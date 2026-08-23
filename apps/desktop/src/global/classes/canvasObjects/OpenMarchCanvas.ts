@@ -1350,6 +1350,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         nextPageCounts,
         previousPathsEnabled,
         nextPathsEnabled,
+        stepSizeWarningsEnabled,
         fieldProperties,
     }: {
         marcherVisuals: MarcherVisualMap;
@@ -1361,6 +1362,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         nextPageCounts: number | undefined;
         previousPathsEnabled: boolean;
         nextPathsEnabled: boolean;
+        stepSizeWarningsEnabled: boolean;
         fieldProperties: FieldProperties;
     }) => {
         if (!fieldProperties) return;
@@ -1386,6 +1388,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     pathEnabled: previousPathsEnabled,
                     // previous paths stay hidden when toggled off, even over threshold
                     allowForceShow: false,
+                    warningsEnabled: stepSizeWarningsEnabled,
                 });
                 if (show) {
                     prevPathway.show();
@@ -1427,6 +1430,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     pathEnabled: nextPathsEnabled,
                     // next path is the current move, force-show it over threshold
                     allowForceShow: true,
+                    warningsEnabled: stepSizeWarningsEnabled,
                 });
                 if (show) {
                     // TODO: Uncomment when EditablePath is fully implemented

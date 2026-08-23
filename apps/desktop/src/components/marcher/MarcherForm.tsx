@@ -113,15 +113,15 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         setQuantityInput(String(defaultQuantity));
         if (!preserveSection) {
             setSection(defaultSection(t));
+            setDrillPrefix(defaultDrillPrefix);
+            setDrillPrefixTouched(false);
         }
         setName("");
         setYear("");
-        setDrillPrefix(defaultDrillPrefix);
         setDrillOrder(defaultDrillOrder);
         setNotes("");
         setSectionError("");
         setDrillPrefixError("");
-        setDrillPrefixTouched(false);
         setDrillOrderError("");
 
         if (formRef.current) formRef.current.reset();
