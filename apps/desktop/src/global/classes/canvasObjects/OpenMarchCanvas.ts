@@ -1119,10 +1119,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /**
      * Update the coordinates of all marchers on the canvas
+     *
+     * @param settle When true, also calls `setCoords()` on each updated marcher
+     * to refresh Fabric's cached bounding box (hit-testing/selection/offscreen
+     * culling). Skipped by default since it's unnecessary overhead during
+     * active playback ticks — callers should pass `true` once the frame clock
+     * has settled (e.g. on pause or a seek while paused).
      */
     updateMarcherCoordinates = (
         coordinatesFlat: Float32Array,
         marcherIds: number[],
+        { settle = false }: { settle?: boolean } = {},
     ) => {
         const marchersById = this._getCanvasMarchersByIdsMap();
 
@@ -1135,6 +1142,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             const y = coordinatesFlat[coordinateIndex + 1];
 
             marcher.setLiveCoordinates(x, y);
+            if (settle) marcher.setCoords();
         }
     };
 
