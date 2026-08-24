@@ -9,7 +9,7 @@ import {
 import {
     marcherPageMapFromArray,
     toMarcherPagesByMarcher,
-    toMarcherPagesByPage,
+    type MarcherPagesByMarcher,
 } from "@/global/classes/MarcherPageIndex";
 import { queryClient } from "@/App";
 import {
@@ -25,7 +25,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
 import { db, schema } from "@/global/database/db";
-import { invalidateByMarchers } from "./sharedInvalidators";
+import { invalidateByMarchers, invalidateByPages } from "./sharedInvalidators";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -126,18 +126,139 @@ export const marcherPagesByMarcherQueryOptions = (
 };
 
 // Mutation hooks
+
+/**
+ * Groups modified marcher-page rows by marcher_id and optimistically patches
+ * each marcher's `marcherPageKeys.byMarcher` cache — the cache
+ * `useMarcherTimelines` reads to drive canvas rendering. Only x/y are
+ * touched; every other field (appearance, notes, path data, locked status)
+ * is left untouched.
+ *
+ * Returns a snapshot of each patched marcher's previous cache value, for
+ * rollback on error.
+ */
+const patchMarcherPagesByMarcherCache = (
+    qc: QueryClient,
+    modifiedMarcherPages: ModifiedMarcherPageArgs[],
+): Map<number, MarcherPage[] | undefined> => {
+    const previous = new Map<number, MarcherPage[] | undefined>();
+    const byMarcherId = new Map<number, ModifiedMarcherPageArgs[]>();
+    for (const patch of modifiedMarcherPages) {
+        const list = byMarcherId.get(patch.marcher_id);
+        if (list) list.push(patch);
+        else byMarcherId.set(patch.marcher_id, [patch]);
+    }
+
+    for (const [marcherId, patches] of byMarcherId) {
+        const queryKey = marcherPageKeys.byMarcher(marcherId);
+        previous.set(marcherId, qc.getQueryData<MarcherPage[]>(queryKey));
+        qc.setQueryData<MarcherPage[]>(queryKey, (old) => {
+            if (!old) return old;
+            return old.map((mp) => {
+                const patch = patches.find((p) => p.page_id === mp.page_id);
+                return patch ? { ...mp, x: patch.x, y: patch.y } : mp;
+            });
+        });
+    }
+    return previous;
+};
+
+/**
+ * Same idea as `patchMarcherPagesByMarcherCache`, but for
+ * `marcherPageKeys.byPage` — used by `Canvas.tsx`/`RegisteredActionsHandler`
+ * for pathways and other page-scoped metadata, which would otherwise stay
+ * stale after a coordinate edit (coordinate mutations only ever invalidated
+ * the `byMarcher` cache).
+ */
+const patchMarcherPagesByPageCache = (
+    qc: QueryClient,
+    modifiedMarcherPages: ModifiedMarcherPageArgs[],
+): Map<number, MarcherPagesByMarcher | undefined> => {
+    const previous = new Map<number, MarcherPagesByMarcher | undefined>();
+    const byPageId = new Map<number, ModifiedMarcherPageArgs[]>();
+    for (const patch of modifiedMarcherPages) {
+        const list = byPageId.get(patch.page_id);
+        if (list) list.push(patch);
+        else byPageId.set(patch.page_id, [patch]);
+    }
+
+    for (const [pageId, patches] of byPageId) {
+        const queryKey = marcherPageKeys.byPage(pageId);
+        previous.set(pageId, qc.getQueryData<MarcherPagesByMarcher>(queryKey));
+        qc.setQueryData<MarcherPagesByMarcher>(queryKey, (old) => {
+            if (!old) return old;
+            const next = { ...old };
+            for (const patch of patches) {
+                const existing = next[patch.marcher_id];
+                if (existing) {
+                    next[patch.marcher_id] = {
+                        ...existing,
+                        x: patch.x,
+                        y: patch.y,
+                    };
+                }
+            }
+            return next;
+        });
+    }
+    return previous;
+};
+
 export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarcherPages: ModifiedMarcherPageArgs[]) =>
             updateMarcherPages({ db, modifiedMarcherPages }),
-        onSuccess: (_, variables) => {
-            // Invalidate all needed marcher pages queries
-            const marcherIds = new Set<number>(
-                variables.map((m) => m.marcher_id),
+        // Optimistically patch the caches the canvas renders from, so the
+        // timeline sampler never sees stale data while the background
+        // refetch (kicked off in onSettled) is in flight. Without this, the
+        // canvas briefly repaints from stale cached data and marchers flash
+        // back to their pre-edit position before snapping forward again as
+        // each per-marcher refetch resolves.
+        onMutate: async (modifiedMarcherPages) => {
+            const marcherIds = new Set(
+                modifiedMarcherPages.map((m) => m.marcher_id),
             );
-            invalidateByMarchers(queryClient, marcherIds);
+            const pageIds = new Set(modifiedMarcherPages.map((m) => m.page_id));
+
+            await Promise.all([
+                ...Array.from(marcherIds, (id) =>
+                    queryClient.cancelQueries({
+                        queryKey: marcherPageKeys.byMarcher(id),
+                    }),
+                ),
+                ...Array.from(pageIds, (id) =>
+                    queryClient.cancelQueries({
+                        queryKey: marcherPageKeys.byPage(id),
+                    }),
+                ),
+            ]);
+
+            const previousByMarcher = patchMarcherPagesByMarcherCache(
+                queryClient,
+                modifiedMarcherPages,
+            );
+            const previousByPage = patchMarcherPagesByPageCache(
+                queryClient,
+                modifiedMarcherPages,
+            );
+
+            return { previousByMarcher, previousByPage };
         },
-        onError: (e, variables) => {
+        onError: (e, variables, context) => {
+            if (context) {
+                for (const [marcherId, data] of context.previousByMarcher) {
+                    queryClient.setQueryData(
+                        marcherPageKeys.byMarcher(marcherId),
+                        data,
+                    );
+                }
+                for (const [pageId, data] of context.previousByPage) {
+                    queryClient.setQueryData(
+                        marcherPageKeys.byPage(pageId),
+                        data,
+                    );
+                }
+            }
             conToastError(`Error updating pages`, e, variables);
         },
     });
@@ -212,6 +333,17 @@ export type MarcherTransformFunction = (args: {
     pageId: number;
 }) => MarcherCoordinate[];
 
+const toModifiedMarcherPageArgs = (
+    coordinates: MarcherCoordinate[],
+    pageId: number,
+): ModifiedMarcherPageArgs[] =>
+    coordinates.map((coordinate) => ({
+        marcher_id: coordinate.marcher_id,
+        page_id: pageId,
+        x: coordinate.x,
+        y: coordinate.y,
+    }));
+
 /**
  * A hook that updates the selected marchers on the selected page.
  *
@@ -269,15 +401,10 @@ export const useUpdateSelectedMarchers = (
                 fieldProperties,
                 pageId,
             });
-            const modifiedMarcherPages: ModifiedMarcherPageArgs[] =
-                newCoordinates.map((coordinate) => {
-                    return {
-                        x: coordinate.x,
-                        y: coordinate.y,
-                        marcher_id: coordinate.marcher_id,
-                        page_id: pageId,
-                    };
-                });
+            const modifiedMarcherPages = toModifiedMarcherPageArgs(
+                newCoordinates,
+                pageId,
+            );
 
             await updateMarcherPages({
                 db,
@@ -285,9 +412,29 @@ export const useUpdateSelectedMarchers = (
             });
             return { newCoordinates };
         },
-        onSuccess: () => {
-            const marcherIds = new Set(selectedMarchers.map((m) => m.id));
-            void invalidateByMarchers(queryClient, marcherIds);
+        onSuccess: (data) => {
+            if (!data || pageId == null) return;
+            const { newCoordinates } = data;
+            const modifiedMarcherPages = toModifiedMarcherPageArgs(
+                newCoordinates,
+                pageId,
+            );
+
+            // Patch the caches the canvas renders from *before* invalidating,
+            // so useMarcherTimelines never observes stale data alongside
+            // isFetching:true — this hook can't use onMutate for the
+            // optimistic patch (mutationFn only knows newCoordinates once
+            // it's run), but since the write already succeeded by the time
+            // onSuccess fires, patching first here has the same effect.
+            patchMarcherPagesByMarcherCache(queryClient, modifiedMarcherPages);
+            patchMarcherPagesByPageCache(queryClient, modifiedMarcherPages);
+
+            // Derived from newCoordinates (not the closed-over
+            // selectedMarchers state, which could drift during the IPC
+            // round trip) so it always matches exactly what was written.
+            const marcherIds = new Set(newCoordinates.map((c) => c.marcher_id));
+            invalidateByMarchers(queryClient, marcherIds);
+            invalidateByPages(queryClient, new Set([pageId]));
         },
         onError: (e, variables) => {
             conToastError(`Error updating selected marchers`, e, variables);

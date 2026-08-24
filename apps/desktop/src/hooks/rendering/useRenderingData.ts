@@ -5,7 +5,7 @@ import {
 } from "../queries";
 import { useTimingObjects } from "../useTimingObjects";
 import { MarcherTimeline } from "@openmarch/core";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { getAllCoordinatesAtTime } from "@/services/rendering/get-coordinates-at-time";
 import { dbToMarcherTimeline } from "@/services/rendering/db-to-timeline";
 
@@ -28,6 +28,103 @@ export const _coordinatesCoverPages = (
 ): boolean => {
     const pageIds = new Set(coordinates.map((c) => c.page_id));
     return pages.every((p) => pageIds.has(p.page_id));
+};
+
+/** Per-marcher timeline plus the query `data` reference it was built from. */
+type CachedMarcherTimeline = {
+    data: { page_id: number; x: number; y: number }[];
+    timeline: MarcherTimeline;
+};
+
+export type TimelineCombineCache = {
+    /** The `pagesForTimeline` reference the cache was last built against. */
+    pagesForTimeline: { page_id: number; timestamp: number }[] | null;
+    perMarcher: Map<number, CachedMarcherTimeline>;
+    lastMarcherIds: number[] | null;
+    lastResult:
+        | { marcherIds: number[]; marcherTimelines: MarcherTimeline[] }
+        | undefined;
+};
+
+export const createTimelineCombineCache = (): TimelineCombineCache => ({
+    pagesForTimeline: null,
+    perMarcher: new Map(),
+    lastMarcherIds: null,
+    lastResult: undefined,
+});
+
+/**
+ * Pure combine step for `useMarcherTimelines`. TanStack Query calls
+ * `combine` whenever *any* underlying query's result object changes —
+ * including `isFetching` flipping to `true` on invalidation, before `data`
+ * updates. Rebuilding every marcher's timeline (and returning a new
+ * top-level object) on every such call recreates `renderingCallback` /
+ * `updateCoordinates` downstream, which re-triggers `useAnimation`'s repaint
+ * effect even when nothing actually changed.
+ *
+ * This reuses a marcher's previously built `MarcherTimeline` — and the whole
+ * result object — by reference whenever the underlying query `data`
+ * references haven't changed, so no-op query-state transitions don't cause
+ * a repaint.
+ */
+export const combineMarcherTimelines = (
+    cache: TimelineCombineCache,
+    marcherIds: number[] | undefined,
+    pagesForTimeline: { page_id: number; timestamp: number }[],
+    marcherPages: {
+        data: { page_id: number; x: number; y: number }[] | undefined;
+    }[],
+):
+    | { marcherIds: number[]; marcherTimelines: MarcherTimeline[] }
+    | undefined => {
+    if (
+        marcherIds == null ||
+        marcherPages.some(
+            (mp) =>
+                mp == null ||
+                mp.data == null ||
+                !_coordinatesCoverPages(mp.data, pagesForTimeline),
+        )
+    )
+        return undefined;
+
+    // Page timing changed — every cached timeline embeds its timestamps, so
+    // the whole per-marcher cache is stale and must be rebuilt.
+    if (cache.pagesForTimeline !== pagesForTimeline) {
+        cache.perMarcher = new Map();
+        cache.pagesForTimeline = pagesForTimeline;
+    }
+
+    let anyChanged = cache.lastMarcherIds !== marcherIds;
+
+    const marcherTimelines = marcherPages.map((result, index) => {
+        const marcherId = marcherIds[index];
+        const cached = cache.perMarcher.get(marcherId);
+        if (cached && cached.data === result.data) {
+            return cached.timeline;
+        }
+        anyChanged = true;
+        const timeline = dbToMarcherTimeline(result.data!, pagesForTimeline);
+        cache.perMarcher.set(marcherId, { data: result.data!, timeline });
+        return timeline;
+    });
+
+    // Prune entries for marchers no longer present (e.g. a deleted marcher).
+    if (cache.perMarcher.size > marcherIds.length) {
+        const idSet = new Set(marcherIds);
+        for (const id of cache.perMarcher.keys()) {
+            if (!idSet.has(id)) cache.perMarcher.delete(id);
+        }
+    }
+
+    if (!anyChanged && cache.lastResult) {
+        return cache.lastResult;
+    }
+
+    const nextResult = { marcherIds, marcherTimelines };
+    cache.lastMarcherIds = marcherIds;
+    cache.lastResult = nextResult;
+    return nextResult;
 };
 
 export const useMarcherTimelines = ():
@@ -68,33 +165,21 @@ export const useMarcherTimelines = ():
         [marcherIds],
     );
 
+    const timelineCacheRef = useRef(createTimelineCombineCache());
+
     // Also must be stable — see comment above.
     const combine = useCallback(
         (
             marcherPages: {
                 data: { page_id: number; x: number; y: number }[] | undefined;
             }[],
-        ) => {
-            if (
-                marcherIds == null ||
-                marcherPages.some(
-                    (mp) =>
-                        mp == null ||
-                        mp.data == null ||
-                        !_coordinatesCoverPages(mp.data, pagesForTimeline),
-                )
-            )
-                return undefined;
-
-            const marcherTimelines = marcherPages.map((result) =>
-                dbToMarcherTimeline(result.data!, pagesForTimeline),
-            );
-
-            return {
+        ) =>
+            combineMarcherTimelines(
+                timelineCacheRef.current,
                 marcherIds,
-                marcherTimelines,
-            };
-        },
+                pagesForTimeline,
+                marcherPages,
+            ),
         [marcherIds, pagesForTimeline],
     );
 
