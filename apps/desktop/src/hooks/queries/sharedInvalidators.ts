@@ -28,3 +28,11 @@ export const invalidateByMarchers = (
         });
     }
 };
+
+export const invalidateByPages = (qc: QueryClient, pageIds: Set<number>) => {
+    for (const pageId of pageIds) {
+        void qc.invalidateQueries({
+            queryKey: marcherPageKeys.byPage(pageId),
+        });
+    }
+};
