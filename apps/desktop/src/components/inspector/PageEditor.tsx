@@ -15,7 +15,7 @@ function PageEditor() {
     const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
     );
-    const splitPage = useSplitPage().mutate;
+    const { mutate: splitPage, isPending: isSplittingPage } = useSplitPage();
     const isFirstPage = selectedPage?.previousPageId === null;
 
     const countsInputId = "page-counts";
@@ -100,7 +100,9 @@ function PageEditor() {
                         variant="secondary"
                         size="compact"
                         onClick={() => splitPage({ page: selectedPage })}
-                        disabled={selectedPage?.beats.length <= 1}
+                        disabled={
+                            selectedPage?.beats.length <= 1 || isSplittingPage
+                        }
                     >
                         <T keyName="inspector.page.splitPage" />
                     </Button>
