@@ -1177,6 +1177,7 @@
             "halfLines": "Half lines",
             "nextPaths": "Next paths",
             "previousPaths": "Previous paths",
+            "stepSizeWarnings": "Step size warnings",
             "uiSettingsToolbar": "Ui Settings Toolbar"
         }
     },
