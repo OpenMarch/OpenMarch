@@ -86,13 +86,22 @@ Payload: `u16 count`, then `count` records of:
 
 ```
 u64 id            // stable performer id (see §3, join key)
-i32 labelLen
+u32 labelLen
 labelLen bytes    // drill label, ASCII, e.g. "T3", "G10"
-8 bytes           // reserved / unused
+u16 nameLen
+nameLen bytes     // instrument/section name, ASCII, e.g. "Piccolo", "Guard"
+6 bytes           // reserved / unused
 ```
 
 The `u64 id` is read as a decimal string to avoid float precision loss; it joins
 to the 18-digit id embedded in each coordinate record.
+
+`name` is a source-assigned instrument/section label. We don't read it into the
+model (section comes from the drill label's own prefix instead), but its
+length-prefixed bytes must still be consumed to stay aligned with the rest of
+the record. Older exporter builds always write `nameLen == 0`, which collapses
+this shape to exactly the old flat "8 reserved bytes" reading — so this is a
+strict generalization, not a breaking change.
 
 ### 2.4 `PTB7` — set list (named formations)
 

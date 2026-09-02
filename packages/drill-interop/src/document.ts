@@ -291,8 +291,17 @@ function readTitle(payload: Uint8Array): string | undefined {
     return reader.utf8(length) || undefined;
 }
 
-/** `CST7`: `u16 count`, then `u64 id, i32 labelLen, label, 8 reserved bytes`. */
-function readCast(payload: Uint8Array): DrillPerformer[] {
+/**
+ * `CST7`: `u16 count`, then per performer: `u64 id, u32 labelLen, label,
+ * u16 nameLen, name, 6 reserved bytes`. `name` is the performer's
+ * instrument/section label assigned by the source tool (e.g. "Piccolo",
+ * "Guard"); we don't use it (section comes from the drill label's prefix),
+ * but its length-prefixed bytes must still be consumed to stay aligned.
+ * Older exports always have `nameLen === 0`, making this a strict
+ * generalization of the previous flat "8 reserved bytes" reading, not a
+ * breaking change.
+ */
+export function readCast(payload: Uint8Array): DrillPerformer[] {
     const reader = new BinaryReader(payload);
     const count = reader.u16();
     const performers: DrillPerformer[] = [];
@@ -300,7 +309,9 @@ function readCast(payload: Uint8Array): DrillPerformer[] {
         const id = reader.u64String();
         const labelLength = reader.u32();
         const label = reader.ascii(labelLength);
-        reader.skip(8);
+        const nameLength = reader.u16();
+        reader.skip(nameLength); // instrument/section name — unused for now
+        reader.skip(6);
         const parsed = parseDrillLabel(label);
         performers.push({
             id,
@@ -308,6 +319,11 @@ function readCast(payload: Uint8Array): DrillPerformer[] {
             drill_prefix: parsed.drill_prefix,
             drill_order: parsed.drill_order,
         });
+    }
+    if (performers.length < count) {
+        console.warn(
+            `readCast: expected ${count} performers from CST7 but only recovered ${performers.length}; the record layout may have drifted further.`,
+        );
     }
     return performers;
 }
