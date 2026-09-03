@@ -46,6 +46,9 @@ import { resolveSectionForDrillPrefix } from "@/global/drillLabel";
 export type DrillImportResult = {
     success: boolean;
     message: string;
+    /** The parsed drill package's title, if it has one. Used to prefill a
+     * project name for the show being created from this import. */
+    title?: string;
     marchers: number;
     sets: number;
     /**
@@ -357,6 +360,7 @@ export const importDrillPackage = async (
         message: show.title
             ? `Imported "${show.title}"`
             : "Imported drill file",
+        title: show.title,
         marchers,
         sets,
         warnings,

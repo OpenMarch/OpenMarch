@@ -230,6 +230,8 @@ const APP_API = {
         ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
     getNewShowDraftPath: () =>
         ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
+    getNewShowDraftsDirectory: () =>
+        ipcRenderer.invoke("newShow:getDraftsDirectory") as Promise<string>,
     choosePreviousDotsFile: () =>
         ipcRenderer.invoke(
             "newShow:choosePreviousDotsFile",

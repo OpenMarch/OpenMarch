@@ -357,6 +357,9 @@ function initDatabaseIpcHandlers() {
         store.set("pendingNewShowDialog", false);
     });
     ipcMain.handle("newShow:createDraft", async () => createNewShowDraft());
+    ipcMain.handle("newShow:getDraftsDirectory", () =>
+        getNewShowDraftsDirectory(),
+    );
     ipcMain.handle(
         "newShow:finalizeDraft",
         async (_, targetPath: string, projectName: string) =>
@@ -896,6 +899,14 @@ export async function finalizeNewShowDraft(
               ? targetPath
               : `${targetPath}.dots`,
     );
+
+    if (isNewShowDraftPath(finalPath)) {
+        console.error(
+            "Refusing to finalize new show into drafts directory:",
+            finalPath,
+        );
+        return -1;
+    }
 
     const finalDir = dirname(finalPath);
     if (!fs.existsSync(finalDir)) {

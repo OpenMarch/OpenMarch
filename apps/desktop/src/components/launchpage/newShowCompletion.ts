@@ -95,6 +95,76 @@ const DEFAULT_TEMPO = 120;
 export const sanitizeFilename = (name: string): string =>
     name.trim().replace(/[<>:"/\\|?*]/g, "_");
 
+const normalizePath = (path: string) => path.replace(/\\/g, "/");
+
+const trimTrailingSlashes = (path: string) => path.replace(/\/+$/, "");
+
+/**
+ * True when filePath is the directory itself or a nested path inside it.
+ */
+export function isPathUnderDirectory(
+    filePath: string,
+    parentDirectory: string,
+): boolean {
+    const path = trimTrailingSlashes(normalizePath(filePath.trim()));
+    const parent = trimTrailingSlashes(normalizePath(parentDirectory.trim()));
+    if (!path || !parent) return false;
+    return path === parent || path.startsWith(`${parent}/`);
+}
+
+/**
+ * Default save folder from the last opened file, falling back to Documents
+ * when that parent is missing or lives under the new-show drafts directory.
+ */
+export function resolveDefaultSaveDirectory(
+    lastFilePath: string | undefined,
+    draftsDirectory: string,
+    documentsPath: string,
+): string {
+    if (lastFilePath?.trim()) {
+        const normalizedPath = normalizePath(lastFilePath.trim());
+        const pathParts = normalizedPath.split("/");
+        pathParts.pop();
+        const directory = pathParts.join("/");
+        if (directory && !isPathUnderDirectory(directory, draftsDirectory)) {
+            return directory;
+        }
+    }
+    return documentsPath;
+}
+
+const dotsBasename = (dotsFilename: string) =>
+    dotsFilename.slice(0, -".dots".length);
+
+export const ensureFileLocationHasProjectName = (
+    rawLocation: string,
+    projectName: string,
+    defaultDirectory?: string,
+) => {
+    const sanitizedProjectName = sanitizeFilename(projectName);
+    const filename = `${sanitizedProjectName}.dots`;
+
+    let finalFileLocation = rawLocation.trim();
+    if (finalFileLocation) {
+        const normalizedPath = normalizePath(finalFileLocation);
+        const pathParts = normalizedPath.split("/");
+        const lastPart = pathParts[pathParts.length - 1];
+
+        if (!lastPart) {
+            pathParts[pathParts.length - 1] = filename;
+        } else if (!lastPart.endsWith(".dots")) {
+            pathParts.push(filename);
+        } else if (dotsBasename(lastPart) !== sanitizedProjectName) {
+            pathParts[pathParts.length - 1] = filename;
+        }
+        finalFileLocation = pathParts.join("/");
+    } else if (defaultDirectory) {
+        finalFileLocation = `${normalizePath(defaultDirectory)}/${filename}`;
+    }
+
+    return finalFileLocation;
+};
+
 export async function buildDefaultFilePath(
     projectName: string,
 ): Promise<string> {
@@ -122,7 +192,7 @@ export function resolveNewShowFilePath(
         return pathParts.join("/");
     }
 
-    if (!lastPart.startsWith(sanitizedProjectName)) {
+    if (dotsBasename(lastPart) !== sanitizedProjectName) {
         pathParts[pathParts.length - 1] = `${sanitizedProjectName}.dots`;
         return pathParts.join("/");
     }
