@@ -7,7 +7,7 @@ import sanitize from "sanitize-filename";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
-import Page from "../../../src/global/classes/Page";
+import type Page from "../../../src/global/classes/Page";
 import sanitizeHtml from "sanitize-html";
 
 import Store from "electron-store";

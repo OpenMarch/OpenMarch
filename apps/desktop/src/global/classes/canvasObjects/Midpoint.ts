@@ -69,11 +69,12 @@ export default class Midpoint extends fabric.Circle {
 
     // Makes the midpoint invisible
     hide(): void {
-        this.set("visible", false);
+        // compare to the exact target since fabric renders an unset visible as visible
+        if (this.visible !== false) this.set("visible", false);
     }
 
     // Makes the midpoint visible
     show(): void {
-        this.set("visible", true);
+        if (this.visible !== true) this.set("visible", true);
     }
 }

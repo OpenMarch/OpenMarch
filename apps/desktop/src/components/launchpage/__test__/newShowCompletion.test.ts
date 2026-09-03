@@ -4,18 +4,28 @@ import { QueryClient } from "@tanstack/react-query";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import {
     completeNewShow,
+    ensureFileLocationHasProjectName,
+    isPathUnderDirectory,
+    resolveDefaultSaveDirectory,
     resolveNewShowFilePath,
     sanitizeFilename,
 } from "../newShowCompletion";
 import { wizardStateToFormState } from "../newShowTypes";
 import type { NewShowWizardState } from "../newShowTypes";
 import { getWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
-import { getFieldProperties } from "@/global/classes/FieldProperties";
+import {
+    getFieldProperties,
+    getFieldPropertiesImage,
+} from "@/global/classes/FieldProperties";
 import { allDatabaseBeatsQueryOptions } from "@/hooks/queries/useBeats";
 import { allDatabasePagesQueryOptions } from "@/hooks/queries/usePages";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
 import { getUtility } from "@/db-functions/utility";
 import { getMarchers } from "@/db-functions/marcher";
+import { marcherPagesByPageId } from "@/db-functions/marcherPage";
+import { FIRST_PAGE_ID } from "@/db-functions/page";
+import { getSectionAppearances } from "@/db-functions/sectionAppearance";
+import { getMarcherTags, getTags } from "@/db-functions/tag";
 
 describe("newShowCompletion helpers", () => {
     it("sanitizeFilename removes invalid characters", () => {
@@ -28,15 +38,97 @@ describe("newShowCompletion helpers", () => {
         ).toBe("/Users/me/Documents/My Show.dots");
     });
 
+    it("resolveNewShowFilePath updates filename when project name is shortened", () => {
+        expect(
+            resolveNewShowFilePath(
+                "My Sho",
+                "/Users/me/Documents/My Show.dots",
+            ),
+        ).toBe("/Users/me/Documents/My Sho.dots");
+    });
+
+    it("ensureFileLocationHasProjectName updates filename when project name is shortened", () => {
+        expect(
+            ensureFileLocationHasProjectName(
+                "/Users/me/Documents/My Show.dots",
+                "My Sho",
+            ),
+        ).toBe("/Users/me/Documents/My Sho.dots");
+    });
+
+    it("isPathUnderDirectory matches the directory itself and nested paths", () => {
+        const drafts =
+            "/Users/me/Library/Application Support/OpenMarch/new-show-drafts";
+        expect(isPathUnderDirectory(drafts, drafts)).toBe(true);
+        expect(isPathUnderDirectory(`${drafts}/uuid.dots`, drafts)).toBe(true);
+        expect(isPathUnderDirectory(`${drafts}/nested/file.dots`, drafts)).toBe(
+            true,
+        );
+        expect(
+            isPathUnderDirectory(
+                "/Users/me/Library/Application Support/OpenMarch/new-show-drafts/nested/file.dots".replaceAll(
+                    "/",
+                    "\\",
+                ),
+                drafts,
+            ),
+        ).toBe(true);
+        expect(
+            isPathUnderDirectory("/Users/me/Documents/Show.dots", drafts),
+        ).toBe(false);
+        expect(
+            isPathUnderDirectory(
+                "/Users/me/Library/Application Support/OpenMarch/new-show-drafts-backup/file.dots",
+                drafts,
+            ),
+        ).toBe(false);
+        expect(isPathUnderDirectory("", drafts)).toBe(false);
+        expect(isPathUnderDirectory(`${drafts}/file.dots`, "")).toBe(false);
+    });
+
+    it("resolveDefaultSaveDirectory falls back to Documents when last file is a draft", () => {
+        const drafts =
+            "/Users/me/Library/Application Support/OpenMarch/new-show-drafts";
+        const documents = "/Users/me/Documents";
+
+        expect(
+            resolveDefaultSaveDirectory(
+                `${drafts}/uuid.dots`,
+                drafts,
+                documents,
+            ),
+        ).toBe(documents);
+        expect(
+            resolveDefaultSaveDirectory(
+                `${drafts}/nested/uuid.dots`,
+                drafts,
+                documents,
+            ),
+        ).toBe(documents);
+        expect(
+            resolveDefaultSaveDirectory(
+                "/Users/me/Shows/existing.dots",
+                drafts,
+                documents,
+            ),
+        ).toBe("/Users/me/Shows");
+        expect(resolveDefaultSaveDirectory("", drafts, documents)).toBe(
+            documents,
+        );
+        expect(resolveDefaultSaveDirectory(undefined, drafts, documents)).toBe(
+            documents,
+        );
+    });
+
     it("maps split audio and tempo wizard state to completion form state", () => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Test Show",
                 fileLocation: "/tmp/test-show.dots",
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -86,6 +178,7 @@ describeDbTests("completeNewShow", (it) => {
         db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Test Show",
                 fileLocation: `/tmp/test-show-${task.id}.dots`,
@@ -93,8 +186,7 @@ describeDbTests("completeNewShow", (it) => {
                 client: "Client Name",
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -121,8 +213,7 @@ describeDbTests("completeNewShow", (it) => {
         expect(settings.defaultTempo).toBe(100);
         expect(settings.defaultBeatsPerMeasure).toBe(4);
         expect(settings.defaultNewPageCounts).toBe(16);
-        expect(settings.ensembleEnvironment).toBe("outdoor");
-        expect(settings.ensembleType).toBe("Marching Band");
+        expect(settings.activity).toBe("Marching Band");
 
         const field = await getFieldProperties();
         expect(field.name).toBe(
@@ -151,6 +242,11 @@ describeDbTests("completeNewShow", (it) => {
             "/tmp/Test Show.dots",
             "Test Show",
         );
+
+        expect(await getFieldPropertiesImage()).toBeNull();
+        expect(await getSectionAppearances({ db })).toEqual([]);
+        expect(await getTags({ db })).toEqual([]);
+        expect(await getMarcherTags({ db })).toEqual([]);
     });
 
     it("creates tempo-only show with 3/4 time signature", async ({
@@ -158,13 +254,13 @@ describeDbTests("completeNewShow", (it) => {
         db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Triple Meter Show",
                 fileLocation: `/tmp/triple-meter-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -204,13 +300,13 @@ describeDbTests("completeNewShow", (it) => {
         window.electron.getAudioFilesDetails = vi.fn().mockResolvedValue([]);
 
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Audio Show",
                 fileLocation: `/tmp/audio-show-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -235,13 +331,13 @@ describeDbTests("completeNewShow", (it) => {
         db: _db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "XML Show",
                 fileLocation: `/tmp/xml-show-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -266,13 +362,13 @@ describeDbTests("completeNewShow", (it) => {
         db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Invalid Tempo Show",
                 fileLocation: `/tmp/invalid-tempo-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -307,13 +403,13 @@ describeDbTests("completeNewShow", (it) => {
             .mockResolvedValueOnce(200);
 
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Retry Show",
                 fileLocation: `/tmp/retry-show-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -363,13 +459,13 @@ describeDbTests("completeNewShow", (it) => {
             .mockResolvedValueOnce(200);
 
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Performer Retry Show",
                 fileLocation: `/tmp/performer-retry-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -409,5 +505,208 @@ describeDbTests("completeNewShow", (it) => {
 
         const marchers = await getMarchers({ db });
         expect(marchers).toHaveLength(2);
+    });
+
+    it("applies imported previous dots performers and first-page coordinates", async ({
+        task,
+        db,
+    }) => {
+        const importedField =
+            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+        const fieldImage = new Uint8Array([1, 2, 3, 4, 5]);
+        const wizardState: NewShowWizardState = {
+            start: { mode: "importPrevious" },
+            project: {
+                projectName: "Imported Previous Show",
+                fileLocation: `/tmp/imported-previous-${task.id}.dots`,
+            },
+            ensemble: {
+                activity: "Marching Band",
+            },
+            field: {
+                template: importedField,
+                isCustom: false,
+            },
+            performers: {
+                method: "add",
+                marchers: [
+                    {
+                        section: "Trumpet",
+                        drill_prefix: "T",
+                        drill_order: 1,
+                    },
+                    {
+                        section: "Trumpet",
+                        drill_prefix: "T",
+                        drill_order: 2,
+                    },
+                ],
+            },
+            audio: { method: "skip" },
+            tempo: { method: "skip" },
+            draftFilePath: "/tmp/draft.dots",
+            previousDotsImport: {
+                sourcePath: "/tmp/source.dots",
+                field: {
+                    template: importedField,
+                    isCustom: false,
+                },
+                fieldImage,
+                performers: {
+                    method: "add",
+                    marchers: [
+                        {
+                            section: "Trumpet",
+                            drill_prefix: "T",
+                            drill_order: 1,
+                        },
+                        {
+                            section: "Trumpet",
+                            drill_prefix: "T",
+                            drill_order: 2,
+                        },
+                    ],
+                },
+                coordinates: [
+                    {
+                        drill_prefix: "T",
+                        drill_order: 1,
+                        x: 321,
+                        y: 654,
+                    },
+                    {
+                        drill_prefix: "T",
+                        drill_order: 2,
+                        x: 987,
+                        y: 123,
+                    },
+                ],
+                sectionAppearances: [
+                    {
+                        section: "Trumpet",
+                        fill_color: { r: 255, g: 0, b: 0, a: 1 },
+                        outline_color: { r: 0, g: 0, b: 0, a: 1 },
+                        shape_type: "circle",
+                        visible: true,
+                        label_visible: true,
+                    },
+                ],
+                tags: [
+                    {
+                        key: 10,
+                        name: "Soloists",
+                        description: "Featured performers",
+                        icon: "star",
+                        color_hex: "#ff0000",
+                    },
+                    {
+                        key: 20,
+                        name: "Front",
+                        description: null,
+                        icon: null,
+                        color_hex: "#00ff00",
+                    },
+                ],
+                marcherTags: [
+                    {
+                        drill_prefix: "T",
+                        drill_order: 1,
+                        tagKey: 10,
+                    },
+                    {
+                        drill_prefix: "T",
+                        drill_order: 2,
+                        tagKey: 20,
+                    },
+                    {
+                        drill_prefix: "T",
+                        drill_order: 1,
+                        tagKey: 20,
+                    },
+                ],
+                pageNumberOffset: 18,
+            },
+        };
+
+        await completeNewShow(wizardStateToFormState(wizardState), queryClient);
+
+        const marchers = await getMarchers({ db });
+        const marcherByDrillNumber = new Map(
+            marchers.map((marcher) => [
+                `${marcher.drill_prefix}${marcher.drill_order}`,
+                marcher,
+            ]),
+        );
+        const firstPageMarcherPages = await marcherPagesByPageId({
+            db,
+            pageId: FIRST_PAGE_ID,
+        });
+        const firstPageByMarcherId = new Map(
+            firstPageMarcherPages.map((marcherPage) => [
+                marcherPage.marcher_id,
+                marcherPage,
+            ]),
+        );
+
+        const t1 = marcherByDrillNumber.get("T1");
+        const t2 = marcherByDrillNumber.get("T2");
+        expect(t1).toBeDefined();
+        expect(t2).toBeDefined();
+        expect(firstPageByMarcherId.get(t1!.id)).toMatchObject({
+            x: 321,
+            y: 654,
+        });
+        expect(firstPageByMarcherId.get(t2!.id)).toMatchObject({
+            x: 987,
+            y: 123,
+        });
+
+        const importedImage = await getFieldPropertiesImage();
+        expect(importedImage).toEqual(fieldImage);
+
+        const sectionAppearances = await getSectionAppearances({ db });
+        expect(sectionAppearances).toHaveLength(1);
+        expect(sectionAppearances[0]).toMatchObject({
+            section: "Trumpet",
+            fill_color: { r: 255, g: 0, b: 0, a: 1 },
+            outline_color: { r: 0, g: 0, b: 0, a: 1 },
+            shape_type: "circle",
+            visible: true,
+            label_visible: true,
+        });
+
+        const tags = await getTags({ db });
+        expect(tags).toHaveLength(2);
+        const tagByName = new Map(tags.map((tag) => [tag.name, tag]));
+        expect(tagByName.get("Soloists")).toMatchObject({
+            description: "Featured performers",
+            icon: "star",
+            color_hex: "#ff0000",
+        });
+        expect(tagByName.get("Front")).toMatchObject({
+            description: null,
+            icon: null,
+            color_hex: "#00ff00",
+        });
+
+        const marcherTags = await getMarcherTags({ db });
+        expect(marcherTags).toHaveLength(3);
+        const soloistsId = tagByName.get("Soloists")!.id;
+        const frontId = tagByName.get("Front")!.id;
+        const marcherTagKeys = new Set(
+            marcherTags.map(
+                (marcherTag) => `${marcherTag.marcher_id}:${marcherTag.tag_id}`,
+            ),
+        );
+        expect(marcherTagKeys).toEqual(
+            new Set([
+                `${t1!.id}:${soloistsId}`,
+                `${t2!.id}:${frontId}`,
+                `${t1!.id}:${frontId}`,
+            ]),
+        );
+
+        const settings = await getWorkspaceSettingsParsed({ db });
+        expect(settings.pageNumberOffset).toBe(18);
     });
 });

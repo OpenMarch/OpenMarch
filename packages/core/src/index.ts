@@ -7,6 +7,7 @@ export * from "./shapes";
 export * from "./path-utility";
 export * from "./lighting";
 export * from "./coordinates";
+export * from "./page";
 
 // Future core features can be added here:
 // export * from "./marching";

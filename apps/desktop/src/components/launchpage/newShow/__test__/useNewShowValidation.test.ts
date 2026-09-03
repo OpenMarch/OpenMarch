@@ -8,11 +8,39 @@ import {
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 describe("useNewShowValidation", () => {
+    it("requires a setup mode on start step", () => {
+        const { result } = renderHook(() =>
+            useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "start"),
+        );
+        expect(result.current).toBe(false);
+
+        const withStart: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            start: { mode: "importPrevious" },
+        };
+        const { result: selectedResult } = renderHook(() =>
+            useNewShowValidation(withStart, "start"),
+        );
+        expect(selectedResult.current).toBe(true);
+    });
+
     it("requires project name and file location on project step", () => {
         const { result } = renderHook(() =>
             useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "project"),
         );
         expect(result.current).toBe(false);
+
+        const withEmptyName: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            project: {
+                projectName: "",
+                fileLocation: "/tmp/my.dots",
+            },
+        };
+        const { result: emptyNameResult } = renderHook(() =>
+            useNewShowValidation(withEmptyName, "project"),
+        );
+        expect(emptyNameResult.current).toBe(false);
 
         const withProject: NewShowWizardState = {
             ...DEFAULT_NEW_SHOW_WIZARD_STATE,
@@ -25,6 +53,34 @@ describe("useNewShowValidation", () => {
             useNewShowValidation(withProject, "project"),
         );
         expect(result2.current).toBe(true);
+    });
+
+    it("rejects a save location inside the new-show drafts directory", () => {
+        const drafts =
+            "/Users/me/Library/Application Support/OpenMarch/new-show-drafts";
+        const withDraftsPath: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            project: {
+                projectName: "My Show",
+                fileLocation: `${drafts}/My Show.dots`,
+            },
+        };
+        const { result: invalidResult } = renderHook(() =>
+            useNewShowValidation(withDraftsPath, "project", drafts),
+        );
+        expect(invalidResult.current).toBe(false);
+
+        const withSafePath: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            project: {
+                projectName: "My Show",
+                fileLocation: "/Users/me/Documents/My Show.dots",
+            },
+        };
+        const { result: validResult } = renderHook(() =>
+            useNewShowValidation(withSafePath, "project", drafts),
+        );
+        expect(validResult.current).toBe(true);
     });
 
     it("allows skip on performers step", () => {
@@ -89,8 +145,7 @@ describe("useNewShowValidation", () => {
         const state: NewShowWizardState = {
             ...DEFAULT_NEW_SHOW_WIZARD_STATE,
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:

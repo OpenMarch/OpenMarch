@@ -1,0 +1,1 @@
+ALTER TABLE `utility` ADD `notes` text;

@@ -26,13 +26,14 @@ import {
     updateRecentFileSvgPreview,
     clearMissingRecentFiles,
 } from "./services/recent-files-service";
-import AudioFile from "../../src/global/classes/AudioFile";
+import type AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
+import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -439,6 +440,9 @@ function initDatabaseIpcHandlers() {
         store.set("pendingNewShowDialog", false);
     });
     ipcMain.handle("newShow:createDraft", async () => createNewShowDraft());
+    ipcMain.handle("newShow:getDraftsDirectory", () =>
+        getNewShowDraftsDirectory(),
+    );
     ipcMain.handle(
         "newShow:finalizeDraft",
         async (_, targetPath: string, projectName: string) =>
@@ -446,6 +450,9 @@ function initDatabaseIpcHandlers() {
     );
     ipcMain.handle("newShow:discardDraft", async () => discardNewShowDraft());
     ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
+    ipcMain.handle("newShow:choosePreviousDotsFile", async () =>
+        choosePreviousDotsFile(win),
+    );
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             DatabaseServices.closePersistentConnection();
@@ -458,6 +465,11 @@ function initDatabaseIpcHandlers() {
         }
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle(
+        "audio:insertBuffer",
+        async (_, args: { data: ArrayBuffer; nickname: string }) =>
+            insertAudioFileFromBuffer(args),
+    );
 }
 
 function initRecentFilesIpcHandlers() {
@@ -971,6 +983,14 @@ export async function finalizeNewShowDraft(
               : `${targetPath}.dots`,
     );
 
+    if (isNewShowDraftPath(finalPath)) {
+        console.error(
+            "Refusing to finalize new show into drafts directory:",
+            finalPath,
+        );
+        return -1;
+    }
+
     const finalDir = dirname(finalPath);
     if (!fs.existsSync(finalDir)) {
         fs.mkdirSync(finalDir, { recursive: true });
@@ -1373,6 +1393,37 @@ export async function insertAudioFile(): Promise<
         return databaseResponse;
     } catch (err) {
         console.error("Error inserting audio file:", err);
+        return audioInsertError(
+            err instanceof Error ? err.message : String(err),
+        );
+    }
+}
+
+/**
+ * Inserts an audio file from an in-memory buffer (e.g. audio bundled inside an
+ * imported drill package) and selects it, without prompting the user for a file.
+ */
+export async function insertAudioFileFromBuffer({
+    data,
+    nickname,
+}: {
+    data: ArrayBuffer;
+    nickname: string;
+}): Promise<DatabaseServices.LegacyDatabaseResponse<AudioFile[]>> {
+    if (!DatabaseServices.databaseIsReady()) {
+        return audioInsertError(
+            "No file is open. Create or open a show first.",
+        );
+    }
+    try {
+        return await DatabaseServices.insertAudioFile({
+            data,
+            path: nickname,
+            nickname,
+            selected: true,
+        });
+    } catch (err) {
+        console.error("Error inserting audio file from buffer:", err);
         return audioInsertError(
             err instanceof Error ? err.message : String(err),
         );

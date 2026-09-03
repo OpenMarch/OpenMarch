@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { FieldProperties } from "@openmarch/core";
+import { UnitInput } from "@openmarch/ui";
 import FieldPropertiesSelector from "@/components/field/FieldPropertiesSelector";
 import FieldPreview from "@/components/field/FieldPreview";
-import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { NewShowEnsembleData, NewShowFieldData } from "../../newShowTypes";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
+import { getDefaultFieldTemplate } from "@/global/classes/Activities";
 
 interface FieldStepProps {
     ensemble: NewShowEnsembleData | null;
@@ -17,16 +18,13 @@ export default function FieldStep({
     field,
     onChange,
 }: FieldStepProps) {
-    const environment = ensemble?.environment ?? "outdoor";
-    const defaultTemplate =
-        environment === "indoor"
-            ? FieldPropertiesTemplates.INDOOR_50x80_8to5
-            : FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+    const activity = ensemble?.activity;
+    const defaultTemplate = getDefaultFieldTemplate(activity);
 
     const [currentTemplate, setCurrentTemplate] = useState<FieldProperties>(
         field?.template ?? defaultTemplate,
     );
-    const prevEnvironment = useRef(environment);
+    const prevActivity = useRef(activity);
     const hasInitializedField = useRef(field !== null);
 
     useEffect(() => {
@@ -39,14 +37,14 @@ export default function FieldStep({
             return;
         }
 
-        if (prevEnvironment.current === environment) return;
-        prevEnvironment.current = environment;
+        if (prevActivity.current === activity) return;
+        prevActivity.current = activity;
         setCurrentTemplate(defaultTemplate);
         onChange({
             template: defaultTemplate,
             isCustom: defaultTemplate.isCustom ?? false,
         });
-    }, [environment, field, defaultTemplate, onChange]);
+    }, [activity, field, defaultTemplate, onChange]);
 
     const handleTemplateChange = (template: FieldProperties) => {
         setCurrentTemplate(template);
@@ -56,10 +54,24 @@ export default function FieldStep({
         });
     };
 
+    const { t } = useTolgee();
+
+    const handleThresholdChange = (valueInUnits: number) => {
+        const inches =
+            currentTemplate.measurementSystem === "imperial"
+                ? valueInUnits
+                : FieldProperties.centimetersToInches(valueInUnits);
+        const template = new FieldProperties({
+            ...currentTemplate,
+            stepSizeWarningThresholdInches: inches,
+        });
+        setCurrentTemplate(template);
+        onChange({ template, isCustom: template.isCustom ?? false });
+    };
+
     return (
         <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
             <FieldPropertiesSelector
-                environment={environment}
                 currentTemplate={currentTemplate}
                 onTemplateChange={handleTemplateChange}
             />
@@ -71,6 +83,34 @@ export default function FieldStep({
                     fieldProperties={currentTemplate}
                     className="h-[200px]"
                     disableBackground
+                />
+            </div>
+            <div className="flex flex-col gap-8">
+                <span className="text-body text-text font-medium">
+                    {t("fieldProperties.labels.stepSizeWarningThreshold")}
+                </span>
+                <UnitInput
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*\.?[0-9]*"
+                    unit={
+                        currentTemplate.measurementSystem === "imperial"
+                            ? "in"
+                            : "cm"
+                    }
+                    onBlur={(e) => {
+                        if (e.target.value === "") return;
+                        const parsed = parseFloat(e.target.value);
+                        if (!isNaN(parsed)) handleThresholdChange(parsed);
+                    }}
+                    onChange={(e) => {
+                        const filtered = e.target.value.replace(/[^\d.]/g, "");
+                        e.target.value = filtered.replace(/\.+/g, ".");
+                    }}
+                    defaultValue={
+                        currentTemplate.stepSizeWarningThresholdInUnits
+                    }
+                    key={currentTemplate.name}
                 />
             </div>
         </div>

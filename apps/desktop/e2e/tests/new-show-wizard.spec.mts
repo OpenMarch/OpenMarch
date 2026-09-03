@@ -5,6 +5,7 @@ import path from "path";
 import {
     completeNewShowWizard,
     fillProjectStep,
+    goToProjectStep,
     openNewShowWizard,
 } from "../utils/new-show-wizard.mjs";
 
@@ -19,7 +20,10 @@ test("Project validation requires show name", async ({ electronAppEmpty }) => {
     const dialog = page.getByRole("dialog", { name: "New show" });
 
     await openNewShowWizard(page);
-    await expect(dialog.getByRole("button", { name: "Next" })).toBeDisabled();
+    await goToProjectStep(page);
+    await expect(
+        dialog.getByRole("button", { name: "Next", exact: true }),
+    ).toBeDisabled();
 
     await fillProjectStep(page, "Test Show");
 });
@@ -60,12 +64,13 @@ test("Back navigation returns to project step", async ({
     const dialog = page.getByRole("dialog", { name: "New show" });
 
     await openNewShowWizard(page);
+    await goToProjectStep(page);
     await fillProjectStep(page, "Back Nav Test");
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
 
     await expect(
         dialog.getByRole("heading", {
-            name: "Ensemble",
+            name: "Activity",
             exact: true,
             level: 2,
         }),
@@ -88,6 +93,7 @@ test("Exit confirm on discard", async ({ electronAppEmpty }) => {
     const { page } = electronAppEmpty;
 
     await openNewShowWizard(page);
+    await goToProjectStep(page);
     await fillProjectStep(page, "Discard Test");
     await page.keyboard.press("Escape");
 
@@ -103,12 +109,13 @@ test("Refresh during wizard discards draft and returns to launch page", async ({
     const dialog = page.getByRole("dialog", { name: "New show" });
 
     await openNewShowWizard(page);
+    await goToProjectStep(page);
     await fillProjectStep(page, "Refresh Test");
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
 
     await expect(
         dialog.getByRole("heading", {
-            name: "Ensemble",
+            name: "Activity",
             exact: true,
             level: 2,
         }),

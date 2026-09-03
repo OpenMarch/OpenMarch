@@ -1,5 +1,6 @@
-import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import Page from "@/global/classes/Page";
+import type AudioFile from "@/global/classes/AudioFile";
+import type { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
+import type Page from "@/global/classes/Page";
 import {
     contextBridge,
     ipcRenderer,
@@ -10,6 +11,7 @@ import * as DbServices from "@om-electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+import type { PreviousDotsImportResult } from "@om-electron/main/services/previous-dots-import-service";
 import type {
     AuthState,
     AuthError,
@@ -18,7 +20,7 @@ import type {
     AccessTokenResult,
 } from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
-import { HistoryResponse } from "@/db-functions";
+import type { HistoryResponse } from "@/db-functions";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -228,6 +230,12 @@ const APP_API = {
         ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
     getNewShowDraftPath: () =>
         ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
+    getNewShowDraftsDirectory: () =>
+        ipcRenderer.invoke("newShow:getDraftsDirectory") as Promise<string>,
+    choosePreviousDotsFile: () =>
+        ipcRenderer.invoke(
+            "newShow:choosePreviousDotsFile",
+        ) as Promise<PreviousDotsImportResult | null>,
 
     export: {
         pdf: (params: {
@@ -299,6 +307,13 @@ const APP_API = {
     // Audio File
     launchInsertAudioFileDialogue: () =>
         ipcRenderer.invoke("audio:insert") as Promise<
+            DbServices.LegacyDatabaseResponse<AudioFile[]>
+        >,
+    insertAudioFileFromBuffer: (args: {
+        data: ArrayBuffer;
+        nickname: string;
+    }) =>
+        ipcRenderer.invoke("audio:insertBuffer", args) as Promise<
             DbServices.LegacyDatabaseResponse<AudioFile[]>
         >,
     getAudioFilesDetails: () =>

@@ -4,6 +4,7 @@ import {
     type NewShowStepId,
     type NewShowWizardState,
 } from "../../newShowTypes";
+import { isPathUnderDirectory } from "../../newShowCompletion";
 
 const OPTIONAL_STEPS: Set<NewShowStepId> = new Set(["performers", "audio"]);
 
@@ -14,6 +15,7 @@ function isValidTempoOnlyTempo(tempo: number | undefined): boolean {
 export function useNewShowValidation(
     state: NewShowWizardState,
     currentStep: NewShowStepId,
+    newShowDraftsDirectory = "",
 ): boolean {
     return useMemo(() => {
         if (OPTIONAL_STEPS.has(currentStep)) {
@@ -21,12 +23,18 @@ export function useNewShowValidation(
         }
 
         switch (currentStep) {
+            case "start":
+                return state.start !== null;
             case "project": {
                 const project = state.project;
                 return (
                     project !== null &&
                     project.projectName.trim().length > 0 &&
-                    project.fileLocation.trim().length > 0
+                    project.fileLocation.trim().length > 0 &&
+                    !isPathUnderDirectory(
+                        project.fileLocation,
+                        newShowDraftsDirectory,
+                    )
                 );
             }
             case "ensemble":
@@ -46,5 +54,5 @@ export function useNewShowValidation(
             default:
                 return false;
         }
-    }, [state, currentStep]);
+    }, [state, currentStep, newShowDraftsDirectory]);
 }
