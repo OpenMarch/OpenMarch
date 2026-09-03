@@ -120,6 +120,41 @@
             "when": 1764733345489,
             "tag": "0016_unique_ultimo",
             "breakpoints": true
+        },
+        {
+            "idx": 17,
+            "version": "6",
+            "when": 1770003302649,
+            "tag": "0017_glamorous_stellaris",
+            "breakpoints": true
+        },
+        {
+            "idx": 18,
+            "version": "6",
+            "when": 1784321761129,
+            "tag": "0018_absent_mad_thinker",
+            "breakpoints": true
+        },
+        {
+            "idx": 19,
+            "version": "6",
+            "when": 1786933454443,
+            "tag": "0019_petite_madame_web",
+            "breakpoints": true
+        },
+        {
+            "idx": 20,
+            "version": "6",
+            "when": 1786933455443,
+            "tag": "0020_prop_outline_rename",
+            "breakpoints": true
+        },
+        {
+            "idx": 21,
+            "version": "6",
+            "when": 1786937916817,
+            "tag": "0021_last_psylocke",
+            "breakpoints": true
         }
     ]
 }

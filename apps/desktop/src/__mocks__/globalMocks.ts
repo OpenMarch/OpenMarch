@@ -13,6 +13,7 @@ import { DatabaseShape, DatabaseShapePage } from "@/db-functions";
 export const mockMarchers: Marcher[] = [
     {
         id: 1,
+        type: "marcher",
         name: "Marc Sylvester",
         section: "Flute",
         drill_prefix: "F",
@@ -25,6 +26,7 @@ export const mockMarchers: Marcher[] = [
     },
     {
         id: 2,
+        type: "marcher",
         name: "George Zingali",
         section: "Snare",
         drill_prefix: "S",
@@ -37,6 +39,7 @@ export const mockMarchers: Marcher[] = [
     },
     {
         id: 3,
+        type: "marcher",
         name: "John Bilby",
         section: "Trumpet",
         drill_prefix: "T",
@@ -49,6 +52,7 @@ export const mockMarchers: Marcher[] = [
     },
     {
         id: 4,
+        type: "marcher",
         name: "",
         section: "Baritone",
         drill_prefix: "B",

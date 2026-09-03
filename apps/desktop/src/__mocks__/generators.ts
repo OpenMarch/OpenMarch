@@ -34,6 +34,7 @@ export const generateMarchers = ({
         drillOrderMap.set(section.name, drillOrder + 1);
         marchers.push({
             id: i + 1,
+            type: "marcher",
             name: faker.person.fullName(),
             section: section.name,
             year: faker.helpers.arrayElement([
