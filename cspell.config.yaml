@@ -21,6 +21,19 @@ words:
   - blockqoute
   - bostick
   - BRHS
+  - BORD
+  - COLR
+  - CTITL
+  - endline
+  - endlines
+  - HZHS
+  - HZMJ
+  - HZMN
+  - misaligns
+  - mojibake
+  - SRFC
+  - VTMJ
+  - VTMN
   - canvas
   - Catmull
   - ccpa
@@ -31,9 +44,11 @@ words:
   - clsx
   - codegen
   - colours
+  - ciphertext
   - Configuración
   - cooldown
   - couldn
+  - curatin
   - customizer
   - dbstat
   - DELME
@@ -54,6 +69,7 @@ words:
   - evented
   - fielddots
   - fieldots
+  - fflate
   - flac
   - forwardslash
   - français
@@ -65,8 +81,10 @@ words:
   - Hipp
   - idioma
   - importmap
+  - interconvertible
   - Invalidators
   - launchpage
+  - lerp
   - lightridge
   - localappdata
   - Loudoun
@@ -92,6 +110,7 @@ words:
   - oklch
   - openmarch
   - openmarchdev
+  - overcounts
   - OTMDEMO
   - ONTHEMOVE
   - overscan
@@ -103,10 +122,15 @@ words:
   - Português
   - posthog
   - Pressable
+  - PRPM
+  - PRPT
+  - PTBT
   - PWDEBUG
   - pwsh
+  - PYJAVA
   - Pyware
   - Rcoords
+  - RMAP
   - rels
   - recents
   - rgba
@@ -169,6 +193,17 @@ words:
   - waivable
   - WASD
   - wavesurfer
+  - westside
+  - batesburg
+  - Dreher
+  - eastside
+  - hartsville
+  - jackbritt
+  - leesville
+  - setlist
+  - westoak
+  - westsidehs
+  - workstream
   - winget
   - Winterguard
   - Woodgrove
@@ -216,6 +251,11 @@ ignoreRegExpList:
   - \u[0-9A-Fa-f]{4}
   - ^import\s+.*$
   - "[a-zA-Z]+\\=\\{[a-zA-Z0-9_$]+\\}"
+  # Base64 payloads. The length floor matters: `+` matched any quoted word, so
+  # ordinary misspellings inside string literals were ignored everywhere. 20
+  # clears the longest real English words while still covering a 16-byte key or
+  # IV, which encodes to 22 characters plus padding.
+  - '[`"][A-Za-z0-9+/]{20,}={0,2}[`"]'
 overrides:
   - filename:
       - "**/i18n/**"
