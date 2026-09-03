@@ -34,21 +34,33 @@ permissions:
   contents: write # Required for creating releases
 
 jobs:
+  determine-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      os_list: ${{ steps.build.outputs.os_list }}
+    steps:
+      - name: Build OS matrix from dispatch inputs
+        id: build
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo 'os_list=["macos-15","macos-15-intel","ubuntu-latest","ubuntu-24.04-arm"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          OS_LIST=()
+          [ "${{ github.event.inputs.macos_arm }}" == "true" ] && OS_LIST+=("\"macos-15\"")
+          [ "${{ github.event.inputs.macos_intel }}" == "true" ] && OS_LIST+=("\"macos-15-intel\"")
+          [ "${{ github.event.inputs.linux_x64 }}" == "true" ] && OS_LIST+=("\"ubuntu-latest\"")
+          [ "${{ github.event.inputs.linux_arm }}" == "true" ] && OS_LIST+=("\"ubuntu-24.04-arm\"")
+          JSON="[$(IFS=,; echo "${OS_LIST[*]}")]"
+          echo "os_list=$JSON" >> "$GITHUB_OUTPUT"
+
   build-and-release:
-    if: |
-      github.event_name != 'workflow_dispatch' ||
-      (matrix.os == 'macos-15' && github.event.inputs.macos_arm == 'true') ||
-      (matrix.os == 'macos-15-intel' && github.event.inputs.macos_intel == 'true') ||
-      (matrix.os == 'ubuntu-latest' && github.event.inputs.linux_x64 == 'true') ||
-      (matrix.os == 'ubuntu-24.04-arm' && github.event.inputs.linux_arm == 'true')
+    needs: determine-matrix
+    if: needs.determine-matrix.outputs.os_list != '[]'
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - macos-15
-          - macos-15-intel # x86 (Intel) macOS
-          - ubuntu-latest
-          - ubuntu-24.04-arm
+        os: ${{ fromJson(needs.determine-matrix.outputs.os_list) }}
 
     steps:
       - name: Check out Git repository
