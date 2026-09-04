@@ -6,6 +6,7 @@ import {
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogTitle,
+    Badge,
     Button,
     Dialog,
     DialogContent,
@@ -17,6 +18,17 @@ import { toast } from "sonner";
 import NewShowModalLayout from "./newShow/NewShowModalLayout";
 import StartStep from "./newShow/steps/StartStep";
 import ProjectStep from "./newShow/steps/ProjectStep";
+import {
+    useImportDrillPackage,
+    type DrillImportResult,
+    type DrillImportStep,
+} from "@/components/import/DrillImport";
+import { createAllUndoTriggers } from "@/db-functions/history";
+import {
+    getWorkspaceSettingsParsed,
+    updateWorkspaceSettingsParsed,
+} from "@/db-functions/workspaceSettings";
+import { db } from "@/global/database/db";
 import EnsembleStep from "./newShow/steps/EnsembleStep";
 import FieldStep from "./newShow/steps/FieldStep";
 import PerformersStep from "./newShow/steps/PerformersStep";
@@ -37,8 +49,11 @@ import {
     type NewShowWizardState,
     wizardStateToFormState,
 } from "./newShowTypes";
-import { invalidateDatabaseReadyQueries } from "@/hooks/useDatabaseReady";
-import { completeNewShow } from "./newShowCompletion";
+import {
+    databaseReadyQueryOptions,
+    invalidateDatabaseReadyQueries,
+} from "@/hooks/useDatabaseReady";
+import { completeNewShow, resolveNewShowFilePath } from "./newShowCompletion";
 import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { DEFAULT_ACTIVITY } from "@/global/classes/Activities";
@@ -107,6 +122,12 @@ const STEP_COPY: Record<
 };
 
 function getWizardSteps(state: NewShowWizardState): NewShowStepId[] {
+    if (state.start?.mode === "importDrill") {
+        // The drill-file import is entirely self-contained within the start
+        // step (choose file -> import -> review & save), so it's the only
+        // step in the wizard.
+        return ["start"];
+    }
     if (state.start?.mode === "importPrevious") {
         return ["start", "project", "ensemble", "audio", "tempo"];
     }
@@ -130,21 +151,36 @@ export default function NewShowDialog({
     const [isCompleting, setIsCompleting] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+    const [drillActiveStep, setDrillActiveStep] =
+        useState<DrillImportStep | null>(null);
+    const [drillResult, setDrillResult] = useState<DrillImportResult | null>(
+        null,
+    );
+    const [isSavingDrillShow, setIsSavingDrillShow] = useState(false);
+    const [newShowDraftsDirectory, setNewShowDraftsDirectory] = useState("");
+    const importDrill = useImportDrillPackage();
 
     const wizardSteps = useMemo(
         () => getWizardSteps(wizardState),
         [wizardState],
     );
     const currentStep = wizardSteps[currentStepIndex] ?? wizardSteps[0];
-    const canGoNext = useNewShowValidation(wizardState, currentStep);
+    const canGoNext = useNewShowValidation(
+        wizardState,
+        currentStep,
+        newShowDraftsDirectory,
+    );
     const isLastStep = currentStepIndex === wizardSteps.length - 1;
     const isFirstStep = currentStepIndex === 0;
     const canSkip = currentStep === "performers" || currentStep === "audio";
+    const isDrillFlow = wizardState.start?.mode === "importDrill";
 
     const resetWizard = useCallback(() => {
         setWizardState(DEFAULT_NEW_SHOW_WIZARD_STATE);
         setCurrentStepIndex(0);
         setCompletedSteps(new Set());
+        setDrillResult(null);
+        setDrillActiveStep(null);
     }, []);
 
     useEffect(() => {
@@ -156,6 +192,10 @@ export default function NewShowDialog({
     useEffect(() => {
         if (open) {
             resetWizard();
+            void window.electron
+                .getNewShowDraftsDirectory()
+                .then(setNewShowDraftsDirectory)
+                .catch(() => setNewShowDraftsDirectory(""));
         }
     }, [open, resetWizard]);
 
@@ -198,7 +238,6 @@ export default function NewShowDialog({
 
     const ensureDraftCreated = useCallback(async (): Promise<string | null> => {
         if (wizardState.draftFilePath) return wizardState.draftFilePath;
-        setIsCreatingDraft(true);
         try {
             const result = await window.electron.createNewShowDraft();
             if (typeof result === "number" || !result.path) {
@@ -212,8 +251,6 @@ export default function NewShowDialog({
         } catch (error) {
             conToastError(t("launchpage.newShow.errors.createFailed"), error);
             return null;
-        } finally {
-            setIsCreatingDraft(false);
         }
     }, [wizardState.draftFilePath, t]);
 
@@ -221,8 +258,13 @@ export default function NewShowDialog({
         if (!canGoNext || isCompleting || isCreatingDraft) return;
 
         if (currentStep === "project") {
-            const draftFilePath = await ensureDraftCreated();
-            if (!draftFilePath) return;
+            setIsCreatingDraft(true);
+            try {
+                const draftFilePath = await ensureDraftCreated();
+                if (!draftFilePath) return;
+            } finally {
+                setIsCreatingDraft(false);
+            }
         }
 
         markStepComplete();
@@ -284,9 +326,13 @@ export default function NewShowDialog({
             next.delete(0);
             return next;
         });
+        setDrillResult(null);
+        setDrillActiveStep(null);
     }, []);
 
     const handleImportPrevious = useCallback(async () => {
+        setDrillResult(null);
+        setDrillActiveStep(null);
         setIsCreatingDraft(true);
         try {
             const result = await window.electron.choosePreviousDotsFile();
@@ -352,8 +398,107 @@ export default function NewShowDialog({
         }
     }, [t]);
 
+    const handleImportDrillFile = useCallback(
+        async (file: File) => {
+            if (isCreatingDraft || isDrillFlow || importDrill.isPending) {
+                return;
+            }
+            setDrillResult(null);
+            setDrillActiveStep(null);
+            setIsCreatingDraft(true);
+            setWizardState((prev) => ({
+                ...prev,
+                start: { mode: "importDrill" },
+            }));
+            setCompletedSteps((prev) => {
+                const next = new Set(prev);
+                next.delete(0);
+                return next;
+            });
+            try {
+                const draftFilePath = await ensureDraftCreated();
+                if (!draftFilePath) {
+                    setDrillActiveStep(null);
+                    setWizardState((prev) => ({ ...prev, start: null }));
+                    return;
+                }
+                // The draft db has schema/data-guard triggers from
+                // migrations, but not the undo/redo history triggers that
+                // _importDrillShow's transactionWithHistory calls require.
+                await createAllUndoTriggers(db);
+
+                const imported = await importDrill.mutateAsync({
+                    file,
+                    onProgress: setDrillActiveStep,
+                });
+                setDrillResult(imported);
+            } catch {
+                // useImportDrillPackage's onError already toasts. Back out to
+                // the choice cards so the user can retry or pick another
+                // mode; the draft file itself is left in place and reused
+                // (or discarded on dialog close) rather than recreated.
+                setDrillActiveStep(null);
+                setWizardState((prev) => ({ ...prev, start: null }));
+            } finally {
+                setIsCreatingDraft(false);
+            }
+        },
+        [ensureDraftCreated, importDrill, isCreatingDraft, isDrillFlow],
+    );
+
+    const handleSaveDrillShow = useCallback(
+        async (projectName: string, fileLocation: string) => {
+            if (isSavingDrillShow) return;
+            setIsSavingDrillShow(true);
+            try {
+                const targetPath = resolveNewShowFilePath(
+                    projectName,
+                    fileLocation,
+                );
+                const settings = await getWorkspaceSettingsParsed({ db });
+                await updateWorkspaceSettingsParsed({
+                    db,
+                    settings: { ...settings, projectName },
+                });
+
+                const finalizeResult =
+                    await window.electron.finalizeNewShowDraft(
+                        targetPath,
+                        projectName,
+                    );
+                if (finalizeResult !== 200) {
+                    throw new Error(`Failed to save show at ${targetPath}`);
+                }
+
+                await queryClient.invalidateQueries({
+                    queryKey: databaseReadyQueryOptions().queryKey,
+                });
+                toast.success(t("launchpage.newShow.success"));
+                resetWizard();
+                onCreated();
+                onOpenChange(false);
+            } catch (error) {
+                const message =
+                    error instanceof Error && error.message
+                        ? error.message
+                        : t("launchpage.newShow.errors.createFailed");
+                conToastError(message, error);
+            } finally {
+                setIsSavingDrillShow(false);
+            }
+        },
+        [
+            isSavingDrillShow,
+            queryClient,
+            t,
+            resetWizard,
+            onCreated,
+            onOpenChange,
+        ],
+    );
+
     const handleComplete = useCallback(async () => {
-        if (isCompleting) return;
+        if (isCompleting || isDrillFlow) return;
         setIsCompleting(true);
         try {
             const withDefaults: NewShowWizardState = {
@@ -400,6 +545,7 @@ export default function NewShowDialog({
         }
     }, [
         isCompleting,
+        isDrillFlow,
         wizardState,
         ensureDraftCreated,
         queryClient,
@@ -456,7 +602,25 @@ export default function NewShowDialog({
                             handleStartBlank();
                         }}
                         onImportPrevious={() => void handleImportPrevious()}
+                        onImportDrillFile={(file) =>
+                            void handleImportDrillFile(file)
+                        }
                         isImporting={isCreatingDraft}
+                        newShowDraftsDirectory={newShowDraftsDirectory}
+                        drillImport={
+                            isDrillFlow
+                                ? {
+                                      activeStep: drillActiveStep,
+                                      result: drillResult,
+                                      isSaving: isSavingDrillShow,
+                                      onSave: (name, location) =>
+                                          void handleSaveDrillShow(
+                                              name,
+                                              location,
+                                          ),
+                                  }
+                                : null
+                        }
                     />
                 );
             case "project":
@@ -464,6 +628,7 @@ export default function NewShowDialog({
                     <ProjectStep
                         project={wizardState.project}
                         onChange={handleProjectChange}
+                        newShowDraftsDirectory={newShowDraftsDirectory}
                     />
                 );
             case "ensemble":
@@ -517,8 +682,14 @@ export default function NewShowDialog({
         wizardState.tempo,
         wizardState.previousDotsImport,
         isCreatingDraft,
+        isDrillFlow,
+        drillActiveStep,
+        drillResult,
+        isSavingDrillShow,
         handleStartBlank,
         handleImportPrevious,
+        handleImportDrillFile,
+        handleSaveDrillShow,
         handleProjectChange,
         handleEnsembleChange,
         handleFieldChange,
@@ -535,12 +706,23 @@ export default function NewShowDialog({
                 <DialogContent
                     className="flex max-h-[85vh] w-[40rem] max-w-[95vw] flex-col overflow-hidden"
                     onPointerDownOutside={(e) => {
-                        if (isCompleting || isCreatingDraft) {
+                        if (
+                            isCompleting ||
+                            isCreatingDraft ||
+                            isSavingDrillShow
+                        ) {
                             e.preventDefault();
                         }
                     }}
                     onEscapeKeyDown={(e) => {
                         e.preventDefault();
+                        if (
+                            isCompleting ||
+                            isCreatingDraft ||
+                            isSavingDrillShow
+                        ) {
+                            return;
+                        }
                         requestClose();
                     }}
                 >
@@ -550,11 +732,28 @@ export default function NewShowDialog({
                     <NewShowModalLayout
                         currentStepIndex={currentStepIndex}
                         steps={wizardSteps}
-                        stepTitle={t(stepCopy.titleKey)}
+                        stepTitle={
+                            isDrillFlow ? (
+                                <>
+                                    {t(
+                                        "launchpage.newShow.steps.start.importDrillTitle",
+                                    )}
+                                    <Badge variant="secondary">
+                                        <T keyName="launchpage.newShow.steps.start.importDrillBeta" />
+                                    </Badge>
+                                </>
+                            ) : (
+                                t(stepCopy.titleKey)
+                            )
+                        }
                         stepDescription={
-                            stepCopy.descriptionKey
-                                ? t(stepCopy.descriptionKey)
-                                : undefined
+                            isDrillFlow
+                                ? t(
+                                      "launchpage.newShow.steps.start.importDrillSubtitle",
+                                  )
+                                : stepCopy.descriptionKey
+                                  ? t(stepCopy.descriptionKey)
+                                  : undefined
                         }
                         onNext={() => void handleNext()}
                         onBack={handleBack}
@@ -564,7 +763,9 @@ export default function NewShowDialog({
                         onComplete={() => void handleComplete()}
                         onSkip={canSkip ? handleSkip : undefined}
                         canSkip={canSkip}
-                        isCompleting={isCompleting || isCreatingDraft}
+                        isCompleting={
+                            isCompleting || isCreatingDraft || isDrillFlow
+                        }
                         completedSteps={completedSteps}
                     >
                         {stepContent}

@@ -97,9 +97,11 @@ function getFieldExtentsSteps(fieldProperties: FieldProperties) {
 function buildPagesFromTiming({
     timingRows,
     pagesById,
+    pageNumberOffset = 0,
 }: {
     timingRows: TimingRow[];
     pagesById: Map<number, PageRow>;
+    pageNumberOffset?: number;
 }): {
     id: string;
     duration: number;
@@ -114,7 +116,7 @@ function buildPagesFromTiming({
         pageTimingRows.map(
             (row) => (pagesById.get(row.page_id)?.is_subset ?? 0) === 1,
         ),
-        0,
+        pageNumberOffset,
     );
     return pageTimingRows.map((row, idx) => {
         const startPosition = row.position;
@@ -309,16 +311,20 @@ function buildOpenMarchFromRows(
         getFieldExtentsSteps(fieldProps);
     const centerXPixels = (fieldWidthSteps / 2) * pixelsPerStep;
 
+    const workspaceSettings = workspaceSettingsRow
+        ? workspaceSettingsSchema.parse(
+              JSON.parse(workspaceSettingsRow.json_data),
+          )
+        : undefined;
+
     const metadata = {
         performanceArea,
         createdAtUtc:
             timingRows.length > 0
                 ? new Date(timingRows[0].timestamp * 1000).toISOString()
                 : new Date().toISOString(),
-        ...(workspaceSettingsRow && {
-            audioOffsetSeconds: workspaceSettingsSchema.parse(
-                JSON.parse(workspaceSettingsRow.json_data),
-            ).audioOffsetSeconds,
+        ...(workspaceSettings && {
+            audioOffsetSeconds: workspaceSettings.audioOffsetSeconds,
         }),
     };
 
@@ -335,7 +341,11 @@ function buildOpenMarchFromRows(
         measuresRows.map((m: MeasureRow) => [m.id, m]),
     );
 
-    const pages = buildPagesFromTiming({ timingRows, pagesById });
+    const pages = buildPagesFromTiming({
+        timingRows,
+        pagesById,
+        pageNumberOffset: workspaceSettings?.pageNumberOffset ?? 0,
+    });
     const tempoSections = buildTempoSections(timingRows);
     const coordinates = buildCoordinates({
         marcherPagesRows,

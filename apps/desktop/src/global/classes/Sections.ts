@@ -145,6 +145,12 @@ export const SECTIONS: { [key: string]: Section } = {
         tName: "section.other",
         prefix: "OT",
     }),
+    Prop: new Section({
+        family: FAMILIES.Other,
+        name: "Prop",
+        tName: "section.prop",
+        prefix: "PR",
+    }),
     Piccolo: new Section({
         family: FAMILIES.Woodwind,
         name: "Piccolo",
