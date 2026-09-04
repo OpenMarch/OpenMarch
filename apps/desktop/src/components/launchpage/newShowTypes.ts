@@ -1,5 +1,6 @@
 import type { FieldProperties } from "@openmarch/core";
 import type { NewMarcherArgs, NewSectionAppearanceArgs } from "@/db-functions";
+import type { EnsembleSize } from "@/global/classes/EnsembleTemplates";
 
 export type NewShowStepId =
     | "start"
@@ -35,6 +36,7 @@ export interface NewShowStartData {
 
 export interface NewShowEnsembleData {
     activity: string;
+    size: EnsembleSize;
 }
 
 export interface NewShowFieldData {
@@ -81,6 +83,7 @@ export type NewShowMarcherDraft = NewMarcherArgs & { tempId?: string };
 export interface NewShowPerformersData {
     method?: "add" | "skip";
     marchers: NewShowMarcherDraft[];
+    presetKey?: string;
 }
 
 export interface NewShowAudioData {
