@@ -27,7 +27,7 @@ export interface NewShowProjectData {
     client?: string;
 }
 
-export type NewShowSetupMode = "blank" | "importPrevious";
+export type NewShowSetupMode = "blank" | "importPrevious" | "importDrill";
 
 export interface NewShowStartData {
     mode: NewShowSetupMode;
