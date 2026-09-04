@@ -28,7 +28,7 @@ export type AppearanceComponentRaw = InferSelectModel<
 >;
 
 // Parse rgba(0, 0, 0, 1) string color to RGBA color
-function parseRgbaColor(colorStr: string): RgbaColor {
+export function parseRgbaColor(colorStr: string): RgbaColor {
     // Extract r, g, b, a values from rgba string
     const match = colorStr.match(
         /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*\.?\d+))?\)/,

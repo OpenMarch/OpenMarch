@@ -16,7 +16,7 @@ import {
 } from "@testing-library/react";
 import { useTimingObjects } from "@/hooks";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { ElectronApi } from "electron/preload";
@@ -43,7 +43,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => (
 // Mock the hooks
 vi.mock("@/hooks");
 vi.mock("@/stores/UiSettingsStore");
-vi.mock("@/context/IsPlayingContext");
+vi.mock("@/services/clock/frame-clock");
 vi.mock("@/context/SelectedPageContext");
 vi.mock("@/context/SelectedAudioFileContext");
 
@@ -168,15 +168,12 @@ describe.todo("PageTimeline Resizing", () => {
         });
 
         // Mock the useIsPlaying hook
-        vi.mocked(useIsPlaying).mockReturnValue({
-            isPlaying: false,
-            setIsPlaying: vi.fn(),
-        });
+        vi.mocked(useIsPlaying).mockReturnValue(false);
 
         // Mock the useSelectedPage hook
         vi.mocked(useSelectedPage).mockReturnValue({
             selectedPage: mockPages[1],
-            setSelectedPage: vi.fn(),
+            seekTo: vi.fn(),
             setPageToSelect: vi.fn(),
         });
 
@@ -287,10 +284,7 @@ describe.todo("PageTimeline Resizing", () => {
 
     it("does not allow resizing when playback is active", () => {
         // Mock isPlaying to return true
-        vi.mocked(useIsPlaying).mockReturnValue({
-            isPlaying: true,
-            setIsPlaying: vi.fn(),
-        });
+        vi.mocked(useIsPlaying).mockReturnValue(true);
 
         const { container } = render(
             <Providers>

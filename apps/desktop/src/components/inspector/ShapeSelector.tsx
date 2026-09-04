@@ -7,6 +7,8 @@ import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { marcherPagesByPageQueryOptions } from "@/hooks/queries/useMarcherPages";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useStablePageId } from "@/hooks/useStablePageId";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useQuery } from "@tanstack/react-query";
 
 function ShapeSelector() {
@@ -16,8 +18,10 @@ function ShapeSelector() {
         [selectedMarchers],
     );
     const { selectedPage } = useSelectedPage()!;
+    const isPlaying = useIsPlaying();
+    const stablePageId = useStablePageId(selectedPage?.id, isPlaying);
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
+        marcherPagesByPageQueryOptions(stablePageId),
     );
     const editingDisabled = useMemo(() => {
         return (

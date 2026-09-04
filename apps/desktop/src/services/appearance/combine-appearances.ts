@@ -1,36 +1,22 @@
-import {
-    allMarchersQueryOptions,
-    allSectionAppearancesQueryOptions,
-    DEFAULT_STALE_TIME,
-    fieldPropertiesQueryOptions,
-    marcherIdsForAllTagIdsQueryOptions,
-    marcherPagesByPageQueryOptions,
-    resolvedTagAppearancesByPageIdQueryOptions,
-} from ".";
-import { QueryClient, queryOptions } from "@tanstack/react-query";
 import Marcher from "@/global/classes/Marcher";
 import {
     TagAppearance,
     SectionAppearance,
     MarcherIdsByTagId,
 } from "@/db-functions";
-import { AppearanceComponentOptional } from "@/entity-components/appearance";
+import {
+    AppearanceComponentOptional,
+    ResolvedPerformerAppearance,
+} from "@/entity-components/appearance";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
-import { FieldProperties } from "@openmarch/core";
-
-const KEY_BASE = "marcher-appearances";
-
-export const marcherAppearancesKeys = {
-    all: () => [KEY_BASE] as const,
-    byPageId: (pageId: number) => [KEY_BASE, { pageId }] as const,
-};
+import { FieldTheme } from "@openmarch/core";
 
 export type MarcherAppearanceByIdMap = Record<
     number,
     AppearanceComponentOptional[]
 >;
 
-const getSectionAppearance = (
+export const getSectionAppearance = (
     section: string,
     sectionAppearances: SectionAppearance[],
 ) => {
@@ -38,6 +24,27 @@ const getSectionAppearance = (
         (appearance) => appearance.section === section,
     );
 };
+
+export const buildDefaultMarcherAppearance = (
+    fieldTheme: FieldTheme,
+): AppearanceComponentOptional => ({
+    fill_color: fieldTheme.defaultMarcher.fill,
+    outline_color: fieldTheme.defaultMarcher.outline,
+    visible: true,
+    shape_type: fieldTheme.shapeType,
+    label_visible: true,
+});
+
+export const sortTagAppearancesByPriority = (
+    tagAppearances: TagAppearance[],
+): TagAppearance[] =>
+    tagAppearances.sort((a, b) => {
+        if (b.priority !== a.priority) {
+            return b.priority - a.priority;
+        }
+        // This shouldn't happen, but sort by id in reverse in case the priorities are the same
+        return b.id - a.id;
+    });
 
 /**
  * Creates a map of tag appearances by marcher id sorted by the priority of the tag appearance.
@@ -66,13 +73,7 @@ const separateTagAppearanceByMarcherId = (
 
     // Sort the tag appearances by priority
     for (const tagAppearances of tagAppearanceByMarcherId.values()) {
-        tagAppearances.sort((a, b) => {
-            if (b.priority !== a.priority) {
-                return b.priority - a.priority;
-            }
-            // This shouldn't happen, but sort by id in reverse in case the priorities are the same
-            return b.id - a.id;
-        });
+        sortTagAppearancesByPriority(tagAppearances);
     }
 
     return tagAppearanceByMarcherId;
@@ -88,9 +89,15 @@ const separateTagAppearanceByMarcherId = (
  * 3. Section appearance
  * 4. (Default) Field theme appearance
  *
+ * This is a page-scoped, one-shot computation — used by the export pipeline
+ * (`exportAppearances.ts`, `performer-appearance-export.ts`), which needs every
+ * marcher's appearance for a specific page rather than a per-marcher timeline.
+ * Live rendering uses `useMarcherAppearanceTimelines`
+ * (`hooks/rendering/useAppearanceData.ts`) instead.
+ *
  * @returns
  */
-export const _combineMarcherAppearances = ({
+export const combineMarcherAppearances = ({
     marchers,
     sectionAppearances,
     marcherIdsByTagId,
@@ -103,7 +110,7 @@ export const _combineMarcherAppearances = ({
     marcherIdsByTagId: MarcherIdsByTagId;
     tagAppearances: TagAppearance[];
     marcherPages: MarcherPagesByMarcher;
-    fieldProperties: FieldProperties;
+    fieldProperties: { theme: FieldTheme };
 }): MarcherAppearanceByIdMap => {
     if (!marchers) {
         return {};
@@ -117,14 +124,9 @@ export const _combineMarcherAppearances = ({
             : new Map();
 
     const appearancesByMarcherId: MarcherAppearanceByIdMap = {};
-    const defaultTheme = fieldProperties.theme;
-    const defaultMarcherAppearance = {
-        fill_color: defaultTheme.defaultMarcher.fill,
-        outline_color: defaultTheme.defaultMarcher.outline,
-        visible: true,
-        shape_type: defaultTheme.shapeType,
-        label_visible: true,
-    } as AppearanceComponentOptional;
+    const defaultMarcherAppearance = buildDefaultMarcherAppearance(
+        fieldProperties.theme,
+    );
     for (const marcher of marchers) {
         const appearances: AppearanceComponentOptional[] = [];
 
@@ -152,43 +154,27 @@ export const _combineMarcherAppearances = ({
     return appearancesByMarcherId;
 };
 
-export const marcherAppearancesQueryOptions = (
-    pageId: number | null | undefined,
-    queryClient: QueryClient,
-) =>
-    // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryOptions<MarcherAppearanceByIdMap>({
-        queryKey: marcherAppearancesKeys.byPageId(pageId!),
-        queryFn: async () => {
-            const [
-                marchers,
-                sectionAppearances,
-                marcherIdsByTagId,
-                tagAppearances,
-                marcherPages,
-                fieldProperties,
-            ] = await Promise.all([
-                queryClient.fetchQuery(allMarchersQueryOptions()),
-                queryClient.fetchQuery(allSectionAppearancesQueryOptions()),
-                queryClient.fetchQuery(marcherIdsForAllTagIdsQueryOptions()),
-                queryClient.fetchQuery(
-                    resolvedTagAppearancesByPageIdQueryOptions({
-                        pageId,
-                        queryClient,
-                    }),
-                ),
-                queryClient.fetchQuery(marcherPagesByPageQueryOptions(pageId)),
-                queryClient.fetchQuery(fieldPropertiesQueryOptions()),
-            ]);
-            return _combineMarcherAppearances({
-                marchers,
-                sectionAppearances,
-                marcherIdsByTagId,
-                tagAppearances,
-                marcherPages,
-                fieldProperties,
-            });
-        },
-        enabled: pageId != null,
-        staleTime: DEFAULT_STALE_TIME,
-    });
+export const appearancesEqual = (
+    a: ResolvedPerformerAppearance,
+    b: ResolvedPerformerAppearance,
+): boolean =>
+    a.fillRgba === b.fillRgba &&
+    a.strokeRgba === b.strokeRgba &&
+    a.strokeWidth === b.strokeWidth &&
+    a.visible === b.visible &&
+    a.textVisible === b.textVisible &&
+    a.shape === b.shape;
+
+export const tagAppearancesForPage = (
+    pageId: number,
+    allTagAppearances: TagAppearance[],
+    tagAppearanceIdsByPageId: Map<number, Set<number>>,
+): TagAppearance[] => {
+    const tagAppearanceIds = tagAppearanceIdsByPageId.get(pageId);
+    if (!tagAppearanceIds || tagAppearanceIds.size === 0) {
+        return [];
+    }
+    return allTagAppearances.filter((tagAppearance) =>
+        tagAppearanceIds.has(tagAppearance.id),
+    );
+};

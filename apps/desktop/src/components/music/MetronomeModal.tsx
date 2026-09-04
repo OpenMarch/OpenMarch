@@ -13,7 +13,7 @@ import { Slider } from "@openmarch/ui";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { BEAT_STYLE_IDS, BeatStyleId } from "@openmarch/metronome";
 import { T } from "@tolgee/react";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 
 export default function MetronomeModal({
     label = <MetronomeIcon size={24} />,
@@ -46,7 +46,7 @@ function MetronomeModalContents() {
         beatStyle,
         setBeatStyle,
     } = useMetronomeStore();
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
 
     const BEAT_STYLE_LABELS: Record<BeatStyleId, string> = {
         default: "music.standard",

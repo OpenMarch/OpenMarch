@@ -24,6 +24,8 @@ import MarcherRotationInput from "./marcher/MarcherRotationInput";
 import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useStablePageId } from "@/hooks/useStablePageId";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
@@ -430,15 +432,21 @@ function MarcherEditor() {
         [selectedMarchers],
     );
     const { selectedPage } = useSelectedPage()!;
+    const isPlaying = useIsPlaying();
+    const stablePageId = useStablePageId(selectedPage?.id, isPlaying);
+    const stablePreviousPageId = useStablePageId(
+        selectedPage?.previousPageId,
+        isPlaying,
+    );
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
+        marcherPagesByPageQueryOptions(stablePageId),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(stablePreviousPageId!),
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: spmsForThisPage } = useQuery(
-        shapePageMarchersQueryByPageIdOptions(selectedPage?.id ?? null),
+        shapePageMarchersQueryByPageIdOptions(stablePageId ?? null),
     );
     const editingDisabled = useMemo(() => {
         return (
