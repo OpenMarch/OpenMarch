@@ -543,6 +543,11 @@ saved as the show's field during import.
 
 The normalized output model (`DrillShow`) is defined in `src/types.ts`.
 
+When an import fails or produces a wrong result, start at
+[`docs/diagnosing-import-failures.md`](docs/diagnosing-import-failures.md)
+rather than re-deriving the triage process — it covers the diagnostic scripts
+in `scripts/`, the parser-vs-DB split, and the `dist/` vs `src/` gotcha.
+
 ## 7. Known mapping gaps & future work
 
 The parser preserves the source data faithfully; these are limitations in how we

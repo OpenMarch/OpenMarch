@@ -59,6 +59,15 @@ function sortedPrefixes(prefixes: readonly string[]): string[] {
 /**
  * Splits a drill label into its prefix and numeric order using longest-prefix
  * matching against {@link COMMON_DRILL_LABEL_PREFIXES} (or a custom list).
+ *
+ * Some exporters (observed in real Carolina `.3dz` files) number performers
+ * with a bare digit string and no section prefix at all (e.g. `"35"`). Folding
+ * the whole numeral into `drill_prefix` (the old fallback) breaks the
+ * `drill_prefix + drill_order === label` contract and renders as a wrong
+ * number (`"35"` -> `"350"`). Such labels instead get `drill_prefix: "-"` — an
+ * explicit marker that the source carried no real prefix — with `drill_order`
+ * set to the numeral itself. `readCast` further disambiguates `"-"`-prefixed
+ * performers that collide on the same numeral (see its doc comment).
  */
 export function parseDrillLabel(
     label: string,
@@ -83,6 +92,13 @@ export function parseDrillLabel(
     }
 
     const fallback = upper.match(/^([A-Za-z]+)\s*(\d+)?$/);
+    if (!fallback && /^\d+$/.test(upper)) {
+        return {
+            drill_number,
+            drill_prefix: "-",
+            drill_order: parseInt(upper, 10),
+        };
+    }
     const drill_prefix = (fallback?.[1] ?? upper).toUpperCase();
     const drill_order = fallback?.[2] ? parseInt(fallback[2], 10) : 0;
     return { drill_number, drill_prefix, drill_order };

@@ -92,4 +92,47 @@ describe("readCast", () => {
         expect(performers[0]).toMatchObject({ id: "10", label: "G10" });
         expect(performers[1]).toMatchObject({ id: "11", label: "G11" });
     });
+
+    it("disambiguates bare-numeric labels that collide, leaving a lone one plain", () => {
+        // Mirrors the real Carolina CST7 cast: every label is a bare digit
+        // string with no section prefix, and distinct performers can share
+        // the same numeral (e.g. several sections each restarting at 1).
+        const records: CastRecord[] = [
+            { id: 1n, label: "1" },
+            { id: 2n, label: "1" },
+            { id: 3n, label: "1" },
+            { id: 4n, label: "1" },
+            { id: 5n, label: "T3" },
+            { id: 6n, label: "7" }, // lone bare numeral: no collision
+        ];
+        const payload = buildCastPayload(records);
+
+        const performers = readCast(payload);
+
+        expect(performers).toHaveLength(records.length);
+        expect(performers[0]).toMatchObject({
+            drill_prefix: "1-",
+            drill_order: 1,
+        });
+        expect(performers[1]).toMatchObject({
+            drill_prefix: "2-",
+            drill_order: 1,
+        });
+        expect(performers[2]).toMatchObject({
+            drill_prefix: "3-",
+            drill_order: 1,
+        });
+        expect(performers[3]).toMatchObject({
+            drill_prefix: "4-",
+            drill_order: 1,
+        });
+        expect(performers[4]).toMatchObject({
+            drill_prefix: "T",
+            drill_order: 3,
+        });
+        expect(performers[5]).toMatchObject({
+            drill_prefix: "-",
+            drill_order: 7,
+        });
+    });
 });

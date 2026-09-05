@@ -325,7 +325,41 @@ export function readCast(payload: Uint8Array): DrillPerformer[] {
             `readCast: expected ${count} performers from CST7 but only recovered ${performers.length}; the record layout may have drifted further.`,
         );
     }
-    return performers;
+    return dedupeBareNumericLabels(performers);
+}
+
+/**
+ * Disambiguates performers whose label carried no section prefix at all
+ * ({@link parseDrillLabel}'s `drill_prefix: "-"` case). Some exporters number
+ * performers with bare digits — several sections each restarting their own
+ * numbering at 1 is common — so distinct performers can legitimately share the
+ * same digits. Every performer still needs a unique `(drill_prefix,
+ * drill_order)` pair downstream: OpenMarch's `marchers` table enforces that
+ * uniqueness, and a batch import of a colliding cast fails entirely.
+ *
+ * Performers that don't collide keep the plain `"-"` prefix. Performers that
+ * do collide on the same numeral get `"1-", "2-", "3-", ...` (1-based, in file
+ * order) in place of `"-"`; `drill_order` is left as the original numeral so
+ * the true source number stays visible in every case.
+ */
+function dedupeBareNumericLabels(
+    performers: DrillPerformer[],
+): DrillPerformer[] {
+    const groups = new Map<number, number>();
+    for (const p of performers) {
+        if (p.drill_prefix !== "-") continue;
+        groups.set(p.drill_order, (groups.get(p.drill_order) ?? 0) + 1);
+    }
+
+    const seen = new Map<number, number>();
+    return performers.map((p) => {
+        if (p.drill_prefix !== "-" || (groups.get(p.drill_order) ?? 0) <= 1) {
+            return p;
+        }
+        const index = (seen.get(p.drill_order) ?? 0) + 1;
+        seen.set(p.drill_order, index);
+        return { ...p, drill_prefix: `${index}-` };
+    });
 }
 
 /**

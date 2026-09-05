@@ -356,6 +356,11 @@ Useful when comparing drafts; not all are parsed today.
 
 ## How to repro diagnostics locally
 
+> For the general "an import is broken, where do I even start" checklist
+> (not specific to `PTB7`), see
+> [`diagnosing-import-failures.md`](./diagnosing-import-failures.md). This
+> section is the `PTB7`-specific worked example it points back to.
+
 `scripts/diag-setlist.mts` does this — it walks chunks the same way
 `parseDrillDocument` does, then reports what `readSetList` recovers:
 
