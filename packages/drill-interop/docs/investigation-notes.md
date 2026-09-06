@@ -5,9 +5,9 @@ Canonical format reference remains [`../FORMAT.md`](../FORMAT.md); this file is
 the **working notes** — what we tried, what each real file did, and what is
 still open.
 
-Last updated: 2026-07-20. `PTB7` is **done**: all 50 `PTB7` files on this
+Last updated: 2026-09-05. `PTB7` is **done**: all 50 `PTB7` files on this
 machine parse their full declared set count. Remaining work is `PTB6` (Open
-case B) only.
+case B) only. See also the `VIS2` declared-length bug below (2026-09-05).
 
 ---
 
@@ -164,6 +164,7 @@ Paths are wherever they lived when tested (Downloads / iCloud Bright Designs fol
 | westoak2025-part3, hartsville2025-part2, batesburg2025 v2/v3, westside2025part4-old, westsidehs2026-part1, lhs2025 insert | `PTB7`                       | ✅ full                               | Was 0–2 — **text-free set lists**, see Closed case C           |
 | Swansea HS 2021 - Mvt 1                                                                                                   | **`PTB6` + `PAGE` + `CST6`** | ❌ not supported                      | Older generation — see below                                   |
 | Dreher HS 2019 Mvt. I                                                                                                     | **`PTB6` + `PAGE` + `CST6`** | ❌ not supported                      | Same generation as Swansea                                     |
+| HFB 2026 Show 1 Lights Out                                                                                                | `PTB7`                       | ✅ 209 performers (was 9)             | `VIS2` declared-length bug — see below                         |
 
 ---
 
@@ -253,6 +254,62 @@ page 15A  src="60-END"   start= 244  counts= 24  SUBSET  ← "HOLD TO END"
 `"60-END"` carrying its own note, not an unnamed synthesized page. Each subset
 is the record the source flagged, and each carries the text box that names it a
 hold.
+
+---
+
+## `VIS2` declared-length bug — HFB 2026 Show 1 Lights Out (2026-09-05)
+
+### Symptom
+
+`HFB 2026 Show 1 Lights Out.3dz` (~15 MB `.3dj`) imported with **9 marchers
+and 1 page**, instead of the 209 cast members the file actually declares. Not
+"a few missing" — a near-total failure that happened to leave behind a
+handful of fallback ("Other"-section) markers discovered by `discoverMarkers`,
+which is why the resulting `.dots` looked obviously wrong rather than merely
+incomplete.
+
+### Root cause
+
+Walking the file's chunks by hand confirmed `3DJV, PRP1, PRF3, GRD1, CORD,
+PG15 (209 markers), PRP8, VIS2` all read in perfect byte alignment — each
+chunk's declared length landed exactly on the next tag, all the way through
+the first `VIS2` chunk header (at byte 26983). That `VIS2` chunk declared an
+`i32` length of **17349**, but the real payload was **25950 bytes** — 8601
+bytes longer than declared. `VIS2` is one of `FORMAT.md` §2.1's documented
+"exceptions to the length rule" (alongside `PG15`), but the old `skipChunk`
+trusted the declared length unconditionally for both `SEL2` and `VIS2` — it
+had never actually been observed wrong before this file. (`SEL2`'s declared
+length _was_ checked on the one instance seen here and was correct — this is
+`VIS2`-specific, not a general "never trust any declared length" problem.)
+
+Landing 8601 bytes short put the reader on garbage, which failed the next
+chunk's `length > reader.remaining` guard and silently broke out of the parse
+loop with no error. Everything after that point in the 15 MB file — including
+`CST7` (cast) and `PTB7` (set list), which this file's exporter happens to
+write **near the end** (offsets ~15,388,673 / ~15,387,996) rather than near
+the top like the `sample.3dz` fixture — was never read. Hence 209 performers
+collapsing to 9 fallback markers and 1 page.
+
+### File class
+
+A `.3dz` with a single, unusually large consolidated `VIS2` blob (one 26 KB
+chunk) instead of the usual many small ones (`FORMAT.md` counts 13 `VIS2`
+instances in the reference sample) — plausibly from a show with heavy
+editor/undo history. The declared length undercounted the real payload by
+several KB.
+
+### Fix
+
+`skipChunk` (`document.ts`) now verifies where the declared length for
+`SEL2`/`VIS2` actually lands — EOF, `END.`, or a recognized tag — before
+trusting it. When it doesn't land cleanly, it resyncs by scanning forward from
+the chunk's header-end position for the next offset that both looks like a
+known tag (`FORMAT.md` §2.1's full inventory) and passes a sanity check on
+what follows it (declared length `>= 0` and `<= remaining`), logging a
+`console.warn` with the tag and recovered byte count. Scoped to `SEL2`/`VIS2`
+only — the generic `tag + i32 length + payload` path (`CST7`, `PTB7`, `GRD1`,
+…) has no evidence of this problem and stays untouched. Regression test:
+`src/__test__/document.test.ts`.
 
 ---
 
@@ -355,6 +412,11 @@ Useful when comparing drafts; not all are parsed today.
 ---
 
 ## How to repro diagnostics locally
+
+> For the general "an import is broken, where do I even start" checklist
+> (not specific to `PTB7`), see
+> [`diagnosing-import-failures.md`](./diagnosing-import-failures.md). This
+> section is the `PTB7`-specific worked example it points back to.
 
 `scripts/diag-setlist.mts` does this — it walks chunks the same way
 `parseDrillDocument` does, then reports what `readSetList` recovers:

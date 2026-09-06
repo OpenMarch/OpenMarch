@@ -31,6 +31,14 @@ words:
   - HZMN
   - misaligns
   - mojibake
+  - desyncs
+  - resync
+  - resynced
+  - resyncs
+  - undercount
+  - undercounted
+  - undercounting
+  - undercounts
   - SRFC
   - VTMJ
   - VTMN
@@ -52,6 +60,7 @@ words:
   - curatin
   - customizer
   - dbstat
+  - dedup
   - DELME
   - Dhruva
   - DMEA
@@ -172,6 +181,7 @@ words:
   - Topbar
   - trackpad
   - trackpads
+  - triaging
   - Tribbiani
   - turborepo
   - umami

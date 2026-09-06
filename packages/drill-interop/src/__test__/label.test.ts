@@ -33,4 +33,20 @@ describe("parseDrillLabel", () => {
             drill_order: 10,
         });
     });
+
+    it("marks a bare-numeric label with no source prefix as '-'", () => {
+        expect(parseDrillLabel("35")).toEqual({
+            drill_number: "35",
+            drill_prefix: "-",
+            drill_order: 35,
+        });
+    });
+
+    it("still parses letter-prefixed labels unaffected by the bare-numeric case", () => {
+        expect(parseDrillLabel("T3")).toEqual({
+            drill_number: "T3",
+            drill_prefix: "T",
+            drill_order: 3,
+        });
+    });
 });

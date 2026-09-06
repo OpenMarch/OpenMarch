@@ -3,29 +3,75 @@ name: Desktop Release
 on:
   push:
     tags: [v*]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to build/release (e.g. v1.2.3)"
+        required: true
+        type: string
+      macos_arm:
+        description: "Build macOS (Apple Silicon)"
+        type: boolean
+        default: true
+      macos_intel:
+        description: "Build macOS (Intel)"
+        type: boolean
+        default: true
+      windows:
+        description: "Build Windows"
+        type: boolean
+        default: true
+      linux_x64:
+        description: "Build Linux (x64)"
+        type: boolean
+        default: true
+      linux_arm:
+        description: "Build Linux (arm64)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write # Required for creating releases
 
 jobs:
-  build-and-release:
-    runs-on: ${{ matrix.os }}
+  determine-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      os_list: ${{ steps.build.outputs.os_list }}
+    steps:
+      - name: Build OS matrix from dispatch inputs
+        id: build
+        run: |
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo 'os_list=["macos-15","macos-15-intel","ubuntu-latest","ubuntu-24.04-arm"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          OS_LIST=()
+          [ "${{ github.event.inputs.macos_arm }}" == "true" ] && OS_LIST+=("\"macos-15\"")
+          [ "${{ github.event.inputs.macos_intel }}" == "true" ] && OS_LIST+=("\"macos-15-intel\"")
+          [ "${{ github.event.inputs.linux_x64 }}" == "true" ] && OS_LIST+=("\"ubuntu-latest\"")
+          [ "${{ github.event.inputs.linux_arm }}" == "true" ] && OS_LIST+=("\"ubuntu-24.04-arm\"")
+          JSON="[$(IFS=,; echo "${OS_LIST[*]}")]"
+          echo "os_list=$JSON" >> "$GITHUB_OUTPUT"
 
+  build-and-release:
+    needs: determine-matrix
+    if: needs.determine-matrix.outputs.os_list != '[]'
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - macos-latest
-          - macos-15-intel # x86 (Intel) macOS
-          - ubuntu-latest
-          - ubuntu-24.04-arm
+        os: ${{ fromJson(needs.determine-matrix.outputs.os_list) }}
 
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Debug release output
         run: |
           echo "GITHUB_REF=${GITHUB_REF}"
+          echo "Building ref: ${{ github.event.inputs.tag || github.ref }}"
           echo "Releasing version tag"
 
       - name: Install Node.js
@@ -127,15 +173,19 @@ jobs:
           if-no-files-found: warn
 
   windows-build-and-release:
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.windows == 'true'
     runs-on: windows-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Debug release output
         shell: pwsh
         run: |
           Write-Output "GITHUB_REF=$env:GITHUB_REF"
+          Write-Output "Building ref: ${{ github.event.inputs.tag || github.ref }}"
           Write-Output "Releasing version tag"
 
       - name: Install Node.js

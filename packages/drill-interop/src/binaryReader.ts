@@ -24,6 +24,11 @@ export class BinaryReader {
         return this.bytes.byteLength - this.offset;
     }
 
+    /** Total size of the underlying buffer, irrespective of the cursor. */
+    get length(): number {
+        return this.bytes.byteLength;
+    }
+
     seek(offset: number): void {
         this.offset = offset;
     }
@@ -98,11 +103,25 @@ export class BinaryReader {
 
     /** Peeks the next four bytes as an ASCII tag without advancing. */
     peekTag(): string {
-        if (this.remaining < 4) return "";
+        return this.peekTagAt(this.offset);
+    }
+
+    /**
+     * Peeks four bytes as an ASCII tag at an arbitrary absolute offset, without
+     * disturbing the cursor. Used by the chunk-resync scan, which probes many
+     * candidate offsets while deciding where to resume reading.
+     */
+    peekTagAt(offset: number): string {
+        if (offset < 0 || offset + 4 > this.bytes.byteLength) return "";
         let result = "";
         for (let i = 0; i < 4; i++) {
-            result += String.fromCharCode(this.bytes[this.offset + i]!);
+            result += String.fromCharCode(this.bytes[offset + i]!);
         }
         return result;
+    }
+
+    /** Peeks a big-endian `i32` at an arbitrary absolute offset, without advancing. */
+    peekI32At(offset: number): number {
+        return this.view.getInt32(offset, false);
     }
 }
