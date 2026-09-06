@@ -100,7 +100,7 @@ export async function parseDrillDocument(
             continue;
         }
         if (tag === "SEL2" || tag === "VIS2") {
-            skipChunk(reader);
+            skipChunk(reader, tag);
             continue;
         }
 
@@ -238,9 +238,103 @@ function readMarkerGroupIds(table: Uint8Array, count: number): string[] {
     return ids;
 }
 
-function skipChunk(reader: BinaryReader): void {
+/**
+ * Every chunk tag the format is known to emit (§2.1's inventory table). Used
+ * only to sanity-check where the reader lands after a `SEL2`/`VIS2` chunk —
+ * see {@link skipChunk}.
+ */
+const KNOWN_TAGS = new Set([
+    "3DJV",
+    "PRP1",
+    "PRF3",
+    "PTL1",
+    "CVR1",
+    "GRD1",
+    "CST7",
+    "COLR",
+    "PLS2",
+    "TLL2",
+    "PTB7",
+    "PTU1",
+    "PG15",
+    "PRP8",
+    "VsD1",
+    "TxD1",
+    "FAB1",
+    "SYNC",
+    "RMAP",
+    "COM2",
+    "CORD",
+    "SEL2",
+    "VIS2",
+]);
+
+/** How far the `SEL2`/`VIS2` resync scan looks before giving up. */
+const RESYNC_SCAN_LIMIT = 4 * 1024 * 1024;
+
+/** True when the reader's current position is EOF, `END.`, or a known tag. */
+function isPlausibleContinuation(reader: BinaryReader): boolean {
+    if (reader.remaining < 4) return true;
+    const tag = reader.peekTag();
+    return tag === "END." || KNOWN_TAGS.has(tag);
+}
+
+/**
+ * Scans forward byte-by-byte from `from` for the next offset that both looks
+ * like a known tag and passes a light sanity check on what follows it (its
+ * declared `i32` length, if any, must be non-negative and fit in what's left
+ * of the buffer). The sanity check matters: tag-shaped byte sequences do turn
+ * up by coincidence in binary noise, and without it the scan can lock onto
+ * one before reaching the real chunk boundary.
+ */
+function resyncChunkEnd(
+    reader: BinaryReader,
+    from: number,
+): number | undefined {
+    const limit = Math.min(reader.length, from + RESYNC_SCAN_LIMIT);
+    for (let pos = from; pos + 4 <= limit; pos++) {
+        const tag = reader.peekTagAt(pos);
+        if (tag === "END.") return pos;
+        if (!KNOWN_TAGS.has(tag)) continue;
+        if (pos + 8 > reader.length) continue;
+        const length = reader.peekI32At(pos + 4);
+        if (length >= 0 && length <= reader.length - (pos + 8)) return pos;
+    }
+    return undefined;
+}
+
+/**
+ * `SEL2` and `VIS2` are the format's other documented exception to the
+ * `tag + i32 length + payload` rule (§2.1, alongside `PG15`): their declared
+ * length has been observed wrong on a real file, undercounting the actual
+ * payload by several KB. Trusting it blindly lands the reader mid-chunk on
+ * garbage, which fails the next chunk's length guard and silently truncates
+ * the rest of the document.
+ *
+ * We still trust the declared length as the common case — it's correct far
+ * more often than not — but verify it first: if it doesn't land on something
+ * recognizable, resync by scanning forward for the next plausible chunk tag
+ * instead of giving up.
+ */
+function skipChunk(reader: BinaryReader, tag: string): void {
     const length = reader.i32();
-    reader.skip(length);
+    const headerEnd = reader.position;
+    reader.seek(headerEnd + length);
+    if (isPlausibleContinuation(reader)) return;
+
+    const resynced = resyncChunkEnd(reader, headerEnd);
+    if (resynced === undefined) {
+        // Nothing recognizable within the scan window; leave the reader at the
+        // naive (likely wrong) offset so the existing remaining-length guard on
+        // the next chunk still bails out cleanly, as before this change.
+        reader.seek(headerEnd + length);
+        return;
+    }
+    console.warn(
+        `skipChunk: ${tag}'s declared length (${length}) did not land on a recognized chunk; ` +
+            `resynced by scanning forward ${resynced - headerEnd} bytes from the chunk start.`,
+    );
+    reader.seek(resynced);
 }
 
 /**
