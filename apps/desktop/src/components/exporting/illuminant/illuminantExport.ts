@@ -26,6 +26,8 @@ export type IlluminantVisualizerShowData = {
     sampledCoordinates: SerializableSampledMarcherCoordinates;
     beats: SampleMarcherCoordinatesBeat[];
     pages: SampleMarcherCoordinatesPage[];
+    /** Roster used by Illuminant to set each device's `performer_label`. */
+    marchers: SampleMarcherCoordinatesMarcher[];
 };
 
 export type IlluminantVisualizerSource = {
@@ -134,6 +136,7 @@ export function buildIlluminantVisualizerSource({
                 serializeSampledMarcherCoordinates(sampledCoordinates),
             beats,
             pages,
+            marchers,
         },
         lightingData: parsedLightingData,
     };

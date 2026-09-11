@@ -60,6 +60,7 @@ describe("illuminantExport", () => {
                     { id: 100, start_beat: 1 },
                     { id: 200, start_beat: 2 },
                 ],
+                marchers: [{ id: 3, drill_prefix: "B", drill_order: 1 }],
             },
             lightingData: {
                 scenes: [{ id: 1, start_page_id: 100, name: null }],
