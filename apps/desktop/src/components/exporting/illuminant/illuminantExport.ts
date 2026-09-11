@@ -26,7 +26,7 @@ export type IlluminantVisualizerShowData = {
     sampledCoordinates: SerializableSampledMarcherCoordinates;
     beats: SampleMarcherCoordinatesBeat[];
     pages: SampleMarcherCoordinatesPage[];
-    /** Roster used by Illuminant to set each device's `performer_label`. */
+    /** Roster used by Illuminant to set each device's `drillNumber`. */
     marchers: SampleMarcherCoordinatesMarcher[];
 };
 
