@@ -25,6 +25,7 @@ import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import { ResolvedPerformerAppearance } from "@/entity-components/appearance";
 import { RgbaColor } from "@uiw/react-color";
 import {
     evaluatePathWarning,
@@ -1117,6 +1118,58 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
+     * Update the coordinates of all marchers on the canvas
+     *
+     * @param settle When true, also calls `setCoords()` on each updated marcher
+     * to refresh Fabric's cached bounding box (hit-testing/selection/offscreen
+     * culling). Skipped by default since it's unnecessary overhead during
+     * active playback ticks — callers should pass `true` once the frame clock
+     * has settled (e.g. on pause or a seek while paused).
+     */
+    updateMarcherCoordinates = (
+        coordinatesFlat: Float32Array,
+        marcherIds: number[],
+        { settle = false }: { settle?: boolean } = {},
+    ) => {
+        const marchersById = this._getCanvasMarchersByIdsMap();
+
+        for (const [index, marcherId] of marcherIds.entries()) {
+            const marcher = marchersById.get(marcherId);
+            if (!marcher) continue;
+
+            const coordinateIndex = index * 2;
+            const x = coordinatesFlat[coordinateIndex];
+            const y = coordinatesFlat[coordinateIndex + 1];
+
+            marcher.setLiveCoordinates(x, y);
+            if (settle) marcher.setCoords();
+        }
+    };
+
+    /**
+     * Update the appearance (fill/outline color, shape, visibility) of every marcher
+     * on the canvas from resolved appearances sampled at a point in time. Mirrors
+     * `updateMarcherCoordinates`, but each marcher skips its own canvas update when
+     * its appearance hasn't changed since the last call — see
+     * `CanvasMarcher.applyResolvedAppearance`.
+     */
+    updateMarcherAppearances = (
+        appearances: ResolvedPerformerAppearance[],
+        marcherIds: number[],
+    ) => {
+        const marchersById = this._getCanvasMarchersByIdsMap();
+        const labelColor = this.fieldProperties?.theme.defaultMarcher.label;
+
+        for (const [index, marcherId] of marcherIds.entries()) {
+            const marcher = marchersById.get(marcherId);
+            const appearance = appearances[index];
+            if (!marcher || !appearance) continue;
+
+            marcher.applyResolvedAppearance(appearance, labelColor);
+        }
+    };
+
+    /**
      * Render the given marcherPages on the canvas
      *
      * @param marcherVisuals The map of marcher visuals
@@ -1135,8 +1188,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         Object.values(marcherPages).forEach((marcherPage) => {
             const visual = marcherVisuals[marcherPage.marcher_id];
             if (!visual) return;
-
-            visual.getCanvasMarcher().setMarcherCoords(marcherPage);
         });
 
         if (this._listeners && this._listeners.refreshMarchers)
@@ -2151,6 +2202,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return this.getCanvasMarchers().filter((marcher) =>
             marcherIdsSet.has(marcher.marcherObj.id),
         );
+    }
+
+    _getCanvasMarchersByIdsMap(): Map<number, CanvasMarcher> {
+        const output = new Map<number, CanvasMarcher>();
+        for (const marcher of this.getCanvasMarchers()) {
+            output.set(marcher.marcherObj.id, marcher);
+        }
+        return output;
     }
 
     /**

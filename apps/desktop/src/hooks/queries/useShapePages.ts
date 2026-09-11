@@ -21,7 +21,7 @@ import {
 import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
-import { invalidateByPage } from "./sharedInvalidators";
+import { invalidateAllMarchers } from "./sharedInvalidators";
 
 const KEY_BASE = "shape_pages";
 
@@ -111,7 +111,7 @@ export const updateShapePagesMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
+            void invalidateAllMarchers(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error updating shape pages`, e, variables);
@@ -127,7 +127,6 @@ export const deleteShapePagesMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
         },
         onError: (e, variables) => {
             conToastError(`Error deleting shape pages`, e, variables);
@@ -148,7 +147,7 @@ export const copyShapePageToPageMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            invalidateByPage(qc, new Set([variables.targetPageId]));
+            void invalidateAllMarchers(qc);
 
             toast.success(tolgee.t("inspector.shape.successfullyCopied"));
         },

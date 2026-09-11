@@ -213,7 +213,7 @@ export default function MarcherCoordinateSheetPreview({
         } else {
             setMarcherToUse(marcher);
             setPagesToUse(pages);
-            setMarcherPagesToUse(Object.values(marcherPages));
+            setMarcherPagesToUse(marcherPages);
         }
     }, [
         marcher,

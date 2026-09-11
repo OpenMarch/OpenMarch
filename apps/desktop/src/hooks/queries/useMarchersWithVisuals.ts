@@ -3,6 +3,9 @@ import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 import Marcher from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { allMarchersQueryOptions } from "./useMarchers";
+import { FIRST_PAGE_ID, marcherPagesByPageId } from "@/db-functions";
+import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
+import { marcherPagesByPageQueryOptions } from "./useMarcherPages";
 
 const KEY_BASE = "marcher-with-visuals";
 
@@ -26,8 +29,10 @@ export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
  */
 export const _combineMarcherVisualGroups = ({
     marchers,
+    firstPageMarcherPages,
 }: {
     marchers: Marcher[];
+    firstPageMarcherPages: MarcherPagesByMarcher;
 }): MarcherVisualMap => {
     if (!marchers) {
         return {};
@@ -37,6 +42,7 @@ export const _combineMarcherVisualGroups = ({
     for (const marcher of marchers)
         newVisuals[marcher.id] = new MarcherVisualGroup({
             marcher,
+            initialPosition: firstPageMarcherPages[marcher.id],
         });
 
     return newVisuals;
@@ -47,11 +53,15 @@ export const marcherWithVisualsQueryOptions = (queryClient: QueryClient) =>
     queryOptions({
         queryKey: marcherWithVisualsKeys.all(),
         queryFn: async () => {
-            const [marchers] = await Promise.all([
+            const [marchers, firstPageMarcherPages] = await Promise.all([
                 queryClient.fetchQuery(allMarchersQueryOptions()),
+                queryClient.fetchQuery(
+                    marcherPagesByPageQueryOptions(FIRST_PAGE_ID),
+                ),
             ]);
             return _combineMarcherVisualGroups({
                 marchers,
+                firstPageMarcherPages,
             });
         },
         staleTime: DEFAULT_STALE_TIME,

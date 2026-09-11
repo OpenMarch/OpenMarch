@@ -14,4 +14,3 @@ export * from "./constants";
 export * from "./tags/queries";
 export * from "./tags/mutations";
 export * from "./useMarchersWithVisuals";
-export * from "./useMarcherAppearances";

@@ -17,7 +17,6 @@ import {
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
 import { db } from "@/global/database/db";
-import { marcherAppearancesKeys } from "..";
 
 const KEY_BASE = "tags";
 const TAG_APPEARANCES_KEY = "tag_appearances";
@@ -48,11 +47,7 @@ export const invalidateTagQueries = (qc: QueryClient) => {
         qc.invalidateQueries({
             queryKey: [TAG_APPEARANCES_KEY],
         }),
-    ]).then(() => {
-        void qc.invalidateQueries({
-            queryKey: marcherAppearancesKeys.all(),
-        });
-    });
+    ]);
 };
 
 export const invalidateTagQueriesByPage = (qc: QueryClient, pageId: number) => {

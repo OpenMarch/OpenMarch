@@ -24,6 +24,8 @@ import {
     deleteShapePagesMutationOptions,
     shapePagesQueryByPageIdOptions,
 } from "@/hooks/queries";
+import { useStablePageId } from "@/hooks/useStablePageId";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useCanvasStore } from "@/stores/CanvasStore";
 import { assert } from "@/utilities/utils";
 
@@ -41,10 +43,12 @@ export default function ShapeEditor() {
     //         ),
     // });
     const { selectedPage } = useSelectedPage()!;
+    const isPlaying = useIsPlaying();
+    const stablePageId = useStablePageId(selectedPage?.id ?? null, isPlaying);
     const { mutate: copyShapePageToPage, isPending: isCopyingShapePageToPage } =
         useMutation(copyShapePageToPageMutationOptions(queryClient));
     const { data: shapePagesForThisPage } = useQuery(
-        shapePagesQueryByPageIdOptions(selectedPage?.id ?? null),
+        shapePagesQueryByPageIdOptions(stablePageId),
     );
 
     const { t } = useTolgee();

@@ -4,12 +4,12 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { updatePagesMutationOptions } from "../../hooks/queries";
 import { NotesRichTextEditor } from "../notes/NotesRichTextEditor";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useTimingObjects } from "@/hooks";
 
 export function PageNotesSection() {
     const { selectedPage } = useSelectedPage()!;
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
     const { pages } = useTimingObjects()!;
     const { t } = useTranslate();
     const queryClient = useQueryClient();

@@ -16,7 +16,7 @@ import {
     resolveAppearanceFromStack,
     ResolvedPerformerAppearance,
 } from "@/entity-components/appearance";
-import { _combineMarcherAppearances } from "@/hooks/queries/useMarcherAppearances";
+import { combineMarcherAppearances } from "@/services/appearance/combine-appearances";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import MarcherPage, {
     databaseMarcherPagesToMarcherPages,
@@ -162,7 +162,7 @@ export function buildPerformerAppearanceShowData({
             pageId,
         );
 
-        const appearancesByMarcherId = _combineMarcherAppearances({
+        const appearancesByMarcherId = combineMarcherAppearances({
             marchers,
             sectionAppearances,
             marcherIdsByTagId,

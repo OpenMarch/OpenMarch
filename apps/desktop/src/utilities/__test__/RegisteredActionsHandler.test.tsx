@@ -2,7 +2,7 @@
 // import { render, fireEvent, renderHook, act } from '@testing-library/react';
 // import RegisteredActionsHandler from '../RegisteredActionsHandler';
 // import PageList from '@/components/page/PageList';
-// import { IsPlayingProvider, useIsPlaying } from '@/context/IsPlayingContext';
+// import { useIsPlaying } from "@/services/clock/frame-clock";
 // import { SelectedPageProvider } from '@/context/SelectedPageContext';
 // import { SelectedMarchersProvider } from '@/context/SelectedMarchersContext';
 // import { ElectronApi } from 'electron/preload';
@@ -19,15 +19,13 @@ it("passes, todo", () => {
 
 // describe('RegisteredActionsHandler', () => {
 //     const AllProviders = ({ children }: { children: ReactNode }) => (
-//         <IsPlayingProvider>
-//             <SelectedPageProvider>
-//                 <SelectedMarchersProvider>
-//                     <FieldPropertiesProvider>
-//                         {children}
-//                     </FieldPropertiesProvider>
-//                 </SelectedMarchersProvider>
-//             </SelectedPageProvider>
-//         </IsPlayingProvider >
+//         <SelectedPageProvider>
+//             <SelectedMarchersProvider>
+//                 <FieldPropertiesProvider>
+//                     {children}
+//                 </FieldPropertiesProvider>
+//             </SelectedMarchersProvider>
+//         </SelectedPageProvider>
 //     );
 //     window.electron = {
 //         getFieldProperties: vi.fn().mockResolvedValue(mockNCAAFieldProperties),
@@ -37,8 +35,8 @@ it("passes, todo", () => {
 //     it('should trigger the appropriate action when a keyboard shortcut is pressed', () => {
 //         return
 
-//         // const { result } = renderHook(() => useIsPlaying(), { wrapper: IsPlayingProvider });
-//         // expect(result.current?.isPlaying).toBe(false);
+//         // const { result } = renderHook(() => useIsPlaying());
+//         // expect(result.current).toBe(false);
 //         act(() =>
 //             render(<RegisteredActionsHandler />,
 //                 { wrapper: AllProviders }

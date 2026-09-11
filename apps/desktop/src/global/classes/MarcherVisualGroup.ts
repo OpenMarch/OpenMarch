@@ -32,19 +32,22 @@ export default class MarcherVisualGroup {
     constructor({
         marcher,
         appearances,
+        initialPosition,
     }: {
         marcher: Marcher;
         appearances?:
             | AppearanceComponentOptional
             | AppearanceComponentOptional[];
+        initialPosition: { x: number; y: number };
     }) {
         this.marcherId = marcher.id;
 
         this.canvasMarcher = new CanvasMarcher({
             marcher: marcher,
-            coordinate: { x: 0, y: 0 },
+            coordinate: initialPosition,
             appearances,
         });
+        this.canvasMarcher.setCoords();
 
         this.previousPathway = new Pathway({
             marcherId: this.marcherId,
