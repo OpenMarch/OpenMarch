@@ -28,10 +28,47 @@ export type IlluminantVisualizerShowData = {
     pages: SampleMarcherCoordinatesPage[];
     /** Roster used by Illuminant to set each device's `drillNumber`. */
     marchers: SampleMarcherCoordinatesMarcher[];
+    /**
+     * Sparse per-page marcher positions, sent alongside `sampledCoordinates`
+     * so the visualizer server can run the exact same
+     * `constructIlluminantShowFromOpenMarchSourceV2` pipeline the Illuminant
+     * Worker's `/api/export/v2` uses (which interpolates from these on
+     * demand rather than reading a dense per-frame track) — keeping the
+     * local preview representative of the real `/api/export/v2` output.
+     * `sampledCoordinates` is kept only so the Python renderer can draw
+     * marcher dots per video frame; it's not consulted by the
+     * lighting-command pipeline anymore.
+     */
+    marcherPages: SampleMarcherCoordinatesMarcherPage[];
+    pathways: SampleMarcherCoordinatesPathway[];
 };
 
 export type IlluminantVisualizerSource = {
     showData: IlluminantVisualizerShowData;
+    lightingData: LightingData;
+};
+
+/**
+ * Sparse per-page marcher data — the same rows OpenMarch stores in its
+ * `marcher_pages`/`pathways` tables — sent to the Illuminant Worker's
+ * `/api/export/v2` instead of a dense per-frame coordinate track.
+ *
+ * The Worker interpolates positions on demand at each scene's sample times
+ * (via `@openmarch/core`'s `buildMarcherTimelines`/`getMarcherCoordinateAtTime`),
+ * so there's no need to pre-expand a full playback track client-side. Doing
+ * so used to produce millions of JSON numbers for a multi-minute show and
+ * was the primary cause of Worker OOMs on large shows.
+ */
+export type IlluminantApiExportShowData = {
+    beats: SampleMarcherCoordinatesBeat[];
+    pages: SampleMarcherCoordinatesPage[];
+    marchers: SampleMarcherCoordinatesMarcher[];
+    marcherPages: SampleMarcherCoordinatesMarcherPage[];
+    pathways: SampleMarcherCoordinatesPathway[];
+};
+
+export type IlluminantApiExportSource = {
+    showData: IlluminantApiExportShowData;
     lightingData: LightingData;
 };
 
@@ -137,6 +174,36 @@ export function buildIlluminantVisualizerSource({
             beats,
             pages,
             marchers,
+            marcherPages,
+            pathways,
+        },
+        lightingData: parsedLightingData,
+    };
+}
+
+/**
+ * Builds the request body sent to the Illuminant Worker's `/api/export/v2`.
+ * Unlike {@link buildIlluminantVisualizerSource} (used for the local ffmpeg
+ * preview), this sends sparse per-page `marcherPages`/`pathways` rather than
+ * a dense per-frame coordinate track — see {@link IlluminantApiExportSource}.
+ */
+export function buildIlluminantApiExportSource({
+    beats,
+    pages,
+    marchers,
+    marcherPages,
+    pathways,
+    lightingData,
+}: BuildIlluminantVisualizerSourceArgs): IlluminantApiExportSource {
+    const parsedLightingData = LightingDataSchema.parse(lightingData);
+
+    return {
+        showData: {
+            beats,
+            pages,
+            marchers,
+            marcherPages,
+            pathways,
         },
         lightingData: parsedLightingData,
     };

@@ -1,8 +1,8 @@
 import { db, type DB } from "@/global/database/db";
 import {
-    buildIlluminantVisualizerSource,
+    buildIlluminantApiExportSource,
     fetchIlluminantVisualizerSourceData,
-    type IlluminantVisualizerSource,
+    type IlluminantApiExportSource,
 } from "./illuminantExport";
 
 export const SHOW_COLORS = [
@@ -34,7 +34,7 @@ export function getShowColorLabel(color: ShowColor): string {
     return color.charAt(0) + color.slice(1).toLowerCase();
 }
 
-export type IlluminantExportSource = IlluminantVisualizerSource & {
+export type IlluminantExportSource = IlluminantApiExportSource & {
     showColor: ShowColor;
     title: string;
 };
@@ -55,7 +55,7 @@ export async function buildIlluminantExportSource({
     showColor?: ShowColor;
     title: string;
 }): Promise<IlluminantExportSource> {
-    const source = buildIlluminantVisualizerSource(
+    const source = buildIlluminantApiExportSource(
         await fetchIlluminantVisualizerSourceData(database),
     );
 

@@ -46,11 +46,15 @@ export async function exportIlluminantShow(
     requestBody: unknown,
 ): Promise<IlluminantExportResult> {
     let res: Response;
+    const body = JSON.stringify(requestBody);
+    console.log(
+        `[illuminant-export] outbound payload size=${Buffer.byteLength(body)} bytes`,
+    );
     try {
-        res = await fetch(`${ILLUMINANT_API_URL}/api/export`, {
+        res = await fetch(`${ILLUMINANT_API_URL}/api/export/v2`, {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify(requestBody),
+            body,
         });
     } catch (error) {
         return {

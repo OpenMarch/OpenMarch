@@ -60,7 +60,7 @@ type CoordinateDefinition = {
     nextPathPosition?: number;
 };
 
-type MarcherTimeline = {
+export type MarcherTimeline = {
     pathMap: Map<number, CoordinateDefinition>;
     sortedTimestamps: number[];
 };
@@ -88,7 +88,7 @@ export function sampleMarcherCoordinates({
             ? pageTimestamps.get(sortedPages.at(-1)!.id)!
             : 0;
     const sampleTimes = getSampleTimesMilliseconds(durationMilliseconds, fps);
-    const timelines = getMarcherTimelines({
+    const timelines = buildMarcherTimelinesFromPageTimestamps({
         marchers,
         marcherPages,
         pageTimestamps,
@@ -197,7 +197,69 @@ function getSampleTimesMilliseconds(durationMilliseconds: number, fps: number) {
     return sampleTimes;
 }
 
-function getMarcherTimelines({
+/**
+ * Builds a per-marcher timeline of position keyframes (page coordinates plus
+ * any pathway) that can be queried at an arbitrary timestamp via
+ * `getMarcherCoordinateAtTime`, without expanding into a dense per-frame
+ * array. Prefer this over `sampleMarcherCoordinates` when the caller only
+ * needs positions at a handful of specific times (e.g. lighting-effect
+ * sample points) rather than a full playback track.
+ */
+export function buildMarcherTimelines({
+    beats,
+    pages,
+    marchers,
+    marcherPages,
+    pathways = [],
+}: {
+    beats: readonly SampleMarcherCoordinatesBeat[];
+    pages: readonly SampleMarcherCoordinatesPage[];
+    marchers: readonly SampleMarcherCoordinatesMarcher[];
+    marcherPages: readonly SampleMarcherCoordinatesMarcherPage[];
+    pathways?: readonly SampleMarcherCoordinatesPathway[];
+}): Map<number, MarcherTimeline> {
+    const sortedPages = sortPagesByBeatPosition(pages, beats);
+    const pageTimestamps = getPageTimestampsMilliseconds(sortedPages, beats);
+    return buildMarcherTimelinesFromPageTimestamps({
+        marchers,
+        marcherPages,
+        pageTimestamps,
+        pathways,
+    });
+}
+
+/**
+ * Looks up a marcher's interpolated (or pathway-following) position at a
+ * given timestamp. Returns `undefined` rather than throwing when the marcher
+ * has no timeline, or when the requested time falls before the marcher's
+ * first keyframe (that keyframe's position is used as a best-effort
+ * fallback instead).
+ */
+export function getMarcherCoordinateAtTime(
+    marcherId: number,
+    timelines: Map<number, MarcherTimeline>,
+    timestampMilliseconds: number,
+): { x: number; y: number } | undefined {
+    const timeline = timelines.get(marcherId);
+    if (!timeline) return undefined;
+
+    const { current, next } = findSurroundingTimestamps({
+        sortedTimestamps: timeline.sortedTimestamps,
+        targetTimestamp: timestampMilliseconds,
+    });
+
+    // Before the first keyframe: no "previous" position to interpolate from,
+    // so clamp to the first known keyframe rather than throwing.
+    if (current == null) {
+        if (next == null) return undefined;
+        const coordinate = timeline.pathMap.get(next);
+        return coordinate ? { x: coordinate.x, y: coordinate.y } : undefined;
+    }
+
+    return getCoordinatesAtTime(timestampMilliseconds, timeline);
+}
+
+function buildMarcherTimelinesFromPageTimestamps({
     marchers,
     marcherPages,
     pageTimestamps,
