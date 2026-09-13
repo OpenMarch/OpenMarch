@@ -320,12 +320,9 @@ function directoryExists(dir: string): boolean {
 
 /**
  * Persist the parent directory of a newly created file as the default files
- * directory, honoring write-once semantics. No-op during Playwright sessions so
- * e2e runs never write into the shared app store (which would leak the first
- * test's output directory into every later test).
+ * directory, honoring write-once semantics.
  */
 function persistDefaultFilesDirectory(filePath: string) {
-    if (process.env.PLAYWRIGHT_SESSION) return;
     const dirToPersist = computeDefaultDirectoryToPersist(
         store.get("defaultFilesDirectory") as string | undefined,
         filePath,
