@@ -1,0 +1,4 @@
+# Real third-party drill packages/documents used for local smoke testing may
+# contain licensed show designs and audio; never commit them.
+src/__test__/fixtures/*.3dz
+src/__test__/fixtures/*.3dj
