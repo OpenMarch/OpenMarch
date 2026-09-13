@@ -1,48 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Input, Button, WarningNote } from "@openmarch/ui";
+import { Input, Button, WarningNote, DangerNote } from "@openmarch/ui";
 import { WizardFormField } from "@/components/ui/FormField";
 import { T, useTranslate } from "@tolgee/react";
 import { FolderOpenIcon } from "@phosphor-icons/react";
 import type { NewShowProjectData } from "../../newShowTypes";
-import { sanitizeFilename } from "../../newShowCompletion";
-
-const normalizePath = (path: string) => path.replace(/\\/g, "/");
-
-const ensureFileLocationHasProjectName = (
-    rawLocation: string,
-    projectName: string,
-    defaultDirectory?: string,
-) => {
-    const sanitizedProjectName = sanitizeFilename(projectName);
-    const filename = `${sanitizedProjectName}.dots`;
-
-    let finalFileLocation = rawLocation.trim();
-    if (finalFileLocation) {
-        const normalizedPath = normalizePath(finalFileLocation);
-        const pathParts = normalizedPath.split("/");
-        const lastPart = pathParts[pathParts.length - 1];
-
-        if (!lastPart) {
-            pathParts[pathParts.length - 1] = filename;
-        } else if (!lastPart.endsWith(".dots")) {
-            pathParts.push(filename);
-        } else if (!lastPart.startsWith(sanitizedProjectName)) {
-            pathParts[pathParts.length - 1] = filename;
-        }
-        finalFileLocation = pathParts.join("/");
-    } else if (defaultDirectory) {
-        finalFileLocation = `${normalizePath(defaultDirectory)}/${filename}`;
-    }
-
-    return finalFileLocation;
-};
+import {
+    ensureFileLocationHasProjectName,
+    isPathUnderDirectory,
+    resolveDefaultSaveDirectory,
+} from "../../newShowCompletion";
 
 interface ProjectStepProps {
     project: NewShowProjectData | null;
     onChange: (project: NewShowProjectData) => void;
+    newShowDraftsDirectory: string;
 }
 
-export default function ProjectStep({ project, onChange }: ProjectStepProps) {
+export default function ProjectStep({
+    project,
+    onChange,
+    newShowDraftsDirectory,
+}: ProjectStepProps) {
     const { t } = useTranslate();
     const [projectName, setProjectName] = useState(project?.projectName ?? "");
     const [fileLocation, setFileLocation] = useState(
@@ -53,6 +31,10 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
     const [defaultDirectory, setDefaultDirectory] = useState("");
     const [fileExists, setFileExists] = useState(false);
     const fileLocationManuallyEdited = useRef(!!project?.fileLocation);
+    const isDraftsLocation = isPathUnderDirectory(
+        fileLocation,
+        newShowDraftsDirectory,
+    );
 
     const syncToParent = useCallback(
         (
@@ -61,13 +43,18 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
             designerVal: string,
             clientVal: string,
         ) => {
-            const finalLocation = ensureFileLocationHasProjectName(
-                location,
-                name,
-                defaultDirectory,
-            );
+            const trimmedName = name.trim();
+            // Keep the existing path when the name is cleared so we don't
+            // rewrite it to ".dots" while validation blocks advancing.
+            const finalLocation = trimmedName
+                ? ensureFileLocationHasProjectName(
+                      location,
+                      name,
+                      defaultDirectory,
+                  )
+                : location;
             onChange({
-                projectName: name.trim(),
+                projectName: trimmedName,
                 fileLocation: finalLocation,
                 designer: designerVal.trim() || undefined,
                 client: clientVal.trim() || undefined,
@@ -80,19 +67,15 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
         const fetchDefaultDirectory = async () => {
             try {
                 const lastFilePath = await window.electron.databaseGetPath();
-                if (lastFilePath?.trim()) {
-                    const normalizedPath = normalizePath(lastFilePath);
-                    const pathParts = normalizedPath.split("/");
-                    pathParts.pop();
-                    const directory = pathParts.join("/");
-                    if (directory) {
-                        setDefaultDirectory(directory);
-                        return;
-                    }
-                }
                 const docsPath =
                     await window.electron.getDefaultDocumentsPath();
-                setDefaultDirectory(docsPath);
+                setDefaultDirectory(
+                    resolveDefaultSaveDirectory(
+                        lastFilePath,
+                        newShowDraftsDirectory,
+                        docsPath,
+                    ),
+                );
             } catch {
                 const docsPath =
                     await window.electron.getDefaultDocumentsPath();
@@ -100,24 +83,32 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
             }
         };
         void fetchDefaultDirectory();
-    }, []);
+    }, [newShowDraftsDirectory]);
 
     useEffect(() => {
-        if (!projectName.trim() || fileLocationManuallyEdited.current) return;
-        const autoPath = ensureFileLocationHasProjectName(
-            "",
+        if (!projectName.trim()) return;
+        const nextPath = ensureFileLocationHasProjectName(
+            fileLocationManuallyEdited.current ? fileLocation : "",
             projectName,
             defaultDirectory,
         );
-        if (autoPath) {
-            setFileLocation(autoPath);
+        if (!nextPath) return;
+        if (nextPath !== fileLocation) {
+            setFileLocation(nextPath);
             void window.electron
-                .fileExists(autoPath)
+                .fileExists(nextPath)
                 .then(setFileExists)
                 .catch(() => setFileExists(false));
-            syncToParent(projectName, autoPath, designer, client);
         }
-    }, [projectName, defaultDirectory, designer, client, syncToParent]);
+        syncToParent(projectName, nextPath, designer, client);
+    }, [
+        projectName,
+        defaultDirectory,
+        fileLocation,
+        designer,
+        client,
+        syncToParent,
+    ]);
 
     const hasSyncedDefaultDirectory = useRef(false);
     useEffect(() => {
@@ -136,7 +127,9 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
     const handleBrowse = async () => {
         const result = await window.electron.showSaveDialog({
             buttonLabel: t("launchpage.newShow.browse"),
-            defaultPath: fileLocation || defaultDirectory,
+            defaultPath: isDraftsLocation
+                ? defaultDirectory
+                : fileLocation || defaultDirectory,
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         });
         if (!result.canceled && result.filePath) {
@@ -158,9 +151,32 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                 <Input
                     value={projectName}
                     onChange={(e) => {
-                        const name = e.target.value;
-                        setProjectName(name);
-                        syncToParent(name, fileLocation, designer, client);
+                        const value = e.target.value;
+                        setProjectName(value);
+                        if (!value.trim()) {
+                            syncToParent(value, fileLocation, designer, client);
+                            return;
+                        }
+                        const nextPath = ensureFileLocationHasProjectName(
+                            fileLocationManuallyEdited.current
+                                ? fileLocation
+                                : "",
+                            value,
+                            defaultDirectory,
+                        );
+                        if (nextPath && nextPath !== fileLocation) {
+                            setFileLocation(nextPath);
+                            void window.electron
+                                .fileExists(nextPath)
+                                .then(setFileExists)
+                                .catch(() => setFileExists(false));
+                        }
+                        syncToParent(
+                            value,
+                            nextPath || fileLocation,
+                            designer,
+                            client,
+                        );
                     }}
                     placeholder={t("launchpage.newShow.showName")}
                     autoFocus
@@ -180,10 +196,16 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                     </Button>
                 </div>
             </WizardFormField>
-            {fileExists && (
-                <WarningNote>
-                    <T keyName="launchpage.newShow.fileExistsWarning" />
-                </WarningNote>
+            {isDraftsLocation ? (
+                <DangerNote>
+                    <T keyName="launchpage.newShow.draftsLocationError" />
+                </DangerNote>
+            ) : (
+                fileExists && (
+                    <WarningNote>
+                        <T keyName="launchpage.newShow.fileExistsWarning" />
+                    </WarningNote>
+                )
             )}
             <WizardFormField label={t("launchpage.newShow.designer")}>
                 <Input
