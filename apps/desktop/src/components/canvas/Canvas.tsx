@@ -8,9 +8,8 @@ import {
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
-    marcherAppearancesQueryOptions,
 } from "@/hooks/queries";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
@@ -19,6 +18,7 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
 import { useAnimation } from "@/hooks/useAnimation";
+import { useAppearanceAnimation } from "@/hooks/useAppearanceAnimation";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
@@ -52,15 +52,12 @@ export default function Canvas({
 }) {
     const queryClient = useQueryClient();
     useEditablePath();
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherVisuals } = useQuery(
         marcherWithVisualsQueryOptions(queryClient),
-    );
-    const { data: marcherAppearances } = useQuery(
-        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
     );
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
@@ -104,6 +101,7 @@ export default function Canvas({
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
     useAnimation({ canvas });
+    useAppearanceAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
 
     // Function to center and fit the canvas to the container
@@ -304,41 +302,6 @@ export default function Canvas({
         }
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
-    // Sync canvas with marcher appearances
-    useEffect(() => {
-        if (
-            !canvas ||
-            !marchers ||
-            marcherAppearances == null ||
-            marcherVisuals == null
-        )
-            return;
-
-        // Add all marcher appearances to the canvas
-        marchers.forEach((marcher) => {
-            const visualGroup = marcherVisuals[marcher.id];
-            const appearancesForMarcher = marcherAppearances[marcher.id];
-            if (!visualGroup || !appearancesForMarcher) return;
-
-            const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(
-                appearancesForMarcher,
-                {
-                    requestRenderAll: false,
-                },
-                fieldProperties?.theme.defaultMarcher.label,
-            );
-        });
-
-        canvas.requestRenderAll();
-    }, [
-        canvas,
-        marchers,
-        marcherAppearances,
-        marcherVisuals,
-        fieldProperties?.theme.defaultMarcher.label,
-    ]);
-
     // Setters for alignmentEvent state
     useEffect(() => {
         if (canvas) {
@@ -352,35 +315,24 @@ export default function Canvas({
         if (canvas) canvas.setUiSettings(uiSettings);
     }, [canvas, uiSettings]);
 
-    // Render the marchers when the selected page or the marcher pages change
+    // Keep canvas.currentPage aligned with selection (used by drag-save / line tools).
+    // Animation still owns marcher left/top — do not restore renderMarchers here.
     useEffect(() => {
-        if (
-            !canvas ||
-            !selectedPage ||
-            !marchers ||
-            !marcherPagesLoaded ||
-            marcherVisuals == null
-        )
+        if (!canvas || !selectedPage) return;
+        canvas.currentPage = selectedPage;
+    }, [canvas, selectedPage]);
+
+    // Sync CanvasMarcher.coordinate metadata (page_id, locks, DB coords) for the
+    // selected page without moving fabric objects.
+    useEffect(() => {
+        if (!canvas || !selectedPage || !marcherPagesLoaded || !marcherPages)
             return;
 
-        canvas.currentPage = selectedPage;
-
-        canvas
-            .renderMarchers({
-                marcherVisuals,
-                marcherPages,
-            })
-            .catch((error) => {
-                console.error("Error rendering marchers", error);
-            });
-    }, [
-        canvas,
-        marcherPages,
-        marcherPagesLoaded,
-        marcherVisuals,
-        marchers,
-        selectedPage,
-    ]);
+        for (const canvasMarcher of canvas.getCanvasMarchers()) {
+            const marcherPage = marcherPages[canvasMarcher.marcherObj.id];
+            if (marcherPage) canvasMarcher.setCoordinateMetadata(marcherPage);
+        }
+    }, [canvas, selectedPage, marcherPages, marcherPagesLoaded]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
@@ -538,51 +490,66 @@ export default function Canvas({
 
     /* --------------------------Animation Functions-------------------------- */
 
-    // This effect ensures that when the animation is playing, the shape paths
-    // are removed from the canvas.
+    // This effect ensures that when the animation starts playing, the shape paths
+    // are removed from the canvas. Deliberately excludes `selectedPage` from the deps —
+    // shape paths are edit-mode-only, so once they're gone at playback start there's
+    // nothing left to remove on subsequent page changes, and re-scanning the canvas on
+    // every page turn during playback is a needless hitch.
     useEffect(() => {
-        if (canvas && isPlaying && selectedPage) {
+        if (canvas && isPlaying) {
             canvas.removeAllObjectsByType(ShapePath);
         }
-    }, [canvas, isPlaying, selectedPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canvas, isPlaying]);
 
-    // This effect ensures that when the animation is paused, the marchers are
-    // rendered at their final positions for the selected page.
-    useEffect(() => {
-        if (
-            canvas &&
-            !isPlaying &&
-            selectedPage &&
-            marcherPagesLoaded &&
-            marcherVisuals != null
-        ) {
-            canvas
-                .renderMarchers({
-                    marcherPages: marcherPages,
-                    marcherVisuals: marcherVisuals,
-                })
-                .catch((error) => {
-                    console.error("Error rendering marchers", error);
-                });
-        }
-    }, [
-        canvas,
-        isPlaying,
-        selectedPage,
-        marcherPages,
-        marchers,
-        marcherVisuals,
-        marcherPagesLoaded,
-    ]);
+    // // This effect ensures that when the animation is paused, the marchers are
+    // // rendered at their final positions for the selected page.
+    // useEffect(() => {
+    //     if (
+    //         canvas &&
+    //         !isPlaying &&
+    //         selectedPage &&
+    //         marcherPagesLoaded &&
+    //         marcherVisuals != null
+    //     ) {
+    //         canvas
+    //             .renderMarchers({
+    //                 marcherPages: marcherPages,
+    //                 marcherVisuals: marcherVisuals,
+    //             })
+    //             .catch((error) => {
+    //                 console.error("Error rendering marchers", error);
+    //             });
+    //     }
+    // }, [
+    //     canvas,
+    //     isPlaying,
+    //     selectedPage,
+    //     marcherPages,
+    //     marchers,
+    //     marcherVisuals,
+    //     marcherPagesLoaded,
+    // ]);
 
-    // Render collision markers when paused
+    // Render collision markers when paused. Markers are only ever (re)added in the
+    // paused branch below, so once they've been cleared for a playback session there's
+    // nothing left to remove on subsequent page changes — skip the scan/remove/render
+    // pass in that case rather than paying for it on every page turn during playback.
+    const hasClearedCollisionMarkersForPlaybackRef = useRef(false);
     useEffect(() => {
         if (!canvas) return;
 
-        // Always remove existing collision markers when page changes or animation starts
+        if (isPlaying) {
+            if (hasClearedCollisionMarkersForPlaybackRef.current) return;
+            hasClearedCollisionMarkersForPlaybackRef.current = true;
+        } else {
+            hasClearedCollisionMarkersForPlaybackRef.current = false;
+        }
+
         const existingMarkers = canvas
             .getObjects()
             .filter((obj: any) => obj.isCollisionMarker);
+        if (existingMarkers.length === 0 && isPlaying) return;
         existingMarkers.forEach((marker) => canvas.remove(marker));
 
         // Add new collision markers only when paused, collisions exist, and showCollisions is enabled
@@ -604,13 +571,7 @@ export default function Canvas({
         }
 
         canvas.requestRenderAll();
-    }, [
-        canvas,
-        isPlaying,
-        currentCollisions,
-        selectedPage,
-        uiSettings.showCollisions,
-    ]);
+    }, [canvas, isPlaying, currentCollisions, uiSettings.showCollisions]);
 
     return (
         <div

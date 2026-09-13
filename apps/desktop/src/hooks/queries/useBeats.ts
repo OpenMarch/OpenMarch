@@ -88,11 +88,8 @@ export const updateBeatsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedBeats: ModifiedBeatArgs[]) =>
             updateBeats({ db, modifiedBeats }),
-        onSuccess: (_, variables) => {
+        onSuccess: () => {
             // Invalidate all beat queries
-            const beatIds = new Set<number>();
-            for (const modifiedArgs of variables) beatIds.add(modifiedArgs.id);
-
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });

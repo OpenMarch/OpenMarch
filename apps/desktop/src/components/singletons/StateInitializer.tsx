@@ -4,12 +4,8 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useTimingObjects } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import {
-    marcherAppearancesQueryOptions,
-    updateShapePagesMutationOptions,
-} from "@/hooks/queries";
+import { updateShapePagesMutationOptions } from "@/hooks/queries";
 import {
     MarcherShape,
     marcherShapeToShapePageArgs,
@@ -24,7 +20,7 @@ function StateInitializer() {
     const { pages } = useTimingObjects();
     const selectedPageContext = useSelectedPage();
     const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const seekTo = selectedPageContext?.seekTo ?? (() => {});
     const selectedAudioFileContext = useSelectedAudioFile();
     const selectedAudioFile =
         selectedAudioFileContext?.selectedAudioFile ?? null;
@@ -37,52 +33,14 @@ function StateInitializer() {
         updateShapePagesMutationOptions(queryClient),
     );
 
-    if (selectedPage) {
-        void queryClient.prefetchQuery(
-            coordinateDataQueryOptions(selectedPage, queryClient),
-        );
-        void queryClient.prefetchQuery(
-            marcherAppearancesQueryOptions(selectedPage.id, queryClient),
-        );
-        if (selectedPage.nextPageId != null) {
-            const nextPage = pages.find(
-                (page) => page.id === selectedPage.nextPageId,
-            );
-            if (nextPage) {
-                void queryClient.prefetchQuery(
-                    coordinateDataQueryOptions(nextPage, queryClient),
-                );
-                void queryClient.prefetchQuery(
-                    marcherAppearancesQueryOptions(nextPage.id, queryClient),
-                );
-            }
-        }
-        if (selectedPage.previousPageId != null) {
-            const previousPage = pages.find(
-                (page) => page.id === selectedPage.previousPageId,
-            );
-            if (previousPage) {
-                void queryClient.prefetchQuery(
-                    coordinateDataQueryOptions(previousPage, queryClient),
-                );
-                void queryClient.prefetchQuery(
-                    marcherAppearancesQueryOptions(
-                        previousPage.id,
-                        queryClient,
-                    ),
-                );
-            }
-        }
-    }
-
     /*******************************************************************/
 
     // Select page 0 (first page in show order) when none are selected (e.g. app load / refresh)
     useEffect(() => {
         if (selectedPage == null && pages.length > 0) {
-            setSelectedPage(pages[0]);
+            seekTo(pages[0]);
         }
-    }, [pages, selectedPage, setSelectedPage]);
+    }, [pages, selectedPage, seekTo]);
 
     // Select the currently selected audio file
     useEffect(() => {

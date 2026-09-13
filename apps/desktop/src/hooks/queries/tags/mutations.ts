@@ -33,7 +33,7 @@ import { conToastError } from "@/utilities/utils";
 export const createTagsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newTags: NewTagArgs[]) => createTags({ db, newTags }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -75,7 +75,7 @@ export const deleteTagsMutationOptions = (qc: QueryClient) => {
             transactionWithHistory(db, "deleteTags", async (tx) => {
                 return await deleteTagsInTransaction({ tagIds, tx });
             }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -95,7 +95,7 @@ export const createTagAppearancesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newItems: NewTagAppearanceArgs[]) =>
             createTagAppearances({ db, newItems }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -165,7 +165,7 @@ export const deleteTagAppearancesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (itemIds: Set<number>) =>
             deleteTagAppearances({ db, itemIds }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -184,7 +184,7 @@ export const createNewTagFromMarcherIdsMutationOptions = (qc: QueryClient) => {
             marcherIds: Set<number>;
             tagName: string | null;
         }) => createNewTagFromMarcherIds({ db, ...args }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -204,7 +204,7 @@ export const createMarcherTagsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newMarcherTags: NewMarcherTagArgs[]) =>
             createMarcherTags({ db, newMarcherTags }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -220,7 +220,7 @@ export const updateMarcherTagsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarcherTags: ModifiedMarcherTagArgs[]) =>
             updateMarcherTags({ db, modifiedMarcherTags }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
@@ -236,7 +236,7 @@ export const deleteMarcherTagsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (marcherTagIds: Set<number>) =>
             deleteMarcherTags({ db, marcherTagIds }),
-        onSuccess: async (_) => {
+        onSuccess: async () => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
