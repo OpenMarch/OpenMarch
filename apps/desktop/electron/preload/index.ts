@@ -230,6 +230,8 @@ const APP_API = {
         ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
     getNewShowDraftPath: () =>
         ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
+    getNewShowDraftsDirectory: () =>
+        ipcRenderer.invoke("newShow:getDraftsDirectory") as Promise<string>,
     choosePreviousDotsFile: () =>
         ipcRenderer.invoke(
             "newShow:choosePreviousDotsFile",
@@ -305,6 +307,13 @@ const APP_API = {
     // Audio File
     launchInsertAudioFileDialogue: () =>
         ipcRenderer.invoke("audio:insert") as Promise<
+            DbServices.LegacyDatabaseResponse<AudioFile[]>
+        >,
+    insertAudioFileFromBuffer: (args: {
+        data: ArrayBuffer;
+        nickname: string;
+    }) =>
+        ipcRenderer.invoke("audio:insertBuffer", args) as Promise<
             DbServices.LegacyDatabaseResponse<AudioFile[]>
         >,
     getAudioFilesDetails: () =>

@@ -203,6 +203,11 @@
         "sideToSide": "Side to Side",
         "sideToSideAbbreviation": "S. to S."
     },
+    "drill": {
+        "audioNotImported": "The drill imported, but its audio could not be added. You can add the audio file manually.",
+        "importFailed": "Failed to import drill file",
+        "settingsNotApplied": "The drill imported, but page numbering and audio alignment could not be applied. You can set these in workspace settings."
+    },
     "ensembles": {
         "attachDialog": {
             "attach": "Attach",
@@ -668,6 +673,7 @@
             "client": "Client",
             "create": "Create show",
             "designer": "Designer",
+            "draftsLocationError": "This location is inside OpenMarch's temporary drafts folder, which is deleted automatically. Choose a different folder.",
             "errors": {
                 "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
                 "createFailed": "Failed to create show",
@@ -696,7 +702,14 @@
                     "waitingDb": "Preparing your show file…"
                 },
                 "ensemble": {
-                    "description": "Choose your activity.",
+                    "description": "Choose your activity and approximate ensemble size.",
+                    "size": {
+                        "large": "Large",
+                        "medium": "Medium",
+                        "small": "Small"
+                    },
+                    "sizeLabel": "Ensemble size",
+                    "sizeOption": "{label} (~{count, plural, one {# performer} other {# performers}})",
                     "title": "Activity",
                     "typeLabel": "Activity"
                 },
@@ -705,7 +718,7 @@
                     "title": "Field setup"
                 },
                 "performers": {
-                    "added": "Added performers",
+                    "added": "Added performers ({count})",
                     "addNew": "Add performers",
                     "description": "Add marchers now or skip and add them later in the editor.",
                     "noneAdded": "No performers added yet.",
@@ -719,6 +732,11 @@
                     "blank": "Start blank show",
                     "blankDescription": "Choose field and performers in the next steps.",
                     "description": "Choose how to start this show.",
+                    "importDrill": "Import .3dz file",
+                    "importDrillBeta": "BETA",
+                    "importDrillDescription": "Import a drill file (.3dz) to build the show, including marchers, sets, and audio.",
+                    "importDrillSubtitle": "You may experience bugs in conversion.",
+                    "importDrillTitle": "Importing .3dz file",
                     "importPrevious": "Import previous .dots file",
                     "importPreviousDescription": "Reuse performers, field setup, and the last set coordinates from an existing show.",
                     "importSummary": "Selected {fileName}. {count, plural, one {# performer} other {# performers}} will be imported.",

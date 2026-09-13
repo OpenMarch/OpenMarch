@@ -369,6 +369,8 @@ export const utility = sqliteTable(
         id: integer().primaryKey(),
         last_page_counts: integer().notNull().default(8),
         default_beat_duration: real().notNull().default(0.5), // 120 bpm
+        /** Show-level notes (e.g. production/credit notes from an imported drill). */
+        notes: text(),
         updated_at: text()
             .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
