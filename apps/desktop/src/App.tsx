@@ -8,7 +8,11 @@ import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
-import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
+import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
+import {
+    EditorActionHandlers,
+    FileActionHandlers,
+} from "@/shortcuts/ActionHandlers";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
@@ -226,10 +230,11 @@ function App() {
                         </div>
                     )}
                     <AlertModal />
+                    <ShortcutDispatcher />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
                         <SelectedAudioFileProvider>
-                            <RegisteredActionsHandler />
+                            <FileActionHandlers />
                             <LaunchPage
                                 setDatabaseIsReady={setDatabaseIsReady}
                             />
@@ -244,7 +249,8 @@ function App() {
                                     <SelectedMarchersProvider>
                                         <SelectedAudioFileProvider>
                                             <StateInitializer />
-                                            <RegisteredActionsHandler />
+                                            <FileActionHandlers />
+                                            <EditorActionHandlers />
                                             <SvgPreviewHandler />
                                             <TitleBar showControls />
                                             <FocusNotice />
