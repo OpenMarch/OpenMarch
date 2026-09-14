@@ -8,8 +8,7 @@ import {
     SignOutIcon,
 } from "@phosphor-icons/react";
 import * as api from "@/api/api";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ActionButton from "@/shortcuts/ActionButton";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import SettingsModal from "../SettingsModal";
@@ -31,33 +30,27 @@ export function FileTab() {
     return (
         <div className="flex w-full flex-wrap gap-8">
             <ToolbarSection>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchLoadFileDialogue
-                    }
+                <ActionButton
+                    action="launchLoadFileDialogue"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FolderOpenIcon size={24} />
                     <T keyName="fileTab.openFile" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchNewFileDialogue
-                    }
+                </ActionButton>
+                <ActionButton
+                    action="launchNewFileDialogue"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FileIcon size={24} />
                     <T keyName="fileTab.newFile" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchSaveFileDialogue
-                    }
+                </ActionButton>
+                <ActionButton
+                    action="launchSaveFileDialogue"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FloppyDiskIcon size={24} />
                     <T keyName="fileTab.saveFile" />
-                </RegisteredActionButton>
+                </ActionButton>
             </ToolbarSection>
             <ToolbarSection>
                 <button

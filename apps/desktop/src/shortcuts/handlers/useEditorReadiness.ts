@@ -10,7 +10,7 @@ import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 /**
  * Shared editor state that most editor action handlers depend on.
- * `ready` replaces the legacy guard in RegisteredActionsHandler
+ * `ready` replaces the legacy guard in the removed registered-actions handler
  * (selected page, field properties and marcher pages all loaded).
  */
 export function useEditorReadiness() {

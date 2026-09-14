@@ -1,12 +1,11 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
     ArrowsHorizontalIcon,
     ArrowsVerticalIcon,
     ArrowsInCardinalIcon,
     CaretDownIcon,
 } from "@phosphor-icons/react";
-import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ActionButton from "@/shortcuts/ActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
@@ -22,39 +21,29 @@ export default function AlignmentTab() {
             <ToolbarSection
                 aria-label={t("toolbar.alignment.lockMarchersAriaLabel")}
             >
-                <RegisteredActionButton
-                    instructionalString={
-                        uiSettings.lockX
-                            ? RegisteredActionsObjects.lockX.getInstructionalStringToggleOff()
-                            : RegisteredActionsObjects.lockX.getInstructionalStringToggleOn()
-                    }
-                    registeredAction={RegisteredActionsObjects.lockX}
+                <ActionButton
+                    toggleState={uiSettings.lockX ? "off" : "on"}
+                    action="lockX"
                     className={clsx(
                         "flex gap-6",
                         uiSettings.lockX ? "text-accent" : "text-text",
                     )}
                 >
                     <ArrowsVerticalIcon size={24} />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    instructionalString={
-                        uiSettings.lockY
-                            ? RegisteredActionsObjects.lockY.getInstructionalStringToggleOff()
-                            : RegisteredActionsObjects.lockY.getInstructionalStringToggleOn()
-                    }
-                    registeredAction={RegisteredActionsObjects.lockY}
+                </ActionButton>
+                <ActionButton
+                    toggleState={uiSettings.lockY ? "off" : "on"}
+                    action="lockY"
                     className={`flex gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}
                 >
                     <ArrowsHorizontalIcon size={24} />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.snapToNearestCustomFraction
-                    }
+                </ActionButton>
+                <ActionButton
+                    action="snapToNearestCustomFraction"
                     className={`flex gap-6`}
                 >
                     <ArrowsInCardinalIcon size={24} />
-                </RegisteredActionButton>
+                </ActionButton>
                 {/* -- */}
             </ToolbarSection>
             <SetMarcherPositionsDropdown />
@@ -71,24 +60,18 @@ function SetMarcherPositionsDropdown() {
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.setAllMarchersToPreviousPage
-                            }
+                        <ActionButton
+                            action="setAllMarchersToPreviousPage"
                             className="text-text px-6 py-4"
-                            tooltipPosition="left"
                         >
                             <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                        </RegisteredActionButton>
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.setAllMarchersToNextPage
-                            }
+                        </ActionButton>
+                        <ActionButton
+                            action="setAllMarchersToNextPage"
                             className="text-text px-6 py-4"
-                            tooltipPosition="left"
                         >
                             <T keyName="toolbar.alignment.toNextPagePositions" />
-                        </RegisteredActionButton>
+                        </ActionButton>
                     </Dropdown.Content>
                 </Dropdown.Portal>
             </Dropdown.Root>

@@ -16,8 +16,7 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from "@openmarch/ui";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "../RegisteredActionButton";
+import ActionButton from "@/shortcuts/ActionButton";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { T, useTolgee } from "@tolgee/react";
@@ -130,15 +129,12 @@ export default function AudioSelector() {
                 </div>
             )}
             <div className="flex justify-center gap-8 py-8">
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchInsertAudioFileDialogue
-                    }
-                    showTooltip={false}
+                <ActionButton
+                    action="launchInsertAudioFileDialogue"
                     className="text-body bg-fg-2 text-text border-stroke flex h-[1.625rem] min-h-0 w-fit items-center justify-center gap-4 rounded-full border px-8 py-[4px] duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     <PlusIcon /> <T keyName="music.importAudioFile" />
-                </RegisteredActionButton>
+                </ActionButton>
                 <AlertDialog>
                     <AlertDialogTrigger>
                         <Button
