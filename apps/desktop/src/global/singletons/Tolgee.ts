@@ -47,6 +47,7 @@ if (isOfflineTolgeeEnvironment()) {
 
 const tolgee = tolgeeBuilder.init({
     language: "en",
+    fallbackLanguage: "en",
     // Disable API URL in tests to prevent external network calls and dev-backend timers
     apiUrl: isOfflineTolgeeEnvironment() ? undefined : TOLGEE_API_URL,
     staticData: {

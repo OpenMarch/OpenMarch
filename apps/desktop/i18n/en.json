@@ -50,7 +50,14 @@
             "moveDown": "Move selected marcher(s) down",
             "moveLeft": "Move selected marcher(s) left",
             "moveRight": "Move selected marcher(s) right",
-            "moveUp": "Move selected marcher(s) up"
+            "moveUp": "Move selected marcher(s) up",
+            "variants": {
+                "coarse": "4 steps",
+                "coarseFree": "4 steps, no snap",
+                "fine": "¼ step, no snap",
+                "free": "no snap",
+                "tenth": "⅒ step, no snap"
+            }
         },
         "navigation": {
             "firstPage": "First page",
@@ -61,7 +68,8 @@
         "playback": {
             "pause": "Pause",
             "play": "Play",
-            "playPause": "Play or pause"
+            "playPause": "Play or pause",
+            "toggleMetronome": "Toggle metronome"
         },
         "select": {
             "selectAll": "Select all marchers"
@@ -79,7 +87,12 @@
             "success": "Swapped marchers {marcher1} and {marcher2}",
             "swap": "Swap marchers"
         },
+        "timeline": {
+            "playPause": "Play/pause audio",
+            "tapBeats": "Add {count} temporary beats"
+        },
         "ui": {
+            "exitTimelineFocus": "Exit timeline focus",
             "focusCanvas": "Focus the canvas",
             "focusTimeline": "Focus the timeline",
             "hideNextPaths": "Hide next page dots/paths",
