@@ -97,6 +97,7 @@
         "sonner": "^1.7.4",
         "svg-to-pdfkit": "^0.1.8",
         "tailwind-merge": "^2.6.0",
+        "tinykeys": "^4.0.0",
         "uuid": "^11.1.0",
         "wavesurfer.js": "^7.9.9",
         "zod": "^4.1.12",
