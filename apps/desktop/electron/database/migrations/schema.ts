@@ -363,6 +363,67 @@ export const marcher_tags = sqliteTable(
     (table) => [unique().on(table.marcher_id, table.tag_id)],
 );
 
+// ********* TIMELINES *********
+export const timeline = sqliteTable(
+    "timeline",
+    {
+        id: integer().primaryKey(),
+        beat_index_start: integer().notNull(),
+        beat_index_end: integer().notNull(),
+    },
+    () => [
+        check("timeline_beat_index_start_check", sql`beat_index_start > 0`),
+        check("timeline_beat_index_end_check", sql`beat_index_end > 0`),
+        check(
+            "timeline_beat_index_end_gt_start_check",
+            sql`beat_index_end > beat_index_start`,
+        ),
+    ],
+);
+
+export const transition = sqliteTable("transition", {
+    id: integer().primaryKey(),
+    timeline_id: integer()
+        .notNull()
+        .references(() => timeline.id, { onDelete: "cascade" }),
+    json_route_args: text(),
+});
+
+export const transition_marcher = sqliteTable(
+    "transition_marcher",
+    {
+        id: integer().primaryKey(),
+        transition_id: integer()
+            .notNull()
+            .references(() => transition.id, { onDelete: "cascade" }),
+        end_x: real().notNull(),
+        end_y: real().notNull(),
+        transition_index: integer().notNull(),
+        json_route_override_args: text(),
+    },
+    (table) => [
+        check("transition_marcher_index_check", sql`transition_index > 0`),
+        unique().on(table.transition_id, table.transition_index),
+    ],
+);
+export const transition_assignment = sqliteTable(
+    "transition_assignment",
+    {
+        id: integer().primaryKey(),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        is_active: integer().notNull(),
+        transition_beat_start: integer().notNull(),
+    },
+    () => [
+        check("transition_beat_start_check", sql`transition_beat_start > 0`),
+        check("transition_assignment_active_check", sql`is_active IN (0, 1)`),
+    ],
+);
+
+// ********* MISC TABLES *********
+
 export const utility = sqliteTable(
     "utility",
     {
