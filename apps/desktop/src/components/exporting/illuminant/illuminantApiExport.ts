@@ -1,4 +1,8 @@
 import { db, type DB } from "@/global/database/db";
+import type {
+    ExportRequestFields,
+    ShowColor as GeneratedShowColor,
+} from "@/generated/illuminant-api-contract";
 import {
     buildIlluminantApiExportSource,
     fetchIlluminantVisualizerSourceData,
@@ -14,8 +18,8 @@ export const SHOW_COLORS = [
     "BLUE",
     "PURPLE",
     "PINK",
-] as const;
-export type ShowColor = (typeof SHOW_COLORS)[number];
+] as const satisfies readonly GeneratedShowColor[];
+export type ShowColor = GeneratedShowColor;
 
 export const SHOW_COLOR_HEX: Record<ShowColor, string> = {
     RED: "#FF0000",
@@ -34,10 +38,18 @@ export function getShowColorLabel(color: ShowColor): string {
     return color.charAt(0) + color.slice(1).toLowerCase();
 }
 
-export type IlluminantExportSource = IlluminantApiExportSource & {
-    showColor: ShowColor;
-    title: string;
-};
+export type ColorMapping = ExportRequestFields["colorMapping"];
+
+/** LED channel order for setColor bytes. Use GRB for strips with swapped R/G. */
+export const COLOR_MAPPINGS = [
+    "RGB",
+    "GRB",
+] as const satisfies readonly ColorMapping[];
+
+export const DEFAULT_COLOR_MAPPING: ColorMapping = "RGB";
+
+export type IlluminantExportSource = IlluminantApiExportSource &
+    ExportRequestFields;
 
 export type IlluminantHealthCheckResult = { ok: boolean };
 
@@ -49,17 +61,27 @@ export type IlluminantExportResult =
 export async function buildIlluminantExportSource({
     database = db,
     showColor = DEFAULT_SHOW_COLOR,
+    colorMapping = DEFAULT_COLOR_MAPPING,
     title,
+    author,
 }: {
     database?: DB;
     showColor?: ShowColor;
+    colorMapping?: ColorMapping;
     title: string;
+    author?: string;
 }): Promise<IlluminantExportSource> {
     const source = buildIlluminantApiExportSource(
         await fetchIlluminantVisualizerSourceData(database),
     );
 
-    return { ...source, showColor, title };
+    return {
+        ...source,
+        showColor,
+        colorMapping,
+        title,
+        author,
+    } satisfies IlluminantExportSource;
 }
 
 export async function checkIlluminantHealth(): Promise<IlluminantHealthCheckResult> {

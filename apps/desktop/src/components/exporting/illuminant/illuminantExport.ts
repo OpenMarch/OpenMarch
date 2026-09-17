@@ -1,4 +1,5 @@
 import { db, schema, type DB } from "@/global/database/db";
+import type { OpenMarchSourceV2 } from "@/generated/illuminant-api-contract";
 import {
     LightingDataSchema,
     sampleMarcherCoordinates,
@@ -206,7 +207,7 @@ export function buildIlluminantApiExportSource({
             pathways,
         },
         lightingData: parsedLightingData,
-    };
+    } satisfies OpenMarchSourceV2;
 }
 
 function buildCoordinateSamplingTiming({

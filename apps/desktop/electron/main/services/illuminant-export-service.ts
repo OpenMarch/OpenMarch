@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog } from "electron";
 import { promises as fsPromises } from "node:fs";
 import { basename, dirname, extname, join } from "node:path";
 import * as DatabaseServices from "../../database/database.services";
+import type { HealthCheckResponse } from "../../../src/generated/illuminant-api-contract";
 
 const ILLUMINANT_API_URL = "https://illuminant.openmarch.com";
 
@@ -18,7 +19,7 @@ export async function checkIlluminantHealth(): Promise<IlluminantHealthCheckResu
             signal: AbortSignal.timeout(5000),
         });
         if (!res.ok) return { ok: false };
-        const body = await res.json();
+        const body = (await res.json()) as Partial<HealthCheckResponse>;
         return { ok: body?.status === "ok" };
     } catch {
         return { ok: false };
