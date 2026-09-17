@@ -41,10 +41,12 @@ words:
   - DMEA
   - dorico
   - dorny
+  - Dpho
   - dpkg
   - drumline
   - dukc
   - Dumouchelle
+  - editaudio
   - Ehhh
   - ehlert
   - endzone
@@ -61,6 +63,8 @@ words:
   - frontmatter
   - Geral
   - GLHF
+  - gridline
+  - gridlines
   - hexdigest
   - Hipp
   - idioma
@@ -108,6 +112,7 @@ words:
   - pwsh
   - Pyware
   - Rcoords
+  - recentered
   - rels
   - recents
   - rgba
@@ -138,6 +143,7 @@ words:
   - svgs
   - tabler
   - Tamagui
+  - timecode
   - Titlebar
   - togglefullscreen
   - toks
@@ -181,6 +187,7 @@ words:
   - youtu
   - zier
   - Zingali
+  - zoomable
   - 日本語
 ignorePaths:
   - node_modules/**
