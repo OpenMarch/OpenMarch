@@ -6,10 +6,13 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
     stories: ["../src/**/*.stories.@(ts|tsx)"],
-    addons: ["@storybook/addon-docs"],
+    addons: ["@storybook/addon-docs", "@storybook/addon-mcp"],
     framework: {
         name: "@storybook/react-vite",
         options: {},
+    },
+    features: {
+        componentsManifest: true,
     },
     async viteFinal(config) {
         const { mergeConfig } = await import("vite");
