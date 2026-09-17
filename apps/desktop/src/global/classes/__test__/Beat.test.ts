@@ -5,6 +5,8 @@ import {
     fromDatabaseBeat,
     durationToBeats,
     calculateTimestamps,
+    getBeatIndexAtTime,
+    getNearestBeatIndex,
 } from "../Beat";
 import type Beat from "../Beat";
 import { DatabaseBeat } from "@/db-functions";
@@ -657,6 +659,117 @@ describe("Beat", () => {
                 index: 1,
                 timestamp: 1.0,
             });
+        });
+    });
+
+    describe("getBeatIndexAtTime", () => {
+        const beats: Beat[] = [
+            {
+                id: 1,
+                position: 1,
+                duration: 1,
+                includeInMeasure: true,
+                notes: null,
+                index: 0,
+                timestamp: 0,
+            },
+            {
+                id: 2,
+                position: 2,
+                duration: 1.5,
+                includeInMeasure: true,
+                notes: null,
+                index: 1,
+                timestamp: 1,
+            },
+            {
+                id: 3,
+                position: 3,
+                duration: 1,
+                includeInMeasure: true,
+                notes: null,
+                index: 2,
+                timestamp: 2.5,
+            },
+        ];
+
+        it("returns the first beat at the show start and before the first boundary", () => {
+            expect(getBeatIndexAtTime(beats, 0)).toBe(0);
+            expect(getBeatIndexAtTime(beats, 999)).toBe(0);
+        });
+
+        it("returns the beat containing an interior timestamp", () => {
+            expect(getBeatIndexAtTime(beats, 1_500)).toBe(1);
+        });
+
+        it("assigns exact beat boundaries to the beat that starts there", () => {
+            expect(getBeatIndexAtTime(beats, 1_000)).toBe(1);
+            expect(getBeatIndexAtTime(beats, 2_500)).toBe(2);
+        });
+
+        it("keeps the final beat active after its boundary and defaults to zero without beats", () => {
+            expect(getBeatIndexAtTime(beats, 10_000)).toBe(2);
+            expect(getBeatIndexAtTime([], 10_000)).toBe(0);
+        });
+    });
+
+    describe("getNearestBeatIndex", () => {
+        const beats: Beat[] = [
+            {
+                id: 1,
+                position: 1,
+                duration: 1,
+                includeInMeasure: true,
+                notes: null,
+                index: 0,
+                timestamp: 0,
+            },
+            {
+                id: 2,
+                position: 2,
+                duration: 1.5,
+                includeInMeasure: true,
+                notes: null,
+                index: 1,
+                timestamp: 1,
+            },
+            {
+                id: 3,
+                position: 3,
+                duration: 1,
+                includeInMeasure: true,
+                notes: null,
+                index: 2,
+                timestamp: 2.5,
+            },
+        ];
+
+        it("returns the exact beat when the timestamp lands exactly on it", () => {
+            expect(getNearestBeatIndex(beats, 1)).toBe(1);
+        });
+
+        it("returns the floor beat when the timestamp is closer to it", () => {
+            expect(getNearestBeatIndex(beats, 1.2)).toBe(1);
+        });
+
+        it("returns the next beat when the timestamp is closer to it", () => {
+            expect(getNearestBeatIndex(beats, 2.3)).toBe(2);
+        });
+
+        it("resolves an exact midpoint tie to the floor (earlier) beat", () => {
+            expect(getNearestBeatIndex(beats, 1.75)).toBe(1);
+        });
+
+        it("clamps to the first beat when before the first beat", () => {
+            expect(getNearestBeatIndex(beats, -1)).toBe(0);
+        });
+
+        it("clamps to the last beat when after the last beat", () => {
+            expect(getNearestBeatIndex(beats, 10)).toBe(2);
+        });
+
+        it("returns 0 for an empty array", () => {
+            expect(getNearestBeatIndex([], 5)).toBe(0);
         });
     });
 });

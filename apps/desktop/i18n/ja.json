@@ -55,7 +55,9 @@
         "navigation": {
             "firstPage": "最初 の ページ",
             "lastPage": "最終 ページ",
+            "nextBeat": "次の拍",
             "nextPage": "次のページ",
+            "previousBeat": "前の拍",
             "previousPage": "前の ページ"
         },
         "playback": {

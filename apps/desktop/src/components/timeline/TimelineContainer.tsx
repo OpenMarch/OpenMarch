@@ -1,4 +1,9 @@
-import { useIsPlaying } from "@/services/clock/frame-clock";
+import {
+    subscribeToFrameClock,
+    useCurrentBeatIndex,
+    useFrameClockStore,
+    useIsPlaying,
+} from "@/services/clock/frame-clock";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useRef } from "react";
 import {
@@ -19,14 +24,29 @@ import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
 import { T } from "@tolgee/react";
 import clsx from "clsx";
+import { getBeatIndexAtTime } from "@/global/classes/Beat";
 
 export default function TimelineContainer() {
     const isPlaying = useIsPlaying();
-    const { measures } = useTimingObjects()!;
+    const currentBeatIndex = useCurrentBeatIndex();
+    const { beats, measures } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
+    const currentBeat = beats[currentBeatIndex] ?? null;
+
+    // The frame clock owns the global playback state while this container owns the
+    // ordered timing data needed to translate timestamps into beat indexes.
+    useEffect(() => {
+        const syncCurrentBeatIndex = (timeMs: number) => {
+            const beatIndex = getBeatIndexAtTime(beats, timeMs);
+            useFrameClockStore.getState().setCurrentBeatIndex(beatIndex);
+        };
+
+        syncCurrentBeatIndex(useFrameClockStore.getState().currentTime);
+        return subscribeToFrameClock(syncCurrentBeatIndex);
+    }, [beats]);
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -75,7 +95,10 @@ export default function TimelineContainer() {
     return (
         <div className="flex gap-8">
             {uiSettings.focussedComponent !== "timeline" && (
-                <TimelineControls />
+                <TimelineControls
+                    currentBeat={currentBeat}
+                    beatCount={beats.length}
+                />
             )}
             {isFullscreen && <PerspectiveSlider />}
             <div

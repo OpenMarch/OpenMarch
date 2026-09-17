@@ -5,6 +5,8 @@ import { create } from "zustand";
 interface ClockState {
     /** The currentTime in milliseconds */
     currentTime: number;
+    /** The zero-based index of the beat containing the current playback time. */
+    currentBeatIndex: number;
     /** The currentTime in seconds */
     getAudioTime: () => number;
     /** Incrementing version number. Only used to force a re-render */
@@ -35,10 +37,12 @@ interface ClockState {
     play: () => void;
     pause: () => void;
     seek: (timestamp: number) => void;
+    setCurrentBeatIndex: (index: number) => void;
 }
 
 const frameClockStoreBase = create<ClockState>()((set, get) => ({
     currentTime: 0,
+    currentBeatIndex: 0,
     getAudioTime: () => get().currentTime / 1000,
     _version: 0,
     playing: false,
@@ -97,6 +101,10 @@ const frameClockStoreBase = create<ClockState>()((set, get) => ({
                 : {}),
         });
     },
+
+    setCurrentBeatIndex: (index) => {
+        if (get().currentBeatIndex !== index) set({ currentBeatIndex: index });
+    },
 }));
 
 export const useFrameClockStore = createSelectors(frameClockStoreBase);
@@ -148,6 +156,8 @@ export function subscribeToFrameClock(
 //    so usePlaying() only re-renders on play/pause, not every tick.
 export const useIsPlaying = () => useFrameClockStore.use.playing();
 export const useCurrentTime = () => useFrameClockStore.use.currentTime();
+export const useCurrentBeatIndex = () =>
+    useFrameClockStore.use.currentBeatIndex();
 
 export const usePlaybackControls = () =>
     useFrameClockStore(

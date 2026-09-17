@@ -12,6 +12,8 @@ import {
     SpeakerSimpleHighIcon,
     SpeakerSimpleLowIcon,
     SpeakerSimpleXIcon,
+    CaretLeftIcon,
+    CaretRightIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -24,8 +26,17 @@ import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
 import { useIsPlaying } from "@/services/clock/frame-clock";
+import type Beat from "@/global/classes/Beat";
 
-export default function TimelineControls() {
+type TimelineControlsProps = {
+    currentBeat: Beat | null;
+    beatCount: number;
+};
+
+export default function TimelineControls({
+    currentBeat,
+    beatCount,
+}: TimelineControlsProps) {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
     const { uiSettings } = useUiSettingsStore();
     return (
@@ -47,7 +58,10 @@ export default function TimelineControls() {
                     "flex-col": !isFullscreen,
                 })}
             >
-                <PlaybackControls />
+                <PlaybackControls
+                    currentBeat={currentBeat}
+                    beatCount={beatCount}
+                />
                 <div
                     className={clsx("flex items-center gap-12", {
                         "justify-between": !isFullscreen,
@@ -151,7 +165,7 @@ function TimelineMetronomeButton() {
     );
 }
 
-function PlaybackControls() {
+function PlaybackControls({ currentBeat, beatCount }: TimelineControlsProps) {
     const { selectedPage } = useSelectedPage()!;
     const isPlaying = useIsPlaying()!;
     const { uiSettings } = useUiSettingsStore();
@@ -187,6 +201,19 @@ function PlaybackControls() {
             </RegisteredActionButton>
 
             <RegisteredActionButton
+                registeredAction={RegisteredActionsObjects.previousBeat}
+                disabled={
+                    !selectedPage ||
+                    !currentBeat ||
+                    currentBeat.index === 0 ||
+                    isPlaying ||
+                    uiSettings.focussedComponent === "timeline"
+                }
+            >
+                <CaretLeftIcon size={24} />
+            </RegisteredActionButton>
+
+            <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
                 className="focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-2"
                 disabled={
@@ -195,6 +222,19 @@ function PlaybackControls() {
                 }
             >
                 {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
+            </RegisteredActionButton>
+
+            <RegisteredActionButton
+                registeredAction={RegisteredActionsObjects.nextBeat}
+                disabled={
+                    !selectedPage ||
+                    !currentBeat ||
+                    currentBeat.index >= beatCount - 1 ||
+                    isPlaying ||
+                    uiSettings.focussedComponent === "timeline"
+                }
+            >
+                <CaretRightIcon size={24} />
             </RegisteredActionButton>
 
             <RegisteredActionButton

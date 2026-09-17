@@ -176,6 +176,7 @@ export default function WaveformTimingOverlay({
                                 measure={measure}
                             >
                                 <div
+                                    data-timeline-marker="true"
                                     className={clsx(
                                         "hover:bg-accent pointer-events-auto absolute top-0 bottom-0 -translate-x-1/2 cursor-pointer rounded-full",
                                         isRehearsalMark
@@ -218,6 +219,7 @@ export default function WaveformTimingOverlay({
                         >
                             <div
                                 key={`beat-${beat.id}`}
+                                data-timeline-marker="true"
                                 className="hover:bg-accent pointer-events-auto absolute w-1 -translate-x-1/2 cursor-pointer rounded-full bg-[rgb(205,205,205)] hover:w-4 dark:bg-[rgb(60,60,60)]"
                                 style={{
                                     left: x,

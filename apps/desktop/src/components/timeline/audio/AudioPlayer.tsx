@@ -1,9 +1,10 @@
 import WaveSurfer from "wavesurfer.js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile, {
     computePlaceholderAudioDurationFromPages,
 } from "@/global/classes/AudioFile";
+import { getNearestBeatIndex } from "@/global/classes/Beat";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import { useTheme } from "@/context/ThemeContext";
@@ -99,6 +100,12 @@ export default function AudioPlayer() {
     const audioDurationRef = useRef(audioDuration);
     const isPlayingRef = useRef(isPlaying);
 
+    // Refs for waveform click/drag-to-scrub
+    const waveformWrapperRef = useRef<HTMLDivElement>(null);
+    const beatsRef = useRef(beats);
+    const pxPerSecondRef = useRef(uiSettings.timelinePixelsPerSecond);
+    const isScrubbingRef = useRef(false);
+
     useEffect(() => {
         audioDurationRef.current = audioDuration;
     }, [audioDuration]);
@@ -106,6 +113,14 @@ export default function AudioPlayer() {
     useEffect(() => {
         isPlayingRef.current = isPlaying;
     }, [isPlaying]);
+
+    useEffect(() => {
+        beatsRef.current = beats;
+    }, [beats]);
+
+    useEffect(() => {
+        pxPerSecondRef.current = uiSettings.timelinePixelsPerSecond;
+    }, [uiSettings.timelinePixelsPerSecond]);
 
     // Set up AudioContext on the first mount
     useEffect(() => {
@@ -522,6 +537,74 @@ export default function AudioPlayer() {
             ? renderedDuration * uiSettings.timelinePixelsPerSecond
             : 0;
 
+    // Click/drag-to-scrub on the waveform, snapping to the nearest beat.
+    const seekToNearestBeatAtClientX = useCallback((clientX: number) => {
+        const rect = waveformWrapperRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const pxPerSecond = pxPerSecondRef.current;
+        if (pxPerSecond <= 0) return;
+        const currentBeats = beatsRef.current;
+        if (currentBeats.length === 0) return;
+
+        const timeSeconds = (clientX - rect.left) / pxPerSecond;
+        const nearestBeat =
+            currentBeats[getNearestBeatIndex(currentBeats, timeSeconds)];
+        if (!nearestBeat) return;
+
+        const { seek, audioTimeToShowTime } = useFrameClockStore.getState();
+        seek(audioTimeToShowTime(nearestBeat.timestamp));
+    }, []);
+
+    const handleWaveformMouseMove = useCallback(
+        (e: MouseEvent) => {
+            if (!isScrubbingRef.current) return;
+            seekToNearestBeatAtClientX(e.clientX);
+        },
+        [seekToNearestBeatAtClientX],
+    );
+
+    const handleWaveformMouseUp = useCallback(() => {
+        isScrubbingRef.current = false;
+        document.removeEventListener("mousemove", handleWaveformMouseMove);
+        document.removeEventListener("mouseup", handleWaveformMouseUp);
+    }, [handleWaveformMouseMove]);
+
+    const handleWaveformMouseDown = useCallback(
+        (e: React.MouseEvent<HTMLDivElement>) => {
+            if (e.button !== 0) return;
+            if (
+                e.target instanceof HTMLElement &&
+                e.target.closest("[data-timeline-marker]")
+            ) {
+                // Let BeatOrMeasureContextMenu's own click handler run untouched
+                return;
+            }
+            e.preventDefault();
+
+            if (useFrameClockStore.getState().playing) {
+                useFrameClockStore.getState().pause();
+            }
+
+            isScrubbingRef.current = true;
+            seekToNearestBeatAtClientX(e.clientX);
+
+            document.addEventListener("mousemove", handleWaveformMouseMove);
+            document.addEventListener("mouseup", handleWaveformMouseUp);
+        },
+        [
+            seekToNearestBeatAtClientX,
+            handleWaveformMouseMove,
+            handleWaveformMouseUp,
+        ],
+    );
+
+    useEffect(() => {
+        return () => {
+            document.removeEventListener("mousemove", handleWaveformMouseMove);
+            document.removeEventListener("mouseup", handleWaveformMouseUp);
+        };
+    }, [handleWaveformMouseMove, handleWaveformMouseUp]);
+
     if (!contextsReady) {
         console.warn(
             "AudioPlayer is waiting for context providers to mount; rendering skipped.",
@@ -532,11 +615,13 @@ export default function AudioPlayer() {
     return (
         <div className="w-fit pl-[40px]">
             <div
-                className="relative pt-12"
+                ref={waveformWrapperRef}
+                className="relative cursor-pointer pt-12"
                 style={{
                     width: waveformWidth || undefined,
                     height: WAVEFORM_HEIGHT,
                 }}
+                onMouseDown={handleWaveformMouseDown}
             >
                 {isAudioProcessing && (
                     <div className="absolute inset-0 z-10 flex items-center justify-start pl-4">

@@ -56,6 +56,8 @@ export enum RegisteredActionsEnum {
     lastPage = "lastPage",
     previousPage = "previousPage",
     firstPage = "firstPage",
+    nextBeat = "nextBeat",
+    previousBeat = "previousBeat",
     playPause = "playPause",
     toggleMetronome = "toggleMetronome",
 
@@ -319,6 +321,14 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "q", shift: true }),
         enumString: "firstPage",
     }),
+    nextBeat: new RegisteredAction({
+        descKey: "actions.navigation.nextBeat",
+        enumString: "nextBeat",
+    }),
+    previousBeat: new RegisteredAction({
+        descKey: "actions.navigation.previousBeat",
+        enumString: "previousBeat",
+    }),
     playPause: new RegisteredAction({
         descKey: "actions.playback.playPause",
         toggleOnKey: "actions.playback.play",
@@ -532,8 +542,9 @@ function RegisteredActionsHandler() {
     const selectedPage = selectedPageContext?.selectedPage ?? null;
     const seekTo = selectedPageContext?.seekTo ?? (() => undefined);
     const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { pages } = useTimingObjects()!;
+    const { beats, pages } = useTimingObjects()!;
     const isPlaying = useIsPlaying();
+    const currentBeatIndex = useFrameClockStore.use.currentBeatIndex();
     const triggerPlay = useFrameClockStore.use.play();
     const triggerPause = useFrameClockStore.use.pause();
     const metronomeStore = useMetronomeStore();
@@ -852,6 +863,24 @@ function RegisteredActionsHandler() {
                     if (!databaseReady || !pages || pages.length === 0) break;
                     const firstPage = pages[0];
                     if (firstPage && !isPlaying) seekTo(firstPage);
+                    break;
+                }
+                case RegisteredActionsEnum.nextBeat: {
+                    const nextBeat = beats[currentBeatIndex + 1];
+                    if (nextBeat && !isPlaying) {
+                        const { audioTimeToShowTime, seek } =
+                            useFrameClockStore.getState();
+                        seek(audioTimeToShowTime(nextBeat.timestamp));
+                    }
+                    break;
+                }
+                case RegisteredActionsEnum.previousBeat: {
+                    const previousBeat = beats[currentBeatIndex - 1];
+                    if (previousBeat && !isPlaying) {
+                        const { audioTimeToShowTime, seek } =
+                            useFrameClockStore.getState();
+                        seek(audioTimeToShowTime(previousBeat.timestamp));
+                    }
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {
@@ -1326,8 +1355,10 @@ function RegisteredActionsHandler() {
             uiSettings,
             performHistoryAction,
             databaseReady,
+            beats,
             pages,
             isPlaying,
+            currentBeatIndex,
             seekTo,
             triggerPause,
             triggerPlay,

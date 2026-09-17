@@ -50,6 +50,50 @@ export const beatsDuration = (beats: Beat[]): number =>
     beats.reduce((total, beat) => total + beat.duration, 0);
 
 /**
+ * Finds the zero-based index of the beat containing a show timestamp in milliseconds.
+ * Beat timestamps are measured in seconds, and exact beat boundaries belong to the
+ * beat that starts at that boundary.
+ */
+export const getBeatIndexAtTime = (
+    beats: Beat[],
+    currentTimeMs: number,
+): number => {
+    if (beats.length === 0) return 0;
+
+    const currentTimeSeconds = currentTimeMs / 1000;
+    let currentBeatIndex = 0;
+    for (let index = 1; index < beats.length; index++) {
+        if (beats[index].timestamp <= currentTimeSeconds) {
+            currentBeatIndex = index;
+        } else {
+            break;
+        }
+    }
+    return currentBeatIndex;
+};
+
+/**
+ * Finds the zero-based index of the beat nearest to a show timestamp in seconds.
+ * Ties (the timestamp is exactly equidistant between two beats) resolve to the
+ * earlier (floor) beat.
+ */
+export const getNearestBeatIndex = (
+    beats: Beat[],
+    timeSeconds: number,
+): number => {
+    if (beats.length === 0) return 0;
+
+    const floorIndex = getBeatIndexAtTime(beats, timeSeconds * 1000);
+    const nextBeat = beats[floorIndex + 1];
+    if (!nextBeat) return floorIndex;
+
+    const floorBeat = beats[floorIndex];
+    const distToFloor = timeSeconds - floorBeat.timestamp;
+    const distToNext = nextBeat.timestamp - timeSeconds;
+    return distToNext < distToFloor ? floorIndex + 1 : floorIndex;
+};
+
+/**
  * Converts a DatabaseBeat object to a Beat object.
  * @param beat - The DatabaseBeat object to convert.
  * @param index - The index of the beat in the array of beats in the show.

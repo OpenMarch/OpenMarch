@@ -55,7 +55,9 @@
         "navigation": {
             "firstPage": "Primera página",
             "lastPage": "Última página",
+            "nextBeat": "Siguiente pulso",
             "nextPage": "Página siguiente",
+            "previousBeat": "Pulso anterior",
             "previousPage": "Página anterior"
         },
         "playback": {
