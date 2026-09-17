@@ -9,6 +9,7 @@ lerna-debug.log*
 
 .turbo
 .astro
+storybook-static/
 
 node_modules
 dist
