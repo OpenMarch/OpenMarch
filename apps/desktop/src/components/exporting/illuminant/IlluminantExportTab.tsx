@@ -12,19 +12,25 @@ import {
     SelectContent,
     SelectItem,
     SelectTriggerButton,
+    SegmentedTextSwitch,
 } from "@openmarch/ui";
 import {
     buildIlluminantExportSource,
     checkIlluminantHealth,
+    COLOR_MAPPINGS,
+    DEFAULT_COLOR_MAPPING,
     DEFAULT_SHOW_COLOR,
     exportIlluminantShow,
     getShowColorLabel,
     SHOW_COLOR_HEX,
     SHOW_COLORS,
+    type ColorMapping,
     type ShowColor,
 } from "./illuminantApiExport";
 
 type HealthState = "checking" | "ok" | "error";
+
+const COLOR_MAPPING_STORAGE_KEY = "openmarch-illuminant-color-mapping";
 
 const EXPORT_INSTRUCTIONS = [
     "Choose a Show Color. This will be the color that shows up on your Illuminant light when this show is selected.",
@@ -49,6 +55,17 @@ export default function IlluminantExportTab() {
     const [isExporting, setIsExporting] = useState(false);
     const [showColor, setShowColor] = useState<ShowColor>(DEFAULT_SHOW_COLOR);
     const [title, setTitle] = useState("");
+    const [colorMapping, setColorMapping] = useState<ColorMapping>(() => {
+        const stored = localStorage.getItem(COLOR_MAPPING_STORAGE_KEY);
+        if (stored && COLOR_MAPPINGS.includes(stored as ColorMapping)) {
+            return stored as ColorMapping;
+        }
+        return DEFAULT_COLOR_MAPPING;
+    });
+
+    useEffect(() => {
+        localStorage.setItem(COLOR_MAPPING_STORAGE_KEY, colorMapping);
+    }, [colorMapping]);
 
     useEffect(() => {
         let cancelled = false;
@@ -80,6 +97,7 @@ export default function IlluminantExportTab() {
         try {
             const request = await buildIlluminantExportSource({
                 showColor,
+                colorMapping,
                 title: title.trim() || "Untitled",
             });
             const result = await exportIlluminantShow(request);
@@ -119,7 +137,7 @@ export default function IlluminantExportTab() {
         } finally {
             setIsExporting(false);
         }
-    }, [showColor, title]);
+    }, [showColor, colorMapping, title]);
 
     if (healthState === "checking") {
         return (
@@ -185,6 +203,24 @@ export default function IlluminantExportTab() {
                         ))}
                     </SelectContent>
                 </Select>
+            </div>
+
+            <div className="flex w-full items-center gap-12">
+                <span className="text-body">Color order</span>
+                <SegmentedTextSwitch
+                    options={COLOR_MAPPINGS.map((m) => ({
+                        value: m,
+                        label: m,
+                    }))}
+                    selected={colorMapping}
+                    setSelected={(value) =>
+                        setColorMapping(value as ColorMapping)
+                    }
+                    ariaLabel="LED color order"
+                />
+                <span className="text-body text-text-subtitle">
+                    Use GRB if your strip has swapped red/green
+                </span>
             </div>
 
             <div className="flex w-full justify-end">
