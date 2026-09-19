@@ -1,5 +1,11 @@
 import { PlusIcon } from "@phosphor-icons/react";
-import { type RefObject, useCallback, useMemo, useRef } from "react";
+import {
+    type ReactNode,
+    type RefObject,
+    useCallback,
+    useMemo,
+    useRef,
+} from "react";
 import { TimelineGridCanvas, TimelineWaveformCanvas } from "./TimelineCanvas";
 import {
     clamp,
@@ -23,6 +29,24 @@ import type {
 } from "./TimelineViewModel";
 
 const PANEL_PADDING = 16;
+
+const TimelineLabels = ({
+    items,
+}: {
+    items: readonly { label: ReactNode; top: number }[];
+}) => (
+    <>
+        {items.map(({ label, top }, index) => (
+            <span
+                key={`${top}-${index}`}
+                className="text-sub text-text-subtitle absolute left-0 leading-none"
+                style={{ top }}
+            >
+                {label}
+            </span>
+        ))}
+    </>
+);
 
 const useTimelineZoom = ({
     viewportRef,
@@ -198,14 +222,12 @@ export function SimpleTimeline(props: SimpleTimelineProps) {
                 ) : undefined
             }
             labels={
-                <>
-                    <span className="text-sub text-text-subtitle absolute top-8 left-0">
-                        Pages
-                    </span>
-                    <span className="text-sub text-text-subtitle absolute top-52 left-0">
-                        Audio
-                    </span>
-                </>
+                <TimelineLabels
+                    items={[
+                        { label: "Pages", top: 8 },
+                        { label: "Audio", top: 53 },
+                    ]}
+                />
             }
         >
             <div
@@ -226,7 +248,7 @@ export function SimpleTimeline(props: SimpleTimelineProps) {
                                 data-timeline-interactive="true"
                                 aria-pressed={selectedPageId === page.id}
                                 onClick={() => onPageSelect?.(page.id)}
-                                className="border-stroke bg-fg-2 text-text focus-visible:border-accent h-full border-r px-8 font-mono text-[11px] last:border-r-0 aria-pressed:border-[#967eff]"
+                                className="border-stroke bg-fg-2 text-text focus-visible:ring-accent hover:text-accent h-full border-r px-8 font-mono text-[11px] outline-hidden transition-[color,background-color,box-shadow] duration-150 last:border-r-0 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:shadow-[inset_0_0_0_1px_var(--color-accent)]"
                                 style={{ width }}
                             >
                                 {page.label}
@@ -240,14 +262,14 @@ export function SimpleTimeline(props: SimpleTimelineProps) {
                         data-timeline-interactive="true"
                         aria-label="Add page"
                         onClick={onPageAdd}
-                        className="absolute top-1 flex size-26 items-center justify-center rounded-full bg-[#967eff] text-[#0f0e13]"
+                        className="bg-accent text-text-invert focus-visible:ring-accent absolute top-1 flex size-26 items-center justify-center rounded-full outline-hidden transition-transform duration-150 hover:-translate-y-px focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-px"
                         style={{ left: contentWidth + 8 }}
                     >
                         <PlusIcon size={18} />
                     </button>
                 )}
                 <div
-                    className="absolute top-40 left-0 h-42 overflow-hidden"
+                    className="bg-bg-1/40 rounded-4 absolute top-40 left-0 h-42 overflow-hidden"
                     style={{ width: contentWidth }}
                 >
                     <TimelineWaveformCanvas
@@ -301,6 +323,14 @@ export function ExpandedTimeline(props: TimelineCommonProps) {
                     />
                 ) : undefined
             }
+            labels={
+                <TimelineLabels
+                    items={[
+                        { label: "Tracks", top: rowTop + 8 },
+                        { label: "Audio", top: audioTop + 12 },
+                    ]}
+                />
+            }
         >
             <div
                 {...scrub}
@@ -337,7 +367,7 @@ export function ExpandedTimeline(props: TimelineCommonProps) {
                     )),
                 )}
                 <div
-                    className="absolute left-0 overflow-hidden"
+                    className="bg-bg-1/40 rounded-4 absolute left-0 overflow-hidden"
                     style={{ top: audioTop + 3, width, height: 32 }}
                 >
                     <TimelineWaveformCanvas
@@ -397,6 +427,14 @@ export function CollapsedTimeline(props: TimelineCommonProps) {
                     />
                 ) : undefined
             }
+            labels={
+                <TimelineLabels
+                    items={[
+                        { label: "Tracks", top: trackTop - 1 },
+                        { label: "Audio", top: audioTop + 6 },
+                    ]}
+                />
+            }
         >
             <div
                 {...scrub}
@@ -425,7 +463,7 @@ export function CollapsedTimeline(props: TimelineCommonProps) {
                     )),
                 )}
                 <div
-                    className="rounded-4 absolute left-0 overflow-hidden bg-[#08070d]"
+                    className="bg-bg-1/40 rounded-4 absolute left-0 overflow-hidden"
                     style={{ top: audioTop, width, height: 22 }}
                 >
                     <TimelineWaveformCanvas
@@ -497,6 +535,14 @@ export function InspectorTimeline(props: InspectorTimelineProps) {
                     />
                 ) : undefined
             }
+            labels={
+                <TimelineLabels
+                    items={[
+                        { label: track?.label ?? "Track", top: trackTop + 7 },
+                        { label: "Audio", top: audioTop + 6 },
+                    ]}
+                />
+            }
         >
             <div
                 {...scrub}
@@ -523,7 +569,7 @@ export function InspectorTimeline(props: InspectorTimelineProps) {
                     />
                 )}
                 <div
-                    className="rounded-4 absolute left-0 overflow-hidden bg-[#08070d]"
+                    className="bg-bg-1/40 rounded-4 absolute left-0 overflow-hidden"
                     style={{ top: audioTop, width, height: 22 }}
                 >
                     <TimelineWaveformCanvas

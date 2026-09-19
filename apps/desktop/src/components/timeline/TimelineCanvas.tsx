@@ -83,10 +83,20 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
         if (!prepared) return;
         const { context } = prepared;
         const pagePositions = new Set(pages.map((page) => page.atBeat));
+        const stroke = colorFromTheme(
+            canvas,
+            "--color-stroke",
+            "rgba(255, 255, 255, 0.06)",
+        );
+        const text = colorFromTheme(
+            canvas,
+            "--color-text",
+            "rgb(208, 208, 208)",
+        );
 
         context.lineWidth = 1;
         if (showMeasureLines) {
-            context.strokeStyle = "rgba(255, 255, 255, 0.06)";
+            context.strokeStyle = stroke;
             for (const measure of measures) {
                 if (pagePositions.has(measure.atBeat)) continue;
                 const x = Math.round(
@@ -100,7 +110,8 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
             }
         }
 
-        context.strokeStyle = "rgba(255, 255, 255, 0.18)";
+        context.strokeStyle = text;
+        context.globalAlpha = 0.18;
         for (const page of pages) {
             const x = Math.round(
                 beatToX(page.atBeat, pixelsPerBeat, startBeat),
@@ -112,8 +123,11 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
             context.stroke();
         }
 
-        if (!showBeatTicks) return;
-        context.strokeStyle = "rgba(255, 255, 255, 0.18)";
+        if (!showBeatTicks) {
+            context.globalAlpha = 1;
+            return;
+        }
+        context.globalAlpha = 0.22;
         const firstBeat = Math.ceil(startBeat);
         const lastBeat = Math.floor(startBeat + width / pixelsPerBeat);
         for (let beat = firstBeat; beat <= lastBeat; beat++) {
@@ -125,6 +139,7 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
             context.lineTo(x + 0.5, bottomTickY);
             context.stroke();
         }
+        context.globalAlpha = 1;
     }, [
         bottomTickY,
         height,
@@ -178,7 +193,11 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
         if (!prepared) return;
         const { context } = prepared;
         const accent = colorFromTheme(canvas, "--color-accent", "#967eff");
-        const inactive = "rgba(208, 208, 208, 0.72)";
+        const inactive = colorFromTheme(
+            canvas,
+            "--color-text-subtitle",
+            "rgba(208, 208, 208, 0.6)",
+        );
         const centerY = height / 2;
         const firstBeat = Math.max(0, Math.floor(startBeat));
         const endBeat = startBeat + width / pixelsPerBeat;
@@ -188,6 +207,13 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
         );
 
         context.lineWidth = 1;
+        context.strokeStyle = inactive;
+        context.globalAlpha = 0.2;
+        context.beginPath();
+        context.moveTo(0, Math.round(centerY) + 0.5);
+        context.lineTo(width, Math.round(centerY) + 0.5);
+        context.stroke();
+        context.globalAlpha = 1;
         for (let beat = firstBeat; beat < lastBeat; beat++) {
             const peaks = waveform.peaksByBeat[beat];
             if (!peaks || peaks.length === 0) continue;

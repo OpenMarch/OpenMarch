@@ -68,6 +68,27 @@ export const beatToX = (
     startBeat = 0,
 ) => (beat - startBeat) * pixelsPerBeat;
 
+/**
+ * Keeps ruler labels readable at low zoom levels without removing their grid
+ * lines. The first in-range marker is always retained so the ruler still has a
+ * clear local origin.
+ */
+export const filterMarkersByMinimumSpacing = (
+    markers: readonly TimelineMarker[],
+    pixelsPerBeat: number,
+    minimumSpacingPx = 32,
+) => {
+    const ordered = [...markers].sort((a, b) => a.atBeat - b.atBeat);
+    let lastVisibleX = Number.NEGATIVE_INFINITY;
+
+    return ordered.filter((marker) => {
+        const markerX = marker.atBeat * pixelsPerBeat;
+        if (markerX - lastVisibleX < minimumSpacingPx) return false;
+        lastVisibleX = markerX;
+        return true;
+    });
+};
+
 export const clientXToNearestBeat = ({
     clientX,
     surfaceLeft,

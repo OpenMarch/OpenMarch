@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import clsx from "clsx";
 import { useEffect, useState } from "react";
+import { expect, userEvent } from "storybook/test";
 import {
     CollapsedTimeline,
     ExpandedTimeline,
@@ -13,6 +15,7 @@ import {
 import type { TimelineViewModel } from "./TimelineViewModel";
 
 type StoryMode = "simple" | "expanded" | "collapsed" | "inspector";
+type StoryTheme = "dark" | "light";
 
 interface TimelineStoryProps {
     mode: StoryMode;
@@ -23,6 +26,7 @@ interface TimelineStoryProps {
     showTransport: boolean;
     focusedTrackId: string;
     width: number;
+    theme: StoryTheme;
 }
 
 function TimelineStory({
@@ -34,6 +38,7 @@ function TimelineStory({
     showTransport,
     focusedTrackId,
     width,
+    theme,
 }: TimelineStoryProps) {
     const [positionBeat, setPositionBeat] = useState(initialPositionBeat);
     const [pixelsPerBeat, setPixelsPerBeat] = useState(initialPixelsPerBeat);
@@ -64,7 +69,10 @@ function TimelineStory({
 
     return (
         <div
-            className="dark flex min-h-screen items-center bg-[#17161b] p-24"
+            className={clsx(
+                "bg-bg-1 text-text flex min-h-screen items-center p-24",
+                theme === "dark" && "dark",
+            )}
             style={{ width: "100%" }}
         >
             <div style={{ width, maxWidth: "100%" }}>
@@ -118,6 +126,10 @@ const meta = {
         width: {
             control: { type: "range", min: 500, max: 1536, step: 16 },
         },
+        theme: {
+            control: "inline-radio",
+            options: ["dark", "light"],
+        },
     },
     args: {
         model: timelineStoryModel,
@@ -127,10 +139,11 @@ const meta = {
         showTransport: true,
         focusedTrackId: "shape",
         width: 1280,
+        theme: "dark",
     },
     render: (args) => (
         <TimelineStory
-            key={`${args.mode}-${args.initialPositionBeat}-${args.initialPixelsPerBeat}-${args.initialIsPlaying}-${args.showTransport}-${args.focusedTrackId}-${args.width}`}
+            key={`${args.mode}-${args.initialPositionBeat}-${args.initialPixelsPerBeat}-${args.initialIsPlaying}-${args.showTransport}-${args.focusedTrackId}-${args.width}-${args.theme}`}
             {...args}
         />
     ),
@@ -141,10 +154,29 @@ type Story = StoryObj<typeof meta>;
 
 export const Simple: Story = {
     args: { mode: "simple", showTransport: true },
+    play: async ({ canvas }) => {
+        const page = canvas.getByRole("button", { name: "2" });
+        await userEvent.click(page);
+        await expect(page).toHaveAttribute("aria-pressed", "true");
+    },
 };
 
 export const Expanded: Story = {
     args: { mode: "expanded", showTransport: true },
+    play: async ({ canvas }) => {
+        const track = canvas.getByLabelText(/SH timeline/);
+        await userEvent.click(track);
+        await expect(track).toHaveAttribute("aria-pressed", "true");
+
+        await userEvent.click(canvas.getByRole("button", { name: "Play" }));
+        await expect(
+            canvas.getByRole("button", { name: "Pause" }),
+        ).toBeInTheDocument();
+        await userEvent.click(canvas.getByRole("button", { name: "Pause" }));
+        await expect(
+            canvas.getByRole("button", { name: "Play" }),
+        ).toBeInTheDocument();
+    },
 };
 
 export const Collapsed: Story = {
@@ -166,5 +198,42 @@ export const LongShowPerformance: Story = {
         initialPixelsPerBeat: 8,
         initialPositionBeat: 120,
         width: 1400,
+    },
+};
+
+export const SimpleLight: Story = {
+    name: "Simple · Light",
+    args: { mode: "simple", showTransport: true, theme: "light" },
+};
+
+export const ExpandedLight: Story = {
+    name: "Expanded · Light",
+    args: { mode: "expanded", showTransport: true, theme: "light" },
+};
+
+export const CollapsedLight: Story = {
+    name: "Collapsed · Light",
+    args: { mode: "collapsed", showTransport: false, theme: "light" },
+};
+
+export const InspectorLight: Story = {
+    name: "Inspector · Light",
+    args: {
+        mode: "inspector",
+        showTransport: false,
+        focusedTrackId: "shape",
+        theme: "light",
+    },
+};
+
+export const LongShowPerformanceLight: Story = {
+    name: "Long Show Performance · Light",
+    args: {
+        mode: "expanded",
+        model: createLongTimelineStoryModel(),
+        initialPixelsPerBeat: 8,
+        initialPositionBeat: 120,
+        width: 1400,
+        theme: "light",
     },
 };

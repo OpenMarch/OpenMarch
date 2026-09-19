@@ -22,6 +22,7 @@ import {
 import {
     beatToX,
     clientXToNearestBeat,
+    filterMarkersByMinimumSpacing,
     getPlayheadLabel,
     getTrackRange,
 } from "./TimelineGeometry";
@@ -42,18 +43,24 @@ const TransportButton = ({
     label,
     children,
     onClick,
+    pressed,
 }: {
     label: string;
     children: ReactNode;
     onClick?: () => void;
+    pressed?: boolean;
 }) => (
     <button
         type="button"
         aria-label={label}
+        aria-pressed={pressed}
         title={label}
         onClick={onClick}
         disabled={!onClick}
-        className="text-text hover:text-accent focus-visible:ring-accent rounded-4 flex size-24 items-center justify-center transition-colors focus-visible:ring-2 disabled:opacity-35"
+        className={clsx(
+            "focus-visible:ring-accent rounded-4 enabled:hover:text-accent enabled:hover:bg-fg-2 flex size-24 items-center justify-center outline-hidden transition-[color,background-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent enabled:active:translate-y-px disabled:cursor-not-allowed disabled:opacity-30",
+            pressed ? "text-accent" : "text-text",
+        )}
     >
         {children}
     </button>
@@ -77,9 +84,11 @@ export function TimelineTransport({
     showZoom?: boolean;
 }) {
     return (
-        <aside className="border-stroke bg-fg-1 rounded-6 flex w-[200px] shrink-0 flex-col justify-center gap-16 border px-16 py-12">
-            <span className="text-body text-text-subtitle">Timeline</span>
-            <div className="flex items-center justify-between gap-8">
+        <aside className="border-stroke bg-fg-1 rounded-6 flex w-[200px] shrink-0 flex-col justify-center gap-12 border px-16 py-12">
+            <span className="text-body text-text-subtitle leading-none">
+                Timeline
+            </span>
+            <div className="flex items-center justify-between gap-6">
                 <TransportButton
                     label="First page"
                     onClick={
@@ -100,6 +109,7 @@ export function TimelineTransport({
                 </TransportButton>
                 <TransportButton
                     label={isPlaying ? "Pause" : "Play"}
+                    pressed={isPlaying}
                     onClick={
                         onPlayingChange
                             ? () => onPlayingChange(!isPlaying)
@@ -107,9 +117,9 @@ export function TimelineTransport({
                     }
                 >
                     {isPlaying ? (
-                        <PauseIcon size={22} weight="fill" />
+                        <PauseIcon size={24} weight="fill" />
                     ) : (
-                        <PlayIcon size={22} />
+                        <PlayIcon size={24} />
                     )}
                 </TransportButton>
                 <TransportButton
@@ -130,15 +140,15 @@ export function TimelineTransport({
                 </TransportButton>
             </div>
             {showZoom && (
-                <div className="flex items-center gap-16">
+                <div className="border-stroke flex items-center gap-12 border-t pt-8">
                     <TransportButton label="Zoom out" onClick={onZoomOut}>
-                        <MagnifyingGlassMinusIcon size={21} />
+                        <MagnifyingGlassMinusIcon size={20} />
                     </TransportButton>
                     <TransportButton label="Zoom in" onClick={onZoomIn}>
-                        <MagnifyingGlassPlusIcon size={21} />
+                        <MagnifyingGlassPlusIcon size={20} />
                     </TransportButton>
                     <TransportButton label="Fit timeline" onClick={onFit}>
-                        <CornersOutIcon size={21} />
+                        <CornersOutIcon size={20} />
                     </TransportButton>
                 </div>
             )}
@@ -163,7 +173,7 @@ export const TimelineShell = ({
 }) => (
     <div className={clsx("flex min-w-0 gap-8 font-sans", className)}>
         {transport}
-        <section className="border-stroke bg-bg-1 rounded-6 flex min-w-0 flex-1 border p-8 text-[#cccccc]">
+        <section className="border-stroke bg-fg-1 text-text rounded-6 flex min-w-0 flex-1 border p-8">
             <div className="relative w-[50px] shrink-0">{labels}</div>
             <div className="w-[6px] shrink-0" />
             <div
@@ -197,6 +207,10 @@ export const TimelineRuler = ({
 }) => {
     const inRange = (marker: TimelineMarker) =>
         marker.atBeat >= startBeat && marker.atBeat <= endBeat;
+    const visibleMeasures = filterMarkersByMinimumSpacing(
+        measures.filter(inRange),
+        pixelsPerBeat,
+    );
     return (
         <div className="pointer-events-none absolute inset-x-0 top-28 h-28 font-mono">
             {pages.filter(inRange).map((page) => (
@@ -212,12 +226,12 @@ export const TimelineRuler = ({
                     }}
                 >
                     {compact && (
-                        <span className="mr-2 inline-block size-0 border-r-[3px] border-b-[5px] border-l-[3px] border-r-transparent border-b-[#cccccc] border-l-transparent" />
+                        <span className="text-text-subtitle mr-2 inline-block size-0 border-r-[3px] border-b-[5px] border-l-[3px] border-r-transparent border-b-current border-l-transparent" />
                     )}
                     {page.label}
                 </span>
             ))}
-            {measures.filter(inRange).map((measure) => (
+            {visibleMeasures.map((measure) => (
                 <span
                     key={measure.id}
                     className={clsx(
@@ -272,7 +286,7 @@ export const TimelineTrackClip = ({
             title={track.label}
             onClick={() => onSelect?.(track.id)}
             className={clsx(
-                "absolute overflow-visible text-[9px] font-medium text-[#0f0e13] focus-visible:ring-2 focus-visible:ring-[#967eff]",
+                "group focus-visible:ring-accent absolute overflow-visible text-[9px] font-medium outline-hidden transition-[filter,box-shadow] duration-150 focus-visible:ring-2 enabled:hover:brightness-110",
                 micro ? "rounded-full" : "rounded-6",
             )}
             style={{
@@ -280,7 +294,9 @@ export const TimelineTrackClip = ({
                 top,
                 width,
                 height,
-                boxShadow: selected ? "0 0 0 2px #967eff" : undefined,
+                boxShadow: selected
+                    ? "0 0 0 2px var(--color-accent)"
+                    : undefined,
             }}
         >
             {track.legs.map((leg) => (
@@ -294,8 +310,8 @@ export const TimelineTrackClip = ({
                         width: (leg.endBeat - leg.startBeat) * pixelsPerBeat,
                         backgroundColor:
                             leg.texture === "hold"
-                                ? `color-mix(in srgb, ${track.color} 22%, transparent)`
-                                : track.color,
+                                ? `color-mix(in srgb, ${track.color} 20%, transparent)`
+                                : `color-mix(in srgb, ${track.color} 86%, var(--color-bg-1))`,
                         borderColor: track.color,
                         borderRadius: micro ? 999 : 5,
                     }}
@@ -303,7 +319,9 @@ export const TimelineTrackClip = ({
             ))}
             {!micro && (
                 <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    {track.label}
+                    <span className="bg-bg-1/75 text-text rounded-4 px-4 py-1 font-mono leading-none shadow-sm">
+                        {track.label}
+                    </span>
                 </span>
             )}
             {!micro &&
@@ -311,7 +329,7 @@ export const TimelineTrackClip = ({
                     <span
                         key={beat}
                         aria-hidden="true"
-                        className="absolute top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rotate-45 border border-[#0f0e13]"
+                        className="border-bg-1 absolute top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rotate-45 border"
                         style={{
                             left: (beat - range.startBeat) * pixelsPerBeat,
                             backgroundColor: track.color,
@@ -342,11 +360,11 @@ export const TimelinePlayhead = ({
             className="pointer-events-none absolute top-0 z-30 w-0"
             style={{ left, height }}
         >
-            <span className="rounded-4 absolute top-0 left-0 -translate-x-1/2 bg-[#967eff] px-5 py-2 font-mono text-[9px] leading-none whitespace-nowrap text-[#0f0e13]">
+            <span className="rounded-4 bg-accent text-text-invert absolute top-0 left-0 -translate-x-1/2 px-5 py-2 font-mono text-[9px] leading-none whitespace-nowrap shadow-sm">
                 {getPlayheadLabel(model, positionBeat)}
             </span>
-            <span className="absolute top-14 left-0 size-0 -translate-x-1/2 border-t-[6px] border-r-[4px] border-l-[4px] border-t-[#967eff] border-r-transparent border-l-transparent" />
-            <span className="absolute top-20 bottom-0 left-0 w-px bg-[#967eff]" />
+            <span className="border-t-accent absolute top-14 left-0 size-0 -translate-x-1/2 border-t-[6px] border-r-[4px] border-l-[4px] border-r-transparent border-l-transparent" />
+            <span className="bg-accent absolute top-20 bottom-0 left-0 w-px" />
         </div>
     );
 };

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     clientXToNearestBeat,
+    filterMarkersByMinimumSpacing,
     getInspectorRange,
     getPlayheadLabel,
     packTimelineTracks,
@@ -40,6 +41,16 @@ describe("timeline geometry", () => {
                 beatCount: 32,
             }),
         ).toBe(4);
+    });
+
+    it("thins ruler labels at low zoom while retaining the local origin", () => {
+        expect(
+            filterMarkersByMinimumSpacing(
+                timelineStoryModel.measures,
+                4,
+                32,
+            ).map((marker) => marker.id),
+        ).toEqual(["measure-1", "measure-3", "measure-5", "measure-7"]);
     });
 
     it("formats the playhead from current page, measure, and count", () => {
