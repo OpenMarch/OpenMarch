@@ -1,0 +1,10 @@
+# Keep tool attribution out of commit messages.
+# See the "Repository communication" section of AGENTS.md.
+
+if grep -qiE '^[[:space:]]*co-authored-by:[[:space:]]*.*(claude|codex|copilot|openai|anthropic|chatgpt)' "$1" ||
+	grep -qiE 'generated with \[claude code\]|made with (chatgpt|codex|claude)' "$1"; then
+	echo "❌ This commit message credits a tool as an author or co-author."
+	echo "   OpenMarch commits name only the human author — see AGENTS.md."
+	echo "   Remove the offending line and commit again."
+	exit 1
+fi
