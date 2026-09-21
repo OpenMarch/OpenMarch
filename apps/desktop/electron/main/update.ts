@@ -1,8 +1,33 @@
-import electronUpdater from "electron-updater";
+import { autoUpdater } from "electron-updater";
 
 export function getAutoUpdater() {
-    // Using destructuring to access autoUpdater due to the CommonJS module of 'electron-updater'.
-    // It is a workaround for ESM compatibility issues, see https://github.com/electron-userland/electron-builder/issues/7976.
-    const { autoUpdater } = electronUpdater;
     return autoUpdater;
+}
+
+export function automaticUpdatesAreEnabled(value: unknown): boolean {
+    return value !== false;
+}
+
+export async function startAutomaticUpdates({
+    isPackaged,
+    automaticUpdatesEnabled,
+    isSnap = false,
+}: {
+    isPackaged: boolean;
+    automaticUpdatesEnabled: boolean;
+    isSnap?: boolean;
+}) {
+    if (!isPackaged || !automaticUpdatesEnabled || isSnap) return;
+
+    const autoUpdater = getAutoUpdater();
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on("error", (error) => {
+        console.error("Unable to automatically update OpenMarch:", error);
+    });
+    try {
+        await autoUpdater.checkForUpdates();
+    } catch (error) {
+        console.error("Unable to check for automatic updates:", error);
+    }
 }

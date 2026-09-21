@@ -30,7 +30,7 @@ import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
-import { getAutoUpdater } from "./update";
+import { automaticUpdatesAreEnabled, startAutomaticUpdates } from "./update";
 import { repairDatabase } from "../database/repair";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
@@ -277,9 +277,13 @@ async function createWindow(title?: string) {
         menu.popup({ window: win! });
     });
 
-    // Apply electron-updater
-    const autoUpdater = getAutoUpdater();
-    await autoUpdater.checkForUpdatesAndNotify();
+    void startAutomaticUpdates({
+        isPackaged: app.isPackaged,
+        automaticUpdatesEnabled: automaticUpdatesAreEnabled(
+            store.get("automaticUpdates"),
+        ),
+        isSnap: Boolean(process.env.SNAP),
+    });
 }
 
 function resolveStartupDatabasePath(): string {
