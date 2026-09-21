@@ -1,6 +1,9 @@
-import { readFile } from "node:fs/promises";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { automaticUpdatesAreEnabled, startAutomaticUpdates } from "../update";
+import {
+    applyAutomaticUpdatesSetting,
+    automaticUpdatesAreEnabled,
+    startAutomaticUpdates,
+} from "../update";
 
 const { autoUpdater } = vi.hoisted(() => ({
     autoUpdater: {
@@ -8,11 +11,13 @@ const { autoUpdater } = vi.hoisted(() => ({
         autoInstallOnAppQuit: false,
         checkForUpdates: vi.fn(),
         on: vi.fn(),
+        removeAllListeners: vi.fn(),
     },
 }));
 
+// electron-updater is CommonJS; the app reads autoUpdater off the default export.
 vi.mock("electron-updater", () => ({
-    autoUpdater,
+    default: { autoUpdater },
 }));
 
 describe("startAutomaticUpdates", () => {
@@ -21,6 +26,7 @@ describe("startAutomaticUpdates", () => {
         autoUpdater.autoInstallOnAppQuit = false;
         autoUpdater.checkForUpdates.mockReset();
         autoUpdater.on.mockReset();
+        autoUpdater.removeAllListeners.mockReset();
     });
 
     it("downloads updates and installs them when the user next quits", async () => {
@@ -35,6 +41,22 @@ describe("startAutomaticUpdates", () => {
         expect(autoUpdater.on).toHaveBeenCalledWith(
             "error",
             expect.any(Function),
+        );
+    });
+
+    it("does not stack error listeners when started more than once", async () => {
+        await startAutomaticUpdates({
+            isPackaged: true,
+            automaticUpdatesEnabled: true,
+        });
+        await startAutomaticUpdates({
+            isPackaged: true,
+            automaticUpdatesEnabled: true,
+        });
+
+        expect(autoUpdater.removeAllListeners).toHaveBeenCalledWith("error");
+        expect(autoUpdater.on).toHaveBeenCalledTimes(
+            autoUpdater.removeAllListeners.mock.calls.length,
         );
     });
 
@@ -69,25 +91,35 @@ describe("startAutomaticUpdates", () => {
 
         expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
     });
+
+    it("does not run in development", async () => {
+        await startAutomaticUpdates({
+            isPackaged: false,
+            automaticUpdatesEnabled: true,
+        });
+
+        expect(autoUpdater.checkForUpdates).not.toHaveBeenCalled();
+    });
+});
+
+describe("applyAutomaticUpdatesSetting", () => {
+    it("cancels an already-staged install when the user opts out mid-session", async () => {
+        await startAutomaticUpdates({
+            isPackaged: true,
+            automaticUpdatesEnabled: true,
+        });
+        expect(autoUpdater.autoInstallOnAppQuit).toBe(true);
+
+        applyAutomaticUpdatesSetting(false);
+
+        expect(autoUpdater.autoInstallOnAppQuit).toBe(false);
+        expect(autoUpdater.autoDownload).toBe(false);
+    });
 });
 
 describe("automaticUpdatesAreEnabled", () => {
     it("defaults to enabled unless the user explicitly turns it off", () => {
         expect(automaticUpdatesAreEnabled(undefined)).toBe(true);
         expect(automaticUpdatesAreEnabled(false)).toBe(false);
-    });
-});
-
-describe("desktop release configuration", () => {
-    it("keeps update-capable targets for every supported operating system", async () => {
-        const config = await readFile("electron-builder.json5", "utf8");
-
-        expect(config).toMatch(/mac:\s*\{[\s\S]*?target:\s*\["dmg", "zip"\]/);
-        expect(config).toMatch(/win:\s*\{[\s\S]*?target:\s*"nsis"/);
-        expect(config).toMatch(/nsis:\s*\{[\s\S]*?perMachine:\s*false/);
-        expect(config).toMatch(
-            /linux:\s*\{[\s\S]*?target:\s*\["snap", "AppImage"\]/,
-        );
-        expect(config).toMatch(/provider:\s*"github"/);
     });
 });

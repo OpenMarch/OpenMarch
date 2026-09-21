@@ -30,7 +30,11 @@ import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
-import { automaticUpdatesAreEnabled, startAutomaticUpdates } from "./update";
+import {
+    applyAutomaticUpdatesSetting,
+    automaticUpdatesAreEnabled,
+    startAutomaticUpdates,
+} from "./update";
 import { repairDatabase } from "../database/repair";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
@@ -81,6 +85,20 @@ init({
 ipcMain.on("settings:set", (_, settings) => {
     for (const [key, value] of Object.entries(settings)) {
         store.set(key, value);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(settings, "automaticUpdates")) {
+        const enabled = automaticUpdatesAreEnabled(settings.automaticUpdates);
+        if (app.isPackaged && !process.env.SNAP) {
+            // Applies immediately so opting out also cancels an already-staged install.
+            applyAutomaticUpdatesSetting(enabled);
+            if (enabled) {
+                void startAutomaticUpdates({
+                    isPackaged: true,
+                    automaticUpdatesEnabled: true,
+                });
+            }
+        }
     }
 });
 
@@ -276,14 +294,6 @@ async function createWindow(title?: string) {
         const menu = Menu.buildFromTemplate(template);
         menu.popup({ window: win! });
     });
-
-    void startAutomaticUpdates({
-        isPackaged: app.isPackaged,
-        automaticUpdatesEnabled: automaticUpdatesAreEnabled(
-            store.get("automaticUpdates"),
-        ),
-        isSnap: Boolean(process.env.SNAP),
-    });
 }
 
 function resolveStartupDatabasePath(): string {
@@ -424,6 +434,14 @@ void app.whenReady().then(async () => {
     initGetters();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
+
+    void startAutomaticUpdates({
+        isPackaged: app.isPackaged,
+        automaticUpdatesEnabled: automaticUpdatesAreEnabled(
+            store.get("automaticUpdates"),
+        ),
+        isSnap: Boolean(process.env.SNAP),
+    });
 });
 
 function initGetters() {
