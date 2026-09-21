@@ -19,7 +19,7 @@ Please update the website's dev docs if you're updating anything important
 apps/website/src/content/docs/developers
 -->
 
-We are using a monorepo with Turbo, pnpm, and Node.js 22. Here are the main commands you need to know:
+We use a monorepo with Turbo, pnpm 10.11.0, and Node.js 24. The main commands are:
 
 ```bash
 # Install packages
