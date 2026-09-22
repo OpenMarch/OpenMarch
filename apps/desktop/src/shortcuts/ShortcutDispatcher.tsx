@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { readShortcutContext } from "./context";
 import {
@@ -9,17 +10,17 @@ import {
 } from "./keymap";
 import { isActionEnabled, runAction } from "./registry";
 
-const NO_OVERRIDES: ShortcutOverrides = {};
-
-/** The single keydown listener for all app shortcuts. Mount once. */
+/** The single keydown listener for all app shortcuts. Mount once. Uses the saved overrides unless given some. */
 export default function ShortcutDispatcher({
-    overrides = NO_OVERRIDES,
+    overrides,
 }: {
     overrides?: ShortcutOverrides;
 }) {
+    const savedOverrides = useShortcutOverridesStore((s) => s.overrides);
+    const activeOverrides = overrides ?? savedOverrides;
     const compiled = useMemo(
-        () => compileKeymap(buildKeymap(overrides)),
-        [overrides],
+        () => compileKeymap(buildKeymap(activeOverrides)),
+        [activeOverrides],
     );
 
     useEffect(() => {

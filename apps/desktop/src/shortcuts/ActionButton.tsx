@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import clsx from "clsx";
 import { useTolgee } from "@tolgee/react";
 import { twMerge } from "tailwind-merge";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import type { ActionId } from "./definitions";
 import { getActionTooltip } from "./labels";
 import {
@@ -35,6 +36,7 @@ export default function ActionButton({
     ...rest
 }: ActionButtonProps) {
     const { t } = useTolgee();
+    const overrides = useShortcutOverridesStore((s) => s.overrides);
     const runnable = useSyncExternalStore(subscribeToActionHandlers, () =>
         isActionEnabled(action),
     );
@@ -48,7 +50,7 @@ export default function ActionButton({
                 getActionTooltip(
                     action,
                     (key, params) => t(key, params as never),
-                    { toggleState },
+                    { toggleState, overrides },
                 )
             }
             onClick={() => runAction(action)}

@@ -84,6 +84,50 @@ export function canonicalBinding(binding: string): string {
     return [...modifiers, key].join("+");
 }
 
+const MODIFIER_KEY_NAMES = new Set([
+    "Shift",
+    "Control",
+    "Alt",
+    "AltGraph",
+    "Meta",
+    "OS",
+    "Fn",
+    "CapsLock",
+]);
+
+type KeyPress = Pick<
+    KeyboardEvent,
+    "key" | "code" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey"
+>;
+
+function keyFromEvent({ key, code }: KeyPress): string {
+    const letter = /^Key([A-Z])$/.exec(code);
+    if (letter) return letter[1];
+    const digit = /^(?:Digit|Numpad)(\d)$/.exec(code);
+    if (digit) return digit[1];
+    if (code === "Space" || key === " ") return "Space";
+    // Punctuation uses event.code ("Slash", "Equal"): event.key varies by layout and "+" is the separator.
+    if (key.length === 1) return code;
+    return key;
+}
+
+/**
+ * Turns a key press into a portable binding string, or undefined for a bare modifier press.
+ * Cmd on macOS and Ctrl elsewhere are recorded as `$mod`.
+ */
+export function bindingFromEvent(
+    event: KeyPress,
+    isMac: boolean,
+): string | undefined {
+    if (MODIFIER_KEY_NAMES.has(event.key) || !event.code) return undefined;
+    const modifiers: string[] = [];
+    if (event.ctrlKey) modifiers.push(isMac ? "Control" : "$mod");
+    if (event.metaKey) modifiers.push(isMac ? "$mod" : "Meta");
+    if (event.altKey) modifiers.push("Alt");
+    if (event.shiftKey) modifiers.push("Shift");
+    return canonicalBinding([...modifiers, keyFromEvent(event)].join("+"));
+}
+
 /** Canonical binding with `$mod` resolved to the platform's modifier, so equal key presses compare equal. */
 export function platformBinding(binding: string, isMac: boolean): string {
     const { modifiers, key } = parseBinding(binding);

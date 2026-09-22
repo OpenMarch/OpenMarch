@@ -1,5 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { act } from "@testing-library/react";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import ShortcutDispatcher from "../ShortcutDispatcher";
 import { registerActionHandler } from "../registry";
@@ -101,6 +103,21 @@ describe("ShortcutDispatcher", () => {
         render(<ShortcutDispatcher />);
         fireEvent.keyDown(window, { key: "z", code: "KeyZ", ctrlKey: true });
         expect(undo).toHaveBeenCalledTimes(1);
+    });
+
+    it("uses saved overrides and picks up changes", () => {
+        const run = handle("nextPage");
+        render(<ShortcutDispatcher />);
+        act(() => {
+            useShortcutOverridesStore.getState().addBinding("nextPage", "K");
+        });
+        fireEvent.keyDown(window, { key: "k", code: "KeyK" });
+        expect(run).toHaveBeenCalledTimes(1);
+        act(() => {
+            useShortcutOverridesStore.getState().resetAll();
+        });
+        fireEvent.keyDown(window, { key: "k", code: "KeyK" });
+        expect(run).toHaveBeenCalledTimes(1);
     });
 
     it("honors overrides", () => {

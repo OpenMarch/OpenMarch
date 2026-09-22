@@ -3,10 +3,15 @@ import type { ActionDefinition, ActionId } from "../definitions";
 import {
     buildKeymap,
     compileKeymap,
+    findBindingOwners,
     findConflicts,
+    getDisplayBindings,
     getEffectiveBindings,
+    normalizeOverrides,
     pickAction,
     resolveKeyEvent,
+    withBinding,
+    withoutBinding,
     type ShortcutContext,
 } from "../keymap";
 
@@ -101,6 +106,65 @@ describe("pickAction", () => {
             pickAction(e, canvas, (id: ActionId) => id !== ("a" as ActionId))
                 ?.id,
         ).toBe("d");
+    });
+});
+
+describe("customizing", () => {
+    it("normalizeOverrides keeps only real changes", () => {
+        expect(
+            normalizeOverrides({
+                nextPage: ["E"],
+                previousPage: ["K", "not+a+++binding"],
+                notAnAction: ["X"],
+                lockX: "Y",
+            }),
+        ).toEqual({ previousPage: ["K"] });
+    });
+
+    it("adds, removes and reassigns bindings", () => {
+        let overrides = withBinding({}, "nextPage", "K", false);
+        expect(overrides).toEqual({ nextPage: ["E", "K"] });
+        expect(withBinding(overrides, "nextPage", "k", false)).toBe(overrides);
+
+        overrides = withoutBinding(overrides, "nextPage", "K", false);
+        expect(overrides).toEqual({});
+
+        expect(findBindingOwners("nextPage", "Q", {}, false)).toEqual([
+            "previousPage",
+        ]);
+        overrides = withBinding({}, "nextPage", "Q", false, ["previousPage"]);
+        expect(overrides).toEqual({ nextPage: ["E", "Q"], previousPage: [] });
+    });
+
+    it("finds owners across $mod and Control off macOS only", () => {
+        expect(
+            findBindingOwners("flipHorizontal", "Control+Z", {}, false),
+        ).toEqual(["performUndo"]);
+        expect(
+            findBindingOwners("flipHorizontal", "Control+Z", {}, true),
+        ).toEqual(["performUndo"]);
+        expect(
+            findBindingOwners("flipHorizontal", "Meta+Z", {}, false),
+        ).toEqual([]);
+    });
+
+    it("ignores bindings in a non-overlapping scope", () => {
+        expect(
+            findBindingOwners("timelinePlayPause", "Space", {}, false),
+        ).toEqual([]);
+    });
+
+    it("removing Ctrl+Z off macOS drops both $mod and Control variants", () => {
+        expect(withoutBinding({}, "performUndo", "Control+Z", false)).toEqual({
+            performUndo: [],
+        });
+        expect(getDisplayBindings("performUndo", {}, false)).toEqual([
+            "$mod+Z",
+        ]);
+        expect(getDisplayBindings("performUndo", {}, true)).toEqual([
+            "$mod+Z",
+            "Control+Z",
+        ]);
     });
 });
 

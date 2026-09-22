@@ -5,7 +5,67 @@ import {
     formatBinding,
     parseBinding,
     toTinykeys,
+    bindingFromEvent,
 } from "../bindings";
+
+describe("bindingFromEvent", () => {
+    const press = (init: KeyboardEventInit) =>
+        new KeyboardEvent("keydown", init);
+
+    it("records the platform command key as $mod", () => {
+        expect(
+            bindingFromEvent(
+                press({ key: "k", code: "KeyK", metaKey: true }),
+                true,
+            ),
+        ).toBe("$mod+K");
+        expect(
+            bindingFromEvent(
+                press({ key: "k", code: "KeyK", ctrlKey: true }),
+                false,
+            ),
+        ).toBe("$mod+K");
+        expect(
+            bindingFromEvent(
+                press({ key: "k", code: "KeyK", ctrlKey: true }),
+                true,
+            ),
+        ).toBe("Control+K");
+    });
+
+    it("uses physical keys for letters, digits and punctuation", () => {
+        expect(
+            bindingFromEvent(
+                press({ key: "å", code: "KeyA", altKey: true }),
+                true,
+            ),
+        ).toBe("Alt+A");
+        expect(
+            bindingFromEvent(press({ key: "1", code: "Numpad1" }), false),
+        ).toBe("1");
+        expect(
+            bindingFromEvent(press({ key: "/", code: "Slash" }), false),
+        ).toBe("Slash");
+        expect(
+            bindingFromEvent(
+                press({ key: "ArrowUp", code: "ArrowUp", shiftKey: true }),
+                false,
+            ),
+        ).toBe("Shift+ArrowUp");
+        expect(
+            bindingFromEvent(press({ key: " ", code: "Space" }), false),
+        ).toBe("Space");
+    });
+
+    it("ignores bare modifier presses", () => {
+        expect(
+            bindingFromEvent(
+                press({ key: "Shift", code: "ShiftLeft", shiftKey: true }),
+                false,
+            ),
+        ).toBeUndefined();
+    });
+});
 
 describe("parseBinding", () => {
     it("orders modifiers canonically and upper-cases letters", () => {

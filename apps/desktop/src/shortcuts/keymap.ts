@@ -3,7 +3,7 @@ import {
     parseKeybinding,
     type KeybindingPress,
 } from "tinykeys";
-import { platformBinding, toTinykeys } from "./bindings";
+import { canonicalBinding, platformBinding, toTinykeys } from "./bindings";
 import {
     ACTIONS,
     type ActionDefinition,
@@ -113,6 +113,119 @@ export function findConflicts(
         }
     }
     return conflicts;
+}
+
+function isValidBinding(binding: string): boolean {
+    try {
+        canonicalBinding(binding);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function sameBindings(a: readonly string[], b: readonly string[]): boolean {
+    return (
+        a.length === b.length &&
+        a.every(
+            (binding, i) =>
+                canonicalBinding(binding) === canonicalBinding(b[i]),
+        )
+    );
+}
+
+/** Drops unknown actions, invalid bindings and entries equal to the defaults, so saved overrides only hold real changes. */
+export function normalizeOverrides(
+    overrides: Record<string, unknown>,
+    actions: Record<string, ActionDefinition> = ACTIONS,
+): ShortcutOverrides {
+    const result: ShortcutOverrides = {};
+    for (const [id, bindings] of Object.entries(overrides)) {
+        if (!(id in actions) || !Array.isArray(bindings)) continue;
+        const valid = bindings.filter(
+            (b): b is string => typeof b === "string" && isValidBinding(b),
+        );
+        if (sameBindings(valid, actions[id].defaultBindings)) continue;
+        result[id as ActionId] = valid;
+    }
+    return result;
+}
+
+/** An action's bindings with platform duplicates (e.g. $mod+Z and Control+Z off macOS) shown once. */
+export function getDisplayBindings(
+    id: ActionId,
+    overrides: ShortcutOverrides,
+    isMac: boolean,
+    actions: Record<string, ActionDefinition> = ACTIONS,
+): string[] {
+    const seen = new Set<string>();
+    return getEffectiveBindings(id, overrides, actions).filter((binding) => {
+        const key = platformBinding(binding, isMac);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+/** Other actions in an overlapping scope that already use `binding`. */
+export function findBindingOwners(
+    id: ActionId,
+    binding: string,
+    overrides: ShortcutOverrides,
+    isMac: boolean,
+    actions: Record<string, ActionDefinition> = ACTIONS,
+): ActionId[] {
+    const target = platformBinding(binding, isMac);
+    const owners = buildKeymap(overrides, actions, isMac)
+        .filter(
+            (entry) =>
+                entry.id !== id &&
+                entry.binding === target &&
+                scopesOverlap(entry.scope, actions[id].scope),
+        )
+        .map((entry) => entry.id);
+    return [...new Set(owners)];
+}
+
+export function withoutBinding(
+    overrides: ShortcutOverrides,
+    id: ActionId,
+    binding: string,
+    isMac: boolean,
+    actions: Record<string, ActionDefinition> = ACTIONS,
+): ShortcutOverrides {
+    const target = platformBinding(binding, isMac);
+    return normalizeOverrides(
+        {
+            ...overrides,
+            [id]: getEffectiveBindings(id, overrides, actions).filter(
+                (b) => platformBinding(b, isMac) !== target,
+            ),
+        },
+        actions,
+    );
+}
+
+/** Adds `binding` to `id`, first removing it from `takeFrom` (the owners the user chose to reassign from). */
+export function withBinding(
+    overrides: ShortcutOverrides,
+    id: ActionId,
+    binding: string,
+    isMac: boolean,
+    takeFrom: readonly ActionId[] = [],
+    actions: Record<string, ActionDefinition> = ACTIONS,
+): ShortcutOverrides {
+    let next = overrides;
+    for (const owner of takeFrom) {
+        next = withoutBinding(next, owner, binding, isMac, actions);
+    }
+    const current = getEffectiveBindings(id, next, actions);
+    const target = platformBinding(binding, isMac);
+    if (current.some((b) => platformBinding(b, isMac) === target)) return next;
+    return normalizeOverrides(
+        { ...next, [id]: [...current, canonicalBinding(binding)] },
+        actions,
+    );
 }
 
 export function compileKeymap(entries: KeymapEntry[]): CompiledEntry[] {
