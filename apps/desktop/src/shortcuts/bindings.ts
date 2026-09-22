@@ -85,13 +85,16 @@ export function canonicalBinding(binding: string): string {
 }
 
 /* cspell: disable-next-line */
-/** Converts to tinykeys syntax. Letters/digits match on event.code so macOS Option doesn't break them. */
+/**
+ * Converts to tinykeys syntax. Letters/digits match on event.code so macOS Option doesn't break them;
+ * digits also match the numpad, as the old handler did.
+ */
 /* cspell: disable-next-line */
 export function toTinykeys(binding: string): string {
     const { modifiers, key } = parseBinding(binding);
     let tinyKey = key;
     if (/^[A-Z]$/.test(key)) tinyKey = `Key${key}`;
-    else if (/^\d$/.test(key)) tinyKey = `Digit${key}`;
+    else if (/^\d$/.test(key)) tinyKey = `(Digit${key}|Numpad${key})`;
     return [...modifiers, tinyKey].join("+");
 }
 

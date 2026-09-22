@@ -105,6 +105,22 @@ describe("pickAction", () => {
 });
 
 describe("resolveKeyEvent", () => {
+    it("matches digits on the top row and the numpad", () => {
+        const compiled = compileKeymap(buildKeymap());
+        const context = {
+            baseScope: "canvas" as const,
+            inTextInput: false,
+            modalOpen: false,
+        };
+        for (const code of ["Digit1", "Numpad1"]) {
+            const event = new KeyboardEvent("keydown", { key: "1", code });
+            expect(
+                resolveKeyEvent(event, compiled, context, () => true)?.id,
+                code,
+            ).toBe("snapToNearestCustomFraction");
+        }
+    });
+
     it("matches letters by event.code even when event.key is mangled", () => {
         const compiled = compileKeymap(buildKeymap());
         const event = new KeyboardEvent("keydown", {

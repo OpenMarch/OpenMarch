@@ -35,7 +35,7 @@ describe("parseBinding", () => {
 describe("toTinykeys", () => {
     it("maps letters and digits to event.code names", () => {
         expect(toTinykeys("Alt+V")).toBe("Alt+KeyV");
-        expect(toTinykeys("1")).toBe("Digit1");
+        expect(toTinykeys("1")).toBe("(Digit1|Numpad1)");
         expect(toTinykeys("$mod+Shift+Z")).toBe("$mod+Shift+KeyZ");
     });
 
