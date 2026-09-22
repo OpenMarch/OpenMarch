@@ -29,7 +29,9 @@ export function useActionHandlerGroup(
 
     const idsKey = ids.join("|");
     useEffect(() => {
-        const unregister = idsKey.split("|").map((id) =>
+        // "".split("|") is [""], so an empty list must not be split.
+        const idList = idsKey === "" ? [] : idsKey.split("|");
+        const unregister = idList.map((id) =>
             registerActionHandler(id as ActionId, {
                 run: (args) => runRef.current(id as ActionId, args),
                 isEnabled: () => enabledRef.current,

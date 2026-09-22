@@ -90,4 +90,15 @@ describe("useActionHandler", () => {
         unmount();
         expect(hasActionHandler("timelineTapBeats1")).toBe(false);
     });
+
+    it("group with no ids registers nothing", () => {
+        const listener = vi.fn();
+        const off = subscribeToActionHandlers(listener);
+        const { unmount } = renderHook(() =>
+            useActionHandlerGroup([], vi.fn()),
+        );
+        expect(listener).not.toHaveBeenCalled();
+        unmount();
+        off();
+    });
 });
