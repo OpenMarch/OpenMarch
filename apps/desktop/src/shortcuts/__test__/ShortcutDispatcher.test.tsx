@@ -85,6 +85,13 @@ describe("ShortcutDispatcher", () => {
         expect(cancel).toHaveBeenCalledTimes(1);
     });
 
+    it("runs legacy Ctrl shortcuts once", () => {
+        const undo = handle("performUndo");
+        render(<ShortcutDispatcher />);
+        fireEvent.keyDown(window, { key: "z", code: "KeyZ", ctrlKey: true });
+        expect(undo).toHaveBeenCalledTimes(1);
+    });
+
     it("honors overrides", () => {
         const run = handle("nextPage");
         render(<ShortcutDispatcher overrides={{ nextPage: ["K"] }} />);

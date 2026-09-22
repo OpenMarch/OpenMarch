@@ -24,7 +24,10 @@ export interface ActionDefinition {
     toggleOffKey?: string;
     category: ActionCategory;
     scope: ActionScope;
-    /** Binding strings, see bindings.ts. Empty = unbound. */
+    /**
+     * Binding strings, see bindings.ts. Empty = unbound. The first binding is the one shown in tooltips.
+     * Legacy Ctrl shortcuts also list "Control+…" so Ctrl keeps working alongside Cmd on macOS.
+     */
     defaultBindings: readonly string[];
     allowInInputs?: boolean;
     allowInModals?: boolean;
@@ -178,13 +181,13 @@ const STATIC_ACTIONS = {
         labelKey: "actions.edit.undo",
         category: "edit",
         scope: "global",
-        defaultBindings: ["$mod+Z"],
+        defaultBindings: ["$mod+Z", "Control+Z"],
     },
     performRedo: {
         labelKey: "actions.edit.redo",
         category: "edit",
         scope: "global",
-        defaultBindings: ["$mod+Shift+Z"],
+        defaultBindings: ["$mod+Shift+Z", "Control+Shift+Z"],
     },
 
     // Navigation and playback
@@ -224,7 +227,7 @@ const STATIC_ACTIONS = {
         labelKey: "actions.playback.toggleMetronome",
         category: "playback",
         scope: "global",
-        defaultBindings: ["$mod+M"],
+        defaultBindings: ["$mod+M", "Control+M"],
     },
 
     // Batch editing
@@ -232,7 +235,7 @@ const STATIC_ACTIONS = {
         labelKey: "actions.batchEdit.setAllToPrevious",
         category: "batchEdit",
         scope: "canvas",
-        defaultBindings: ["$mod+Shift+P"],
+        defaultBindings: ["$mod+Shift+P", "Control+Shift+P"],
     },
     setSelectedMarchersToPreviousPage: {
         labelKey: "actions.batchEdit.setSelectedToPrevious",
@@ -244,7 +247,7 @@ const STATIC_ACTIONS = {
         labelKey: "actions.batchEdit.setAllToNext",
         category: "batchEdit",
         scope: "canvas",
-        defaultBindings: ["$mod+Shift+N"],
+        defaultBindings: ["$mod+Shift+N", "Control+Shift+N"],
     },
     setSelectedMarchersToNextPage: {
         labelKey: "actions.batchEdit.setSelectedToNext",
@@ -316,7 +319,7 @@ const STATIC_ACTIONS = {
         labelKey: "actions.swap.swap",
         category: "alignment",
         scope: "canvas",
-        defaultBindings: ["$mod+S"],
+        defaultBindings: ["$mod+S", "Control+S"],
     },
 
     // UI
@@ -400,7 +403,7 @@ const STATIC_ACTIONS = {
         labelKey: "actions.select.selectAll",
         category: "select",
         scope: "canvas",
-        defaultBindings: ["$mod+A"],
+        defaultBindings: ["$mod+A", "Control+A"],
     },
 
     // Shapes

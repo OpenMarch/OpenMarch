@@ -48,8 +48,14 @@ describe("ACTIONS", () => {
     });
 
     it("preserves legacy defaults", () => {
-        expect(ACTIONS.performUndo.defaultBindings).toEqual(["$mod+Z"]);
-        expect(ACTIONS.performRedo.defaultBindings).toEqual(["$mod+Shift+Z"]);
+        expect(ACTIONS.performUndo.defaultBindings).toEqual([
+            "$mod+Z",
+            "Control+Z",
+        ]);
+        expect(ACTIONS.performRedo.defaultBindings).toEqual([
+            "$mod+Shift+Z",
+            "Control+Shift+Z",
+        ]);
         expect(ACTIONS.nextPage.defaultBindings).toEqual(["E"]);
         expect(ACTIONS.playPause.defaultBindings).toEqual(["Space"]);
         expect(ACTIONS.flipVertical.defaultBindings).toEqual(["Alt+Shift+F"]);
