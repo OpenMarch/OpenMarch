@@ -16,16 +16,19 @@ import {
     TIMELINE_MAX_PX_PER_BEAT,
     TIMELINE_MIN_PX_PER_BEAT,
     TimelinePlayhead,
+    TimelinePageLines,
     TimelineRuler,
     TimelineShell,
     TimelineTrackClip,
     TimelineTransport,
+    TimelineWorkspaceFlags,
     useElementWidth,
     useTimelineScrubbing,
 } from "./TimelinePrimitives";
 import type {
     TimelineCommonProps,
     TimelineNavigation,
+    TimelineTrackId,
 } from "./TimelineViewModel";
 
 const PANEL_PADDING = 16;
@@ -178,8 +181,8 @@ const transportNavigation = (props: TimelineCommonProps) =>
         : undefined);
 
 export interface SimpleTimelineProps extends TimelineCommonProps {
-    readonly selectedPageId?: string | null;
-    readonly onPageSelect?: (pageId: string) => void;
+    readonly selectedPageId?: string | number | null;
+    readonly onPageSelect?: (pageId: string | number) => void;
     readonly onPageAdd?: () => void;
 }
 
@@ -280,6 +283,15 @@ export function SimpleTimeline(props: SimpleTimelineProps) {
                         positionBeat={positionBeat}
                     />
                 </div>
+                {props.workspaceRange && (
+                    <TimelineWorkspaceFlags
+                        range={props.workspaceRange}
+                        beatCount={model.beatCount}
+                        pixelsPerBeat={pixelsPerBeat}
+                        height={88}
+                        onCommit={props.onWorkspaceRangeCommit}
+                    />
+                )}
             </div>
         </TimelineShell>
     );
@@ -341,11 +353,15 @@ export function ExpandedTimeline(props: TimelineCommonProps) {
                     width={width}
                     height={height}
                     pixelsPerBeat={pixelsPerBeat}
-                    pages={model.pages}
                     measures={model.measures}
                     lineTop={28}
                     topTickY={56}
                     bottomTickY={height - 1}
+                />
+                <TimelinePageLines
+                    pages={model.pages}
+                    pixelsPerBeat={pixelsPerBeat}
+                    height={height}
                 />
                 <TimelineRuler
                     pages={model.pages}
@@ -363,6 +379,8 @@ export function ExpandedTimeline(props: TimelineCommonProps) {
                             height={18}
                             selected={selectedTrackId === track.id}
                             onSelect={props.onTrackSelect}
+                            onRangeCommit={props.onTimelineRangeCommit}
+                            beatCount={model.beatCount}
                         />
                     )),
                 )}
@@ -384,12 +402,21 @@ export function ExpandedTimeline(props: TimelineCommonProps) {
                     pixelsPerBeat={pixelsPerBeat}
                     height={height}
                 />
+                {props.workspaceRange && (
+                    <TimelineWorkspaceFlags
+                        range={props.workspaceRange}
+                        beatCount={model.beatCount}
+                        pixelsPerBeat={pixelsPerBeat}
+                        height={height}
+                        onCommit={props.onWorkspaceRangeCommit}
+                    />
+                )}
             </div>
         </TimelineShell>
     );
 }
 
-export function CollapsedTimeline(props: TimelineCommonProps) {
+export function CompactTimeline(props: TimelineCommonProps) {
     const {
         model,
         pixelsPerBeat,
@@ -458,6 +485,8 @@ export function CollapsedTimeline(props: TimelineCommonProps) {
                             height={3}
                             selected={selectedTrackId === track.id}
                             onSelect={props.onTrackSelect}
+                            onRangeCommit={props.onTimelineRangeCommit}
+                            beatCount={model.beatCount}
                             micro
                         />
                     )),
@@ -486,7 +515,7 @@ export function CollapsedTimeline(props: TimelineCommonProps) {
 }
 
 export interface InspectorTimelineProps extends TimelineCommonProps {
-    readonly focusedTrackId: string;
+    readonly focusedTrackId: TimelineTrackId;
 }
 
 export function InspectorTimeline(props: InspectorTimelineProps) {
@@ -566,6 +595,8 @@ export function InspectorTimeline(props: InspectorTimelineProps) {
                         height={22}
                         selected={selectedTrackId === track.id}
                         onSelect={props.onTrackSelect}
+                        onRangeCommit={props.onTimelineRangeCommit}
+                        beatCount={model.beatCount}
                     />
                 )}
                 <div
@@ -590,7 +621,20 @@ export function InspectorTimeline(props: InspectorTimelineProps) {
                         height={height}
                     />
                 )}
+                {props.workspaceRange && (
+                    <TimelineWorkspaceFlags
+                        range={props.workspaceRange}
+                        beatCount={model.beatCount}
+                        pixelsPerBeat={pixelsPerBeat}
+                        startBeat={range.startBeat}
+                        height={height}
+                        onCommit={props.onWorkspaceRangeCommit}
+                    />
+                )}
             </div>
         </TimelineShell>
     );
 }
+
+/** @deprecated Use CompactTimeline. */
+export const CollapsedTimeline = CompactTimeline;

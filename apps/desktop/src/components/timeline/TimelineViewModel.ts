@@ -1,4 +1,4 @@
-export type TimelineTrackId = string;
+export type TimelineTrackId = string | number;
 
 /**
  * An x-position in the timeline measured in beats. Integer positions are beat
@@ -8,13 +8,13 @@ export type TimelineTrackId = string;
 export type BeatPosition = number;
 
 export interface TimelineMarker {
-    readonly id: string;
+    readonly id: string | number;
     readonly label: string;
     readonly atBeat: BeatPosition;
 }
 
 export interface TimelineLeg {
-    readonly id: string;
+    readonly id: string | number;
     readonly startBeat: BeatPosition;
     readonly endBeat: BeatPosition;
     /** Presentation texture derived from whether the source coordinates change. */
@@ -72,4 +72,18 @@ export interface TimelineCommonProps
     readonly model: TimelineViewModel;
     readonly showTransport?: boolean;
     readonly className?: string;
+    readonly workspaceRange?: TimelineWorkspaceRange;
+    readonly onWorkspaceRangeCommit?: (range: TimelineWorkspaceRange) => void;
+    readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
+}
+
+export interface TimelineWorkspaceRange {
+    readonly startFlagBeatIndex: number;
+    readonly endFlagBeatIndex: number;
+}
+
+export interface TimelineRangeChange {
+    readonly timelineId: TimelineTrackId;
+    readonly startBeatIndex: number;
+    readonly endBeatIndex: number;
 }

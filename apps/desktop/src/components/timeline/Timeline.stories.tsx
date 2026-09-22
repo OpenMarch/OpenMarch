@@ -1,105 +1,108 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { expect, userEvent } from "storybook/test";
+import { useFrameClockStore } from "@/services/clock/frame-clock";
 import {
-    CollapsedTimeline,
-    ExpandedTimeline,
-    InspectorTimeline,
-    SimpleTimeline,
-} from "./TimelineVariants";
+    Timeline,
+    TimelineWaveformProvider,
+    type TimelineMode,
+} from "./Timeline";
 import {
-    createLongTimelineStoryModel,
-    timelineStoryModel,
+    createLongTimelineStoryData,
+    timelineStoryData,
 } from "./TimelineStoryFixtures";
-import type { TimelineViewModel } from "./TimelineViewModel";
 
-type StoryMode = "simple" | "expanded" | "collapsed" | "inspector";
 type StoryTheme = "dark" | "light";
+type StoryScenario = "standard" | "long-show";
 
 interface TimelineStoryProps {
-    mode: StoryMode;
-    model: TimelineViewModel;
-    initialPositionBeat: number;
-    initialPixelsPerBeat: number;
-    initialIsPlaying: boolean;
-    showTransport: boolean;
-    focusedTrackId: string;
-    width: number;
+    mode: TimelineMode;
+    scenario: StoryScenario;
     theme: StoryTheme;
 }
 
-function TimelineStory({
-    mode,
-    model,
-    initialPositionBeat,
-    initialPixelsPerBeat,
-    initialIsPlaying,
-    showTransport,
-    focusedTrackId,
-    width,
-    theme,
-}: TimelineStoryProps) {
-    const [positionBeat, setPositionBeat] = useState(initialPositionBeat);
-    const [pixelsPerBeat, setPixelsPerBeat] = useState(initialPixelsPerBeat);
-    const [isPlaying, setIsPlaying] = useState(initialIsPlaying);
-    const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-    const [selectedPageId, setSelectedPageId] = useState<string | null>(null);
+function TimelineStory({ mode, scenario, theme }: TimelineStoryProps) {
+    const data = useMemo(
+        () =>
+            scenario === "long-show"
+                ? createLongTimelineStoryData()
+                : timelineStoryData,
+        [scenario],
+    );
+    const [workspace, setWorkspace] = useState({
+        startFlagBeatIndex: scenario === "long-show" ? 64 : 4,
+        endFlagBeatIndex: scenario === "long-show" ? 256 : 27,
+    });
+    const [timelines, setTimelines] = useState(data.timelines);
 
     useEffect(() => {
-        if (!isPlaying) return;
-        const timer = window.setInterval(() => {
-            setPositionBeat((beat) => (beat + 1) % model.beatCount);
-        }, 450);
-        return () => window.clearInterval(timer);
-    }, [isPlaying, model.beatCount]);
+        setTimelines(data.timelines);
+        useFrameClockStore
+            .getState()
+            .setCurrentBeatIndex(scenario === "long-show" ? 120 : 11);
+    }, [data, scenario]);
 
-    const commonProps = {
-        model,
-        positionBeat,
-        isPlaying,
-        pixelsPerBeat,
-        selectedTrackId,
-        showTransport,
-        onSeek: setPositionBeat,
-        onPlayingChange: setIsPlaying,
-        onPixelsPerBeatChange: setPixelsPerBeat,
-        onTrackSelect: setSelectedTrackId,
+    const shared = {
+        beats: data.beats,
+        pages: data.pages,
+        measures: data.measures,
+        timelines,
+        onTimelineRangeCommit: (change: {
+            timelineId: string | number;
+            startBeatIndex: number;
+            endBeatIndex: number;
+        }) => {
+            setTimelines((current) =>
+                current.map((timeline) => {
+                    if (timeline.id !== change.timelineId) return timeline;
+                    const offset =
+                        change.startBeatIndex - timeline.startBeatIndex;
+                    return {
+                        ...timeline,
+                        startBeatIndex: change.startBeatIndex,
+                        endBeatIndex: change.endBeatIndex,
+                        legs: timeline.legs.map((leg) => ({
+                            ...leg,
+                            startBeatIndex: leg.startBeatIndex + offset,
+                            endBeatIndex: leg.endBeatIndex + offset,
+                        })),
+                    };
+                }),
+            );
+        },
     };
+    const timeline =
+        mode === "compact" ? (
+            <Timeline {...shared} mode="compact" />
+        ) : mode === "inspector" ? (
+            <Timeline
+                {...shared}
+                {...workspace}
+                mode="inspector"
+                focusedTimelineId="shape"
+                onWorkspaceRangeCommit={setWorkspace}
+            />
+        ) : (
+            <Timeline
+                {...shared}
+                {...workspace}
+                mode={mode}
+                onWorkspaceRangeCommit={setWorkspace}
+            />
+        );
 
     return (
-        <div
-            className={clsx(
-                "bg-bg-1 text-text flex min-h-screen items-center p-24",
-                theme === "dark" && "dark",
-            )}
-            style={{ width: "100%" }}
-        >
-            <div style={{ width, maxWidth: "100%" }}>
-                {mode === "simple" && (
-                    <SimpleTimeline
-                        {...commonProps}
-                        selectedPageId={selectedPageId}
-                        onPageSelect={(pageId) => {
-                            setSelectedPageId(pageId);
-                            const page = model.pages.find(
-                                (item) => item.id === pageId,
-                            );
-                            if (page) setPositionBeat(page.atBeat);
-                        }}
-                        onPageAdd={() => setPositionBeat(model.beatCount - 1)}
-                    />
+        <TimelineWaveformProvider waveform={data.waveform}>
+            <div
+                className={clsx(
+                    "bg-bg-1 text-text flex min-h-screen items-center p-24",
+                    theme === "dark" && "dark",
                 )}
-                {mode === "expanded" && <ExpandedTimeline {...commonProps} />}
-                {mode === "collapsed" && <CollapsedTimeline {...commonProps} />}
-                {mode === "inspector" && (
-                    <InspectorTimeline
-                        {...commonProps}
-                        focusedTrackId={focusedTrackId}
-                    />
-                )}
+            >
+                <div className="w-full">{timeline}</div>
             </div>
-        </div>
+        </TimelineWaveformProvider>
     );
 }
 
@@ -110,21 +113,11 @@ const meta = {
     argTypes: {
         mode: {
             control: "select",
-            options: ["simple", "expanded", "collapsed", "inspector"],
+            options: ["simple", "expanded", "compact", "inspector"],
         },
-        model: { control: false },
-        initialPositionBeat: {
-            control: { type: "range", min: 0, max: 511, step: 1 },
-        },
-        initialPixelsPerBeat: {
-            control: { type: "range", min: 4, max: 64, step: 1 },
-        },
-        focusedTrackId: {
-            control: "select",
-            options: ["shape", "m1", "m7"],
-        },
-        width: {
-            control: { type: "range", min: 500, max: 1536, step: 16 },
+        scenario: {
+            control: "inline-radio",
+            options: ["standard", "long-show"],
         },
         theme: {
             control: "inline-radio",
@@ -132,18 +125,13 @@ const meta = {
         },
     },
     args: {
-        model: timelineStoryModel,
-        initialPositionBeat: 11,
-        initialPixelsPerBeat: 16,
-        initialIsPlaying: false,
-        showTransport: true,
-        focusedTrackId: "shape",
-        width: 1280,
+        mode: "simple",
+        scenario: "standard",
         theme: "dark",
     },
     render: (args) => (
         <TimelineStory
-            key={`${args.mode}-${args.initialPositionBeat}-${args.initialPixelsPerBeat}-${args.initialIsPlaying}-${args.showTransport}-${args.focusedTrackId}-${args.width}-${args.theme}`}
+            key={`${args.mode}-${args.scenario}-${args.theme}`}
             {...args}
         />
     ),
@@ -153,87 +141,72 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Simple: Story = {
-    args: { mode: "simple", showTransport: true },
+    args: { mode: "simple" },
     play: async ({ canvas }) => {
-        const page = canvas.getByRole("button", { name: "2" });
+        const page = await canvas.findByRole("button", { name: "2" });
         await userEvent.click(page);
         await expect(page).toHaveAttribute("aria-pressed", "true");
     },
 };
 
 export const Expanded: Story = {
-    args: { mode: "expanded", showTransport: true },
+    args: { mode: "expanded" },
     play: async ({ canvas }) => {
-        const track = canvas.getByLabelText(/SH timeline/);
+        const track = await canvas.findByLabelText(/SH timeline/);
         await userEvent.click(track);
         await expect(track).toHaveAttribute("aria-pressed", "true");
+        await expect(
+            await canvas.findByRole("button", { name: "Workspace start" }),
+        ).toBeInTheDocument();
 
-        await userEvent.click(canvas.getByRole("button", { name: "Play" }));
+        await userEvent.click(
+            await canvas.findByRole("button", { name: "Play" }),
+        );
         await expect(
             canvas.getByRole("button", { name: "Pause" }),
         ).toBeInTheDocument();
-        await userEvent.click(canvas.getByRole("button", { name: "Pause" }));
-        await expect(
-            canvas.getByRole("button", { name: "Play" }),
-        ).toBeInTheDocument();
     },
 };
 
-export const Collapsed: Story = {
-    args: { mode: "collapsed", showTransport: false },
+export const Compact: Story = {
+    args: { mode: "compact" },
+    play: async ({ canvas }) => {
+        await canvas.findByText("Audio");
+        await expect(
+            canvas.queryByRole("button", { name: "Workspace start" }),
+        ).not.toBeInTheDocument();
+    },
 };
 
 export const Inspector: Story = {
-    args: {
-        mode: "inspector",
-        showTransport: false,
-        focusedTrackId: "shape",
-    },
+    args: { mode: "inspector" },
 };
 
 export const LongShowPerformance: Story = {
-    args: {
-        mode: "expanded",
-        model: createLongTimelineStoryModel(),
-        initialPixelsPerBeat: 8,
-        initialPositionBeat: 120,
-        width: 1400,
-    },
+    args: { mode: "expanded", scenario: "long-show" },
 };
 
 export const SimpleLight: Story = {
     name: "Simple · Light",
-    args: { mode: "simple", showTransport: true, theme: "light" },
+    args: { mode: "simple", theme: "light" },
 };
 
 export const ExpandedLight: Story = {
     name: "Expanded · Light",
-    args: { mode: "expanded", showTransport: true, theme: "light" },
+    args: { mode: "expanded", theme: "light" },
 };
 
-export const CollapsedLight: Story = {
-    name: "Collapsed · Light",
-    args: { mode: "collapsed", showTransport: false, theme: "light" },
+export const CompactLight: Story = {
+    name: "Compact · Light",
+    args: { mode: "compact", theme: "light" },
 };
 
 export const InspectorLight: Story = {
     name: "Inspector · Light",
-    args: {
-        mode: "inspector",
-        showTransport: false,
-        focusedTrackId: "shape",
-        theme: "light",
-    },
+    args: { mode: "inspector", theme: "light" },
 };
 
 export const LongShowPerformanceLight: Story = {
     name: "Long Show Performance · Light",
-    args: {
-        mode: "expanded",
-        model: createLongTimelineStoryModel(),
-        initialPixelsPerBeat: 8,
-        initialPositionBeat: 120,
-        width: 1400,
-        theme: "light",
-    },
+    args: { mode: "expanded", scenario: "long-show", theme: "light" },
 };

@@ -52,7 +52,6 @@ interface TimelineGridCanvasProps {
     height: number;
     pixelsPerBeat: number;
     startBeat?: number;
-    pages: readonly TimelineMarker[];
     measures: readonly TimelineMarker[];
     lineTop?: number;
     showMeasureLines?: boolean;
@@ -66,7 +65,6 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
     height,
     pixelsPerBeat,
     startBeat = 0,
-    pages,
     measures,
     lineTop = 0,
     showMeasureLines = true,
@@ -82,7 +80,6 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
         const prepared = prepareCanvas(canvas, width, height);
         if (!prepared) return;
         const { context } = prepared;
-        const pagePositions = new Set(pages.map((page) => page.atBeat));
         const stroke = colorFromTheme(
             canvas,
             "--color-stroke",
@@ -98,7 +95,6 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
         if (showMeasureLines) {
             context.strokeStyle = stroke;
             for (const measure of measures) {
-                if (pagePositions.has(measure.atBeat)) continue;
                 const x = Math.round(
                     beatToX(measure.atBeat, pixelsPerBeat, startBeat),
                 );
@@ -110,23 +106,11 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
             }
         }
 
-        context.strokeStyle = text;
-        context.globalAlpha = 0.18;
-        for (const page of pages) {
-            const x = Math.round(
-                beatToX(page.atBeat, pixelsPerBeat, startBeat),
-            );
-            if (x < 0 || x > width) continue;
-            context.beginPath();
-            context.moveTo(x + 0.5, lineTop);
-            context.lineTo(x + 0.5, height);
-            context.stroke();
-        }
-
         if (!showBeatTicks) {
             context.globalAlpha = 1;
             return;
         }
+        context.strokeStyle = text;
         context.globalAlpha = 0.22;
         const firstBeat = Math.ceil(startBeat);
         const lastBeat = Math.floor(startBeat + width / pixelsPerBeat);
@@ -145,7 +129,6 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
         height,
         lineTop,
         measures,
-        pages,
         pixelsPerBeat,
         showBeatTicks,
         showMeasureLines,

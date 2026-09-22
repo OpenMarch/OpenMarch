@@ -21,6 +21,7 @@ import {
 } from "react";
 import {
     beatToX,
+    clamp,
     clientXToNearestBeat,
     filterMarkersByMinimumSpacing,
     getPlayheadLabel,
@@ -30,8 +31,11 @@ import type {
     BeatPosition,
     TimelineMarker,
     TimelineNavigation,
+    TimelineRangeChange,
     TimelineTrack,
+    TimelineTrackId,
     TimelineViewModel,
+    TimelineWorkspaceRange,
 } from "./TimelineViewModel";
 
 export const TIMELINE_LABEL_WIDTH = 50;
@@ -250,6 +254,33 @@ export const TimelineRuler = ({
     );
 };
 
+export const TimelinePageLines = ({
+    pages,
+    pixelsPerBeat,
+    height,
+    startBeat = 0,
+}: {
+    pages: readonly TimelineMarker[];
+    pixelsPerBeat: number;
+    height: number;
+    startBeat?: number;
+}) => (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {pages.map((page) => (
+            <span
+                key={page.id}
+                className="bg-text absolute top-0 w-px opacity-[0.18]"
+                style={{
+                    left: Math.round(
+                        beatToX(page.atBeat, pixelsPerBeat, startBeat),
+                    ),
+                    height,
+                }}
+            />
+        ))}
+    </div>
+);
+
 export const TimelineTrackClip = ({
     track,
     pixelsPerBeat,
@@ -258,6 +289,8 @@ export const TimelineTrackClip = ({
     height,
     selected,
     onSelect,
+    onRangeCommit,
+    beatCount,
     micro = false,
 }: {
     track: TimelineTrack;
@@ -266,16 +299,41 @@ export const TimelineTrackClip = ({
     top: number;
     height: number;
     selected: boolean;
-    onSelect?: (trackId: string) => void;
+    onSelect?: (trackId: TimelineTrackId) => void;
+    onRangeCommit?: (change: TimelineRangeChange) => void;
+    beatCount?: number;
     micro?: boolean;
 }) => {
     const range = getTrackRange(track);
+    const [previewOffset, setPreviewOffset] = useState(0);
+    const dragRef = useRef<{
+        pointerId: number;
+        startClientX: number;
+        offset: number;
+    } | null>(null);
+
+    useEffect(() => {
+        dragRef.current = null;
+        setPreviewOffset(0);
+    }, [range?.endBeat, range?.startBeat]);
+
     if (!range) return null;
-    const left = beatToX(range.startBeat, pixelsPerBeat, startBeat);
+    const left = beatToX(
+        range.startBeat + previewOffset,
+        pixelsPerBeat,
+        startBeat,
+    );
     const width = (range.endBeat - range.startBeat) * pixelsPerBeat;
     const keyframes = Array.from(
         new Set(track.legs.flatMap((leg) => [leg.startBeat, leg.endBeat])),
     );
+    const canMove = onRangeCommit != null && beatCount != null;
+    const getOffset = (clientX: number, startClientX: number) => {
+        const requested = Math.round((clientX - startClientX) / pixelsPerBeat);
+        const minimum = -range.startBeat;
+        const maximum = Math.max(minimum, beatCount! - 1 - range.endBeat);
+        return clamp(requested, minimum, maximum);
+    };
 
     return (
         <button
@@ -285,8 +343,44 @@ export const TimelineTrackClip = ({
             aria-pressed={selected}
             title={track.label}
             onClick={() => onSelect?.(track.id)}
+            onPointerDown={(event) => {
+                if (!canMove || event.button !== 0) return;
+                event.stopPropagation();
+                dragRef.current = {
+                    pointerId: event.pointerId,
+                    startClientX: event.clientX,
+                    offset: 0,
+                };
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+                const drag = dragRef.current;
+                if (!drag || drag.pointerId !== event.pointerId) return;
+                const offset = getOffset(event.clientX, drag.startClientX);
+                drag.offset = offset;
+                setPreviewOffset(offset);
+            }}
+            onPointerUp={(event) => {
+                const drag = dragRef.current;
+                if (!drag || drag.pointerId !== event.pointerId) return;
+                dragRef.current = null;
+                event.currentTarget.releasePointerCapture?.(event.pointerId);
+                const offset = drag.offset;
+                setPreviewOffset(0);
+                if (offset === 0) return;
+                onRangeCommit?.({
+                    timelineId: track.id,
+                    startBeatIndex: range.startBeat + offset,
+                    endBeatIndex: range.endBeat + offset,
+                });
+            }}
+            onPointerCancel={() => {
+                dragRef.current = null;
+                setPreviewOffset(0);
+            }}
             className={clsx(
                 "group focus-visible:ring-accent absolute overflow-visible text-[9px] font-medium outline-hidden transition-[filter,box-shadow] duration-150 focus-visible:ring-2 enabled:hover:brightness-110",
+                canMove && "cursor-grab touch-none active:cursor-grabbing",
                 micro ? "rounded-full" : "rounded-6",
             )}
             style={{
@@ -337,6 +431,202 @@ export const TimelineTrackClip = ({
                     />
                 ))}
         </button>
+    );
+};
+
+export const TimelineWorkspaceFlags = ({
+    range,
+    beatCount,
+    pixelsPerBeat,
+    height,
+    startBeat = 0,
+    onCommit,
+}: {
+    range: TimelineWorkspaceRange;
+    beatCount: number;
+    pixelsPerBeat: number;
+    height: number;
+    startBeat?: number;
+    onCommit?: (range: TimelineWorkspaceRange) => void;
+}) => {
+    const [preview, setPreview] = useState(range);
+    const previewRef = useRef(range);
+    const dragRef = useRef<{
+        kind: "start" | "end";
+        pointerId: number;
+        surface: HTMLElement;
+    } | null>(null);
+
+    useEffect(() => {
+        const next = {
+            startFlagBeatIndex: range.startFlagBeatIndex,
+            endFlagBeatIndex: range.endFlagBeatIndex,
+        };
+        dragRef.current = null;
+        previewRef.current = next;
+        setPreview(next);
+    }, [range.endFlagBeatIndex, range.startFlagBeatIndex]);
+
+    const updatePreview = useCallback(
+        (kind: "start" | "end", clientX: number, surface: HTMLElement) => {
+            const bounds = surface.getBoundingClientRect();
+            const requested = clientXToNearestBeat({
+                clientX,
+                surfaceLeft: bounds.left,
+                pixelsPerBeat,
+                startBeat,
+                beatCount,
+            });
+            const current = previewRef.current;
+            const next =
+                kind === "start"
+                    ? {
+                          startFlagBeatIndex: clamp(
+                              requested,
+                              0,
+                              current.endFlagBeatIndex - 1,
+                          ),
+                          endFlagBeatIndex: current.endFlagBeatIndex,
+                      }
+                    : {
+                          startFlagBeatIndex: current.startFlagBeatIndex,
+                          endFlagBeatIndex: clamp(
+                              requested,
+                              current.startFlagBeatIndex + 1,
+                              Math.max(beatCount - 1, 1),
+                          ),
+                      };
+            previewRef.current = next;
+            setPreview(next);
+        },
+        [beatCount, pixelsPerBeat, startBeat],
+    );
+
+    const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId) return;
+        updatePreview(drag.kind, event.clientX, drag.surface);
+        dragRef.current = null;
+        event.currentTarget.releasePointerCapture?.(event.pointerId);
+        const next = previewRef.current;
+        if (
+            next.startFlagBeatIndex !== range.startFlagBeatIndex ||
+            next.endFlagBeatIndex !== range.endFlagBeatIndex
+        ) {
+            onCommit?.(next);
+        }
+    };
+
+    const flag = (kind: "start" | "end", beatIndex: number) => {
+        const isVisible = beatIndex >= startBeat;
+        const label = `Workspace ${kind}`;
+        if (!isVisible) return null;
+        return (
+            <button
+                type="button"
+                data-timeline-interactive="true"
+                aria-label={label}
+                title={`${label}: beat ${beatIndex + 1}`}
+                disabled={!onCommit}
+                onPointerDown={(event) => {
+                    if (!onCommit || event.button !== 0) return;
+                    event.stopPropagation();
+                    const surface = event.currentTarget.parentElement;
+                    if (!surface) return;
+                    dragRef.current = {
+                        kind,
+                        pointerId: event.pointerId,
+                        surface,
+                    };
+                    event.currentTarget.setPointerCapture?.(event.pointerId);
+                    updatePreview(kind, event.clientX, surface);
+                }}
+                onPointerMove={(event) => {
+                    const drag = dragRef.current;
+                    if (!drag || drag.pointerId !== event.pointerId) return;
+                    updatePreview(kind, event.clientX, drag.surface);
+                }}
+                onPointerUp={finishDrag}
+                onPointerCancel={() => {
+                    dragRef.current = null;
+                    previewRef.current = range;
+                    setPreview(range);
+                }}
+                onKeyDown={(event) => {
+                    if (!onCommit) return;
+                    const delta =
+                        event.key === "ArrowLeft"
+                            ? -1
+                            : event.key === "ArrowRight"
+                              ? 1
+                              : 0;
+                    if (delta === 0) return;
+                    event.preventDefault();
+                    const next =
+                        kind === "start"
+                            ? {
+                                  startFlagBeatIndex: clamp(
+                                      beatIndex + delta,
+                                      0,
+                                      range.endFlagBeatIndex - 1,
+                                  ),
+                                  endFlagBeatIndex: range.endFlagBeatIndex,
+                              }
+                            : {
+                                  startFlagBeatIndex: range.startFlagBeatIndex,
+                                  endFlagBeatIndex: clamp(
+                                      beatIndex + delta,
+                                      range.startFlagBeatIndex + 1,
+                                      Math.max(beatCount - 1, 1),
+                                  ),
+                              };
+                    onCommit(next);
+                }}
+                className="group focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
+                style={{
+                    left: beatToX(beatIndex, pixelsPerBeat, startBeat),
+                    height,
+                }}
+            >
+                <span className="bg-accent absolute top-0 bottom-0 left-1/2 w-px" />
+                <span
+                    className={clsx(
+                        "bg-accent absolute top-0 h-12 w-9",
+                        kind === "start"
+                            ? "left-1/2 rounded-r-sm"
+                            : "right-1/2 rounded-l-sm",
+                    )}
+                />
+            </button>
+        );
+    };
+
+    const startX = beatToX(
+        preview.startFlagBeatIndex,
+        pixelsPerBeat,
+        startBeat,
+    );
+    const endX = beatToX(preview.endFlagBeatIndex, pixelsPerBeat, startBeat);
+
+    return (
+        <div
+            data-testid="timeline-workspace-flags"
+            className="pointer-events-none absolute inset-0 z-40"
+        >
+            <span
+                aria-hidden="true"
+                className="bg-accent/5 pointer-events-none absolute top-0"
+                style={{
+                    left: startX,
+                    width: Math.max(0, endX - startX),
+                    height,
+                }}
+            />
+            <div className="pointer-events-none absolute inset-0">
+                {flag("start", preview.startFlagBeatIndex)}
+                {flag("end", preview.endFlagBeatIndex)}
+            </div>
+        </div>
     );
 };
 

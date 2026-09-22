@@ -1,4 +1,12 @@
-import type { TimelineTrack, TimelineViewModel } from "./TimelineViewModel";
+import type Beat from "@/global/classes/Beat";
+import type Measure from "@/global/classes/Measure";
+import type Page from "@/global/classes/Page";
+import type { TimelineInput } from "./Timeline";
+import type {
+    TimelineTrack,
+    TimelineViewModel,
+    TimelineWaveform,
+} from "./TimelineViewModel";
 
 const waveformForBeatCount = (beatCount: number) => ({
     peaksByBeat: Array.from({ length: beatCount }, (_, beat) =>
@@ -10,6 +18,8 @@ const waveformForBeatCount = (beatCount: number) => ({
         }),
     ),
 });
+
+export const timelineStoryWaveform = waveformForBeatCount(32);
 
 export const timelineStoryTracks: readonly TimelineTrack[] = [
     {
@@ -68,8 +78,113 @@ export const timelineStoryModel: TimelineViewModel = {
         atBeat: index * 4,
     })),
     tracks: timelineStoryTracks,
-    waveform: waveformForBeatCount(32),
+    waveform: timelineStoryWaveform,
 };
+
+const createStoryBeats = (beatCount: number): Beat[] =>
+    Array.from({ length: beatCount }, (_, index) => ({
+        id: index,
+        position: index,
+        duration: 0.5,
+        includeInMeasure: true,
+        notes: null,
+        index,
+        timestamp: index * 0.5,
+    }));
+
+const createStoryMeasures = (beats: Beat[], count: number): Measure[] =>
+    Array.from({ length: count }, (_, index) => {
+        const measureBeats = beats.slice(index * 4, index * 4 + 4);
+        return {
+            id: index + 1,
+            startBeat: measureBeats[0],
+            number: index + 1,
+            rehearsalMark: null,
+            notes: null,
+            duration: measureBeats.length * 0.5,
+            counts: measureBeats.length,
+            beats: measureBeats,
+            timestamp: measureBeats[0]?.timestamp ?? 0,
+        };
+    });
+
+const createStoryPages = ({
+    beats,
+    measures,
+    markers,
+}: {
+    beats: Beat[];
+    measures: Measure[];
+    markers: readonly { id: string; label: string; atBeat: number }[];
+}): Page[] =>
+    markers.map((marker, index) => {
+        const next = markers[index + 1]?.atBeat ?? beats.length;
+        const pageBeats = beats.slice(marker.atBeat, next);
+        return {
+            id: index + 1,
+            name: marker.label,
+            counts: pageBeats.length,
+            notes: null,
+            order: index,
+            nextPageId: markers[index + 1] ? index + 2 : null,
+            previousPageId: index === 0 ? null : index,
+            isSubset: /[A-Za-z]/.test(marker.label),
+            duration: pageBeats.length * 0.5,
+            beats: pageBeats,
+            measures: measures.filter((measure) =>
+                pageBeats.some((beat) => beat.id === measure.startBeat.id),
+            ),
+            measureBeatToStartOn: 1,
+            measureBeatToEndOn: pageBeats.length,
+            timestamp: pageBeats[0]?.timestamp ?? 0,
+        };
+    });
+
+const tracksToTimelineInputs = (
+    tracks: readonly TimelineTrack[],
+): TimelineInput[] =>
+    tracks.map((track) => ({
+        id: track.id,
+        targetId: track.targetId,
+        targetType: track.targetType,
+        label: track.label,
+        color: track.color,
+        startBeatIndex: Math.min(...track.legs.map((leg) => leg.startBeat)),
+        endBeatIndex: Math.max(...track.legs.map((leg) => leg.endBeat)),
+        legs: track.legs.map((leg) => ({
+            id: leg.id,
+            startBeatIndex: leg.startBeat,
+            endBeatIndex: leg.endBeat,
+            texture: leg.texture,
+        })),
+    }));
+
+export interface TimelineStoryData {
+    beats: Beat[];
+    pages: Page[];
+    measures: Measure[];
+    timelines: TimelineInput[];
+    waveform: TimelineWaveform;
+}
+
+export const timelineStoryData: TimelineStoryData = (() => {
+    const beats = createStoryBeats(timelineStoryModel.beatCount);
+    const measures = createStoryMeasures(beats, 8);
+    return {
+        beats,
+        measures,
+        pages: createStoryPages({
+            beats,
+            measures,
+            markers: timelineStoryModel.pages.map((page) => ({
+                ...page,
+                id: String(page.id),
+            })),
+        }),
+        timelines: tracksToTimelineInputs(timelineStoryTracks),
+        waveform: timelineStoryWaveform,
+    };
+})();
 
 export const createLongTimelineStoryModel = (): TimelineViewModel => {
     const beatCount = 512;
@@ -104,5 +219,25 @@ export const createLongTimelineStoryModel = (): TimelineViewModel => {
         })),
         tracks,
         waveform: waveformForBeatCount(beatCount),
+    };
+};
+
+export const createLongTimelineStoryData = (): TimelineStoryData => {
+    const model = createLongTimelineStoryModel();
+    const beats = createStoryBeats(model.beatCount);
+    const measures = createStoryMeasures(beats, model.beatCount / 4);
+    return {
+        beats,
+        measures,
+        pages: createStoryPages({
+            beats,
+            measures,
+            markers: model.pages.map((page) => ({
+                ...page,
+                id: String(page.id),
+            })),
+        }),
+        timelines: tracksToTimelineInputs(model.tracks),
+        waveform: model.waveform,
     };
 };
