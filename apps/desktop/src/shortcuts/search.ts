@@ -32,19 +32,26 @@ export function searchScore(
     return score;
 }
 
-/** Items matching `query`, best first; ties keep their original order. */
+/**
+ * Items matching `query`, best first; ties keep their original order.
+ * `boost` adds to a match's score, e.g. to favour frequently used commands.
+ */
 export function searchItems<T>(
     items: readonly T[],
     query: string,
     fields: (item: T) => readonly string[],
+    boost: (item: T) => number = () => 0,
 ): T[] {
     if (query.trim() === "") return [...items];
     return items
-        .map((item, index) => ({
-            item,
-            index,
-            score: searchScore(query, fields(item)),
-        }))
+        .map((item, index) => {
+            const score = searchScore(query, fields(item));
+            return {
+                item,
+                index,
+                score: score === undefined ? undefined : score + boost(item),
+            };
+        })
         .filter(
             (entry): entry is { item: T; index: number; score: number } =>
                 entry.score !== undefined,

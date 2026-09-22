@@ -1,0 +1,343 @@
+/*
+ * Command palette. Every animation here is transform/opacity only so it runs on the compositor:
+ * the border ring is a rotating child clipped by a static mask, never an animated gradient.
+ */
+
+.command-palette {
+    --palette-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --palette-ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+    --palette-radius: 16px;
+    --palette-surface: rgba(250, 249, 252, 0.9);
+    --palette-highlight: rgba(100, 66, 255, 0.1);
+    --palette-divider: rgba(0, 0, 0, 0.07);
+    --palette-rim: rgba(255, 255, 255, 0.7);
+    --palette-kbd: rgba(0, 0, 0, 0.05);
+    --palette-ring-a: rgb(100, 66, 255);
+    --palette-ring-b: rgb(0, 170, 255);
+    --palette-ring-c: rgb(236, 72, 153);
+    --palette-shadow:
+        0 28px 70px -16px rgba(20, 16, 40, 0.35),
+        0 10px 24px -12px rgba(20, 16, 40, 0.2);
+}
+
+.dark .command-palette {
+    --palette-surface: rgba(24, 23, 30, 0.9);
+    --palette-highlight: rgba(150, 126, 255, 0.16);
+    --palette-divider: rgba(255, 255, 255, 0.07);
+    --palette-rim: rgba(255, 255, 255, 0.07);
+    --palette-kbd: rgba(255, 255, 255, 0.07);
+    --palette-ring-a: rgb(150, 126, 255);
+    --palette-ring-b: rgb(86, 204, 255);
+    --palette-ring-c: rgb(255, 122, 200);
+    --palette-shadow:
+        0 28px 80px -12px rgba(0, 0, 0, 0.7),
+        0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------------------------------------------------------------- overlay */
+
+.palette-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: rgba(12, 10, 20, 0.12);
+}
+.dark .palette-overlay {
+    background: rgba(0, 0, 0, 0.3);
+}
+.palette-overlay[data-state="open"] {
+    animation: palette-fade-in 200ms var(--palette-ease-out);
+}
+.palette-overlay[data-state="closed"] {
+    animation: palette-fade-out 130ms var(--palette-ease-in) forwards;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.palette-shell {
+    position: fixed;
+    top: 14vh;
+    left: 50%;
+    z-index: 901;
+    width: min(640px, calc(100vw - 32px));
+    translate: -50% 0;
+    transform-origin: 50% 0;
+    border-radius: var(--palette-radius);
+    box-shadow: var(--palette-shadow);
+    outline: none;
+    will-change: transform, opacity;
+}
+.palette-shell[data-state="open"] {
+    animation: palette-in 260ms var(--palette-ease-out);
+}
+.palette-shell[data-state="closed"] {
+    animation: palette-out 130ms var(--palette-ease-in) forwards;
+}
+
+.palette-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--palette-radius);
+    background: var(--palette-surface);
+    backdrop-filter: blur(32px) saturate(180%);
+    -webkit-backdrop-filter: blur(32px) saturate(180%);
+    box-shadow: inset 0 1px 0 0 var(--palette-rim);
+}
+
+/* Animated border: a 1px ring (static mask) over a slowly rotating conic gradient. */
+.palette-ring {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    padding: 1px;
+    overflow: hidden;
+    border-radius: var(--palette-radius);
+    pointer-events: none;
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#000 0 0) content-box exclude,
+        linear-gradient(#000 0 0);
+    animation: palette-ring-settle 1400ms var(--palette-ease-out) both;
+}
+.palette-ring::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        var(--palette-ring-a) 50deg,
+        var(--palette-ring-b) 100deg,
+        transparent 150deg,
+        transparent 180deg,
+        var(--palette-ring-c) 230deg,
+        var(--palette-ring-a) 280deg,
+        transparent 330deg
+    );
+    animation: palette-spin 7s linear infinite;
+    will-change: transform;
+}
+
+/* ------------------------------------------------------------------ input */
+
+.palette-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--palette-divider);
+    color: var(--color-text-subtitle);
+}
+.palette-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    caret-color: var(--palette-ring-a);
+}
+.palette-input::placeholder {
+    color: var(--color-text-subtitle);
+}
+
+/* ------------------------------------------------------------------- list */
+
+.palette-list {
+    height: var(--palette-list-height, auto);
+    max-height: min(400px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: 8px;
+    transition: height 200ms var(--palette-ease-out);
+}
+.palette-list-inner {
+    position: relative;
+    padding: 8px;
+}
+.palette-group-heading {
+    padding: 10px 12px 6px;
+    color: var(--color-text-subtitle);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    user-select: none;
+}
+.palette-item {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 42px;
+    padding: 0 12px;
+    border-radius: 10px;
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+.palette-item-icon {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--color-text-subtitle);
+    transition: color 150ms ease;
+}
+.palette-item[aria-selected="true"] .palette-item-icon {
+    color: var(--palette-ring-a);
+}
+.palette-item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.palette-item-group {
+    flex-shrink: 0;
+    color: var(--color-text-subtitle);
+    font-size: 12px;
+}
+.palette-item[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.45;
+}
+
+/* The selection highlight glides between rows instead of jumping. */
+.palette-highlight {
+    position: absolute;
+    top: 0;
+    right: 8px;
+    left: 8px;
+    z-index: 0;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--palette-highlight);
+    box-shadow: inset 0 0 0 1px var(--palette-highlight);
+    pointer-events: none;
+    will-change: transform;
+}
+.palette-highlight[data-animate="true"] {
+    transition: transform 170ms var(--palette-ease-out);
+}
+
+.palette-empty {
+    padding: 28px 12px;
+    color: var(--color-text-subtitle);
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ----------------------------------------------------------------- keys */
+
+.palette-kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 6px;
+    background: var(--palette-kbd);
+    color: var(--color-text-subtitle);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.palette-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    height: 40px;
+    padding: 0 16px;
+    border-top: 1px solid var(--palette-divider);
+    color: var(--color-text-subtitle);
+    font-size: 12px;
+}
+.palette-footer-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ------------------------------------------------------------- keyframes */
+
+@keyframes palette-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.965);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes palette-out {
+    from {
+        opacity: 1;
+        transform: none;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+    }
+}
+@keyframes palette-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+@keyframes palette-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+@keyframes palette-spin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+/* The ring flares as the palette opens, then settles to a quiet shimmer. */
+@keyframes palette-ring-settle {
+    0% {
+        opacity: 0;
+    }
+    25% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.55;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .palette-shell[data-state="open"],
+    .palette-shell[data-state="closed"] {
+        animation-name: palette-fade-in;
+        animation-duration: 120ms;
+    }
+    .palette-shell[data-state="closed"] {
+        animation-name: palette-fade-out;
+    }
+    .palette-ring::before {
+        animation: none;
+    }
+    .palette-highlight[data-animate="true"],
+    .palette-list {
+        transition: none;
+    }
+}

@@ -96,7 +96,7 @@ export function useBatchEditActionHandlers() {
                 );
             }
         },
-        { enabled },
+        { enabled: enabled && selectedMarchers.length > 0 },
     );
 
     useActionHandler(
@@ -162,6 +162,6 @@ export function useBatchEditActionHandlers() {
                 );
             }
         },
-        { enabled },
+        { enabled: enabled && selectedMarchers.length > 0 },
     );
 }

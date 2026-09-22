@@ -22,6 +22,7 @@ export function useAlignmentActionHandlers() {
         selectedMarchers,
     } = useEditorReadiness();
     const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const hasSelection = ready && selectedMarchers.length > 0;
     const { mutate: swapMarchers } = useMutation(
         swapMarchersMutationOptions(queryClient),
     );
@@ -72,7 +73,7 @@ export function useAlignmentActionHandlers() {
             });
             updateMarcherPages(alignedCoords);
         },
-        { enabled: ready },
+        { enabled: hasSelection },
     );
 
     useActionHandler(
@@ -83,7 +84,7 @@ export function useAlignmentActionHandlers() {
             });
             updateMarcherPages(alignedCoords);
         },
-        { enabled: ready },
+        { enabled: hasSelection },
     );
 
     useActionHandler(
@@ -97,7 +98,7 @@ export function useAlignmentActionHandlers() {
                 });
             updateMarcherPages(distributedCoords);
         },
-        { enabled: ready },
+        { enabled: hasSelection },
     );
 
     useActionHandler(
@@ -111,7 +112,7 @@ export function useAlignmentActionHandlers() {
                 });
             updateMarcherPages(distributedCoords);
         },
-        { enabled: ready },
+        { enabled: hasSelection },
     );
 
     useActionHandler(
@@ -122,7 +123,7 @@ export function useAlignmentActionHandlers() {
             );
             updateMarcherPages(flippedCoords);
         },
-        { enabled: ready },
+        { enabled: hasSelection },
     );
 
     useActionHandler(
@@ -133,7 +134,7 @@ export function useAlignmentActionHandlers() {
             );
             updateMarcherPages(flippedCoords);
         },
-        { enabled: ready },
+        { enabled: hasSelection },
     );
 
     useActionHandler(
@@ -153,6 +154,6 @@ export function useAlignmentActionHandlers() {
                 marcher2Id: selectedMarchers[1].id,
             });
         },
-        { enabled: ready },
+        { enabled: ready && selectedMarchers.length === 2 },
     );
 }

@@ -4,6 +4,7 @@ import {
     fireEvent,
     render,
     screen,
+    within,
 } from "@testing-library/react";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -11,6 +12,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import CommandPalette from "../palette/CommandPalette";
 import { registerPaletteSource } from "../palette/sources";
 import { registerActionHandler, runAction } from "../registry";
+import { getPaletteUsageScores, recordPaletteUsage } from "../palette/usage";
 
 const offs: Array<() => void> = [];
 function handle(
@@ -46,6 +48,7 @@ describe("CommandPalette", () => {
     afterEach(() => {
         offs.splice(0).forEach((off) => off());
         cleanup();
+        localStorage.clear();
     });
 
     it("lists handled actions and searches by keywords", () => {
@@ -123,5 +126,79 @@ describe("CommandPalette", () => {
         fireEvent.change(input, { target: { value: "page 3" } });
         fireEvent.keyDown(input, { key: "Enter" });
         await vi.waitFor(() => expect(run).toHaveBeenCalledTimes(1));
+    });
+
+    it("opens with curated suggestions first", () => {
+        handle("nextPage");
+        handle("swapMarchers");
+        handle("createCircle");
+        renderPalette();
+        const suggested = screen.getByRole("group", { name: "Suggested" });
+        expect(
+            within(suggested)
+                .getAllByRole("option")
+                .map((o) => o.textContent),
+        ).toEqual([
+            expect.stringMatching(/^Create circle/),
+            expect.stringMatching(/^Swap two marchers/),
+        ]);
+        expect(optionLabels()[2]).toMatch(/^Next page/);
+    });
+
+    it("puts runnable suggestions before unavailable ones", () => {
+        handle("createCircle", false);
+        handle("swapMarchers");
+        renderPalette();
+        const suggested = screen.getByRole("group", { name: "Suggested" });
+        const [first, second] = within(suggested).getAllByRole("option");
+        expect(first).toHaveTextContent(/^Swap two marchers/);
+        expect(first).toHaveAttribute("aria-selected", "true");
+        expect(second).toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("positions the selection highlight once the portal content mounts", () => {
+        handle("swapMarchers");
+        renderPalette();
+        const highlight =
+            document.querySelector<HTMLElement>(".palette-highlight")!;
+        expect(highlight.style.transform).toMatch(/^translateY\(/);
+        expect(highlight.style.opacity).toBe("1");
+    });
+
+    it("puts frequently used commands first", () => {
+        handle("nextPage");
+        handle("createCircle");
+        recordPaletteUsage("action:nextPage");
+        recordPaletteUsage("action:nextPage");
+        renderPalette();
+        const suggested = screen.getByRole("group", { name: "Suggested" });
+        expect(within(suggested).getAllByRole("option")[0]).toHaveTextContent(
+            /^Next page/,
+        );
+    });
+
+    it("records usage when a command runs", async () => {
+        handle("exportVideo");
+        const input = renderPalette();
+        fireEvent.change(input, { target: { value: "video" } });
+        fireEvent.keyDown(input, { key: "Enter" });
+        await vi.waitFor(() =>
+            expect(getPaletteUsageScores().get("action:exportVideo")).toBe(100),
+        );
+    });
+});
+
+describe("palette usage", () => {
+    it("weights recent use above old use", () => {
+        const now = Date.now();
+        const day = 24 * 60 * 60 * 1000;
+        recordPaletteUsage("old", now - 60 * day);
+        recordPaletteUsage("old", now - 60 * day);
+        recordPaletteUsage("old", now - 60 * day);
+        recordPaletteUsage("recent", now);
+        const scores = getPaletteUsageScores(now);
+        expect(scores.get("recent")).toBe(100);
+        expect(scores.get("old")).toBe(90);
+        localStorage.clear();
     });
 });

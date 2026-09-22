@@ -67,7 +67,7 @@ export function useCursorActionHandlers() {
             );
             resetAlignmentEvent();
         },
-        { enabled: ready },
+        { enabled: ready && alignmentEventNewMarcherPages.length > 0 },
     );
 
     useActionHandler(
@@ -89,7 +89,7 @@ export function useCursorActionHandlers() {
             });
             resetAlignmentEvent();
         },
-        { enabled: ready },
+        { enabled: ready && alignmentEventNewMarcherPages.length > 0 },
     );
 
     useActionHandler(
@@ -113,7 +113,7 @@ export function useCursorActionHandlers() {
             setAlignmentEventMarchers(selectedMarchers);
             setSelectedMarchers([]);
         },
-        { enabled: ready },
+        { enabled: ready && selectedMarchers.length >= 2 },
     );
 
     useActionHandler(
@@ -153,6 +153,6 @@ export function useCursorActionHandlers() {
                 }));
             });
         },
-        { enabled: ready },
+        { enabled: ready && selectedMarchers.length > 0 },
     );
 }

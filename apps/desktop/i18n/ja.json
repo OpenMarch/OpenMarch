@@ -3,64 +3,64 @@
         "alignment": {
             "alignHorizontally": "水平方向に整列",
             "alignVertically": "垂直 に 配置",
-            "cancelUpdates": "マーチャー への アップデートをキャンセル",
-            "distributeHorizontally": "行進者 を 横 に 均等 に 配置する",
-            "distributeVertically": "行進者 を 縦 に 均等 に 配置する",
-            "flipHorizontal": "行進者 を 横 に 反転する",
-            "flipVertical": "行進者を縦に反転",
+            "cancelUpdates": "キャンセル / 選択解除",
+            "distributeHorizontally": "水平方向に均等配置",
+            "distributeVertically": "垂直方向に均等配置",
+            "flipHorizontal": "左右反転",
+            "flipVertical": "上下反転",
             "lockX": "X 軸 をロック",
-            "lockXOff": "X 移動を有効にする",
+            "lockXOff": "X方向の移動のロックを解除",
             "lockXOn": "X の動きをロック",
             "lockY": "Y 軸 をロック",
-            "lockYOff": "Y 移動を有効にする",
+            "lockYOff": "Y方向の移動のロックを解除",
             "lockYOn": "Y の動きをロック",
-            "snapToCustomFraction": "最も近い 整数 に スナップ",
+            "snapToCustomFraction": "グリッドにスナップ",
             "snapToWhole": "最も近い 整数 に スナップ"
         },
         "batchEdit": {
             "noNextPage": "進行中の座標を 次のページには設定できません 。次のページがありません",
             "noPreviousPage": "進行中の座標を 前のページには設定できません 。前のページがありません",
-            "setAllToNext": "すべての マーカー座標を 次のページに設定",
+            "setAllToNext": "次のページの位置をコピー（全員）",
             "setAllToNextSuccess": "すべての {count} マーカー座標をページ {currentPage} 上の次のページ {nextPage} の座標に成功して設定しました",
-            "setAllToPrevious": "すべての マーカー座標を 前のページに設定",
+            "setAllToPrevious": "前のページの位置をコピー（全員）",
             "setAllToPreviousSuccess": "すべての {count} マーカー座標をページ {currentPage} 上の前のページ {previousPage} の座標に成功して設定しました",
-            "setSelectedToNext": "選択したマーチャーの座標を 次のページに設定",
+            "setSelectedToNext": "次のページの位置をコピー（選択中）",
             "setSelectedToNextSuccess": "{count, plural, other {'{'count, plural, other '{'ページ '{'currentPage'}' 上の '{'count'}' ヶ所の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'\n'{'count, plural, one '{'ページ '{'currentPage'}' 上の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'}}",
-            "setSelectedToPrevious": "選択したマーチャーの座標を 前のページに設定",
+            "setSelectedToPrevious": "前のページの位置をコピー（選択中）",
             "setSelectedToPreviousSuccess": "{count, plural, other {ページ {currentPage} 上の {count} マーカー座標を前のページ {previousPage} の座標に成功して設定しました}}"
         },
         "cursor": {
-            "defaultMode": "カーソルモードをデフォルトに設定",
-            "lineMode": "選択したマーチャーから ライン を作成する"
+            "defaultMode": "選択モード",
+            "lineMode": "ラインを作成"
         },
         "edit": {
             "noRedoAvailable": "やり直すアクションはありません",
             "noUndoAvailable": "元に戻すアクションはありません",
-            "redo": "やり直し を実行",
-            "undo": "元に戻す を実行"
+            "redo": "やり直す",
+            "undo": "元に戻す"
         },
         "file": {
             "closeFile": "ファイルを閉じる",
-            "exportCoordinateSheets": "座標シートをエクスポート",
+            "exportCoordinateSheets": "座標シートをエクスポート…",
             "exportCoordinateSheetsKeywords": "印刷 pdf シート",
-            "exportDrillCharts": "ドリルチャートをエクスポート",
+            "exportDrillCharts": "ドリルチャートをエクスポート…",
             "exportDrillChartsKeywords": "印刷 pdf",
-            "exportToMobile": "OpenMarch Mobile にエクスポート",
+            "exportToMobile": "OpenMarch Mobile にエクスポート…",
             "exportToMobileKeywords": "スマホ アプリ アップロード",
-            "exportVideo": "動画をエクスポート",
+            "exportVideo": "動画をエクスポート…",
             "exportVideoKeywords": "mp4 ムービー レンダリング",
-            "importMusicXml": "MusicXML ファイル をインポートして 小節 を取得",
-            "insertAudio": "新しい音声ファイルをショーにロードする",
-            "loadDialogue": "ロードファイル ダイアログを開始",
-            "newDialogue": "新規ファイル ダイアログを開始",
-            "openExport": "エクスポート",
-            "saveDialogue": "保存ファイル ダイアログを開始"
+            "importMusicXml": "MusicXML を読み込む…",
+            "insertAudio": "オーディオファイルを追加…",
+            "loadDialogue": "ファイルを開く…",
+            "newDialogue": "新規ファイル…",
+            "openExport": "エクスポート…",
+            "saveDialogue": "コピーを保存…"
         },
         "movement": {
-            "moveDown": "選択したマーチャーを下に移動",
-            "moveLeft": "選択したマーチャーを左に移動",
-            "moveRight": "選択したマーチャーを右に移動",
-            "moveUp": "選択したマーチャーを上に移動"
+            "moveDown": "下へ移動",
+            "moveLeft": "左へ移動",
+            "moveRight": "右へ移動",
+            "moveUp": "上へ移動"
         },
         "navigation": {
             "firstPage": "最初 の ページ",
@@ -71,14 +71,14 @@
         "playback": {
             "pause": "一時停止",
             "play": "再生",
-            "playPause": "再生 または 一時停止"
+            "playPause": "再生 / 一時停止"
         },
         "select": {
-            "selectAll": "すべての行進者を選択"
+            "selectAll": "すべて選択"
         },
         "shape": {
-            "applyQuick": "編集可能なオブジェクトを作成せずに形状にスナップする",
-            "create": "ページにまたがって編集可能な、線または曲線で構成された新しい形状を作成",
+            "applyQuick": "図形にスナップ",
+            "create": "図形を作成",
             "createCircle": "円を作成",
             "delete": "選択されている形状を削除",
             "noMarchersSelected": "行進者が選択されていません"
@@ -87,19 +87,20 @@
             "error": "スワップできませんでした マーチャーズ {marcher1} と {marcher2}",
             "mustSelectTwo": "2 人の行進者を選択した場合にのみ交換可能です。",
             "success": "スワップしました マーチャーズ {marcher1} と {marcher2}",
-            "swap": "スワップ マーチャーズ"
+            "swap": "2人のメンバーを入れ替え"
         },
         "ui": {
-            "focusCanvas": "キャンバス を フォーカス",
-            "focusTimeline": "タイムラインをフォーカス",
-            "hideNextPaths": "次のページ ドット /パスを非表示",
-            "hidePreviousPaths": "前のページ ドット /パスを非表示",
-            "openCommandPalette": "コマンドパレットを開く",
-            "openSettings": "設定を開く",
-            "showNextPaths": "次のページ ドット/パスを表示",
-            "showPreviousPaths": "前のページ ドット/パスを表示",
-            "toggleNextPaths": "次のページ パスの表示を切り替え",
-            "togglePreviousPaths": "前のページ パスの表示を切り替え"
+            "exitTimelineFocus": "タイムラインの編集を終了",
+            "focusCanvas": "キャンバスにフォーカス",
+            "focusTimeline": "タイムラインを編集",
+            "hideNextPaths": "次のページの経路を隠す",
+            "hidePreviousPaths": "前のページの経路を隠す",
+            "openCommandPalette": "コマンドパレット",
+            "openSettings": "設定…",
+            "showNextPaths": "次のページの経路を表示",
+            "showPreviousPaths": "前のページの経路を表示",
+            "toggleNextPaths": "次のページの経路を切り替え",
+            "togglePreviousPaths": "前のページの経路を切り替え"
         }
     },
     "analyticsOptIn": {
@@ -192,8 +193,12 @@
         "save": "保存"
     },
     "commandPalette": {
+        "close": "閉じる",
         "empty": "一致するコマンドはありません。",
+        "navigate": "移動",
         "placeholder": "コマンドを検索…",
+        "run": "実行",
+        "suggested": "おすすめ",
         "title": "コマンドパレット",
         "unavailable": "現在は利用できません"
     },

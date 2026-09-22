@@ -3,35 +3,35 @@
         "alignment": {
             "alignHorizontally": "Alinhar horizontalmente",
             "alignVertically": "Alinhar verticalmente",
-            "cancelUpdates": "Cancelar atualizações para os marchadores",
-            "distributeHorizontally": "Distribuir marchadores uniformemente na horizontal",
-            "distributeVertically": "Distribuir marchadores uniformemente na vertical",
-            "flipHorizontal": "Virar marchadores na horizontal",
-            "flipVertical": "Inverter marchantes verticalmente",
+            "cancelUpdates": "Cancelar ou desmarcar",
+            "distributeHorizontally": "Distribuir horizontalmente",
+            "distributeVertically": "Distribuir verticalmente",
+            "flipHorizontal": "Espelhar horizontalmente",
+            "flipVertical": "Espelhar verticalmente",
             "lockX": "Travar eixo X",
-            "lockXOff": "Habilitar movimento em X",
+            "lockXOff": "Desbloquear movimento X",
             "lockXOn": "Bloquear movimento X",
             "lockY": "Travar eixo Y",
-            "lockYOff": "Habilitar movimento em Y",
+            "lockYOff": "Desbloquear movimento Y",
             "lockYOn": "Bloquear movimento Y",
-            "snapToCustomFraction": "Ajustar para o inteiro mais próximo",
+            "snapToCustomFraction": "Ajustar à grade",
             "snapToWhole": "Ajustar para o inteiro mais próximo"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
             "noPreviousPage": "Não é possível definir coordenadas do marcador para a página anterior. Não há página anterior.",
-            "setAllToNext": "Defina todas as coordenadas dos marchadores para a próxima página",
+            "setAllToNext": "Copiar posições da próxima página (todos)",
             "setAllToNextSuccess": "Todas as {count} coordenadas dos marchadores na página {currentPage} foram definidas com sucesso para as coordenadas da próxima página {nextPage}",
-            "setAllToPrevious": "Defina todas as coordenadas dos marchadores para a página anterior",
+            "setAllToPrevious": "Copiar posições da página anterior (todos)",
             "setAllToPreviousSuccess": "\"Todas as {count} coordenadas dos marchadores na página {currentPage} foram definidas com sucesso para as coordenadas da página anterior {previousPage}\"",
-            "setSelectedToNext": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a próxima página",
+            "setSelectedToNext": "Copiar posições da próxima página (seleção)",
             "setSelectedToNextSuccess": "{count, plural, one {Sucesso ao definir # coordenada de marcha na página {currentPage} para as coordenadas da próxima página {nextPage}} other {Sucesso ao definir # coordenadas de marcha na página {currentPage} para as coordenadas da próxima página {nextPage}} }",
-            "setSelectedToPrevious": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a página anterior",
+            "setSelectedToPrevious": "Copiar posições da página anterior (seleção)",
             "setSelectedToPreviousSuccess": "{count, plural, other {\"'{count} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {currentPage} foi definida com sucesso para as coordenadas da página anterior {previousPage}'\"}}"
         },
         "cursor": {
-            "defaultMode": "Definir modo do cursor como padrão",
-            "lineMode": "Criar uma linha com os selecionados"
+            "defaultMode": "Modo de seleção",
+            "lineMode": "Criar linha"
         },
         "edit": {
             "noRedoAvailable": "Nenhuma ação para refazer",
@@ -40,27 +40,27 @@
             "undo": "Desfazer"
         },
         "file": {
-            "closeFile": "Sair do arquivo",
-            "exportCoordinateSheets": "Exportar folhas de coordenadas",
+            "closeFile": "Fechar arquivo",
+            "exportCoordinateSheets": "Exportar folhas de coordenadas…",
             "exportCoordinateSheetsKeywords": "imprimir pdf folhas",
-            "exportDrillCharts": "Exportar gráficos de drill",
+            "exportDrillCharts": "Exportar gráficos de drill…",
             "exportDrillChartsKeywords": "imprimir pdf",
-            "exportToMobile": "Exportar para o OpenMarch Mobile",
+            "exportToMobile": "Exportar para o OpenMarch Mobile…",
             "exportToMobileKeywords": "celular app enviar",
-            "exportVideo": "Exportar vídeo",
+            "exportVideo": "Exportar vídeo…",
             "exportVideoKeywords": "mp4 filme renderizar",
-            "importMusicXml": "Importar arquivo MusicXML para obter compassos",
-            "insertAudio": "Carregar novo arquivo de áudio no show",
-            "loadDialogue": "Iniciar diálogo de carregamento de arquivo",
-            "newDialogue": "Iniciar diálogo de novo arquivo",
-            "openExport": "Exportar",
-            "saveDialogue": "Iniciar diálogo de salvamento de arquivo"
+            "importMusicXml": "Importar MusicXML…",
+            "insertAudio": "Adicionar arquivo de áudio…",
+            "loadDialogue": "Abrir arquivo…",
+            "newDialogue": "Novo arquivo…",
+            "openExport": "Exportar…",
+            "saveDialogue": "Salvar uma cópia…"
         },
         "movement": {
-            "moveDown": "Mover o(s) marchador(es) selecionado(s) para baixo",
-            "moveLeft": "Mover o(s) marchador(es) selecionado(s) para a esquerda",
-            "moveRight": "Mover o(s) marchador(es) selecionado(s) para a direita",
-            "moveUp": "Mover o(s) marchador(es) selecionado(s) para cima"
+            "moveDown": "Mover para baixo",
+            "moveLeft": "Mover para a esquerda",
+            "moveRight": "Mover para a direita",
+            "moveUp": "Mover para cima"
         },
         "navigation": {
             "firstPage": "Primeira página",
@@ -71,14 +71,14 @@
         "playback": {
             "pause": "Pausar",
             "play": "Reproduzir",
-            "playPause": "Tocar ou pausar"
+            "playPause": "Reproduzir / pausar"
         },
         "select": {
-            "selectAll": "Selecionar todos os marchadores"
+            "selectAll": "Selecionar tudo"
         },
         "shape": {
-            "applyQuick": "Alinha marchadores à forma sem criar um objeto editável",
-            "create": "Cria uma nova forma com linhas ou curvas que podem ser editadas em várias páginas",
+            "applyQuick": "Ajustar à forma",
+            "create": "Criar forma",
             "createCircle": "Criar círculo",
             "delete": "Exclui as formas selecionadas atualmente",
             "noMarchersSelected": "Nenhum marchador selecionado"
@@ -87,19 +87,20 @@
             "error": "Não foi possível trocar marchadores {marcher1} e {marcher2}",
             "mustSelectTwo": "Só é possível trocar quando 2 marchadores estão selecionados.",
             "success": "Trocou marchadores {marcher1} e {marcher2}",
-            "swap": "Trocar marchadores"
+            "swap": "Trocar dois integrantes"
         },
         "ui": {
-            "focusCanvas": "Focar a tela",
-            "focusTimeline": "Focar a linha do tempo",
-            "hideNextPaths": "Ocultar próximos pontos/caminhos",
-            "hidePreviousPaths": "Ocultar pontos/caminhos anteriores",
-            "openCommandPalette": "Abrir paleta de comandos",
-            "openSettings": "Abrir configurações",
-            "showNextPaths": "Mostrar próximos pontos/caminhos",
-            "showPreviousPaths": "Mostrar pontos/caminhos anteriores",
-            "toggleNextPaths": "Alternar visualização dos caminhos de próxima página",
-            "togglePreviousPaths": "Alternar visualização dos caminhos de página anteriores"
+            "exitTimelineFocus": "Concluir edição da linha do tempo",
+            "focusCanvas": "Focar o canvas",
+            "focusTimeline": "Editar linha do tempo",
+            "hideNextPaths": "Ocultar trajetos da próxima página",
+            "hidePreviousPaths": "Ocultar trajetos da página anterior",
+            "openCommandPalette": "Paleta de comandos",
+            "openSettings": "Configurações…",
+            "showNextPaths": "Mostrar trajetos da próxima página",
+            "showPreviousPaths": "Mostrar trajetos da página anterior",
+            "toggleNextPaths": "Alternar trajetos da próxima página",
+            "togglePreviousPaths": "Alternar trajetos da página anterior"
         }
     },
     "analyticsOptIn": {
@@ -192,8 +193,12 @@
         "save": "Salvar"
     },
     "commandPalette": {
+        "close": "Fechar",
         "empty": "Nenhum comando corresponde.",
+        "navigate": "Navegar",
         "placeholder": "Pesquisar comandos…",
+        "run": "Executar",
+        "suggested": "Sugestões",
         "title": "Paleta de comandos",
         "unavailable": "Indisponível no momento"
     },

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import type { Translate } from "../labels";
 
 /** One row in the command palette. */
@@ -6,14 +6,17 @@ export interface PaletteItem {
     /** Unique across all sources, e.g. "action:nextPage" or "page:12". */
     id: string;
     label: string;
-    /** Shown beside the label and searched, e.g. the category. */
+    /** Heading the item is listed under, also searched, e.g. the category. */
     group: string;
+    icon?: ReactNode;
     /** Extra search words that aren't shown. */
     keywords?: readonly string[];
     /** Formatted shortcut, e.g. "⌘K". */
     shortcut?: string;
     /** Shown greyed out and can't be run. */
     disabled?: boolean;
+    /** Curated position in "Suggested" before usage history exists (lower comes first). */
+    suggestedRank?: number;
     run: () => void;
 }
 

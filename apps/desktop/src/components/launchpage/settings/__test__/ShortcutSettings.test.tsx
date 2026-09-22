@@ -67,11 +67,11 @@ describe("ShortcutSettings", () => {
 
     it("matches every search word anywhere in the label", () => {
         render(<ShortcutSettings />, { wrapper: Providers });
-        search("up move ¼");
+        search("up nudge ¼");
         expect(
-            screen.getByText("Move selected marcher(s) up (¼ step, no snap)"),
+            screen.getByText("Nudge up (¼ step, no snap)"),
         ).toBeInTheDocument();
-        expect(screen.queryByText(/marcher\(s\) down/)).toBeNull();
+        expect(screen.queryByText(/Nudge down/)).toBeNull();
     });
 
     it("cancels recording with Escape", () => {
