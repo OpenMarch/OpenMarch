@@ -1,9 +1,14 @@
+import { useSyncExternalStore } from "react";
 import clsx from "clsx";
 import { useTolgee } from "@tolgee/react";
 import { twMerge } from "tailwind-merge";
 import type { ActionId } from "./definitions";
 import { getActionTooltip } from "./labels";
-import { runAction } from "./registry";
+import {
+    isActionEnabled,
+    runAction,
+    subscribeToActionHandlers,
+} from "./registry";
 
 export type ActionButtonProps = Omit<
     React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -16,20 +21,28 @@ export type ActionButtonProps = Omit<
     toggleState?: "on" | "off";
 };
 
-/** A button that runs a registered action; its tooltip shows the current shortcut. */
+/**
+ * A button that runs a registered action; its tooltip shows the current shortcut.
+ * Disabled while the action has no enabled handler, so a click never silently does nothing.
+ */
 export default function ActionButton({
     action,
     tooltip,
     toggleState,
     children,
     className,
+    disabled,
     ...rest
 }: ActionButtonProps) {
     const { t } = useTolgee();
+    const runnable = useSyncExternalStore(subscribeToActionHandlers, () =>
+        isActionEnabled(action),
+    );
     return (
         <button
             type="button"
             {...rest}
+            disabled={disabled || !runnable}
             title={
                 tooltip ??
                 getActionTooltip(

@@ -1,10 +1,18 @@
-import { fireEvent, render, screen, cleanup } from "@testing-library/react";
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    renderHook,
+    screen,
+} from "@testing-library/react";
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import ActionButton from "../ActionButton";
 import { getActionLabel, getActionTooltip } from "../labels";
 import { registerActionHandler } from "../registry";
+import { useActionHandler } from "../useActionHandler";
 
 const t = (key: string, params?: Record<string, string | number>) =>
     params ? `${key}:${JSON.stringify(params)}` : key;
@@ -55,6 +63,44 @@ describe("ActionButton", () => {
         });
         fireEvent.click(screen.getByRole("button", { name: "Flip" }));
         expect(run).toHaveBeenCalledTimes(1);
+        off();
+    });
+
+    it("is disabled while the action has no handler", () => {
+        render(<ActionButton action="flipHorizontal">Flip</ActionButton>, {
+            wrapper: Providers,
+        });
+        expect(screen.getByRole("button", { name: "Flip" })).toBeDisabled();
+    });
+
+    it("follows the handler's enabled state", () => {
+        const { rerender, unmount } = renderHook(
+            ({ enabled }) =>
+                useActionHandler("flipHorizontal", vi.fn(), { enabled }),
+            { initialProps: { enabled: false } },
+        );
+        render(<ActionButton action="flipHorizontal">Flip</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Flip" });
+        expect(button).toBeDisabled();
+        act(() => rerender({ enabled: true }));
+        expect(button).toBeEnabled();
+        unmount();
+    });
+
+    it("respects an explicit disabled prop", () => {
+        const off = registerActionHandler("flipHorizontal", {
+            run: vi.fn(),
+            isEnabled: () => true,
+        });
+        render(
+            <ActionButton action="flipHorizontal" disabled>
+                Flip
+            </ActionButton>,
+            { wrapper: Providers },
+        );
+        expect(screen.getByRole("button", { name: "Flip" })).toBeDisabled();
         off();
     });
 });

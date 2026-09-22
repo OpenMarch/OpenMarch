@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import type { ActionArgs, ActionId } from "./definitions";
-import { registerActionHandler } from "./registry";
+import { notifyActionHandlersChanged, registerActionHandler } from "./registry";
 
 interface HandlerOptions {
     /** When false the action is skipped by shortcuts and greyed out in the palette. Default true. */
@@ -20,12 +20,18 @@ export function useActionHandlerGroup(
     run: (id: ActionId, args: ActionArgs | undefined) => void,
     options: HandlerOptions = {},
 ): void {
+    const enabled = options.enabled ?? true;
     const runRef = useRef(run);
-    const enabledRef = useRef(options.enabled ?? true);
+    const enabledRef = useRef(enabled);
     useLayoutEffect(() => {
         runRef.current = run;
-        enabledRef.current = options.enabled ?? true;
     });
+    useLayoutEffect(() => {
+        if (enabledRef.current === enabled) return;
+        enabledRef.current = enabled;
+        // Lets subscribers such as ActionButton re-read isActionEnabled().
+        notifyActionHandlersChanged();
+    }, [enabled]);
 
     const idsKey = ids.join("|");
     useEffect(() => {

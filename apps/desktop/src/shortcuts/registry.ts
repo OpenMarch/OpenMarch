@@ -50,6 +50,11 @@ export function runAction(id: ActionId): boolean {
     return true;
 }
 
+/** Call when a handler's `isEnabled()` result may have changed without a (un)registration. */
+export function notifyActionHandlersChanged(): void {
+    notify();
+}
+
 export function subscribeToActionHandlers(listener: () => void): () => void {
     listeners.add(listener);
     return () => {
