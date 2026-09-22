@@ -9,6 +9,14 @@ const TEXT_INPUT_SELECTOR = [
     "#__tolgee_dev_tools",
 ].join(", ");
 
+// Content elements of Radix layers that can be modal: Dialog, AlertDialog, Popover, DropdownMenu, ContextMenu, Select.
+const OPEN_MODAL_LAYER_SELECTOR = [
+    '[role="dialog"][data-state="open"]',
+    '[role="alertdialog"][data-state="open"]',
+    '[role="menu"][data-state="open"]',
+    '[role="listbox"][data-state="open"]',
+].join(", ");
+
 export function readShortcutContext(
     baseScope: ShortcutContext["baseScope"],
 ): ShortcutContext {
@@ -20,7 +28,10 @@ export function readShortcutContext(
             (active.matches(TEXT_INPUT_SELECTOR) ||
                 active.closest("#sentry-feedback, #__tolgee_dev_tools") !==
                     null),
-        // Radix sets pointer-events: none on <body> while a modal Dialog, AlertDialog or DropdownMenu is open.
-        modalOpen: document.body.style.pointerEvents === "none",
+        // Radix sets pointer-events: none on <body> while a modal layer is open, but can leave it behind
+        // when a layer unmounts while open. Require a live open layer too so a stale style can't block every shortcut.
+        modalOpen:
+            document.body.style.pointerEvents === "none" &&
+            document.querySelector(OPEN_MODAL_LAYER_SELECTOR) !== null,
     };
 }

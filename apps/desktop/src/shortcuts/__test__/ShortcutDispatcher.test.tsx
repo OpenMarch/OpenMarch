@@ -29,9 +29,20 @@ describe("readShortcutContext", () => {
         expect(readShortcutContext("canvas").inTextInput).toBe(false);
     });
 
-    it("detects modal via body pointer-events", () => {
+    it("detects an open modal layer with body pointer-events", () => {
+        document.body.innerHTML = `<div role="dialog" data-state="open"></div>`;
         document.body.style.pointerEvents = "none";
         expect(readShortcutContext("canvas").modalOpen).toBe(true);
+    });
+
+    it("ignores pointer-events left behind after a modal unmounts", () => {
+        document.body.style.pointerEvents = "none";
+        expect(readShortcutContext("canvas").modalOpen).toBe(false);
+    });
+
+    it("ignores open non-modal layers", () => {
+        document.body.innerHTML = `<div role="dialog" data-state="open"></div>`;
+        expect(readShortcutContext("canvas").modalOpen).toBe(false);
     });
 });
 
