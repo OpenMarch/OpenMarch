@@ -17,6 +17,8 @@ export type ActionArgs = Readonly<Record<string, string | number | boolean>>;
 export interface ActionDefinition {
     /** i18n key, e.g. "actions.alignment.lockX" */
     labelKey: string;
+    /** i18n key of extra space-separated search words for the command palette, e.g. "print pdf" */
+    keywordsKey?: string;
     /** i18n key appended in parentheses, e.g. "(fine)" */
     labelSuffixKey?: string;
     labelParams?: Readonly<Record<string, string | number>>;
@@ -167,6 +169,51 @@ const STATIC_ACTIONS = {
         category: "file",
         scope: "global",
         defaultBindings: [],
+    },
+    closeFile: {
+        labelKey: "actions.file.closeFile",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+    },
+    openExportDialog: {
+        labelKey: "actions.file.openExport",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+        args: { tab: "mobile" },
+    },
+    exportCoordinateSheets: {
+        labelKey: "actions.file.exportCoordinateSheets",
+        keywordsKey: "actions.file.exportCoordinateSheetsKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+        args: { tab: "coordinate-sheets" },
+    },
+    exportDrillCharts: {
+        labelKey: "actions.file.exportDrillCharts",
+        keywordsKey: "actions.file.exportDrillChartsKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+        args: { tab: "drill-charts" },
+    },
+    exportVideo: {
+        labelKey: "actions.file.exportVideo",
+        keywordsKey: "actions.file.exportVideoKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+        args: { tab: "video" },
+    },
+    exportToMobile: {
+        labelKey: "actions.file.exportToMobile",
+        keywordsKey: "actions.file.exportToMobileKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+        args: { tab: "mobile" },
     },
     launchImportMusicXmlFileDialogue: {
         labelKey: "actions.file.importMusicXml",
@@ -351,6 +398,20 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["Alt+T"],
     },
+    openSettings: {
+        labelKey: "actions.ui.openSettings",
+        category: "ui",
+        scope: "global",
+        defaultBindings: ["$mod+Comma"],
+    },
+    openCommandPalette: {
+        labelKey: "actions.ui.openCommandPalette",
+        category: "ui",
+        scope: "global",
+        defaultBindings: ["$mod+K"],
+        allowInInputs: true,
+        hiddenFromPalette: true,
+    },
     exitTimelineFocus: {
         labelKey: "actions.ui.exitTimelineFocus",
         category: "ui",
@@ -431,6 +492,14 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[];
 export const NUDGE_ACTION_IDS = ACTION_IDS.filter((id) =>
     id.startsWith("moveSelectedMarchers"),
 );
+
+export const EXPORT_ACTION_IDS = [
+    "openExportDialog",
+    "exportCoordinateSheets",
+    "exportDrillCharts",
+    "exportVideo",
+    "exportToMobile",
+] as const satisfies readonly ActionId[];
 
 export const TAP_BEATS_ACTION_IDS = ACTION_IDS.filter((id) =>
     id.startsWith("timelineTapBeats"),

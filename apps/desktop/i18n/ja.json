@@ -40,10 +40,20 @@
             "undo": "元に戻す を実行"
         },
         "file": {
+            "closeFile": "ファイルを閉じる",
+            "exportCoordinateSheets": "座標シートをエクスポート",
+            "exportCoordinateSheetsKeywords": "印刷 pdf シート",
+            "exportDrillCharts": "ドリルチャートをエクスポート",
+            "exportDrillChartsKeywords": "印刷 pdf",
+            "exportToMobile": "OpenMarch Mobile にエクスポート",
+            "exportToMobileKeywords": "スマホ アプリ アップロード",
+            "exportVideo": "動画をエクスポート",
+            "exportVideoKeywords": "mp4 ムービー レンダリング",
             "importMusicXml": "MusicXML ファイル をインポートして 小節 を取得",
             "insertAudio": "新しい音声ファイルをショーにロードする",
             "loadDialogue": "ロードファイル ダイアログを開始",
             "newDialogue": "新規ファイル ダイアログを開始",
+            "openExport": "エクスポート",
             "saveDialogue": "保存ファイル ダイアログを開始"
         },
         "movement": {
@@ -84,6 +94,8 @@
             "focusTimeline": "タイムラインをフォーカス",
             "hideNextPaths": "次のページ ドット /パスを非表示",
             "hidePreviousPaths": "前のページ ドット /パスを非表示",
+            "openCommandPalette": "コマンドパレットを開く",
+            "openSettings": "設定を開く",
             "showNextPaths": "次のページ ドット/パスを表示",
             "showPreviousPaths": "前のページ ドット/パスを表示",
             "toggleNextPaths": "次のページ パスの表示を切り替え",
@@ -178,6 +190,12 @@
         "discard": "破棄",
         "removeSetting": "設定を削除",
         "save": "保存"
+    },
+    "commandPalette": {
+        "empty": "一致するコマンドはありません。",
+        "placeholder": "コマンドを検索…",
+        "title": "コマンドパレット",
+        "unavailable": "現在は利用できません"
     },
     "coordinateRoundingSettings": {
         "custom": "カスタム",

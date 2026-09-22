@@ -40,10 +40,20 @@
             "undo": "Perform undo"
         },
         "file": {
+            "closeFile": "Exit file",
+            "exportCoordinateSheets": "Export coordinate sheets",
+            "exportCoordinateSheetsKeywords": "print pdf dot sheets",
+            "exportDrillCharts": "Export drill charts",
+            "exportDrillChartsKeywords": "print pdf",
+            "exportToMobile": "Export to OpenMarch Mobile",
+            "exportToMobileKeywords": "phone app upload",
+            "exportVideo": "Export video",
+            "exportVideoKeywords": "mp4 movie render",
             "importMusicXml": "Import MusicXML file to get measures",
             "insertAudio": "Load new audio file into the show",
             "loadDialogue": "Launch load file dialogue",
             "newDialogue": "Launch new file dialogue",
+            "openExport": "Export",
             "saveDialogue": "Launch save file dialogue"
         },
         "movement": {
@@ -97,6 +107,8 @@
             "focusTimeline": "Focus the timeline",
             "hideNextPaths": "Hide next page dots/paths",
             "hidePreviousPaths": "Hide previous page dots/paths",
+            "openCommandPalette": "Open command palette",
+            "openSettings": "Open settings",
             "showNextPaths": "Show next page dots/paths",
             "showPreviousPaths": "Show previous page dots/paths",
             "toggleNextPaths": "Toggle viewing next page paths",
@@ -191,6 +203,12 @@
         "discard": "Discard",
         "removeSetting": "Remove setting",
         "save": "Save"
+    },
+    "commandPalette": {
+        "empty": "No matching commands.",
+        "placeholder": "Search commands…",
+        "title": "Command palette",
+        "unavailable": "Not available right now"
     },
     "coordinateRoundingSettings": {
         "custom": "Custom",

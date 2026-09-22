@@ -180,8 +180,25 @@ const ARROWS: Record<string, string> = {
     ArrowRight: "→",
 };
 
+/* cspell: disable */
+const PUNCTUATION: Record<string, string> = {
+    Comma: ",",
+    Period: ".",
+    Slash: "/",
+    Backslash: "\\",
+    Semicolon: ";",
+    Quote: "'",
+    BracketLeft: "[",
+    BracketRight: "]",
+    Minus: "-",
+    Equal: "=",
+    Backquote: "`",
+};
+/* cspell: enable */
+
 function formatKey(key: string, isMac: boolean): string {
     if (ARROWS[key]) return ARROWS[key];
+    if (PUNCTUATION[key]) return PUNCTUATION[key];
     if (key === "Escape") return "Esc";
     if (isMac && key === "Enter") return "↩";
     if (isMac && key === "Delete") return "⌦";

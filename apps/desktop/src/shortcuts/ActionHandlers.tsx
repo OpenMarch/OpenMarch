@@ -1,4 +1,5 @@
 import { useAlignmentActionHandlers } from "./handlers/useAlignmentActionHandlers";
+import { useAppActionHandlers } from "./handlers/useAppActionHandlers";
 import { useBatchEditActionHandlers } from "./handlers/useBatchEditActionHandlers";
 import { useCursorActionHandlers } from "./handlers/useCursorActionHandlers";
 import { useFileActionHandlers } from "./handlers/useFileActionHandlers";
@@ -15,6 +16,7 @@ export function FileActionHandlers() {
 
 /** Handlers that need an open show and editor contexts. */
 export function EditorActionHandlers() {
+    useAppActionHandlers();
     useHistoryActionHandlers();
     useNavigationActionHandlers();
     useBatchEditActionHandlers();

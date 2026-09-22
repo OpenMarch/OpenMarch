@@ -40,10 +40,20 @@
             "undo": "Deshacer"
         },
         "file": {
+            "closeFile": "Salir del archivo",
+            "exportCoordinateSheets": "Exportar hojas de coordenadas",
+            "exportCoordinateSheetsKeywords": "imprimir pdf hojas",
+            "exportDrillCharts": "Exportar gráficos de drill",
+            "exportDrillChartsKeywords": "imprimir pdf",
+            "exportToMobile": "Exportar a OpenMarch Mobile",
+            "exportToMobileKeywords": "teléfono app subir",
+            "exportVideo": "Exportar video",
+            "exportVideoKeywords": "mp4 película renderizar",
             "importMusicXml": "Importar archivo MusicXML para obtener compases",
             "insertAudio": "Cargar nuevo archivo de audio en el programa",
             "loadDialogue": "Iniciar diálogo de carga de archivo",
             "newDialogue": "Iniciar diálogo de nuevo archivo",
+            "openExport": "Exportar",
             "saveDialogue": "Iniciar diálogo para guardar archivo"
         },
         "movement": {
@@ -84,6 +94,8 @@
             "focusTimeline": "Enfocar la cronología",
             "hideNextPaths": "Ocultar puntos/rutas de la próxima página",
             "hidePreviousPaths": "Ocultar puntos/rutas de página anterior",
+            "openCommandPalette": "Abrir paleta de comandos",
+            "openSettings": "Abrir ajustes",
             "showNextPaths": "Mostrar puntos/rutas de la próxima página",
             "showPreviousPaths": "Mostrar puntos/rutas de la página anterior",
             "toggleNextPaths": "Alternar visualización de rutas de la página siguiente",
@@ -178,6 +190,12 @@
         "discard": "Descartar",
         "removeSetting": "Eliminar configuración",
         "save": "Guardar"
+    },
+    "commandPalette": {
+        "empty": "Ningún comando coincide.",
+        "placeholder": "Buscar comandos…",
+        "title": "Paleta de comandos",
+        "unavailable": "No disponible ahora"
     },
     "coordinateRoundingSettings": {
         "custom": "Personalizado",

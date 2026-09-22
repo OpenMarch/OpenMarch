@@ -40,10 +40,20 @@
             "undo": "Annuler"
         },
         "file": {
+            "closeFile": "Quitter le fichier",
+            "exportCoordinateSheets": "Exporter les feuilles de coordonnées",
+            "exportCoordinateSheetsKeywords": "imprimer pdf feuilles",
+            "exportDrillCharts": "Exporter les diagrammes",
+            "exportDrillChartsKeywords": "imprimer pdf",
+            "exportToMobile": "Exporter vers OpenMarch Mobile",
+            "exportToMobileKeywords": "téléphone appli envoyer",
+            "exportVideo": "Exporter la vidéo",
+            "exportVideoKeywords": "mp4 film rendu",
             "importMusicXml": "Importer le fichier MusicXML pour obtenir des mesures",
             "insertAudio": "Charger un nouveau fichier audio dans le spectacle",
             "loadDialogue": "Lancer la boîte de dialogue de chargement de fichier",
             "newDialogue": "Lancer une nouvelle boîte de dialogue de fichier",
+            "openExport": "Exporter",
             "saveDialogue": "Lancer la boîte de dialogue de sauvegarde de fichier"
         },
         "movement": {
@@ -84,6 +94,8 @@
             "focusTimeline": "Focaliser la chronologie",
             "hideNextPaths": "Masquer les points/chemins de la page suivante",
             "hidePreviousPaths": "Masquer les points/chemins de la page précédente",
+            "openCommandPalette": "Ouvrir la palette de commandes",
+            "openSettings": "Ouvrir les paramètres",
             "showNextPaths": "Afficher les points/chemins de la page suivante",
             "showPreviousPaths": "Afficher les chemins/pages précédents",
             "toggleNextPaths": "Basculer l'affichage des chemins de pages suivantes",
@@ -178,6 +190,12 @@
         "discard": "Annuler",
         "removeSetting": "Supprimer le paramètre",
         "save": "Sauvegarder"
+    },
+    "commandPalette": {
+        "empty": "Aucune commande ne correspond.",
+        "placeholder": "Rechercher des commandes…",
+        "title": "Palette de commandes",
+        "unavailable": "Indisponible pour le moment"
     },
     "coordinateRoundingSettings": {
         "custom": "Personnalisé",

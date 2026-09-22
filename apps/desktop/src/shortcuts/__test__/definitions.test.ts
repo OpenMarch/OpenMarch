@@ -38,6 +38,7 @@ describe("ACTIONS", () => {
             for (const key of [
                 def.labelKey,
                 def.labelSuffixKey,
+                def.keywordsKey,
                 def.toggleOnKey,
                 def.toggleOffKey,
             ]) {
