@@ -40,20 +40,18 @@ export function useCursorActionHandlers() {
     const { mutate: updateSelectedMarchers } =
         useUpdateSelectedMarchersOnSelectedPage();
 
-    useActionHandler(
-        "cancelAlignmentUpdates",
-        () => {
-            if (alignmentEventMarchers.length > 0) {
-                setSelectedMarchers(alignmentEventMarchers);
-                resetAlignmentEvent();
-            } else {
-                // Deselect all shapes and marchers
-                setSelectedMarchers([]);
-                setSelectedShapePageIds([]);
-            }
-        },
-        { enabled: ready },
-    );
+    // Not gated on `ready`: resetting the alignment event is what clears a half-drawn line
+    // (via the listener swap in Canvas), and that must work even while page data is loading.
+    useActionHandler("cancelAlignmentUpdates", () => {
+        if (alignmentEventMarchers.length > 0) {
+            setSelectedMarchers(alignmentEventMarchers);
+            resetAlignmentEvent();
+        } else {
+            // Deselect all shapes and marchers
+            setSelectedMarchers([]);
+            setSelectedShapePageIds([]);
+        }
+    });
 
     useActionHandler(
         "applyQuickShape",
