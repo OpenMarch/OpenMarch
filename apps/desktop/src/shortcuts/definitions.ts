@@ -373,13 +373,6 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Enter"],
     },
-    deleteMarcherShape: {
-        labelKey: "actions.shape.delete",
-        category: "cursor",
-        scope: "canvas",
-        defaultBindings: ["Delete"],
-        hiddenFromPalette: true,
-    },
     cancelAlignmentUpdates: {
         labelKey: "actions.alignment.cancelUpdates",
         category: "cursor",
