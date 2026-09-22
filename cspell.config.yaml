@@ -210,6 +210,15 @@ ignorePaths:
   - cloudflare-env.d.ts
   - apps/cms/.cursor/rules/*
   - apps/cms/AGENTS.md
+  # Machine-local agent notes, kept untracked via .git/info/exclude. Numbered ADR
+  # records are local; docs/adr/README.md is tracked and stays checked.
+  - "**/CONTEXT.md"
+  - CONTEXT-MAP.md
+  - "**/docs/agents/**"
+  - "**/docs/adr/[0-9]*.md"
+  - docs/superpowers/**
+  - .superpowers/**
+  - .scratch/**
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)

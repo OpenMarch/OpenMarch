@@ -35,6 +35,7 @@
         "build": "tsup --format esm,cjs",
         "playground": "astro dev",
         "lint": "eslint . --fix",
+        "lint:check": "eslint .",
         "format": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'"
