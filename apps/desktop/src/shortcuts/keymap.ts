@@ -3,13 +3,14 @@ import {
     parseKeybinding,
     type KeybindingPress,
 } from "tinykeys";
-import { canonicalBinding, toTinykeys } from "./bindings";
+import { platformBinding, toTinykeys } from "./bindings";
 import {
     ACTIONS,
     type ActionDefinition,
     type ActionId,
     type ActionScope,
 } from "./definitions";
+import { isMacPlatform } from "./platform";
 
 export type ShortcutOverrides = Partial<Record<ActionId, string[]>>;
 
@@ -44,17 +45,24 @@ export function getEffectiveBindings(
     return overrides[id] ?? [...actions[id].defaultBindings];
 }
 
+/** Entry bindings have `$mod` resolved for the platform; duplicate bindings of one action collapse. */
 export function buildKeymap(
     overrides: ShortcutOverrides = {},
     actions: Record<string, ActionDefinition> = ACTIONS,
+    isMac: boolean = isMacPlatform(),
 ): KeymapEntry[] {
     const entries: KeymapEntry[] = [];
     for (const id of Object.keys(actions) as ActionId[]) {
         const def = actions[id];
-        for (const binding of getEffectiveBindings(id, overrides, actions)) {
+        const bindings = new Set(
+            getEffectiveBindings(id, overrides, actions).map((binding) =>
+                platformBinding(binding, isMac),
+            ),
+        );
+        for (const binding of bindings) {
             entries.push({
                 id,
-                binding: canonicalBinding(binding),
+                binding,
                 scope: def.scope,
                 allowInInputs: def.allowInInputs ?? false,
                 allowInModals: def.allowInModals ?? false,
@@ -71,9 +79,10 @@ function scopesOverlap(a: ActionScope, b: ActionScope): boolean {
 export function findConflicts(
     overrides: ShortcutOverrides = {},
     actions: Record<string, ActionDefinition> = ACTIONS,
+    isMac: boolean = isMacPlatform(),
 ): BindingConflict[] {
     const byBinding = new Map<string, KeymapEntry[]>();
-    for (const entry of buildKeymap(overrides, actions)) {
+    for (const entry of buildKeymap(overrides, actions, isMac)) {
         byBinding.set(entry.binding, [
             ...(byBinding.get(entry.binding) ?? []),
             entry,

@@ -84,6 +84,15 @@ export function canonicalBinding(binding: string): string {
     return [...modifiers, key].join("+");
 }
 
+/** Canonical binding with `$mod` resolved to the platform's modifier, so equal key presses compare equal. */
+export function platformBinding(binding: string, isMac: boolean): string {
+    const { modifiers, key } = parseBinding(binding);
+    const resolved = modifiers.map((m) =>
+        m === "$mod" ? (isMac ? "Meta" : "Control") : m,
+    );
+    return canonicalBinding([...resolved, key].join("+"));
+}
+
 /* cspell: disable-next-line */
 /**
  * Converts to tinykeys syntax. Letters/digits match on event.code so macOS Option doesn't break them;

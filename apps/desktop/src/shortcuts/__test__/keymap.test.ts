@@ -86,7 +86,7 @@ describe("pickAction", () => {
     });
 
     it("blocks non-input actions while typing and in modals", () => {
-        const e = entries.filter((x) => x.binding === "$mod+Z");
+        const e = entries.filter((x) => x.binding === "Control+Z");
         expect(
             pickAction(e, { ...canvas, inTextInput: true }, always),
         ).toBeUndefined();
@@ -101,6 +101,41 @@ describe("pickAction", () => {
             pickAction(e, canvas, (id: ActionId) => id !== ("a" as ActionId))
                 ?.id,
         ).toBe("d");
+    });
+});
+
+describe("platform bindings", () => {
+    it("treats $mod and Control as the same key off macOS", () => {
+        const conflicts = findConflicts(
+            {
+                performUndo: ["$mod+Z"],
+                flipHorizontal: ["Control+Z"],
+            },
+            undefined,
+            false,
+        );
+        expect(conflicts).toEqual([
+            {
+                binding: "Control+Z",
+                actionIds: ["performUndo", "flipHorizontal"],
+            },
+        ]);
+        expect(
+            findConflicts(
+                { performUndo: ["$mod+Z"], flipHorizontal: ["Control+Z"] },
+                undefined,
+                true,
+            ),
+        ).toEqual([]);
+    });
+
+    it("collapses an action's duplicate bindings", () => {
+        const undo = (isMac: boolean) =>
+            buildKeymap({}, undefined, isMac)
+                .filter((e) => e.id === "performUndo")
+                .map((e) => e.binding);
+        expect(undo(false)).toEqual(["Control+Z"]);
+        expect(undo(true)).toEqual(["Meta+Z", "Control+Z"]);
     });
 });
 
