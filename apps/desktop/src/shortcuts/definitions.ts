@@ -356,6 +356,7 @@ const STATIC_ACTIONS = {
         category: "ui",
         scope: "timeline",
         defaultBindings: ["Escape"],
+        allowInInputs: true,
         hiddenFromPalette: true,
     },
 

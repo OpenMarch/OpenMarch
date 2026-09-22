@@ -85,6 +85,17 @@ describe("ShortcutDispatcher", () => {
         expect(cancel).toHaveBeenCalledTimes(1);
     });
 
+    it("exits timeline focus with Escape from a text field", () => {
+        const exit = handle("exitTimelineFocus");
+        document.body.innerHTML = `<input id="t" />`;
+        (document.getElementById("t") as HTMLInputElement).focus();
+        const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
+        setUiSettings({ ...uiSettings, focussedComponent: "timeline" });
+        render(<ShortcutDispatcher />);
+        fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
+        expect(exit).toHaveBeenCalledTimes(1);
+    });
+
     it("runs legacy Ctrl shortcuts once", () => {
         const undo = handle("performUndo");
         render(<ShortcutDispatcher />);
