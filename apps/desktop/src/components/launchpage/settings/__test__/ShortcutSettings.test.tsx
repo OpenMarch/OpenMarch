@@ -65,6 +65,15 @@ describe("ShortcutSettings", () => {
         ).toEqual({ nextPage: ["E", "K"] });
     });
 
+    it("matches every search word anywhere in the label", () => {
+        render(<ShortcutSettings />, { wrapper: Providers });
+        search("up move ¼");
+        expect(
+            screen.getByText("Move selected marcher(s) up (¼ step, no snap)"),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/marcher\(s\) down/)).toBeNull();
+    });
+
     it("cancels recording with Escape", () => {
         render(<ShortcutSettings />, { wrapper: Providers });
         search("next page");

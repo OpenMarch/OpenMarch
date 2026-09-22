@@ -23,6 +23,7 @@ import {
 import { findBindingOwners, getDisplayBindings } from "@/shortcuts/keymap";
 import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import { isMacPlatform } from "@/shortcuts/platform";
+import { searchItems } from "@/shortcuts/search";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 
 const CATEGORY_ORDER: readonly ActionCategory[] = [
@@ -253,16 +254,11 @@ export default function ShortcutSettings() {
         [overrides, isMac, t],
     );
 
-    const normalizedQuery = query.trim().toLowerCase();
-    const visible = normalizedQuery
-        ? rows.filter(
-              (row) =>
-                  row.label.toLowerCase().includes(normalizedQuery) ||
-                  row.formatted.some((f) =>
-                      f.toLowerCase().includes(normalizedQuery),
-                  ),
-          )
-        : rows;
+    const normalizedQuery = query.trim();
+    const visible = searchItems(rows, query, (row) => [
+        row.label,
+        ...row.formatted,
+    ]);
 
     return (
         <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-6 border p-12">
