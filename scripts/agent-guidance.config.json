@@ -38,6 +38,11 @@
         "docs/conventions/change-routing.md",
         "docs/conventions/verification.md",
         "docs/conventions/architecture-decisions.md",
-        "docs/adr/README.md"
+        "docs/adr/README.md",
+        "docs/conventions/database-interactions.md",
+        "docs/conventions/database-transactions.md",
+        "docs/conventions/multi-query-hooks.md",
+        "docs/conventions/testing.md",
+        "docs/conventions/troubleshooting.md"
     ]
 }
