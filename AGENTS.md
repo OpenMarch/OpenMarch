@@ -19,12 +19,14 @@
 ## Repo Shape
 
 - This is a pnpm/Turbo monorepo: `apps/*` and `packages/*` are workspace packages.
+- The stack is Electron and React for the desktop app, Zustand for UI state, TanStack Query for server state, Radix and Tailwind for styling, and Vitest and Playwright for testing.
 - `apps/desktop` is the main Electron + React app; `@/*` maps to `apps/desktop/src/*` and `@om-electron/*` maps to `apps/desktop/electron/*`. Read `apps/desktop/AGENTS.md` before desktop changes.
 - `apps/website` is Astro/Starlight docs and site content.
 - `apps/cms` is a Next/Payload/Cloudflare app with its own `apps/cms/AGENTS.md`; read that before CMS changes.
 - `packages/core`, `packages/musicxml-parser`, and `packages/ui` are publishable/shared packages built with `tsup`; `packages/ui/src/tailwind.css` is the shared style source.
 - Prefer existing UI primitives in `packages/ui/src/components/base`; icons should come from `@phosphor-icons/react`.
 - Read [change routing](docs/conventions/change-routing.md) when ownership is unclear or a change crosses packages.
+- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [testing](docs/conventions/testing.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
 
 ## Verification
 
