@@ -1,0 +1,43 @@
+{
+    "instructionPairs": [
+        {
+            "agents": "AGENTS.md",
+            "claude": "CLAUDE.md",
+            "maxAgentLines": 120,
+            "maxClaudeLines": 10
+        }
+    ],
+    "requiredScripts": [
+        {
+            "package": "package.json",
+            "names": [
+                "check:agent-guidance",
+                "check:quick",
+                "check:full",
+                "lint:check"
+            ]
+        },
+        {
+            "package": "apps/desktop/package.json",
+            "names": [
+                "build:electron",
+                "migrate",
+                "test:focused",
+                "test:history"
+            ]
+        }
+    ],
+    "runtimeFiles": ["README.md", "AGENTS.md", ".husky/pre-commit"],
+    "linkRoots": [],
+    "attributionRoots": [".github", ".changeset"],
+    "linkFiles": [
+        "AGENTS.md",
+        "CONTRIBUTING.md",
+        "README.md",
+        "docs/conventions/README.md",
+        "docs/conventions/change-routing.md",
+        "docs/conventions/verification.md",
+        "docs/conventions/architecture-decisions.md",
+        "docs/adr/README.md"
+    ]
+}
