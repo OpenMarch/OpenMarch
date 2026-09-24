@@ -1,11 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-    CollapsedTimeline,
-    ExpandedTimeline,
-    InspectorTimeline,
-    SimpleTimeline,
-} from "../TimelineVariants";
+import { CollapsedTimeline, ExpandedTimeline } from "../TimelineVariants";
 import { Timeline, TimelineWaveformProvider } from "../Timeline";
 import {
     createLongTimelineStoryModel,
@@ -22,14 +17,14 @@ const commonProps = {
     pixelsPerBeat: 16,
 };
 
-describe("new timeline variants", () => {
+describe("timeline views", () => {
     it("renders expanded packed tracks over canvas layers", () => {
-        const onTrackSelect = vi.fn();
+        const onSelectionChange = vi.fn();
         const { container } = render(
             <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                onTrackSelect={onTrackSelect}
+                onSelectionChange={onSelectionChange}
             />,
         );
 
@@ -43,15 +38,30 @@ describe("new timeline variants", () => {
                 '[data-testid="timeline-waveform-canvas"]',
             ),
         ).toHaveLength(1);
+        expect(screen.getByTestId("timeline-initial-page")).toHaveStyle({
+            width: "40px",
+        });
+        expect(screen.getByRole("button", { name: "Page 1" })).toHaveStyle({
+            left: "40px",
+        });
+        expect(screen.getByRole("button", { name: "Page 1" })).toHaveClass(
+            "justify-end",
+        );
+        expect(screen.getByTestId("timeline-pointer-surface")).toHaveStyle({
+            left: "40px",
+        });
 
         fireEvent.click(screen.getByLabelText(/SH timeline/));
-        expect(onTrackSelect).toHaveBeenCalledWith("shape");
+        expect(onSelectionChange).toHaveBeenCalledWith({
+            kind: "track",
+            trackId: "shape",
+        });
     });
 
-    it("forwards transport playback and zoom controls", () => {
+    it("forwards transport playback and exposes zoom only when expanded", () => {
         const onPlayingChange = vi.fn();
         const onPixelsPerBeatChange = vi.fn();
-        render(
+        const { rerender } = render(
             <ExpandedTimeline
                 {...commonProps}
                 showTransport
@@ -62,45 +72,324 @@ describe("new timeline variants", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Play" }));
         fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
-
         expect(onPlayingChange).toHaveBeenCalledWith(true);
         expect(onPixelsPerBeatChange).toHaveBeenCalledWith(20);
+
+        rerender(
+            <CollapsedTimeline
+                {...commonProps}
+                showTransport
+                onPixelsPerBeatChange={onPixelsPerBeatChange}
+            />,
+        );
+        expect(
+            screen.queryByRole("button", { name: "Zoom in" }),
+        ).not.toBeInTheDocument();
     });
 
-    it("keeps simple mode free of a playhead and exposes page controls", () => {
-        const onPageSelect = vi.fn();
-        render(
-            <SimpleTimeline
+    it("synchronizes page and track selections to one range overlay", () => {
+        const onSelectionChange = vi.fn();
+        const { rerender } = render(
+            <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                onPageSelect={onPageSelect}
+                selection={{ kind: "page", pageId: "page-2" }}
+                onSelectionChange={onSelectionChange}
             />,
         );
 
-        fireEvent.click(screen.getByRole("button", { name: "2" }));
-        expect(onPageSelect).toHaveBeenCalledWith("page-2");
-        expect(screen.queryByLabelText(/^Pg /)).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute(
+            "aria-pressed",
+            "true",
+        );
+        expect(
+            screen.getByTestId("timeline-selection-range"),
+        ).toBeInTheDocument();
+
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{ kind: "track", trackId: "shape" }}
+                onSelectionChange={onSelectionChange}
+            />,
+        );
+        expect(screen.getByLabelText(/SH timeline/)).toHaveAttribute(
+            "aria-pressed",
+            "true",
+        );
     });
 
-    it("renders compact tracks in compact mode", () => {
-        render(<CollapsedTimeline {...commonProps} />);
-
-        expect(screen.getByLabelText(/M7 timeline/)).toBeInTheDocument();
-        expect(screen.getByLabelText(/^Pg 2/)).toBeInTheDocument();
-    });
-
-    it("shows only the focused track in inspector mode", () => {
-        render(
-            <div style={{ width: 900 }}>
-                <InspectorTimeline {...commonProps} focusedTrackId="shape" />
-            </div>,
+    it("rounds only the outside edges of each track", () => {
+        const { container, rerender } = render(
+            <CollapsedTimeline {...commonProps} showTransport={false} />,
         );
 
-        expect(screen.getByLabelText(/SH timeline/)).toBeInTheDocument();
-        expect(screen.queryByLabelText(/M1 timeline/)).not.toBeInTheDocument();
+        expect(
+            container.querySelectorAll('[data-activity="active"]'),
+        ).toHaveLength(6);
+        expect(
+            container.querySelectorAll('[data-activity="inactive"]'),
+        ).toHaveLength(3);
+
+        const collapsedSpans = screen
+            .getByLabelText(/M1 timeline/)
+            .querySelectorAll("[data-activity]");
+        expect(collapsedSpans[0]).toHaveClass("rounded-l-full");
+        expect(collapsedSpans[0]).not.toHaveClass("rounded-r-full");
+        expect(collapsedSpans[1]).not.toHaveClass(
+            "rounded-l-full",
+            "rounded-r-full",
+        );
+        expect(collapsedSpans[2]).not.toHaveClass("rounded-l-full");
+        expect(collapsedSpans[2]).toHaveClass("rounded-r-full");
+
+        rerender(<ExpandedTimeline {...commonProps} showTransport={false} />);
+
+        const expandedSpans = screen
+            .getByLabelText(/M1 timeline/)
+            .querySelectorAll("[data-activity]");
+        expect(expandedSpans[0]).toHaveClass("rounded-l-4");
+        expect(expandedSpans[0]).not.toHaveClass("rounded-r-4");
+        expect(expandedSpans[1]).not.toHaveClass("rounded-l-4", "rounded-r-4");
+        expect(expandedSpans[2]).not.toHaveClass("rounded-l-4");
+        expect(expandedSpans[2]).toHaveClass("rounded-r-4");
+
+        for (const inactive of container.querySelectorAll(
+            '[data-activity="inactive"]',
+        )) {
+            expect(inactive).not.toHaveClass("rounded-l-4", "rounded-r-4");
+        }
     });
 
-    it("scrubs from one pointer surface instead of beat DOM nodes", () => {
+    it("shows counts for any concrete selection range", () => {
+        const onCreateTrack = vi.fn();
+        const { rerender } = render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{ kind: "page", pageId: "page-2" }}
+                selectedTarget={{ id: "new-marcher", type: "marcher" }}
+                onCreateTrack={onCreateTrack}
+            />,
+        );
+
+        expect(
+            screen.getByTestId("timeline-selection-count"),
+        ).toHaveTextContent("8 counts");
+        expect(
+            screen.queryByRole("button", { name: "Create Track" }),
+        ).not.toBeInTheDocument();
+
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{ kind: "track", trackId: "shape" }}
+                selectedTarget={{ id: "shape-1", type: "shape" }}
+                onCreateTrack={onCreateTrack}
+            />,
+        );
+        expect(
+            screen.getByTestId("timeline-selection-count"),
+        ).toHaveTextContent("16 counts");
+        expect(
+            screen.queryByRole("button", { name: "Create Track" }),
+        ).not.toBeInTheDocument();
+
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 5, endBeatIndex: 9 },
+                }}
+            />,
+        );
+        expect(
+            screen.getByTestId("timeline-selection-count"),
+        ).toHaveTextContent("4 counts");
+        expect(
+            screen.queryByRole("button", { name: "Create Track" }),
+        ).not.toBeInTheDocument();
+
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{ kind: "page", pageId: "page-0" }}
+            />,
+        );
+        expect(
+            screen.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
+
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={null}
+            />,
+        );
+        expect(
+            screen.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows create track for an explicit range regardless of coverage", () => {
+        const onCreateTrack = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 5, endBeatIndex: 9 },
+                }}
+                selectedTarget={{ id: "marcher-1", type: "marcher" }}
+                onCreateTrack={onCreateTrack}
+            />,
+        );
+        const create = screen.getByRole("button", { name: "Create Track" });
+        fireEvent.click(create);
+        expect(onCreateTrack).toHaveBeenCalledWith({
+            target: { id: "marcher-1", type: "marcher" },
+            range: { startBeatIndex: 5, endBeatIndex: 9 },
+        });
+        expect(screen.getByText("4 counts")).toBeInTheDocument();
+    });
+
+    it("moves the count with the dragged start flag and reveals create on release", () => {
+        const onSelectionChange = vi.fn();
+        const onCreateTrack = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 5, endBeatIndex: 9 },
+                }}
+                selectedTarget={{ id: "marcher-1", type: "marcher" }}
+                onSelectionChange={onSelectionChange}
+                onCreateTrack={onCreateTrack}
+            />,
+        );
+        const start = screen.getByRole("button", { name: "Selection start" });
+        const actions = screen.getByTestId("timeline-selection-actions");
+
+        fireEvent(
+            start,
+            new MouseEvent("pointerdown", {
+                bubbles: true,
+                button: 0,
+                clientX: 80,
+            }),
+        );
+        fireEvent(
+            start,
+            new MouseEvent("pointermove", { bubbles: true, clientX: 112 }),
+        );
+
+        expect(onSelectionChange).not.toHaveBeenCalled();
+        expect(screen.getByText("2 counts")).toBeInTheDocument();
+        expect(actions).toHaveStyle({
+            left: "106px",
+            transform: "translateX(-100%)",
+        });
+        expect(actions).toHaveClass("flex-col");
+        expect(
+            screen.queryByRole("button", { name: "Create Track" }),
+        ).not.toBeInTheDocument();
+
+        fireEvent(
+            start,
+            new MouseEvent("pointermove", { bubbles: true, clientX: 0 }),
+        );
+        expect(screen.getByText("9 counts")).toBeInTheDocument();
+        expect(actions).toHaveStyle({ left: "6px", transform: "" });
+
+        fireEvent(
+            start,
+            new MouseEvent("pointerup", { bubbles: true, clientX: 0 }),
+        );
+
+        expect(onSelectionChange).toHaveBeenCalledTimes(1);
+        expect(onSelectionChange).toHaveBeenCalledWith({
+            kind: "range",
+            range: { startBeatIndex: 0, endBeatIndex: 9 },
+        });
+        expect(actions).toHaveStyle({ left: "150px", transform: "" });
+        const create = screen.getByRole("button", { name: "Create Track" });
+        expect(
+            screen.getByTestId("timeline-selection-count").nextElementSibling,
+        ).toBe(create);
+        fireEvent.click(create);
+        expect(onCreateTrack).toHaveBeenCalledWith({
+            target: { id: "marcher-1", type: "marcher" },
+            range: { startBeatIndex: 0, endBeatIndex: 9 },
+        });
+    });
+
+    it("moves the count with the end flag and restores state on cancel", () => {
+        const onSelectionChange = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 5, endBeatIndex: 9 },
+                }}
+                selectedTarget={{ id: "marcher-1", type: "marcher" }}
+                onSelectionChange={onSelectionChange}
+                onCreateTrack={vi.fn()}
+            />,
+        );
+        const end = screen.getByRole("button", { name: "Selection end" });
+        const actions = screen.getByTestId("timeline-selection-actions");
+
+        fireEvent(
+            end,
+            new MouseEvent("pointerdown", {
+                bubbles: true,
+                button: 0,
+                clientX: 144,
+            }),
+        );
+        fireEvent(
+            end,
+            new MouseEvent("pointermove", { bubbles: true, clientX: 192 }),
+        );
+
+        expect(screen.getByText("7 counts")).toBeInTheDocument();
+        expect(actions).toHaveStyle({ left: "198px", transform: "" });
+        expect(
+            screen.queryByRole("button", { name: "Create Track" }),
+        ).not.toBeInTheDocument();
+
+        fireEvent(
+            end,
+            new MouseEvent("pointermove", { bubbles: true, clientX: 512 }),
+        );
+        expect(screen.getByText("27 counts")).toBeInTheDocument();
+        expect(actions).toHaveStyle({
+            left: "506px",
+            transform: "translateX(-100%)",
+        });
+
+        fireEvent(end, new MouseEvent("pointercancel", { bubbles: true }));
+
+        expect(onSelectionChange).not.toHaveBeenCalled();
+        expect(screen.getByText("4 counts")).toBeInTheDocument();
+        expect(actions).toHaveStyle({ left: "150px", transform: "" });
+        expect(
+            screen.getByRole("button", { name: "Create Track" }),
+        ).toBeInTheDocument();
+    });
+
+    it("uses the playhead as the only hover detail and scrubs on drag", () => {
         const onSeek = vi.fn();
         render(
             <ExpandedTimeline
@@ -109,8 +398,29 @@ describe("new timeline variants", () => {
                 onSeek={onSeek}
             />,
         );
-        const viewport = screen.getByTestId("timeline-viewport");
-        const surface = viewport.firstElementChild!;
+        const surface = screen.getByTestId("timeline-pointer-surface");
+        const playhead = screen.getByRole("button", {
+            name: /^Playback position:/,
+        });
+
+        fireEvent(
+            surface,
+            new MouseEvent("pointermove", { bubbles: true, clientX: 64 }),
+        );
+        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+        expect(onSeek).not.toHaveBeenCalled();
+        expect(screen.getAllByTestId("timeline-playhead")).toHaveLength(1);
+
+        fireEvent.pointerEnter(playhead);
+        const detail = screen.getByRole("tooltip");
+        expect(detail).toHaveTextContent("Pg 2 · m3.4");
+        expect(surface.contains(detail)).toBe(false);
+        fireEvent.pointerLeave(playhead);
+        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+        fireEvent.focus(playhead);
+        expect(screen.getByRole("tooltip")).toBeInTheDocument();
+        fireEvent.blur(playhead);
+        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 
         fireEvent(
             surface,
@@ -120,7 +430,33 @@ describe("new timeline variants", () => {
                 clientX: 64,
             }),
         );
+        expect(screen.getByRole("tooltip")).toBeInTheDocument();
+        fireEvent(
+            surface,
+            new MouseEvent("pointermove", { bubbles: true, clientX: 96 }),
+        );
+        fireEvent(
+            surface,
+            new MouseEvent("pointerup", { bubbles: true, clientX: 96 }),
+        );
         expect(onSeek).toHaveBeenCalledWith(4);
+        expect(onSeek).toHaveBeenLastCalledWith(6);
+    });
+
+    it("seeks from an accessible rehearsal marker", () => {
+        const onSeek = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                onSeek={onSeek}
+            />,
+        );
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Rehearsal mark A" }),
+        );
+        expect(onSeek).toHaveBeenCalledWith(24);
     });
 
     it("does not create one DOM node per beat for a long show", () => {
@@ -186,97 +522,49 @@ describe("production timeline interface", () => {
         timelines: timelineStoryData.timelines,
     };
 
-    it("does not render workspace flags in compact mode", () => {
+    it("supports exactly the collapsed view with the controlled selection", () => {
         render(
             <TimelineWaveformProvider waveform={timelineStoryData.waveform}>
-                <Timeline {...shared} mode="compact" />
+                <Timeline
+                    {...shared}
+                    mode="collapsed"
+                    selection={{ kind: "page", pageId: 3 }}
+                />
             </TimelineWaveformProvider>,
         );
 
+        expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute(
+            "aria-pressed",
+            "true",
+        );
         expect(
-            screen.queryByTestId("timeline-workspace-flags"),
+            screen.getByTestId("timeline-selection-range"),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: "Zoom in" }),
         ).not.toBeInTheDocument();
     });
 
-    it("renders and commits controlled workspace flags", () => {
-        const onWorkspaceRangeCommit = vi.fn();
+    it("turns a handle edit into a free range selection", () => {
+        const onSelectionChange = vi.fn();
         render(
             <TimelineWaveformProvider waveform={timelineStoryData.waveform}>
                 <Timeline
                     {...shared}
                     mode="expanded"
-                    startFlagBeatIndex={4}
-                    endFlagBeatIndex={27}
-                    onWorkspaceRangeCommit={onWorkspaceRangeCommit}
+                    selection={{ kind: "page", pageId: 3 }}
+                    onSelectionChange={onSelectionChange}
                 />
             </TimelineWaveformProvider>,
         );
         const start = screen.getByRole("button", {
-            name: "Workspace start",
+            name: "Selection start",
         });
 
-        fireEvent(
-            start,
-            new MouseEvent("pointerdown", {
-                bubbles: true,
-                button: 0,
-                clientX: 64,
-            }),
-        );
-        fireEvent(
-            start,
-            new MouseEvent("pointermove", { bubbles: true, clientX: 96 }),
-        );
-        expect(onWorkspaceRangeCommit).not.toHaveBeenCalled();
-        fireEvent(
-            start,
-            new MouseEvent("pointerup", { bubbles: true, clientX: 96 }),
-        );
-
-        expect(onWorkspaceRangeCommit).toHaveBeenCalledTimes(1);
-        expect(onWorkspaceRangeCommit).toHaveBeenCalledWith({
-            startFlagBeatIndex: 6,
-            endFlagBeatIndex: 27,
+        fireEvent.keyDown(start, { key: "ArrowRight" });
+        expect(onSelectionChange).toHaveBeenCalledWith({
+            kind: "range",
+            range: { startBeatIndex: 9, endBeatIndex: 16 },
         });
-    });
-
-    it("cancels a workspace drag when authoritative props change", () => {
-        const onWorkspaceRangeCommit = vi.fn();
-        const renderTimeline = (startFlagBeatIndex: number) => (
-            <TimelineWaveformProvider waveform={timelineStoryData.waveform}>
-                <Timeline
-                    {...shared}
-                    mode="expanded"
-                    startFlagBeatIndex={startFlagBeatIndex}
-                    endFlagBeatIndex={27}
-                    onWorkspaceRangeCommit={onWorkspaceRangeCommit}
-                />
-            </TimelineWaveformProvider>
-        );
-        const { rerender } = render(renderTimeline(4));
-        const start = screen.getByRole("button", {
-            name: "Workspace start",
-        });
-
-        fireEvent(
-            start,
-            new MouseEvent("pointerdown", {
-                bubbles: true,
-                button: 0,
-                clientX: 64,
-            }),
-        );
-        fireEvent(
-            start,
-            new MouseEvent("pointermove", { bubbles: true, clientX: 96 }),
-        );
-        rerender(renderTimeline(2));
-        fireEvent(
-            start,
-            new MouseEvent("pointerup", { bubbles: true, clientX: 96 }),
-        );
-
-        expect(start).toHaveAttribute("title", "Workspace start: beat 3");
-        expect(onWorkspaceRangeCommit).not.toHaveBeenCalled();
     });
 });

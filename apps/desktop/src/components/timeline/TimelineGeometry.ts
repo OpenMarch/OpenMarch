@@ -1,34 +1,71 @@
 import type {
     BeatPosition,
+    TimelineBeatRange,
     TimelineMarker,
+    TimelinePageMarker,
+    TimelineSelection,
     TimelineTrack,
     TimelineViewModel,
 } from "./TimelineViewModel";
 
-export interface TimelineRange {
-    readonly startBeat: BeatPosition;
-    readonly endBeat: BeatPosition;
-}
-
 export const clamp = (value: number, min: number, max: number) =>
     Math.min(Math.max(value, min), max);
 
-export const getTrackRange = (track: TimelineTrack): TimelineRange | null => {
+export const getTrackRange = (
+    track: TimelineTrack,
+): TimelineBeatRange | null => {
     if (track.legs.length === 0) return null;
     return {
-        startBeat: Math.min(...track.legs.map((leg) => leg.startBeat)),
-        endBeat: Math.max(...track.legs.map((leg) => leg.endBeat)),
+        startBeatIndex: Math.min(...track.legs.map((leg) => leg.startBeat)),
+        endBeatIndex: Math.max(...track.legs.map((leg) => leg.endBeat)),
     };
 };
 
-const rangesOverlap = (a: TimelineRange, b: TimelineRange) =>
-    a.startBeat < b.endBeat && b.startBeat < a.endBeat;
+export const getPageRange = ({
+    pages,
+    pageId,
+    beatCount,
+}: {
+    pages: readonly TimelinePageMarker[];
+    pageId: string | number;
+    beatCount: number;
+}): TimelineBeatRange | null => {
+    const requestedPage = pages.find((page) => page.id === pageId);
+    if (!requestedPage || requestedPage.isInitial) return null;
+    const ordered = pages
+        .filter((page) => !page.isInitial)
+        .sort((a, b) => a.atBeat - b.atBeat);
+    const index = ordered.findIndex((page) => page.id === pageId);
+    if (index < 0) return null;
+    return {
+        startBeatIndex: ordered[index].atBeat,
+        endBeatIndex: ordered[index + 1]?.atBeat ?? beatCount,
+    };
+};
 
-/**
- * Stable interval packing. Touching tracks can share a row; overlapping tracks
- * cannot. Sorting by start time makes the result deterministic for adapters and
- * stories that return tracks in different orders.
- */
+export const getSelectionRange = (
+    selection: TimelineSelection | undefined,
+    model: Pick<TimelineViewModel, "beatCount" | "pages" | "tracks">,
+): TimelineBeatRange | null => {
+    if (!selection) return null;
+    if (selection.kind === "range") return selection.range;
+    if (selection.kind === "page") {
+        return getPageRange({
+            pages: model.pages,
+            pageId: selection.pageId,
+            beatCount: model.beatCount,
+        });
+    }
+    const track = model.tracks.find(
+        (candidate) => candidate.id === selection.trackId,
+    );
+    return track ? getTrackRange(track) : null;
+};
+
+export const rangesOverlap = (a: TimelineBeatRange, b: TimelineBeatRange) =>
+    a.startBeatIndex < b.endBeatIndex && b.startBeatIndex < a.endBeatIndex;
+
+/** Stable interval packing. Touching tracks may share a row. */
 export const packTimelineTracks = (
     tracks: readonly TimelineTrack[],
 ): TimelineTrack[][] => {
@@ -40,12 +77,13 @@ export const packTimelineTracks = (
             ): item is {
                 track: TimelineTrack;
                 index: number;
-                range: TimelineRange;
+                range: TimelineBeatRange;
             } => item.range !== null,
         )
         .sort(
             (a, b) =>
-                a.range.startBeat - b.range.startBeat || a.index - b.index,
+                a.range.startBeatIndex - b.range.startBeatIndex ||
+                a.index - b.index,
         );
 
     const rows: TimelineTrack[][] = [];
@@ -68,11 +106,6 @@ export const beatToX = (
     startBeat = 0,
 ) => (beat - startBeat) * pixelsPerBeat;
 
-/**
- * Keeps ruler labels readable at low zoom levels without removing their grid
- * lines. The first in-range marker is always retained so the ruler still has a
- * clear local origin.
- */
 export const filterMarkersByMinimumSpacing = (
     markers: readonly TimelineMarker[],
     pixelsPerBeat: number,
@@ -89,7 +122,7 @@ export const filterMarkersByMinimumSpacing = (
     });
 };
 
-export const clientXToNearestBeat = ({
+export const clientXToBeat = ({
     clientX,
     surfaceLeft,
     pixelsPerBeat,
@@ -103,22 +136,27 @@ export const clientXToNearestBeat = ({
     beatCount: number;
 }) =>
     clamp(
-        Math.round(startBeat + (clientX - surfaceLeft) / pixelsPerBeat),
+        startBeat + (clientX - surfaceLeft) / pixelsPerBeat,
         0,
         Math.max(beatCount - 1, 0),
     );
 
-export const getInspectorRange = (
-    track: TimelineTrack | undefined,
-    beatCount: number,
-): TimelineRange => {
-    const range = track ? getTrackRange(track) : null;
-    if (!range) return { startBeat: 0, endBeat: Math.max(beatCount, 1) };
-    return {
-        startBeat: Math.max(0, Math.floor(range.startBeat) - 1),
-        endBeat: Math.min(beatCount, Math.ceil(range.endBeat) + 1),
-    };
-};
+export const clientXToNearestBeat = (
+    args: Parameters<typeof clientXToBeat>[0],
+) => Math.round(clientXToBeat(args));
+
+export const clientXToNearestBoundary = ({
+    clientX,
+    surfaceLeft,
+    pixelsPerBeat,
+    startBeat,
+    beatCount,
+}: Parameters<typeof clientXToBeat>[0]) =>
+    clamp(
+        Math.round(startBeat + (clientX - surfaceLeft) / pixelsPerBeat),
+        0,
+        beatCount,
+    );
 
 const latestMarkerAt = (
     markers: readonly TimelineMarker[],
@@ -128,7 +166,7 @@ const latestMarkerAt = (
         .filter((marker) => marker.atBeat <= beat)
         .sort((a, b) => b.atBeat - a.atBeat)[0];
 
-export const getPlayheadLabel = (
+export const getFrameContext = (
     model: Pick<TimelineViewModel, "pages" | "measures" | "beatCount">,
     positionBeat: BeatPosition,
 ) => {
@@ -137,10 +175,26 @@ export const getPlayheadLabel = (
         0,
         Math.max(model.beatCount - 1, 0),
     );
-    const page = latestMarkerAt(model.pages, beat);
+    const timedPages = model.pages.filter((page) => !page.isInitial);
+    const page = latestMarkerAt(
+        timedPages.length > 0 ? timedPages : model.pages,
+        beat,
+    );
     const measure = latestMarkerAt(model.measures, beat);
     const count = measure ? beat - measure.atBeat + 1 : beat + 1;
-    return `Pg ${page?.label ?? "—"} · ${measure?.label ?? "—"} · ct ${count}`;
+    const measureLabel = measure?.label.replace(/^m/i, "") ?? "—";
+    return {
+        pageLabel: page?.label ?? "—",
+        measureAndCount: `m${measureLabel}.${count}`,
+    };
+};
+
+export const getPlayheadLabel = (
+    model: Pick<TimelineViewModel, "pages" | "measures" | "beatCount">,
+    positionBeat: BeatPosition,
+) => {
+    const context = getFrameContext(model, positionBeat);
+    return `Pg ${context.pageLabel} · ${context.measureAndCount}`;
 };
 
 export const validateTimelineViewModel = (
@@ -158,11 +212,12 @@ export const validateTimelineViewModel = (
 
     for (const track of model.tracks) {
         const legs = [...track.legs].sort((a, b) => a.startBeat - b.startBeat);
-        if (legs.length === 0) continue;
-        if (!pageBoundaries.has(legs[0].startBeat)) {
+        const range = getTrackRange(track);
+        if (!range) continue;
+        if (!pageBoundaries.has(range.startBeatIndex)) {
             errors.push(`${track.id} must start on a page boundary`);
         }
-        if (!pageBoundaries.has(legs[legs.length - 1].endBeat)) {
+        if (!pageBoundaries.has(range.endBeatIndex)) {
             errors.push(`${track.id} must end on a page boundary`);
         }
         for (let index = 0; index < legs.length; index++) {
@@ -175,6 +230,37 @@ export const validateTimelineViewModel = (
             }
             if (index > 0 && legs[index - 1].endBeat !== leg.startBeat) {
                 errors.push(`${track.id} legs must be contiguous`);
+            }
+        }
+
+        const activity = [...track.activitySpans].sort(
+            (a, b) => a.startBeatIndex - b.startBeatIndex,
+        );
+        if (
+            activity.length === 0 ||
+            activity[0].startBeatIndex !== range.startBeatIndex ||
+            activity[activity.length - 1].endBeatIndex !== range.endBeatIndex
+        ) {
+            errors.push(`${track.id} activity must cover its complete range`);
+            continue;
+        }
+        for (let index = 0; index < activity.length; index++) {
+            const span = activity[index];
+            if (span.endBeatIndex <= span.startBeatIndex) {
+                errors.push(`${track.id} activity spans must be positive`);
+            }
+            if (index > 0) {
+                const previous = activity[index - 1];
+                if (previous.endBeatIndex !== span.startBeatIndex) {
+                    errors.push(
+                        `${track.id} activity must not have gaps or overlaps`,
+                    );
+                }
+                if (previous.active === span.active) {
+                    errors.push(
+                        `${track.id} adjacent activity spans must be normalized`,
+                    );
+                }
             }
         }
     }

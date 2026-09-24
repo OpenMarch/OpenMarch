@@ -16,22 +16,19 @@ import {
     useState,
 } from "react";
 import { clamp } from "./TimelineGeometry";
-import {
-    CompactTimeline,
-    ExpandedTimeline,
-    InspectorTimeline,
-    SimpleTimeline,
-} from "./TimelineVariants";
+import { CollapsedTimeline, ExpandedTimeline } from "./TimelineVariants";
 import type {
+    TimelineActivitySpan,
+    TimelineCreateTrackRequest,
     TimelineRangeChange,
+    TimelineSelection,
+    TimelineTarget,
     TimelineTrack,
-    TimelineTrackId,
     TimelineViewModel,
     TimelineWaveform,
-    TimelineWorkspaceRange,
 } from "./TimelineViewModel";
 
-export type TimelineMode = "simple" | "expanded" | "compact" | "inspector";
+export type TimelineMode = "expanded" | "collapsed";
 
 export interface TimelineLegInput {
     readonly id: string | number;
@@ -40,50 +37,32 @@ export interface TimelineLegInput {
     readonly texture: "move" | "hold";
 }
 
-/**
- * Renderer-ready aggregate assembled from the timeline/transition tables and
- * their target metadata. Database access stays outside the visual component.
- */
+/** Renderer-ready aggregate assembled outside the visual component. */
 export interface TimelineInput {
-    readonly id: TimelineTrackId;
+    readonly id: string | number;
     readonly targetId: string | number;
-    readonly targetType: "marcher" | "shape";
+    readonly targetType: TimelineTarget["type"];
     readonly label: string;
     readonly color: string;
     readonly startBeatIndex: number;
     readonly endBeatIndex: number;
     readonly legs: readonly TimelineLegInput[];
+    readonly activitySpans: readonly TimelineActivitySpan[];
 }
 
-interface TimelineBaseProps {
+export interface TimelineProps {
+    readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
     readonly measures: readonly Measure[];
     readonly timelines: readonly TimelineInput[];
+    readonly selection?: TimelineSelection;
+    readonly selectedTarget?: TimelineTarget | null;
     readonly className?: string;
+    readonly onSelectionChange?: (selection: TimelineSelection) => void;
+    readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
 }
-
-interface TimelineWorkspaceProps extends TimelineBaseProps {
-    readonly startFlagBeatIndex: number;
-    readonly endFlagBeatIndex: number;
-    readonly onWorkspaceRangeCommit?: (range: TimelineWorkspaceRange) => void;
-}
-
-export type TimelineProps =
-    | (TimelineWorkspaceProps & {
-          readonly mode: "simple" | "expanded";
-      })
-    | (TimelineBaseProps & {
-          readonly mode: "compact";
-          readonly startFlagBeatIndex?: never;
-          readonly endFlagBeatIndex?: never;
-          readonly onWorkspaceRangeCommit?: never;
-      })
-    | (TimelineWorkspaceProps & {
-          readonly mode: "inspector";
-          readonly focusedTimelineId: TimelineTrackId;
-      });
 
 const TimelineWaveformContext = createContext<TimelineWaveform | null>(null);
 
@@ -124,6 +103,7 @@ const toTrack = (timeline: TimelineInput): TimelineTrack => ({
         endBeat: leg.endBeatIndex,
         texture: leg.texture,
     })),
+    activitySpans: timeline.activitySpans,
 });
 
 export const createTimelineViewModel = ({
@@ -132,7 +112,7 @@ export const createTimelineViewModel = ({
     measures,
     timelines,
     waveform,
-}: Pick<TimelineBaseProps, "beats" | "pages" | "measures" | "timelines"> & {
+}: Pick<TimelineProps, "beats" | "pages" | "measures" | "timelines"> & {
     waveform: TimelineWaveform;
 }): TimelineViewModel => ({
     beatCount: beats.length,
@@ -140,12 +120,21 @@ export const createTimelineViewModel = ({
         const atBeat = page.beats[0]?.index;
         return atBeat == null
             ? []
-            : [{ id: page.id, label: page.name, atBeat }];
+            : [
+                  {
+                      id: page.id,
+                      label: page.name,
+                      atBeat,
+                      isInitial:
+                          page.previousPageId === null && page.counts === 0,
+                  },
+              ];
     }),
     measures: measures.map((measure) => ({
         id: measure.id,
         label: `M${measure.number}`,
         atBeat: measure.startBeat.index,
+        rehearsalMark: measure.rehearsalMark,
     })),
     tracks: timelines.map(toTrack),
     waveform,
@@ -168,11 +157,6 @@ export function Timeline(props: TimelineProps) {
     const clockIsPlaying = useIsPlaying();
     const playback = usePlaybackControls();
     const [pixelsPerBeat, setPixelsPerBeat] = useState(16);
-    const [selectedTrackId, setSelectedTrackId] =
-        useState<TimelineTrackId | null>(null);
-    const [selectedPageId, setSelectedPageId] = useState<
-        string | number | null
-    >(null);
     const [displayIsPlaying, setDisplayIsPlaying] = useState(clockIsPlaying);
 
     useEffect(() => setDisplayIsPlaying(clockIsPlaying), [clockIsPlaying]);
@@ -198,59 +182,34 @@ export function Timeline(props: TimelineProps) {
         if (isPlaying) playback.play();
         else playback.pause();
     };
-    const workspaceRange =
-        props.mode === "compact"
-            ? undefined
-            : {
-                  startFlagBeatIndex: props.startFlagBeatIndex,
-                  endFlagBeatIndex: props.endFlagBeatIndex,
-              };
     const commonProps = {
         model,
         positionBeat,
         isPlaying: displayIsPlaying,
         pixelsPerBeat,
-        selectedTrackId,
+        selection: props.selection,
+        selectedTarget: props.selectedTarget,
         className: props.className,
-        workspaceRange,
         onSeek: seekToBeat,
         onPlayingChange: setPlaying,
         onPixelsPerBeatChange: setPixelsPerBeat,
-        onTrackSelect: setSelectedTrackId,
+        onSelectionChange: props.onSelectionChange,
+        onCreateTrack: props.onCreateTrack,
         onTimelineRangeCommit: props.onTimelineRangeCommit,
-        onWorkspaceRangeCommit:
-            props.mode === "compact" ? undefined : props.onWorkspaceRangeCommit,
+        showTransport: true,
     };
 
-    if (props.mode === "simple") {
-        return (
-            <SimpleTimeline
-                {...commonProps}
-                showTransport
-                selectedPageId={selectedPageId}
-                onPageSelect={(pageId) => {
-                    const page = props.pages.find(
-                        (candidate) => candidate.id === pageId,
-                    );
-                    setSelectedPageId(page?.id ?? null);
-                    const beatIndex = page?.beats[0]?.index;
-                    if (beatIndex != null) seekToBeat(beatIndex);
-                }}
-            />
-        );
-    }
-    if (props.mode === "expanded") {
-        return <ExpandedTimeline {...commonProps} showTransport />;
-    }
-    if (props.mode === "compact") {
-        return <CompactTimeline {...commonProps} showTransport={false} />;
-    }
-    if (!("focusedTimelineId" in props)) return null;
-    return (
-        <InspectorTimeline
-            {...commonProps}
-            showTransport={false}
-            focusedTrackId={props.focusedTimelineId}
-        />
+    return props.mode === "expanded" ? (
+        <ExpandedTimeline {...commonProps} />
+    ) : (
+        <CollapsedTimeline {...commonProps} />
     );
 }
+
+export type {
+    TimelineActivitySpan,
+    TimelineBeatRange,
+    TimelineCreateTrackRequest,
+    TimelineSelection,
+    TimelineTarget,
+} from "./TimelineViewModel";

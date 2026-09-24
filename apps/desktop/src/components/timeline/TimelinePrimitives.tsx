@@ -16,32 +16,45 @@ import {
     type RefObject,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useRef,
     useState,
 } from "react";
+import { createPortal } from "react-dom";
+import { AudioClock } from "./Clock";
 import {
     beatToX,
     clamp,
-    clientXToNearestBeat,
+    clientXToBeat,
+    clientXToNearestBoundary,
     filterMarkersByMinimumSpacing,
+    getFrameContext,
+    getPageRange,
     getPlayheadLabel,
     getTrackRange,
 } from "./TimelineGeometry";
 import type {
     BeatPosition,
+    TimelineBeatRange,
     TimelineMarker,
     TimelineNavigation,
+    TimelinePageMarker,
     TimelineRangeChange,
+    TimelineSelection,
     TimelineTrack,
     TimelineTrackId,
     TimelineViewModel,
-    TimelineWorkspaceRange,
 } from "./TimelineViewModel";
 
-export const TIMELINE_LABEL_WIDTH = 50;
-export const TIMELINE_LABEL_GAP = 6;
 export const TIMELINE_MIN_PX_PER_BEAT = 4;
 export const TIMELINE_MAX_PX_PER_BEAT = 64;
+export const TIMELINE_INITIAL_PAGE_WIDTH = 40;
+
+export interface TimelineSelectionInteraction {
+    readonly range: TimelineBeatRange;
+    readonly activeHandle: "start" | "end" | null;
+    readonly dragging: boolean;
+}
 
 const TransportButton = ({
     label,
@@ -71,6 +84,8 @@ const TransportButton = ({
 );
 
 export function TimelineTransport({
+    model,
+    positionBeat,
     isPlaying,
     onPlayingChange,
     onNavigate,
@@ -79,6 +94,8 @@ export function TimelineTransport({
     onFit,
     showZoom = true,
 }: {
+    model: TimelineViewModel;
+    positionBeat: BeatPosition;
     isPlaying: boolean;
     onPlayingChange?: (isPlaying: boolean) => void;
     onNavigate?: (direction: TimelineNavigation) => void;
@@ -87,11 +104,17 @@ export function TimelineTransport({
     onFit?: () => void;
     showZoom?: boolean;
 }) {
+    const frame = getFrameContext(model, positionBeat);
     return (
-        <aside className="border-stroke bg-fg-1 rounded-6 flex w-[200px] shrink-0 flex-col justify-center gap-12 border px-16 py-12">
-            <span className="text-body text-text-subtitle leading-none">
-                Timeline
-            </span>
+        <aside className="border-stroke bg-fg-1 rounded-6 flex w-[244px] shrink-0 flex-col justify-center gap-12 border px-16 py-12">
+            <div className="text-text-subtitle flex items-start justify-between gap-12">
+                <AudioClock />
+                <span className="text-sub text-right font-mono leading-tight">
+                    Pg {frame.pageLabel}
+                    <br />
+                    {frame.measureAndCount}
+                </span>
+            </div>
             <div className="flex items-center justify-between gap-6">
                 <TransportButton
                     label="First page"
@@ -162,31 +185,22 @@ export function TimelineTransport({
 
 export const TimelineShell = ({
     transport,
-    labels,
     children,
     viewportRef,
     className,
-    allowScroll = true,
 }: {
     transport?: ReactNode;
-    labels?: ReactNode;
     children: ReactNode;
     viewportRef: RefObject<HTMLDivElement | null>;
     className?: string;
-    allowScroll?: boolean;
 }) => (
     <div className={clsx("flex min-w-0 gap-8 font-sans", className)}>
         {transport}
-        <section className="border-stroke bg-fg-1 text-text rounded-6 flex min-w-0 flex-1 border p-8">
-            <div className="relative w-[50px] shrink-0">{labels}</div>
-            <div className="w-[6px] shrink-0" />
+        <section className="border-stroke bg-fg-1 text-text rounded-6 min-w-0 flex-1 overflow-visible border p-6">
             <div
                 ref={viewportRef}
                 data-testid="timeline-viewport"
-                className={clsx("min-w-0 flex-1", {
-                    "overflow-x-auto overflow-y-hidden": allowScroll,
-                    "overflow-hidden": !allowScroll,
-                })}
+                className="min-w-0 overflow-x-auto overflow-y-hidden"
             >
                 {children}
             </div>
@@ -197,60 +211,103 @@ export const TimelineShell = ({
 export const TimelineRuler = ({
     pages,
     measures,
+    beatCount,
     pixelsPerBeat,
-    startBeat = 0,
-    endBeat,
-    compact = false,
+    selection,
+    onSelectionChange,
+    initialPageWidth,
 }: {
-    pages: readonly TimelineMarker[];
+    pages: readonly TimelinePageMarker[];
     measures: readonly TimelineMarker[];
+    beatCount: number;
     pixelsPerBeat: number;
-    startBeat?: number;
-    endBeat: number;
-    compact?: boolean;
+    selection?: TimelineSelection;
+    onSelectionChange?: (selection: TimelineSelection) => void;
+    initialPageWidth: number;
 }) => {
-    const inRange = (marker: TimelineMarker) =>
-        marker.atBeat >= startBeat && marker.atBeat <= endBeat;
     const visibleMeasures = filterMarkersByMinimumSpacing(
-        measures.filter(inRange),
+        measures,
         pixelsPerBeat,
     );
+    const initialPage = pages.find((page) => page.isInitial);
+    const orderedPages = pages
+        .filter((page) => !page.isInitial)
+        .sort((a, b) => a.atBeat - b.atBeat);
+    const selectedPageId = selection?.kind === "page" ? selection.pageId : null;
+    const selectPage = (page: TimelinePageMarker) => {
+        onSelectionChange?.({ kind: "page", pageId: page.id });
+    };
     return (
-        <div className="pointer-events-none absolute inset-x-0 top-28 h-28 font-mono">
-            {pages.filter(inRange).map((page) => (
-                <span
-                    key={page.id}
-                    className={clsx(
-                        "text-text absolute top-0 whitespace-nowrap",
-                        page.atBeat !== startBeat && "-translate-x-1/2",
-                    )}
-                    style={{
-                        left: beatToX(page.atBeat, pixelsPerBeat, startBeat),
-                        fontSize: compact ? 9 : 11,
-                    }}
-                >
-                    {compact && (
-                        <span className="text-text-subtitle mr-2 inline-block size-0 border-r-[3px] border-b-[5px] border-l-[3px] border-r-transparent border-b-current border-l-transparent" />
-                    )}
-                    {page.label}
-                </span>
-            ))}
-            {visibleMeasures.map((measure) => (
-                <span
-                    key={measure.id}
-                    className={clsx(
-                        "text-text-subtitle absolute top-16 whitespace-nowrap",
-                        measure.atBeat !== startBeat && "-translate-x-1/2",
-                    )}
-                    style={{
-                        left: beatToX(measure.atBeat, pixelsPerBeat, startBeat),
-                        fontSize: compact ? 8 : 9,
-                    }}
-                >
-                    {measure.label}
-                </span>
-            ))}
-        </div>
+        <>
+            <div
+                data-testid="timeline-page-ruler"
+                className="border-stroke bg-fg-2 rounded-6 absolute top-0 h-28 overflow-hidden border font-mono"
+                style={{
+                    left: -initialPageWidth,
+                    width: beatCount * pixelsPerBeat + initialPageWidth,
+                }}
+            >
+                {initialPage && (
+                    <button
+                        type="button"
+                        data-timeline-interactive="true"
+                        data-testid="timeline-initial-page"
+                        aria-label={`Page ${initialPage.label}`}
+                        aria-pressed={selectedPageId === initialPage.id}
+                        onClick={() => selectPage(initialPage)}
+                        className="border-stroke text-text focus-visible:ring-accent absolute top-0 left-0 flex h-full items-center justify-center border-r text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+                        style={{ width: initialPageWidth }}
+                    >
+                        {initialPage.label}
+                    </button>
+                )}
+                {orderedPages.map((page) => {
+                    const range = getPageRange({
+                        pages: orderedPages,
+                        pageId: page.id,
+                        beatCount,
+                    });
+                    if (!range) return null;
+                    const selected = selectedPageId === page.id;
+                    return (
+                        <button
+                            key={page.id}
+                            type="button"
+                            data-timeline-interactive="true"
+                            aria-label={`Page ${page.label}`}
+                            aria-pressed={selected}
+                            onClick={() => selectPage(page)}
+                            className="border-stroke text-text focus-visible:ring-accent absolute top-0 flex h-full items-center justify-end border-r px-8 text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+                            style={{
+                                left:
+                                    initialPageWidth +
+                                    beatToX(
+                                        range.startBeatIndex,
+                                        pixelsPerBeat,
+                                    ),
+                                width:
+                                    (range.endBeatIndex -
+                                        range.startBeatIndex) *
+                                    pixelsPerBeat,
+                            }}
+                        >
+                            {page.label}
+                        </button>
+                    );
+                })}
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 top-[31px] h-20 font-mono">
+                {visibleMeasures.map((measure) => (
+                    <span
+                        key={measure.id}
+                        className="text-text-subtitle absolute top-7 -translate-x-1/2 text-[8px] whitespace-nowrap"
+                        style={{ left: beatToX(measure.atBeat, pixelsPerBeat) }}
+                    >
+                        {measure.label}
+                    </span>
+                ))}
+            </div>
+        </>
     );
 };
 
@@ -258,33 +315,30 @@ export const TimelinePageLines = ({
     pages,
     pixelsPerBeat,
     height,
-    startBeat = 0,
 }: {
-    pages: readonly TimelineMarker[];
+    pages: readonly TimelinePageMarker[];
     pixelsPerBeat: number;
     height: number;
-    startBeat?: number;
 }) => (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        {pages.map((page) => (
-            <span
-                key={page.id}
-                className="bg-text absolute top-0 w-px opacity-[0.18]"
-                style={{
-                    left: Math.round(
-                        beatToX(page.atBeat, pixelsPerBeat, startBeat),
-                    ),
-                    height,
-                }}
-            />
-        ))}
+        {pages
+            .filter((page) => !page.isInitial)
+            .map((page) => (
+                <span
+                    key={page.id}
+                    className="bg-text absolute top-28 w-px opacity-[0.24]"
+                    style={{
+                        left: Math.round(beatToX(page.atBeat, pixelsPerBeat)),
+                        height: Math.max(0, height - 28),
+                    }}
+                />
+            ))}
     </div>
 );
 
 export const TimelineTrackClip = ({
     track,
     pixelsPerBeat,
-    startBeat = 0,
     top,
     height,
     selected,
@@ -295,7 +349,6 @@ export const TimelineTrackClip = ({
 }: {
     track: TimelineTrack;
     pixelsPerBeat: number;
-    startBeat?: number;
     top: number;
     height: number;
     selected: boolean;
@@ -315,23 +368,16 @@ export const TimelineTrackClip = ({
     useEffect(() => {
         dragRef.current = null;
         setPreviewOffset(0);
-    }, [range?.endBeat, range?.startBeat]);
+    }, [range?.endBeatIndex, range?.startBeatIndex]);
 
     if (!range) return null;
-    const left = beatToX(
-        range.startBeat + previewOffset,
-        pixelsPerBeat,
-        startBeat,
-    );
-    const width = (range.endBeat - range.startBeat) * pixelsPerBeat;
-    const keyframes = Array.from(
-        new Set(track.legs.flatMap((leg) => [leg.startBeat, leg.endBeat])),
-    );
+    const left = (range.startBeatIndex + previewOffset) * pixelsPerBeat;
+    const width = (range.endBeatIndex - range.startBeatIndex) * pixelsPerBeat;
     const canMove = onRangeCommit != null && beatCount != null;
     const getOffset = (clientX: number, startClientX: number) => {
         const requested = Math.round((clientX - startClientX) / pixelsPerBeat);
-        const minimum = -range.startBeat;
-        const maximum = Math.max(minimum, beatCount! - 1 - range.endBeat);
+        const minimum = -range.startBeatIndex;
+        const maximum = Math.max(minimum, beatCount! - range.endBeatIndex);
         return clamp(requested, minimum, maximum);
     };
 
@@ -339,7 +385,7 @@ export const TimelineTrackClip = ({
         <button
             type="button"
             data-timeline-interactive="true"
-            aria-label={`${track.label} timeline, beats ${range.startBeat} through ${range.endBeat}`}
+            aria-label={`${track.label} timeline, beats ${range.startBeatIndex + 1} through ${range.endBeatIndex}`}
             aria-pressed={selected}
             title={track.label}
             onClick={() => onSelect?.(track.id)}
@@ -370,8 +416,8 @@ export const TimelineTrackClip = ({
                 if (offset === 0) return;
                 onRangeCommit?.({
                     timelineId: track.id,
-                    startBeatIndex: range.startBeat + offset,
-                    endBeatIndex: range.endBeat + offset,
+                    startBeatIndex: range.startBeatIndex + offset,
+                    endBeatIndex: range.endBeatIndex + offset,
                 });
             }}
             onPointerCancel={() => {
@@ -379,9 +425,9 @@ export const TimelineTrackClip = ({
                 setPreviewOffset(0);
             }}
             className={clsx(
-                "group focus-visible:ring-accent absolute overflow-visible text-[9px] font-medium outline-hidden transition-[filter,box-shadow] duration-150 focus-visible:ring-2 enabled:hover:brightness-110",
+                "focus-visible:ring-accent absolute overflow-visible outline-hidden transition-[filter,box-shadow] duration-150 focus-visible:ring-2 enabled:hover:brightness-110",
                 canMove && "cursor-grab touch-none active:cursor-grabbing",
-                micro ? "rounded-full" : "rounded-6",
+                micro ? "rounded-full" : "rounded-4",
             )}
             style={{
                 left,
@@ -393,61 +439,61 @@ export const TimelineTrackClip = ({
                     : undefined,
             }}
         >
-            {track.legs.map((leg) => (
-                <span
-                    key={leg.id}
-                    className={clsx("absolute inset-y-0", {
-                        "border border-dashed": leg.texture === "hold",
-                    })}
-                    style={{
-                        left: (leg.startBeat - range.startBeat) * pixelsPerBeat,
-                        width: (leg.endBeat - leg.startBeat) * pixelsPerBeat,
-                        backgroundColor:
-                            leg.texture === "hold"
-                                ? `color-mix(in srgb, ${track.color} 20%, transparent)`
-                                : `color-mix(in srgb, ${track.color} 86%, var(--color-bg-1))`,
-                        borderColor: track.color,
-                        borderRadius: micro ? 999 : 5,
-                    }}
-                />
-            ))}
-            {!micro && (
-                <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="bg-bg-1/75 text-text rounded-4 px-4 py-1 font-mono leading-none shadow-sm">
-                        {track.label}
-                    </span>
-                </span>
-            )}
-            {!micro &&
-                keyframes.map((beat) => (
+            {track.activitySpans.map((span) => {
+                const isFirst = span.startBeatIndex === range.startBeatIndex;
+                const isLast = span.endBeatIndex === range.endBeatIndex;
+
+                return (
                     <span
-                        key={beat}
-                        aria-hidden="true"
-                        className="border-bg-1 absolute top-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rotate-45 border"
+                        key={`${span.startBeatIndex}-${span.endBeatIndex}`}
+                        data-activity={span.active ? "active" : "inactive"}
+                        className={clsx(
+                            "absolute inset-y-0 overflow-hidden",
+                            isFirst &&
+                                (micro ? "rounded-l-full" : "rounded-l-4"),
+                            isLast &&
+                                (micro ? "rounded-r-full" : "rounded-r-4"),
+                            span.active
+                                ? "border border-transparent"
+                                : "border border-dashed",
+                        )}
                         style={{
-                            left: (beat - range.startBeat) * pixelsPerBeat,
-                            backgroundColor: track.color,
+                            left:
+                                (span.startBeatIndex - range.startBeatIndex) *
+                                pixelsPerBeat,
+                            width:
+                                (span.endBeatIndex - span.startBeatIndex) *
+                                pixelsPerBeat,
+                            backgroundColor: span.active
+                                ? `color-mix(in srgb, ${track.color} 82%, var(--color-bg-1))`
+                                : `color-mix(in srgb, ${track.color} 12%, transparent)`,
+                            borderColor: span.active
+                                ? "transparent"
+                                : track.color,
                         }}
                     />
-                ))}
+                );
+            })}
         </button>
     );
 };
 
-export const TimelineWorkspaceFlags = ({
+export const TimelineSelectionRange = ({
     range,
     beatCount,
     pixelsPerBeat,
     height,
-    startBeat = 0,
     onCommit,
+    onInteractionChange,
 }: {
-    range: TimelineWorkspaceRange;
+    range: TimelineBeatRange;
     beatCount: number;
     pixelsPerBeat: number;
     height: number;
-    startBeat?: number;
-    onCommit?: (range: TimelineWorkspaceRange) => void;
+    onCommit?: (range: TimelineBeatRange) => void;
+    onInteractionChange?: (
+        interaction: TimelineSelectionInteraction | null,
+    ) => void;
 }) => {
     const [preview, setPreview] = useState(range);
     const previewRef = useRef(range);
@@ -459,174 +505,304 @@ export const TimelineWorkspaceFlags = ({
 
     useEffect(() => {
         const next = {
-            startFlagBeatIndex: range.startFlagBeatIndex,
-            endFlagBeatIndex: range.endFlagBeatIndex,
+            startBeatIndex: range.startBeatIndex,
+            endBeatIndex: range.endBeatIndex,
         };
         dragRef.current = null;
         previewRef.current = next;
         setPreview(next);
-    }, [range.endFlagBeatIndex, range.startFlagBeatIndex]);
+    }, [range.endBeatIndex, range.startBeatIndex]);
 
     const updatePreview = useCallback(
-        (kind: "start" | "end", clientX: number, surface: HTMLElement) => {
+        (
+            kind: "start" | "end",
+            clientX: number,
+            surface: HTMLElement,
+            dragging = true,
+        ) => {
             const bounds = surface.getBoundingClientRect();
-            const requested = clientXToNearestBeat({
+            const requested = clientXToNearestBoundary({
                 clientX,
                 surfaceLeft: bounds.left,
                 pixelsPerBeat,
-                startBeat,
+                startBeat: 0,
                 beatCount,
             });
             const current = previewRef.current;
             const next =
                 kind === "start"
                     ? {
-                          startFlagBeatIndex: clamp(
+                          startBeatIndex: clamp(
                               requested,
                               0,
-                              current.endFlagBeatIndex - 1,
+                              current.endBeatIndex - 1,
                           ),
-                          endFlagBeatIndex: current.endFlagBeatIndex,
+                          endBeatIndex: current.endBeatIndex,
                       }
                     : {
-                          startFlagBeatIndex: current.startFlagBeatIndex,
-                          endFlagBeatIndex: clamp(
+                          startBeatIndex: current.startBeatIndex,
+                          endBeatIndex: clamp(
                               requested,
-                              current.startFlagBeatIndex + 1,
-                              Math.max(beatCount - 1, 1),
+                              current.startBeatIndex + 1,
+                              beatCount,
                           ),
                       };
             previewRef.current = next;
             setPreview(next);
+            onInteractionChange?.({
+                range: next,
+                activeHandle: dragging ? kind : null,
+                dragging,
+            });
+            return next;
         },
-        [beatCount, pixelsPerBeat, startBeat],
+        [beatCount, onInteractionChange, pixelsPerBeat],
     );
 
     const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
         const drag = dragRef.current;
         if (!drag || drag.pointerId !== event.pointerId) return;
-        updatePreview(drag.kind, event.clientX, drag.surface);
+        const next = updatePreview(
+            drag.kind,
+            event.clientX,
+            drag.surface,
+            false,
+        );
         dragRef.current = null;
         event.currentTarget.releasePointerCapture?.(event.pointerId);
-        const next = previewRef.current;
         if (
-            next.startFlagBeatIndex !== range.startFlagBeatIndex ||
-            next.endFlagBeatIndex !== range.endFlagBeatIndex
+            next.startBeatIndex !== range.startBeatIndex ||
+            next.endBeatIndex !== range.endBeatIndex
         ) {
             onCommit?.(next);
         }
     };
 
-    const flag = (kind: "start" | "end", beatIndex: number) => {
-        const isVisible = beatIndex >= startBeat;
-        const label = `Workspace ${kind}`;
-        if (!isVisible) return null;
-        return (
-            <button
-                type="button"
-                data-timeline-interactive="true"
-                aria-label={label}
-                title={`${label}: beat ${beatIndex + 1}`}
-                disabled={!onCommit}
-                onPointerDown={(event) => {
-                    if (!onCommit || event.button !== 0) return;
-                    event.stopPropagation();
-                    const surface = event.currentTarget.parentElement;
-                    if (!surface) return;
-                    dragRef.current = {
-                        kind,
-                        pointerId: event.pointerId,
-                        surface,
-                    };
-                    event.currentTarget.setPointerCapture?.(event.pointerId);
-                    updatePreview(kind, event.clientX, surface);
-                }}
-                onPointerMove={(event) => {
-                    const drag = dragRef.current;
-                    if (!drag || drag.pointerId !== event.pointerId) return;
-                    updatePreview(kind, event.clientX, drag.surface);
-                }}
-                onPointerUp={finishDrag}
-                onPointerCancel={() => {
-                    dragRef.current = null;
-                    previewRef.current = range;
-                    setPreview(range);
-                }}
-                onKeyDown={(event) => {
-                    if (!onCommit) return;
-                    const delta =
-                        event.key === "ArrowLeft"
-                            ? -1
-                            : event.key === "ArrowRight"
-                              ? 1
-                              : 0;
-                    if (delta === 0) return;
-                    event.preventDefault();
-                    const next =
-                        kind === "start"
-                            ? {
-                                  startFlagBeatIndex: clamp(
-                                      beatIndex + delta,
-                                      0,
-                                      range.endFlagBeatIndex - 1,
-                                  ),
-                                  endFlagBeatIndex: range.endFlagBeatIndex,
-                              }
-                            : {
-                                  startFlagBeatIndex: range.startFlagBeatIndex,
-                                  endFlagBeatIndex: clamp(
-                                      beatIndex + delta,
-                                      range.startFlagBeatIndex + 1,
-                                      Math.max(beatCount - 1, 1),
-                                  ),
-                              };
-                    onCommit(next);
-                }}
-                className="group focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
-                style={{
-                    left: beatToX(beatIndex, pixelsPerBeat, startBeat),
-                    height,
-                }}
-            >
-                <span className="bg-accent absolute top-0 bottom-0 left-1/2 w-px" />
-                <span
-                    className={clsx(
-                        "bg-accent absolute top-0 h-12 w-9",
-                        kind === "start"
-                            ? "left-1/2 rounded-r-sm"
-                            : "right-1/2 rounded-l-sm",
-                    )}
-                />
-            </button>
-        );
-    };
-
-    const startX = beatToX(
-        preview.startFlagBeatIndex,
-        pixelsPerBeat,
-        startBeat,
+    const flag = (kind: "start" | "end", beatIndex: number) => (
+        <button
+            type="button"
+            data-timeline-interactive="true"
+            aria-label={`Selection ${kind}`}
+            title={`Selection ${kind}: beat boundary ${beatIndex}`}
+            disabled={!onCommit}
+            onPointerDown={(event) => {
+                if (!onCommit || event.button !== 0) return;
+                event.stopPropagation();
+                const surface =
+                    event.currentTarget.parentElement?.parentElement;
+                if (!surface) return;
+                dragRef.current = {
+                    kind,
+                    pointerId: event.pointerId,
+                    surface,
+                };
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+                updatePreview(kind, event.clientX, surface);
+            }}
+            onPointerMove={(event) => {
+                const drag = dragRef.current;
+                if (!drag || drag.pointerId !== event.pointerId) return;
+                updatePreview(kind, event.clientX, drag.surface);
+            }}
+            onPointerUp={finishDrag}
+            onPointerCancel={() => {
+                dragRef.current = null;
+                previewRef.current = range;
+                setPreview(range);
+                onInteractionChange?.(null);
+            }}
+            onKeyDown={(event) => {
+                if (!onCommit) return;
+                const delta =
+                    event.key === "ArrowLeft"
+                        ? -1
+                        : event.key === "ArrowRight"
+                          ? 1
+                          : 0;
+                if (delta === 0) return;
+                event.preventDefault();
+                onCommit(
+                    kind === "start"
+                        ? {
+                              startBeatIndex: clamp(
+                                  beatIndex + delta,
+                                  0,
+                                  range.endBeatIndex - 1,
+                              ),
+                              endBeatIndex: range.endBeatIndex,
+                          }
+                        : {
+                              startBeatIndex: range.startBeatIndex,
+                              endBeatIndex: clamp(
+                                  beatIndex + delta,
+                                  range.startBeatIndex + 1,
+                                  beatCount,
+                              ),
+                          },
+                );
+            }}
+            className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
+            style={{ left: beatToX(beatIndex, pixelsPerBeat), height }}
+        >
+            <span className="bg-accent absolute inset-y-0 left-1/2 w-px" />
+            <span
+                className={clsx(
+                    "bg-accent absolute top-0 h-10 w-8",
+                    kind === "start"
+                        ? "left-1/2 rounded-r-sm"
+                        : "right-1/2 rounded-l-sm",
+                )}
+            />
+        </button>
     );
-    const endX = beatToX(preview.endFlagBeatIndex, pixelsPerBeat, startBeat);
 
+    const startX = beatToX(preview.startBeatIndex, pixelsPerBeat);
+    const endX = beatToX(preview.endBeatIndex, pixelsPerBeat);
     return (
         <div
-            data-testid="timeline-workspace-flags"
-            className="pointer-events-none absolute inset-0 z-40"
+            data-testid="timeline-selection-range"
+            className="pointer-events-none absolute inset-0 z-30"
         >
             <span
                 aria-hidden="true"
-                className="bg-accent/5 pointer-events-none absolute top-0"
-                style={{
-                    left: startX,
-                    width: Math.max(0, endX - startX),
-                    height,
-                }}
+                className="bg-accent/8 absolute top-0"
+                style={{ left: startX, width: endX - startX, height }}
             />
             <div className="pointer-events-none absolute inset-0">
-                {flag("start", preview.startFlagBeatIndex)}
-                {flag("end", preview.endFlagBeatIndex)}
+                {flag("start", preview.startBeatIndex)}
+                {flag("end", preview.endBeatIndex)}
             </div>
         </div>
+    );
+};
+
+export const TimelineRehearsalMarkers = ({
+    model,
+    pixelsPerBeat,
+    top,
+    onSeek,
+}: {
+    model: TimelineViewModel;
+    pixelsPerBeat: number;
+    top: number;
+    onSeek?: (beat: BeatPosition) => void;
+}) => (
+    <div className="pointer-events-none absolute inset-0 z-20">
+        {model.measures.flatMap((measure) => {
+            const label = measure.rehearsalMark?.trim();
+            if (!label) return [];
+            return [
+                <button
+                    key={measure.id}
+                    type="button"
+                    data-timeline-interactive="true"
+                    aria-label={`Rehearsal mark ${label}`}
+                    title={`Rehearsal mark ${label}`}
+                    onClick={() => onSeek?.(measure.atBeat)}
+                    className="border-text-subtitle bg-bg-1 text-text pointer-events-auto absolute flex size-22 -translate-x-1/2 items-center justify-center rounded-full border font-mono text-[10px] shadow-sm"
+                    style={{
+                        left: beatToX(measure.atBeat, pixelsPerBeat),
+                        top,
+                    }}
+                >
+                    {label}
+                </button>,
+            ];
+        })}
+    </div>
+);
+
+export const TimelinePlayheadDetail = ({
+    model,
+    positionBeat,
+    pixelsPerBeat,
+    height,
+    anchorRef,
+    visible,
+}: {
+    model: TimelineViewModel;
+    positionBeat: BeatPosition;
+    pixelsPerBeat: number;
+    height: number;
+    anchorRef: RefObject<HTMLButtonElement | null>;
+    visible: boolean;
+}) => {
+    const detailRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState<{
+        left: number;
+        top: number;
+    } | null>(null);
+    const updatePosition = useCallback(() => {
+        const anchor = anchorRef.current;
+        const detail = detailRef.current;
+        if (!anchor || !detail) return;
+        const anchorRect = anchor.getBoundingClientRect();
+        const detailRect = detail.getBoundingClientRect();
+        const centeredLeft =
+            anchorRect.left + anchorRect.width / 2 - detailRect.width / 2;
+        const maximumLeft = Math.max(
+            8,
+            window.innerWidth - detailRect.width - 8,
+        );
+        const next = {
+            left: clamp(centeredLeft, 8, maximumLeft),
+            top: Math.max(8, anchorRect.top - detailRect.height - 8),
+        };
+        setPosition((current) =>
+            current?.left === next.left && current.top === next.top
+                ? current
+                : next,
+        );
+    }, [anchorRef]);
+
+    useLayoutEffect(() => {
+        if (!visible) {
+            setPosition(null);
+            return;
+        }
+        updatePosition();
+        const observer =
+            typeof ResizeObserver === "undefined"
+                ? null
+                : new ResizeObserver(updatePosition);
+        if (anchorRef.current) observer?.observe(anchorRef.current);
+        if (detailRef.current) observer?.observe(detailRef.current);
+        window.addEventListener("resize", updatePosition);
+        window.addEventListener("scroll", updatePosition, true);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener("resize", updatePosition);
+            window.removeEventListener("scroll", updatePosition, true);
+        };
+    }, [
+        anchorRef,
+        height,
+        pixelsPerBeat,
+        positionBeat,
+        updatePosition,
+        visible,
+    ]);
+
+    if (!visible) return null;
+    const isDark = anchorRef.current?.closest(".dark") != null;
+    return createPortal(
+        <div
+            ref={detailRef}
+            role="tooltip"
+            data-testid="timeline-playhead-detail"
+            className={clsx(
+                "bg-accent text-text-invert rounded-4 pointer-events-none fixed z-[100] px-6 py-4 font-mono text-[11px] leading-none whitespace-nowrap shadow-sm",
+                isDark && "dark",
+            )}
+            style={{
+                left: position?.left ?? 0,
+                top: position?.top ?? 0,
+                visibility: position ? "visible" : "hidden",
+            }}
+        >
+            {getPlayheadLabel(model, positionBeat)}
+        </div>,
+        document.body,
     );
 };
 
@@ -634,82 +810,120 @@ export const TimelinePlayhead = ({
     model,
     positionBeat,
     pixelsPerBeat,
-    startBeat = 0,
     height,
+    beatCount,
+    anchorRef,
+    onHoverChange,
+    onFocusChange,
+    onSeek,
 }: {
     model: TimelineViewModel;
     positionBeat: BeatPosition;
     pixelsPerBeat: number;
-    startBeat?: number;
     height: number;
-}) => {
-    const left = beatToX(positionBeat, pixelsPerBeat, startBeat);
-    return (
-        <div
-            aria-label={getPlayheadLabel(model, positionBeat)}
-            className="pointer-events-none absolute top-0 z-30 w-0"
-            style={{ left, height }}
-        >
-            <span className="rounded-4 bg-accent text-text-invert absolute top-0 left-0 -translate-x-1/2 px-5 py-2 font-mono text-[9px] leading-none whitespace-nowrap shadow-sm">
-                {getPlayheadLabel(model, positionBeat)}
-            </span>
-            <span className="border-t-accent absolute top-14 left-0 size-0 -translate-x-1/2 border-t-[6px] border-r-[4px] border-l-[4px] border-r-transparent border-l-transparent" />
-            <span className="bg-accent absolute top-20 bottom-0 left-0 w-px" />
-        </div>
-    );
-};
+    beatCount: number;
+    anchorRef: RefObject<HTMLButtonElement | null>;
+    onHoverChange: (hovered: boolean) => void;
+    onFocusChange: (focused: boolean) => void;
+    onSeek?: (beat: BeatPosition) => void;
+}) => (
+    <button
+        ref={anchorRef}
+        type="button"
+        data-testid="timeline-playhead"
+        aria-label={`Playback position: ${getPlayheadLabel(model, positionBeat)}`}
+        onPointerDown={(event) => event.preventDefault()}
+        onPointerEnter={() => onHoverChange(true)}
+        onPointerLeave={() => onHoverChange(false)}
+        onFocus={() => onFocusChange(true)}
+        onBlur={() => onFocusChange(false)}
+        onKeyDown={(event) => {
+            const delta =
+                event.key === "ArrowLeft"
+                    ? -1
+                    : event.key === "ArrowRight"
+                      ? 1
+                      : 0;
+            if (delta === 0 || !onSeek) return;
+            event.preventDefault();
+            onSeek(
+                clamp(
+                    Math.round(positionBeat) + delta,
+                    0,
+                    Math.max(beatCount - 1, 0),
+                ),
+            );
+        }}
+        className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-50 w-12 -translate-x-1/2 cursor-ew-resize touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
+        style={{
+            left: beatToX(positionBeat, pixelsPerBeat),
+            height,
+        }}
+    >
+        <span className="border-t-accent absolute top-0 left-1/2 size-0 -translate-x-1/2 border-t-[6px] border-r-[4px] border-l-[4px] border-r-transparent border-l-transparent" />
+        <span className="bg-accent absolute top-6 bottom-0 left-1/2 w-px" />
+    </button>
+);
 
-export const useTimelineScrubbing = ({
+export const useTimelinePointer = ({
     onSeek,
     pixelsPerBeat,
-    startBeat,
     beatCount,
 }: {
     onSeek?: (beat: number) => void;
     pixelsPerBeat: number;
-    startBeat: number;
     beatCount: number;
 }) => {
-    const scrubbing = useRef(false);
-    const seek = useCallback(
+    const [isDragging, setIsDragging] = useState(false);
+    const dragging = useRef(false);
+    const pointerBeat = useCallback(
         (event: ReactPointerEvent<HTMLElement>) => {
-            if (!onSeek) return;
             const bounds = event.currentTarget.getBoundingClientRect();
-            onSeek(
-                clientXToNearestBeat({
-                    clientX: event.clientX,
-                    surfaceLeft: bounds.left,
-                    pixelsPerBeat,
-                    startBeat,
-                    beatCount,
-                }),
-            );
+            return clientXToBeat({
+                clientX: event.clientX,
+                surfaceLeft: bounds.left,
+                pixelsPerBeat,
+                startBeat: 0,
+                beatCount,
+            });
         },
-        [beatCount, onSeek, pixelsPerBeat, startBeat],
+        [beatCount, pixelsPerBeat],
+    );
+    const seek = useCallback(
+        (beat: number) => onSeek?.(Math.round(beat)),
+        [onSeek],
     );
 
     return {
-        onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
-            if (
-                (event.button !== undefined && event.button !== 0) ||
-                (event.target instanceof Element &&
-                    event.target.closest("[data-timeline-interactive]"))
-            )
-                return;
-            scrubbing.current = true;
-            event.currentTarget.setPointerCapture?.(event.pointerId);
-            seek(event);
-        },
-        onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
-            if (scrubbing.current) seek(event);
-        },
-        onPointerUp: (event: ReactPointerEvent<HTMLElement>) => {
-            if (!scrubbing.current) return;
-            scrubbing.current = false;
-            event.currentTarget.releasePointerCapture?.(event.pointerId);
-        },
-        onPointerCancel: () => {
-            scrubbing.current = false;
+        isDragging,
+        pointerHandlers: {
+            onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
+                if (dragging.current) seek(pointerBeat(event));
+            },
+            onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
+                if (
+                    (event.button !== undefined && event.button !== 0) ||
+                    (event.target instanceof Element &&
+                        event.target.closest("[data-timeline-interactive]"))
+                )
+                    return;
+                dragging.current = true;
+                setIsDragging(true);
+                event.currentTarget.setPointerCapture?.(event.pointerId);
+                seek(pointerBeat(event));
+            },
+            onPointerUp: (event: ReactPointerEvent<HTMLElement>) => {
+                if (!dragging.current) return;
+                dragging.current = false;
+                setIsDragging(false);
+                const beat = pointerBeat(event);
+                seek(beat);
+                event.currentTarget.releasePointerCapture?.(event.pointerId);
+            },
+            onPointerCancel: () => {
+                dragging.current = false;
+                setIsDragging(false);
+            },
         },
     };
 };

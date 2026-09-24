@@ -32,6 +32,11 @@ export const timelineStoryTracks: readonly TimelineTrack[] = [
             { id: "m1-hold", startBeat: 0, endBeat: 8, texture: "hold" },
             { id: "m1-move", startBeat: 8, endBeat: 16, texture: "move" },
         ],
+        activitySpans: [
+            { startBeatIndex: 0, endBeatIndex: 5, active: true },
+            { startBeatIndex: 5, endBeatIndex: 9, active: false },
+            { startBeatIndex: 9, endBeatIndex: 16, active: true },
+        ],
     },
     {
         id: "shape",
@@ -53,6 +58,11 @@ export const timelineStoryTracks: readonly TimelineTrack[] = [
                 texture: "hold",
             },
         ],
+        activitySpans: [
+            { startBeatIndex: 8, endBeatIndex: 18, active: true },
+            { startBeatIndex: 18, endBeatIndex: 21, active: false },
+            { startBeatIndex: 21, endBeatIndex: 24, active: true },
+        ],
     },
     {
         id: "m7",
@@ -61,21 +71,28 @@ export const timelineStoryTracks: readonly TimelineTrack[] = [
         label: "M7",
         color: "#e56a82",
         legs: [{ id: "m7-move", startBeat: 16, endBeat: 24, texture: "move" }],
+        activitySpans: [
+            { startBeatIndex: 16, endBeatIndex: 20, active: true },
+            { startBeatIndex: 20, endBeatIndex: 22, active: false },
+            { startBeatIndex: 22, endBeatIndex: 24, active: true },
+        ],
     },
 ];
 
 export const timelineStoryModel: TimelineViewModel = {
     beatCount: 32,
     pages: [
-        { id: "page-1", label: "1", atBeat: 0 },
-        { id: "page-2", label: "2", atBeat: 8 },
-        { id: "page-2a", label: "2A", atBeat: 16 },
-        { id: "page-3", label: "3", atBeat: 24 },
+        { id: "page-0", label: "0", atBeat: 0, isInitial: true },
+        { id: "page-1", label: "1", atBeat: 0, isInitial: false },
+        { id: "page-2", label: "2", atBeat: 8, isInitial: false },
+        { id: "page-2a", label: "2A", atBeat: 16, isInitial: false },
+        { id: "page-4", label: "4", atBeat: 24, isInitial: false },
     ],
     measures: Array.from({ length: 8 }, (_, index) => ({
         id: `measure-${index + 1}`,
         label: `M${index + 1}`,
         atBeat: index * 4,
+        rehearsalMark: index === 6 ? "A" : null,
     })),
     tracks: timelineStoryTracks,
     waveform: timelineStoryWaveform,
@@ -99,7 +116,7 @@ const createStoryMeasures = (beats: Beat[], count: number): Measure[] =>
             id: index + 1,
             startBeat: measureBeats[0],
             number: index + 1,
-            rehearsalMark: null,
+            rehearsalMark: index === 6 ? "A" : null,
             notes: null,
             duration: measureBeats.length * 0.5,
             counts: measureBeats.length,
@@ -115,27 +132,39 @@ const createStoryPages = ({
 }: {
     beats: Beat[];
     measures: Measure[];
-    markers: readonly { id: string; label: string; atBeat: number }[];
+    markers: readonly {
+        id: string;
+        label: string;
+        atBeat: number;
+        isInitial: boolean;
+    }[];
 }): Page[] =>
     markers.map((marker, index) => {
-        const next = markers[index + 1]?.atBeat ?? beats.length;
+        const next =
+            markers.slice(index + 1).find((candidate) => !candidate.isInitial)
+                ?.atBeat ?? beats.length;
         const pageBeats = beats.slice(marker.atBeat, next);
+        const initialPage = marker.isInitial;
         return {
             id: index + 1,
             name: marker.label,
-            counts: pageBeats.length,
+            counts: initialPage ? 0 : pageBeats.length,
             notes: null,
             order: index,
             nextPageId: markers[index + 1] ? index + 2 : null,
             previousPageId: index === 0 ? null : index,
             isSubset: /[A-Za-z]/.test(marker.label),
-            duration: pageBeats.length * 0.5,
-            beats: pageBeats,
-            measures: measures.filter((measure) =>
-                pageBeats.some((beat) => beat.id === measure.startBeat.id),
-            ),
-            measureBeatToStartOn: 1,
-            measureBeatToEndOn: pageBeats.length,
+            duration: initialPage ? 0 : pageBeats.length * 0.5,
+            beats: initialPage ? [beats[0]] : pageBeats,
+            measures: initialPage
+                ? null
+                : measures.filter((measure) =>
+                      pageBeats.some(
+                          (beat) => beat.id === measure.startBeat.id,
+                      ),
+                  ),
+            measureBeatToStartOn: initialPage ? null : 1,
+            measureBeatToEndOn: initialPage ? null : pageBeats.length,
             timestamp: pageBeats[0]?.timestamp ?? 0,
         };
     });
@@ -157,6 +186,7 @@ const tracksToTimelineInputs = (
             endBeatIndex: leg.endBeat,
             texture: leg.texture,
         })),
+        activitySpans: track.activitySpans,
     }));
 
 export interface TimelineStoryData {
@@ -188,11 +218,20 @@ export const timelineStoryData: TimelineStoryData = (() => {
 
 export const createLongTimelineStoryModel = (): TimelineViewModel => {
     const beatCount = 512;
-    const pages = Array.from({ length: beatCount / 32 }, (_, index) => ({
-        id: `long-page-${index + 1}`,
-        label: `${index + 1}`,
-        atBeat: index * 32,
-    }));
+    const pages = [
+        {
+            id: "long-page-0",
+            label: "0",
+            atBeat: 0,
+            isInitial: true,
+        },
+        ...Array.from({ length: beatCount / 32 }, (_, index) => ({
+            id: `long-page-${index + 1}`,
+            label: `${index + 1}`,
+            atBeat: index * 32,
+            isInitial: false,
+        })),
+    ];
     const colors = ["#2fc4b2", "#e79b00", "#e56a82", "#967eff"];
     const tracks = colors.map((color, index) => ({
         id: `long-track-${index}`,
@@ -206,6 +245,13 @@ export const createLongTimelineStoryModel = (): TimelineViewModel => {
                 startBeat: index * 64,
                 endBeat: index * 64 + 64,
                 texture: (index % 2 === 0 ? "move" : "hold") as "move" | "hold",
+            },
+        ],
+        activitySpans: [
+            {
+                startBeatIndex: index * 64,
+                endBeatIndex: index * 64 + 64,
+                active: true,
             },
         ],
     }));

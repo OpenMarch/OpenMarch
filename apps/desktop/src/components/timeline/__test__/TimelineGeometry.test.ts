@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
     clientXToNearestBeat,
     filterMarkersByMinimumSpacing,
-    getInspectorRange,
+    getPageRange,
     getPlayheadLabel,
+    getSelectionRange,
     packTimelineTracks,
     validateTimelineViewModel,
 } from "../TimelineGeometry";
@@ -22,13 +23,27 @@ describe("timeline geometry", () => {
         ]);
     });
 
-    it("fits inspector view around the track with one beat of context", () => {
+    it("derives end-exclusive page and selection ranges", () => {
         expect(
-            getInspectorRange(
-                timelineStoryTracks.find((track) => track.id === "shape"),
-                timelineStoryModel.beatCount,
+            getPageRange({
+                pages: timelineStoryModel.pages,
+                pageId: "page-0",
+                beatCount: timelineStoryModel.beatCount,
+            }),
+        ).toBeNull();
+        expect(
+            getPageRange({
+                pages: timelineStoryModel.pages,
+                pageId: "page-2",
+                beatCount: timelineStoryModel.beatCount,
+            }),
+        ).toEqual({ startBeatIndex: 8, endBeatIndex: 16 });
+        expect(
+            getSelectionRange(
+                { kind: "track", trackId: "shape" },
+                timelineStoryModel,
             ),
-        ).toEqual({ startBeat: 7, endBeat: 25 });
+        ).toEqual({ startBeatIndex: 8, endBeatIndex: 24 });
     });
 
     it("maps a pointer position to the nearest beat", () => {
@@ -53,34 +68,45 @@ describe("timeline geometry", () => {
         ).toEqual(["measure-1", "measure-3", "measure-5", "measure-7"]);
     });
 
-    it("formats the playhead from current page, measure, and count", () => {
-        expect(getPlayheadLabel(timelineStoryModel, 11)).toBe(
-            "Pg 2 · M3 · ct 4",
-        );
+    it("formats the playhead as page, measure, and count", () => {
+        expect(getPlayheadLabel(timelineStoryModel, 0)).toBe("Pg 1 · m1.1");
+        expect(getPlayheadLabel(timelineStoryModel, 11)).toBe("Pg 2 · m3.4");
     });
 
-    it("accepts the story model and flags non-page track endpoints", () => {
+    it("accepts normalized activity partitions", () => {
         expect(validateTimelineViewModel(timelineStoryModel)).toEqual([]);
+    });
+
+    it("reports activity gaps and adjacent duplicate states", () => {
         expect(
             validateTimelineViewModel({
                 ...timelineStoryModel,
                 tracks: [
                     {
                         ...timelineStoryTracks[0],
-                        legs: [
+                        activitySpans: [
                             {
-                                id: "invalid-leg",
-                                startBeat: 1,
-                                endBeat: 7,
-                                texture: "move",
+                                startBeatIndex: 0,
+                                endBeatIndex: 4,
+                                active: true,
+                            },
+                            {
+                                startBeatIndex: 5,
+                                endBeatIndex: 8,
+                                active: true,
+                            },
+                            {
+                                startBeatIndex: 8,
+                                endBeatIndex: 16,
+                                active: false,
                             },
                         ],
                     },
                 ],
             }),
         ).toEqual([
-            "m1 must start on a page boundary",
-            "m1 must end on a page boundary",
+            "m1 activity must not have gaps or overlaps",
+            "m1 adjacent activity spans must be normalized",
         ]);
     });
 });
