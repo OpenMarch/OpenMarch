@@ -20,7 +20,6 @@ import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { JSX } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
@@ -225,15 +224,13 @@ const baseFixture = baseTest.extend<BaseApi>({
                         delayDuration={500}
                         skipDelayDuration={500}
                     >
-                        <IsPlayingProvider>
-                            <SelectedPageProvider>
-                                <SelectedMarchersProvider>
-                                    <SelectedAudioFileProvider>
-                                        {children}
-                                    </SelectedAudioFileProvider>
-                                </SelectedMarchersProvider>
-                            </SelectedPageProvider>
-                        </IsPlayingProvider>
+                        <SelectedPageProvider>
+                            <SelectedMarchersProvider>
+                                <SelectedAudioFileProvider>
+                                    {children}
+                                </SelectedAudioFileProvider>
+                            </SelectedMarchersProvider>
+                        </SelectedPageProvider>
                     </TooltipProvider>
                 </QueryClientProvider>
             );

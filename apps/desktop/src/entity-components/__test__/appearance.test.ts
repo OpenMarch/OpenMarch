@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createFieldTheme } from "@openmarch/core";
 import {
     appearanceIsHidden,
+    parseRgbaColor,
     resolveAppearanceFromStack,
     rgbaToSchemaString,
 } from "../appearance";
@@ -155,6 +156,31 @@ describe("appearance", () => {
             );
             expect(resolved.visible).toBe(false);
             expect(resolved.textVisible).toBe(false);
+        });
+    });
+
+    describe("parseRgbaColor", () => {
+        it("parses an rgba string with a fractional alpha", () => {
+            expect(parseRgbaColor("rgba(10,20,30,0.5)")).toEqual({
+                r: 10,
+                g: 20,
+                b: 30,
+                a: 0.5,
+            });
+        });
+
+        it("defaults alpha to 1 when omitted", () => {
+            expect(parseRgbaColor("rgb(1,2,3)")).toEqual({
+                r: 1,
+                g: 2,
+                b: 3,
+                a: 1,
+            });
+        });
+
+        it("round-trips with rgbaToSchemaString", () => {
+            const color = { r: 5, g: 6, b: 7, a: 0.25 };
+            expect(parseRgbaColor(rgbaToSchemaString(color))).toEqual(color);
         });
     });
 });

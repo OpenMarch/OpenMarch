@@ -14,6 +14,8 @@ import {
 import {
     AppearanceComponentOptional,
     appearanceIsHidden,
+    parseRgbaColor,
+    ResolvedPerformerAppearance,
 } from "@/entity-components/appearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
@@ -60,6 +62,13 @@ export default class CanvasMarcher
         visible: true,
         label_visible: true,
     };
+
+    /**
+     * The last fully-resolved appearance applied via `applyResolvedAppearance`,
+     * tracked by reference so the live frame-clock render loop can skip
+     * re-applying an appearance that hasn't changed since the previous frame.
+     */
+    private lastResolvedAppearance: ResolvedPerformerAppearance | null = null;
 
     /**
      * Creates a marker shape based on the given parameters.
@@ -260,7 +269,10 @@ export default class CanvasMarcher
         this.marcherObj = marcher;
 
         // Set the initial coordinates to the appropriate offset
-        const newCoords = this.databaseCoordsToCanvasCoords(coordinate);
+        const newCoords = this.databaseCoordsToCanvasCoords(
+            coordinate.x,
+            coordinate.y,
+        );
         this.left = newCoords.x;
         this.top = newCoords.y;
 
@@ -418,6 +430,37 @@ export default class CanvasMarcher
             this.canvas.requestRenderAll();
     }
 
+    /**
+     * Applies a fully-resolved appearance (as sampled from a
+     * `MarcherAppearanceTimeline`, see `getAppearanceAtTime`) directly to the canvas.
+     *
+     * This is the live-animation counterpart to `setAppearance`, called from the frame
+     * clock loop (`useAppearanceAnimation`) instead of a page-scoped effect. The
+     * appearance-priority cascade already happened once, when the marcher's timeline
+     * was built (`dbToMarcherAppearanceTimeline`), so this just re-applies that single,
+     * already-resolved value through `setAppearance` as a one-item stack — reusing its
+     * shape-creation/color-update logic rather than duplicating it.
+     *
+     * No-ops when `appearance` is reference-equal to the last one applied.
+     * `MarcherAppearanceTimeline` keyframes are guaranteed to differ from their
+     * predecessor, so a stable reference reliably means nothing changed — this keeps
+     * the steady-state, per-frame cost of the appearance sync to a single reference
+     * check per marcher.
+     */
+    applyResolvedAppearance(
+        appearance: ResolvedPerformerAppearance,
+        labelColor?: RgbaColor,
+    ) {
+        if (this.lastResolvedAppearance === appearance) return;
+        this.lastResolvedAppearance = appearance;
+
+        this.setAppearance(
+            resolvedAppearanceToAppearanceComponent(appearance),
+            { requestRenderAll: false },
+            labelColor,
+        );
+    }
+
     refreshLockedStatus() {
         if (this.coordinate.page_id == null || this.marcherObj.id == null) {
             return;
@@ -444,7 +487,8 @@ export default class CanvasMarcher
 
         // Convert back to canvas coordinates
         const roundedCanvasCoords = this.databaseCoordsToCanvasCoords(
-            roundedDatabaseCoords,
+            roundedDatabaseCoords.x,
+            roundedDatabaseCoords.y,
         );
 
         // Update position with proper typing
@@ -515,19 +559,17 @@ export default class CanvasMarcher
     /**
      * Converts the coordinates from the database to the canvas coordinates of the dot/label fabric group.
      *
-     * @param databaseCoords The coordinates from the database where the actual dot should be. I.e. a marcherPage object
+     * @param x The x coordinate from the database where the actual dot should be
+     * @param y The y coordinate from the database where the actual dot should be
      * @returns {x: number, y: number}, The coordinates of the center of the dot/label fabric group on the canvas.
      */
-    private databaseCoordsToCanvasCoords(databaseCoords: {
-        x: number;
-        y: number;
-    }) {
+    private databaseCoordsToCanvasCoords(x: number, y: number) {
         const dotOffset = this.getDotOffset();
 
         // The absolute position of the dot on the canvas
         const absoluteDotPosition = {
-            x: databaseCoords.x + CanvasMarcher.gridOffset,
-            y: databaseCoords.y + CanvasMarcher.gridOffset,
+            x: x + CanvasMarcher.gridOffset,
+            y: y + CanvasMarcher.gridOffset,
         };
 
         // If the object is in a group, we need to calculate the position relative to the group
@@ -626,7 +668,10 @@ export default class CanvasMarcher
             : coordinate;
 
         // Offset the new canvas coordinates (center of the dot/label group) by the dot's position
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coordsToUse);
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(
+            coordsToUse.x,
+            coordsToUse.y,
+        );
 
         if (this.left === undefined || this.top === undefined)
             throw new Error(
@@ -639,6 +684,17 @@ export default class CanvasMarcher
         // This is needed for the canvas to register the change - http://fabricjs.com/fabric-gotchas
         this.getCanvas().bringToFront(this);
         this.setCoords();
+        this.refreshLockedStatus();
+    }
+
+    /**
+     * Updates the stored MarcherPage / coordinate metadata (page_id, locks, DB x/y)
+     * without moving the fabric object. Live animation owns left/top via
+     * `setLiveCoordinates`; this keeps drag-save, lock state, and refreshMarchers
+     * aligned with the selected page.
+     */
+    setCoordinateMetadata(coordinate: CoordinateLike) {
+        this.coordinate = coordinate;
         this.refreshLockedStatus();
     }
 
@@ -660,13 +716,13 @@ export default class CanvasMarcher
     /**
      * Updates the position of the text label to follow the dot.
      */
-    updateTextLabelPosition() {
+    updateTextLabelPosition(callSetCoords = true) {
         const absoluteCoords = this.getAbsoluteCoords();
         this.textLabel.set({
             left: absoluteCoords.x,
             top: absoluteCoords.y - CanvasMarcher.dotRadius * 2.2,
         });
-        this.textLabel.setCoords();
+        if (callSetCoords) this.textLabel.setCoords();
     }
 
     /**
@@ -724,7 +780,10 @@ export default class CanvasMarcher
         marcherPage: MarcherPage;
         durationMilliseconds: number;
     }) {
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(
+            marcherPage.x,
+            marcherPage.y,
+        );
         const callback = this.animate(
             {
                 left: newCanvasCoords.x,
@@ -749,16 +808,16 @@ export default class CanvasMarcher
      * A lightweight method to update the marcher's position on the canvas during live animation.
      * This method avoids the overhead of `setMarcherCoords` and is intended for use within an animation loop.
      *
-     * @param coords The new coordinates (in database terms) to set the marcher to.
+     * @param x The new x coordinate (in database terms) to set the marcher to.
+     * @param y The new y coordinate (in database terms) to set the marcher to.
      */
-    setLiveCoordinates(coords: { x: number; y: number }) {
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
+    setLiveCoordinates(x: number, y: number) {
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(x, y);
 
         this.left = newCanvasCoords.x;
         this.top = newCanvasCoords.y;
 
-        this.updateTextLabelPosition();
-        this.setCoords();
+        this.updateTextLabelPosition(false);
     }
 
     /**
@@ -799,6 +858,34 @@ export default class CanvasMarcher
     get lockedReason() {
         return this._lockedReason;
     }
+}
+
+/** Inverse of the `shapeTypeToSchemaShape` mapping in `entity-components/appearance.ts`. */
+const RESOLVED_SHAPE_TO_SHAPE_TYPE: Record<
+    ResolvedPerformerAppearance["shape"],
+    string
+> = {
+    circle: "circle",
+    square: "square",
+    triangle: "triangle",
+    cross: "x",
+};
+
+/**
+ * Adapts a fully-resolved appearance back into the single-item
+ * `AppearanceComponentOptional` "stack" that `CanvasMarcher.setAppearance` expects,
+ * so `applyResolvedAppearance` can reuse it instead of duplicating its logic.
+ */
+function resolvedAppearanceToAppearanceComponent(
+    appearance: ResolvedPerformerAppearance,
+): AppearanceComponentOptional {
+    return {
+        fill_color: parseRgbaColor(appearance.fillRgba),
+        outline_color: parseRgbaColor(appearance.strokeRgba),
+        shape_type: RESOLVED_SHAPE_TO_SHAPE_TYPE[appearance.shape],
+        visible: appearance.visible,
+        label_visible: appearance.textVisible,
+    };
 }
 
 /**

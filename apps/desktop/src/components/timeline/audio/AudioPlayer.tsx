@@ -1,6 +1,4 @@
 import WaveSurfer from "wavesurfer.js";
-import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile, {
@@ -19,7 +17,11 @@ import { useQuery } from "@tanstack/react-query";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
 import { CircleNotchIcon } from "@phosphor-icons/react";
-import type Page from "@/global/classes/Page";
+import {
+    subscribeToFrameClock,
+    useFrameClockStore,
+    useIsPlaying,
+} from "@/services/clock/frame-clock";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -32,53 +34,15 @@ function volumeAdjustment(volume: number): number {
     return (volume * 2.0) / 100.0;
 }
 
-// Playback start info interface
-interface PlaybackStartInfo {
-    playStartTime: number;
-    startTimestamp: number;
-    pageDuration: number;
-}
-
-// Global reference to store playback start info, used for calculating live playback position
-export const playbackStartInfoRef = {
-    current: null as PlaybackStartInfo | null,
-};
-
-// Global reference to store the AudioContext, used for getting timestamp
-export let audioContextRef: AudioContext | null = null;
-
-/** Departure time (end of page) used when paused — matches clock and Web Audio start. */
-export const getPausedPlaybackSeconds = (page: Page | null): number => {
-    if (!page) return 0;
-    return page.timestamp + page.duration;
-};
-
+/** Snaps the waveform's progress bar to the clock's current (paused) position. */
 export const seekWaveSurferToPausedPosition = (
     ws: ReturnType<typeof WaveSurfer.create>,
-    page: Page | null,
     duration: number,
 ): void => {
     if (duration <= 0) return;
-    const seconds = getPausedPlaybackSeconds(page);
+    const seconds = useFrameClockStore.getState().getAudioTime();
     const progress = Math.max(0, Math.min(1, seconds / duration));
     ws.seekTo(progress);
-};
-
-// Function to get the current live playback position in seconds
-export const getLivePlaybackPosition = (): number => {
-    if (!audioContextRef || !playbackStartInfoRef.current) {
-        return 0;
-    }
-
-    const { playStartTime, startTimestamp, pageDuration } =
-        playbackStartInfoRef.current;
-    return (
-        startTimestamp +
-        pageDuration +
-        (audioContextRef.currentTime - playStartTime) +
-        PLAYBACK_DELAY +
-        0.01
-    );
 };
 
 /**
@@ -92,20 +56,14 @@ export default function AudioPlayer() {
     const { uiSettings } = useUiSettingsStore();
     const audioMuted = uiSettings.audioMuted;
     const audioVolume = uiSettings.audioVolume;
-    const selectedPageContext = useSelectedPage();
-    const isPlayingContext = useIsPlaying();
+    const isPlaying = useIsPlaying();
     const selectedAudioFileContext = useSelectedAudioFile();
     const { beats, measures, pages } = useTimingObjects();
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
     const audioOffsetSeconds = workspaceSettings?.audioOffsetSeconds ?? 0;
-    const contextsReady =
-        !!selectedPageContext &&
-        !!isPlayingContext &&
-        !!selectedAudioFileContext;
-    const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const isPlaying = isPlayingContext?.isPlaying ?? false;
+    const contextsReady = !!selectedAudioFileContext;
     const selectedAudioFile =
         selectedAudioFileContext?.selectedAudioFile ?? null;
     // Metronome state management
@@ -138,14 +96,8 @@ export default function AudioPlayer() {
 
     // AudioContext state management
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-    const [playbackTimestamp, setPlaybackTimestamp] = useState<number>(0);
-    const selectedPageRef = useRef(selectedPage);
     const audioDurationRef = useRef(audioDuration);
     const isPlayingRef = useRef(isPlaying);
-
-    useEffect(() => {
-        selectedPageRef.current = selectedPage;
-    }, [selectedPage]);
 
     useEffect(() => {
         audioDurationRef.current = audioDuration;
@@ -157,20 +109,17 @@ export default function AudioPlayer() {
 
     // Set up AudioContext on the first mount
     useEffect(() => {
-        if (!audioContext) {
-            try {
-                const ctx = new window.AudioContext({
-                    sampleRate: SAMPLE_RATE,
-                });
-                setAudioContext(ctx);
-                audioContextRef = ctx;
-            } catch (e) {
-                toast.error(t("audio.context.error"));
-            }
-        } else {
-            audioContextRef = audioContext;
+        try {
+            const ctx = new window.AudioContext({
+                sampleRate: SAMPLE_RATE,
+            });
+            setAudioContext(ctx);
+            useFrameClockStore.getState().init(ctx, (s) => s * 1000);
+        } catch (e) {
+            // No need to translate this. Don't want the extra `t` dependency
+            toast.error("Error loading audio context");
         }
-    }, [audioContext, setAudioContext, t]);
+    }, []);
 
     // Populate metronome audio track when beats or measures change
     useEffect(() => {
@@ -337,13 +286,6 @@ export default function AudioPlayer() {
         t,
     ]);
 
-    // Sync audio and store playback position with the selected page
-    useEffect(() => {
-        if (!selectedPage || isPlaying) return;
-
-        setPlaybackTimestamp(getPausedPlaybackSeconds(selectedPage));
-    }, [selectedPage, isPlaying, setPlaybackTimestamp]);
-
     // Play/pause audio when isPlaying changes
     useEffect(() => {
         if (
@@ -412,6 +354,9 @@ export default function AudioPlayer() {
                 .connect(metroGainNode.current)
                 .connect(audioContext.destination);
 
+            const playbackTimestamp = useFrameClockStore
+                .getState()
+                .getAudioTime();
             audioSource.start(startAt, playbackTimestamp);
             metroSource.start(startAt, playbackTimestamp);
 
@@ -425,24 +370,13 @@ export default function AudioPlayer() {
 
             audioNode.current = audioSource;
             metroNode.current = metroSource;
-
-            // Store playback tracking info for live position
-            playbackStartInfoRef.current = {
-                playStartTime: startAt,
-                startTimestamp: selectedPage?.timestamp ?? 0,
-                pageDuration: selectedPage?.duration ?? 0,
-            };
         } else {
             // If not playing, stop any existing playback
             stopPlayback();
-
-            // Clear playback tracking info
-            playbackStartInfoRef.current = null;
         }
 
         return () => {
             stopPlayback();
-            playbackStartInfoRef.current = null;
         };
     }, [
         isPlaying,
@@ -450,7 +384,6 @@ export default function AudioPlayer() {
         audioContext,
         isAudioProcessing,
         metronomeBuffer,
-        playbackTimestamp,
         audioVolume,
         audioMuted,
     ]);
@@ -482,11 +415,7 @@ export default function AudioPlayer() {
 
         const seekToPausedPosition = () => {
             if (isPlayingRef.current) return;
-            seekWaveSurferToPausedPosition(
-                ws,
-                selectedPageRef.current,
-                audioDurationRef.current,
-            );
+            seekWaveSurferToPausedPosition(ws, audioDurationRef.current);
         };
 
         ws.on("decode", seekToPausedPosition);
@@ -525,12 +454,17 @@ export default function AudioPlayer() {
         }
     }, [audioMuted, audioVolume]);
 
-    // Snap WaveSurfer to correct position when paused
+    // Snap WaveSurfer to correct position whenever the clock moves while paused (e.g. a seekTo
+    // from selecting a page, or an undo/redo jump).
     useEffect(() => {
         if (!waveSurfer || !audioBuffer || isPlaying) return;
 
-        seekWaveSurferToPausedPosition(waveSurfer, selectedPage, audioDuration);
-    }, [waveSurfer, audioBuffer, audioDuration, selectedPage, isPlaying]);
+        seekWaveSurferToPausedPosition(waveSurfer, audioDuration);
+
+        return subscribeToFrameClock(() => {
+            seekWaveSurferToPausedPosition(waveSurfer, audioDuration);
+        });
+    }, [waveSurfer, audioBuffer, audioDuration, isPlaying]);
 
     // Animate WaveSurfer progress bar when playing
     useEffect(() => {
@@ -541,10 +475,10 @@ export default function AudioPlayer() {
 
         const update = () => {
             if (!isActive) return;
-            const livePlayback = getLivePlaybackPosition();
+            const clockTime = useFrameClockStore.getState().getAudioTime();
             const progress = Math.max(
                 0,
-                Math.min(1, livePlayback / audioDuration),
+                Math.min(1, clockTime / audioDuration),
             );
             waveSurfer.seekTo(progress);
             rafId = requestAnimationFrame(update);

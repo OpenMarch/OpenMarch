@@ -1,52 +1,42 @@
-import { useIsPlaying } from "@/context/IsPlayingContext";
 import { ClockIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
-import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useEffect, useRef } from "react";
+import {
+    subscribeToFrameClock,
+    useFrameClockStore,
+} from "@/services/clock/frame-clock";
 
+// Helper function to format time in MM:SS.mmm format
+const formatTime = (seconds: number) => {
+    const ms = Math.floor((seconds % 1) * 1000);
+    const totalSeconds = Math.floor(seconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
+};
 /**
  * Live clock component that displays the current playback position
  */
 export function AudioClock() {
-    const { isPlaying } = useIsPlaying()!;
-    const { selectedPage } = useSelectedPage()!;
-    const [displayTime, setDisplayTime] = useState<number>(0);
+    const clockDisplayRef = useRef<HTMLElement>(null);
 
-    // Animation frame loop to update the displayed time
     useEffect(() => {
-        let rafId: number;
-
-        const update = () => {
-            setDisplayTime(getLivePlaybackPosition());
-            rafId = requestAnimationFrame(update);
+        const syncDisplay = (timeMs: number) => {
+            if (clockDisplayRef.current)
+                clockDisplayRef.current.textContent = formatTime(timeMs / 1000);
         };
 
-        if (isPlaying) {
-            update();
-        } else {
-            setDisplayTime(
-                (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0),
-            );
-        }
+        syncDisplay(useFrameClockStore.getState().currentTime);
 
-        return () => {
-            cancelAnimationFrame(rafId);
-        };
-    }, [isPlaying, selectedPage]);
-
-    // Helper function to format time in MM:SS.mmm format
-    const formatTime = (seconds: number) => {
-        const ms = Math.floor((seconds % 1) * 1000);
-        const totalSeconds = Math.floor(seconds);
-        const minutes = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
-        return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
-    };
+        const unsubscribe = subscribeToFrameClock(syncDisplay);
+        return unsubscribe;
+    }, []);
 
     return (
         <div className="text-text flex items-center gap-6">
             <ClockIcon size={14} />
-            <span className="font-mono text-xs">{formatTime(displayTime)}</span>
+            <span className="font-mono text-xs" ref={clockDisplayRef}>
+                {formatTime(useFrameClockStore.getState().currentTime / 1000)}
+            </span>
         </div>
     );
 }

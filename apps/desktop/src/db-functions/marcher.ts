@@ -263,7 +263,7 @@ export async function updateMarchers({
     return updateResponse;
 }
 
-const deleteMarchersInTransaction = async ({
+export const deleteMarchersInTransaction = async ({
     marcherIds,
     tx,
 }: {

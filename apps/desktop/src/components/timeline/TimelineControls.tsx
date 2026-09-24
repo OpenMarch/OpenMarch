@@ -15,7 +15,6 @@ import {
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
@@ -24,6 +23,7 @@ import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -153,7 +153,7 @@ function TimelineMetronomeButton() {
 
 function PlaybackControls() {
     const { selectedPage } = useSelectedPage()!;
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying()!;
     const { uiSettings } = useUiSettingsStore();
     const { t } = useTolgee();
 
