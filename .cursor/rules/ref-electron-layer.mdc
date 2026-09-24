@@ -1,0 +1,191 @@
+---
+description: When working with the Electron main process, preload script, IPC communication, file management, or app packaging
+alwaysApply: false
+---
+
+# Electron Architecture Reference
+
+## Overview
+
+OpenMarch uses Electron with strict context isolation. The main process manages the window, file system, database connection, and native APIs. The renderer process accesses these via a preload-bridge (`window.electron`). The SQL proxy pattern allows Drizzle ORM in the renderer to execute queries against the main process's libsql database.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `electron/main/index.ts` | Main process entry (window, IPC, lifecycle) |
+| `electron/preload/index.ts` | Preload bridge (`window.electron` API) |
+| `electron/database/db.ts` | Main process DB connection (libsql) |
+| `electron/database/database.services.ts` | SQL proxy + IPC handlers |
+| `electron/database/services/DrizzleMigrationService.ts` | Migration runner |
+| `electron/database/services/sqljs-driver.ts` | SQL.js driver (testing) |
+| `electron/database/migrations/schema.ts` | Drizzle schema |
+| `electron/database/migrations/triggers.ts` | History trigger SQL |
+| `electron/database/repair.ts` | Database repair utilities |
+| `electron-builder.json5` | Electron packaging config |
+
+## Security Model
+
+```typescript
+// Main process creates BrowserWindow with:
+{
+    contextIsolation: true,    // Renderer can't access Node.js
+    nodeIntegration: false,    // No require() in renderer
+    sandbox: true,             // Additional sandboxing
+}
+```
+
+All main process access goes through the preload script's `contextBridge.exposeInMainWorld()`.
+
+## Preload Bridge API
+
+`window.electron` exposes:
+
+```typescript
+interface ElectronAPI {
+    // SQL Proxy (core data access)
+    sqlProxy(sql: string, params: any[], method: string): Promise<any>;
+    unsafeSqlProxy(sql: string): Promise<void>;  // For trigger creation
+
+    // Database lifecycle
+    databaseIsReady(): Promise<boolean>;
+    databaseGetPath(): Promise<string>;
+    databaseCreate(filePath: string): Promise<void>;
+    databaseLoad(filePath: string): Promise<void>;
+    databaseSave(): Promise<void>;
+
+    // History
+    undo(): Promise<void>;
+    redo(): Promise<void>;
+    onHistoryAction(callback: Function): void;
+
+    // Window controls
+    minimizeWindow(): void;
+    maximizeWindow(): void;
+    closeWindow(): void;
+
+    // Export
+    export: {
+        pdf(html: string): Promise<Buffer>;
+        generateDocForMarcher(marcherId: number): Promise<Buffer>;
+    };
+
+    // Audio
+    getAudioFile(path: string): Promise<ArrayBuffer>;
+    saveAudioFile(data: ArrayBuffer, name: string): Promise<string>;
+    deleteAudioFile(path: string): Promise<void>;
+
+    // Recent files
+    getRecentFiles(): Promise<string[]>;
+    addRecentFile(path: string): Promise<void>;
+
+    // Logging
+    log(level: string, message: string): Promise<void>;
+}
+```
+
+## SQL Proxy Pattern
+
+The core data access mechanism:
+
+```
+Renderer (Drizzle ORM)
+  → generates SQL string + params
+  → calls window.electron.sqlProxy(sql, params, method)
+  → IPC to main process
+Main Process (database.services.ts)
+  → receives SQL via ipcMain.handle
+  → executes against libsql Database
+  → returns result rows
+  → IPC response to renderer
+Renderer
+  → Drizzle processes result into typed objects
+```
+
+```typescript
+// Main process handler (database.services.ts)
+ipcMain.handle("sql-proxy", async (_, sql, params, method) => {
+    return handleSqlProxyWithDb(database, sql, params, method);
+});
+
+// Renderer connection (src/global/database/db.ts)
+export const db = drizzle(
+    async (sql, params, method) => {
+        return await window.electron.sqlProxy(sql, params, method);
+    },
+    { schema, casing: "snake_case" },
+);
+```
+
+## Database File Management
+
+- File extension: `.dots`
+- User controls file location (File > Open / Save As)
+- Connection lifecycle:
+  1. `setDbPath(filePath)` - sets active database path
+  2. `connect()` - creates libsql `Database` instance
+  3. Foreign keys enabled: `PRAGMA foreign_keys = ON`
+  4. Migrations run on connect
+  5. History triggers created after migrations
+
+## Build & Packaging
+
+```json5
+// electron-builder.json5
+{
+    appId: "com.openmarch.app",
+    productName: "OpenMarch",
+    // File associations
+    fileAssociations: [{ ext: "dots", name: "OpenMarch File" }],
+    // Platforms
+    mac: { target: ["dmg", "zip"], hardenedRuntime: true, notarize: true },
+    win: { target: "nsis" },
+    linux: { target: ["snap", "AppImage"] },
+    // Native modules
+    asar: true,
+    asarUnpack: ["**/node_modules/@libsql/**"],
+    // Publishing
+    publish: { provider: "github" }
+}
+```
+
+Build output:
+- `dist-electron/main/` - main process bundle
+- `dist-electron/preload/` - preload script bundle
+- `dist/` - renderer (Vite build)
+
+## Vite Config
+
+```
+vite.config.mts
+├── @vitejs/plugin-react
+├── vite-plugin-electron (main + preload)
+├── vite-plugin-electron-renderer (Node.js in renderer for dev)
+├── @tailwindcss/vite
+└── @sentry/vite-plugin (source maps)
+```
+
+## Main Process Responsibilities
+
+1. **Window management** - BrowserWindow creation, lifecycle, menu
+2. **Database connection** - libsql Database instance, SQL proxy
+3. **File I/O** - .dots file open/save, audio files, recent files
+4. **PDF export** - `webContents.printToPDF()`
+5. **Auto-updater** - GitHub releases via electron-updater
+6. **Error reporting** - Sentry integration
+7. **IPC handlers** - All `ipcMain.handle()` registrations
+
+## Integration Points
+
+- **Renderer DB**: `src/global/database/db.ts` is the renderer's Drizzle instance using `window.electron.sqlProxy`
+- **History**: Undo/redo uses `window.electron.undo()` / `window.electron.redo()` which execute in main process
+- **Audio**: Audio files managed via IPC (main process file system access)
+- **Export**: PDF generation via main process
+
+## Gotchas
+
+- `unsafeSqlProxy` bypasses Drizzle's prepared statement system. Only used for trigger SQL that Drizzle can't handle.
+- In Vitest, `window.electron` doesn't exist. Tests use a mock SQL proxy (`setupTestSqlProxy()`).
+- libsql native module must be unpacked from ASAR (`asarUnpack` in builder config).
+- The preload script runs in a limited context - no full Node.js access, only what's explicitly bridged.
+- `PRAGMA foreign_keys = ON` must be set after every connection (it's per-connection in SQLite).

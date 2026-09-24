@@ -1,0 +1,119 @@
+---
+description: When needing to understand the overall project structure, directory layout, tech stack, or data flow patterns
+alwaysApply: false
+---
+
+# Project Architecture Reference
+
+## Overview
+
+OpenMarch is an Electron + React desktop app for writing drill (marching band formations). It uses a monorepo structure with `apps/desktop` as the main app. The renderer process handles all business logic and database queries via a SQLite proxy to the main process.
+
+## Tech Stack
+
+- **Runtime**: Electron (main + renderer processes)
+- **UI**: React 18, Tailwind CSS, Radix UI primitives
+- **State**: Zustand (UI state), React Context (tree state), TanStack React Query (server/DB state)
+- **Database**: SQLite via libsql, Drizzle ORM with SQLite proxy pattern
+- **Canvas**: Fabric.js for drill field rendering
+- **Build**: Vite + vite-plugin-electron, pnpm workspaces
+- **Testing**: Vitest (unit), Playwright (e2e)
+- **Icons**: @phosphor-icons/react
+
+## Directory Map
+
+```
+apps/desktop/
+├── electron/                      # Main process code
+│   ├── main/index.ts             # Electron entry, window mgmt, IPC
+│   ├── preload/index.ts          # Context bridge (window.electron API)
+│   └── database/
+│       ├── db.ts                 # Main process DB connection (libsql)
+│       ├── database.services.ts  # SQL proxy IPC handlers
+│       ├── migrations/
+│       │   ├── schema.ts         # Drizzle schema (all tables)
+│       │   ├── relations.ts      # Table relations
+│       │   ├── triggers.ts       # History triggers SQL
+│       │   └── *.sql             # Migration files
+│       └── services/
+│           └── DrizzleMigrationService.ts
+├── src/
+│   ├── main.tsx                  # React entry (providers)
+│   ├── App.tsx                   # Root component (LaunchPage vs workspace)
+│   ├── components/               # React UI components
+│   │   ├── canvas/               # Canvas + listeners + hooks
+│   │   ├── timeline/             # Timeline + audio components
+│   │   ├── inspector/            # Right panel editors
+│   │   ├── toolbar/              # Top toolbar + tabs
+│   │   ├── sidebar/              # Left sidebar + modals
+│   │   ├── marcher/              # Marcher CRUD + appearance
+│   │   ├── prop/                 # Prop CRUD + drawing
+│   │   ├── field/                # Field properties config
+│   │   ├── music/                # Music/tempo/metronome
+│   │   ├── exporting/            # Coordinate sheets + PDF
+│   │   ├── tags/                 # Tag management
+│   │   ├── launchpage/           # Start screen + settings
+│   │   ├── titlebar/             # Window title bar
+│   │   └── singletons/           # StateInitializer
+│   ├── global/
+│   │   ├── classes/              # Domain entities (Marcher, Page, Beat, etc.)
+│   │   │   ├── canvasObjects/    # Fabric.js wrappers (CanvasMarcher, etc.)
+│   │   │   └── fieldTemplates/   # Football, Indoor templates
+│   │   └── database/
+│   │       └── db.ts             # Renderer DB connection (proxy)
+│   ├── db-functions/             # Database CRUD operations
+│   │   ├── index.ts              # Barrel exports
+│   │   ├── types.ts              # DbConnection, DbTransaction types
+│   │   ├── history.ts            # transactionWithHistory, undo/redo
+│   │   └── [entity].ts           # Per-entity CRUD
+│   ├── hooks/
+│   │   ├── queries/              # React Query hooks per entity
+│   │   │   ├── index.ts          # Barrel exports
+│   │   │   └── use[Entity].ts    # Query/mutation options
+│   │   ├── useTimingObjects.ts   # Multi-query: pages+beats+measures
+│   │   └── useAnimation.ts       # Canvas animation during playback
+│   ├── stores/                   # Zustand stores (UI state)
+│   ├── context/                  # React Context providers
+│   ├── utilities/                # Helper functions
+│   └── settings/                 # Workspace settings
+```
+
+## Data Flow
+
+```
+Database (SQLite)
+    ↕ SQL via IPC proxy
+Renderer DB (src/global/database/db.ts)
+    ↕ Drizzle ORM queries
+DB Functions (src/db-functions/*.ts)
+    ↕ called by
+React Query Hooks (src/hooks/queries/use*.ts)
+    ↕ provides data to
+React Components (src/components/)
+    ↕ reads UI state from
+Zustand Stores (src/stores/*.ts)
+    ↕ reads tree state from
+React Context (src/context/*.tsx)
+```
+
+### Three State Categories
+
+1. **Server/DB state** → React Query: All entity data (marchers, pages, shapes, etc.). Cached, auto-invalidated on mutations.
+2. **UI state** → Zustand: Canvas zoom/pan, selection, drawing mode, modals, settings. Persisted to localStorage where needed.
+3. **Tree state** → React Context: Selected page, selected marchers, playback state, theme. Shared across component tree.
+
+## App Entry Flow
+
+1. `main.tsx` → wraps in `ThemeProvider`, `PostHogProvider`, `TolgeeProvider`, `QueryClientProvider`
+2. `App.tsx` → checks `databaseIsReady`. Shows `LaunchPage` if not, main workspace if yes.
+3. Main workspace layout: `TitleBar` (top) → `Toolbar` → `Sidebar` (left) + `Canvas` (center) + `Inspector` (right) → `TimelineContainer` (bottom)
+4. `StateInitializer` prefetches queries, selects first page, loads audio file on mount.
+
+## Key Conventions
+
+- **Imports**: Use `@/` alias for `src/` directory
+- **Barrel exports**: `db-functions/index.ts` and `hooks/queries/index.ts` re-export everything
+- **Naming**: DB functions in `camelCase.ts`, query hooks in `use[PascalCase].ts`, stores in `[PascalCase]Store.ts`
+- **Components**: Co-located with feature (e.g., `components/marcher/` has list, modal, form)
+- **Styles**: Tailwind CSS classes inline, shared styles in `packages/ui/src/tailwind.css`
+- **Base components**: Reusable buttons, inputs, etc. in `packages/ui/src/components/base/`
