@@ -39,6 +39,9 @@ import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
 import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
+import { toast } from "sonner";
+import { version as currentVersion } from "../package.json";
+import { shouldShowUpdateNotification } from "./utilities/updateNotification";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -132,6 +135,24 @@ function App() {
         void window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
         });
+    }, []);
+
+    useEffect(() => {
+        const previousVersion = localStorage.getItem("openmarch:lastVersion");
+        localStorage.setItem("openmarch:lastVersion", currentVersion);
+
+        if (shouldShowUpdateNotification(previousVersion, currentVersion)) {
+            toast.info(`OpenMarch updated to v${currentVersion}`, {
+                duration: 10_000,
+                action: {
+                    label: "Release notes",
+                    onClick: () =>
+                        window.electron.openExternal(
+                            "https://openmarch.com/download/#releases",
+                        ),
+                },
+            });
+        }
     }, []);
 
     useEffect(() => {

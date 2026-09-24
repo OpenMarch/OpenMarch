@@ -25,6 +25,8 @@ export default function GeneralSettings() {
     const { theme, setTheme } = useTheme();
     const tolgee = useTolgee();
     const [currentLanguage, setCurrentLanguage] = useState("en");
+    const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] =
+        useState(true);
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     useEffect(() => {
@@ -41,6 +43,21 @@ export default function GeneralSettings() {
         };
         void loadLanguage();
     }, [tolgee]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadAutomaticUpdatesSetting = async () => {
+            const savedValue = await window.electron.invoke(
+                "settings:get",
+                "automaticUpdates",
+            );
+            if (isMounted) setAutomaticUpdatesEnabled(savedValue !== false);
+        };
+        void loadAutomaticUpdatesSetting();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleLanguageChange = async (languageCode: string) => {
         try {
@@ -127,6 +144,21 @@ export default function GeneralSettings() {
                             showFullDatabasePath: checked,
                         })
                     }
+                />
+            </div>
+
+            <div className="flex h-[2.5rem] items-center justify-between px-8">
+                <p className="text-body text-text-subtitle">
+                    <T keyName="settings.general.automaticUpdates" />
+                </p>
+                <Switch
+                    checked={automaticUpdatesEnabled}
+                    onCheckedChange={(checked) => {
+                        setAutomaticUpdatesEnabled(checked);
+                        window.electron.send("settings:set", {
+                            automaticUpdates: checked,
+                        });
+                    }}
                 />
             </div>
         </div>
