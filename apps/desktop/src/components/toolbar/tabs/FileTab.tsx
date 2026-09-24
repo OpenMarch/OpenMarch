@@ -6,13 +6,11 @@ import {
     ArrowUUpRightIcon,
     FloppyDiskIcon,
     SignOutIcon,
+    ArrowSquareOutIcon,
+    GearSixIcon,
 } from "@phosphor-icons/react";
-import * as api from "@/api/api";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "@/components/RegisteredActionButton";
-import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
+import ActionButton from "@/shortcuts/ActionButton";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
-import SettingsModal from "../SettingsModal";
 import { T } from "@tolgee/react";
 import {
     canUndoQueryOptions,
@@ -31,42 +29,36 @@ export function FileTab() {
     return (
         <div className="flex w-full flex-wrap gap-8">
             <ToolbarSection>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchLoadFileDialogue
-                    }
+                <ActionButton
+                    action="launchLoadFileDialogue"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FolderOpenIcon size={24} />
                     <T keyName="fileTab.openFile" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchNewFileDialogue
-                    }
+                </ActionButton>
+                <ActionButton
+                    action="launchNewFileDialogue"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FileIcon size={24} />
                     <T keyName="fileTab.newFile" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchSaveFileDialogue
-                    }
+                </ActionButton>
+                <ActionButton
+                    action="launchSaveFileDialogue"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <FloppyDiskIcon size={24} />
                     <T keyName="fileTab.saveFile" />
-                </RegisteredActionButton>
+                </ActionButton>
             </ToolbarSection>
             <ToolbarSection>
-                <button
-                    onClick={api.closeCurrentFile}
+                <ActionButton
+                    action="closeFile"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <SignOutIcon size={24} />
                     <T keyName="fileTab.exitFile" />
-                </button>
+                </ActionButton>
             </ToolbarSection>
             {!isFullscreen && (
                 <ToolbarSection>
@@ -89,10 +81,22 @@ export function FileTab() {
                 </ToolbarSection>
             )}
             <ToolbarSection>
-                <ExportCoordinatesModal />
+                <ActionButton
+                    action="openExportDialog"
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <ArrowSquareOutIcon size={24} />
+                    <T keyName="exportCoordinates.exportButton" />
+                </ActionButton>
             </ToolbarSection>
             <ToolbarSection>
-                <SettingsModal />
+                <ActionButton
+                    action="openSettings"
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <GearSixIcon size={24} />
+                    <T keyName="toolbar.settings" />
+                </ActionButton>
             </ToolbarSection>
         </div>
     );

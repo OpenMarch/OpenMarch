@@ -3,54 +3,71 @@
         "alignment": {
             "alignHorizontally": "Align horizontally",
             "alignVertically": "Align vertically",
-            "cancelUpdates": "Cancel updates to marchers",
-            "distributeHorizontally": "Evenly distribute marchers horizontally",
-            "distributeVertically": "Evenly distribute marchers vertically",
-            "flipHorizontal": "Flip marchers horizontally",
-            "flipVertical": "Flip marchers vertically",
+            "cancelUpdates": "Cancel or deselect",
+            "distributeHorizontally": "Distribute horizontally",
+            "distributeVertically": "Distribute vertically",
+            "flipHorizontal": "Flip horizontally",
+            "flipVertical": "Flip vertically",
             "lockX": "Lock X axis",
-            "lockXOff": "Enable X movement",
+            "lockXOff": "Unlock X movement",
             "lockXOn": "Lock X movement",
             "lockY": "Lock Y axis",
-            "lockYOff": "Enable Y movement",
+            "lockYOff": "Unlock Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToCustomFraction": "Apply snap",
+            "snapToCustomFraction": "Snap to grid",
             "snapToWhole": "Snap to nearest whole"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
-            "setAllToNext": "Set all marcher coordinates to next page",
+            "setAllToNext": "Copy positions from next page (all marchers)",
             "setAllToNextSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}",
-            "setAllToPrevious": "Set all marcher coordinates to previous page",
+            "setAllToPrevious": "Copy positions from previous page (all marchers)",
             "setAllToPreviousSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the previous page {previousPage}",
-            "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
+            "setSelectedToNext": "Copy positions from next page (selected)",
             "setSelectedToNextSuccess": "{count, plural, one {Successfully set {count} marcher coordinate on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
-            "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
+            "setSelectedToPrevious": "Copy positions from previous page (selected)",
             "setSelectedToPreviousSuccess": "{count, plural, other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}"
         },
         "cursor": {
-            "defaultMode": "Set cursor mode to default",
-            "lineMode": "Create a line out of the selected marchers"
+            "defaultMode": "Selection mode",
+            "lineMode": "Create line"
         },
         "edit": {
             "noRedoAvailable": "No action to redo",
             "noUndoAvailable": "No action to undo",
-            "redo": "Perform redo",
-            "undo": "Perform undo"
+            "redo": "Redo",
+            "undo": "Undo"
         },
         "file": {
-            "importMusicXml": "Import MusicXML file to get measures",
-            "insertAudio": "Load new audio file into the show",
-            "loadDialogue": "Launch load file dialogue",
-            "newDialogue": "Launch new file dialogue",
-            "saveDialogue": "Launch save file dialogue"
+            "closeFile": "Close file",
+            "exportCoordinateSheets": "Export coordinate sheets…",
+            "exportCoordinateSheetsKeywords": "print pdf dot sheets",
+            "exportDrillCharts": "Export drill charts…",
+            "exportDrillChartsKeywords": "print pdf",
+            "exportToMobile": "Export to OpenMarch Mobile…",
+            "exportToMobileKeywords": "phone app upload",
+            "exportVideo": "Export video…",
+            "exportVideoKeywords": "mp4 movie render",
+            "importMusicXml": "Import MusicXML…",
+            "insertAudio": "Add audio file…",
+            "loadDialogue": "Open file…",
+            "newDialogue": "New file…",
+            "openExport": "Export…",
+            "saveDialogue": "Save a copy…"
         },
         "movement": {
-            "moveDown": "Move selected marcher(s) down",
-            "moveLeft": "Move selected marcher(s) left",
-            "moveRight": "Move selected marcher(s) right",
-            "moveUp": "Move selected marcher(s) up"
+            "moveDown": "Nudge down",
+            "moveLeft": "Nudge left",
+            "moveRight": "Nudge right",
+            "moveUp": "Nudge up",
+            "variants": {
+                "coarse": "4 steps",
+                "coarseFree": "4 steps, no snap",
+                "fine": "¼ step, no snap",
+                "free": "no snap",
+                "tenth": "⅒ step, no snap"
+            }
         },
         "navigation": {
             "firstPage": "First page",
@@ -61,14 +78,15 @@
         "playback": {
             "pause": "Pause",
             "play": "Play",
-            "playPause": "Play or pause"
+            "playPause": "Play / pause",
+            "toggleMetronome": "Toggle metronome"
         },
         "select": {
-            "selectAll": "Select all marchers"
+            "selectAll": "Select all"
         },
         "shape": {
-            "applyQuick": "Snaps marchers to shape without creating an editable object",
-            "create": "Creates a new shape with lines or curves that can be edited across pages",
+            "applyQuick": "Snap to shape",
+            "create": "Create shape",
             "createCircle": "Create circle",
             "delete": "Deletes the current selected shapes",
             "noMarchersSelected": "No marchers selected"
@@ -77,17 +95,24 @@
             "error": "Could not swap marchers {marcher1} and {marcher2}",
             "mustSelectTwo": "Can only swap when 2 marchers are selected.",
             "success": "Swapped marchers {marcher1} and {marcher2}",
-            "swap": "Swap marchers"
+            "swap": "Swap two marchers"
+        },
+        "timeline": {
+            "playPause": "Play / pause audio",
+            "tapBeats": "Add {count} temporary beats"
         },
         "ui": {
-            "focusCanvas": "Focus the canvas",
-            "focusTimeline": "Focus the timeline",
-            "hideNextPaths": "Hide next page dots/paths",
-            "hidePreviousPaths": "Hide previous page dots/paths",
-            "showNextPaths": "Show next page dots/paths",
-            "showPreviousPaths": "Show previous page dots/paths",
-            "toggleNextPaths": "Toggle viewing next page paths",
-            "togglePreviousPaths": "Toggle viewing previous page paths"
+            "exitTimelineFocus": "Done editing timeline",
+            "focusCanvas": "Focus canvas",
+            "focusTimeline": "Edit timeline",
+            "hideNextPaths": "Hide next page paths",
+            "hidePreviousPaths": "Hide previous page paths",
+            "openCommandPalette": "Command palette",
+            "openSettings": "Settings…",
+            "showNextPaths": "Show next page paths",
+            "showPreviousPaths": "Show previous page paths",
+            "toggleNextPaths": "Toggle next page paths",
+            "togglePreviousPaths": "Toggle previous page paths"
         }
     },
     "analyticsOptIn": {
@@ -178,6 +203,16 @@
         "discard": "Discard",
         "removeSetting": "Remove setting",
         "save": "Save"
+    },
+    "commandPalette": {
+        "close": "Close",
+        "empty": "No matching commands.",
+        "navigate": "Navigate",
+        "placeholder": "Search commands…",
+        "run": "Run",
+        "suggested": "Suggested",
+        "title": "Command palette",
+        "unavailable": "Not available right now"
     },
     "coordinateRoundingSettings": {
         "custom": "Custom",
@@ -1081,6 +1116,29 @@
         "repairDotsFile.repairing": "Repairing...",
         "repairDotsFile.success": "Database repaired successfully. Reloading...",
         "repairDotsFile.title": "Repair DOTS file",
+        "shortcuts": "Keyboard shortcuts",
+        "shortcuts.add": "Add shortcut for {action}",
+        "shortcuts.cancel": "Cancel",
+        "shortcuts.category.alignment": "Alignment",
+        "shortcuts.category.batchEdit": "Batch editing",
+        "shortcuts.category.cursor": "Cursor mode",
+        "shortcuts.category.edit": "Edit",
+        "shortcuts.category.file": "File",
+        "shortcuts.category.movement": "Movement",
+        "shortcuts.category.navigation": "Navigation",
+        "shortcuts.category.playback": "Playback",
+        "shortcuts.category.select": "Selection",
+        "shortcuts.category.shape": "Shapes",
+        "shortcuts.category.timeline": "Timeline",
+        "shortcuts.category.ui": "Interface",
+        "shortcuts.conflict": "{binding} is already used by {actions}.",
+        "shortcuts.noResults": "No shortcuts match your search.",
+        "shortcuts.reassign": "Reassign",
+        "shortcuts.recording": "Press keys… (Esc to cancel)",
+        "shortcuts.remove": "Remove {binding}",
+        "shortcuts.reset": "Reset {action} to default",
+        "shortcuts.resetAll": "Reset all",
+        "shortcuts.search": "Search shortcuts",
         "title": "Settings",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating"

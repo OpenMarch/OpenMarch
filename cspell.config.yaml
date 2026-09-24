@@ -30,6 +30,7 @@ words:
   - Cinnaminson
   - clsx
   - codegen
+  - contenteditable
   - colours
   - Configuración
   - cooldown
@@ -66,6 +67,7 @@ words:
   - idioma
   - importmap
   - Invalidators
+  - keymap
   - launchpage
   - lightridge
   - localappdata
@@ -142,6 +144,8 @@ words:
   - toks
   - tolgee
   - Tolgee
+  - Tinykeys
+  - tinykeys
   - Topbar
   - trackpad
   - trackpads

@@ -1,4 +1,5 @@
 import MouseSettings from "./MouseSettings";
+import ShortcutSettings from "./ShortcutSettings";
 import GeneralSettings from "./GeneralSettings";
 import PluginsContents from "./plugins/Plugins";
 import PrivacySettings from "./PrivacySettings";
@@ -20,6 +21,12 @@ export default function SettingsContent() {
                     <T keyName="settings.mouse" />
                 </h5>
                 <MouseSettings />
+            </div>
+            <div className="space-y-16">
+                <h5 className="text-h5 leading-none">
+                    <T keyName="settings.shortcuts" />
+                </h5>
+                <ShortcutSettings />
             </div>
             <div className="space-y-16">
                 <h5 className="text-h5">

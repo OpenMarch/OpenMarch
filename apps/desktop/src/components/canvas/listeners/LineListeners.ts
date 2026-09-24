@@ -33,8 +33,6 @@ export default class LineListeners
         this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
             canvasMarcher.makeUnselectable();
         });
-
-        window.addEventListener("keydown", this.handleKeyDown);
     }
 
     initiateListeners = () => {
@@ -290,10 +288,6 @@ export default class LineListeners
         super.handleObjectModified(fabricEvent);
         this.drawNewMarcherPaths();
     }
-
-    handleKeyDown = (keyboardEvent: KeyboardEvent) => {
-        if (keyboardEvent.key === "Escape") this.clearLine();
-    };
 
     handleMouseUp(fabricEvent: fabric.IEvent<MouseEvent>): void {
         super.handleMouseUp(fabricEvent);

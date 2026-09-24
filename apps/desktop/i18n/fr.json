@@ -3,35 +3,35 @@
         "alignment": {
             "alignHorizontally": "Aligner horizontalement",
             "alignVertically": "Aligner verticalement",
-            "cancelUpdates": "Annuler les mises à jour des marcheurs",
-            "distributeHorizontally": "Distribuer les marcheurs uniformément sur l'horizontale",
-            "distributeVertically": "Distribuer les marcheurs uniformément sur la verticale",
-            "flipHorizontal": "Inverser les marcheurs horizontalement",
-            "flipVertical": "Inverser les marcheurs verticalement",
+            "cancelUpdates": "Annuler ou désélectionner",
+            "distributeHorizontally": "Répartir horizontalement",
+            "distributeVertically": "Répartir verticalement",
+            "flipHorizontal": "Retourner horizontalement",
+            "flipVertical": "Retourner verticalement",
             "lockX": "Verrouiller l'axe X",
-            "lockXOff": "Activer le mouvement X",
+            "lockXOff": "Déverrouiller le mouvement X",
             "lockXOn": "Verrouiller mouvement en X",
             "lockY": "Verrouiller l'axe Y",
-            "lockYOff": "Activer le mouvement Y",
+            "lockYOff": "Déverrouiller le mouvement Y",
             "lockYOn": "Verrouiller mouvement en Y",
-            "snapToCustomFraction": "Aligner avec l'entier le plus proche",
+            "snapToCustomFraction": "Aligner sur la grille",
             "snapToWhole": "Aligner avec l'entier le plus proche"
         },
         "batchEdit": {
             "noNextPage": "Impossible de définir les coordonnées des marcheurs sur la page suivante. Il n'y a pas de page suivante.",
             "noPreviousPage": "Impossible de définir les coordonnées pour la page précédente. Il n'y a pas de page précédente",
-            "setAllToNext": "Définir toutes les coordonnées des marcheurs sur la page suivante",
+            "setAllToNext": "Copier les positions de la page suivante (tous)",
             "setAllToNextSuccess": "Coordonnées de {count} marcheurs sur la page {currentPage} définies avec succès aux coordonnées de la page suivante {nextPage}",
-            "setAllToPrevious": "Définir toutes les coordonnées des marcheurs sur la page précédente",
+            "setAllToPrevious": "Copier les positions de la page précédente (tous)",
             "setAllToPreviousSuccess": "Coordonnées de {{count}} marcheurs sur la page {{currentPage}} définies avec succès aux coordonnées de la page précédente {{previousPage}}",
-            "setSelectedToNext": "Définir les coordonnées du(es) marcheur(s) sélectionné(s) sur la page suivante",
+            "setSelectedToNext": "Copier les positions de la page suivante (sélection)",
             "setSelectedToNextSuccess": "{count, plural, one {Paramètres {count} coordonnée de marcheur sur la page {currentPage} aux coordonnées de la page suivante {nextPage}} other {Paramètres {count} coordonnées de marcheur sur la page {currentPage} aux coordonnées de la page suivante {nextPage}} }",
-            "setSelectedToPrevious": "Définir les coordonnées du(es) marcheur(s) sélectionné(s) sur la page précédente",
+            "setSelectedToPrevious": "Copier les positions de la page précédente (sélection)",
             "setSelectedToPreviousSuccess": "{count, plural, other {Coordonnée'{{count, plural, one {} other {s}}} de {{count}} marcheur{{count, plural, one {} other {s}}} sur la page {{currentPage}} définie avec succès aux coordonnées de la page précédente {{previousPage}}'}}"
         },
         "cursor": {
-            "defaultMode": "Définir le mode du curseur sur par défaut",
-            "lineMode": "Créer une ligne avec les marqueurs sélectionnés"
+            "defaultMode": "Mode sélection",
+            "lineMode": "Créer une ligne"
         },
         "edit": {
             "noRedoAvailable": "Aucune action à rétablir",
@@ -40,17 +40,27 @@
             "undo": "Annuler"
         },
         "file": {
-            "importMusicXml": "Importer le fichier MusicXML pour obtenir des mesures",
-            "insertAudio": "Charger un nouveau fichier audio dans le spectacle",
-            "loadDialogue": "Lancer la boîte de dialogue de chargement de fichier",
-            "newDialogue": "Lancer une nouvelle boîte de dialogue de fichier",
-            "saveDialogue": "Lancer la boîte de dialogue de sauvegarde de fichier"
+            "closeFile": "Fermer le fichier",
+            "exportCoordinateSheets": "Exporter les feuilles de coordonnées…",
+            "exportCoordinateSheetsKeywords": "imprimer pdf feuilles",
+            "exportDrillCharts": "Exporter les diagrammes…",
+            "exportDrillChartsKeywords": "imprimer pdf",
+            "exportToMobile": "Exporter vers OpenMarch Mobile…",
+            "exportToMobileKeywords": "téléphone appli envoyer",
+            "exportVideo": "Exporter la vidéo…",
+            "exportVideoKeywords": "mp4 film rendu",
+            "importMusicXml": "Importer un MusicXML…",
+            "insertAudio": "Ajouter un fichier audio…",
+            "loadDialogue": "Ouvrir un fichier…",
+            "newDialogue": "Nouveau fichier…",
+            "openExport": "Exporter…",
+            "saveDialogue": "Enregistrer une copie…"
         },
         "movement": {
-            "moveDown": "Déplacer le(s) marcheur(s) sélectionné(s) vers le bas",
-            "moveLeft": "Déplacer le(s) marcheur(s) sélectionné(s) vers la gauche",
-            "moveRight": "Déplacer le(s) marcheur(s) sélectionné(s) vers la droite",
-            "moveUp": "Déplacer le(s) marcheur(s) sélectionné(s) vers le haut"
+            "moveDown": "Décaler vers le bas",
+            "moveLeft": "Décaler vers la gauche",
+            "moveRight": "Décaler vers la droite",
+            "moveUp": "Décaler vers le haut"
         },
         "navigation": {
             "firstPage": "Première page",
@@ -61,14 +71,14 @@
         "playback": {
             "pause": "Pause",
             "play": "Jouer",
-            "playPause": "Lire ou mettre en pause"
+            "playPause": "Lecture / pause"
         },
         "select": {
-            "selectAll": "Sélectionner tous les marcheurs"
+            "selectAll": "Tout sélectionner"
         },
         "shape": {
-            "applyQuick": "Aligne les marcheurs à la forme sans créer un objet modifiable",
-            "create": "Crée une nouvelle forme avec des lignes ou des courbes pouvant être modifiées sur plusieurs pages",
+            "applyQuick": "Aligner sur la forme",
+            "create": "Créer une forme",
             "createCircle": "Créer cercle",
             "delete": "Supprime les formes sélectionnées actuelles",
             "noMarchersSelected": "Aucun marcheur sélectionné"
@@ -77,17 +87,20 @@
             "error": "Impossible d'échanger les marcheurs {{marcher1}} et {{marcher2}}",
             "mustSelectTwo": "Peut échanger uniquement lorsque 2 marcheurs sont sélectionnés.",
             "success": "Échangé les marcheurs {{marcher1}} et {{marcher2}}",
-            "swap": "Échanger les marcheurs"
+            "swap": "Échanger deux musiciens"
         },
         "ui": {
-            "focusCanvas": "Centrer la toile",
-            "focusTimeline": "Focaliser la chronologie",
-            "hideNextPaths": "Masquer les points/chemins de la page suivante",
-            "hidePreviousPaths": "Masquer les points/chemins de la page précédente",
-            "showNextPaths": "Afficher les points/chemins de la page suivante",
-            "showPreviousPaths": "Afficher les chemins/pages précédents",
-            "toggleNextPaths": "Basculer l'affichage des chemins de pages suivantes",
-            "togglePreviousPaths": "Basculer l'affichage des chemins de pages précédentes"
+            "exitTimelineFocus": "Terminer l’édition de la chronologie",
+            "focusCanvas": "Activer le canevas",
+            "focusTimeline": "Modifier la chronologie",
+            "hideNextPaths": "Masquer les trajectoires de la page suivante",
+            "hidePreviousPaths": "Masquer les trajectoires de la page précédente",
+            "openCommandPalette": "Palette de commandes",
+            "openSettings": "Paramètres…",
+            "showNextPaths": "Afficher les trajectoires de la page suivante",
+            "showPreviousPaths": "Afficher les trajectoires de la page précédente",
+            "toggleNextPaths": "Basculer les trajectoires de la page suivante",
+            "togglePreviousPaths": "Basculer les trajectoires de la page précédente"
         }
     },
     "analyticsOptIn": {
@@ -178,6 +191,16 @@
         "discard": "Annuler",
         "removeSetting": "Supprimer le paramètre",
         "save": "Sauvegarder"
+    },
+    "commandPalette": {
+        "close": "Fermer",
+        "empty": "Aucune commande ne correspond.",
+        "navigate": "Naviguer",
+        "placeholder": "Rechercher des commandes…",
+        "run": "Exécuter",
+        "suggested": "Suggestions",
+        "title": "Palette de commandes",
+        "unavailable": "Indisponible pour le moment"
     },
     "coordinateRoundingSettings": {
         "custom": "Personnalisé",
@@ -1068,6 +1091,29 @@
         "repairDotsFile.repairing": "Réparation...",
         "repairDotsFile.success": "Base de données réparée avec succès. Rechargement...",
         "repairDotsFile.title": "Réparer le fichier DOTS",
+        "shortcuts": "Raccourcis clavier",
+        "shortcuts.add": "Ajouter un raccourci pour {action}",
+        "shortcuts.cancel": "Annuler",
+        "shortcuts.category.alignment": "Alignement",
+        "shortcuts.category.batchEdit": "Modification groupée",
+        "shortcuts.category.cursor": "Mode curseur",
+        "shortcuts.category.edit": "Édition",
+        "shortcuts.category.file": "Fichier",
+        "shortcuts.category.movement": "Déplacement",
+        "shortcuts.category.navigation": "Navigation",
+        "shortcuts.category.playback": "Lecture",
+        "shortcuts.category.select": "Sélection",
+        "shortcuts.category.shape": "Formes",
+        "shortcuts.category.timeline": "Chronologie",
+        "shortcuts.category.ui": "Interface",
+        "shortcuts.conflict": "{binding} est déjà utilisé par {actions}.",
+        "shortcuts.noResults": "Aucun raccourci ne correspond à la recherche.",
+        "shortcuts.reassign": "Réattribuer",
+        "shortcuts.recording": "Appuyez sur les touches… (Échap pour annuler)",
+        "shortcuts.remove": "Supprimer {binding}",
+        "shortcuts.reset": "Réinitialiser {action}",
+        "shortcuts.resetAll": "Tout réinitialiser",
+        "shortcuts.search": "Rechercher des raccourcis",
         "title": "Paramètres",
         "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
         "tolgeeDevToolsToggle": "Tolgee Traduction In-Context"
