@@ -1,0 +1,146 @@
+---
+description: When working with marchers, sections, drill numbers, marcher CRUD, marcher list, or marcher canvas rendering
+alwaysApply: false
+---
+
+# Marchers Feature Reference
+
+## Overview
+
+Marchers are the core entity in OpenMarch - they represent performers on the field. Each marcher belongs to a section (instrument), has a drill number (e.g., "T1" for Trumpet 1), and has positions on each page via the `marcher_pages` junction table. Marchers are rendered on the canvas as `CanvasMarcher` objects.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/global/classes/Marcher.ts` | Domain class - sorting, drill number |
+| `src/global/classes/Sections.ts` | Section definitions (instruments) |
+| `src/global/classes/MarcherPage.ts` | Position per page (junction entity) |
+| `src/global/classes/MarcherPageIndex.ts` | Efficient lookup maps |
+| `src/global/classes/MarcherVisualGroup.ts` | Aggregates canvas visuals per marcher |
+| `src/global/classes/canvasObjects/CanvasMarcher.ts` | Fabric.js canvas object |
+| `src/db-functions/marcher.ts` | Database CRUD operations |
+| `src/db-functions/marcherPage.ts` | MarcherPage CRUD |
+| `src/hooks/queries/useMarchers.ts` | React Query hooks |
+| `src/hooks/queries/useMarcherPages.ts` | MarcherPage query hooks |
+| `src/hooks/queries/useMarchersWithVisuals.ts` | Combined marcher + visual data |
+| `src/components/marcher/MarcherList.tsx` | Marcher list UI |
+| `src/components/marcher/MarchersModal.tsx` | Sidebar modal wrapper |
+| `src/components/marcher/NewMarcherForm.tsx` | Create marcher form |
+
+## Data Model
+
+### Marcher (DatabaseMarcher)
+```typescript
+{
+    id: number;
+    name: string;           // Display name
+    section: string;        // Section name (e.g., "Trumpet")
+    drill_prefix: string;   // Section prefix (e.g., "T")
+    drill_order: number;    // Order within section (e.g., 1)
+    type: "marcher" | "prop"; // Entity type
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+}
+// Computed: drill_number = drill_prefix + drill_order (e.g., "T1")
+```
+
+### MarcherPage (DatabaseMarcherPage)
+```typescript
+{
+    id: number;
+    marcher_id: number;     // FK to marchers
+    page_id: number;        // FK to pages
+    x: number;              // X coordinate on field
+    y: number;              // Y coordinate on field
+    rotation_degrees: number | null;
+    // Appearance overrides (per-page)
+    fill_color: string | null;
+    outline_color: string | null;
+    shape_type: string | null;
+    visible: boolean;
+    label_visible: boolean;
+    equipment_name: string | null;
+    equipment_state: string | null;
+    // Path data
+    path_data_id: number | null;  // FK to pathways
+    path_start_position: number | null;
+    path_end_position: number | null;
+}
+```
+
+### Sections
+```typescript
+// src/global/classes/Sections.ts
+// Predefined sections with families:
+// Woodwind: Piccolo, Flute, Clarinet, Alto Sax, Tenor Sax, Bari Sax
+// Brass: Trumpet, Mellophone, Trombone, Baritone, Sousaphone
+// Battery: Snare, Tenors, Bass Drum, Cymbals
+// Guard: Color Guard, Dance Team, Twirler, Flag
+// Other: Drum Major
+// Each has: name, family, scoreOrder, prefix
+```
+
+## MarcherPageIndex
+
+Efficient lookup structure used across the app:
+
+```typescript
+// src/global/classes/MarcherPageIndex.ts
+class MarcherPageIndex {
+    marcherPagesByMarcher: Map<number, Map<number, MarcherPage>>;  // marcherId -> pageId -> MP
+    marcherPagesByPage: Map<number, Map<number, MarcherPage>>;     // pageId -> marcherId -> MP
+
+    static marcherPageMapFromArray(marcherPages: MarcherPage[]): MarcherPageIndex;
+    getByPageId(pageId: number): Map<number, MarcherPage>;
+    getByMarcherId(marcherId: number): Map<number, MarcherPage>;
+}
+```
+
+## Canvas Rendering
+
+`CanvasMarcher` extends `fabric.Group` and contains:
+- `dotObject` - the visual dot on the field
+- `textLabel` - drill number label
+- `appearances[]` - layered appearance settings
+- Methods: `setMarcherCoords()`, `getMarcherCoords()`, `setAppearance()`, `setNextAnimation()`
+
+`MarcherVisualGroup` aggregates per-marcher:
+- `canvasMarcher` - the CanvasMarcher instance
+- `previousPathway` / `nextPathway` - path visuals
+- `previousMidpoint` / `nextMidpoint` - midpoint markers
+- `previousEndPoint` / `nextEndPoint` - endpoint markers
+
+## Query Patterns
+
+```typescript
+// Get all marchers
+import { allMarchersQueryOptions } from "@/hooks/queries";
+const { data: marchers } = useQuery(allMarchersQueryOptions());
+
+// Create marchers
+import { createMarchersMutationOptions } from "@/hooks/queries";
+const createMutation = useMutation(createMarchersMutationOptions(queryClient));
+createMutation.mutate([{ name: "John", section: "Trumpet", drill_prefix: "T", drill_order: 1 }]);
+
+// Combined visual data
+import { useMarchersWithVisuals } from "@/hooks/queries";
+const { marchersWithVisuals, isLoading } = useMarchersWithVisuals();
+```
+
+## Integration Points
+
+- **MarcherPage**: Every marcher has a position on every page. Creating a marcher auto-creates MarcherPages for all existing pages.
+- **Tags**: Marchers can have tags (`marcher_tags` table) that affect their appearance.
+- **Shapes**: Marchers can be assigned to shapes (`shape_page_marchers`).
+- **Props**: A prop is linked to a marcher via `props.marcher_id` FK. Props use `type: "prop"` on the marcher.
+- **Canvas**: `CanvasMarcher` objects are managed by `OpenMarchCanvas.renderMarchers()`.
+- **Selection**: Selected marchers tracked via `SelectedMarchersContext`.
+
+## Gotchas
+
+- Marchers with `type: "prop"` are props, not regular marchers. Filter on `type` when listing.
+- `drill_number` is computed (prefix + order), not stored in DB.
+- When creating a marcher, MarcherPages for all existing pages are auto-created with default positions.
+- Marcher sorting uses `Marcher.compare()` which sorts by section score order, then drill order.

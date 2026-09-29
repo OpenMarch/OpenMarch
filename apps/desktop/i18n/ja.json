@@ -1026,6 +1026,7 @@
         "general.appearance": "外観",
         "general.appearance.dark": "ダーク",
         "general.appearance.light": "ライト",
+        "general.automaticUpdates": "アップデートを自動的にダウンロードしてインストール",
         "general.language": "言語",
         "general.showFullDatabasePath": "フル ファイル パスを表示",
         "mouse": "マウス ＆ トラックパッド",

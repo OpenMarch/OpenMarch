@@ -1,0 +1,213 @@
+---
+description: When working with Zustand stores, React Context providers, React Query patterns, or deciding where to put state
+alwaysApply: false
+---
+
+# State Management Reference
+
+## Overview
+
+OpenMarch uses three state management approaches, each for a specific category: React Query for server/database state, Zustand for UI state, and React Context for component tree state. Understanding which to use is critical for maintaining consistency.
+
+## Decision Guide
+
+| Category | Tool | When to Use |
+|----------|------|-------------|
+| Database/server data | React Query | Any data from the database (marchers, pages, shapes, etc.) |
+| UI-only state | Zustand | Canvas state, drawing mode, modal open/close, settings |
+| Component tree state | React Context | Selected page, selected marchers, playback state, theme |
+
+**Rule of thumb**: If it comes from the database, use React Query. If it's UI state shared across unrelated components, use Zustand. If it flows down the component tree and is set by parents/consumed by children, use Context.
+
+## Zustand Stores
+
+All stores are in `src/stores/`:
+
+### CanvasStore
+```typescript
+// Canvas instance and viewport (zoom, pan)
+import { useCanvasStore } from "@/stores/CanvasStore";
+const { canvas, viewport, setCanvas, zoomToFit, resetViewport } = useCanvasStore();
+```
+
+### SelectionStore
+```typescript
+// Selected shape page IDs
+import { useSelectionStore } from "@/stores/SelectionStore";
+```
+
+### UiSettingsStore
+```typescript
+// UI preferences (persisted to localStorage)
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+const { lockX, lockY, gridLines, collisions, pixelsPerSecond, audioVolume, mouseSettings, focussedComponent } = useUiSettingsStore();
+```
+
+### SidebarModalStore
+```typescript
+// Sidebar modal open state and content
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+const { isOpen, content, contentId, toggleOpen, setContent } = useSidebarModalStore();
+```
+
+### PropDrawingStore
+```typescript
+// Prop drawing state (mode, points, etc.)
+import { usePropDrawingStore } from "@/stores/PropDrawingStore";
+const { drawingMode, isDrawing, startPoint, points, setDrawingMode, resetDrawingState } = usePropDrawingStore();
+```
+
+### RegisteredActionsStore
+```typescript
+// Links button refs to keyboard shortcuts
+import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
+const { linkRegisteredAction, removeRegisteredAction } = useRegisteredActionsStore();
+```
+
+### MetronomeStore
+```typescript
+// Metronome settings
+import { useMetronomeStore } from "@/stores/MetronomeStore";
+const { metronomeOn, accentOn, volume, beatStyle, toggleMetronome } = useMetronomeStore();
+```
+
+### AlignmentEventStore
+```typescript
+// Alignment tool state (default, line, lasso)
+import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
+const { alignmentEvent, setAlignmentEvent, resetAlignmentEvent } = useAlignmentEventStore();
+```
+
+### CollisionStore
+```typescript
+// Collision data per page
+import { useCollisionStore } from "@/stores/CollisionStore";
+const { collisions, currentCollision, setCollisions } = useCollisionStore();
+```
+
+### FullscreenStore
+```typescript
+// Fullscreen mode
+import { useFullscreenStore } from "@/stores/FullscreenStore";
+const { isFullscreen, perspective, toggleFullscreen, setPerspective } = useFullscreenStore();
+```
+
+## React Context Providers
+
+All in `src/context/`:
+
+### SelectedPageContext
+```typescript
+import { useSelectedPage } from "@/context/SelectedPageContext";
+const { selectedPage, setSelectedPage, setPageToSelect } = useSelectedPage();
+// setPageToSelect is for deferred selection (page not yet created)
+```
+
+### SelectedMarchersContext
+```typescript
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+// Automatically filters out hidden marchers (visible=false in appearances)
+```
+
+### IsPlayingContext
+```typescript
+import { useIsPlaying } from "@/context/IsPlayingContext";
+const { isPlaying, setIsPlaying } = useIsPlaying();
+```
+
+### SelectedAudioFileContext
+```typescript
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+```
+
+### ThemeContext
+```typescript
+import { useTheme } from "@/context/ThemeContext";
+// Syncs with Electron store and system preferences
+```
+
+## React Query Patterns
+
+### Query Key Factories
+
+Every entity uses a key factory pattern:
+
+```typescript
+const KEY_BASE = "marchers";
+
+export const marcherKeys = {
+    all: () => [KEY_BASE] as const,
+    byId: (id: number) => [KEY_BASE, "id", id] as const,
+};
+```
+
+### Query Options
+
+```typescript
+import { queryOptions } from "@tanstack/react-query";
+
+export const allMarchersQueryOptions = () =>
+    queryOptions({
+        queryKey: marcherKeys.all(),
+        queryFn: async () => getMarchers({ db }),
+    });
+```
+
+### Mutation Options
+
+```typescript
+import { mutationOptions, QueryClient } from "@tanstack/react-query";
+
+export const createMarchersMutationOptions = (qc: QueryClient) =>
+    mutationOptions({
+        mutationFn: (newMarchers) => createMarchers({ db, newMarchers }),
+        onSuccess: () => {
+            void qc.invalidateQueries({ queryKey: [KEY_BASE] });
+        },
+        onError: (e, variables) => {
+            conToastError("Error creating marchers", e, variables);
+        },
+    });
+```
+
+### Cache Invalidation
+
+After mutations, invalidate related queries:
+
+```typescript
+// Invalidate all queries for an entity
+void qc.invalidateQueries({ queryKey: [KEY_BASE] });
+
+// Shared invalidators for cross-entity invalidation
+// See src/hooks/queries/sharedInvalidators.ts
+```
+
+### Multi-Query Hooks
+
+For combining data from multiple queries, use `useQueries` with a stable `combine` function:
+
+```typescript
+export const useTimingObjects = () =>
+    useQueries({
+        queries: [pagesQuery, beatsQuery, measuresQuery, utilityQuery],
+        combine: _combineTimingObjects,  // Stable reference, NOT inline
+    });
+```
+
+See the `multi-query-hooks.mdc` cursor rule for the full pattern.
+
+## StateInitializer
+
+`src/components/singletons/StateInitializer.tsx` runs on mount:
+- Prefetches queries for current and adjacent pages
+- Selects the first page if none selected
+- Loads the selected audio file
+- Sets up initial state for stores
+
+## Gotchas
+
+- Zustand stores are singletons. Use `useStore()` hook in components, `useStore.getState()` outside React.
+- React Query's `queryClient` is created in `App.tsx` and exported. Pass it to mutation options.
+- Never use inline `combine` functions in `useQueries` - causes re-renders every cycle.
+- UiSettingsStore persists to localStorage. Changes survive page reloads.
+- SelectedMarchersContext auto-filters hidden marchers. This can cause confusion if a "selected" marcher disappears.

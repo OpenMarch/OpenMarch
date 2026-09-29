@@ -1039,6 +1039,7 @@
         "general.appearance": "Appearance",
         "general.appearance.dark": "Dark",
         "general.appearance.light": "Light",
+        "general.automaticUpdates": "Automatically download and install updates",
         "general.language": "Language",
         "general.showFullDatabasePath": "Show full file path",
         "mouse": "Mouse & Trackpad",

@@ -1,0 +1,157 @@
+---
+description: When working with props, prop geometry, prop drawing, prop canvas rendering, or the props modal
+alwaysApply: false
+---
+
+# Props Feature Reference
+
+## Overview
+
+Props represent physical objects on the field (platforms, obstacles, floor markings). Each prop is linked to a marcher record (with `type: "prop"`) and has per-page geometry via the `prop_page_geometry` table. Props can be drawn on the canvas using various shape tools (rectangle, circle, arc, polygon, freehand).
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/global/classes/Prop.ts` | Types, constants, unit conversions |
+| `src/global/classes/PropVisualGroup.ts` | Aggregates visual elements per prop |
+| `src/global/classes/canvasObjects/CanvasProp.ts` | Fabric.js canvas object (extends CanvasMarcher) |
+| `src/db-functions/prop.ts` | Database CRUD operations |
+| `src/hooks/queries/useProps.ts` | React Query hooks |
+| `src/stores/PropDrawingStore.ts` | Drawing mode state |
+| `src/components/canvas/listeners/PropDrawingListeners.ts` | Canvas drawing event handlers |
+| `src/components/prop/PropList.tsx` | Prop list UI |
+| `src/components/prop/PropsModal.tsx` | Sidebar modal wrapper |
+| `src/components/prop/PropEditForm.tsx` | Edit prop form |
+| `src/components/prop/NewPropForm.tsx` | Create prop form |
+| `src/components/prop/PropToolSelector.tsx` | Drawing tool selector |
+
+## Data Model
+
+### Props Table
+```typescript
+type DatabaseProp = {
+    id: number;
+    marcher_id: number;         // FK to marchers (type="prop")
+    surface_type: SurfaceType;  // "floor" | "platform" | "obstacle"
+    asset_url: string | null;
+    prop_category: string | null;
+    default_width: number;      // Default width in pixels
+    default_height: number;     // Default height in pixels
+    created_at: string;
+    updated_at: string;
+};
+
+type PropWithMarcher = DatabaseProp & {
+    marcher: typeof schema.marchers.$inferSelect;
+};
+```
+
+### Prop Page Geometry
+```typescript
+type DatabasePropPageGeometry = {
+    id: number;
+    marcher_page_id: number;    // FK to marcher_pages, unique
+    outline_type: OutlineType;  // NOT "shape" — see naming note below
+    width: number;              // feet, CHECK width > 0
+    height: number;             // feet, CHECK height > 0
+    custom_outline: string | null;  // JSON point list for arc/polygon/freehand
+    rotation: number;           // degrees, defaults to 0
+};
+
+type OutlineType = "rectangle" | "circle" | "arc" | "polygon" | "freehand";
+```
+
+**Naming**: a prop's silhouette is its **outline**, never its "shape". "Shape"
+means a drill formation (`shapes` / `shape_pages` / `shape_page_marchers`).
+See `apps/desktop/CONTEXT.md` for the full glossary.
+
+**Which fields animate**: `width`, `height` and `rotation` interpolate between
+pages (the `PropTransform` type). `outline_type` and `custom_outline` are
+discrete and snap at the page boundary.
+
+### Surface Types
+```typescript
+type SurfaceType = "floor" | "platform" | "obstacle";
+```
+
+Recorded and displayed, but carries **no runtime behavior** — nothing renders,
+stacks, or collides differently because of it. The `SURFACE_TYPE_Z_ORDER` map is
+commented out in `Prop.ts` until 3D makes it meaningful.
+
+### Drawing Modes
+```typescript
+type PropDrawingMode = "rectangle" | "circle" | "arc" | "polygon" | "freehand" | null;
+```
+
+## Unit Conversions
+
+Props use real-world feet for dimensions, converted to canvas pixels:
+
+```typescript
+import { getPixelsPerFoot } from "@/global/classes/Prop";
+
+const pixelsPerFoot = getPixelsPerFoot();
+const widthPx = 10 * pixelsPerFoot; // 10 feet -> pixels
+const widthFt = 150 / pixelsPerFoot; // 150 pixels -> feet
+```
+
+Default prop size: `DEFAULT_PROP_WIDTH = 15`, `DEFAULT_PROP_HEIGHT = 15` (pixels).
+
+## Canvas Rendering
+
+`CanvasProp` extends `CanvasMarcher` and adds:
+- `propId` - the prop's database id
+- `propObj` - the DatabaseProp data
+- `geometry` - the DatabasePropPageGeometry for current page
+- `shapeObject` - Fabric.js shape (rect, circle, or custom path)
+- Methods: `getDimensions()`, `getEdges()`, `setEdges()`
+
+`PropVisualGroup` is similar to `MarcherVisualGroup` but without the `canvasMarcher` property - it only has pathway/midpoint/endpoint visuals.
+
+## Drawing Store
+
+```typescript
+import { usePropDrawingStore } from "@/stores/PropDrawingStore";
+
+const {
+    drawingMode,      // Current tool: "rectangle" | "circle" | ... | null
+    isDrawing,        // Currently drawing
+    startPoint,       // Initial click point
+    points,           // Accumulated points (polygon/freehand)
+    setDrawingMode,   // Activate a drawing tool
+    resetDrawingState // Clear all drawing state
+} = usePropDrawingStore();
+```
+
+## Architecture: Prop-Marcher Relationship
+
+Props piggyback on the marcher system:
+1. Creating a prop also creates a marcher record with `type: "prop"`
+2. This marcher gets MarcherPages (positions) on every page
+3. `prop_page_geometry` stores the shape/size per page via `marcher_page_id` FK
+4. On canvas, `CanvasProp` extends `CanvasMarcher` to reuse positioning logic
+
+This means props participate in undo/redo, pathways, and animation just like marchers.
+
+## Integration Points
+
+- **Marcher system**: Props create a marcher with `type: "prop"`. The marcher_pages provide positioning.
+- **Canvas**: `PropDrawingListeners.ts` handles mouse events for drawing. `CanvasProp` renders on canvas.
+- **PropDrawingStore**: Zustand store tracks active drawing tool and state.
+- **Field Properties**: Unit conversions depend on `fieldProperties.pixelsPerStep`.
+
+## Gotchas
+
+- A prop always has a backing marcher with `type: "prop"`. Deleting the marcher deletes the prop.
+- There is no per-page visibility column. Hiding a prop is a display preference held in
+  `UiSettingsStore.hiddenPropIds`, not part of the show — a prop is on the field on every page.
+- `prop_page_geometry` IS tracked by undo/redo history triggers — it is listed in
+  `tablesWithHistory`. Any write path that touches it must use `transactionWithHistory`, not a plain
+  transaction, so that all the rows one user action writes undo as a single step. See ADR-0001.
+- `custom_outline` stores a JSON point list (`{ points, originalWidth, originalHeight, closed }`),
+  not SVG path data. Only arc, polygon and freehand use it.
+- Rendering a prop onto any canvas goes through `addPropsToCanvas` in
+  `canvasObjects/renderProps.ts` — the interactive canvas, SVG export and video export all use it.
+  Don't construct a `CanvasProp` directly.
+- The `PropDrawingListeners` are only active when `drawingMode` is non-null in the PropDrawingStore.
