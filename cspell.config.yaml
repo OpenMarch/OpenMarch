@@ -66,6 +66,7 @@ words:
   - idioma
   - importmap
   - Invalidators
+  - keyframed
   - launchpage
   - lightridge
   - localappdata
@@ -77,6 +78,7 @@ words:
   - mello
   - merch
   - Meuli
+  - mgmt
   - midset
   - midsets
   - monokai
@@ -116,6 +118,7 @@ words:
   - rwxr
   - saario
   - samuelmeuli
+  - sandboxing
   - Schachner
   - Segoe
   - seti
@@ -179,6 +182,7 @@ words:
   - youtu
   - zier
   - Zingali
+  - Zustand
   - 日本語
 ignorePaths:
   - node_modules/**
