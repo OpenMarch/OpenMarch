@@ -9,6 +9,8 @@ depends_on: [0]
 updated: 2026-09-29
 ---
 
+<!-- cspell:ignore korath -->
+
 # Phase 3: Storage schema and triggers (desktop)
 
 Follow the protocol in [../README.md](../README.md). Claim a work package before you start, and append to the progress log as you go.
