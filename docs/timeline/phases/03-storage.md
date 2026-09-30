@@ -73,8 +73,8 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.5: History registration
 
 - Owner: timeline-worker agent (timeline/p3-history)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1039
 - Parallel: yes
 - Depends on: P3.3
 
@@ -133,6 +133,8 @@ Tick an item only after running its check, and paste the command and result into
 ## Handoff notes
 
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
+
+- History triggers are rebuilt whenever the columns they copy no longer match the table (P3.5), so a later column addition doesn't need a manual trigger reset.
 
 - Can run in parallel with Phases 1 and 2. `PRAGMA foreign_keys = ON` is already set on the main connection and in tests.
 - P3.1 to P3.4 are in review (PR #1037). C-5: homes are `home_x`/`home_y` columns on `marchers` (see `implementation-plan.md`). Migration `0017_powerful_edwin_jarvis.sql` is hand-edited from drizzle's table rebuild into two `ALTER TABLE marchers ADD COLUMN` statements; don't regenerate it, and check that `drizzle-kit generate` stays a no-op after any schema change. `marchers` gained columns, so P3.5 must make sure existing files get `marchers` history triggers that include `home_x`/`home_y`: `createTriggers` in `src/db-functions/history.ts` uses `CREATE TRIGGER IF NOT EXISTS`, so old `marchers_it/_ut/_dt` triggers in a file would otherwise survive with the old column list. The test suite creates triggers fresh, so it doesn't catch this.
@@ -219,3 +221,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** history tests for the timeline tables (round trips, child-first delete for C-1, destination delete + older undo for C-2) and the stale-trigger recreation, then tsc and focused history runs.
 - **Blockers:** none.
 - **Resume from:** check out `origin/timeline/p3-history`, `pnpm install`, `pnpm exec turbo run build --filter=@openmarch/desktop^...`, then add `apps/desktop/src/db-functions/__test__/timelineHistory.test.ts` and run `pnpm --dir apps/desktop run test:history src/db-functions/__test__/timelineHistory.test.ts`.
+
+### 2026-09-30 · lead session · P3.5 (finished after the worker stopped)
+
+- **Done:** the worker stopped when plan mode switched on, with its tests uncommitted. The lead fixed the last failing test (the U-1 guard read `AFTER UPDATE ON` in a trigger's header as a write; it now scans only the body after `BEGIN`), squashed the work into one commit (fb88d217), rebased it onto `timeline-try-2`, and opened PR #1039. P3.5 is in review.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/` (3 files, 51 passed); `pnpm --dir apps/desktop run test:history` on `timelineHistory.test.ts`, `history.test.ts` and `marcher.test.ts` (3 files, 94 passed); eslint (no errors; one `max-lines-per-function` warning that also appears on the base branch); prettier (clean). Full `test:history` and e2e skipped per policy.
+- **Next:** a person reviews and merges #1039.
+- **Blockers:** none.
