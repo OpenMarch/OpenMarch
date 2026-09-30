@@ -90,10 +90,8 @@ Throughout:
 
 - Follow the root `AGENTS.md`, the nearest package `AGENTS.md`, and
   `docs/conventions/` for the area you're changing.
-- The spec (`docs/timeline/spec.md`, or `openmarch-timeline-spec.md` at the
-  repo root before Phase 0 lands) wins on the model. The reference code is in
-  `docs/timeline/ref/` (or unzip `openmarch-timeline-ref.zip` into your scratch
-  space before then).
+- The spec (`docs/timeline/spec.md`) wins on the model. The reference code is in
+  `docs/timeline/ref/`.
 - Don't edit other packages' lines or other phases' work packages. Use a
   `Cross-phase note from P<n>` log entry in the other phase's file instead.
 - A decision that changes a `C-n` conflict, the schema, a file format, IPC or a
