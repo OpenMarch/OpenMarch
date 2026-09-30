@@ -73,7 +73,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.5: History registration
 
 - Owner: timeline-worker agent (timeline/p3-history)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P3.3
@@ -211,3 +211,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** on `timeline-try-2` at 8cb11475 after both merges: `pnpm install`; `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (14 files, 239 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
 - **Next:** P3.5 (history registration, including recreating the `marchers` history triggers on existing files) is being started. P3.8 (open an older `.dots` file) is still a human step.
 - **Blockers:** none.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-history) · P3.5
+
+- **Done:** branch `timeline/p3-history` from `origin/timeline-try-2`. `src/db-functions/history.ts`: the five timeline data tables are in `tablesWithHistory` (not `timeline_change_log`); trigger SQL moved into an exported pure `buildHistoryTriggerSql`; `createTriggers` now drops a table's `_it/_ut/_dt` triggers first when the columns their `old."…"` references name differ from `pragma_table_info` (general, not marchers-specific), then recreates them. `src/hooks/queries/utils.ts`: explicit `[[tableName]]` keys for the timeline tables. Pushed as wip commit 244100ed.
+- **Checks:** none yet (lint-staged eslint/prettier ran on commit).
+- **Next:** history tests for the timeline tables (round trips, child-first delete for C-1, destination delete + older undo for C-2) and the stale-trigger recreation, then tsc and focused history runs.
+- **Blockers:** none.
+- **Resume from:** check out `origin/timeline/p3-history`, `pnpm install`, `pnpm exec turbo run build --filter=@openmarch/desktop^...`, then add `apps/desktop/src/db-functions/__test__/timelineHistory.test.ts` and run `pnpm --dir apps/desktop run test:history src/db-functions/__test__/timelineHistory.test.ts`.
