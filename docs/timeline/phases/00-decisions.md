@@ -30,8 +30,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P0.1: Move the spec and ref/ into the repo
 
 - Owner: timeline-worker (timeline/p0-spec)
-- Status: claimed
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1034
 - Parallel: yes
 - Depends on: —
 
@@ -81,7 +81,7 @@ Send C-1, C-2, C-3 and C-8 to the spec's authors as proposed amendments. Log eac
 
 Tick an item only after running its check, and paste the command and result into the log.
 
-- [ ] The spec and `ref/` are under `docs/timeline/`, and the root copies are gone. The cspell and prettier ignore entries for them already exist
+- [x] The spec and `ref/` are under `docs/timeline/`, and the root copies are gone. The cspell and prettier ignore entries for them already exist
 - [ ] `run_all.sh` baseline result logged (P0.2)
 - [ ] ADR 0001 has status `accepted`
 - [ ] `pnpm check:agent-guidance`, plus prettier and cspell on the changed Markdown, pass
@@ -95,3 +95,5 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+- **2026-09-29 P0.1** (timeline-worker, timeline/p0-spec): Moved spec to docs/timeline/spec.md, unzipped ref/ to docs/timeline/ref/, deleted the zip, removed root spec ignore entries, updated WORKER.md and implementation-plan.md paths. Ran `pnpm format:check`, `pnpm spellcheck` (0 issues), `pnpm check:agent-guidance`: all pass. PR: https://github.com/OpenMarch/OpenMarch/pull/1034. Status in-review.
