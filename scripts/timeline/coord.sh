@@ -57,6 +57,16 @@ cmd_commit() {
         echo "coord.sh: nothing to commit" >&2
         return 0
     fi
+    # The pre-commit hook can't spellcheck here (this checkout lives under .git/, which cspell
+    # skips), so check the staged Markdown directly.
+    local staged
+    staged="$(git -C "$dir" diff --cached --name-only --diff-filter=ACM -- '*.md')"
+    if [ -n "$staged" ]; then
+        (cd "$dir" && printf '%s\n' "$staged" | xargs pnpm exec prettier --write >/dev/null \
+            && printf '%s\n' "$staged" | xargs git add -- \
+            && printf '%s\n' "$staged" | xargs pnpm exec cspell --no-progress --no-must-find-files) \
+            || die "cspell or prettier failed on the staged Markdown; fix it and run commit again"
+    fi
     git -C "$dir" commit --quiet -m "$message"
     local attempt
     for attempt in 1 2 3 4 5; do
