@@ -60,7 +60,7 @@ Draft `docs/adr/0001-timeline-motion-model.md`: replacing pages, C-1 to C-8, tab
 ### P0.4: Accept the ADR
 
 - Owner: human
-- Status: open
+- Status: done
 - PR: none
 - Parallel: no
 - Depends on: P0.3
@@ -83,7 +83,7 @@ Tick an item only after running its check, and paste the command and result into
 
 - [x] The spec and `ref/` are under `docs/timeline/`, and the root copies are gone. The cspell and prettier ignore entries for them already exist
 - [x] `run_all.sh` baseline result logged (P0.2)
-- [ ] ADR 0001 has status `accepted`
+- [x] ADR 0001 has status `accepted`
 - [x] `pnpm check:agent-guidance`, plus prettier and cspell on the changed Markdown, pass
 
 ## Handoff notes
@@ -143,3 +143,10 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
 - **Checks:** on `timeline-try-2` after both merges: `pnpm check:agent-guidance` (valid); `pnpm exec prettier --check docs/timeline docs/adr` (pass); `pnpm exec cspell --no-must-find-files "docs/timeline/**/*.md" "docs/adr/*.md"` (16 files, 0 issues). Exit-gate Markdown item ticked.
 - **Next:** P0.4, a person accepts ADR 0001 (including its §6 file-format proposal, beat numbering and oracle export). Then Phases 1 and 3 can start.
 - **Blockers:** P0.4 (human).
+
+### 2026-09-30 · lead session (accepted by the project owner) · P0.4
+
+- **Done:** the project owner accepted ADR 0001 as written, including §6 (version guard before Phase 9; conversion sets `user_version = 8`), 0-based beat positions, and the `…ForTesting` oracle export. Status set to `accepted` in commit eaa51c67 on `timeline-try-2`.
+- **Checks:** pre-commit (cspell and prettier) passed on the ADR.
+- **Next:** Phases 1 and 3 are unblocked. The §6 version guard is now work package P3.9. P0.5 (amendments to the spec's authors) is still open, but it blocks only Phase 9 (C-8), not Phases 1 to 8.
+- **Blockers:** none for other phases.

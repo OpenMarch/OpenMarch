@@ -54,7 +54,7 @@ Back up the file before converting (next to the original, with a clear name).
 - Parallel: no
 - Depends on: P9.2
 
-A post-migration step in the main process runs the converter in one transaction, and bumps the file-format version so older app versions refuse the file cleanly.
+A post-migration step in the main process runs the converter in one transaction, and sets `user_version = 8` in that transaction (ADR 0001 §6). Releases with the P3.9 guard refuse newer files; older releases can't, so warn when a converted file comes back at 7 and offer the backup instead of converting again.
 
 ### P9.4: Remove the dev flag
 

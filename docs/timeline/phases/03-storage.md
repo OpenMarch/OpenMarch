@@ -110,6 +110,16 @@ A migration test modelled on `0012_pink_king_cobra.test.ts`.
 
 Manual: launch the desktop app and open an older `.dots` file with no errors.
 
+### P3.9: File-format version guard (ADR 0001 §6)
+
+- Owner: unassigned
+- Status: open
+- PR: none
+- Parallel: yes
+- Depends on: —
+
+On open, read `user_version` **before** touching the file; refuse a version higher than this build supports, with a message to update; stop setting `PRAGMA user_version = 7` unconditionally (`apps/desktop/electron/main/index.ts:779` and `:1401`); keep migrating files at 7, and accept 8 once Phase 9 exists. It must ship in the same release as the timeline tables or earlier, so the more releases carry it before Phase 9, the fewer can damage a converted file. Tests: open files at 7, 8 and 9 (refused), and confirm the version is no longer rewritten.
+
 ## Exit gate
 
 Tick an item only after running its check, and paste the command and result into the log.
@@ -118,6 +128,7 @@ Tick an item only after running its check, and paste the command and result into
 - [ ] `pnpm --dir apps/desktop exec tsc --noEmit` passes
 - [ ] Existing history tests still pass: `pnpm --dir apps/desktop run test:history`
 - [ ] P3.8 done by a person
+- [ ] P3.9 merged, with its open-at-7/8/9 tests passing
 
 ## Handoff notes
 
