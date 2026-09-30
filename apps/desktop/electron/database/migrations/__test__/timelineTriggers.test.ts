@@ -409,10 +409,41 @@ describeDbTests("timeline schema and triggers", (it) => {
         it("no timeline trigger modifies a data table (U-1)", async ({
             db,
         }) => {
-            const triggers = (await all(
+            const allTriggers = (await all(
                 db,
                 `SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'timeline$_%' ESCAPE '$'`,
             )) as [string, string][];
+            // The app's undo/redo triggers (`<table>_it/_ut/_dt`, P3.5) write only to the
+            // history bookkeeping tables, which U-1 allows. (`timelines_*` doesn't match the
+            // `timeline_` prefix, so four tables' worth.)
+            const isHistoryTrigger = (name: string) =>
+                /_(it|ut|dt)$/.test(name);
+            const historyTriggers = allTriggers.filter(([name]) =>
+                isHistoryTrigger(name),
+            );
+            expect(historyTriggers.length).toBe(12);
+            for (const [name, triggerSql] of historyTriggers) {
+                // Only the body writes; the header names the watched table. Drop string
+                // literals too: they hold the logged inverse statements.
+                const code = triggerSql
+                    .slice(triggerSql.search(/\bBEGIN\b/))
+                    .replace(/'(?:[^']|'')*'/g, "''");
+                const targets = Array.from(
+                    code.matchAll(
+                        /\b(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+"?(\w+)/gi,
+                    ),
+                    (m) => m[1],
+                );
+                expect(targets.length, name).toBeGreaterThan(0);
+                for (const target of targets)
+                    expect(target, `${name} writes ${target}`).toMatch(
+                        /^history_/,
+                    );
+            }
+
+            const triggers = allTriggers.filter(
+                ([name]) => !isHistoryTrigger(name),
+            );
             expect(triggers.length).toBe(31);
             for (const [name, triggerSql] of triggers) {
                 const body = triggerSql
