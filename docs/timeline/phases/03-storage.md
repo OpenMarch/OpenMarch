@@ -182,3 +182,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** `schema.ts`, regenerate 0017, hand-edit it, confirm repeated generation is a no-op.
 - **Blockers:** none.
 - **Resume from:** on a local branch from `origin/timeline/p3-storage` (push with `git push origin HEAD:timeline/p3-storage`), edit `apps/desktop/electron/database/migrations/schema.ts`, delete `0017_daffy_korath.sql`, `meta/0017_snapshot.json` and its `_journal.json` entry, then run `pnpm --dir apps/desktop run migrate`.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-storage) · P3.1 to P3.4 (rework (C-5 homes on marchers))
+
+- **Done:** `schema.ts`: `timeline_marcher_homes` removed; `marchers` gains `home_x`/`home_y` (`real NOT NULL DEFAULT 0`) with named `typeof` and `abs(…) <= 1e6` CHECKs. The old 0017 (SQL, snapshot, journal entry) deleted and regenerated as `0017_powerful_edwin_jarvis.sql`; drizzle's `__new_marchers` rebuild hand-edited into two `ALTER TABLE marchers ADD COLUMN … CONSTRAINT … CHECK(…)` statements using the snapshot's constraint names. `triggers.ts`: home change-log triggers are now `timeline_log_marchers_ins/upd/del` on `marchers` (update fires only `OF home_x, home_y`). `_blank.dots` regenerated. Tests updated, new migration test `migrations/__test__/0017_powerful_edwin_jarvis.test.ts`. `Marcher` is inferred from `marchers`, so 5 fixtures/constructors and the two mock `.sql`/`.mjs` data sets gained `home_x: 0, home_y: 0`. Pushed as wip commit c474b862.
+- **Checks:** `drizzle-kit generate` after the hand edit: "No schema changes, nothing to migrate". `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/`: 3 files, 51 tests passed. `test:history`: running.
+- **Next:** finish `test:history`, squash the commits, update C-5 and the handoff notes, update PR #1037.
+- **Blockers:** none.
+- **Resume from:** check out `origin/timeline/p3-storage` locally, `pnpm install`, `pnpm exec turbo run build --filter=@openmarch/desktop^...`, run `pnpm --dir apps/desktop run test:history`; then docs (implementation-plan C-5, Phase 3/4 notes) via coord.sh and the PR body.
