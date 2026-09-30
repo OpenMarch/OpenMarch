@@ -1,9 +1,9 @@
 ---
 phase: 3
 title: Storage schema and triggers (desktop)
-status: not-started
-owner: unassigned
-branch: none
+status: in-progress
+owner: timeline-worker agent (timeline/p3-storage)
+branch: timeline/p3-storage
 pr: none
 depends_on: [0]
 updated: 2026-09-29
@@ -32,8 +32,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P3.1: Decide where marcher homes live (C-5)
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker agent (timeline/p3-storage)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: —
@@ -42,8 +42,8 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 
 ### P3.2: Tables in schema.ts
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker agent (timeline/p3-storage)
+- Status: claimed
 - PR: none
 - Parallel: no
 - Depends on: —
@@ -52,8 +52,8 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 
 ### P3.3: Generate and inspect the migration
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker agent (timeline/p3-storage)
+- Status: claimed
 - PR: none
 - Parallel: no
 - Depends on: P3.1, P3.2
@@ -62,8 +62,8 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 
 ### P3.4: Triggers, view and change log
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker agent (timeline/p3-storage)
+- Status: claimed
 - PR: none
 - Parallel: no
 - Depends on: P3.3
