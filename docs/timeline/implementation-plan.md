@@ -1,6 +1,6 @@
 # Timeline Resolution Model: Implementation Plan
 
-- Spec: `openmarch-timeline-spec.md` (v0.7), with its reference suite in `openmarch-timeline-ref.zip` (`ref/`). Phase 0 moves both under `docs/timeline/`.
+- Spec: `docs/timeline/spec.md` (v0.7), with its reference suite in `docs/timeline/ref/`.
 - Date: 2026-09-29
 - Direction: timelines **replace** pages. Existing shows are converted on open (Phase 9). Until then, everything sits behind a dev flag.
 - Working protocol and status board: [README.md](README.md). Per-phase work: [phases/](phases/).
