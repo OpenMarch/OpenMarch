@@ -39,8 +39,8 @@ Move `openmarch-timeline-spec.md` to `docs/timeline/spec.md` and unzip `ref/` un
 
 ### P0.2: Baseline run of the reference suite
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (detached at origin/timeline/p0-spec)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P0.1
