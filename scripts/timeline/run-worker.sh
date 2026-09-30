@@ -3,7 +3,7 @@
 # Each attempt is a fresh `claude -p` run that follows docs/timeline/WORKER.md. State lives in the phase
 # files and pushed branches, so a new attempt resumes from the last checkpoint. See docs/timeline/README.md.
 #
-#   scripts/timeline/run-worker.sh P1.2          # work one package until it is in review or blocked
+#   scripts/timeline/run-worker.sh P1.2          # work one package until it is in review, done or blocked
 #   scripts/timeline/run-worker.sh               # keep taking the next available package until none is left
 #
 # Environment:
@@ -55,7 +55,7 @@ while :; do
         "TIMELINE-STATUS: none")
             echo "run-worker.sh: nothing available; stopping" >&2
             exit 0 ;;
-        *" in-review" | *" blocked")
+        *" in-review" | *" done" | *" blocked")
             failures=0
             [ -n "$package" ] && exit 0
             continue ;;                       # auto mode: take the next package

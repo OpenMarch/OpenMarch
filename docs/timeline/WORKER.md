@@ -118,7 +118,9 @@ Throughout:
 End your final message with exactly one line, which scripts can match:
 
 ```text
-TIMELINE-STATUS: <P-id> <in-review|blocked|in-progress>
+TIMELINE-STATUS: <P-id> <in-review|done|blocked|in-progress>
 ```
 
-or `TIMELINE-STATUS: none` when nothing was available.
+Use `done` only for a package that produces no pull request (for example a
+baseline run or a human decision) and is complete. Use `TIMELINE-STATUS: none`
+when nothing was available.
