@@ -103,6 +103,12 @@ to a 1:1 `timeline_marcher_homes` table instead (decided in P3.1 and recorded in
 the implementation plan). Either way, the `marchers` history triggers are
 recreated afterwards, because they snapshot the column list.
 
+Resolved 2026-09-30 (P3.1): the columns stay on `marchers`. With the bound
+CHECKs, drizzle-kit generated a table rebuild, so migration 0017 was
+hand-edited into two `ALTER TABLE marchers ADD COLUMN … CHECK (…)` statements
+that use the snapshot's constraint names; running `drizzle-kit generate` again
+reports no changes. `timeline_marcher_homes` was not created.
+
 **Coordinates and beats.** Resolver coordinates are the same units as
 `marcher_pages.x`/`y`, so the converter copies page-end positions exactly. The
 spec's `[−10⁶, 10⁶]` bound applies to those units. The spec's integer beats are
@@ -196,7 +202,8 @@ export function createTimelineOracleForTesting(host: TimelineSnapshot): Oracle;
 and the spec's JSON row images, so a drained log is a `ChangeBatch` without
 translation. `marchers` changes are logged with only `id` and `home`, because
 nothing else about a marcher affects resolution. If homes live in
-`timeline_marcher_homes` (C-5), that table's triggers log under `marchers`.
+`timeline_marcher_homes` (C-5), that table's triggers log under `marchers`. (Not needed: see the C-5
+resolution above.)
 Timelines are not logged (spec §10.2, R-1).
 
 The write path in `apps/desktop/src/db-functions/` is the only producer, and it
