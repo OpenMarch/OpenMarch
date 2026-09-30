@@ -32,7 +32,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.1: Types
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: —
@@ -127,3 +127,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+### 2026-09-29 · timeline-worker · P1.1
+
+- **Done:** `packages/core/src/timeline/types.ts` on `timeline/p1-geometry` (commit "feat(core): timeline types (P1.1)"): spec 10.1 types, `TimelineSnapshot` and the show row shapes from `ref/README.md`.
+- **Checks:** not run yet (type check and build come with P1.2).
+- **Next:** P1.2 `geom.ts` (already drafted locally) and its tests.
+- **Resume from:** on `timeline/p1-geometry`, write `packages/core/src/timeline/geom.ts` and `__test__/geom.test.ts`; then `pnpm --dir packages/core run build`.
+- **Blockers:** none.
