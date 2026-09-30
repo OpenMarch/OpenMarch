@@ -62,7 +62,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.4: Write-path validators
 
 - Owner: timeline-worker (timeline/p1-validators)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1038
 - Parallel: yes
 - Depends on: P1.1
@@ -179,4 +179,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** reviewed PR #1038. Confirmed the worker's finding that `BlockGeometry` in the merged `types.ts` lacked `rows` (spec §5.2 requires it; the DB capacity trigger uses rows × cols). Pushed 26b35d70 to the PR: `rows` added to `BlockGeometry`, the `geom.test.ts` block fixture updated, and a file-level `cspell:ignore NONFOUNDING` added to `types.ts` (the pre-commit hook rejected it).
 - **Checks:** at the PR head with the fix: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (15 files, 289 passed, 2 skipped); `pnpm --dir packages/core exec tsc --noEmit -p .` (no errors under `src/timeline`); `pnpm --dir packages/core exec vitest run src/timeline` (96 passed); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); pre-commit hook (pass). Full history and e2e skipped per policy.
 - **Next:** a person reviews and merges #1038, and decides whether `E-N2` (homes) and `E-D2` (individual destinations) are acceptable error codes; the spec lists those invariants without an `E-` code.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.4
+
+- **Done:** PR #1038 merged (f9599090); P1.4 set to done.
+- **Checks:** on `timeline-try-2` at 84ea6191: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (289 passed, 2 skipped); `pnpm --dir apps/desktop exec tsc --noEmit` (pass). `test:focused` on the migration, file-version and repair tests: `timelineTriggers.test.ts` failed to load, because P3.9's renderer hook imports `@om-electron/database/fileVersion` and `vitest.config.ts` lacked that alias. Fix: branch `timeline/fix-vitest-alias` (eb81e8a5); with it, 6 files and 126 tests pass.
+- **Next:** P1.5 and P1.6 are being started.
 - **Blockers:** none.

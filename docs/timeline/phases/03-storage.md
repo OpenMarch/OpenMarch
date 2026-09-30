@@ -75,7 +75,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.5: History registration
 
 - Owner: timeline-worker agent (timeline/p3-history)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1039
 - Parallel: yes
 - Depends on: P3.3
@@ -115,7 +115,7 @@ Manual: launch the desktop app and open an older `.dots` file with no errors.
 ### P3.9: File-format version guard (ADR 0001 §6)
 
 - Owner: timeline-worker agent (timeline/p3-version-guard)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1040
 - Parallel: yes
 - Depends on: —
@@ -130,7 +130,7 @@ Tick an item only after running its check, and paste the command and result into
 - [x] `pnpm --dir apps/desktop exec tsc --noEmit` passes
 - [ ] Existing history tests still pass: `pnpm --dir apps/desktop run test:history`
 - [ ] P3.8 done by a person
-- [ ] P3.9 merged, with its open-at-7/8/9 tests passing
+- [x] P3.9 merged, with its open-at-7/8/9 tests passing
 
 ## Handoff notes
 
@@ -243,4 +243,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** re-checked PR #1040 at 85e31526. Read `electron/database/fileVersion.ts`: files above 8 are refused before any write; the version is set only for a new, empty file (to `NEW_FILE_USER_VERSION`, 7 until Phase 9); 7 and 8 open unchanged; below 7 keeps the old "open in 0.0.10 first" error. Both unconditional `PRAGMA user_version = 7` writes are gone from `electron/main/index.ts`.
 - **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test:focused` on `fileVersion.test.ts`, `fileVersionOpen.test.ts`, `repair.test.ts` and `database.services.test.ts` (4 files, 81 passed). Commits carry no attribution lines. Full `test:history` and e2e skipped per policy.
 - **Next:** a person reviews and merges #1040, then opens an older `.dots` file and a newly created one and checks both stay at `user_version` 7 (this also covers P3.8).
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.5, P3.9
+
+- **Done:** PRs #1039 (P3.5, e1cc3590) and #1040 (P3.9, 84ea6191) merged; both set to done; P3.9's exit-gate item ticked.
+- **Checks:** on `timeline-try-2` at 84ea6191: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (289 passed, 2 skipped); `pnpm --dir apps/desktop exec tsc --noEmit` (pass). `test:focused` on the migration, file-version and repair tests: `timelineTriggers.test.ts` failed to load, because P3.9's renderer hook imports `@om-electron/database/fileVersion` and `vitest.config.ts` lacked that alias. Fix: branch `timeline/fix-vitest-alias` (eb81e8a5); with it, 6 files and 126 tests pass.
+- **Next:** merge the Vitest alias fix. P3.6 (full QA-DB suite), P3.7 (migration test) and P3.8 (a person opens an older and a new `.dots` file) remain.
 - **Blockers:** none.
