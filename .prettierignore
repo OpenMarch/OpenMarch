@@ -123,3 +123,7 @@ CONTEXT-MAP.md
 **/docs/agents/
 **/docs/adr/[0-9]*.md
 docs/superpowers/
+
+# Timeline spec and reference suite: external documents, kept verbatim
+docs/timeline/spec.md
+docs/timeline/ref/
