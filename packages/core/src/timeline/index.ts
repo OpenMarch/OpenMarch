@@ -33,6 +33,21 @@ export type {
     AssignmentRow,
 } from "./types";
 export type { Oracle } from "./oracle";
+export {
+    validateShapeGeometry,
+    validatePathParams,
+    validateDestinations,
+    validateDestination,
+    validateHome,
+    normalizeStartAngle,
+    COORD_BOUND,
+    MAX_ABS_BULGE,
+} from "./validate";
+export type {
+    ValidationResult,
+    ValidationError,
+    ValidationCode,
+} from "./validate";
 
 /** The uncached reference oracle (spec section 8), for tests and debug checks only. */
 export function createTimelineOracleForTesting(host: TimelineSnapshot): Oracle {
