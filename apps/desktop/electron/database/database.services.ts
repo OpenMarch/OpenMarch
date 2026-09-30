@@ -6,6 +6,12 @@ import * as fs from "fs";
 import type AudioFile from "../../src/global/classes/AudioFile";
 import type { ModifiedAudioFileArgs } from "../../src/global/classes/AudioFile";
 import { getOrm } from "./db";
+import {
+    decideFileVersion,
+    FILE_TOO_NEW_STATUS,
+    fileTooNewMessage,
+    readUserVersion,
+} from "./fileVersion";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -40,7 +46,8 @@ export function closePersistentConnection() {
  * Change the location of the database file the application and actively updates.
  *
  * @param path the path to the database file
- * @returns 200 if successful, HTTP status codes if appropriate, or -1 otherwise
+ * @returns 200 if successful, HTTP status codes if appropriate (426 when the
+ * file is from a newer release; nothing is written to it), or -1 otherwise
  */
 export function setDbPath(path: string, isNewFile = false) {
     const failedDb = (message: string, statusCode: number = -1) => {
@@ -74,15 +81,23 @@ export function setDbPath(path: string, isNewFile = false) {
     const db = connect();
 
     try {
-        const user_version = (
-            db.prepare("PRAGMA user_version").get() as {
-                user_version: number;
-            }
-        ).user_version;
+        const user_version = readUserVersion(db);
         if (user_version === -1) {
             return failedDb(
                 `setDbPath: user_version is -1, meaning the database was not created successfully`,
                 500,
+            );
+        }
+
+        // Refuse a file from a newer release before anything below writes to it
+        // (ADR 0001 §6).
+        if (
+            decideFileVersion(user_version, isNewFile).action ===
+            "refuse-too-new"
+        ) {
+            return failedDb(
+                `setDbPath: ${fileTooNewMessage(user_version)} [path=${path}]`,
+                FILE_TOO_NEW_STATUS,
             );
         }
 

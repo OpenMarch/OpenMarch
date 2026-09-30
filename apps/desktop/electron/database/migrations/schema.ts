@@ -130,6 +130,15 @@ export const pages = sqliteTable(
     ],
 );
 
+/** CHECKs that a coordinate column holds a number within the authored bound (I-N2, I-D2). */
+const coordinateChecks = (tableName: string, column: string) => [
+    check(
+        `${tableName}_${column}_type_check`,
+        sql.raw(`typeof(${column}) IN ('integer', 'real')`),
+    ),
+    check(`${tableName}_${column}_check`, sql.raw(`abs(${column}) <= 1e6`)),
+];
+
 export const marchers = sqliteTable(
     "marchers",
     {
@@ -147,8 +156,18 @@ export const marchers = sqliteTable(
         /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
         ...timestamps,
+        /**
+         * Where the marcher stands before its first timeline assignment (spec §5.1, C-5).
+         * Migration 0017 adds these with `ALTER TABLE … ADD COLUMN`; see the note there.
+         */
+        home_x: real().notNull().default(0),
+        home_y: real().notNull().default(0),
     },
-    (table) => [unique().on(table.drill_prefix, table.drill_order)],
+    (table) => [
+        unique().on(table.drill_prefix, table.drill_order),
+        ...coordinateChecks("marchers", "home_x"),
+        ...coordinateChecks("marchers", "home_y"),
+    ],
 );
 
 export const pathways = sqliteTable("pathways", {
@@ -393,6 +412,232 @@ export const workspace_settings = sqliteTable(
     },
     (_table) => [check("workspace_settings_id_check", sql`id = 1`)],
 );
+
+/* ========================= TIMELINES ========================= */
+/*
+ * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0001). Column names follow the
+ * spec; tables carry a `timeline_` prefix (C-4). Drizzle can't declare STRICT tables, so every
+ * column the spec's I-N1 covers has a `typeof` CHECK instead (C-3). Invariant triggers, the
+ * `timeline_commit_violations` view and the change-log triggers live in `triggers.ts`.
+ *
+ * Foreign keys from a timeline to its transitions, and from a transition to its assignments and
+ * destinations, are ON DELETE RESTRICT (C-1): delete children explicitly first.
+ */
+
+/** Largest beat a timeline row may hold (2^31 - 1, spec I-N2). */
+const TIMELINE_MAX_BEAT = 2147483647;
+
+/** CHECK that an integer column holds an integer (spec I-N1, C-3). */
+const integerTypeCheck = (tableName: string, column: string) =>
+    check(
+        `${tableName}_${column}_type_check`,
+        sql.raw(`typeof(${column}) = 'integer'`),
+    );
+
+/** CHECKs on a `start_beat`/`end_beat` pair: integers, in range, positive length (I-N1, I-N2, I-A6). */
+const beatRangeChecks = (tableName: string) => [
+    integerTypeCheck(tableName, "start_beat"),
+    integerTypeCheck(tableName, "end_beat"),
+    check(
+        `${tableName}_start_beat_check`,
+        sql.raw(`start_beat BETWEEN 0 AND ${TIMELINE_MAX_BEAT}`),
+    ),
+    check(
+        `${tableName}_end_beat_check`,
+        sql.raw(`end_beat BETWEEN 0 AND ${TIMELINE_MAX_BEAT}`),
+    ),
+    check(`${tableName}_range_check`, sql`end_beat > start_beat`),
+];
+
+/** A track that groups transitions over a beat range (spec §5.1 `timelines`). */
+export const timelines = sqliteTable(
+    "timelines",
+    {
+        id: integer().primaryKey(),
+        name: text(),
+        start_beat: integer().notNull(),
+        end_beat: integer().notNull(),
+    },
+    (_table) => [...beatRangeChecks("timelines")],
+);
+
+/** A formation that transitions move marchers into (spec §5.1 `shapes`, §5.2 geometry). */
+export const timeline_shapes = sqliteTable(
+    "timeline_shapes",
+    {
+        id: integer().primaryKey(),
+        name: text(),
+        /** line, freehand, circle, box or block */
+        kind: text().notNull(),
+        /** JSON geometry, by kind (spec §5.2) */
+        geometry: text().notNull(),
+    },
+    (_table) => [
+        check(
+            "timeline_shapes_kind_check",
+            sql`kind IN ('line', 'freehand', 'circle', 'box', 'block')`,
+        ),
+        check("timeline_shapes_geometry_check", sql`json_valid(geometry)`),
+        // I-S1 (partial): a numeric circle radius in (0, 1e6] and start_angle in [0, 2π)
+        check(
+            "timeline_shapes_circle_check",
+            sql`kind <> 'circle' OR (coalesce(json_type(geometry, '$.radius'), '') IN ('integer', 'real') AND json_extract(geometry, '$.radius') > 0 AND json_extract(geometry, '$.radius') <= 1e6 AND coalesce(json_type(geometry, '$.start_angle'), '') IN ('integer', 'real') AND json_extract(geometry, '$.start_angle') >= 0 AND json_extract(geometry, '$.start_angle') < 6.283185307179586)`,
+        ),
+    ],
+);
+
+/** Motion into a destination over a beat range (spec §5.1 `transitions`). */
+export const timeline_transitions = sqliteTable(
+    "timeline_transitions",
+    {
+        id: integer().primaryKey(),
+        timeline_id: integer()
+            .notNull()
+            .references(() => timelines.id, { onDelete: "restrict" }),
+        /** NULL: slots are placed individually in `timeline_slot_destinations` (D-16) */
+        dest_shape_id: integer().references(() => timeline_shapes.id, {
+            onDelete: "restrict",
+        }),
+        /** direct, arc or follow_the_leader */
+        path_style: text().notNull().default("direct"),
+        /** JSON path parameters, by path_style (spec §5.2) */
+        path_params: text(),
+        /** inherit or slot */
+        order_mode: text().notNull().default("inherit"),
+        slot_count: integer().notNull(),
+        start_beat: integer().notNull(),
+        end_beat: integer().notNull(),
+    },
+    (table) => [
+        integerTypeCheck("timeline_transitions", "timeline_id"),
+        check(
+            "timeline_transitions_dest_shape_id_type_check",
+            sql`dest_shape_id IS NULL OR typeof(dest_shape_id) = 'integer'`,
+        ),
+        check(
+            "timeline_transitions_path_style_check",
+            sql`path_style IN ('direct', 'arc', 'follow_the_leader')`,
+        ),
+        check(
+            "timeline_transitions_path_params_check",
+            sql`path_params IS NULL OR json_valid(path_params)`,
+        ),
+        check(
+            "timeline_transitions_order_mode_check",
+            sql`order_mode IN ('inherit', 'slot')`,
+        ),
+        integerTypeCheck("timeline_transitions", "slot_count"),
+        check(
+            "timeline_transitions_slot_count_check",
+            sql`slot_count BETWEEN 1 AND 10000`,
+        ),
+        ...beatRangeChecks("timeline_transitions"),
+        // I-T5: follow-the-leader follows a path, so it needs a destination shape
+        check(
+            "timeline_transitions_ftl_shape_check",
+            sql`dest_shape_id IS NOT NULL OR path_style <> 'follow_the_leader'`,
+        ),
+        // I-T2 (partial): an arc carries a numeric bulge with |bulge| <= 0.5 (minor arcs only)
+        check(
+            "timeline_transitions_arc_bulge_check",
+            sql`path_style <> 'arc' OR (coalesce(json_type(path_params, '$.bulge'), '') IN ('integer', 'real') AND abs(json_extract(path_params, '$.bulge')) <= 0.5)`,
+        ),
+        index("timeline_idx_tr_shape").on(table.dest_shape_id),
+        index("timeline_idx_tr_timeline").on(table.timeline_id),
+    ],
+);
+
+/** A marcher filling one slot of a transition over a beat range, at a layer (spec §5.1 `assignments`). */
+export const timeline_assignments = sqliteTable(
+    "timeline_assignments",
+    {
+        id: integer().primaryKey(),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        transition_id: integer()
+            .notNull()
+            .references(() => timeline_transitions.id, {
+                onDelete: "restrict",
+            }),
+        slot_index: integer().notNull(),
+        start_beat: integer().notNull(),
+        end_beat: integer().notNull(),
+        layer: integer().notNull().default(0),
+    },
+    (table) => [
+        integerTypeCheck("timeline_assignments", "marcher_id"),
+        integerTypeCheck("timeline_assignments", "transition_id"),
+        integerTypeCheck("timeline_assignments", "slot_index"),
+        check("timeline_assignments_slot_index_check", sql`slot_index >= 0`),
+        ...beatRangeChecks("timeline_assignments"),
+        integerTypeCheck("timeline_assignments", "layer"),
+        check(
+            "timeline_assignments_layer_check",
+            sql`layer BETWEEN -1000 AND 1000`,
+        ),
+        unique("timeline_assignments_transition_slot_unique").on(
+            table.transition_id,
+            table.slot_index,
+        ),
+        unique("timeline_assignments_transition_marcher_unique").on(
+            table.transition_id,
+            table.marcher_id,
+        ),
+        index("timeline_idx_asn_marcher").on(
+            table.marcher_id,
+            table.start_beat,
+        ),
+    ],
+);
+
+/**
+ * An individually placed destination for one slot of a shapeless transition (spec §5.1
+ * `slot_destinations`, D-16). Has a surrogate `id` so undo restores the same rowid (C-2).
+ */
+export const timeline_slot_destinations = sqliteTable(
+    "timeline_slot_destinations",
+    {
+        id: integer().primaryKey(),
+        transition_id: integer()
+            .notNull()
+            .references(() => timeline_transitions.id, {
+                onDelete: "restrict",
+            }),
+        slot_index: integer().notNull(),
+        x: real().notNull(),
+        y: real().notNull(),
+    },
+    (table) => [
+        integerTypeCheck("timeline_slot_destinations", "transition_id"),
+        integerTypeCheck("timeline_slot_destinations", "slot_index"),
+        check(
+            "timeline_slot_destinations_slot_index_check",
+            sql`slot_index >= 0`,
+        ),
+        ...coordinateChecks("timeline_slot_destinations", "x"),
+        ...coordinateChecks("timeline_slot_destinations", "y"),
+        unique("timeline_slot_destinations_transition_slot_unique").on(
+            table.transition_id,
+            table.slot_index,
+        ),
+    ],
+);
+
+/**
+ * Bookkeeping, not data: one row per changed timeline row, written by triggers and drained by
+ * the write wrapper inside each transaction (spec §10.2). Has no history triggers.
+ */
+export const timeline_change_log = sqliteTable("timeline_change_log", {
+    seq: integer().primaryKey(),
+    /** The spec's logical table name: marchers, shapes, transitions, assignments or slot_destinations */
+    tbl: text().notNull(),
+    row_id: integer().notNull(),
+    /** JSON row image; NULL on insert */
+    before: text(),
+    /** JSON row image; NULL on delete */
+    after: text(),
+});
 
 /* =========================== VIEWS =========================== */
 /**

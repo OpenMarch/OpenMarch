@@ -528,6 +528,10 @@
         "server": {
             "description": "The server experienced an error while trying to open this file.",
             "title": "Internal server error"
+        },
+        "tooNew": {
+            "description": "This file was saved by a newer version of OpenMarch. Update OpenMarch to open it. The file has not been changed.",
+            "title": "Update OpenMarch to open this file"
         }
     },
     "fileTab": {

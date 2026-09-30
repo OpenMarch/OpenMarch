@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { T } from "@tolgee/react";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
+import { FILE_TOO_NEW_STATUS } from "@om-electron/database/fileVersion";
 
 const FILE_ERROR_GUIDE_URLS = {
     forbidden:
@@ -70,6 +71,12 @@ export function useLoadFileErrorHandler() {
                                         }
                                     />
                                 </>,
+                            );
+                            break;
+                        case FILE_TOO_NEW_STATUS:
+                            setTitle("fileAccessDialogError.tooNew.title");
+                            setContent(
+                                <T keyName="fileAccessDialogError.tooNew.description" />,
                             );
                             break;
                         case 500:

@@ -12,11 +12,23 @@
 #   TIMELINE_PERMISSION_MODE  default auto
 #   TIMELINE_RETRY_WAIT       seconds to wait after a run ends without a status line (limit or crash), default 900
 #   TIMELINE_MAX_ATTEMPTS     consecutive failed attempts before giving up, default 24
-#   TIMELINE_REMOTE, TIMELINE_COORD_BRANCH   as in coord.sh
+#   TIMELINE_REPO, TIMELINE_REMOTE, TIMELINE_COORD_BRANCH   as in coord.sh
 set -uo pipefail
 
 package="${1:-}"
-REMOTE="${TIMELINE_REMOTE:-origin}"
+# Timeline work lives on the fork AlexDumo/OpenMarch-timeline, not on OpenMarch/OpenMarch.
+# Use the remote that points at the fork, unless TIMELINE_REMOTE names one.
+TIMELINE_REPO="${TIMELINE_REPO:-AlexDumo/OpenMarch-timeline}"
+if [ -n "${TIMELINE_REMOTE:-}" ]; then
+    REMOTE="$TIMELINE_REMOTE"
+else
+    REMOTE="$(git remote -v | awk -v r="$TIMELINE_REPO(\\.git)?$" '$2 ~ r && $3 == "(push)" { print $1; exit }')"
+    if [ -z "$REMOTE" ]; then
+        echo "$(basename "$0"): no git remote points at $TIMELINE_REPO." >&2
+        echo "Add one: git remote add timeline https://github.com/$TIMELINE_REPO.git" >&2
+        exit 1
+    fi
+fi
 BRANCH="${TIMELINE_COORD_BRANCH:-timeline-try-2}"
 name="${TIMELINE_WORKER_NAME:-tl-${package:-worker}}"
 mode="${TIMELINE_PERMISSION_MODE:-auto}"

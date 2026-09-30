@@ -12,12 +12,33 @@ head.
 Input: an optional work package ID such as `P1.2`. Without one, pick the next
 available package (step 2).
 
+## Current policy (temporary)
+
+Set by the project owner on 2026-09-30, until they lift it here:
+
+- **Don't run the full `test:history` suite or the Playwright e2e suite.** They
+  take the longest. Run focused tests instead, including focused history tests
+  (`pnpm --dir apps/desktop run test:history <file>`) for the files you change.
+  Say in the PR and log which suites you skipped.
+- **CI doesn't run on PRs into `timeline-try-2`**, so a reviewer re-runs your
+  checks by hand. List every command you ran, with its result.
+
+- **Reviews and merges:** workers never merge their own PRs. The lead session
+  has a reviewer sub-agent review each PR against the spec, ADR 0001, `ui.md`
+  and the phase file, re-runs the PR's checks itself, and then merges it on the
+  fork. The lead stops for the project owner only when a question can't be
+  answered from the spec, the ADR, `ui.md` or the plan; otherwise it decides,
+  and records the decision in the phase log.
+
 ## 1. Orient
 
-1. Fetch: `git fetch <remote>`. The remote is `origin` unless
-   `TIMELINE_REMOTE` says otherwise. The coordination branch is named in
-   [README.md](README.md) and defaults to `timeline-try-2` in
-   `scripts/timeline/coord.sh`.
+1. Fetch: `git fetch <remote>`. All timeline branches and PRs live on the fork
+   `AlexDumo/OpenMarch-timeline`, never on `OpenMarch/OpenMarch`. `<remote>` is
+   the git remote that points at the fork; the scripts find it. If it's
+   missing, add it:
+   `git remote add timeline https://github.com/AlexDumo/OpenMarch-timeline.git`.
+   The coordination branch is named in [README.md](README.md) and defaults to
+   `timeline-try-2` in `scripts/timeline/coord.sh`.
 2. Read [README.md](README.md) (the protocol), then, if you haven't in this
    session, [implementation-plan.md](implementation-plan.md).
 3. Read the **coordination branch's** copy of the phase file, not a possibly
@@ -110,8 +131,11 @@ Throughout:
 2. Squash or tidy `wip:` commits. Confirm
    `git log <base>..HEAD --format=%B` has no AI attribution or co-author lines
    (root `AGENTS.md`).
-3. Push, and open a PR against the base branch with `gh pr create`. Its body
-   names the work package IDs and the checks you ran, with results.
+3. Push to the fork's remote, and open the PR on the fork:
+   `gh pr create --repo AlexDumo/OpenMarch-timeline --base timeline-try-2`.
+   Always pass `--repo AlexDumo/OpenMarch-timeline` to `gh`; without it, `gh`
+   can pick the public repo. The PR body names the work package IDs and the
+   checks you ran, with results.
 4. Through `coord.sh`: set `- Status: in-review` and `- PR: <url>`, tick only
    the exit-gate items you actually ran and whose outcome is already true on
    the base branch. An item that only becomes true when your PR merges (such

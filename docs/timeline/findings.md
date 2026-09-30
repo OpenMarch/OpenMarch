@@ -72,3 +72,9 @@ deep chains, small stack           ok    all deep-chain checks pass
 ```
 
 Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environment: macOS (Darwin 25.5.0), Python 3.14.7 (its `sqlite3` module links SQLite 3.53.4), Node v24.14.1 (`node:sqlite` reports SQLite 3.51.2). Reference suite from `origin/timeline/p0-spec` at 7c144877 (PR #1034).
+
+### 2026-09-30 · lead session · pre-existing test failures
+
+- `pnpm --dir apps/desktop run test` has 21 failing tests in `src/components/marcher/__test__/MarcherForm.test.tsx` and `src/components/mobile/__test__/RevisionsList.test.tsx` ("Invalid Chai property: toBeInTheDocument", "toHaveTextContent", "toHaveClass"): the jest-dom matchers aren't registered.
+- The same 21 fail the same way on `origin/main` (e731f3a2), so they predate the timeline work. Treat them as known when re-checking timeline PRs, and don't count them against a PR.
+- Workers reported them earlier as a worktree problem; they also fail in a normal checkout, so that explanation was incomplete. Not investigated further.

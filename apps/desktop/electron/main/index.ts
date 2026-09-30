@@ -36,6 +36,7 @@ import {
     startAutomaticUpdates,
 } from "./update";
 import { repairDatabase } from "../database/repair";
+import { applyFileVersionDecision } from "../database/fileVersion";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
     initAuthBeforeReady,
@@ -56,7 +57,6 @@ import {
 
 let isQuitting = false;
 const store = new Store();
-const DB_USER_VERSION = 7;
 
 /** Active new-show draft file in userData/new-show-drafts (not in recent files until finalized). */
 let currentNewShowDraftPath: string | null = null;
@@ -514,7 +514,9 @@ app.on("window-all-closed", async () => {
 
 app.on("open-file", async (event, path) => {
     event.preventDefault();
-    await setActiveDb(path);
+    const resCode = await setActiveDb(path);
+    // Lets the renderer explain a refused file (for example one from a newer release).
+    win?.webContents.send("load-file-response", resCode);
 });
 
 // Handle instances where the app is already running and a file is opened
@@ -776,7 +778,9 @@ async function openDatabaseAtPathWithoutReload(
             "migrations",
         );
 
-        db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
+        // Sets the version only on a new, empty file; setDbPath already refused
+        // a file from a newer release (ADR 0001 §6).
+        applyFileVersionDecision(db, isNewFile);
         await migrator.applyPendingMigrations(migrationsFolder);
         await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
 
@@ -1397,9 +1401,10 @@ async function setActiveDb(path: string, isNewFile = false) {
                     }
                 });
             }
-        } else {
-            db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
         }
+        // Sets the version only on a new, empty file; an existing file keeps
+        // its version (ADR 0001 §6). setDbPath already refused newer files.
+        applyFileVersionDecision(db, isNewFile);
         await migrator.applyPendingMigrations(migrationsFolder);
 
         if (isNewFile) {

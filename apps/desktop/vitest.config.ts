@@ -17,6 +17,7 @@ export default defineConfig(() => {
         resolve: {
             alias: {
                 "@": path.join(__dirname, "src"),
+                "@om-electron": path.join(__dirname, "electron"),
             },
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },

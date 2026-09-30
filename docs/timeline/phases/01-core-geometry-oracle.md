@@ -1,7 +1,7 @@
 ---
 phase: 1
 title: Geometry, oracle, validators (core)
-status: in-progress
+status: done
 owner: timeline-worker (timeline/p1-geometry)
 branch: timeline/p1-geometry
 pr: none
@@ -9,7 +9,7 @@ depends_on: [0]
 updated: 2026-09-29
 ---
 
-<!-- cspell:ignore lerp -->
+<!-- cspell:ignore lerp unticked -->
 
 # Phase 1: Geometry, oracle, validators (core)
 
@@ -32,7 +32,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.1: Types
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: —
@@ -42,7 +42,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.2: Geometry
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: P1.1
@@ -52,7 +52,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.3: Oracle
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: P1.2
@@ -61,9 +61,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.4: Write-path validators
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p1-validators)
+- Status: done
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1038
 - Parallel: yes
 - Depends on: P1.1
 
@@ -71,9 +71,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.5: Golden, flattening and degenerate tests
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p1-golden-tests)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/2
 - Parallel: yes
 - Depends on: P1.3
 
@@ -81,9 +81,9 @@ Tests: QA-FL-01 to -06, G1 to G13 and G8b, QA-DG-1 to -7 and QA-REG-5 against th
 
 ### P1.6: Property tests with independent geometry
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p1-properties)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/3
 - Parallel: yes
 - Depends on: P1.3
 
@@ -92,7 +92,7 @@ Property tests: port `props.mjs` to `fast-check`, with its **own independent geo
 ### P1.7: Mutation script (optional)
 
 - Owner: unassigned
-- Status: open
+- Status: deferred
 - PR: none
 - Parallel: yes
 - Depends on: P1.6
@@ -101,8 +101,8 @@ Optional: port `mutate.py` as a script that applies the nine seeded bugs to a co
 
 ### P1.8: Export from core
 
-- Owner: unassigned
-- Status: open
+- Owner: lead session
+- Status: done
 - PR: none
 - Parallel: no
 - Depends on: P1.3
@@ -113,10 +113,10 @@ Export the module from `packages/core/src/index.ts` (the oracle behind a clearly
 
 Tick an item only after running its check, and paste the command and result into the log.
 
-- [ ] Every test in P1.5 and P1.6 passes
-- [ ] `pnpm --dir packages/core run build` passes
-- [ ] `pnpm --dir packages/core run test` passes
-- [ ] Desktop still builds against the new core (`pnpm --dir apps/desktop exec tsc --noEmit`)
+- [x] Every test in P1.5 and P1.6 passes
+- [x] `pnpm --dir packages/core run build` passes
+- [x] `pnpm --dir packages/core run test` passes
+- [x] Desktop still builds against the new core (`pnpm --dir apps/desktop exec tsc --noEmit`)
 
 ## Handoff notes
 
@@ -157,4 +157,70 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** independently re-ran PR #1036's checks at its head (606db11c), because CI (`pr-checks.yaml`) runs only on PRs into `main`, so PRs into `timeline-try-2` get no automated checks.
 - **Checks:** `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core exec vitest run src/timeline` (2 files, 46 tests, pass). Spot-checked that the golden tests assert the spec's literal values (for example G3 `(7,6)` at beat 8, G8 `(1.1716, 2.8284)`, G7 end distances), not values captured from the oracle.
 - **Next:** a person reviews and merges #1036. P1.4 (validators) can start now; P1.5 and P1.6 after the merge.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.1, P1.2, P1.3
+
+- **Done:** PR #1036 merged (948e8a0a); P1.1 to P1.3 set to done. Three exit-gate items ticked; they must still hold when the phase closes.
+- **Checks:** on `timeline-try-2` at 8cb11475 after both merges: `pnpm install`; `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (14 files, 239 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
+- **Next:** P1.4 (validators) is being started. P1.5 and P1.6 are open.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker · P1.4
+
+- **Done:** `packages/core/src/timeline/validate.ts` (`validateShapeGeometry`, `validatePathParams`, `validateDestinations`, plus `validateDestination`, `validateHome`, `normalizeStartAngle`, `COORD_BOUND`, `MAX_ABS_BULGE`), exported from `timeline/index.ts`; `__test__/validate.test.ts` (50 tests: every rule, QA-DB-25, QA-DB-31, values at and just beyond each bound). PR: https://github.com/OpenMarch/OpenMarch/pull/1038 on `timeline/p1-validators` against `timeline-try-2`. P1.4 is in review.
+- **Checks:** `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (15 files, 289 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm format:check` (pass); pre-commit hook (pass). Skipped per policy: full `test:history` and Playwright e2e.
+- **Next:** a person reviews and merges #1038. Notes for other packages: `BlockGeometry` in `types.ts` lacks `rows` (spec 5.2 requires it); destination and home validators use codes `E-D2` and `E-N2`, which the spec's error table does not define. P1.8 owns the final export review. Exit-gate boxes are left unticked until the PR merges.
+- **Resume from:** none; address review comments on PR 1038 on branch `timeline/p1-validators`.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.4 (review check)
+
+- **Done:** reviewed PR #1038. Confirmed the worker's finding that `BlockGeometry` in the merged `types.ts` lacked `rows` (spec §5.2 requires it; the DB capacity trigger uses rows × cols). Pushed 26b35d70 to the PR: `rows` added to `BlockGeometry`, the `geom.test.ts` block fixture updated, and a file-level `cspell:ignore NONFOUNDING` added to `types.ts` (the pre-commit hook rejected it).
+- **Checks:** at the PR head with the fix: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (15 files, 289 passed, 2 skipped); `pnpm --dir packages/core exec tsc --noEmit -p .` (no errors under `src/timeline`); `pnpm --dir packages/core exec vitest run src/timeline` (96 passed); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); pre-commit hook (pass). Full history and e2e skipped per policy.
+- **Next:** a person reviews and merges #1038, and decides whether `E-N2` (homes) and `E-D2` (individual destinations) are acceptable error codes; the spec lists those invariants without an `E-` code.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.4
+
+- **Done:** PR #1038 merged (f9599090); P1.4 set to done.
+- **Checks:** on `timeline-try-2` at 84ea6191: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (289 passed, 2 skipped); `pnpm --dir apps/desktop exec tsc --noEmit` (pass). `test:focused` on the migration, file-version and repair tests: `timelineTriggers.test.ts` failed to load, because P3.9's renderer hook imports `@om-electron/database/fileVersion` and `vitest.config.ts` lacked that alias. Fix: branch `timeline/fix-vitest-alias` (eb81e8a5); with it, 6 files and 126 tests pass.
+- **Next:** P1.5 and P1.6 are being started.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker · P1.5
+
+- **Done:** `packages/core/src/timeline/__test__/degenerate.test.ts`: QA-DG-1 to -7 (spec literal values, D-FTL-EMPTY on QA-DG-4), P-11 on every fixture, QA-REG-5 at 40 and 1,000 chained arcs (bound beta\*sqrt(1+a), max |P| <= 1e6, exact (1,1) arrival). The oracle handled 1,000 arcs without a stack overflow on Node 24. G1-G13, G8b, QA-FL-01..06 and QA-DB-25/-31 were already covered by P1.2-P1.4. PR: https://github.com/OpenMarch/OpenMarch/pull/1042 on `timeline/p1-golden-tests`. P1.5 is in review.
+- **Checks:** `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (16 files, 298 passed, 2 skipped); prettier, eslint, cspell on the new file (pass). Skipped per policy: full test:history and Playwright e2e.
+- **Next:** a person reviews and merges #1042. The exit-gate box "Every test in P1.5 and P1.6 passes" stays unticked until P1.6 lands.
+- **Resume from:** none; address review comments on PR 1042.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.5 (review check)
+
+- **Done:** re-checked PR #1042 at 60499128 (one new file, `__test__/degenerate.test.ts`).
+- **Checks:** `pnpm --dir packages/core exec vitest run src/timeline/__test__/degenerate.test.ts` (9 passed). Spot-checked QA-DG-4 against spec §12.4: beat 6 M1 (2,3), M2 (2,1); beat 8 M1 (4,6), M2 (4,0); one `D-FTL-EMPTY` on transition 1; no members. These are the spec's literal values, not oracle snapshots. Commit carries no attribution lines.
+- **Next:** a person merges #1042. P1.6 (properties) is still running.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker · P1.6
+
+- **Done:** on `timeline/p1-properties` (b6d23db9, pushed): `packages/core/src/timeline/__test__/properties.test.ts` ports `ref/props.mjs` to fast-check against `createTimelineOracleForTesting`: P-1, P-2, P-5, P-6, P-7 (approximate against independent geometry and bit-exact against `destinationsOf`), P-9, P-11, P-12 and P-13 on ordinary, boundary-valued and adversarial arc-chain shows, with D-16 individual destinations mixed in; plus the R-8 cross-check against the centre-and-radius form (moderate inputs, fast-check arbitraries) and the R-8 endpoint and extreme-input cases. Independent geometry is in `__test__/independentGeometry.ts` (imports nothing from `geom.ts`); the generators in `__test__/showGenerators.ts` reproduce props.mjs's draws, so a failing seed builds the same show there. Seeded and deterministic; `TIMELINE_PROPS_SHOWS` and `TIMELINE_PROPS_SEED` opt into larger or different runs (documented in the file header). A final test asserts every property was exercised, including at least one D-16 arrival.
+- **Checks:** `pnpm install` (pass); `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (16 files, 295 passed, 2 skipped, 3.3 s); `pnpm --dir packages/core exec vitest run src/timeline/__test__/properties.test.ts` (6 passed, about 0.6 s; default run 300 ordinary + 300 boundary + 30 chain shows = 196,544 checks, against props.mjs's 253,917 at 300 seeds, whose extra ~57,000 are its resolver-vs-oracle checks, deferred to Phase 2); opt-in `TIMELINE_PROPS_SHOWS=5000 TIMELINE_PROPS_SEED=7` (3,083,896 checks, 0 failures, 5.2 s); `pnpm --dir packages/core exec tsc --noEmit -p .` (no errors under `src/timeline`); prettier, eslint and cspell on the three files (pass; the pre-commit hook also passed). Mutation smoke check, not committed: changing the R-5 denominator in `oracle.ts` to `sp.end - sp.start` (breaking D-7) made the ordinary and boundary suites fail with `P-12 causality`; reverted with `git checkout`. Full `test:history` and Playwright e2e not run (policy; core-only change).
+- **Next:** no PR on OpenMarch/OpenMarch, per the lead: timeline work is moving to a fork. The lead opens the PR there.
+- **Resume from:** open the PR on the fork once the lead sets it up (branch `timeline/p1-properties`, base the fork's coordination branch); then set P1.6 to `in-review` with the PR link. Nothing else outstanding.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.5, P1.6 (moved to the fork)
+
+- **Done:** timeline work moved to the fork `AlexDumo/OpenMarch-timeline` (see README "Coordination branch"). P1.5's PR moved from OpenMarch/OpenMarch#1042 (closed with a pointer) to AlexDumo/OpenMarch-timeline#2. P1.6's PR opened on the fork as #3 (branch `timeline/p1-properties`, b6d23db9); P1.6 set to in-review.
+- **Checks:** from the P1.6 worker at b6d23db9: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (16 files, 295 passed, 2 skipped); default property run 196,544 checks, opt-in 5,000-show run 3,083,896 checks, 0 failures; a local D-7 mutation made P-12 fail. Full history and e2e skipped per policy.
+- **Next:** a person reviews and merges fork PRs #2 and #3.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · Phase 1 closed
+
+- **Done:** fork PRs #2 (P1.5) and #3 (P1.6) merged; P1.5 and P1.6 set to done. P1.8: `packages/core/src/timeline/index.ts` exports the §10.1 types, `TimelineSnapshot`, the validators and `createTimelineOracleForTesting`, matching ADR 0001 §4; `createResolver` arrives with P2.9. P1.7 (mutation script) deferred as optional: P1.6's mutation smoke check showed a D-7 break is caught by P-12. Phase 1 set to done.
+- **Checks:** on the fork's `timeline-try-2` at a42286d4: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (17 files, 304 passed, 2 skipped); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
+- **Next:** Phase 2.
 - **Blockers:** none.

@@ -9,6 +9,8 @@ depends_on: [0]
 updated: 2026-09-29
 ---
 
+<!-- cspell:ignore korath -->
+
 # Phase 3: Storage schema and triggers (desktop)
 
 Follow the protocol in [../README.md](../README.md). Claim a work package before you start, and append to the progress log as you go.
@@ -33,7 +35,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Decide where marcher homes live (C-5)
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: yes
 - Depends on: —
@@ -43,7 +45,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.2: Tables in schema.ts
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: —
@@ -53,7 +55,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.3: Generate and inspect the migration
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.1, P3.2
@@ -63,7 +65,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.4: Triggers, view and change log
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.3
@@ -72,9 +74,9 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 
 ### P3.5: History registration
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker agent (timeline/p3-history)
+- Status: done
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1039
 - Parallel: yes
 - Depends on: P3.3
 
@@ -82,9 +84,9 @@ Add the data tables (not the change log) to `tablesWithHistory` and the query-ke
 
 ### P3.6: Storage tests
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p3-qa-db)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/4
 - Parallel: yes
 - Depends on: P3.4
 
@@ -92,8 +94,8 @@ Add the data tables (not the change log) to `tablesWithHistory` and the query-ke
 
 ### P3.7: Migration test
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p3-storage)
+- Status: done
 - PR: none
 - Parallel: yes
 - Depends on: P3.3
@@ -112,9 +114,9 @@ Manual: launch the desktop app and open an older `.dots` file with no errors.
 
 ### P3.9: File-format version guard (ADR 0001 §6)
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker agent (timeline/p3-version-guard)
+- Status: done
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1040
 - Parallel: yes
 - Depends on: —
 
@@ -124,15 +126,17 @@ On open, read `user_version` **before** touching the file; refuse a version high
 
 Tick an item only after running its check, and paste the command and result into the log.
 
-- [ ] P3.6 and P3.7 pass: `pnpm --dir apps/desktop run test:focused <file>`
-- [ ] `pnpm --dir apps/desktop exec tsc --noEmit` passes
+- [x] P3.6 and P3.7 pass: `pnpm --dir apps/desktop run test:focused <file>`
+- [x] `pnpm --dir apps/desktop exec tsc --noEmit` passes
 - [ ] Existing history tests still pass: `pnpm --dir apps/desktop run test:history`
 - [ ] P3.8 done by a person
-- [ ] P3.9 merged, with its open-at-7/8/9 tests passing
+- [x] P3.9 merged, with its open-at-7/8/9 tests passing
 
 ## Handoff notes
 
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
+
+- History triggers are rebuilt whenever the columns they copy no longer match the table (P3.5), so a later column addition doesn't need a manual trigger reset.
 
 - Can run in parallel with Phases 1 and 2. `PRAGMA foreign_keys = ON` is already set on the main connection and in tests.
 - P3.1 to P3.4 are in review (PR #1037). C-5: homes are `home_x`/`home_y` columns on `marchers` (see `implementation-plan.md`). Migration `0017_powerful_edwin_jarvis.sql` is hand-edited from drizzle's table rebuild into two `ALTER TABLE marchers ADD COLUMN` statements; don't regenerate it, and check that `drizzle-kit generate` stays a no-op after any schema change. `marchers` gained columns, so P3.5 must make sure existing files get `marchers` history triggers that include `home_x`/`home_y`: `createTriggers` in `src/db-functions/history.ts` uses `CREATE TRIGGER IF NOT EXISTS`, so old `marchers_it/_ut/_dt` triggers in a file would otherwise survive with the old column list. The test suite creates triggers fresh, so it doesn't catch this.
@@ -166,7 +170,6 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/timelineTriggers.test.ts`: 15 passed. `pnpm --dir apps/desktop run test:history`: pass (79 files, 1251 tests passed; 7 files and 3 tests skipped, 15 todo). Exit-gate items for `tsc` and `test:history` are not ticked, because they only become true on the base branch when the PR merges.
 - **Next:** review and merge #1037. Then P3.5, P3.6, P3.7 and P3.9 (open). P3.8 (human): open an older `.dots` file in the app after the merge.
 - **Blockers:** none.
-
 
 ### 2026-09-30 · lead session · P3.1 to P3.4 (review check)
 
@@ -205,3 +208,74 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Finding:** the 21 `Invalid Chai property` failures the worker saw are environmental, not caused by the PR. The same files pass at the PR head in a normal checkout. Agent worktrees live under the main checkout (`.claude/worktrees/`), where package resolution can reach the parent checkout's older root `vitest`.
 - **Next:** a person reviews and merges #1037, then P3.8. P3.5 must recreate the `marchers` history triggers on existing files (see handoff notes) before anything writes homes.
 - **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.1 to P3.4
+
+- **Done:** PR #1037 merged (8cb11475); P3.1 to P3.4 set to done. The desktop `tsc` exit-gate item is ticked.
+- **Checks:** on `timeline-try-2` at 8cb11475 after both merges: `pnpm install`; `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (14 files, 239 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
+- **Next:** P3.5 (history registration, including recreating the `marchers` history triggers on existing files) is being started. P3.8 (open an older `.dots` file) is still a human step.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-history) · P3.5
+
+- **Done:** branch `timeline/p3-history` from `origin/timeline-try-2`. `src/db-functions/history.ts`: the five timeline data tables are in `tablesWithHistory` (not `timeline_change_log`); trigger SQL moved into an exported pure `buildHistoryTriggerSql`; `createTriggers` now drops a table's `_it/_ut/_dt` triggers first when the columns their `old."…"` references name differ from `pragma_table_info` (general, not marchers-specific), then recreates them. `src/hooks/queries/utils.ts`: explicit `[[tableName]]` keys for the timeline tables. Pushed as wip commit 244100ed.
+- **Checks:** none yet (lint-staged eslint/prettier ran on commit).
+- **Next:** history tests for the timeline tables (round trips, child-first delete for C-1, destination delete + older undo for C-2) and the stale-trigger recreation, then tsc and focused history runs.
+- **Blockers:** none.
+- **Resume from:** check out `origin/timeline/p3-history`, `pnpm install`, `pnpm exec turbo run build --filter=@openmarch/desktop^...`, then add `apps/desktop/src/db-functions/__test__/timelineHistory.test.ts` and run `pnpm --dir apps/desktop run test:history src/db-functions/__test__/timelineHistory.test.ts`.
+
+### 2026-09-30 · lead session · P3.5 (finished after the worker stopped)
+
+- **Done:** the worker stopped when plan mode switched on, with its tests uncommitted. The lead fixed the last failing test (the U-1 guard read `AFTER UPDATE ON` in a trigger's header as a write; it now scans only the body after `BEGIN`), squashed the work into one commit (fb88d217), rebased it onto `timeline-try-2`, and opened PR #1039. P3.5 is in review.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/` (3 files, 51 passed); `pnpm --dir apps/desktop run test:history` on `timelineHistory.test.ts`, `history.test.ts` and `marcher.test.ts` (3 files, 94 passed); eslint (no errors; one `max-lines-per-function` warning that also appears on the base branch); prettier (clean). Full `test:history` and e2e skipped per policy.
+- **Next:** a person reviews and merges #1039.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-version-guard) · P3.9
+
+- **Done:** opened https://github.com/OpenMarch/OpenMarch/pull/1040 against `timeline-try-2` (commit 85e31526). New `apps/desktop/electron/database/fileVersion.ts` defines the constants (min 7, max 8, new file 7) and a pure `decideFileVersion(userVersion, isNewFile)`. `setDbPath` returns 426 for a version above 8 before its write probe, so a refused file is never written to. Both open paths in `electron/main/index.ts` call `applyFileVersionDecision`, which writes the version only on a new file at 0. That was the only case today's write existed for: `setActiveDb` wrote it only for new files, and `openDatabaseAtPathWithoutReload` is only called with `isNewFile = true`. The migration service accepts 7 and 8 and never changes the version. Repair refuses a source above 8 and keeps a source at 8. The renderer shows a Tolgee dialog for 426 (`fileAccessDialogError.tooNew.*`, English only). The macOS `open-file` handler now sends `load-file-response`, so it shows open errors too.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/__test__/fileVersion.test.ts electron/database/__test__/fileVersionOpen.test.ts`: 36 passed; these open real files at 7 and 8 (they keep their version) and at 9 and 1000 (refused with 426; the 9 file's hash, mtime and siblings are unchanged). `pnpm --dir apps/desktop run test:focused electron/database/__test__/repair.test.ts electron/database/__test__/database.services.test.ts`: 45 passed. `prettier`, `eslint` and `cspell` on the changed files: clean. Not run, per the current policy: full `test:history` and e2e. The exit-gate item "P3.9 merged, with its open-at-7/8/9 tests passing" is not ticked, because it only becomes true when the PR merges.
+- **Next:** review and merge #1040. After the merge, a person should open an older `.dots` file and a newly created one (P3.8 style). Phase 9 sets `NEW_FILE_USER_VERSION` to 8 in `fileVersion.ts`.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.9 (review check)
+
+- **Done:** re-checked PR #1040 at 85e31526. Read `electron/database/fileVersion.ts`: files above 8 are refused before any write; the version is set only for a new, empty file (to `NEW_FILE_USER_VERSION`, 7 until Phase 9); 7 and 8 open unchanged; below 7 keeps the old "open in 0.0.10 first" error. Both unconditional `PRAGMA user_version = 7` writes are gone from `electron/main/index.ts`.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test:focused` on `fileVersion.test.ts`, `fileVersionOpen.test.ts`, `repair.test.ts` and `database.services.test.ts` (4 files, 81 passed). Commits carry no attribution lines. Full `test:history` and e2e skipped per policy.
+- **Next:** a person reviews and merges #1040, then opens an older `.dots` file and a newly created one and checks both stay at `user_version` 7 (this also covers P3.8).
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.5, P3.9
+
+- **Done:** PRs #1039 (P3.5, e1cc3590) and #1040 (P3.9, 84ea6191) merged; both set to done; P3.9's exit-gate item ticked.
+- **Checks:** on `timeline-try-2` at 84ea6191: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (289 passed, 2 skipped); `pnpm --dir apps/desktop exec tsc --noEmit` (pass). `test:focused` on the migration, file-version and repair tests: `timelineTriggers.test.ts` failed to load, because P3.9's renderer hook imports `@om-electron/database/fileVersion` and `vitest.config.ts` lacked that alias. Fix: branch `timeline/fix-vitest-alias` (eb81e8a5); with it, 6 files and 126 tests pass.
+- **Next:** merge the Vitest alias fix. P3.6 (full QA-DB suite), P3.7 (migration test) and P3.8 (a person opens an older and a new `.dots` file) remain.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · Vitest alias fix (moved to the fork)
+
+- **Done:** the Vitest `@om-electron` alias fix moved from OpenMarch/OpenMarch#1041 (closed with a pointer) to AlexDumo/OpenMarch-timeline#1. The public repo's four timeline branches were deleted after the fork had them.
+- **Checks:** unchanged from the earlier entry (6 files, 126 passed with the fix).
+- **Next:** a person merges fork PR #1.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.7
+
+- **Done:** P3.7 set to done. `electron/database/migrations/__test__/0017_powerful_edwin_jarvis.test.ts` (merged in #1037's rework) is the migration test: a pre-0017 file with marchers and `marcher_pages` rows, row counts and ids unchanged, no rebuild of `marchers`, empty `foreign_key_check`, and home bounds enforced.
+- **Checks:** passed in the earlier `test:focused electron/database/migrations/__test__/` runs (51, then 126 with the file-version tests).
+- **Next:** P3.6 (full QA-DB suite) is being started. P3.8 is still a human step.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker (timeline/p3-qa-db) · P3.6
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/4 adds `apps/desktop/electron/database/migrations/__test__/timelineStorageQa.test.ts`: QA-DB-01 to -10, -13b, -14 to -23, -27, -28 and -30 to -41 (36 tests, each named by id). QA-DB-11 to -13, -24 to -26 and -29 are left for Phase 4 (R-E1 procedure and write wrapper). QA-DB-18 and -41 use RESTRICT (parent delete rejected, child-first succeeds); QA-DB-27 notes that integer affinity coerces the text '5' to 5; QA-DB-23 widens its second transition so E-A3 is the failure under test; QA-DB-30 and -36 run the commit view and change log inside a transaction and ROLLBACK.
+- **Checks:** `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/` (4 files, 87 passed); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); eslint, prettier --check and cspell on the new file (pass). Full `test:history` and e2e skipped per policy. The P3.6 exit-gate item also names P3.7, which was already done; it is not ticked until the PR merges.
+- **Next:** review and merge PR #4, then set P3.6 to done.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.6 (reviewed and merged)
+
+- **Done:** fork PR #4 reviewed by a sub-agent (APPROVE WITH NITS) and merged (678b8549). The lead applied the nits before merging: the QA-DB-27 `slot_count = 'many'` case now matches the named `timeline_transitions_slot_count_type_check` (text also fails the range CHECK), QA-DB-39's first two cases match the row triggers' messages (the commit-time view would otherwise mask a broken trigger), and a comment explains the shared E-A1/E-A2 message. P3.6 set to done; the P3.6/P3.7 exit-gate item ticked.
+- **Checks:** at the PR head before the nits: `test:focused electron/database/migrations/__test__/` (4 files, 87 passed) and `tsc --noEmit` (pass). After the nits: `test:focused .../timelineStorageQa.test.ts` (36 passed).
+- **Next:** Phase 3's remaining items: P3.8 (a person opens an older and a new `.dots` file) and the full `test:history` gate item, which is skipped under the current policy.
+- **Blockers:** P3.8 is human.

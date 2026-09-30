@@ -965,6 +965,43 @@ describe("DatabaseSync Repair", () => {
             fs.unlinkSync(originalDbPath);
         });
 
+        it("keeps a timeline-model file (user_version 8) at 8", async () => {
+            const originalDbPath = path.join(tempDir, "timeline.dots");
+            const originalDb =
+                await createNewDatabaseWithMigrations(originalDbPath);
+            originalDb.prepare("PRAGMA user_version = 8").run();
+            originalDb.close();
+
+            const fixedPath = await repairDatabase(originalDbPath);
+
+            const fixedDb = new DatabaseSync(fixedPath, { readOnly: true });
+            const userVersion = (
+                fixedDb.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
+            fixedDb.close();
+            expect(userVersion).toBe(8);
+        });
+
+        it("refuses a file from a newer release and leaves it unchanged", async () => {
+            const originalDbPath = path.join(tempDir, "newer.dots");
+            const originalDb =
+                await createNewDatabaseWithMigrations(originalDbPath);
+            originalDb.prepare("PRAGMA user_version = 9").run();
+            originalDb.close();
+            const before = fs.readFileSync(originalDbPath);
+            const fixedPath = path.join(tempDir, "newer - FIXED.dots");
+
+            await expect(repairDatabase(originalDbPath)).rejects.toThrow(
+                /newer version of OpenMarch/,
+            );
+
+            expect(fs.readFileSync(originalDbPath).equals(before)).toBe(true);
+            expect(fs.existsSync(fixedPath)).toBe(false);
+            expect(getRepairTempEntries()).toEqual([]);
+        });
+
         it("should use _blank.dots as the base database and migrate it", async () => {
             const blankDbPath = path.join(
                 __dirname,

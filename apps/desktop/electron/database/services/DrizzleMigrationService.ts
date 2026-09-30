@@ -9,6 +9,13 @@ import { createAllTriggers } from "../migrations/triggers";
 import { sql } from "drizzle-orm";
 import { DB } from "../db";
 import { DatabaseSync } from "node:sqlite";
+import {
+    fileTooNewMessage,
+    isSupportedUserVersion,
+    MAX_SUPPORTED_USER_VERSION,
+    NEW_FILE_USER_VERSION,
+    readUserVersion,
+} from "../fileVersion";
 
 /**
  * Service for handling Drizzle migrations at runtime
@@ -51,23 +58,20 @@ export class DrizzleMigrationService {
         return requestedFolder;
     }
 
-    // User version 7 is an artifact of the previous migration system
-    // but we will keep it at 7 to indicate we are on drizzle
-    private async canApplyMigrations(): Promise<boolean> {
-        const userVersion = (
-            this.rawDb.prepare("PRAGMA user_version").get() as {
-                user_version: number;
-            }
-        ).user_version;
-        return userVersion === 7;
-    }
-
     /**
      * Applies pending migrations from the migrations folder
      * This uses Drizzle's built-in migration functionality
+     *
+     * Runs only on files whose `user_version` this build supports (7, the page
+     * model, which is an artifact of the previous migration system, and 8, the
+     * timeline model). It never changes the version. See `../fileVersion.ts`.
      */
     async applyPendingMigrations(migrationsFolder?: string): Promise<void> {
-        if (!(await this.canApplyMigrations())) {
+        const userVersion = readUserVersion(this.rawDb);
+        if (userVersion > MAX_SUPPORTED_USER_VERSION) {
+            throw new Error(fileTooNewMessage(userVersion));
+        }
+        if (!isSupportedUserVersion(userVersion)) {
             throw new Error(
                 "Cannot apply migrations, user version is not 7. If you have a file from 0.0.9 or earlier, please open your file in 0.0.10, then open it again in the current version",
             );
@@ -171,7 +175,8 @@ export class DrizzleMigrationService {
 
     /** Run any ts migrations that are not in drizzle */
     static async initializeDatabase(db: DB, rawDb: DatabaseSync) {
-        await db.run(sql`PRAGMA user_version = 7`);
+        // Only ever called on a file the app just created.
+        await db.run(sql.raw(`PRAGMA user_version = ${NEW_FILE_USER_VERSION}`));
 
         // Easier to do this here than in the migration
         await db.insert(schema.field_properties).values({

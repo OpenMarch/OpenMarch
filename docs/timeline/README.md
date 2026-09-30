@@ -10,6 +10,7 @@ what you own and how far you've got.
 | [implementation-plan.md](implementation-plan.md) | Shared context: repo facts, spec/app conflicts (`C-n`), phase order, risks. Read it once.      |
 | [WORKER.md](WORKER.md)                           | The step-by-step procedure every worker follows: claim, checkpoint, finish.                    |
 | [phases/](phases/)                               | One file per phase: status, owners, work packages, exit gate, handoff notes, progress log.     |
+| [ui.md](ui.md)                                   | The timeline UI design (adopted from the `0.2` branch) and how it maps onto the spec.          |
 | [findings.md](findings.md)                       | Measurements (QA-PF) and human verdicts (QA-SC-07, -14, -15). Append-only.                     |
 | `spec.md`, `ref/`                                | The spec and its reference suite, added in Phase 0. The spec wins over this plan on the model. |
 
@@ -94,6 +95,18 @@ from a separate checkout, runs the pre-commit hook, and rebases and retries if
 another worker pushed first. `WORKER.md` step 3 shows its use. When Phase 0
 merges, change its default branch (and `run-worker.sh`'s) to `main`.
 
+## Upstream
+
+- **Keep up with `main`:** merge `OpenMarch/OpenMarch` `main` into the fork's
+  `timeline-try-2` regularly (for example after each phase), so the eventual
+  upstream PR stays small to review.
+- **Going upstream:** open one PR from the fork's `timeline-try-2` into
+  `OpenMarch/OpenMarch` `main` at a milestone. Everything is behind the dev
+  flag until Phase 9, so a phase boundary is a safe point.
+- **PR numbers:** squash-merge commits on the fork end in the fork's PR number,
+  such as `(#3)`. On the public repo, `#3` would point at a different PR, so
+  rewrite those suffixes (or drop them) when preparing the upstream PR.
+
 ## Vocabulary
 
 - **Phase status:** `not-started`, `in-progress`, `blocked`, `in-review`,
@@ -113,7 +126,12 @@ All edits to `docs/timeline/` go to the **coordination branch** as small,
 docs-only commits, separate from code branches. That way every agent sees
 claims and progress as soon as they're pushed.
 
-- Coordination branch: `timeline-try-2` until Phase 0 merges, then `main`.
+- Repository: the fork
+  [`AlexDumo/OpenMarch-timeline`](https://github.com/AlexDumo/OpenMarch-timeline).
+  Every timeline branch and PR lives there, so the public repo's PR list stays
+  clean. Timeline work reaches `OpenMarch/OpenMarch` only as a deliberate PR
+  from the fork's `timeline-try-2` (see "Upstream" below).
+- Coordination branch: `timeline-try-2` on the fork.
 - Before editing, pull and rebase. If a push is rejected, rebase and retry.
   Edits touch different lines, so conflicts should be rare and trivial.
 

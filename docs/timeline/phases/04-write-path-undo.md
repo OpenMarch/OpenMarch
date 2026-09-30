@@ -144,4 +144,3 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** n/a
 - **Next:** the drain-on-open should also cover `repair.ts`, which writes to `timeline_change_log` through the triggers, and repair must copy the timeline tables in dependency order (timelines, shapes, transitions, then destinations and assignments), or `timeline_asn_bounds_ins` rejects the copy.
 - **Blockers:** none.
-

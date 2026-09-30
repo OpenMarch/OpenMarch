@@ -48,6 +48,8 @@ const expectedMarchers = Array.from({ length: numberOfMarchers }, (_, i) => {
         drill_order,
         year: null,
         notes: null,
+        home_x: 0,
+        home_y: 0,
     };
 });
 
