@@ -1,6 +1,6 @@
 # 0001: Timelines replace pages as the motion model
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-09-29
 
 ## Context
