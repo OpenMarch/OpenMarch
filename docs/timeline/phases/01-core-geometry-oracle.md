@@ -32,7 +32,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.1: Types
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: —
@@ -42,7 +42,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.2: Geometry
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: P1.1
@@ -52,7 +52,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.3: Oracle
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: P1.2
@@ -114,9 +114,9 @@ Export the module from `packages/core/src/index.ts` (the oracle behind a clearly
 Tick an item only after running its check, and paste the command and result into the log.
 
 - [ ] Every test in P1.5 and P1.6 passes
-- [ ] `pnpm --dir packages/core run build` passes
-- [ ] `pnpm --dir packages/core run test` passes
-- [ ] Desktop still builds against the new core (`pnpm --dir apps/desktop exec tsc --noEmit`)
+- [x] `pnpm --dir packages/core run build` passes
+- [x] `pnpm --dir packages/core run test` passes
+- [x] Desktop still builds against the new core (`pnpm --dir apps/desktop exec tsc --noEmit`)
 
 ## Handoff notes
 
@@ -157,4 +157,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** independently re-ran PR #1036's checks at its head (606db11c), because CI (`pr-checks.yaml`) runs only on PRs into `main`, so PRs into `timeline-try-2` get no automated checks.
 - **Checks:** `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core exec vitest run src/timeline` (2 files, 46 tests, pass). Spot-checked that the golden tests assert the spec's literal values (for example G3 `(7,6)` at beat 8, G8 `(1.1716, 2.8284)`, G7 end distances), not values captured from the oracle.
 - **Next:** a person reviews and merges #1036. P1.4 (validators) can start now; P1.5 and P1.6 after the merge.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.1, P1.2, P1.3
+
+- **Done:** PR #1036 merged (948e8a0a); P1.1 to P1.3 set to done. Three exit-gate items ticked; they must still hold when the phase closes.
+- **Checks:** on `timeline-try-2` at 8cb11475 after both merges: `pnpm install`; `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (14 files, 239 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
+- **Next:** P1.4 (validators) is being started. P1.5 and P1.6 are open.
 - **Blockers:** none.

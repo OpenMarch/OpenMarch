@@ -12,6 +12,17 @@ head.
 Input: an optional work package ID such as `P1.2`. Without one, pick the next
 available package (step 2).
 
+## Current policy (temporary)
+
+Set by the project owner on 2026-09-30, until they lift it here:
+
+- **Don't run the full `test:history` suite or the Playwright e2e suite.** They
+  take the longest. Run focused tests instead, including focused history tests
+  (`pnpm --dir apps/desktop run test:history <file>`) for the files you change.
+  Say in the PR and log which suites you skipped.
+- **CI doesn't run on PRs into `timeline-try-2`**, so a reviewer re-runs your
+  checks by hand. List every command you ran, with its result.
+
 ## 1. Orient
 
 1. Fetch: `git fetch <remote>`. The remote is `origin` unless

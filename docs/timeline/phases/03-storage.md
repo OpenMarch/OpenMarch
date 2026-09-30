@@ -33,7 +33,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Decide where marcher homes live (C-5)
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: yes
 - Depends on: —
@@ -43,7 +43,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.2: Tables in schema.ts
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: —
@@ -53,7 +53,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.3: Generate and inspect the migration
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.1, P3.2
@@ -63,7 +63,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.4: Triggers, view and change log
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.3
@@ -125,7 +125,7 @@ On open, read `user_version` **before** touching the file; refuse a version high
 Tick an item only after running its check, and paste the command and result into the log.
 
 - [ ] P3.6 and P3.7 pass: `pnpm --dir apps/desktop run test:focused <file>`
-- [ ] `pnpm --dir apps/desktop exec tsc --noEmit` passes
+- [x] `pnpm --dir apps/desktop exec tsc --noEmit` passes
 - [ ] Existing history tests still pass: `pnpm --dir apps/desktop run test:history`
 - [ ] P3.8 done by a person
 - [ ] P3.9 merged, with its open-at-7/8/9 tests passing
@@ -167,7 +167,6 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** review and merge #1037. Then P3.5, P3.6, P3.7 and P3.9 (open). P3.8 (human): open an older `.dots` file in the app after the merge.
 - **Blockers:** none.
 
-
 ### 2026-09-30 · lead session · P3.1 to P3.4 (review check)
 
 - **Done:** independently re-checked PR #1037 at its head (8486ee0e); CI doesn't run on PRs into `timeline-try-2`.
@@ -204,4 +203,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** 0017 creates 6 tables; the only change to an existing table is two `ALTER TABLE marchers ADD COLUMN … CHECK` statements, with no `INSERT INTO`, `DROP TABLE`, `RENAME` or rebuild. Commits carry no attribution lines. In the lead checkout (normal install, workspace packages built), at the PR head: `VITEST_ENABLE_HISTORY=true vitest run` on `MarcherForm.test.tsx`, `RevisionsList.test.tsx`, `db-functions/__test__/marcher.test.ts` and `electron/database/migrations/__test__/` gives 6 files, 110 tests, all passing.
 - **Finding:** the 21 `Invalid Chai property` failures the worker saw are environmental, not caused by the PR. The same files pass at the PR head in a normal checkout. Agent worktrees live under the main checkout (`.claude/worktrees/`), where package resolution can reach the parent checkout's older root `vitest`.
 - **Next:** a person reviews and merges #1037, then P3.8. P3.5 must recreate the `marchers` history triggers on existing files (see handoff notes) before anything writes homes.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.1 to P3.4
+
+- **Done:** PR #1037 merged (8cb11475); P3.1 to P3.4 set to done. The desktop `tsc` exit-gate item is ticked.
+- **Checks:** on `timeline-try-2` at 8cb11475 after both merges: `pnpm install`; `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (14 files, 239 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
+- **Next:** P3.5 (history registration, including recreating the `marchers` history triggers on existing files) is being started. P3.8 (open an older `.dots` file) is still a human step.
 - **Blockers:** none.
