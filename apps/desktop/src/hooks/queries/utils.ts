@@ -40,6 +40,14 @@ const singleTableNameToQueryKey = (tableName: string): string[][] => {
     switch (tableName) {
         case "shape_page_marchers":
             return [["shape_pages"], ["marcher_pages"]];
+        // Timeline data tables (ADR 0001 §3). Their query hooks use the table name as the key
+        // base, as the page-model hooks do; listed so the mapping is explicit when they land.
+        case "timelines":
+        case "timeline_shapes":
+        case "timeline_transitions":
+        case "timeline_assignments":
+        case "timeline_slot_destinations":
+            return [[tableName]];
         default:
             return [[tableName]];
     }
