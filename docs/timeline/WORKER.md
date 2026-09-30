@@ -83,6 +83,12 @@ anything long:
    `- **Resume from:** <the exact next step, the files involved, and any command to re-run first>`.
 3. Keep your package's `- Status:` at `in-progress`.
 
+Long, quiet commands (the full `test:history` suite, e2e runs, fuzzers) can
+look like a stalled session and get the worker stopped. Run anything expected
+to take more than about five minutes in the background with its output
+redirected to a file, and check the file's tail every few minutes instead of
+waiting on one silent command. Checkpoint before starting it.
+
 If you sense the session ending (context is being compacted, a usage warning,
 or you're about to wait on something slow), checkpoint first.
 
