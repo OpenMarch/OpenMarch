@@ -42,7 +42,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.2: Geometry
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: P1.1
@@ -52,7 +52,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.3: Oracle
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: P1.2
@@ -134,4 +134,12 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** not run yet (type check and build come with P1.2).
 - **Next:** P1.2 `geom.ts` (already drafted locally) and its tests.
 - **Resume from:** on `timeline/p1-geometry`, write `packages/core/src/timeline/geom.ts` and `__test__/geom.test.ts`; then `pnpm --dir packages/core run build`.
+- **Blockers:** none.
+
+### 2026-09-29 · timeline-worker · P1.1, P1.2
+
+- **Done:** P1.1 types and P1.2 `packages/core/src/timeline/geom.ts` (`lerp`, `arcPoint`, `pointAtDistance`, `destPath`, `sampleDestinations`, `destinationsOf`, `flatten`, `classifySpan`, `makeTrail`) with `__test__/geom.test.ts` (QA-FL-01..06 at the flatten level, arc, path, sampling cases). Branch `timeline/p1-geometry`, commit "feat(core): timeline geometry (P1.2)".
+- **Checks:** `pnpm --dir packages/core exec vitest run src/timeline`: 23 passed. `tsc --noEmit -p packages/core`: no errors under `src/timeline` (the package has pre-existing errors in `path-utility`, untouched). Build and desktop tsc not yet run.
+- **Next:** P1.3 `oracle.ts`, then golden tests G1-G13 + G8b and QA-FL against the oracle.
+- **Resume from:** on `timeline/p1-geometry`, write `packages/core/src/timeline/oracle.ts` (port `docs/timeline/ref/oracle.mjs`, add `diagnostics()`), `__test__/oracle.test.ts` (golden vectors from `ref/golden.mjs`), then export from `index.ts` as `createTimelineOracleForTesting`.
 - **Blockers:** none.
