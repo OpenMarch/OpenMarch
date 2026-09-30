@@ -33,7 +33,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Decide where marcher homes live (C-5)
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: in-progress
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: yes
 - Depends on: —
@@ -43,7 +43,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.2: Tables in schema.ts
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: in-progress
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: —
@@ -53,7 +53,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.3: Generate and inspect the migration
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: in-progress
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.1, P3.2
@@ -63,7 +63,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.4: Triggers, view and change log
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-review
+- Status: in-progress
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.3
@@ -174,3 +174,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** `0017_daffy_korath.sql` creates exactly 7 tables and contains no `INSERT INTO`, `DROP TABLE`, `ALTER TABLE` or `__new_` rebuild, so it can't damage existing data. `pnpm exec tsc --noEmit` in `apps/desktop` (pass). `pnpm run test:focused electron/database/migrations/__test__/timelineTriggers.test.ts` (15 of 15 pass). Commits carry no attribution lines. Not re-run by the lead: the full `test:history` suite (the worker reports 1,251 passing) and eslint.
 - **Next:** a person reviews and merges #1037, then does P3.8 (open an older `.dots` file). The `repair.ts` table-order problem (see handoff notes) must be fixed before any write path lands; Phase 4 has a cross-phase note.
 - **Blockers:** none.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-storage) · P3.1 to P3.4 (rework (C-5 homes on marchers))
+
+- **Done:** started the rework the project owner asked for: marcher homes move to `home_x`/`home_y` columns on `marchers` (ADR 0001's primary choice), `timeline_marcher_homes` goes, and migration 0017 is regenerated with drizzle's `__new_marchers` rebuild hand-edited into two `ALTER TABLE … ADD COLUMN` statements with CHECKs. P3.1 to P3.4 set back to `in-progress` for the rework.
+- **Checks:** none yet.
+- **Next:** `schema.ts`, regenerate 0017, hand-edit it, confirm repeated generation is a no-op.
+- **Blockers:** none.
+- **Resume from:** on a local branch from `origin/timeline/p3-storage` (push with `git push origin HEAD:timeline/p3-storage`), edit `apps/desktop/electron/database/migrations/schema.ts`, delete `0017_daffy_korath.sql`, `meta/0017_snapshot.json` and its `_journal.json` entry, then run `pnpm --dir apps/desktop run migrate`.
