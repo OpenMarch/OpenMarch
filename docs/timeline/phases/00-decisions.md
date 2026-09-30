@@ -1,8 +1,8 @@
 ---
 phase: 0
 title: Decisions, ADR, spec in repo
-status: not-started
-owner: unassigned
+status: in-progress
+owner: timeline-worker (timeline/p0-adr)
 branch: none
 pr: none
 depends_on: []
@@ -49,8 +49,8 @@ Run `docs/timeline/ref/run_all.sh` once (Python 3 and Node 24) and log the resul
 
 ### P0.3: Draft ADR 0001
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p0-adr)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: —
