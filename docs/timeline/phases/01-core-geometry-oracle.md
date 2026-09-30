@@ -1,9 +1,9 @@
 ---
 phase: 1
 title: Geometry, oracle, validators (core)
-status: not-started
-owner: unassigned
-branch: none
+status: in-progress
+owner: timeline-worker (timeline/p1-geometry)
+branch: timeline/p1-geometry
 pr: none
 depends_on: [0]
 updated: 2026-09-29
@@ -31,8 +31,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.1: Types
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p1-geometry)
+- Status: claimed
 - PR: none
 - Parallel: no
 - Depends on: —
@@ -41,8 +41,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.2: Geometry
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p1-geometry)
+- Status: claimed
 - PR: none
 - Parallel: no
 - Depends on: P1.1
@@ -51,8 +51,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.3: Oracle
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p1-geometry)
+- Status: claimed
 - PR: none
 - Parallel: no
 - Depends on: P1.2
