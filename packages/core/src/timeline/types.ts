@@ -1,3 +1,4 @@
+// cspell:ignore NONFOUNDING
 /**
  * Timeline motion model types (ADR 0001, spec section 10.1) plus the input show
  * shape used by the reference suite (`docs/timeline/ref/README.md`).
@@ -148,6 +149,7 @@ export interface CircleGeometry {
 }
 export interface BlockGeometry {
     origin: XY;
+    rows: number;
     cols: number;
     spacing: XY;
 }

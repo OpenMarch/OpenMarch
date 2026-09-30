@@ -208,7 +208,7 @@ describe("destPath / sampleDestinations (R-13)", () => {
     it("block: row-major grid", () => {
         const s: ShapeRow = {
             kind: "block",
-            geometry: { origin: [1, 1], cols: 2, spacing: [2, 3] },
+            geometry: { origin: [1, 1], rows: 2, cols: 2, spacing: [2, 3] },
         };
         expect(sampleDestinations(s, 3)).toEqual([
             [1, 1],
