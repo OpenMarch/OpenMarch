@@ -62,8 +62,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.4: Write-path validators
 
 - Owner: timeline-worker (timeline/p1-validators)
-- Status: claimed
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1038
 - Parallel: yes
 - Depends on: P1.1
 
@@ -164,4 +164,12 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** PR #1036 merged (948e8a0a); P1.1 to P1.3 set to done. Three exit-gate items ticked; they must still hold when the phase closes.
 - **Checks:** on `timeline-try-2` at 8cb11475 after both merges: `pnpm install`; `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (14 files, 239 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
 - **Next:** P1.4 (validators) is being started. P1.5 and P1.6 are open.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker · P1.4
+
+- **Done:** `packages/core/src/timeline/validate.ts` (`validateShapeGeometry`, `validatePathParams`, `validateDestinations`, plus `validateDestination`, `validateHome`, `normalizeStartAngle`, `COORD_BOUND`, `MAX_ABS_BULGE`), exported from `timeline/index.ts`; `__test__/validate.test.ts` (50 tests: every rule, QA-DB-25, QA-DB-31, values at and just beyond each bound). PR: https://github.com/OpenMarch/OpenMarch/pull/1038 on `timeline/p1-validators` against `timeline-try-2`. P1.4 is in review.
+- **Checks:** `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (15 files, 289 passed, 2 skipped); `pnpm exec turbo run build --filter=@openmarch/desktop^...` (pass); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm format:check` (pass); pre-commit hook (pass). Skipped per policy: full `test:history` and Playwright e2e.
+- **Next:** a person reviews and merges #1038. Notes for other packages: `BlockGeometry` in `types.ts` lacks `rows` (spec 5.2 requires it); destination and home validators use codes `E-D2` and `E-N2`, which the spec's error table does not define. P1.8 owns the final export review. Exit-gate boxes are left unticked until the PR merges.
+- **Resume from:** none; address review comments on PR 1038 on branch `timeline/p1-validators`.
 - **Blockers:** none.
