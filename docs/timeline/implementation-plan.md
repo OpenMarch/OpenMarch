@@ -58,11 +58,18 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   `timeline_transitions`, `timeline_assignments`,
   `timeline_slot_destinations` and `timeline_change_log`. Column names follow
   the spec, so `ref/` maps one-to-one.
-- **C-5: Marcher home.** Add `home_x` and `home_y` (REAL, NOT NULL DEFAULT 0,
+- **C-5: Marcher home.** ~~Add `home_x` and `home_y` (REAL, NOT NULL DEFAULT 0,
   CHECK ≤ 1e6) to `marchers`, seeded from page 0. Accept this only if
   drizzle-kit emits `ADD COLUMN` and not a table rebuild; otherwise fall back to
-  a 1:1 `timeline_marcher_homes` table. Afterwards, recreate the `marchers`
-  history triggers, because they snapshot the column list.
+  a 1:1 `timeline_marcher_homes` table.~~ **Decided in P3.1: the fallback.**
+  With the bound CHECKs, drizzle-kit rebuilds `marchers` (and its generated
+  copy reads the new columns from the old table). Homes live in
+  `timeline_marcher_homes` (`marcher_id` primary key, `ON DELETE CASCADE` from
+  `marchers`; `home_x`, `home_y` REAL NOT NULL, numeric and `abs(…) ≤ 1e6`),
+  seeded from page 0 by the converter. Its change-log triggers log under
+  `marchers`. A marcher with no row is unknown to the resolver, so the write
+  path creates the row with the marcher. `marchers` is unchanged, so its history
+  triggers need no recreation.
 - **C-6: Undo lacks the §6 write wrapper.** `executeHistoryAction` must also
   check `commit_violations` and drain the change log inside its transaction.
 - **C-7: Beats instead of wall-clock time.** Today's playback interpolates over

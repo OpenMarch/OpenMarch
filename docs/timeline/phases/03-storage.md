@@ -33,7 +33,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Decide where marcher homes live (C-5)
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: —
@@ -43,7 +43,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.2: Tables in schema.ts
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: —
@@ -53,7 +53,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.3: Generate and inspect the migration
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: P3.1, P3.2
@@ -63,7 +63,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.4: Triggers, view and change log
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: P3.3
@@ -139,3 +139,12 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+### 2026-09-29 · timeline-worker agent (timeline/p3-storage) · P3.1, P3.2, P3.3
+
+- **Done:** P3.1 decided C-5: marcher homes live in a 1:1 `timeline_marcher_homes` table. With `home_x`/`home_y` plus the bound CHECKs on `marchers`, `drizzle-kit generate` emits a full `__new_marchers` rebuild whose `INSERT … SELECT` copies `home_x`/`home_y` from the old table, where they don't exist. Without the CHECKs it emits two `ALTER TABLE … ADD` statements, but then I-N2's bound is lost. `implementation-plan.md` C-5 updated. P3.2: the seven tables are in `schema.ts` (commit b379e7ad on `timeline/p3-storage`). P3.3: migration `0017_daffy_korath.sql` inspected: only `CREATE TABLE`/`CREATE INDEX` for the new tables, no column copies, no change to existing tables. `_blank.dots` regenerated; its schema diff against the old one is the new objects plus whitespace in `__drizzle_migrations` and `timing_objects`.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `sqlite3 _blank.dots "pragma foreign_key_check; pragma integrity_check"`: ok.
+- **Next:** P3.4 triggers, view and change-log triggers in `triggers.ts`, with a few `describeDbTests` showing they fire.
+- **Blockers:** none. Note for whoever runs `pnpm run migrate` next: its second step (`tsx scripts/create-blank-db.ts`) fails with `Cannot read properties of undefined (reading 'VITE_API_URL')`, because `Constants.ts` reads `import.meta.env`, which tsx doesn't define. `drizzle-kit generate` still succeeds. I regenerated `_blank.dots` by running the same steps from a throwaway Vitest file, which defines the env.
+- **Resume from:** P3.4. Edit `apps/desktop/electron/database/migrations/triggers.ts` (add the `timeline_*` triggers and the `timeline_commit_violations` view; teach `dropAllTriggers` to drop the view), then regenerate `_blank.dots` so tests see them (see the note above), then add tests under `apps/desktop/electron/database/migrations/__test__/`.
+
