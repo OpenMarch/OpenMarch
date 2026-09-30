@@ -72,8 +72,8 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 
 ### P3.5: History registration
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker agent (timeline/p3-history)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P3.3
