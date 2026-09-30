@@ -14,13 +14,13 @@ words:
   - barlines
   - bbox
   - behance
-  - Bézier
   - BFSL
   - Bilby
   - blockmap
   - blockqoute
   - bostick
   - BRHS
+  - Bézier
   - canvas
   - Catmull
   - ccpa
@@ -92,10 +92,10 @@ words:
   - nums
   - NURBS
   - oklch
+  - ONTHEMOVE
   - openmarch
   - openmarchdev
   - OTMDEMO
-  - ONTHEMOVE
   - overscan
   - pacman
   - pagewidth
@@ -109,8 +109,8 @@ words:
   - pwsh
   - Pyware
   - Rcoords
-  - rels
   - recents
+  - rels
   - rgba
   - ritardandos
   - rootfile
@@ -146,6 +146,7 @@ words:
   - tolgee
   - Tolgee
   - Topbar
+  - toplevel
   - trackpad
   - trackpads
   - Tribbiani
@@ -176,6 +177,8 @@ words:
   - Winterguard
   - Woodgrove
   - workerd
+  - worktree
+  - worktrees
   - xlink
   - XMLID
   - yeskunallumami
@@ -185,6 +188,10 @@ words:
   - Zustand
   - 日本語
 ignorePaths:
+  # Timeline spec and reference suite: external documents, kept verbatim
+  - openmarch-timeline-spec.md
+  - docs/timeline/spec.md
+  - docs/timeline/ref/**
   - node_modules/**
   - "**/node_modules/**"
   - "**/dist/**"

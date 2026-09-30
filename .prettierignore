@@ -123,3 +123,8 @@ CONTEXT-MAP.md
 **/docs/agents/
 **/docs/adr/[0-9]*.md
 docs/superpowers/
+
+# Timeline spec and reference suite: external documents, kept verbatim
+openmarch-timeline-spec.md
+docs/timeline/spec.md
+docs/timeline/ref/
