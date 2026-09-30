@@ -9,7 +9,7 @@ depends_on: [0]
 updated: 2026-09-29
 ---
 
-<!-- cspell:ignore lerp -->
+<!-- cspell:ignore lerp unticked -->
 
 # Phase 1: Geometry, oracle, validators (core)
 
@@ -61,8 +61,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.4: Write-path validators
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p1-validators)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P1.1
