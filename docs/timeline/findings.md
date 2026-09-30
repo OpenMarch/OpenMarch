@@ -51,3 +51,24 @@ Entry format:
 ## Other findings
 
 <!-- Append entries below: ### YYYY-MM-DD · <owner> · P<n>.<m> -->
+
+### 2026-09-29 · timeline-worker · P0.2
+
+Baseline run of the reference suite (`run_all.sh`, exit 0, all 12 checks ok):
+
+```text
+storage (db_tests.py)              ok    50 of 50 pass
+undo and redo (undo_tests.py)      ok    15 of 15 pass
+golden vectors                     ok    14 of 14 golden fixtures pass (oracle and cached resolver)
+regressions + degenerate           ok    13 pass, 3 expected v0.1 failures, 0 unexpected
+properties (props.mjs)             ok    253917 property checks, 0 failures
+mutation test of props.mjs         ok    9 of 9 mutations caught by a property check
+differential fuzz, v0.2+ rules     ok    rules v0.2+: 71591 batches, 0 divergent, 0 closure violations, 0 exceptions
+differential fuzz, v0.1 rules      ok    rules v0.1: 2550 batches, 276 divergent, 35 closure violations, 131 exceptions (failures e
+end-to-end SQLite fuzz + undo      ok    28069 commits (11473 with individual-point changes), 10099 rejected by the database; 11239
+end-to-end, v0.6 range trigger     ok    expected failure reproduced: undo broke in 83 of 300 seeds
+complexity counters                ok    CX-06 warm FTL evaluation: 108 ns/member at m=50, 100 ns/member at m=5000 (ratio 0.93; inf
+deep chains, small stack           ok    all deep-chain checks pass
+```
+
+Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environment: macOS (Darwin 25.5.0), Python 3.14.7 (its `sqlite3` module links SQLite 3.53.4), Node v24.14.1 (`node:sqlite` reports SQLite 3.51.2). Reference suite from `origin/timeline/p0-spec` at 7c144877 (PR #1034).

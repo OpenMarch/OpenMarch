@@ -40,7 +40,7 @@ Move `openmarch-timeline-spec.md` to `docs/timeline/spec.md` and unzip `ref/` un
 ### P0.2: Baseline run of the reference suite
 
 - Owner: timeline-worker (detached at origin/timeline/p0-spec)
-- Status: claimed
+- Status: done
 - PR: none
 - Parallel: yes
 - Depends on: P0.1
@@ -82,7 +82,7 @@ Send C-1, C-2, C-3 and C-8 to the spec's authors as proposed amendments. Log eac
 Tick an item only after running its check, and paste the command and result into the log.
 
 - [x] The spec and `ref/` are under `docs/timeline/`, and the root copies are gone. The cspell and prettier ignore entries for them already exist
-- [ ] `run_all.sh` baseline result logged (P0.2)
+- [x] `run_all.sh` baseline result logged (P0.2)
 - [ ] ADR 0001 has status `accepted`
 - [ ] `pnpm check:agent-guidance`, plus prettier and cspell on the changed Markdown, pass
 
@@ -97,3 +97,27 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
 
 - **2026-09-29 P0.1** (timeline-worker, timeline/p0-spec): Moved spec to docs/timeline/spec.md, unzipped ref/ to docs/timeline/ref/, deleted the zip, removed root spec ignore entries, updated WORKER.md and implementation-plan.md paths. Ran `pnpm format:check`, `pnpm spellcheck` (0 issues), `pnpm check:agent-guidance`: all pass. PR: https://github.com/OpenMarch/OpenMarch/pull/1034. Status in-review.
+
+### 2026-09-29 · timeline-worker · P0.2
+
+- **Done:** ran `docs/timeline/ref/run_all.sh` once as the baseline the TypeScript ports must match. Per-check output is in the block below (also recorded in `findings.md`).
+- **Checks:** all 12 checks passed, including the two expected-failure runs (v0.1 fuzz and v0.6 range trigger), which reproduced their expected failures.
+- **Next:** none for P0.2.
+- **Blockers:** none.
+
+```text
+storage (db_tests.py)              ok    50 of 50 pass
+undo and redo (undo_tests.py)      ok    15 of 15 pass
+golden vectors                     ok    14 of 14 golden fixtures pass (oracle and cached resolver)
+regressions + degenerate           ok    13 pass, 3 expected v0.1 failures, 0 unexpected
+properties (props.mjs)             ok    253917 property checks, 0 failures
+mutation test of props.mjs         ok    9 of 9 mutations caught by a property check
+differential fuzz, v0.2+ rules     ok    rules v0.2+: 71591 batches, 0 divergent, 0 closure violations, 0 exceptions
+differential fuzz, v0.1 rules      ok    rules v0.1: 2550 batches, 276 divergent, 35 closure violations, 131 exceptions (failures e
+end-to-end SQLite fuzz + undo      ok    28069 commits (11473 with individual-point changes), 10099 rejected by the database; 11239
+end-to-end, v0.6 range trigger     ok    expected failure reproduced: undo broke in 83 of 300 seeds
+complexity counters                ok    CX-06 warm FTL evaluation: 108 ns/member at m=50, 100 ns/member at m=5000 (ratio 0.93; inf
+deep chains, small stack           ok    all deep-chain checks pass
+```
+
+Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environment: macOS (Darwin 25.5.0), Python 3.14.7 (its `sqlite3` module links SQLite 3.53.4), Node v24.14.1 (`node:sqlite` reports SQLite 3.51.2). Reference suite from `origin/timeline/p0-spec` at 7c144877 (PR #1034).
