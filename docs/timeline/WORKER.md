@@ -109,7 +109,9 @@ Throughout:
 3. Push, and open a PR against the base branch with `gh pr create`. Its body
    names the work package IDs and the checks you ran, with results.
 4. Through `coord.sh`: set `- Status: in-review` and `- PR: <url>`, tick only
-   the exit-gate items you actually ran, and append a final log entry.
+   the exit-gate items you actually ran and whose outcome is already true on
+   the base branch. An item that only becomes true when your PR merges (such
+   as "the root copies are gone") waits for the merge; say so in the log, and append a final log entry.
 5. If you're blocked instead: set `- Status: blocked`, and log exactly what is
    needed and from whom.
 
