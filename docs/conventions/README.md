@@ -20,3 +20,11 @@ Use these references when their condition applies:
   changed area.
 - Read the [architecture decision policy](architecture-decisions.md) before a
   persistent or cross-boundary change.
+- Read [database interactions](database-interactions.md) before adding renderer access
+  for a new table.
+- Read [transactions across tables](database-transactions.md) before a custom or
+  multi-table write.
+- Read [multi-query hooks](multi-query-hooks.md) before combining data from several
+  queries.
+- Read [testing](testing.md) before writing or running unit tests.
+- Read [troubleshooting](troubleshooting.md) when local hooks or formatting misbehave.
