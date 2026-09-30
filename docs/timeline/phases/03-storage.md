@@ -167,3 +167,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** review and merge #1037. Then P3.5, P3.6, P3.7 and P3.9 (open). P3.8 (human): open an older `.dots` file in the app after the merge.
 - **Blockers:** none.
 
+
+### 2026-09-30 · lead session · P3.1 to P3.4 (review check)
+
+- **Done:** independently re-checked PR #1037 at its head (8486ee0e); CI doesn't run on PRs into `timeline-try-2`.
+- **Checks:** `0017_daffy_korath.sql` creates exactly 7 tables and contains no `INSERT INTO`, `DROP TABLE`, `ALTER TABLE` or `__new_` rebuild, so it can't damage existing data. `pnpm exec tsc --noEmit` in `apps/desktop` (pass). `pnpm run test:focused electron/database/migrations/__test__/timelineTriggers.test.ts` (15 of 15 pass). Commits carry no attribution lines. Not re-run by the lead: the full `test:history` suite (the worker reports 1,251 passing) and eslint.
+- **Next:** a person reviews and merges #1037, then does P3.8 (open an older `.dots` file). The `repair.ts` table-order problem (see handoff notes) must be fixed before any write path lands; Phase 4 has a cross-phase note.
+- **Blockers:** none.
