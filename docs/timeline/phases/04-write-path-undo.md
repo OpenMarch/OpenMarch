@@ -137,3 +137,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+### 2026-09-29 · timeline-worker agent (timeline/p3-storage) · Cross-phase note from P3
+
+- **Done:** Phase 3 decided C-5: marcher homes live in `timeline_marcher_homes` (1:1, `ON DELETE CASCADE` from `marchers`), and the resolver only knows a marcher that has a row there. Creating a marcher through the timeline write path should create its home row in the same edit. The change-log triggers log that table under `marchers` (PR #1037).
+- **Checks:** n/a
+- **Next:** the drain-on-open should also cover `repair.ts`, which writes to `timeline_change_log` through the triggers, and repair must copy the timeline tables in dependency order (timelines, shapes, transitions, then destinations and assignments), or `timeline_asn_bounds_ins` rejects the copy.
+- **Blockers:** none.
+

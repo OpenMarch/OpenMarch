@@ -4,7 +4,7 @@ title: Storage schema and triggers (desktop)
 status: in-progress
 owner: timeline-worker agent (timeline/p3-storage)
 branch: timeline/p3-storage
-pr: none
+pr: https://github.com/OpenMarch/OpenMarch/pull/1037
 depends_on: [0]
 updated: 2026-09-29
 ---
@@ -33,8 +33,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Decide where marcher homes live (C-5)
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: yes
 - Depends on: —
 
@@ -43,8 +43,8 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.2: Tables in schema.ts
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: —
 
@@ -53,8 +53,8 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.3: Generate and inspect the migration
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.1, P3.2
 
@@ -63,8 +63,8 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.4: Triggers, view and change log
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.3
 
@@ -135,6 +135,10 @@ Tick an item only after running its check, and paste the command and result into
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
 
 - Can run in parallel with Phases 1 and 2. `PRAGMA foreign_keys = ON` is already set on the main connection and in tests.
+- P3.1 to P3.4 are in review (PR #1037). C-5 went to the side table `timeline_marcher_homes`, so `marchers` is unchanged and P3.5 doesn't need to recreate its history triggers; P3.5 registers `timeline_marcher_homes` with the other data tables.
+- `pnpm run migrate`'s `create-blank-db` step fails under tsx (`import.meta.env` is undefined in `Constants.ts`). `drizzle-kit generate` works; regenerate `_blank.dots` by running the same steps from a throwaway Vitest file, which defines the env. Build the workspace deps first (`pnpm exec turbo run build --filter=@openmarch/desktop^...`), or Vitest can't resolve `@openmarch/core` and `@openmarch/metronome`.
+- Test harness quirks: raw `db.all(sql.raw(…))` through the proxy returns rows as arrays, and SQLite errors arrive as `Failed query: …` with the real message in `error.cause`. See `expectError` in `migrations/__test__/timelineTriggers.test.ts`.
+- `repair.ts` copies tables in `sqlite_master` order, and `timeline_assignments` was created before `timeline_transitions`, so repairing a file with timeline data would trip `timeline_asn_bounds_ins`. That's harmless until something writes these tables, but it needs a dependency-ordered copy by then.
 
 ## Progress log
 
@@ -155,4 +159,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** finish `test:history`, open the PR against `timeline-try-2`.
 - **Blockers:** none.
 - **Resume from:** check out `timeline/p3-storage`, run `pnpm install`, build the workspace deps (`pnpm exec turbo run build --filter=@openmarch/desktop^...`), run `pnpm --dir apps/desktop run test:history`, then open the PR (WORKER.md step 6).
+
+### 2026-09-29 · timeline-worker agent (timeline/p3-storage) · P3.1, P3.2, P3.3, P3.4
+
+- **Done:** opened https://github.com/OpenMarch/OpenMarch/pull/1037 against `timeline-try-2` (commits b379e7ad, 8486ee0e). P3.1 to P3.4 set to `in-review`. Handoff notes updated.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/timelineTriggers.test.ts`: 15 passed. `pnpm --dir apps/desktop run test:history`: pass (79 files, 1251 tests passed; 7 files and 3 tests skipped, 15 todo). Exit-gate items for `tsc` and `test:history` are not ticked, because they only become true on the base branch when the PR merges.
+- **Next:** review and merge #1037. Then P3.5, P3.6, P3.7 and P3.9 (open). P3.8 (human): open an older `.dots` file in the app after the merge.
+- **Blockers:** none.
 
