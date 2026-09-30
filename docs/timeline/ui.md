@@ -17,7 +17,7 @@ from it. The spec still wins on the model; this file decides presentation.
 ## What the reference UI is
 
 - A page ruler (page buttons, measure labels, rehearsal marks), a beat grid, a
-  waveform lane, a playhead with scrubbing, a transport, and zoom.
+  waveform lane, a draggable playback cursor, a transport, and zoom.
 - Tracks drawn as one clip each, packed into rows automatically. Two densities:
   expanded (22 px rows) and collapsed (5 px micro-pills).
 - Selection: a page, a track or a free range, shown as one overlay with
