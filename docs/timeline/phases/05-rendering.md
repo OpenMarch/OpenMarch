@@ -108,6 +108,16 @@ Dev fixture loader that builds G1 to G13 and the QA-SC scenarios into a show.
 
 Tests: store and hook tests on a real DB; a QA-SC-11 scale fixture with QA-PF-01 to -04 recorded in `findings.md`; one Playwright spec checking rendered positions at several beats.
 
+### P5.9: Frame clock from 0.2
+
+- Owner: unassigned
+- Status: open
+- PR: none
+- Parallel: yes
+- Depends on: —
+
+Bring 0.2's frame-clock store (`origin/0.2:apps/desktop/src/services/clock/frame-clock.ts` and the commits that introduced it) onto `timeline-try-2`. It already tracks `currentBeatIndex`, so it can serve P5.2 and P5.4, and the 0.2 timeline (P8.1) depends on it. Check what else those commits changed before porting; take only what the clock needs.
+
 ## Exit gate
 
 Tick an item only after running its check, and paste the command and result into the log.

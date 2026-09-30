@@ -10,6 +10,7 @@ what you own and how far you've got.
 | [implementation-plan.md](implementation-plan.md) | Shared context: repo facts, spec/app conflicts (`C-n`), phase order, risks. Read it once.      |
 | [WORKER.md](WORKER.md)                           | The step-by-step procedure every worker follows: claim, checkpoint, finish.                    |
 | [phases/](phases/)                               | One file per phase: status, owners, work packages, exit gate, handoff notes, progress log.     |
+| [ui.md](ui.md)                                   | The timeline UI design (adopted from the `0.2` branch) and how it maps onto the spec.          |
 | [findings.md](findings.md)                       | Measurements (QA-PF) and human verdicts (QA-SC-07, -14, -15). Append-only.                     |
 | `spec.md`, `ref/`                                | The spec and its reference suite, added in Phase 0. The spec wins over this plan on the model. |
 
