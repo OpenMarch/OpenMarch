@@ -58,18 +58,26 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   `timeline_transitions`, `timeline_assignments`,
   `timeline_slot_destinations` and `timeline_change_log`. Column names follow
   the spec, so `ref/` maps one-to-one.
-- **C-5: Marcher home.** ~~Add `home_x` and `home_y` (REAL, NOT NULL DEFAULT 0,
-  CHECK ≤ 1e6) to `marchers`, seeded from page 0. Accept this only if
-  drizzle-kit emits `ADD COLUMN` and not a table rebuild; otherwise fall back to
-  a 1:1 `timeline_marcher_homes` table.~~ **Decided in P3.1: the fallback.**
-  With the bound CHECKs, drizzle-kit rebuilds `marchers` (and its generated
-  copy reads the new columns from the old table). Homes live in
-  `timeline_marcher_homes` (`marcher_id` primary key, `ON DELETE CASCADE` from
-  `marchers`; `home_x`, `home_y` REAL NOT NULL, numeric and `abs(…) ≤ 1e6`),
-  seeded from page 0 by the converter. Its change-log triggers log under
-  `marchers`. A marcher with no row is unknown to the resolver, so the write
-  path creates the row with the marcher. `marchers` is unchanged, so its history
-  triggers need no recreation.
+- **C-5: Marcher home.** **Decided in P3.1 (reworked at the project owner's
+  request): homes are columns on `marchers`.** `home_x` and `home_y` are
+  `REAL NOT NULL DEFAULT 0` with named CHECKs `marchers_home_<x|y>_type_check`
+  (`typeof(…) IN ('integer', 'real')`) and `marchers_home_<x|y>_check`
+  (`abs(…) <= 1e6`), declared in `schema.ts`. The converter seeds them from
+  page 0; existing marchers start at the origin. With those CHECKs, drizzle-kit
+  emits a `marchers` table rebuild whose `INSERT … SELECT` copies
+  `home_x`/`home_y` from the old table, where they don't exist yet. Migration
+  `0017_powerful_edwin_jarvis.sql` hand-edits that rebuild into two
+  `ALTER TABLE marchers ADD COLUMN … CONSTRAINT … CHECK(…)` statements that use
+  the snapshot's constraint names, so the snapshot still matches `schema.ts`
+  and a repeated `drizzle-kit generate` reports no changes. Why columns and
+  not a side table: every marcher always has a home, so there is no second row
+  to create or keep in sync with the marcher; undo and redo cover homes through
+  the existing `marchers` history triggers; and `ADD COLUMN` leaves `marchers`
+  and every row that references it untouched. The change-log triggers
+  `timeline_log_marchers_ins/upd/del` log only `id` and `home` (the update
+  trigger fires only `OF home_x, home_y`). Because `marchers` gained columns,
+  its history triggers must be recreated in files that already have them
+  (P3.5).
 - **C-6: Undo lacks the §6 write wrapper.** `executeHistoryAction` must also
   check `commit_violations` and drain the change log inside its transaction.
 - **C-7: Beats instead of wall-clock time.** Today's playback interpolates over

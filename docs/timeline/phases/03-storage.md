@@ -33,7 +33,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Decide where marcher homes live (C-5)
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
+- Status: in-review
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: yes
 - Depends on: —
@@ -43,7 +43,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.2: Tables in schema.ts
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
+- Status: in-review
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: —
@@ -53,7 +53,7 @@ Decide C-5: add `home_x`/`home_y` to `marchers`, run `pnpm run migrate`, and che
 ### P3.3: Generate and inspect the migration
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
+- Status: in-review
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.1, P3.2
@@ -63,7 +63,7 @@ Run `pnpm run migrate` and **inspect** the generated SQL for bad column copies. 
 ### P3.4: Triggers, view and change log
 
 - Owner: timeline-worker agent (timeline/p3-storage)
-- Status: in-progress
+- Status: in-review
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1037
 - Parallel: no
 - Depends on: P3.3
@@ -135,7 +135,7 @@ Tick an item only after running its check, and paste the command and result into
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
 
 - Can run in parallel with Phases 1 and 2. `PRAGMA foreign_keys = ON` is already set on the main connection and in tests.
-- P3.1 to P3.4 are in review (PR #1037). C-5 went to the side table `timeline_marcher_homes`, so `marchers` is unchanged and P3.5 doesn't need to recreate its history triggers; P3.5 registers `timeline_marcher_homes` with the other data tables.
+- P3.1 to P3.4 are in review (PR #1037). C-5: homes are `home_x`/`home_y` columns on `marchers` (see `implementation-plan.md`). Migration `0017_powerful_edwin_jarvis.sql` is hand-edited from drizzle's table rebuild into two `ALTER TABLE marchers ADD COLUMN` statements; don't regenerate it, and check that `drizzle-kit generate` stays a no-op after any schema change. `marchers` gained columns, so P3.5 must make sure existing files get `marchers` history triggers that include `home_x`/`home_y`: `createTriggers` in `src/db-functions/history.ts` uses `CREATE TRIGGER IF NOT EXISTS`, so old `marchers_it/_ut/_dt` triggers in a file would otherwise survive with the old column list. The test suite creates triggers fresh, so it doesn't catch this.
 - `pnpm run migrate`'s `create-blank-db` step fails under tsx (`import.meta.env` is undefined in `Constants.ts`). `drizzle-kit generate` works; regenerate `_blank.dots` by running the same steps from a throwaway Vitest file, which defines the env. Build the workspace deps first (`pnpm exec turbo run build --filter=@openmarch/desktop^...`), or Vitest can't resolve `@openmarch/core` and `@openmarch/metronome`.
 - Test harness quirks: raw `db.all(sql.raw(…))` through the proxy returns rows as arrays, and SQLite errors arrive as `Failed query: …` with the real message in `error.cause`. See `expectError` in `migrations/__test__/timelineTriggers.test.ts`.
 - `repair.ts` copies tables in `sqlite_master` order, and `timeline_assignments` was created before `timeline_transitions`, so repairing a file with timeline data would trip `timeline_asn_bounds_ins`. That's harmless until something writes these tables, but it needs a dependency-ordered copy by then.
@@ -190,3 +190,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** finish `test:history`, squash the commits, update C-5 and the handoff notes, update PR #1037.
 - **Blockers:** none.
 - **Resume from:** check out `origin/timeline/p3-storage` locally, `pnpm install`, `pnpm exec turbo run build --filter=@openmarch/desktop^...`, run `pnpm --dir apps/desktop run test:history`; then docs (implementation-plan C-5, Phase 3/4 notes) via coord.sh and the PR body.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-storage) · P3.1 to P3.4 (rework (C-5 homes on marchers), resumed)
+
+- **Done:** resumed the stalled rework from c474b862. Added a history test (`src/db-functions/__test__/marcher.test.ts`, "marcher homes") that changes `home_x`/`home_y` through `transactionWithHistory`; the history fixture undoes and redoes it and compares whole `marchers` rows. Squashed the branch into two commits, 66002c5d (P3.1 to P3.3: tables, homes on `marchers`, hand-edited 0017) and cca04ca9 (P3.4: triggers, view, change log, `_blank.dots`), and force-pushed `timeline/p3-storage` (tree identical to the tested wip head b04a4a12). C-5 in `implementation-plan.md`, ADR 0001 (C-5 and the change-log paragraph), Phase 3 handoff notes and the Phase 4 cross-phase note now describe homes on `marchers`; nothing refers to `timeline_marcher_homes` or a home row to create. P3.1 to P3.4 set back to `in-review`; PR #1037 description updated.
+- **Checks:** `pnpm --dir apps/desktop run test:history`: 78 files and 1,237 tests pass (7 files and 3 tests skipped, 15 todo); 21 tests in 2 files fail, `MarcherForm.test.tsx` and `RevisionsList.test.tsx`, with `Invalid Chai property: toBeInTheDocument`/`toHaveTextContent`. Those two files fail identically on `origin/timeline-try-2` (0ac06bdb) in the same install, so they're not caused by this PR: jest-dom's `vitest` import resolves to the root `vitest@3.2.3` while `apps/desktop` runs `vitest@4.1.2`. `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/`: 3 files, 51 tests pass. `drizzle-kit generate` against `_blank.dots`: "No schema changes, nothing to migrate". `0017_powerful_edwin_jarvis.sql`: only `CREATE TABLE`/`CREATE INDEX` for the new tables plus the two `ALTER TABLE marchers ADD COLUMN` statements; no `INSERT INTO`, `DROP TABLE` or rebuild statement (`__new_marchers` appears only in the explanatory SQL comment). `eslint` on the changed files: clean except one existing `no-loop-func` warning in the 0017 test. Commits carry no attribution lines.
+- **Next:** a person reviews and merges #1037, then does P3.8 (open an older `.dots` file). P3.5 must recreate the `marchers` history triggers in existing files (see handoff notes).
+- **Blockers:** none. The jest-dom/vitest resolution failure above is pre-existing and outside Phase 3.
