@@ -151,3 +151,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** after merge, P1.4, P1.5, P1.6 and P1.8 can proceed. The exit-gate boxes stay unticked: build, test and desktop tsc are only true on the base branch once this PR merges, and P1.5/P1.6 are not done. The root export in this PR is minimal (types and the oracle only); P1.8 still owns the final export review.
 - **Resume from:** none for P1.1-P1.3; address review comments on PR 1036 on branch `timeline/p1-geometry`.
 - **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.1, P1.2, P1.3 (review check)
+
+- **Done:** independently re-ran PR #1036's checks at its head (606db11c), because CI (`pr-checks.yaml`) runs only on PRs into `main`, so PRs into `timeline-try-2` get no automated checks.
+- **Checks:** `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core exec vitest run src/timeline` (2 files, 46 tests, pass). Spot-checked that the golden tests assert the spec's literal values (for example G3 `(7,6)` at beat 8, G8 `(1.1716, 2.8284)`, G7 end distances), not values captured from the oracle.
+- **Next:** a person reviews and merges #1036. P1.4 (validators) can start now; P1.5 and P1.6 after the merge.
+- **Blockers:** none.
