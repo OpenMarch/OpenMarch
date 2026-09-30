@@ -6,12 +6,19 @@ import * as path from "path";
 import { app } from "electron";
 import { getOrm } from "./db";
 import { DrizzleMigrationService } from "./services/DrizzleMigrationService";
+import {
+    applyFileVersionDecision,
+    fileTooNewMessage,
+    isSupportedUserVersion,
+    MAX_SUPPORTED_USER_VERSION,
+    readUserVersion,
+} from "./fileVersion";
 
 export const initializeAndMigrateDatabase = async (
     newDb: DatabaseSync,
 ): Promise<void> => {
-    // Set user version to 7 (indicates Drizzle migration system)
-    newDb.prepare("PRAGMA user_version = 7").run();
+    // A new, empty file: set its version (7, the Drizzle-era page model).
+    applyFileVersionDecision(newDb, true);
 
     const drizzleDb = getOrm(newDb);
     const migrator = new DrizzleMigrationService(drizzleDb, newDb);
@@ -229,6 +236,15 @@ export const repairDatabase = async (originalDbPath: string) => {
         // Open the copied source database so repair does not hold the active file.
         originalDb = new DatabaseSync(sourceDbPath, { readOnly: true });
 
+        // Refuse a file from a newer release: its tables may not match this
+        // build's schema, and the repaired copy would otherwise be written at
+        // an older version (ADR 0001 §6). The original is never written to.
+        const sourceVersion = readUserVersion(originalDb);
+        if (sourceVersion > MAX_SUPPORTED_USER_VERSION) {
+            originalDb.close();
+            throw new Error(fileTooNewMessage(sourceVersion));
+        }
+
         // Create the new database at the temp path in the app data directory.
         newDb = new DatabaseSync(tempDbPath);
 
@@ -247,6 +263,15 @@ export const repairDatabase = async (originalDbPath: string) => {
 
             // Remove orphaned marcher_pages entries
             removeOrphanMarcherPages(newDb);
+
+            // Keep a supported version higher than a new file's (8, the
+            // timeline model), so repair never lowers a file's version.
+            if (
+                isSupportedUserVersion(sourceVersion) &&
+                sourceVersion > readUserVersion(newDb)
+            ) {
+                newDb.prepare(`PRAGMA user_version = ${sourceVersion}`).run();
+            }
         } finally {
             // Close both databases before moving or deleting temp files.
             originalDb?.close();
