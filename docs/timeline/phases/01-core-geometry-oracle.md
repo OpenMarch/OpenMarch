@@ -173,3 +173,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** a person reviews and merges #1038. Notes for other packages: `BlockGeometry` in `types.ts` lacks `rows` (spec 5.2 requires it); destination and home validators use codes `E-D2` and `E-N2`, which the spec's error table does not define. P1.8 owns the final export review. Exit-gate boxes are left unticked until the PR merges.
 - **Resume from:** none; address review comments on PR 1038 on branch `timeline/p1-validators`.
 - **Blockers:** none.
+
+### 2026-09-30 · lead session · P1.4 (review check)
+
+- **Done:** reviewed PR #1038. Confirmed the worker's finding that `BlockGeometry` in the merged `types.ts` lacked `rows` (spec §5.2 requires it; the DB capacity trigger uses rows × cols). Pushed 26b35d70 to the PR: `rows` added to `BlockGeometry`, the `geom.test.ts` block fixture updated, and a file-level `cspell:ignore NONFOUNDING` added to `types.ts` (the pre-commit hook rejected it).
+- **Checks:** at the PR head with the fix: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (15 files, 289 passed, 2 skipped); `pnpm --dir packages/core exec tsc --noEmit -p .` (no errors under `src/timeline`); `pnpm --dir packages/core exec vitest run src/timeline` (96 passed); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); pre-commit hook (pass). Full history and e2e skipped per policy.
+- **Next:** a person reviews and merges #1038, and decides whether `E-N2` (homes) and `E-D2` (individual destinations) are acceptable error codes; the spec lists those invariants without an `E-` code.
+- **Blockers:** none.
