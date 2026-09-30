@@ -112,8 +112,8 @@ Manual: launch the desktop app and open an older `.dots` file with no errors.
 
 ### P3.9: File-format version guard (ADR 0001 §6)
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker agent (timeline/p3-version-guard)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: —
