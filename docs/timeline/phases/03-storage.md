@@ -237,3 +237,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/__test__/fileVersion.test.ts electron/database/__test__/fileVersionOpen.test.ts`: 36 passed; these open real files at 7 and 8 (they keep their version) and at 9 and 1000 (refused with 426; the 9 file's hash, mtime and siblings are unchanged). `pnpm --dir apps/desktop run test:focused electron/database/__test__/repair.test.ts electron/database/__test__/database.services.test.ts`: 45 passed. `prettier`, `eslint` and `cspell` on the changed files: clean. Not run, per the current policy: full `test:history` and e2e. The exit-gate item "P3.9 merged, with its open-at-7/8/9 tests passing" is not ticked, because it only becomes true when the PR merges.
 - **Next:** review and merge #1040. After the merge, a person should open an older `.dots` file and a newly created one (P3.8 style). Phase 9 sets `NEW_FILE_USER_VERSION` to 8 in `fileVersion.ts`.
 - **Blockers:** none.
+
+### 2026-09-30 · lead session · P3.9 (review check)
+
+- **Done:** re-checked PR #1040 at 85e31526. Read `electron/database/fileVersion.ts`: files above 8 are refused before any write; the version is set only for a new, empty file (to `NEW_FILE_USER_VERSION`, 7 until Phase 9); 7 and 8 open unchanged; below 7 keeps the old "open in 0.0.10 first" error. Both unconditional `PRAGMA user_version = 7` writes are gone from `electron/main/index.ts`.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test:focused` on `fileVersion.test.ts`, `fileVersionOpen.test.ts`, `repair.test.ts` and `database.services.test.ts` (4 files, 81 passed). Commits carry no attribution lines. Full `test:history` and e2e skipped per policy.
+- **Next:** a person reviews and merges #1040, then opens an older `.dots` file and a newly created one and checks both stay at `user_version` 7 (this also covers P3.8).
+- **Blockers:** none.
