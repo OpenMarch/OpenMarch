@@ -29,8 +29,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P0.1: Move the spec and ref/ into the repo
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p0-spec)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: —
