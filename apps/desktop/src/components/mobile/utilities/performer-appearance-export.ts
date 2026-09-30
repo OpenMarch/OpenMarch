@@ -276,6 +276,8 @@ export function marcherRowsToMarchers(
             notes: null,
             created_at: "",
             updated_at: "",
+            home_x: 0,
+            home_y: 0,
         }),
     );
 }

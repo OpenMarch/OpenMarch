@@ -110,6 +110,8 @@ export default function MarcherCoordinateSheetPreview({
                 notes: null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
+                home_x: 0,
+                home_y: 0,
             });
             const pages = [
                 {

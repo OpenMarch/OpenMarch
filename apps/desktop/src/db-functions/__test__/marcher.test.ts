@@ -7,7 +7,8 @@ import {
 } from "../marcher";
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { inArray } from "drizzle-orm";
+import { transactionWithHistory } from "../history";
+import { eq, inArray } from "drizzle-orm";
 
 describeDbTests("marchers", (it) => {
     describe("database interactions", () => {
@@ -841,6 +842,43 @@ describeDbTests("marchers", (it) => {
                                 );
                         },
                     );
+                },
+            );
+        });
+
+        describe("marcher homes", () => {
+            // The history fixture undoes and redoes every change here and
+            // compares whole `marchers` rows, so this covers home_x/home_y.
+            testWithHistory(
+                "records a home change so undo and redo restore it",
+                async ({ db, expectNumberOfChanges }) => {
+                    await createMarchers({
+                        newMarchers: [
+                            {
+                                section: "Trumpet",
+                                drill_prefix: "T",
+                                drill_order: 1,
+                            },
+                        ],
+                        db,
+                    });
+                    const databaseState =
+                        await expectNumberOfChanges.getDatabaseState(db);
+
+                    await transactionWithHistory(
+                        db,
+                        "updateMarcherHome",
+                        async (tx) => {
+                            await tx
+                                .update(schema.marchers)
+                                .set({ home_x: 12.5, home_y: -3 })
+                                .where(eq(schema.marchers.id, 1));
+                        },
+                    );
+
+                    const [marcher] = await db.select().from(schema.marchers);
+                    expect(marcher).toMatchObject({ home_x: 12.5, home_y: -3 });
+                    await expectNumberOfChanges.test(db, 1, databaseState);
                 },
             );
         });
