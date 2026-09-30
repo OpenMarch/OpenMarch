@@ -32,8 +32,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.1: Types
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: —
 
@@ -42,8 +42,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.2: Geometry
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: P1.1
 
@@ -52,8 +52,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.3: Oracle
 
 - Owner: timeline-worker (timeline/p1-geometry)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1036
 - Parallel: no
 - Depends on: P1.2
 
@@ -142,4 +142,12 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** `pnpm --dir packages/core exec vitest run src/timeline`: 23 passed. `tsc --noEmit -p packages/core`: no errors under `src/timeline` (the package has pre-existing errors in `path-utility`, untouched). Build and desktop tsc not yet run.
 - **Next:** P1.3 `oracle.ts`, then golden tests G1-G13 + G8b and QA-FL against the oracle.
 - **Resume from:** on `timeline/p1-geometry`, write `packages/core/src/timeline/oracle.ts` (port `docs/timeline/ref/oracle.mjs`, add `diagnostics()`), `__test__/oracle.test.ts` (golden vectors from `ref/golden.mjs`), then export from `index.ts` as `createTimelineOracleForTesting`.
+- **Blockers:** none.
+
+### 2026-09-29 · timeline-worker · P1.1, P1.2, P1.3
+
+- **Done:** P1.3 `packages/core/src/timeline/oracle.ts` (naive recursive oracle, R-1 to R-13, 8.9 diagnostics), `__test__/oracle.test.ts` (G1-G13 and G8b at spec tolerances, QA-FL-01..06 through the oracle, diagnostics), `timeline/index.ts` and root export of the types and `createTimelineOracleForTesting`. PR: https://github.com/OpenMarch/OpenMarch/pull/1036 against `timeline-try-2`. P1.1-P1.3 are in review.
+- **Checks:** `pnpm --dir packages/core run build`: pass. `pnpm --dir packages/core run test`: pass (14 files, 239 passed, 2 skipped; 46 of those are the new timeline tests). `pnpm --dir apps/desktop exec tsc --noEmit`: pass (no output). `pnpm format:check`: pass. The pre-commit cspell hook passed after adding file-level `cspell:ignore` comments.
+- **Next:** after merge, P1.4, P1.5, P1.6 and P1.8 can proceed. The exit-gate boxes stay unticked: build, test and desktop tsc are only true on the base branch once this PR merges, and P1.5/P1.6 are not done. The root export in this PR is minimal (types and the oracle only); P1.8 still owns the final export review.
+- **Resume from:** none for P1.1-P1.3; address review comments on PR 1036 on branch `timeline/p1-geometry`.
 - **Blockers:** none.
