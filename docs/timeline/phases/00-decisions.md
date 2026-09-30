@@ -50,7 +50,7 @@ Run `docs/timeline/ref/run_all.sh` once (Python 3 and Node 24) and log the resul
 ### P0.3: Draft ADR 0001
 
 - Owner: timeline-worker (timeline/p0-adr)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: —
@@ -121,3 +121,11 @@ deep chains, small stack           ok    all deep-chain checks pass
 ```
 
 Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environment: macOS (Darwin 25.5.0), Python 3.14.7 (its `sqlite3` module links SQLite 3.53.4), Node v24.14.1 (`node:sqlite` reports SQLite 3.51.2). Reference suite from `origin/timeline/p0-spec` at 7c144877 (PR #1034).
+
+### 2026-09-29 · timeline-worker (timeline/p0-adr) · P0.3
+
+- **Done:** first full draft of `docs/adr/0001-timeline-motion-model.md` (status `proposed`), pushed as a `wip:` commit on `timeline/p0-adr`.
+- **Checks:** not run yet (prettier, cspell, `pnpm check:agent-guidance` next).
+- **Next:** run the Markdown checks, tidy the commit, open the PR against `timeline-try-2`.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p0-adr`, run prettier and cspell on `docs/adr/0001-timeline-motion-model.md` and `pnpm check:agent-guidance`, then squash and open the PR (WORKER.md step 6).
