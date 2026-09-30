@@ -113,8 +113,8 @@ Manual: launch the desktop app and open an older `.dots` file with no errors.
 ### P3.9: File-format version guard (ADR 0001 §6)
 
 - Owner: timeline-worker agent (timeline/p3-version-guard)
-- Status: claimed
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1040
 - Parallel: yes
 - Depends on: —
 
@@ -227,4 +227,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** the worker stopped when plan mode switched on, with its tests uncommitted. The lead fixed the last failing test (the U-1 guard read `AFTER UPDATE ON` in a trigger's header as a write; it now scans only the body after `BEGIN`), squashed the work into one commit (fb88d217), rebased it onto `timeline-try-2`, and opened PR #1039. P3.5 is in review.
 - **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/` (3 files, 51 passed); `pnpm --dir apps/desktop run test:history` on `timelineHistory.test.ts`, `history.test.ts` and `marcher.test.ts` (3 files, 94 passed); eslint (no errors; one `max-lines-per-function` warning that also appears on the base branch); prettier (clean). Full `test:history` and e2e skipped per policy.
 - **Next:** a person reviews and merges #1039.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker agent (timeline/p3-version-guard) · P3.9
+
+- **Done:** opened https://github.com/OpenMarch/OpenMarch/pull/1040 against `timeline-try-2` (commit 85e31526). New `apps/desktop/electron/database/fileVersion.ts` defines the constants (min 7, max 8, new file 7) and a pure `decideFileVersion(userVersion, isNewFile)`. `setDbPath` returns 426 for a version above 8 before its write probe, so a refused file is never written to. Both open paths in `electron/main/index.ts` call `applyFileVersionDecision`, which writes the version only on a new file at 0. That was the only case today's write existed for: `setActiveDb` wrote it only for new files, and `openDatabaseAtPathWithoutReload` is only called with `isNewFile = true`. The migration service accepts 7 and 8 and never changes the version. Repair refuses a source above 8 and keeps a source at 8. The renderer shows a Tolgee dialog for 426 (`fileAccessDialogError.tooNew.*`, English only). The macOS `open-file` handler now sends `load-file-response`, so it shows open errors too.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/__test__/fileVersion.test.ts electron/database/__test__/fileVersionOpen.test.ts`: 36 passed; these open real files at 7 and 8 (they keep their version) and at 9 and 1000 (refused with 426; the 9 file's hash, mtime and siblings are unchanged). `pnpm --dir apps/desktop run test:focused electron/database/__test__/repair.test.ts electron/database/__test__/database.services.test.ts`: 45 passed. `prettier`, `eslint` and `cspell` on the changed files: clean. Not run, per the current policy: full `test:history` and e2e. The exit-gate item "P3.9 merged, with its open-at-7/8/9 tests passing" is not ticked, because it only becomes true when the PR merges.
+- **Next:** review and merge #1040. After the merge, a person should open an older `.dots` file and a newly created one (P3.8 style). Phase 9 sets `NEW_FILE_USER_VERSION` to 8 in `fileVersion.ts`.
 - **Blockers:** none.
