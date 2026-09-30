@@ -50,8 +50,8 @@ Run `docs/timeline/ref/run_all.sh` once (Python 3 and Node 24) and log the resul
 ### P0.3: Draft ADR 0001
 
 - Owner: timeline-worker (timeline/p0-adr)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/OpenMarch/OpenMarch/pull/1035
 - Parallel: yes
 - Depends on: —
 
@@ -129,3 +129,10 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
 - **Next:** run the Markdown checks, tidy the commit, open the PR against `timeline-try-2`.
 - **Blockers:** none.
 - **Resume from:** check out `timeline/p0-adr`, run prettier and cspell on `docs/adr/0001-timeline-motion-model.md` and `pnpm check:agent-guidance`, then squash and open the PR (WORKER.md step 6).
+
+### 2026-09-29 · timeline-worker (timeline/p0-adr) · P0.3
+
+- **Done:** `docs/adr/0001-timeline-motion-model.md`, status `proposed`: replacing pages and the rollout, C-1 to C-8 as implemented, `timeline_` table names, the resolver in `packages/core/src/timeline/` and its public API, the renderer-local change-log listener contract (`batch`/`reset`, no new IPC), the file-format bump, and verification. PR: https://github.com/OpenMarch/OpenMarch/pull/1035 (base `timeline-try-2`).
+- **Checks:** `prettier --check docs/adr/0001-timeline-motion-model.md`: pass. `cspell --config cspell.config.yaml --language-id markdown stdin < docs/adr/0001-timeline-motion-model.md`: 0 issues (run via stdin because a file path under `.claude/worktrees/` is git-ignored and cspell skips it; a seeded misspelling was caught, so the check is live). `node scripts/validate-agent-guidance.mjs`: pass. The exit-gate Markdown item is not ticked, because these checks covered only this package's file.
+- **Next:** P0.4, a maintainer reviews PR #1035 and sets the ADR to `accepted`.
+- **Blockers:** none for P0.3. P0.4 should confirm or amend ADR section 6 (file format): no current release can refuse a newer file, because the app sets `PRAGMA user_version = 7` on every open before migrating. The ADR proposes a version check that ships before Phase 9. See the cross-phase note in `09-flip.md`.

@@ -113,3 +113,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+### 2026-09-29 · Cross-phase note from P0 · P9.3
+
+- **Done:** ADR 0001 (proposed, PR https://github.com/OpenMarch/OpenMarch/pull/1035) section 6 found that P9.3's "older app versions refuse the file cleanly" doesn't hold for any current release: `apps/desktop/electron/main/index.ts` sets `PRAGMA user_version = 7` on every open before migrating, and `DrizzleMigrationService` only checks for 7.
+- **Checks:** read the open path in `main/index.ts` and `DrizzleMigrationService.ts`; no code run.
+- **Next:** if the ADR is accepted as drafted, a release before Phase 9 must read `user_version`, refuse versions above the supported one, and stop overwriting it; P9.3 then sets 8 on conversion and warns when a converted file comes back at 7. Which phase ships the check is for the phase leads to agree.
+- **Blockers:** none yet; depends on P0.4.
