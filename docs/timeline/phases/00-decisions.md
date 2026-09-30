@@ -30,7 +30,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P0.1: Move the spec and ref/ into the repo
 
 - Owner: timeline-worker (timeline/p0-spec)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1034
 - Parallel: yes
 - Depends on: —
@@ -50,7 +50,7 @@ Run `docs/timeline/ref/run_all.sh` once (Python 3 and Node 24) and log the resul
 ### P0.3: Draft ADR 0001
 
 - Owner: timeline-worker (timeline/p0-adr)
-- Status: in-review
+- Status: done
 - PR: https://github.com/OpenMarch/OpenMarch/pull/1035
 - Parallel: yes
 - Depends on: —
@@ -84,7 +84,7 @@ Tick an item only after running its check, and paste the command and result into
 - [x] The spec and `ref/` are under `docs/timeline/`, and the root copies are gone. The cspell and prettier ignore entries for them already exist
 - [x] `run_all.sh` baseline result logged (P0.2)
 - [ ] ADR 0001 has status `accepted`
-- [ ] `pnpm check:agent-guidance`, plus prettier and cspell on the changed Markdown, pass
+- [x] `pnpm check:agent-guidance`, plus prettier and cspell on the changed Markdown, pass
 
 ## Handoff notes
 
@@ -136,3 +136,10 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
 - **Checks:** `prettier --check docs/adr/0001-timeline-motion-model.md`: pass. `cspell --config cspell.config.yaml --language-id markdown stdin < docs/adr/0001-timeline-motion-model.md`: 0 issues (run via stdin because a file path under `.claude/worktrees/` is git-ignored and cspell skips it; a seeded misspelling was caught, so the check is live). `node scripts/validate-agent-guidance.mjs`: pass. The exit-gate Markdown item is not ticked, because these checks covered only this package's file.
 - **Next:** P0.4, a maintainer reviews PR #1035 and sets the ADR to `accepted`.
 - **Blockers:** none for P0.3. P0.4 should confirm or amend ADR section 6 (file format): no current release can refuse a newer file, because the app sets `PRAGMA user_version = 7` on every open before migrating. The ADR proposes a version check that ships before Phase 9. See the cross-phase note in `09-flip.md`.
+
+### 2026-09-30 · lead session · P0.1, P0.3
+
+- **Done:** PRs #1034 (P0.1) and #1035 (P0.3) merged into `timeline-try-2`; both packages set to done. ADR 0001 is merged with status `proposed`, so P0.4 stays open until a person accepts it.
+- **Checks:** on `timeline-try-2` after both merges: `pnpm check:agent-guidance` (valid); `pnpm exec prettier --check docs/timeline docs/adr` (pass); `pnpm exec cspell --no-must-find-files "docs/timeline/**/*.md" "docs/adr/*.md"` (16 files, 0 issues). Exit-gate Markdown item ticked.
+- **Next:** P0.4, a person accepts ADR 0001 (including its §6 file-format proposal, beat numbering and oracle export). Then Phases 1 and 3 can start.
+- **Blockers:** P0.4 (human).
