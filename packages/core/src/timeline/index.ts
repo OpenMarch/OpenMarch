@@ -1,7 +1,7 @@
 /**
- * Timeline motion model (ADR 0001). Only the names fixed by the ADR are
- * exported here; the geometry module stays internal until the resolver
- * (Phase 2) needs it across the package boundary.
+ * Timeline motion model (ADR 0001). Only the names fixed by the ADR (section
+ * 4) are exported here; the geometry module and the resolver's test hooks stay
+ * internal.
  */
 import { createOracle } from "./oracle";
 import type { Oracle } from "./oracle";
@@ -33,6 +33,7 @@ export type {
     AssignmentRow,
 } from "./types";
 export type { Oracle } from "./oracle";
+export { createResolver } from "./resolver";
 export {
     validateShapeGeometry,
     validatePathParams,

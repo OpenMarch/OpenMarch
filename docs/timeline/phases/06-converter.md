@@ -89,6 +89,7 @@ Tick an item only after running its check, and paste the command and result into
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
 
 - None yet.
+- Page and beat positions: the fixed beat at position 0 has zero length (see the Phase 5 handoff notes). Map page N's transition range from beat positions as ADR 0001 says, and remember that positions in [0, 1) never play.
 
 ## Progress log
 

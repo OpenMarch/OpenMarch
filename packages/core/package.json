@@ -18,7 +18,9 @@
         "build": "tsup --format esm,cjs",
         "pretest": "pnpm build",
         "test": "vitest run --silent",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "test:fuzz": "TIMELINE_FUZZ_SEEDS=1000 TIMELINE_FUZZ_STEPS=80 vitest run src/timeline/__test__/fuzz.test.ts",
+        "test:deep": "tsup --format esm,cjs && node --stack-size=300 scripts/deep-chains.mjs"
     },
     "types": "./dist/index.d.ts",
     "exports": {

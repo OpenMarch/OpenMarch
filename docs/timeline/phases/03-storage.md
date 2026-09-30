@@ -279,3 +279,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** at the PR head before the nits: `test:focused electron/database/migrations/__test__/` (4 files, 87 passed) and `tsc --noEmit` (pass). After the nits: `test:focused .../timelineStorageQa.test.ts` (36 passed).
 - **Next:** Phase 3's remaining items: P3.8 (a person opens an older and a new `.dots` file) and the full `test:history` gate item, which is skipped under the current policy.
 - **Blockers:** P3.8 is human.
+
+### 2026-09-30 · timeline-worker agent (timeline/p4-write-wrapper) · Cross-phase note from P4
+
+- **Done:** P4.1-P4.3 (PR https://github.com/AlexDumo/OpenMarch-timeline/pull/9) drain `timeline_change_log` in the wrapper and in undo/redo. Repair now copies the timeline tables parents first and clears the log, as this phase's note asked.
+- **Checks:** n/a
+- **Next:** optional. `timeline_log_marchers_upd` fires on `UPDATE OF home_x, home_y` even when the values don't change, and the history inverse of any marcher edit (for example a rename) rewrites every column. So undoing or redoing a rename logs a `marchers` change whose before equals its after. It's harmless after coalescing. Adding `WHEN OLD.home_x IS NOT NEW.home_x OR OLD.home_y IS NOT NEW.home_y` would suppress it. That needs a trigger change here, and the test `timelineChanges.test.ts` ("undoing a marcher rename…") would then expect no batch.
+- **Blockers:** none.

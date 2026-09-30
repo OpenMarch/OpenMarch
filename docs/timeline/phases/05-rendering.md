@@ -41,7 +41,7 @@ Per-file dev flag in `workspace_settings` (optional zod field, default off), hid
 ### P5.2: Time and beat mapping
 
 - Owner: timeline-worker (timeline/p5-frame-clock)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/5
 - Parallel: yes
 - Depends on: —
@@ -111,7 +111,7 @@ Tests: store and hook tests on a real DB; a QA-SC-11 scale fixture with QA-PF-01
 ### P5.9: Frame clock from 0.2
 
 - Owner: timeline-worker (timeline/p5-frame-clock)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/5
 - Parallel: yes
 - Depends on: —
@@ -131,6 +131,8 @@ Tick an item only after running its check, and paste the command and result into
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
 
 - Missing a QA-PF budget is a finding, not a blocker. Move the resolver to a worker only if the budgets are badly missed.
+- Every show starts with a fixed, zero-length beat at position 0 (migration 0000). In the tempo map (`src/timeline/timeMap.ts`), beat 1 owns show time 0 and beat positions in [0, 1) are never reached during playback. P5.4 and P5.5 draw the show from beat 1; a resolver span over [0, 1) has no visible time.
+- The frame clock (`src/services/clock/frame-clock.ts`, copied unchanged from 0.2) isn't wired in yet. P5.4 must call `init` from a user gesture, register `setOnPause` if pause should land on a page end, and set the beat index with `beatIndexAtTime(beats, currentTime / 1000)`: the clock's `currentTime` is in milliseconds, `timeMap` takes seconds, and `beatIndexAtTime` returns -1 when there are no beats.
 
 ## Progress log
 
@@ -142,4 +144,11 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Seam:** nothing imports the clock, so behavior is unchanged. Not ported from 0.2: the `useAnimation` rewrite, the `AudioPlayer`/`Clock.tsx` wiring that calls `init`, `IsPlayingContext` removal, the canvas `setCoords` change, and `SelectedPageContext`'s `setOnPause` page-end snap. In 0.2 the clock does not compute `currentBeatIndex`; `Timeline.tsx` sets it. P5.4 and P8.1 should set it with `beatIndexAtTime(beats, currentTime / 1000)` so there is one mapping.
 - **Checks:** `pnpm --dir apps/desktop run test:focused src/timeline/__test__/timeMap.test.ts src/services/clock/__test__/frame-clock.test.ts`: pass (30 tests). `pnpm --dir apps/desktop exec tsc --noEmit`: pass. eslint, prettier and cspell on the changed files: pass. Full `test:history` and e2e not run (policy); no history tests apply.
 - **Next:** review and merge by the lead. No exit-gate items are covered by these packages.
+- **Blockers:** none.
+
+### 2026-09-30 · lead session · P5.2, P5.9 (reviewed and merged)
+
+- **Done:** fork PR #5 reviewed by a sub-agent (APPROVE WITH NITS) and merged (33a8be4f). Before merging, the lead added tests for the fixed zero-length beat 0, corrected the `timeMap` docs (a beat runs to the next beat's timestamp), and stated `beatIndexAtTime`'s units and NaN behavior. The reviewer confirmed `frame-clock.ts` and `zustand.ts` are byte-identical to `origin/0.2` and that nothing imports the clock yet. P5.2 and P5.9 set to done; handoff notes updated for P5.4.
+- **Checks:** at the PR head before the fixes: `test:focused src/timeline/__test__/timeMap.test.ts src/services/clock/__test__/frame-clock.test.ts` (30 passed) and `tsc --noEmit` (pass). After the fixes: the same tests (33 passed).
+- **Next:** P5.1, P5.3 and later wait for Phase 4.
 - **Blockers:** none.
