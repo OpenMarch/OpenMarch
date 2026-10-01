@@ -12,6 +12,8 @@ import {
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
+import { useTimelineResolverStore } from "@/timeline/timelineStore";
 
 // eslint-disable-next-line max-lines-per-function
 export const useMovementListeners = ({
@@ -40,6 +42,16 @@ export const useMovementListeners = ({
         marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
     );
 
+    // Timeline mode (P7.10): once the resolver is ready, the paths come from it
+    // (useTimelinePathRender) and a drag leaves them alone, as page mode's redraw from the stored
+    // rows does; they follow once the move is written. Redrawing here would put back the straight
+    // marcher_pages lines.
+    const timelineMode = useTimelineMode();
+    const timelineResolverReady = useTimelineResolverStore(
+        (s) => s.status === "ready",
+    );
+    const drawFromResolver = timelineMode && timelineResolverReady;
+
     const frameRef = useRef<number | null>(null);
 
     const handleRotate = useCallback(
@@ -64,7 +76,9 @@ export const useMovementListeners = ({
     const updateMovingPaths = useCallback(() => {
         if (frameRef.current !== null) {
             cancelAnimationFrame(frameRef.current);
+            frameRef.current = null;
         }
+        if (drawFromResolver) return;
 
         frameRef.current = requestAnimationFrame(() => {
             if (
@@ -98,6 +112,7 @@ export const useMovementListeners = ({
         });
     }, [
         canvas,
+        drawFromResolver,
         fieldProperties,
         marcherPages,
         marcherVisuals,

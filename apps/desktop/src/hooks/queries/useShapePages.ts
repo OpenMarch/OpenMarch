@@ -22,6 +22,10 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
 import { invalidateByPage } from "./sharedInvalidators";
+import {
+    timelineErrorCode,
+    toastTimelineError,
+} from "@/timeline/timelineErrorMessages";
 
 const KEY_BASE = "shape_pages";
 
@@ -114,7 +118,10 @@ export const updateShapePagesMutationOptions = (qc: QueryClient) => {
             invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
         },
         onError: (e, variables) => {
-            conToastError(`Error updating shape pages`, e, variables);
+            // A timeline-mode refusal (P7.11) says why in its own words
+            if (timelineErrorCode(e) !== null)
+                toastTimelineError(e, undefined, variables);
+            else conToastError(`Error updating shape pages`, e, variables);
         },
     });
 };
@@ -130,7 +137,9 @@ export const deleteShapePagesMutationOptions = (qc: QueryClient) => {
             invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting shape pages`, e, variables);
+            if (timelineErrorCode(e) !== null)
+                toastTimelineError(e, undefined, variables);
+            else conToastError(`Error deleting shape pages`, e, variables);
         },
     });
 };
@@ -153,6 +162,10 @@ export const copyShapePageToPageMutationOptions = (qc: QueryClient) => {
             toast.success(tolgee.t("inspector.shape.successfullyCopied"));
         },
         onError: (e, variables) => {
+            if (timelineErrorCode(e) !== null) {
+                toastTimelineError(e, undefined, variables);
+                return;
+            }
             toast.error(tolgee.t("inspector.shape.errorCopyingPage"));
             console.error(e, variables);
         },

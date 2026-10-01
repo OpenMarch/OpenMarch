@@ -13,6 +13,12 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
+import {
+    PAGE_SHAPES_TIMELINE_MESSAGE,
+    refusePageShapesInTimelineMode,
+} from "./pageShapesGate";
+
+export { PAGE_SHAPES_TIMELINE_MESSAGE };
 
 type MarcherCoordinates = {
     marcher_id: number;
@@ -172,6 +178,7 @@ export async function createShapePages({
         db,
         "createShapePages",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await createShapePagesInTransaction({
                 newItems,
                 tx,
@@ -255,6 +262,7 @@ export async function updateShapePages({
         db,
         "updateShapePages",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await updateShapePagesInTransaction({
                 modifiedItems,
                 tx,
@@ -335,6 +343,7 @@ export async function deleteShapePages({
         db,
         "deleteShapePages",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await deleteShapePagesInTransaction({
                 itemIds,
                 tx,
@@ -387,6 +396,7 @@ export async function copyShapePageToPage({
         db,
         "copyShapePageToPage",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await copyShapePageToPageInTransaction({
                 shapePageId,
                 targetPageId,

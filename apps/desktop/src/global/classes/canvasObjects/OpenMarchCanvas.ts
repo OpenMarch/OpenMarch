@@ -3,6 +3,8 @@ import CanvasMarcher from "./CanvasMarcher";
 import Endpoint from "./Endpoint";
 import Pathway, { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 import Midpoint from "./Midpoint";
+import TimelinePathway from "./TimelinePathway";
+import type TimelineShapeOverlay from "./TimelineShapeOverlay";
 import { FieldProperties } from "@openmarch/core";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
@@ -26,6 +28,7 @@ import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
 import type { TimelinePositionBuffer } from "@/timeline/timelineCanvas";
+import type { TimelinePath } from "@/timeline/timelinePaths";
 import { RgbaColor } from "@uiw/react-color";
 import {
     evaluatePathWarning,
@@ -41,7 +44,8 @@ const STEP_SIZE_WARNING_STROKE = rgbaToString(STEP_SIZE_WARNING_COLOR);
 // Apply or clear the step-size warning style, skipping fabric mutations when the pathway already matches
 // Compares against the live fabric state so it stays correct even after the theme effect recolors paths
 function applyPathwayWarningStyle(
-    pathway: Pathway,
+    // A straight Pathway in page mode, a TimelinePathway in timeline mode (P7.10)
+    pathway: fabric.Object,
     midpoint: Midpoint,
     isWarning: boolean,
     normalColor: RgbaColor,
@@ -67,6 +71,21 @@ function applyPathwayWarningStyle(
     if (midpoint.stroke !== targetStroke) {
         midpoint.setColor(isWarning ? STEP_SIZE_WARNING_COLOR : normalColor);
     }
+}
+
+/** One side of a marcher's timeline path visuals (P7.10) and the objects that draw it. */
+interface TimelinePathSide {
+    path: TimelinePath | undefined;
+    /** Which end of the path the endpoint marks */
+    endpointAt: "start" | "end";
+    pathway: TimelinePathway;
+    /** The page-mode line this side replaces: hidden, and the curve is stacked at its place */
+    straightPathway: Pathway;
+    midpoint: Midpoint;
+    endpoint: Endpoint;
+    pathEnabled: boolean;
+    allowForceShow: boolean;
+    color: RgbaColor;
 }
 
 /**
@@ -111,6 +130,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     lastPosX = 0;
     lastPosY = 0;
     marcherShapes: MarcherShape[] = [];
+    /** Timeline mode's picked spec shape, while one is drawn (P7.11, `useTimelineShapeCanvas`) */
+    timelineShapeOverlay: TimelineShapeOverlay | null = null;
     /**
      * The reference to the grid (the lines on the field) object to use for caching
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
@@ -1070,12 +1091,21 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 controlPoint.bringToFront();
             });
         }
+        this.timelineShapeOverlay?.bringToFront();
     }
 
+    /**
+     * Draws `shapePages` as `MarcherShape`s, replacing the ones drawn before.
+     *
+     * @param isCurrent checked after each await: once it returns false (a newer render started,
+     * or timeline mode turned on, P7.11), this render stops adding shapes
+     */
     renderMarcherShapes = async ({
         shapePages,
+        isCurrent = () => true,
     }: {
         shapePages: ShapePage[];
+        isCurrent?: () => boolean;
     }) => {
         const existingMarcherShapeMap = new Map(
             this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
@@ -1097,9 +1127,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             const existingMarcherShape = existingMarcherShapeMap.get(
                 shapePage.shape_id,
             );
+            if (!isCurrent()) return;
             if (existingMarcherShape) {
                 existingMarcherShape.setShapePage(shapePage);
                 await existingMarcherShape.refreshMarchers();
+                if (!isCurrent()) return;
                 const index = this.marcherShapes.findIndex(
                     (ms) => ms.shapePage.shape_id === shapePage.shape_id,
                 );
@@ -1169,6 +1201,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     ...(pageId !== undefined ? { page_id: pageId } : {}),
                     x,
                     y,
+                    // Timeline mode has no shape locks (P7.11): a page-era lock from an earlier
+                    // marcher_pages render must not stop a drag that P7.2 can write
+                    isLocked: false,
+                    lockedReason: "",
                 });
             },
         );
@@ -1457,6 +1493,128 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 nextMidpoint.hide();
                 visual.getNextEndpoint().hide();
             }
+        });
+    };
+
+    /** One side (previous or next) of a marcher's timeline path visuals; see below. */
+    private drawTimelinePathSide(
+        {
+            path,
+            endpointAt,
+            pathway,
+            straightPathway,
+            midpoint,
+            endpoint,
+            pathEnabled,
+            allowForceShow,
+            color,
+        }: TimelinePathSide,
+        fieldProperties: FieldProperties,
+        warningsEnabled: boolean,
+    ) {
+        // Stack the curve where the straight line sits, under the midpoint and endpoint dots
+        if (!pathway.canvas) {
+            const index = this.getObjects().indexOf(straightPathway);
+            if (index >= 0) this.insertAt(pathway, index, false);
+            else this.add(pathway);
+        }
+        straightPathway.hide();
+        // The step size is the stride of the fastest stretch: its distance in one count
+        const { show, isWarning } = path
+            ? evaluatePathWarning({
+                  start: path.start,
+                  end: path.end,
+                  distance: path.stride,
+                  counts: 1,
+                  fieldProperties,
+                  pathEnabled,
+                  allowForceShow,
+                  warningsEnabled,
+              })
+            : { show: false, isWarning: false };
+        if (!path || !show) {
+            pathway.hide();
+            midpoint.hide();
+            endpoint.hide();
+            return;
+        }
+        // Style first: the stroke width changes the polyline's bounds, which updatePoints computes
+        applyPathwayWarningStyle(pathway, midpoint, isWarning, color);
+        pathway.updatePoints(path.points);
+        pathway.show();
+        midpoint.updateCoords(path.midpoint);
+        midpoint.show();
+        endpoint.updateCoords(path[endpointAt]);
+        endpoint.show();
+    }
+
+    /**
+     * Timeline mode's path visuals (P7.10): like `renderPathVisuals`, but each path is sampled from
+     * the resolver (`pathsIntoPage`), so it is drawn as a polyline that follows arcs and
+     * follow-the-leader moves, and the midpoint is the midset on that path. The step-size warning
+     * uses the path's stride (its fastest stretch per count). The straight page-mode lines are
+     * hidden. A marcher with no path on one side (the first or last page, a side that can't show,
+     * or a marcher unknown to the resolver) has that side hidden.
+     *
+     * @param previousPaths each marcher's move into the selected page (endpoint: where it starts)
+     * @param nextPaths each marcher's move into the next page (endpoint: where it ends)
+     */
+    renderTimelinePathVisuals = ({
+        marcherVisuals,
+        marcherIds,
+        previousPaths,
+        nextPaths,
+        previousPathsEnabled,
+        nextPathsEnabled,
+        stepSizeWarningsEnabled,
+        fieldProperties,
+    }: {
+        marcherVisuals: MarcherVisualMap;
+        marcherIds: readonly number[];
+        previousPaths: ReadonlyMap<number, TimelinePath>;
+        nextPaths: ReadonlyMap<number, TimelinePath>;
+        previousPathsEnabled: boolean;
+        nextPathsEnabled: boolean;
+        stepSizeWarningsEnabled: boolean;
+        fieldProperties: FieldProperties;
+    }) => {
+        if (!fieldProperties) return;
+
+        const drawSide = (side: TimelinePathSide) =>
+            this.drawTimelinePathSide(
+                side,
+                fieldProperties,
+                stepSizeWarningsEnabled,
+            );
+
+        marcherIds.forEach((marcherId: number) => {
+            const visual = marcherVisuals[marcherId];
+            if (!visual) return;
+
+            drawSide({
+                path: previousPaths.get(marcherId),
+                endpointAt: "start",
+                pathway: visual.getPreviousTimelinePathway(),
+                straightPathway: visual.getPreviousPathway(),
+                midpoint: visual.getPreviousMidpoint(),
+                endpoint: visual.getPreviousEndpoint(),
+                pathEnabled: previousPathsEnabled,
+                // previous paths stay hidden when toggled off, even over threshold
+                allowForceShow: false,
+                color: fieldProperties.theme.previousPath,
+            });
+            drawSide({
+                path: nextPaths.get(marcherId),
+                endpointAt: "end",
+                pathway: visual.getNextTimelinePathway(),
+                straightPathway: visual.getNextPathway(),
+                midpoint: visual.getNextMidpoint(),
+                endpoint: visual.getNextEndpoint(),
+                pathEnabled: nextPathsEnabled,
+                // next path is the current move, force-show it over threshold
+                allowForceShow: true,
+                color: fieldProperties.theme.nextPath,
+            });
         });
     };
 
@@ -2215,6 +2373,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return active
             ? this.getActiveObjectsByType(Pathway)
             : this.getObjectsByType(Pathway);
+    }
+
+    /**
+     * Removes timeline mode's curved paths (P7.10) from the canvas. `renderTimelinePathVisuals`
+     * adds them back as it needs them. Does nothing in page mode, which never adds any.
+     */
+    removeTimelinePathways(): void {
+        const pathways = this.getObjectsByType(TimelinePathway);
+        if (pathways.length === 0) return;
+        for (const pathway of pathways) this.remove(pathway);
+        this.requestRenderAll();
     }
 
     /**

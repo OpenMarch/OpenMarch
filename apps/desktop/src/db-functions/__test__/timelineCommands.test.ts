@@ -21,6 +21,12 @@ import {
 import { createTimelineTransitionsInTransaction } from "../timelineTransitions";
 import { createTimelineAssignmentsInTransaction } from "../timelineAssignments";
 import { createTrack, shiftTimeline } from "../timelineCommands";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
+
+// P7.17: these tests set up timeline mode themselves
+keepFixturesInPageMode(
+    "its tests convert the show or write timeline rows, and set the flag, themselves",
+);
 
 /**
  * The timeline's commands (docs/timeline/phases/08-authoring-ui.md P8.9) on a converted
@@ -479,7 +485,7 @@ describeDbTests("timeline commands", (it) => {
             expect(second.layer).toBe(1);
         });
 
-        it("for a shape: the selected marchers fill its slots in id order", async ({
+        it("for a shape: the selected marchers fill its slots, nearest first", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -558,6 +564,60 @@ describeDbTests("timeline commands", (it) => {
             expect(await dataOf(db)).toEqual(before);
             expect((await performRedo(db)).success).toBe(true);
             expect(await dataOf(db)).toEqual(after);
+        });
+
+        it("for a shape: casts by nearest slot, not by id (P8.4)", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const timeline = await converted(db);
+            const ids = (
+                await db
+                    .select({ id: schema.marchers.id })
+                    .from(schema.marchers)
+                    .orderBy(asc(schema.marchers.id))
+                    .all()
+            )
+                .map((m) => m.id)
+                .slice(0, 2);
+            const start = 2;
+            const end = timeline.end_beat + 2;
+            const r = await resolverOf(db);
+            const [a, b] = ids.map((id) => r.positionAt(id, start));
+            expect(a).not.toEqual(b);
+            // A line from the second marcher to the first: slot 0 is where the second one stands
+            const shapeId = await addShape(db, {
+                kind: "line",
+                geometry: { points: [b!, a!] },
+            });
+            const result = await createTrack({
+                db,
+                target: { kind: "shape", shapeId, marcherIds: ids },
+                startBeat: start,
+                endBeat: end,
+            });
+            const assigned = await db
+                .select()
+                .from(schema.timeline_assignments)
+                .where(
+                    eq(
+                        schema.timeline_assignments.transition_id,
+                        result.transitionId,
+                    ),
+                )
+                .orderBy(asc(schema.timeline_assignments.slot_index))
+                .all();
+            expect(assigned.map((x) => [x.marcher_id, x.slot_index])).toEqual([
+                [ids[1], 0],
+                [ids[0], 1],
+            ]);
+            // Nobody moves: each slot is where its marcher already stands
+            const after = await resolverOf(db);
+            for (const [i, id] of ids.entries()) {
+                const [x, y] = after.positionAt(id, end);
+                expect(x).toBeCloseTo([a, b][i]![0]);
+                expect(y).toBeCloseTo([a, b][i]![1]);
+            }
         });
 
         it("refuses more marchers than a block holds (E-T4), a bad range, and an empty shape selection", async ({

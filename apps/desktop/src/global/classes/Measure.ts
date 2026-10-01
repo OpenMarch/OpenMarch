@@ -1,3 +1,4 @@
+import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import Beat, { beatsDuration, compareBeats, tempBeat } from "./Beat";
 import { db, schema } from "../database/db";
 import {
@@ -121,21 +122,26 @@ export const _cascadeDeleteMeasures = async (measures: Measure[]) => {
     );
     const measureIdsToDelete = new Set(measures.map((m) => m.id));
 
-    await transactionWithHistory(db, "cascadeDeleteMeasures", async (tx) => {
-        await deleteMeasuresInTransaction({
-            tx,
-            itemIds: measureIdsToDelete,
-        });
-        await deletePagesInTransaction({
-            tx,
-            pageIds: pageIdsToDelete,
-        });
-        await deleteBeatsInTransaction({
-            tx,
-            beatIds: beatIdsToDelete,
-        });
-        await ensureSecondBeatHasPage({ tx });
-    });
+    await transactionWithHistory(
+        db,
+        "cascadeDeleteMeasures",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                await deleteMeasuresInTransaction({
+                    tx,
+                    itemIds: measureIdsToDelete,
+                });
+                await deletePagesInTransaction({
+                    tx,
+                    pageIds: pageIdsToDelete,
+                });
+                await deleteBeatsInTransaction({
+                    tx,
+                    beatIds: beatIdsToDelete,
+                });
+                await ensureSecondBeatHasPage({ tx });
+            }),
+    );
 };
 
 export const useCascadeDeleteMeasures = () => {

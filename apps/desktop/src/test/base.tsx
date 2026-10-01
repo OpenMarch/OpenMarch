@@ -16,6 +16,7 @@ import {
     handleSqlProxyWithDbBetterSqlite,
     handleSqlProxyWithDbSqlJs,
 } from "./sqlProxyTestUtil";
+import { applyTimelineModeToFile, timelineFixtureMode } from "./timelineMode";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { JSX } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -110,6 +111,7 @@ const loadSqlIntoDatabase = async (
     const updatedDbBuffer = db.export();
     fs.writeFileSync(dbPath, updatedDbBuffer);
     db.close();
+    if (timelineFixtureMode()) await applyTimelineModeToFile(dbPath);
 };
 
 /********* FIXTURES *********/
@@ -201,6 +203,11 @@ const baseFixture = baseTest.extend<BaseApi>({
 
                 fs.writeFileSync(tempDatabaseFile, updatedDbBuffer);
                 db.close();
+                // A blank file only gets the flag: a new timeline-mode file has no timeline rows
+                if (timelineFixtureMode())
+                    await applyTimelineModeToFile(tempDatabaseFile, {
+                        convert: false,
+                    });
                 await use();
             } catch (error) {
                 console.error("Error setting up database:", error);
@@ -442,6 +449,7 @@ const describeDbTests = (
 };
 
 export {
+    getTempDotsPath,
     sqlJsTest,
     betterSqliteTestWithProxy,
     describeDbTests,

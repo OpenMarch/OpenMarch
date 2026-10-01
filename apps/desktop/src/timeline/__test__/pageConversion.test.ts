@@ -23,6 +23,12 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "../timelineStore";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
+
+// P7.17: these tests set up timeline mode themselves
+keepFixturesInPageMode(
+    "its tests convert the show or write timeline rows, and set the flag, themselves",
+);
 
 /**
  * The page → timeline converter on a real database (docs/timeline/phases/06-converter.md P6.5),

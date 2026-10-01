@@ -1,3 +1,4 @@
+import { timelineHistoryTables } from "@/test/timelineMode";
 import { describe, expect } from "vitest";
 import {
     createMeasures,
@@ -24,6 +25,7 @@ describeDbTests("measures", (it) => {
     const testWithHistory = getTestWithHistory(it, [
         schema.measures,
         schema.beats,
+        ...timelineHistoryTables(),
     ]);
 
     describe("createMeasures", () => {

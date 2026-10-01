@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { marcherPagesByPageQueryOptions } from "@/hooks/queries";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { isTimelineShapeHandle } from "@/global/classes/canvasObjects/TimelineShapeOverlay";
 
 // eslint-disable-next-line max-lines-per-function
 export const useSelectionListeners = ({
@@ -132,7 +133,17 @@ export const useSelectionListeners = ({
      * corresponding global selected objects
      */
     const handleSelect = useCallback(() => {
-        if (!canvas || activeObjectsAreGloballySelected()) return;
+        if (!canvas) return;
+        // Timeline shape handles (P7.11) are transparent to the selection
+        const active = canvas.getActiveObjects();
+        const handles = active.filter(isTimelineShapeHandle);
+        if (handles.length > 0) {
+            // A press on one handle starts its drag: keep the marchers selected as they are
+            if (active.length === 1) return;
+            // A rubber band that took in handles: let them go and keep the rest
+            canvas.setActiveObjects(active.filter(Selectable.isSelectable));
+        }
+        if (activeObjectsAreGloballySelected()) return;
         const newSelectedObjects: {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             [key in Selectable.SelectableClasses]: any[];
@@ -205,38 +216,11 @@ export const useSelectionListeners = ({
         setSelectedShapePageIds,
     ]);
 
-    /**
-     * Handler for clearing global selected objects in the store
-     */
-    const handleDeselect = useCallback(() => {
-        const deselectObjects = (
-            selectableClass: Selectable.SelectableClasses,
-        ) => {
-            switch (selectableClass) {
-                case Selectable.SelectableClasses.MARCHER: {
-                    setSelectedMarchers([]);
-                    break;
-                }
-                case Selectable.SelectableClasses.MARCHER_SHAPE: {
-                    // setSelectedCurvePoints([]);
-                    break;
-                }
-                default: {
-                    unimplementedError(selectableClass);
-                }
-            }
-        };
-
-        for (const selectableClass of Object.values(
-            Selectable.SelectableClasses,
-        )) {
-            deselectObjects(selectableClass);
-        }
-    }, [setSelectedMarchers]);
-
-    // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
-    useEffect(() => {
+    /** Makes the canvas's active objects the globally selected ones. */
+    const syncCanvasToGlobal = useCallback(() => {
         if (!canvas || activeObjectsAreGloballySelected()) return;
+        // Never take a timeline shape handle away mid-drag (P7.11)
+        if (canvas.getActiveObjects().some(isTimelineShapeHandle)) return;
         const selectableObjects: Map<string, Selectable.ISelectable> = new Map(
             canvas
                 .getAllSelectableObjects()
@@ -259,14 +243,57 @@ export const useSelectionListeners = ({
 
         canvas.setActiveObjects(objectsToSelect);
     }, [
-        selectedMarchers,
-        marcherPages,
-        selectedPage,
         canvas,
-        setSelectedMarchers,
         getGlobalSelectedObjectClassIds,
         activeObjectsAreGloballySelected,
     ]);
+
+    /**
+     * Handler for clearing global selected objects in the store
+     */
+    const handleDeselect = useCallback(
+        (event?: { deselected?: unknown[] }) => {
+            // A timeline shape handle let go (P7.11): the marchers were never deselected, so show
+            // them as selected again rather than clearing them
+            const deselected = event?.deselected ?? [];
+            if (
+                deselected.length > 0 &&
+                deselected.every(isTimelineShapeHandle)
+            ) {
+                syncCanvasToGlobal();
+                return;
+            }
+            const deselectObjects = (
+                selectableClass: Selectable.SelectableClasses,
+            ) => {
+                switch (selectableClass) {
+                    case Selectable.SelectableClasses.MARCHER: {
+                        setSelectedMarchers([]);
+                        break;
+                    }
+                    case Selectable.SelectableClasses.MARCHER_SHAPE: {
+                        // setSelectedCurvePoints([]);
+                        break;
+                    }
+                    default: {
+                        unimplementedError(selectableClass);
+                    }
+                }
+            };
+
+            for (const selectableClass of Object.values(
+                Selectable.SelectableClasses,
+            )) {
+                deselectObjects(selectableClass);
+            }
+        },
+        [setSelectedMarchers, syncCanvasToGlobal],
+    );
+
+    // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
+    useEffect(() => {
+        syncCanvasToGlobal();
+    }, [selectedMarchers, marcherPages, selectedPage, syncCanvasToGlobal]);
 
     // Update the control points on MarcherShapes when the selectedShapePages change
     useEffect(() => {

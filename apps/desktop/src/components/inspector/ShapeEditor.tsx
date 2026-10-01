@@ -26,6 +26,7 @@ import {
 } from "@/hooks/queries";
 import { useCanvasStore } from "@/stores/CanvasStore";
 import { assert } from "@/utilities/utils";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 
 // eslint-disable-next-line max-lines-per-function
 export default function ShapeEditor() {
@@ -41,10 +42,13 @@ export default function ShapeEditor() {
     //         ),
     // });
     const { selectedPage } = useSelectedPage()!;
+    const timelineMode = useTimelineMode();
     const { mutate: copyShapePageToPage, isPending: isCopyingShapePageToPage } =
         useMutation(copyShapePageToPageMutationOptions(queryClient));
     const { data: shapePagesForThisPage } = useQuery(
-        shapePagesQueryByPageIdOptions(selectedPage?.id ?? null),
+        shapePagesQueryByPageIdOptions(
+            timelineMode ? null : (selectedPage?.id ?? null),
+        ),
     );
 
     const { t } = useTolgee();
@@ -350,6 +354,9 @@ export default function ShapeEditor() {
     );
 
     const marcherShapesByShapePageId = getMarcherShapesByShapePageId();
+    // Timeline mode draws no page shapes and refuses their edits (P7.11); its shapes are edited
+    // in the Timeline section
+    if (timelineMode) return null;
     return (
         selectedShapePageIds.length > 0 && (
             <InspectorCollapsible

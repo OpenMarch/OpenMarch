@@ -14,7 +14,7 @@ import { assertValid, mapDbErrors } from "./timelineErrors";
 /**
  * Marcher add and delete in timeline mode (docs/timeline/phases/07-page-parity.md P7.3). Both run
  * inside the same `transactionWithHistory` edit as the page-era create or delete
- * (`createMarchers`, `deleteMarchers` with `timelineMode: true`), so each is one undo step.
+ * (`createMarchers`, `deleteMarchers`, when the file's flag is on), so each is one undo step.
  *
  * **Add.** A new marcher gets a home (C-5) and holds it across the show, as a new marcher in page
  * mode gets a row on every page at its starting position:

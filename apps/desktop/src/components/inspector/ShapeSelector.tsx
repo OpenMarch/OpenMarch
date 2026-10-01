@@ -8,6 +8,7 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { marcherPagesByPageQueryOptions } from "@/hooks/queries/useMarcherPages";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useQuery } from "@tanstack/react-query";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 
 function ShapeSelector() {
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -16,10 +17,13 @@ function ShapeSelector() {
         [selectedMarchers],
     );
     const { selectedPage } = useSelectedPage()!;
+    const timelineMode = useTimelineMode();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
     const editingDisabled = useMemo(() => {
+        // No shape locks in timeline mode (P7.11): the circle writes positions (P7.2)
+        if (timelineMode) return false;
         return (
             !marcherPagesLoaded ||
             Object.values(marcherPages).some(
@@ -28,7 +32,7 @@ function ShapeSelector() {
                     selectedMarcherIds.has(marcherPage.marcher_id),
             )
         );
-    }, [marcherPagesLoaded, marcherPages, selectedMarcherIds]);
+    }, [timelineMode, marcherPagesLoaded, marcherPages, selectedMarcherIds]);
 
     if (!selectedMarchers.length) return <></>;
 

@@ -1,4 +1,5 @@
 import { eq, inArray, isNull } from "drizzle-orm";
+import { refusePageShapesInTimelineMode } from "./pageShapesGate";
 import {
     DbConnection,
     DbTransaction,
@@ -115,6 +116,7 @@ export async function createShapes({
         db,
         "createShapes",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await createShapesInTransaction({
                 newItems,
                 tx,
@@ -153,6 +155,7 @@ export async function updateShapes({
         db,
         "updateShapes",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await updateShapesInTransaction({
                 modifiedItems,
                 tx,
@@ -204,6 +207,7 @@ export async function deleteShapes({
         db,
         "deleteShapes",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await deleteShapesInTransaction({
                 itemIds,
                 tx,

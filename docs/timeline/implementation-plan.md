@@ -100,6 +100,11 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   The converter keeps their page-end coordinates exactly, as individual
   destinations. The curved motion in between needs a spec decision: a new path
   style, or accepting the loss.
+  **Decided (project owner, 2026-10-01):** pathways and midsets were never
+  implemented and are dropped. SVG page shapes convert to individual
+  destinations; page mode moves in straight lines between pages, so only the
+  editable curve is lost. See ADR 0001. P6.6 verifies conversion equality on
+  real shows.
 
 ## 3. Phases
 

@@ -1,9 +1,19 @@
 import { afterEach, expect } from "vitest";
+import { eq } from "drizzle-orm";
 import { renderHook, waitFor } from "@testing-library/react";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import { performUndo, transactionWithHistory } from "@/db-functions/history";
-import { startTimelineResolver, stopTimelineResolver } from "../timelineStore";
+import {
+    performRedo,
+    performUndo,
+    transactionWithHistory,
+} from "@/db-functions/history";
+import {
+    startTimelineResolver,
+    stopTimelineResolver,
+    useTimelineResolverStore,
+} from "../timelineStore";
 import { useTimelineInspections } from "../useTimelineInspections";
+import { updateTimelineShape } from "@/db-functions/timelineShapes";
 
 /**
  * `useTimelineInspections` (P8.5) against a real database: the explanation joined with the rows
@@ -94,6 +104,40 @@ describeDbTests("useTimelineInspections", (it) => {
             "D-VACANT",
         ]);
         expect(first!.diagnostics.map((d) => d.code)).toEqual(["D-VACANT"]);
+        // P8.3: both marchers are in transition 1, so it is offered once
+        expect(result.current.transitionEdits).toHaveLength(1);
+        expect(result.current.transitionEdits[0]).toMatchObject({
+            id: 1,
+            style: "direct",
+            slotCount: 3,
+            minSlotCount: 2,
+            destination: { kind: "shape", shapeId: 1 },
+        });
+        expect(result.current.shapeOptions).toEqual([
+            { id: 1, name: "Front line", kind: "line", capacity: null },
+        ]);
+        // P8.4: the same transition's slots, with drill numbers and the vacancy
+        expect(result.current.assignmentEdits).toEqual([
+            {
+                version: expect.any(Number),
+                transitionId: 1,
+                style: "direct",
+                start: 1,
+                end: 9,
+                slotCount: 3,
+                members: [1, 2].map((id, slot) => ({
+                    assignmentId: id,
+                    marcherId: id,
+                    label: `B${id}`,
+                    slot,
+                    start: 1,
+                    end: 9,
+                    layer: 4,
+                    stolen: [],
+                })),
+                vacantSlots: [2],
+            },
+        ]);
     });
 
     it("explains nobody while there is no beat, and ignores marchers the resolver lacks", async ({
@@ -147,6 +191,70 @@ describeDbTests("useTimelineInspections", (it) => {
         await performUndo(db);
         await waitFor(() =>
             expect(result.current.inspections[0]!.layer).toBe(4),
+        );
+    });
+
+    it("lists every shape for the shape editor (P8.2) with no page, and follows a rename, a reshape and their undo", async ({
+        db,
+    }) => {
+        await seedShow(db);
+        await startTimelineResolver(db);
+        const ids: number[] = [];
+        const { result } = renderHook(() =>
+            useTimelineInspections({
+                database: db,
+                enabled: true,
+                marcherIds: ids,
+                beat: null,
+            }),
+        );
+        await waitFor(() =>
+            expect(result.current.shapeEdits.targets).toHaveLength(1),
+        );
+        const first = result.current.shapeEdits;
+        expect(first.targets[0]).toMatchObject({
+            id: 1,
+            name: "Front line",
+            usedBy: [{ transitionId: 1, style: "direct", slotCount: 3 }],
+            minCells: 3,
+            version: first.version,
+        });
+
+        await updateTimelineShape({
+            db,
+            modified: {
+                id: 1,
+                name: "Company front",
+                geometry: {
+                    points: [
+                        [0, 20],
+                        [30, 20],
+                    ],
+                },
+            },
+        });
+        await waitFor(() =>
+            expect(result.current.shapeEdits.targets[0]!.name).toBe(
+                "Company front",
+            ),
+        );
+        const edited = result.current.shapeEdits;
+        expect(edited.version).toBeGreaterThan(first.version);
+        expect(edited.targets[0]!.shape.geometry).toEqual({
+            points: [
+                [0, 20],
+                [30, 20],
+            ],
+        });
+
+        await performUndo(db);
+        await waitFor(() =>
+            expect(result.current.shapeEdits.targets[0]!.name).toBe(
+                "Front line",
+            ),
+        );
+        expect(result.current.shapeEdits.version).toBeGreaterThan(
+            edited.version,
         );
     });
 
@@ -213,5 +321,77 @@ describeDbTests("useTimelineInspections", (it) => {
         );
         expect(result.current.inspections).toEqual([]);
         expect(result.current.diagnostics).toEqual([]);
+    });
+
+    it("reloads after a timeline rename, which the change log doesn't carry (P7.15)", async ({
+        db,
+    }) => {
+        await seedShow(db);
+        await startTimelineResolver(db);
+        const ids = [1, 2];
+        const { result } = renderHook(() =>
+            useTimelineInspections({
+                database: db,
+                enabled: true,
+                marcherIds: ids,
+                beat: 5,
+            }),
+        );
+        await waitFor(() =>
+            expect(
+                result.current.inspections[0]?.transition?.timelineName,
+            ).toBe("Opener"),
+        );
+        const name = () =>
+            result.current.inspections[0]?.transition?.timelineName;
+
+        await transactionWithHistory(db, "renameTimeline", (tx) =>
+            tx
+                .update(schema.timelines)
+                .set({ name: "Renamed" })
+                .where(eq(schema.timelines.id, 1)),
+        );
+        await waitFor(() => expect(name()).toBe("Renamed"));
+        await performUndo(db);
+        await waitFor(() => expect(name()).toBe("Opener"));
+        await performRedo(db);
+        await waitFor(() => expect(name()).toBe("Renamed"));
+    });
+
+    it("a display-only edit raises the assignment target's version, so an editor waiting on it re-enables (P7.15, P8.4)", async ({
+        db,
+    }) => {
+        await seedShow(db);
+        await startTimelineResolver(db);
+        const ids = [1, 2];
+        const { result } = renderHook(() =>
+            useTimelineInspections({
+                database: db,
+                enabled: true,
+                marcherIds: ids,
+                beat: 5,
+            }),
+        );
+        await waitFor(() =>
+            expect(result.current.assignmentEdits).toHaveLength(1),
+        );
+        const before = result.current.assignmentEdits[0]!.version;
+        const resolverVersion = useTimelineResolverStore.getState().version;
+
+        // A timeline rename writes no change-log row: only the display version moves
+        await transactionWithHistory(db, "renameTimeline", (tx) =>
+            tx
+                .update(schema.timelines)
+                .set({ name: "Renamed" })
+                .where(eq(schema.timelines.id, 1)),
+        );
+        await waitFor(() =>
+            expect(result.current.assignmentEdits[0]!.version).toBeGreaterThan(
+                before,
+            ),
+        );
+        expect(useTimelineResolverStore.getState().version).toBe(
+            resolverVersion,
+        );
     });
 });

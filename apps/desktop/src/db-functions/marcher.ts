@@ -8,6 +8,7 @@ import {
     addMarchersToTimelineInTransaction,
     removeMarchersFromTimelineInTransaction,
 } from "./timelineMarchers";
+import { timelineModeInTransaction } from "./timelineRipple";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -192,6 +193,9 @@ export async function createMarchersInTransaction({
  * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
  *
  *
+ * In timeline mode (the file's flag, read inside the edit), the new marchers also get a home and a
+ * holding slot in each page move, in the same edit (`addMarchersToTimelineInTransaction`, P7.3).
+ *
  * @param newMarchers Array of NewMarcherArgs containing the marcher data to create
  * @param db The database connection
  * @returns Promise<DatabaseMarcher[]> Array of created marchers
@@ -199,15 +203,9 @@ export async function createMarchersInTransaction({
 export async function createMarchers({
     newMarchers,
     db,
-    timelineMode = false,
 }: {
     newMarchers: NewMarcherArgs[];
     db: DbConnection;
-    /**
-     * The file's timeline flag. When true, the new marchers also get a home and a holding slot
-     * in each page move, in the same edit (`addMarchersToTimelineInTransaction`, P7.3).
-     */
-    timelineMode?: boolean;
 }): Promise<DatabaseMarcher[]> {
     await ensureUndoTriggers(db);
     const transactionResult = await transactionWithHistory(
@@ -218,7 +216,7 @@ export async function createMarchers({
                 newMarchers,
                 tx,
             });
-            if (timelineMode)
+            if (await timelineModeInTransaction(tx))
                 await addMarchersToTimelineInTransaction({
                     tx,
                     marcherIds: created.map((m) => m.id),
@@ -306,6 +304,11 @@ const deleteMarchersInTransaction = async ({
  * Deletes the marchers with the given ids and all of their marcherPages.
  * CAUTION - This will also delete all of the marcherPages associated with the marchers.
  *
+ * In timeline mode (the file's flag, read inside the edit), the marchers' assignments are deleted
+ * first and the slots they leave are compacted where that moves no one, in the same edit
+ * (`removeMarchersFromTimelineInTransaction`, P7.3). In page mode the assignments go with the
+ * marcher through the foreign-key cascade, as before.
+ *
  * @param marcherIds Set of marcher IDs to delete
  * @param db The database connection
  * @returns Promise<DatabaseMarcher[]> Array of deleted marchers
@@ -313,24 +316,16 @@ const deleteMarchersInTransaction = async ({
 export async function deleteMarchers({
     marcherIds,
     db,
-    timelineMode = false,
 }: {
     marcherIds: Set<number>;
     db: DbConnection;
-    /**
-     * The file's timeline flag. When true, the marchers' assignments are deleted first and the
-     * slots they leave are compacted where that moves no one, in the same edit
-     * (`removeMarchersFromTimelineInTransaction`, P7.3). When false, the assignments go with the
-     * marcher through the foreign-key cascade, as before.
-     */
-    timelineMode?: boolean;
 }): Promise<DatabaseMarcher[]> {
     await ensureUndoTriggers(db);
     const deleteResponse = await transactionWithHistory(
         db,
         "deleteMarchers",
         async (tx) => {
-            if (timelineMode)
+            if (await timelineModeInTransaction(tx))
                 await removeMarchersFromTimelineInTransaction({
                     tx,
                     marcherIds: [...marcherIds],

@@ -41,8 +41,10 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
     // The number of pages +/- to fetch
     const PAGE_DELTA = 2;
+    // Page-mode keyframes from marcher_pages; timeline mode plays from the resolver, so it fetches
+    // none (P7.13)
     const { data: marcherTimelines } = useManyCoordinateData(
-        selectedPage
+        selectedPage && !timelineMode
             ? pages.filter(
                   (p) => Math.abs(p.order - selectedPage.order) <= PAGE_DELTA,
               )

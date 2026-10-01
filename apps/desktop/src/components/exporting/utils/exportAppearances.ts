@@ -40,7 +40,7 @@ export function buildMarcherAppearancesByPageId({
     sortedPages,
     marchers,
     marcherPagesMap,
-    timelineMode = false,
+    timelineMode,
     sectionAppearances,
     marcherIdsByTagId,
     allTagAppearances,
@@ -51,7 +51,8 @@ export function buildMarcherAppearancesByPageId({
     marchers: Marcher[];
     /** Not read when `timelineMode` is true, so it may be omitted then */
     marcherPagesMap?: MarcherPageMap;
-    timelineMode?: boolean;
+    /** The file's timeline flag. Required, so no caller falls back to page mode by omission. */
+    timelineMode: boolean;
     sectionAppearances: SectionAppearance[];
     marcherIdsByTagId: MarcherIdsByTagId;
     allTagAppearances: TagAppearance[];

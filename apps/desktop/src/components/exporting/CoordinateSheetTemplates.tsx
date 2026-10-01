@@ -1,7 +1,7 @@
 import React from "react";
 import Marcher from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
+import type { PagePosition } from "./utils/exportPagePositions";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { T, useTolgee } from "@tolgee/react";
@@ -10,7 +10,7 @@ import { T, useTolgee } from "@tolgee/react";
 interface CoordinateSheetProps {
     marcher: Marcher;
     pages: Page[];
-    marcherPages: MarcherPage[];
+    marcherPages: PagePosition[];
     fieldProperties: FieldProperties;
     roundingDenominator?: number;
     terse?: boolean;
@@ -35,7 +35,7 @@ export function FullPageCoordinateSheet({
 
     ReadableCoords.setFieldProperties(fieldProperties);
 
-    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
+    const sortMarcherPages = (a: PagePosition, b: PagePosition) => {
         const pageA = pages.find((p) => p.id === a.page_id);
         const pageB = pages.find((p) => p.id === b.page_id);
         if (!pageA) return 1;
@@ -127,7 +127,7 @@ export function FullPageCoordinateSheet({
                         });
 
                         return (
-                            <tr key={marcherPage.id}>
+                            <tr key={marcherPage.page_id}>
                                 <td style={thTdStyle}>{page.name}</td>
                                 <td style={thTdStyle}>{page.counts}</td>
                                 {includeMeasures && (
@@ -174,7 +174,7 @@ export function QuarterPageCoordinateSheet({
 
     ReadableCoords.setFieldProperties(fieldProperties);
 
-    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
+    const sortMarcherPages = (a: PagePosition, b: PagePosition) => {
         const pageA = pages.find((p) => p.id === a.page_id);
         const pageB = pages.find((p) => p.id === b.page_id);
         if (!pageA) return 1;
@@ -301,7 +301,7 @@ export function QuarterPageCoordinateSheet({
                         );
 
                         return (
-                            <tr key={marcherPage.id}>
+                            <tr key={marcherPage.page_id}>
                                 <td style={thTdStyle}>{page.name}</td>
                                 <td style={thTdStyle}>{counts}</td>
                                 <td style={thTdStyle}>{msValue}</td>

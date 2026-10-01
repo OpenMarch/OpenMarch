@@ -125,3 +125,23 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
 ### 2026-10-01 · lead session · flaky Tolgee timer after test teardown
 
 - One run of `pnpm --dir apps/desktop run test` (on PR #25's branch) passed every test but exited 1 with an unhandled "ReferenceError: window is not defined" from a Tolgee web timer (`@tolgee/web` `removeEventListener` in a timeout) firing after a jsdom environment was torn down, reported while `src/components/mobile/__test__/RevisionsList.test.tsx` was running. An immediate re-run was clean (exit 0). It's load- or timing-dependent and predates the timeline work's i18n changes; treat a lone occurrence as flaky, and re-run before blaming a PR. A real fix would stop Tolgee's timer in test teardown.
+
+### 2026-10-01 · timeline-worker (timeline/p6-equality-corpus) · P6.6 · conversion equality
+
+- **What:** converted shows were compared with page-mode playback (the app's keyframe code) at every page end, and at 4 or 5 beats inside each page at the same beat position (C-7). The millisecond difference on uneven-tempo pages is reported, not failed. Real shows are anonymized; only aggregates are recorded.
+- **Generated show** (`conversionShow.ts`, 14 marchers, 10 pages):
+  - Page ends: 151 of 151 exact.
+  - Straight moves inside pages: within 1e-9.
+  - The pathway and the damaged-file gap differ as expected (C-8; P6.7).
+- **Real show A (large):** 44 marchers, 69 pages.
+  - Page ends: 3,080 of 3,080 exact (max 0, mean 0).
+  - Inside pages: 11,968 samples, max 0, mean 0.
+  - 14 pages with uneven tempo, where millisecond playback differs by up to 5.0 px (1.5e-10 on even pages).
+  - Loss report: 1 curved shape; 0 pathways, midsets, dropped fields, missing rows, skipped pages or homes from a later page.
+- **Real show B (demo):** 95 marchers, 23 pages.
+  - Page ends: 2,280 of 2,280 exact.
+  - Inside pages: 8,360 samples, max 0, mean 0.
+  - 4 pages with uneven tempo, up to 35.1 px in milliseconds (3.7e-12 on even pages).
+  - Loss report: 8 curved shapes and nothing else.
+- **Jev** (`scripts/timeline/jev-equality`, 6 moments and up to 48 marchers per show, coordinates only): 12 of 12 real samples judged "same" (P ≥ 0.99), agreeing with the numeric verdict. 10 of 10 controls agree: the identical control got P 0.99; one marcher moved, two swapped, shifted and mirrored got P 0.02 to 0.15.
+- **Reading:** on these two shows the converter is exact at page ends and identical between them at the same beat. The only visible change is timing inside uneven-tempo pages, where timeline motion follows beats (C-7). Curved shapes are kept only as their marchers' points (C-8).

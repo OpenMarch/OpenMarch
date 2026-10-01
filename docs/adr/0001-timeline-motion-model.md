@@ -285,13 +285,13 @@ new record supersedes the affected section.
 - **C-7 is accepted.** Motion between page boundaries follows beats, not
   milliseconds, so pages with uneven tempo animate differently between
   boundaries while still matching exactly at every boundary.
-- **C-8 is open and blocks only Phase 9.** Pathways, midsets and curved SVG
-  shapes have no timeline equivalent (only `direct`, `arc` and
-  `follow_the_leader` exist, and beats are integers, spec Q-6). The converter
-  keeps their page-end coordinates exactly as individual destinations and
-  reports the lost in-between motion per page. Whether that loss is accepted or
-  a new path style is added is decided before Phase 9, in a new record or an
-  update to this one.
+- **C-8 is decided (project owner, 2026-10-01).** Pathways and midsets were
+  never implemented in the app, so they are dropped with nothing to convert.
+  Curved SVG page shapes only place marchers at page boundaries; page mode
+  moves marchers in straight lines between pages, so the converter keeps the
+  page-end coordinates exactly as individual destinations and no motion is
+  lost. Only the editable curve object is not carried over. No new path style
+  is added. The conversion equality corpus (P6.6) checks this on real shows.
 
 ## Consequences
 
@@ -317,8 +317,8 @@ new record supersedes the affected section.
 - Converted files open in current releases only. Releases from before the
   version check open them without refusing (section 6), so release notes must
   say which version is the minimum for converted shows.
-- Conversion loses curved in-between motion from pathways, midsets and curved
-  shapes until C-8 is decided.
+- Conversion does not carry over the editable curve of an SVG page shape (C-8);
+  marcher positions and motion are unchanged.
 
 ## Verification
 

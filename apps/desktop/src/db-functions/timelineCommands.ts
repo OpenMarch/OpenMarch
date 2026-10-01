@@ -1,7 +1,8 @@
 import { and, eq, inArray, lt, gt, notInArray, sql } from "drizzle-orm";
 import { createResolver, validateDestination } from "@openmarch/core";
 import { schema } from "@/global/database/db";
-import { readTimelineTables } from "@/timeline/timelineRows";
+import { readTimelineTables, shapeFromRow } from "@/timeline/timelineRows";
+import { castSlots, transitionSlotPoints } from "@/timeline/timelineCasting";
 import { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
@@ -247,11 +248,13 @@ export interface CreateTrackResult {
  * assignment there, otherwise one above the highest layer among the ones that overlap, so the new
  * track steals the range (R-2) instead of colliding with what's there (E-A3).
  */
-const stealLayer = async (
+export const stealLayer = async (
     tx: DbTransaction,
     marcherIds: readonly number[],
     start: number,
     end: number,
+    /** Ends the refusal's message, after "the range already has assignments at the highest layer" */
+    consequence = "so a new track can't be added over it",
 ): Promise<number> => {
     const a = schema.timeline_assignments;
     const overlapping = await tx
@@ -270,7 +273,7 @@ const stealLayer = async (
     if (layer > MAX_LAYER)
         throw new TimelineWriteError(
             "E-A3",
-            `the range already has assignments at the highest layer (${MAX_LAYER}), so a new track can't be added over it`,
+            `the range already has assignments at the highest layer (${MAX_LAYER}), ${consequence}`,
         );
     return layer;
 };
@@ -309,8 +312,10 @@ const shapeCapacity = (shape: typeof schema.timeline_shapes.$inferSelect) => {
  *   still changes the show when the track steals a move in progress: the marcher stops for the
  *   range, and since progress is measured against the stolen transition's own end (D-7), that
  *   move resumes afterwards with a catch-up, a visible change of speed.
- * - **A shape:** the transition goes into the shape with one slot per marcher, and the marchers fill
- *   the slots in id order. A block with fewer cells than marchers is refused (`E-T4`).
+ * - **A shape:** the transition goes into the shape with one slot per marcher, and each marcher
+ *   takes the slot nearest to where it stands at `startBeat` (nearest-slot casting, P8.4, so the
+ *   total distance is as small as it can be). A block with fewer cells than marchers is refused
+ *   (`E-T4`).
  *
  * **The layer** (decision UI-6 in ui.md): the assignments go one layer above the highest layer the
  * marchers already have in the range, or at 0 where they have none there, so the new track steals
@@ -351,6 +356,7 @@ export const createTrackInTransaction = async ({
     let destination:
         | { kind: "shape"; shapeId: number }
         | { kind: "individual"; points: [number, number][] };
+    let slotOf: ReadonlyMap<number, number> = new Map([[marcherIds[0]!, 0]]);
     if (target.kind === "shape") {
         const shape = await tx
             .select()
@@ -367,6 +373,31 @@ export const createTrackInTransaction = async ({
                 }, not ${marcherIds.length}`,
             );
         destination = { kind: "shape", shapeId: shape.id };
+        const { snapshot } = await readTimelineTables(tx);
+        const resolver = createResolver(snapshot);
+        const points = transitionSlotPoints(
+            {
+                id: 0,
+                start: startBeat,
+                end: endBeat,
+                dest: shape.id,
+                slots: marcherIds.length,
+                style: "direct",
+                order: "inherit",
+                params: null,
+            },
+            { [shape.id]: shapeFromRow(shape) },
+        );
+        // Past MAX_CAST_SLOTS the solve is too slow for one click, so castSlots falls back to id
+        // order (marcherIds is sorted)
+        slotOf = castSlots(
+            "direct",
+            marcherIds.map((id) => ({
+                id,
+                xy: resolver.positionAt(id, startBeat),
+            })),
+            points.map((xy, slot) => ({ slot, xy })),
+        );
     } else {
         const { snapshot } = await readTimelineTables(tx);
         const [x, y] = createResolver(snapshot).positionAt(
@@ -399,10 +430,10 @@ export const createTrackInTransaction = async ({
     });
     const created = await createTimelineAssignmentsInTransaction({
         tx,
-        newAssignments: marcherIds.map((marcherId, slotIndex) => ({
+        newAssignments: marcherIds.map((marcherId) => ({
             marcherId,
             transitionId: transition!.id,
-            slotIndex,
+            slotIndex: slotOf.get(marcherId)!,
             startBeat,
             endBeat,
             layer,

@@ -1,3 +1,4 @@
+import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import { db } from "@/global/database/db";
 import {
     queryOptions,
@@ -112,12 +113,14 @@ export const createMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 db,
                 "createMeasuresAndBeats",
                 async (tx) =>
-                    createMeasuresAndBeatsInTransaction({
-                        tx,
-                        beatArgs,
-                        startingPosition,
-                        quantity,
-                    }),
+                    await withTimelinePageRipple(tx, () =>
+                        createMeasuresAndBeatsInTransaction({
+                            tx,
+                            beatArgs,
+                            startingPosition,
+                            quantity,
+                        }),
+                    ),
             );
         },
         onSettled: () => {
@@ -194,12 +197,13 @@ export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
             return transactionWithHistory(
                 db,
                 "deleteMeasuresAndBeats",
-                async (tx) => {
-                    await deleteMeasuresAndBeatsInTransaction({
-                        tx,
-                        measureIds,
-                    });
-                },
+                async (tx) =>
+                    await withTimelinePageRipple(tx, async () => {
+                        await deleteMeasuresAndBeatsInTransaction({
+                            tx,
+                            measureIds,
+                        });
+                    }),
             );
         },
         onSettled: () => {

@@ -16,8 +16,6 @@ import {
 import { pageEndBeat } from "../timelineCanvas";
 import {
     canvasCoordinateWriter,
-    NOT_IN_TIMELINE_MODE_MESSAGE,
-    refuseInTimelineMode,
     timelineCoordinateRecords,
     transformMarchersOnPage,
     TimelineNotReadyError,
@@ -31,6 +29,12 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "../timelineStore";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
+
+// P7.17: these tests set up timeline mode themselves
+keepFixturesInPageMode(
+    "its tests convert the show or write timeline rows, and set the flag, themselves",
+);
 
 /**
  * The routed coordinate tools (docs/timeline/phases/07-page-parity.md P7.2), with the timeline
@@ -340,53 +344,5 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         expect(await marcherPagesByPageId({ db, pageId: page.id })).toEqual(
             before,
         );
-    });
-
-    it("set to previous/next page, flag on: refused with a message, nothing written", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await convertPagesToTimeline(db);
-        const pages = await sortedPages(db);
-        const page = pages[3]!;
-        const previous = await marcherPagesByPageId({
-            db,
-            pageId: pages[2]!.id,
-        });
-        const marcherPagesBefore = await db
-            .select()
-            .from(schema.marcher_pages)
-            .all();
-        const timelineBefore = await timelineRows(db);
-
-        // RegisteredActionsHandler's setAllMarchersToPreviousPage, flag on then off
-        const run = async (timelineMode: boolean) => {
-            const notify = vi.fn();
-            if (refuseInTimelineMode(timelineMode, notify)) return notify;
-            await updateMarcherPages({
-                db,
-                modifiedMarcherPages: previous.map((mp) => ({
-                    marcher_id: mp.marcher_id,
-                    page_id: page.id,
-                    x: mp.x,
-                    y: mp.y,
-                })),
-            });
-            return notify;
-        };
-
-        const notify = await run(true);
-        expect(notify).toHaveBeenCalledWith(NOT_IN_TIMELINE_MODE_MESSAGE);
-        expect(await db.select().from(schema.marcher_pages).all()).toEqual(
-            marcherPagesBefore,
-        );
-        expect(await timelineRows(db)).toEqual(timelineBefore);
-
-        // Flag off: the page-mode write happens as before
-        expect(await run(false)).not.toHaveBeenCalled();
-        expect(await marcherPage(db, 1, page.id)).toMatchObject({
-            x: previous.find((mp) => mp.marcher_id === 1)!.x,
-            y: previous.find((mp) => mp.marcher_id === 1)!.y,
-        });
     });
 });

@@ -22,7 +22,6 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherPageKeys } from "./useMarcherPages";
 import { coordinateDataKeys } from "./useCoordinateData";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
-import { readTimelineMode } from "./useWorkspaceSettings";
 
 const { marchers } = schema;
 
@@ -85,17 +84,13 @@ export const fetchMarchers = () => {
 
 /**
  * In timeline mode the new marchers also get a home and a holding slot in each page move (P7.3).
- * The flag is read when the mutation runs (`readTimelineMode`), waiting for the workspace settings
- * if they haven't loaded yet.
+ * `createMarchers` reads the file's flag inside its own edit, so this works before the workspace
+ * settings query has loaded.
  */
 export const createMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: async (newMarchers: NewMarcherArgs[]) =>
-            createMarchers({
-                db,
-                newMarchers,
-                timelineMode: await readTimelineMode(qc),
-            }),
+        mutationFn: (newMarchers: NewMarcherArgs[]) =>
+            createMarchers({ db, newMarchers }),
         onSuccess: async (_, variables) => {
             // Invalidate all marcher queries
             await qc.invalidateQueries({
@@ -144,17 +139,13 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
 
 /**
  * In timeline mode the deleted marchers' slots are also compacted where that moves no one (P7.3).
- * The flag is read when the mutation runs (`readTimelineMode`), waiting for the workspace settings
- * if they haven't loaded yet.
+ * `deleteMarchers` reads the file's flag inside its own edit, so this works before the workspace
+ * settings query has loaded.
  */
 export const deleteMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: async (marcherIds: Set<number>) =>
-            deleteMarchers({
-                db,
-                marcherIds,
-                timelineMode: await readTimelineMode(qc),
-            }),
+        mutationFn: (marcherIds: Set<number>) =>
+            deleteMarchers({ db, marcherIds }),
         onSuccess: (_, variables) => {
             // Invalidate all marcher queries
             void qc.invalidateQueries({

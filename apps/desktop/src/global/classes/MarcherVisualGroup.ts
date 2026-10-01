@@ -2,6 +2,7 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
+import TimelinePathway from "@/global/classes/canvasObjects/TimelinePathway";
 import Marcher from "@/global/classes/Marcher";
 import { AppearanceComponentOptional } from "@/entity-components/appearance";
 
@@ -23,6 +24,10 @@ export default class MarcherVisualGroup {
     nextMidpoint: Midpoint;
     previousEndPoint: Endpoint;
     nextEndPoint: Endpoint;
+
+    /** Timeline mode's curved paths (P7.10), created on first use; page mode never makes them */
+    private previousTimelinePathway?: TimelinePathway;
+    private nextTimelinePathway?: TimelinePathway;
 
     /**
      * Creates a new MarcherVisualGroup instance.
@@ -112,5 +117,17 @@ export default class MarcherVisualGroup {
     }
     getNextEndpoint() {
         return this.nextEndPoint;
+    }
+    /** Timeline mode's path into the selected page, created on first call */
+    getPreviousTimelinePathway() {
+        return (this.previousTimelinePathway ??= new TimelinePathway({
+            marcherId: this.marcherId,
+        }));
+    }
+    /** Timeline mode's path out of the selected page, created on first call */
+    getNextTimelinePathway() {
+        return (this.nextTimelinePathway ??= new TimelinePathway({
+            marcherId: this.marcherId,
+        }));
     }
 }

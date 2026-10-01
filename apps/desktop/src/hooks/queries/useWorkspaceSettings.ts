@@ -18,6 +18,7 @@ import {
 } from "@/db-functions/workspaceSettings";
 import { mutationOptions } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
+import { marcherAppearancesKeys } from "./marcherAppearancesKeys";
 
 export const workspaceSettingsKeys = {
     all: () => ["workspaceSettings"] as const,
@@ -108,6 +109,10 @@ export const updateWorkspaceSettingsMutationOptions = (queryClient: any) =>
             void queryClient.invalidateQueries({
                 queryKey: workspaceSettingsKeys.all(),
             });
+            // Canvas appearances depend on the timeline flag (P7.16)
+            void queryClient.invalidateQueries({
+                queryKey: marcherAppearancesKeys.all(),
+            });
         },
         onError: (error) => {
             conToastError("Failed to update workspace settings", error);
@@ -126,6 +131,10 @@ export const updateWorkspaceSettingsJSONMutationOptions = (queryClient: any) =>
             // Invalidate workspace settings queries to refetch the updated data
             void queryClient.invalidateQueries({
                 queryKey: workspaceSettingsKeys.all(),
+            });
+            // Canvas appearances depend on the timeline flag (P7.16)
+            void queryClient.invalidateQueries({
+                queryKey: marcherAppearancesKeys.all(),
             });
         },
         onError: (error) => {

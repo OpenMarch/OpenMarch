@@ -31,6 +31,8 @@
         "test": "vitest run --silent",
         "test:focused": "vitest run --silent=true",
         "test:history": "VITEST_ENABLE_HISTORY=true vitest run",
+        "test:timeline": "VITEST_TIMELINE_MODE=true vitest run --silent=true",
+        "test:timeline-history": "VITEST_ENABLE_HISTORY=true VITEST_TIMELINE_MODE=true vitest run",
         "test:watch": "vitest",
         "test:coverage": "pnpm test -- --coverage",
         "test:clearCache": "vitest --clearCache",

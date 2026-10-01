@@ -43,6 +43,12 @@ const MAX_DEPTH = 14;
 /** Where in a piece the chord error is probed (the ends are keyframes and exact). */
 const PROBES = [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875] as const;
 
+/**
+ * The probes for drawn paths (`sampleMarcherPath`): fewer, since a path is drawn on every page
+ * change. Count seeding there catches zig-zags whose corners these would straddle.
+ */
+const PATH_PROBES = [0.25, 0.5, 0.75] as const;
+
 /** One keyframe: a show time in seconds and a position in field units. */
 export interface ExportKeyframe {
     time: number;
@@ -175,9 +181,174 @@ function marcherKeyframes(
     return { keyframes: out, excess };
 }
 
+/** One marcher's path between two beats, as a polyline (see {@link sampleMarcherPath}). */
+export interface MarcherPathSample {
+    /**
+     * The polyline, from the position at `fromBeat` to the one at `toBeat`, with consecutive
+     * repeats (holds) removed; a single point when the marcher doesn't move
+     */
+    points: [number, number][];
+    /** As in {@link MarcherKeyframes}: 0 unless the depth cap left a piece above the tolerance */
+    maxErrorAboveTolerance: number;
+    /**
+     * The stride of the fastest moving stretch: the largest sampled length per beat over the
+     * marcher's non-hold spans clipped to the range. 0 when the marcher holds throughout.
+     */
+    stride: number;
+}
+
+/**
+ * Samples one marcher's path between two beats as a polyline whose chords stay within
+ * `tolerance` of the resolver's path: the span-edge keyframes and probe-based bisection of
+ * {@link buildKeyframes}, but in beats rather than show time (a drawn path has no time axis),
+ * with 3 probes per piece instead of 7, and with a moving span cut at every whole count first
+ * when any count leaves its chord (so zig-zags with corners on the counts aren't straddled).
+ * Arcs and follow-the-leader moves come back curved; a direct move is just its two ends.
+ *
+ * @param fromBeat the start beat; must be below `toBeat`
+ */
+export function sampleMarcherPath(
+    resolver: Pick<Resolver, "positionAt" | "spanInfos">,
+    marcherId: number,
+    fromBeat: number,
+    toBeat: number,
+    options: Pick<KeyframeExportOptions, "tolerance" | "maxDepth"> = {},
+): MarcherPathSample {
+    if (!(fromBeat < toBeat))
+        throw new RangeError("fromBeat must be below toBeat");
+    const tolerance = options.tolerance ?? DEFAULT_KEYFRAME_TOLERANCE;
+    if (!(tolerance > 0)) throw new RangeError("tolerance must be positive");
+    const maxDepth = options.maxDepth ?? MAX_DEPTH;
+
+    const spans = resolver.spanInfos(marcherId);
+    const edges = new Set<number>([fromBeat, toBeat]);
+    for (const span of spans)
+        for (const edge of [span.start, span.end])
+            if (edge > fromBeat && edge < toBeat) edges.add(edge);
+    const sorted = [...edges].sort((a, b) => a - b);
+
+    const at = (beat: number): [number, number] => {
+        const [x, y] = resolver.positionAt(marcherId, beat);
+        return [x, y];
+    };
+    const all: [number, number][] = [];
+    const emit = (_beat: number, p: [number, number]) => {
+        all.push(p);
+    };
+
+    let excess = 0;
+    let stride = 0;
+    let prevBeat = sorted[0]!;
+    let prevPos = at(prevBeat);
+    emit(prevBeat, prevPos);
+    for (let i = 1; i < sorted.length; i++) {
+        const beat = sorted[i]!;
+        const pos = at(beat);
+        const from = prevBeat;
+        const span = spans.find((s) => s.start <= from && from < s.end);
+        if (span && span.kind !== "hold") {
+            // The interval is one span clipped to the range (span edges are boundaries)
+            const first = all.length - 1;
+            const pieces = countSeeds(at, from, prevPos, beat, pos, tolerance);
+            let a = from;
+            let pa = prevPos;
+            for (const [b, pb] of pieces) {
+                excess = Math.max(
+                    excess,
+                    subdivide(
+                        at,
+                        a,
+                        pa,
+                        b,
+                        pb,
+                        tolerance,
+                        0,
+                        maxDepth,
+                        emit,
+                        PATH_PROBES,
+                    ),
+                );
+                if (b !== beat) emit(b, pb);
+                a = b;
+                pa = pb;
+            }
+            all.push(pos);
+            stride = Math.max(
+                stride,
+                polylineLength(all, first) / (beat - from),
+            );
+            all.pop();
+        }
+        emit(beat, pos);
+        prevBeat = beat;
+        prevPos = pos;
+    }
+
+    const points: [number, number][] = [];
+    for (const p of all) {
+        const last = points[points.length - 1];
+        if (!last || last[0] !== p[0] || last[1] !== p[1]) points.push(p);
+    }
+    return { points, maxErrorAboveTolerance: excess, stride };
+}
+
+/** The length of `points` from index `from` to the end, as a polyline. */
+function polylineLength(points: readonly [number, number][], from: number) {
+    let length = 0;
+    for (let i = from + 1; i < points.length; i++)
+        length += Math.hypot(
+            points[i]![0] - points[i - 1]![0],
+            points[i]![1] - points[i - 1]![1],
+        );
+    return length;
+}
+
+/**
+ * The pieces to bisect a moving span `[a, b]` in, as their end beats and positions (the last is
+ * `b`). A span that leaves the chord at a whole count is cut at every whole count inside it, so a
+ * zig-zag with corners on the counts, which the 7 probes of one piece can straddle, isn't missed;
+ * otherwise the span is one piece. The check costs one position per whole count.
+ */
+function countSeeds(
+    at: (beat: number) => [number, number],
+    a: number,
+    pa: [number, number],
+    b: number,
+    pb: [number, number],
+    tolerance: number,
+): [number, [number, number]][] {
+    const seeds: [number, [number, number]][] = [];
+    for (let k = Math.floor(a) + 1; k < b; k++) seeds.push([k, at(k)]);
+    const offChord = seeds.some(
+        ([, p]) => distanceToSegment(p, pa, pb) > tolerance,
+    );
+    return offChord ? [...seeds, [b, pb]] : [[b, pb]];
+}
+
+function distanceToSegment(
+    p: readonly [number, number],
+    a: readonly [number, number],
+    b: readonly [number, number],
+): number {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len2 = dx * dx + dy * dy;
+    const t =
+        len2 === 0
+            ? 0
+            : Math.max(
+                  0,
+                  Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2),
+              );
+    return Math.hypot(p[0] - (a[0] + t * dx), p[1] - (a[1] + t * dy));
+}
+
 /**
  * Emits the keyframes strictly between `t0` and `t1` (in order) that bring the chord error of the
  * piece within `tolerance`, by bisecting at the midpoint while any probe is too far off.
+ *
+ * @param probes where in each piece to measure the chord error; the position at 0.5, when
+ * probed, is reused as the bisection point
  */
 function subdivide(
     evalAt: (time: number) => [number, number],
@@ -189,10 +360,13 @@ function subdivide(
     depth: number,
     maxDepth: number,
     emit: (time: number, p: [number, number]) => void,
+    probes: readonly number[] = PROBES,
 ): number {
     let worst = 0;
-    for (const f of PROBES) {
+    let half: [number, number] | null = null;
+    for (const f of probes) {
         const p = evalAt(t0 + f * (t1 - t0));
+        if (f === 0.5) half = p;
         const error = Math.hypot(
             p[0] - (p0[0] + f * (p1[0] - p0[0])),
             p[1] - (p0[1] + f * (p1[1] - p0[1])),
@@ -203,30 +377,28 @@ function subdivide(
 
     const tm = t0 + 0.5 * (t1 - t0);
     if (depth >= maxDepth || !(tm > t0 && tm < t1)) return worst - tolerance;
-    const pm = evalAt(tm);
-    const left = subdivide(
-        evalAt,
-        t0,
-        p0,
-        tm,
-        pm,
-        tolerance,
-        depth + 1,
-        maxDepth,
-        emit,
-    );
+    const pm = half ?? evalAt(tm);
+    const next = (
+        a: number,
+        pa: [number, number],
+        b: number,
+        pb: [number, number],
+    ) =>
+        subdivide(
+            evalAt,
+            a,
+            pa,
+            b,
+            pb,
+            tolerance,
+            depth + 1,
+            maxDepth,
+            emit,
+            probes,
+        );
+    const left = next(t0, p0, tm, pm);
     emit(tm, pm);
-    const right = subdivide(
-        evalAt,
-        tm,
-        pm,
-        t1,
-        p1,
-        tolerance,
-        depth + 1,
-        maxDepth,
-        emit,
-    );
+    const right = next(tm, pm, t1, p1);
     return Math.max(left, right);
 }
 

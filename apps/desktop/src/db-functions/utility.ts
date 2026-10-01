@@ -1,3 +1,4 @@
+import { withTimelinePageRipple } from "./timelineRipple";
 import { eq } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
@@ -71,12 +72,13 @@ export async function updateUtility({
     return await transactionWithHistory(
         db,
         "updateUtility",
-        async (tx: DbTransaction) => {
-            return await updateUtilityInTransaction({
-                tx,
-                args,
-            });
-        },
+        async (tx: DbTransaction) =>
+            await withTimelinePageRipple(tx, async () => {
+                return await updateUtilityInTransaction({
+                    tx,
+                    args,
+                });
+            }),
     );
 }
 

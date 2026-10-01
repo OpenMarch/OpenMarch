@@ -2,6 +2,7 @@ import { describe, expect } from "vitest";
 import { eq, getTableName, sql } from "drizzle-orm";
 import type { ChangeBatch } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
+import { setTimelineModeFlag } from "@/test/timelineMode";
 import {
     createUndoTriggers,
     dropUndoTriggers,
@@ -257,6 +258,10 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
             db,
         }) => {
             await seed(db);
+            // The page-mode delete, which leaves the assignments to the cascade. With the flag on
+            // (`test:timeline`), `deleteMarchers` deletes them first instead (P7.3), which
+            // `timelineMarchers.test.ts` covers.
+            await setTimelineModeFlag(db, false);
             await roundTrip(db, () =>
                 deleteMarchers({ marcherIds: new Set([1]), db }),
             );

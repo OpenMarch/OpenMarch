@@ -22,6 +22,7 @@ import {
     updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
+import { withTimelinePageRipple } from "./timelineRipple";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import {
@@ -327,12 +328,13 @@ export async function createPages({
     const transactionResult = await transactionWithHistory(
         db,
         "createPages",
-        async (tx) => {
-            return await createPagesInTransaction({
-                newPages,
-                tx,
-            });
-        },
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                return await createPagesInTransaction({
+                    newPages,
+                    tx,
+                });
+            }),
     );
     return transactionResult;
 }
@@ -404,12 +406,13 @@ export async function updatePages({
     const transactionResult = await transactionWithHistory(
         db,
         "updatePages",
-        async (tx) => {
-            return await updatePagesInTransaction({
-                modifiedPages,
-                tx,
-            });
-        },
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                return await updatePagesInTransaction({
+                    modifiedPages,
+                    tx,
+                });
+            }),
     );
     return transactionResult;
 }
@@ -614,14 +617,15 @@ export async function deletePages({
     const response = await transactionWithHistory(
         db,
         "deletePages",
-        async (tx) => {
-            const response = await deletePagesInTransaction({
-                pageIds,
-                tx,
-            });
-            await ensureSecondBeatHasPage({ tx });
-            return response;
-        },
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                const response = await deletePagesInTransaction({
+                    pageIds,
+                    tx,
+                });
+                await ensureSecondBeatHasPage({ tx });
+                return response;
+            }),
     );
     return response;
 }
@@ -651,34 +655,35 @@ export async function deletePageYank({
     const response = await transactionWithHistory(
         db,
         "deletePageYank",
-        async (tx) => {
-            const response = await deletePagesInTransaction({
-                pageIds: new Set([pageId]),
-                tx,
-            });
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                const response = await deletePagesInTransaction({
+                    pageIds: new Set([pageId]),
+                    tx,
+                });
 
-            if (yankLength > 0) {
-                for (const page of laterPages) {
-                    const targetBeat = await tx.query.beats.findFirst({
-                        where: eq(
-                            schema.beats.position,
-                            page.beatObject.position - yankLength,
-                        ),
-                    });
-                    assert(
-                        targetBeat != null,
-                        `Could not find target beat for yanked page ${page.id}`,
-                    );
-                    await tx
-                        .update(schema.pages)
-                        .set({ start_beat: targetBeat.id })
-                        .where(eq(schema.pages.id, page.id));
+                if (yankLength > 0) {
+                    for (const page of laterPages) {
+                        const targetBeat = await tx.query.beats.findFirst({
+                            where: eq(
+                                schema.beats.position,
+                                page.beatObject.position - yankLength,
+                            ),
+                        });
+                        assert(
+                            targetBeat != null,
+                            `Could not find target beat for yanked page ${page.id}`,
+                        );
+                        await tx
+                            .update(schema.pages)
+                            .set({ start_beat: targetBeat.id })
+                            .where(eq(schema.pages.id, page.id));
+                    }
                 }
-            }
 
-            await ensureSecondBeatHasPage({ tx });
-            return response;
-        },
+                await ensureSecondBeatHasPage({ tx });
+                return response;
+            }),
     );
     return response;
 }
@@ -703,13 +708,14 @@ export const createLastPage = async ({
     const transactionResult = await transactionWithHistory(
         db,
         "createLastPage",
-        async (tx) => {
-            return await createLastPageInTransaction({
-                tx,
-                newPageCounts,
-                createNewBeats,
-            });
-        },
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                return await createLastPageInTransaction({
+                    tx,
+                    newPageCounts,
+                    createNewBeats,
+                });
+            }),
     );
     return transactionResult;
 };
@@ -1124,29 +1130,31 @@ export const createTempoGroupAndPageFromWorkspaceSettings = async ({
     const result = await transactionWithHistory(
         db,
         "createDefaultTempoGroupAndPage",
-        async (tx) => {
-            const lastBeat = await getLastBeat({ db });
-            assert(lastBeat != null, "Last beat not found");
-            await _createFromTempoGroupInTransaction({
-                tx,
-                tempoGroup,
-                endTempo: undefined,
-                startingPosition: lastBeat.position + 1,
-            });
-            const nextBeat = await getNextBeatToStartPageOn(tx);
-            if (!nextBeat) throw new Error("Next beat not found");
-            const createdPages = await createPagesInTransaction({
-                tx,
-                newPages: [{ start_beat: nextBeat.id, is_subset: false }],
-            });
-            await updateUtilityInTransaction({
-                tx,
-                args: {
-                    last_page_counts: workspaceSettings.defaultNewPageCounts,
-                },
-            });
-            return createdPages[0];
-        },
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                const lastBeat = await getLastBeat({ db });
+                assert(lastBeat != null, "Last beat not found");
+                await _createFromTempoGroupInTransaction({
+                    tx,
+                    tempoGroup,
+                    endTempo: undefined,
+                    startingPosition: lastBeat.position + 1,
+                });
+                const nextBeat = await getNextBeatToStartPageOn(tx);
+                if (!nextBeat) throw new Error("Next beat not found");
+                const createdPages = await createPagesInTransaction({
+                    tx,
+                    newPages: [{ start_beat: nextBeat.id, is_subset: false }],
+                });
+                await updateUtilityInTransaction({
+                    tx,
+                    args: {
+                        last_page_counts:
+                            workspaceSettings.defaultNewPageCounts,
+                    },
+                });
+                return createdPages[0];
+            }),
     );
     return result;
 };

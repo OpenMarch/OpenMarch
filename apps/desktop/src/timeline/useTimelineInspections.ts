@@ -3,6 +3,7 @@ import type { Diagnostic } from "@openmarch/core";
 import type { DbConnection } from "@/db-functions/types";
 import {
     getTimelineHost,
+    resolverSpans,
     useDiagnostics,
     useTimelineResolverStore,
 } from "./timelineStore";
@@ -10,6 +11,21 @@ import {
     buildMarcherInspection,
     type MarcherInspection,
 } from "./timelineInspector";
+import {
+    buildTransitionEditTargets,
+    transitionShapeOptions,
+    type TransitionEditTarget,
+    type TransitionShapeOption,
+} from "./timelineTransitionEditor";
+import { useTimelineViewVersions } from "./useTimelineViewVersions";
+import {
+    buildAssignmentEditTarget,
+    type AssignmentEditTarget,
+} from "./timelineAssignmentEditor";
+import {
+    buildShapeEditTargets,
+    type ShapeEditTarget,
+} from "./timelineShapeEditor";
 import { readVersionedTimelineViewTables } from "./useTimelineTracks";
 import type { TimelineViewTables } from "./timelineViewModel";
 
@@ -17,9 +33,33 @@ import type { TimelineViewTables } from "./timelineViewModel";
 export const MAX_INSPECTED_MARCHERS = 10;
 
 const NO_DIAGNOSTICS: Diagnostic[] = [];
+interface ShapeEdits {
+    /**
+     * The store and display versions the shapes were read at, summed (as the other editors'
+     * targets are); -1 before any read
+     */
+    readonly version: number;
+    readonly targets: readonly ShapeEditTarget[];
+}
+const NO_SHAPE_EDITS: ShapeEdits = { version: -1, targets: [] };
+
+interface Built {
+    readonly inspections: readonly MarcherInspection[];
+    readonly transitionEdits: readonly TransitionEditTarget[];
+    readonly shapeOptions: readonly TransitionShapeOption[];
+    readonly assignmentEdits: readonly AssignmentEditTarget[];
+}
+
+const EMPTY_BUILT: Built = {
+    inspections: [],
+    transitionEdits: [],
+    shapeOptions: [],
+    assignmentEdits: [],
+};
 
 interface VersionedTables {
     readonly version: number;
+    readonly displayVersion: number;
     readonly tables: TimelineViewTables;
 }
 
@@ -50,9 +90,23 @@ export function useTimelineInspections({
     /** Selected marchers the resolver doesn't have; empty until a resolver is ready */
     unknownMarcherIds: readonly number[];
     diagnostics: readonly Diagnostic[];
+    /**
+     * The transitions the inspections can edit (P8.3), once each, in the order of the inspections:
+     * each marcher's current transition, or the one that ends at the beat
+     */
+    transitionEdits: readonly TransitionEditTarget[];
+    /** The shapes a transition can head to */
+    shapeOptions: readonly TransitionShapeOption[];
+    /** The slots and assignments of each of `transitionEdits` (P8.4), in the same order */
+    assignmentEdits: readonly AssignmentEditTarget[];
+    /**
+     * Every shape, for the shape editor (P8.2), by id, and the version they were read at.
+     * Built whether or not a page is selected.
+     */
+    shapeEdits: ShapeEdits;
 } {
     const resolver = useTimelineResolverStore((s) => s.resolver);
-    const version = useTimelineResolverStore((s) => s.version);
+    const { version, displayVersion } = useTimelineViewVersions();
     const active = enabled && resolver !== null;
 
     const [loaded, setLoaded] = useState<VersionedTables | null>(null);
@@ -72,7 +126,7 @@ export function useTimelineInspections({
         return () => {
             current = false;
         };
-    }, [active, database, version]);
+    }, [active, database, version, displayVersion]);
 
     const storeDiagnostics = useDiagnostics();
     const diagnostics = active ? storeDiagnostics : NO_DIAGNOSTICS;
@@ -89,11 +143,16 @@ export function useTimelineInspections({
     }, [active, resolver, version, marcherIds]);
 
     const built = useMemo(() => {
-        if (!active || !resolver || !loaded || beat === null) return [];
+        if (!active || !resolver || !loaded || beat === null)
+            return EMPTY_BUILT;
         // Rows of another version: wait for the matching read
-        if (loaded.version !== version) return null;
+        if (
+            loaded.version !== version ||
+            loaded.displayVersion !== displayVersion
+        )
+            return null;
         const host = getTimelineHost();
-        if (!host) return [];
+        if (!host) return EMPTY_BUILT;
         const shapeKinds: Record<number, string> = {};
         for (const [id, shape] of Object.entries(host.snapshot.shapes))
             shapeKinds[Number(id)] = shape.kind;
@@ -103,7 +162,7 @@ export function useTimelineInspections({
             shapeKinds,
             showDiagnostics: diagnostics,
         };
-        return known.ids
+        const inspections = known.ids
             .slice(0, MAX_INSPECTED_MARCHERS)
             .map((id) =>
                 buildMarcherInspection(
@@ -113,12 +172,80 @@ export function useTimelineInspections({
                     sources,
                 ),
             );
-    }, [active, resolver, loaded, version, beat, known, diagnostics]);
+        const transitionEdits = buildTransitionEditTargets(inspections, {
+            transitions: host.snapshot.transitions,
+            shapes: host.snapshot.shapes,
+            assignments: loaded.tables.assignments,
+        });
+        const labels = new Map(
+            loaded.tables.marchers.map((m) => [m.id, m.label]),
+        );
+        const assignmentEdits = transitionEdits.map((target) =>
+            buildAssignmentEditTarget(
+                host.snapshot.transitions[target.id]!,
+                // Moves on a display-only edit too, so the editors' guard can't wait on a
+                // resolver version that never comes
+                loaded.version + loaded.displayVersion,
+                {
+                    assignments: loaded.tables.assignments,
+                    labels,
+                    spansOf: (id) => resolverSpans(resolver, id),
+                },
+            ),
+        );
+        return {
+            inspections,
+            transitionEdits,
+            shapeOptions: transitionShapeOptions(
+                host.snapshot.shapes,
+                loaded.tables.shapes,
+            ),
+            assignmentEdits,
+        };
+    }, [
+        active,
+        resolver,
+        loaded,
+        version,
+        displayVersion,
+        beat,
+        known,
+        diagnostics,
+    ]);
 
-    const last = useRef<readonly MarcherInspection[]>([]);
+    const shapes = useMemo(() => {
+        if (!active || !loaded) return NO_SHAPE_EDITS;
+        if (
+            loaded.version !== version ||
+            loaded.displayVersion !== displayVersion
+        )
+            return null;
+        // Moves on a display-only edit too, like the other editors' version (P7.15)
+        const shown = loaded.version + loaded.displayVersion;
+        const host = getTimelineHost();
+        if (!host) return NO_SHAPE_EDITS;
+        return {
+            version: shown,
+            targets: buildShapeEditTargets(
+                host.snapshot.shapes,
+                loaded.tables.shapes,
+                host.snapshot.transitions,
+                shown,
+            ),
+        };
+    }, [active, loaded, version, displayVersion]);
+    const lastShapes = useRef<ShapeEdits>(NO_SHAPE_EDITS);
+    if (shapes !== null) lastShapes.current = shapes;
+
+    const last = useRef<Built>(EMPTY_BUILT);
     if (built !== null) last.current = built;
+    const current = built ?? last.current;
     return {
-        inspections: built ?? last.current,
+        inspections: current.inspections,
+        transitionEdits: current.transitionEdits,
+        shapeOptions: current.shapeOptions,
+        assignmentEdits: current.assignmentEdits,
+        shapeEdits: shapes ?? lastShapes.current,
         omitted: Math.max(0, known.ids.length - MAX_INSPECTED_MARCHERS),
         unknownMarcherIds: known.unknown,
         diagnostics,

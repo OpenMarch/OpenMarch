@@ -9,6 +9,10 @@ import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { transactionWithHistory } from "../history";
 import { eq, inArray } from "drizzle-orm";
+import {
+    timelineFixtureMode,
+    timelineHistoryTables,
+} from "@/test/timelineMode";
 
 describeDbTests("marchers", (it) => {
     describe("database interactions", () => {
@@ -17,6 +21,7 @@ describeDbTests("marchers", (it) => {
             schema.marcher_pages,
             schema.pages,
             schema.beats,
+            ...timelineHistoryTables(),
         ]);
 
         describe("getMarchers", () => {
@@ -38,9 +43,29 @@ describeDbTests("marchers", (it) => {
                     expect(result).toHaveLength(
                         marchers.expectedMarchers.length,
                     );
-                    expect(result.sort(sort)).toMatchObject(
-                        marchers.expectedMarchers.sort(sort),
-                    );
+                    if (!timelineFixtureMode()) {
+                        expect(result.sort(sort)).toMatchObject(
+                            marchers.expectedMarchers.sort(sort),
+                        );
+                    } else {
+                        // P7.17: converting the show sets each home from the marcher's page 0 row
+                        const page0 = await db
+                            .select()
+                            .from(schema.marcher_pages)
+                            .where(eq(schema.marcher_pages.page_id, 0))
+                            .all();
+                        const homes = new Map(
+                            page0.map((mp) => [
+                                mp.marcher_id,
+                                { home_x: mp.x, home_y: mp.y },
+                            ]),
+                        );
+                        expect(result.sort(sort)).toMatchObject(
+                            marchers.expectedMarchers
+                                .sort(sort)
+                                .map((m) => ({ ...m, ...homes.get(m.id) })),
+                        );
+                    }
                     await expectNumberOfChanges.test(db, 0);
                 },
             );

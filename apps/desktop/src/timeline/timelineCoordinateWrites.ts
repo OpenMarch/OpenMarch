@@ -4,14 +4,19 @@ import {
     type TimelineMovePage,
 } from "@/db-functions/timelineMoves";
 import type { DbConnection } from "@/db-functions/types";
+import { withTimelineWriteLock } from "@/db-functions/history";
 import type { CoordinateRecord } from "@/utilities/CoordinateActions";
 import { pageEndBeat } from "./timelineCanvas";
-import { useTimelineResolverStore } from "./timelineStore";
+import {
+    timelineResolverSettled,
+    useTimelineResolverStore,
+} from "./timelineStore";
 
 /**
  * The seam between the page-era coordinate tools and timeline writes in timeline mode
  * (docs/timeline/phases/07-page-parity.md P7.2). Canvas drag, nudges, snap, align, distribute,
- * flip, swap, circle, the line tool and the inspector's distribute buttons all compute new x/y
+ * flip, swap, circle, the line tool, the inspector's distribute buttons and "set marchers to the
+ * previous or next page" (P7.6) all compute new x/y
  * for the selected marchers on the selected page; in timeline mode they read the current x/y from
  * the resolver at the page's end beat (what the canvas draws) and write through
  * `moveMarchersOnPage`. With the flag off, nothing here runs.
@@ -108,22 +113,66 @@ export async function transformMarchersOnPage<R extends MarcherXY>({
     return next;
 }
 
-/** Shown when a page-era tool has no timeline version yet. */
-export const NOT_IN_TIMELINE_MODE_MESSAGE =
-    "This isn't available in timeline mode yet.";
+/**
+ * Settles once every timeline write queued so far has committed and reached the resolver, and no
+ * cold build is pending. Call it before reading positions to plan a new write from them: without
+ * it, a write still in flight (a nudge pressed just before) is missing from the resolver, and the
+ * plan starts from stale positions. Never call it from inside a wrapped write.
+ */
+export async function timelinePositionsSettled(): Promise<void> {
+    await withTimelineWriteLock(async () => undefined);
+    await timelineResolverSettled();
+}
+
+/** What `copyPagePositions` plans: the marchers it covers and the moves that change something. */
+export interface PagePositionCopy {
+    /** The marchers set to the source page's positions, moved or already there */
+    marcherIds: number[];
+    /** One move per marcher whose position on the target page changes */
+    moves: TimelineMarcherMove[];
+}
 
 /**
- * For page-era tools that would read stale `marcher_pages` rows in timeline mode ("set marchers to
- * the previous or next page", until P7.6): with the flag on, shows `NOT_IN_TIMELINE_MODE_MESSAGE`
- * and returns true, and the caller writes nothing. With the flag off, returns false.
+ * "Set all or selected marchers to the previous or next page" in timeline mode
+ * (docs/timeline/phases/07-page-parity.md P7.6). Copies each marcher's position on `source` (the
+ * resolver at its end beat, what the canvas draws there) to `page`, as moves for
+ * `moveMarchersOnPage`. `marcher_pages` is never read: its rows can be stale or missing in timeline
+ * mode.
+ *
+ * Marchers already at the source position on `page` get no move, so a marcher that holds still
+ * across the two pages is not touched (it may have no move ending at the page's end beat, which
+ * `moveMarchersOnPage` would refuse). Positions are compared exactly, since they are copied.
+ *
+ * @param marcherIds the marchers to copy; all marchers the resolver knows when omitted. Marchers
+ *   the resolver doesn't know are dropped.
+ * @throws TimelineNotReadyError when no resolver is ready
  */
-export function refuseInTimelineMode(
-    timelineMode: boolean,
-    notify: (message: string) => unknown,
-): boolean {
-    if (!timelineMode) return false;
-    notify(NOT_IN_TIMELINE_MODE_MESSAGE);
-    return true;
+export function copyPagePositions({
+    page,
+    source,
+    marcherIds,
+}: {
+    page: TimelineMovePage;
+    source: TimelineMovePage;
+    marcherIds?: readonly number[];
+}): PagePositionCopy {
+    const resolver = useTimelineResolverStore.getState().resolver;
+    if (!resolver) throw new TimelineNotReadyError();
+    const known = resolver.marcherIds();
+    const knownSet = new Set(known);
+    const ids =
+        marcherIds === undefined
+            ? [...known]
+            : marcherIds.filter((id) => knownSet.has(id));
+    const sourceBeat = pageEndBeat(source);
+    const targetBeat = pageEndBeat(page);
+    const moves: TimelineMarcherMove[] = [];
+    for (const marcherId of ids) {
+        const [x, y] = resolver.positionAt(marcherId, sourceBeat);
+        const [currentX, currentY] = resolver.positionAt(marcherId, targetBeat);
+        if (x !== currentX || y !== currentY) moves.push({ marcherId, x, y });
+    }
+    return { marcherIds: ids, moves };
 }
 
 /** The timeline move for each changed coordinate. Any `page_id` on them is ignored. */

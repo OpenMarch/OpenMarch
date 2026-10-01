@@ -13,13 +13,15 @@ import {
     marcherIdsForAllTagIdsQueryOptions,
     tagAppearanceByPageIdMapQueryOptions,
 } from "@/hooks/queries";
-import type MarcherPageMap from "@/global/classes/MarcherPageIndex";
+import type { PagePositionMap } from "@/components/exporting/utils/exportPagePositions";
 import type Page from "@/global/classes/Page";
 import type Marcher from "@/global/classes/Marcher";
 import type { FieldProperties } from "@openmarch/core";
 import { useTimingObjects } from "@/hooks";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useQuery } from "@tanstack/react-query";
+import { useTimelineResolverStore } from "@/timeline/timelineStore";
+import { timelinePreviewPositions } from "./svgPreviewPositions";
 
 const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
 
@@ -57,7 +59,7 @@ const SvgPreviewHandler: React.FC = () => {
             !fieldProperties ||
             !marchers?.length ||
             !sectionAppearances ||
-            !marcherPages ||
+            (!timelineMode && !marcherPages) ||
             !marcherIdsByTagId ||
             !allTagAppearances ||
             !tagAppearanceIdsByPageId ||
@@ -90,7 +92,8 @@ const SvgPreviewHandler: React.FC = () => {
     ]);
 
     const fieldPropertiesRef = useRef(fieldProperties);
-    const marcherPagesRef = useRef<MarcherPageMap | undefined>(marcherPages);
+    const marcherPagesRef = useRef<PagePositionMap | undefined>(marcherPages);
+    const timelineModeRef = useRef(timelineMode);
     const marchersRef = useRef(Array.isArray(marchers) ? marchers : []);
     const pagesRef = useRef(pages);
     const marcherAppearancesByPageIdRef = useRef(marcherAppearancesByPageId);
@@ -102,6 +105,10 @@ const SvgPreviewHandler: React.FC = () => {
     useEffect(() => {
         marcherPagesRef.current = marcherPages;
     }, [marcherPages]);
+
+    useEffect(() => {
+        timelineModeRef.current = timelineMode;
+    }, [timelineMode]);
 
     useEffect(() => {
         marchersRef.current = Array.isArray(marchers) ? marchers : [];
@@ -119,7 +126,7 @@ const SvgPreviewHandler: React.FC = () => {
         async (
             fieldProps: FieldProperties,
             page: Page,
-            marcherPagesMap: MarcherPageMap | undefined,
+            marcherPagesMap: PagePositionMap | undefined,
             allMarchers: Marcher[],
         ): Promise<string> => {
             try {
@@ -172,7 +179,6 @@ const SvgPreviewHandler: React.FC = () => {
         window.electron.onGetSvgForClose(async () => {
             const currentFieldProps = fieldPropertiesRef.current;
             const currentPages = pagesRef.current;
-            const currentMarcherPages = marcherPagesRef.current;
             const currentMarchers = marchersRef.current;
 
             const firstPage =
@@ -185,6 +191,19 @@ const SvgPreviewHandler: React.FC = () => {
                     "Missing required data for SVG generation. Field properties or first page not available.",
                 );
                 return SVG_GENERATION_ERROR;
+            }
+
+            // Timeline mode: marcher_pages is frozen page-era data, so sample the live
+            // resolver, only when it is ready and without the write lock (P7.7)
+            let currentMarcherPages: PagePositionMap | undefined;
+            if (timelineModeRef.current) {
+                currentMarcherPages = await timelinePreviewPositions(
+                    useTimelineResolverStore.getState(),
+                    firstPage,
+                );
+                if (!currentMarcherPages) return SVG_GENERATION_ERROR;
+            } else {
+                currentMarcherPages = marcherPagesRef.current;
             }
 
             const svg = await generateSvgPreview(

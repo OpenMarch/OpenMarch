@@ -71,3 +71,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+### 2026-10-01 · timeline-worker (timeline/p7-coordinate-sheets) · Cross-phase note from P7.7
+
+- **Unowned dead code for cleanup:** `apps/desktop/electron/main/services/export-utility-process.ts` is unreachable. Nothing imports or forks it, and it is not a Vite or electron-builder entry. It still reads `marcher_pages` straight from the file. Delete it with the page-era tables. `src/components/exporting/CoordinateSheetTemplates.tsx` has no importers either.

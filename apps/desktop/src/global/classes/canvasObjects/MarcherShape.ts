@@ -13,6 +13,10 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { db } from "@/global/database/db";
 import { invalidateByPage } from "@/hooks/queries/sharedInvalidators";
+import {
+    timelineErrorCode,
+    toastTimelineError,
+} from "@/timeline/timelineErrorMessages";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -266,6 +270,11 @@ export const useCreateMarcherShape = () => {
                 queryKey: shapePageKeys.all(),
             });
             invalidateByPage(queryClient, new Set([pageId]));
+        },
+        onError: (error) => {
+            // In timeline mode `createShapePages` refuses (P7.11); say why
+            if (timelineErrorCode(error) !== null) toastTimelineError(error);
+            else console.error(error);
         },
     });
 };

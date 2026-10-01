@@ -1,10 +1,11 @@
+import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import Beat, {
     assertValidTempoBpm,
     fromDatabaseBeat,
 } from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
 import Page from "@/global/classes/Page";
-import { conToastError } from "@/utilities/utils";
+import type { DbTransaction } from "@/db-functions/types";
 import { db } from "@/global/database/db";
 import { transactionWithHistory } from "@/db-functions";
 import {
@@ -29,6 +30,7 @@ import { measureKeys } from "@/hooks/queries/useMeasures";
 import { beatKeys } from "@/hooks/queries/useBeats";
 import { pageKeys } from "@/hooks/queries/usePages";
 import { toast } from "sonner";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import tolgee from "@/global/singletons/Tolgee";
 
 /**
@@ -343,17 +345,21 @@ export const prepareMeasuresForCreation = (
  * @param oldBeats - The old beats to delete
  * @returns A promise resolving to the result of the database operations
  */
-export const _performDatabaseOperations = async ({
-    pagesToUpdate,
-    measuresToCreate,
-    oldMeasures,
-    oldBeats,
-}: {
+interface DatabaseOperationsArgs {
     pagesToUpdate: ModifiedPageArgs[];
     measuresToCreate: NewMeasureArgs[];
     oldMeasures: Measure[];
     oldBeats: Beat[];
-}): Promise<void> => {
+}
+
+/** The statements of `_performDatabaseOperations`, inside a transaction the caller owns. */
+export const _performDatabaseOperationsInTransaction = async ({
+    tx,
+    pagesToUpdate,
+    measuresToCreate,
+    oldMeasures,
+    oldBeats,
+}: DatabaseOperationsArgs & { tx: DbTransaction }): Promise<void> => {
     const measureIdsToDelete = new Set(
         oldMeasures.map((measure) => measure.id),
     );
@@ -363,39 +369,50 @@ export const _performDatabaseOperations = async ({
             .map((beat) => beat.id),
     );
 
-    await transactionWithHistory(db, "replaceAllBeatObjects", async (tx) => {
-        // Update pages
-        if (pagesToUpdate.length > 0) {
-            await updatePagesInTransaction({
-                tx,
-                modifiedPages: pagesToUpdate,
-            });
-        }
+    // Update pages
+    if (pagesToUpdate.length > 0) {
+        await updatePagesInTransaction({
+            tx,
+            modifiedPages: pagesToUpdate,
+        });
+    }
 
-        // Create new measures
-        if (measuresToCreate.length > 0) {
-            await createMeasuresInTransaction({
-                tx,
-                newItems: measuresToCreate,
-            });
-        }
+    // Create new measures
+    if (measuresToCreate.length > 0) {
+        await createMeasuresInTransaction({
+            tx,
+            newItems: measuresToCreate,
+        });
+    }
 
-        // Delete old measures
-        if (measureIdsToDelete.size > 0) {
-            await deleteMeasuresInTransaction({
-                tx,
-                itemIds: measureIdsToDelete,
-            });
-        }
+    // Delete old measures
+    if (measureIdsToDelete.size > 0) {
+        await deleteMeasuresInTransaction({
+            tx,
+            itemIds: measureIdsToDelete,
+        });
+    }
 
-        // Delete old beats
-        if (beatIdsToDelete.size > 0) {
-            await deleteBeatsInTransaction({
-                tx,
-                beatIds: beatIdsToDelete,
-            });
-        }
-    });
+    // Delete old beats
+    if (beatIdsToDelete.size > 0) {
+        await deleteBeatsInTransaction({
+            tx,
+            beatIds: beatIdsToDelete,
+        });
+    }
+};
+
+export const _performDatabaseOperations = async (
+    args: DatabaseOperationsArgs,
+): Promise<void> => {
+    await transactionWithHistory(
+        db,
+        "replaceAllBeatObjects",
+        async (tx) =>
+            await withTimelinePageRipple(tx, () =>
+                _performDatabaseOperationsInTransaction({ tx, ...args }),
+            ),
+    );
 };
 
 /**
@@ -424,7 +441,8 @@ const useAudioPlayerMutation = <TArgs>(
             if (successKey) toast.success(tolgee.t(successKey));
         },
         onError: (error) => {
-            conToastError(tolgee.t(errorKey), error);
+            // Timeline refusals get their own message (P8.6); anything else the generic one
+            toastTimelineError(error, tolgee.t(errorKey));
         },
     });
 };
@@ -437,12 +455,17 @@ export const _createBeatsWithResult = async ({
 }: {
     newBeats: NewBeatArgs[];
 }): Promise<DatabaseBeat[]> => {
-    return await transactionWithHistory(db, "createBeats", async (tx) => {
-        return await createBeatsInTransaction({
-            tx,
-            newBeats,
-        });
-    });
+    return await transactionWithHistory(
+        db,
+        "createBeats",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                return await createBeatsInTransaction({
+                    tx,
+                    newBeats,
+                });
+            }),
+    );
 };
 
 /**
@@ -551,33 +574,44 @@ export const _replaceAllBeatObjects = async ({
     // Step 1: Prepare beats for creation
     const beatsToCreate = prepareBeatsForCreation(newBeats);
 
-    // Step 2: Create beats in the database
-    const createdBeats = await _createBeatsWithResult({
-        newBeats: beatsToCreate,
-    });
+    // One edit, so a refusal (a timeline-mode ripple that can't be done) writes nothing
+    await transactionWithHistory(
+        db,
+        "replaceAllBeatObjects",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                // Step 2: Create beats in the database
+                const createdBeats = await createBeatsInTransaction({
+                    tx,
+                    newBeats: beatsToCreate,
+                });
 
-    // Step 3: Convert database beats to Beat objects
-    const convertedBeats = convertDatabaseBeatsToBeats(createdBeats);
+                // Step 3: Convert database beats to Beat objects
+                const convertedBeats =
+                    convertDatabaseBeatsToBeats(createdBeats);
 
-    // Step 4: Prepare page updates
-    const { pagesToUpdate } = preparePageUpdates(
-        pages,
-        oldBeats,
-        convertedBeats,
+                // Step 4: Prepare page updates
+                const { pagesToUpdate } = preparePageUpdates(
+                    pages,
+                    oldBeats,
+                    convertedBeats,
+                );
+
+                // Step 5: Prepare measure updates
+                const measuresToCreate = prepareMeasuresForCreation(
+                    newMeasures,
+                    newBeats,
+                    convertedBeats,
+                );
+
+                // Step 6: Perform database operations
+                await _performDatabaseOperationsInTransaction({
+                    tx,
+                    pagesToUpdate,
+                    measuresToCreate,
+                    oldMeasures,
+                    oldBeats,
+                });
+            }),
     );
-
-    // Step 5: Prepare measure updates
-    const measuresToCreate = prepareMeasuresForCreation(
-        newMeasures,
-        newBeats,
-        convertedBeats,
-    );
-
-    // Step 6: Perform database operations
-    await _performDatabaseOperations({
-        pagesToUpdate,
-        measuresToCreate,
-        oldMeasures,
-        oldBeats,
-    });
 };

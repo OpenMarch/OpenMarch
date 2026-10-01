@@ -1,3 +1,4 @@
+import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import Measure from "../../../global/classes/Measure";
 import Beat, {
     assertValidTempoBpm,
@@ -464,14 +465,19 @@ export const _createFromTempoGroup = async ({
         assertValidTempoBpm(endTempo);
     }
 
-    await transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
-        await _createFromTempoGroupInTransaction({
-            tx,
-            tempoGroup,
-            endTempo,
-            startingPosition,
-        });
-    });
+    await transactionWithHistory(
+        db,
+        "createFromTempoGroup",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                await _createFromTempoGroupInTransaction({
+                    tx,
+                    tempoGroup,
+                    endTempo,
+                    startingPosition,
+                });
+            }),
+    );
 };
 
 export const _createFromTempoGroupInTransaction = async ({
@@ -566,27 +572,33 @@ export const _updateTempoGroup = async ({
         });
     }
 
-    await transactionWithHistory(db, "updateTempoGroup", async (tx) => {
-        await updateBeatsInTransaction({
-            tx,
-            modifiedBeats: updatedBeats,
-        });
+    await transactionWithHistory(
+        db,
+        "updateTempoGroup",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                await updateBeatsInTransaction({
+                    tx,
+                    modifiedBeats: updatedBeats,
+                });
 
-        if (
-            tempoGroup.measures &&
-            newName !== tempoGroup.measures[0].rehearsalMark
-        ) {
-            await updateMeasuresInTransaction({
-                tx,
-                modifiedItems: [
-                    {
-                        id: tempoGroup.measures![0].id,
-                        rehearsal_mark: newName.trim() === "" ? null : newName,
-                    },
-                ],
-            });
-        }
-    });
+                if (
+                    tempoGroup.measures &&
+                    newName !== tempoGroup.measures[0].rehearsalMark
+                ) {
+                    await updateMeasuresInTransaction({
+                        tx,
+                        modifiedItems: [
+                            {
+                                id: tempoGroup.measures![0].id,
+                                rehearsal_mark:
+                                    newName.trim() === "" ? null : newName,
+                            },
+                        ],
+                    });
+                }
+            }),
+    );
 };
 
 export const useUpdateManualTempos = () => {
@@ -623,12 +635,17 @@ export const _updateManualTempos = async ({
         });
     }
 
-    await transactionWithHistory(db, "updateManualTempos", async (tx) => {
-        await updateBeatsInTransaction({
-            tx,
-            modifiedBeats: updatedBeats,
-        });
-    });
+    await transactionWithHistory(
+        db,
+        "updateManualTempos",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                await updateBeatsInTransaction({
+                    tx,
+                    modifiedBeats: updatedBeats,
+                });
+            }),
+    );
 };
 
 /**

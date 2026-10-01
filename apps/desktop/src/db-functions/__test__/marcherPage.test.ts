@@ -1,4 +1,5 @@
 import { describeDbTests, schema, transaction } from "@/test/base";
+import { skipInTimelineMode } from "@/test/timelineMode";
 import { describe, expect, it } from "vitest";
 import {
     getAllMarcherPages,
@@ -192,7 +193,11 @@ describeDbTests("marcherPage", (it) => {
             });
         },
     );
-    describe("Locked marcher pages", () => {
+    describe.skipIf(
+        skipInTimelineMode(
+            "page shapes are refused in timeline mode (P7.11), so shape pages can't be set up",
+        ),
+    )("Locked marcher pages", () => {
         it.for([
             ...Array(20)
                 .fill(null)
@@ -816,7 +821,11 @@ describeDbTests("swapMarchers", (it) => {
         });
     });
 
-    describe("One shape", () => {
+    describe.skipIf(
+        skipInTimelineMode(
+            "page shapes are refused in timeline mode (P7.11), so shape pages can't be set up",
+        ),
+    )("One shape", () => {
         testWithHistory(
             "should swap two marchers with one belonging to a shape",
             async ({ db, marchersAndPages }) => {
@@ -1550,7 +1559,11 @@ describeDbTests("swapMarchers", (it) => {
         });
     });
 
-    describe("two shapes", () => {
+    describe.skipIf(
+        skipInTimelineMode(
+            "page shapes are refused in timeline mode (P7.11), so shape pages can't be set up",
+        ),
+    )("two shapes", () => {
         testWithHistory(
             "should swap two marchers with both belonging to a shape",
             async ({ db, marchersAndPages }) => {

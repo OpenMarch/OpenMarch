@@ -178,6 +178,7 @@ describe("buildMarcherAppearancesByPageId", () => {
             sortedPages: timingObjects.pages,
             marchers,
             marcherPagesMap,
+            timelineMode: false,
             sectionAppearances: [],
             marcherIdsByTagId: new Map([[1, [marchers[0].id]]]),
             allTagAppearances: [
@@ -244,6 +245,7 @@ describe("buildMarcherAppearancesByPageId", () => {
         const pageMode = buildMarcherAppearancesByPageId({
             ...args,
             marcherPagesMap,
+            timelineMode: false,
         }).get(pageId)![marchers[0].id];
         const timelineMode = buildMarcherAppearancesByPageId({
             ...args,

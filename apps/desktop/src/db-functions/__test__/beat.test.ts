@@ -1,3 +1,4 @@
+import { timelineHistoryTables } from "@/test/timelineMode";
 import { describe, expect } from "vitest";
 import {
     createBeats,
@@ -32,7 +33,10 @@ const addFirstBeat = (
 };
 
 describeDbTests("beats", (it) => {
-    const testWithHistory = getTestWithHistory(it, [schema.beats]);
+    const testWithHistory = getTestWithHistory(it, [
+        schema.beats,
+        ...timelineHistoryTables(),
+    ]);
 
     describe("createBeats", () => {
         describe("insert with no existing beats", () => {

@@ -1,3 +1,4 @@
+import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import {
     transactionWithHistory,
     createPagesInTransaction,
@@ -28,31 +29,39 @@ export const _splitPage = async ({ page }: SplitPageArgs) => {
         throw new Error("Failed to split page");
     }
 
-    await transactionWithHistory(db, "splitPage", async (tx) => {
-        // Create the new page
-        await createPagesInTransaction({
-            newPages: [splitResult.newPageArgs],
-            tx,
-        });
+    await transactionWithHistory(
+        db,
+        "splitPage",
+        async (tx) =>
+            await withTimelinePageRipple(tx, async () => {
+                // Create the new page
+                await createPagesInTransaction({
+                    newPages: [splitResult.newPageArgs],
+                    tx,
+                });
 
-        // Update the original page if needed
-        if (splitResult.modifyPageRequest) {
-            if (splitResult.modifyPageRequest.modifiedPagesArgs.length > 0) {
-                await updatePagesInTransaction({
-                    modifiedPages:
-                        splitResult.modifyPageRequest.modifiedPagesArgs,
-                    tx,
-                });
-            }
-            if (splitResult.modifyPageRequest.lastPageCounts != null) {
-                await updateLastPageCounts({
-                    lastPageCounts:
-                        splitResult.modifyPageRequest.lastPageCounts,
-                    tx,
-                });
-            }
-        }
-    });
+                // Update the original page if needed
+                if (splitResult.modifyPageRequest) {
+                    if (
+                        splitResult.modifyPageRequest.modifiedPagesArgs.length >
+                        0
+                    ) {
+                        await updatePagesInTransaction({
+                            modifiedPages:
+                                splitResult.modifyPageRequest.modifiedPagesArgs,
+                            tx,
+                        });
+                    }
+                    if (splitResult.modifyPageRequest.lastPageCounts != null) {
+                        await updateLastPageCounts({
+                            lastPageCounts:
+                                splitResult.modifyPageRequest.lastPageCounts,
+                            tx,
+                        });
+                    }
+                }
+            }),
+    );
 };
 
 // React Query mutation hook

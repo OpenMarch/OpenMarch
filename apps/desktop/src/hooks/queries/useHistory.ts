@@ -4,6 +4,7 @@ import {
     performHistoryAction,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
+import { useEffect, useState } from "react";
 import {
     queryOptions,
     useMutation,
@@ -45,6 +46,12 @@ export const canRedoQueryOptions = (enabled = true) =>
         enabled,
     });
 
+/** Where an undo or redo asked to go, kept until that page is in the page list. */
+interface PendingFocus {
+    pageId: number;
+    marcherIds: Set<number> | undefined;
+}
+
 export const usePerformHistoryAction = () => {
     const qc = useQueryClient();
     const { pages } = useTimingObjects();
@@ -54,9 +61,34 @@ export const usePerformHistoryAction = () => {
         selectedMarchersContext?.setSelectedMarchers ?? (() => {});
     const selectedPageContext = useSelectedPage();
     const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const [pendingFocus, setPendingFocus] = useState<PendingFocus | null>(null);
+
+    const selectMarchers = (ids: Set<number>) => {
+        // The marchers as fetched again after the action, so restored marchers can be selected
+        const current =
+            qc.getQueryData(allMarchersQueryOptions().queryKey) ?? marchers;
+        if (current) setSelectedMarchers(current.filter((m) => ids.has(m.id)));
+    };
+
+    // An action can target a page it just restored (redo "add page", undo "delete page"), which
+    // the page list only has after it is fetched again. Go there, and select the marchers, once
+    // it is in the list; the marchers are selected only together with that page.
+    useEffect(() => {
+        if (!pendingFocus) return;
+        const page = pages?.find((p) => p.id === pendingFocus.pageId);
+        if (!page) return;
+        setPendingFocus(null);
+        if (selectedPageContext?.selectedPage?.id !== page.id)
+            setSelectedPage(page);
+        if (pendingFocus.marcherIds) selectMarchers(pendingFocus.marcherIds);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pendingFocus, pages]);
 
     return useMutation({
-        mutationFn: (type: "undo" | "redo") => performHistoryAction(type, db),
+        mutationFn: (type: "undo" | "redo") =>
+            performHistoryAction(type, db, {
+                currentPageId: selectedPageContext?.selectedPage?.id,
+            }),
         onSuccess: async (response) => {
             // Invalidate history query
             void qc.invalidateQueries({
@@ -69,20 +101,19 @@ export const usePerformHistoryAction = () => {
 
             // Greedily invalidate all coordinate data queries
             // The better thing to do would be to check the pages that were modified
+            // (In timeline mode these queries don't run; the resolver store follows the action's
+            // change batch instead.)
             void qc.invalidateQueries({ queryKey: coordinateDataKeys.all });
 
-            if (response.pageIdToGoTo && pages) {
-                setSelectedPage(
-                    pages.find((page) => page.id === response.pageIdToGoTo)!,
-                );
-            }
-            if (response.marcherIdsToSelect != null && marchers) {
-                setSelectedMarchers(
-                    marchers.filter((marcher) =>
-                        response.marcherIdsToSelect?.has(marcher.id),
-                    ),
-                );
-            }
+            // Page 0 has id 0, so compare with undefined. The page and its marchers are applied by
+            // the effect above, once the page is in the page list.
+            if (response.pageIdToGoTo != null)
+                setPendingFocus({
+                    pageId: response.pageIdToGoTo,
+                    marcherIds: response.marcherIdsToSelect,
+                });
+            else if (response.marcherIdsToSelect != null)
+                selectMarchers(response.marcherIdsToSelect);
         },
     });
 };

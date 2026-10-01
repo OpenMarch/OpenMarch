@@ -1,108 +1,91 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { vi, expect } from "vitest";
+import { eq } from "drizzle-orm";
 import { QueryClient } from "@tanstack/react-query";
+import { describeDbTests, schema } from "@/test/base";
+import { timelineFixtureMode } from "@/test/timelineMode";
 
 /**
- * The marcher create and delete mutations read the timeline flag when they run, so one started
- * while the workspace settings are still loading still takes the timeline path (P7.3).
+ * The marcher create and delete mutations take the file's mode: `createMarchers` and
+ * `deleteMarchers` read the flag inside their own edit (P7.3, P7.18), so a mutation started before
+ * the workspace settings query has loaded (an empty query client here) still takes the right path.
+ *
+ * Runs on the `base.tsx` fixtures, so the default run checks page mode and `test:timeline` (a
+ * converted show with the flag on) checks timeline mode.
  */
 
-const mocks = vi.hoisted(() => ({
-    createMarchers: vi.fn(async () => []),
-    deleteMarchers: vi.fn(async () => []),
-    getSettings: vi.fn(),
-}));
-
 vi.mock("@/App", () => ({ queryClient: undefined }));
-vi.mock("@/global/database/db", async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    db: {},
-}));
-vi.mock("@/db-functions", async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    createMarchers: mocks.createMarchers,
-    deleteMarchers: mocks.deleteMarchers,
-}));
-vi.mock("@/db-functions/workspaceSettings", async (importOriginal) => ({
-    ...(await importOriginal<object>()),
-    getWorkspaceSettingsParsed: mocks.getSettings,
-}));
 
 const { createMarchersMutationOptions, deleteMarchersMutationOptions } =
     await import("../useMarchers");
-const { workspaceSettingsKeys } = await import("../useWorkspaceSettings");
 
-const NEW = [{ section: "Trumpet", drill_prefix: "T", drill_order: 1 }];
+const NEW = [{ section: "Trumpet", drill_prefix: "T", drill_order: 99 }];
 
-/** A settings load that resolves only when `release` is called. */
-const slowSettings = (timelineMode: boolean) => {
-    let release!: () => void;
-    const gate = new Promise<void>((r) => (release = r));
-    mocks.getSettings.mockImplementation(async () => {
-        await gate;
-        return { timelineMode };
-    });
-    return () => release();
-};
-
-describe("marcher mutations read the timeline flag when they run", () => {
-    beforeEach(() => {
-        mocks.createMarchers.mockClear();
-        mocks.deleteMarchers.mockClear();
-        mocks.getSettings.mockReset();
-    });
-
-    it("a create started before the settings load waits for them and takes the timeline path", async () => {
+describeDbTests("marcher mutations take the file's mode", (it) => {
+    it("a create with no settings loaded follows the file's flag", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
         const qc = new QueryClient();
-        const release = slowSettings(true);
-        const running = createMarchersMutationOptions(qc).mutationFn!(
+        const transitions = await db
+            .select()
+            .from(schema.timeline_transitions)
+            .all();
+        const [created] = await createMarchersMutationOptions(qc).mutationFn!(
             NEW,
             undefined as never,
         );
-        await Promise.resolve();
-        expect(mocks.createMarchers).not.toHaveBeenCalled();
-        release();
-        await running;
-        expect(mocks.createMarchers).toHaveBeenCalledWith(
-            expect.objectContaining({ newMarchers: NEW, timelineMode: true }),
-        );
+        const assignments = await db
+            .select()
+            .from(schema.timeline_assignments)
+            .where(eq(schema.timeline_assignments.marcher_id, created!.id))
+            .all();
+        if (timelineFixtureMode()) {
+            // A holding slot in every page move of the converted show
+            expect(transitions.length).toBeGreaterThan(0);
+            expect(assignments.map((a) => a.transition_id).sort()).toEqual(
+                transitions.map((t) => t.id).sort(),
+            );
+        } else {
+            expect(transitions).toEqual([]);
+            expect(assignments).toEqual([]);
+        }
+        // Page rows are written in both modes, as before
+        const pageRows = await db
+            .select()
+            .from(schema.marcher_pages)
+            .where(eq(schema.marcher_pages.marcher_id, created!.id))
+            .all();
+        expect(pageRows.length).toBeGreaterThan(0);
     });
 
-    it("a delete started before the settings load waits for them and takes the timeline path", async () => {
+    it("a delete with no settings loaded follows the file's flag", async ({
+        db,
+        marchersAndPages,
+    }) => {
         const qc = new QueryClient();
-        const release = slowSettings(true);
-        const ids = new Set([3]);
-        const running = deleteMarchersMutationOptions(qc).mutationFn!(
-            ids,
-            undefined as never,
-        );
-        await Promise.resolve();
-        expect(mocks.deleteMarchers).not.toHaveBeenCalled();
-        release();
-        await running;
-        expect(mocks.deleteMarchers).toHaveBeenCalledWith(
-            expect.objectContaining({ marcherIds: ids, timelineMode: true }),
-        );
-    });
-
-    it("uses the cached settings, and page mode when the flag is off", async () => {
-        const qc = new QueryClient();
-        qc.setQueryData(workspaceSettingsKeys.detail(), {
-            timelineMode: false,
-        });
-        await createMarchersMutationOptions(qc).mutationFn!(
-            NEW,
-            undefined as never,
-        );
+        const victim = marchersAndPages.expectedMarchers[1]!.id;
+        const slotCounts = async () =>
+            (await db.select().from(schema.timeline_transitions).all()).map(
+                (t) => t.slot_count,
+            );
+        const before = await slotCounts();
         await deleteMarchersMutationOptions(qc).mutationFn!(
-            new Set([1]),
+            new Set([victim]),
             undefined as never,
         );
-        expect(mocks.getSettings).not.toHaveBeenCalled();
-        expect(mocks.createMarchers).toHaveBeenCalledWith(
-            expect.objectContaining({ timelineMode: false }),
-        );
-        expect(mocks.deleteMarchers).toHaveBeenCalledWith(
-            expect.objectContaining({ timelineMode: false }),
-        );
+        const marcher = await db
+            .select()
+            .from(schema.marchers)
+            .where(eq(schema.marchers.id, victim))
+            .get();
+        expect(marcher).toBeUndefined();
+        if (timelineFixtureMode()) {
+            // Each page move lost the victim's slot (compacted, P7.3)
+            expect(before.length).toBeGreaterThan(0);
+            expect(await slotCounts()).toEqual(before.map((n) => n - 1));
+        } else {
+            expect(before).toEqual([]);
+            expect(await slotCounts()).toEqual([]);
+        }
     });
 });

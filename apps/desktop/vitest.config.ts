@@ -8,6 +8,7 @@ import { defineConfig } from "vitest/config";
  *
  * VITEST_ENABLE_HISTORY - Enable history reporter (Tests undo/redo functionality at the cost of much slower tests)
  * VITEST_ENABLE_SQLJS - Enable sql.js database driver
+ * VITEST_TIMELINE_MODE - Convert every fixture database to timeline rows and turn the timeline flag on (src/test/timelineMode.ts)
  */
 
 export default defineConfig(() => {

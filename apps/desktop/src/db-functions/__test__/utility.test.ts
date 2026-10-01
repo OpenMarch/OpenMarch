@@ -1,3 +1,4 @@
+import { timelineHistoryTables } from "@/test/timelineMode";
 import { describe, expect } from "vitest";
 import { getUtility, updateUtility, initializeUtility } from "../utility";
 import { describeDbTests, schema } from "@/test/base";
@@ -5,7 +6,10 @@ import { getTestWithHistory } from "@/test/history";
 
 describeDbTests("utility", (it) => {
     describe("database interactions", () => {
-        const testWithHistory = getTestWithHistory(it, [schema.utility]);
+        const testWithHistory = getTestWithHistory(it, [
+            schema.utility,
+            ...timelineHistoryTables(),
+        ]);
 
         describe("getUtility", () => {
             it("should return the utility record when no utility record exists", async ({

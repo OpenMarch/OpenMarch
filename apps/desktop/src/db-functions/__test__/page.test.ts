@@ -1,3 +1,4 @@
+import { timelineHistoryTables } from "@/test/timelineMode";
 import { assert, describe, expect } from "vitest";
 import {
     createPages,
@@ -68,6 +69,7 @@ describeDbTests("pages", (it) => {
         schema.marchers,
         schema.marcher_pages,
         schema.utility,
+        ...timelineHistoryTables(),
     ]);
 
     describe("createPages", () => {

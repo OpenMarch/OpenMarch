@@ -37,7 +37,8 @@ import { assertValid, refuse, TimelineWriteError } from "./timelineErrors";
  *   untouched. A follow-the-leader transition needs its shape (I-T5), so it is refused (`E-T5`).
  * - **No assignment ending at B** (the marcher holds through B, is in the middle of a longer move at
  *   B, or its move's transition doesn't end at B) is refused (`E-ARGS`) with a message naming the
- *   marcher. Creating a transition or assignment for it is left to the timeline UI (P8.9).
+ *   marcher by its drill number. Creating a transition or assignment for it is left to the timeline UI
+ *   (P8.9).
  *
  * Every refusal is decided before the first write: the rows, shapes and shape samples are all read
  * and checked first, so a refused move writes nothing. A database rejection during the writes
@@ -108,6 +109,25 @@ const sampleShape = (
     };
     const resolver = createResolver(snapshot);
     return ids.map((id) => resolver.positionAt(id, 1));
+};
+
+/**
+ * How refusal messages name a marcher: its drill number (`drill_prefix` + `drill_order`), as the
+ * rest of the UI shows it, or its id if the row can't be read.
+ */
+const marcherLabel = async (
+    tx: DbTransaction,
+    marcherId: number,
+): Promise<string> => {
+    const marcher = await tx
+        .select({
+            prefix: schema.marchers.drill_prefix,
+            order: schema.marchers.drill_order,
+        })
+        .from(schema.marchers)
+        .where(eq(schema.marchers.id, marcherId))
+        .get();
+    return marcher ? `${marcher.prefix}${marcher.order}` : `${marcherId}`;
 };
 
 /** Refuses a batch that names a marcher twice. */
@@ -203,14 +223,14 @@ export const moveMarchersOnPageInTransaction = async ({
         const row = winners.get(move.marcherId);
         if (!row || row.end !== endBeat || row.transitionEnd !== endBeat)
             refuse(
-                `marcher ${move.marcherId} has no move that ends at the end of ${pageLabel(
+                `marcher ${await marcherLabel(tx, move.marcherId)} has no move that ends at the end of ${pageLabel(
                     page,
                 )} (beat ${endBeat}), so there is no destination to change there`,
             );
         if (row.shapeId !== null && row.pathStyle === "follow_the_leader")
             throw new TimelineWriteError(
                 "E-T5",
-                `marcher ${move.marcherId} follows the leader into a shape on ${pageLabel(
+                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${pageLabel(
                     page,
                 )}; move the shape instead`,
             );

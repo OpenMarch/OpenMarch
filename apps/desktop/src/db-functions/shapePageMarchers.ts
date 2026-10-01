@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { refusePageShapesInTimelineMode } from "./pageShapesGate";
 import {
     DbConnection,
     DbTransaction,
@@ -235,6 +236,7 @@ export async function swapPositionOrder({
     spmId2: number;
 }): Promise<[DatabaseShapePageMarcher, DatabaseShapePageMarcher]> {
     return await transactionWithHistory(db, "swapPositionOrder", async (tx) => {
+        await refusePageShapesInTimelineMode(tx);
         return await swapPositionOrderInTransaction({ tx, spmId1, spmId2 });
     });
 }
@@ -503,6 +505,7 @@ export const createShapePageMarchers = async ({
         db,
         "createShapePageMarchers",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await createShapePageMarchersInTransaction({
                 newItems,
                 tx,
@@ -529,6 +532,7 @@ export async function updateShapePageMarchers({
         db,
         "updateShapePageMarchers",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await updateShapePageMarchersInTransaction({
                 modifiedItems,
                 tx,
@@ -644,6 +648,7 @@ export async function deleteShapePageMarchers({
         db,
         "deleteShapePageMarchers",
         async (tx) => {
+            await refusePageShapesInTimelineMode(tx);
             return await deleteShapePageMarchersInTransaction({
                 itemIds,
                 tx,

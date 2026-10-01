@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import { skipInTimelineMode } from "@/test/timelineMode";
 import { afterEach, describe, expect } from "vitest";
 import { sql } from "drizzle-orm";
 import { renderHook, waitFor } from "@testing-library/react";
@@ -314,6 +315,36 @@ describeDbTests("timeline rendering", (it) => {
             rerender({ enabled: true, isPlaying: false });
             expectAt(coordsById(canvas)[1]!, [10, 20], "static");
         });
+
+        it("drops a page-era shape lock, since timeline mode has none (P7.11)", async ({
+            db,
+        }) => {
+            await seedShow(db);
+            await startTimelineResolver(db);
+            const { pages } = await readTiming(db);
+            const canvas = await createCanvasWithMarchers(db);
+            const marcher = canvas
+                .getCanvasMarchers()
+                .find((m) => m.marcherObj.id === 1)!;
+            // As an earlier marcher_pages render of a page shape leaves it
+            marcher.setMarcherCoords({
+                ...marcher.coordinate,
+                page_id: pages[1]!.id,
+                isLocked: true,
+                lockedReason: "Marcher is part of a shape\n",
+            });
+            expect(marcher.locked).toBe(true);
+            renderHook(() =>
+                useTimelineStaticRender({
+                    canvas,
+                    selectedPage: pages[1]!,
+                    isPlaying: false,
+                    enabled: true,
+                }),
+            );
+            expect(marcher.locked).toBe(false);
+            expect(marcher.lockedReason).toBe("");
+        });
     });
 
     describe("playback (P5.4)", () => {
@@ -382,26 +413,34 @@ describeDbTests("timeline rendering", (it) => {
             expectAt(coordsById(canvas)[1]!, [-1, -1], "not ready");
         });
 
-        it("with the flag off, uses the page path and ignores the resolver", async ({
-            db,
-            wrapper,
-        }) => {
-            await seedShow(db);
-            await startTimelineResolver(db);
-            const canvas = await createCanvasWithMarchers(db);
-            const { result } = renderAnimation(canvas, wrapper);
-            await waitFor(() =>
-                expect(result.current.timing.beats).toHaveLength(17),
-            );
-            expect(result.current.timelineMode).toBe(false);
+        it.skipIf(
+            skipInTimelineMode(
+                "it asserts the flag-off path; timeline test mode turns the flag on",
+            ),
+        )(
+            "with the flag off, uses the page path and ignores the resolver",
+            async ({ db, wrapper }) => {
+                await seedShow(db);
+                await startTimelineResolver(db);
+                const canvas = await createCanvasWithMarchers(db);
+                const { result } = renderAnimation(canvas, wrapper);
+                await waitFor(() =>
+                    expect(result.current.timing.beats).toHaveLength(17),
+                );
+                expect(result.current.timelineMode).toBe(false);
 
-            // The page path finds no marcher_pages timelines for these marchers, reports it
-            // (false stops playback) and moves nothing, even though a resolver is ready
-            expect(
-                result.current.animation.setMarcherPositionsAtTime(1250),
-            ).toBe(false);
-            for (const id of MARCHER_IDS)
-                expectAt(coordsById(canvas)[id]!, [-1, -1], `marcher ${id}`);
-        });
+                // The page path finds no marcher_pages timelines for these marchers, reports it
+                // (false stops playback) and moves nothing, even though a resolver is ready
+                expect(
+                    result.current.animation.setMarcherPositionsAtTime(1250),
+                ).toBe(false);
+                for (const id of MARCHER_IDS)
+                    expectAt(
+                        coordsById(canvas)[id]!,
+                        [-1, -1],
+                        `marcher ${id}`,
+                    );
+            },
+        );
     });
 });

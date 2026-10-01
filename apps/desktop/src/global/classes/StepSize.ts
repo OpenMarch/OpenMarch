@@ -126,6 +126,34 @@ export class StepSize {
     }
 
     /**
+     * A step size from a distance already measured (for example along a curved path in timeline
+     * mode), with the same arithmetic as a straight move of that length.
+     *
+     * @param distance the distance covered, in field units (pixels)
+     */
+    static fromDistance({
+        marcher_id,
+        distance,
+        counts,
+        fieldProperties,
+    }: {
+        marcher_id: number;
+        distance: number;
+        counts: number;
+        fieldProperties: FieldProperties;
+    }): StepSize {
+        return new StepSize({
+            marcher_id,
+            startingX: 0,
+            startingY: 0,
+            endingX: distance,
+            endingY: 0,
+            counts,
+            fieldProperties,
+        });
+    }
+
+    /**
      * Creates a step size object from a starting and ending marcher page, and the drill page.
      *
      * @param startingPage starting coordinate of the move

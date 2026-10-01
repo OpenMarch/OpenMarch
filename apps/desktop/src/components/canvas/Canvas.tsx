@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -34,6 +34,8 @@ import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useTimelineStaticRender } from "@/timeline/useTimelineStaticRender";
+import { useTimelinePathRender } from "@/timeline/useTimelinePathRender";
+import { useTimelineShapeCanvas } from "@/timeline/useTimelineShapeCanvas";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { canvasCoordinateWriter } from "@/timeline/timelineCoordinateWrites";
 
@@ -95,6 +97,7 @@ export default function Canvas({
         (s) => s.status === "ready",
     );
     const drawFromResolver = timelineMode && timelineResolverReady;
+    const marcherIds = useMemo(() => marchers?.map((m) => m.id), [marchers]);
 
     const { data: fieldProperties } = useQuery(
         fieldPropertiesQueryOptions(databaseReady),
@@ -119,7 +122,8 @@ export default function Canvas({
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
     useAnimation({ canvas });
-    useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
+    // Page mode draws the selected page's page-era shapes; timeline mode draws none (P7.11)
+    useRenderMarcherShapes({ canvas, selectedPage, isPlaying, timelineMode });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -282,6 +286,9 @@ export default function Canvas({
             canvas.getEndpoints().forEach((endpoint) => {
                 canvas.remove(endpoint);
             });
+            // Timeline mode's curved paths belong to the old visual groups (P7.10); the timeline
+            // path render adds the new groups' paths back
+            canvas.removeTimelinePathways();
 
             // Add all marcher visuals to the canvas
             marchers.forEach((marcher) => {
@@ -428,6 +435,10 @@ export default function Canvas({
         )
             return;
 
+        // Timeline mode draws the paths from the resolver (useTimelinePathRender below) once it's
+        // ready (P7.10)
+        if (drawFromResolver) return;
+
         if (marchers) {
             // Always call renderPathVisuals, it decides visibility per pathway
             const nextPage = pages.find(
@@ -462,6 +473,7 @@ export default function Canvas({
         uiSettings.stepSizeWarnings,
         marcherVisuals,
         marcherPagesLoaded,
+        drawFromResolver,
     ]);
 
     // Update the canvas when the field properties change
@@ -620,6 +632,30 @@ export default function Canvas({
         isPlaying,
         enabled: timelineMode,
         redrawKey: marcherVisuals,
+    });
+
+    // Timeline mode (P7.11): the spec shape picked in the inspector, with handles to drag
+    useTimelineShapeCanvas({
+        canvas,
+        enabled: drawFromResolver,
+        isPlaying,
+        theme: fieldProperties?.theme,
+    });
+
+    // Timeline mode (P7.10): paths, midpoints, endpoints and step-size warnings from the resolver
+    // between page end beats, in place of the marcher_pages paths above
+    useTimelinePathRender({
+        canvas,
+        enabled: drawFromResolver,
+        isPlaying,
+        selectedPage,
+        pages,
+        marcherIds,
+        marcherVisuals,
+        fieldProperties,
+        previousPathsEnabled: uiSettings.previousPaths,
+        nextPathsEnabled: uiSettings.nextPaths,
+        stepSizeWarningsEnabled: uiSettings.stepSizeWarnings,
     });
 
     // Render collision markers when paused

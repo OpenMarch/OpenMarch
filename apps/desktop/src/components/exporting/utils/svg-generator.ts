@@ -1,16 +1,15 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { FieldProperties, FieldTheme, rgbaToString } from "@openmarch/core";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { defaultSettings } from "@/stores/UiSettingsStore";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
-import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { db } from "@/global/database/db";
 import { SectionAppearance } from "@/db-functions";
+import type { PagePosition, PagePositionMap } from "./exportPagePositions";
 import {
     applyMarcherAppearancesForPage,
     type MarcherAppearancesByPageId,
@@ -77,9 +76,9 @@ const addIndividualMarcherLines = ({
     fieldTheme,
 }: {
     canvas: OpenMarchCanvas;
-    currentCoordinate: Pick<MarcherPage, "x" | "y" | "marcher_id">;
-    previousCoordinate?: Pick<MarcherPage, "x" | "y">;
-    nextCoordinate?: Pick<MarcherPage, "x" | "y">;
+    currentCoordinate: Pick<PagePosition, "x" | "y" | "marcher_id">;
+    previousCoordinate?: Pick<PagePosition, "x" | "y">;
+    nextCoordinate?: Pick<PagePosition, "x" | "y">;
     fieldTheme: Pick<FieldTheme, "previousPath" | "nextPath">;
 }): { objectsToRemove: fabric.Object[]; readableCoords: ReadableCoords } => {
     const readableCoords = ReadableCoords.fromMarcherPage(currentCoordinate);
@@ -231,10 +230,10 @@ const renderIndividualMarcherChartsForPage = (args: {
     fieldProperties: FieldProperties;
     canvas: OpenMarchCanvas;
     marchers: Marcher[];
-    marcherPagesByMarcherForCurrentPage: Record<number, MarcherPage>;
+    marcherPagesByMarcherForCurrentPage: Record<number, PagePosition>;
     page: Page;
     pageIndex: number;
-    marcherPagesMap: MarcherPageMap;
+    marcherPagesMap: Pick<PagePositionMap, "marcherPagesByPage">;
     sortedPages: Page[];
 }) => {
     const {
@@ -247,8 +246,10 @@ const renderIndividualMarcherChartsForPage = (args: {
         marcherPagesMap,
         sortedPages,
     } = args;
-    const marcherSvgs: string[] = [];
-    const marcherReadableCoordStrings: string[] = [];
+    // One entry per marcher, in `marchers` order, so index i is always marchers[i]; null marks a
+    // marcher with no position on this page
+    const marcherSvgs: (string | null)[] = [];
+    const marcherReadableCoordStrings: (string | null)[] = [];
 
     for (const marcher of marchers) {
         const currentCoordinate =
@@ -257,6 +258,8 @@ const renderIndividualMarcherChartsForPage = (args: {
             console.error(
                 `No marcherPage found for marcher id: ${marcher.id} on page: ${page.id}`,
             );
+            marcherSvgs.push(null);
+            marcherReadableCoordStrings.push(null);
             continue;
         }
 
@@ -264,13 +267,13 @@ const renderIndividualMarcherChartsForPage = (args: {
             pageIndex > 0
                 ? marcherPagesMap.marcherPagesByPage[
                       sortedPages[pageIndex - 1].id
-                  ][marcher.id]
+                  ]?.[marcher.id]
                 : undefined;
         const nextCoordinate =
             pageIndex < sortedPages.length - 1
                 ? marcherPagesMap.marcherPagesByPage[
-                      sortedPages[pageIndex + 1]?.id
-                  ][marcher.id]
+                      sortedPages[pageIndex + 1].id
+                  ]?.[marcher.id]
                 : undefined;
 
         const { objectsToRemove, readableCoords } = addIndividualMarcherLines({
@@ -303,15 +306,15 @@ const processDrillChartExportPage = (args: {
     canvas: OpenMarchCanvas;
     canvasMarchersById: Record<number, CanvasMarcher>;
     marchers: Marcher[];
-    marcherPagesByMarcherForCurrentPage: Record<number, MarcherPage>;
-    marcherPagesMap: MarcherPageMap;
+    marcherPagesByMarcherForCurrentPage: Record<number, PagePosition>;
+    marcherPagesMap: Pick<PagePositionMap, "marcherPagesByPage">;
     sortedPages: Page[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     individualCharts: boolean;
     useImagePlaceholder: boolean;
 }): {
-    marcherSvgs?: string[];
-    marcherReadableCoordStrings?: string[];
+    marcherSvgs?: (string | null)[];
+    marcherReadableCoordStrings?: (string | null)[];
     mainSvg?: string;
 } => {
     const {
@@ -358,8 +361,10 @@ const processDrillChartExportPage = (args: {
                 marcherPagesMap,
                 sortedPages,
             });
-        const formatSvg = (svg: string) =>
-            useImagePlaceholder ? replaceImageDataWithPlaceholder(svg) : svg;
+        const formatSvg = (svg: string | null) =>
+            svg !== null && useImagePlaceholder
+                ? replaceImageDataWithPlaceholder(svg)
+                : svg;
         return {
             marcherSvgs: marcherSvgs.map(formatSvg),
             marcherReadableCoordStrings,
@@ -378,7 +383,8 @@ export const generateDrillChartExportSVGs = async (args: {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marchers: Marcher[];
-    marcherPagesMap: MarcherPageMap;
+    /** Positions by page: `marcher_pages` rows in page mode, resolver samples in timeline mode (P7.7) */
+    marcherPagesMap: Pick<PagePositionMap, "marcherPagesByPage">;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
@@ -410,6 +416,8 @@ export const generateDrillChartExportSVGs = async (args: {
     // Otherwise, initialize the output SVGs for the main chart
     if (individualCharts) marchers.forEach(() => outputSVGs.push([]));
     else outputSVGs.push([]);
+    // Individual charts: indexes of marchers with no position on some page
+    const incompleteMarchers = new Set<number>();
 
     // Loop through each page and generate an SVG for it
     for (const [pageIndex, page] of sortedPages.entries()) {
@@ -432,16 +440,24 @@ export const generateDrillChartExportSVGs = async (args: {
         });
 
         if (pageResult.marcherSvgs) {
-            pageResult.marcherSvgs.forEach((svg, index) =>
-                outputSVGs[index].push(svg),
-            );
-            pageResult.marcherReadableCoordStrings!.forEach((coord, index) =>
-                readableCoordsStrings![index].push(coord),
-            );
+            pageResult.marcherSvgs.forEach((svg, index) => {
+                if (svg === null) incompleteMarchers.add(index);
+                else outputSVGs[index].push(svg);
+            });
+            pageResult.marcherReadableCoordStrings!.forEach((coord, index) => {
+                if (coord !== null) readableCoordsStrings![index].push(coord);
+            });
         } else if (pageResult.mainSvg) {
             if (outputSVGs.length === 0) outputSVGs.push([]);
             outputSVGs[0].push(pageResult.mainSvg);
         }
+    }
+
+    // A marcher missing on any page gets no pages at all, never a partial chart, and the arrays
+    // stay aligned with `marchers` (the caller skips that marcher's PDF)
+    for (const index of incompleteMarchers) {
+        outputSVGs[index] = [];
+        readableCoordsStrings[index] = [];
     }
 
     return { SVGs: outputSVGs, coords: readableCoordsStrings };

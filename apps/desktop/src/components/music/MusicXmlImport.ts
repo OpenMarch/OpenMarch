@@ -1,3 +1,4 @@
+import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import { FIRST_BEAT_ID, transactionWithHistory } from "@/db-functions";
 import {
     createBeatsInTransaction,
@@ -66,112 +67,117 @@ export const _importMusicXmlFile = async ({
         db,
         "importMusicXmlFile",
         // eslint-disable-next-line max-lines-per-function
-        async (tx) => {
-            const { file, allPages, measures, allBeats } = data;
+        async (tx) =>
+            // eslint-disable-next-line max-lines-per-function
+            await withTimelinePageRipple(tx, async () => {
+                const { file, allPages, measures, allBeats } = data;
 
-            // Import & parse MusicXML file + handle MXL files
-            const xmlText = file.name.endsWith(".mxl")
-                ? await extractXmlFromMxlFile(await file.arrayBuffer())
-                : await file.text();
-            let parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
+                // Import & parse MusicXML file + handle MXL files
+                const xmlText = file.name.endsWith(".mxl")
+                    ? await extractXmlFromMxlFile(await file.arrayBuffer())
+                    : await file.text();
+                let parsedMeasures: ParserMeasure[] = parseMusicXml(xmlText);
 
-            // Get page count
-            if (!allPages) throw new Error("Failed to fetch pages");
-            const pageCount = allPages.length;
+                // Get page count
+                if (!allPages) throw new Error("Failed to fetch pages");
+                const pageCount = allPages.length;
 
-            // Add standard measures if more pages than measures
-            if (parsedMeasures.length < pageCount) {
-                parsedMeasures = [
-                    ...parsedMeasures,
-                    ...generateStandardMeasures(
-                        pageCount - parsedMeasures.length,
-                    ),
-                ];
-            }
+                // Add standard measures if more pages than measures
+                if (parsedMeasures.length < pageCount) {
+                    parsedMeasures = [
+                        ...parsedMeasures,
+                        ...generateStandardMeasures(
+                            pageCount - parsedMeasures.length,
+                        ),
+                    ];
+                }
 
-            // Delete existing measures
-            if (measures.length > 0) {
-                await deleteMeasuresInTransaction({
+                // Delete existing measures
+                if (measures.length > 0) {
+                    await deleteMeasuresInTransaction({
+                        tx,
+                        itemIds: new Set(measures.map((m) => m.id)),
+                    });
+                }
+
+                // Prepare new beats and store their grouping to measures
+                let beatPosition = 0;
+                const measureStartBeatPositions: number[] = [];
+                const newBeats: NewBeatArgs[] = parsedMeasures.flatMap(
+                    (measure) => {
+                        measureStartBeatPositions.push(beatPosition);
+                        return measure.beats.map((beat) => ({
+                            position: beatPosition++,
+                            duration: beat.duration,
+                            include_in_measure: true,
+                            notes: beat.notes,
+                        }));
+                    },
+                );
+
+                // Insert new beats
+                const dbBeats = await createBeatsInTransaction({
                     tx,
-                    itemIds: new Set(measures.map((m) => m.id)),
+                    newBeats,
+                    startingPosition: 0,
                 });
-            }
 
-            // Prepare new beats and store their grouping to measures
-            let beatPosition = 0;
-            const measureStartBeatPositions: number[] = [];
-            const newBeats: NewBeatArgs[] = parsedMeasures.flatMap(
-                (measure) => {
-                    measureStartBeatPositions.push(beatPosition);
-                    return measure.beats.map((beat) => ({
-                        position: beatPosition++,
-                        duration: beat.duration,
-                        include_in_measure: true,
-                        notes: beat.notes,
-                    }));
-                },
-            );
-
-            // Insert new beats
-            const dbBeats = await createBeatsInTransaction({
-                tx,
-                newBeats,
-                startingPosition: 0,
-            });
-
-            // Insert new measures with their new start beats
-            const newMeasures: NewMeasureArgs[] = parsedMeasures.map(
-                (measure, i) => ({
-                    start_beat: dbBeats[measureStartBeatPositions[i]].id,
-                    rehearsal_mark: measure.rehearsalMark,
-                    notes: measure.notes,
-                }),
-            );
-            await createMeasuresInTransaction({
-                tx,
-                newItems: newMeasures,
-            });
-
-            // Reassign start_beat for all pages to new measures
-            const modifiedPagesArgs: ModifiedPageArgs[] = allPages.map(
-                (page: any, idx: number) => {
-                    const measureIdx =
-                        idx < measureStartBeatPositions.length
-                            ? idx
-                            : measureStartBeatPositions.length - 1;
-                    return {
-                        id: page.id,
-                        start_beat:
-                            dbBeats[measureStartBeatPositions[measureIdx]].id,
-                    };
-                },
-            );
-            if (modifiedPagesArgs.length > 0) {
-                await updatePagesInTransaction({
+                // Insert new measures with their new start beats
+                const newMeasures: NewMeasureArgs[] = parsedMeasures.map(
+                    (measure, i) => ({
+                        start_beat: dbBeats[measureStartBeatPositions[i]].id,
+                        rehearsal_mark: measure.rehearsalMark,
+                        notes: measure.notes,
+                    }),
+                );
+                await createMeasuresInTransaction({
                     tx,
-                    modifiedPages: modifiedPagesArgs,
+                    newItems: newMeasures,
                 });
-            }
 
-            // Delete old beats now that they are not referenced
-            const newBeatIds = new Set(dbBeats.map((b: DatabaseBeat) => b.id));
-            const unusedBeats = allBeats.filter(
-                (b) => !newBeatIds.has(b.id) && b.id !== FIRST_BEAT_ID,
-            );
-            if (unusedBeats.length > 0) {
-                await deleteBeatsInTransaction({
-                    tx,
-                    beatIds: new Set(unusedBeats.map((b) => b.id)),
-                });
-            }
+                // Reassign start_beat for all pages to new measures
+                const modifiedPagesArgs: ModifiedPageArgs[] = allPages.map(
+                    (page: any, idx: number) => {
+                        const measureIdx =
+                            idx < measureStartBeatPositions.length
+                                ? idx
+                                : measureStartBeatPositions.length - 1;
+                        return {
+                            id: page.id,
+                            start_beat:
+                                dbBeats[measureStartBeatPositions[measureIdx]]
+                                    .id,
+                        };
+                    },
+                );
+                if (modifiedPagesArgs.length > 0) {
+                    await updatePagesInTransaction({
+                        tx,
+                        modifiedPages: modifiedPagesArgs,
+                    });
+                }
 
-            return {
-                success: true,
-                message: tolgee.t("music.importSuccess", {
-                    fileName: file.name,
-                }),
-            };
-        },
+                // Delete old beats now that they are not referenced
+                const newBeatIds = new Set(
+                    dbBeats.map((b: DatabaseBeat) => b.id),
+                );
+                const unusedBeats = allBeats.filter(
+                    (b) => !newBeatIds.has(b.id) && b.id !== FIRST_BEAT_ID,
+                );
+                if (unusedBeats.length > 0) {
+                    await deleteBeatsInTransaction({
+                        tx,
+                        beatIds: new Set(unusedBeats.map((b) => b.id)),
+                    });
+                }
+
+                return {
+                    success: true,
+                    message: tolgee.t("music.importSuccess", {
+                        fileName: file.name,
+                    }),
+                };
+            }),
     );
 };
 

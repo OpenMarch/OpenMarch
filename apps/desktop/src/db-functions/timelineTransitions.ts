@@ -8,7 +8,8 @@ import {
     type XY,
 } from "@openmarch/core";
 import { schema } from "@/global/database/db";
-import { DbTransaction } from "./types";
+import { DbConnection, DbTransaction } from "./types";
+import { transactionWithHistory } from "./history";
 import {
     assertValid,
     mapDbErrors,
@@ -432,6 +433,48 @@ export const setTimelineTransitionDestinationInTransaction = async ({
         return row;
     });
 };
+
+/**
+ * `updateTimelineTransitionsInTransaction` for one transition, as one undoable edit (the
+ * inspector's transition editor, P8.3). An edit that writes nothing is refused by
+ * `transactionWithHistory`, so skip no-op changes before calling it.
+ */
+export const updateTimelineTransition = async ({
+    db,
+    modified,
+}: {
+    db: DbConnection;
+    modified: ModifiedTimelineTransitionArgs;
+}): Promise<DatabaseTimelineTransition> => {
+    const [row] = await transactionWithHistory(
+        db,
+        "updateTimelineTransition",
+        (tx) =>
+            updateTimelineTransitionsInTransaction({
+                tx,
+                modifiedTransitions: [modified],
+            }),
+    );
+    return row!;
+};
+
+/** `setTimelineTransitionDestinationInTransaction` as one undoable edit (P8.3). */
+export const setTimelineTransitionDestination = async ({
+    db,
+    transitionId,
+    destination,
+}: {
+    db: DbConnection;
+    transitionId: number;
+    destination: TimelineTransitionDestination;
+}): Promise<DatabaseTimelineTransition> =>
+    await transactionWithHistory(db, "setTimelineTransitionDestination", (tx) =>
+        setTimelineTransitionDestinationInTransaction({
+            tx,
+            transitionId,
+            destination,
+        }),
+    );
 
 /** Replaces the individual destinations of a shapeless transition (one point per slot). */
 export const setTimelineSlotDestinationsInTransaction = async ({

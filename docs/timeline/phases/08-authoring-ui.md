@@ -71,9 +71,9 @@ Wire the UI's commands to the write path: moving a clip moves its whole timeline
 
 ### P8.2: Shapes
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p8-2-shapes)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/34
 - Parallel: yes
 - Depends on: P8.0
 
@@ -82,8 +82,8 @@ Shapes: draw and edit `line`, `freehand`, `circle`, `box` and `block` in absolut
 ### P8.3: Transitions
 
 - Owner: timeline-worker (timeline/p8-transitions)
-- Status: in-progress
-- PR: none
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/27
 - Parallel: yes
 - Depends on: P8.0
 
@@ -91,13 +91,13 @@ Transitions: destination, style, bulge clamped to ±½, waypoints, `slot_count`,
 
 ### P8.4: Assignments and layers
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p8-assignments)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/31
 - Parallel: yes
 - Depends on: P8.3
 
-Assignments: casting (nearest-slot auto-assign via `computeOptimalCoordinateMapping` in core), steals as layers, and visible vacancies.
+Assignments: casting (nearest-slot auto-assign with core's Hungarian solve, `hungarianAlgorithm`, which `computeOptimalCoordinateMapping` wraps; lowest vacant slots for follow the leader), steals as layers, and visible vacancies.
 
 ### P8.5: Inspector
 
@@ -359,3 +359,281 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:** unit tests for the planner, component tests for each control, history tests on a real DB.
 - **Blockers:** none.
 - **Resume from:** check out `timeline/p8-transitions`; `pnpm install`; `pnpm exec turbo run build --filter=@openmarch/desktop^... --force`; write `apps/desktop/src/timeline/__test__/timelineTransitionEditor.test.ts`, `apps/desktop/src/components/inspector/__test__/TimelineTransitionEditor.test.tsx` and `apps/desktop/src/db-functions/__test__/timelineTransitionEdits.test.ts`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-transitions) · P8.3
+
+- **Done:** wip commits 63a4472c (tests) and 93502c7d (`ui.md` notes) on `timeline/p8-transitions`. Planner unit tests, component tests for each control, a section test, the hook's edit targets against a real DB, and history tests for a style change, a bulge change, both destination switches and two slot-count changes (undo and redo round-trip the rows, and the resolver store follows each step).
+- **Checks:** `tsc --noEmit`: pass. `test:focused src/components/inspector src/timeline/__test__/useTimelineInspections.test.tsx src/timeline/__test__/timelineTransitionEditor.test.ts src/timeline/__test__/timelineErrorMessages.test.ts`: 5 files, 95 passed. `test:history src/db-functions/__test__/timelineTransitionEdits.test.ts`: 9 passed. eslint: 0 errors. prettier and cspell: pass. The regular desktop suite is running.
+- **Next:** read the suite result, squash, open the PR.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-transitions`; `pnpm install`; build the desktop's dependencies; `pnpm --dir apps/desktop run test` (in the background); then squash the wip commits and `gh pr create --repo AlexDumo/OpenMarch-timeline --base timeline-try-2`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-transitions) · P8.3
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/27 (one commit, f24f0294, rebased on `timeline-try-2` after P7.4/P7.5).
+  - `TimelineTransitionEditor` in the inspector's timeline section edits the transition of each selected marcher at the page (or the move ending there): path style (FTL disabled with the reason when there's no shape or the shape is a block), bulge clamped to ±½ with the minor-arc note, FTL waypoints (add, remove, reorder, x/y), order mode with a one-line note, destination shape or individual points (copying the shape's samples), and slot count (at least the highest assigned slot + 1; new shapeless slots start at the last point).
+  - Each change is one undoable edit through the new `updateTimelineTransition` and `setTimelineTransitionDestination` wrappers. No-op changes are skipped, and refusals go through `toastTimelineError`.
+  - Shape samples come from a one-transition resolver (`shapeSlotPoints`), so there's no core API change. Exporting core's `sampleDestinations` is an optional follow-up (ADR 0001 §4).
+- **For the handoff notes:** the editor and its planner are `src/components/inspector/TimelineTransitionEditor.tsx` and `src/timeline/timelineTransitionEditor.ts`. `useTimelineInspections` returns `transitionEdits` and `shapeOptions`. Follow-ups:
+  - Timeline clip and track selections don't drive the editor yet.
+  - Waypoints can't be picked on the canvas yet.
+  - The shape list doesn't filter out blocks that are too small (picking one is refused with E-T4).
+- **Checks:**
+  - Build of the desktop's dependencies: pass.
+  - After the rebase: `tsc --noEmit` passes; `test:focused` on the inspector and timeline editor files passes (5 files, 95 tests); `test:history src/db-functions/__test__/timelineTransitionEdits.test.ts` passes (9 tests).
+  - `pnpm --dir apps/desktop run test`: 129 files, 1,889 tests passed (before the rebase, which touched none of these files).
+  - eslint: 0 errors. prettier and cspell: pass.
+  - Not run (policy): full `test:history`, e2e, `build:electron`.
+- **Exit gate:** nothing ticked. The UI verification item needs a manual app check.
+- **Next:** review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-transitions) · P8.3 (review fixes)
+
+- **Done:** commits dbca9b8d (code and tests) and a936ac98 (`ui.md`) on PR https://github.com/AlexDumo/OpenMarch-timeline/pull/27 fix the lead's five findings:
+  1. At a page's end beat the editor now edits the move that ends there, not the next page's move starting there (spans are half-open). Tests cover back-to-back moves and a selection that mixes holding and moving marchers.
+  2. After an edit, nothing is planned until the inspector shows the rebuilt target, so a quick second edit can't write over the first. The module comment is corrected. Tests: two quick waypoint removals, and controls re-enabled after a refusal.
+  3. Number fields commit only changed text, so blurring a rounded value (0.1234 shown as 0.123) writes nothing. Tested.
+  4. Slot counts are clamped to 10000 (I-N2) in the field and in the planner. Tested.
+  5. The shape picker disables, with the reason, blocks for follow the leader (E-T3) and blocks smaller than the slot count (E-T4). Tested.
+- **Note:** the session scratchpad is shared with another worker (P7.6). Its `pr.md` was briefly used as this PR's body; PR #27's body was rewritten at once, and my inserted section was removed from that file.
+- **Checks:** `tsc --noEmit`: pass. `test:focused` (inspector and timeline editor files): 5 files, 105 passed. `test:history src/db-functions/__test__/timelineTransitionEdits.test.ts`: 9 passed. `pnpm --dir apps/desktop run test`: 130 files, 1,923 passed. eslint 0 errors; prettier and cspell pass. Not run (policy): full `test:history`, e2e, `build:electron`.
+- **Next:** re-review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-01 · lead · P8.3
+
+- **Done:** reviewed PR #27. The review found five issues, all fixed in dbca9b8d and a936ac98:
+  - the editor targeted the next page's move on back-to-back moves;
+  - edits could be planned from stale rows;
+  - blurring a field wrote its rounded value;
+  - slot count had no cap;
+  - the shape picker offered shapes the database refuses.
+    Squash-merged at head a936ac98.
+- **Checks (lead, on a936ac98):**
+  - `tsc --noEmit`: pass.
+  - Focused `test:history src/db-functions/__test__/`: 24 files, 592 tests passed.
+  - `pnpm --dir apps/desktop run test`: 130 files and 1,923 tests passed, no errors.
+  - Skipped by policy: the full `test:history` and e2e suites.
+- **Next:**
+  - P8.4 (assignments and layers) is unblocked.
+  - Optional follow-ups: timeline clip/track selection driving the editor, picking waypoints on the canvas, exporting `sampleDestinations` from core (ADR 0001 §4).
+  - The UI exit-gate item still needs a manual app check.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p7-copy-paste) · Cross-phase note from P7.6
+
+- **Done:** found in the PR #28 review. Code that reads `useTimelineResolverStore.getState().resolver` to plan a write can start from stale positions while an earlier write is still in its transaction, because change batches reach the resolver only on commit. P7.6 adds `timelinePositionsSettled()` (`apps/desktop/src/timeline/timelineCoordinateWrites.ts`), which waits for `withTimelineWriteLock` and then `timelineResolverSettled()`. Await it before planning a write from resolver positions. Never call it inside a wrapped write: it would wait for itself.
+- **Checks:** none for this note.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-assignments) · P8.4
+
+- **Done:** claimed P8.4. Branch `timeline/p8-assignments` from `timeline-try-2` (at 33ac65e6, after P8.3).
+- **Checks:** none yet.
+- **Next:** an assignments editor under each transition in the inspector's timeline section: the slot list with vacancies, nearest-slot casting, layer and range per assignment, and which ones are stolen.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-assignments`; `pnpm install`; build the desktop's dependencies.
+
+### 2026-10-01 · timeline-worker (timeline/p8-assignments) · P8.4
+
+- **Done:** wip commit 46e97d8e on `timeline/p8-assignments` (rebased on `timeline-try-2` after PR #28): `src/timeline/timelineCasting.ts` (nearest-slot casting with core's `hungarianAlgorithm`, padded so leftover slots stay vacant) and `src/db-functions/timelineAssignmentEdits.ts` (cast marchers into a transition, recast by nearest slot, move to a slot or trade slots, change layer or beats, remove). Casting reads positions from a resolver over the edit's own transaction, so it can't plan from positions a committing edit is about to change. `stealLayer` in `timelineCommands.ts` is now exported.
+- **Checks:** none yet.
+- **Next:** the pure planner (`src/timeline/timelineAssignmentEditor.ts`), the inspector's assignments editor, history tests.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-assignments`; `pnpm install`; build the desktop's dependencies; write `apps/desktop/src/timeline/timelineAssignmentEditor.ts` and `apps/desktop/src/components/inspector/TimelineAssignmentsEditor.tsx`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-assignments) · P8.4
+
+- **Done:** wip commits 5faed882, 3b3a4b27 and 36bbc97b on `timeline/p8-assignments`:
+  - `TimelineAssignmentsEditor` under each transition editor in the inspector's timeline section: slots by drill number, vacant slots (with a warning line), per-member slot (take a vacant one or trade), layer, beats, remove, and where a higher layer steals it. **Cast selected marchers** and **Recast by nearest slot**, each disabled with its reason.
+  - Planner `src/timeline/timelineAssignmentEditor.ts`; `useTimelineInspections` returns `assignmentEdits`.
+  - Create Track into a shape now casts by nearest slot instead of id order.
+  - Decision UI-7 (casting and layers) and the editor recorded in `ui.md` on the code branch.
+- **Checks:** `tsc --noEmit`: pass. `test:history src/db-functions/__test__/timelineAssignmentEdits.test.ts`: 11 passed; `test:history src/db-functions/__test__/timelineCommands.test.ts`: 12 passed; `test:history src/timeline/__test__/useTimelineInspections.test.tsx`: 6 passed. `test:focused` on the inspector and the new planner/casting tests: 7 files, 130 passed. Mutations: zero casting cost fails 6 tests; id-order Create Track fails the new nearest-slot test. The regular desktop suite is running.
+- **Next:** read the suite result; eslint, prettier, cspell; squash; open the PR.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-assignments`; `pnpm install`; build the desktop's dependencies; `pnpm --dir apps/desktop run test` (in the background); then squash and `gh pr create --repo AlexDumo/OpenMarch-timeline --base timeline-try-2`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-assignments) · P8.4
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/31 (one commit, b8a3a5b1, on `timeline-try-2`).
+  - **The editor:** `TimelineAssignmentsEditor` sits under each transition editor in the inspector. It shows:
+    - the slots, with each member's drill number;
+    - vacant slots, with a warning line (D-13);
+    - for each member: its slot (take a vacant one or trade), layer, beats, a remove button, and where a higher layer steals it (R-2).
+  - **Casting:** two actions, each disabled with its reason when it can't run:
+    - **Cast selected marchers** fills vacant slots by nearest slot. Each marcher's layer is one above its other moves at those beats (per-marcher steal).
+    - **Recast by nearest slot** re-picks every member's slot. A recast that wouldn't shorten the total distance is refused.
+  - **Create Track** into a shape now casts by nearest slot instead of id order.
+  - **Decision UI-7** is recorded in `ui.md` on the code branch.
+- **For the handoff notes:**
+  - Files: the editor is `src/components/inspector/TimelineAssignmentsEditor.tsx`; the planner is `src/timeline/timelineAssignmentEditor.ts`; casting is `src/timeline/timelineCasting.ts` (Hungarian solve, capped at 500 slots); the db-functions are `src/db-functions/timelineAssignmentEdits.ts`.
+  - Casting reads positions from the rows inside its own transaction, so it doesn't need `timelinePositionsSettled()`.
+  - Follow-ups: timeline track and clip selections don't drive the editor yet. Only the first 64 slots are listed.
+- **Checks:**
+  - `tsc --noEmit`: pass.
+  - Focused `test:history`: `timelineAssignmentEdits.test.ts` 11 passed, `timelineCommands.test.ts` 12 passed, `useTimelineInspections.test.tsx` 6 passed.
+  - `test:focused` on the inspector and the new planner and casting tests: 7 files, 130 passed.
+  - `pnpm --dir apps/desktop run test`: 135 files, 1,980 passed. This ran on 36bbc97b, before a small picker and wording change; the focused tests were re-run after that change.
+  - Mutation checks: zeroing the casting cost fails 6 tests; reverting Create Track to id order fails the new test.
+  - eslint: 0 errors. prettier and cspell: pass.
+  - Not run (policy): full `test:history`, e2e, `build:electron`.
+- **Exit gate:** nothing ticked. The UI verification item needs a manual app check.
+- **Next:** review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-assignments) · P8.4 (review fixes)
+
+- **Done:** merged `timeline-try-2` (f34cc8e8, with #29). Commit ed095df0 on PR https://github.com/AlexDumo/OpenMarch-timeline/pull/31 fixes the lead's review:
+  1. **Follow the leader** is never cast by nearest slot: new marchers take the lowest vacant slots, and recast is refused, with the reason shown, in the db-functions and the editor. Its founders' targets come from trail order (R-9, R-12).
+  2. **Recast** starts each member from its row's first winning span, so a breakaway at the row's start doesn't skew the cast; rows that never win cost nothing.
+  3. **Big transitions:** every member is listed, and only the vacant rows are capped (16). The vacancy line is a range summary ("0–9, 12, … (+N)"), and the slot is a typed number instead of a list of up to 10000 options.
+  4. **Steals:** a cast names the moves it steals beats from, in a note after it commits. `stealLayer`'s refusal message fits each caller.
+  5. **Create Track** falls back to id order past `MAX_CAST_SLOTS`.
+  6. **Stale-plan guard:** after an edit, the editor waits for a target from a newer store version, so a rebuild from the same rows (scrubbing, playback) doesn't re-enable it.
+  7. **Docs:** `ui.md` UI-7 and the recast help note that recasting a direct move can reorder a downstream follow-the-leader move under `inherit` (QA-SC-07). The P8.4 description here no longer names `computeOptimalCoordinateMapping`.
+  8. **Tests added:** follow the leader (`inherit` and `slot`), recast after a breakaway at the start, refusals past 500 slots, a beats change that hits E-A3, members past slot 64, the vacancy summary, the steal note, and a version guard across an edit that changes ids.
+- **Checks:**
+  - `tsc --noEmit`: pass.
+  - Focused `test:history`: `timelineAssignmentEdits.test.ts`, `timelineCommands.test.ts` and `useTimelineInspections.test.tsx`, 34 passed.
+  - `test:focused` on the inspector and the planner and casting tests: 7 files, 140 passed.
+  - Mutation checks: starting a recast at the row's own start fails the breakaway test; casting follow the leader by nearest slot fails both follow-the-leader tests.
+  - eslint: 0 errors. prettier and cspell: pass.
+  - The desktop suite is running.
+  - Not run (policy): full `test:history`, e2e, `build:electron`.
+- **Next:** read the suite result, update the PR body, report back.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-assignments`; `pnpm --dir apps/desktop run test` (in the background); update PR #31's body from `pr-P8.4.md`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-assignments) · P8.4 (review fixes ready)
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/31's body is updated for the review fixes in ed095df0. The branch was merged with `timeline-try-2`, not force-pushed.
+- **Checks:** `pnpm --dir apps/desktop run test` on ed095df0: 137 files, 2,011 passed (14 skipped, 15 todo). The other checks are in the previous entry.
+- **Next:** re-review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-01 · lead · P8.4
+
+- **Done:** reviewed PR #31 and squash-merged it at head ed095df0.
+  - The review raised eight items, all fixed with tests. The main ones:
+    - follow the leader now casts into the lowest vacant slots, and recast is refused;
+    - recast measures from each row's first winning span;
+    - every member is listed past slot 64;
+    - cast steal notes;
+    - Create Track falls back past 500 marchers;
+    - the stale-plan guard is keyed on the store version.
+  - UI-7 is in `ui.md`.
+- **Checks (lead, on ed095df0):**
+  - `tsc --noEmit`: pass.
+  - Focused `test:history src/db-functions/__test__/`: 26 files, 621 tests passed.
+  - `pnpm --dir apps/desktop run test`: 137 files and 2,011 tests passed, with no errors.
+  - Skipped by policy: the full `test:history` and e2e suites.
+- **Next:**
+  - P8.2 (shapes).
+  - Follow-up: timeline clip and track selection doesn't drive the inspector editors yet.
+  - The UI exit-gate item needs a manual app check.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-2-shapes) · P8.2
+
+- **Done:** claimed P8.2. Branch `timeline/p8-2-shapes` from `timeline-try-2` (at dd7e3e2e, after P8.4).
+- **Checks:** none yet.
+- **Next:** read the shape rules in the spec and P7.11; split the work with P7.11; build the shape editor.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-2-shapes`; `pnpm install`; build the desktop's dependencies.
+
+### 2026-10-01 · timeline-worker (timeline/p8-2-shapes) · P8.2
+
+- **Done:** wip commit b4c09aa0 on `timeline/p8-2-shapes`: `TimelineShapesEditor` in the inspector's timeline section (new shape of any kind drawn through the selected marchers, or at the field's middle; pick a shape; name, kind, geometry per kind, delete), planned by `src/timeline/timelineShapeEditor.ts` and run as one undoable edit each through the new `createTimelineShape`, `updateTimelineShape` and `deleteTimelineShape` wrappers in `timelineShapes.ts`. Converting a shape in use to a block gives it a cell for every slot of the transitions using it (I-T4); a block for a follow-the-leader user (I-T3) and deleting a shape in use (I-D1) are disabled with the reason; fewer rows or columns than a user's slots go to the database, which refuses them (E-T3/E-T4).
+- **Split with P7.11:** P8.2 is the spec-shape model's editor (create, geometry, kind, rename, delete of `timeline_shapes`, keeping the transitions that use a shape valid). P7.11 keeps the page-era shape tools: canvas shape objects and control-point drags (`MarcherShape`, `StaticMarcherShape`), the old `ShapeEditor`, shape pages and copy to page, the lock rules, and shape rendering on the canvas. Drawing a spec shape on the canvas (outline and handles) needs those canvas objects, so it is P7.11's, or a follow-up after it; P8.2 draws a shape through the selected marchers instead.
+- **Checks:** `tsc --noEmit`: pass.
+- **Next:** planner unit tests, component tests, history tests on a real DB.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-2-shapes`; `pnpm install`; build the desktop's dependencies; write `apps/desktop/src/timeline/__test__/timelineShapeEditor.test.ts`, `apps/desktop/src/components/inspector/__test__/TimelineShapesEditor.test.tsx` and `apps/desktop/src/db-functions/__test__/timelineShapeEdits.test.ts`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-2-shapes) · P8.2
+
+- **Done:** wip commit 5a8a5ab4 on `timeline/p8-2-shapes`: planner unit tests (`src/timeline/__test__/timelineShapeEditor.test.ts`), component tests (`src/components/inspector/__test__/TimelineShapesEditor.test.tsx`), history tests on a real DB (`src/db-functions/__test__/timelineShapeEdits.test.ts`), a hook case in `useTimelineInspections.test.tsx`, and the editor's notes in `ui.md` ("Shapes (P8.2)", on the code branch, as P8.3 and P8.4 did).
+- **Checks:** `tsc --noEmit`: pass. `test:focused` on the planner, inspector and error-message tests: 7 files, 160 passed. Focused `test:history` on every test file that uses `timelineShapes.ts` (`timelineShapeEdits`, `timelineMoves`, `timelineMarchers`, `timelineAssignmentEdits`, `timelineTransitionEdits`, `timelineCommands`, `useTimelineInspections`, `timelinePageCopy`): 8 files, 92 passed. Mutations: removing the version guard fails the stale-plan test; enabling the block kind for a follow-the-leader user fails the I-T3 test. eslint 0 errors; prettier and cspell pass. The regular desktop suite is running.
+- **Next:** read the suite result; squash; open the PR.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-2-shapes`; `pnpm install`; build the desktop's dependencies; `pnpm --dir apps/desktop run test` (in the background); then squash the wip commits and `gh pr create --repo AlexDumo/OpenMarch-timeline --base timeline-try-2` with the body from `pr-P8.2.md`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-2-shapes) · P8.2
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/34 (one commit, 715e6dce, rebased on `timeline-try-2` after P7.12 and P7.15).
+  - `TimelineShapesEditor` sits in the inspector's timeline section and shows with or without a page.
+    - **New shape:** a shape of any kind is drawn through the selected marchers where they stand at the page's end beat, or at the field's middle when nobody is selected.
+    - **Edit:** pick a shape to change its name, its kind and its geometry for that kind.
+    - **Delete:** only unused shapes.
+  - Each change is one undoable edit through the new `createTimelineShape`, `updateTimelineShape` and `deleteTimelineShape`. The planner is `src/timeline/timelineShapeEditor.ts`.
+  - **Keeping the transitions that use a shape valid:**
+    - a kind change to a block gets a cell for every slot of the transitions using the shape (I-T4);
+    - a block for a follow-the-leader user (I-T3) and deleting a shape in use (I-D1) are disabled, with the reason;
+    - a smaller block grid is sent as typed, and the database refuses it (E-T3/E-T4) through `toastTimelineError`.
+  - **After the P7.15 rebase:** shape targets match both the resolver version and the display version, and their guard version is the sum, as the other editors' is.
+  - `ui.md` has "Shapes (P8.2)" on the code branch.
+- **Split with P7.11:** see the first P8.2 entry. In short, P7.11 keeps the page-era canvas shape tools and on-canvas drawing; P8.2 is the `timeline_shapes` editor.
+- **For the handoff notes:**
+  - Files: the editor is `src/components/inspector/TimelineShapesEditor.tsx`; the planner is `src/timeline/timelineShapeEditor.ts`; the db-functions are in `src/db-functions/timelineShapes.ts`. `useTimelineInspections` returns `shapeEdits` (`{ version, targets }`).
+  - Follow-ups:
+    - drawing and dragging spec shapes on the canvas (with P7.11);
+    - picking the shape to edit from a timeline shape track;
+    - a friendlier message for the combined E-T3/E-T4 code when the change is to a shape, not a transition's destination.
+- **Checks:**
+  - `tsc --noEmit`: pass.
+  - `test:focused` on the planner, inspector, error-message and transition-planner tests: 7 files, 160 passed.
+  - Focused `test:history` on every test file that uses `timelineShapes.ts`: 8 files, 94 passed (after the rebase).
+  - `pnpm --dir apps/desktop run test` on the rebased head: 149 files (142 passed, 7 skipped), 2,095 tests passed.
+  - Mutation checks: removing the version guard fails the stale-plan test; enabling the block kind for a follow-the-leader user fails the I-T3 test.
+  - eslint: 0 errors. prettier and cspell: pass.
+  - Not run (policy): full `test:history`, e2e, `build:electron`.
+- **Exit gate:** nothing ticked. The UI verification item needs a manual app check.
+- **Next:** review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-2-shapes) · P8.2 (review fixes)
+
+- **Done:** merged `timeline-try-2` (81c94cdd, with #33, P7.10). Commit ace16e71 on PR https://github.com/AlexDumo/OpenMarch-timeline/pull/34 fixes the lead's review:
+  1. **Open paths:** a box, circle or block converted to freehand is now an open path, so its first and last slots no longer stack (freehand samples at `i/(n-1)`). A kind change on a shape in use says that its users' slots are re-spread. The "same ground" wording is fixed in `ui.md` and the help text. Test: for every source shape and target kind, at 2, 3, 5, 16, 17 and 40 slots, every slot point is distinct. Putting the closing point back fails 3 tests.
+  2. **Delete in use:** `deleteTimelineShape` checks `dest_shape_id` inside the edit and refuses with an `E-ARGS` message that names the transitions. The foreign key stays the backstop, with its own test (E-DB through `deleteTimelineShapesInTransaction`).
+  3. **Circle from a selection:** the radius is the first marcher's distance from the middle (the mean when that is 0), so the circle passes through marcher 1. Tested with marchers at unequal distances.
+  4. **Double click:** an in-flight ref covers the whole edit. Test: a second click while the create is in flight, even after the version moves, creates nothing. Removing the ref fails it.
+  5. **Unknown marchers:** selected marchers that aren't in the timeline are refused with a toast (E-ARGS) instead of drawing at the field's middle.
+  6. **New tests:** circle and block through collinear marchers; freehand through coincident marchers; non-whole rows and columns (planner, and E-S1 on a real DB).
+- **Checks:**
+  - `tsc --noEmit`: pass.
+  - `test:focused` (planner, inspector, error-message and transition-planner tests): 7 files, 169 passed.
+  - Focused `test:history` on the shape test files (`timelineShapeEdits`, `timelineMoves`, `timelineMarchers`, `timelineAssignmentEdits`, `timelineTransitionEdits`, `timelineCommands`, `useTimelineInspections`, `timelinePageCopy`): 8 files, 96 passed.
+  - eslint: 0 errors. prettier and cspell: pass.
+  - The desktop suite is running.
+- **Next:** read the suite result, update the PR body, report back.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-2-shapes`; `pnpm --dir apps/desktop run test` (in the background); update PR #34's body from `pr-P8.2.md`.
+
+### 2026-10-01 · timeline-worker (timeline/p8-2-shapes) · P8.2 (review fixes ready)
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/34's body is updated for the review fixes in ace16e71. The branch was merged with `timeline-try-2`, not force-pushed.
+- **Checks:** `pnpm --dir apps/desktop run test` at ace16e71, run once and alone: 153 files (146 passed, 7 skipped), 2,150 tests passed. The other checks are in the previous entry. Not run (policy): full `test:history`, e2e, `build:electron`.
+- **Next:** re-review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-01 · lead · P8.2
+
+- **Done:** reviewed PR #34 and squash-merged it at head ace16e71. The review found two significant issues and four smaller ones, all fixed:
+  - Closed shapes converted to freehand stacked the first and last slot. They are now open paths, with a distinctness test over every conversion.
+  - Deleting a shape in use gave a generic error. It now gives an E-ARGS refusal naming the transitions.
+  - A circle drawn from the selection now passes through marcher 1.
+  - A double-click guard is added.
+  - Unknown selected marchers are now refused.
+  - Tests are added for degenerate selections.
+- **Checks (lead, on ace16e71, includes #33):**
+  - `tsc --noEmit`: pass.
+  - Focused `test:history src/db-functions/__test__/`: 28 files, 647 tests passed.
+  - `pnpm --dir apps/desktop run test`: 146 files, 2,150 tests passed, no errors.
+  - Skipped by policy: the full `test:history` and e2e suites.
+- **Next:**
+  - P7.11 (page-era shape tools; canvas drawing of spec shapes) is now unblocked.
+  - The UI exit-gate item needs a manual app check.
+- **Blockers:** none.

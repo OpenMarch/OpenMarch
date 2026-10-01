@@ -127,7 +127,7 @@ Throughout:
 ## 6. Finish
 
 1. Run every exit-gate check that your package covers, plus the checks in
-   `docs/conventions/verification.md` for the changed area.
+   `docs/conventions/verification.md` for the changed area. If `tsc` or a test fails in a file you didn't touch, run `pnpm install` and rebuild the workspace packages before calling it unrelated: a stale install in a new work tree is the usual cause, and the base is kept clean.
 2. Squash or tidy `wip:` commits. Confirm
    `git log <base>..HEAD --format=%B` has no AI attribution or co-author lines
    (root `AGENTS.md`).
@@ -135,8 +135,10 @@ Throughout:
    `gh pr create --repo AlexDumo/OpenMarch-timeline --base timeline-try-2`.
    Always pass `--repo AlexDumo/OpenMarch-timeline` to `gh`; without it, `gh`
    can pick the public repo. The PR body names the work package IDs and the
-   checks you ran, with results.
-4. Through `coord.sh`: set `- Status: in-review` and `- PR: <url>`, tick only
+   checks you ran, with results. Workers can share one scratchpad, so name
+   temporary files after your package (`pr-P8.3.md`, not `pr.md`), and read a
+   body file back before passing it to `--body-file`.
+4. Through `coord.sh`: set `- Status: in-review` and `- PR: <url>`. Edit only your package's section: a regex over the whole file can hit the first `- PR:` line instead of yours. Before `coord.sh commit`, run `git diff` in the coordination checkout and confirm only your package's lines and your log entry changed. Tick only
    the exit-gate items you actually ran and whose outcome is already true on
    the base branch. An item that only becomes true when your PR merges (such
    as "the root copies are gone") waits for the merge; say so in the log, and append a final log entry.

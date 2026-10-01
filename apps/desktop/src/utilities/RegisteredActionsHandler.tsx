@@ -9,10 +9,17 @@ import {
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import type { ModifiedMarcherPageArgs } from "@/db-functions/marcherPage";
 import {
-    refuseInTimelineMode,
     timelineCoordinateRecords,
     toTimelineMoves,
 } from "@/timeline/timelineCoordinateWrites";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
+import { TimelineWriteError } from "@/db-functions/timelineErrors";
+import { PAGE_SHAPES_TIMELINE_MESSAGE } from "@/db-functions/shapePages";
+import {
+    setMarchersToNeighborPage,
+    type NeighborPageDirection,
+    type NeighborPageScope,
+} from "./setMarchersToNeighborPage";
 import { createCircle } from "@openmarch/core";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -44,12 +51,6 @@ import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
-
-/** Shows an error's message as a toast. */
-const conToastErrorMessage = (e: unknown) => {
-    console.error(e);
-    toast.error(e instanceof Error ? e.message : String(e));
-};
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -555,11 +556,18 @@ function RegisteredActionsHandler() {
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
+    const timelineMode = useTimelineMode();
+    // Only page mode's "set marchers to the previous or next page" reads these; timeline mode
+    // reads the resolver instead (P7.6), so they don't run there
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(
+            timelineMode ? null : selectedPage?.previousPageId,
+        ),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(
+            timelineMode ? null : selectedPage?.nextPageId,
+        ),
     );
     const { mutate: swapMarchers } = useMutation(
         swapMarchersMutationOptions(queryClient),
@@ -567,10 +575,8 @@ function RegisteredActionsHandler() {
     const { mutate: updateMarcherPages } = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    const timelineMode = useTimelineMode();
-    const { mutate: moveMarchersOnPage } = useMutation(
-        moveMarchersOnPageMutationOptions(),
-    );
+    const { mutate: moveMarchersOnPage, mutateAsync: moveMarchersOnPageAsync } =
+        useMutation(moveMarchersOnPageMutationOptions());
     const { mutate: createMarcherShape } = useCreateMarcherShape();
     const selectedMarchersContext = useSelectedMarchers();
     const selectedMarchers = selectedMarchersContext?.selectedMarchers ?? [];
@@ -636,7 +642,7 @@ function RegisteredActionsHandler() {
                     selectedMarchers.map((marcher) => marcher.id),
                 );
             } catch (e) {
-                conToastErrorMessage(e);
+                toastTimelineError(e);
                 return [];
             }
         }
@@ -676,6 +682,47 @@ function RegisteredActionsHandler() {
             });
         },
         [timelineMode, updateMarcherPages, selectedPage, moveMarchersOnPage],
+    );
+
+    /**
+     * "Set all or selected marchers to the previous or next page" in either mode
+     * (`setMarchersToNeighborPage`; timeline mode is P7.6).
+     */
+    const runNeighborPageAction = useCallback(
+        (direction: NeighborPageDirection, scope: NeighborPageScope) => {
+            if (!selectedPage || !databaseReady || !pages || pages.length === 0)
+                return;
+            void setMarchersToNeighborPage({
+                timelineMode,
+                direction,
+                scope,
+                selectedPage,
+                pages,
+                selectedMarcherIds: (
+                    selectedMarchersContext?.selectedMarchers ?? []
+                ).map((m) => m.id),
+                neighborMarcherPages:
+                    direction === "previous"
+                        ? previousMarcherPages
+                        : nextMarcherPages,
+                writePages: updateMarcherPages,
+                writeTimeline: moveMarchersOnPageAsync,
+                notify: toast,
+                t: (key, params) => t(key, params),
+            });
+        },
+        [
+            selectedPage,
+            databaseReady,
+            pages,
+            timelineMode,
+            selectedMarchersContext,
+            previousMarcherPages,
+            nextMarcherPages,
+            updateMarcherPages,
+            moveMarchersOnPageAsync,
+            t,
+        ],
     );
 
     // Arrow movement defaults
@@ -913,150 +960,18 @@ function RegisteredActionsHandler() {
                 }
 
                 /****************** Batch Editing ******************/
-                case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
-                    // Reads page-era rows; not in timeline mode until P7.6
-                    if (refuseInTimelineMode(timelineMode, toast.error)) break;
-                    if (!databaseReady || !pages || pages.length === 0) break;
-                    const previousPage = getPreviousPage(selectedPage, pages);
-                    if (!previousPage || !previousMarcherPages) {
-                        toast.error(t("actions.batchEdit.noPreviousPage"));
-                        return;
-                    }
-
-                    const previousMarcherPagesArray =
-                        Object.values(previousMarcherPages);
-                    const changes = previousMarcherPagesArray.map(
-                        (marcherPage) => ({
-                            marcher_id: marcherPage.marcher_id,
-                            page_id: selectedPage.id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
-                            notes: marcherPage.notes || undefined,
-                        }),
-                    );
-                    updateMarcherPages(changes);
-
-                    toast.success(
-                        t("actions.batchEdit.setAllToPreviousSuccess", {
-                            count: previousMarcherPagesArray.length,
-                            currentPage: selectedPage.name,
-                            previousPage: previousPage.name,
-                        }),
-                    );
+                case RegisteredActionsEnum.setAllMarchersToPreviousPage:
+                    runNeighborPageAction("previous", "all");
                     break;
-                }
-                case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
-                    // Reads page-era rows; not in timeline mode until P7.6
-                    if (refuseInTimelineMode(timelineMode, toast.error)) break;
-                    if (!databaseReady || !pages || pages.length === 0) break;
-                    const previousPage = getPreviousPage(selectedPage, pages);
-                    if (!previousPage || !previousMarcherPages) {
-                        toast.error(t("actions.batchEdit.noPreviousPage"));
-                        return;
-                    }
-
-                    const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id,
-                    );
-
-                    const filteredPreviousMarcherPages = selectedMarcherIds
-                        .map((marcherId) => previousMarcherPages[marcherId])
-                        .filter(Boolean);
-
-                    if (filteredPreviousMarcherPages.length > 0) {
-                        const changes = filteredPreviousMarcherPages.map(
-                            (marcherPage) => ({
-                                marcher_id: marcherPage.marcher_id,
-                                page_id: selectedPage.id,
-                                x: marcherPage.x as number,
-                                y: marcherPage.y as number,
-                                notes: marcherPage.notes || undefined,
-                            }),
-                        );
-                        updateMarcherPages(changes);
-
-                        toast.success(
-                            t(
-                                "actions.batchEdit.setSelectedToPreviousSuccess",
-                                {
-                                    count: filteredPreviousMarcherPages.length,
-                                    currentPage: selectedPage.name,
-                                    previousPage: previousPage.name,
-                                },
-                            ),
-                        );
-                    }
+                case RegisteredActionsEnum.setSelectedMarchersToPreviousPage:
+                    runNeighborPageAction("previous", "selected");
                     break;
-                }
-                case RegisteredActionsEnum.setAllMarchersToNextPage: {
-                    // Reads page-era rows; not in timeline mode until P7.6
-                    if (refuseInTimelineMode(timelineMode, toast.error)) break;
-                    if (!databaseReady || !pages || pages.length === 0) break;
-                    const nextPage = getNextPage(selectedPage, pages);
-                    if (!nextPage || !nextMarcherPages) {
-                        toast.error(t("actions.batchEdit.noNextPage"));
-                        return;
-                    }
-                    const nextMarcherPagesArray =
-                        Object.values(nextMarcherPages);
-                    const changes = nextMarcherPagesArray.map(
-                        (marcherPage) => ({
-                            marcher_id: marcherPage.marcher_id,
-                            page_id: selectedPage.id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
-                            notes: marcherPage.notes || undefined,
-                        }),
-                    );
-                    updateMarcherPages(changes);
-
-                    toast.success(
-                        t("actions.batchEdit.setAllToNextSuccess", {
-                            count: nextMarcherPagesArray.length,
-                            currentPage: selectedPage.name,
-                            nextPage: nextPage.name,
-                        }),
-                    );
+                case RegisteredActionsEnum.setAllMarchersToNextPage:
+                    runNeighborPageAction("next", "all");
                     break;
-                }
-                case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
-                    // Reads page-era rows; not in timeline mode until P7.6
-                    if (refuseInTimelineMode(timelineMode, toast.error)) break;
-                    if (!databaseReady || !pages || pages.length === 0) break;
-                    const nextPage = getNextPage(selectedPage, pages);
-                    if (!nextPage || !nextMarcherPages) {
-                        toast.error(t("actions.batchEdit.noNextPage"));
-                        return;
-                    }
-                    const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id,
-                    );
-                    const nextPageMarcherPages = selectedMarcherIds
-                        .map((marcherId) => nextMarcherPages[marcherId])
-                        .filter(Boolean);
-
-                    if (nextPageMarcherPages.length > 0) {
-                        const changes = nextPageMarcherPages.map(
-                            (marcherPage) => ({
-                                marcher_id: marcherPage.marcher_id,
-                                page_id: selectedPage.id,
-                                x: marcherPage.x as number,
-                                y: marcherPage.y as number,
-                                notes: marcherPage.notes || undefined,
-                            }),
-                        );
-                        updateMarcherPages(changes);
-
-                        toast.success(
-                            t("actions.batchEdit.setSelectedToNextSuccess", {
-                                count: nextPageMarcherPages.length,
-                                currentPage: selectedPage.name,
-                                nextPage: nextPage.name,
-                            }),
-                        );
-                    }
+                case RegisteredActionsEnum.setSelectedMarchersToNextPage:
+                    runNeighborPageAction("next", "selected");
                     break;
-                }
 
                 /******************* Marcher Movement ******************/
                 case RegisteredActionsEnum.moveSelectedMarchersUp: {
@@ -1300,6 +1215,17 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.createMarcherShape: {
+                    if (timelineMode) {
+                        // Page shapes write shape pages and marcher_pages (P7.11). The line's
+                        // positions can still be applied, so the alignment stays open.
+                        toastTimelineError(
+                            new TimelineWriteError(
+                                "E-ARGS",
+                                PAGE_SHAPES_TIMELINE_MESSAGE,
+                            ),
+                        );
+                        break;
+                    }
                     const firstMarcherPage = alignmentEventNewMarcherPages[0];
                     const lastMarcherPage =
                         alignmentEventNewMarcherPages[
@@ -1408,6 +1334,7 @@ function RegisteredActionsHandler() {
             setAlignmentEventMarchers,
             updateSelectedMarchers,
             updateCoordinates,
+            runNeighborPageAction,
             timelineMode,
         ],
     );

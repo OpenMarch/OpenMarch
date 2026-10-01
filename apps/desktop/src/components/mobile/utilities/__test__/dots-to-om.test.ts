@@ -1,3 +1,4 @@
+import { skipInTimelineMode } from "@/test/timelineMode";
 import { describeDbTests } from "@/test/base";
 import { expect } from "vitest";
 import type { DB } from "@/global/database/db";
@@ -237,31 +238,35 @@ describeDbTests("dots-to-om", (it) => {
         expect(override!.shape).toBe("triangle");
     });
 
-    it("exports performer override when marcher page appearance differs from baseline", async ({
-        db,
-        marchersAndPages,
-    }) => {
-        const firstPageId = marchersAndPages.expectedPages[0].id;
-        const marcherId = 1;
+    it.skipIf(
+        skipInTimelineMode(
+            "timeline mode drops marcher_pages appearance overrides from the export (P7.14 decision, P7.12)",
+        ),
+    )(
+        "exports performer override when marcher page appearance differs from baseline",
+        async ({ db, marchersAndPages }) => {
+            const firstPageId = marchersAndPages.expectedPages[0].id;
+            const marcherId = 1;
 
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                {
-                    marcher_id: marcherId,
-                    page_id: firstPageId,
-                    shape_type: "x",
-                },
-            ],
-        });
+            await updateMarcherPages({
+                db,
+                modifiedMarcherPages: [
+                    {
+                        marcher_id: marcherId,
+                        page_id: firstPageId,
+                        shape_type: "x",
+                    },
+                ],
+            });
 
-        const result = await toOpenMarchSchema(db as unknown as DB);
-        const override = result.performerAppearance.performers.find(
-            (p) =>
-                p.marcherId === String(marcherId) &&
-                p.pageId === String(firstPageId),
-        );
-        expect(override).toBeDefined();
-        expect(override!.shape).toBe("cross");
-    });
+            const result = await toOpenMarchSchema(db as unknown as DB);
+            const override = result.performerAppearance.performers.find(
+                (p) =>
+                    p.marcherId === String(marcherId) &&
+                    p.pageId === String(firstPageId),
+            );
+            expect(override).toBeDefined();
+            expect(override!.shape).toBe("cross");
+        },
+    );
 });

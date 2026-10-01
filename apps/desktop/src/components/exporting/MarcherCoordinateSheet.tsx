@@ -5,7 +5,7 @@ import {
 import React, { useEffect, useState } from "react";
 import Marcher from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
+import type { PagePosition } from "./utils/exportPagePositions";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
@@ -55,9 +55,9 @@ export default function MarcherCoordinateSheetPreview({
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
-    const [marcherPagesToUse, setMarcherPagesToUse] = useState<
-        Pick<MarcherPage, "id" | "marcher_id" | "page_id" | "x" | "y">[]
-    >([]);
+    const [marcherPagesToUse, setMarcherPagesToUse] = useState<PagePosition[]>(
+        [],
+    );
 
     const t = tolgee.t;
 
@@ -181,14 +181,12 @@ export default function MarcherCoordinateSheetPreview({
             setPagesToUse(pages);
             setMarcherPagesToUse([
                 {
-                    id: 1,
                     marcher_id: 1,
                     page_id: 1,
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
                 },
                 {
-                    id: 2,
                     marcher_id: 1,
                     page_id: 2,
                     x:
@@ -199,7 +197,6 @@ export default function MarcherCoordinateSheetPreview({
                         2 * pixelsPerStep,
                 },
                 {
-                    id: 3,
                     marcher_id: 1,
                     page_id: 3,
                     x:
@@ -243,10 +240,8 @@ export default function MarcherCoordinateSheetPreview({
 interface StaticCoordinateSheetProps {
     marcher: Marcher;
     pages: Page[];
-    marcherPages: Pick<
-        MarcherPage,
-        "id" | "marcher_id" | "page_id" | "x" | "y"
-    >[];
+    /** The marcher's position on each page, in page order (`marcher_pages` rows or resolver samples) */
+    marcherPages: PagePosition[];
     fieldProperties: FieldProperties;
     includeMeasures?: boolean;
 
@@ -541,7 +536,7 @@ export function StaticMarcherCoordinateSheet({
                                 if (!page || !rCoords) return null;
 
                                 return (
-                                    <tr key={marcherPage.id}>
+                                    <tr key={marcherPage.page_id}>
                                         <td
                                             className="text-center"
                                             aria-label="page name"
@@ -611,7 +606,8 @@ export function StaticMarcherCoordinateSheet({
 interface StaticQuarterMarcherSheetProps {
     marcher: Marcher;
     pages: Page[];
-    marcherPages: MarcherPage[];
+    /** The marcher's position on each page, in page order (`marcher_pages` rows or resolver samples) */
+    marcherPages: PagePosition[];
     fieldProperties: FieldProperties;
     roundingDenominator?: number;
     terse?: boolean;
@@ -655,7 +651,7 @@ export function StaticQuarterMarcherSheet({
     const [fieldPropertiesState, setFieldPropertiesState] =
         useState<FieldProperties>(fieldProperties);
     const [marcherPagesState, setMarcherPagesState] =
-        useState<MarcherPage[]>(marcherPages);
+        useState<PagePosition[]>(marcherPages);
     const [pagesState, setPagesState] = useState<Page[]>(pages);
     const [useXYState, setUseXY] = useState<boolean>(useXY);
     const [includeMeasuresState, setIncludeMeasures] =
@@ -858,7 +854,7 @@ export function StaticQuarterMarcherSheet({
                 </thead>
                 <tbody>
                     {marcherPagesState.map(
-                        (marcherPage: MarcherPage, index) => {
+                        (marcherPage: PagePosition, index) => {
                             if (!fieldPropertiesState) return null;
                             const page = pagesState.find(
                                 (p) => p.id === marcherPage.page_id,
@@ -890,7 +886,7 @@ export function StaticQuarterMarcherSheet({
 
                             return (
                                 <tr
-                                    key={marcherPage.id}
+                                    key={marcherPage.page_id}
                                     style={{
                                         backgroundColor: isEven
                                             ? "#f0f0f0"

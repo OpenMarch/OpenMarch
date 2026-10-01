@@ -1,10 +1,12 @@
-import { getOrm, schema } from "@om-electron/database/db";
+import { getOrm, schema, type DB } from "@om-electron/database/db";
 import { dialog } from "electron";
 import type { BrowserWindow } from "electron";
 import { DatabaseSync } from "node:sqlite";
 import { asc, desc, eq, isNotNull } from "drizzle-orm";
 import { parseFromWorkspaceSettings } from "@/components/launchpage/parseFromWorkspaceSettings";
 import { getLastPageNumber } from "@openmarch/core";
+import type { DbConnection } from "@/db-functions/types";
+import { readSourceTimelinePositions } from "@/timeline/sourceTimelinePositions";
 
 export interface PreviousDotsMarcherImport {
     name?: string | null;
@@ -63,8 +65,90 @@ export interface PreviousDotsImportResult {
     pageNumberOffset: number;
 }
 
+/**
+ * The marcher columns the import uses. Selected by name so a source file from before migration
+ * 0017 (no `home_x`/`home_y`) still reads, and so no other column reaches the new show.
+ */
+const sourceMarcherColumns = {
+    id: schema.marchers.id,
+    name: schema.marchers.name,
+    section: schema.marchers.section,
+    drill_prefix: schema.marchers.drill_prefix,
+    drill_order: schema.marchers.drill_order,
+    year: schema.marchers.year,
+    notes: schema.marchers.notes,
+};
+
+type SourceMarcher = PreviousDotsMarcherImport & { id: number };
+
+/**
+ * Page mode: the source's last page `marcher_pages` rows, as before timeline mode existed.
+ *
+ * @throws when the source has no pages
+ */
+async function readLastPageMarcherPages(
+    orm: DB,
+): Promise<PreviousDotsCoordinateImport[]> {
+    const lastPage = await orm
+        .select({ page_id: schema.timing_objects.page_id })
+        .from(schema.timing_objects)
+        .where(isNotNull(schema.timing_objects.page_id))
+        .orderBy(desc(schema.timing_objects.position))
+        .limit(1)
+        .get();
+
+    if (!lastPage?.page_id)
+        throw new Error("No timing objects found in source file");
+
+    return await orm
+        .select({
+            drill_prefix: schema.marchers.drill_prefix,
+            drill_order: schema.marchers.drill_order,
+            x: schema.marcher_pages.x,
+            y: schema.marcher_pages.y,
+        })
+        .from(schema.marcher_pages)
+        .innerJoin(
+            schema.marchers,
+            eq(schema.marcher_pages.marcher_id, schema.marchers.id),
+        )
+        .where(eq(schema.marcher_pages.page_id, lastPage.page_id))
+        .all();
+}
+
+/**
+ * Timeline mode: each marcher's position at the source's last page end beat, from the source's
+ * resolver (docs/timeline/phases/07-page-parity.md P7.16), since its `marcher_pages` rows are
+ * frozen page-era data. `null` when the source is in page mode or has no timeline tables.
+ */
+async function readTimelineCoordinates(
+    orm: DB,
+    marchers: readonly SourceMarcher[],
+    workspaceSettingsJson: string | undefined,
+): Promise<PreviousDotsCoordinateImport[] | null> {
+    const positions = await readSourceTimelinePositions({
+        db: orm as unknown as DbConnection,
+        workspaceSettingsJson,
+    });
+    if (!positions) return null;
+    const marchersById = new Map(marchers.map((m) => [m.id, m]));
+    return positions.flatMap(({ marcher_id, x, y }) => {
+        const marcher = marchersById.get(marcher_id);
+        return marcher
+            ? [
+                  {
+                      drill_prefix: marcher.drill_prefix,
+                      drill_order: marcher.drill_order,
+                      x,
+                      y,
+                  },
+              ]
+            : [];
+    });
+}
+
 // eslint-disable-next-line max-lines-per-function
-async function readPreviousDotsFile(
+export async function readPreviousDotsFile(
     sourcePath: string,
 ): Promise<PreviousDotsImportResult> {
     const db = new DatabaseSync(sourcePath, { readOnly: true });
@@ -77,8 +161,8 @@ async function readPreviousDotsFile(
         if (!fieldProperties?.json_data)
             throw new Error("Field properties not found in source file");
 
-        const marchers = await orm
-            .select()
+        const marchers: SourceMarcher[] = await orm
+            .select(sourceMarcherColumns)
             .from(schema.marchers)
             .orderBy(
                 schema.marchers.drill_prefix,
@@ -88,31 +172,23 @@ async function readPreviousDotsFile(
             )
             .all();
 
-        const lastPage = await orm
-            .select({ page_id: schema.timing_objects.page_id })
-            .from(schema.timing_objects)
-            .where(isNotNull(schema.timing_objects.page_id))
-            .orderBy(desc(schema.timing_objects.position))
-            .limit(1)
-            .get();
+        let workspaceSettingsJson: string | undefined;
+        try {
+            const workspaceSettings =
+                await orm.query.workspace_settings.findFirst({
+                    columns: { json_data: true },
+                });
+            workspaceSettingsJson = workspaceSettings?.json_data;
+        } catch {
+            // Older files may lack workspace_settings
+        }
 
-        if (!lastPage?.page_id)
-            throw new Error("No timing objects found in source file");
-
-        const coordinates = await orm
-            .select({
-                drill_prefix: schema.marchers.drill_prefix,
-                drill_order: schema.marchers.drill_order,
-                x: schema.marcher_pages.x,
-                y: schema.marcher_pages.y,
-            })
-            .from(schema.marcher_pages)
-            .innerJoin(
-                schema.marchers,
-                eq(schema.marcher_pages.marcher_id, schema.marchers.id),
-            )
-            .where(eq(schema.marcher_pages.page_id, lastPage.page_id))
-            .all();
+        const coordinates =
+            (await readTimelineCoordinates(
+                orm,
+                marchers,
+                workspaceSettingsJson,
+            )) ?? (await readLastPageMarcherPages(orm));
 
         const sectionAppearancesRaw = await orm
             .select({
@@ -142,17 +218,6 @@ async function readPreviousDotsFile(
                 eq(schema.marcher_tags.marcher_id, schema.marchers.id),
             )
             .all();
-
-        let workspaceSettingsJson: string | undefined;
-        try {
-            const workspaceSettings =
-                await orm.query.workspace_settings.findFirst({
-                    columns: { json_data: true },
-                });
-            workspaceSettingsJson = workspaceSettings?.json_data;
-        } catch {
-            // Older files may lack workspace_settings
-        }
 
         const {
             designer,

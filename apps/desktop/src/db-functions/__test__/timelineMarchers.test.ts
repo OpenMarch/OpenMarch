@@ -21,6 +21,15 @@ import {
     createTimelineTransitionsInTransaction,
     setTimelineTransitionDestinationInTransaction,
 } from "../timelineTransitions";
+import {
+    keepFixturesInPageMode,
+    setTimelineModeFlag,
+} from "@/test/timelineMode";
+
+// P7.17: these tests set up timeline mode themselves
+keepFixturesInPageMode(
+    "its tests convert the show or write timeline rows, and set the flag, themselves",
+);
 
 /**
  * Marcher add and delete in timeline mode (docs/timeline/phases/07-page-parity.md P7.3), on a
@@ -53,9 +62,13 @@ const resolver = () => {
     return r!;
 };
 
-/** Converts the show, starts the store on it, and returns the pages in order. */
-const setUp = async (db: DbConnection): Promise<Page[]> => {
+/**
+ * Converts the show, sets the file's timeline flag (on unless `flag` is false), starts the store
+ * on it, and returns the pages in order.
+ */
+const setUp = async (db: DbConnection, flag = true): Promise<Page[]> => {
     await convertPagesToTimeline(db);
+    await setTimelineModeFlag(db, flag);
     await startTimelineResolver(db);
     const { pages } = await readShowTiming(db);
     return [...pages].sort((a, b) => a.order - b.order);
@@ -170,7 +183,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             const [created] = await createMarchers({
                 db,
                 newMarchers: [NEW_MARCHER],
-                timelineMode: true,
             });
             const id = created!.id;
             const marcher = await db
@@ -251,7 +263,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
                     { ...NEW_MARCHER, drill_order: 2 },
                     { ...NEW_MARCHER, drill_order: 3 },
                 ],
-                timelineMode: true,
             });
             const homes = await db
                 .select()
@@ -314,7 +325,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             const [created] = await createMarchers({
                 db,
                 newMarchers: [NEW_MARCHER],
-                timelineMode: true,
             });
             const after = (await transitions(db)).find(
                 (t) => t.id === shaped.id,
@@ -387,7 +397,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             await deleteMarchers({
                 db,
                 marcherIds: new Set([victim]),
-                timelineMode: true,
             });
             // The last slot's marcher and point moved into the vacated slot
             for (const { t, vacated, last, point } of expectedMoves) {
@@ -473,7 +482,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             await deleteMarchers({
                 db,
                 marcherIds: victims,
-                timelineMode: true,
             });
             const transitionsAfter = await transitions(db);
             transitionsAfter.forEach((t, i) =>
@@ -494,12 +502,10 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             const [created] = await createMarchers({
                 db,
                 newMarchers: [NEW_MARCHER],
-                timelineMode: true,
             });
             await deleteMarchers({
                 db,
                 marcherIds: new Set([created!.id]),
-                timelineMode: true,
             });
             const after = await snapshot(db);
             // Back to the converted show, apart from the page rows and ids of the deleted marcher
@@ -549,7 +555,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             await deleteMarchers({
                 db,
                 marcherIds: new Set([victim]),
-                timelineMode: true,
             });
             const after = (await transitions(db)).find(
                 (t) => t.id === shaped.id,
@@ -621,7 +626,6 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             await deleteMarchers({
                 db,
                 marcherIds: new Set([m0!.id]),
-                timelineMode: true,
             });
             // Every page move shares m1 and m2 with the follow-the-leader transition
             const after = await transitions(db);
@@ -642,7 +646,7 @@ describeDbTests("marcher add and delete in timeline mode", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await setUp(db);
+            await setUp(db, false);
             const before = await snapshot(db);
             const [created] = await createMarchers({
                 db,
