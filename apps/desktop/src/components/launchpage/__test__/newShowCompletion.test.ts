@@ -23,6 +23,8 @@ import { marcherPagesByPageId } from "@/db-functions/marcherPage";
 import { FIRST_PAGE_ID } from "@/db-functions/page";
 import { getSectionAppearances } from "@/db-functions/sectionAppearance";
 import { getMarcherTags, getTags } from "@/db-functions/tag";
+import { setTimelineModeFlag, timelineFixtureMode } from "@/test/timelineMode";
+import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
 
 describe("newShowCompletion helpers", () => {
     it("sanitizeFilename removes invalid characters", () => {
@@ -567,11 +569,17 @@ describeDbTests("completeNewShow", (it) => {
         const t2 = marcherByDrillNumber.get("T2");
         expect(t1).toBeDefined();
         expect(t2).toBeDefined();
-        expect(firstPageByMarcherId.get(t1!.id)).toMatchObject({
+        // In a timeline-mode file the first-page coordinates are the homes, and the frozen
+        // marcher pages aren't written (P9.5)
+        const firstPagePosition = (marcher: (typeof marchers)[number]) =>
+            timelineFixtureMode()
+                ? { x: marcher.home_x, y: marcher.home_y }
+                : firstPageByMarcherId.get(marcher.id);
+        expect(firstPagePosition(t1!)).toMatchObject({
             x: 321,
             y: 654,
         });
-        expect(firstPageByMarcherId.get(t2!.id)).toMatchObject({
+        expect(firstPagePosition(t2!)).toMatchObject({
             x: 987,
             y: 123,
         });
@@ -623,5 +631,122 @@ describeDbTests("completeNewShow", (it) => {
 
         const settings = await getWorkspaceSettingsParsed({ db });
         expect(settings.pageNumberOffset).toBe(18);
+    });
+
+    /** A minimal imported show: two trumpets with first-page coordinates. */
+    const importedTrumpets = (taskId: string): NewShowWizardState => {
+        const field = {
+            template:
+                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+            isCustom: false,
+        };
+        const marchers = [1, 2].map((n) => ({
+            section: "Trumpet",
+            drill_prefix: "T",
+            drill_order: n,
+        }));
+        return {
+            start: { mode: "importPrevious" },
+            project: {
+                projectName: "Timeline Import",
+                fileLocation: `/tmp/timeline-import-${taskId}.dots`,
+            },
+            ensemble: { activity: "Marching Band" },
+            field,
+            performers: { method: "add", marchers },
+            audio: { method: "skip" },
+            tempo: { method: "skip" },
+            draftFilePath: "/tmp/draft.dots",
+            previousDotsImport: {
+                sourcePath: "/tmp/source.dots",
+                field,
+                fieldImage: null,
+                performers: { method: "add", marchers },
+                coordinates: [
+                    { drill_prefix: "T", drill_order: 1, x: 321, y: 654 },
+                    { drill_prefix: "T", drill_order: 2, x: 987, y: 123 },
+                ],
+                sectionAppearances: [],
+                tags: [],
+                marcherTags: [],
+                pageNumberOffset: 0,
+            },
+        };
+    };
+
+    it("in a new timeline-mode show (convert on open, P9.3), imported first-page coordinates are the homes", async ({
+        task,
+        db,
+    }) => {
+        await setTimelineModeFlag(db, true);
+
+        await completeNewShow(
+            wizardStateToFormState(importedTrumpets(task.id)),
+            queryClient,
+        );
+
+        const marchers = await getMarchers({ db });
+        const byDrill = new Map(
+            marchers.map((m) => [`${m.drill_prefix}${m.drill_order}`, m]),
+        );
+        expect(byDrill.get("T1")).toMatchObject({ home_x: 321, home_y: 654 });
+        expect(byDrill.get("T2")).toMatchObject({ home_x: 987, home_y: 123 });
+        const settings = await getWorkspaceSettingsParsed({ db });
+        expect(settings.timelineMode).toBe(true);
+        // Marcher pages are frozen in timeline mode (P9.5): none were written
+        expect(
+            await marcherPagesByPageId({ db, pageId: FIRST_PAGE_ID }),
+        ).toEqual([]);
+    });
+
+    it("in page mode, imported coordinates don't touch the homes", async ({
+        task,
+        db,
+    }) => {
+        await setTimelineModeFlag(db, false);
+        const homesBefore = new Map(
+            (await getMarchers({ db })).map((m) => [
+                m.id,
+                [m.home_x, m.home_y],
+            ]),
+        );
+
+        await completeNewShow(
+            wizardStateToFormState(importedTrumpets(task.id)),
+            queryClient,
+        );
+
+        for (const m of await getMarchers({ db }))
+            if (!homesBefore.has(m.id))
+                expect([m.home_x, m.home_y]).not.toEqual([321, 654]);
+    });
+
+    it("finishes quietly when the main process stopped the open and already said why", async ({
+        task,
+        db,
+    }) => {
+        expect(db).toBeDefined(); // the fixture sets up the database
+        window.electron.finalizeNewShowDraft = vi
+            .fn()
+            .mockResolvedValue(OPEN_STOPPED_STATUS);
+
+        await expect(
+            completeNewShow(
+                wizardStateToFormState(importedTrumpets(task.id)),
+                queryClient,
+            ),
+        ).resolves.toBeUndefined();
+    });
+
+    it("still fails on any other finalize status", async ({ task, db }) => {
+        expect(db).toBeDefined(); // the fixture sets up the database
+        window.electron.finalizeNewShowDraft = vi.fn().mockResolvedValue(-1);
+
+        await expect(
+            completeNewShow(
+                wizardStateToFormState(importedTrumpets(task.id)),
+                queryClient,
+            ),
+        ).rejects.toThrow(/Failed to save show/);
     });
 });

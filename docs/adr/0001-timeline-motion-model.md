@@ -55,6 +55,11 @@ resolver, and which package owns motion.
   `shape_page_marchers` become page-era tables. They stay writable behind the
   dev flag until Phase 9, are read-only for one release after it, and are
   dropped in Phase 10.
+  The database enforces the freeze with `page_era_frozen_*` triggers keyed on
+  the file's flag. Deletes that cascade from a deleted marcher or page are
+  allowed, and history steps the freeze refuses are skipped with a notice
+  (P9.5, C-10). Releases that predate the version guard can't edit a converted
+  file's page-era rows.
 - Rollout order: a per-file dev flag in `workspace_settings` (optional zod
   field, default off, hidden from normal users; P5.1); a converter run on demand
   behind the flag (Phase 6); page-workflow parity (Phase 7); then convert on
@@ -275,6 +280,16 @@ migrations only when `user_version === 7`. So:
   edits are not reflected in the timeline tables. When the current app then
   sees version 7 with timeline data present, it warns that an older version
   edited the file and offers the backup, rather than converting again.
+- **Conversion marker (P9.3, C-9).** The conversion transaction, and the
+  creation of a new file while convert on open is on, write
+  `timelineConvertedAt` (an ISO time) into the workspace settings JSON. A
+  version-7 file with the marker was converted and then saved by a release
+  without the version guard: the app warns and offers the backup instead of
+  converting again, even when no backup is found. A version-7 file with
+  timeline rows but neither the marker nor a conversion backup was made with
+  the dev flag and opens without a warning. An older release that saves the
+  workspace settings drops unknown keys, so the backup next to the file is kept
+  as a second signal.
 
 ### 7. Decisions still owed by the spec's authors
 

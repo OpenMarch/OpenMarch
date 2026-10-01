@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it as plainIt, vi } from "vitest";
 import { FieldProperties } from "@openmarch/core";
 import type { OpenMarchShowData } from "@openmarch/schema";
 import { safeValidateOpenMarchData } from "@openmarch/schema";
+import { eq } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
 import type { DB } from "@/global/database/db";
@@ -28,7 +29,10 @@ import {
     stopTimelineResolver,
 } from "@/timeline/timelineStore";
 import { toOpenMarchSchema } from "../dots-to-om";
-import { keepFixturesInPageMode } from "@/test/timelineMode";
+import {
+    keepFixturesInPageMode,
+    withPageEraFreezeLifted,
+} from "@/test/timelineMode";
 
 // P7.17: these tests set up timeline mode themselves
 keepFixturesInPageMode(
@@ -216,13 +220,16 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
             page,
             moves: [{ marcherId: 1, x: x + 24, y }],
         });
-        // Frozen page-era rows that disagree with the timeline are ignored
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
-            ],
-        });
+        // Frozen page-era rows that disagree with the timeline are ignored (written with the
+        // freeze lifted, as only a file from before the conversion could have them)
+        await withPageEraFreezeLifted(db, () =>
+            updateMarcherPages({
+                db,
+                modifiedMarcherPages: [
+                    { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
+                ],
+            }),
+        );
 
         const after = await exportShow(db);
 
@@ -321,7 +328,9 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
         await convertPagesToTimeline(db);
         await setTimelineMode(db, true);
         const expected = (await exportShow(db)).coordinates;
-        await db.delete(schema.marcher_pages);
+        await withPageEraFreezeLifted(db, () =>
+            db.delete(schema.marcher_pages),
+        );
 
         const { coordinates } = await exportShow(db);
 
@@ -365,8 +374,17 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
             ],
         });
         await createLastPage({ db, newPageCounts: 4, createNewBeats: true });
-        // Neither has page-era rows to fall back on
-        await db.delete(schema.marcher_pages);
+        // Neither has page-era rows to fall back on (P9.5: they get none), nor does anyone else
+        expect(
+            await db
+                .select()
+                .from(schema.marcher_pages)
+                .where(eq(schema.marcher_pages.marcher_id, created!.id))
+                .all(),
+        ).toEqual([]);
+        await withPageEraFreezeLifted(db, () =>
+            db.delete(schema.marcher_pages),
+        );
         const pages = await sortedPages(db);
         const newPage = pages[pages.length - 1]!;
         const resolver = await acquireExportResolver(db);

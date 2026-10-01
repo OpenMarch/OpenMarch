@@ -12,6 +12,8 @@ import tolgee from "@/global/singletons/Tolgee";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
 import { updateMarcherPages } from "@/db-functions/marcherPage";
+import { createMarchers } from "@/db-functions/marcher";
+import { createLastPage, getPages } from "@/db-functions/page";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
 import MarcherEditor from "../MarcherEditor";
 import { TimelineInspectorSection } from "../TimelineInspectorSection";
@@ -95,5 +97,41 @@ describeDbTests("the marcher inspector in the file's mode", (it) => {
                 expect(result.queryAllByText(/ at beat /).length).toBe(1),
             );
         else expect(result.queryAllByText(/ at beat /)).toEqual([]);
+    });
+
+    it("shows coordinates for a marcher and a page created after the conversion", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        // In timeline mode neither gets marcher pages (P9.5); the inspector must not need them
+        const [created] = await createMarchers({
+            db,
+            newMarchers: [
+                { section: "Flute", drill_prefix: "N", drill_order: 1 },
+            ],
+        });
+        await createLastPage({ db, newPageCounts: 4, createNewBeats: true });
+        const lastIndex = (await getPages({ db })).length - 1;
+        const { page, result } = await setUpFeature(
+            <MarcherEditor />,
+            lastIndex,
+            [created!.id],
+        );
+
+        const [x, y] = await positionOn(db, page, created!.id);
+        const want = ReadableCoords.fromMarcherPage({ x, y });
+        await waitFor(() => {
+            const [xSteps, ySteps] = [
+                ...result.container.querySelectorAll<HTMLInputElement>(
+                    'input[type="number"]',
+                ),
+            ].map((input) => Number(input.value));
+            expect(xSteps).toBeCloseTo(want.xSteps, 6);
+            expect(ySteps).toBeCloseTo(want.ySteps, 6);
+        });
+        expect(
+            result.container.querySelector("p.text-red"),
+            "no coordinate loading error",
+        ).toBeNull();
     });
 });

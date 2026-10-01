@@ -503,8 +503,18 @@ function MarcherEditor() {
     }, [timelineMode, selectedMarchers, spmsForThisPage]);
 
     const rCoords = useMemo(() => {
-        if (selectedMarchers.length !== 1 || !marcherPagesLoaded)
-            return undefined;
+        if (selectedMarchers.length !== 1) return undefined;
+        // Timeline mode (P7.2): show where the canvas draws the marcher. Checked before the
+        // marcher page lookup: marchers and pages made after the conversion have no marcher
+        // pages, which are frozen (P9.5)
+        if (timelineMode)
+            return timelinePosition
+                ? ReadableCoords.fromMarcherPage({
+                      x: timelinePosition[0],
+                      y: timelinePosition[1],
+                  })
+                : undefined;
+        if (!marcherPagesLoaded) return undefined;
 
         const selectedMarcherPage = marcherPages[selectedMarchers[0].id];
         if (!selectedMarcherPage) {
@@ -513,14 +523,6 @@ function MarcherEditor() {
             );
             return undefined;
         }
-        // Timeline mode (P7.2): show where the canvas draws the marcher
-        if (timelineMode)
-            return timelinePosition
-                ? ReadableCoords.fromMarcherPage({
-                      x: timelinePosition[0],
-                      y: timelinePosition[1],
-                  })
-                : undefined;
         const newRcoords = ReadableCoords.fromMarcherPage(selectedMarcherPage);
         return newRcoords;
     }, [
@@ -567,9 +569,12 @@ function MarcherEditor() {
 
         const selectedMarcherPage = marcherPages[selectedMarchers[0].id];
         if (!selectedMarcherPage) {
-            console.error(
-                `Selected marcher page not found for marcher ${selectedMarchers[0].id}`,
-            );
+            // Timeline mode before the resolver is ready: marchers and pages made after the
+            // conversion have no marcher pages (P9.5), so there is no page-mode fallback
+            if (!timelineMode)
+                console.error(
+                    `Selected marcher page not found for marcher ${selectedMarchers[0].id}`,
+                );
             return undefined;
         }
         return StepSize.createStepSizeForMarcher({
@@ -587,6 +592,7 @@ function MarcherEditor() {
         selectedPage,
         fieldProperties,
         marcherPages,
+        timelineMode,
     ]);
 
     const minMaxStepSize = useMemo(() => {

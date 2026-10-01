@@ -6,12 +6,15 @@ import * as fs from "fs";
 import type AudioFile from "../../src/global/classes/AudioFile";
 import type { ModifiedAudioFileArgs } from "../../src/global/classes/AudioFile";
 import { getOrm } from "./db";
+import { handleSqlProxyWithDb } from "./sqlProxy";
 import {
     decideFileVersion,
     FILE_TOO_NEW_STATUS,
     fileTooNewMessage,
     readUserVersion,
 } from "./fileVersion";
+
+export { handleSqlProxyWithDb };
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -150,7 +153,16 @@ export function databaseIsReady() {
 }
 
 export function connect() {
-    if (!DB_PATH) {
+    return connectToPath(DB_PATH);
+}
+
+/**
+ * Opens a connection to `path`, whatever the active path is. An open uses it to
+ * reconnect to its own file after the convert-on-open worker (P9.8), since the
+ * active path is global.
+ */
+export function connectToPath(path: string) {
+    if (!path) {
         throw new Error("Database path is empty");
     }
     try {
@@ -160,7 +172,7 @@ export function connect() {
         if (!sqlite?.DatabaseSync) {
             throw new Error("node:sqlite module is unavailable");
         }
-        return new sqlite.DatabaseSync(DB_PATH);
+        return new sqlite.DatabaseSync(path);
     } catch (error: any) {
         console.error(error);
 
@@ -168,106 +180,6 @@ export function connect() {
             "Failed to connect to database: " + error.message,
             error,
         );
-    }
-}
-
-/**
- * Core SQL proxy logic with dependency injection for Drizzle ORM
- *
- * Per Drizzle documentation:
- * - When method is "get", return {rows: string[]}
- * - Otherwise, return {rows: string[][]}
- *
- * https://orm.drizzle.team/docs/connect-drizzle-proxy
- */
-export async function handleSqlProxyWithDb(
-    db: DatabaseSync,
-    sql: string,
-    params: any[],
-    method: "all" | "run" | "get" | "values",
-) {
-    try {
-        // node:sqlite rejects `undefined` bind values while previous drivers
-        // tolerated them. Coerce to null for compatibility.
-        const normalizedParams = params.map((param) =>
-            param === undefined ? null : param,
-        );
-
-        // prevent multiple queries
-        // const sqlBody = sql.replace(/;/g, "");
-
-        const statement = db.prepare(sql);
-
-        let rows: any;
-
-        switch (method) {
-            case "all": {
-                // Drizzle's mapResultRow expects all results to be arrays
-                statement.setReturnArrays(true);
-                const rawValues = statement.all(
-                    ...normalizedParams,
-                ) as unknown as any[][];
-                // Return the raw arrays directly - Drizzle's mapResultRow expects arrays
-                rows = rawValues;
-
-                const resultObj = {
-                    rows: rows || [],
-                };
-                return resultObj;
-            }
-            case "get": {
-                // Drizzle's mapResultRow expects all results to be arrays
-                statement.setReturnArrays(true);
-                const rawValues = statement.get(...normalizedParams) as
-                    | any[]
-                    | undefined;
-                // Return the raw array directly - Drizzle's mapResultRow expects an array
-                rows = rawValues;
-
-                const resultObj2 = {
-                    rows: rows || undefined,
-                };
-                return resultObj2;
-            }
-            case "run":
-                rows = statement.run(...normalizedParams);
-
-                return {
-                    rows: [], // no data returned for run
-                };
-            case "values": {
-                // values() returns raw array values, similar to all() but used by migrator
-                statement.setReturnArrays(true);
-                const rawValues = statement.all(
-                    ...normalizedParams,
-                ) as unknown as any[][];
-                rows = rawValues;
-
-                return {
-                    rows: rows || [],
-                };
-            }
-            default:
-                throw new Error(`Unknown method: ${method}`);
-        }
-    } catch (error: any) {
-        const describeParam = (value: unknown): string => {
-            if (value === null) return "null";
-            if (value === undefined) return "undefined";
-            if (value instanceof Uint8Array) return "Uint8Array";
-            if (value instanceof Date) return "Date";
-            if (Array.isArray(value)) return "Array";
-            return typeof value;
-        };
-
-        console.error("Error from SQL proxy:", error);
-        console.error("SQL proxy context:", {
-            method,
-            sql,
-            params: params.map((param) => (param === undefined ? null : param)),
-            paramTypes: params.map(describeParam),
-        });
-        throw error;
     }
 }
 
@@ -294,12 +206,69 @@ export const getOrmConnection = () => {
     return getOrm(persistentConnection);
 };
 
+/** The current suspension of the renderer's SQL, or null when it isn't suspended. */
+let sqlProxySuspension: { token: number; reason: string } | null = null;
+let lastSqlProxySuspensionToken = 0;
+
+/**
+ * Refuses the renderer's SQL (`sql:proxy`, `unsafeSql:proxy`) until
+ * `resumeSqlProxy` is called with the returned token. Convert on open (P9.3)
+ * suspends it for an open, so the page still showing the previous file can't
+ * reach the file being opened and converted; it resumes once the window has
+ * reloaded. A newer suspension takes over: resuming an older token then does
+ * nothing, so one open's late resume can't lift the next open's suspension.
+ */
+export function suspendSqlProxy(reason: string): number {
+    const token = ++lastSqlProxySuspensionToken;
+    sqlProxySuspension = { token, reason };
+    return token;
+}
+
+/** Lifts the suspension `token` started. Returns false when a newer suspension owns it. */
+export function resumeSqlProxy(token: number): boolean {
+    if (sqlProxySuspension?.token !== token) return false;
+    sqlProxySuspension = null;
+    return true;
+}
+
+/** Lifts any suspension. For tests and for recovering from an unexpected error. */
+export function forceResumeSqlProxy() {
+    sqlProxySuspension = null;
+}
+
+export function isSqlProxySuspended() {
+    return sqlProxySuspension !== null;
+}
+
+function assertSqlProxyNotSuspended() {
+    if (sqlProxySuspension !== null)
+        throw new Error(
+            `The database is not available: ${sqlProxySuspension.reason}`,
+        );
+}
+
+/** How long the audio handlers' connections wait for another connection's lock. */
+const AUDIO_BUSY_TIMEOUT_MS = 5000;
+
+/**
+ * A connection for the `audio:*` handlers. Like the renderer's SQL, they are
+ * refused while an open suspends it (P9.8: the file may be converting in the
+ * worker), and they wait for a lock instead of failing at once.
+ */
+function audioConnection(): DatabaseSync {
+    assertSqlProxyNotSuspended();
+    const db = connect();
+    db.exec(`PRAGMA busy_timeout = ${AUDIO_BUSY_TIMEOUT_MS}`);
+    return db;
+}
+
 export async function handleSqlProxy(
     _: any,
     sql: string,
     params: any[],
     method: "all" | "run" | "get" | "values",
 ) {
+    assertSqlProxyNotSuspended();
     try {
         if (persistentConnectionPath !== DB_PATH) {
             closePersistentConnection();
@@ -324,7 +293,8 @@ export async function handleSqlProxy(
 }
 
 /** Directly executes the SQL query without any parameters */
-async function handleUnsafeSqlProxy(_: any, sql: string) {
+export async function handleUnsafeSqlProxy(_: any, sql: string) {
+    assertSqlProxyNotSuspended();
     const db = connect();
     try {
         return await handleUnsafeSqlProxyWithDb(db, sql);
@@ -372,7 +342,7 @@ export function initHandlers() {
  * @returns Array of measures
  */
 async function getAudioFilesDetails(db?: DatabaseSync): Promise<AudioFile[]> {
-    const dbToUse = db || connect();
+    const dbToUse = db || audioConnection();
     const stmt = dbToUse.prepare(
         `SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`,
     );
@@ -391,7 +361,7 @@ async function getAudioFilesDetails(db?: DatabaseSync): Promise<AudioFile[]> {
 export async function getSelectedAudioFile(
     db?: DatabaseSync,
 ): Promise<AudioFile | null> {
-    const dbToUse = db || connect();
+    const dbToUse = db || audioConnection();
     try {
         const stmt = dbToUse.prepare(
             `SELECT * FROM ${Constants.AudioFilesTableName} WHERE selected = 1`,
@@ -430,7 +400,7 @@ export async function getSelectedAudioFile(
 async function setSelectAudioFile(
     audioFileId: number,
 ): Promise<AudioFile | null> {
-    const db = connect();
+    const db = audioConnection();
     const stmt = db.prepare(
         `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`,
     );
@@ -454,7 +424,7 @@ type AudioFileInsert = {
 export async function insertAudioFile(
     audioFile: AudioFileInsert,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
-    const db = connect();
+    const db = audioConnection();
     const stmt = db.prepare(
         `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`,
     );
@@ -527,7 +497,7 @@ export async function insertAudioFile(
 async function updateAudioFiles(
     audioFileUpdates: ModifiedAudioFileArgs[],
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
-    const db = connect();
+    const db = audioConnection();
     let output: LegacyDatabaseResponse<AudioFile[]> = { success: true };
     try {
         for (const audioFileUpdate of audioFileUpdates) {
@@ -594,7 +564,7 @@ async function updateAudioFiles(
  * @returns {success: boolean, error?: string}
  */
 async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
-    const db = connect();
+    const db = audioConnection();
     try {
         const wasSelectedStmt = db.prepare(
             `SELECT selected FROM ${Constants.AudioFilesTableName} WHERE id = ?`,

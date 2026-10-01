@@ -1,0 +1,12 @@
+# cspell:ignore typesafe
+[project]
+name = "openmarch-jev-equality"
+version = "0.1.0"
+description = "Optional judgment layer for the page-to-timeline conversion corpus (P6.6)"
+requires-python = ">=3.12"
+dependencies = [
+    "typesafe-sdk>=0.7.2",
+]
+
+[tool.uv]
+package = false

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { Path } from "@openmarch/core";
+import { getCoordinatesAtTime } from "@/utilities/Keyframes";
 import {
     CONVERTED_TIMELINE_NAME,
     describePageConversionReport,
     droppedFieldsOf,
+    interpolateGap,
     pageBeatRange,
     pageHasLoss,
     planPageConversion,
@@ -125,26 +128,241 @@ describe("planPageConversion", () => {
         expect(plan.transitions).toEqual([]);
     });
 
-    it("a marcher without a row on a page holds there: no slot, and the report lists it", () => {
+    it("a marcher without a row on a middle page glides there, linear in beats (P6.7)", () => {
+        // Page 1 is [1, 3), page 2 [3, 9): the gap's end beat 3 is 2 / 8 of the way from 1 to 9
         const plan = planPageConversion({
-            pages: pagesOf(2, 2),
+            pages: pagesOf(2, 6),
             marcherIds: [1, 2],
             marcherPages: [
                 row(1, 100, 0, 0),
                 row(2, 100, 5, 5),
                 row(1, 101, 1, 1),
                 row(1, 102, 2, 2),
-                row(2, 102, 6, 6),
+                row(2, 102, 13, 9),
             ],
         });
         expect(plan.transitions.map((t) => t.marcherIds)).toEqual([
-            [1],
+            [1, 2],
             [1, 2],
         ]);
-        expect(plan.report.pages[1]!.missingMarchers).toEqual([2]);
-        expect(pageHasLoss(plan.report.pages[1]!)).toBe(true);
+        expect(plan.transitions[0]!.points).toEqual([
+            [1, 1],
+            [5 + (2 / 8) * 8, 5 + (2 / 8) * 4],
+        ]);
+        expect(plan.transitions[1]!.points[1]).toEqual([13, 9]);
+        const page1 = plan.report.pages[1]!;
+        expect(page1.missingMarchers).toEqual([2]);
+        expect(page1.interpolated).toEqual([
+            { marcherId: 2, pathwayId: null, unusablePathwayId: null },
+        ]);
+        expect(pageHasLoss(page1)).toBe(true);
         expect(describePageConversionReport(plan.report)).toEqual([
+            "Page 1 [1, 3): marchers without a row glide to an interpolated point: 2",
+        ]);
+    });
+
+    it("glides across several pages in a row, each at its own beat fraction", () => {
+        // Pages [1, 5), [5, 6), [6, 9), [9, 11): the gap spans pages 2 and 3, from beat 5 to 11
+        const plan = planPageConversion({
+            pages: pagesOf(4, 1, 3, 2),
+            marcherIds: [1],
+            marcherPages: [
+                row(1, 100, 0, 0),
+                row(1, 101, 10, 20),
+                row(1, 104, 70, -40),
+            ],
+        });
+        const destinations = plan.transitions.map((t) => t.points[0]);
+        expect(destinations).toEqual([
+            [10, 20],
+            [10 + (1 / 6) * 60, 20 + (1 / 6) * -60],
+            [10 + (4 / 6) * 60, 20 + (4 / 6) * -60],
+            [70, -40],
+        ]);
+        expect(
+            plan.report.pages.map((p) =>
+                p.interpolated.map((g) => g.marcherId),
+            ),
+        ).toEqual([[], [], [1], [1], []]);
+    });
+
+    it("a page with no rows still gets a transition when marchers glide across it", () => {
+        const plan = planPageConversion({
+            pages: pagesOf(2, 2),
+            marcherIds: [1],
+            marcherPages: [row(1, 100, 0, 0), row(1, 102, 4, 8)],
+        });
+        expect(plan.transitions.map((t) => t.pageId)).toEqual([101, 102]);
+        expect(plan.transitions[0]!.points).toEqual([[2, 4]]);
+        expect(plan.report.pages.map((p) => p.skipped)).toEqual([
+            null,
+            null,
+            null,
+        ]);
+    });
+
+    it("glides along the next row's pathway, as page mode does", () => {
+        // An L-shaped pathway of length 20: (0, 0) to (10, 0) to (10, 10)
+        const pathway = Path.fromSvgString("M 0 0 L 10 0 L 10 10");
+        const plan = planPageConversion({
+            pages: pagesOf(2, 2),
+            marcherIds: [1],
+            marcherPages: [row(1, 100, 0, 0), row(1, 102, 10, 10, 7)],
+            pathways: [{ id: 7, path_data: pathway.toJson() }],
+        });
+        // Page 1 ends at beat 3, halfway from beat 1 to beat 5: the corner, not the chord's middle
+        expect(plan.transitions[0]!.points[0]![0]).toBeCloseTo(10, 12);
+        expect(plan.transitions[0]!.points[0]![1]).toBeCloseTo(0, 12);
+        expect(plan.report.pages[1]!.interpolated).toEqual([
+            { marcherId: 1, pathwayId: 7, unusablePathwayId: null },
+        ]);
+        expect(describePageConversionReport(plan.report)[0]).toBe(
+            "Page 1 [1, 3): marchers without a row glide to an interpolated point: 1 (along a pathway, kept only at the page end: 1)",
+        );
+    });
+
+    it("a damaged pathway falls back to a straight glide instead of failing the conversion", () => {
+        // Unknown id, unreadable JSON, and an empty path (no finite point)
+        const cases = [
+            { pathways: [] },
+            { pathways: [{ id: 8, path_data: "{not json" }] },
+            { pathways: [{ id: 8, path_data: '{"segments":[]}' }] },
+        ];
+        for (const { pathways } of cases) {
+            const plan = planPageConversion({
+                pages: pagesOf(2, 2),
+                marcherIds: [1],
+                marcherPages: [row(1, 100, 0, 0), row(1, 102, 10, 10, 8)],
+                pathways,
+            });
+            const what = JSON.stringify(pathways);
+            expect(plan.transitions[0]!.points[0], what).toEqual([5, 5]);
+            expect(plan.report.pages[1]!.interpolated, what).toEqual([
+                { marcherId: 1, pathwayId: null, unusablePathwayId: 8 },
+            ]);
+            expect(describePageConversionReport(plan.report)[0], what).toBe(
+                "Page 1 [1, 3): marchers without a row glide to an interpolated point: 1; unusable pathway(s), glided in a straight line instead (marchers 1; pathways 8)",
+            );
+        }
+        // A pathway whose point isn't finite falls back too
+        const nan = {
+            getTotalLength: () => NaN,
+            getPointAtLength: () => ({ x: NaN, y: NaN }),
+        };
+        expect(
+            interpolateGap(
+                { endBeat: 1, row: row(1, 100, 0, 0) },
+                { endBeat: 5, row: row(1, 102, 10, 10, 9) },
+                3,
+                () => nan as unknown as Path,
+            ),
+        ).toEqual({ point: [5, 5], pathwayId: null, unusablePathwayId: 9 });
+    });
+
+    it("a gap whose next row is on a page with no beats holds: that row has no end beat to glide to", () => {
+        // Page 3 has no beats (beyond the beat list), so its row is no anchor. Page mode would
+        // glide toward it; the converter holds marcher 1 on page 2 instead, and reports it.
+        const pages: ConversionPage[] = [
+            ...pagesOf(2, 2),
+            { id: 200, name: "3", order: 3, beats: [] },
+        ];
+        const plan = planPageConversion({
+            pages,
+            marcherIds: [1, 2],
+            marcherPages: [
+                row(1, 100, 0, 0),
+                row(2, 100, 5, 5),
+                row(1, 101, 1, 1),
+                row(2, 101, 6, 6),
+                row(2, 102, 7, 7),
+                row(1, 200, 9, 9),
+                row(2, 200, 8, 8),
+            ],
+        });
+        expect(plan.transitions.map((t) => t.marcherIds)).toEqual([
+            [1, 2],
+            [2],
+        ]);
+        const page2 = plan.report.pages[2]!;
+        expect(page2.missingMarchers).toEqual([1]);
+        expect(page2.interpolated).toEqual([]);
+        expect(plan.report.pages[3]!.skipped).toBe("no-beats");
+        expect(describePageConversionReport(plan.report)).toEqual([
+            "Page 2 [3, 5): marchers without a row hold: 1",
+            "Page 3 [0, 0): no transition (no-beats)",
+        ]);
+    });
+
+    it("matches page mode's pathway positions, path_start_position and path_end_position included", () => {
+        const pathway = Path.fromSvgString("M 0 0 Q 50 80 100 0");
+        const prev = {
+            endBeat: 1,
+            row: { ...row(1, 100, 0, 0), path_start_position: 0.25 },
+        };
+        const next = {
+            endBeat: 9,
+            row: { ...row(1, 102, 100, 0, 3), path_end_position: 0.75 },
+        };
+        const timeline = {
+            pathMap: new Map([
+                [1, { x: 0, y: 0, previousPathPosition: 0.25 }],
+                [
+                    9,
+                    {
+                        x: 100,
+                        y: 0,
+                        path: pathway,
+                        previousPathPosition: 0,
+                        nextPathPosition: 0.75,
+                    },
+                ],
+            ]),
+            sortedTimestamps: [1, 9],
+        };
+        for (const beat of [2, 3.5, 7]) {
+            const { point } = interpolateGap(prev, next, beat, () => pathway);
+            const pageMode = getCoordinatesAtTime(beat, timeline)!;
+            expect(point).toEqual([pageMode.x, pageMode.y]);
+        }
+    });
+
+    it("holds after the last row and before the first one", () => {
+        const plan = planPageConversion({
+            pages: pagesOf(2, 2, 2),
+            marcherIds: [1, 2, 3],
+            marcherPages: [
+                row(1, 100, 0, 0),
+                row(3, 100, 9, 9),
+                row(1, 101, 1, 1),
+                row(3, 101, 8, 8),
+                row(1, 102, 2, 2),
+                row(2, 102, 6, 6),
+                row(1, 103, 3, 3),
+                row(2, 103, 7, 7),
+            ],
+        });
+        // Marcher 2's first row is on page 2: it waits at its home on page 1. Marcher 3's last
+        // row is on page 1: it holds on pages 2 and 3.
+        expect(plan.transitions.map((t) => t.marcherIds)).toEqual([
+            [1, 3],
+            [1, 2],
+            [1, 2],
+        ]);
+        expect(plan.report.pages.map((p) => p.missingMarchers)).toEqual([
+            [2],
+            [2],
+            [3],
+            [3],
+        ]);
+        expect(
+            plan.report.pages.every((p) => p.interpolated.length === 0),
+        ).toBe(true);
+        expect(describePageConversionReport(plan.report)).toEqual([
+            "Page 0 [0, 1): marchers without a row hold: 2",
             "Page 1 [1, 3): marchers without a row hold: 2",
+            "Page 2 [3, 5): marchers without a row hold: 3",
+            "Page 3 [5, 7): marchers without a row hold: 3",
+            "Homes from a later page (no page-0 row): marchers 2",
         ]);
     });
 

@@ -50,6 +50,9 @@ import {
     getMarchers,
 } from "@/db-functions/marcher";
 import { updateMarcherPagesInTransaction } from "@/db-functions/marcherPage";
+import { updateMarcherHomesInTransaction } from "@/db-functions/marcherHome";
+import { timelineModeInTransaction } from "@/db-functions/timelineRipple";
+import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
 import { createSectionAppearances } from "@/db-functions/sectionAppearance";
 import {
     _createTagsInTransaction,
@@ -305,10 +308,22 @@ async function applyPreviousDotsCoordinates(
         db,
         "applyPreviousDotsCoordinates",
         async (tx) => {
-            await updateMarcherPagesInTransaction({
-                tx,
-                modifiedMarcherPages: updates,
-            });
+            // A new show made with convert on open on starts in timeline mode (P9.3): the
+            // first-page positions are the marchers' homes, as the converter seeds them, and
+            // marcher pages are frozen (P9.5)
+            if (await timelineModeInTransaction(tx))
+                await updateMarcherHomesInTransaction({
+                    tx,
+                    modifiedHomes: updates.map((u) => ({
+                        marcherId: u.marcher_id,
+                        home: [u.x, u.y],
+                    })),
+                });
+            else
+                await updateMarcherPagesInTransaction({
+                    tx,
+                    modifiedMarcherPages: updates,
+                });
         },
     );
 
@@ -742,6 +757,9 @@ export async function completeNewShow(
         targetPath,
         form.projectName,
     );
+    // OPEN_STOPPED_STATUS: the show was saved, but a main-process dialog already explained why
+    // it didn't open (convert on open), and the window is reloading.
+    if (finalizeResult === OPEN_STOPPED_STATUS) return;
     if (finalizeResult !== 200) {
         throw new Error(`Failed to save show at ${targetPath}`);
     }

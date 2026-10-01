@@ -666,7 +666,11 @@ describeDbTests("swapMarchers", (it) => {
         schema.shape_pages,
         schema.shapes,
     ]);
-    describe("no shapes", () => {
+    describe.skipIf(
+        skipInTimelineMode(
+            "swapMarchers writes marcher pages, which are frozen in timeline mode (P9.5); it refuses there, and timeline mode swaps through moveMarchersOnPage (P7.2)",
+        ),
+    )("no shapes", () => {
         testWithHistory(
             "swap single marcher",
             async ({ db, marchersAndPages }) => {

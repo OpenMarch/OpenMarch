@@ -1,5 +1,5 @@
-import type { XY } from "@openmarch/core";
-import { pageEndBeat } from "../timelineCanvas";
+import { Path, type XY } from "@openmarch/core";
+import { pageEndBeat } from "../pageEndBeat";
 
 /**
  * Plans the conversion of a page show into timeline rows (docs/timeline/phases/06-converter.md
@@ -21,9 +21,13 @@ import { pageEndBeat } from "../timelineCanvas";
  *   marchers that have a `marcher_pages` row on N, in ascending marcher id; slot i's destination
  *   is that row's coordinate, copied exactly. Each of those marchers gets one layer-0 assignment
  *   over the whole transition.
- * - A marcher with no row on page N gets no assignment there, so it holds where it was (R-6).
- *   Page mode would instead glide across the gap to its next row. The report lists it.
- * - A page with no beats, or with no rows at all, gets no transition; the report says why.
+ * - A marcher with no row on page N (only in damaged files) glides across the gap like page mode
+ *   (P6.7): it gets a slot on N whose destination is linear in beats (C-7) between its neighboring
+ *   rows, the point that fraction of the beats from the previous row's end beat to the next row's
+ *   end beat, along the next row's pathway if it has one. The report lists it as interpolated.
+ *   With no earlier row (before its first row: it waits at its home) or no later row (after its
+ *   last row) it gets no assignment and holds where it is (R-6); the report lists it as held.
+ * - A page with no beats, or with no slots at all, gets no transition; the report says why.
  * - Pathways, midsets and curved SVG shapes can't be expressed (C-8). Only their page-end
  *   coordinates are kept; the report lists them per page.
  * - Only x and y are copied. A row's `rotation_degrees`, `notes` and per-page appearance
@@ -48,6 +52,9 @@ export interface ConversionMarcherPage {
     readonly x: number;
     readonly y: number;
     readonly path_data_id: number | null;
+    /** Read only to place a marcher that glides across a gap along this row's pathway (P6.7) */
+    readonly path_start_position?: number | null;
+    readonly path_end_position?: number | null;
     /** Dropped in timeline mode; read only to report them */
     readonly rotation_degrees?: number | null;
     readonly notes?: string | null;
@@ -75,6 +82,13 @@ export interface ConversionShapePage {
     readonly svg_path: string;
 }
 
+/** The `pathways` columns the converter reads: only to place gap glides (P6.7). */
+export interface ConversionPathway {
+    readonly id: number;
+    /** `Path` JSON, as `pathways.path_data` stores it */
+    readonly path_data: string;
+}
+
 export interface PageConversionInput {
     /** Every page in show order (page 0 first) */
     readonly pages: readonly ConversionPage[];
@@ -82,6 +96,7 @@ export interface PageConversionInput {
     readonly marcherPages: readonly ConversionMarcherPage[];
     readonly midsets?: readonly ConversionMidset[];
     readonly shapePages?: readonly ConversionShapePage[];
+    readonly pathways?: readonly ConversionPathway[];
 }
 
 /** One planned transition: page `pageId`'s move. Slot i belongs to `marcherIds[i]`. */
@@ -124,8 +139,20 @@ export interface PageLossReport {
         notes: number;
         appearance: number;
     };
-    /** Marchers with no row on this page: they hold, where page mode would glide */
+    /**
+     * Marchers with no row on this page. Those in `interpolated` glide across the gap; the rest
+     * hold, because they have no earlier row (they wait at their home) or no later row.
+     */
     readonly missingMarchers: number[];
+    /**
+     * Marchers with no row on this page that glide across the gap like page mode: their slot's
+     * destination is interpolated in beats between their neighboring rows (P6.7). `pathwayId` is
+     * the next row's pathway when the glide follows it; then the destination is on the pathway,
+     * but the move inside the page is straight (C-8), as for `pathways`. `unusablePathwayId` is the
+     * next row's pathway when it couldn't be followed (missing, unreadable, or giving no finite
+     * point); then the glide is a straight line, as if the row had no pathway.
+     */
+    readonly interpolated: GapGlideReport[];
     /** Set when the page got no transition */
     readonly skipped: SkippedPageReason | null;
 }
@@ -179,6 +206,79 @@ export function droppedFieldsOf(mp: ConversionMarcherPage): {
             filled(mp.equipment_state) ||
             mp.visible === 0 ||
             mp.label_visible === 0,
+    };
+}
+
+/** How a marcher without a row glides across a page (P6.7). */
+export interface GapGlideReport {
+    readonly marcherId: number;
+    /** The pathway the glide follows, or null for a straight line */
+    readonly pathwayId: number | null;
+    /** The next row's pathway when it couldn't be used, so the glide fell back to a straight line */
+    readonly unusablePathwayId: number | null;
+}
+
+/** Where a gap glide ends, and how it got there. */
+export interface GapGlide {
+    readonly point: XY;
+    readonly pathwayId: number | null;
+    readonly unusablePathwayId: number | null;
+}
+
+/** A marcher's row on a page that has an end beat: a neighbor a gap glide is anchored to. */
+interface RowAnchor {
+    readonly pageIndex: number;
+    readonly endBeat: number;
+    readonly row: ConversionMarcherPage;
+}
+
+/**
+ * Where page mode puts a marcher at `beat`, between its rows `prev` and `next` (P6.7): the same
+ * arithmetic as `getCoordinatesAtTime` on keyframes at the rows' end beats (C-7). Along `next`'s
+ * pathway when it has one, from `prev.path_start_position` to `next.path_end_position` (both read
+ * with `||`, as `getMarcherTimelines` does); otherwise in a straight line.
+ *
+ * Never throws on a damaged pathway, so a damaged file still converts (and opens, once conversion
+ * runs on open): when `pathOf` returns nothing or throws (unknown id, unreadable JSON), or the
+ * path gives no finite point (an empty path), the glide falls back to the straight line and
+ * `unusablePathwayId` names the pathway.
+ */
+export function interpolateGap(
+    prev: { endBeat: number; row: ConversionMarcherPage },
+    next: { endBeat: number; row: ConversionMarcherPage },
+    beat: number,
+    pathOf: (pathwayId: number) => Path | undefined = () => undefined,
+): GapGlide {
+    const progress = (beat - prev.endBeat) / (next.endBeat - prev.endBeat);
+    const pathwayId = next.row.path_data_id;
+    if (pathwayId !== null) {
+        const from = prev.row.path_start_position || 0;
+        const to = next.row.path_end_position || 1;
+        const position = (to - from) * progress + from;
+        try {
+            const path = pathOf(pathwayId);
+            if (path) {
+                const point = path.getPointAtLength(
+                    path.getTotalLength() * position,
+                );
+                if (Number.isFinite(point.x) && Number.isFinite(point.y))
+                    return {
+                        point: [point.x, point.y],
+                        pathwayId,
+                        unusablePathwayId: null,
+                    };
+            }
+        } catch {
+            // A damaged pathway: fall back to the straight line below
+        }
+    }
+    return {
+        point: [
+            prev.row.x + progress * (next.row.x - prev.row.x),
+            prev.row.y + progress * (next.row.y - prev.row.y),
+        ],
+        pathwayId: null,
+        unusablePathwayId: pathwayId,
     };
 }
 
@@ -250,18 +350,75 @@ export function planPageConversion(
         else marchersWithoutRows.push(marcherId);
     }
 
+    const ranges = input.pages.map((page, i) =>
+        i === 0 ? { startBeat: 0, endBeat: 1 } : pageBeatRange(page),
+    );
+
+    // Each marcher's rows on pages with an end beat, in show order: the anchors of gap glides
+    const anchorsOf = new Map<number, RowAnchor[]>(
+        marcherIds.map((id) => [id, []]),
+    );
+    for (const [pageIndex, page] of input.pages.entries()) {
+        const range = ranges[pageIndex];
+        if (!range) continue;
+        for (const [marcherId, row] of rowOf.get(page.id)!)
+            anchorsOf
+                .get(marcherId)!
+                .push({ pageIndex, endBeat: range.endBeat, row });
+    }
+    // Parsed once per pathway; a parse error is kept and rethrown for `interpolateGap` to catch
+    const pathsById = new Map<number, Path | undefined | Error>();
+    const pathways = new Map((input.pathways ?? []).map((p) => [p.id, p]));
+    const pathOf = (id: number): Path | undefined => {
+        if (!pathsById.has(id)) {
+            const pathway = pathways.get(id);
+            let parsed: Path | undefined | Error;
+            try {
+                parsed = pathway
+                    ? Path.fromJson(pathway.path_data, undefined, undefined, id)
+                    : undefined;
+            } catch (error) {
+                parsed =
+                    error instanceof Error ? error : new Error(String(error));
+            }
+            pathsById.set(id, parsed);
+        }
+        const path = pathsById.get(id);
+        if (path instanceof Error) throw path;
+        return path;
+    };
+    /** Marchers without a row on page `i` that have a row before and after it glide (P6.7). */
+    const gapGlides = (i: number, endBeat: number) => {
+        const rows = rowOf.get(input.pages[i]!.id)!;
+        const glides = new Map<number, GapGlide>();
+        for (const id of marcherIds) {
+            if (rows.has(id)) continue;
+            const anchors = anchorsOf.get(id)!;
+            const next = anchors.find((a) => a.pageIndex > i);
+            const prev = anchors.findLast((a) => a.pageIndex < i);
+            if (prev && next)
+                glides.set(id, interpolateGap(prev, next, endBeat, pathOf));
+        }
+        return glides;
+    };
+
     const transitions: PlannedPageTransition[] = [];
     const pages: PageLossReport[] = input.pages.map((page, i) => {
         const rows = rowOf.get(page.id)!;
-        const range =
-            i === 0 ? { startBeat: 0, endBeat: 1 } : pageBeatRange(page);
-        const present = marcherIds.filter((id) => rows.has(id));
+        const range = ranges[i] ?? null;
+        const glides =
+            i > 0 && range
+                ? gapGlides(i, range.endBeat)
+                : new Map<number, GapGlide>();
+        const slotted = marcherIds.filter(
+            (id) => rows.has(id) || glides.has(id),
+        );
         const skipped: SkippedPageReason | null =
             i === 0
                 ? null
                 : !range
                   ? "no-beats"
-                  : present.length === 0
+                  : slotted.length === 0
                     ? "no-marchers"
                     : null;
         if (i > 0 && range && !skipped)
@@ -269,10 +426,10 @@ export function planPageConversion(
                 pageId: page.id,
                 startBeat: range.startBeat,
                 endBeat: range.endBeat,
-                marcherIds: present,
-                points: present.map((id) => {
-                    const mp = rows.get(id)!;
-                    return [mp.x, mp.y] as XY;
+                marcherIds: slotted,
+                points: slotted.map((id) => {
+                    const mp = rows.get(id);
+                    return mp ? ([mp.x, mp.y] as XY) : glides.get(id)!.point;
                 }),
             });
         const sortedRows = [...rows.values()].sort(
@@ -315,6 +472,11 @@ export function planPageConversion(
                 { rotation: 0, notes: 0, appearance: 0 },
             ),
             missingMarchers: marcherIds.filter((id) => !rows.has(id)),
+            interpolated: [...glides].map(([marcherId, g]) => ({
+                marcherId,
+                pathwayId: g.pathwayId,
+                unusablePathwayId: g.unusablePathwayId,
+            })),
             skipped,
         };
     });
@@ -371,10 +533,26 @@ export function describePageConversionReport(
             parts.push(
                 `dropped from rows: rotation ${rotation}, notes ${notes}, appearance overrides ${appearance}`,
             );
-        if (page.missingMarchers.length)
+        if (page.interpolated.length) {
+            const along = page.interpolated.filter((g) => g.pathwayId !== null);
             parts.push(
-                `marchers without a row hold: ${ids(page.missingMarchers)}`,
+                `marchers without a row glide to an interpolated point: ${ids(page.interpolated.map((g) => g.marcherId))}` +
+                    (along.length
+                        ? ` (along a pathway, kept only at the page end: ${ids(along.map((g) => g.marcherId))})`
+                        : ""),
             );
+            const unusable = page.interpolated.filter(
+                (g) => g.unusablePathwayId !== null,
+            );
+            if (unusable.length)
+                parts.push(
+                    `unusable pathway(s), glided in a straight line instead (marchers ${ids(unusable.map((g) => g.marcherId))}; pathways ${ids(unusable.map((g) => g.unusablePathwayId!))})`,
+                );
+        }
+        const glided = new Set(page.interpolated.map((g) => g.marcherId));
+        const held = page.missingMarchers.filter((id) => !glided.has(id));
+        if (held.length)
+            parts.push(`marchers without a row hold: ${ids(held)}`);
         lines.push(
             `Page ${page.pageName} [${page.startBeat}, ${page.endBeat}): ${parts.join("; ")}`,
         );

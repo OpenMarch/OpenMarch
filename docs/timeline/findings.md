@@ -133,15 +133,49 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
   - Page ends: 151 of 151 exact.
   - Straight moves inside pages: within 1e-9.
   - The pathway and the damaged-file gap differ as expected (C-8; P6.7).
-- **Real show A (large):** 44 marchers, 69 pages.
+- **Show A:** 44 marchers, 69 pages.
   - Page ends: 3,080 of 3,080 exact (max 0, mean 0).
   - Inside pages: 11,968 samples, max 0, mean 0.
   - 14 pages with uneven tempo, where millisecond playback differs by up to 5.0 px (1.5e-10 on even pages).
   - Loss report: 1 curved shape; 0 pathways, midsets, dropped fields, missing rows, skipped pages or homes from a later page.
-- **Real show B (demo):** 95 marchers, 23 pages.
+- **Show B:** 95 marchers, 23 pages.
   - Page ends: 2,280 of 2,280 exact.
   - Inside pages: 8,360 samples, max 0, mean 0.
   - 4 pages with uneven tempo, up to 35.1 px in milliseconds (3.7e-12 on even pages).
   - Loss report: 8 curved shapes and nothing else.
 - **Jev** (`scripts/timeline/jev-equality`, 6 moments and up to 48 marchers per show, coordinates only): 12 of 12 real samples judged "same" (P ≥ 0.99), agreeing with the numeric verdict. 10 of 10 controls agree: the identical control got P 0.99; one marcher moved, two swapped, shifted and mirrored got P 0.02 to 0.15.
 - **Reading:** on these two shows the converter is exact at page ends and identical between them at the same beat. The only visible change is timing inside uneven-tempo pages, where timeline motion follows beats (C-7). Curved shapes are kept only as their marchers' points (C-8).
+
+### 2026-10-01 · lead · flaky: `timelineHistory.test.ts` "trigger already exists"
+
+- **Seen once:** in a full desktop suite run on PR #40's head f905edda (`pnpm --dir apps/desktop run test`).
+- **Failing test:** "C-1: RESTRICT with child-first deletes > deleting children, then the transition, then the timeline, undoes and redoes as one edit".
+- **Error:** `malformed database schema (timelines_it) - trigger 'timelines_it' already exists` (`ERR_SQLITE_ERROR`, SQLite result code 11).
+- **Not reproduced:** the file passed 3 times alone, and the full suite passed on the next run.
+- **Likely cause:** a test database collision, either another vitest process in the same work tree or the history-trigger refresh racing within the file.
+- **Next time:** if it recurs, check for concurrent vitest processes first, then look at `createTriggers`/`recreateChangeLogTriggers` in the test setup.
+
+### 2026-10-01 · lead · flaky under load: `backup.test.ts` hook timeout
+
+- **What failed:** in a full desktop suite run on PR #43's head, `backup.test.ts > a folder whose name looks like an error > still backs up` failed with "Hook timed out in 10000ms" in `beforeEach`. A follow-on `afterEach` error came from `oddDir` being undefined.
+- **Conditions:** the run took 1,047 s against the usual ~130 s, while another worker's tests ran on the machine.
+- **Rerun:** the file alone passed 21 of 21 twice.
+- **Fix:** hardening the hook timeout and the `afterEach` guard was handed to the P9.3 worker, which is working in `electron/database`.
+
+### 2026-10-01 · timeline-worker (timeline/p9-8-convert-worker) · P9.8 · convert-on-open timing and the bulk-insert path
+
+- **Setup:** `electron/database/__test__/convertOnOpenPerf.test.ts` (opt-in: `OPENMARCH_PERF=1 pnpm exec vitest run electron/database/__test__/convertOnOpenPerf.test.ts`). It seeds a version-7 show with 400 marchers on 100 pages, every marcher on every page and the undo triggers (4.7 MB), then times `backupBeforeConversion` and `convertFileOnOpen` on the test's thread. Apple Silicon Mac, Node 24.14, vitest 4, one vitest process.
+- **Before (base `timeline-try-2` 5644fe10, one INSERT … RETURNING per assignment):** backup 52 ms, conversion 3,791 ms. That matches P9.3's 3.9 s.
+- **After (chunked multi-row inserts, 500 rows a statement; the row triggers still run per row):** backup 49–62 ms, conversion 1,430–1,486 ms (2.6 times faster).
+  - Steps after: convert 1,327 ms, drain the change log 87 ms, the others under 5 ms each.
+  - The rest of the convert step is the per-row change-log trigger work and the planner.
+- **Off the main thread:** since P9.8 both run in a worker thread. In `convertWorkerHost.test.ts`, a 10 ms timer on the main thread kept firing through a conversion slowed to more than 1.2 s, and its longest gap stayed under 500 ms.
+- **Not measured:** a 50 MB file. P9.2 measured 1–2 s for its backup, which now also runs in the worker.
+
+### 2026-10-01 · timeline-worker (timeline/p9-8-convert-worker) · P9.8 · `vite.config.mjs` is the config Vite uses
+
+`apps/desktop/vite.config.mjs` is checked in. It is tsc's output of `vite.config.mts`, and Vite loads `.mjs` before `.mts`. An edit to `vite.config.mts` alone doesn't change the app build: the P9.8 worker entry was missing from `dist-electron` until the `.mjs` was regenerated (`pnpm exec tsc -p tsconfig.node.json`, which also prints existing type errors and leaves a `tsconfig.node.tsbuildinfo` to delete; then prettier). `mainBundle.test.ts` now checks that both files build the worker.
+
+### 2026-10-01 · timeline-worker (timeline/p9-8-convert-worker) · P9.8 · `vite.config.mjs` removed
+
+Follow-up to the `vite.config.mjs` entry above. PR #44 removes the checked-in `vite.config.mjs` and `vite.config.d.mts`, so `vite.config.mts` is the config Vite uses again. `tsconfig.node.json` emits under `node_modules/.tmp`, `apps/desktop/.gitignore` lists the generated names, and `mainBundle.test.ts` fails if another Vite config shadows the `.mts`.

@@ -171,7 +171,11 @@ const APP_API = {
         ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
     fileExists: (filePath: string) =>
         ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
-    repairDatabase: (dbPath: string) =>
+    /**
+     * Repairs the file and opens the repaired copy. Resolves its path, or null when it didn't
+     * open and the main process already showed a dialog saying why (convert on open, P9.3).
+     */
+    repairDatabase: (dbPath: string): Promise<string | null> =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
     onLoadFileResponse: (callback: (value: number) => void) => {

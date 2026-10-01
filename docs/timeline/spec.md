@@ -59,7 +59,7 @@ The design replaces the current model, which stores one coordinate per (marcher,
 | **Range** | A half-open interval `[start, end)` of beats. |
 | **Marcher** | A real performer. It has a *home* position, which is where it stands before its first assignment. |
 | **Shape** | A formation drawn in absolute field coordinates, such as a line, freehand curve, circle, box or block. It has no knowledge of time or of marchers. **Optional**: a transition can place its slots individually instead (D-16). |
-| **Timeline** | A container with a range: a track in the UI. It has **no effect on resolution** (R-1). |
+| **Timeline** | A container with a range: a track in the UI. It has **no effect on resolution** (R-1). *App restriction (implementation-plan.md C-11): it is the container for start and stop, and every transition in it spans its whole range.* |
 | **Transition** | Motion over a range, in a given path style, into slot destinations. The destinations come from a shape or are placed individually. It owns `slot_count` **anonymous slots**. It does **not** store where marchers start. |
 | **Slot** | An anonymous position within a transition, numbered `0…slot_count-1`. Its destination is sampled from the transition's shape, or is an individually placed point (R-13). |
 | **Individual destination** | A point placed by hand for one slot of a transition that has no shape (`slot_destinations`, D-16). "Move marcher 7 here" means setting the point of marcher 7's slot. |
@@ -99,7 +99,7 @@ flowchart LR
 The four concepts are strictly separated. Merging any two of them is the failure this design exists to prevent:
 
 - **Shapes** say *where*, with no time. They are optional. A transition can instead place each slot's destination individually, and nothing downstream can tell the difference (D-16).
-- **Timelines** say *which track*. They carry no motion.
+- **Timelines** say *which track*. They carry no motion. In the app they also say *when*: every transition in a timeline starts and ends with it (C-11 in implementation-plan.md), while assignments still come and go inside it.
 - **Transitions** say *how and when* for anonymous slots. A transition is a function whose starting point is filled in at resolve time. Its start state is an input to resolution, not stored data.
 - **Assignments** say *who*, *when* and *with what precedence*.
 

@@ -15,6 +15,12 @@ import {
 import { describe, expect } from "vitest";
 import { findPageIdsForPathway, updateEndPoint } from "../pathways";
 import { eq } from "drizzle-orm";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
+
+// Page mode in either test run
+keepFixturesInPageMode(
+    "pathways and marcher pages are page-era tables, frozen in timeline mode (P9.5); these tests set them up and edit them as page mode does",
+);
 
 describeDbTests("pathways", (baseIt) => {
     const it = baseIt.extend<{

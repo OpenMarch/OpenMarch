@@ -8,6 +8,7 @@ import { dropAllTriggers } from "../migrations/triggers";
 import {
     createAllTriggers,
     recreateChangeLogTriggers,
+    recreatePageEraFreezeTriggers,
 } from "../migrations/triggers";
 import { sql } from "drizzle-orm";
 import { DB } from "../db";
@@ -114,10 +115,13 @@ export class DrizzleMigrationService {
                 },
             );
 
-            // Files migrated before a change-log trigger body changed still carry the old body.
-            // Runs on every open, after the file-version guard above: it must never write to a
-            // file this build refuses.
+            // The callback above already rebuilds every trigger in the `triggers` map (drizzle
+            // calls it on every open, even with no migration pending); these checks make sure
+            // the change-log bodies are current without relying on that. They run after the
+            // file-version guard above, so they never write to a file this build refuses.
             recreateChangeLogTriggers(this.rawDb);
+            // Likewise for the page-era freeze (P9.5), which files migrated before it lack
+            recreatePageEraFreezeTriggers(this.rawDb);
 
             console.log("Drizzle migrations applied successfully.");
         } catch (error) {

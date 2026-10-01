@@ -28,15 +28,27 @@ import {
 import type AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
-import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
-import { getOrm } from "../database/db";
 import {
     applyAutomaticUpdatesSetting,
     automaticUpdatesAreEnabled,
     startAutomaticUpdates,
 } from "./update";
 import { repairDatabase } from "../database/repair";
-import { applyFileVersionDecision } from "../database/fileVersion";
+import { OPEN_STOPPED_STATUS } from "../database/convertOnOpenGate";
+import { electronConvertOnOpenDialogs } from "./convertOnOpenDialogs";
+import {
+    conversionWorkersStopped,
+    defaultConvertWorkerPath,
+    stopConversionWorkersOnQuit,
+} from "./convertWorkerHost";
+import {
+    openOnce,
+    openShowDatabase,
+    openShowFile,
+    resumeSqlProxyAfterReload,
+    withOpenLock,
+    type OpenShowDeps,
+} from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
     initAuthBeforeReady,
@@ -225,7 +237,7 @@ async function createWindow(title?: string) {
         "did-start-navigation",
         (_event, _url, _isInPlace, isMainFrame) => {
             if (!isMainFrame || !currentNewShowDraftPath) return;
-            void discardNewShowDraft().catch((error) => {
+            void withOpenLock(discardNewShowDraft).catch((error) => {
                 console.error(
                     "Error discarding new show draft on navigation:",
                     error,
@@ -331,13 +343,22 @@ async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
     return await dialog.showSaveDialog(win, options);
 }
 
+/**
+ * Lets the renderer explain a refused file (for example one from a newer release). Skips an open
+ * that a main-process dialog already explained (convert on open), so no second dialog shows.
+ */
+function sendLoadFileResponse(resCode: number) {
+    if (resCode === OPEN_STOPPED_STATUS) return;
+    win?.webContents.send("load-file-response", resCode);
+}
+
 async function openRecentFile(filePath: string) {
     store.set("databasePath", filePath);
     addRecentFile(filePath);
 
     const resCode = await setActiveDb(filePath);
 
-    win?.webContents.send("load-file-response", resCode);
+    sendLoadFileResponse(resCode);
 
     return resCode;
 }
@@ -376,7 +397,10 @@ function initDatabaseIpcHandlers() {
         async (_, targetPath: string, projectName: string) =>
             finalizeNewShowDraft(targetPath, projectName),
     );
-    ipcMain.handle("newShow:discardDraft", async () => discardNewShowDraft());
+    // Changes the active file, so it waits for any open (P9.8: a conversion no longer blocks).
+    ipcMain.handle("newShow:discardDraft", async () =>
+        withOpenLock(discardNewShowDraft),
+    );
     ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
     ipcMain.handle("newShow:choosePreviousDotsFile", async () =>
         choosePreviousDotsFile(win),
@@ -385,8 +409,13 @@ function initDatabaseIpcHandlers() {
         try {
             DatabaseServices.closePersistentConnection();
             const newPath = await repairDatabase(dbPath);
-            await setActiveDb(newPath);
-            return newPath;
+            const resCode = await setActiveDb(newPath);
+            if (resCode === 200) return newPath;
+            // A main-process dialog already explained why it didn't open.
+            if (resCode === OPEN_STOPPED_STATUS) return null;
+            throw new Error(
+                `The repaired file was saved at ${newPath} but couldn't be opened (status ${resCode}).`,
+            );
         } catch (error) {
             console.error("Error repairing database:", error);
             throw error;
@@ -507,6 +536,9 @@ function initGetters() {
     //);
 }
 
+// A conversion running in its worker (P9.8) is stopped, and so rolled back, before the app quits.
+stopConversionWorkersOnQuit(app);
+
 app.on("window-all-closed", async () => {
     win = null;
     if (process.platform !== "darwin") app.quit();
@@ -515,8 +547,7 @@ app.on("window-all-closed", async () => {
 app.on("open-file", async (event, path) => {
     event.preventDefault();
     const resCode = await setActiveDb(path);
-    // Lets the renderer explain a refused file (for example one from a newer release).
-    win?.webContents.send("load-file-response", resCode);
+    sendLoadFileResponse(resCode);
 });
 
 // Handle instances where the app is already running and a file is opened
@@ -753,37 +784,20 @@ async function openDatabaseAtPathWithoutReload(
         fs.unlinkSync(filePath);
     }
 
-    let db: ReturnType<typeof DatabaseServices.connect> | undefined;
     try {
-        const resCode = DatabaseServices.setDbPath(filePath, isNewFile);
-        if (resCode !== 200) {
-            return resCode;
+        // Shares the open path (and its lock) with setActiveDb, so both ways of
+        // making a new file give the same result.
+        const result = await openShowFile(filePath, isNewFile, openShowDeps());
+        result.db?.close();
+        // A draft is a new file: it never suspends the renderer's SQL.
+        if (result.sqlSuspension !== undefined)
+            DatabaseServices.resumeSqlProxy(result.sqlSuspension);
+        if (result.status !== 200) {
+            return result.status === OPEN_STOPPED_STATUS ? result.status : -1;
         }
 
         store.set("databasePath", filePath);
-        win.setTitle("OpenMarch - " + filePath);
-
-        db = DatabaseServices.connect();
-        if (!db) {
-            console.error("Error connecting to database");
-            return -1;
-        }
-
-        const drizzleDb = getOrm(db);
-        const migrator = new DrizzleMigrationService(drizzleDb, db);
-        const migrationsFolder = join(
-            app.getAppPath(),
-            "electron",
-            "database",
-            "migrations",
-        );
-
-        // Sets the version only on a new, empty file; setDbPath already refused
-        // a file from a newer release (ADR 0001 §6).
-        applyFileVersionDecision(db, isNewFile);
-        await migrator.applyPendingMigrations(migrationsFolder);
-        await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
-
+        win?.setTitle("OpenMarch - " + filePath);
         return 200;
     } catch (error) {
         captureException(error);
@@ -791,8 +805,6 @@ async function openDatabaseAtPathWithoutReload(
         DatabaseServices.setDbPath("", false);
         console.error("Error opening database without reload:", error);
         return -1;
-    } finally {
-        db?.close();
     }
 }
 
@@ -972,7 +984,8 @@ export async function finalizeNewShowDraft(
 
     currentNewShowDraftPath = null;
 
-    await setActiveDb(finalPath, false);
+    const resCode = await setActiveDb(finalPath, false);
+    if (resCode !== 200) return resCode;
     addRecentFile(finalPath);
 
     return 200;
@@ -1138,7 +1151,7 @@ export async function loadDatabaseFile() {
             const resCode = await setActiveDb(path.filePaths[0]);
 
             // Handle alert dialogs in frontend
-            win?.webContents.send("load-file-response", resCode);
+            sendLoadFileResponse(resCode);
 
             return resCode;
         })
@@ -1185,7 +1198,13 @@ function requestSvgBeforeClose(win: BrowserWindow): Promise<string> {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function closeCurrentFile(isAppQuitting = false) {
+export function closeCurrentFile(isAppQuitting = false): Promise<number> {
+    // Closing changes the active file, so it waits for an open that is running (P9.8: the main
+    // process stays responsive while a file converts, so "Close File" can arrive meanwhile).
+    return withOpenLock(() => closeCurrentFileNow(isAppQuitting));
+}
+
+async function closeCurrentFileNow(isAppQuitting: boolean) {
     console.log("closeCurrentFile called. isAppQuitting:", isAppQuitting);
     // console.trace();
 
@@ -1208,7 +1227,9 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
     // Close the current file
     DatabaseServices.setDbPath("", false);
-    store.set("databasePath", "");
+    // A conversion the quit stopped keeps its file as the one to reopen on the next launch.
+    if (!(isAppQuitting && conversionWorkersStopped()))
+        store.set("databasePath", "");
 
     // Only reload if we're NOT quitting the app
     if (!isAppQuitting) {
@@ -1326,95 +1347,108 @@ export async function insertAudioFile(): Promise<
     }
 }
 
+/** Where the migration files are, in development and in a packaged build. */
+const migrationsFolderPath = () =>
+    join(app.getAppPath(), "electron", "database", "migrations");
+
+/** Backs a file up to userData/backups before migrations, and prunes backups older than 30 days. */
+function backupBeforeMigrations(path: string) {
+    const backupDir = join(app.getPath("userData"), "backups");
+    if (!fs.existsSync(backupDir)) {
+        fs.mkdirSync(backupDir);
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const originalName = path.split(/[\\/]/).pop();
+    const backupPath = join(backupDir, `backup_${timestamp}_${originalName}`);
+    console.log("Creating backup of database in " + backupPath);
+    fs.copyFileSync(path, backupPath);
+
+    console.log("Deleting backups older than 30 days");
+    const files = fs.readdirSync(backupDir);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    files.forEach((file) => {
+        const filePath = join(backupDir, file);
+        const stats = fs.statSync(filePath);
+        if (stats.birthtime < thirtyDaysAgo) {
+            fs.unlinkSync(filePath);
+        }
+    });
+}
+
+/** The dependencies of `openShowDatabase` in the running app. */
+const openShowDeps = (): OpenShowDeps => ({
+    migrationsFolder: migrationsFolderPath(),
+    beforeMigrations: backupBeforeMigrations,
+    dialogs: () => electronConvertOnOpenDialogs(win),
+    // The backup and conversion run in a worker thread, off this event loop (P9.8).
+    convertWorker: { workerPath: defaultConvertWorkerPath(__dirname) },
+});
+
+/** The window's navigation events, for resuming the renderer's SQL after a reload. */
+const reloadEvents = () => (win && !win.isDestroyed() ? win.webContents : null);
+
 /**
- * Sets the active database path and reloads the window.
+ * Sets the active database path and reloads the window. Opens are serialized:
+ * one that starts while another runs (for example while a file converts)
+ * waits for it, and a second open of a file that is already queued or waiting
+ * on a dialog returns that open's result instead of opening it again.
  *
  * @param path path to the database file
  * @param isNewFile True if this is a new file, false if it is an existing file
+ * @returns 200, a refusal code, or `OPEN_STOPPED_STATUS` when a main-process
+ *   dialog already explained why nothing opened
  */
-async function setActiveDb(path: string, isNewFile = false) {
+function setActiveDb(path: string, isNewFile = false): Promise<number> {
+    // Get the current path from the store if the path is "."
+    // I.e. last opened file
+    if (path === ".") path = store.get("databasePath") as string;
+    return openOnce(path, () =>
+        withOpenLock(() => setActiveDbNow(path, isNewFile)),
+    );
+}
+
+async function setActiveDbNow(path: string, isNewFile: boolean) {
     try {
-        // Get the current path from the store if the path is "."
-        // I.e. last opened file
-        if (path === ".") path = store.get("databasePath") as string;
+        const result = await openShowDatabase(path, isNewFile, openShowDeps());
+        result.db?.close();
+        const token = result.sqlSuspension;
 
-        const resCode = DatabaseServices.setDbPath(path, isNewFile);
-
-        if (resCode !== 200) {
+        if (result.status !== 200) {
+            if (token !== undefined) DatabaseServices.resumeSqlProxy(token);
+            if (
+                result.status === OPEN_STOPPED_STATUS &&
+                conversionWorkersStopped()
+            ) {
+                // The app is quitting and stopped this file's conversion (rolled back): reopen,
+                // and so convert, it on the next launch.
+                store.set("databasePath", path);
+                return result.status;
+            }
             store.delete("databasePath");
-            console.error(
-                `Error loading database file [code=${resCode}] [path=${path}]`,
-            );
-            return resCode;
+            if (result.status === OPEN_STOPPED_STATUS) {
+                // Convert on open (P9.3, behind OPENMARCH_CONVERT_ON_OPEN until P9.4): a dialog
+                // already told the person why the file didn't open. Open nothing.
+                win?.setTitle("OpenMarch");
+                win?.webContents.reload();
+            } else {
+                console.error(
+                    `Error loading database file [code=${result.status}] [path=${path}]`,
+                );
+            }
+            return result.status;
         }
 
         win?.setTitle("OpenMarch - " + path);
-
-        const db = DatabaseServices.connect();
-        if (!db) {
-            console.error("Error connecting to database");
-            return 500;
-        }
-
-        const drizzleDb = getOrm(db);
-        const migrator = new DrizzleMigrationService(drizzleDb, db);
-
-        const migrationsFolder = join(
-            app.getAppPath(),
-            "electron",
-            "database",
-            "migrations",
-        );
-
-        // If this isn't a new file, create backups before applying migrations
-        if (!isNewFile) {
-            console.log(
-                "Checking database version to see if migration is needed",
-            );
-            if (migrator.hasPendingMigrations(migrationsFolder)) {
-                const backupDir = join(app.getPath("userData"), "backups");
-                if (!fs.existsSync(backupDir)) {
-                    fs.mkdirSync(backupDir);
-                }
-                const timestamp = new Date()
-                    .toISOString()
-                    .replace(/[:.]/g, "-");
-                const originalName = path.split(/[\\/]/).pop();
-                const backupPath = join(
-                    backupDir,
-                    `backup_${timestamp}_${originalName}`,
-                );
-                console.log("Creating backup of database in " + backupPath);
-                fs.copyFileSync(path, backupPath);
-
-                console.log("Deleting backups older than 30 days");
-                // Delete backups older than 30 days
-                const files = fs.readdirSync(backupDir);
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-                files.forEach((file) => {
-                    const filePath = join(backupDir, file);
-                    const stats = fs.statSync(filePath);
-                    if (stats.birthtime < thirtyDaysAgo) {
-                        fs.unlinkSync(filePath);
-                    }
-                });
-            }
-        }
-        // Sets the version only on a new, empty file; an existing file keeps
-        // its version (ADR 0001 §6). setDbPath already refused newer files.
-        applyFileVersionDecision(db, isNewFile);
-        await migrator.applyPendingMigrations(migrationsFolder);
-
-        if (isNewFile) {
-            await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
-        }
-
         store.set("databasePath", path); // Save current db path
         win?.webContents.reload();
+        // Only once the reloaded page has navigated may it query the file. Another open can
+        // start meanwhile; it takes the suspension over, and this resume then leaves it be.
+        if (token !== undefined)
+            void resumeSqlProxyAfterReload(token, reloadEvents());
 
-        return resCode;
+        return result.status;
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path

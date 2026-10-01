@@ -1049,6 +1049,101 @@ describe("DatabaseSync Repair", () => {
             }
         });
 
+        it("copies a timeline-mode file's frozen page-era rows, and the freeze holds afterwards (P9.5)", async () => {
+            const originalDbPath = path.join(tempDir, "frozen.dots");
+            const originalDb =
+                await createNewDatabaseWithMigrations(originalDbPath);
+            originalDb.exec(`
+                INSERT INTO marchers (id, section, drill_prefix, drill_order) VALUES (1, 'Brass', 'B', 1);
+                INSERT INTO pathways (id, path_data) VALUES (1, '{}');
+                INSERT INTO marcher_pages (id, marcher_id, page_id, x, y, path_data_id) VALUES (1, 1, 0, 4, 2, 1);
+                INSERT INTO shapes (id, name) VALUES (1, 'line');
+                INSERT INTO shape_pages (id, shape_id, page_id, svg_path) VALUES (1, 1, 0, 'M 0 0 L 1 0');
+                INSERT INTO shape_page_marchers (id, shape_page_id, marcher_id, position_order) VALUES (1, 1, 1, 1);
+                UPDATE workspace_settings SET json_data = json_set(json_data, '$.timelineMode', json('true'));
+            `);
+            const frozen = [
+                "marcher_pages",
+                "pathways",
+                "shapes",
+                "shape_pages",
+                "shape_page_marchers",
+            ];
+            const readFrozen = (db: DatabaseSync) =>
+                Object.fromEntries(
+                    frozen.map((table) => [
+                        table,
+                        db
+                            .prepare(`SELECT * FROM "${table}" ORDER BY id`)
+                            .all(),
+                    ]),
+                );
+            const expected = readFrozen(originalDb);
+            expect(() =>
+                originalDb.exec("UPDATE marcher_pages SET x = 0"),
+            ).toThrow(/read-only in timeline mode/);
+            originalDb.close();
+
+            const fixedPath = await repairDatabase(originalDbPath);
+
+            const fixedDb = new DatabaseSync(fixedPath);
+            try {
+                expect(readFrozen(fixedDb)).toEqual(expected);
+                expect(() =>
+                    fixedDb.exec("UPDATE marcher_pages SET x = 0"),
+                ).toThrow(/read-only in timeline mode/);
+            } finally {
+                fixedDb.close();
+            }
+        });
+
+        it("puts the freeze back even when detaching the original fails (P9.5)", async () => {
+            const originalDbPath = path.join(tempDir, "detach-original.dots");
+            const originalDb =
+                await createNewDatabaseWithMigrations(originalDbPath);
+            const newDb = await createNewDatabaseWithMigrations(
+                path.join(tempDir, "detach-new.dots"),
+            );
+            const freezeTriggers = () =>
+                (
+                    newDb
+                        .prepare(
+                            "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'page_era_frozen_%' ORDER BY name",
+                        )
+                        .all() as { name: string }[]
+                ).map((r) => r.name);
+            const before = freezeTriggers();
+            expect(before).toHaveLength(18);
+            // A connection whose DETACH throws
+            const failingDetach = new Proxy(newDb, {
+                get(target, prop) {
+                    if (prop === "prepare")
+                        return (statement: string) => {
+                            if (statement.startsWith("DETACH"))
+                                throw new Error("detach failed");
+                            return target.prepare(statement);
+                        };
+                    const value = Reflect.get(target, prop) as unknown;
+                    return typeof value === "function"
+                        ? (value as (...a: unknown[]) => unknown).bind(target)
+                        : value;
+                },
+            });
+            try {
+                expect(() =>
+                    copyDataFromOriginalDatabase(
+                        originalDb,
+                        failingDetach,
+                        originalDbPath,
+                    ),
+                ).toThrow("detach failed");
+                expect(freezeTriggers()).toEqual(before);
+            } finally {
+                originalDb.close();
+                newDb.close();
+            }
+        });
+
         it("orders dependent tables after the others, parents before children", () => {
             const names = [
                 "timeline_assignments",

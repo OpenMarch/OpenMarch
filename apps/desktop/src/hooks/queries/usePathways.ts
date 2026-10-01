@@ -5,7 +5,8 @@ import {
 } from "@tanstack/react-query";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
-import { conToastError } from "@/utilities/utils";
+import { refusePageEraWriteInTimelineMode } from "@/db-functions/pageEraFreeze";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { db, schema } from "@/global/database/db";
 import { Path } from "@openmarch/core";
 import { DbConnection } from "@/test/base";
@@ -141,6 +142,8 @@ const pathwayMutations = {
         marcherPageIds?: number[];
     }): Promise<MutationResult> => {
         return await db.transaction(async (tx) => {
+            // Timeline mode: pathways and marcher pages are frozen (P9.5)
+            await refusePageEraWriteInTimelineMode(tx);
             await incrementUndoGroup(tx);
 
             const createdPathway = await tx
@@ -173,6 +176,8 @@ const pathwayMutations = {
         modifiedPathway: ModifiedPathwayArgs,
     ): Promise<MutationResult> => {
         return await db.transaction(async (tx) => {
+            // Timeline mode: pathways and marcher pages are frozen (P9.5)
+            await refusePageEraWriteInTimelineMode(tx);
             await incrementUndoGroup(tx);
 
             const { id, ...updateData } = modifiedPathway;
@@ -194,6 +199,8 @@ const pathwayMutations = {
 
     deletePathways: async (pathwayIds: number[]): Promise<MutationResult> => {
         return await db.transaction(async (tx) => {
+            // Timeline mode: pathways and marcher pages are frozen (P9.5)
+            await refusePageEraWriteInTimelineMode(tx);
             await incrementUndoGroup(tx);
 
             const results = await tx
@@ -243,7 +250,7 @@ export const useCreatePathway = () => {
             },
         ) => {
             // Log the error for debugging/telemetry
-            conToastError(`Failed to create pathway`, { error, variables });
+            toastTimelineError(error, `Failed to create pathway`, variables);
         },
     });
 };
@@ -263,7 +270,7 @@ export const useUpdatePathway = () => {
         },
         onError: (error: Error, variables: ModifiedPathwayArgs) => {
             // Log the error for debugging/telemetry
-            conToastError(`Failed to update pathway`, { error, variables });
+            toastTimelineError(error, `Failed to update pathway`, variables);
         },
     });
 };
@@ -283,11 +290,12 @@ export const useDeletePathways = () => {
         },
         onError: (error: Error, variables: number[]) => {
             // Log the error for debugging/telemetry
-            conToastError(
+            toastTimelineError(
+                error,
                 `Failed to delete ${variables.length} pathway${
                     variables.length === 1 ? "" : "s"
                 }`,
-                { error, variables },
+                variables,
             );
         },
     });

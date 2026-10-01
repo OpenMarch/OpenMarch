@@ -24,6 +24,13 @@ export const workspaceSettingsSchema = z.object({
      * `marcher_pages` (docs/timeline, Phase 5). Off when absent, and not shown in the settings UI.
      */
     timelineMode: z.boolean().optional(),
+
+    /**
+     * When the file was converted to timelines, or created as a timeline file (ISO time; P9.3,
+     * ADR 0001 §6). Written by the main process; kept here so saving the settings keeps it. Its
+     * presence is how a file reset to version 7 by an older release is recognized.
+     */
+    timelineConvertedAt: z.string().optional(),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;

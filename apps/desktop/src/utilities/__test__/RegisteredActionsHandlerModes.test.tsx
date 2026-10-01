@@ -6,7 +6,10 @@ import {
     createAllUndoTriggers,
     dropAllUndoTriggers,
 } from "@/db-functions/history";
-import { timelineFixtureMode } from "@/test/timelineMode";
+import {
+    timelineFixtureMode,
+    withPageEraFreezeLifted,
+} from "@/test/timelineMode";
 import {
     expectWrittenWhereTheModeWrites,
     harnessQueryClient,
@@ -93,8 +96,11 @@ const STALE = { dx: -40, dy: -24 };
 const makePageRowsStale = async (db: DbConnection) => {
     if (!timelineFixtureMode()) return;
     await dropAllUndoTriggers(db);
-    await db.run(
-        sql`UPDATE marcher_pages SET x = x + ${STALE.dx}, y = y + ${STALE.dy}`,
+    // The rows are frozen in timeline mode (P9.5); lift the freeze to make them stale
+    await withPageEraFreezeLifted(db, () =>
+        db.run(
+            sql`UPDATE marcher_pages SET x = x + ${STALE.dx}, y = y + ${STALE.dy}`,
+        ),
     );
     await createAllUndoTriggers(db);
 };

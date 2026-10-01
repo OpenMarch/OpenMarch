@@ -9,6 +9,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { utf8ToBase64 } from "@/utilities/utils";
 
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
 
 /**
  * Builds a `data:image/svg+xml;base64,...` URI from a cached SVG preview.
@@ -61,6 +62,8 @@ export default function FilesTabContent() {
             if (result === 200) {
                 // File opened successfully, the app will reload
                 console.log("File opened successfully");
+            } else if (result === OPEN_STOPPED_STATUS) {
+                // A main-process dialog already explained why it didn't open (convert on open).
             } else {
                 toast.error(t("launchpage.files.failedToOpen"));
 

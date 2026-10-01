@@ -17,6 +17,8 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "../useTimingObjects";
 import { coordinateDataKeys } from "./useCoordinateData";
+import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 
 const KEY_BASE = "history";
 
@@ -45,6 +47,54 @@ export const canRedoQueryOptions = (enabled = true) =>
         },
         enabled,
     });
+
+/** Messages for an undo or redo that didn't apply, as Tolgee keys with English defaults */
+export const HISTORY_FAILURE_MESSAGES = {
+    "page-era-frozen": {
+        undo: {
+            key: "actions.edit.undoSkippedFrozen",
+            defaultMessage:
+                "That step can't be undone in timeline mode, because it changes page positions from before the show was converted. It was skipped.",
+        },
+        redo: {
+            key: "actions.edit.redoSkippedFrozen",
+            defaultMessage:
+                "That step can't be redone in timeline mode, because it changes page positions from before the show was converted. It was skipped.",
+        },
+    },
+    error: {
+        undo: {
+            key: "actions.edit.undoFailed",
+            defaultMessage: "The undo couldn't be applied, so nothing changed.",
+        },
+        redo: {
+            key: "actions.edit.redoFailed",
+            defaultMessage: "The redo couldn't be applied, so nothing changed.",
+        },
+    },
+} as const;
+
+type HistoryActionFailure = NonNullable<
+    Awaited<ReturnType<typeof performHistoryAction>>["failure"]
+>;
+
+/**
+ * Tells the user an undo or redo didn't apply: a step the page-era freeze refused (P9.5), which
+ * was dropped from its stack, or any other failure, which left the stacks alone.
+ */
+export const toastHistoryActionFailure = (
+    type: "undo" | "redo",
+    failure: HistoryActionFailure,
+) => {
+    const { key, defaultMessage } =
+        HISTORY_FAILURE_MESSAGES[failure.kind][type];
+    const message = tolgee.t(key, defaultMessage);
+    if (failure.kind === "page-era-frozen") toast.warning(message);
+    else {
+        console.error(`${type} failed:`, failure.message);
+        toast.error(message);
+    }
+};
 
 /** Where an undo or redo asked to go, kept until that page is in the page list. */
 interface PendingFocus {
@@ -89,11 +139,16 @@ export const usePerformHistoryAction = () => {
             performHistoryAction(type, db, {
                 currentPageId: selectedPageContext?.selectedPage?.id,
             }),
-        onSuccess: async (response) => {
+        onSuccess: async (response, type) => {
             // Invalidate history query
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+
+            if (response.failure) {
+                toastHistoryActionFailure(type, response.failure);
+                return;
+            }
 
             if (response.queriesToInvalidate) {
                 await safelyInvalidateQueries(response.queriesToInvalidate, qc);

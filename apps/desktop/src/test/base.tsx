@@ -106,6 +106,13 @@ const loadSqlIntoDatabase = async (
 
     // drop all triggers
     await dropAllUndoTriggers(orm as unknown as any);
+    // In timeline test mode the blank file already has the flag on, and the page-era freeze
+    // (P9.5) would refuse the page show's rows. Load them in page mode; applyTimelineModeToFile
+    // below turns the flag back on after converting them.
+    if (timelineFixtureMode())
+        db.exec(
+            `UPDATE workspace_settings SET json_data = json_set(json_data, '$.timelineMode', json('false'))`,
+        );
     await db.exec(sql);
     await createAllUndoTriggers(orm as unknown as any);
     const updatedDbBuffer = db.export();

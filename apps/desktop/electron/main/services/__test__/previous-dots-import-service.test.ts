@@ -24,7 +24,10 @@ import {
     lastPageEndBeat,
     SourceTimelineReadError,
 } from "@/timeline/sourceTimelinePositions";
-import { keepFixturesInPageMode } from "@/test/timelineMode";
+import {
+    keepFixturesInPageMode,
+    withPageEraFreezeLifted,
+} from "@/test/timelineMode";
 
 // P7.17: these tests set up timeline mode themselves
 keepFixturesInPageMode(
@@ -211,13 +214,16 @@ describeDbTests("readPreviousDotsFile", (it) => {
             page,
             moves: [{ marcherId: 1, x: x + 24, y: y - 12 }],
         });
-        // A frozen page-era row that disagrees with the timeline is ignored
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
-            ],
-        });
+        // A frozen page-era row that disagrees with the timeline is ignored (written with the
+        // freeze lifted, as only a file from before the conversion could have it)
+        await withPageEraFreezeLifted(db, () =>
+            updateMarcherPages({
+                db,
+                modifiedMarcherPages: [
+                    { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
+                ],
+            }),
+        );
         const resolver = await acquireExportResolver(db);
 
         const { coordinates } = await readPreviousDotsFile(

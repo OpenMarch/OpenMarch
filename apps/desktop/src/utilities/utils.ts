@@ -1,21 +1,10 @@
 // Random utils that I don't know where else to put
 
 import { toast } from "sonner";
-/**
- * Logs to the main process via window.electron.log if available, otherwise falls back to console.log
- */
-export const mainProcessLog = (
-    level: "log" | "info" | "warn" | "error",
-    message: string,
-    ...args: any[]
-) => {
-    if (typeof window !== "undefined" && window.electron?.log) {
-        void window.electron.log(level, message, ...args);
-    } else {
-        console[level](message, ...args);
-    }
-};
-
+// Light helpers, kept in their own modules so the main process and its workers can load them
+// without `sonner` (P9.8).
+export { mainProcessLog } from "./mainProcessLog";
+export { assert } from "./assert";
 /**
  * Logs an error message to the console and displays a toast error notification.
  *
@@ -61,13 +50,3 @@ export const softAssert = (
         if (displayToast) toast.error(message);
     }
 };
-
-/**
- * Asserts that a condition is true. Meant to mimic assertions in other languages.
- *
- * @param condition The condition to assert.
- * @param message The message to display if the condition is false.
- */
-export function assert(condition: unknown, message: string): asserts condition {
-    if (!condition) throw new Error(message);
-}

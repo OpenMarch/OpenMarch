@@ -3,12 +3,16 @@ import { DatabaseSync } from "node:sqlite";
 import { existsSync, mkdtempSync, renameSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
+import { Worker } from "node:worker_threads";
 import {
     closePersistentConnection,
+    getSelectedAudioFile,
     handleSqlProxy,
     handleSqlProxyWithDb,
     insertAudioFile,
+    resumeSqlProxy,
     setDbPath,
+    suspendSqlProxy,
 } from "../database.services";
 
 describe("Database Services", () => {
@@ -178,6 +182,48 @@ describe("Database Services", () => {
                 nickname: "test.mp3",
                 selected: 1,
             });
+        });
+
+        it("are refused while an open suspends the renderer's SQL, and work again after (P9.8)", async () => {
+            const token = suspendSqlProxy("a file is being opened");
+            try {
+                await expect(
+                    insertAudioFile({ path: "/tmp/a.mp3" }),
+                ).rejects.toThrow(/not available: a file is being opened/);
+                await expect(getSelectedAudioFile()).rejects.toThrow(
+                    /not available/,
+                );
+            } finally {
+                resumeSqlProxy(token);
+            }
+            expect(
+                (await insertAudioFile({ path: "/tmp/a.mp3" })).success,
+            ).toBe(true);
+        });
+
+        it("wait for another connection's lock instead of failing at once", async () => {
+            // Another thread holds a write lock for 300 ms (as the conversion worker would).
+            const holder = new Worker(
+                `const { DatabaseSync } = require("node:sqlite");
+                const { parentPort, workerData } = require("node:worker_threads");
+                const db = new DatabaseSync(workerData);
+                db.exec("BEGIN IMMEDIATE");
+                parentPort.postMessage("locked");
+                const end = Date.now() + 300;
+                while (Date.now() < end) {}
+                db.exec("COMMIT");
+                db.close();`,
+                { eval: true, workerData: dbPath },
+            );
+            await new Promise((resolve) => holder.once("message", resolve));
+            const exited = new Promise((resolve) =>
+                holder.once("exit", resolve),
+            );
+
+            expect(
+                (await insertAudioFile({ path: "/tmp/b.mp3" })).success,
+            ).toBe(true);
+            await exited;
         });
     });
 });

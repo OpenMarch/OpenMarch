@@ -1,5 +1,59 @@
 import { DatabaseSync } from "node:sqlite";
 
+/**
+ * The file's timeline flag, as `isTimelineModeEnabled` reads it: `timelineMode` is JSON `true` in
+ * the workspace settings. A malformed settings row counts as off, as it does in the app, and
+ * never fails a page-mode write.
+ */
+const TIMELINE_MODE_ON = `EXISTS (SELECT 1 FROM workspace_settings WHERE CASE WHEN json_valid(json_data) THEN json_type(json_data, '$.timelineMode') END = 'true')`;
+
+/**
+ * The page-era tables frozen in timeline mode (P9.5, ADR 0001 §1), each with the parents its
+ * foreign keys cascade from.
+ */
+const PAGE_ERA_FROZEN_TABLES: {
+    table: string;
+    parents: { column: string; table: string }[];
+}[] = [
+    {
+        table: "marcher_pages",
+        parents: [
+            { column: "marcher_id", table: "marchers" },
+            { column: "page_id", table: "pages" },
+        ],
+    },
+    {
+        table: "midsets",
+        parents: [{ column: "mp_id", table: "marcher_pages" }],
+    },
+    { table: "pathways", parents: [] },
+    { table: "shapes", parents: [] },
+    {
+        table: "shape_pages",
+        parents: [
+            { column: "shape_id", table: "shapes" },
+            { column: "page_id", table: "pages" },
+        ],
+    },
+    {
+        table: "shape_page_marchers",
+        parents: [
+            { column: "shape_page_id", table: "shape_pages" },
+            { column: "marcher_id", table: "marchers" },
+        ],
+    },
+];
+
+/** The prefix of every page-era freeze trigger's name. */
+export const PAGE_ERA_FROZEN_TRIGGER_PREFIX = "page_era_frozen_";
+
+/**
+ * How every freeze trigger's RAISE message ends, after the table name. Undo matches it to skip a
+ * history group the freeze refuses (`src/db-functions/pageEraFreezeMarker.ts` has the same text).
+ */
+export const PAGE_ERA_FROZEN_RAISE_SUFFIX =
+    "is read-only in timeline mode (page-era data, P9.5)";
+
 const triggers = {
     prevent_first_beat_modification: `
             CREATE TRIGGER IF NOT EXISTS prevent_first_beat_modification
@@ -51,6 +105,7 @@ const triggers = {
     `,
     ...timelineInvariantTriggers(),
     ...timelineChangeLogTriggers(),
+    ...pageEraFreezeTriggers(),
 };
 
 /**
@@ -329,6 +384,44 @@ function timelineChangeLogTriggers(): Record<string, string> {
 }
 
 /**
+ * The page-era freeze (P9.5): with the file's timeline flag on, the page-era tables refuse every
+ * insert, update and delete. They stay readable for one release and are dropped in Phase 10.
+ * With the flag off (page mode) the triggers do nothing. The app refuses these writes itself first
+ * (`pageEraFreeze.ts`, `pageShapesGate.ts`); the triggers are the backstop.
+ *
+ * One exception: a row whose parent row is already gone may be deleted, and (only possible with
+ * foreign keys off, as in undo replay) inserted. That is what lets a marcher or page delete
+ * cascade into its frozen rows (SQLite deletes the parent before running the cascade), lets
+ * `repair` remove orphans, and lets undo and redo of that delete restore and remove the rows,
+ * since history logs the parent first. A row with all its parents present can't change. Tables
+ * with no parent (`pathways`, `shapes`) refuse every write.
+ */
+function pageEraFreezeTriggers(): Record<string, string> {
+    const result: Record<string, string> = {};
+    for (const { table, parents } of PAGE_ERA_FROZEN_TABLES) {
+        const message = `${table} ${PAGE_ERA_FROZEN_RAISE_SUFFIX}`;
+        const parentsPresent = (row: "NEW" | "OLD") =>
+            parents
+                .map(
+                    (p) =>
+                        ` AND EXISTS (SELECT 1 FROM ${p.table} WHERE id = ${row}.${p.column})`,
+                )
+                .join("");
+        const name = `${PAGE_ERA_FROZEN_TRIGGER_PREFIX}${table}`;
+        result[`${name}_ins`] =
+            `CREATE TRIGGER IF NOT EXISTS ${name}_ins BEFORE INSERT ON ${table} ` +
+            `WHEN ${TIMELINE_MODE_ON}${parentsPresent("NEW")} ${raise(message)}`;
+        result[`${name}_upd`] =
+            `CREATE TRIGGER IF NOT EXISTS ${name}_upd BEFORE UPDATE ON ${table} ` +
+            `WHEN ${TIMELINE_MODE_ON} ${raise(message)}`;
+        result[`${name}_del`] =
+            `CREATE TRIGGER IF NOT EXISTS ${name}_del BEFORE DELETE ON ${table} ` +
+            `WHEN ${TIMELINE_MODE_ON}${parentsPresent("OLD")} ${raise(message)}`;
+    }
+    return result;
+}
+
+/**
  * Trigger SQL as `sqlite_master` stores it: SQLite drops the `IF NOT EXISTS` clause and the
  * trailing semicolon; whitespace differences are ignored too.
  */
@@ -341,23 +434,68 @@ const normalizeTriggerSql = (sql: string) =>
         .trim();
 
 /**
- * Brings the change-log triggers up to this build's bodies. Every trigger uses `CREATE TRIGGER IF
- * NOT EXISTS`, and `createAllTriggers` runs only when a migration is pending, so a file that was
- * migrated before a change to a trigger body keeps the old body. The migration service calls this
- * on every open, after the file-version guard. Only missing or changed triggers are recreated, so
- * an up-to-date file isn't written to (no schema or mtime change), and the recreation is one
- * transaction, so a failure can't leave a trigger dropped.
+ * Brings the change-log triggers up to this build's bodies. Drizzle's sqlite-proxy `migrate` calls
+ * the migration service's callback on every open, even with no migration pending, and that
+ * callback runs `dropAllTriggers` then `createAllTriggers`, so every trigger in the `triggers`
+ * map is normally rebuilt on open already. This check is a second line that doesn't depend on
+ * that drizzle behavior: it runs after the migrations, on every open, after the file-version
+ * guard. Only missing or changed triggers are recreated, so it writes nothing to an up-to-date
+ * file, and the recreation is one transaction, so a failure can't leave a trigger dropped.
  */
-export const recreateChangeLogTriggers = (dbConnection: DatabaseSync) => {
-    const wanted = Object.entries(timelineChangeLogTriggers());
+export const recreateChangeLogTriggers = (dbConnection: DatabaseSync) =>
+    recreateTriggersIfStale(dbConnection, timelineChangeLogTriggers());
+
+/**
+ * Adds the page-era freeze triggers (P9.5) to a file migrated before they existed, or brings
+ * their bodies up to this build's, like `recreateChangeLogTriggers`. The migration service calls
+ * it on every open, after the file-version guard; an up-to-date file isn't written to.
+ */
+export const recreatePageEraFreezeTriggers = (dbConnection: DatabaseSync) =>
+    recreateTriggersIfStale(dbConnection, pageEraFreezeTriggers());
+
+/**
+ * Drops the page-era freeze triggers the database has, and returns a function that puts the same
+ * ones back. For `repair`, which copies a timeline-mode file's settings (flag on) and then its
+ * frozen rows into a fresh file.
+ */
+export const liftPageEraFreezeTriggers = (
+    dbConnection: DatabaseSync,
+): (() => void) => {
+    const names = new Set(Object.keys(pageEraFreezeTriggers()));
+    const present = (
+        dbConnection
+            .prepare(
+                `SELECT name, sql FROM sqlite_master WHERE type = 'trigger'`,
+            )
+            .all() as { name: string; sql: string }[]
+    ).filter((row) => names.has(row.name));
+    for (const { name } of present)
+        dbConnection.exec(`DROP TRIGGER IF EXISTS ${name}`);
+    return () => {
+        for (const { sql } of present) dbConnection.exec(sql);
+    };
+};
+
+/**
+ * Recreates the triggers in `wantedTriggers` that are missing or whose stored body differs, in
+ * one transaction. Writes nothing when all are current.
+ */
+const recreateTriggersIfStale = (
+    dbConnection: DatabaseSync,
+    wantedTriggers: Record<string, string>,
+) => {
+    const wanted = Object.entries(wantedTriggers);
+    const names = new Set(Object.keys(wantedTriggers));
     const current = new Map(
         (
             dbConnection
                 .prepare(
-                    `SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'timeline_log_%'`,
+                    `SELECT name, sql FROM sqlite_master WHERE type = 'trigger'`,
                 )
                 .all() as { name: string; sql: string }[]
-        ).map((row) => [row.name, normalizeTriggerSql(row.sql)]),
+        )
+            .filter((row) => names.has(row.name))
+            .map((row) => [row.name, normalizeTriggerSql(row.sql)]),
     );
     const stale = wanted.filter(
         ([name, trigger]) => current.get(name) !== normalizeTriggerSql(trigger),

@@ -107,22 +107,31 @@ from it. The spec still wins on the model; this file decides presentation.
   without the designer placing everyone by hand; casting reads the positions
   from the rows inside the edit's own transaction, so it can't plan from a
   resolver that hasn't caught up with an earlier edit.
+- **UI-8: a clip is a timeline (C-11, P8.10).** Every transition starts and
+  ends with its timeline, so the timeline is the unit the user sees split up:
+  a marcher track's clip spans its whole timeline, and the marcher's own
+  assignments show as active spans inside it (dashed where it isn't in the
+  move, UI-1). Several transitions can share a timeline (several groups moving
+  over the same counts); they share its clip range. Changing a range always
+  moves the timeline with all of its transitions. Why: with transitions
+  starting and stopping anywhere inside a timeline, it was unclear what a
+  timeline meant; now it is the container for one start and one stop.
 
 ## Mapping the spec onto the view model
 
 The reference `TimelineViewModel` becomes a derived view: an adapter builds it
 from the stored tables and the resolver, and nothing in it is stored.
 
-| View model                                   | Built from                                                                                                                                                                                                                                                                 |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `beatCount`, `pages`, `measures`             | beats, pages and measures, as today                                                                                                                                                                                                                                        |
-| Marcher track                                | one per spec timeline in which the marcher has an assignment. Clip range: the marcher's first assignment start to last assignment end in that timeline                                                                                                                     |
-| Marcher track `legs`                         | the marcher's resolver spans (R-2) inside the clip: a hold span is `hold`; any other span is `move`                                                                                                                                                                        |
-| Marcher track `activitySpans`                | active where the marcher's winning span belongs to an assignment in this timeline; inactive otherwise (UI-1)                                                                                                                                                               |
-| Shape track                                  | one per spec timeline and shape used as a destination in it: the transitions whose `dest_shape_id` is that shape (a group move). Spec shapes have no time; the track shows the moves into them. A gap filled by another shape's move splits it into two clips (P8.8)       |
-| Shape track `activitySpans`                  | active where at least one member's winning span is in those transitions; inactive where all are stolen (UI-4)                                                                                                                                                              |
-| `TimelineRangeChange {timelineId, range}`    | moves the whole spec timeline. Clips from the same timeline move together, so the UI highlights linked clips                                                                                                                                                               |
-| `TimelineCreateTrackRequest {target, range}` | one edit: a new timeline over the range with one transition. For a marcher, a shapeless one-slot `direct` transition whose destination starts at the marcher's position at the range start; for a shape, a transition into it with the selected marchers assigned to slots |
+| View model                                   | Built from                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `beatCount`, `pages`, `measures`             | beats, pages and measures, as today                                                                                                                                                                                                                                                                        |
+| Marcher track                                | one per spec timeline in which the marcher has an assignment. Clip range: the timeline's range (C-11); beats where the marcher has no assignment there are inactive (UI-1)                                                                                                                                 |
+| Marcher track `legs`                         | the marcher's resolver spans (R-2) inside the clip: a hold span is `hold`; any other span is `move`                                                                                                                                                                                                        |
+| Marcher track `activitySpans`                | active where the marcher's winning span belongs to an assignment in this timeline; inactive otherwise (UI-1)                                                                                                                                                                                               |
+| Shape track                                  | one per spec timeline and shape used as a destination in it: the transitions whose `dest_shape_id` is that shape (a group move). Spec shapes have no time; the track shows the moves into them. Its clip is the timeline's range (C-11); converted legacy timelines can still split it at gaps until P9.10 |
+| Shape track `activitySpans`                  | active where at least one member's winning span is in those transitions; inactive where all are stolen (UI-4)                                                                                                                                                                                              |
+| `TimelineRangeChange {timelineId, range}`    | moves the whole spec timeline. Clips from the same timeline move together, so the UI highlights linked clips                                                                                                                                                                                               |
+| `TimelineCreateTrackRequest {target, range}` | one edit: a new timeline over the range with one transition. For a marcher, a shapeless one-slot `direct` transition whose destination starts at the marcher's position at the range start; for a shape, a transition into it with the selected marchers assigned to slots                                 |
 
 ## What the timeline doesn't show
 
@@ -297,13 +306,14 @@ points (P7.2).
   the audio player.
 - `legs` keep their `move`/`hold` texture but aren't drawn.
 - Not in the reference and not needed for the first port: clip edge resizing
-  (maps to R-E1 later), wheel zoom and multi-select.
+  (a timeline range edit, U-Q2), wheel zoom and multi-select.
 
 ## Open UI questions
 
 - **U-Q1:** which tracks show by default. Decided: UI-3.
-- **U-Q2:** what resizing a clip edge means: an R-E1 range edit on the
-  timeline's transitions, or on one assignment.
+- **U-Q2:** what resizing a clip edge means. Decided (C-11, P8.10): a range
+  edit of the clip's whole timeline. The timeline and every transition in it
+  move together, and assignments anchored at the moved edge follow (R-E1).
 - **U-Q3:** how layers show on the timeline, if at all (spec Q-8). Since
   P8.4 the inspector shows and edits each assignment's layer and where it's
   stolen (UI-7); the timeline itself still shows steals only as dashed spans

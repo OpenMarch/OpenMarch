@@ -148,7 +148,7 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
             invalidateByPage(queryClient, pageIds);
         },
         onError: (e, variables) => {
-            conToastError(`Error updating pages`, e, variables);
+            toastTimelineError(e, `Error updating pages`, variables);
         },
     });
 };
@@ -208,7 +208,7 @@ export const swapMarchersMutationOptions = (queryClient: QueryClient) => {
             );
         },
         onError: (e, variables) => {
-            conToastError(`Error swapping marchers`, e, variables);
+            toastTimelineError(e, `Error swapping marchers`, variables);
         },
     });
 };

@@ -1,7 +1,7 @@
 import { drizzle, type SqliteRemoteDatabase } from "drizzle-orm/sqlite-proxy";
 import * as schema from "./migrations/schema";
 import type { DatabaseSync } from "node:sqlite";
-import { handleSqlProxyWithDb } from "./database.services";
+import { handleSqlProxyWithDb } from "./sqlProxy";
 
 export type DB = SqliteRemoteDatabase<typeof schema>;
 

@@ -1,7 +1,7 @@
 import type { ChangeBatch, RowImage } from "@openmarch/core";
 import { asc, count, sql } from "drizzle-orm";
-import { schema } from "../global/database/db";
-import { assert } from "../utilities/utils";
+import * as schema from "@om-electron/database/migrations/schema";
+import { assert } from "../utilities/assert";
 import type { DbTransaction } from "./types";
 
 /**

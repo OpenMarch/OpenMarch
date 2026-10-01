@@ -49,13 +49,14 @@ describeDbTests("marcher mutations take the file's mode", (it) => {
             expect(transitions).toEqual([]);
             expect(assignments).toEqual([]);
         }
-        // Page rows are written in both modes, as before
+        // Page rows are written in page mode only: they're frozen in timeline mode (P9.5)
         const pageRows = await db
             .select()
             .from(schema.marcher_pages)
             .where(eq(schema.marcher_pages.marcher_id, created!.id))
             .all();
-        expect(pageRows.length).toBeGreaterThan(0);
+        if (timelineFixtureMode()) expect(pageRows).toEqual([]);
+        else expect(pageRows.length).toBeGreaterThan(0);
     });
 
     it("a delete with no settings loaded follows the file's flag", async ({

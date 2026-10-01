@@ -31,7 +31,10 @@ import {
     ShowChangedDuringExportError,
 } from "../exportPagePositions";
 import { generateDrillChartExportSVGs } from "../svg-generator";
-import { keepFixturesInPageMode } from "@/test/timelineMode";
+import {
+    keepFixturesInPageMode,
+    withPageEraFreezeLifted,
+} from "@/test/timelineMode";
 
 // P7.17: these tests set up timeline mode themselves
 keepFixturesInPageMode(
@@ -193,13 +196,16 @@ describeDbTests("readTimelineExportPositions", (it) => {
             page,
             moves: [{ marcherId: 1, x: x + 24, y }],
         });
-        // Frozen page-era rows that disagree with the timeline are ignored
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
-            ],
-        });
+        // Frozen page-era rows that disagree with the timeline are ignored (written with the
+        // freeze lifted, as only a file from before the conversion could have them)
+        await withPageEraFreezeLifted(db, () =>
+            updateMarcherPages({
+                db,
+                modifiedMarcherPages: [
+                    { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
+                ],
+            }),
+        );
 
         const { positions } = (await readTimelineExportPositions(db))!;
 

@@ -11,6 +11,12 @@ import { _pathwayQueries } from "../usePathways";
 import { describe, expect } from "vitest";
 import { count, eq } from "drizzle-orm";
 import { expectedPages } from "@/test/mock-data/marchers-and-pages.mjs";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
+
+// Page mode in either test run
+keepFixturesInPageMode(
+    "pathways and marcher pages are page-era tables, frozen in timeline mode (P9.5); these tests set them up as page mode does",
+);
 
 describeDbTests("usePathways", (baseIt) => {
     const it = baseIt.extend<{

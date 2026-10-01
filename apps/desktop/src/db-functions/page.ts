@@ -22,15 +22,19 @@ import {
     updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
-import { withTimelinePageRipple } from "./timelineRipple";
+import {
+    timelineModeInTransaction,
+    withTimelinePageRipple,
+} from "./timelineRipple";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import {
     _createFromTempoGroupInTransaction,
     tempoGroupFromWorkspaceSettings,
 } from "@/components/music/TempoGroup/TempoGroup";
+import { FIRST_PAGE_ID, realDatabasePageToDatabasePage } from "./rowMappers";
 
-export const FIRST_PAGE_ID = 0;
+export { FIRST_PAGE_ID, realDatabasePageToDatabasePage };
 
 /** How a page is represented in the database */
 /** Represents a page in the database */
@@ -45,15 +49,6 @@ export interface DatabasePage {
     start_beat: number;
 }
 type RealDatabasePage = typeof schema.pages.$inferSelect;
-
-export const realDatabasePageToDatabasePage = (
-    page: RealDatabasePage,
-): DatabasePage => {
-    return {
-        ...page,
-        is_subset: page.is_subset === 1,
-    };
-};
 
 export interface NewPageArgs {
     start_beat: number;
@@ -295,15 +290,19 @@ export const createPagesInTransaction = async ({
             pageBeatMap.get(a.id)!.position - pageBeatMap.get(b.id)!.position,
     );
 
-    const createdPageIds = createdPages.map((page) => page.id);
-    await tx
-        .delete(schema.marcher_pages)
-        .where(inArray(schema.marcher_pages.page_id, createdPageIds));
+    // Timeline mode: pages don't own positions and marcher pages are frozen (P9.5), so a new page
+    // gets no marcher pages. The timeline ripple (`withTimelinePageRipple`) handles the motion.
+    if (!(await timelineModeInTransaction(tx))) {
+        const createdPageIds = createdPages.map((page) => page.id);
+        await tx
+            .delete(schema.marcher_pages)
+            .where(inArray(schema.marcher_pages.page_id, createdPageIds));
 
-    await _createMarcherPages({
-        tx,
-        sortedNewPages,
-    });
+        await _createMarcherPages({
+            tx,
+            sortedNewPages,
+        });
+    }
 
     return createdPages.map(realDatabasePageToDatabasePage);
 };
@@ -544,14 +543,21 @@ export const deletePagesInTransaction = async ({
         "Last page before deletion not found",
     );
 
-    await tx
-        .delete(schema.marcher_pages)
-        .where(inArray(schema.marcher_pages.page_id, Array.from(pageIds)));
+    const deleteMarcherPages = () =>
+        tx
+            .delete(schema.marcher_pages)
+            .where(inArray(schema.marcher_pages.page_id, Array.from(pageIds)));
+    // Timeline mode: marcher pages are frozen (P9.5), and the freeze triggers only let a row go
+    // once its page is gone. So the pages go first; their rows follow through the foreign-key
+    // cascade, or the delete after it where foreign keys are off.
+    const timelineMode = await timelineModeInTransaction(tx);
+    if (!timelineMode) await deleteMarcherPages();
 
     const deletedPages = await tx
         .delete(schema.pages)
         .where(inArray(schema.pages.id, Array.from(pageIds)))
         .returning();
+    if (timelineMode) await deleteMarcherPages();
 
     const lastPageAfterDeletion = await getLastPage({ tx });
     assert(lastPageAfterDeletion != null, "Last page after deletion not found");

@@ -1,10 +1,12 @@
 import { describe, expect } from "vitest";
-import { getTableName } from "drizzle-orm";
+import { asc, eq, getTableName } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { transactionWithHistory } from "../history";
 import {
+    BULK_INSERT_ROWS,
     TimelineWriteError,
+    chunked,
     createTimelineAssignmentsInTransaction,
     createTimelineShapesInTransaction,
     createTimelineTransitionsInTransaction,
@@ -13,6 +15,7 @@ import {
     deleteTimelineShapesInTransaction,
     deleteTimelineTransitionsInTransaction,
     deleteTimelinesInTransaction,
+    insertTimelineAssignmentsBulkInTransaction,
     setTimelineSlotDestinationsInTransaction,
     setTimelineTransitionDestinationInTransaction,
     updateMarcherHomesInTransaction,
@@ -748,6 +751,126 @@ describeDbTests("timeline db-functions", (it) => {
                     transactionWithHistory(db, "u", (tx) =>
                         updateTimelineAssignmentsInTransaction({
                             modifiedAssignments: [{ id: 999, layer: 1 }],
+                            tx,
+                        }),
+                    ),
+                );
+            },
+        );
+
+        testWithHistory(
+            "bulk insert (P9.8): chunked multi-row inserts, checked row by row",
+            async ({ db }) => {
+                const { timelineId, t2 } = await seed(db);
+                // More than two chunks, with as many slot destinations.
+                const n = BULK_INSERT_ROWS * 2 + 7;
+                const ids = Array.from({ length: n }, (_, i) => 100 + i);
+                const inserted = await transactionWithHistory(
+                    db,
+                    "bulk",
+                    async (tx) => {
+                        for (const chunk of chunked(ids))
+                            await tx.insert(schema.marchers).values(
+                                chunk.map((id) => ({
+                                    id,
+                                    section: "Brass",
+                                    drill_prefix: "X",
+                                    drill_order: id,
+                                })),
+                            );
+                        const [t] =
+                            await createTimelineTransitionsInTransaction({
+                                newTransitions: [
+                                    {
+                                        timelineId,
+                                        startBeat: 32,
+                                        endBeat: 48,
+                                        slotCount: n,
+                                        destination: {
+                                            kind: "individual",
+                                            points: ids.map((id) => [id, 0]),
+                                        },
+                                    },
+                                ],
+                                tx,
+                            });
+                        const count =
+                            await insertTimelineAssignmentsBulkInTransaction({
+                                newAssignments: ids.map((marcherId, slot) => ({
+                                    marcherId,
+                                    transitionId: t!.id,
+                                    slotIndex: slot,
+                                    startBeat: 32,
+                                    endBeat: 48,
+                                })),
+                                tx,
+                            });
+                        return { count, transitionId: t!.id };
+                    },
+                );
+                expect(inserted.count).toBe(n);
+                const rows = await db
+                    .select()
+                    .from(schema.timeline_assignments)
+                    .where(
+                        eq(
+                            schema.timeline_assignments.transition_id,
+                            inserted.transitionId,
+                        ),
+                    )
+                    .orderBy(asc(schema.timeline_assignments.id))
+                    .all();
+                expect(rows.map((r) => [r.marcher_id, r.slot_index])).toEqual(
+                    ids.map((id, slot) => [id, slot]),
+                );
+                const destinations = await db
+                    .select()
+                    .from(schema.timeline_slot_destinations)
+                    .where(
+                        eq(
+                            schema.timeline_slot_destinations.transition_id,
+                            inserted.transitionId,
+                        ),
+                    )
+                    .all();
+                expect(destinations).toHaveLength(n);
+
+                // Two rows of one statement that overlap: the row trigger sees the first.
+                await expectRejected(db, "E-A3", () =>
+                    transactionWithHistory(db, "overlap", (tx) =>
+                        insertTimelineAssignmentsBulkInTransaction({
+                            newAssignments: [
+                                {
+                                    marcherId: 3,
+                                    transitionId: t2,
+                                    slotIndex: 1,
+                                    startBeat: 16,
+                                    endBeat: 24,
+                                },
+                                {
+                                    marcherId: 3,
+                                    transitionId: t2,
+                                    slotIndex: 1,
+                                    startBeat: 20,
+                                    endBeat: 28,
+                                },
+                            ],
+                            tx,
+                        }),
+                    ),
+                );
+                await expectRejected(db, "E-A1/E-A2", () =>
+                    transactionWithHistory(db, "outside", (tx) =>
+                        insertTimelineAssignmentsBulkInTransaction({
+                            newAssignments: [
+                                {
+                                    marcherId: 3,
+                                    transitionId: t2,
+                                    slotIndex: 9,
+                                    startBeat: 16,
+                                    endBeat: 24,
+                                },
+                            ],
                             tx,
                         }),
                     ),

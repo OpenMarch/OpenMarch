@@ -3,6 +3,7 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
+import { refusePageEraWriteInTimelineMode } from "./pageEraFreeze";
 import { assert } from "@/utilities/utils";
 import {
     DatabaseShapePageMarcher,
@@ -145,6 +146,8 @@ export async function updateMarcherPagesInTransaction({
     tx: DbTransaction;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
 }): Promise<number[]> {
+    // Timeline mode: marcher pages and their pathways are frozen (P9.5)
+    await refusePageEraWriteInTimelineMode(tx);
     const updatedIds: number[] = [];
 
     for (const modifiedMarcherPage of modifiedMarcherPages) {
@@ -299,6 +302,9 @@ export const swapMarchersInTransaction = async ({
     marcher1Id: number;
     marcher2Id: number;
 }) => {
+    // Timeline mode swaps positions through `moveMarchersOnPage` (P7.2); the page-era rows,
+    // including shape page marchers, are frozen (P9.5)
+    await refusePageEraWriteInTimelineMode(tx);
     const marcherPage1 = await tx.query.marcher_pages.findFirst({
         where: and(
             eq(schema.marcher_pages.page_id, pageId),

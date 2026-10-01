@@ -97,6 +97,39 @@ export async function setTimelineModeFlag(
     await db.transaction((tx) => setTimelineFlag(tx, on));
 }
 
+/**
+ * Runs `write` with the page-era freeze (P9.5) lifted: the file's timeline flag is turned off for
+ * it, then set back as it was. In timeline mode the freeze triggers refuse every write to
+ * `marcher_pages`, `pathways`, `midsets` and the page shape tables. This is for tests that make
+ * those rows stale, or remove them, to show that timeline mode never reads them; the app itself
+ * can't write them in timeline mode.
+ */
+export async function withPageEraFreezeLifted<T>(
+    db: DbConnection,
+    write: () => Promise<T>,
+): Promise<T> {
+    const row = await db
+        .select({ json: schema.workspace_settings.json_data })
+        .from(schema.workspace_settings)
+        .get();
+    let wasOn = false;
+    try {
+        wasOn =
+            row != null &&
+            (JSON.parse(row.json) as { timelineMode?: unknown })
+                .timelineMode === true;
+    } catch {
+        wasOn = false;
+    }
+    if (!wasOn) return await write();
+    await setTimelineModeFlag(db, false);
+    try {
+        return await write();
+    } finally {
+        await setTimelineModeFlag(db, true);
+    }
+}
+
 /** Sets the `timelineMode` flag in `workspace_settings`, keeping the other settings. */
 async function setTimelineFlag(tx: DbTransaction, on = true): Promise<void> {
     const row = await tx

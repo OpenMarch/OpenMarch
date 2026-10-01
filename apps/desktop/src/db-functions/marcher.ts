@@ -159,6 +159,10 @@ export async function createMarchersInTransaction({
         throw new Error("Failed to create marchers");
     }
 
+    // Timeline mode: marcher pages are frozen page-era data (P9.5), so new marchers get none.
+    // Their positions come from their home and timeline slots (`createMarchers`).
+    if (await timelineModeInTransaction(tx)) return createdMarchers;
+
     // Create a marcherPage for each marcher and page
     const allPages = await tx.query.pages.findMany();
 
@@ -194,7 +198,8 @@ export async function createMarchersInTransaction({
  *
  *
  * In timeline mode (the file's flag, read inside the edit), the new marchers also get a home and a
- * holding slot in each page move, in the same edit (`addMarchersToTimelineInTransaction`, P7.3).
+ * holding slot in each page move, in the same edit (`addMarchersToTimelineInTransaction`, P7.3),
+ * and no `marcher_pages` rows, which are frozen in timeline mode (P9.5).
  *
  * @param newMarchers Array of NewMarcherArgs containing the marcher data to create
  * @param db The database connection

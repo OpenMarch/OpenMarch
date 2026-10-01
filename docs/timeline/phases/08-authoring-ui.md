@@ -129,6 +129,16 @@ Map every `E-*` abort to a user-facing message. Rejected edits leave nothing beh
 
 QA-SC-01 to -15 runnable from the UI. Verdicts for SC-07, SC-14 and SC-15 recorded in `findings.md`.
 
+### P8.10: Transitions span their timeline
+
+- Owner: timeline-worker (timeline/p8-10-transitions-span-timeline)
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/47
+- Parallel: no
+- Depends on: P8.9
+
+Apply C-11 (implementation-plan.md): every transition starts and ends exactly when its timeline does. A timeline can own several transitions, but they all share its range; assignments still go in and out inside it. Range edits move the timeline and all its transitions together (one lockstep R-E1 procedure), creating a transition with another range is refused, the ripple's holding moves get their own timelines, deleting a timeline's last transition deletes the timeline, and a marcher track's clip is its timeline's range. The converter and the database check are P9.10.
+
 ## Exit gate
 
 Tick an item only after running its check, and paste the command and result into the log.
@@ -636,4 +646,18 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Next:**
   - P7.11 (page-era shape tools; canvas drawing of spec shapes) is now unblocked.
   - The UI exit-gate item needs a manual app check.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-10-transitions-span-timeline) · P8.10
+
+- **Done:** claimed P8.10 at the project owner's request. Recorded C-11 (transitions span their timeline; a timeline may own several, all sharing its range; assignments keep sub-ranges) in `implementation-plan.md`, a note in spec §2/§3, ui.md UI-8 and U-Q2, and filed P9.10 (converter and the database check) as a dependency of P9.4.
+- **Checks:** none yet (docs only).
+- **Next:** code on `timeline/p8-10-transitions-span-timeline`: lockstep timeline range edit, create guard, ripple holds, delete-last-transition, marcher clip range, fixtures.
+- **Blockers:** none.
+
+### 2026-10-01 · timeline-worker (timeline/p8-10-transitions-span-timeline) · P8.10
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/47. Transitions take their timeline's range (others refused, E-ARGS); `setTimelineRangeInTransaction` moves a timeline with all its transitions and anchored assignments (R-E1), and timeline and transition range edits go through it; deleting a timeline's last transition deletes the timeline; the ripple's holding moves get their own timeline and emptied timelines are deleted; a marcher clip is its timeline's range (UI-8); fixtures group transitions by range. The converter keeps one show-wide timeline through `createLegacyPageTransitionsInTransaction` (TODO P9.10). ADR 0001 records C-11.
+- **Checks:** `npx vitest run --silent=true` (apps/desktop): 2483 passed, 15 skipped, 15 todo, 0 failed, including the e2e fuzz and its v0.6 negative control. `tsc --noEmit`: pass. Pre-commit (cspell, eslint, prettier): pass. Not run, at the owner's request: `test:timeline`, focused `test:history`, `pnpm check:quick`, Playwright e2e. `test:timeline` is the most relevant of these (ripple on converted shows).
+- **Next:** review and merge; then P9.10.
 - **Blockers:** none.

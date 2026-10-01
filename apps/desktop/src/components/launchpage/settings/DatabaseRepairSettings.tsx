@@ -31,7 +31,14 @@ export default function DatabaseRepairSettings() {
 
             // Call repair function
             // The IPC handler will handle setting the new path and reloading the window
-            await window.electron.repairDatabase(currentPath);
+            const repairedPath =
+                await window.electron.repairDatabase(currentPath);
+            if (repairedPath == null) {
+                // The repaired file didn't open, and a main-process dialog already said why
+                // (convert on open). Nothing more to show.
+                setIsRepairing(false);
+                return;
+            }
 
             // Show success toast before window reloads
             toast.success(t("settings.repairDotsFile.success"));

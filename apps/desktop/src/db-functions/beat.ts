@@ -7,6 +7,7 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { withTimelinePageRipple } from "./timelineRipple";
+import { realDatabaseBeatToDatabaseBeat } from "./rowMappers";
 
 export const FIRST_BEAT_ID = 0;
 
@@ -28,16 +29,7 @@ export interface DatabaseBeat {
     updated_at: string;
 }
 
-type RealDatabaseBeat = typeof schema.beats.$inferSelect;
-
-export const realDatabaseBeatToDatabaseBeat = (
-    beat: RealDatabaseBeat,
-): DatabaseBeat => {
-    return {
-        ...beat,
-        include_in_measure: beat.include_in_measure === 1,
-    };
-};
+export { realDatabaseBeatToDatabaseBeat };
 
 export interface NewBeatArgs {
     duration: number;

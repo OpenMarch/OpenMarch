@@ -1,6 +1,6 @@
 import { and, asc, eq, gt, lt } from "drizzle-orm";
 import { createResolver, validateDestination, type XY } from "@openmarch/core";
-import { schema } from "@/global/database/db";
+import * as schema from "@om-electron/database/migrations/schema";
 import { isTimelineModeEnabled } from "@/settings/workspaceSettings";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { DbTransaction } from "./types";

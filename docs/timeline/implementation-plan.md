@@ -106,6 +106,51 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   editable curve is lost. See ADR 0001. P6.6 verifies conversion equality on
   real shows.
 
+- **C-9: Recognizing a converted file at version 7.** Releases without the
+  version guard reset `user_version` to 7, so the version alone can't show
+  that a file was converted. **Decided (lead, 2026-10-01, P9.3):** the
+  conversion transaction, and the creation of a new file with convert on open
+  on, write `timelineConvertedAt` (an ISO time) into the workspace settings
+  JSON. A version-7 file with that key always gets the "saved by an older
+  version" warning; one with timeline rows and neither the key nor a
+  conversion backup is a dev-flag file and opens silently. An older release
+  that saves the workspace settings drops unknown keys, so the backup next to
+  the file remains a second signal. To be added to ADR 0001 §6 (text in the
+  Phase 9 log).
+- **C-10: Freezing the page-era tables (P9.5).** In timeline mode, `marcher_pages`,
+  `midsets`, `pathways`, `shapes`, `shape_pages` and `shape_page_marchers` refuse
+  INSERT, UPDATE and DELETE through BEFORE triggers named
+  `page_era_frozen_<table>_<ins|upd|del>`. They fire only while
+  `workspace_settings.json_data` has `timelineMode` set to JSON `true`. They live
+  in the `triggers.ts` map, are rebuilt on every open and are checked again for
+  staleness. Exception: a row whose parent (marcher, page, marcher page, shape or
+  shape page) is already gone may be deleted, and inserted while foreign keys are
+  off. That keeps marcher and page deletes cascading, lets repair remove orphans,
+  and lets undo and redo of those deletes replay. The app refuses the same writes
+  first with `E-ARGS`. An undo or redo the freeze refuses (dev-flag history, or
+  timeline-mode history from before P9.5) is removed from its stack, and the user
+  is told it was skipped; any other failed undo or redo is reported and leaves the
+  stacks alone. Repair lifts the freeze while it copies. Consequence: a release
+  without the version guard that opens a converted file can't edit its page-era
+  tables. Phase 10 must remove these triggers from the map before dropping the
+  tables.
+
+- **C-11: Transitions span their timeline.** **Decided (project owner,
+  2026-10-01):** a timeline is the container for start and stop. It can own
+  several transitions, but every one of them starts and ends exactly when the
+  timeline does; no transition starts or stops partway through a timeline.
+  Assignments keep their own ranges inside the transition, so marchers still
+  join late, leave early, and are stolen through layers (R-2). The transition
+  keeps its `start_beat`/`end_beat` columns as a mirror of the timeline's
+  range, so the resolver, `ref/` and the golden vectors are unchanged (a
+  timeline has no effect on resolution, R-1). Enforcement: the write functions
+  refuse a transition whose range differs from its timeline's (E-ARGS), and
+  every range edit moves the timeline and all its transitions together
+  (P8.10). The database check, an `E-T1` row in `timeline_commit_violations`,
+  waits for P9.10, because the converter still writes one show-wide timeline
+  with a transition per page; until then a function that would have to resize
+  such a legacy timeline refuses. Recorded in ADR 0001.
+
 ## 3. Phases
 
 | Phase                                  | Title                                       | Depends on |

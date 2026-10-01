@@ -379,7 +379,7 @@ describeDbTests("page → timeline converter", (it) => {
         expect(await expectPageEndsExact(db)).toBeGreaterThan(0);
     });
 
-    it("a marcher missing a row on a page holds over that page", async ({
+    it("a marcher missing a row on a middle page glides across it like page mode (P6.7)", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -392,36 +392,102 @@ describeDbTests("page → timeline converter", (it) => {
                 ),
             );
         const { report, assignmentCount } = await convertPagesToTimeline(db);
-        expect(
-            report.pages.find((p) => p.pageId === 3)!.missingMarchers,
-        ).toEqual([2]);
+        const page3Report = report.pages.find((p) => p.pageId === 3)!;
+        expect(page3Report.missingMarchers).toEqual([2]);
+        expect(page3Report.interpolated).toEqual([
+            { marcherId: 2, pathwayId: null, unusablePathwayId: null },
+        ]);
+        expect(assignmentCount).toBe(6 * 76);
+
+        await startTimelineResolver(db);
+        const { beats, pages } = await readShowTiming(db);
+        const rows = await db.select().from(schema.marcher_pages).all();
+        const rowOf = (pageId: number) =>
+            rows.find((mp) => mp.page_id === pageId && mp.marcher_id === 2)!;
+        const page2 = pages.find((p) => p.id === 2)!;
+        const page3 = pages.find((p) => p.id === 3)!;
+        const page4 = pages.find((p) => p.id === 4)!;
+        // The gap page ends where page mode is: linear in beats between the page-2 and page-4 rows
+        const [from, to] = [rowOf(2), rowOf(4)];
+        const progress =
+            (pageEndBeat(page3) - pageEndBeat(page2)) /
+            (pageEndBeat(page4) - pageEndBeat(page2));
+        expect(resolver().positionAt(2, pageEndBeat(page3))).toEqual([
+            from.x + progress * (to.x - from.x),
+            from.y + progress * (to.y - from.y),
+        ]);
+        // Inside pages 3 and 4 too (uniform tempo, so beats and milliseconds agree)
+        const timeline = combineMarcherTimelines(
+            pages
+                .filter((page) => page.id !== 3)
+                .map((page) =>
+                    getMarcherTimelines(
+                        (page.timestamp + page.duration) * 1000,
+                        Object.fromEntries(
+                            rows
+                                .filter(
+                                    (mp) =>
+                                        mp.page_id === page.id &&
+                                        mp.marcher_id === 2,
+                                )
+                                .map((mp) => [mp.marcher_id, mp]),
+                        ) as unknown as MarcherPagesByMarcher,
+                        {},
+                    ),
+                ),
+        ).get(2)!;
+        let checked = 0;
+        for (let b = page3.beats[0]!.index; b < pageEndBeat(page4); b += 0.25) {
+            const expected = getCoordinatesAtTime(
+                timeAtBeat(beats, b) * 1000,
+                timeline,
+            )!;
+            const [x, y] = resolver().positionAt(2, b);
+            expect(Math.abs(x - expected.x), `beat ${b}`).toBeLessThan(1e-9);
+            expect(Math.abs(y - expected.y), `beat ${b}`).toBeLessThan(1e-9);
+            checked++;
+        }
+        expect(checked).toBe(64);
+        expect(await expectPageEndsExact(db)).toBe(7 * 76 + 76 - 1);
+    });
+
+    it("a marcher missing a row on the last page holds there", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { pages } = await readShowTiming(db);
+        const last = pages[pages.length - 1]!;
+        const before = pages[pages.length - 2]!;
+        await db
+            .delete(schema.marcher_pages)
+            .where(
+                and(
+                    eq(schema.marcher_pages.page_id, last.id),
+                    eq(schema.marcher_pages.marcher_id, 2),
+                ),
+            );
+        const { report, assignmentCount } = await convertPagesToTimeline(db);
+        const lastReport = report.pages.find((p) => p.pageId === last.id)!;
+        expect(lastReport.missingMarchers).toEqual([2]);
+        expect(lastReport.interpolated).toEqual([]);
         expect(assignmentCount).toBe(6 * 76 - 1);
 
         await startTimelineResolver(db);
-        const { pages } = await readShowTiming(db);
-        const page2 = pages.find((p) => p.id === 2)!;
-        const page3 = pages.find((p) => p.id === 3)!;
-        const page2Row = await db
+        const beforeRow = await db
             .select()
             .from(schema.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, 2),
+                    eq(schema.marcher_pages.page_id, before.id),
                     eq(schema.marcher_pages.marcher_id, 2),
                 ),
             )
             .get();
-        for (const beat of [pageEndBeat(page2), pageEndBeat(page3) - 0.5])
+        for (const beat of [pageEndBeat(before), pageEndBeat(last) - 0.5])
             expect(resolver().positionAt(2, beat)).toEqual([
-                page2Row!.x,
-                page2Row!.y,
+                beforeRow!.x,
+                beforeRow!.y,
             ]);
-        expect(
-            await expectPageEndsExact(
-                db,
-                (marcherId, pageId) => marcherId === 2 && pageId === 3,
-            ),
-        ).toBeGreaterThan(0);
     });
 
     it("a show with only page 0 converts to homes and an empty timeline", async ({

@@ -11,7 +11,9 @@ import type {
     XY,
 } from "@openmarch/core";
 import { asc } from "drizzle-orm";
-import { schema } from "@/global/database/db";
+// The schema itself, not the renderer's `@/global/database/db`: the main process loads this module
+// (through `sourceTimelinePositions`, for the previous-show import).
+import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection, DbTransaction } from "@/db-functions/types";
 
 /**

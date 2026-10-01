@@ -1,5 +1,5 @@
 import { eq, inArray } from "drizzle-orm";
-import { schema } from "@/global/database/db";
+import * as schema from "@om-electron/database/migrations/schema";
 import { DbTransaction } from "./types";
 import { mapDbErrors, refuse } from "./timelineErrors";
 
@@ -58,6 +58,56 @@ export const createTimelineAssignmentsInTransaction = async ({
         created.push(row);
     }
     return created;
+};
+
+/**
+ * Rows per multi-row INSERT in the bulk paths. Six values a row stays far below SQLite's limit of
+ * 32,766 bound parameters, and the statement text stays small.
+ */
+export const BULK_INSERT_ROWS = 500;
+
+/** Splits `rows` into chunks of at most `size`. */
+export const chunked = <T>(
+    rows: readonly T[],
+    size = BULK_INSERT_ROWS,
+): T[][] => {
+    const chunks: T[][] = [];
+    for (let i = 0; i < rows.length; i += size)
+        chunks.push(rows.slice(i, i + size));
+    return chunks;
+};
+
+/**
+ * Creates assignments with chunked multi-row inserts and returns how many it inserted, without
+ * reading the rows back. For large writes such as the page conversion (P9.8). SQLite inserts the
+ * rows of one statement one at a time, so the row triggers still run for every row and each
+ * check sees the rows before it: an overlap inside one chunk is refused like one across calls
+ * (E-A1, E-A2, E-A3).
+ */
+export const insertTimelineAssignmentsBulkInTransaction = async ({
+    newAssignments,
+    tx,
+}: {
+    newAssignments: readonly NewTimelineAssignmentArgs[];
+    tx: DbTransaction;
+}): Promise<number> => {
+    for (const chunk of chunked(newAssignments))
+        await mapDbErrors(() =>
+            tx
+                .insert(schema.timeline_assignments)
+                .values(
+                    chunk.map((a) => ({
+                        marcher_id: a.marcherId,
+                        transition_id: a.transitionId,
+                        slot_index: a.slotIndex,
+                        start_beat: a.startBeat,
+                        end_beat: a.endBeat,
+                        layer: a.layer ?? 0,
+                    })),
+                )
+                .run(),
+        );
+    return newAssignments.length;
 };
 
 export const updateTimelineAssignmentsInTransaction = async ({

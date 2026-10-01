@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { validateHome, type XY } from "@openmarch/core";
-import { schema } from "@/global/database/db";
+import * as schema from "@om-electron/database/migrations/schema";
 import { DbTransaction } from "./types";
 import { assertValid, mapDbErrors, refuse } from "./timelineErrors";
 

@@ -1,8 +1,8 @@
 import { eq, inArray } from "drizzle-orm";
-import { schema } from "@/global/database/db";
+import * as schema from "@om-electron/database/migrations/schema";
 import { DbTransaction } from "./types";
 import { mapDbErrors, refuse } from "./timelineErrors";
-import { deleteTimelineTransitionsInTransaction } from "./timelineTransitions";
+import { deleteTimelineTransitionsInTransaction } from "./timelineTransitionsInTransaction";
 
 /** A row of `timelines`. */
 export type DatabaseTimeline = typeof schema.timelines.$inferSelect;
