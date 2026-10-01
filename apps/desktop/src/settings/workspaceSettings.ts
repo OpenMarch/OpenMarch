@@ -18,6 +18,12 @@ export const workspaceSettingsSchema = z.object({
         (v) => (v === "" || v === undefined ? undefined : v),
         z.optional(z.coerce.number().int().positive()),
     ),
+
+    /**
+     * Development only: drive this file's canvas from the timeline resolver instead of
+     * `marcher_pages` (docs/timeline, Phase 5). Off when absent, and not shown in the settings UI.
+     */
+    timelineMode: z.boolean().optional(),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
@@ -62,4 +68,13 @@ export function serializeWorkspaceSettings(
     settings: WorkspaceSettings,
 ): string {
     return JSON.stringify(settings);
+}
+
+/**
+ * Whether the timeline dev flag is on for this file. Absent means off.
+ */
+export function isTimelineModeEnabled(
+    settings: Pick<WorkspaceSettings, "timelineMode"> | undefined,
+): boolean {
+    return settings?.timelineMode === true;
 }

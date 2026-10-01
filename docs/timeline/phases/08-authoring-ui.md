@@ -1,9 +1,9 @@
 ---
 phase: 8
 title: Timeline authoring MVP
-status: not-started
-owner: unassigned
-branch: none
+status: in-progress
+owner: timeline-worker (timeline/p8-timeline-ui)
+branch: timeline/p8-timeline-ui
 pr: none
 depends_on: [7]
 updated: 2026-09-29
@@ -32,7 +32,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P8.0: Confirm ui.md
 
 - Owner: human
-- Status: open
+- Status: done
 - PR: none
 - Parallel: no
 - Depends on: —
@@ -41,8 +41,8 @@ Confirm `docs/timeline/ui.md` (set its status to accepted), and answer U-Q1 to U
 
 ### P8.1: Port the 0.2 timeline
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p8-timeline-ui)
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P8.0, P5.9
@@ -147,3 +147,18 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ## Progress log
 
 <!-- Append entries below, newest last, using the format in ../README.md. Never edit earlier entries. -->
+
+### 2026-09-30 · lead session · P8.0 (decided)
+
+- **Done:** the project owner accepted `docs/timeline/ui.md` as written (UI-1: dashed spans mean stolen; UI-2: any beat, snap to pages as an aid). U-Q1 to U-Q4 are deferred to the packages that meet them (P8.1, P8.8, P8.9), decided from the spec where possible and recorded in `ui.md`. P8.0 set to done; P8.1 is unblocked (P5.9 is merged).
+- **Checks:** none (decision only).
+- **Next:** P8.1 (port the 0.2 timeline).
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker (timeline/p8-timeline-ui) · P8.1
+
+- **Done:** claimed P8.1. Branch `timeline/p8-timeline-ui` from `timeline-try-2`; wip commit 07cc58e8 copies the 0.2 timeline components, stories, fixtures and tests verbatim from `568056aa` (and adds `playhead` to cspell). Storybook isn't configured in this repo (no `.storybook`, no storybook packages).
+- **Checks:** none yet (the verbatim copy doesn't typecheck: it imports the frame clock and storybook).
+- **Next:** decouple `Timeline.tsx` from the frame clock (playback passed in as props, fed from the existing `IsPlayingContext` and `getLivePlaybackPosition` path), page snapping with an Alt override, drop the page-boundary validator rule, render behind `useTimelineMode()` in `TimelineContainer`.
+- **Blockers:** none.
+- **Resume from:** check out `timeline/p8-timeline-ui`; `pnpm install`; adapt `apps/desktop/src/components/timeline/Timeline*.ts(x)`; then `pnpm --dir apps/desktop exec tsc --noEmit`.

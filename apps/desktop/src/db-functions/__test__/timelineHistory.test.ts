@@ -29,7 +29,8 @@ const tablesToCheck = [
 
 /**
  * One edit: two marchers, a timeline over [0, 64), a line shape, a 2-slot transition on the line
- * over [0, 16) (id 1), and a shapeless 2-slot transition over [16, 32) (id 2).
+ * over [0, 16) (id 1), and a shapeless 2-slot transition over [16, 32) (id 2) with its two
+ * destinations (ids 1 and 2).
  */
 const seed = (db: DbConnection) =>
     transactionWithHistory(db, "seedTimeline", async (tx) => {
@@ -62,6 +63,11 @@ const seed = (db: DbConnection) =>
                 start_beat: 16,
                 end_beat: 32,
             },
+        ]);
+        // A shapeless transition needs every destination by commit (I-T6)
+        await tx.insert(schema.timeline_slot_destinations).values([
+            { id: 1, transition_id: 2, slot_index: 0, x: 0, y: 0 },
+            { id: 2, transition_id: 2, slot_index: 1, x: 2, y: 0 },
         ]);
     });
 
@@ -274,10 +280,20 @@ describeDbTests("timeline history", (it) => {
                 await seed(db);
                 const state = await expectNumberOfChanges.getDatabaseState(db);
 
+                // Every edit leaves each shapeless transition with all its destinations (I-T6)
                 await transactionWithHistory(db, "insert", async (tx) => {
+                    await tx.insert(schema.timeline_transitions).values({
+                        id: 3,
+                        timeline_id: 1,
+                        dest_shape_id: null,
+                        slot_count: 3,
+                        start_beat: 32,
+                        end_beat: 48,
+                    });
                     await tx.insert(schema.timeline_slot_destinations).values([
-                        { transition_id: 2, slot_index: 0, x: 0, y: 0 },
-                        { transition_id: 2, slot_index: 1, x: 2, y: 0 },
+                        { transition_id: 3, slot_index: 0, x: 0, y: 0 },
+                        { transition_id: 3, slot_index: 1, x: 2, y: 0 },
+                        { transition_id: 3, slot_index: 2, x: 4, y: 0 },
                     ]);
                 });
                 await transactionWithHistory(db, "update", async (tx) => {
@@ -292,8 +308,12 @@ describeDbTests("timeline history", (it) => {
                     await tx
                         .delete(schema.timeline_slot_destinations)
                         .where(
-                            eq(schema.timeline_slot_destinations.slot_index, 0),
+                            eq(schema.timeline_slot_destinations.slot_index, 2),
                         );
+                    await tx
+                        .update(schema.timeline_transitions)
+                        .set({ slot_count: 2 })
+                        .where(eq(schema.timeline_transitions.id, 3));
                 });
 
                 await expectNumberOfChanges.test(db, 3, state);
@@ -324,10 +344,6 @@ describeDbTests("timeline history", (it) => {
                             start_beat: 16,
                             end_beat: 32,
                         },
-                    ]);
-                    await tx.insert(schema.timeline_slot_destinations).values([
-                        { id: 1, transition_id: 2, slot_index: 0, x: 0, y: 0 },
-                        { id: 2, transition_id: 2, slot_index: 1, x: 2, y: 0 },
                     ]);
                 });
                 const state = await expectNumberOfChanges.getDatabaseState(db);
@@ -421,35 +437,55 @@ describeDbTests("timeline history", (it) => {
                         .from(schema.timeline_slot_destinations)
                         .orderBy(asc(schema.timeline_slot_destinations.id));
 
+                const seeded = await destinations();
+
+                // A new shapeless transition with its destinations (ids 3 and 4)
                 await transactionWithHistory(db, "place", async (tx) => {
+                    await tx.insert(schema.timeline_transitions).values({
+                        id: 3,
+                        timeline_id: 1,
+                        dest_shape_id: null,
+                        slot_count: 2,
+                        start_beat: 32,
+                        end_beat: 48,
+                    });
                     await tx.insert(schema.timeline_slot_destinations).values([
-                        { transition_id: 2, slot_index: 0, x: 0, y: 0 },
-                        { transition_id: 2, slot_index: 1, x: 2, y: 0 },
+                        { transition_id: 3, slot_index: 0, x: 0, y: 0 },
+                        { transition_id: 3, slot_index: 1, x: 2, y: 0 },
                     ]);
                 });
                 const placed = await destinations();
-                const [first] = placed;
+                expect(placed).toHaveLength(4);
 
+                // Switch it to the shape: its destinations must go in the same edit (I-T6)
                 await transactionWithHistory(db, "remove", async (tx) => {
                     await tx
                         .delete(schema.timeline_slot_destinations)
                         .where(
-                            eq(schema.timeline_slot_destinations.id, first.id),
+                            eq(
+                                schema.timeline_slot_destinations.transition_id,
+                                3,
+                            ),
                         );
+                    await tx
+                        .update(schema.timeline_transitions)
+                        .set({ dest_shape_id: 1 })
+                        .where(eq(schema.timeline_transitions.id, 3));
                 });
-                expect(await destinations()).toHaveLength(1);
+                expect(await destinations()).toEqual(seeded);
 
-                // Undo the delete: the row comes back with its old id (its rowid).
+                // Undo the delete: the rows come back with their old ids, which are their row ids.
                 expect((await performUndo(db)).success).toBe(true);
                 expect(await destinations()).toEqual(placed);
 
                 // The older undo's `DELETE … WHERE rowid=` inverses find both rows.
                 expect((await performUndo(db)).success).toBe(true);
-                expect(await destinations()).toEqual([]);
+                expect(await destinations()).toEqual(seeded);
 
                 expect((await performRedo(db)).success).toBe(true);
+                expect(await destinations()).toEqual(placed);
                 expect((await performRedo(db)).success).toBe(true);
-                expect(await destinations()).toEqual(placed.slice(1));
+                expect(await destinations()).toEqual(seeded);
 
                 await expectNumberOfChanges.test(db, 2, state);
             },

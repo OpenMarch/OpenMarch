@@ -25,6 +25,7 @@ import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import type { TimelinePositionBuffer } from "@/timeline/timelineCanvas";
 import { RgbaColor } from "@uiw/react-color";
 import {
     evaluatePathWarning,
@@ -1138,6 +1139,32 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             visual.getCanvasMarcher().setMarcherCoords(marcherPage);
         });
+
+        if (this._listeners && this._listeners.refreshMarchers)
+            this._listeners?.refreshMarchers();
+        this.bringAllControlPointsTooFront();
+        this.requestRenderAll();
+    };
+
+    /**
+     * Timeline mode's static render (P5.5): like `renderMarchers`, but each marcher's position
+     * comes from a filled resolver buffer instead of marcher_pages. The position also becomes the
+     * marcher's `coordinate`, so `refreshMarchers` returns marchers to it. Marchers missing from
+     * the buffer stay where they are.
+     */
+    renderMarcherPositions = (positions: TimelinePositionBuffer) => {
+        CanvasMarcher.theme = this.fieldProperties.theme;
+
+        positions.forEachMarcher(
+            this.getCanvasMarchers(),
+            (canvasMarcher, x, y) => {
+                canvasMarcher.setMarcherCoords({
+                    ...canvasMarcher.coordinate,
+                    x,
+                    y,
+                });
+            },
+        );
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();

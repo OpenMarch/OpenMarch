@@ -8,6 +8,11 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { useManyCoordinateData } from "./queries/useCoordinateData";
 import Page from "@/global/classes/Page";
+import { useTimelineMode } from "./queries/useWorkspaceSettings";
+import {
+    playbackBeat,
+    TimelinePositionBuffer,
+} from "@/timeline/timelineCanvas";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -15,7 +20,8 @@ interface UseAnimationProps {
 
 // eslint-disable-next-line max-lines-per-function
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
-    const { pages } = useTimingObjects()!;
+    const { pages, beats } = useTimingObjects()!;
+    const timelineMode = useTimelineMode();
     const pagesById: Record<number, Page> = useMemo(() => {
         return pages.reduce(
             (acc, page) => {
@@ -158,7 +164,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     }, [selectedPage, getCollisionsForSelectedPage, setCurrentCollision]);
 
     // Set marcher positions at a specific time
-    const setMarcherPositionsAtTime = useCallback(
+    const setPageMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
             let output = true;
@@ -190,6 +196,37 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         },
         [canvas, marcherTimelines],
     );
+
+    // Timeline mode (P5.4): one reused buffer, filled from the resolver each frame
+    const timelineBufferRef = useRef<TimelinePositionBuffer | null>(null);
+    const setTimelineMarcherPositionsAtTime = useCallback(
+        (timeMilliseconds: number) => {
+            if (!canvas) return;
+            const buffer = (timelineBufferRef.current ??=
+                new TimelinePositionBuffer());
+            // Not ready (or rebuilding with a new marcher count): leave marchers where they are
+            if (buffer.fill(playbackBeat(beats, timeMilliseconds))) {
+                const coords = { x: 0, y: 0 };
+                buffer.forEachMarcher(
+                    canvas.getCanvasMarchers(),
+                    (canvasMarcher, x, y) => {
+                        coords.x = x;
+                        coords.y = y;
+                        canvasMarcher.setLiveCoordinates(coords);
+                    },
+                );
+            }
+            canvas.requestRenderAll();
+            // The resolver has a position at every beat; the end of the show stops playback
+            // through updateSelectedPage
+            return true;
+        },
+        [canvas, beats],
+    );
+
+    const setMarcherPositionsAtTime = timelineMode
+        ? setTimelineMarcherPositionsAtTime
+        : setPageMarcherPositionsAtTime;
 
     // Update the selected page based on playback timestamp
     const updateSelectedPage = useCallback(

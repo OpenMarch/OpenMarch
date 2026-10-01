@@ -6,6 +6,7 @@ import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
+import TimelineResolverHost from "@/timeline/TimelineResolverHost";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
@@ -31,7 +32,7 @@ import {
     QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { createAllUndoTriggers } from "./db-functions";
+import { createAllUndoTriggers, resetTimelineChangeLog } from "./db-functions";
 import { db } from "./global/database/db";
 import { historyKeys } from "./hooks/queries/useHistory";
 import tolgee from "./global/singletons/Tolgee";
@@ -203,6 +204,15 @@ function App() {
             });
     }, [databaseIsReady]);
 
+    useEffect(() => {
+        // A file was just opened (the window reloads on every open): drop change-log rows left by
+        // writes outside the wrapper, such as migrations or repair, and have listeners cold-build
+        if (databaseIsReady)
+            resetTimelineChangeLog(db).catch((error) => {
+                console.error("Error clearing the timeline change log:", error);
+            });
+    }, [databaseIsReady]);
+
     // Inject Tolgee API key
     useEffect(() => {
         async function injectTolgeeApiKey() {
@@ -265,6 +275,7 @@ function App() {
                                     <SelectedMarchersProvider>
                                         <SelectedAudioFileProvider>
                                             <StateInitializer />
+                                            <TimelineResolverHost />
                                             <RegisteredActionsHandler />
                                             <SvgPreviewHandler />
                                             <TitleBar showControls />

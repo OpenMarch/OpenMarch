@@ -34,6 +34,38 @@ export const initializeAndMigrateDatabase = async (
     await DrizzleMigrationService.initializeDatabase(drizzleDb, newDb);
 };
 
+/**
+ * Tables that must be copied in this order, after every other table. Foreign keys are off during
+ * the copy, but the timeline invariant triggers still run on each insert and read the parent rows:
+ * a transition must lie inside its timeline and use an existing shape, and destinations and
+ * assignments must fit their transition. Marchers come before the assignments that name them.
+ */
+const DEPENDENT_TABLE_COPY_ORDER = [
+    "marchers",
+    "timelines",
+    "timeline_shapes",
+    "timeline_transitions",
+    "timeline_slot_destinations",
+    "timeline_assignments",
+];
+
+/**
+ * Orders tables for copying: tables without a place in `DEPENDENT_TABLE_COPY_ORDER` keep their
+ * original order and come first, then the listed tables in their listed order.
+ */
+export const orderTablesForCopy = <T extends { name: string }>(
+    tables: readonly T[],
+): T[] => {
+    const rank = (name: string) => DEPENDENT_TABLE_COPY_ORDER.indexOf(name);
+    return tables
+        .map((table, index) => ({ table, index }))
+        .sort((a, b) => {
+            const byRank = rank(a.table.name) - rank(b.table.name);
+            return byRank !== 0 ? byRank : a.index - b.index;
+        })
+        .map(({ table }) => table);
+};
+
 export const copyDataFromOriginalDatabase = (
     originalDb: DatabaseSync,
     newDb: DatabaseSync,
@@ -44,6 +76,8 @@ export const copyDataFromOriginalDatabase = (
         "history_undo",
         "history_redo",
         "history_stats",
+        // Bookkeeping: the copy logs its own rows, which repairDatabase then clears
+        "timeline_change_log",
     ]);
 
     const singleRowTables = new Set([
@@ -72,7 +106,7 @@ export const copyDataFromOriginalDatabase = (
             );
         }
         // Copy data from each table
-        for (const { name: tableName } of tables) {
+        for (const { name: tableName } of orderTablesForCopy(tables)) {
             if (
                 excludedTables.has(tableName) ||
                 singleRowTables.has(tableName)
@@ -257,6 +291,10 @@ export const repairDatabase = async (originalDbPath: string) => {
 
             // Copy data from original database
             copyDataFromOriginalDatabase(originalDb, newDb, sourceDbPath);
+
+            // The copy went around the write wrapper, so drop what its triggers logged
+            // (ADR 0001 §5). The app also clears the log whenever it opens a file.
+            newDb.prepare("DELETE FROM timeline_change_log").run();
 
             // Turn foreign keys back on
             newDb.prepare("PRAGMA foreign_keys = ON").run();

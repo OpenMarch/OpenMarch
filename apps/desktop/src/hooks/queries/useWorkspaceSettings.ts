@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
-import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
+import {
+    isTimelineModeEnabled,
+    workspaceSettingsSchema,
+} from "@/settings/workspaceSettings";
 import { db } from "@/global/database/db";
 import {
     getWorkspaceSettingsParsed,
@@ -49,6 +52,17 @@ export const workspaceSettingsQueryOptions = (enabled = true) => ({
     staleTime: 5 * 60 * 1000, // 5 minutes
     enabled,
 });
+
+/**
+ * Whether the file's timeline dev flag (`timelineMode`) is on. False while the settings load.
+ */
+export function useTimelineMode(enabled = true): boolean {
+    const { data } = useQuery({
+        ...workspaceSettingsQueryOptions(enabled),
+        select: isTimelineModeEnabled,
+    });
+    return data ?? false;
+}
 
 /**
  * Query options for fetching workspace settings as JSON

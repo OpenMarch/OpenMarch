@@ -44,6 +44,13 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   unchanged. Marcher→assignment keeps CASCADE, because no assignment trigger
   reads `marchers`, so the reverse order is still safe. A history test pins
   this.
+  Exception, confirmed in P4.8: a deleted marcher is still logged before its
+  cascaded assignments (the history trigger is BEFORE DELETE and
+  marcher→assignment keeps CASCADE). Undo stays exact only because replay
+  runs with foreign keys off and no assignment trigger reads `marchers`; a
+  future check on assignments that reads `marchers` would break it. Batch
+  consumers must not assume parent-first order.
+
 - **C-2: `slot_destinations` row ids are unstable.** The table has a composite
   primary key, and the app's delete inverse doesn't restore the rowid, so older
   `DELETE … WHERE rowid=` inverses can miss. **Decision:** add

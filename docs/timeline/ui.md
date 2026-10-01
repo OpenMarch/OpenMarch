@@ -12,7 +12,7 @@ from it. The spec still wins on the model; this file decides presentation.
 - Run the stories to see it: they cover the expanded and collapsed densities,
   page and track selection, range selection with Create Track, inactive spans
   and a 512-beat show.
-- Status: proposed until P8.0 confirms it.
+- Status: accepted by the project owner on 2026-09-30 (P8.0). Open questions U-Q1 to U-Q4 are deferred to the Phase 8 work that meets them, decided from the spec where it can, and recorded here when decided.
 
 ## What the reference UI is
 

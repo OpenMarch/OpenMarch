@@ -10,6 +10,7 @@ import {
     copyFieldPropertiesFromOriginalDatabase,
     repairDatabase,
     removeOrphanMarcherPages,
+    orderTablesForCopy,
 } from "../repair";
 import { getOrm } from "../db";
 import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
@@ -982,6 +983,99 @@ describe("DatabaseSync Repair", () => {
             ).user_version;
             fixedDb.close();
             expect(userVersion).toBe(8);
+        });
+
+        it("copies timeline rows parents first, so the invariant triggers accept them", async () => {
+            const originalDbPath = path.join(tempDir, "timeline-data.dots");
+            const originalDb =
+                await createNewDatabaseWithMigrations(originalDbPath);
+            originalDb.exec(`
+                INSERT INTO marchers (id, section, drill_prefix, drill_order, home_x, home_y)
+                    VALUES (1, 'Brass', 'B', 1, 4, -2), (2, 'Brass', 'B', 2, 0, 0);
+                INSERT INTO timelines (id, name, start_beat, end_beat) VALUES (1, 'Opener', 0, 64);
+                INSERT INTO timeline_shapes (id, kind, geometry)
+                    VALUES (1, 'line', '{"points":[[0,0],[10,0]]}');
+                INSERT INTO timeline_transitions (id, timeline_id, dest_shape_id, slot_count, start_beat, end_beat)
+                    VALUES (1, 1, 1, 2, 0, 16), (2, 1, NULL, 2, 16, 32);
+                INSERT INTO timeline_slot_destinations (id, transition_id, slot_index, x, y)
+                    VALUES (1, 2, 0, 0, 0), (2, 2, 1, 2, 0);
+                INSERT INTO timeline_assignments (id, marcher_id, transition_id, slot_index, start_beat, end_beat)
+                    VALUES (1, 1, 1, 0, 0, 16), (2, 2, 1, 1, 0, 16), (3, 1, 2, 0, 16, 32);
+            `);
+            const timelineTables = [
+                "marchers",
+                "timelines",
+                "timeline_shapes",
+                "timeline_transitions",
+                "timeline_slot_destinations",
+                "timeline_assignments",
+            ];
+            const readTables = (db: DatabaseSync) =>
+                Object.fromEntries(
+                    timelineTables.map((table) => [
+                        table,
+                        db
+                            .prepare(`SELECT * FROM "${table}" ORDER BY id`)
+                            .all(),
+                    ]),
+                );
+            const expected = readTables(originalDb);
+            // The inserts above went around the write wrapper, so the log holds their rows
+            const logged = originalDb
+                .prepare("SELECT count(*) AS n FROM timeline_change_log")
+                .get() as { n: number };
+            expect(logged.n).toBeGreaterThan(0);
+            originalDb.close();
+
+            const fixedPath = await repairDatabase(originalDbPath);
+
+            const fixedDb = new DatabaseSync(fixedPath, { readOnly: true });
+            try {
+                expect(readTables(fixedDb)).toEqual(expected);
+                expect(
+                    fixedDb
+                        .prepare(
+                            "SELECT count(*) AS n FROM timeline_change_log",
+                        )
+                        .get(),
+                ).toEqual({ n: 0 });
+                expect(
+                    fixedDb
+                        .prepare("SELECT * FROM timeline_commit_violations")
+                        .all(),
+                ).toEqual([]);
+            } finally {
+                fixedDb.close();
+            }
+        });
+
+        it("orders dependent tables after the others, parents before children", () => {
+            const names = [
+                "timeline_assignments",
+                "beats",
+                "timeline_slot_destinations",
+                "timeline_transitions",
+                "pages",
+                "timeline_shapes",
+                "timelines",
+                "marchers",
+                "marcher_pages",
+            ];
+            expect(
+                orderTablesForCopy(names.map((name) => ({ name }))).map(
+                    (t) => t.name,
+                ),
+            ).toEqual([
+                "beats",
+                "pages",
+                "marcher_pages",
+                "marchers",
+                "timelines",
+                "timeline_shapes",
+                "timeline_transitions",
+                "timeline_slot_destinations",
+                "timeline_assignments",
+            ]);
         });
 
         it("refuses a file from a newer release and leaves it unchanged", async () => {
