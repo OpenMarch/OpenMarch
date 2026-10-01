@@ -4,6 +4,10 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { transactionWithHistory, createAllUndoTriggers } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
+import {
+    addMarchersToTimelineInTransaction,
+    removeMarchersFromTimelineInTransaction,
+} from "./timelineMarchers";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -195,19 +199,31 @@ export async function createMarchersInTransaction({
 export async function createMarchers({
     newMarchers,
     db,
+    timelineMode = false,
 }: {
     newMarchers: NewMarcherArgs[];
     db: DbConnection;
+    /**
+     * The file's timeline flag. When true, the new marchers also get a home and a holding slot
+     * in each page move, in the same edit (`addMarchersToTimelineInTransaction`, P7.3).
+     */
+    timelineMode?: boolean;
 }): Promise<DatabaseMarcher[]> {
     await ensureUndoTriggers(db);
     const transactionResult = await transactionWithHistory(
         db,
         "createMarchers",
         async (tx) => {
-            return await createMarchersInTransaction({
+            const created = await createMarchersInTransaction({
                 newMarchers,
                 tx,
             });
+            if (timelineMode)
+                await addMarchersToTimelineInTransaction({
+                    tx,
+                    marcherIds: created.map((m) => m.id),
+                });
+            return created;
         },
     );
     return transactionResult;
@@ -297,15 +313,28 @@ const deleteMarchersInTransaction = async ({
 export async function deleteMarchers({
     marcherIds,
     db,
+    timelineMode = false,
 }: {
     marcherIds: Set<number>;
     db: DbConnection;
+    /**
+     * The file's timeline flag. When true, the marchers' assignments are deleted first and the
+     * slots they leave are compacted where that moves no one, in the same edit
+     * (`removeMarchersFromTimelineInTransaction`, P7.3). When false, the assignments go with the
+     * marcher through the foreign-key cascade, as before.
+     */
+    timelineMode?: boolean;
 }): Promise<DatabaseMarcher[]> {
     await ensureUndoTriggers(db);
     const deleteResponse = await transactionWithHistory(
         db,
         "deleteMarchers",
         async (tx) => {
+            if (timelineMode)
+                await removeMarchersFromTimelineInTransaction({
+                    tx,
+                    marcherIds: [...marcherIds],
+                });
             return await deleteMarchersInTransaction({
                 marcherIds,
                 tx,

@@ -194,6 +194,14 @@ export function createTimelineOracleForTesting(host: TimelineSnapshot): Oracle;
   this record, not a major version.
 - Final exported names are confirmed against this list in P2.9. A rename there
   updates this record.
+- **Amendment (2026-09-30, P8.8): `Resolver.spanInfos(marcherId)`.** An
+  addition beside the spec §10.1 methods, not a change to this decision. It
+  returns a marcher's spans (R-2) with their kinds (R-3), sorted from the
+  leading hold to the trailing one, from the cached spans only: it computes no
+  origins or positions. The timeline's view-model adapter needs every span of
+  many marchers on each edit; walking `explain()` span by span would pull
+  origins, FTL entries and diagnostics for each one. The reference oracle is
+  unchanged.
 
 ### 5. Change-log listener contract (desktop)
 

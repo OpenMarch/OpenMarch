@@ -4,6 +4,7 @@ import AlignmentEditor from "./AlignmentEditor";
 import ShapeEditor from "./ShapeEditor";
 import ShapeSelector from "./ShapeSelector";
 import { PageNotesSection } from "./PageNotesSection";
+import { TimelineInspectorSection } from "./TimelineInspectorSection";
 import { T } from "@tolgee/react";
 
 function Inspector() {
@@ -21,6 +22,7 @@ function Inspector() {
                 <ShapeEditor />
                 <AlignmentEditor />
                 <ShapeSelector />
+                <TimelineInspectorSection />
             </div>
 
             {/* Fixed notes footer at the bottom of the inspector */}

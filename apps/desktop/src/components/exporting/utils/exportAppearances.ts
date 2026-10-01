@@ -28,10 +28,19 @@ function resolveTagAppearancesForPage(
     );
 }
 
+/**
+ * Each page's appearance stack per marcher: marcher page, then tag, section and field theme.
+ *
+ * With `timelineMode`, `marcherPagesMap` is ignored: the per-page appearance fields of
+ * `marcher_pages` are dropped in timeline mode (P7.14), so appearance comes from the tags, the
+ * section and the field theme only. Positions are not part of appearances; the video export
+ * samples them from the resolver (`ResolverFrameSampler`).
+ */
 export function buildMarcherAppearancesByPageId({
     sortedPages,
     marchers,
     marcherPagesMap,
+    timelineMode = false,
     sectionAppearances,
     marcherIdsByTagId,
     allTagAppearances,
@@ -40,7 +49,9 @@ export function buildMarcherAppearancesByPageId({
 }: {
     sortedPages: Page[];
     marchers: Marcher[];
-    marcherPagesMap: MarcherPageMap;
+    /** Not read when `timelineMode` is true, so it may be omitted then */
+    marcherPagesMap?: MarcherPageMap;
+    timelineMode?: boolean;
     sectionAppearances: SectionAppearance[];
     marcherIdsByTagId: MarcherIdsByTagId;
     allTagAppearances: TagAppearance[];
@@ -50,7 +61,9 @@ export function buildMarcherAppearancesByPageId({
     const appearancesByPageId: MarcherAppearancesByPageId = new Map();
 
     for (const page of sortedPages) {
-        const marcherPages = marcherPagesMap.marcherPagesByPage[page.id] ?? {};
+        const marcherPages = timelineMode
+            ? {}
+            : (marcherPagesMap?.marcherPagesByPage[page.id] ?? {});
         const tagAppearances = resolveTagAppearancesForPage(
             page.id,
             allTagAppearances,

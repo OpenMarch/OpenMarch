@@ -626,6 +626,98 @@
             "selectShape": "Select Shape",
             "title": "Shapes"
         },
+        "timeline": {
+            "beats": {
+                "range": "{start} to {end}",
+                "showEnd": "the end of the show",
+                "showStart": "the start of the show"
+            },
+            "destination": {
+                "points": "{count} individually placed points",
+                "shape": "{name} ({kind})",
+                "shapeUnnamed": "Shape {id} ({kind})"
+            },
+            "diagnostics": {
+                "dFtlEmpty": "Nobody founds this follow-the-leader move, so there's no trail: the marchers fill the shape from its far end.",
+                "dFtlNonFounding": "This marcher joined or resumed a follow-the-leader move partway, so it isn't part of the trail's order and heads to its target on its own.",
+                "dOrderFallback": "This move couldn't inherit an order from a single earlier move, so it uses slot order.",
+                "dRebase": "This marcher joined or resumed this move partway, so its path was rebased to start where it was.",
+                "dVacant": "Slot {slot} has no marcher assigned, so nobody goes to that place.",
+                "info": "Info",
+                "none": "No diagnostics.",
+                "showNone": "No diagnostics for the whole show.",
+                "showTitle": "Show diagnostics ({count})",
+                "title": "Diagnostics",
+                "transition": "Transition {id}",
+                "warning": "Warning"
+            },
+            "ftl": {
+                "notMember": "Not a member of the trail (it didn't found this transition)",
+                "place": "Place {place} of {count} (1 is the tail)",
+                "sourceFallback": "Slot order (no single upstream order to inherit)",
+                "sourceInherit": "Inherited from transition {transition}",
+                "sourceSlot": "Slot order",
+                "target": "({x}, {y})"
+            },
+            "label": {
+                "beats": "Beats",
+                "bulge": "Bulge",
+                "destination": "Destination",
+                "layer": "Layer",
+                "memberOrder": "Member order",
+                "orderMode": "Order mode",
+                "orderSource": "Order source",
+                "origin": "Starts from",
+                "pathStyle": "Path style",
+                "progress": "Progress",
+                "slot": "Slot",
+                "span": "Span",
+                "target": "Target",
+                "transition": "Transition",
+                "waypoints": "Waypoints"
+            },
+            "marcherTitle": "{marcher} at beat {beat}",
+            "noPage": "Select a page to see why each marcher is where it is.",
+            "notInTimeline": "{marcher} isn't in the timeline yet.",
+            "omitted": "and {count} more selected marchers",
+            "orderMode": {
+                "inherit": "Inherit the upstream order",
+                "slot": "Slot order"
+            },
+            "origin": {
+                "home": "Home ({x}, {y})",
+                "spanFounding": "End of the previous founding span in transition {transition} ({x}, {y})",
+                "spanJoin": "End of the previous join span in transition {transition} ({x}, {y})",
+                "spanResume": "End of the previous resume span in transition {transition} ({x}, {y})",
+                "spanHold": "Where it was holding ({x}, {y})"
+            },
+            "pathStyle": {
+                "arc": "Arc",
+                "direct": "Direct",
+                "follow_the_leader": "Follow the leader"
+            },
+            "progress": {
+                "value": "{percent}%"
+            },
+            "slot": {
+                "value": "{slot} of {count}"
+            },
+            "span": {
+                "founding": "Founding",
+                "foundingHelp": "In this transition from its start, so its path starts from the marcher's position at the start of the transition.",
+                "hold": "Hold",
+                "holdHelp": "Not moving: no move is active, so the marcher stays where it is.",
+                "join": "Join",
+                "joinHelp": "Joined this transition after it started, so its path starts from where the marcher was when it joined.",
+                "resume": "Resume",
+                "resumeHelp": "Back in this transition after another move took over, so its path starts from where the marcher was."
+            },
+            "title": "Timeline",
+            "transition": {
+                "onTimeline": "{id} on {timeline}",
+                "plain": "{id}"
+            }
+        },
         "title": "Inspector"
     },
     "launchpage": {
@@ -1112,6 +1204,25 @@
         "audio": "Audio",
         "controls": {
             "label": "Playback Controls"
+        },
+        "errors": {
+            "assignmentDoesNotFit": "That marcher's move doesn't fit the transition: it must stay inside the transition's range, and use a slot the transition has.",
+            "assignmentOutsideTransition": "A marcher's move must stay inside its transition. Adjust the transition's range, or the move's.",
+            "assignmentOverlap": "That marcher already has a move on the same layer at those beats. Put one of them on a different layer, or move it.",
+            "blockTooSmall": "The block doesn't have enough places for every slot. Add rows or columns, or use fewer slots.",
+            "database": "The change couldn't be saved, so nothing was changed. Try again, and report it if it keeps happening.",
+            "destinationInvalid": "A destination isn't valid. Destinations must be finite points on the field.",
+            "destinationShapeUnsuitable": "That destination doesn't fit the transition. A follow-the-leader transition can't end on a block, and a block needs at least as many places as the transition has slots.",
+            "followLeaderBlock": "A follow-the-leader transition can't end on a block. Choose a line, curve, circle or box instead.",
+            "followLeaderNeedsShape": "A follow-the-leader transition needs a shape to follow.",
+            "notReady": "The timeline is still loading. Try again in a moment.",
+            "numberOutOfRange": "A number is out of range. Beats, layers, slot counts and positions must be whole or finite numbers within the allowed limits.",
+            "pathParamsInvalid": "That path setting isn't valid. An arc's bulge can be at most half the distance between its ends, and waypoints must be points on the field.",
+            "shapeInvalid": "That shape isn't valid. Its points must be on the field, a line needs two different end points, a freehand path needs some length, and a circle, box or block needs a positive size.",
+            "shapeOrDestinations": "A transition uses either a shape or one individual destination for every slot, never both and never fewer.",
+            "slotOutOfRange": "That slot doesn't exist. A transition's slots are numbered from 0 up to one less than its slot count.",
+            "transitionOutsideTimeline": "A transition must stay inside its timeline. Lengthen the timeline first, or choose a shorter range.",
+            "unknown": "The timeline couldn't make that change."
         },
         "label": "Timeline",
         "masterVolume": "Master Volume",

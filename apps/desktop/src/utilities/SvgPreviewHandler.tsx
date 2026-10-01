@@ -18,6 +18,7 @@ import type Page from "@/global/classes/Page";
 import type Marcher from "@/global/classes/Marcher";
 import type { FieldProperties } from "@openmarch/core";
 import { useTimingObjects } from "@/hooks";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useQuery } from "@tanstack/react-query";
 
 const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
@@ -27,6 +28,8 @@ const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
  */
 const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
+    // Timeline mode drops the per-page appearance fields of marcher_pages (P7.14)
+    const timelineMode = useTimelineMode();
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { pages = [] } = useTimingObjects() ?? {};
@@ -67,6 +70,7 @@ const SvgPreviewHandler: React.FC = () => {
             sortedPages: pages,
             marchers,
             marcherPagesMap: marcherPages,
+            timelineMode,
             sectionAppearances,
             marcherIdsByTagId,
             allTagAppearances,
@@ -74,6 +78,7 @@ const SvgPreviewHandler: React.FC = () => {
             fieldProperties,
         });
     }, [
+        timelineMode,
         fieldProperties,
         marchers,
         sectionAppearances,

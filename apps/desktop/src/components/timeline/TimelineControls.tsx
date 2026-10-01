@@ -76,7 +76,7 @@ export default function TimelineControls() {
     );
 }
 
-function TimelineMuteButton() {
+export function TimelineMuteButton() {
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
     const setAudioVolume = useUiSettingsStore((s) => s.setAudioVolume);
 
@@ -129,7 +129,7 @@ function TimelineMuteButton() {
     );
 }
 
-function TimelineMetronomeButton() {
+export function TimelineMetronomeButton() {
     const isMetronomeOn = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleMetronome = useMetronomeStore((s) => s.toggleMetronome);
 

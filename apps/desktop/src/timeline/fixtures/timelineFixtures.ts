@@ -12,6 +12,8 @@ import {
     type PageConversionResult,
 } from "../convert/writePageConversion";
 import { describePageConversionReport } from "../convert/planPageConversion";
+import { exportTimelineKeyframesJson } from "../timelineExport";
+import type { KeyframeExportOptions } from "../timelineKeyframes";
 
 /**
  * Every fixture the dev loader offers (docs/timeline/phases/05-rendering.md P5.7): the golden
@@ -60,6 +62,11 @@ export interface TimelineDevApi {
     convertPages: (
         options?: ConvertPagesOptions,
     ) => Promise<PageConversionResult>;
+    /**
+     * The spec §11 keyframe export of the open file, as JSON text (P7.9). Built from the resolver;
+     * export data only, never read back as state.
+     */
+    exportKeyframes: (options?: KeyframeExportOptions) => Promise<string>;
 }
 
 export function createTimelineDevApi(
@@ -91,5 +98,6 @@ export function createTimelineDevApi(
             );
             return result;
         },
+        exportKeyframes: (options) => exportTimelineKeyframesJson(db, options),
     };
 }

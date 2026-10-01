@@ -109,8 +109,6 @@ export interface ResolverTestHooks {
 
 /** The resolver plus test and debug hooks that are not part of the public API. */
 export interface CachedResolver extends Resolver {
-    /** The marcher's spans in the public shape (tests only). */
-    spanInfos(marcherId: number): SpanInfo[];
     /** I-C1: the first violation found, described, or null when the caches are closed. */
     cacheClosureViolation(): string | null;
     /** TEST ONLY: see {@link ResolverTestHooks}. */
@@ -981,13 +979,15 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
 /** Cold build of the resolver (ADR 0001 section 4, spec 10.1). */
 export function createResolver(host: TimelineSnapshot): Resolver {
     const r = createCachedResolver(host);
-    // Only the public interface: the internal caches, introspection and test
-    // hooks on the cached resolver stay unreachable at runtime too.
+    // Only the public interface (spec 10.1 plus `spanInfos`, ADR 0001 section 4):
+    // the internal caches, introspection and test hooks on the cached resolver
+    // stay unreachable at runtime too.
     return {
         positionAt: r.positionAt,
         positionsAt: r.positionsAt,
         marcherIds: r.marcherIds,
         explain: r.explain,
+        spanInfos: r.spanInfos,
         ftlEntry: r.ftlEntry,
         notify: r.notify,
         warmAll: r.warmAll,

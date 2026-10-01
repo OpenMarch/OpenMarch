@@ -67,7 +67,17 @@ import {
     coordinateDataQueryOptions,
     useManyCoordinateData,
 } from "@/hooks/queries/useCoordinateData";
-import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import {
+    useTimelineMode,
+    workspaceSettingsQueryOptions,
+} from "@/hooks/queries/useWorkspaceSettings";
+import { db } from "@/global/database/db";
+import { showEndTime } from "@/timeline/timeMap";
+import {
+    acquireExportResolver,
+    ResolverFrameSampler,
+} from "@/timeline/timelineExport";
+import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import AudioFile from "@/global/classes/AudioFile";
 import { exportVideo } from "./video/videoRenderer";
 import {
@@ -702,6 +712,8 @@ function CoordinateSheetExport() {
 // eslint-disable-next-line max-lines-per-function
 function DrillChartExport() {
     const { pages } = useTimingObjects()!;
+    // Timeline mode drops the per-page appearance fields of marcher_pages (P7.14)
+    const timelineMode = useTimelineMode();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         allMarcherPagesQueryOptions({
@@ -742,6 +754,7 @@ function DrillChartExport() {
             sortedPages: pages,
             marchers,
             marcherPagesMap: marcherPages,
+            timelineMode,
             sectionAppearances,
             marcherIdsByTagId,
             allTagAppearances,
@@ -749,6 +762,7 @@ function DrillChartExport() {
             fieldProperties,
         });
     }, [
+        timelineMode,
         fieldProperties,
         marchers,
         sectionAppearances,
@@ -1251,7 +1265,12 @@ const VIDEO_FRAME_RATES = [30, 60] as const;
 
 // eslint-disable-next-line max-lines-per-function
 function VideoExport() {
-    const { pages, measures } = useTimingObjects()!;
+    const { pages, measures, beats } = useTimingObjects()!;
+    // Timeline mode: positions come from the resolver, appearances ignore page rows (P7.8)
+    const timelineMode = useTimelineMode();
+    const storeResolver = useTimelineResolverStore((s) => s.resolver);
+    // The store's resolver is updated in place; a new version redraws the preview
+    const resolverVersion = useTimelineResolverStore((s) => s.version);
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
@@ -1292,7 +1311,7 @@ function VideoExport() {
             !fieldProperties ||
             !marchers?.length ||
             !sectionAppearances ||
-            !marcherPages ||
+            (!timelineMode && !marcherPages) ||
             !marcherIdsByTagId ||
             !allTagAppearances ||
             !tagAppearanceIdsByPageId
@@ -1304,6 +1323,7 @@ function VideoExport() {
             sortedPages: pages,
             marchers,
             marcherPagesMap: marcherPages,
+            timelineMode,
             sectionAppearances,
             marcherIdsByTagId,
             allTagAppearances,
@@ -1311,6 +1331,7 @@ function VideoExport() {
             fieldProperties,
         });
     }, [
+        timelineMode,
         fieldProperties,
         marchers,
         sectionAppearances,
@@ -1347,13 +1368,24 @@ function VideoExport() {
     const t = tolgee.t;
 
     const { data: marcherTimelines, isPending: timelinesPending } =
-        useManyCoordinateData(pages);
+        useManyCoordinateData(timelineMode ? [] : pages);
+
+    // The preview's sampler; the export builds its own (it can cold-build a resolver)
+    const previewSampler = useMemo(
+        () =>
+            timelineMode && storeResolver
+                ? new ResolverFrameSampler(storeResolver, beats)
+                : null,
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [timelineMode, storeResolver, resolverVersion, beats],
+    );
 
     const durationSeconds = useMemo(() => {
+        if (timelineMode) return showEndTime(beats);
         if (pages.length === 0) return 0;
         const lastPage = pages[pages.length - 1];
         return lastPage.timestamp + lastPage.duration;
-    }, [pages]);
+    }, [pages, timelineMode, beats]);
 
     useEffect(() => {
         let cancelled = false;
@@ -1388,7 +1420,8 @@ function VideoExport() {
                 !fieldProperties ||
                 !marchers?.length ||
                 pages.length < 1 ||
-                timelinesPending
+                timelinesPending ||
+                (timelineMode && !previewSampler)
             ) {
                 return;
             }
@@ -1399,6 +1432,7 @@ function VideoExport() {
                     sortedPages: pages,
                     marchers,
                     marcherTimelines,
+                    frameSampler: previewSampler,
                     sectionAppearances,
                     marcherAppearancesByPageId,
                     backgroundImage,
@@ -1430,6 +1464,8 @@ function VideoExport() {
         pages,
         marcherTimelines,
         timelinesPending,
+        timelineMode,
+        previewSampler,
         sectionAppearances,
         marcherAppearancesByPageId,
         backgroundImage,
@@ -1516,7 +1552,8 @@ function VideoExport() {
             const [timelineMaps, audioFile, backgroundImage] =
                 await Promise.all([
                     Promise.all(
-                        pages.map((page) =>
+                        // Timeline mode samples the resolver instead (P7.8)
+                        (timelineMode ? [] : pages).map((page) =>
                             queryClient.fetchQuery(
                                 coordinateDataQueryOptions(page, queryClient),
                             ),
@@ -1526,12 +1563,20 @@ function VideoExport() {
                     getFieldPropertiesImageElement(),
                 ]);
             assert(audioFile.data, "Audio file has no data");
+            // The store's resolver when ready, else one cold-built for this export
+            const frameSampler = timelineMode
+                ? new ResolverFrameSampler(
+                      await acquireExportResolver(db),
+                      beats,
+                  )
+                : null;
 
             const result = await exportVideo({
                 fieldProperties,
                 marchers,
                 sortedPages: pages,
                 marcherTimelines: combineMarcherTimelines(timelineMaps),
+                frameSampler,
                 sectionAppearances,
                 marcherAppearancesByPageId,
                 backgroundImage,
@@ -1593,6 +1638,8 @@ function VideoExport() {
         }
     }, [
         t,
+        timelineMode,
+        beats,
         marchersLoaded,
         fieldProperties,
         resolution,

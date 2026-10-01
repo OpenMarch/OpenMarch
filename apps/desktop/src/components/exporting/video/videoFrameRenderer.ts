@@ -8,6 +8,7 @@ import {
     getCoordinatesAtTime,
     type MarcherTimeline,
 } from "@/utilities/Keyframes";
+import type { ResolverFrameSampler } from "@/timeline/timelineExport";
 import { initializeCanvasForRendering } from "../utils/svg-generator";
 import {
     applyMarcherAppearancesForPage,
@@ -90,6 +91,11 @@ export interface VideoRenderContext {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marcherTimelines: Map<number, MarcherTimeline>;
+    /**
+     * Timeline mode: positions come from the resolver at each frame's beat, and
+     * `marcherTimelines` is not used. Null in page mode.
+     */
+    frameSampler: ResolverFrameSampler | null;
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     lastAppliedPageId: number | null;
     staticFieldCache: {
@@ -104,6 +110,8 @@ export interface CreateVideoRenderContextArgs {
     sortedPages: Page[];
     marchers: Marcher[];
     marcherTimelines: Map<number, MarcherTimeline>;
+    /** Timeline mode only: samples the resolver instead of `marcherTimelines` */
+    frameSampler?: ResolverFrameSampler | null;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
@@ -130,6 +138,7 @@ export async function createVideoRenderContext(
         fieldProperties: args.fieldProperties,
         sortedPages: args.sortedPages,
         marcherTimelines: args.marcherTimelines,
+        frameSampler: args.frameSampler ?? null,
         marcherAppearancesByPageId: args.marcherAppearancesByPageId,
         lastAppliedPageId: null,
         staticFieldCache: null,
@@ -258,10 +267,19 @@ function applyAppearancesAtTime(context: VideoRenderContext, timeMs: number) {
     context.lastAppliedPageId = activePage.id;
 }
 
-function setMarcherPositionsAtTime(
+export function setMarcherPositionsAtTime(
     context: VideoRenderContext,
     timeMilliseconds: number,
 ) {
+    if (context.frameSampler) {
+        // Timeline mode: seconds to a beat, then the resolver, applied by marcher id
+        context.frameSampler.apply(
+            timeMilliseconds / 1000,
+            Object.values(context.canvasMarchersById),
+            (canvasMarcher, x, y) => canvasMarcher.setLiveCoordinates({ x, y }),
+        );
+        return;
+    }
     for (const [marcherId, canvasMarcher] of Object.entries(
         context.canvasMarchersById,
     )) {

@@ -17,6 +17,7 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
 import { type MarcherTimeline } from "@/utilities/Keyframes";
+import type { ResolverFrameSampler } from "@/timeline/timelineExport";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
 import {
@@ -44,6 +45,8 @@ export interface VideoExportArgs {
     sortedPages: Page[];
     /** Full-show timelines for every marcher (keyframes for every page) */
     marcherTimelines: Map<number, MarcherTimeline>;
+    /** Timeline mode: positions come from the resolver instead of `marcherTimelines` */
+    frameSampler?: ResolverFrameSampler | null;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
@@ -223,6 +226,7 @@ export async function exportVideo(
             sortedPages,
             marchers: args.marchers,
             marcherTimelines,
+            frameSampler: args.frameSampler,
             sectionAppearances: args.sectionAppearances,
             marcherAppearancesByPageId: args.marcherAppearancesByPageId,
             backgroundImage: args.backgroundImage,

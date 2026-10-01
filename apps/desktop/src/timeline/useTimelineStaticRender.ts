@@ -24,6 +24,8 @@ export function useTimelineStaticRender({
 }: {
     canvas: OpenMarchCanvas | null;
     selectedPage: {
+        /** Stamped on each marcher's `coordinate`, so its `page_id` is current */
+        readonly id?: number;
         readonly beats: readonly { readonly index: number }[];
     } | null;
     isPlaying: boolean;
@@ -37,6 +39,6 @@ export function useTimelineStaticRender({
         if (!enabled || !canvas || !selectedPage || isPlaying) return;
         const buffer = (bufferRef.current ??= new TimelinePositionBuffer());
         if (!buffer.fill(pageEndBeat(selectedPage))) return;
-        canvas.renderMarcherPositions(buffer);
+        canvas.renderMarcherPositions(buffer, selectedPage.id);
     }, [enabled, canvas, selectedPage, isPlaying, version, redrawKey]);
 }

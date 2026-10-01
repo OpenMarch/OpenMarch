@@ -5,6 +5,7 @@ import type {
     Diagnostic,
     Explanation,
     Resolver,
+    SpanInfo,
     XY,
 } from "@openmarch/core";
 import { withTimelineWriteLock } from "@/db-functions/history";
@@ -324,4 +325,17 @@ export function useDiagnostics(): Diagnostic[] {
         void version;
         return resolver ? resolver.diagnostics() : noDiagnostics;
     }, [resolver, version]);
+}
+
+/**
+ * A marcher's resolver spans (spec R-2, R-3), sorted, from the leading hold to the trailing one,
+ * from `Resolver.spanInfos` (ADR 0001 §4 amendment): the cached spans only, no positions. For the
+ * timeline's view-model adapter (`timelineViewModel.ts`). Empty for a marcher the resolver
+ * doesn't have (yet).
+ */
+export function resolverSpans(
+    resolver: Resolver,
+    marcherId: number,
+): SpanInfo[] {
+    return hasMarcher(resolver, marcherId) ? resolver.spanInfos(marcherId) : [];
 }

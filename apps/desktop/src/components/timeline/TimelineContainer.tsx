@@ -17,6 +17,8 @@ import TimelineControls from "./TimelineControls";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
+import TimelineModePanel from "./TimelineModePanel";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { T } from "@tolgee/react";
 import clsx from "clsx";
 
@@ -27,6 +29,7 @@ export default function TimelineContainer() {
     const { uiSettings } = useUiSettingsStore();
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
+    const timelineMode = useTimelineMode();
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -71,6 +74,21 @@ export default function TimelineContainer() {
     useEffect(() => {
         // do nothing, just re-render
     }, [measures]);
+
+    // With the file's timeline dev flag on, the timeline replaces the page timeline and its controls.
+    // Editing beats (the focused timeline) still uses the page timeline. The audio player stays
+    // mounted, hidden, because it runs playback and the timeline reads its clock.
+    if (timelineMode && uiSettings.focussedComponent !== "timeline") {
+        return (
+            <div className="flex gap-8" data-testid="timeline-mode-container">
+                {isFullscreen && <PerspectiveSlider />}
+                <TimelineModePanel />
+                <div style={{ display: "none" }}>
+                    <AudioPlayer />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex gap-8">

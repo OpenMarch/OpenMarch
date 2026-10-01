@@ -110,6 +110,12 @@ export interface Resolver {
     positionsAt(beat: Beat, out: Float64Array): void;
     marcherIds(): readonly number[];
     explain(marcherId: number, beat: Beat): Explanation;
+    /**
+     * Every span of a marcher (R-2) with its kind (R-3), sorted from the leading hold to the
+     * trailing one. Not in spec §10.1: added for the timeline UI (ADR 0001 §4 amendment,
+     * 2026-09-30). Reads the cached spans only; computes no positions.
+     */
+    spanInfos(marcherId: number): SpanInfo[];
     ftlEntry(transitionId: number): FtlEntryInfo;
     /** After COMMIT; applied atomically (spec 10.2) */
     notify(batch: ChangeBatch): InvalidationReport;

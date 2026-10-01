@@ -18,6 +18,15 @@ export type CoordinateLike = {
 };
 
 /**
+ * The fields of a MarcherPage these helpers read. A full `MarcherPage` satisfies it; timeline mode
+ * builds these from the resolver's positions instead (P7.2).
+ */
+export type CoordinateRecord = Pick<
+    MarcherPage,
+    "marcher_id" | "page_id" | "x" | "y" | "notes"
+>;
+
+/**
  * A safety check to ensure that all the marcherPages are on the same page.
  *
  * Prints a console.error if the marcherPages are not all on the same page.
@@ -26,7 +35,7 @@ export type CoordinateLike = {
  * @returns True if all the marcherPages are on the same page, false otherwise.
  */
 export function checkMarcherPagesAreSamePage(
-    marcherPages: MarcherPage[],
+    marcherPages: CoordinateRecord[],
     printError = true,
 ): boolean {
     if (marcherPages.length === 0) return false;
@@ -64,7 +73,7 @@ export function getRoundCoordinates({
     xAxis = true,
     yAxis = true,
 }: {
-    marcherPages: MarcherPage[];
+    marcherPages: CoordinateRecord[];
     denominatorX: number;
     denominatorY: number;
     fieldProperties: FieldProperties;
@@ -184,7 +193,7 @@ export function getRoundCoordinates2({
 export function alignVertically({
     marcherPages,
 }: {
-    marcherPages: MarcherPage[];
+    marcherPages: CoordinateRecord[];
 }): ModifiedMarcherPageArgs[] {
     const changes: ModifiedMarcherPageArgs[] = [];
     checkMarcherPagesAreSamePage(marcherPages);
@@ -217,7 +226,7 @@ export function alignVertically({
 export function alignHorizontally({
     marcherPages,
 }: {
-    marcherPages: MarcherPage[];
+    marcherPages: CoordinateRecord[];
 }): ModifiedMarcherPageArgs[] {
     const changes: ModifiedMarcherPageArgs[] = [];
     checkMarcherPagesAreSamePage(marcherPages);
@@ -254,7 +263,7 @@ export function evenlyDistributeHorizontally({
     sortingThreshold = 0.1,
     fieldProperties,
 }: {
-    marcherPages: MarcherPage[];
+    marcherPages: CoordinateRecord[];
     sortingThreshold?: number;
     fieldProperties: FieldProperties;
 }): ModifiedMarcherPageArgs[] {
@@ -321,7 +330,7 @@ export function evenlyDistributeVertically({
     sortingThreshold = 0.1,
     fieldProperties,
 }: {
-    marcherPages: MarcherPage[];
+    marcherPages: CoordinateRecord[];
     sortingThreshold?: number;
     fieldProperties: FieldProperties;
 }): ModifiedMarcherPageArgs[] {
@@ -397,7 +406,7 @@ export function moveMarchersXY({
     snapDenominatorX = 1, // default for grid
     snapDenominatorY = 1,
 }: {
-    marcherPages: MarcherPage[];
+    marcherPages: CoordinateRecord[];
     direction: "up" | "down" | "left" | "right";
     distance?: number;
     snap?: boolean;
@@ -522,7 +531,7 @@ export const getCenterFromCoordinates = (
 };
 
 export const flipHorizontal = (
-    marcherPages: MarcherPage[],
+    marcherPages: CoordinateRecord[],
 ): ModifiedMarcherPageArgs[] => {
     const center = getCenterFromCoordinates(marcherPages);
 
@@ -536,7 +545,7 @@ export const flipHorizontal = (
 };
 
 export const flipVertical = (
-    marcherPages: MarcherPage[],
+    marcherPages: CoordinateRecord[],
 ): ModifiedMarcherPageArgs[] => {
     const center = getCenterFromCoordinates(marcherPages);
 

@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import {
     DbConnection,
     createMarchers,
@@ -21,6 +22,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherPageKeys } from "./useMarcherPages";
 import { coordinateDataKeys } from "./useCoordinateData";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
+import { readTimelineMode } from "./useWorkspaceSettings";
 
 const { marchers } = schema;
 
@@ -81,10 +83,19 @@ export const fetchMarchers = () => {
     void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
 
+/**
+ * In timeline mode the new marchers also get a home and a holding slot in each page move (P7.3).
+ * The flag is read when the mutation runs (`readTimelineMode`), waiting for the workspace settings
+ * if they haven't loaded yet.
+ */
 export const createMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: (newMarchers: NewMarcherArgs[]) =>
-            createMarchers({ db, newMarchers }),
+        mutationFn: async (newMarchers: NewMarcherArgs[]) =>
+            createMarchers({
+                db,
+                newMarchers,
+                timelineMode: await readTimelineMode(qc),
+            }),
         onSuccess: async (_, variables) => {
             // Invalidate all marcher queries
             await qc.invalidateQueries({
@@ -102,7 +113,7 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error creating marchers`, e, variables);
+            toastTimelineError(e, `Error creating marchers`, variables);
         },
     });
 };
@@ -131,10 +142,19 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
     });
 };
 
+/**
+ * In timeline mode the deleted marchers' slots are also compacted where that moves no one (P7.3).
+ * The flag is read when the mutation runs (`readTimelineMode`), waiting for the workspace settings
+ * if they haven't loaded yet.
+ */
 export const deleteMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: (marcherIds: Set<number>) =>
-            deleteMarchers({ db, marcherIds }),
+        mutationFn: async (marcherIds: Set<number>) =>
+            deleteMarchers({
+                db,
+                marcherIds,
+                timelineMode: await readTimelineMode(qc),
+            }),
         onSuccess: (_, variables) => {
             // Invalidate all marcher queries
             void qc.invalidateQueries({
@@ -149,7 +169,7 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting marchers`, e, variables);
+            toastTimelineError(e, `Error deleting marchers`, variables);
         },
     });
 };

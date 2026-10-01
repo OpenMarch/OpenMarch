@@ -121,3 +121,7 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
 ### 2026-09-30 · lead session · every file open rewrites all triggers (pre-existing)
 
 - Drizzle's migrator calls the migration callback in `DrizzleMigrationService.applyPendingMigrations` on every open, even with no pending migration, and that callback runs `dropAllTriggers` and `createAllTriggers`. So each open changes the schema (`schema_version` rose by about 100 on an up-to-date file in a test) and the file's modification time, which cloud sync or version control can see as an edit. This predates the timeline work. The change-log refresh added in PR #18 is itself a no-op on an up-to-date file. Worth fixing in the app generally: only drop and recreate triggers when the callback actually receives queries.
+
+### 2026-10-01 · lead session · flaky Tolgee timer after test teardown
+
+- One run of `pnpm --dir apps/desktop run test` (on PR #25's branch) passed every test but exited 1 with an unhandled "ReferenceError: window is not defined" from a Tolgee web timer (`@tolgee/web` `removeEventListener` in a timeout) firing after a jsdom environment was torn down, reported while `src/components/mobile/__test__/RevisionsList.test.tsx` was running. An immediate re-run was clean (exit 0). It's load- or timing-dependent and predates the timeline work's i18n changes; treat a lone occurrence as flaky, and re-run before blaming a PR. A real fix would stop Tolgee's timer in test teardown.

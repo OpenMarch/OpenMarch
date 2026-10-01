@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    QueryClient,
+    useMutation,
+    useQuery,
+    useQueryClient,
+} from "@tanstack/react-query";
 import * as z from "zod";
 import {
     isTimelineModeEnabled,
@@ -62,6 +67,18 @@ export function useTimelineMode(enabled = true): boolean {
         select: isTimelineModeEnabled,
     });
     return data ?? false;
+}
+
+/**
+ * The file's timeline flag, read when a write needs it rather than from a hook. The cached
+ * settings are used when fresh; otherwise this waits for them to load, so a write started while
+ * the settings are still loading never falls back to page mode by mistake (`useTimelineMode`
+ * returns false until they load).
+ */
+export async function readTimelineMode(qc: QueryClient): Promise<boolean> {
+    return isTimelineModeEnabled(
+        await qc.fetchQuery(workspaceSettingsQueryOptions()),
+    );
 }
 
 /**

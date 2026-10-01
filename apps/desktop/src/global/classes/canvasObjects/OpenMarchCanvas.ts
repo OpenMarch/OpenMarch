@@ -1151,8 +1151,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * comes from a filled resolver buffer instead of marcher_pages. The position also becomes the
      * marcher's `coordinate`, so `refreshMarchers` returns marchers to it. Marchers missing from
      * the buffer stay where they are.
+     *
+     * @param pageId the page drawn, stamped on each `coordinate` so its `page_id` isn't left over
+     * from an earlier page render (P7.2). Timeline writes don't read it, but other canvas code may.
      */
-    renderMarcherPositions = (positions: TimelinePositionBuffer) => {
+    renderMarcherPositions = (
+        positions: TimelinePositionBuffer,
+        pageId?: number,
+    ) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
         positions.forEachMarcher(
@@ -1160,6 +1166,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             (canvasMarcher, x, y) => {
                 canvasMarcher.setMarcherCoords({
                     ...canvasMarcher.coordinate,
+                    ...(pageId !== undefined ? { page_id: pageId } : {}),
                     x,
                     y,
                 });

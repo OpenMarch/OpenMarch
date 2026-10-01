@@ -28,6 +28,9 @@ import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import type { FieldProperties } from "@openmarch/core";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
+import { usePositionAt } from "@/timeline/timelineStore";
+import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     FlipHorizontalIcon,
     FlipVerticalIcon,
@@ -437,6 +440,11 @@ function MarcherEditor() {
         marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const timelineMode = useTimelineMode();
+    const timelinePosition = usePositionAt(
+        selectedMarchers.length === 1 ? selectedMarchers[0].id : -1,
+        selectedPage ? pageEndBeat(selectedPage) : 0,
+    );
     const { data: spmsForThisPage } = useQuery(
         shapePageMarchersQueryByPageIdOptions(selectedPage?.id ?? null),
     );
@@ -495,9 +503,23 @@ function MarcherEditor() {
             );
             return undefined;
         }
+        // Timeline mode (P7.2): show where the canvas draws the marcher
+        if (timelineMode)
+            return timelinePosition
+                ? ReadableCoords.fromMarcherPage({
+                      x: timelinePosition[0],
+                      y: timelinePosition[1],
+                  })
+                : undefined;
         const newRcoords = ReadableCoords.fromMarcherPage(selectedMarcherPage);
         return newRcoords;
-    }, [selectedMarchers, marcherPagesLoaded, marcherPages]);
+    }, [
+        selectedMarchers,
+        marcherPagesLoaded,
+        marcherPages,
+        timelineMode,
+        timelinePosition,
+    ]);
 
     const stepSize = useMemo(() => {
         if (

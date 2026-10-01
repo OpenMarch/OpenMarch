@@ -214,4 +214,50 @@ describe("buildMarcherAppearancesByPageId", () => {
             ),
         ).toBe(false);
     });
+
+    it("ignores marcher page rows in timeline mode (per-page appearance is dropped)", () => {
+        const fieldProperties =
+            FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+        const marchers = generateMarchers({ numberOfMarchers: 2, seed: 3 });
+        const timingObjects = generateTimingObjects({
+            numberOfBeats: 16,
+            seed: 3,
+        });
+        const marcherPagesMap = marcherPageMapFromArray(
+            generateMarcherPages({
+                marchers,
+                pages: timingObjects.pages.map(pageToDatabasePage),
+                fieldProperties,
+                seed: 3,
+            }) as unknown as MarcherPage[],
+        );
+        const args = {
+            sortedPages: timingObjects.pages,
+            marchers,
+            sectionAppearances: [],
+            marcherIdsByTagId: new Map(),
+            allTagAppearances: [],
+            tagAppearanceIdsByPageId: new Map(),
+            fieldProperties,
+        };
+        const pageId = timingObjects.pages[0].id;
+        const pageMode = buildMarcherAppearancesByPageId({
+            ...args,
+            marcherPagesMap,
+        }).get(pageId)![marchers[0].id];
+        const timelineMode = buildMarcherAppearancesByPageId({
+            ...args,
+            marcherPagesMap,
+            timelineMode: true,
+        }).get(pageId)![marchers[0].id];
+        const withoutMap = buildMarcherAppearancesByPageId({
+            ...args,
+            timelineMode: true,
+        }).get(pageId)![marchers[0].id];
+
+        // Page mode puts the marcher page row first; timeline mode leaves only the field default
+        expect(pageMode).toHaveLength(2);
+        expect(timelineMode).toHaveLength(1);
+        expect(timelineMode).toEqual(withoutMap);
+    });
 });
