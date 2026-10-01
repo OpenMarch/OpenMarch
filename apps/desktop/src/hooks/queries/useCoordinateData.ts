@@ -38,7 +38,7 @@ type MarcherTimelinesByMarcherId = Map<number, MarcherTimeline>;
  * @param pathwaysById - a record of pathway IDs to their pathways
  * @returns - a record of marcher IDs to their timelines for the page
  */
-const getMarcherTimelines = (
+export const getMarcherTimelines = (
     destinationTimestamp: number,
     marcherPages: MarcherPagesByMarcher,
     pathwaysById: Record<number, Pathway>,

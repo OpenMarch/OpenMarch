@@ -39,8 +39,8 @@ Inventory every reader and writer of `marcher_pages`, `shape_pages` and the path
 
 ### P7.2: Selection, drag and alignment
 
-- Owner: unassigned
-- Status: open
+- Owner: timeline-worker (timeline/p7-drag-align)
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P7.1
@@ -349,4 +349,20 @@ Facts that change how to read the PR #14 note above:
 - **Done:** the project owner decided that `marcher_pages`' per-page appearance overrides, `rotation_degrees` and `notes` are dropped in timeline mode: they were never implemented as features. The converter copies only x and y, and its loss report should list any non-empty values it finds so nothing disappears silently. 4 P7.14 checklist items ticked as dropped. P7.14 set to done; P7.8 and P7.12 no longer wait on it.
 - **Checks:** none (decision only).
 - **Next:** P7.2 onward after Phase 6 merges.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker (timeline/p7-drag-align) · P7.2 checkpoint
+
+- **Done:** `moveMarchersOnPage` / `moveMarchersOnPageInTransaction` in `apps/desktop/src/db-functions/timelineMoves.ts`: one `transactionWithHistory` edit that turns "these marchers at these x/y on page N" into timeline writes. Page 0 (no previous page) sets homes. Page N ≥ 1 finds the R-2 winner among the marcher's rows with `start < pageEndBeat ≤ end`, requires that it and its transition end at the page's end beat, and updates that slot's destination. Decisions: a shape-backed transition is switched to individual points in the same edit, copying the shape's exact samples (Q-14 workaround; sampled through the public `createResolver`, so no new core export), then the slot is updated; follow-the-leader into a shape is refused (E-T5); a marcher with no move ending at the page's end beat is refused (E-ARGS) with a message naming it, left for P8.9. Everything is validated before the first write. Tests in `src/db-functions/__test__/timelineMoves.test.ts`.
+- **Checks:** `pnpm --dir apps/desktop exec vitest run src/db-functions/__test__/timelineMoves.test.ts` → 7 passed.
+- **Next:** route canvas drag, nudges, snap, align, distribute, flip, swap, circle, line tool and the inspector distribute buttons through it in timeline mode; read current positions from the resolver; fix the stale `coordinate.page_id`.
+- **Resume from:** branch `timeline/p7-drag-align` at `5ff9f67b`. Add the timeline branch to `useUpdateSelectedMarchers` (`src/hooks/queries/useMarcherPages.ts`) and an `updateCoordinates` wrapper in `RegisteredActionsHandler.tsx`; replace the drag gate in `Canvas.tsx` ~238.
+- **Blockers:** none.
+
+### 2026-09-30 · timeline-worker (timeline/p7-drag-align) · P7.2 checkpoint 2
+
+- **Done:** routing in timeline mode. `src/timeline/timelineCoordinateWrites.ts` (`withTimelinePositions` reads current x/y from the resolver at the page's end beat; `canvasCoordinateWriter` is the drag callback, and is the page-mode writer itself when the flag is off). Canvas drag is re-enabled (`Canvas.tsx`) and ignores the stale `coordinate.page_id`; `renderMarcherPositions` now stamps the drawn page's id too. `useUpdateSelectedMarchers` (nudges, circle, inspector distribute buttons) and `RegisteredActionsHandler` (snap, align, distribute, flip, swap, apply line tool) write through `moveMarchersOnPage` with the flag on; page mode calls are unchanged. Tests in `src/timeline/__test__/timelineCoordinateWrites.test.ts` (drag and align vertically, flag on and off).
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` → clean; `vitest run` on the two new test files → 15 passed; `pnpm --dir apps/desktop run test:history src/db-functions/__test__/timelineMoves.test.ts` → 7 passed.
+- **Next:** the regular desktop suite (running), then the PR and the checklist ticks.
+- **Resume from:** branch `timeline/p7-drag-align` at `fcd54872`. Re-run `pnpm --dir apps/desktop run test` in the background, then open the PR and tick the P7.2 items.
 - **Blockers:** none.

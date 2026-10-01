@@ -228,6 +228,17 @@ function timelineDestinationTriggers(): Record<string, string> {
 }
 
 /**
+ * A REAL column as a JSON number that parses back to the identical double. SQLite's default text
+ * rendering keeps 15 significant digits, so the running resolver store, which is fed by these
+ * images, would drift from the stored value by a few units in the last place. `%!.17g` (the `!`
+ * flag lifts SQLite's 16-digit cap) always round-trips. `json()` keeps the text as a JSON number
+ * rather than a string. REAL columns hold finite values, so the result is always valid JSON.
+ */
+function exactReal(column: string): string {
+    return `json(printf('%!.17g', ${column}))`;
+}
+
+/**
  * The change-log triggers (spec §10.2, ADR 0001 §5): one `timeline_change_log` row per changed
  * row, with the spec's logical table name and JSON row image, so a drained log is a
  * `ChangeBatch` without translation. They fire for foreign-key cascades too. They write only to
@@ -250,7 +261,7 @@ function timelineChangeLogTriggers(): Record<string, string> {
             logicalName: "marchers",
             rowId: (r) => `${r}.id`,
             image: (r) =>
-                `json_object('id', ${r}.id, 'home', json_array(${r}.home_x, ${r}.home_y))`,
+                `json_object('id', ${r}.id, 'home', json_array(${exactReal(`${r}.home_x`)}, ${exactReal(`${r}.home_y`)}))`,
             updateOf: ["home_x", "home_y"],
         },
         {
@@ -284,7 +295,7 @@ function timelineChangeLogTriggers(): Record<string, string> {
             logicalName: "slot_destinations",
             rowId: (r) => `${r}.transition_id`,
             image: (r) =>
-                `json_object('transition', ${r}.transition_id, 'slot', ${r}.slot_index, 'x', ${r}.x, 'y', ${r}.y)`,
+                `json_object('transition', ${r}.transition_id, 'slot', ${r}.slot_index, 'x', ${exactReal(`${r}.x`)}, 'y', ${exactReal(`${r}.y`)})`,
         },
     ];
 
@@ -316,6 +327,55 @@ function timelineChangeLogTriggers(): Record<string, string> {
     }
     return result;
 }
+
+/**
+ * Trigger SQL as `sqlite_master` stores it: SQLite drops the `IF NOT EXISTS` clause and the
+ * trailing semicolon; whitespace differences are ignored too.
+ */
+const normalizeTriggerSql = (sql: string) =>
+    sql
+        .replace(/\s+/g, " ")
+        .replace(/CREATE TRIGGER IF NOT EXISTS/i, "CREATE TRIGGER")
+        .trim()
+        .replace(/;$/, "")
+        .trim();
+
+/**
+ * Brings the change-log triggers up to this build's bodies. Every trigger uses `CREATE TRIGGER IF
+ * NOT EXISTS`, and `createAllTriggers` runs only when a migration is pending, so a file that was
+ * migrated before a change to a trigger body keeps the old body. The migration service calls this
+ * on every open, after the file-version guard. Only missing or changed triggers are recreated, so
+ * an up-to-date file isn't written to (no schema or mtime change), and the recreation is one
+ * transaction, so a failure can't leave a trigger dropped.
+ */
+export const recreateChangeLogTriggers = (dbConnection: DatabaseSync) => {
+    const wanted = Object.entries(timelineChangeLogTriggers());
+    const current = new Map(
+        (
+            dbConnection
+                .prepare(
+                    `SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'timeline_log_%'`,
+                )
+                .all() as { name: string; sql: string }[]
+        ).map((row) => [row.name, normalizeTriggerSql(row.sql)]),
+    );
+    const stale = wanted.filter(
+        ([name, trigger]) => current.get(name) !== normalizeTriggerSql(trigger),
+    );
+    if (stale.length === 0) return;
+
+    dbConnection.exec("BEGIN IMMEDIATE");
+    try {
+        for (const [name, trigger] of stale) {
+            dbConnection.exec(`DROP TRIGGER IF EXISTS ${name}`);
+            dbConnection.exec(trigger);
+        }
+        dbConnection.exec("COMMIT");
+    } catch (error) {
+        dbConnection.exec("ROLLBACK");
+        throw error;
+    }
+};
 
 /**
  * Drops all triggers and views from the database.

@@ -5,7 +5,10 @@ import path from "path";
 import fs from "fs";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { dropAllTriggers } from "../migrations/triggers";
-import { createAllTriggers } from "../migrations/triggers";
+import {
+    createAllTriggers,
+    recreateChangeLogTriggers,
+} from "../migrations/triggers";
 import { sql } from "drizzle-orm";
 import { DB } from "../db";
 import { DatabaseSync } from "node:sqlite";
@@ -110,6 +113,11 @@ export class DrizzleMigrationService {
                     migrationsTable: "__drizzle_migrations",
                 },
             );
+
+            // Files migrated before a change-log trigger body changed still carry the old body.
+            // Runs on every open, after the file-version guard above: it must never write to a
+            // file this build refuses.
+            recreateChangeLogTriggers(this.rawDb);
 
             console.log("Drizzle migrations applied successfully.");
         } catch (error) {

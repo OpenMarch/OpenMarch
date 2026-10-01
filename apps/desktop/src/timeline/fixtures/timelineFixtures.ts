@@ -6,6 +6,12 @@ import {
     type LoadedTimelineFixture,
 } from "./loadTimelineFixture";
 import { sc01, sc03, sc05, sc11 } from "./scenarioFixtures";
+import {
+    convertPagesToTimeline,
+    type ConvertPagesOptions,
+    type PageConversionResult,
+} from "../convert/writePageConversion";
+import { describePageConversionReport } from "../convert/planPageConversion";
 
 /**
  * Every fixture the dev loader offers (docs/timeline/phases/05-rendering.md P5.7): the golden
@@ -46,6 +52,14 @@ export interface TimelineDevApi {
         name: string,
         options?: { seed?: number; beatOffset?: number },
     ) => Promise<LoadedTimelineFixture>;
+    /**
+     * Converts the file's page show into timeline rows as one undoable edit (P6.4), and logs the
+     * per-page loss report. Refused (E-ARGS) when the file already has timeline rows, unless
+     * `replace` is set.
+     */
+    convertPages: (
+        options?: ConvertPagesOptions,
+    ) => Promise<PageConversionResult>;
 }
 
 export function createTimelineDevApi(
@@ -62,6 +76,20 @@ export function createTimelineDevApi(
             );
             afterLoad();
             return loaded;
+        },
+        async convertPages(options) {
+            const result = await convertPagesToTimeline(db, options);
+            afterLoad();
+            const lines = describePageConversionReport(result.report);
+            // The dev console API reports to the console it runs in
+            // eslint-disable-next-line no-console
+            console.info(
+                `Converted ${result.transitionIds.size} page(s) into timeline ${result.timelineId}` +
+                    (lines.length
+                        ? `. Not carried over:\n${lines.join("\n")}`
+                        : "; nothing lost."),
+            );
+            return result;
         },
     };
 }

@@ -30,7 +30,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P6.1: Confirm page semantics
 
 - Owner: timeline-worker (timeline/p6-converter)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/17
 - Parallel: no
 - Depends on: —
@@ -40,7 +40,7 @@ Confirm the page semantics in code: which beat range each page's move covers, an
 ### P6.2: Converter
 
 - Owner: timeline-worker (timeline/p6-converter)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/17
 - Parallel: no
 - Depends on: P6.1
@@ -50,7 +50,7 @@ Pure converter (desktop-side, reading via Drizzle): homes from page 0; one timel
 ### P6.3: Loss report
 
 - Owner: timeline-worker (timeline/p6-converter)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/17
 - Parallel: yes
 - Depends on: P6.2
@@ -60,7 +60,7 @@ Loss report per page: pathways, midsets and curved SVG shapes, which are kept on
 ### P6.4: Dev command
 
 - Owner: timeline-worker (timeline/p6-converter)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/17
 - Parallel: yes
 - Depends on: P6.2
@@ -70,7 +70,7 @@ Dev command that runs the converter as one `transactionWithHistory` edit, so it 
 ### P6.5: Converter tests
 
 - Owner: timeline-worker (timeline/p6-converter)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/17
 - Parallel: yes
 - Depends on: P6.4
@@ -81,7 +81,7 @@ Tests on fixture shows (including the e2e fixtures): resolver positions equal `m
 
 Tick an item only after running its check, and paste the command and result into the log.
 
-- [ ] P6.5 passes
+- [x] P6.5 passes
 - [ ] The converter has been run on at least three real shows, with loss reports logged
 
 ## Handoff notes
@@ -91,6 +91,9 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - None yet.
 - Page and beat positions: the fixed beat at position 0 has zero length (see the Phase 5 handoff notes). Map page N's transition range from beat positions as ADR 0001 says, and remember that positions in [0, 1) never play.
 - Decided 2026-09-30 (P7.14): `marcher_pages`' appearance overrides, `rotation_degrees` and `notes` are dropped (never implemented). The converter copies only x and y; its loss report should list any non-empty values it finds.
+- Converter follow-ups (from the PR #17 review): (1) a marcher with no row on a page in the MIDDLE of the show currently holds; page mode glides from its previous row to its next. Match page mode by giving it a slot on that page whose destination is the page-mode position at the page's end beat (linear in time between its neighbors), reported as "interpolated"; keep "hold" only when no later row exists. Gaps only come from damaged files, since creating a marcher writes a row on every page. (2) Assignments are inserted one statement each (about 12,500 for 250 marchers × 50 pages, plus undo and change-log rows); before the open-time conversion (Phase 9) add a bulk path with chunked multi-row inserts (row triggers still run per row). (3) Add tests with uneven tempo and with a page that has no beats.
+- Precision (found in P6): the change-log triggers write marcher homes and slot-destination x/y into JSON with 15 significant digits, so a running resolver store is about 4e-12 off until it rebuilds. Being fixed separately (`printf('%!.17g', …)` in the trigger images).
+- Precision fix (2026-09-30): PR https://github.com/AlexDumo/OpenMarch-timeline/pull/18 renders those REAL values at full precision in the trigger images and refreshes the change-log triggers on every file open. Once it merges the live store is exact: the `1e-9` tolerance in `pageConversion.test.ts` is already removed there, so compare against the rows with `Object.is`.
 
 ## Progress log
 
@@ -149,3 +152,10 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   - "Run on three real shows" is still open: no real show files are available to this worker, and the e2e mock database is blank.
 - **Next:** review and merge by the lead; run `convertPages()` on three real shows and log their reports.
 - **Blockers:** none.
+
+### 2026-09-30 · lead session · P6.1 to P6.5 (reviewed and merged)
+
+- **Done:** fork PR #17 reviewed by a sub-agent (APPROVE WITH NITS, no correctness bugs: page N ≥ 1 becomes a shapeless direct transition over its beats with destinations copied exactly; page ends are exact and between pages it matches page mode under uniform tempo; one undoable edit through the real db-functions; no intermediate state the triggers reject; the loss report is accurate per page, including the dropped page extras). Merged. P6.1 to P6.5 set to done; "P6.5 passes" ticked. Follow-ups are in the handoff notes.
+- **Checks:** at the PR head: tsc (pass); `test:history` on pageConversion, planPageConversion, timelineFixtureLoad and timelineDevApi (4 files, 43 passed); the worker's regular desktop suite (101 files, 1,564 passed, before its last small commit).
+- **Next:** the precision fix; then Phase 7.
+- **Blockers:** the exit-gate item "run on at least three real shows" needs real `.dots` files, which the workers don't have (a person, or files added to the repo for testing).
