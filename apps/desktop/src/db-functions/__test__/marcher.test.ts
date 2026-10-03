@@ -416,6 +416,108 @@ describeDbTests("marchers", (it) => {
                     );
                 });
 
+                describe("section row placement", () => {
+                    testWithHistory(
+                        "places each section on its own row stacked toward the front",
+                        async ({ db, pages, expectNumberOfChanges }) => {
+                            void pages;
+                            const newMarchers = [
+                                {
+                                    name: null,
+                                    section: "Trumpet",
+                                    drill_prefix: "T",
+                                    drill_order: 1,
+                                    year: null,
+                                    notes: null,
+                                },
+                                {
+                                    name: null,
+                                    section: "Trumpet",
+                                    drill_prefix: "T",
+                                    drill_order: 2,
+                                    year: null,
+                                    notes: null,
+                                },
+                                {
+                                    name: null,
+                                    section: "Mellophone",
+                                    drill_prefix: "M",
+                                    drill_order: 1,
+                                    year: null,
+                                    notes: null,
+                                },
+                                {
+                                    name: null,
+                                    section: "Baritone",
+                                    drill_prefix: "B",
+                                    drill_order: 1,
+                                    year: null,
+                                    notes: null,
+                                },
+                            ];
+
+                            const created = await createMarchers({
+                                newMarchers,
+                                db,
+                            });
+                            const sectionOf = new Map(
+                                created.map((m) => [m.id, m.section]),
+                            );
+
+                            const firstPage = (
+                                await db.query.pages.findMany()
+                            )[0];
+                            const marcherPages = (
+                                await db.query.marcher_pages.findMany()
+                            ).filter((mp) => mp.page_id === firstPage.id);
+
+                            const rows = new Map<
+                                string,
+                                { x: number; y: number }[]
+                            >();
+                            for (const mp of marcherPages) {
+                                const section = sectionOf.get(mp.marcher_id)!;
+                                if (!rows.has(section)) rows.set(section, []);
+                                rows.get(section)!.push({ x: mp.x, y: mp.y });
+                            }
+
+                            // every marcher in a section shares one y, forming a single row
+                            for (const points of rows.values()) {
+                                expect(
+                                    new Set(points.map((p) => p.y)).size,
+                                ).toBe(1);
+                            }
+
+                            const rowY = (section: string) =>
+                                rows.get(section)![0].y;
+                            // rows stack toward the front (increasing y) in creation order
+                            expect(rowY("Mellophone")).toBeGreaterThan(
+                                rowY("Trumpet"),
+                            );
+                            expect(rowY("Baritone")).toBeGreaterThan(
+                                rowY("Mellophone"),
+                            );
+
+                            // the front-to-back gap between rows is uniform
+                            const rowGap = rowY("Mellophone") - rowY("Trumpet");
+                            expect(rowY("Baritone") - rowY("Mellophone")).toBe(
+                                rowGap,
+                            );
+
+                            // within a row marchers are evenly spaced in x, the row gap is twice that
+                            const trumpetXs = rows
+                                .get("Trumpet")!
+                                .map((p) => p.x)
+                                .sort((a, b) => a - b);
+                            const columnGap = trumpetXs[1] - trumpetXs[0];
+                            expect(columnGap).toBeGreaterThan(0);
+                            expect(rowGap).toBe(columnGap * 2);
+
+                            await expectNumberOfChanges.test(db, 1);
+                        },
+                    );
+                });
+
                 describe("insert with existing marchers", () => {
                     testWithHistory.for([
                         {

@@ -169,6 +169,8 @@ export function buildPerformerAppearanceShowData({
             tagAppearances: tagAppearancesForPage,
             marcherPages: marcherPagesForPage,
             fieldProperties,
+            // this export diffs against a section+default baseline, so exclude the family color
+            includeSectionFamilyColor: false,
         });
 
         for (const marcher of marchers) {

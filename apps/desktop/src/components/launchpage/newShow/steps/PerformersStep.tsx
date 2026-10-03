@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MarcherForm from "@/components/marcher/MarcherForm";
 import { T, useTolgee } from "@tolgee/react";
 import Marcher from "@/global/classes/Marcher";
@@ -10,22 +10,49 @@ import {
     getTranslatedSectionName,
 } from "@/global/classes/Sections";
 import { NewMarcherArgs } from "@/db-functions";
-import type { NewShowPerformersData } from "../../newShowTypes";
+import type {
+    NewShowEnsembleData,
+    NewShowPerformersData,
+} from "../../newShowTypes";
+import {
+    getPresetMarchers,
+    getEnsemblePresetKey,
+    DEFAULT_ENSEMBLE_SIZE,
+} from "@/global/classes/EnsembleTemplates";
 
 type WizardMarcher = Marcher & { tempId: string };
 
 interface PerformersStepProps {
+    ensemble: NewShowEnsembleData | null;
     performers: NewShowPerformersData | null;
     onChange: (performers: NewShowPerformersData) => void;
 }
 
 export default function PerformersStep({
+    ensemble,
     performers,
     onChange,
 }: PerformersStepProps) {
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
     const { t } = useTolgee();
     const marchersList = performers?.marchers ?? [];
+
+    const activity = ensemble?.activity;
+    const size = ensemble?.size ?? DEFAULT_ENSEMBLE_SIZE;
+    const presetKey = getEnsemblePresetKey(activity, size);
+
+    // Fill the roster from the activity/size preset, regenerating when the pair changes
+    useEffect(() => {
+        if (performers?.presetKey === presetKey) return;
+        onChange({
+            method: "add",
+            marchers: getPresetMarchers(activity, size).map((m) => ({
+                ...m,
+                tempId: crypto.randomUUID(),
+            })),
+            presetKey,
+        });
+    }, [presetKey, activity, size, performers?.presetKey, onChange]);
 
     const marchers = useMemo<WizardMarcher[]>(() => {
         return marchersList.map((m, index) => {
@@ -76,6 +103,7 @@ export default function PerformersStep({
         onChange({
             method: "add",
             marchers: [...marchersList, ...marchersWithIds],
+            presetKey,
         });
     };
 
@@ -83,6 +111,7 @@ export default function PerformersStep({
         onChange({
             method: "add",
             marchers: marchersList.filter((m) => m.tempId !== marcherId),
+            presetKey,
         });
     };
 
@@ -103,7 +132,9 @@ export default function PerformersStep({
                 </div>
                 <div className="flex flex-col gap-12">
                     <h5 className="text-body font-medium">
-                        <T keyName="launchpage.newShow.steps.performers.added" />
+                        {t("launchpage.newShow.steps.performers.added", {
+                            count: marchers.length,
+                        })}
                     </h5>
                     {marchers.length === 0 ? (
                         <div className="rounded-12 bg-fg-1 border-stroke border p-16">

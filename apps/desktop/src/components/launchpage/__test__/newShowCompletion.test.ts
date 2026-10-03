@@ -4,6 +4,9 @@ import { QueryClient } from "@tanstack/react-query";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import {
     completeNewShow,
+    ensureFileLocationHasProjectName,
+    isPathUnderDirectory,
+    resolveDefaultSaveDirectory,
     resolveNewShowFilePath,
     sanitizeFilename,
 } from "../newShowCompletion";
@@ -33,6 +36,88 @@ describe("newShowCompletion helpers", () => {
         expect(
             resolveNewShowFilePath("My Show", "/Users/me/Documents/My Show"),
         ).toBe("/Users/me/Documents/My Show.dots");
+    });
+
+    it("resolveNewShowFilePath updates filename when project name is shortened", () => {
+        expect(
+            resolveNewShowFilePath(
+                "My Sho",
+                "/Users/me/Documents/My Show.dots",
+            ),
+        ).toBe("/Users/me/Documents/My Sho.dots");
+    });
+
+    it("ensureFileLocationHasProjectName updates filename when project name is shortened", () => {
+        expect(
+            ensureFileLocationHasProjectName(
+                "/Users/me/Documents/My Show.dots",
+                "My Sho",
+            ),
+        ).toBe("/Users/me/Documents/My Sho.dots");
+    });
+
+    it("isPathUnderDirectory matches the directory itself and nested paths", () => {
+        const drafts =
+            "/Users/me/Library/Application Support/OpenMarch/new-show-drafts";
+        expect(isPathUnderDirectory(drafts, drafts)).toBe(true);
+        expect(isPathUnderDirectory(`${drafts}/uuid.dots`, drafts)).toBe(true);
+        expect(isPathUnderDirectory(`${drafts}/nested/file.dots`, drafts)).toBe(
+            true,
+        );
+        expect(
+            isPathUnderDirectory(
+                "/Users/me/Library/Application Support/OpenMarch/new-show-drafts/nested/file.dots".replaceAll(
+                    "/",
+                    "\\",
+                ),
+                drafts,
+            ),
+        ).toBe(true);
+        expect(
+            isPathUnderDirectory("/Users/me/Documents/Show.dots", drafts),
+        ).toBe(false);
+        expect(
+            isPathUnderDirectory(
+                "/Users/me/Library/Application Support/OpenMarch/new-show-drafts-backup/file.dots",
+                drafts,
+            ),
+        ).toBe(false);
+        expect(isPathUnderDirectory("", drafts)).toBe(false);
+        expect(isPathUnderDirectory(`${drafts}/file.dots`, "")).toBe(false);
+    });
+
+    it("resolveDefaultSaveDirectory falls back to Documents when last file is a draft", () => {
+        const drafts =
+            "/Users/me/Library/Application Support/OpenMarch/new-show-drafts";
+        const documents = "/Users/me/Documents";
+
+        expect(
+            resolveDefaultSaveDirectory(
+                `${drafts}/uuid.dots`,
+                drafts,
+                documents,
+            ),
+        ).toBe(documents);
+        expect(
+            resolveDefaultSaveDirectory(
+                `${drafts}/nested/uuid.dots`,
+                drafts,
+                documents,
+            ),
+        ).toBe(documents);
+        expect(
+            resolveDefaultSaveDirectory(
+                "/Users/me/Shows/existing.dots",
+                drafts,
+                documents,
+            ),
+        ).toBe("/Users/me/Shows");
+        expect(resolveDefaultSaveDirectory("", drafts, documents)).toBe(
+            documents,
+        );
+        expect(resolveDefaultSaveDirectory(undefined, drafts, documents)).toBe(
+            documents,
+        );
     });
 
     it("maps split audio and tempo wizard state to completion form state", () => {

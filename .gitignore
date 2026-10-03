@@ -32,6 +32,8 @@ node_modules/.vite
 *.njsproj
 *.sln
 *.sw?
+docs/superpowers/
+
 
 /test-results/
 /playwright-report/

@@ -6,7 +6,8 @@
                 "@openmarch/core#dev",
                 "@openmarch/musicxml-parser#dev",
                 "@openmarch/ui#dev",
-                "@openmarch/metronome#dev"
+                "@openmarch/metronome#dev",
+                "@openmarch/drill-interop#dev"
             ],
             "persistent": true,
             "cache": false
