@@ -134,8 +134,23 @@ const seed = async (db: DbConnection) => {
     await exec(db, `DELETE FROM timeline_change_log`);
 };
 
+/**
+ * `seed` with every transition spanning its timeline (C-11), for the commit-time checks, which
+ * report one that doesn't (E-T1): timeline 1 is cut to transition 1's [0, 16), and timeline 5 over
+ * [0, 8) holds `SHAPELESS`. The row-trigger tests keep `seed`'s wider timeline, which they need for
+ * transitions inside it.
+ */
+const seedSpanning = async (db: DbConnection) => {
+    await seed(db);
+    await exec(db, `UPDATE timelines SET end_beat = 16 WHERE id = 1`);
+    await exec(
+        db,
+        `INSERT INTO timelines (id, name, start_beat, end_beat) VALUES (5, 'shapeless', 0, 8)`,
+    );
+};
+
 const SHAPELESS = `INSERT INTO timeline_transitions (id, timeline_id, dest_shape_id, path_style, path_params, slot_count, start_beat, end_beat)
-    VALUES (5, 1, NULL, 'direct', NULL, 2, 0, 8)`;
+    VALUES (5, 5, NULL, 'direct', NULL, 2, 0, 8)`;
 const POINTS = [
     `INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (5, 0, 3.5, -2)`,
     `INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (5, 1, 7, 4)`,
@@ -493,7 +508,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-30: a rolled-back edit leaves no change-log rows", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             await exec(db, "BEGIN");
             await exec(db, `UPDATE marchers SET home_x = 9 WHERE id = 1`);
             // The earlier statement is logged while the transaction is open...
@@ -525,7 +540,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-32: a circle radius must be numeric, > 0 and <= 1e6", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             const circle = (radius: string | null) =>
                 `INSERT INTO timeline_shapes (id, kind, geometry) VALUES (9, 'circle',
                     '{"center":[0,0],${radius === null ? "" : `"radius":${radius},`}"start_angle":0,"clockwise":false}')`;
@@ -546,7 +561,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-33: an arc bulge must be numeric with |bulge| <= 0.5; a direct transition needs no params", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             for (const [style, params, accepted] of [
                 ["arc", `'{"bulge":0.5}'`, true],
                 ["arc", `'{"bulge":-0.5}'`, true],
@@ -568,7 +583,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-34: a circle start_angle must be numeric in [0, 2pi)", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             for (const [angle, accepted] of [
                 ["0", true],
                 ["6.28", true],
@@ -591,7 +606,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-35: a shapeless direct transition with a point for each slot is accepted in one edit", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             expect(await attempt(db, [SHAPELESS, ...POINTS])).toBeNull();
             expect(await count(db, "timeline_slot_destinations")).toBe(2);
         });
@@ -599,7 +614,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-36: a shapeless transition with an unplaced slot is reported at commit (E-T6) and the whole edit rolls back", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             // Directly, inside one transaction: the view reports the gap, and ROLLBACK leaves no trace
             await exec(db, "BEGIN");
             await exec(db, `UPDATE marchers SET name = 'X' WHERE id = 1`);
@@ -638,7 +653,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-37: follow-the-leader without a shape is rejected (I-T5)", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             const error = await attempt(db, [
                 `INSERT INTO timeline_transitions (id, timeline_id, dest_shape_id, path_style, path_params, slot_count, start_beat, end_beat)
                     VALUES (6, 1, NULL, 'follow_the_leader', '{"waypoints":[]}', 1, 0, 8)`,
@@ -649,7 +664,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-38: a shape and individual destinations are exclusive, and converting either way works in one edit", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             // A point on a shaped transition
             expect(
                 await attempt(db, [
@@ -695,7 +710,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-39: destination rows stay consistent with slot_count", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             expect(
                 await attempt(db, [
                     SHAPELESS,
@@ -732,7 +747,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-40: a point with an out-of-range, infinite, NaN or text coordinate is rejected (I-D2)", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             for (const x of ["2e6", "1e999", "0.0/0.0", "'abc'"]) {
                 const error = await attempt(db, [
                     SHAPELESS,
@@ -747,7 +762,7 @@ describeDbTests("QA-DB storage suite", (it) => {
         it("QA-DB-41: the change log records destination edits under the transition's id, including the explicit child-first deletes", async ({
             db,
         }) => {
-            await seed(db);
+            await seedSpanning(db);
             const drain = async () => {
                 const rows = (await all(
                     db,
@@ -804,6 +819,47 @@ describeDbTests("QA-DB storage suite", (it) => {
                 [5, { transition: 5, slot: 0, x: 3.5, y: -2 }, null],
                 [5, { transition: 5, slot: 1, x: 0, y: 4 }, null],
             ]);
+        });
+
+        it("C-11: a transition whose range differs from its timeline's is reported at commit (E-T1), and a range edit may pass through one", async ({
+            db,
+        }) => {
+            await seedSpanning(db);
+            // A second transition over part of timeline 1: inside it, so the row trigger accepts
+            // it, but it doesn't span it
+            await exec(db, "BEGIN");
+            await exec(db, INSERT_TRANSITION(2, 1, 1, 8, 16));
+            expect(
+                await all(db, `SELECT * FROM timeline_commit_violations`),
+            ).toEqual([
+                [
+                    "E-T1",
+                    2,
+                    "transition spans [8, 16) but its timeline spans [0, 16)",
+                ],
+            ]);
+            await exec(db, "ROLLBACK");
+            expect(
+                await attempt(db, [INSERT_TRANSITION(2, 1, 1, 8, 16)]),
+            ).toMatch(E_T1);
+            expect(await count(db, "timeline_transitions WHERE id = 2")).toBe(
+                0,
+            );
+            // R-E1 grows the timeline, then its transitions, then moves the anchored rows: the
+            // middle state differs, the end state spans, so the edit commits
+            expect(
+                await attempt(db, [
+                    `UPDATE timelines SET end_beat = 24 WHERE id = 1`,
+                    `UPDATE timeline_transitions SET end_beat = 24 WHERE id = 1`,
+                    `UPDATE timeline_assignments SET end_beat = 24 WHERE transition_id = 1 AND end_beat = 16`,
+                ]),
+            ).toBeNull();
+            // Stopping halfway is refused
+            expect(
+                await attempt(db, [
+                    `UPDATE timelines SET end_beat = 32 WHERE id = 1`,
+                ]),
+            ).toMatch(E_T1);
         });
     });
 });

@@ -4,6 +4,10 @@ import { db } from "@/global/database/db";
 import type { DbConnection } from "@/db-functions/types";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { startTimelineResolver, stopTimelineResolver } from "./timelineStore";
+import { useTimelineSelectionHost } from "./useTimelineSelectionHost";
+import { useTimelinePageBridge } from "./useTimelinePageBridge";
+import { useDeselectDimmedMarchers } from "./useTimelineDimming";
+import { useTimelinePlaybackDriver } from "./useTimelinePlaybackDriver";
 import {
     createTimelineDevApi,
     type TimelineDevApi,
@@ -63,6 +67,14 @@ export function useTimelineDevApi(
 export default function TimelineResolverHost() {
     const enabled = useTimelineMode();
     useTimelineResolverSession(db, enabled);
+    // The stored timelines the UI-9 selection resolves to (P8.11)
+    useTimelineSelectionHost(db, enabled);
+    // TEMPORARY (P8.12): the legacy selected page follows the playhead
+    useTimelinePageBridge(enabled);
+    // UI-9: marchers outside the selected timeline can't stay selected
+    useDeselectDimmedMarchers(enabled);
+    // UI-9 Play: loop a selected range, stop at the end, leave the playhead where a pause lands
+    useTimelinePlaybackDriver(enabled);
     // The console API can write fixtures into the file. The flag lives in the file itself, so it
     // alone mustn't expose a write path in a release build: development builds only.
     useTimelineDevApi(db, enabled && import.meta.env.DEV);

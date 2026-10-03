@@ -5,6 +5,23 @@ model. Many agents and people work on it at once, each owning separate pieces.
 Read this file before you start, and follow the protocol so that others can see
 what you own and how far you've got.
 
+## Current focus: Validation phase
+
+Start with [the linear page-creation MVP validation plan](validation-plan.md).
+We are validating timeline and page creation interaction first, ignoring shapes
+and assuming linear pathways. Broader feature validation comes later.
+Record MVP evidence in that plan's append-only validation log, not as
+completed implementation gates.
+
+The workflow under test is **UI-9: pages are flags** (decided 2026-10-01).
+Read UI-9 in [ui.md](ui.md) and C-12 in
+[implementation-plan.md](implementation-plan.md) before any timeline UI work;
+UI-9 wins over older text in `ui.md`. It is built by P8.11, P8.13, P8.14 and
+P8.15, then P8.12 ([phase 8](phases/08-authoring-ui.md); its handoff notes
+give the order), and the MVP also needs P9.10. Open owner questions are in
+`ui.md` U-Q5, and deferred work is in its backlog: don't build those without
+a decision.
+
 | File                                             | Purpose                                                                                        |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | [implementation-plan.md](implementation-plan.md) | Shared context: repo facts, spec/app conflicts (`C-n`), phase order, risks. Read it once.      |

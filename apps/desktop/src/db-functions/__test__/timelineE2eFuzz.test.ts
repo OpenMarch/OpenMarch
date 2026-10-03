@@ -333,7 +333,7 @@ const OP_NAMES = [
     "update assignment",
     "R-E1 range edit",
     "R-E1 range shift",
-    "plain range update",
+    "timeline range nudge",
     "raw range update",
     "path style",
     "order mode",
@@ -366,14 +366,14 @@ const INVALID_NAMES = [
     "E-A1/E-A2 row after the end",
     "E-A1/E-A2 slot past the count",
     "E-A3 overlapping copy",
-    "E-T1 transition after its timeline",
+    "E-ARGS transition off its timeline's range",
     "E-T3/E-T4 block followed by the leader",
     "E-T6 unplaced point at commit",
     "E-T6 shape on a transition with points",
     "E-DB shape in use",
     "E-A1 range strands a row",
     "E-A2 slot count below an occupied slot",
-    "E-T1 timeline drops a transition",
+    "E-T1 raw timeline drops a transition",
 ] as const;
 type InvalidName = (typeof INVALID_NAMES)[number];
 
@@ -495,10 +495,23 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
         return { startBeat: s, endBeat: ri(s + 1, Math.min(SHOW_END, s + 12)) };
     };
 
-    const addShaped: Op = async (tx) => {
+    /**
+     * A transition spans its timeline (C-11): an existing timeline, or about half the time a new
+     * one over a random range, made in the same edit.
+     */
+    const timelineFor = async (tx: DbTransaction): Promise<number> => {
         const timelines = await idsOf(tx, schema.timelines);
+        if (timelines.length && R() < 0.5) return pick(timelines);
+        const [timeline] = await createTimelinesInTransaction({
+            newTimelines: [{ name: "fuzz", ...randomRange() }],
+            tx,
+        });
+        return timeline!.id;
+    };
+
+    const addShaped: Op = async (tx) => {
         const shapes = await idsOf(tx, schema.timeline_shapes);
-        if (!timelines.length || !shapes.length) return false;
+        if (!shapes.length) return false;
         const style = pick<PathStyle>([
             "direct",
             "arc",
@@ -508,8 +521,7 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
         await createTimelineTransitionsInTransaction({
             newTransitions: [
                 {
-                    timelineId: pick(timelines),
-                    ...randomRange(),
+                    timelineId: await timelineFor(tx),
                     slotCount: ri(1, 5),
                     destination: { kind: "shape", shapeId: pick(shapes) },
                     pathStyle: style,
@@ -524,15 +536,12 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
 
     /** D-16: a shapeless transition and all its points, in one edit */
     const addIndividual: Op = async (tx) => {
-        const timelines = await idsOf(tx, schema.timelines);
-        if (!timelines.length) return false;
         const style = pick<PathStyle>(["direct", "arc"]);
         const n = ri(1, 5);
         await createTimelineTransitionsInTransaction({
             newTransitions: [
                 {
-                    timelineId: pick(timelines),
-                    ...randomRange(),
+                    timelineId: await timelineFor(tx),
                     slotCount: n,
                     destination: { kind: "individual", points: points(n) },
                     pathStyle: style,
@@ -647,34 +656,48 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
         }),
         op("R-E1 range edit", rangeEdit(false)),
         op("R-E1 range shift", rangeEdit(true)),
-        // A plain range update: refused (E-A1) if it would strand a row
-        op("plain range update", async (tx) => {
-            const t = await pickTransition(tx);
-            if (!t) return false;
-            const [ds, de] = [ri(-3, 3), ri(-3, 3)];
-            if (ds === 0 && de === 0) return false;
-            await updateTimelineTransitionsInTransaction({
-                modifiedTransitions: [
-                    {
-                        id: t.id,
-                        startBeat: t.start_beat + ds,
-                        endBeat: t.end_beat + de,
-                    },
+        // A timeline's range nudged: its transitions and anchored rows move with it (C-11), and
+        // it is refused (E-A1) if it would strand a row
+        op("timeline range nudge", async (tx) => {
+            const timelines = await tx.select().from(schema.timelines).all();
+            if (!timelines.length) return false;
+            const l = pick(timelines);
+            const start = Math.max(0, l.start_beat + ri(-3, 3));
+            const end = Math.max(start + 1, l.end_beat + ri(-3, 3));
+            if (start === l.start_beat && end === l.end_beat) return false;
+            await updateTimelinesInTransaction({
+                modifiedTimelines: [
+                    { id: l.id, startBeat: start, endBeat: end },
                 ],
                 tx,
             });
             return true;
         }),
         // A raw range UPDATE, as in e2e.mjs: tr_range_check rejects a stranded row. Under the
-        // v0.6 trigger it moves the anchored rows instead.
+        // v0.6 trigger it moves the anchored rows instead. The timeline moves with its transitions
+        // (C-11): grown to the union first, settled on the new range last.
         op("raw range update", async (tx) => {
             const t = await pickTransition(tx);
             if (!t) return false;
-            const [ds, de] = [ri(-3, 3), ri(-3, 3)];
-            if (ds === 0 && de === 0) return false;
+            const l = (await tx
+                .select()
+                .from(schema.timelines)
+                .where(eq(schema.timelines.id, t.timeline_id))
+                .get())!;
+            const start = Math.max(0, l.start_beat + ri(-3, 3));
+            const end = Math.max(start + 1, l.end_beat + ri(-3, 3));
+            if (start === l.start_beat && end === l.end_beat) return false;
             await raw(
                 tx,
-                sql`UPDATE timeline_transitions SET start_beat = start_beat + ${ds}, end_beat = end_beat + ${de} WHERE id = ${t.id}`,
+                sql`UPDATE timelines SET start_beat = ${Math.min(start, l.start_beat)}, end_beat = ${Math.max(end, l.end_beat)} WHERE id = ${l.id}`,
+            );
+            await raw(
+                tx,
+                sql`UPDATE timeline_transitions SET start_beat = ${start}, end_beat = ${end} WHERE timeline_id = ${l.id}`,
+            );
+            await raw(
+                tx,
+                sql`UPDATE timelines SET start_beat = ${start}, end_beat = ${end} WHERE id = ${l.id}`,
             );
             return true;
         }),
@@ -884,17 +907,10 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
             );
             return true;
         }),
-        // Timelines: add, change the range (E-T1 if it would drop a transition), delete
+        // Timelines: add, change the range (moving their transitions, C-11), delete
         op("add timeline", async (tx) => {
-            const s = ri(0, 8);
             await createTimelinesInTransaction({
-                newTimelines: [
-                    {
-                        name: "fuzz",
-                        startBeat: s,
-                        endBeat: ri(SHOW_END - 8, SHOW_END),
-                    },
-                ],
+                newTimelines: [{ name: "fuzz", ...randomRange() }],
                 tx,
             });
             return true;
@@ -1025,8 +1041,8 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
             });
             return true;
         }),
-        // E-T1: a transition after its timeline's end
-        invalidOp("E-T1 transition after its timeline", async (tx) => {
+        // C-11: a transition that doesn't span its timeline (refused by the app, E-ARGS)
+        invalidOp("E-ARGS transition off its timeline's range", async (tx) => {
             const timelines = await tx.select().from(schema.timelines).all();
             if (!timelines.length) return false;
             const tl = pick(timelines);
@@ -1055,7 +1071,6 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
                 newTransitions: [
                     {
                         timelineId: pick(timelines),
-                        ...randomRange(),
                         slotCount: 1,
                         destination: {
                             kind: "shape",
@@ -1110,21 +1125,16 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
             });
             return true;
         }),
-        // E-A1: a plain range update that strands a row
+        // E-A1: a raw range update that strands a row (the app moves ranges only with their
+        // timeline, C-11)
         invalidOp("E-A1 range strands a row", async (tx) => {
             const rows = await assignmentsOf(tx);
             if (!rows.length) return false;
             const a = pick(rows);
-            await updateTimelineTransitionsInTransaction({
-                modifiedTransitions: [
-                    {
-                        id: a.transition_id,
-                        startBeat: a.end_beat,
-                        endBeat: a.end_beat + 1,
-                    },
-                ],
+            await raw(
                 tx,
-            });
+                sql`UPDATE timeline_transitions SET start_beat = ${a.end_beat}, end_beat = ${a.end_beat + 1} WHERE id = ${a.transition_id}`,
+            );
             return true;
         }),
         // E-A2: a slot count below an occupied slot
@@ -1151,20 +1161,15 @@ function makeGenerators(rand: Rand, v06: boolean, tags: EditTags) {
             });
             return true;
         }),
-        // E-T1: a timeline that no longer contains its transitions
-        invalidOp("E-T1 timeline drops a transition", async (tx) => {
+        // E-T1: a raw timeline update that no longer contains its transitions (the app moves the
+        // transitions with it, C-11)
+        invalidOp("E-T1 raw timeline drops a transition", async (tx) => {
             const t = await pickTransition(tx);
             if (!t) return false;
-            await updateTimelinesInTransaction({
-                modifiedTimelines: [
-                    {
-                        id: t.timeline_id,
-                        startBeat: t.end_beat,
-                        endBeat: t.end_beat + 1,
-                    },
-                ],
+            await raw(
                 tx,
-            });
+                sql`UPDATE timelines SET start_beat = ${t.end_beat}, end_beat = ${t.end_beat + 1} WHERE id = ${t.timeline_id}`,
+            );
             return true;
         }),
     ];

@@ -6,6 +6,7 @@ import { useTimingObjects } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 import { useSelectionStore } from "@/stores/SelectionStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     marcherAppearancesQueryOptions,
     updateShapePagesMutationOptions,
@@ -89,6 +90,11 @@ function StateInitializer() {
             setSelectedPage(pages[0]);
         }
     }, [pages, selectedPage, setSelectedPage]);
+
+    // Timeline mode (UI-9): opening a show selects home, with the playhead at beat 0
+    useEffect(() => {
+        useTimelineSelectionStore.getState().selectHome();
+    }, []);
 
     // Select the currently selected audio file
     useEffect(() => {

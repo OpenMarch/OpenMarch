@@ -31,9 +31,9 @@ const tablesToCheck = [
 ];
 
 /**
- * One edit: two marchers, a timeline over [0, 64), a line shape, a 2-slot transition on the line
- * over [0, 16) (id 1), and a shapeless 2-slot transition over [16, 32) (id 2) with both of its
- * destinations.
+ * One edit: two marchers, timelines over [0, 16), [16, 32) and [32, 48), a line shape, a 2-slot
+ * transition on the line spanning the first (id 1), and a shapeless 2-slot transition spanning the
+ * second (id 2) with both of its destinations.
  */
 const seed = (db: DbConnection) =>
     transactionWithHistory(db, "seedTimeline", async (tx) => {
@@ -41,9 +41,12 @@ const seed = (db: DbConnection) =>
             { id: 1, section: "Brass", drill_prefix: "B", drill_order: 1 },
             { id: 2, section: "Brass", drill_prefix: "B", drill_order: 2 },
         ]);
-        await tx
-            .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 64 });
+        // One timeline per transition, which spans it (C-11); timeline 3 is for transition 3
+        await tx.insert(schema.timelines).values([
+            { id: 1, name: "Opener", start_beat: 0, end_beat: 16 },
+            { id: 2, start_beat: 16, end_beat: 32 },
+            { id: 3, start_beat: 32, end_beat: 48 },
+        ]);
         await tx.insert(schema.timeline_shapes).values({
             id: 1,
             kind: "line",
@@ -60,7 +63,7 @@ const seed = (db: DbConnection) =>
             },
             {
                 id: 2,
-                timeline_id: 1,
+                timeline_id: 2,
                 dest_shape_id: null,
                 slot_count: 2,
                 start_beat: 16,
@@ -337,7 +340,7 @@ describeDbTests("timeline change-log wrapper", (it) => {
                 transactionWithHistory(db, "incomplete", async (tx) => {
                     await tx.insert(schema.timeline_transitions).values({
                         id: 3,
-                        timeline_id: 1,
+                        timeline_id: 3,
                         dest_shape_id: null,
                         slot_count: 2,
                         start_beat: 32,

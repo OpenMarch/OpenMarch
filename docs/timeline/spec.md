@@ -59,7 +59,7 @@ The design replaces the current model, which stores one coordinate per (marcher,
 | **Range** | A half-open interval `[start, end)` of beats. |
 | **Marcher** | A real performer. It has a *home* position, which is where it stands before its first assignment. |
 | **Shape** | A formation drawn in absolute field coordinates, such as a line, freehand curve, circle, box or block. It has no knowledge of time or of marchers. **Optional**: a transition can place its slots individually instead (D-16). |
-| **Timeline** | A container with a range: a track in the UI. It has **no effect on resolution** (R-1). *App restriction (implementation-plan.md C-11): it is the container for start and stop, and every transition in it spans its whole range.* |
+| **Timeline** | A container with a range: a track in the UI. It has **no effect on resolution** (R-1). *App restriction (implementation-plan.md C-11): it is the container for start and stop, and every transition in it spans its whole range. App restriction (C-12): at most one timeline has a given range, and a page's box in the UI is the timeline ending at its flag.* |
 | **Transition** | Motion over a range, in a given path style, into slot destinations. The destinations come from a shape or are placed individually. It owns `slot_count` **anonymous slots**. It does **not** store where marchers start. |
 | **Slot** | An anonymous position within a transition, numbered `0…slot_count-1`. Its destination is sampled from the transition's shape, or is an individually placed point (R-13). |
 | **Individual destination** | A point placed by hand for one slot of a transition that has no shape (`slot_destinations`, D-16). "Move marcher 7 here" means setting the point of marcher 7's slot. |

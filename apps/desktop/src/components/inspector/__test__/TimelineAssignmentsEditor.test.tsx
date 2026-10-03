@@ -39,7 +39,10 @@ vi.mock("@/db-functions/timelineAssignmentEdits", () => ({
     recastTransition: mocks.recast,
     setAssignmentSlot: mocks.slot,
     updateAssignment: mocks.update,
-    removeAssignment: mocks.remove,
+}));
+// The inspector's remove is UI-9's (P8.14)
+vi.mock("@/db-functions/timelineMembership", () => ({
+    removeAssignmentFromTimeline: mocks.remove,
 }));
 vi.mock("@/timeline/timelineErrorMessages", () => ({
     toastTimelineError: mocks.toast,

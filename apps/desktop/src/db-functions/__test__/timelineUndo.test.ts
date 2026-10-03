@@ -144,7 +144,7 @@ const LINE = {
 } as const;
 
 /**
- * One edit: 3 marchers, a timeline [0, 64), a line shape, and two transitions:
+ * One edit: 3 marchers, a line shape, and two transitions, each spanning its own timeline (C-11):
  *
  * - T1 on the line over [8, 24), 3 slots: marcher 1 `[8, 24)` slot 0, marcher 2 `[8, 24)` slot 1,
  *   marcher 3 `[12, 20)` slot 2;
@@ -160,8 +160,11 @@ const seed = (db: DbConnection) =>
                 drill_order: id,
             })),
         );
-        const [timeline] = await createTimelinesInTransaction({
-            newTimelines: [{ name: "Opener", startBeat: 0, endBeat: 64 }],
+        const [timeline, timeline2] = await createTimelinesInTransaction({
+            newTimelines: [
+                { name: "Opener", startBeat: 8, endBeat: 24 },
+                { startBeat: 30, endBeat: 40 },
+            ],
             tx,
         });
         const [shape] = await createTimelineShapesInTransaction({
@@ -178,7 +181,7 @@ const seed = (db: DbConnection) =>
                     destination: { kind: "shape", shapeId: shape!.id },
                 },
                 {
-                    timelineId: timeline!.id,
+                    timelineId: timeline2!.id,
                     startBeat: 30,
                     endBeat: 40,
                     slotCount: 2,
@@ -246,11 +249,13 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
             // DELETE and FKs are RESTRICT (C-1), so child-first deletes log each child's inverse
             // before its parent's, and undo re-inserts the parent first.
             expect((await performRedo(db)).success).toBe(true);
+            // Its timeline is left empty, so it goes last (C-11)
             expect(await newestUndoGroupTables(db)).toEqual([
                 "timeline_assignments",
                 "timeline_slot_destinations",
                 "timeline_slot_destinations",
                 "timeline_transitions",
+                "timelines",
             ]);
         });
 
@@ -281,7 +286,20 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
         it("a timeline holding two transitions (two levels)", async ({
             db,
         }) => {
-            const { timelineId } = await seed(db);
+            const { timelineId, shapeId } = await seed(db);
+            // A second transition over the same counts (C-11)
+            await transactionWithHistory(db, "sibling", (tx) =>
+                createTimelineTransitionsInTransaction({
+                    newTransitions: [
+                        {
+                            timelineId,
+                            slotCount: 1,
+                            destination: { kind: "shape", shapeId },
+                        },
+                    ],
+                    tx,
+                }),
+            );
             await roundTrip(db, () =>
                 transactionWithHistory(db, "deleteTimeline", (tx) =>
                     deleteTimelinesInTransaction({
@@ -647,7 +665,7 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
         it("QA-UNDO-1: a restored v0.6 row-rewriting range trigger makes a shrink's undo fail (U-1)", async ({
             db,
         }) => {
-            const { t1 } = await seed(db);
+            const { t1, timelineId } = await seed(db);
             await db.run(sql.raw("DROP TRIGGER timeline_tr_range_check"));
             await db.run(
                 sql.raw(`CREATE TRIGGER v06_range_anchor AFTER UPDATE OF start_beat, end_beat ON timeline_transitions
@@ -664,12 +682,17 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
             // the v0.6 review found (spec Appendix G).
             await dropUndoTriggers(db, "timeline_transitions");
             await createUndoTriggers(db, "timeline_transitions");
-            await transactionWithHistory(db, "shrink", (tx) =>
-                tx
+            await transactionWithHistory(db, "shrink", async (tx) => {
+                await tx
                     .update(schema.timeline_transitions)
                     .set({ end_beat: 20 })
-                    .where(eq(schema.timeline_transitions.id, t1)),
-            );
+                    .where(eq(schema.timeline_transitions.id, t1));
+                // The timeline too, so the transition still spans it at commit (C-11)
+                await tx
+                    .update(schema.timelines)
+                    .set({ end_beat: 20 })
+                    .where(eq(schema.timelines.id, timelineId));
+            });
             const edited = await snapshot(db);
             expect((await assignmentOf(db, 2)).end_beat).toBe(20);
 
@@ -683,7 +706,7 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
         it("QA-UNDO-1b: without the transition-side range check, 'shrink, then fix the rows' commits and can't be undone (U-3)", async ({
             db,
         }) => {
-            const { t1 } = await seed(db);
+            const { t1, timelineId } = await seed(db);
             await db.run(sql.raw("DROP TRIGGER timeline_tr_range_check"));
             await transactionWithHistory(db, "shrinkThenFix", async (tx) => {
                 await tx
@@ -694,6 +717,11 @@ describeDbTests("timeline undo round trips (P4.8)", (it) => {
                     .update(schema.timeline_assignments)
                     .set({ end_beat: 16 })
                     .where(eq(schema.timeline_assignments.transition_id, t1));
+                // The timeline too, so the transition still spans it at commit (C-11)
+                await tx
+                    .update(schema.timelines)
+                    .set({ end_beat: 16 })
+                    .where(eq(schema.timelines.id, timelineId));
             });
             const edited = await snapshot(db);
 

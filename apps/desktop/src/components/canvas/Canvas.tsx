@@ -5,7 +5,7 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
-    moveMarchersOnPageMutationOptions,
+    moveMarchersInTargetMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
@@ -37,7 +37,10 @@ import { useTimelineStaticRender } from "@/timeline/useTimelineStaticRender";
 import { useTimelinePathRender } from "@/timeline/useTimelinePathRender";
 import { useTimelineShapeCanvas } from "@/timeline/useTimelineShapeCanvas";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import { useTimelineDimming } from "@/timeline/useTimelineDimming";
 import { canvasCoordinateWriter } from "@/timeline/timelineCoordinateWrites";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 
 /**
  * The field/stage UI of OpenMarch
@@ -85,8 +88,8 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    const { mutate: moveMarchersOnPageMutate } = useMutation(
-        moveMarchersOnPageMutationOptions(),
+    const { mutate: moveMarchersMutate } = useMutation(
+        moveMarchersInTargetMutationOptions(),
     );
     const { setSelectedShapePageIds } = useSelectionStore()!;
     const databaseReady = useDatabaseReady();
@@ -97,6 +100,8 @@ export default function Canvas({
         (s) => s.status === "ready",
     );
     const drawFromResolver = timelineMode && timelineResolverReady;
+    // UI-9: the paused canvas shows positions at the playhead
+    const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
     const marcherIds = useMemo(() => marchers?.map((m) => m.id), [marchers]);
 
     const { data: fieldProperties } = useQuery(
@@ -244,26 +249,23 @@ export default function Canvas({
     // Update section appearances
     useEffect(() => {
         if (canvas) {
-            // Timeline mode (P7.2): a drag sets the dragged marchers' destinations on the selected
-            // page. A refused move snaps the marchers back to the resolver's position.
+            // Timeline mode (UI-9 Editing, P8.15): a drag sets the dragged marchers' endings in
+            // the selected timeline, or their homes at home. The selection is read when the drag
+            // ends. A refused move shows why and snaps the marchers back to the resolver.
             canvas.updateMarcherPagesFunction = canvasCoordinateWriter({
                 timelineMode,
-                page: selectedPage,
                 writePages: updateMarcherPages.mutate,
                 writeTimeline: (request) =>
-                    moveMarchersOnPageMutate(request, {
+                    moveMarchersMutate(request, {
                         onError: () => canvas.refreshMarchers(),
                     }),
-                onNoPage: () => canvas.refreshMarchers(),
+                onRefused: (error) => {
+                    toastTimelineError(error);
+                    canvas.refreshMarchers();
+                },
             });
         }
-    }, [
-        canvas,
-        updateMarcherPages.mutate,
-        moveMarchersOnPageMutate,
-        timelineMode,
-        selectedPage,
-    ]);
+    }, [canvas, updateMarcherPages.mutate, moveMarchersMutate, timelineMode]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -629,7 +631,15 @@ export default function Canvas({
     useTimelineStaticRender({
         canvas,
         selectedPage,
+        beat: playheadBeat,
         isPlaying,
+        enabled: timelineMode,
+        redrawKey: marcherVisuals,
+    });
+
+    // Timeline mode (UI-9): marchers outside the selected timeline are dimmed and can't be hit
+    useTimelineDimming({
+        canvas,
         enabled: timelineMode,
         redrawKey: marcherVisuals,
     });

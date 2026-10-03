@@ -6,9 +6,13 @@ import {
     marcherPagesByPageId,
     updateMarcherPages,
 } from "@/db-functions/marcherPage";
-import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
+import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
 import type Page from "@/global/classes/Page";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
+import {
+    useTimelineSelectionStore,
+    type StoredTimelineMembership,
+} from "@/stores/TimelineSelectionStore";
 import {
     convertPagesToTimeline,
     readShowTiming,
@@ -16,13 +20,18 @@ import {
 import { pageEndBeat } from "../timelineCanvas";
 import {
     canvasCoordinateWriter,
+    planCanvasEdit,
     timelineCoordinateRecords,
-    transformMarchersOnPage,
+    transformMarchersInSelection,
+    TimelineEditRefusedError,
     TimelineNotReadyError,
     toTimelineMoves,
     withTimelinePositions,
-    type TimelineMoveRequest,
+    type CanvasEditPlan,
+    type TimelineEditRequest,
 } from "../timelineCoordinateWrites";
+import { timelineErrorMessage } from "../timelineErrorMessages";
+import { readStoredTimelineMemberships } from "../useTimelineSelectionHost";
 import {
     startTimelineResolver,
     stopTimelineResolver,
@@ -38,12 +47,16 @@ keepFixturesInPageMode(
 
 /**
  * The routed coordinate tools (docs/timeline/phases/07-page-parity.md P7.2), with the timeline
- * flag on and off: canvas drag (`canvasCoordinateWriter`, as `Canvas.tsx` installs it) and the
- * align-vertically tool (as `RegisteredActionsHandler` runs it: read the selected marchers, apply
- * `CoordinateActions`, write).
+ * flag on and off, editing against the UI-9 selection (P8.15): canvas drag
+ * (`canvasCoordinateWriter`, as `Canvas.tsx` installs it) and the tools as
+ * `RegisteredActionsHandler` runs them (read the selected marchers, apply `CoordinateActions`,
+ * write).
  */
 
-afterEach(() => stopTimelineResolver());
+afterEach(() => {
+    stopTimelineResolver();
+    useTimelineSelectionStore.getState().reset();
+});
 
 const TIMELINE_TABLES = [
     schema.marchers,
@@ -79,22 +92,184 @@ const sortedPages = async (db: DbConnection): Promise<Page[]> => {
 const positionAt = (marcherId: number, beat: number) =>
     useTimelineResolverStore.getState().resolver!.positionAt(marcherId, beat);
 
+/** The edit plan for `page`'s page timeline, as the selection store gives it at its end. */
+const pagePlan = async (
+    db: DbConnection,
+    page: Page,
+): Promise<CanvasEditPlan> => {
+    const timeline = await db
+        .select()
+        .from(schema.timelines)
+        .where(eq(schema.timelines.end_beat, pageEndBeat(page)))
+        .get();
+    expect(timeline).toBeDefined();
+    return {
+        ok: true,
+        target: { kind: "timeline", timelineId: timeline!.id },
+        beat: timeline!.end_beat,
+    };
+};
+
+/** Loads the stored timelines into the selection store, as `useTimelineSelectionHost` does. */
+const loadSelection = async (db: DbConnection) =>
+    useTimelineSelectionStore
+        .getState()
+        .setStoredTimelines(await readStoredTimelineMemberships(db));
+
+const stored = (
+    id: number,
+    start: number,
+    end: number,
+    marcherIds: number[] = [1],
+): StoredTimelineMembership => ({
+    id,
+    start,
+    end,
+    marcherIds: new Set(marcherIds),
+});
+
+describe("planCanvasEdit (UI-9 Editing, Home)", () => {
+    const timelines = [stored(7, 1, 9), stored(8, 9, 17)];
+
+    plainIt("home with the playhead on beat 0 edits homes", () => {
+        expect(
+            planCanvasEdit({
+                selection: { kind: "home" },
+                storedTimelines: null,
+                playheadBeat: 0,
+            }),
+        ).toEqual({ ok: true, target: { kind: "home" }, beat: 0 });
+        // Nothing selected at beat 0 is the same
+        expect(
+            planCanvasEdit({
+                selection: { kind: "none" },
+                storedTimelines: timelines,
+                playheadBeat: 0,
+            }),
+        ).toEqual({ ok: true, target: { kind: "home" }, beat: 0 });
+    });
+
+    plainIt("no timeline selected off beat 0 is refused", () => {
+        for (const selection of [
+            { kind: "home" } as const,
+            { kind: "none" } as const,
+        ]) {
+            const plan = planCanvasEdit({
+                selection,
+                storedTimelines: timelines,
+                playheadBeat: 5,
+            });
+            expect(plan.ok).toBe(false);
+            expect(!plan.ok && plan.error).toBeInstanceOf(
+                TimelineEditRefusedError,
+            );
+            expect(
+                !plan.ok && (plan.error as TimelineEditRefusedError).refusal,
+            ).toBe("noTimeline");
+        }
+    });
+
+    plainIt("a stored timeline with the playhead on its end edits it", () => {
+        expect(
+            planCanvasEdit({
+                selection: { kind: "range", start: 9, end: 17 },
+                storedTimelines: timelines,
+                playheadBeat: 17,
+            }),
+        ).toEqual({
+            ok: true,
+            target: { kind: "timeline", timelineId: 8 },
+            beat: 17,
+        });
+    });
+
+    plainIt(
+        "off the selected timeline's end is refused (TEMPORARY), even at its start",
+        () => {
+            for (const playheadBeat of [9, 12, 16, 18, 0]) {
+                const plan = planCanvasEdit({
+                    selection: { kind: "range", start: 9, end: 17 },
+                    storedTimelines: timelines,
+                    playheadBeat,
+                });
+                expect(
+                    !plan.ok &&
+                        (plan.error as TimelineEditRefusedError).refusal,
+                    `playhead ${playheadBeat}`,
+                ).toBe("offEnd");
+            }
+        },
+    );
+
+    plainIt("a range with no stored timeline is refused", () => {
+        const plan = planCanvasEdit({
+            selection: { kind: "range", start: 3, end: 9 },
+            storedTimelines: timelines,
+            playheadBeat: 9,
+        });
+        expect(
+            !plan.ok && (plan.error as TimelineEditRefusedError).refusal,
+        ).toBe("emptyTimeline");
+    });
+
+    plainIt("a range before the timelines load is not ready", () => {
+        const plan = planCanvasEdit({
+            selection: { kind: "range", start: 9, end: 17 },
+            storedTimelines: null,
+            playheadBeat: 17,
+        });
+        expect(!plan.ok && plan.error).toBeInstanceOf(TimelineNotReadyError);
+    });
+
+    plainIt("reads the selection store by default", () => {
+        const store = useTimelineSelectionStore.getState();
+        store.setStoredTimelines(timelines);
+        store.selectRange(1, 9);
+        expect(planCanvasEdit()).toEqual({
+            ok: true,
+            target: { kind: "timeline", timelineId: 7 },
+            beat: 9,
+        });
+        store.seek(4);
+        expect(planCanvasEdit().ok).toBe(false);
+    });
+
+    plainIt("each refusal shows its own message", () => {
+        for (const refusal of [
+            "noTimeline",
+            "emptyTimeline",
+            "offEnd",
+        ] as const) {
+            const error = new TimelineEditRefusedError(refusal);
+            expect(
+                timelineErrorMessage(error, { translate: (_k, d) => d }),
+            ).toBe(error.message);
+            expect(
+                timelineErrorMessage(error, { translate: (key) => key }),
+            ).toBe(error.key);
+        }
+    });
+});
+
 describe("canvasCoordinateWriter", () => {
     const changes: ModifiedMarcherPageArgs[] = [
         // A page id left over from an earlier render
         { marcher_id: 1, page_id: 99, x: 10, y: 20 },
     ];
-    const page = { id: 3, previousPageId: 2, beats: [{ index: 5 }] };
+    const timelinePlan: CanvasEditPlan = {
+        ok: true,
+        target: { kind: "timeline", timelineId: 4 },
+        beat: 9,
+    };
 
     plainIt("flag off: is the page-mode writer itself", () => {
         const writePages = vi.fn();
         const writeTimeline = vi.fn();
         const write = canvasCoordinateWriter({
             timelineMode: false,
-            page,
             writePages,
             writeTimeline,
-            onNoPage: vi.fn(),
+            onRefused: vi.fn(),
         });
         expect(write).toBe(writePages);
         write(changes);
@@ -103,42 +278,64 @@ describe("canvasCoordinateWriter", () => {
     });
 
     plainIt(
-        "flag on: writes the moves on the selected page, ignoring page_id",
+        "flag on: writes the moves where the selection edits, ignoring page_id",
         () => {
             const writePages = vi.fn();
             const writeTimeline = vi.fn();
             canvasCoordinateWriter({
                 timelineMode: true,
-                page,
                 writePages,
                 writeTimeline,
-                onNoPage: vi.fn(),
+                onRefused: vi.fn(),
+                plan: () => timelinePlan,
             })(changes);
             expect(writePages).not.toHaveBeenCalled();
             expect(writeTimeline).toHaveBeenCalledWith({
-                page,
+                target: { kind: "timeline", timelineId: 4 },
                 moves: [{ marcherId: 1, x: 10, y: 20 }],
             });
         },
     );
 
-    plainIt("flag on with no selected page: writes nothing", () => {
+    plainIt("flag on: plans when the move ends, not when installed", () => {
+        const store = useTimelineSelectionStore.getState();
+        store.setStoredTimelines([stored(4, 1, 9)]);
+        store.selectHome();
         const writeTimeline = vi.fn();
-        const onNoPage = vi.fn();
-        canvasCoordinateWriter({
+        const onRefused = vi.fn();
+        const write = canvasCoordinateWriter({
             timelineMode: true,
-            page: null,
             writePages: vi.fn(),
             writeTimeline,
-            onNoPage,
+            onRefused,
+        });
+        store.selectRange(1, 9);
+        write(changes);
+        expect(writeTimeline).toHaveBeenCalledWith({
+            target: { kind: "timeline", timelineId: 4 },
+            moves: [{ marcherId: 1, x: 10, y: 20 }],
+        });
+        expect(onRefused).not.toHaveBeenCalled();
+    });
+
+    plainIt("flag on, refused by the selection: writes nothing", () => {
+        const writeTimeline = vi.fn();
+        const onRefused = vi.fn();
+        const error = new TimelineEditRefusedError("offEnd");
+        canvasCoordinateWriter({
+            timelineMode: true,
+            writePages: vi.fn(),
+            writeTimeline,
+            onRefused,
+            plan: () => ({ ok: false, error }),
         })(changes);
         expect(writeTimeline).not.toHaveBeenCalled();
-        expect(onNoPage).toHaveBeenCalled();
+        expect(onRefused).toHaveBeenCalledWith(error);
     });
 
     plainIt("withTimelinePositions refuses to guess without a resolver", () => {
         expect(() =>
-            withTimelinePositions(page, [{ marcher_id: 1, x: 0, y: 0 }]),
+            withTimelinePositions(5, [{ marcher_id: 1, x: 0, y: 0 }]),
         ).toThrow(TimelineNotReadyError);
     });
 });
@@ -156,14 +353,13 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         let pending: Promise<unknown> = Promise.resolve();
         const write = canvasCoordinateWriter<ModifiedMarcherPageArgs>({
             timelineMode: false,
-            page,
             writePages: (modifiedMarcherPages) => {
                 pending = updateMarcherPages({ db, modifiedMarcherPages });
             },
             writeTimeline: () => {
                 throw new Error("not in page mode");
             },
-            onNoPage: () => {},
+            onRefused: () => {},
         });
         write([{ marcher_id: 4, page_id: page.id, x: 111, y: 222 }]);
         await pending;
@@ -175,7 +371,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         expect(await timelineRows(db)).toEqual(before);
     });
 
-    it("canvas drag, flag on: sets the slot destination, leaves marcher_pages alone", async ({
+    it("canvas drag, flag on: sets the ending in the selected timeline, leaves marcher_pages alone", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -184,18 +380,21 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         const pages = await sortedPages(db);
         const page = pages[2]!;
         const rowBefore = await marcherPage(db, 4, page.id);
+        const plan = await pagePlan(db, page);
 
         let pending: Promise<unknown> = Promise.resolve();
         const write = canvasCoordinateWriter<ModifiedMarcherPageArgs>({
             timelineMode: true,
-            page,
             writePages: () => {
                 throw new Error("not in timeline mode");
             },
-            writeTimeline: ({ page, moves }: TimelineMoveRequest) => {
-                pending = moveMarchersOnPage({ db, page, moves });
+            writeTimeline: ({ target, moves }: TimelineEditRequest) => {
+                pending = moveMarchersInTarget({ db, target, moves });
             },
-            onNoPage: () => {},
+            onRefused: () => {
+                throw new Error("not refused");
+            },
+            plan: () => plan,
         });
         // The canvas marcher's coordinate.page_id is stale (a different page)
         write([{ marcher_id: 4, page_id: pages[5]!.id, x: 111, y: 222 }]);
@@ -211,6 +410,38 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
             staleRow!.x,
             staleRow!.y,
         ]);
+    });
+
+    it("canvas drag at home: sets the homes", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await convertPagesToTimeline(db);
+        await startTimelineResolver(db);
+        useTimelineSelectionStore.getState().selectHome();
+        const before = await timelineRows(db);
+
+        let pending: Promise<unknown> = Promise.resolve();
+        canvasCoordinateWriter<ModifiedMarcherPageArgs>({
+            timelineMode: true,
+            writePages: () => {
+                throw new Error("not in timeline mode");
+            },
+            writeTimeline: ({ target, moves }) => {
+                pending = moveMarchersInTarget({ db, target, moves });
+            },
+            onRefused: () => {
+                throw new Error("not refused");
+            },
+        })([{ marcher_id: 2, page_id: 0, x: 33, y: 44 }]);
+        await pending;
+
+        await timelineResolverSettled();
+        expect(positionAt(2, 0)).toEqual([33, 44]);
+        const after = await timelineRows(db);
+        expect(after.timeline_slot_destinations).toEqual(
+            before.timeline_slot_destinations,
+        );
     });
 
     it("align vertically, flag off: averages marcher_pages and writes them", async ({
@@ -245,10 +476,12 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         await startTimelineResolver(db);
         const page = (await sortedPages(db))[3]!;
         const endBeat = pageEndBeat(page);
+        const plan = await pagePlan(db, page);
+        if (!plan.ok) throw new Error("planned");
         // An earlier timeline move makes marcher_pages stale for marcher 1
-        await moveMarchersOnPage({
+        await moveMarchersInTarget({
             db,
-            page,
+            target: plan.target,
             moves: [{ marcherId: 1, x: 50, y: 900 }],
         });
         await timelineResolverSettled();
@@ -258,7 +491,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         });
 
         // RegisteredActionsHandler: getSelectedMarcherPages → alignVertically → updateCoordinates
-        const selected = timelineCoordinateRecords(page, [1, 2, 3]);
+        const selected = timelineCoordinateRecords(plan.beat, [1, 2, 3]);
         expect(selected.map((mp) => mp.marcher_id).sort()).toEqual([1, 2, 3]);
         for (const mp of selected)
             expect([mp.x, mp.y]).toEqual(positionAt(mp.marcher_id, endBeat));
@@ -266,7 +499,11 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         const changes = CoordinateActions.alignVertically({
             marcherPages: selected,
         });
-        await moveMarchersOnPage({ db, page, moves: toTimelineMoves(changes) });
+        await moveMarchersInTarget({
+            db,
+            target: plan.target,
+            moves: toTimelineMoves(changes),
+        });
 
         await timelineResolverSettled();
         const averageY = selected.reduce((s, mp) => s + mp.y, 0) / 3;
@@ -303,9 +540,9 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         const [x0, y0] = positionAt(6, endBeat);
 
         // useUpdateSelectedMarchers' timeline branch, with a nudge as the transform
-        const result = await transformMarchersOnPage({
+        const result = await transformMarchersInSelection({
             db,
-            page,
+            plan: await pagePlan(db, page),
             marcherIds: [5, 6],
             transform: (current) => current.map((c) => ({ ...c, x: c.x + 10 })),
         });
@@ -315,7 +552,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         expect(positionAt(6, endBeat)).toEqual([x0 + 10, y0]);
     });
 
-    it("swap, flag on: the two marchers exchange positions on the page", async ({
+    it("nudge through the selection store: edits at the selected timeline's end, refused elsewhere", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -323,15 +560,57 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         await startTimelineResolver(db);
         const page = (await sortedPages(db))[2]!;
         const endBeat = pageEndBeat(page);
+        const plan = await pagePlan(db, page);
+        if (!plan.ok || plan.target.kind !== "timeline")
+            throw new Error("planned");
+        await loadSelection(db);
+        const store = useTimelineSelectionStore.getState();
+        const timeline = store.storedTimelines!.find(
+            (t) => t.id === (plan.target as { timelineId: number }).timelineId,
+        )!;
+        store.selectRange(timeline.start, timeline.end);
+        const [x0, y0] = positionAt(3, endBeat);
+
+        await transformMarchersInSelection({
+            db,
+            marcherIds: [3],
+            transform: (current) => current.map((c) => ({ ...c, y: c.y + 4 })),
+        });
+        await timelineResolverSettled();
+        expect(positionAt(3, endBeat)).toEqual([x0, y0 + 4]);
+
+        // Off the end (TEMPORARY): refused, nothing written
+        store.seek(timeline.start + 1);
+        const before = await timelineRows(db);
+        const error = await transformMarchersInSelection({
+            db,
+            marcherIds: [3],
+            transform: (current) => current.map((c) => ({ ...c, y: c.y + 4 })),
+        }).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(TimelineEditRefusedError);
+        expect((error as TimelineEditRefusedError).refusal).toBe("offEnd");
+        expect(await timelineRows(db)).toEqual(before);
+    });
+
+    it("swap, flag on: the two marchers exchange positions at the timeline's end", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await convertPagesToTimeline(db);
+        await startTimelineResolver(db);
+        const page = (await sortedPages(db))[2]!;
+        const endBeat = pageEndBeat(page);
+        const plan = await pagePlan(db, page);
+        if (!plan.ok) throw new Error("planned");
         const a = positionAt(8, endBeat);
         const b = positionAt(9, endBeat);
         const before = await marcherPagesByPageId({ db, pageId: page.id });
 
         // RegisteredActionsHandler's swapMarchers case in timeline mode
-        const [p, q] = timelineCoordinateRecords(page, [8, 9]);
-        await moveMarchersOnPage({
+        const [p, q] = timelineCoordinateRecords(plan.beat, [8, 9]);
+        await moveMarchersInTarget({
             db,
-            page,
+            target: plan.target,
             moves: toTimelineMoves([
                 { ...p!, x: q!.x, y: q!.y },
                 { ...q!, x: p!.x, y: p!.y },

@@ -5,8 +5,8 @@ import { schema } from "@/global/database/db";
 import { transactionWithHistory, createAllUndoTriggers } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
 import {
-    addMarchersToTimelineInTransaction,
-    removeMarchersFromTimelineInTransaction,
+    joinNewMarchersToTimelinesInTransaction,
+    removeDeletedMarchersFromTimelinesInTransaction,
 } from "./timelineMarchers";
 import { timelineModeInTransaction } from "./timelineRipple";
 
@@ -197,9 +197,10 @@ export async function createMarchersInTransaction({
  * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
  *
  *
- * In timeline mode (the file's flag, read inside the edit), the new marchers also get a home and a
- * holding slot in each page move, in the same edit (`addMarchersToTimelineInTransaction`, P7.3),
- * and no `marcher_pages` rows, which are frozen in timeline mode (P9.5).
+ * In timeline mode (the file's flag, read inside the edit), the new marchers also get a home and
+ * their own transition in every stored timeline, holding the home, in the same edit
+ * (`joinNewMarchersToTimelinesInTransaction`, P7.3 and UI-9), and no `marcher_pages` rows, which
+ * are frozen in timeline mode (P9.5).
  *
  * @param newMarchers Array of NewMarcherArgs containing the marcher data to create
  * @param db The database connection
@@ -222,7 +223,7 @@ export async function createMarchers({
                 tx,
             });
             if (await timelineModeInTransaction(tx))
-                await addMarchersToTimelineInTransaction({
+                await joinNewMarchersToTimelinesInTransaction({
                     tx,
                     marcherIds: created.map((m) => m.id),
                 });
@@ -310,9 +311,10 @@ const deleteMarchersInTransaction = async ({
  * CAUTION - This will also delete all of the marcherPages associated with the marchers.
  *
  * In timeline mode (the file's flag, read inside the edit), the marchers' assignments are deleted
- * first and the slots they leave are compacted where that moves no one, in the same edit
- * (`removeMarchersFromTimelineInTransaction`, P7.3). In page mode the assignments go with the
- * marcher through the foreign-key cascade, as before.
+ * first, with their own one-slot transitions (timelines stay, UI-9), and the slots they leave in
+ * shared transitions are compacted where that moves no one, in the same edit
+ * (`removeDeletedMarchersFromTimelinesInTransaction`, P7.3 and P8.14). In page mode the
+ * assignments go with the marcher through the foreign-key cascade, as before.
  *
  * @param marcherIds Set of marcher IDs to delete
  * @param db The database connection
@@ -331,7 +333,7 @@ export async function deleteMarchers({
         "deleteMarchers",
         async (tx) => {
             if (await timelineModeInTransaction(tx))
-                await removeMarchersFromTimelineInTransaction({
+                await removeDeletedMarchersFromTimelinesInTransaction({
                     tx,
                     marcherIds: [...marcherIds],
                 });

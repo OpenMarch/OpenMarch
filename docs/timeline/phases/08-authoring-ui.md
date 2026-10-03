@@ -132,12 +132,72 @@ QA-SC-01 to -15 runnable from the UI. Verdicts for SC-07, SC-14 and SC-15 record
 ### P8.10: Transitions span their timeline
 
 - Owner: timeline-worker (timeline/p8-10-transitions-span-timeline)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/47
 - Parallel: no
 - Depends on: P8.9
 
 Apply C-11 (implementation-plan.md): every transition starts and ends exactly when its timeline does. A timeline can own several transitions, but they all share its range; assignments still go in and out inside it. Range edits move the timeline and all its transitions together (one lockstep R-E1 procedure), creating a transition with another range is refused, the ripple's holding moves get their own timelines, deleting a timeline's last transition deletes the timeline, and a marcher track's clip is its timeline's range. The converter and the database check are P9.10.
+
+### P8.11: UI-9 selection and playhead
+
+- Owner: timeline-worker (timeline/p8-11-selection-playhead)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/51
+- Parallel: yes (with P8.13 and P8.14)
+- Depends on: P8.10
+
+The selection state and what it draws (`ui.md` UI-9: Pages, Home, Playhead, Play, Selection, Tracks, What the selection holds, The end of the show). In timeline mode the selection is home, a range or nothing, held in one store that P8.12–P8.15 read. A page box selects its page's range (previous flag to its own flag) and seeks to its end; the initial box selects home and seeks to beat 0. The paused playhead rests on any whole beat, including the last flag, and seeking doesn't change the selection (replaces `pageForSeek`/`followSelectedPage` in `useTimelinePlayback.ts`). Play resumes from the playhead and loops the selected range. Marchers without a transition in the selected timeline are dimmed and can't be selected or hit (clicks, box select); selecting a timeline deselects them. A dragged range is selectable like a page box. The view model draws one track per stored timeline. Replace the timeline's `{kind: "page"}` selection (`TimelinePrimitives.tsx`, `TimelineViewModel.ts`). Page navigation (`nextPage`, `previousPage`, `firstPage`, `lastPage` in `RegisteredActionsHandler.tsx`, `pageForNavigation` and the transport) moves the playhead to that flag and selects that page's timeline (home for the first). Opening a show selects home (`StateInitializer.tsx`). Give `test/featureHarness.tsx` a way to set the selection in timeline mode. No database writes. Leaves the canvas's page-based reads to P8.12.
+
+### P8.13: UI-9 page flags
+
+- Owner: timeline-worker (timeline/p8-13-page-flags)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/48
+- Parallel: yes (with P8.11 and P8.14)
+- Depends on: P8.10
+
+Page writes in timeline mode (UI-9 **+** and Deleting a flag). **+** shows after the paused playhead when it isn't on a flag and there is a beat there. Inside a page it inserts a row at the split page's old start and moves that page's `start_beat` to the playhead, so the split page keeps its flag, id and data and later pages renumber (no `is_subset`); in the last page it also rewrites `last_page_counts`. Past the last flag it appends a page ending at the playhead. Deleting a flag deletes only that page row. None of these write timeline rows: in timeline mode they skip `withTimelinePageRipple` (P7.4) and its holding moves. One undoable edit each; the new page becomes the selection once P8.11 lands. Page mode is unchanged.
+
+### P8.14: UI-9 timeline membership
+
+- Owner: timeline-worker (timeline/p8-14-timeline-membership)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/49
+- Parallel: yes (with P8.11 and P8.13)
+- Depends on: P8.10
+
+The db-functions and context menu for who is in a timeline (UI-9: Adding marchers, New marchers, Removing marchers, Layers, One timeline per range, One transition per marcher). **Add selected marchers** on a timeline, page box or dragged range creates the timeline when none has that range, then gives each selected marcher not already in it a one-slot shapeless `direct` transition spanning it, destination at the marcher's position at the timeline's end, one layer above its highest layer there. Refuse (E-ARGS) a partial overlap with one of the marcher's timelines and a second timeline over an existing range. Remove from a timeline deletes the assignment and the marcher's one-slot transition, never the timeline (an exception to P8.10's rule); point the inspector's existing remove at it. Replace P7.3's join in timeline mode: a new marcher joins every stored timeline, in start order, with its own one-slot transition whose destination is its home, skipping a timeline that partly overlaps one it has joined. Marcher delete removes its transitions the same way and keeps timelines. One undoable edit each. The right-click menu doesn't change the selection.
+
+### P8.15: UI-9 canvas edits
+
+- Owner: timeline-worker (timeline/p8-15-canvas-edits)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/53
+- Parallel: no
+- Depends on: P8.11, P8.14
+
+Canvas moves against the selection (UI-9: Editing, Editing off the end, More than one row, Home). With a timeline selected and the playhead on its end beat, a drag, nudge or alignment sets the ending of each moved marcher's transition in that timeline, found by timeline id (not by end beat, as `moveMarchersOnPage` in `db-functions/timelineMoves.ts` does today). Refuse with a hint while the playhead is off the end (TEMPORARY), when no timeline is selected away from beat 0, and for a marcher with more than one row in the timeline. At home (beat 0, no timeline) moves edit homes. Rework `canvasCoordinateWriter`/`withTimelinePositions` (`timeline/timelineCoordinateWrites.ts`) to take the selection instead of a page. Also (added 2026-10-02): wire P8.13's **+** (`useAddPageFlag` in `hooks/queries/usePageFlags.ts`) into the timeline just after the free paused playhead, selecting the new page through `useTimelineSelectionStore.selectRange`, plus a delete-flag entry on the page box's right-click menu (`deletePageFlagsMutationOptions`); and remove Create Track from timeline mode (`useTimelineCommands.ts` `createTrack`, superseded by **Add selected marchers**), since with per-page timelines it gives a marcher a second transition in a page timeline. Test nits from PR #52's review: assert one assignment per stored timeline in `useMarchersTimelineMode.test.ts`, and that the short-page loop in `timelineMembershipAdversarial.test.ts` runs at least once.
+
+### P8.12: No selected page in timeline mode
+
+- Owner: timeline-worker (timeline/p8-12-no-selected-page)
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/54
+- Parallel: yes (with P8.13–P8.15 once P8.11's selection store exists)
+- Depends on: P8.11
+
+Apply C-12's "no selected page": in timeline mode nothing reads `useSelectedPage` (about 36 files under `apps/desktop/src` today: the inspector, canvas listeners, toolbar, collisions, `useAnimation`, the clock and the timeline). Editing reads the selected timeline, rendering and playback read the playhead, and page data (notes, counts) reads the page containing or ending at the playhead. Port appearance-by-time from the `coordinates-v2` branch (`services/appearance/db-to-timeline.ts`, `get-appearance-at-time.ts`, `useAppearanceAnimation.ts`): per-page tag and section appearances become a step function keyed by flag timestamps and sampled at the playhead, without the per-marcher-page overrides dropped in P7.14. Page-relative tools (UI-9): set all or selected marchers to the previous page sets their ending in the selected timeline to their position at its start, and to the next page to their position at the next flag (`setMarchersToNeighborPage` and its four registered actions; refused with no timeline selected); previous and next page paths show positions at the selected timeline's start and the next flag, and nothing with no timeline selected; undo and redo (`timelineHistoryFocus.ts`) move the playhead and leave the selection alone. Add a dev-mode warning when `useSelectedPage` is read in timeline mode, and prove with timeline-mode feature tests that the listed features no longer read it. Page mode is unchanged; `SelectedPageContext` is removed with page mode in Phase 10.
+
+### P8.16: Ranges not stored yet dim nobody
+
+- Owner: timeline-worker (timeline/p8-16-range-dim)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/55
+- Parallel: no
+- Depends on: P8.11, P8.14, P8.15
+
+UI-9 Selection (project owner, 2026-10-02): a selected range with no stored timeline (a new page's box after **+**, or a dragged range) dims nobody, so marchers stay selectable and **Add selected marchers** can create a timeline that isn't a page. Today `isMarcherDimmed` (`src/stores/TimelineSelectionStore.ts`) dims everyone for such a range and `useDeselectDimmedMarchers` clears the marcher selection, so drag-to-create is impossible. Change it so only a stored timeline dims non-members; canvas moves on such a range stay refused (P8.15's empty-timeline hint). Update the tests that assert such a range dims everyone (P8.11, P8.15 and their adversarial tests) and add tests for: drag a range with marchers selected keeps them selected; select marchers on such a range; right-click Add creates the timeline and then non-members dim; + then select and add without visiting home. Whole `test:focused` and `test:timeline` must pass.
 
 ## Exit gate
 
@@ -151,10 +211,13 @@ Tick an item only after running its check, and paste the command and result into
 
 Kept current by the phase lead: where things stand, surprises, and what not to redo.
 
-- None yet.
+- **State on 2026-10-02:** P8.11, P8.13, P8.14 and P9.10 are merged, and PR #52 (`144a3bb0`) fixed the tests that broke when P8.14 met P9.10 (and made Create Track reuse a stored timeline). The base is green: whole `test:focused` and `test:timeline` pass. P8.15 now also wires P8.13's **+** and removes Create Track. P8.15 owns the canvas write paths; P8.12 owns every other selected-page read. Before merging parallel PRs, run the whole suite on the combined branch.
+- **Paused for MVP testing (project owner, 2026-10-02).** P8.12 (PR #54) is on hold. TODO before it merges: (1) set to previous/next page must write by timeline id with P8.15's `moveMarchersInTimelineInTransaction` (today it edits an inner timeline that shares the outer's end beat); (2) timeline-mode transport buttons should use `canPlay`/`navigationTarget`; (3) hidden marchers should follow the time-sampled appearance; (4) notes during playback; (5) wider `NoSelectedPageModes` coverage. Its log has the `Resume from:` line. P8.12 isn't needed for the linear MVP.
+- **Fresh work trees:** after `pnpm install`, also run `pnpm --filter @openmarch/metronome build`. If jest-dom matchers fail (around 23 `tsc` errors), the install hoisted vitest 3.2.3 at the root; that is the install, not your change.
+- **UI-9 (pages are flags) is the current build, 2026-10-01.** Read `ui.md` UI-9 and `implementation-plan.md` C-12 first; UI-9 wins over older text in `ui.md`. Packages: P8.11 (selection, playhead), P8.13 (page flags), P8.14 (membership) can run in parallel after P8.10; P8.15 (canvas edits) follows P8.11 and P8.14; P8.12 (no selected page, appearance by time) follows P8.11. Converted shows need P9.10 before page boxes have timelines; build and test on timeline-mode fixtures with one timeline per page meanwhile. The linear MVP in `validation-plan.md` needs P8.11 and P8.13–P8.15 plus P9.10. Open owner questions are in `ui.md` U-Q5; _lead default_ items in UI-9 are settled enough to build. Page-based playback helpers (`pageForSeek`, and `followSelectedPage` if it lands) are replaced by P8.11, not extended.
 - Porting the 0.2 timeline (P8.1): 0.2's `TimelineContainer` computes the beat with its own `getBeatIndexAtTime(beats, timeMs)`, in milliseconds, returning 0 with no beats. Replace it with `beatIndexAtTime(beats, timeMs / 1000)` from `src/timeline/timeMap.ts`, so there is one tempo map, and don't pass its -1 (no beats) to `setCurrentBeatIndex`. Don't bring back 0.2's `getBeatIndexAtTime` or `getNearestBeatIndex`.
 - After P8.1 (PR #19), the timeline is in `apps/desktop/src/components/timeline/`:
-  - **Clock:** `Timeline` takes a `playback` prop and doesn't read the frame clock. `useTimelinePlayback` feeds it from the existing clock (`IsPlayingContext`, the selected page and `getLivePlaybackPosition`). While playing, the cursor is `beatIndexAtTime`; while paused, it's `pageEndBeat(selectedPage)`, and `pageLabel` names the selected page in the transport and playhead labels. Seeking to a beat line selects the page whose move contains or ends at that line (`pageForSeek`), so seeking to the paused cursor keeps the selection. A ruler page click selects that page directly (`TimelineModePanel`). Wiring the frame clock later means changing only that hook.
+  - **Clock (superseded by P8.11):** the paused playhead and selection live in `src/stores/TimelineSelectionStore.ts` (`useTimelineSelectionStore`: home, range or none in spec beats; `playheadBeat`; `selectHome`, `selectRange`, `seek`). `useTimelineSelectionHost` keeps its stored timelines current, and `useTimelinePlaybackDriver` runs play, loop, stop and pause. `useTimelinePageBridge` keeps the old selected page following the playhead until P8.12 deletes it.
   - **Data (P8.8):** `TimelineModePanel` passes real beats, pages and measures and `NO_TIMELINES`. Replace that with the adapter's `TimelineInput[]` (`TODO(P8.8)`). View beat indexes are real beat indexes (spec beat positions), so the fixed beat 0 is a one-beat-wide empty column before page 1. Compress that column in the adapter (`TODO(P8.8)` in `createTimelineViewModel`).
   - **Commands (P8.9):** `commitTimelineRange` and `createTrack` are no-ops, and `selectedTarget` is null, so Create Track is hidden (`TODO(P8.9)`).
   - **Snapping:** `getPageSnapBeats`, `snapBoundary`, `snapRangeOffset` and `isPageSnapDisabled` in `TimelineGeometry.ts`. The snap distance is 24 px, and Alt turns snapping off.
@@ -660,4 +723,308 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/47. Transitions take their timeline's range (others refused, E-ARGS); `setTimelineRangeInTransaction` moves a timeline with all its transitions and anchored assignments (R-E1), and timeline and transition range edits go through it; deleting a timeline's last transition deletes the timeline; the ripple's holding moves get their own timeline and emptied timelines are deleted; a marcher clip is its timeline's range (UI-8); fixtures group transitions by range. The converter keeps one show-wide timeline through `createLegacyPageTransitionsInTransaction` (TODO P9.10). ADR 0001 records C-11.
 - **Checks:** `npx vitest run --silent=true` (apps/desktop): 2483 passed, 15 skipped, 15 todo, 0 failed, including the e2e fuzz and its v0.6 negative control. `tsc --noEmit`: pass. Pre-commit (cspell, eslint, prettier): pass. Not run, at the owner's request: `test:timeline`, focused `test:history`, `pnpm check:quick`, Playwright e2e. `test:timeline` is the most relevant of these (ripple on converted shows).
 - **Next:** review and merge; then P9.10.
+- **Blockers:** none.
+
+### 2026-10-01 · lead session · C-12 (decided)
+
+- **Done:** the project owner refined UI-9/C-12: page boxes select a page timeline that is stored only once marchers are added; one timeline per range and one transition per marcher per timeline; adding marchers is a right-click **Add selected marchers** (not double-click); **+** and flag delete write only the page row; no selected page in timeline mode, with appearance sampled by time as on `coordinates-v2`. Added P8.11 (UI-9) and P8.12 (no selected page). Non-linear parents for added marchers and layered validation are deferred.
+- **Checks:** none (decision only).
+- **Next:** P8.11 after P8.10 and P9.10.
+- **Blockers:** none.
+
+### 2026-10-02 · lead session · UI-9 ready to build
+
+- **Done:** the project owner settled the rest of UI-9 (2026-10-01): a page is named by its end flag; **+** keeps the split page's id and renumbers later pages; home (page 0) selects no timeline and edits homes; play loops the selected timeline; one track per timeline; dimmed marchers can't be selected or touched; removing a marcher never deletes a timeline; new marchers join every stored timeline; editing off the timeline's end is refused for now (TEMPORARY). The lead filled the remaining implementation gaps as _lead default_ items in UI-9 (selection held as a range, playhead may rest on the last flag, **+** past the last flag appends, refusal for more than one row, new-marcher join order). Split P8.11 into P8.11 (selection and playhead), P8.13 (page flags), P8.14 (membership) and P8.15 (canvas edits). C-12 recorded in ADR 0001.
+- **Checks:** none (decisions and docs only); prettier and cspell on the changed docs.
+- **Next:** P8.11, P8.13 and P8.14 in parallel once P8.10 merges; P9.10 for converted shows.
+- **Blockers:** none for the MVP path. Open owner questions: `ui.md` U-Q5.
+
+### 2026-10-02 · lead session · page-relative tools (decided)
+
+- **Done:** the project owner accepted the lead's proposals for features built on the selected page (UI-9 Page-relative tools, Deprecating page selection): page navigation moves the playhead to a flag and selects that page's timeline; set to previous/next page edits endings in the selected timeline; previous/next page paths follow the selected timeline; a show opens on home; undo moves only the playhead for now; a dev-mode warning guards `useSelectedPage` in timeline mode. Added to P8.11 (navigation, open, selection type, harness) and P8.12 (neighbor-page actions, paths, history focus, guard).
+- **Checks:** none (decisions and docs only); prettier and cspell on the changed docs.
+- **Next:** unchanged: P8.11, P8.13 and P8.14 after P8.10.
+- **Blockers:** none.
+
+### 2026-10-02 · lead session · P8.10 (done)
+
+- **Done:** PR #47 was already merged (`e12c5e1e`); P8.10 set to done. P8.11, P8.13, P8.14 and P9.10 are unblocked and started with timeline-worker agents.
+- **Checks:** none (status only).
+- **Next:** review and test each PR as it reaches in-review; then P8.15 and P8.12.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-11-selection-playhead) · P8.11
+
+- **Done:** the selection store is pushed (commit `ca9df07d` on `timeline/p8-11-selection-playhead`). **Module: `apps/desktop/src/stores/TimelineSelectionStore.ts`**, `useTimelineSelectionStore`: `selection` is `{kind: "home"} | {kind: "range", start, end} | {kind: "none"}` (spec beats, half-open); `playheadBeat` is the paused playhead (whole spec beat; show time 0 is written as 0); `selectHome()` seeks to 0, `selectRange(start, end)` seeks to `end`, `seek(beat)` moves only the playhead, `followTimelineShift` moves a selection with its clip. The stored timeline a range resolves to: `selectedStoredTimeline(state)` / `useSelectedStoredTimeline()` (`{id, start, end, marcherIds}` or null); `isMarcherDimmed(state, marcherId)`. `storedTimelines` is kept current by `useTimelineSelectionHost` (`src/timeline/useTimelineSelectionHost.ts`, mounted in `TimelineResolverHost`). P8.13–P8.15 and P8.12 read these; the API may still gain fields, but these names stay.
+- **Checks:** `pnpm run test:focused src/stores/__test__/TimelineSelectionStore.test.ts` (apps/desktop): 8 passed. `pnpm tsc --noEmit`: pass. Pre-commit (cspell, eslint, prettier): pass.
+- **Next:** wire the timeline (page boxes, home, dragged range, one track per timeline), playhead and play/loop, navigation, opening on home, dimming on the canvas, harness.
+- **Blockers:** none.
+- **Resume from:** `apps/desktop/src/components/timeline/TimelineViewModel.ts` (`TimelineSelection` to home/range in spec beats), then `TimelinePrimitives.tsx`, `TimelineVariants.tsx`, `TimelineModePanel.tsx`, `useTimelinePlayback.ts`. Run `pnpm install` first in a fresh work tree.
+
+### 2026-10-02 · timeline-worker (timeline/p8-13-page-flags) · P8.13
+
+- **Done:** `apps/desktop/src/db-functions/pageFlags.ts`: `planPageFlagInsertion` (pure: split inside a page, append past the last flag, nothing on a flag, at home or past the beats), `pageFlagGrid` (renderer pages to the plan's grid), `addPageFlag` and `deletePageFlags` (one undoable edit each, page rows and `last_page_counts` only, no `withTimelinePageRipple`, refused outside timeline mode). `hooks/queries/usePageFlags.ts` has mutation options. Tests in `db-functions/__test__/pageFlags.test.ts`. Pushed as a `wip:` commit on `timeline/p8-13-page-flags`.
+- **Checks:** `pnpm run test:focused src/db-functions/__test__/pageFlags.test.ts`: 15 passed. `pnpm run test:history` on the same file: 15 passed. `pnpm tsc --noEmit`: pass.
+- **Next:** desktop verification, tidy commits, PR.
+- **Blockers:** none.
+- **Resume from:** `timeline/p8-13-page-flags`; run `pnpm --filter "./packages/*" build` in a fresh work tree, then the focused test above; then finish (WORKER.md step 6).
+
+### 2026-10-02 · timeline-worker (timeline/p8-13-page-flags) · P8.13
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/48. `db-functions/pageFlags.ts`: `addPageFlag` (**+**: split keeps the split page's flag, id and data with a new row at its old start; splitting the last page keeps the last flag through `last_page_counts`; past the last flag it appends a page ending at the beat) and `deletePageFlags`, each one undoable edit that writes only page rows and `last_page_counts`, with no ripple, refused outside timeline mode. `planPageFlagInsertion`/`pageFlagGrid` decide where **+** shows; `hooks/queries/usePageFlags.ts` has mutation options and `useAddPageFlag`, whose `onAdded` returns the new page's range.
+- **Interpretation for review:** deleting page N's flag deletes N's row and moves the next page's `start_beat` back to N's start, so only N's flag goes and the next page keeps its flag, id and data (the inverse of **+**). Deleting the row alone would remove page N−1's flag instead. Existing `deletePages` and its P7.4 ripple are unchanged.
+- **Checks:** `pnpm run test:focused src/db-functions/__test__/pageFlags.test.ts`: 15 passed; `pnpm run test:history` on it: 15 passed; with `VITEST_TIMELINE_MODE=true`: 15 passed; `test:focused` on `timelineRipple.test.ts` and `page.test.ts`: 147 passed, 1 todo; `pnpm tsc --noEmit`: pass; eslint, prettier --check and cspell on the changed files: pass. Not run (worker policy): full `test:history`, full `test:timeline`, Playwright e2e, `pnpm check:quick`. No exit-gate items ticked.
+- **Next (follow-ups after P8.11 merges):** wire `useAddPageFlag`'s `onAdded` to `useTimelineSelectionStore.getState().selectRange(startBeat, endBeat)`. Render the **+** button after the free paused playhead, in P8.11's `Timeline.tsx`/`TimelinePrimitives.tsx`; it never shows while the playhead sits on a selected page's flag. Give delete an entry point, such as a page-box context menu shared with P8.14, calling `deletePageFlagsMutationOptions`; `PageTimeline` in beat-edit mode still calls the ripple `deletePages`.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-11-selection-playhead) · P8.11
+
+- **Done:** pushed `5119bd98`. The timeline selects home (initial box) and ranges (page boxes, a drag on empty space, resized ranges) through `useTimelineSelectionStore`; `TimelineSelection` is now `home | range | null` in spec beats (`Timeline` converts). One track per stored timeline (`buildTimelineClipTracks`). Playhead: `useTimelinePlayback` reads the store; seeks move only the playhead; navigation and play/pause in `src/timeline/timelineTransport.ts` (pure rules in `src/timeline/timelinePlayhead.ts`); the audio player starts at the playhead and restarts on each playhead write, which is how `useAnimation` loops a selected range. Dimming and deselection: `src/timeline/useTimelineDimming.ts`. Opening a show selects home (`StateInitializer`). TEMPORARY bridge until P8.12: `src/timeline/useTimelinePageBridge.ts` keeps the legacy selected page on the playhead's page (and moves the playhead to a page selected elsewhere). Harness: `selectTimeline`, `timelineSelection` in `src/test/featureHarness.tsx`.
+- **Checks:** focused vitest on the changed timeline tests (`useTimelinePlayback`, `timelineSelection`, `TimelineVariants`, `TimelineGeometry`, `TimelineCommands`, `TimelineAdapterView`, `TimelineStories`, `useTimelineTracks`, `TimelineSelectionStore`): all pass. `pnpm tsc --noEmit`: pass. Pre-commit: pass.
+- **Next:** a timeline-mode feature test through the harness (navigation actions), broader focused runs, then PR.
+- **Blockers:** none.
+- **Resume from:** add `src/utilities/__test__/` or `src/timeline/__test__/` harness test for the navigation actions under `pnpm run test:timeline <file>`; then run `pnpm run test:focused src/components/timeline src/timeline src/utilities src/components/canvas` and lint; open the PR.
+
+### 2026-10-02 · Cross-phase note from P9 · P8.11, P8.14
+
+- **Done:** P9.10 (PR https://github.com/AlexDumo/OpenMarch-timeline/pull/50) changes what the converter writes.
+  - A converted show now has one unnamed timeline per page move, over exactly the page's range (page 1 from beat 1), with one shapeless transition spanning it. Each marcher has one layer-0 assignment in each timeline.
+  - `timeline_commit_violations` now reports `E-T1` at commit for any transition whose range differs from its timeline's.
+- **Next:**
+  - **P8.11:** `clipsOfShape` in `src/timeline/timelineViewModel.ts` (marked `TODO(P9.10)`) only split gaps in the old show-wide timeline and is now dead. Drop it with the one-track-per-timeline rewrite. P9.10 didn't touch the file, to avoid a conflict.
+  - **P8.14:** P7.3's join (`addMarchersToTimelineInTransaction`) still works per page timeline, so nothing blocks replacing it.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-11-selection-playhead) · P8.11
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/51 (squashed `f76a24ea`). Selection store `apps/desktop/src/stores/TimelineSelectionStore.ts` (home / range / none, paused playhead, stored timelines; `useSelectedStoredTimeline`, `isMarcherDimmed`). The timeline selects home and ranges from page boxes, dragged ranges and resized ranges, in spec beats. It draws one track per stored timeline (`buildTimelineClipTracks`). The playhead can rest on any whole beat, including the end of the show, and seeking doesn't change the selection (`pageForSeek`, `pageAtBeat` and `pageForNavigation` are removed). Play resumes from the playhead and loops a selected range (`timelineTransport.ts`, `useAnimation`, `AudioPlayer`). Navigation moves the playhead to a flag and selects that page, or home for the first page. Dimmed marchers can't be selected or hit (`useTimelineDimming.ts`). Opening a show selects home. Harness: `selectTimeline`, `timelineSelection`.
+- **Notes for P8.12, P8.13, P8.14 and P8.15:** `src/timeline/useTimelinePageBridge.ts` is a TEMPORARY bridge that keeps the legacy selected page on the playhead's page, and moves the playhead when something else selects a page. P8.12 should delete it with the selected page. The paused canvas already draws at the playhead (`useTimelineStaticRender`'s `beat`), but `canvasCoordinateWriter` still writes page-based (P8.15). P8.13 can make a new page the selection with `selectRange(start, end)`. Create Track is still offered for one selected marcher until P8.14. The `useTimelineCommands` `noteSelection` and shape picking are removed. Clip click selects nothing, because that is still open in U-Q5. The handoff notes' "Clock" bullet (paused cursor = selected page's end, `pageForSeek`) is now stale; the lead may want to update it.
+- **Checks** (from `apps/desktop`):
+  - `pnpm tsc --noEmit`: pass.
+  - eslint on touched files: 0 errors.
+  - `pnpm prettier --check apps/desktop/src` (repo root): pass.
+  - `pnpm run test:focused` (the whole desktop vitest suite): 177 files and 2496 tests passed.
+  - `pnpm run test:timeline` on `src/components/timeline src/timeline src/utilities src/components/canvas src/stores src/hooks src/components/inspector src/global/classes`: 1098 passed.
+  - `pnpm run test:timeline src/timeline/__test__/TimelineSelectionModes.test.tsx`: 2 passed.
+  - Not run, per policy: the full `test:history` suite and Playwright e2e. No history test covers these files.
+  - Not run: a manual check in the app.
+- **Next:** review and merge.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-11-selection-playhead) · P8.11 (review fixes)
+
+- **Done:** PR #51 is now `8060a271`, still one squashed commit.
+  - **Clip move:** a clip move of the selected timeline no longer clears the marcher selection; `followTimelineShift` moves the loaded stored timeline with the selection.
+  - **Dimmed marchers can't be selected again:** `CanvasMarcher.makeSelectable` and the new `setInteractive` respect `timelineDimmed`, which fixes the line and lasso tools, and the lasso skips dimmed marchers.
+  - **Loop no longer depends on the audio restart:** the loop, stop and pause rules moved to `src/timeline/useTimelinePlaybackDriver.ts` (mounted in `TimelineResolverHost`). A loop moves the live position at once (`restartLivePlaybackAt`).
+  - **Last page box:** it ends at its flag (`TimelinePageMarker.endBeat`).
+  - **Seeks:** non-finite seeks are ignored, and seeks clamp to `showEndBeat`.
+  - **Harness:** `selectTimeline` fails fast in page mode.
+  - **TODO tag:** the `clipsOfShape` TODO is re-tagged.
+  - **Tests:** added for each fix (driver with fake animation frames, clip move, line and lasso tools, page boxes with the zero-length beat 0 and on `marchersAndPages`).
+  - **Tester's files not adopted:** copying them from the tester's work tree was refused by the permission system (untrusted code integration). My own tests cover the same cases.
+- **Checks:**
+  - `pnpm tsc --noEmit`: pass.
+  - eslint on touched files: 0 errors.
+  - `pnpm run test:focused` (the whole suite): 178 files and 2509 tests passed.
+  - `pnpm run test:timeline` on the timeline, canvas, stores, hooks, inspector and utilities paths: 1111 passed.
+  - `TimelineSelectionModes.test.tsx`: 3 passed in each mode.
+  - Pre-commit: pass.
+  - Not run: the full `test:history` suite, Playwright e2e, and a manual run of the app.
+- **Next:** re-review.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-11-selection-playhead) · P8.11 (re-review fixes)
+
+- **Done:** PR #51 is now `571c46c4`, still one squashed commit.
+  - **Shift-drag lasso:** the select tool's lasso (`DefaultListeners`) skips dimmed marchers and turns marchers back on through `setInteractive`, so dimmed ones stay off; tested. No other direct writes turn marchers back on: the remaining `selectable`/`evented` writes only turn things off.
+  - **Comment fixed:** the `useAnimation` comment now names `useTimelinePlaybackDriver`.
+  - **TODO re-tagged:** the `clipsOfShape` TODO now points at P8.12.
+  - **Test renamed:** the harness test in `TimelineSelectionModes.test.tsx` now says what it checks. It no longer claims anything about stored timelines for page boxes, since P9.10 will add them.
+  - **Known gap, documented in `setTimelineDimmed`:** clearing the dim while the line or lasso tool has every marcher off makes that marcher selectable mid-tool. Restoring the state from before the dim would leave it stuck off when the tool finishes while it's dimmed, which is worse.
+- **Checks:**
+  - `pnpm tsc --noEmit`: pass.
+  - eslint on touched files: 0 errors.
+  - `pnpm run test:focused` (the whole suite): 178 files and 2510 tests passed.
+  - `pnpm run test:timeline` on the timeline, canvas, stores, hooks, inspector and utilities paths: 1112 passed.
+  - Pre-commit: pass.
+  - Not run: the full `test:history` suite, Playwright e2e, and a manual run of the app.
+- **Next:** re-review.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-11-selection-playhead) · P8.11 (rebased onto P9.10, P8.13, P8.14)
+
+- **Done:** PR #51 rebased onto `timeline-try-2` (`889cb433`). It is now one commit, `e2203924`.
+  - **Conflict:** the `clipsOfShape` TODO; I kept `TODO(P8.12)`.
+  - **Integration with P8.14:** the right-click menu works with the selection model. Page boxes carry their flag-ended range. Clips send their stored spec range. A right-click or ctrl+click neither seeks nor changes the selection: `TimelineRangeMenuAdversarial` passes. I updated `TimelineRangeMenu.test.tsx` because the dragged-range selection is in spec beats now. Its converted-show test had assumed P9.10's earlier single timeline across the whole show; it now checks per-page timelines from both a page box and a clip.
+  - **Integration with P9.10:** in `TimelineSelectionModes`, a page box on a converted show now resolves to its stored timeline with every marcher in it. The `useTimelineTracks` expectations follow the [1, 9) seed. P8.13's `pageFlags.ts` and `usePageFlags.ts` don't conflict.
+- **Checks:**
+  - `pnpm tsc --noEmit`: pass.
+  - `pnpm run test:history` on `useTimelineTracks`, `timelineSelection` and `TimelineRangeMenu`: 19 passed.
+  - `pnpm run test:focused` (the whole suite): 2582 passed, 19 failed, all in `timelineMembership`, `timelineMembershipAdversarial`, `timelineMarchers`, `timelineRipple` and `timelineHistoryFocus` (db-functions this PR doesn't touch).
+  - `pnpm run test:timeline` on the timeline, canvas, stores, hooks, inspector and utilities paths: 1141 passed, 1 failed (`useMarchersTimelineMode`).
+  - **The same 19 and the same 1 fail on base `889cb433`** (a separate checkout of base, same commands). They are P8.14 tests that assume P9.10's earlier single timeline across the whole show; not this PR.
+  - Not run: Playwright e2e and a manual run of the app.
+- **Next:** review. Someone needs to fix the base failures above (P8.14 or P9.10 owner).
+- **Blockers:** none for P8.11.
+
+### 2026-10-02 · timeline-worker (timeline/p8-14-timeline-membership) · P8.14
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/49 (commit `56a64681`, then `82cad6a7` after review). `src/db-functions/timelineMembership.ts`: `addMarchersToTimeline` (creates the timeline over a range when none has it; one-slot shapeless direct transition per marcher, destination at its position at the end, one layer above its highest layer there; refuses partial overlaps and ranges around one of the marcher's timelines), `removeMarchersFromTimeline` / `removeAssignmentFromTimeline` (delete the assignment and the own one-slot transition, never the timeline; the inspector's remove uses the latter). `createTimelinesInTransaction` refuses a second timeline over a range (`allowSharedRanges` for the scenario loader). New marchers join every stored timeline with their own transition to home (start order, skip partial overlaps), replacing P7.3's join; marcher delete removes own transitions and keeps timelines. Right-click **Add selected marchers** on page boxes, clips and dragged ranges (`TimelineRangeMenu.tsx`), with the target range passed in and no selection change.
+- **Checks:** tsc pass; full `vitest run` (apps/desktop) 2,526 passed, 0 failed at `82cad6a7`; focused `test:history` on 9 files, 134 passed; eslint/prettier/cspell clean. Skipped by policy: full `test:history`, Playwright, `build:electron`, `test:timeline`.
+- **Blockers:** none. The coordination edits for this package were applied by the lead with the project owner's OK: the worker's isolation blocked `coord.sh`.
+
+### 2026-10-02 · lead session · P8.11, P8.13, P8.14, P9.10 merged
+
+- **Done:** each PR had a reviewer and a tester sub-agent and a fix round where asked; the project owner ordered the merges. Merged #50 (P9.10, `76fd399c`), #48 (P8.13, `aff90ab1`), #49 (P8.14, `889cb433`) and #51 (P8.11, `fc149a70`, rebased onto the others). Lead decisions recorded in `ui.md` UI-9: deleting a flag is the inverse of **+**; adding over a range that contains one of the marcher's timelines is refused; ctrl+click is ignored on the timeline. Backlog additions: undoing a clip move dims everyone, ripple holds can give a marcher two transitions in one timeline, clearing dimming mid-tool, ctrl+click on every platform. Old dev-converted files aren't repaired on open (project owner).
+- **Checks:** reviewers and testers re-ran each PR's focused checks; none ran on the combined result before merging. After merging, the base fails 19 unit tests and 1 `test:timeline` test (P8.14 tests vs P9.10 conversion), the same without #51.
+- **Next:** the P8.14 worker's fix PR, then P8.15 and P8.12. Lesson: run the full unit suite on the combined branch before merging parallel PRs that meet in the same area.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-15-canvas-edits) · P8.15
+
+- **Done:** pushed `wip` commit on `timeline/p8-15-canvas-edits`. Canvas moves edit the selection, not a page. `db-functions/timelineMoves.ts`: `moveMarchersInTimelineInTransaction` finds each marcher's row by timeline id and sets its slot destination (refuses E-ARGS: not in the timeline, more than one row, a row ending early, a higher layer winning at the end); `moveMarchersInTarget` is one undoable edit for `{kind: "home"}` or `{kind: "timeline", timelineId}`. `timeline/timelineCoordinateWrites.ts`: `planCanvasEdit` reads the selection store (stored timeline with the playhead on its end, or home/nothing at beat 0; otherwise `TimelineEditRefusedError` with a hint); `withTimelinePositions`/`timelineCoordinateRecords` take a beat; `transformMarchersInSelection` replaces `transformMarchersOnPage`; `canvasCoordinateWriter` plans when the drag ends. Wired in `Canvas.tsx` (shared with P8.12: only the writer effect and its mutation), `RegisteredActionsHandler.tsx` (`getSelectedMarcherPages` timeline branch, `updateCoordinates`) and `useMarcherPages.ts` (`useUpdateSelectedMarchers`, `moveMarchersInTargetMutationOptions`). `moveMarchersOnPage`, `copyPagePositions` and `TimelineMoveRequest` stay for "set to previous/next page", which P8.12 owns.
+- **Checks:** `pnpm run test:focused` on `timelineMovesByTimeline.test.ts` (new), `timelineCoordinateWrites.test.ts`, `timelineToastPaths.test.ts`: 34 passed. `tsc` (apps/desktop): pass.
+- **Next:** **+** button and delete-flag menu entry, remove Create Track from timeline mode, PR #52 test nits, then whole-suite checks.
+- **Blockers:** none.
+- **Resume from:** `apps/desktop/src/components/timeline/TimelineModePanel.tsx` (wire `useAddPageFlag`, `deletePageFlagsMutationOptions`; drop `onCreateTrack`/`selectedTarget`), `TimelineVariants.tsx` and `TimelineRangeMenu.tsx`. In a fresh work tree run `pnpm install`, then build each workspace package by name (`pnpm --filter @openmarch/core --filter @openmarch/metronome --filter @openmarch/musicxml-parser --filter @openmarch/ui --filter @openmarch/config build`).
+
+### 2026-10-02 · timeline-worker (timeline/p8-12-no-selected-page) · P8.12
+
+- **Done:** pushed `7473d3fe` (wip). `SelectedPageContext` now also gives `useCurrentPage()` (page mode: the selected page; timeline mode: `pageAtPlayhead`) and `usePageNavigation()` (`goToPage`: page mode selects; timeline mode moves the playhead to the flag and selects that page's timeline via the new `selectTimelinePage` in `timelineTransport.ts`). `useSelectedPage` warns once per component in development when read in timeline mode (`SELECTED_PAGE_IN_TIMELINE_MODE_WARNING`). Every reader under `src` moved off `useSelectedPage`. `useTimelinePageBridge` is deleted. The inspector's timeline section, the marcher editor's coordinates, the clock and the waveform read the playhead. Undo and redo in timeline mode move only the playhead. Previous and next paths run through the selected range and on to the next flag (`timelinePathRanges`, `pathsBetweenBeats`); nothing at home. Set to previous or next page edits the selected stored timeline's members and is refused with none selected (new `actions.batchEdit.noTimelineSelected`).
+- **Shared files touched (P8.15):** `Canvas.tsx` and `canvasListeners.movement.ts` only swap where `selectedPage` comes from (`useCurrentPage`; the local name stays to avoid conflicts), and Canvas's path-render arguments. `canvasCoordinateWriter`, `updateCoordinates` and `useUpdateSelectedMarchersOnSelectedPage` still write by the page at the playhead. Neighbor-page writes go through `moveMarchersOnPage` at the selected timeline's end beat (`TODO(P8.15)`: by timeline id). `copyPagePositions` in `timelineCoordinateWrites.ts` is no longer used by the app; left for P8.15.
+- **Proposed split:** this PR (P8.12a) is the reads, the bridge, the guard and the page-relative tools; appearance-by-time (P8.12b) follows as its own commit on this branch, or a second PR if this one is already large.
+- **Checks so far:** `pnpm tsc --noEmit` pass; focused vitest on timeline, canvas, hooks, inspector and context tests pass; eslint on touched files 0 errors.
+- **Blockers:** none.
+- **Resume from:** on `timeline/p8-12-no-selected-page`: timeline-mode feature tests through `src/test/featureHarness.tsx` that spy `console.warn` for `SELECTED_PAGE_IN_TIMELINE_MODE_WARNING` while mounting the inspector, toolbar, timeline container, canvas listeners and action handler; then remove `buildTimelineTracks`/`clipsOfShape` (`TODO(P8.12)`, `timelineViewModel.ts`); then appearance-by-time from `coordinates-v2`.
+
+### 2026-10-02 · timeline-worker (timeline/p8-15-canvas-edits) · P8.15
+
+- **Done:** pushed `352b1b44`. **+** shows just after the free paused playhead (`TimelineModePanel` wires `useAddPageFlag`; `onAdded` → `selectRange` through `selectAddedPage`); page boxes carry their page id and the right-click menu has **Delete page flag** (`deletePageFlagsMutationOptions`). Create Track is gone from timeline mode (`useTimelineCommands` has no `createTrack`/`selectedTarget`; the db-level `createTrack` stays for its tests). PR #52 nits: `useMarchersTimelineMode.test.ts` asserts one assignment per stored timeline; `timelineMembershipAdversarial.test.ts` (a) asserts the inside-page loop ran. Shared test helper: `test/featureHarness.tsx` `selectPageAndMarchers` now also selects the page's box in timeline mode (it's the editing context) and waits for stored timelines. Nudges in `RegisteredActionsHandler` catch the already-toasted rejection. New `TimelineCanvasEditModes.test.tsx` (timeline mode) and `TimelinePageFlagControls.test.tsx`.
+- **Checks:** focused runs of each touched test pass in both modes; `pnpm tsc --noEmit` pass; eslint 0 errors on touched files; prettier --check pass.
+- **Next:** whole `test:focused`, then whole `test:timeline`, focused `test:history`, PR.
+- **Blockers:** none.
+- **Resume from:** `timeline/p8-15-canvas-edits`; run `pnpm run test:focused` then `pnpm run test:timeline` (apps/desktop, sequentially) and fix failures; then WORKER.md step 6.
+
+### 2026-10-02 · timeline-worker (timeline/p8-15-canvas-edits) · P8.15
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/53 (one commit, `92998165`). Canvas drag, nudges, alignment and the inspector's coordinate tools edit the UI-9 selection. `moveMarchersInTarget` covers homes, or the endings in a timeline found by id. `planCanvasEdit` refuses off the end (TEMPORARY), with no timeline away from beat 0, on an empty range, and (in the db function) for more than one row. **+** after the free paused playhead selects the new page. Page boxes have **Delete page flag**. Create Track is gone from timeline mode. PR #52 test nits done.
+- **Shared files touched (minimal; P8.12 owns the rest):** `Canvas.tsx` (writer effect only), `RegisteredActionsHandler.tsx` (`getSelectedMarcherPages` timeline branch, `updateCoordinates`, nudge `.catch`), `useMarcherPages.ts`, `test/featureHarness.tsx` (`selectPageAndMarchers` selects the page's box in timeline mode). Left for P8.12: set to previous/next page (`moveMarchersOnPage`, `copyPagePositions`), `triggerAction`'s `selectedPage` guard, and the canvas init's `selectedPage`.
+- **Checks:** `pnpm tsc --noEmit`: pass. Whole `pnpm run test:focused`: 2625 passed. Whole `pnpm run test:timeline`: 2579 passed. `pnpm run test:history` on 9 touched test files: 81 passed. eslint: 0 errors; prettier: pass. Not run (policy): the full `test:history` suite and Playwright. No exit-gate items ticked.
+- **Next:** review and merge. Run the whole suite on the combined branch if P8.12 merges first.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-12-no-selected-page) · P8.12 (checkpoint)
+
+- **Done:** pushed `4eeb237b`.
+  - **Feature test:** `src/timeline/__test__/NoSelectedPageModes.test.tsx` mounts the inspector parts, toolbar, clock, page timeline, action handler, state initializer and the canvas and playback hooks. It drives navigation, set to previous page and undo, and checks that `useSelectedPage`'s warning never fires under `test:timeline`. A canary checks that the warning does fire.
+  - **Dead code:** `buildTimelineTracks`, `clipsOfShape` and the per-marcher and per-shape track builders are removed. Their tests are ported to `buildTimelineClipTracks`.
+  - **Appearance by time:** `src/services/appearance/` (`type.ts`, `db-to-timeline.ts`, `get-appearance-at-time.ts`) and `src/hooks/useAppearanceAnimation.ts`. Each page's tag and section stack (`_combineMarcherAppearances` with no `marcher_pages` overrides) is keyed by its flag time. It is sampled at the paused playhead or the live playback time and applied only when a marcher's stack changes. `Canvas.tsx` skips its per-page appearance query in timeline mode.
+- **Split:** one PR, with commits kept per step (reads and tools, feature test, dead code, appearance), since appearance is about 300 lines.
+- **Checks:** whole `test:focused` passed at `257a3943` (186 files, 2598 tests); `tsc` passes. Whole `test:focused` and `test:timeline` are now running at `4eeb237b`.
+- **Blockers:** none.
+- **Resume from:** read the scratchpad logs (`p812-focused2.log`, `p812-timeline.log`) or rerun both suites one after the other. Then run focused `test:history` on `timelinePageCopy`, `useHistory`, `useTimelinePlayback` and `NoSelectedPageModes`, squash the wip commits into one per step, and open the PR.
+
+### 2026-10-02 · timeline-worker (timeline/p8-12-no-selected-page) · P8.12 (in review)
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/54, one squashed commit `4feb856b`. It covers the reads, the bridge removal, the dev guard, the page-relative tools, appearance by time, the removed dead track builders and the timeline-mode feature test (see the two checkpoints above). After the full `test:timeline` run, the final commit also stubs `ResizeObserver` in `Canvas.test.tsx`: in timeline mode the canvas now starts from the page at the playhead, without a selected page.
+- **Split:** kept as one PR; the appearance part is about 300 lines of the roughly 3,100 changed (about 1,300 of them deletions).
+- **For P8.15:** see the first checkpoint for the shared files. `copyPagePositions` is unused by the app. The neighbor-page write is marked `TODO(P8.15)` (write by timeline id). Both PRs touch `Canvas.tsx`; run the whole suite on the combined branch before merging.
+- **Notes:** between flags, appearance shows the last flag's page (as on `coordinates-v2`), while page data (notes, tag editor, `SelectedMarchersContext`'s hidden marchers) reads the page whose box holds the playhead. Hidden-marcher selection still uses the per-page appearance query.
+- **Checks** (from `apps/desktop`):
+  - `pnpm tsc --noEmit`: pass.
+  - Whole `pnpm run test:focused` at `4eeb237b`: 187 files and 2604 tests passed.
+  - Whole `pnpm run test:timeline` at `4eeb237b`: 187 files and 2558 tests passed, with 1 unhandled `ResizeObserver` error in `Canvas.test.tsx`. It is fixed in the final commit, and `Canvas.test.tsx` passes in both modes.
+  - Focused `test:history` on 9 touched test files: 58 passed.
+  - Pre-commit: pass.
+  - Not run, per policy: the full `test:history` suite and Playwright e2e. Also not run: a manual check in the app.
+- **Exit gate:** nothing ticked; this package covers none of the gate items.
+- **Next:** review.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-15-canvas-edits) · P8.15 (review fixes)
+
+- **Done:** PR #53 is now one commit, `18a3a10d` (force-pushed; the pre-commit hook ran).
+  - **Swap:** when the selection refuses, swap now shows the same hint as the other tools (`RegisteredActionsHandler`).
+  - **Delete page flag without Add:** the entry no longer depends on **Add selected marchers**; `onAdd` is optional in `TimelineRangeMenu` (`Timeline.tsx`).
+  - **Lead decision, implemented:** deleting the flag of the selected page selects the merged box (the next page's box, which now runs from the deleted page's start to the next flag), as **+** selects the new page. Deleting the selected last page's flag selects the previous page's box (home for page 0), since that page becomes last. See `selectionAfterFlagDelete` in `TimelineModePanel.tsx`; it runs `selectRange` after `deletePageFlags` succeeds.
+  - **Planning twice:** skipped, with a comment in `updateCoordinates`. The tools call `getSelectedMarcherPages` and the write synchronously in one action, or within the nudge mutation's own promise chain, so the selection can't change between the two plans.
+  - **Tests (`timelineMovesByTimeline.test.ts`):**
+    - every other slot of the shared converted transition keeps its destination;
+    - new: the refusal for a row ending early;
+    - new: an R-5/D-12 nested-timeline case (the nested move ends at the edited point, and the outer move resumes on the line from it to its unchanged destination).
+  - **Tests (other files):** a swap refusal in `TimelineCanvasEditModes.test.tsx`; Delete without Add and `selectionAfterFlagDelete` cases in `TimelinePageFlagControls.test.tsx`.
+- **Checks** (apps/desktop):
+  - `pnpm tsc --noEmit`: pass.
+  - eslint on touched files: 0 errors; the 3 warnings in `RegisteredActionsHandler.tsx` were already there.
+  - `prettier --check src`: pass.
+  - Whole `pnpm run test:focused`: 2631 passed.
+  - Whole `pnpm run test:timeline`: 2585 passed. It ran after the focused suite, not alongside it.
+  - `pnpm run test:history` on 6 touched test files: 55 passed.
+  - Not run (policy): the full `test:history` suite and Playwright.
+- **Next:** re-review and merge.
+- **Blockers:** none.
+
+### 2026-10-02 · lead session · P8.15 merged
+
+- **Done:** PR #53 merged (`4429acfb`) after review, test and a fix round. The linear MVP's build packages (P8.11, P8.13, P8.14, P8.15, P9.10) are all merged. Lead decisions for UI-9: deleting the selected page's flag selects the merged page; deleting the selected last page's flag selects the previous page (home for page 0). P8.12 is paused for MVP testing (see handoff notes).
+- **Checks:** reviewer and tester re-ran the PR's checks; whole `test:focused` and `test:timeline` passed on its final commit.
+- **Next:** build and run `validation-plan.md` V1–V4 in the app.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p8-12-no-selected-page) · P8.12 (review fixes, paused)
+
+- **Done:** pushed `ee2b4cb2` (wip) on PR #54. Paused by the project owner for MVP testing; status stays in-review.
+  - **Item 2 (done):** `TimelineControls.tsx` gets its transport state from `useTransportAvailability`. In timeline mode, back and forward use `navigationTarget` from the playhead, and play uses `canPlay(selection, playhead, beats.length)`.
+  - **Item 3 (done):** in timeline mode, `SelectedMarchersContext` takes hidden marchers from the appearance timeline at the playhead (`hiddenMarcherIdsAt` in `services/appearance/get-appearance-at-time.ts`). `useMarcherAppearanceTimelines` moved to `src/hooks/useMarcherAppearanceTimelines.ts`. The per-page appearance query runs in page mode only.
+  - **Item 4 (done):** in timeline mode, while playing, `PageNotesSection` shows the notes of the page whose box holds the live position (`useLivePlaybackPage`, checked each frame and updated on change), which follows a loop. Paused, it shows the page at the playhead. Page mode is unchanged.
+- **Not done:**
+  - Item 5 (extend `NoSelectedPageModes.test.tsx`).
+  - Item 1 (write by timeline id after #53, plus the tester's adversarial tests).
+  - No new tests for items 2–4 yet.
+- **Checks at `ee2b4cb2`:**
+  - `pnpm tsc --noEmit`: pass.
+  - `test:focused` on `src/context`, `src/components/timeline`, `src/components/inspector`, `src/services/appearance`, `NoSelectedPageModes` and `RegisteredActionsHandlerModes`: 295 passed.
+  - `test:timeline` on the same paths, without `RegisteredActionsHandlerModes`: 288 passed.
+  - Pre-commit: pass.
+  - Not run: the whole suites and `test:history`.
+- **Blockers:** none (item 1 waits on #53).
+- **Resume from:** on `timeline/p8-12-no-selected-page` at `ee2b4cb2`, do these in order:
+  1. **Tests for items 2–4:** `TimelineControls` disabled states in timeline mode; hidden marchers between flags follow the canvas's sampled appearance; the live-page notes while playing.
+  2. **Item 5:** in `src/timeline/__test__/NoSelectedPageModes.test.tsx`, mount `SelectedMarchersContext` (already in the harness), `TagButtons`, `ShapeSelector` and `TimelineContainer` (needs the electron and `ResizeObserver` stubs; see `TimelineContainerMode.test.tsx`), and assert that set to previous page wrote (the positions at the timeline's end equal those at its start).
+  3. **Item 1, after #53 merges:** rebase onto `timeline-try-2`. In `useMarcherPages.ts`, keep `useCurrentPage` and call #53's one-argument `useUpdateSelectedMarchers`. In `featureHarness.tsx`, keep `goToPage` and drop the unused `pageFlags` and `selectionOfPage` imports. Then switch `setMarchersToNeighborPage.ts`'s timeline write (`timelineEndPage`, `TODO(P8.15)`) to #53's `moveMarchersInTimelineInTransaction` or `moveMarchersInTarget`, and show its higher-layer refusal as a toast. Adopt the tester's `P812Adversarial.test.tsx` and `P812UndoAdversarial.test.tsx` from `/Users/openmarchdev/GitHub/OpenMarch/.claude/worktrees/agent-af5ffb1de086b0faa/apps/desktop/src/timeline/__test__/`, changing the mid-page undo assertion so the playhead stays put. If copying is refused, write equivalent tests.
+  4. **Finish:** `tsc`; whole `test:focused`, then whole `test:timeline`; focused `test:history` on the touched files; push; log.
+
+### 2026-10-02 · timeline-worker (timeline/p8-16-range-dim) · P8.16
+
+- **Done:** pushed `6b414865` (wip) on `timeline/p8-16-range-dim`. `isMarcherDimmed` dims non-members only when the selected range resolves to a stored timeline, so `useDeselectDimmedMarchers` and the canvas dimming keep marchers selectable on a range with no stored timeline. Canvas moves there stay refused (`emptyTimeline`). Updated the store and selection tests, and added `RangeNotStoredModes.test.tsx` (drag keeps the selection, select on the range, Add then dims, + then add, refused moves write nothing).
+- **Checks:** `tsc --noEmit`: pass. The new and changed test files pass under `test:timeline`, and fail on the old store.
+- **Next:** the whole suites, then the PR.
+- **Blockers:** none.
+- **Resume from:** on `timeline/p8-16-range-dim`, run the whole `pnpm run test:focused`, then the whole `pnpm run test:timeline`, then focused `test:history` on the touched test files; open the PR.
+
+### 2026-10-02 · timeline-worker (timeline/p8-16-range-dim) · P8.16 (in review)
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/55, one commit `a445988e` on `timeline-try-2`.
+  - `isMarcherDimmed` dims non-members only for a stored timeline. The canvas dimming, the hit and lasso skips and `useDeselectDimmedMarchers` all go through it.
+  - A stored timeline with nobody in it still dims everyone.
+  - Canvas moves on a range that isn't stored stay refused (`emptyTimeline`).
+  - The Add disabled reason now mentions a range with no timeline yet.
+  - Tests: the store and selection tests are updated, and `RangeNotStoredModes.test.tsx` is new.
+- **Checks** (apps/desktop; the machine was heavily loaded, load average up to 125):
+  - `tsc --noEmit`: pass. eslint, prettier and pre-commit: pass.
+  - Whole `test:focused`: 2617 passed, 2 failed, plus 2 worker-start errors. The failures were load timeouts in `backup.test.ts` and `pageEraFreeze.test.ts`.
+  - Whole `test:timeline`, run after the focused suite: 2582 passed, 2 failed, plus 1 worker-start error. The failures were timeouts in `convertOnOpen.test.ts` and `MarcherEditorModes.test.tsx`.
+  - Every file that failed or didn't start passes when re-run alone (the PR lists them).
+  - Focused `test:history` on the 3 touched test files: 23 passed.
+  - Not run, per policy: the full `test:history` suite and Playwright. No manual V2 check either.
+- **Exit gate:** nothing ticked; this package covers none of the gate items.
+- **Next:** review.
+- **Blockers:** none.
+
+### 2026-10-03 · lead session · P8.16 and the pause loop merged
+
+- **Done:** PR #55 (P8.16, `34a33b18`): a range with no stored timeline dims nobody, so drag-to-create and adding marchers right after **+** work. PR #56 (`c38c45ac`): fixes "Maximum update depth exceeded" on play, pause, play in timeline mode, found in MVP testing. The temporary page bridge read the stale play-start beat on pause and ping-ponged between two flags; it now ignores all of its own pending writes. Each PR had a reviewer and tester (combined for #55 under machine load).
+- **Checks:** #55: whole suites had only load timeouts in untouched files, each passing alone; focused 34/34 in all modes. #56: reproduction test red without the fix, green with it; 27/27 focused in both modes.
+- **Next:** continue MVP testing in the app; P8.12 stays paused (it deletes the bridge). Known: on every pause the bridge's selected page flickers to the previous page for one commit (fixed for good when P8.12 lands).
 - **Blockers:** none.

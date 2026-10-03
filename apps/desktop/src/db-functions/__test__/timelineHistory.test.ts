@@ -28,9 +28,10 @@ const tablesToCheck = [
 ];
 
 /**
- * One edit: two marchers, a timeline over [0, 64), a line shape, a 2-slot transition on the line
- * over [0, 16) (id 1), and a shapeless 2-slot transition over [16, 32) (id 2) with its two
- * destinations (ids 1 and 2).
+ * One edit: two marchers, timelines over [0, 16), [16, 32) and [32, 48) (ids 1 to 3), a line shape,
+ * a 2-slot transition on the line spanning timeline 1 (id 1), and a shapeless 2-slot transition
+ * spanning timeline 2 (id 2) with its two destinations (ids 1 and 2). Timeline 3 is empty, for the
+ * tests' own transition 3 (a transition spans its timeline, C-11).
  */
 const seed = (db: DbConnection) =>
     transactionWithHistory(db, "seedTimeline", async (tx) => {
@@ -38,9 +39,11 @@ const seed = (db: DbConnection) =>
             { id: 1, section: "Brass", drill_prefix: "B", drill_order: 1 },
             { id: 2, section: "Brass", drill_prefix: "B", drill_order: 2 },
         ]);
-        await tx
-            .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 64 });
+        await tx.insert(schema.timelines).values([
+            { id: 1, name: "Opener", start_beat: 0, end_beat: 16 },
+            { id: 2, start_beat: 16, end_beat: 32 },
+            { id: 3, start_beat: 32, end_beat: 48 },
+        ]);
         await tx.insert(schema.timeline_shapes).values({
             id: 1,
             kind: "line",
@@ -57,7 +60,7 @@ const seed = (db: DbConnection) =>
             },
             {
                 id: 2,
-                timeline_id: 1,
+                timeline_id: 2,
                 dest_shape_id: null,
                 slot_count: 2,
                 start_beat: 16,
@@ -127,18 +130,18 @@ describeDbTests("timeline history", (it) => {
             await transactionWithHistory(db, "insert", async (tx) => {
                 await tx
                     .insert(schema.timelines)
-                    .values({ id: 2, start_beat: 64, end_beat: 96 });
+                    .values({ id: 4, start_beat: 64, end_beat: 96 });
             });
             await transactionWithHistory(db, "update", async (tx) => {
                 await tx
                     .update(schema.timelines)
                     .set({ name: "Closer", end_beat: 128 })
-                    .where(eq(schema.timelines.id, 2));
+                    .where(eq(schema.timelines.id, 4));
             });
             await transactionWithHistory(db, "delete", async (tx) => {
                 await tx
                     .delete(schema.timelines)
-                    .where(eq(schema.timelines.id, 2));
+                    .where(eq(schema.timelines.id, 4));
             });
             await transactionWithHistory(db, "rename", async (tx) => {
                 await tx
@@ -198,7 +201,7 @@ describeDbTests("timeline history", (it) => {
                 await transactionWithHistory(db, "insert", async (tx) => {
                     await tx.insert(schema.timeline_transitions).values({
                         id: 3,
-                        timeline_id: 1,
+                        timeline_id: 3,
                         dest_shape_id: 1,
                         slot_count: 2,
                         start_beat: 32,
@@ -206,6 +209,11 @@ describeDbTests("timeline history", (it) => {
                     });
                 });
                 await transactionWithHistory(db, "update", async (tx) => {
+                    // The timeline grows first, so the transition stays inside it (E-T1)
+                    await tx
+                        .update(schema.timelines)
+                        .set({ end_beat: 56 })
+                        .where(eq(schema.timelines.id, 3));
                     await tx
                         .update(schema.timeline_transitions)
                         .set({
@@ -284,7 +292,7 @@ describeDbTests("timeline history", (it) => {
                 await transactionWithHistory(db, "insert", async (tx) => {
                     await tx.insert(schema.timeline_transitions).values({
                         id: 3,
-                        timeline_id: 1,
+                        timeline_id: 3,
                         dest_shape_id: null,
                         slot_count: 3,
                         start_beat: 32,
@@ -400,7 +408,7 @@ describeDbTests("timeline history", (it) => {
                             );
                         await tx
                             .delete(schema.timelines)
-                            .where(eq(schema.timelines.id, 1));
+                            .where(inArray(schema.timelines.id, [1, 2, 3]));
                     },
                 );
 
@@ -443,7 +451,7 @@ describeDbTests("timeline history", (it) => {
                 await transactionWithHistory(db, "place", async (tx) => {
                     await tx.insert(schema.timeline_transitions).values({
                         id: 3,
-                        timeline_id: 1,
+                        timeline_id: 3,
                         dest_shape_id: null,
                         slot_count: 2,
                         start_beat: 32,

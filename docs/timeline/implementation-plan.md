@@ -10,6 +10,15 @@ between the spec and the app, dependencies, and risks. Phase files cite
 conflicts by ID (`C-n`). Change this file only to record a decision, and log
 that change in the phase that made it.
 
+## Current focus: Validation phase
+
+The project is now validating a smaller MVP under
+[validation-plan.md](validation-plan.md): timeline and page creation interaction,
+with shapes excluded and all pathways assumed linear. This is a validation
+priority, not a change to the spec, implementation scope, or phase statuses.
+Validate that workflow first; defer broader feature validation until the project
+owner accepts it. Existing safety and release gates remain required.
+
 ## 1. Repo facts the plan depends on (verified 2026-09-29)
 
 | Area           | Fact                                                                                                                                                                                                         | Source                                                                                         |
@@ -146,10 +155,69 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   timeline has no effect on resolution, R-1). Enforcement: the write functions
   refuse a transition whose range differs from its timeline's (E-ARGS), and
   every range edit moves the timeline and all its transitions together
-  (P8.10). The database check, an `E-T1` row in `timeline_commit_violations`,
-  waits for P9.10, because the converter still writes one show-wide timeline
-  with a transition per page; until then a function that would have to resize
-  such a legacy timeline refuses. Recorded in ADR 0001.
+  (P8.10). The database check is an `E-T1` row in
+  `timeline_commit_violations`, checked at commit (P9.10), now that the
+  converter writes one timeline per page move. A file converted by an earlier
+  development build (one show-wide timeline) fails every edit with E-T1 and
+  must be converted again by hand; open doesn't repair it (project owner,
+  2026-10-02). Recorded in ADR 0001.
+
+- **C-12: Pages are cosmetic flags; the selected timeline is the editing
+  context.** **Decided (project owner, 2026-10-01):** a page owns no motion.
+  A page is named by its end flag, where marchers arrive: its box stands for
+  the timeline from the previous flag to its own flag (its page timeline),
+  and selecting a timeline replaces selecting a page. Timelines track the
+  page (an edge on a flag follows it), but the page owns no motion. Home
+  (page 0) selects no timeline and edits homes. UI-9 in `ui.md` has the
+  interaction; P8.11 and P8.13–P8.15 build it and P8.12 removes the selected
+  page. Recorded in ADR 0001.
+  - **Consequences for the model.**
+    - Empty timelines aren't created: a page timeline not yet stored (or a
+      dragged range) is created when marchers are first added to it. But
+      removing marchers never deletes a timeline, so a stored timeline can be
+      empty; P8.10's rule that a timeline goes with its last transition
+      doesn't apply to removal.
+    - New marchers join every stored timeline, each with its own one-slot
+      transition whose destination is its home (P7.3's join, one transition
+      per marcher).
+    - Canvas edits are refused while the playhead isn't on the selected
+      timeline's end (temporary; editing anywhere comes later).
+    - At most one timeline has a given range; the write functions refuse a
+      second (E-ARGS). Groups over the same counts are transitions in one
+      timeline (UI-8).
+    - A marcher has at most one transition per timeline. Adding it gives it
+      its own one-slot shapeless `direct` transition spanning the timeline
+      (C-11), with its destination set to its position at the timeline's
+      end. It sits one layer above the marcher's timelines that wholly
+      contain it (R-2). Partial overlaps are refused (E-ARGS).
+    - Adding or deleting a flag writes only page rows (and
+      `last_page_counts` at the end of the show); no timeline is created or
+      deleted, so motion is unchanged. On insert, the split page keeps its
+      flag, id and data, and later pages renumber.
+  - **No selected page in timeline mode.** Editing reads the selected
+    timeline; rendering, playback and the inspector read the playhead. Data
+    that belongs to a page reads the page containing (or ending at) the
+    playhead. Marcher appearance stays by page but is sampled by time: a step
+    function keyed by each flag's timestamp, as on the `coordinates-v2`
+    branch. Page navigation, set to previous/next page and page paths work
+    relative to flags and the selected timeline (UI-9 Page-relative tools).
+    P8.11 and P8.12 remove the selected page; `SelectedPageContext` goes with
+    page mode in Phase 10.
+  - **Supersedes, in timeline mode:**
+    - P7.4's page-edge rule and holding moves, for adding or deleting a
+      page.
+    - UI-3's marcher and shape tracks: one track per stored timeline.
+    - P7.2's "move on page N edits the move ending at N's end beat": a canvas
+      move edits the ending coordinate of the marcher's transition in the
+      selected timeline.
+    - UI-6's Create Track: drag a range on empty timeline space, then **Add
+      selected marchers** from its context menu.
+  - **Depends on P9.10.** Converted shows need range-aligned page timelines.
+    Today the converter writes one show-wide timeline, so a converted show's
+    page boxes have no timeline of their own.
+  - **Still open (U-Q5):** where removal lives;
+    appending pages, clip selection and editing off the end are TODO. Beat editing, moving marchers between
+    timelines and undo's selection are in the `ui.md` backlog.
 
 ## 3. Phases
 

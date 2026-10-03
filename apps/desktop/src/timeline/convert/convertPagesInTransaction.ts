@@ -46,11 +46,11 @@ export interface ConvertPagesOptions {
      * file that already has timeline rows is refused (E-ARGS).
      */
     replace?: boolean;
-    /** Called after each page's transition and assignments are written. */
+    /** Called after each page's timeline, transition and assignments are written. */
     onProgress?: ConversionProgress;
 }
 
-/** Pages written so far, out of the pages that get a transition. */
+/** Pages written so far, out of the pages that get a timeline. */
 export type ConversionProgress = (
     pagesDone: number,
     pagesTotal: number,
@@ -58,8 +58,9 @@ export type ConversionProgress = (
 
 export interface PageConversionResult {
     readonly report: PageConversionReport;
-    readonly timelineId: number;
-    /** The new transition of each converted page, by page id */
+    /** The new timeline of each converted page (its page move, C-11), by page id */
+    readonly timelineIds: Map<number, number>;
+    /** The new transition of each converted page, the one spanning its timeline, by page id */
     readonly transitionIds: Map<number, number>;
     readonly assignmentCount: number;
     readonly homeCount: number;
@@ -195,7 +196,10 @@ async function deleteAllTimelineRows(tx: DbTransaction): Promise<void> {
     });
 }
 
-/** Writes `plan` inside `tx`. */
+/**
+ * Writes `plan` inside `tx`: the homes, then, page by page, the page's timeline over exactly its
+ * range and the one transition spanning it (C-11), through the checked write functions.
+ */
 export async function writePageConversionPlanInTransaction(
     tx: DbTransaction,
     plan: PageConversionPlan,
@@ -205,25 +209,24 @@ export async function writePageConversionPlanInTransaction(
         tx,
         modifiedHomes: plan.homes,
     });
-    const [timeline] = await createTimelinesInTransaction({
-        tx,
-        newTimelines: [plan.timeline],
-    });
-    // One page at a time (its transition, destinations and assignments), so progress can be
-    // reported. Ids come out as before: transitions and assignments are each inserted in plan
-    // order. The assignments go in as chunked multi-row inserts (P9.8); the row triggers still
-    // run for every row, and each sees the rows inserted before it.
+    // One page at a time (its timeline, transition, destinations and assignments), so progress
+    // can be reported. Ids come out in plan order. The assignments go in as chunked multi-row
+    // inserts (P9.8); the row triggers still run for every row, and each sees the rows inserted
+    // before it.
+    const timelineIds = new Map<number, number>();
     const transitionIds = new Map<number, number>();
     let assignmentCount = 0;
     const total = plan.transitions.length;
     for (const [i, t] of plan.transitions.entries()) {
+        const [timeline] = await createTimelinesInTransaction({
+            tx,
+            newTimelines: [{ startBeat: t.startBeat, endBeat: t.endBeat }],
+        });
         const [transition] = await createTimelineTransitionsInTransaction({
             tx,
             newTransitions: [
                 {
                     timelineId: timeline!.id,
-                    startBeat: t.startBeat,
-                    endBeat: t.endBeat,
                     slotCount: t.marcherIds.length,
                     destination: { kind: "individual", points: [...t.points] },
                     pathStyle: "direct",
@@ -231,6 +234,7 @@ export async function writePageConversionPlanInTransaction(
                 },
             ],
         });
+        timelineIds.set(t.pageId, timeline!.id);
         transitionIds.set(t.pageId, transition!.id);
         assignmentCount += await insertTimelineAssignmentsBulkInTransaction({
             tx,
@@ -247,7 +251,7 @@ export async function writePageConversionPlanInTransaction(
     }
     return {
         report: plan.report,
-        timelineId: timeline!.id,
+        timelineIds,
         transitionIds,
         assignmentCount,
         homeCount: plan.homes.length,

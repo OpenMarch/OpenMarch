@@ -186,11 +186,13 @@ describeDbTests("undo and redo in timeline mode", (it) => {
         });
         const id = created!.id;
 
-        // The add touched every page (a home and a slot in each page move)
+        // The add touched the first page (a home) and the last (its own move over the converted
+        // show's one timeline, UI-9 New marchers), not the pages in between
+        const last = pages[pages.length - 1]!;
         const undo = await performHistoryAction("undo", db, {
-            currentPageId: pages[4]!.id,
+            currentPageId: last.id,
         });
-        expect(undo.pageIdToGoTo).toBe(pages[4]!.id);
+        expect(undo.pageIdToGoTo).toBe(last.id);
         expect(undo.marcherIdsToSelect).toEqual(new Set([id]));
         await expectStoreMatchesColdBuild(db, pages);
         expect(
@@ -253,9 +255,9 @@ describeDbTests("undo and redo in timeline mode", (it) => {
         marchersAndPages: _,
     }) => {
         const pages = await setUp(db);
-        const page = pages[3]!;
+        const page = pages[pages.length - 1]!;
         const t = schema.timeline_transitions;
-        // Edit 1 adds a marcher, who gets a slot in every page move
+        // Edit 1 adds a marcher, who gets its own move in each page's timeline (UI-9, P9.10)
         const [created] = await createMarchers({
             db,
             newMarchers: [
@@ -263,10 +265,22 @@ describeDbTests("undo and redo in timeline mode", (it) => {
             ],
         });
         const id = created!.id;
-        // Edit 2 changes page 3's move, which selects everyone in it
+        // Edit 2 changes its move on the last page, which selects everyone in it
+        const own = new Set(
+            (
+                await db
+                    .select({
+                        transition: schema.timeline_assignments.transition_id,
+                    })
+                    .from(schema.timeline_assignments)
+                    .where(eq(schema.timeline_assignments.marcher_id, id))
+                    .all()
+            ).map((r) => r.transition),
+        );
         const transition = (await db.select().from(t).all()).find(
-            (row) => row.end_beat === pageEndBeat(page),
+            (row) => own.has(row.id) && row.end_beat === pageEndBeat(page),
         )!;
+        expect(transition).toBeDefined();
         await transactionWithHistory(db, "arcPageMove", async (tx) => {
             await tx
                 .update(t)

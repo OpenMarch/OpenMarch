@@ -5,10 +5,12 @@ import {
     swapMarchersMutationOptions,
     useUpdateSelectedMarchersOnSelectedPage,
     moveMarchersOnPageMutationOptions,
+    moveMarchersInTargetMutationOptions,
 } from "@/hooks/queries";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import type { ModifiedMarcherPageArgs } from "@/db-functions/marcherPage";
 import {
+    planCanvasEdit,
     timelineCoordinateRecords,
     toTimelineMoves,
 } from "@/timeline/timelineCoordinateWrites";
@@ -37,6 +39,10 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
+import {
+    navigateTimelinePages,
+    toggleTimelinePlayback,
+} from "@/timeline/timelineTransport";
 import tolgee from "@/global/singletons/Tolgee";
 import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
@@ -547,7 +553,7 @@ function RegisteredActionsHandler() {
     const setSelectedPage =
         selectedPageContext?.setSelectedPage ?? (() => undefined);
     const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { pages } = useTimingObjects()!;
+    const { pages, beats } = useTimingObjects()!;
     const isPlayingContext = useIsPlaying();
     const isPlaying = isPlayingContext?.isPlaying ?? false;
     const setIsPlaying = isPlayingContext?.setIsPlaying ?? (() => {});
@@ -575,8 +581,13 @@ function RegisteredActionsHandler() {
     const { mutate: updateMarcherPages } = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    const { mutate: moveMarchersOnPage, mutateAsync: moveMarchersOnPageAsync } =
-        useMutation(moveMarchersOnPageMutationOptions());
+    // "Set marchers to the previous or next page" still writes by page (P7.6) until P8.12
+    const { mutateAsync: moveMarchersOnPageAsync } = useMutation(
+        moveMarchersOnPageMutationOptions(),
+    );
+    const { mutate: moveMarchersInTarget } = useMutation(
+        moveMarchersInTargetMutationOptions(),
+    );
     const { mutate: createMarcherShape } = useCreateMarcherShape();
     const selectedMarchersContext = useSelectedMarchers();
     const selectedMarchers = selectedMarchersContext?.selectedMarchers ?? [];
@@ -628,23 +639,28 @@ function RegisteredActionsHandler() {
      * Get the MarcherPages for the selected marchers on the selected page.
      */
     const getSelectedMarcherPages = useCallback(() => {
-        if (!selectedPage) {
-            console.error("No selected page");
-            return [];
-        }
         if (timelineMode) {
-            // Timeline mode (P7.2): the tools start from what the canvas draws, the resolver's
-            // positions at the page's end beat, for every selected marcher. marcher_pages isn't
-            // read: its rows can be stale or missing in timeline mode.
+            // Timeline mode (UI-9 Editing, P8.15): the tools start from the resolver's positions
+            // where the selection edits (the selected timeline's end, or homes at beat 0), for
+            // every selected marcher. marcher_pages isn't read: its rows can be stale or missing.
+            // A refused selection gives nothing here; the write (`updateCoordinates` or
+            // `useUpdateSelectedMarchers`) says why, once.
+            if (selectedMarchers.length === 0) return [];
+            const plan = planCanvasEdit();
+            if (!plan.ok) return [];
             try {
                 return timelineCoordinateRecords(
-                    selectedPage,
+                    plan.beat,
                     selectedMarchers.map((marcher) => marcher.id),
                 );
             } catch (e) {
                 toastTimelineError(e);
                 return [];
             }
+        }
+        if (!selectedPage) {
+            console.error("No selected page");
+            return [];
         }
         if (!marcherPagesLoaded) {
             console.error("Marcher pages not loaded");
@@ -663,9 +679,11 @@ function RegisteredActionsHandler() {
         timelineMode,
     ]);
 
+    const selectedMarcherCount = selectedMarchers.length;
     /**
-     * Writes new coordinates for marchers on the selected page: `marcher_pages` in page mode
-     * (unchanged), slot destinations or homes in timeline mode (P7.2).
+     * Writes new coordinates for the marchers: `marcher_pages` on the selected page in page mode
+     * (unchanged); in timeline mode, the endings in the selected timeline or the homes, as the
+     * selection allows (UI-9 Editing, P8.15). A refusal is a toast when marchers are selected.
      */
     const updateCoordinates = useCallback(
         (changes: ModifiedMarcherPageArgs[]) => {
@@ -673,15 +691,28 @@ function RegisteredActionsHandler() {
                 updateMarcherPages(changes);
                 return;
             }
-            // The changes' page ids can be left over from an earlier render; the tools act on
-            // the selected page
-            if (!selectedPage) return;
-            moveMarchersOnPage({
-                page: selectedPage,
+            // The changes' page ids can be left over from an earlier render and are ignored.
+            // This plans again after `getSelectedMarcherPages` planned the read. The tools call
+            // both synchronously in one action, so the selection can't change in between and
+            // both plans agree; passing the plan through would touch every tool's call.
+            const plan = planCanvasEdit();
+            if (!plan.ok) {
+                if (changes.length > 0 || selectedMarcherCount > 0)
+                    toastTimelineError(plan.error);
+                return;
+            }
+            if (changes.length === 0) return;
+            moveMarchersInTarget({
+                target: plan.target,
                 moves: toTimelineMoves(changes),
             });
         },
-        [timelineMode, updateMarcherPages, selectedPage, moveMarchersOnPage],
+        [
+            timelineMode,
+            updateMarcherPages,
+            selectedMarcherCount,
+            moveMarchersInTarget,
+        ],
     );
 
     /**
@@ -925,18 +956,34 @@ function RegisteredActionsHandler() {
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
+                    // UI-9: navigation moves the playhead to a flag and selects that page
+                    if (timelineMode) {
+                        if (!isPlaying)
+                            navigateTimelinePages(pages, "next-page");
+                        break;
+                    }
                     const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage && !isPlaying) setSelectedPage(nextPage);
                     break;
                 }
                 case RegisteredActionsEnum.lastPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
+                    if (timelineMode) {
+                        if (!isPlaying)
+                            navigateTimelinePages(pages, "last-page");
+                        break;
+                    }
                     const lastPage = pages[pages.length - 1];
                     if (lastPage && !isPlaying) setSelectedPage(lastPage);
                     break;
                 }
                 case RegisteredActionsEnum.previousPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
+                    if (timelineMode) {
+                        if (!isPlaying)
+                            navigateTimelinePages(pages, "previous-page");
+                        break;
+                    }
                     const previousPage = getPreviousPage(selectedPage, pages);
                     if (previousPage && !isPlaying)
                         setSelectedPage(previousPage);
@@ -944,12 +991,26 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.firstPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
+                    if (timelineMode) {
+                        if (!isPlaying)
+                            navigateTimelinePages(pages, "first-page");
+                        break;
+                    }
                     const firstPage = pages[0];
                     if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {
                     if (!databaseReady || !pages || pages.length === 0) break;
+                    // UI-9 Play: resumes from the playhead and loops a selected range
+                    if (timelineMode) {
+                        toggleTimelinePlayback({
+                            isPlaying,
+                            showEndBeat: beats.length,
+                            setIsPlaying,
+                        });
+                        break;
+                    }
                     const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage) setIsPlaying(!isPlaying);
                     break;
@@ -986,11 +1047,12 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(
-                        () => updatedPagesArray,
-                    ).finally(() => {
-                        isUpdatingDirection.current = false;
-                    });
+                    updateSelectedMarchersAsync(() => updatedPagesArray)
+                        // The mutation toasts a failure or refusal itself
+                        .catch(() => undefined)
+                        .finally(() => {
+                            isUpdatingDirection.current = false;
+                        });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersDown: {
@@ -1005,11 +1067,12 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(
-                        () => updatedPagesArray,
-                    ).finally(() => {
-                        isUpdatingDirection.current = false;
-                    });
+                    updateSelectedMarchersAsync(() => updatedPagesArray)
+                        // The mutation toasts a failure or refusal itself
+                        .catch(() => undefined)
+                        .finally(() => {
+                            isUpdatingDirection.current = false;
+                        });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersLeft: {
@@ -1024,11 +1087,12 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(
-                        () => updatedPagesArray,
-                    ).finally(() => {
-                        isUpdatingDirection.current = false;
-                    });
+                    updateSelectedMarchersAsync(() => updatedPagesArray)
+                        // The mutation toasts a failure or refusal itself
+                        .catch(() => undefined)
+                        .finally(() => {
+                            isUpdatingDirection.current = false;
+                        });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersRight: {
@@ -1043,11 +1107,12 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(
-                        () => updatedPagesArray,
-                    ).finally(() => {
-                        isUpdatingDirection.current = false;
-                    });
+                    updateSelectedMarchersAsync(() => updatedPagesArray)
+                        // The mutation toasts a failure or refusal itself
+                        .catch(() => undefined)
+                        .finally(() => {
+                            isUpdatingDirection.current = false;
+                        });
                     break;
                 }
 
@@ -1148,7 +1213,11 @@ function RegisteredActionsHandler() {
                     if (timelineMode) {
                         // Timeline mode: each marcher takes the other's position on this page
                         const pair = getSelectedMarcherPages();
-                        if (pair.length !== 2) return;
+                        if (pair.length !== 2) {
+                            // Refused by the selection: say why, as the other tools do
+                            updateCoordinates([]);
+                            return;
+                        }
                         updateCoordinates([
                             { ...pair[0], x: pair[1].x, y: pair[1].y },
                             { ...pair[1], x: pair[0].x, y: pair[0].y },
@@ -1313,6 +1382,7 @@ function RegisteredActionsHandler() {
             uiSettings,
             performHistoryAction,
             pages,
+            beats,
             isPlaying,
             setSelectedPage,
             setIsPlaying,

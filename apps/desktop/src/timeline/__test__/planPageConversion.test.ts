@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { Path } from "@openmarch/core";
 import { getCoordinatesAtTime } from "@/utilities/Keyframes";
 import {
-    CONVERTED_TIMELINE_NAME,
     describePageConversionReport,
     droppedFieldsOf,
     interpolateGap,
@@ -54,7 +53,7 @@ const row = (
 });
 
 describe("planPageConversion", () => {
-    it("plans homes, one timeline, and one direct transition per page with one slot per marcher", () => {
+    it("plans homes and one page move per page: its own range (a timeline, C-11) and one direct transition with one slot per marcher", () => {
         const pages = pagesOf(4, 8);
         const plan = planPageConversion({
             pages,
@@ -72,11 +71,6 @@ describe("planPageConversion", () => {
             { marcherId: 3, home: [0.1, 0.2] },
             { marcherId: 7, home: [10, 20] },
         ]);
-        expect(plan.timeline).toEqual({
-            name: CONVERTED_TIMELINE_NAME,
-            startBeat: 0,
-            endBeat: 13,
-        });
         expect(plan.transitions).toEqual([
             {
                 pageId: 101,
@@ -117,14 +111,13 @@ describe("planPageConversion", () => {
         ]);
     });
 
-    it("a show with only page 0 gets homes and an empty timeline over [0, 1)", () => {
+    it("a show with only page 0 gets homes and no timeline", () => {
         const plan = planPageConversion({
             pages: pagesOf(),
             marcherIds: [1],
             marcherPages: [row(1, 100, 4, 5)],
         });
         expect(plan.homes).toEqual([{ marcherId: 1, home: [4, 5] }]);
-        expect(plan.timeline.endBeat).toBe(1);
         expect(plan.transitions).toEqual([]);
     });
 
@@ -408,7 +401,9 @@ describe("planPageConversion", () => {
             "no-beats",
             "no-marchers",
         ]);
-        expect(plan.timeline.endBeat).toBe(3);
+        expect(plan.transitions.map((t) => [t.startBeat, t.endBeat])).toEqual([
+            [1, 3],
+        ]);
     });
 
     it("ignores rows of unknown marchers and duplicate marcher ids", () => {

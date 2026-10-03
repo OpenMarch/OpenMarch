@@ -34,7 +34,7 @@ const seedShow = (db: DbConnection) =>
         );
         await tx
             .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 16 });
+            .values({ id: 1, name: "Opener", start_beat: 1, end_beat: 9 });
         await tx.insert(schema.timeline_shapes).values({
             id: 1,
             name: "Front line",

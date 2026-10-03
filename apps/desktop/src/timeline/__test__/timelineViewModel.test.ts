@@ -177,6 +177,22 @@ describe("buildTimelineTracks", () => {
             expect(first.color).not.toBe(steal.color);
         });
 
+        it("a marcher that joins late: the clip is its whole timeline, inactive until it joins (UI-8)", () => {
+            const show = structuredClone(golden("G2"));
+            const row = show.assignments.find(
+                (a) => a.marcher === 1 && a.transition === 1,
+            )!;
+            row.start = 4;
+            const tracks = build(show, ALL, { 1: [1], 2: [2] });
+            const first = track(tracks, marcherTrackId(1, 1));
+            expect([first.startBeatIndex, first.endBeatIndex]).toEqual([0, 16]);
+            expect(activity(first)).toEqual([
+                [0, 4, false],
+                [4, 8, true],
+                [8, 16, false],
+            ]);
+        });
+
         it("G2's shape tracks: the first shape is inactive once its only member is stolen", () => {
             const tracks = build(golden("G2"), selecting());
             expect(tracks.map((t) => t.id)).toEqual([

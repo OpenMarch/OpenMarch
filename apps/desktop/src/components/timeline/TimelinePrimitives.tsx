@@ -29,12 +29,15 @@ import {
     filterMarkersByMinimumSpacing,
     getFrameContext,
     getPageRange,
+    getSelectionRange,
     getPlayheadLabel,
     getTrackRange,
+    sameRange,
     isPageSnapDisabled,
     snapBoundary,
     snapRangeOffset,
 } from "./TimelineGeometry";
+import { timelineRangeTargetProps } from "./TimelineRangeMenu";
 import type {
     BeatPosition,
     TimelineBeatRange,
@@ -259,9 +262,21 @@ export const TimelineRuler = ({
     const orderedPages = pages
         .filter((page) => !page.isInitial)
         .sort((a, b) => a.atBeat - b.atBeat);
-    const selectedPageId = selection?.kind === "page" ? selection.pageId : null;
+    // UI-9: the initial box is home; a page box is its range, previous flag to its own flag
+    const selectedRange = getSelectionRange(selection);
+    const pageRange = (page: TimelinePageMarker) =>
+        getPageRange({ pages: orderedPages, pageId: page.id, beatCount });
+    const isSelected = (page: TimelinePageMarker) =>
+        page.isInitial
+            ? selection?.kind === "home"
+            : sameRange(pageRange(page), selectedRange);
     const selectPage = (page: TimelinePageMarker) => {
-        onSelectionChange?.({ kind: "page", pageId: page.id });
+        if (page.isInitial) {
+            onSelectionChange?.({ kind: "home" });
+            return;
+        }
+        const range = pageRange(page);
+        if (range) onSelectionChange?.({ kind: "range", range });
     };
     return (
         <>
@@ -279,7 +294,7 @@ export const TimelineRuler = ({
                         data-timeline-interactive="true"
                         data-testid="timeline-initial-page"
                         aria-label={`Page ${initialPage.label}`}
-                        aria-pressed={selectedPageId === initialPage.id}
+                        aria-pressed={isSelected(initialPage)}
                         onClick={() => selectPage(initialPage)}
                         className="border-stroke text-text focus-visible:ring-accent absolute top-0 left-0 flex h-full items-center justify-center border-r text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
                         style={{ width: initialPageWidth }}
@@ -294,15 +309,23 @@ export const TimelineRuler = ({
                         beatCount,
                     });
                     if (!range) return null;
-                    const selected = selectedPageId === page.id;
+                    const selected = isSelected(page);
                     return (
                         <button
                             key={page.id}
                             type="button"
                             data-timeline-interactive="true"
+                            {...timelineRangeTargetProps(
+                                range,
+                                undefined,
+                                page.id,
+                            )}
                             aria-label={`Page ${page.label}`}
                             aria-pressed={selected}
-                            onClick={() => selectPage(page)}
+                            onClick={(event) => {
+                                // macOS ctrl+click opens the context menu (UI-9: no selection change)
+                                if (!event.ctrlKey) selectPage(page);
+                            }}
                             className="border-stroke text-text focus-visible:ring-accent absolute top-0 flex h-full items-center justify-end border-r px-8 text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
                             style={{
                                 left:
@@ -426,6 +449,7 @@ export const TimelineTrackClip = ({
         <button
             type="button"
             data-timeline-interactive="true"
+            {...timelineRangeTargetProps(range, track.id)}
             aria-label={`${track.label} timeline, beats ${range.startBeatIndex + 1} through ${range.endBeatIndex}${
                 track.diagnostics
                     ? `, ${track.diagnostics.messages.length} ${track.diagnostics.messages.length === 1 ? "diagnostic" : "diagnostics"}`
@@ -438,9 +462,12 @@ export const TimelineTrackClip = ({
                     ? [track.label, ...track.diagnostics.messages].join("\n")
                     : track.label
             }
-            onClick={() => onSelect?.(track.id)}
+            onClick={(event) => {
+                // macOS ctrl+click opens the context menu (UI-9: no selection change)
+                if (!event.ctrlKey) onSelect?.(track.id);
+            }}
             onPointerDown={(event) => {
-                if (!canMove || event.button !== 0) return;
+                if (!canMove || event.button !== 0 || event.ctrlKey) return;
                 event.stopPropagation();
                 dragRef.current = {
                     pointerId: event.pointerId,
@@ -931,6 +958,7 @@ export const TimelinePlayhead = ({
         ref={anchorRef}
         type="button"
         data-testid="timeline-playhead"
+        data-timeline-scrub="true"
         aria-label={`Playback position: ${getPlayheadLabel(model, positionBeat, pageLabel)}`}
         onPointerDown={(event) => event.preventDefault()}
         onPointerEnter={() => onHoverChange(true)}
@@ -946,13 +974,7 @@ export const TimelinePlayhead = ({
                       : 0;
             if (delta === 0 || !onSeek) return;
             event.preventDefault();
-            onSeek(
-                clamp(
-                    Math.round(positionBeat) + delta,
-                    0,
-                    Math.max(beatCount - 1, 0),
-                ),
-            );
+            onSeek(clamp(Math.round(positionBeat) + delta, 0, beatCount));
         }}
         className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-50 w-12 -translate-x-1/2 cursor-ew-resize touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
         style={{
@@ -965,17 +987,73 @@ export const TimelinePlayhead = ({
     </button>
 );
 
-export const useTimelinePointer = ({
-    onSeek,
+/** How far, in pixels, a press on empty timeline space must move to select a range */
+export const TIMELINE_RANGE_DRAG_PX = 4;
+
+/**
+ * The range a drag on empty timeline space selects (ui.md UI-9 "Creating a timeline"): from where
+ * it started to where it is, each edge snapped as in UI-2 (Alt turns snapping off), in order.
+ * `null` while it covers no whole beat.
+ */
+export const getDraggedRange = ({
+    fromBeat,
+    toBeat,
+    snapBeats,
     pixelsPerBeat,
     beatCount,
 }: {
-    onSeek?: (beat: number) => void;
+    fromBeat: number;
+    toBeat: number;
+    snapBeats: readonly number[];
     pixelsPerBeat: number;
     beatCount: number;
+}): TimelineBeatRange | null => {
+    const edge = (beat: number) =>
+        clamp(snapBoundary({ beat, snapBeats, pixelsPerBeat }), 0, beatCount);
+    const a = edge(fromBeat);
+    const b = edge(toBeat);
+    if (a === b) return null;
+    return { startBeatIndex: Math.min(a, b), endBeatIndex: Math.max(a, b) };
+};
+
+/**
+ * The pointer on the timeline's surface. Pressing the playhead and dragging scrubs it. On empty
+ * space, a click seeks; with `onRangeSelect`, a drag selects the dragged range instead (UI-9),
+ * shown as `rangePreview` until it's released. Without it, a drag scrubs.
+ */
+export const useTimelinePointer = ({
+    onSeek,
+    onRangeSelect,
+    pixelsPerBeat,
+    beatCount,
+    snapBeats = [],
+}: {
+    onSeek?: (beat: number) => void;
+    onRangeSelect?: (range: TimelineBeatRange) => void;
+    pixelsPerBeat: number;
+    beatCount: number;
+    snapBeats?: readonly number[];
 }) => {
     const [isDragging, setIsDragging] = useState(false);
-    const dragging = useRef(false);
+    const [rangePreview, setRangePreview] = useState<TimelineBeatRange | null>(
+        null,
+    );
+    const gesture = useRef<{
+        mode: "scrub" | "press" | "range";
+        startClientX: number;
+        startBeat: number;
+    } | null>(null);
+    const draggedRange = (
+        event: ReactPointerEvent<HTMLElement>,
+        startBeat: number,
+    ) =>
+        getDraggedRange({
+            fromBeat: startBeat,
+            toBeat: pointerBeat(event),
+            snapBeats: isPageSnapDisabled(event) ? [] : snapBeats,
+            pixelsPerBeat,
+            beatCount,
+        });
     const pointerBeat = useCallback(
         (event: ReactPointerEvent<HTMLElement>) => {
             const bounds = event.currentTarget.getBoundingClientRect();
@@ -994,36 +1072,74 @@ export const useTimelinePointer = ({
         [onSeek],
     );
 
+    const end = () => {
+        gesture.current = null;
+        setIsDragging(false);
+        setRangePreview(null);
+    };
+
     return {
         isDragging,
+        rangePreview,
         pointerHandlers: {
             onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
-                if (dragging.current) seek(pointerBeat(event));
+                const current = gesture.current;
+                if (!current) return;
+                if (current.mode === "scrub") {
+                    seek(pointerBeat(event));
+                    return;
+                }
+                if (
+                    current.mode === "press" &&
+                    Math.abs(event.clientX - current.startClientX) <
+                        TIMELINE_RANGE_DRAG_PX
+                )
+                    return;
+                current.mode = "range";
+                setRangePreview(draggedRange(event, current.startBeat));
             },
             onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
                 if (
                     (event.button !== undefined && event.button !== 0) ||
+                    // macOS ctrl+click is a right-click: it opens the context menu, not a seek
+                    event.ctrlKey ||
                     (event.target instanceof Element &&
                         event.target.closest("[data-timeline-interactive]"))
                 )
                     return;
-                dragging.current = true;
-                setIsDragging(true);
+                const onPlayhead =
+                    event.target instanceof Element &&
+                    event.target.closest("[data-timeline-scrub]") != null;
+                const startBeat = pointerBeat(event);
+                gesture.current = {
+                    mode: onPlayhead || !onRangeSelect ? "scrub" : "press",
+                    startClientX: event.clientX,
+                    startBeat,
+                };
                 event.currentTarget.setPointerCapture?.(event.pointerId);
-                seek(pointerBeat(event));
+                if (gesture.current.mode === "scrub") {
+                    setIsDragging(true);
+                    if (!onPlayhead) seek(startBeat);
+                }
             },
             onPointerUp: (event: ReactPointerEvent<HTMLElement>) => {
-                if (!dragging.current) return;
-                dragging.current = false;
-                setIsDragging(false);
-                const beat = pointerBeat(event);
-                seek(beat);
+                const current = gesture.current;
+                if (!current) return;
                 event.currentTarget.releasePointerCapture?.(event.pointerId);
+                if (current.mode === "range") {
+                    const range = draggedRange(event, current.startBeat);
+                    end();
+                    if (range) onRangeSelect?.(range);
+                    return;
+                }
+                end();
+                seek(
+                    current.mode === "press"
+                        ? current.startBeat
+                        : pointerBeat(event),
+                );
             },
-            onPointerCancel: () => {
-                dragging.current = false;
-                setIsDragging(false);
-            },
+            onPointerCancel: end,
         },
     };
 };

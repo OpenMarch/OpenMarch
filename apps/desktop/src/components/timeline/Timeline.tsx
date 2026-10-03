@@ -13,8 +13,13 @@ import {
     timelineInputToView,
     type TimelineBeatAxis,
 } from "@/timeline/timelineViewModel";
+import { pageEndBeat } from "@/timeline/pageEndBeat";
 import { clamp } from "./TimelineGeometry";
 import { CollapsedTimeline, ExpandedTimeline } from "./TimelineVariants";
+import type {
+    TimelineAddMarchersMenu,
+    TimelineMenuTarget,
+} from "./TimelineRangeMenu";
 import type {
     TimelineActivitySpan,
     TimelineCreateTrackRequest,
@@ -24,6 +29,7 @@ import type {
     TimelineTarget,
     TimelineTrack,
     TimelineTrackDiagnostics,
+    TimelineTrackTargetType,
     TimelineViewModel,
     TimelineWaveform,
 } from "./TimelineViewModel";
@@ -46,7 +52,7 @@ export interface TimelineInput {
     /** The spec timeline: clips with the same link id move together */
     readonly linkId?: string | number;
     readonly targetId: string | number;
-    readonly targetType: TimelineTarget["type"];
+    readonly targetType: TimelineTrackTargetType;
     readonly label: string;
     readonly color: string;
     readonly startBeatIndex: number;
@@ -62,7 +68,7 @@ export interface TimelineInput {
  * 0.2 read the frame clock store here instead; that clock isn't wired into the app yet (P5.9).
  */
 export interface TimelinePlayback {
-    /** The beat under the playback cursor, a beat index in `[0, beats.length)` */
+    /** The beat under the playback cursor, in `[0, beats.length]` (the end of the show included) */
     readonly positionBeat: number;
     /** Names the page in the transport and playhead labels, such as the selected page while paused */
     readonly pageLabel?: string;
@@ -82,7 +88,7 @@ const STOPPED_AT_START: TimelinePlayback = {
 /**
  * Every beat in these props, and in the commands the timeline sends, is a spec beat position
  * (`beats` indexes). The timeline draws them on a view axis that hides the zero-length beat 0
- * (`createTimelineBeatAxis`); its selection is in view beats and is only passed back to it.
+ * (`createTimelineBeatAxis`), and converts at this boundary, the selection included.
  */
 export interface TimelineProps {
     readonly mode: TimelineMode;
@@ -102,6 +108,18 @@ export interface TimelineProps {
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
     readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
+    /**
+     * The right-click menu's **Add selected marchers** (UI-9, P8.14), for a page box, a clip's
+     * timeline or a dragged range. It gets spec beats; the menu doesn't change the selection.
+     */
+    readonly addSelectedMarchers?: TimelineAddMarchersMenu;
+    /**
+     * UI-9 **+** at the paused playhead (P8.13's `useAddPageFlag`); omit it where **+** doesn't
+     * show (on a flag, at home, past the beats).
+     */
+    readonly onAddPageFlag?: () => void;
+    /** The page box menu's **Delete page flag** (UI-9 Deleting a flag), by page id */
+    readonly onDeletePageFlag?: (pageId: number) => void;
 }
 
 const TimelineWaveformContext = createContext<TimelineWaveform | null>(null);
@@ -173,6 +191,7 @@ export const createTimelineViewModel = ({
                       id: page.id,
                       label: page.name,
                       atBeat: axis.toView(first),
+                      endBeat: axis.toView(pageEndBeat(page)),
                       isInitial:
                           page.previousPageId === null && page.counts === 0,
                   },
@@ -190,6 +209,36 @@ export const createTimelineViewModel = ({
     }),
     waveform,
 });
+
+/** A spec-beat selection on the view axis */
+export const selectionToView = (
+    selection: TimelineSelection | undefined,
+    axis: TimelineBeatAxis,
+): TimelineSelection | undefined =>
+    selection?.kind === "range"
+        ? {
+              kind: "range",
+              range: {
+                  startBeatIndex: axis.toView(selection.range.startBeatIndex),
+                  endBeatIndex: axis.toView(selection.range.endBeatIndex),
+              },
+          }
+        : selection;
+
+/** A view-axis selection in spec beats */
+export const selectionToSpec = (
+    selection: TimelineSelection,
+    axis: TimelineBeatAxis,
+): TimelineSelection =>
+    selection?.kind === "range"
+        ? {
+              kind: "range",
+              range: {
+                  startBeatIndex: axis.toSpec(selection.range.startBeatIndex),
+                  endBeatIndex: axis.toSpec(selection.range.endBeatIndex),
+              },
+          }
+        : selection;
 
 export function Timeline(props: TimelineProps) {
     const axis = useMemo(
@@ -219,21 +268,29 @@ export function Timeline(props: TimelineProps) {
     const playback = props.playback ?? STOPPED_AT_START;
     const [pixelsPerBeat, setPixelsPerBeat] = useState(16);
 
+    // The playhead may rest on the end of the show (the last flag, UI-9), one past the last beat
     const positionBeat = clamp(
         axis.toView(playback.positionBeat),
         0,
-        Math.max(model.beatCount - 1, 0),
+        model.beatCount,
     );
     const seekToBeat = playback.onSeek
         ? (viewBeat: number) => {
-              const nextIndex = clamp(
-                  axis.toSpec(Math.round(viewBeat)),
-                  0,
-                  Math.max(props.beats.length - 1, 0),
+              if (props.beats.length === 0) return;
+              playback.onSeek?.(
+                  clamp(
+                      axis.toSpec(Math.round(viewBeat)),
+                      0,
+                      props.beats.length,
+                  ),
               );
-              if (!props.beats[nextIndex]) return;
-              playback.onSeek?.(nextIndex);
           }
+        : undefined;
+    const { onSelectionChange } = props;
+    const selection = selectionToView(props.selection, axis);
+    const changeSelection = onSelectionChange
+        ? (next: TimelineSelection) =>
+              onSelectionChange(selectionToSpec(next, axis))
         : undefined;
     const { onTimelineRangeCommit, onCreateTrack, timelines } = props;
     // A clip move keeps its length: send the spec range shifted by the move, so a clip whose start
@@ -263,21 +320,58 @@ export function Timeline(props: TimelineProps) {
                   },
               })
         : undefined;
+    const { addSelectedMarchers, onDeletePageFlag } = props;
+    // A clip sends its stored spec range: the view axis folds spec beats 0 and 1 together, so a
+    // converted show's timeline over [0, N) would come back as [1, N). Page boxes and dragged
+    // ranges start on a flag or a timed beat, which `toSpec` maps back exactly.
+    // The right-click menu has an entry for each command given: add, and delete on page boxes
+    const addMarchersMenu:
+        | TimelineAddMarchersMenu<TimelineMenuTarget>
+        | undefined = (addSelectedMarchers || onDeletePageFlag) && {
+        disabledReason: addSelectedMarchers?.disabledReason,
+        ...(onDeletePageFlag
+            ? {
+                  onDeleteFlag: (pageId: string | number) =>
+                      onDeletePageFlag(Number(pageId)),
+              }
+            : {}),
+        onAdd:
+            addSelectedMarchers?.onAdd &&
+            (({ range, trackId }) => {
+                const input =
+                    trackId === undefined
+                        ? undefined
+                        : timelines.find((t) => String(t.id) === trackId);
+                addSelectedMarchers.onAdd?.(
+                    input
+                        ? {
+                              startBeatIndex: input.startBeatIndex,
+                              endBeatIndex: input.endBeatIndex,
+                          }
+                        : {
+                              startBeatIndex: axis.toSpec(range.startBeatIndex),
+                              endBeatIndex: axis.toSpec(range.endBeatIndex),
+                          },
+                );
+            }),
+    };
     const commonProps = {
         model,
         positionBeat,
         pageLabel: playback.pageLabel,
         isPlaying: playback.isPlaying,
         pixelsPerBeat,
-        selection: props.selection,
+        selection,
         selectedTarget: props.selectedTarget,
         className: props.className,
         onSeek: seekToBeat,
         onPlayingChange: playback.onPlayingChange,
         onNavigate: playback.onNavigate,
         onPixelsPerBeatChange: setPixelsPerBeat,
-        onSelectionChange: props.onSelectionChange,
+        onSelectionChange: changeSelection,
         onCreateTrack: createTrack,
+        addSelectedMarchers: addMarchersMenu,
+        onAddPageFlag: props.onAddPageFlag,
         onTimelineRangeCommit: commitRange,
         showTransport: props.showTransport ?? true,
         transportClock: props.transportClock,

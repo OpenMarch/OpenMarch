@@ -52,9 +52,9 @@ export const TIMELINE_ERROR_MESSAGES: Readonly<
             "A number is out of range. Beats, layers, slot counts and positions must be whole or finite numbers within the allowed limits.",
     },
     "E-T1": {
-        key: "timeline.errors.transitionOutsideTimeline",
+        key: "timeline.errors.transitionSpansTimeline",
         defaultMessage:
-            "A transition must stay inside its timeline. Lengthen the timeline first, or choose a shorter range.",
+            "A transition must span its whole timeline, starting and ending with it. Change the timeline's range instead, and its transitions move with it.",
     },
     "E-T3": {
         key: "timeline.errors.followLeaderBlock",
@@ -114,6 +114,42 @@ export const TIMELINE_UNKNOWN_ERROR_MESSAGE: TimelineErrorMessage = {
     defaultMessage: "The timeline couldn't make that change.",
 };
 
+/**
+ * The commit-time E-T1 of a file converted by a development build from before P9.10, which wrote
+ * one show-wide timeline holding a differently ranged transition per page. The commit check reads
+ * the whole database, so every edit of such a file fails until it is converted again.
+ *
+ * The braces are quoted for ICU (Tolgee), so the message shows `convertPages({ replace: true })`.
+ */
+export const TIMELINE_LEGACY_CONVERSION_MESSAGE: TimelineErrorMessage = {
+    key: "timeline.errors.legacyConvertedTimeline",
+    defaultMessage:
+        "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion), or run convertPages('{ replace: true }') from the developer console.",
+};
+
+/**
+ * True when a commit-time violation shows a timeline owning transitions of different ranges, the
+ * shape an earlier development build's converter wrote (C-11). Each E-T1 row's detail names the
+ * transition's range and its timeline's (`triggers.ts`); two rows with the same timeline range but
+ * different transition ranges are that shape. The write functions never produce it.
+ */
+export function isLegacyConversionViolation(error: unknown): boolean {
+    if (!(error instanceof TimelineCommitViolationError)) return false;
+    const spansByTimeline = new Map<string, Set<string>>();
+    for (const v of error.violations) {
+        if (v.code !== "E-T1") continue;
+        const match =
+            /^transition spans (\[[^)]*\)) but its timeline spans (\[[^)]*\))$/.exec(
+                v.detail,
+            );
+        if (!match) continue;
+        const spans = spansByTimeline.get(match[2]!) ?? new Set<string>();
+        spans.add(match[1]!);
+        spansByTimeline.set(match[2]!, spans);
+    }
+    return [...spansByTimeline.values()].some((spans) => spans.size > 1);
+}
+
 export const TIMELINE_NOT_READY_MESSAGE: TimelineErrorMessage = {
     key: "timeline.errors.notReady",
     defaultMessage: "The timeline is still loading. Try again in a moment.",
@@ -157,6 +193,13 @@ export function timelineErrorMessage(
             TIMELINE_NOT_READY_MESSAGE.key,
             TIMELINE_NOT_READY_MESSAGE.defaultMessage,
         );
+    // A canvas move the selection refuses (UI-9, P8.15): its own key and default
+    if (
+        error instanceof Error &&
+        error.name === "TimelineEditRefusedError" &&
+        typeof (error as Error & { key?: unknown }).key === "string"
+    )
+        return translate((error as Error & { key: string }).key, error.message);
     if (code === null)
         return (
             fallback ??
@@ -172,7 +215,9 @@ export function timelineErrorMessage(
     const mapped =
         code === "E-DB"
             ? TIMELINE_DB_ERROR_MESSAGE
-            : TIMELINE_ERROR_MESSAGES[code];
+            : isLegacyConversionViolation(error)
+              ? TIMELINE_LEGACY_CONVERSION_MESSAGE
+              : TIMELINE_ERROR_MESSAGES[code];
     const message = mapped ?? TIMELINE_UNKNOWN_ERROR_MESSAGE;
     return translate(message.key, message.defaultMessage);
 }

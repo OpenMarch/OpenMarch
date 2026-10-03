@@ -762,9 +762,11 @@ export default class CanvasMarcher
     }
 
     /**
-     * Sets the marcher to be selectable and have controls.
+     * Sets the marcher to be selectable and have controls. Does nothing while the marcher is
+     * dimmed outside the selected timeline (`timelineDimmed`, UI-9), which keeps it unselectable.
      */
     makeSelectable() {
+        if (this._timelineDimmed) return;
         this.set({
             selectable: true,
             hoverCursor: "pointer",
@@ -781,6 +783,49 @@ export default class CanvasMarcher
             hoverCursor: "default",
             evented: false,
         } as Partial<this>);
+    }
+
+    /** How opaque a dimmed marcher is (timeline mode, ui.md UI-9 Selection) */
+    static readonly DIMMED_OPACITY = 0.25;
+    private _timelineDimmed = false;
+
+    /** Whether the marcher is dimmed because it has no transition in the selected timeline */
+    get timelineDimmed() {
+        return this._timelineDimmed;
+    }
+
+    /**
+     * Dims the marcher and makes it unselectable, with clicks passing through it, or undoes that (timeline mode,
+     * ui.md UI-9 Selection: a marcher without a transition in the selected timeline can't be
+     * selected or interacted with at all).
+     */
+    setTimelineDimmed(dimmed: boolean) {
+        if (dimmed === this._timelineDimmed) {
+            // Something set the properties directly; a dimmed marcher stays unhooked
+            if (dimmed && (this.selectable || this.evented))
+                this.makeUnselectable();
+            return;
+        }
+        const opacity = dimmed ? CanvasMarcher.DIMMED_OPACITY : 1;
+        this.set({ opacity } as Partial<this>);
+        this.textLabel.set({ opacity });
+        this._timelineDimmed = dimmed;
+        // Known gap: clearing the dim while the line or lasso tool has every marcher off makes this one
+        // selectable mid-tool. Restoring the pre-dim state instead would leave it stuck off when
+        // the tool finishes while it's dimmed, which is worse.
+        if (dimmed) this.makeUnselectable();
+        else this.makeSelectable();
+    }
+
+    /**
+     * Turns selection and pointer events on or off without the cursor changes of
+     * `makeSelectable`, as the lasso tool does. Turning them on does nothing while the marcher is
+     * dimmed (UI-9).
+     */
+    setInteractive(interactive: boolean) {
+        if (interactive && this._timelineDimmed) return;
+        this.selectable = interactive;
+        this.evented = interactive;
     }
 
     /**

@@ -15,9 +15,13 @@ import { pageEndBeat } from "../pageEndBeat";
  * Decisions:
  * - Homes come from page 0. A marcher with no page-0 row takes the coordinate of its first page
  *   that has one; a marcher with no row anywhere keeps its current home.
- * - One timeline over `[0, end beat of the last page)`, at least `[0, 1)`, so a show with only
- *   page 0 still gets a timeline and counts as converted.
- * - Page N ≥ 1 becomes one shapeless `direct` transition over its beats. Its slots are the
+ * - One timeline per page move (C-11, C-12): page N ≥ 1 becomes its own timeline over exactly
+ *   its beats, the range from the previous page's flag to N's flag, which is the page timeline
+ *   that page N's box selects (UI-9). Page 1's timeline starts at beat 1, page 0's flag: page 0
+ *   holds only the zero-length beat 0, so beat 1 is the same show time (UI-5). Page 0 gets no
+ *   timeline; it only seeds the homes. The timelines are unnamed, like every page timeline, since
+ *   pages renumber when flags are added.
+ * - That timeline holds one shapeless `direct` transition spanning it. Its slots are the
  *   marchers that have a `marcher_pages` row on N, in ascending marcher id; slot i's destination
  *   is that row's coordinate, copied exactly. Each of those marchers gets one layer-0 assignment
  *   over the whole transition.
@@ -27,7 +31,8 @@ import { pageEndBeat } from "../pageEndBeat";
  *   end beat, along the next row's pathway if it has one. The report lists it as interpolated.
  *   With no earlier row (before its first row: it waits at its home) or no later row (after its
  *   last row) it gets no assignment and holds where it is (R-6); the report lists it as held.
- * - A page with no beats, or with no slots at all, gets no transition; the report says why.
+ * - A page with no beats, or with no slots at all, gets no timeline; the report says why. So a
+ *   show with only page 0 converts to homes and no timeline rows.
  * - Pathways, midsets and curved SVG shapes can't be expressed (C-8). Only their page-end
  *   coordinates are kept; the report lists them per page.
  * - Only x and y are copied. A row's `rotation_degrees`, `notes` and per-page appearance
@@ -99,7 +104,10 @@ export interface PageConversionInput {
     readonly pathways?: readonly ConversionPathway[];
 }
 
-/** One planned transition: page `pageId`'s move. Slot i belongs to `marcherIds[i]`. */
+/**
+ * One planned page move: page `pageId`'s timeline over `[startBeat, endBeat)` and the one
+ * transition spanning it (C-11). Slot i belongs to `marcherIds[i]`.
+ */
 export interface PlannedPageTransition {
     readonly pageId: number;
     readonly startBeat: number;
@@ -108,7 +116,7 @@ export interface PlannedPageTransition {
     readonly points: readonly XY[];
 }
 
-/** Why a page got no transition. */
+/** Why a page got no timeline. */
 export type SkippedPageReason = "no-beats" | "no-marchers";
 
 /** What converting one page loses, or can't carry over (P6.3, C-8). */
@@ -153,7 +161,7 @@ export interface PageLossReport {
      * point); then the glide is a straight line, as if the row had no pathway.
      */
     readonly interpolated: GapGlideReport[];
-    /** Set when the page got no transition */
+    /** Set when the page got no timeline */
     readonly skipped: SkippedPageReason | null;
 }
 
@@ -167,17 +175,10 @@ export interface PageConversionReport {
 
 export interface PageConversionPlan {
     readonly homes: { marcherId: number; home: XY }[];
-    readonly timeline: {
-        readonly name: string;
-        readonly startBeat: number;
-        readonly endBeat: number;
-    };
+    /** Page moves in show order, each written as its own timeline (C-11) */
     readonly transitions: PlannedPageTransition[];
     readonly report: PageConversionReport;
 }
-
-/** The name of the converter's timeline. */
-export const CONVERTED_TIMELINE_NAME = "Converted from pages";
 
 /** SVG path commands that draw curves: cubic, smooth cubic, quadratic, smooth quadratic, arc. */
 const CURVE_COMMAND = /[CcSsQqTtAa]/;
@@ -481,14 +482,8 @@ export function planPageConversion(
         };
     });
 
-    const lastEnd = Math.max(1, ...transitions.map((t) => t.endBeat));
     return {
         homes,
-        timeline: {
-            name: CONVERTED_TIMELINE_NAME,
-            startBeat: 0,
-            endBeat: lastEnd,
-        },
         transitions,
         report: { pages, homesFromLaterPage, marchersWithoutRows },
     };

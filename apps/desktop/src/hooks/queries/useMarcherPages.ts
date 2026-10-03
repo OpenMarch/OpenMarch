@@ -34,11 +34,14 @@ import { FieldProperties } from "@openmarch/core";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 import { appearanceModelRawToParsed } from "@/entity-components/appearance";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
-import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
 import {
-    transformMarchersOnPage,
+    moveMarchersInTarget,
+    moveMarchersOnPage,
+} from "@/db-functions/timelineMoves";
+import {
+    transformMarchersInSelection,
+    type TimelineEditRequest,
     type TimelineMoveRequest,
-    type TimelineWritePage,
 } from "@/timeline/timelineCoordinateWrites";
 import { useTimelineMode } from "./useWorkspaceSettings";
 
@@ -169,6 +172,21 @@ export const moveMarchersOnPageMutationOptions = () => {
     });
 };
 
+/**
+ * Timeline mode's write for a canvas move (UI-9 Editing, P8.15): one undoable edit through
+ * `moveMarchersInTarget`, setting homes or the endings in the selected timeline. A refused move
+ * shows its friendly message.
+ */
+export const moveMarchersInTargetMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({ target, moves }: TimelineEditRequest) =>
+            moveMarchersInTarget({ db, target, moves }),
+        onError: (e, variables) => {
+            toastTimelineError(e, `Error moving marchers`, variables);
+        },
+    });
+};
+
 export const swapMarchersMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
         mutationFn: ({
@@ -245,9 +263,8 @@ export type MarcherTransformFunction = (args: {
  */
 // eslint-disable-next-line max-lines-per-function
 export const useUpdateSelectedMarchers = (
+    /** The page to write in page mode. Timeline mode edits the selection instead (UI-9). */
     pageId: number | null | undefined,
-    /** The page itself, for timeline mode; page mode only uses `pageId` */
-    timelinePage?: TimelineWritePage | null,
 ) => {
     const timelineMode = useTimelineMode();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
@@ -261,31 +278,29 @@ export const useUpdateSelectedMarchers = (
 
     return useMutation({
         mutationFn: async (transformFunction: MarcherTransformFunction) => {
-            if (pageId == null) throw new Error("No page ID provided");
             if (timelineMode) {
-                // Timeline mode: start from what the canvas draws (the resolver, not
-                // marcher_pages, whose rows can be stale or missing) and write slot destinations
-                if (!timelinePage || timelinePage.id !== pageId)
-                    throw new Error("No page provided for timeline mode");
+                // Timeline mode (UI-9 Editing): start from what the canvas draws (the resolver,
+                // not marcher_pages, whose rows can be stale or missing) and write homes or the
+                // endings in the selected timeline. No page is read; a refusal is a toast.
                 if (!fieldPropertiesLoaded)
                     throw new Error("Field properties not loaded");
                 if (selectedMarchers.length === 0) {
                     toast.warning(t("actions.shape.noMarchersSelected"));
                     return;
                 }
-                const newCoordinates = await transformMarchersOnPage({
+                const newCoordinates = await transformMarchersInSelection({
                     db,
-                    page: timelinePage,
                     marcherIds: selectedMarchers.map((marcher) => marcher.id),
                     transform: (currentCoordinates) =>
                         transformFunction({
                             currentCoordinates,
                             fieldProperties,
-                            pageId,
+                            pageId: pageId ?? 0,
                         }),
                 });
                 return { newCoordinates };
             }
+            if (pageId == null) throw new Error("No page ID provided");
             if (!marcherPagesLoaded)
                 throw new Error("Marcher pages not loaded");
             if (!fieldPropertiesLoaded)
@@ -369,5 +384,5 @@ export const useUpdateSelectedMarchers = (
 export const useUpdateSelectedMarchersOnSelectedPage = () => {
     const selectedPageContext = useSelectedPage();
     const selectedPage = selectedPageContext?.selectedPage ?? null;
-    return useUpdateSelectedMarchers(selectedPage?.id, selectedPage);
+    return useUpdateSelectedMarchers(selectedPage?.id);
 };

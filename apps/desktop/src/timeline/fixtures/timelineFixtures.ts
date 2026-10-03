@@ -91,7 +91,7 @@ export function createTimelineDevApi(
             // The dev console API reports to the console it runs in
             // eslint-disable-next-line no-console
             console.info(
-                `Converted ${result.transitionIds.size} page(s) into timeline ${result.timelineId}` +
+                `Converted ${result.timelineIds.size} page(s), one timeline each` +
                     (lines.length
                         ? `. Not carried over:\n${lines.join("\n")}`
                         : "; nothing lost."),

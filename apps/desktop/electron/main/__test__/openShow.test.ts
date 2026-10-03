@@ -269,7 +269,8 @@ describe("opening a show with convert on open", () => {
         expect(backupsIn(tempDir)).toHaveLength(1);
         expect(stateOf(showPath)).toMatchObject({
             userVersion: 8,
-            timelines: 1,
+            // One timeline per page move (pages 1 to 6)
+            timelines: 6,
         });
         expect(DatabaseServices.getDbPath()).toBe(showPath);
     });

@@ -14,6 +14,18 @@ available package (step 2).
 
 ## Current policy (temporary)
 
+**Current focus: Validation phase.** Read [validation-plan.md](validation-plan.md)
+alongside the implementation plan before choosing work. Prioritize its timeline
+and page-creation MVP: ignore shapes and assume linear pathways. Do not
+automatically take a broader feature-validation package just because it is open;
+defer that validation until the project owner accepts the MVP. Existing package
+claims and implementation scope stay intact. Record validation evidence in the
+plan's log; do not mark deferred phase gates complete. The MVP's build packages
+are P8.11 and P8.13–P8.15 (UI-9), then P8.12, plus P9.10; prefer them. Items in
+UI-9 marked _lead default_ are settled enough to build; items in `ui.md` U-Q5,
+its TODO list and its backlog are not: ask, or log a blocker, instead of
+deciding them. This focus was set by the project owner on 2026-10-01.
+
 Set by the project owner on 2026-09-30, until they lift it here:
 
 - **Don't run the full `test:history` suite or the Playwright e2e suite.** They

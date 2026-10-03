@@ -591,6 +591,8 @@ export default class DefaultListeners implements CanvasListeners {
         const canvasMarchers = this.canvas.getCanvasMarchers();
 
         for (const marcher of canvasMarchers) {
+            // A marcher dimmed outside the selected timeline can't be selected (UI-9)
+            if (marcher.timelineDimmed) continue;
             const marcherCenter = marcher.getCenterPoint();
             if (this.isPointInPolygon(marcherCenter, closedPath)) {
                 marchersToSelect.push(marcher);
@@ -605,11 +607,9 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.defaultCursor = "default";
         this.canvas.hoverCursor = "move";
 
+        // Dimmed marchers stay unselectable (UI-9)
         this.canvas.forEachObject((obj) => {
-            if (obj instanceof CanvasMarcher) {
-                obj.selectable = true;
-                obj.evented = true;
-            }
+            if (obj instanceof CanvasMarcher) obj.setInteractive(true);
         });
 
         // Select the marchers
@@ -645,12 +645,9 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.defaultCursor = "default";
         this.canvas.hoverCursor = "move";
 
-        // Re-enable object selection and movement
+        // Re-enable object selection and movement, except for dimmed marchers (UI-9)
         this.canvas.forEachObject((obj) => {
-            if (obj instanceof CanvasMarcher) {
-                obj.selectable = true;
-                obj.evented = true;
-            }
+            if (obj instanceof CanvasMarcher) obj.setInteractive(true);
         });
     }
 

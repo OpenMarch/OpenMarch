@@ -78,8 +78,9 @@ const expectRejected = async (
 };
 
 /**
- * One edit: 3 marchers, a timeline [0, 64), a line shape, transition 1 (shape, 2 slots, [0, 16))
- * and transition 2 (individual points, 2 slots, [16, 32)). Returns the created ids.
+ * One edit: 3 marchers, timelines [0, 16), [16, 32) and an empty [32, 48), a line shape,
+ * transition 1 (shape, 2 slots) spanning the first timeline and transition 2 (individual points,
+ * 2 slots) spanning the second (C-11). Returns the created ids.
  */
 const seed = (db: DbConnection) =>
     transactionWithHistory(db, "seed", async (tx) => {
@@ -88,10 +89,15 @@ const seed = (db: DbConnection) =>
             { id: 2, section: "Brass", drill_prefix: "B", drill_order: 2 },
             { id: 3, section: "Brass", drill_prefix: "B", drill_order: 3 },
         ]);
-        const [timeline] = await createTimelinesInTransaction({
-            newTimelines: [{ name: "Opener", startBeat: 0, endBeat: 64 }],
-            tx,
-        });
+        const [timeline, timeline2, emptyTimeline] =
+            await createTimelinesInTransaction({
+                newTimelines: [
+                    { name: "Opener", startBeat: 0, endBeat: 16 },
+                    { startBeat: 16, endBeat: 32 },
+                    { startBeat: 32, endBeat: 48 },
+                ],
+                tx,
+            });
         const [shape] = await createTimelineShapesInTransaction({
             newShapes: [LINE],
             tx,
@@ -106,7 +112,7 @@ const seed = (db: DbConnection) =>
                     destination: { kind: "shape", shapeId: shape!.id },
                 },
                 {
-                    timelineId: timeline!.id,
+                    timelineId: timeline2!.id,
                     startBeat: 16,
                     endBeat: 32,
                     slotCount: 2,
@@ -149,6 +155,8 @@ const seed = (db: DbConnection) =>
         });
         return {
             timelineId: timeline!.id,
+            timeline2Id: timeline2!.id,
+            emptyTimelineId: emptyTimeline!.id,
             shapeId: shape!.id,
             t1: t1!.id,
             t2: t2!.id,
@@ -187,14 +195,43 @@ describeDbTests("timeline db-functions", (it) => {
         });
 
         testWithHistory(
-            "rejects a range that drops a transition",
+            "a new range moves its transitions and their anchored assignments (C-11)",
+            async ({ db }) => {
+                const { timeline2Id, t2 } = await seed(db);
+                await transactionWithHistory(db, "u", (tx) =>
+                    updateTimelinesInTransaction({
+                        modifiedTimelines: [{ id: timeline2Id, endBeat: 40 }],
+                        tx,
+                    }),
+                );
+                const after = await snapshot(db);
+                expect(after.timeline_transitions).toContainEqual(
+                    expect.objectContaining({
+                        id: t2,
+                        start_beat: 16,
+                        end_beat: 40,
+                    }),
+                );
+                expect(after.timeline_assignments).toContainEqual(
+                    expect.objectContaining({
+                        transition_id: t2,
+                        start_beat: 16,
+                        end_beat: 40,
+                    }),
+                );
+            },
+        );
+
+        testWithHistory(
+            "rejects a range that strands an assignment",
             async ({ db }) => {
                 const { timelineId } = await seed(db);
-                await expectRejected(db, "E-T1", () =>
+                // Marcher 2's row [4, 16) isn't anchored at the start, so it would be left outside
+                await expectRejected(db, "E-A1", () =>
                     transactionWithHistory(db, "u", (tx) =>
                         updateTimelinesInTransaction({
                             modifiedTimelines: [
-                                { id: timelineId, endBeat: 20 },
+                                { id: timelineId, startBeat: 8 },
                             ],
                             tx,
                         }),
@@ -342,12 +379,12 @@ describeDbTests("timeline db-functions", (it) => {
 
     describe("transitions", () => {
         testWithHistory("create, update, delete", async ({ db }) => {
-            const { timelineId, shapeId } = await seed(db);
+            const { emptyTimelineId, shapeId } = await seed(db);
             const [created] = await transactionWithHistory(db, "c", (tx) =>
                 createTimelineTransitionsInTransaction({
                     newTransitions: [
                         {
-                            timelineId,
+                            timelineId: emptyTimelineId,
                             startBeat: 32,
                             endBeat: 48,
                             slotCount: 2,
@@ -372,7 +409,6 @@ describeDbTests("timeline db-functions", (it) => {
                             pathParams: null,
                             orderMode: "slot",
                             slotCount: 4,
-                            endBeat: 56,
                         },
                     ],
                     tx,
@@ -383,7 +419,7 @@ describeDbTests("timeline db-functions", (it) => {
                 path_params: null,
                 order_mode: "slot",
                 slot_count: 4,
-                end_beat: 56,
+                end_beat: 48,
             });
             const deleted = await transactionWithHistory(db, "d", (tx) =>
                 deleteTimelineTransitionsInTransaction({
@@ -392,6 +428,9 @@ describeDbTests("timeline db-functions", (it) => {
                 }),
             );
             expect(deleted).toHaveLength(1);
+            // Its timeline had no other transition, so it went too (C-11)
+            const timelines = await db.select().from(schema.timelines).all();
+            expect(timelines.map((t) => t.id)).not.toContain(emptyTimelineId);
         });
 
         testWithHistory(
@@ -432,33 +471,52 @@ describeDbTests("timeline db-functions", (it) => {
         );
 
         testWithHistory(
-            "a plain range update fails cleanly when it strands an assignment",
+            "a transition spans its timeline: another range is refused, none takes the timeline's (C-11)",
             async ({ db }) => {
-                const { t1 } = await seed(db);
-                await expectRejected(db, "E-A1", () =>
-                    transactionWithHistory(db, "u", (tx) =>
-                        updateTimelineTransitionsInTransaction({
-                            modifiedTransitions: [{ id: t1, endBeat: 10 }],
+                const { timelineId, shapeId } = await seed(db);
+                await expectRejected(db, "E-ARGS", () =>
+                    transactionWithHistory(db, "c", (tx) =>
+                        createTimelineTransitionsInTransaction({
+                            newTransitions: [
+                                {
+                                    timelineId,
+                                    startBeat: 0,
+                                    endBeat: 8,
+                                    slotCount: 1,
+                                    destination: { kind: "shape", shapeId },
+                                },
+                            ],
                             tx,
                         }),
                     ),
                 );
-                // Widening within the timeline is fine
-                await transactionWithHistory(db, "u", (tx) =>
-                    updateTimelineTransitionsInTransaction({
-                        modifiedTransitions: [{ id: t1, endBeat: 20 }],
+                // A second transition in the timeline shares its range
+                const [second] = await transactionWithHistory(db, "c", (tx) =>
+                    createTimelineTransitionsInTransaction({
+                        newTransitions: [
+                            {
+                                timelineId,
+                                slotCount: 1,
+                                destination: { kind: "shape", shapeId },
+                            },
+                        ],
                         tx,
                     }),
                 );
+                expect(second).toMatchObject({
+                    timeline_id: timelineId,
+                    start_beat: 0,
+                    end_beat: 16,
+                });
             },
         );
 
         testWithHistory(
             "validator rejections leave the database unchanged",
             async ({ db }) => {
-                const { timelineId, shapeId, t1, t2 } = await seed(db);
+                const { emptyTimelineId, shapeId, t1, t2 } = await seed(db);
                 const base = {
-                    timelineId,
+                    timelineId: emptyTimelineId,
                     startBeat: 32,
                     endBeat: 48,
                     slotCount: 2,
@@ -761,7 +819,7 @@ describeDbTests("timeline db-functions", (it) => {
         testWithHistory(
             "bulk insert (P9.8): chunked multi-row inserts, checked row by row",
             async ({ db }) => {
-                const { timelineId, t2 } = await seed(db);
+                const { emptyTimelineId, t2 } = await seed(db);
                 // More than two chunks, with as many slot destinations.
                 const n = BULK_INSERT_ROWS * 2 + 7;
                 const ids = Array.from({ length: n }, (_, i) => 100 + i);
@@ -782,7 +840,7 @@ describeDbTests("timeline db-functions", (it) => {
                             await createTimelineTransitionsInTransaction({
                                 newTransitions: [
                                     {
-                                        timelineId,
+                                        timelineId: emptyTimelineId,
                                         startBeat: 32,
                                         endBeat: 48,
                                         slotCount: n,
@@ -883,20 +941,23 @@ describeDbTests("timeline db-functions", (it) => {
         testWithHistory(
             "a timeline with transitions, assignments and destinations",
             async ({ db, expectNumberOfChanges }) => {
-                const { timelineId, shapeId } = await seed(db);
+                const { timelineId, timeline2Id, emptyTimelineId, shapeId } =
+                    await seed(db);
                 const state = await expectNumberOfChanges.getDatabaseState(db);
                 const deleted = await transactionWithHistory(
                     db,
                     "delete",
                     (tx) =>
                         deleteTimelinesInTransaction({
-                            timelineIds: new Set([timelineId]),
+                            timelineIds: new Set([timelineId, timeline2Id]),
                             tx,
                         }),
                 );
-                expect(deleted).toHaveLength(1);
+                expect(deleted).toHaveLength(2);
                 const after = await snapshot(db);
-                expect(after.timelines).toHaveLength(0);
+                expect(after.timelines).toEqual([
+                    expect.objectContaining({ id: emptyTimelineId }),
+                ]);
                 expect(after.timeline_transitions).toHaveLength(0);
                 expect(after.timeline_assignments).toHaveLength(0);
                 expect(after.timeline_slot_destinations).toHaveLength(0);
@@ -922,6 +983,8 @@ describeDbTests("timeline db-functions", (it) => {
                 expect(after.timeline_transitions).toHaveLength(1);
                 expect(after.timeline_assignments).toHaveLength(2);
                 expect(after.timeline_slot_destinations).toHaveLength(0);
+                // Its timeline had no other transition, so it went too (C-11)
+                expect(after.timelines).toHaveLength(2);
                 await expectNumberOfChanges.test(db, 1, state);
             },
         );

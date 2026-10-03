@@ -51,11 +51,112 @@ describe("timeline views", () => {
             left: "40px",
         });
 
+        // Whether a clip click selects its timeline is open (ui.md U-Q5 TODO): it doesn't yet
         fireEvent.click(screen.getByLabelText(/SH timeline/));
-        expect(onSelectionChange).toHaveBeenCalledWith({
-            kind: "track",
-            trackId: "shape",
+        expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it("selects home from the initial box and a page's range from its box (UI-9)", () => {
+        const onSelectionChange = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                onSelectionChange={onSelectionChange}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("timeline-initial-page"));
+        expect(onSelectionChange).toHaveBeenLastCalledWith({ kind: "home" });
+        fireEvent.click(screen.getByRole("button", { name: "Page 2" }));
+        expect(onSelectionChange).toHaveBeenLastCalledWith({
+            kind: "range",
+            range: { startBeatIndex: 8, endBeatIndex: 16 },
         });
+    });
+
+    it("presses the initial box for home", () => {
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{ kind: "home" }}
+            />,
+        );
+        expect(screen.getByTestId("timeline-initial-page")).toHaveAttribute(
+            "aria-pressed",
+            "true",
+        );
+        expect(
+            screen.queryByTestId("timeline-selection-range"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("selects a dragged range on empty space and seeks on a click (UI-9)", () => {
+        const onSelectionChange = vi.fn();
+        const onSeek = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                onSelectionChange={onSelectionChange}
+                onSeek={onSeek}
+            />,
+        );
+        const surface = screen.getByTestId("timeline-pointer-surface");
+        // jsdom lays the surface out at x = 0; Alt turns page snapping off
+        fireEvent(
+            surface,
+            new MouseEvent("pointerdown", {
+                bubbles: true,
+                button: 0,
+                clientX: 3 * 16,
+                altKey: true,
+            }),
+        );
+        fireEvent(
+            surface,
+            new MouseEvent("pointermove", {
+                bubbles: true,
+                clientX: 6 * 16,
+                altKey: true,
+            }),
+        );
+        expect(screen.getByTestId("timeline-range-preview")).toHaveStyle({
+            left: "48px",
+            width: "48px",
+        });
+        fireEvent(
+            surface,
+            new MouseEvent("pointerup", {
+                bubbles: true,
+                clientX: 6 * 16,
+                altKey: true,
+            }),
+        );
+        expect(onSelectionChange).toHaveBeenCalledWith({
+            kind: "range",
+            range: { startBeatIndex: 3, endBeatIndex: 6 },
+        });
+        expect(onSeek).not.toHaveBeenCalled();
+        expect(
+            screen.queryByTestId("timeline-range-preview"),
+        ).not.toBeInTheDocument();
+
+        // A click (no drag) seeks and leaves the selection alone
+        fireEvent(
+            surface,
+            new MouseEvent("pointerdown", {
+                bubbles: true,
+                button: 0,
+                clientX: 10 * 16,
+            }),
+        );
+        fireEvent(
+            surface,
+            new MouseEvent("pointerup", { bubbles: true, clientX: 10 * 16 }),
+        );
+        expect(onSeek).toHaveBeenCalledWith(10);
+        expect(onSelectionChange).toHaveBeenCalledTimes(1);
     });
 
     it("forwards transport playback and exposes zoom only when expanded", () => {
@@ -87,13 +188,16 @@ describe("timeline views", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("synchronizes page and track selections to one range overlay", () => {
+    it("synchronizes page boxes and clips with the selected range", () => {
         const onSelectionChange = vi.fn();
         const { rerender } = render(
             <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                selection={{ kind: "page", pageId: "page-2" }}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 8, endBeatIndex: 16 },
+                }}
                 onSelectionChange={onSelectionChange}
             />,
         );
@@ -110,13 +214,20 @@ describe("timeline views", () => {
             <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                selection={{ kind: "track", trackId: "shape" }}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 8, endBeatIndex: 24 },
+                }}
                 onSelectionChange={onSelectionChange}
             />,
         );
         expect(screen.getByLabelText(/SH timeline/)).toHaveAttribute(
             "aria-pressed",
             "true",
+        );
+        expect(screen.getByRole("button", { name: "Page 2" })).toHaveAttribute(
+            "aria-pressed",
+            "false",
         );
     });
 
@@ -168,25 +279,25 @@ describe("timeline views", () => {
             <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                selection={{ kind: "page", pageId: "page-2" }}
-                selectedTarget={{ id: "new-marcher", type: "marcher" }}
-                onCreateTrack={onCreateTrack}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 8, endBeatIndex: 16 },
+                }}
             />,
         );
 
         expect(
             screen.getByTestId("timeline-selection-count"),
         ).toHaveTextContent("8 counts");
-        expect(
-            screen.queryByRole("button", { name: "Create Track" }),
-        ).not.toBeInTheDocument();
 
         rerender(
             <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                selection={{ kind: "track", trackId: "shape" }}
-                selectedTarget={{ id: "shape-1", type: "shape" }}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 8, endBeatIndex: 24 },
+                }}
                 onCreateTrack={onCreateTrack}
             />,
         );
@@ -218,7 +329,7 @@ describe("timeline views", () => {
             <ExpandedTimeline
                 {...commonProps}
                 showTransport={false}
-                selection={{ kind: "page", pageId: "page-0" }}
+                selection={{ kind: "home" }}
             />,
         );
         expect(
@@ -534,7 +645,10 @@ describe("production timeline interface", () => {
                 <Timeline
                     {...shared}
                     mode="collapsed"
-                    selection={{ kind: "page", pageId: 3 }}
+                    selection={{
+                        kind: "range",
+                        range: { startBeatIndex: 8, endBeatIndex: 16 },
+                    }}
                 />
             </TimelineWaveformProvider>,
         );
@@ -558,7 +672,10 @@ describe("production timeline interface", () => {
                 <Timeline
                     {...shared}
                     mode="expanded"
-                    selection={{ kind: "page", pageId: 3 }}
+                    selection={{
+                        kind: "range",
+                        range: { startBeatIndex: 8, endBeatIndex: 16 },
+                    }}
                     onSelectionChange={onSelectionChange}
                 />
             </TimelineWaveformProvider>,

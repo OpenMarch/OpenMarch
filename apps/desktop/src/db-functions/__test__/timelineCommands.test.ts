@@ -13,7 +13,10 @@ import {
 } from "@/timeline/timelineStore";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { TimelineWriteError } from "../timelineErrors";
-import { createTimelinesInTransaction } from "../timelines";
+import {
+    createTimelinesInTransaction,
+    deleteTimelinesInTransaction,
+} from "../timelines";
 import {
     createTimelineShapesInTransaction,
     type NewTimelineShapeArgs,
@@ -30,7 +33,8 @@ keepFixturesInPageMode(
 
 /**
  * The timeline's commands (docs/timeline/phases/08-authoring-ui.md P8.9) on a converted
- * `marchersAndPages` show: one timeline from beat 0 with one shapeless transition per page.
+ * `marchersAndPages` show cut down to its first page move: one timeline from beat 1 with one
+ * shapeless transition spanning it, and nothing after it.
  */
 
 afterEach(() => stopTimelineResolver());
@@ -77,11 +81,21 @@ const expectRefused = async (
 const resolverOf = async (db: DbConnection): Promise<Resolver> =>
     createResolver((await readTimelineTables(db)).snapshot);
 
+/**
+ * Converts the show (one timeline per page move, C-11) and keeps only page 1's, so the tests have
+ * one timeline that moves every marcher and nothing after it to collide with.
+ */
 const converted = async (db: DbConnection) => {
-    await convertPagesToTimeline(db);
-    const timeline = await db.select().from(schema.timelines).get();
-    expect(timeline).toBeDefined();
-    return timeline!;
+    const { timelineIds } = await convertPagesToTimeline(db);
+    const [first, ...rest] = [...timelineIds.values()];
+    expect(first).toBeDefined();
+    await transactionWithHistory(db, "keepFirstPageMove", (tx) =>
+        deleteTimelinesInTransaction({ tx, timelineIds: new Set(rest) }),
+    );
+    const timelines = await db.select().from(schema.timelines).all();
+    expect(timelines.map((t) => t.id)).toEqual([first]);
+    expect(timelines[0]!.start_beat).toBe(1);
+    return timelines[0]!;
 };
 
 /** Every marcher's position at each of `beats`. */
@@ -196,7 +210,11 @@ describeDbTests("timeline commands", (it) => {
             const after = await dataOf(db);
             expect(await rangesOf(db)).toEqual(shifted(rangesBefore, k));
             expect(after.timelines).toEqual([
-                { ...timeline, start_beat: k, end_beat: end + k },
+                {
+                    ...timeline,
+                    start_beat: timeline.start_beat + k,
+                    end_beat: end + k,
+                },
             ]);
             // Nothing else changed
             expect(after.timeline_slot_destinations).toEqual(
@@ -244,7 +262,11 @@ describeDbTests("timeline commands", (it) => {
             const after = await dataOf(db);
             expect(await rangesOf(db)).toEqual(shifted(rangesBefore, -2));
             expect(after.timelines).toEqual([
-                { ...timeline, start_beat: 3, end_beat: timeline.end_beat + 3 },
+                {
+                    ...timeline,
+                    start_beat: timeline.start_beat + 3,
+                    end_beat: timeline.end_beat + 3,
+                },
             ]);
             expect(
                 positions(
@@ -277,9 +299,16 @@ describeDbTests("timeline commands", (it) => {
         }) => {
             const timeline = await converted(db);
             const error = await expectRefused(db, "E-ARGS", () =>
-                shiftTimeline({ db, timelineId: timeline.id, delta: -1 }),
+                shiftTimeline({
+                    db,
+                    timelineId: timeline.id,
+                    delta: -timeline.start_beat - 1,
+                }),
             );
-            expect(error.message).toContain("beat 0");
+            // Beat 0 is as early as it can start
+            expect(error.message).toContain(
+                "starts at beat 1, so it can't move 2 beats earlier",
+            );
             await expectRefused(db, "E-ARGS", () =>
                 shiftTimeline({ db, timelineId: 9999, delta: 1 }),
             );
@@ -691,11 +720,7 @@ describeDbTests("timeline commands", (it) => {
         testWithHistory(
             "a shift and a Create Track are one undo group each",
             async ({ db, marchersAndPages: _, expectNumberOfChanges }) => {
-                await convertPagesToTimeline(db);
-                const timeline = (await db
-                    .select()
-                    .from(schema.timelines)
-                    .get())!;
+                const timeline = await converted(db);
                 const marcherId = (await db
                     .select()
                     .from(schema.marchers)

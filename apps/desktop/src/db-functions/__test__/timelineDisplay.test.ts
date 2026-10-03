@@ -85,7 +85,18 @@ describeDbTests("timeline display version", (it) => {
         marchersAndPages: _,
     }) => {
         await setUp(db);
-        const [timeline] = await db.select().from(schema.timelines).all();
+        // An empty timeline: one with transitions moves only with them (C-11)
+        await transactionWithHistory(db, "addEmptyTimeline", (tx) =>
+            tx
+                .insert(schema.timelines)
+                .values({ name: "Spare", start_beat: 50, end_beat: 53 }),
+        );
+        await timelineResolverSettled();
+        const timeline = await db
+            .select()
+            .from(schema.timelines)
+            .where(eq(schema.timelines.name, "Spare"))
+            .get();
         const start = versions();
         await transactionWithHistory(db, "growTimeline", (tx) =>
             tx

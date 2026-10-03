@@ -17,6 +17,7 @@ import {
 import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { TimelineWriteError } from "../timelineErrors";
 import { createTimelineShapesInTransaction } from "../timelineShapes";
+import { createTimelinesInTransaction } from "../timelines";
 import { createTimelineAssignmentsInTransaction } from "../timelineAssignments";
 import {
     createTimelineTransitionsInTransaction,
@@ -113,8 +114,12 @@ const addMove = async (
         layer: number;
     },
 ): Promise<number> => {
-    const timeline = await db.select().from(schema.timelines).get();
     return await transactionWithHistory(db, "addMove", async (tx) => {
+        // A transition spans its own timeline (C-11)
+        const [timeline] = await createTimelinesInTransaction({
+            tx,
+            newTimelines: [{ startBeat: start, endBeat: transitionEnd ?? end }],
+        });
         const [transition] = await createTimelineTransitionsInTransaction({
             tx,
             newTransitions: [

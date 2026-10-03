@@ -13,6 +13,7 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
+import { addMarchersToTimeline } from "../timelineMembership";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { updateTimelineAssignmentsInTransaction } from "../timelineAssignments";
 import {
@@ -185,6 +186,16 @@ const expectAssignmentsCoverTransitions = async (db: DbConnection) => {
 const timeline = async (db: DbConnection) =>
     await db.select().from(schema.timelines).all();
 
+/** Timeline ranges in start order: one per page move, over exactly its range (C-11). */
+const timelineRanges = async (db: DbConnection) =>
+    (
+        await db
+            .select()
+            .from(schema.timelines)
+            .orderBy(asc(schema.timelines.start_beat), asc(schema.timelines.id))
+            .all()
+    ).map((l) => [l.start_beat, l.end_beat] as [number, number]);
+
 const roundTrip = async (
     db: DbConnection,
     before: Record<string, unknown[]>,
@@ -225,9 +236,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             pages.map((p) => [p.id, p.beats[0]!.index, pageEndBeat(p)]),
         );
         expect(await ranges(db)).toEqual(ORIGINAL);
-        expect(await timeline(db)).toMatchObject([
-            { start_beat: 0, end_beat: 49 },
-        ]);
+        expect(await timelineRanges(db)).toEqual(await ranges(db));
     });
 
     describe("beat insert (P7.5)", () => {
@@ -264,9 +273,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             ]);
             expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
             await expectAssignmentsCoverTransitions(db);
-            expect(await timeline(db)).toMatchObject([
-                { start_beat: 0, end_beat: 51 },
-            ]);
+            expect(await timelineRanges(db)).toEqual(await ranges(db));
             expectSamePageEnds(endsBefore, pageEnds(pagesAfter));
             // Page mode spreads page 2's move over its 10 beats: halfway is now beat 14
             for (const [id, [x, y]] of midBefore) {
@@ -517,9 +524,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             const pagesAfter = await pagesInOrder(db);
             expect((await ranges(db))[5]).toEqual([41, 45]);
             expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
-            expect(await timeline(db)).toMatchObject([
-                { start_beat: 0, end_beat: 45 },
-            ]);
+            expect(await timelineRanges(db)).toEqual(await ranges(db));
             await expectAssignmentsCoverTransitions(db);
             expectSamePageEnds(endsBefore, pageEnds(pagesAfter));
 
@@ -576,7 +581,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("adding a last page: a holding move after the last one, in the grown timeline", async ({
+        it("adding a last page: a holding move after the last one, in a timeline of its own (C-11)", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -590,9 +595,10 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             const pagesAfter = await pagesInOrder(db);
             expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
             expect((await ranges(db)).at(-1)).toEqual([49, 57]);
-            expect(await timeline(db)).toMatchObject([
-                { start_beat: 0, end_beat: 57 },
-            ]);
+            // The holding move spans a new timeline; the converted ones are unchanged
+            expect(await timelineRanges(db)).toEqual([...ORIGINAL, [49, 57]]);
+            const hold = (await transitions(db)).at(-1)!;
+            expect(hold.timeline_id).toBe((await timeline(db)).at(-1)!.id);
             const endsAfter = pageEnds(pagesAfter);
             expectSamePageEnds(endsBefore, endsAfter);
             const page6 = endsBefore.get(6)!;
@@ -600,6 +606,64 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
                 expect(Object.is(x, page6.get(id)![0])).toBe(true);
                 expect(Object.is(y, page6.get(id)![1])).toBe(true);
             }
+            await roundTrip(db, before, await snapshot(db));
+        });
+
+        it("adding a last page over a stored timeline puts the holds in it, not a second timeline over that range (C-12)", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const pages = await setUp(db);
+            const endsBefore = pageEnds(pages);
+            // A timeline over the page to come, made by Add selected marchers (UI-9)
+            const a = marchersAndPages.expectedMarchers[0]!.id;
+            const stored = await addMarchersToTimeline({
+                db,
+                range: { start: 49, end: 57 },
+                marcherIds: [a],
+            });
+            await timelineResolverSettled();
+            const before = await snapshot(db);
+
+            const created = await createLastPage({ db, newPageCounts: 8 });
+            await timelineResolverSettled();
+
+            // The page timelines (P9.10), then the stored one: no second timeline over [49, 57)
+            expect(await timelineRanges(db)).toEqual([...ORIGINAL, [49, 57]]);
+            expect(
+                (await timeline(db)).find((t) => t.start_beat === 49)!.id,
+            ).toBe(stored.timelineId);
+            // The holds went into the stored timeline; the marcher already there has its own move
+            const inStored = (await transitions(db)).filter(
+                (t) => t.timeline_id === stored.timelineId,
+            );
+            expect(inStored.length).toBe(2);
+            expect(await violations(db)).toEqual([]);
+            const endsAfter = pageEnds(await pagesInOrder(db));
+            expectSamePageEnds(endsBefore, endsAfter);
+            const page6 = endsBefore.get(6)!;
+            for (const [id, [x, y]] of endsAfter.get(created.id)!) {
+                expect(x).toBeCloseTo(page6.get(id)![0], 9);
+                expect(y).toBeCloseTo(page6.get(id)![1], 9);
+            }
+            await roundTrip(db, before, await snapshot(db));
+        });
+
+        it("deleting an added page deletes its holding move's timeline with it (C-11)", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            await setUp(db);
+            const created = await createLastPage({ db, newPageCounts: 8 });
+            await timelineResolverSettled();
+            const before = await snapshot(db);
+            expect(await timeline(db)).toHaveLength(7);
+
+            await deletePages({ db, pageIds: new Set([created.id]) });
+            await timelineResolverSettled();
+
+            expect(await timelineRanges(db)).toEqual(await ranges(db));
+            expect(await violations(db)).toEqual([]);
             await roundTrip(db, before, await snapshot(db));
         });
 
@@ -624,6 +688,8 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             ]);
             expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
             await expectAssignmentsCoverTransitions(db);
+            // Page 3's timeline went with its move, and page 2's stretched with it (C-11)
+            expect(await timelineRanges(db)).toEqual(await ranges(db));
             // Page 2 still ends on its own positions; pages 4 to 6 are unchanged
             expectSamePageEnds(endsBefore, pageEnds(pagesAfter));
             expect(await violations(db)).toEqual([]);
@@ -650,9 +716,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
                 [33, 41],
             ]);
             expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
-            expect(await timeline(db)).toMatchObject([
-                { start_beat: 0, end_beat: 41 },
-            ]);
+            expect(await timelineRanges(db)).toEqual(await ranges(db));
             await expectAssignmentsCoverTransitions(db);
             expectSamePageEnds(endsBefore, pageEnds(pagesAfter));
             await roundTrip(db, before, await snapshot(db));

@@ -63,7 +63,7 @@ describeDbTests("change-log REAL precision", (it) => {
                 id: 1,
                 name: "T",
                 start_beat: 0,
-                end_beat: 64,
+                end_beat: 16,
             });
         });
 

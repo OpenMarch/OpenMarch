@@ -1,9 +1,20 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type MouseEvent,
+} from "react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { TimelineGridCanvas, TimelineWaveformCanvas } from "./TimelineCanvas";
 import {
+    beatToX,
     clamp,
     getPageSnapBeats,
     getSelectionRange,
+    getTrackRange,
+    sameRange,
     packTimelineTracks,
 } from "./TimelineGeometry";
 import {
@@ -22,6 +33,7 @@ import {
     TimelineTransport,
     useTimelinePointer,
 } from "./TimelinePrimitives";
+import { markedRangeAt, useTimelineRangeMenu } from "./TimelineRangeMenu";
 import type {
     TimelineCommonProps,
     TimelineNavigation,
@@ -173,20 +185,10 @@ function TimelineSurface({
     const waveformHeight = expanded ? 32 : 22;
     const audioTop = trackTop + trackBandHeight + (expanded ? 4 : 2);
     const timelineHeight = audioTop + waveformHeight + 4;
-    const selectionRange = getSelectionRange(selection, model);
-    const selectedLinkId =
-        selection?.kind === "track"
-            ? model.tracks.find((track) => track.id === selection.trackId)
-                  ?.linkId
-            : undefined;
+    const selectionRange = getSelectionRange(selection);
     const [selectionInteraction, setSelectionInteraction] =
         useState<TimelineSelectionInteraction | null>(null);
-    const selectionIdentity =
-        selection?.kind === "page"
-            ? `page:${String(selection.pageId)}`
-            : selection?.kind === "track"
-              ? `track:${String(selection.trackId)}`
-              : (selection?.kind ?? "none");
+    const selectionIdentity = selection?.kind ?? "none";
     useEffect(() => {
         setSelectionInteraction(null);
     }, [
@@ -212,18 +214,18 @@ function TimelineSurface({
         leadingInset: initialPageWidth,
         onPixelsPerBeatChange: props.onPixelsPerBeatChange,
     });
+    // The owner seeks on a selection (UI-9: to a range's end, or home's beat 0)
+    const onSelectionChange = (next: TimelineSelection) =>
+        props.onSelectionChange?.(next);
     const pointer = useTimelinePointer({
         onSeek: props.onSeek,
+        onRangeSelect: props.onSelectionChange
+            ? (range) => onSelectionChange({ kind: "range", range })
+            : undefined,
         pixelsPerBeat,
         beatCount: model.beatCount,
+        snapBeats,
     });
-    const onSelectionChange = (next: TimelineSelection) => {
-        if (next?.kind === "page") {
-            const page = model.pages.find((item) => item.id === next.pageId);
-            if (page) props.onSeek?.(page.atBeat);
-        }
-        props.onSelectionChange?.(next);
-    };
     const showCreateTrack =
         selection?.kind === "range" &&
         selectedTarget != null &&
@@ -236,6 +238,27 @@ function TimelineSurface({
         ...props,
         onNavigate: transportNavigation(props),
     };
+    // The right-click menu's target: a page box or clip under the pointer, else a dragged range
+    // the pointer is inside (UI-9 Adding marchers, Creating a timeline)
+    const rangeMenu = useTimelineRangeMenu({
+        menu: props.addSelectedMarchers,
+        resolveRange: (event: MouseEvent<HTMLElement>) => {
+            const marked = markedRangeAt(event.target);
+            if (marked) return marked;
+            if (selection?.kind !== "range" || !selectionRange) return null;
+            const surface = event.currentTarget.querySelector(
+                '[data-testid="timeline-pointer-surface"]',
+            );
+            if (!surface) return null;
+            const beat =
+                (event.clientX - surface.getBoundingClientRect().left) /
+                pixelsPerBeat;
+            return beat >= selectionRange.startBeatIndex &&
+                beat <= selectionRange.endBeatIndex
+                ? { range: selectionRange }
+                : null;
+        },
+    });
 
     return (
         <TimelineShell
@@ -275,6 +298,7 @@ function TimelineSurface({
             <div
                 className="relative"
                 style={{ width: surfaceWidth, height: timelineHeight }}
+                onContextMenu={rangeMenu.onContextMenu}
             >
                 <div
                     {...pointer.pointerHandlers}
@@ -317,24 +341,13 @@ function TimelineSurface({
                                 pixelsPerBeat={pixelsPerBeat}
                                 top={trackTop + rowIndex * rowPitch}
                                 height={trackHeight}
-                                selected={
-                                    selection?.kind === "track" &&
-                                    selection.trackId === track.id
-                                }
-                                linked={
-                                    selectedLinkId != null &&
-                                    track.linkId === selectedLinkId &&
-                                    !(
-                                        selection?.kind === "track" &&
-                                        selection.trackId === track.id
-                                    )
-                                }
-                                onSelect={(trackId) =>
-                                    onSelectionChange({
-                                        kind: "track",
-                                        trackId,
-                                    })
-                                }
+                                // A clip is its timeline: it shows selected when its range is
+                                // the selection. Whether clicking it selects it is open (ui.md
+                                // U-Q5 TODO), so a click does nothing.
+                                selected={sameRange(
+                                    getTrackRange(track),
+                                    selectionRange,
+                                )}
                                 onRangeCommit={props.onTimelineRangeCommit}
                                 beatCount={model.beatCount}
                                 snapBeats={snapBeats}
@@ -376,6 +389,23 @@ function TimelineSurface({
                         onFocusChange={setPlayheadFocused}
                         onSeek={props.onSeek}
                     />
+                    {props.onAddPageFlag && !props.isPlaying && (
+                        <button
+                            type="button"
+                            data-testid="timeline-add-page-flag"
+                            data-timeline-interactive="true"
+                            aria-label="Add a page flag here"
+                            title="Add a page flag here"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={props.onAddPageFlag}
+                            className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute top-6 z-50 flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
+                            style={{
+                                left: beatToX(positionBeat, pixelsPerBeat) + 8,
+                            }}
+                        >
+                            <PlusIcon size={10} weight="bold" />
+                        </button>
+                    )}
                     <TimelinePlayheadDetail
                         model={model}
                         positionBeat={positionBeat}
@@ -385,6 +415,23 @@ function TimelineSurface({
                         anchorRef={playheadRef}
                         visible={showPlayheadDetail}
                     />
+                    {pointer.rangePreview && (
+                        <div
+                            data-testid="timeline-range-preview"
+                            aria-hidden="true"
+                            className="bg-accent/15 border-accent pointer-events-none absolute top-28 z-30 border-x"
+                            style={{
+                                left:
+                                    pointer.rangePreview.startBeatIndex *
+                                    pixelsPerBeat,
+                                width:
+                                    (pointer.rangePreview.endBeatIndex -
+                                        pointer.rangePreview.startBeatIndex) *
+                                    pixelsPerBeat,
+                                height: Math.max(0, timelineHeight - 28),
+                            }}
+                        />
+                    )}
                     {selectionRange && (
                         <TimelineSelectionRange
                             range={selectionRange}
@@ -450,6 +497,7 @@ function TimelineSurface({
                         </div>
                     )}
                 </div>
+                {rangeMenu.element}
             </div>
         </TimelineShell>
     );

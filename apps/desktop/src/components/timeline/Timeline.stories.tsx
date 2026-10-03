@@ -87,9 +87,18 @@ const initialSelection = (
             range: { startBeatIndex: 64, endBeatIndex: 256 },
         };
     }
-    if (state === "page-selected") return { kind: "page", pageId: 3 };
+    // Page 2A's box: the range from page 2's flag to its own
+    if (state === "page-selected")
+        return {
+            kind: "range",
+            range: { startBeatIndex: 16, endBeatIndex: 24 },
+        };
+    // The shape clip's timeline, selected by its range (UI-9)
     if (state === "track-selected") {
-        return { kind: "track", trackId: "shape" };
+        return {
+            kind: "range",
+            range: { startBeatIndex: 8, endBeatIndex: 24 },
+        };
     }
     return {
         kind: "range",
@@ -182,8 +191,10 @@ function TimelineStory({ mode, scenario, state, theme }: TimelineStoryProps) {
                         mode={mode}
                         selection={selection}
                         selectedTarget={
-                            state === "track-selected"
-                                ? { id: "shape-1", type: "shape" }
+                            // A page box or a clip's timeline selected with no marcher target
+                            state === "track-selected" ||
+                            state === "page-selected"
+                                ? null
                                 : state === "activity"
                                   ? { id: "marcher-1", type: "marcher" }
                                   : {
@@ -191,7 +202,13 @@ function TimelineStory({ mode, scenario, state, theme }: TimelineStoryProps) {
                                         type: "marcher",
                                     }
                         }
-                        onSelectionChange={setSelection}
+                        onSelectionChange={(next) => {
+                            // UI-9: home seeks to 0, a range to its end
+                            setSelection(next);
+                            if (next?.kind === "home") setPositionBeat(0);
+                            if (next?.kind === "range")
+                                setPositionBeat(next.range.endBeatIndex);
+                        }}
                         onCreateTrack={createTrack}
                         onTimelineRangeCommit={(change) => {
                             setTimelines((current) =>

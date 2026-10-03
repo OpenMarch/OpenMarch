@@ -469,27 +469,40 @@ describeDbTests("timeline schema and triggers", (it) => {
             db,
         }) => {
             await seed(db);
+            // Its own timeline over its range, so only E-T6 is under test (C-11)
+            await exec(
+                db,
+                `INSERT INTO timelines (id, start_beat, end_beat) VALUES (2, 16, 32)`,
+            );
             await exec(
                 db,
                 `INSERT INTO timeline_transitions (id, timeline_id, slot_count, start_beat, end_beat)
-                    VALUES (2, 1, 2, 16, 32)`,
+                    VALUES (2, 2, 2, 16, 32)`,
             );
             await exec(
                 db,
                 `INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (2, 0, 1, 1)`,
             );
-            expect(
-                await all(db, `SELECT * FROM timeline_commit_violations`),
-            ).toEqual([
+            const violations = async () =>
+                (await all(
+                    db,
+                    `SELECT * FROM timeline_commit_violations`,
+                )) as unknown[][];
+            // The seed's transition 1 doesn't span timeline 1 ([0, 16) of [0, 64))
+            expect(await violations()).toEqual([
                 ["E-T6", 2, "shapeless transition has 1 of 2 destinations"],
+                [
+                    "E-T1",
+                    1,
+                    "transition spans [0, 16) but its timeline spans [0, 64)",
+                ],
             ]);
             await exec(
                 db,
                 `INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (2, 1, 2, 2)`,
             );
-            expect(
-                await all(db, `SELECT * FROM timeline_commit_violations`),
-            ).toEqual([]);
+            await exec(db, `UPDATE timelines SET end_beat = 16 WHERE id = 1`);
+            expect(await violations()).toEqual([]);
         });
     });
 

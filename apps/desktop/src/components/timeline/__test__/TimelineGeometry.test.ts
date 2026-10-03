@@ -8,6 +8,7 @@ import {
     getSelectionRange,
     isPageSnapDisabled,
     packTimelineTracks,
+    sameRange,
     snapBoundary,
     snapRangeOffset,
     TIMELINE_PAGE_SNAP_PX,
@@ -17,6 +18,7 @@ import {
     timelineStoryModel,
     timelineStoryTracks,
 } from "../TimelineStoryFixtures";
+import { getDraggedRange } from "../TimelinePrimitives";
 
 describe("timeline geometry", () => {
     it("packs touching tracks together and separates overlaps", () => {
@@ -44,11 +46,67 @@ describe("timeline geometry", () => {
             }),
         ).toEqual({ startBeatIndex: 8, endBeatIndex: 16 });
         expect(
-            getSelectionRange(
-                { kind: "track", trackId: "shape" },
-                timelineStoryModel,
-            ),
+            getSelectionRange({
+                kind: "range",
+                range: { startBeatIndex: 8, endBeatIndex: 24 },
+            }),
         ).toEqual({ startBeatIndex: 8, endBeatIndex: 24 });
+        // UI-9: home and nothing have no range
+        expect(getSelectionRange({ kind: "home" })).toBeNull();
+        expect(getSelectionRange(null)).toBeNull();
+    });
+
+    it("compares ranges by their bounds", () => {
+        const range = { startBeatIndex: 8, endBeatIndex: 16 };
+        expect(sameRange(range, { ...range })).toBe(true);
+        expect(sameRange(range, { startBeatIndex: 8, endBeatIndex: 15 })).toBe(
+            false,
+        );
+        expect(sameRange(range, null)).toBe(false);
+        expect(sameRange(null, null)).toBe(false);
+    });
+
+    it("turns a drag into a range, snapping each edge to page lines", () => {
+        const snapBeats = [8, 16, 24];
+        // Within 24px of page lines 8 and 16 at 16px a beat
+        expect(
+            getDraggedRange({
+                fromBeat: 8.6,
+                toBeat: 15.2,
+                snapBeats,
+                pixelsPerBeat: 16,
+                beatCount: 32,
+            }),
+        ).toEqual({ startBeatIndex: 8, endBeatIndex: 16 });
+        // Dragged right to left, and without snapping
+        expect(
+            getDraggedRange({
+                fromBeat: 12.6,
+                toBeat: 3.2,
+                snapBeats: [],
+                pixelsPerBeat: 16,
+                beatCount: 32,
+            }),
+        ).toEqual({ startBeatIndex: 3, endBeatIndex: 13 });
+        // Clamped to the show, and empty when both edges land on one beat
+        expect(
+            getDraggedRange({
+                fromBeat: 30,
+                toBeat: 40,
+                snapBeats: [],
+                pixelsPerBeat: 16,
+                beatCount: 32,
+            }),
+        ).toEqual({ startBeatIndex: 30, endBeatIndex: 32 });
+        expect(
+            getDraggedRange({
+                fromBeat: 4.1,
+                toBeat: 4.3,
+                snapBeats: [],
+                pixelsPerBeat: 16,
+                beatCount: 32,
+            }),
+        ).toBeNull();
     });
 
     it("maps a pointer position to the nearest beat", () => {

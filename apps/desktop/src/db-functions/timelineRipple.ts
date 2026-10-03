@@ -9,6 +9,7 @@ import {
     createTimelineTransitionsInTransaction,
     deleteTimelineTransitionsInTransaction,
 } from "./timelineTransitions";
+import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
 
 /**
@@ -48,16 +49,18 @@ import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
  * refuses the edit instead (`E-ARGS`, naming it and its timeline). The page before then ends where
  * the deleted page ended, so its move stretches over the deleted page's beats, as in page mode
  * (where those coordinates are lost and the earlier page's move runs until the next page starts).
+ * A timeline left with no transition goes too (C-11: a timeline is the container for its moves).
  *
  * **When a page is added** (inserted, split off, or added at the end), page mode copies the
  * previous page's coordinates onto it, so marchers hold through it. Here every transition that
- * ends where the new page starts gets a holding transition over the new page, in the same
- * timeline (grown to contain it if needed), with one slot per assignment that ends there, at that
- * assignment's layer, whose destination is the marcher's position at the page start. If no
- * transition ends there, one holding transition goes in the timeline that contains the page start
- * (or ends there), with every marcher at layer 0. A marcher that already has a row at that layer
- * over the new page is left out (it moves there anyway). The holding transition is what "move the
- * marchers on the new page" edits (D-16, P7.2).
+ * ends where the new page starts gets a holding transition over the new page, with one slot per
+ * assignment that ends there, at that assignment's layer, whose destination is the marcher's
+ * position at the page start. If no transition ends there but a timeline contains the page start
+ * (or ends there), one holding transition holds every marcher at layer 0. A transition spans its
+ * whole timeline (C-11), so the holding transitions of a page share one new timeline over the
+ * page. A marcher that already has a row at that layer over the new page is left out (it moves
+ * there anyway). The holding transition is what "move the marchers on the new page" edits (D-16,
+ * P7.2).
  *
  * **Refusals.** The ripple of existing rows is planned before its first timeline write, and the
  * edit is refused when a row would end up with no beats (`E-ARGS`), an assignment would leave its
@@ -70,7 +73,7 @@ import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
  * **Statement order** (U-3: every intermediate state passes the row triggers, so undo can replay
  * the edit backwards):
  *
- * 1. delete the removed pages' transitions, children first (C-1);
+ * 1. delete the removed pages' transitions, children first (C-1), then the timelines they emptied;
  * 2. every changed timeline grows to the union of its old and new range;
  * 3. every changed transition grows to the union of its old and new range;
  * 4. each changed assignment moves to its new range in one statement. Within one marcher and
@@ -355,9 +358,22 @@ export async function rippleTimelineToPageGridInTransaction({
     const moveName = (t: (typeof transitions)[number]) =>
         `the move over beats ${describe(t)} in ${timelineName.get(t.timeline_id)}`;
 
+    // A timeline whose transitions all go is deleted with them (C-11), so it isn't rippled
+    const emptied = new Set(
+        timelines
+            .filter((l) => {
+                const owned = transitions.filter((t) => t.timeline_id === l.id);
+                return (
+                    owned.length > 0 && owned.every((t) => removed.has(t.id))
+                );
+            })
+            .map((l) => l.id),
+    );
+    const rippled = timelines.filter((l) => !emptied.has(l.id));
+
     // Plan every new range
     const newTimeline = new Map<number, Range>();
-    for (const l of timelines)
+    for (const l of rippled)
         newTimeline.set(l.id, map.range(l.start_beat, l.end_beat));
     const newTransition = new Map<number, Range>();
     for (const t of transitions) {
@@ -373,7 +389,7 @@ export async function rippleTimelineToPageGridInTransaction({
         newTransition.set(t.id, r);
     }
     // Checked after the transitions, so a refusal names the move rather than its timeline
-    for (const l of timelines)
+    for (const l of rippled)
         checkBeats(
             newTimeline.get(l.id)!,
             `${timelineName.get(l.id)} (beats ${describe(l)})`,
@@ -460,7 +476,7 @@ export async function rippleTimelineToPageGridInTransaction({
                     .where(eq(table.id, row.id));
             }
         };
-        await grow(L, timelines, newTimeline);
+        await grow(L, rippled, newTimeline);
         await grow(T, transitions, newTransition);
 
         // 4. Move each assignment once the rows in its way have moved
@@ -492,7 +508,7 @@ export async function rippleTimelineToPageGridInTransaction({
 
         // 5, 6. Shrink transitions, then timelines, to the target
         await shrink(T, transitions, newTransition);
-        await shrink(L, timelines, newTimeline);
+        await shrink(L, rippled, newTimeline);
     });
 
     // 7. Holding moves for added pages
@@ -519,10 +535,7 @@ async function addHoldingMoves(tx: DbTransaction, page: GridPage) {
         .orderBy(asc(T.id))
         .all();
 
-    type Plan = {
-        timelineId: number;
-        rows: { marcherId: number; layer: number }[];
-    };
+    type Plan = { rows: { marcherId: number; layer: number }[] };
     const plans: Plan[] = [];
     if (ending.length > 0) {
         for (const t of ending) {
@@ -532,7 +545,7 @@ async function addHoldingMoves(tx: DbTransaction, page: GridPage) {
                 .where(and(eq(A.transition_id, t.id), eq(A.end_beat, m)))
                 .orderBy(asc(A.slot_index))
                 .all();
-            plans.push({ timelineId: t.timeline_id, rows });
+            plans.push({ rows });
         }
     } else {
         const timeline = await tx
@@ -554,13 +567,14 @@ async function addHoldingMoves(tx: DbTransaction, page: GridPage) {
             .orderBy(asc(schema.marchers.id))
             .all();
         plans.push({
-            timelineId: timeline.id,
             rows: marchers.map((mr) => ({ marcherId: mr.id, layer: 0 })),
         });
     }
 
     const { snapshot } = await readTimelineTables(tx);
     const resolver = createResolver(snapshot);
+    // The page's holding transitions share one timeline over the page (C-11), made with the first
+    let timelineId: number | undefined;
     for (const plan of plans) {
         // Leave out a marcher that already has a row at that layer over the page
         const rows: { marcherId: number; layer: number }[] = [];
@@ -590,26 +604,25 @@ async function addHoldingMoves(tx: DbTransaction, page: GridPage) {
             return point;
         });
 
-        const timeline = await tx
-            .select()
-            .from(schema.timelines)
-            .where(eq(schema.timelines.id, plan.timelineId))
-            .get();
-        if (timeline && (timeline.start_beat > m || timeline.end_beat < e))
-            await mapDbErrors(() =>
-                tx
-                    .update(schema.timelines)
-                    .set({
-                        start_beat: Math.min(timeline.start_beat, m),
-                        end_beat: Math.max(timeline.end_beat, e),
-                    })
-                    .where(eq(schema.timelines.id, plan.timelineId)),
-            );
+        if (timelineId === undefined) {
+            // One timeline per range (C-12): a stored timeline over the page (say, one made by
+            // Add selected marchers) holds the holds too
+            const [timeline] = [
+                (await findTimelineByRange(tx, { start: m, end: e })) ??
+                    (
+                        await createTimelinesInTransaction({
+                            tx,
+                            newTimelines: [{ startBeat: m, endBeat: e }],
+                        })
+                    )[0],
+            ];
+            timelineId = timeline!.id;
+        }
         const [hold] = await createTimelineTransitionsInTransaction({
             tx,
             newTransitions: [
                 {
-                    timelineId: plan.timelineId,
+                    timelineId,
                     startBeat: m,
                     endBeat: e,
                     slotCount: rows.length,

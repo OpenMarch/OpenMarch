@@ -13,6 +13,7 @@ from it. The spec still wins on the model; this file decides presentation.
   page and track selection, range selection with Create Track, inactive spans
   and a 512-beat show.
 - Status: accepted by the project owner on 2026-09-30 (P8.0). Open questions U-Q1 to U-Q4 are deferred to the Phase 8 work that meets them, decided from the spec where it can, and recorded here when decided.
+- **UI-9 overrides (2026-10-01).** In timeline mode, UI-9 replaces page selection, Create Track and per-marcher and per-shape tracks. Text elsewhere in this file that describes those (UI-3, UI-6's Create Track, the view-model table, the inspector's "selected page") describes what is built today; the package that builds each part of UI-9 rewrites it. Where they disagree, UI-9 wins. Its open items and TODOs are in U-Q5 and the backlog at the end of this file.
 
 ## What the reference UI is
 
@@ -40,7 +41,8 @@ from it. The spec still wins on the model; this file decides presentation.
   16-beat move). The UI snaps to page lines by default as an aid, and a
   modifier key turns snapping off. The reference validator's page-boundary
   rule is removed when the components are ported.
-- **UI-3: the default tracks (answers U-Q1, P8.8).** The timeline shows every
+- **UI-3: the default tracks (answers U-Q1, P8.8).** _Superseded in timeline
+  mode by UI-9 (one track per timeline)._ The timeline shows every
   shape track, plus a marcher's track in a timeline when the marcher moves
   individually there (it has an assignment to a one-slot transition without a
   shape, which is what Create Track makes for a marcher) or is selected.
@@ -65,7 +67,8 @@ from it. The spec still wins on the model; this file decides presentation.
   Track) stay in spec beats, and a clip move sends the clip's spec range
   shifted by the dragged beats. A Create Track range from view 0 sends spec
   beat 1, which is the same show time as beat 0.
-- **UI-6: the timeline's commands (P8.9).** A clip move shifts its whole spec
+- **UI-6: the timeline's commands (P8.9).** _Create Track is superseded by
+  UI-9's **Add selected marchers**; clip moves stand._ A clip move shifts its whole spec
   timeline, every transition and assignment in it, by the dragged beats
   (`shiftTimeline`); shapes and destinations stay put, so every position moves
   in time only. A shift that would leave beat 0 or overlap the same marcher's
@@ -116,6 +119,163 @@ from it. The spec still wins on the model; this file decides presentation.
   moves the timeline with all of its transitions. Why: with transitions
   starting and stopping anywhere inside a timeline, it was unclear what a
   timeline meant; now it is the container for one start and one stop.
+- **UI-9: pages are flags; the selected timeline is the editing context (C-12,
+  project owner, 2026-10-01).** Supersedes page selection, Create Track
+  (UI-6) and the page-scoped drag of P7.2 in timeline mode. Built by P8.11,
+  P8.13, P8.14 and P8.15, then P8.12 (phases/08-authoring-ui.md). Items
+  marked _lead default_ were filled in by the lead so the work can start; the
+  owner may change them.
+  - **Pages.** A page is a cosmetic flag; it owns no motion. A page is named
+    by its **end** flag, where marchers arrive, as page counts already are
+    ("counts to get to this page", `Page.ts`): page N's box is the range from
+    the previous flag to N's flag. Anything that goes somewhere ends on a
+    page's flag. Clicking page N's box selects the stored timeline with
+    exactly that range (its page timeline), or, if there is none, an empty
+    one that isn't stored yet. It is stored the first time marchers are added
+    to it. Timelines track the page: a timeline edge on a flag follows the
+    flag when it moves (P7.5's edge rule stands), but the motion belongs to
+    the timeline.
+  - **Home (page 0).** Clicking the initial page box seeks to beat 0 and
+    selects no timeline. Nothing is dimmed, every marcher can be moved, and
+    moves edit homes.
+  - **One timeline per range.** At most one timeline has a given range, so a
+    page box always means one timeline. Several groups moving over the same
+    counts are several transitions in that timeline (UI-8).
+  - **One transition per marcher per timeline.** Adding marchers always spans
+    the whole timeline, and adding a marcher already in it does nothing. So
+    "the marcher's transition in the selected timeline" is always one row.
+  - **Playhead.** The paused playhead rests on any whole beat and the canvas
+    shows positions there. Selecting a timeline seeks it to the timeline's end
+    beat.
+  - **Play.** Play resumes from the playhead. With a timeline selected, it
+    loops that timeline: at its end it jumps back to its start, and play from
+    at or past its end starts at its start. With none selected, it plays on.
+    Pausing keeps the selection.
+  - **No selected page.** Nothing in timeline mode reads a selected page:
+    editing uses the selected timeline, and rendering, playback and the
+    inspector use the playhead. Data that still belongs to a page reads the
+    page containing the playhead (or ending at it). Marcher appearance stays
+    by page, but is resolved into a step function of time keyed by each
+    flag's timestamp and sampled at the playhead, as on the `coordinates-v2`
+    branch (`dbToMarcherAppearanceTimeline`, `getAppearanceAtTime`), without
+    the dropped per-marcher-page overrides (P7.14).
+  - **Page-relative tools (project owner, 2026-10-02).** Features built on
+    "the selected page" keep working, relative to flags and the selection:
+    - Next, previous, first and last page (shortcuts and transport) move the
+      playhead to that flag and select that page's timeline (home for the
+      first flag).
+    - Set all or selected marchers to the previous page sets each marcher's
+      ending in the selected timeline to its position at the timeline's
+      start (a hold); to the next page, to its position at the next flag.
+      Refused with no timeline selected.
+    - Previous and next page paths show positions at the selected timeline's
+      start and at the next flag; with no timeline selected, nothing.
+    - Opening a show selects home.
+    - Undo and redo move the playhead but leave the selection alone, until
+      the backlog item on undo's selection is decided.
+  - **Deprecating page selection.** Page selection stays in page mode until
+    the flip; `SelectedPageContext` goes with page mode in Phase 10. In
+    timeline mode nothing reads it, and a dev-mode warning when
+    `useSelectedPage` is read in timeline mode keeps new code from bringing
+    it back. Coordinate sheets and drill-chart exports loop over every page
+    and don't read the selection, so they stay.
+  - **+.** When the paused playhead isn't on a flag (and there is a beat
+    there), a **+** shows just after it. It adds a page whose flag is at the
+    playhead in one edit. The page that was split keeps its flag, id and
+    per-page data (notes, appearance); the new page comes before it, and
+    later pages renumber (no subset letter). Only page rows change, plus
+    `last_page_counts` when the last page is split; no timeline is written,
+    so motion is unchanged. The new page is selected. Pages store their
+    start beat, so this inserts a row at the split page's old start and moves
+    that page's `start_beat` to the playhead. Past the last flag, nothing is
+    split: **+** appends a page ending at the playhead (_lead default_).
+  - **Selection.** With a stored timeline selected, marchers without a
+    transition in it are dimmed, and a dimmed marcher can't be selected or
+    interacted with at all: clicks and box selection pass over it, and
+    selecting a timeline deselects any selected marcher that isn't in it. So
+    a selection never mixes dimmed and undimmed marchers. With none selected,
+    or with a range that has no stored timeline yet (a new page's box, or a
+    dragged range), nobody is dimmed: that range is where a timeline is
+    created, not edited, so marchers stay selectable for **Add selected
+    marchers**, and canvas moves there are refused (project owner,
+    2026-10-02).
+  - **Editing.** With a timeline selected, a canvas drag, nudge or alignment
+    sets the **ending** coordinate of each moved marcher's transition in that
+    timeline. Its start is already defined: wherever the marcher is at the
+    timeline's start (R-4). With no timeline selected and the playhead off
+    beat 0, canvas moves are refused with a hint to select one.
+  - **Editing off the end (temporary).** While the playhead isn't on the
+    selected timeline's end beat, canvas moves are refused with a hint to go
+    to its end, because the canvas would show a mid-move position while the
+    edit sets the ending. TEMPORARY: editing anywhere in the timeline will be
+    supported later.
+  - **Adding marchers.** Right-click a timeline or page box and choose **Add
+    selected marchers**. The right-click doesn't change the timeline
+    selection, so the marchers to add are picked first where they can be
+    selected: at home, with no timeline or a range not stored yet selected,
+    or in a timeline they're already in. To create a timeline that isn't a
+    page, drag a range, select marchers, then right-click the range. Each marcher
+    gets its own transition, because each moves individually: a one-slot
+    shapeless `direct` transition spanning the timeline (C-11), whose
+    destination is the marcher's position at the timeline's end, so adding
+    changes no motion on a linear path. (A context menu for now; the gesture
+    gets a UX pass later.)
+  - **New marchers.** A marcher created in timeline mode joins every stored
+    timeline automatically, with its own one-slot transition whose
+    destination is its home, so it stands at home and nothing else moves.
+    Layers follow the rule below. This keeps P7.3's join, one transition per
+    marcher instead of a slot in a shared group transition.
+  - **Removing marchers.** Removing a marcher from a timeline deletes its
+    assignment and its own one-slot transition. It never deletes the
+    timeline, which stays stored, and selectable, even with nobody in it.
+  - **Layers.** A marcher can be added to a timeline that lies wholly inside
+    the range of a timeline it's already in. The new transition goes one layer
+    above its highest layer there and steals those beats (R-2). Once its
+    ending coordinate is edited, the old move resumes after it from that new
+    point and still ends where it ended (R-5, D-12, D-7), so its path after
+    the steal changes. Adding to a timeline that only partly overlaps one of
+    the marcher's timelines is refused (E-ARGS); the database wouldn't refuse
+    it, since the new row is a layer up. Adding to a range that strictly
+    contains one of the marcher's timelines is refused too, since the new
+    layer would steal that whole move (P8.14, lead, 2026-10-02). Ctrl+click
+    on the timeline is ignored (it opens the context menu on macOS).
+  - **Creating a timeline.** Click and drag on empty timeline space selects a
+    range (snapping as in UI-2), which acts as an empty timeline that isn't
+    stored yet; **Add selected marchers** on it creates the timeline. It
+    replaces Create Track.
+  - **Tracks.** The timeline draws one track per stored timeline, however
+    many transitions it holds, so a group of one-slot transitions is one clip.
+    This supersedes UI-3's marcher and shape tracks in timeline mode.
+  - **What the selection holds** (_lead default_). The selection is home, a
+    range, or nothing. A selected range resolves to the stored timeline with
+    that range when there is one (one per range), so it survives the first
+    **Add selected marchers** storing it, and undo deleting it. A clip move
+    of the selected timeline moves the selection with it.
+  - **The end of the show** (_lead default_). The paused playhead may rest on
+    the last flag (the show's end beat), so the last page's timeline can be
+    selected and edited there.
+  - **More than one row** (_lead default_). If a marcher has more than one
+    assignment in the selected timeline (a converted or shape-cast show), a
+    canvas edit of it is refused with a hint to use the inspector. UI-9's own
+    flows never make a second row.
+  - **New marchers and overlaps** (_lead default_). A new marcher joins
+    stored timelines in start order and skips one that only partly overlaps a
+    timeline it has already joined.
+  - **Deleting a flag.** Deleting page N's flag deletes N's row and moves
+    page N+1's start back to N's start, the exact inverse of **+**: N+1 keeps
+    its flag, id and data (per-page data follows the page that keeps its
+    flag). Deleting the last page's flag makes the previous page last. If the deleted flag was the selected page's, the merged page is selected (the previous page's box, or home, when it was the last page).
+    Timelines are unchanged, so motion is unchanged (P8.13, lead,
+    2026-10-02).
+
+  Why: pages mark checkpoints without owning motion, and the timeline is the
+  container for its transitions (C-11). Editing the selected timeline's ending
+  coordinates, with starts taken from where marchers already are, keeps every
+  edit local to one container. The steal-and-resume rules already let a short
+  timeline sit inside a longer move without breaking it. Empty timelines
+  aren't created, but a timeline that loses its marchers is kept: P8.10's rule
+  that a timeline goes with its last transition doesn't apply to removing
+  marchers.
 
 ## Mapping the spec onto the view model
 
@@ -134,6 +294,10 @@ from the stored tables and the resolver, and nothing in it is stored.
 | `TimelineCreateTrackRequest {target, range}` | one edit: a new timeline over the range with one transition. For a marcher, a shapeless one-slot `direct` transition whose destination starts at the marcher's position at the range start; for a shape, a transition into it with the selected marchers assigned to slots                                 |
 
 ## What the timeline doesn't show
+
+_Under UI-9, the inspector reads the playhead instead of the selected page's
+end beat, and edits the selected timeline (P8.12, P8.15). The text below
+describes what is built today._
 
 These belong in the inspector (P8.5), not the timeline:
 
@@ -319,3 +483,36 @@ points (P7.2).
   stolen (UI-7); the timeline itself still shows steals only as dashed spans
   (UI-1).
 - **U-Q4:** the shape track's activity rule. Decided: UI-4.
+- **U-Q5:** the rest of UI-9. Decided (2026-10-01): per-page data follows the
+  page that keeps its flag (UI-9 **+**); timelines track flags that move;
+  removing marchers never deletes a timeline; new marchers join every stored
+  timeline; editing off the timeline's end is refused for now. Open:
+  - where removing a marcher from a timeline lives (inspector, right-click,
+    or both).
+
+  TODO (project owner, 2026-10-01; not now):
+  - how a selected marcher's spans (UI-1) show inside a timeline's one track;
+  - appending pages past the last flag (today's `defaultNewPageCounts`);
+  - whether clicking a clip selects its timeline;
+  - editing anywhere in the selected timeline, not only at its end (the
+    temporary refusal in UI-9).
+
+- **Backlog (project owner, 2026-10-01).** Not in the current phase:
+  - Beat editing under UI-9: beat insert and delete (P7.5), clip shifts and
+    range edits can make two timelines share a range or partly overlap,
+    which UI-9 refuses only when adding marchers.
+  - Adding marchers over a range that already holds a non-linear move (arc,
+    follow the leader) or one of the marcher's steals: the new `direct` row
+    is a chord, so it changes the path there.
+  - Moving marchers between timelines ("Move to timeline", or add then
+    remove, where order matters).
+  - Undo's selection (replacing P7.13's page jump; until then undo moves only
+    the playhead, UI-9 Page-relative tools). Undoing a clip move leaves the
+    selection on the moved range, which then resolves to nothing, so everyone
+    is dimmed until the user selects again.
+  - The ripple's holds (`timelineRipple.ts` `addHoldingMoves`) group by layer
+    into one timeline, so a marcher with moves on two layers ending at a new
+    page can get two transitions in one timeline.
+  - Clearing a marcher's dimming while the line or lasso tool has every marcher
+    switched off makes it selectable mid-tool (`CanvasMarcher.setTimelineDimmed`).
+  - Ctrl+click is ignored on the timeline on every platform, not only macOS.

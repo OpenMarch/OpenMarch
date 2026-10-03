@@ -116,7 +116,9 @@ const views = {
     /**
      * Commit-time invariants (spec §6): the write wrapper aborts an edit if this returns any row.
      * I-T6 completeness can only be judged once the whole edit has run, because a transition and
-     * its destinations are inserted in the same edit.
+     * its destinations are inserted in the same edit. E-T1 here is C-11: a transition's range
+     * equals its timeline's. The row trigger only keeps a transition inside its timeline, because
+     * range edits (shift, ripple, R-E1) pass through states where the two differ (D-17).
      */
     timeline_commit_violations: `
         CREATE VIEW IF NOT EXISTS timeline_commit_violations AS
@@ -126,7 +128,14 @@ const views = {
                        || ' of ' || t.slot_count || ' destinations' AS detail
               FROM timeline_transitions t
              WHERE t.dest_shape_id IS NULL
-               AND (SELECT count(*) FROM timeline_slot_destinations d WHERE d.transition_id = t.id) <> t.slot_count;
+               AND (SELECT count(*) FROM timeline_slot_destinations d WHERE d.transition_id = t.id) <> t.slot_count
+            UNION ALL
+            SELECT 'E-T1' AS code, t.id AS transition_id,
+                   'transition spans [' || t.start_beat || ', ' || t.end_beat
+                       || ') but its timeline spans [' || l.start_beat || ', ' || l.end_beat || ')' AS detail
+              FROM timeline_transitions t
+              JOIN timelines l ON l.id = t.timeline_id
+             WHERE t.start_beat <> l.start_beat OR t.end_beat <> l.end_beat;
     `,
 };
 

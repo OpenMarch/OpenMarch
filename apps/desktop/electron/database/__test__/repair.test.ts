@@ -992,11 +992,12 @@ describe("DatabaseSync Repair", () => {
             originalDb.exec(`
                 INSERT INTO marchers (id, section, drill_prefix, drill_order, home_x, home_y)
                     VALUES (1, 'Brass', 'B', 1, 4, -2), (2, 'Brass', 'B', 2, 0, 0);
-                INSERT INTO timelines (id, name, start_beat, end_beat) VALUES (1, 'Opener', 0, 64);
+                INSERT INTO timelines (id, name, start_beat, end_beat)
+                    VALUES (1, 'Opener', 0, 16), (2, NULL, 16, 32);
                 INSERT INTO timeline_shapes (id, kind, geometry)
                     VALUES (1, 'line', '{"points":[[0,0],[10,0]]}');
                 INSERT INTO timeline_transitions (id, timeline_id, dest_shape_id, slot_count, start_beat, end_beat)
-                    VALUES (1, 1, 1, 2, 0, 16), (2, 1, NULL, 2, 16, 32);
+                    VALUES (1, 1, 1, 2, 0, 16), (2, 2, NULL, 2, 16, 32);
                 INSERT INTO timeline_slot_destinations (id, transition_id, slot_index, x, y)
                     VALUES (1, 2, 0, 0, 0), (2, 2, 1, 2, 0);
                 INSERT INTO timeline_assignments (id, marcher_id, transition_id, slot_index, start_beat, end_beat)

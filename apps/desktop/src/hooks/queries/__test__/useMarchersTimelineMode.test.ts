@@ -1,5 +1,5 @@
 import { vi, expect } from "vitest";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { QueryClient } from "@tanstack/react-query";
 import { describeDbTests, schema } from "@/test/base";
 import { timelineFixtureMode } from "@/test/timelineMode";
@@ -40,11 +40,29 @@ describeDbTests("marcher mutations take the file's mode", (it) => {
             .where(eq(schema.timeline_assignments.marcher_id, created!.id))
             .all();
         if (timelineFixtureMode()) {
-            // A holding slot in every page move of the converted show
+            // Its own one-slot move in every stored timeline of the converted show (UI-9 New
+            // marchers, P8.14), not a slot in the page moves
             expect(transitions.length).toBeGreaterThan(0);
-            expect(assignments.map((a) => a.transition_id).sort()).toEqual(
-                transitions.map((t) => t.id).sort(),
+            const timelines = await db.select().from(schema.timelines).all();
+            // Exactly one assignment per stored timeline
+            expect(assignments).toHaveLength(timelines.length);
+            const own = await db
+                .select()
+                .from(schema.timeline_transitions)
+                .where(
+                    inArray(
+                        schema.timeline_transitions.id,
+                        assignments.map((a) => a.transition_id),
+                    ),
+                )
+                .all();
+            expect(own.map((t) => t.timeline_id).sort()).toEqual(
+                timelines.map((t) => t.id).sort(),
             );
+            for (const t of own) expect(t.slot_count).toBe(1);
+            expect(
+                own.some((t) => transitions.some((p) => p.id === t.id)),
+            ).toBe(false);
         } else {
             expect(transitions).toEqual([]);
             expect(assignments).toEqual([]);

@@ -114,6 +114,42 @@ hand-edited into two `ALTER TABLE marchers ADD COLUMN … CHECK (…)` statement
 that use the snapshot's constraint names; running `drizzle-kit generate` again
 reports no changes. `timeline_marcher_homes` was not created.
 
+**Transitions span their timeline (C-11, decided by the project owner on
+2026-10-01).** A timeline is the container for start and stop. It can own
+several transitions, but each one's `start_beat`/`end_beat` equals the
+timeline's, so no transition starts or stops partway through a timeline.
+Assignments keep their own ranges inside the transition. The transition's beat
+columns stay as a mirror of the timeline's range, so the resolver and `ref/`
+are unchanged (a timeline has no effect on resolution, R-1). The write
+functions enforce it (P8.10): a transition takes its timeline's range, and any
+other range is refused (`E-ARGS`); every range edit moves the timeline and all
+its transitions together, with anchored assignments (R-E1); and deleting a
+timeline's last transition deletes the timeline. The database checks it too:
+an `E-T1` row in `timeline_commit_violations`, at commit, since P9.10 made the
+converter write a timeline per page move. Files converted by earlier
+development builds are converted again by hand, not repaired on open.
+
+**Pages are flags (C-12, decided by the project owner on 2026-10-01).** In
+timeline mode a page owns no motion. A page is named by its end flag, and its
+box stands for the timeline from the previous flag to its own (its page
+timeline); selecting a timeline replaces selecting a page, and nothing reads a
+selected page. Rules on stored data, enforced by the write functions
+(`E-ARGS`), not by the database:
+
+- At most one timeline has a given range.
+- A marcher has at most one transition in a timeline when UI-9 makes it; a
+  marcher added to a timeline gets its own one-slot shapeless `direct`
+  transition spanning it.
+- A timeline is created only when marchers are first added to it, but removing
+  marchers never deletes it, so a stored timeline can be empty. This is an
+  exception to C-11's rule that deleting a timeline's last transition deletes
+  the timeline.
+- Adding or deleting a page writes only page rows (and `last_page_counts`),
+  never timeline rows.
+
+Beat editing can still make two timelines share a range; that is in the
+`ui.md` backlog. The interaction is UI-9 in `docs/timeline/ui.md`.
+
 **Coordinates and beats.** Resolver coordinates are the same units as
 `marcher_pages.x`/`y`, so the converter copies page-end positions exactly. The
 spec's `[−10⁶, 10⁶]` bound applies to those units. The spec's integer beats are

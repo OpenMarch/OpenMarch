@@ -102,7 +102,7 @@ const expectStorable = ({ show, timelines }: TimelineFixture) => {
             ).toBeGreaterThanOrEqual(ranges[i - 1]![1]);
     }
 
-    // Each transition on exactly one timeline that contains it
+    // Each transition on exactly one timeline, spanning it (C-11)
     if (timelines) {
         const owner = new Map<number, number>();
         for (const l of timelines)
@@ -112,7 +112,10 @@ const expectStorable = ({ show, timelines }: TimelineFixture) => {
                 );
                 owner.set(id, l.id);
                 const t = show.transitions[id]!;
-                expect(t.start >= l.start && t.end <= l.end).toBe(true);
+                expect([t.start, t.end], `transition ${id}`).toEqual([
+                    l.start,
+                    l.end,
+                ]);
             }
         expect(owner.size).toBe(Object.keys(show.transitions).length);
     }
@@ -219,7 +222,8 @@ describe("QA-SC-11 generator", () => {
         expect(show.marchers).toHaveLength(250);
         expect(transitions).toHaveLength(200);
         expect(Object.keys(show.shapes)).toHaveLength(120);
-        expect(timelines).toHaveLength(10);
+        // A timeline per range on each of the 10 tracks (C-11)
+        expect(new Set(timelines!.map((l) => l.name)).size).toBe(10);
         for (const l of timelines!)
             expect(l.transitions.length).toBeGreaterThan(0);
 

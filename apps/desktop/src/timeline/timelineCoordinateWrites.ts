@@ -1,10 +1,16 @@
 import {
-    moveMarchersOnPage,
+    moveMarchersInTarget,
+    type TimelineEditTarget,
     type TimelineMarcherMove,
     type TimelineMovePage,
 } from "@/db-functions/timelineMoves";
 import type { DbConnection } from "@/db-functions/types";
 import { withTimelineWriteLock } from "@/db-functions/history";
+import {
+    selectedStoredTimeline,
+    useTimelineSelectionStore,
+    type TimelineSelectionState,
+} from "@/stores/TimelineSelectionStore";
 import type { CoordinateRecord } from "@/utilities/CoordinateActions";
 import { pageEndBeat } from "./timelineCanvas";
 import {
@@ -14,12 +20,19 @@ import {
 
 /**
  * The seam between the page-era coordinate tools and timeline writes in timeline mode
- * (docs/timeline/phases/07-page-parity.md P7.2). Canvas drag, nudges, snap, align, distribute,
- * flip, swap, circle, the line tool, the inspector's distribute buttons and "set marchers to the
- * previous or next page" (P7.6) all compute new x/y
- * for the selected marchers on the selected page; in timeline mode they read the current x/y from
- * the resolver at the page's end beat (what the canvas draws) and write through
- * `moveMarchersOnPage`. With the flag off, nothing here runs.
+ * (docs/timeline/phases/07-page-parity.md P7.2, reworked for UI-9 by P8.15). Canvas drag, nudges,
+ * snap, align, distribute, flip, swap, circle, the line tool and the inspector's coordinate edits
+ * all compute new x/y for the selected marchers. In timeline mode they edit against the
+ * **selection** (docs/timeline/ui.md UI-9 Editing, Home), not a page (`planCanvasEdit`):
+ *
+ * - a selected stored timeline, with the paused playhead on its end beat: the endings of the
+ *   moved marchers' transitions in it (`moveMarchersInTimelineInTransaction`), starting from the
+ *   resolver's positions at that end beat;
+ * - no timeline selected (home or nothing) with the playhead on beat 0: the marchers' homes.
+ *
+ * Anything else is refused with a hint (`TimelineEditRefusedError`). "Set marchers to the previous
+ * or next page" (P7.6) still copies page positions through `copyPagePositions` until P8.12 moves
+ * it onto the selection. With the flag off, nothing here runs.
  */
 
 /** The x/y fields every page-era coordinate tool reads and writes. */
@@ -29,7 +42,7 @@ export interface MarcherXY {
     y: number;
 }
 
-/** The parts of a `Page` the timeline write path needs. */
+/** The parts of a `Page` the page-based write path needs. */
 export type TimelineWritePage = TimelineMovePage & { readonly id: number };
 
 /** Thrown when timeline mode can't read positions because the resolver isn't ready yet. */
@@ -41,21 +54,107 @@ export class TimelineNotReadyError extends Error {
 }
 
 /**
- * `coordinates` with each x/y replaced by the resolver's position at the page's end beat, the
- * position the canvas draws in timeline mode. Other fields are kept, so `MarcherPage` objects can
- * go straight into the page-era helpers (`CoordinateActions`). Marchers the resolver doesn't know
- * are dropped.
+ * Why a canvas move can't run in timeline mode (UI-9 Editing, Editing off the end). Each has a
+ * Tolgee key with the English text as its default; `timelineErrorMessage` shows it.
+ */
+export const CANVAS_EDIT_REFUSALS = {
+    /** No timeline is selected and the playhead isn't on beat 0 */
+    noTimeline: {
+        key: "timeline.edit.selectTimeline",
+        defaultMessage:
+            "Select a timeline (click a page box) to move marchers, or go to the start of the show to move their homes.",
+    },
+    /** The selected range has no stored timeline: nobody has been added to it */
+    emptyTimeline: {
+        key: "timeline.edit.emptyTimeline",
+        defaultMessage:
+            "Nobody is in this timeline yet. Right-click it and choose Add selected marchers first.",
+    },
+    /** TEMPORARY (UI-9 Editing off the end): the playhead isn't on the selected timeline's end */
+    offEnd: {
+        key: "timeline.edit.goToEnd",
+        defaultMessage:
+            "Go to the end of the selected timeline to move marchers. For now, a move sets where marchers are at its end.",
+    },
+} as const;
+
+export type CanvasEditRefusal = keyof typeof CANVAS_EDIT_REFUSALS;
+
+/** A canvas move refused by the selection (see `CANVAS_EDIT_REFUSALS`). */
+export class TimelineEditRefusedError extends Error {
+    readonly key: string;
+    constructor(readonly refusal: CanvasEditRefusal) {
+        super(CANVAS_EDIT_REFUSALS[refusal].defaultMessage);
+        this.key = CANVAS_EDIT_REFUSALS[refusal].key;
+        this.name = "TimelineEditRefusedError";
+    }
+}
+
+/** What a canvas move edits, and the beat whose positions the canvas shows for it. */
+export type CanvasEditPlan =
+    | {
+          readonly ok: true;
+          readonly target: TimelineEditTarget;
+          /** Where the edited positions are read: 0 for homes, else the timeline's end beat */
+          readonly beat: number;
+      }
+    | {
+          readonly ok: false;
+          readonly error: TimelineEditRefusedError | TimelineNotReadyError;
+      };
+
+/**
+ * What a canvas move edits right now (UI-9 Editing, Editing off the end, Home), from the selection
+ * and the paused playhead:
+ *
+ * - a range that resolves to a stored timeline, with the playhead on its end: that timeline;
+ * - a range with no stored timeline: refused (nobody is in it yet; it dims nobody, so marchers can
+ *   be selected and added to it);
+ * - a stored timeline with the playhead elsewhere: refused (TEMPORARY);
+ * - home or nothing with the playhead on beat 0: the homes; elsewhere: refused.
+ *
+ * A range before the stored timelines load is `TimelineNotReadyError`.
+ */
+export function planCanvasEdit(
+    state: Pick<
+        TimelineSelectionState,
+        "selection" | "storedTimelines" | "playheadBeat"
+    > = useTimelineSelectionStore.getState(),
+): CanvasEditPlan {
+    const refused = (refusal: CanvasEditRefusal): CanvasEditPlan => ({
+        ok: false,
+        error: new TimelineEditRefusedError(refusal),
+    });
+    if (state.selection.kind === "range") {
+        if (!state.storedTimelines)
+            return { ok: false, error: new TimelineNotReadyError() };
+        const timeline = selectedStoredTimeline(state);
+        if (!timeline) return refused("emptyTimeline");
+        if (state.playheadBeat !== timeline.end) return refused("offEnd");
+        return {
+            ok: true,
+            target: { kind: "timeline", timelineId: timeline.id },
+            beat: timeline.end,
+        };
+    }
+    if (state.playheadBeat !== 0) return refused("noTimeline");
+    return { ok: true, target: { kind: "home" }, beat: 0 };
+}
+
+/**
+ * `coordinates` with each x/y replaced by the resolver's position at `beat` (a spec beat), the
+ * position the canvas draws there. Other fields are kept, so `MarcherPage` objects can go straight
+ * into the page-era helpers (`CoordinateActions`). Marchers the resolver doesn't know are dropped.
  *
  * @throws TimelineNotReadyError when no resolver is ready
  */
 export function withTimelinePositions<T extends MarcherXY>(
-    page: TimelineMovePage,
+    beat: number,
     coordinates: readonly T[],
 ): T[] {
     const resolver = useTimelineResolverStore.getState().resolver;
     if (!resolver) throw new TimelineNotReadyError();
     const known = new Set(resolver.marcherIds());
-    const beat = pageEndBeat(page);
     return coordinates
         .filter((c) => known.has(c.marcher_id))
         .map((c) => {
@@ -65,22 +164,24 @@ export function withTimelinePositions<T extends MarcherXY>(
 }
 
 /**
- * The marchers as coordinate records on `page` at the resolver's positions, for the page-era
+ * The marchers as coordinate records at the resolver's positions at `beat`, for the page-era
  * helpers (`CoordinateActions`). Built from the marcher ids alone, so it doesn't need (or trust)
- * `marcher_pages` rows. Marchers the resolver doesn't know are dropped.
+ * `marcher_pages` rows. `pageId` only fills the records' `page_id`, which the timeline write path
+ * ignores. Marchers the resolver doesn't know are dropped.
  *
  * @throws TimelineNotReadyError when no resolver is ready
  */
 export function timelineCoordinateRecords(
-    page: TimelineWritePage,
+    beat: number,
     marcherIds: readonly number[],
+    pageId = 0,
 ): CoordinateRecord[] {
     return withTimelinePositions(
-        page,
+        beat,
         marcherIds.map(
             (id): CoordinateRecord => ({
                 marcher_id: id,
-                page_id: page.id,
+                page_id: pageId,
                 x: 0,
                 y: 0,
                 notes: null,
@@ -91,25 +192,31 @@ export function timelineCoordinateRecords(
 
 /**
  * Timeline mode's `useUpdateSelectedMarchers`: applies `transform` to the marchers' current
- * positions on `page` (from the resolver, not `marcher_pages`) and writes the result as one
- * `moveMarchersOnPage` edit.
+ * positions where the selection edits (`planCanvasEdit`; from the resolver, not `marcher_pages`)
+ * and writes the result as one `moveMarchersInTarget` edit.
  *
  * @returns the transformed coordinates
+ * @throws TimelineEditRefusedError when the selection refuses canvas moves
  * @throws TimelineNotReadyError when no resolver is ready
  */
-export async function transformMarchersOnPage<R extends MarcherXY>({
+export async function transformMarchersInSelection<R extends MarcherXY>({
     db,
-    page,
     marcherIds,
     transform,
+    plan = planCanvasEdit(),
 }: {
     db: DbConnection;
-    page: TimelineWritePage;
     marcherIds: readonly number[];
     transform: (current: CoordinateRecord[]) => R[];
+    plan?: CanvasEditPlan;
 }): Promise<R[]> {
-    const next = transform(timelineCoordinateRecords(page, marcherIds));
-    await moveMarchersOnPage({ db, page, moves: toTimelineMoves(next) });
+    if (!plan.ok) throw plan.error;
+    const next = transform(timelineCoordinateRecords(plan.beat, marcherIds));
+    await moveMarchersInTarget({
+        db,
+        target: plan.target,
+        moves: toTimelineMoves(next),
+    });
     return next;
 }
 
@@ -181,9 +288,18 @@ export const toTimelineMoves = (
 ): TimelineMarcherMove[] =>
     changes.map((c) => ({ marcherId: c.marcher_id, x: c.x, y: c.y }));
 
-/** What a coordinate tool hands to the timeline write path: the page and its moves. */
+/**
+ * What "set marchers to the previous or next page" hands to `moveMarchersOnPage`: the page and its
+ * moves. P8.12 moves that action onto the selection.
+ */
 export interface TimelineMoveRequest {
     page: TimelineWritePage;
+    moves: TimelineMarcherMove[];
+}
+
+/** What a canvas move hands to the timeline write path (`moveMarchersInTarget`). */
+export interface TimelineEditRequest {
+    target: TimelineEditTarget;
     moves: TimelineMarcherMove[];
 }
 
@@ -192,29 +308,37 @@ export interface TimelineMoveRequest {
  * updateMarcherPagesFunction`).
  *
  * - Flag off: `writePages` itself, so page mode is unchanged.
- * - Flag on: a function that writes the moves on `page`, the selected page. The canvas marchers'
- *   `coordinate.page_id` is not used: in timeline mode it can be left over from an earlier render.
- *   With no selected page, `onNoPage` runs instead (the canvas snaps the marchers back).
+ * - Flag on: a function that writes the moves where the selection edits, planned when the move
+ *   ends (`plan`, `planCanvasEdit` by default, so it never uses a stale selection). The canvas
+ *   marchers' `coordinate.page_id` is not used. When the selection refuses the move, `onRefused`
+ *   gets the reason (the canvas shows it and snaps the marchers back).
  */
 export function canvasCoordinateWriter<A extends MarcherXY>({
     timelineMode,
-    page,
     writePages,
     writeTimeline,
-    onNoPage,
+    onRefused,
+    plan = () => planCanvasEdit(),
 }: {
     timelineMode: boolean;
-    page: TimelineWritePage | null | undefined;
     writePages: (changes: A[]) => void;
-    writeTimeline: (request: TimelineMoveRequest) => void;
-    onNoPage: () => void;
+    writeTimeline: (request: TimelineEditRequest) => void;
+    onRefused: (
+        error: TimelineEditRefusedError | TimelineNotReadyError,
+    ) => void;
+    /** The edit plan at the time of the move */
+    plan?: () => CanvasEditPlan;
 }): (changes: A[]) => void {
     if (!timelineMode) return writePages;
     return (changes) => {
-        if (!page) {
-            onNoPage();
+        const current = plan();
+        if (!current.ok) {
+            onRefused(current.error);
             return;
         }
-        writeTimeline({ page, moves: toTimelineMoves(changes) });
+        writeTimeline({
+            target: current.target,
+            moves: toTimelineMoves(changes),
+        });
     };
 }

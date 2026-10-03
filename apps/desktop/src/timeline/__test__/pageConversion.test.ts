@@ -114,28 +114,41 @@ describeDbTests("page → timeline converter", (it) => {
         const marcherCount = marchersAndPages.expectedMarchers.length;
         expect(pages.length).toBe(7);
         expect(result.transitionIds.size).toBe(6);
+        expect(result.timelineIds.size).toBe(6);
         expect(result.assignmentCount).toBe(6 * marcherCount);
         expect(result.homeCount).toBe(marcherCount);
         expect(await timelineCounts(db)).toEqual([
-            1,
+            6,
             0,
             6,
             6 * marcherCount,
             6 * marcherCount,
         ]);
 
-        // One timeline over the show; one direct, shapeless transition per page N ≥ 1
-        const [timeline] = await db.select().from(schema.timelines).all();
-        expect([timeline!.start_beat, timeline!.end_beat]).toEqual([
-            0,
-            pageEndBeat(pages[6]!),
-        ]);
+        // One timeline per page N ≥ 1 over exactly its beats, from the previous flag to its own
+        // (C-11, UI-9), each holding one direct, shapeless transition spanning it. Page 1's
+        // starts at beat 1, page 0's flag (UI-5)
+        const timelines = await db.select().from(schema.timelines).all();
+        expect(
+            timelines.map((l) => [l.id, l.name, l.start_beat, l.end_beat]),
+        ).toEqual(
+            pages
+                .slice(1)
+                .map((p, i) => [
+                    result.timelineIds.get(p.id),
+                    null,
+                    pageEndBeat(pages[i]!),
+                    pageEndBeat(p),
+                ]),
+        );
+        expect(timelines[0]!.start_beat).toBe(1);
         const transitions = await db
             .select()
             .from(schema.timeline_transitions)
             .all();
         expect(
             transitions.map((t) => [
+                t.timeline_id,
                 t.start_beat,
                 t.end_beat,
                 t.path_style,
@@ -146,6 +159,7 @@ describeDbTests("page → timeline converter", (it) => {
             pages
                 .slice(1)
                 .map((p) => [
+                    result.timelineIds.get(p.id),
                     p.beats[0]!.index,
                     pageEndBeat(p),
                     "direct",
@@ -267,7 +281,7 @@ describeDbTests("page → timeline converter", (it) => {
         const undo = await performUndo(db);
         expect(undo.success, undo.error?.message).toBe(true);
         expect(await tableCount(db, schema.timeline_shapes)).toBe(1);
-        expect(await tableCount(db, schema.timelines)).toBe(1);
+        expect(await tableCount(db, schema.timelines)).toBe(6);
     });
 
     it("reports pathways, midsets and curved shapes, and still lands on their page ends", async ({
@@ -490,7 +504,7 @@ describeDbTests("page → timeline converter", (it) => {
             ]);
     });
 
-    it("a show with only page 0 converts to homes and an empty timeline", async ({
+    it("a show with only page 0 converts to homes and no timeline", async ({
         db,
     }) => {
         await createMarchers({
@@ -505,9 +519,8 @@ describeDbTests("page → timeline converter", (it) => {
         expect(page0.length).toBe(3);
         const result = await convertPagesToTimeline(db);
         expect(result.transitionIds.size).toBe(0);
-        expect(await timelineCounts(db)).toEqual([1, 0, 0, 0, 0]);
-        const [timeline] = await db.select().from(schema.timelines).all();
-        expect([timeline!.start_beat, timeline!.end_beat]).toEqual([0, 1]);
+        expect(result.timelineIds.size).toBe(0);
+        expect(await timelineCounts(db)).toEqual([0, 0, 0, 0, 0]);
         expect(await homes(db)).toEqual(
             page0
                 .sort((a, b) => a.marcher_id - b.marcher_id)
@@ -515,7 +528,8 @@ describeDbTests("page → timeline converter", (it) => {
         );
         await startTimelineResolver(db);
         expect(await expectPageEndsExact(db)).toBe(6);
-        // A second run is refused
-        await expect(convertPagesToTimeline(db)).rejects.toThrow(/E-ARGS/);
+        // No timeline rows were written, so a second run isn't refused, and writes the same homes
+        await convertPagesToTimeline(db);
+        expect(await timelineCounts(db)).toEqual([0, 0, 0, 0, 0]);
     });
 });

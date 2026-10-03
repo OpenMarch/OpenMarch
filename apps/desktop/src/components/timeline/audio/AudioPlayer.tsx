@@ -16,7 +16,12 @@ import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
 import WaveformTimingOverlay from "./WaveformTimingOverlay";
 import { calculateMasterVolume } from "./volume";
 import { useQuery } from "@tanstack/react-query";
-import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import {
+    useTimelineMode,
+    workspaceSettingsQueryOptions,
+} from "@/hooks/queries/useWorkspaceSettings";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import { timeAtBeat } from "@/timeline/timeMap";
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import type Page from "@/global/classes/Page";
@@ -82,6 +87,20 @@ export const getLivePlaybackPosition = (): number => {
 };
 
 /**
+ * Moves the live playback position to `seconds` now, without waiting for the audio to restart
+ * (timeline mode's loop, UI-9). The audio player restarts its sources from the playhead on the same
+ * seek and then replaces this start info with its own. Does nothing while nothing is playing.
+ */
+export const restartLivePlaybackAt = (seconds: number): void => {
+    if (!audioContextRef || !playbackStartInfoRef.current) return;
+    playbackStartInfoRef.current = {
+        playStartTime: audioContextRef.currentTime,
+        startTimestamp: seconds - PLAYBACK_DELAY - 0.01,
+        pageDuration: 0,
+    };
+};
+
+/**
  * The audio player handles playback via Web Audio API.
  * Metronome controls are managed by MetronomeModal.
  */
@@ -139,6 +158,17 @@ export default function AudioPlayer() {
     // AudioContext state management
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
     const [playbackTimestamp, setPlaybackTimestamp] = useState<number>(0);
+    // Timeline mode (UI-9): play starts at the playhead, not the selected page. Every playhead
+    // write restarts playback from it, which is how a selected range loops back to its start.
+    const timelineMode = useTimelineMode();
+    const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
+    const playheadRevision = useTimelineSelectionStore(
+        (s) => s.playheadRevision,
+    );
+    const startSeconds = timelineMode
+        ? timeAtBeat(beats, playheadBeat)
+        : playbackTimestamp;
+    const restartKey = timelineMode ? playheadRevision : 0;
     const selectedPageRef = useRef(selectedPage);
     const audioDurationRef = useRef(audioDuration);
     const isPlayingRef = useRef(isPlaying);
@@ -412,8 +442,8 @@ export default function AudioPlayer() {
                 .connect(metroGainNode.current)
                 .connect(audioContext.destination);
 
-            audioSource.start(startAt, playbackTimestamp);
-            metroSource.start(startAt, playbackTimestamp);
+            audioSource.start(startAt, startSeconds);
+            metroSource.start(startAt, startSeconds);
 
             // Only clear the ref if it still points at this source, a restart may have replaced it
             audioSource.onended = () => {
@@ -427,11 +457,17 @@ export default function AudioPlayer() {
             metroNode.current = metroSource;
 
             // Store playback tracking info for live position
-            playbackStartInfoRef.current = {
-                playStartTime: startAt,
-                startTimestamp: selectedPage?.timestamp ?? 0,
-                pageDuration: selectedPage?.duration ?? 0,
-            };
+            playbackStartInfoRef.current = timelineMode
+                ? {
+                      playStartTime: startAt,
+                      startTimestamp: startSeconds,
+                      pageDuration: 0,
+                  }
+                : {
+                      playStartTime: startAt,
+                      startTimestamp: selectedPage?.timestamp ?? 0,
+                      pageDuration: selectedPage?.duration ?? 0,
+                  };
         } else {
             // If not playing, stop any existing playback
             stopPlayback();
@@ -450,7 +486,9 @@ export default function AudioPlayer() {
         audioContext,
         isAudioProcessing,
         metronomeBuffer,
-        playbackTimestamp,
+        startSeconds,
+        restartKey,
+        timelineMode,
         audioVolume,
         audioMuted,
     ]);

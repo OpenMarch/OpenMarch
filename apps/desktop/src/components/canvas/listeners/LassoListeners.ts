@@ -48,12 +48,9 @@ export default class LassoListeners implements CanvasListeners {
         this.canvas.hoverCursor = "move";
         this.canvas.moveCursor = "move";
 
-        // Re-enable object selection and movement
+        // Re-enable object selection and movement, except for dimmed marchers (UI-9)
         this.canvas.forEachObject((obj) => {
-            if (obj instanceof CanvasMarcher) {
-                obj.selectable = true;
-                obj.evented = true;
-            }
+            if (obj instanceof CanvasMarcher) obj.setInteractive(true);
         });
 
         // Clean up any existing lasso path
@@ -173,6 +170,8 @@ export default class LassoListeners implements CanvasListeners {
         const canvasMarchers = this.canvas.getCanvasMarchers();
 
         for (const marcher of canvasMarchers) {
+            // A marcher dimmed outside the selected timeline can't be selected (UI-9)
+            if (marcher.timelineDimmed) continue;
             const marcherCenter = marcher.getCenterPoint();
             if (this.isPointInPolygon(marcherCenter, closedPath)) {
                 marchersToSelect.push(marcher);
@@ -185,10 +184,7 @@ export default class LassoListeners implements CanvasListeners {
         // Re-enable selection temporarily to select the marchers
         this.canvas.selection = true;
         this.canvas.forEachObject((obj) => {
-            if (obj instanceof CanvasMarcher) {
-                obj.selectable = true;
-                obj.evented = true;
-            }
+            if (obj instanceof CanvasMarcher) obj.setInteractive(true);
         });
 
         // Select the marchers

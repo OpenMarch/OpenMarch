@@ -274,11 +274,12 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
         expect(stateOf(expectedBackup)).toEqual(before);
         expect(sha256(showPath)).not.toBe(hashBeforeStep);
 
-        // The file: version 8, flag on, one timeline with a transition per page 1 to 6.
+        // The file: version 8, flag on, a timeline per page 1 to 6, each with the one transition
+        // spanning it (C-11).
         const after = stateOf(showPath);
         expect(after.userVersion).toBe(8);
         expect(after.timelineMode).toBe(true);
-        expect(after.timelines).toBe(1);
+        expect(after.timelines).toBe(6);
         expect(after.transitions).toBe(6);
         expect(after.assignments).toBe(76 * 6);
         expect(after.marcherPages).toBe(before.marcherPages);
@@ -479,7 +480,7 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
             status: "already-converted",
         });
         expect(sha256(showPath)).toBe(sha256(other));
-        expect(stateOf(showPath).timelines).toBe(1);
+        expect(stateOf(showPath).timelines).toBe(6);
         // The misleading backup is gone; the other instance's own backup is untouched.
         expect(fs.existsSync(thisOpensBackup)).toBe(false);
         expect(backupsIn(tempDir)).toEqual([

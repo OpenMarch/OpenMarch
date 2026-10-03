@@ -6,7 +6,7 @@ import { castSlots, transitionSlotPoints } from "@/timeline/timelineCasting";
 import { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
-import { createTimelinesInTransaction } from "./timelines";
+import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { createTimelineTransitionsInTransaction } from "./timelineTransitions";
 import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
 
@@ -304,7 +304,9 @@ const shapeCapacity = (shape: typeof schema.timeline_shapes.$inferSelect) => {
 
 /**
  * Create Track (ui.md's mapping table): one edit that creates a timeline over `[startBeat,
- * endBeat)` with one `direct` transition over the same range, and its assignments.
+ * endBeat)` with one `direct` transition over the same range, and its assignments. When a stored
+ * timeline already has that range, the transition goes into it instead (one timeline per range,
+ * C-12).
  *
  * - **A marcher:** the transition has no shape and one slot, whose destination is the marcher's
  *   position at `startBeat` (read from a resolver over the rows this edit sees), so the marcher
@@ -412,10 +414,16 @@ export const createTrackInTransaction = async ({
     }
     const layer = await stealLayer(tx, marcherIds, startBeat, endBeat);
 
-    const [timeline] = await createTimelinesInTransaction({
-        tx,
-        newTimelines: [{ startBeat, endBeat }],
-    });
+    // One timeline per range (C-12): a stored timeline over the range (a converted page's, say)
+    // takes the new transition alongside its others (C-11)
+    const timeline =
+        (await findTimelineByRange(tx, { start: startBeat, end: endBeat })) ??
+        (
+            await createTimelinesInTransaction({
+                tx,
+                newTimelines: [{ startBeat, endBeat }],
+            })
+        )[0];
     const [transition] = await createTimelineTransitionsInTransaction({
         tx,
         newTransitions: [

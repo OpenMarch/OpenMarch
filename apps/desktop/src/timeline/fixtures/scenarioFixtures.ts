@@ -152,6 +152,7 @@ export interface Sc11Size {
     groupTransitions: number;
     /** Transitions that hold the layer-1 steals */
     stealTransitions: number;
+    /** Tracks the transitions are spread over; each holds a timeline per range (C-11) */
     timelines: number;
     shapes: number;
     /** Transitions in the deepest chain (group 0's) */
@@ -177,7 +178,7 @@ const MAX_SLOTS = 32;
 
 /**
  * QA-SC-11: a seeded show of the spec's scale. With the default size: 250 marchers in 12 groups
- * of 8 to 32, 200 transitions (180 that move a whole group, 20 that hold steals) on 10 timelines,
+ * of 8 to 32, 200 transitions (180 that move a whole group, 20 that hold steals) on 10 tracks (a timeline per range on each, C-11),
  * 120 shapes of every kind, styles about 60% direct, 10% arc and 30% follow-the-leader, a
  * 32-transition chain (group 0), at least 10 rows per marcher, and a layer-1 steal over the
  * second half of about 10% of the group rows. The same seed always gives the same show.
@@ -333,7 +334,6 @@ export function sc11(
     };
 
     // Group transitions: each group moves through its own chain, back to back with a few gaps
-    let showEnd = 1;
     groups.forEach((members, g) => {
         let beat = 1;
         for (let k = 0; k < counts[g]!; k++) {
@@ -361,7 +361,6 @@ export function sc11(
             );
             beat = end;
         }
-        showEnd = Math.max(showEnd, beat);
     });
 
     // Steals: about STEAL_FRACTION of the group rows get a layer-1 row over their second half
@@ -405,18 +404,24 @@ export function sc11(
         );
     }
 
-    const timelines: FixtureTimeline[] = Array.from(
-        { length: size.timelines },
-        (_, i) => ({
-            id: i + 1,
-            name: `SC-11 track ${i + 1}`,
-            start: 0,
-            end: showEnd,
-            transitions: [...timelineOf]
-                .filter(([, timeline]) => timeline === i)
-                .map(([t]) => t),
-        }),
-    );
+    // A transition spans its whole timeline (C-11), so each of the `size.timelines` tracks holds
+    // one timeline per distinct range of its transitions
+    const timelineByKey = new Map<string, FixtureTimeline>();
+    for (const [id, track] of timelineOf) {
+        const t = transitions[id]!;
+        const key = `${track}:${t.start}:${t.end}`;
+        const timeline = timelineByKey.get(key);
+        if (timeline) timeline.transitions.push(id);
+        else
+            timelineByKey.set(key, {
+                id: timelineByKey.size + 1,
+                name: `SC-11 track ${track + 1}`,
+                start: t.start,
+                end: t.end,
+                transitions: [id],
+            });
+    }
+    const timelines = [...timelineByKey.values()];
 
     return {
         name: `QA-SC-11 (seed ${seed})`,

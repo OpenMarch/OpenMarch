@@ -39,28 +39,26 @@ export const getPageRange = ({
     if (index < 0) return null;
     return {
         startBeatIndex: ordered[index].atBeat,
-        endBeatIndex: ordered[index + 1]?.atBeat ?? beatCount,
+        // The last page ends at its own flag, which can be before the end of the beats
+        endBeatIndex:
+            ordered[index + 1]?.atBeat ?? ordered[index].endBeat ?? beatCount,
     };
 };
 
+/** The selected range, or null for home and nothing. */
 export const getSelectionRange = (
     selection: TimelineSelection | undefined,
-    model: Pick<TimelineViewModel, "beatCount" | "pages" | "tracks">,
-): TimelineBeatRange | null => {
-    if (!selection) return null;
-    if (selection.kind === "range") return selection.range;
-    if (selection.kind === "page") {
-        return getPageRange({
-            pages: model.pages,
-            pageId: selection.pageId,
-            beatCount: model.beatCount,
-        });
-    }
-    const track = model.tracks.find(
-        (candidate) => candidate.id === selection.trackId,
-    );
-    return track ? getTrackRange(track) : null;
-};
+): TimelineBeatRange | null =>
+    selection?.kind === "range" ? selection.range : null;
+
+export const sameRange = (
+    a: TimelineBeatRange | null | undefined,
+    b: TimelineBeatRange | null | undefined,
+) =>
+    a != null &&
+    b != null &&
+    a.startBeatIndex === b.startBeatIndex &&
+    a.endBeatIndex === b.endBeatIndex;
 
 export const rangesOverlap = (a: TimelineBeatRange, b: TimelineBeatRange) =>
     a.startBeatIndex < b.endBeatIndex && b.startBeatIndex < a.endBeatIndex;
@@ -211,8 +209,8 @@ export const getPlayheadLabel = (
 export const TIMELINE_PAGE_SNAP_PX = 24;
 
 /**
- * The beat boundaries that drags snap to: the start of every timed page and the end of the show,
- * ascending and without duplicates.
+ * The beat boundaries that drags snap to: the start and flag (`endBeat`) of every timed page and
+ * the end of the show, ascending and without duplicates.
  */
 export const getPageSnapBeats = (
     model: Pick<TimelineViewModel, "pages" | "beatCount">,
@@ -221,7 +219,11 @@ export const getPageSnapBeats = (
         ...new Set([
             ...model.pages
                 .filter((page) => !page.isInitial)
-                .map((page) => page.atBeat),
+                .flatMap((page) =>
+                    page.endBeat === undefined
+                        ? [page.atBeat]
+                        : [page.atBeat, page.endBeat],
+                ),
             model.beatCount,
         ]),
     ].sort((a, b) => a - b);

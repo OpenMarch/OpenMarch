@@ -1,17 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-    createTrack,
-    shiftTimeline,
-    type CreateTrackTarget,
-} from "@/db-functions/timelineCommands";
+import { useCallback, useMemo } from "react";
+import { shiftTimeline } from "@/db-functions/timelineCommands";
+import { addMarchersToTimeline } from "@/db-functions/timelineMembership";
 import type { DbConnection } from "@/db-functions/types";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import type { TimelineInput } from "./Timeline";
+import type { TimelineAddMarchersMenu } from "./TimelineRangeMenu";
 import type {
-    TimelineCreateTrackRequest,
+    TimelineBeatRange,
     TimelineRangeChange,
-    TimelineSelection,
-    TimelineTarget,
 } from "./TimelineViewModel";
 
 /**
@@ -35,44 +32,23 @@ export function timelineShiftFor(
     return { timelineId: Number(track.linkId), delta };
 }
 
-/**
- * Create Track's target: a shape picked by selecting its track, which takes the selected marchers
- * (none when no marcher is selected, since there would be nobody to move into it); otherwise the
- * one selected marcher. With several marchers selected and no shape, there's none.
- */
-export function selectedTimelineTarget(
-    shape: TimelineTarget | null,
+/** Why **Add selected marchers** is unavailable, or null when it can run. */
+export function addSelectedMarchersBlocker(
     selectedMarcherIds: ReadonlySet<number>,
-): TimelineTarget | null {
-    if (shape) return selectedMarcherIds.size > 0 ? shape : null;
-    if (selectedMarcherIds.size !== 1) return null;
-    const [id] = selectedMarcherIds;
-    return { type: "marcher", id: id! };
-}
-
-/** The write path's target for a Create Track request. */
-export function createTrackTargetFor(
-    target: TimelineTarget,
-    selectedMarcherIds: ReadonlySet<number>,
-): CreateTrackTarget {
-    return target.type === "shape"
-        ? {
-              kind: "shape",
-              shapeId: Number(target.id),
-              marcherIds: [...selectedMarcherIds],
-          }
-        : { kind: "marcher", marcherId: Number(target.id) };
+): string | null {
+    return selectedMarcherIds.size === 0
+        ? "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
+        : null;
 }
 
 /**
- * The panel's side of the commands: the selected target for Create Track, and the callbacks that
- * run each command as one undoable edit and show a refusal's friendly message (P8.6) as a toast.
+ * The panel's side of the commands: the callbacks that run each command as one undoable edit and
+ * show a refusal's friendly message (P8.6) as a toast. A clip move of the selected timeline moves
+ * the selection with it (UI-9).
  *
- * `noteSelection`: call it with every selection change. Selecting a shape's track picks that shape
- * as the target. A range selection keeps it, because Create Track is offered on a range, so the
- * shape is picked first and the range selected next. Any other selection (a marcher's track, a
- * page, or nothing) drops it, and so does its track disappearing (the shape was deleted, or no
- * longer has a move).
+ * Create Track isn't offered in timeline mode (P8.15): with one timeline per page it would give a
+ * marcher a second transition in a page timeline. **Add selected marchers** replaces it (UI-9
+ * Creating a timeline).
  */
 export function useTimelineCommands({
     database,
@@ -83,73 +59,61 @@ export function useTimelineCommands({
     timelines: readonly TimelineInput[];
     selectedMarcherIds: ReadonlySet<number>;
 }) {
-    const [shape, setShape] = useState<TimelineTarget | null>(null);
-
-    const noteSelection = useCallback(
-        (next: TimelineSelection) => {
-            if (next?.kind === "range") return;
-            const track =
-                next?.kind === "track"
-                    ? timelines.find((t) => t.id === next.trackId)
-                    : undefined;
-            setShape(
-                track?.targetType === "shape"
-                    ? { type: "shape", id: track.targetId }
-                    : null,
-            );
-        },
-        [timelines],
-    );
-
-    // Drop a picked shape whose track is gone
-    const shapeShown =
-        shape !== null &&
-        timelines.some(
-            (t) => t.targetType === "shape" && t.targetId === shape.id,
-        );
-    useEffect(() => {
-        if (shape !== null && !shapeShown) setShape(null);
-    }, [shape, shapeShown]);
-
-    const selectedTarget = useMemo(
-        () =>
-            selectedTimelineTarget(
-                shapeShown ? shape : null,
-                selectedMarcherIds,
-            ),
-        [shape, shapeShown, selectedMarcherIds],
-    );
-
     const commitTimelineRange = useCallback(
         (change: TimelineRangeChange) => {
             const shift = timelineShiftFor(change, timelines);
-            if (!shift) return;
-            shiftTimeline({ db: database, ...shift }).catch((error: unknown) =>
-                toastTimelineError(error),
+            const track = timelines.find((t) => t.id === change.timelineId);
+            if (!shift || !track) return;
+            const from = {
+                start: track.startBeatIndex,
+                end: track.endBeatIndex,
+            };
+            shiftTimeline({ db: database, ...shift }).then(
+                (result) => {
+                    if (result)
+                        useTimelineSelectionStore
+                            .getState()
+                            .followTimelineShift(from, shift.delta);
+                },
+                (error: unknown) => toastTimelineError(error),
             );
         },
         [database, timelines],
     );
 
-    const createTrackFromRequest = useCallback(
-        (request: TimelineCreateTrackRequest) => {
-            createTrack({
-                db: database,
-                target: createTrackTargetFor(
-                    request.target,
-                    selectedMarcherIds,
-                ),
-                startBeat: request.range.startBeatIndex,
-                endBeat: request.range.endBeatIndex,
-            }).catch((error: unknown) => toastTimelineError(error));
-        },
+    return {
+        commitTimelineRange,
+        addSelectedMarchers: useAddSelectedMarchers(
+            database,
+            selectedMarcherIds,
+        ),
+    };
+}
+
+/**
+ * UI-9 Adding marchers: the selected marchers join the timeline over the right-clicked range
+ * (spec beats), which is created if none has it, as one undoable edit; a refusal is a toast. The
+ * menu doesn't change the selection.
+ */
+function useAddSelectedMarchers(
+    database: DbConnection,
+    selectedMarcherIds: ReadonlySet<number>,
+): TimelineAddMarchersMenu {
+    return useMemo(
+        (): TimelineAddMarchersMenu => ({
+            disabledReason: addSelectedMarchersBlocker(selectedMarcherIds),
+            onAdd: (range: TimelineBeatRange) => {
+                if (selectedMarcherIds.size === 0) return;
+                addMarchersToTimeline({
+                    db: database,
+                    range: {
+                        start: range.startBeatIndex,
+                        end: range.endBeatIndex,
+                    },
+                    marcherIds: [...selectedMarcherIds],
+                }).catch((error: unknown) => toastTimelineError(error));
+            },
+        }),
         [database, selectedMarcherIds],
     );
-
-    return {
-        selectedTarget,
-        noteSelection,
-        commitTimelineRange,
-        createTrack: createTrackFromRequest,
-    };
 }

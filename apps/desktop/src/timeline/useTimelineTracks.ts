@@ -10,8 +10,7 @@ import { assignmentFromRow } from "./timelineRows";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
 import { useTimelineViewVersions } from "./useTimelineViewVersions";
 import {
-    buildTimelineTracks,
-    type TimelineTrackFilter,
+    buildTimelineClipTracks,
     type TimelineViewTables,
 } from "./timelineViewModel";
 
@@ -106,20 +105,16 @@ export const readVersionedTimelineViewTables = (
  *
  * - Tracks are only built from rows and a resolver of the same version. While the next version's
  *   rows load, the last tracks stay, so nothing flickers and no mismatched pair is ever built.
- * - Spans and diagnostics are cached per resolver version, so a selection change re-derives the
- *   tracks without asking the resolver again.
- *
- * @param selectedMarcherIds the selection, whose marcher tracks show by default (U-Q1). Pass a
- *        stable set: a new one rebuilds the tracks.
+ * - Spans and diagnostics are cached per resolver version.
+ * - One track per stored timeline (`buildTimelineClipTracks`, ui.md UI-9 "Tracks"), so the tracks
+ *   don't depend on the selected marchers.
  */
 export function useTimelineTracks({
     database,
     enabled,
-    selectedMarcherIds,
 }: {
     database: DbConnection;
     enabled: boolean;
-    selectedMarcherIds: ReadonlySet<number>;
 }): readonly TimelineInput[] {
     const resolver = useTimelineResolverStore((s) => s.resolver);
     const { version, displayVersion } = useTimelineViewVersions();
@@ -171,19 +166,12 @@ export function useTimelineTracks({
             loaded.displayVersion !== displayVersion
         )
             return null;
-        const filter: TimelineTrackFilter = {
-            kind: "default",
-            selectedMarcherIds,
-        };
-        return buildTimelineTracks(
-            {
-                tables: loaded.tables,
-                spansOf: cache.spansOf,
-                diagnostics: cache.diagnostics(),
-            },
-            filter,
-        );
-    }, [active, loaded, version, displayVersion, cache, selectedMarcherIds]);
+        return buildTimelineClipTracks({
+            tables: loaded.tables,
+            spansOf: cache.spansOf,
+            diagnostics: cache.diagnostics(),
+        });
+    }, [active, loaded, version, displayVersion, cache]);
 
     const last = useRef<readonly TimelineInput[]>(NO_TRACKS);
     if (built !== null) last.current = built;

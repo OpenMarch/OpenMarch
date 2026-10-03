@@ -1,82 +1,112 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { describeDbTests, type DbConnection, schema } from "@/test/base";
 import { transactionWithHistory } from "@/db-functions/history";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import type Page from "@/global/classes/Page";
 import { useTimingObjects } from "@/hooks";
-import { pageEndBeat } from "@/timeline/timelineCanvas";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
-    pageAtBeat,
-    pageForSeek,
-    pageForNavigation,
-    useTimelinePlayback,
-} from "../useTimelinePlayback";
+    canPlay,
+    navigationTarget,
+    pageAtPlayhead,
+    pageFlags,
+    playbackStep,
+    playStartBeat,
+} from "@/timeline/timelinePlayhead";
+import { useTimelinePageBridge } from "@/timeline/useTimelinePageBridge";
+import { useTimelinePlayback } from "../useTimelinePlayback";
 
 /**
- * The timeline's adapter onto the existing playback clock (P8.1): the cursor while paused, and
- * seeking, page navigation and play/pause through the selected page and IsPlayingContext.
+ * The timeline-mode playhead (ui.md UI-9; P8.11): pages are flags, the paused playhead rests on any
+ * whole beat, seeking doesn't change the selection, navigation selects a page's range (home for
+ * the first), and play resumes from the playhead and loops a selected range.
  */
 
 /** Pages as `fromDatabasePages` builds them: page 0 holds only the fixed beat 0. */
-const pagesStartingAt = (...starts: number[]) =>
-    starts.map(
-        (start, index) =>
-            ({
-                id: index + 1,
-                beats: [{ index: start }],
-            }) as unknown as Page,
-    );
+const pagesOf = (...beatLists: number[][]) =>
+    beatLists.map((indexes, i) => ({
+        id: i,
+        beats: indexes.map((index) => ({ index })),
+    }));
+/** Page 0 is beat 0; page 1 is beats 1-8 (flag 9); page 2 is beats 9-16 (flag 17) */
+const PAGES = pagesOf(
+    [0],
+    [1, 2, 3, 4, 5, 6, 7, 8],
+    [9, 10, 11, 12, 13, 14, 15, 16],
+);
+const store = () => useTimelineSelectionStore.getState();
 
-describe("pageAtBeat", () => {
-    const pages = pagesStartingAt(0, 1, 9);
+beforeEach(() => store().reset());
 
-    it("finds the page whose beats contain the beat", () => {
-        expect(pageAtBeat(pages, 0)?.id).toBe(1);
-        expect(pageAtBeat(pages, 1)?.id).toBe(2);
-        expect(pageAtBeat(pages, 8)?.id).toBe(2);
-        expect(pageAtBeat(pages, 9)?.id).toBe(3);
-        expect(pageAtBeat(pages, 40)?.id).toBe(3);
+describe("pages as flags", () => {
+    it("puts each page's flag at its end, and home's at 0", () => {
+        expect(
+            pageFlags(PAGES).map(({ page, flag, range }) => ({
+                id: page.id,
+                flag,
+                range,
+            })),
+        ).toEqual([
+            { id: 0, flag: 0, range: null },
+            { id: 1, flag: 9, range: { start: 1, end: 9 } },
+            { id: 2, flag: 17, range: { start: 9, end: 17 } },
+        ]);
+        expect(pageFlags([])).toEqual([]);
     });
 
-    it("returns null before the first page or without pages", () => {
-        expect(pageAtBeat(pagesStartingAt(1), 0)).toBeNull();
-        expect(pageAtBeat([], 3)).toBeNull();
+    it("finds the page containing or ending at the playhead", () => {
+        expect(pageAtPlayhead(PAGES, 0)?.id).toBe(0);
+        expect(pageAtPlayhead(PAGES, 1)?.id).toBe(1);
+        expect(pageAtPlayhead(PAGES, 5)?.id).toBe(1);
+        expect(pageAtPlayhead(PAGES, 9)?.id).toBe(1);
+        expect(pageAtPlayhead(PAGES, 10)?.id).toBe(2);
+        expect(pageAtPlayhead(PAGES, 17)?.id).toBe(2);
+        // Past the last flag: the last page
+        expect(pageAtPlayhead(PAGES, 30)?.id).toBe(2);
+        expect(pageAtPlayhead([], 3)).toBeNull();
+    });
+
+    it("navigates by flags from the playhead", () => {
+        const to = (
+            beat: number,
+            direction: Parameters<typeof navigationTarget>[2],
+        ) => navigationTarget(PAGES, beat, direction)?.page.id ?? null;
+        expect(to(0, "next-page")).toBe(1);
+        expect(to(5, "next-page")).toBe(1);
+        expect(to(9, "next-page")).toBe(2);
+        expect(to(17, "next-page")).toBeNull();
+        expect(to(17, "previous-page")).toBe(1);
+        expect(to(12, "previous-page")).toBe(1);
+        expect(to(9, "previous-page")).toBe(0);
+        expect(to(0, "previous-page")).toBeNull();
+        expect(to(12, "first-page")).toBe(0);
+        expect(to(0, "last-page")).toBe(2);
+        expect(navigationTarget([], 0, "first-page")).toBeNull();
     });
 });
 
-describe("pageForSeek", () => {
-    const pages = pagesStartingAt(0, 1, 9);
+describe("play", () => {
+    const range = { kind: "range", start: 1, end: 9 } as const;
+    const home = { kind: "home" } as const;
 
-    it("selects the page whose move contains or ends at the line", () => {
-        // Page 0 holds beat 0 and ends at line 1; page 1 is [1, 9); page 2 starts at 9
-        expect(pageForSeek(pages, 0)?.id).toBe(1);
-        expect(pageForSeek(pages, 1)?.id).toBe(1);
-        expect(pageForSeek(pages, 2)?.id).toBe(2);
-        expect(pageForSeek(pages, 9)?.id).toBe(2);
-        expect(pageForSeek(pages, 10)?.id).toBe(3);
-    });
-});
-
-describe("pageForNavigation", () => {
-    const pages = pagesStartingAt(0, 1, 9);
-
-    it("moves to the adjacent page and to either end", () => {
-        expect(pageForNavigation(pages, pages[1]!, "next-page")?.id).toBe(3);
-        expect(pageForNavigation(pages, pages[1]!, "previous-page")?.id).toBe(
-            1,
-        );
-        expect(pageForNavigation(pages, pages[1]!, "first-page")?.id).toBe(1);
-        expect(pageForNavigation(pages, null, "last-page")?.id).toBe(3);
+    it("starts at the playhead, or at a selected range's start from at or past its end", () => {
+        expect(playStartBeat(home, 5)).toBe(5);
+        expect(playStartBeat(range, 5)).toBe(5);
+        expect(playStartBeat(range, 9)).toBe(1);
+        expect(playStartBeat(range, 12)).toBe(1);
+        expect(canPlay(home, 17, 17)).toBe(false);
+        expect(canPlay(home, 16, 17)).toBe(true);
+        expect(canPlay(range, 17, 17)).toBe(true);
     });
 
-    it("stays put past either end or with nothing selected", () => {
-        expect(pageForNavigation(pages, pages[2]!, "next-page")).toBeNull();
-        expect(pageForNavigation(pages, pages[0]!, "previous-page")).toBeNull();
-        expect(pageForNavigation(pages, null, "next-page")).toBeNull();
-        expect(pageForNavigation([], null, "first-page")).toBeNull();
+    it("loops a selected range and stops at the end of the show otherwise", () => {
+        expect(playbackStep(range, 8.5, 17)).toBeNull();
+        expect(playbackStep(range, 9, 17)).toEqual({ loopTo: 1 });
+        expect(playbackStep(home, 9, 17)).toBeNull();
+        expect(playbackStep(home, 17, 17)).toBe("stop");
+        expect(playbackStep({ kind: "none" }, 17, 17)).toBe("stop");
     });
 });
 
@@ -97,44 +127,57 @@ const seedShow = (db: DbConnection) =>
     });
 
 describeDbTests("useTimelinePlayback", (it) => {
-    const renderPlayback = (wrapper: ComponentType<{ children: ReactNode }>) =>
+    const renderPlayback = (
+        wrapper: ComponentType<{ children: ReactNode }>,
+        bridge = false,
+    ) =>
         renderHook(
             () => {
                 const { beats, pages } = useTimingObjects()!;
+                useTimelinePageBridge(bridge);
                 return {
                     pages,
+                    beats,
                     playback: useTimelinePlayback({ beats, pages }),
                     selected: useSelectedPage()!,
                     playing: useIsPlaying()!,
+                    selection: useTimelineSelectionStore((s) => s.selection),
                 };
             },
             { wrapper },
         );
 
-    it("puts the paused cursor at the selected page's end beat", async ({
+    it("shows the playhead, and seeking moves only the playhead", async ({
         db,
         wrapper,
     }) => {
         await seedShow(db);
         const { result } = renderPlayback(wrapper);
         await waitFor(() => expect(result.current.pages).toHaveLength(3));
-
         expect(result.current.playback.positionBeat).toBe(0);
+        expect(result.current.selection).toEqual({ kind: "home" });
+
         act(() => {
-            result.current.selected.setSelectedPage({ id: 1 });
+            store().selectRange(1, 9);
         });
         expect(result.current.playback.positionBeat).toBe(9);
         act(() => {
-            result.current.selected.setSelectedPage({ id: 2 });
+            result.current.playback.onSeek!(5);
+        });
+        expect(result.current.playback.positionBeat).toBe(5);
+        expect(result.current.selection).toEqual({
+            kind: "range",
+            start: 1,
+            end: 9,
+        });
+        // Any whole beat, the end of the show (the last flag) included
+        act(() => {
+            result.current.playback.onSeek!(17);
         });
         expect(result.current.playback.positionBeat).toBe(17);
-        act(() => {
-            result.current.selected.setSelectedPage({ id: 0 });
-        });
-        expect(result.current.playback.positionBeat).toBe(1);
     });
 
-    it("seeks and navigates by selecting pages, and only while paused", async ({
+    it("navigates to flags, selecting each page's range or home, only while paused", async ({
         db,
         wrapper,
     }) => {
@@ -143,81 +186,43 @@ describeDbTests("useTimelinePlayback", (it) => {
         await waitFor(() => expect(result.current.pages).toHaveLength(3));
 
         act(() => {
-            result.current.playback.onSeek!(12);
+            result.current.playback.onNavigate!("next-page");
         });
-        expect(result.current.selected.selectedPage?.id).toBe(2);
-        act(() => {
-            result.current.playback.onSeek!(2);
+        expect(result.current.selection).toEqual({
+            kind: "range",
+            start: 1,
+            end: 9,
         });
-        expect(result.current.selected.selectedPage?.id).toBe(1);
-        act(() => {
-            result.current.playback.onNavigate!("previous-page");
-        });
-        expect(result.current.selected.selectedPage?.id).toBe(0);
+        expect(result.current.playback.positionBeat).toBe(9);
         act(() => {
             result.current.playback.onNavigate!("last-page");
         });
-        expect(result.current.selected.selectedPage?.id).toBe(2);
+        expect(result.current.selection).toEqual({
+            kind: "range",
+            start: 9,
+            end: 17,
+        });
+        expect(result.current.playback.positionBeat).toBe(17);
+        act(() => {
+            result.current.playback.onNavigate!("first-page");
+        });
+        expect(result.current.selection).toEqual({ kind: "home" });
+        expect(result.current.playback.positionBeat).toBe(0);
 
         act(() => {
             result.current.playing.setIsPlaying(true);
         });
         act(() => {
-            result.current.playback.onSeek!(1);
+            result.current.playback.onNavigate!("last-page");
         });
         act(() => {
-            result.current.playback.onNavigate!("first-page");
+            result.current.playback.onSeek!(4);
         });
-        expect(result.current.selected.selectedPage?.id).toBe(2);
+        expect(result.current.selection).toEqual({ kind: "home" });
+        expect(store().playheadBeat).toBe(0);
     });
 
-    it("keeps the selection when seeking to the paused cursor", async ({
-        db,
-        wrapper,
-    }) => {
-        await seedShow(db);
-        const { result } = renderPlayback(wrapper);
-        await waitFor(() => expect(result.current.pages).toHaveLength(3));
-
-        for (const id of [0, 1, 2]) {
-            act(() => {
-                result.current.selected.setSelectedPage({ id });
-            });
-            const cursor = result.current.playback.positionBeat;
-            expect(cursor).toBe(
-                pageEndBeat(result.current.selected.selectedPage!),
-            );
-            act(() => {
-                result.current.playback.onSeek!(cursor);
-            });
-            expect(result.current.selected.selectedPage?.id).toBe(id);
-            expect(result.current.playback.positionBeat).toBe(cursor);
-        }
-    });
-
-    it("selects the page whose move a mid-page seek lands in", async ({
-        db,
-        wrapper,
-    }) => {
-        await seedShow(db);
-        const { result } = renderPlayback(wrapper);
-        await waitFor(() => expect(result.current.pages).toHaveLength(3));
-
-        // Page 1 moves over [1, 9); a seek to line 5 selects it and the cursor goes to its end
-        act(() => {
-            result.current.playback.onSeek!(5);
-        });
-        expect(result.current.selected.selectedPage?.id).toBe(1);
-        expect(result.current.playback.positionBeat).toBe(9);
-        // Line 10 is inside page 2's move
-        act(() => {
-            result.current.playback.onSeek!(10);
-        });
-        expect(result.current.selected.selectedPage?.id).toBe(2);
-        expect(result.current.playback.positionBeat).toBe(17);
-    });
-
-    it("names the selected page while paused, not the page under the cursor", async ({
+    it("names the page containing or ending at the playhead while paused", async ({
         db,
         wrapper,
     }) => {
@@ -226,21 +231,25 @@ describeDbTests("useTimelinePlayback", (it) => {
         await waitFor(() => expect(result.current.pages).toHaveLength(3));
 
         act(() => {
-            result.current.selected.setSelectedPage({ id: 1 });
+            store().seek(9);
         });
-        // The cursor is at beat 9, page 2's first beat, but page 1 is selected
-        expect(result.current.playback.positionBeat).toBe(9);
+        // Beat 9 is page 1's flag (and page 2's first beat): page 1 ends there
         expect(result.current.playback.pageLabel).toBe(
-            result.current.selected.selectedPage!.name,
+            result.current.pages[1]!.name,
         );
-
+        act(() => {
+            store().seek(10);
+        });
+        expect(result.current.playback.pageLabel).toBe(
+            result.current.pages[2]!.name,
+        );
         act(() => {
             result.current.playing.setIsPlaying(true);
         });
         expect(result.current.playback.pageLabel).toBeUndefined();
     });
 
-    it("plays only from a page with a next page, and always pauses", async ({
+    it("plays from the playhead, from a selected range's start past its end, and pauses keeping the selection", async ({
         db,
         wrapper,
     }) => {
@@ -248,21 +257,24 @@ describeDbTests("useTimelinePlayback", (it) => {
         const { result } = renderPlayback(wrapper);
         await waitFor(() => expect(result.current.pages).toHaveLength(3));
 
+        // At the end of the show with nothing to loop: nothing to play
         act(() => {
-            result.current.selected.setSelectedPage({ id: 2 });
+            store().seek(17);
         });
         act(() => {
             result.current.playback.onPlayingChange!(true);
         });
         expect(result.current.playback.isPlaying).toBe(false);
 
+        // The playhead sits on the selected range's end: play starts at its start
         act(() => {
-            result.current.selected.setSelectedPage({ id: 1 });
+            store().selectRange(1, 9);
         });
         act(() => {
             result.current.playback.onPlayingChange!(true);
         });
         expect(result.current.playback.isPlaying).toBe(true);
+        expect(store().playheadBeat).toBe(0); // beat 1 is show time 0
         // While playing, the cursor follows the audio clock and is never -1
         expect(result.current.playback.positionBeat).toBeGreaterThanOrEqual(0);
 
@@ -270,7 +282,56 @@ describeDbTests("useTimelinePlayback", (it) => {
             result.current.playback.onPlayingChange!(false);
         });
         expect(result.current.playback.isPlaying).toBe(false);
-        // Back at page 1's end beat
-        expect(result.current.playback.positionBeat).toBe(9);
+        expect(result.current.selection).toEqual({
+            kind: "range",
+            start: 1,
+            end: 9,
+        });
+
+        // Mid-range, play resumes where the playhead is
+        act(() => {
+            store().seek(5);
+        });
+        act(() => {
+            result.current.playback.onPlayingChange!(true);
+        });
+        expect(store().playheadBeat).toBe(5);
+    });
+
+    it("keeps the legacy selected page on the playhead's page, and back (TEMPORARY, P8.12)", async ({
+        db,
+        wrapper,
+    }) => {
+        await seedShow(db);
+        const { result } = renderPlayback(wrapper, true);
+        await waitFor(() => expect(result.current.pages).toHaveLength(3));
+
+        act(() => {
+            store().selectRange(9, 17);
+        });
+        await waitFor(() =>
+            expect(result.current.selected.selectedPage?.id).toBe(2),
+        );
+        act(() => {
+            store().seek(4);
+        });
+        await waitFor(() =>
+            expect(result.current.selected.selectedPage?.id).toBe(1),
+        );
+        // Selecting a page elsewhere moves the playhead to its flag, not the selection
+        act(() => {
+            result.current.selected.setSelectedPage({ id: 2 });
+        });
+        await waitFor(() => expect(store().playheadBeat).toBe(17));
+        expect(result.current.selection).toEqual({
+            kind: "range",
+            start: 9,
+            end: 17,
+        });
+        act(() => {
+            result.current.selected.setSelectedPage({ id: 0 });
+        });
+        await waitFor(() => expect(store().playheadBeat).toBe(0));
+        expect(result.current.selected.selectedPage?.id).toBe(0);
     });
 });

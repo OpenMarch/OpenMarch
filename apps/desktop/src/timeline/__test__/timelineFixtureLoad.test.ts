@@ -101,7 +101,9 @@ describeDbTests("timeline fixture loader", (it) => {
     }) => {
         const fixture = sc11(3, SMALL);
         const loaded = await loadTimelineFixture(db, fixture);
-        expect(await tableCount(db, schema.timelines)).toBe(SMALL.timelines);
+        expect(await tableCount(db, schema.timelines)).toBe(
+            fixture.timelines!.length,
+        );
         expect(await tableCount(db, schema.timeline_transitions)).toBe(
             Object.keys(fixture.show.transitions).length,
         );
@@ -163,8 +165,10 @@ describeDbTests("timeline fixture loader", (it) => {
         expectStoreMatchesFixture(first, loadedFirst);
         expectStoreMatchesFixture(second, loadedSecond, 1);
         const timelines = await db.select().from(schema.timelines);
+        // A timeline per transition range (C-11)
         expect(timelines.map((t) => [t.start_beat, t.end_beat])).toEqual([
-            [0, 12],
+            [0, 4],
+            [4, 12],
             [1, 17],
         ]);
     });

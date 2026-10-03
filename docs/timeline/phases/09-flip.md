@@ -118,9 +118,9 @@ From the P9.4 packaged smoke run: on macOS a Quit sent while the "Preparing your
 
 ### P9.10: Convert to range-aligned timelines, then enforce C-11
 
-- Owner: unassigned
-- Status: open
-- PR: none
+- Owner: timeline-worker (timeline/p9-10-range-aligned-convert)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/50
 - Parallel: no
 - Depends on: P8.10
 
@@ -601,4 +601,39 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   - `pnpm --dir apps/desktop run build`: passed.
   - Skipped per the policy: the full `test:history` suite and e2e. `build:electron` wasn't run.
 - **Next:** re-review and merge by the lead.
+- **Blockers:** none.
+
+### 2026-10-02 · timeline-worker (timeline/p9-10-range-aligned-convert) · P9.10
+
+- **Done:** wip commit 6413e917 on `timeline/p9-10-range-aligned-convert`. The converter writes one timeline per page move over exactly the page's range (page 1 from beat 1), each with the one transition spanning it, through the checked `createTimelineTransitionsInTransaction`; page 0 gets no timeline. `createLegacyPageTransitionsInTransaction` and the multi-range refusal in `setTimelineRangeInTransaction` are gone. `timeline_commit_violations` has an `E-T1` row; `_blank.dots` regenerated with `pnpm migrate`.
+- **Checks:** `tsc --noEmit` clean; focused vitest (planner, pageConversion, conversionEquality, conversionCorpus, timelineRangeEdit, `electron/database`): 345 passed, 2 skipped.
+- **Next:** run the wider focused timeline suites, check ripple, P7.3 and P7.2 moves against the new shape, then open the PR.
+- **Blockers:** none.
+- **Resume from:** `git checkout timeline/p9-10-range-aligned-convert`; run `npx vitest run --silent=true src/db-functions/__test__/timeline* src/timeline` in `apps/desktop` and fix fallout.
+
+### 2026-10-02 · timeline-worker (timeline/p9-10-range-aligned-convert) · P9.10
+
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/50, commit 6c15a201 plus 02c0061d. The second commit only undoes stale `docs/timeline` copies that the squash picked up, so the PR's diff is desktop-only. Squash on merge.
+  - **Converter.** It writes one timeline per page move, over exactly the page's range, each with the one transition spanning it. The writes go through the checked `createTimelineTransitionsInTransaction`, and `PageConversionResult.timelineIds` maps page to timeline.
+  - **Page 1 starts at beat 1**, page 0's flag (`pageEndBeat(page 0)`), the same show time as beat 0 (UI-5). Page 0 gets no timeline, so a show with only page 0 converts to homes and no timeline rows.
+  - **Names.** The timelines are unnamed; `CONVERTED_TIMELINE_NAME` is gone.
+  - **E-T1 at commit.** `timeline_commit_violations` has an `E-T1` row for a transition whose range differs from its timeline's. It is rebuilt on every open with the view map, so it needs no migration. `_blank.dots` was regenerated.
+  - **Legacy code removed:** `createLegacyPageTransitionsInTransaction`, and the multi-range refusal in `setTimelineRangeInTransaction`.
+  - **Checked, no change needed:** the ripple, P7.3's join and P7.2's moves against the new shape. The ripple tests now assert that timeline ranges equal transition ranges.
+  - **Tests.** Raw-SQL test seeds that put differently ranged transitions in one timeline now use one timeline per transition. New E-T1 tests are in storage QA, `timelineRangeEdit` and `timelineTriggers`.
+- **Checks:**
+  - `tsc --noEmit`: clean.
+  - eslint: 0 errors.
+  - prettier and cspell: clean.
+  - `pnpm migrate`: no new migration.
+  - Full desktop vitest: 174 files passed, 9 skipped; 2484 tests passed.
+  - `test:timeline`: 174 files passed, 9 skipped; 2438 tests passed.
+  - Focused `test:history` on 8 changed files: 115 passed.
+  - `pnpm --dir apps/desktop run build`: passed.
+  - Skipped per the policy: the full `test:history` suite and e2e. `build:electron` and an app launch weren't run.
+- **Not done:** `clipsOfShape` in `src/timeline/timelineViewModel.ts` still carries `TODO(P9.10)`. P8.11 is rewriting that file, so I left it; see the cross-phase note in the phase 8 file.
+- **For the lead:**
+  - Implementation-plan C-11 and ADR 0001 still say the E-T1 check "waits for P9.10". They can be updated when this merges.
+  - Files converted by an earlier dev build (one show-wide timeline) now fail every edit at commit with E-T1. Re-convert them with `convertPages({ replace: true })`, or from the backup.
+- **Next:** review and merge by the lead.
 - **Blockers:** none.

@@ -5,8 +5,8 @@ import { useTimelineResolverStore } from "./timelineStore";
 
 /**
  * Draws the static (not playing) canvas in timeline mode (docs/timeline/phases/05-rendering.md
- * P5.5): every marcher at the resolver's position at the selected page's end beat
- * (`pageEndBeat`), in place of the marcher_pages render. Redraws when the resolver's answers
+ * P5.5): every marcher at the resolver's position at the paused playhead (`beat`, UI-9), or else
+ * the selected page's end beat (`pageEndBeat`), in place of the marcher_pages render. Redraws when the resolver's answers
  * change. When the resolver isn't ready, marchers stay where they are.
  *
  * Does nothing while `enabled` is false (the flag is off) or while playing, when `useAnimation`
@@ -18,11 +18,16 @@ import { useTimelineResolverStore } from "./timelineStore";
 export function useTimelineStaticRender({
     canvas,
     selectedPage,
+    beat,
     isPlaying,
     enabled,
     redrawKey,
 }: {
     canvas: OpenMarchCanvas | null;
+    /**
+     * The beat to draw (UI-9: the paused playhead). Without it, the selected page's end beat.
+     */
+    beat?: number;
     selectedPage: {
         /** Stamped on each marcher's `coordinate`, so its `page_id` is current */
         readonly id?: number;
@@ -38,7 +43,7 @@ export function useTimelineStaticRender({
     useEffect(() => {
         if (!enabled || !canvas || !selectedPage || isPlaying) return;
         const buffer = (bufferRef.current ??= new TimelinePositionBuffer());
-        if (!buffer.fill(pageEndBeat(selectedPage))) return;
+        if (!buffer.fill(beat ?? pageEndBeat(selectedPage))) return;
         canvas.renderMarcherPositions(buffer, selectedPage.id);
-    }, [enabled, canvas, selectedPage, isPlaying, version, redrawKey]);
+    }, [enabled, canvas, selectedPage, beat, isPlaying, version, redrawKey]);
 }

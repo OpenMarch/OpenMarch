@@ -82,9 +82,11 @@ const seedShow = (db: DbConnection) =>
                 home_y: HOMES[id]![1],
             })),
         );
-        await tx
-            .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 32 });
+        // One timeline per move, which spans it (C-11)
+        await tx.insert(schema.timelines).values([
+            { id: 1, name: "Opener", start_beat: 1, end_beat: 9 },
+            { id: 2, start_beat: 9, end_beat: 17 },
+        ]);
         await tx.insert(schema.timeline_transitions).values([
             {
                 id: 1,
@@ -98,7 +100,7 @@ const seedShow = (db: DbConnection) =>
             },
             {
                 id: 2,
-                timeline_id: 1,
+                timeline_id: 2,
                 dest_shape_id: null,
                 path_style: "direct",
                 path_params: null,

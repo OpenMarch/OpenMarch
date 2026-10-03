@@ -8,7 +8,9 @@ import { conToastError } from "@/utilities/utils";
 import {
     TIMELINE_DB_ERROR_MESSAGE,
     TIMELINE_ERROR_MESSAGES,
+    TIMELINE_LEGACY_CONVERSION_MESSAGE,
     TIMELINE_NOT_READY_MESSAGE,
+    isLegacyConversionViolation,
     TIMELINE_UNKNOWN_ERROR_MESSAGE,
     timelineErrorCode,
     timelineErrorMessage,
@@ -81,6 +83,52 @@ describe("timelineErrorMessage", () => {
         const message = timelineErrorMessage(error);
         expect(message).toBe(TIMELINE_ERROR_MESSAGES["E-T6"]!.defaultMessage);
         expect(message).not.toContain("transition 4");
+    });
+
+    it("E-T1 says a transition spans its timeline (C-11), from a row trigger or the commit check", () => {
+        const message = TIMELINE_ERROR_MESSAGES["E-T1"]!.defaultMessage;
+        expect(message).toMatch(/span its whole timeline/);
+        expect(timelineErrorMessage(new TimelineWriteError("E-T1", "x"))).toBe(
+            message,
+        );
+        // One transition off its timeline's range (not a legacy file)
+        const single = new TimelineCommitViolationError([
+            {
+                code: "E-T1",
+                transitionId: 2,
+                detail: "transition spans [8, 16) but its timeline spans [0, 16)",
+            },
+        ]);
+        expect(isLegacyConversionViolation(single)).toBe(false);
+        expect(timelineErrorMessage(single)).toBe(message);
+    });
+
+    it("E-T1 from a file an earlier development build converted says to convert it again", () => {
+        // One show-wide timeline owning a transition per page, as the old converter wrote
+        const legacy = new TimelineCommitViolationError([
+            {
+                code: "E-T1",
+                transitionId: 1,
+                detail: "transition spans [1, 9) but its timeline spans [0, 49)",
+            },
+            {
+                code: "E-T1",
+                transitionId: 2,
+                detail: "transition spans [9, 17) but its timeline spans [0, 49)",
+            },
+        ]);
+        expect(isLegacyConversionViolation(legacy)).toBe(true);
+        expect(
+            timelineErrorMessage(legacy, { translate: (_key, text) => text }),
+        ).toBe(TIMELINE_LEGACY_CONVERSION_MESSAGE.defaultMessage);
+        // Through Tolgee the ICU-quoted braces render as written
+        const message = timelineErrorMessage(legacy);
+        expect(message).toMatch(/earlier development build/);
+        expect(message).toMatch(/backup/);
+        expect(message).toContain("convertPages({ replace: true })");
+        expect(
+            isLegacyConversionViolation(new TimelineWriteError("E-T1", "x")),
+        ).toBe(false);
     });
 
     it("maps the row-trigger E-T6 the same way", () => {
@@ -201,6 +249,7 @@ describe("en.json", () => {
             TIMELINE_DB_ERROR_MESSAGE,
             TIMELINE_UNKNOWN_ERROR_MESSAGE,
             TIMELINE_NOT_READY_MESSAGE,
+            TIMELINE_LEGACY_CONVERSION_MESSAGE,
         ])
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });

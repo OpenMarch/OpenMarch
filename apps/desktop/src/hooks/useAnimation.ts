@@ -220,7 +220,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             }
             canvas.requestRenderAll();
             // The resolver has a position at every beat; the end of the show stops playback
-            // through updateSelectedPage
+            // through useTimelinePlaybackDriver (UI-9)
             return true;
         },
         [canvas, beats],
@@ -270,7 +270,8 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 const currentTime = getLivePlaybackPosition() * 1000; // s to ms
                 const continueAnimation =
                     setMarcherPositionsAtTime(currentTime);
-                void updateSelectedPage(currentTime);
+                // Timeline mode: useTimelinePlaybackDriver loops and stops; no page follows playback
+                if (!timelineMode) void updateSelectedPage(currentTime);
                 animationFrameRef.current = requestAnimationFrame(animate);
                 if (!continueAnimation) setIsPlaying(false);
             } catch (e) {
@@ -299,6 +300,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         canvas,
         setMarcherPositionsAtTime,
         updateSelectedPage,
+        timelineMode,
         marcherTimelines,
         setIsPlaying,
     ]);

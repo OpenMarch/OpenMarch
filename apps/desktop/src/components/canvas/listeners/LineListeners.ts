@@ -138,7 +138,7 @@ export default class LineListeners
 
                 this._isDrawing = false;
 
-                // Make canvasMarchers selectable again
+                // Make canvasMarchers selectable again (dimmed ones stay unselectable, UI-9)
                 this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
                     canvasMarcher.makeSelectable();
                 });

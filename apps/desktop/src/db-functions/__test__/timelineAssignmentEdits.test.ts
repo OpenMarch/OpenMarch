@@ -151,13 +151,12 @@ const setUp = async (db: DbConnection) => {
                 },
             ],
         });
-        const [one, two] = await createTimelinesInTransaction({
+        // One timeline per range (C-12), holding both transitions (C-11)
+        const [one] = await createTimelinesInTransaction({
             tx,
-            newTimelines: [
-                { startBeat: 0, endBeat: 8 },
-                { startBeat: 0, endBeat: 8 },
-            ],
+            newTimelines: [{ startBeat: 0, endBeat: 8 }],
         });
+        const two = one;
         const [t] = await createTimelineTransitionsInTransaction({
             tx,
             newTransitions: [

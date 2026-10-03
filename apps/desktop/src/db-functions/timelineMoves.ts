@@ -217,8 +217,7 @@ export const moveMarchersOnPageInTransaction = async ({
         if (!best || row.layer > best.layer) winners.set(row.marcherId, row);
     }
 
-    const plans: { move: TimelineMarcherMove; row: (typeof rows)[number] }[] =
-        [];
+    const plans: SlotMovePlan[] = [];
     for (const move of moves) {
         const row = winners.get(move.marcherId);
         if (!row || row.end !== endBeat || row.transitionEnd !== endBeat)
@@ -227,15 +226,47 @@ export const moveMarchersOnPageInTransaction = async ({
                     page,
                 )} (beat ${endBeat}), so there is no destination to change there`,
             );
+        plans.push({ move, row });
+    }
+    await writeSlotMoves({ tx, plans, where: pageLabel(page), result });
+    return result;
+};
+
+/** A moved marcher and the slot it arrives in. */
+interface SlotMovePlan {
+    move: TimelineMarcherMove;
+    row: {
+        transitionId: number;
+        slotIndex: number;
+        shapeId: number | null;
+        pathStyle: string;
+        slotCount: number;
+    };
+}
+
+/**
+ * Sets each planned slot's destination. Refuses follow-the-leader into a shape (`E-T5`), and
+ * switches a shape-backed transition to individual points first (Q-14), reading and sampling
+ * every shape before the first write, so a refusal writes nothing.
+ */
+const writeSlotMoves = async ({
+    tx,
+    plans,
+    where,
+    result,
+}: {
+    tx: DbTransaction;
+    plans: readonly SlotMovePlan[];
+    /** Names the page or timeline in refusals */
+    where: string;
+    result: TimelineMoveResult;
+}): Promise<void> => {
+    for (const { move, row } of plans)
         if (row.shapeId !== null && row.pathStyle === "follow_the_leader")
             throw new TimelineWriteError(
                 "E-T5",
-                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${pageLabel(
-                    page,
-                )}; move the shape instead`,
+                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${where}; move the shape instead`,
             );
-        plans.push({ move, row });
-    }
 
     // Shape-backed transitions switch to individual points (Q-14), copying the shape's samples.
     // Read and sample every shape before the first write.
@@ -274,7 +305,6 @@ export const moveMarchersOnPageInTransaction = async ({
             slotIndex: row.slotIndex,
         });
     }
-    return result;
 };
 
 /** `moveMarchersOnPageInTransaction` as one undoable edit. */
@@ -293,4 +323,175 @@ export const moveMarchersOnPage = async ({
     return await transactionWithHistory(db, "moveMarchersOnPage", (tx) =>
         moveMarchersOnPageInTransaction({ tx, page, moves }),
     );
+};
+
+/**
+ * What a canvas move edits under UI-9 (docs/timeline/ui.md, P8.15): the marchers' homes (home, at
+ * beat 0, with no timeline selected) or the endings of their transitions in one stored timeline.
+ */
+export type TimelineEditTarget =
+    | { readonly kind: "home" }
+    | { readonly kind: "timeline"; readonly timelineId: number };
+
+/**
+ * UI-9 Editing: sets the **ending** of each moved marcher's transition in timeline `timelineId`,
+ * found by the timeline, not by an end beat. Its start is wherever the marcher is at the
+ * timeline's start (R-4), so only the slot destination changes.
+ *
+ * Refused (`E-ARGS`), before any write, for a marcher that:
+ * - has no assignment in the timeline (it isn't in it; the canvas dims it);
+ * - has more than one (a converted or shape-cast show; UI-9 "More than one row", _lead default_):
+ *   the inspector edits those;
+ * - has one that doesn't end at the timeline's end, or that a higher layer steals at the end
+ *   (R-2), since then its destination isn't where the marcher is drawn there.
+ *
+ * Shape-backed and follow-the-leader transitions are handled as in `moveMarchersOnPage`.
+ */
+// eslint-disable-next-line max-lines-per-function
+export const moveMarchersInTimelineInTransaction = async ({
+    tx,
+    timelineId,
+    moves,
+}: {
+    tx: DbTransaction;
+    timelineId: number;
+    moves: readonly TimelineMarcherMove[];
+}): Promise<TimelineMoveResult> => {
+    const result: TimelineMoveResult = {
+        homes: [],
+        slots: [],
+        convertedTransitionIds: [],
+    };
+    if (moves.length === 0) return result;
+    refuseDuplicateMarchers(moves);
+    for (const m of moves)
+        assertValid(validateDestination([m.x, m.y]), "position");
+
+    const timeline = await tx
+        .select()
+        .from(schema.timelines)
+        .where(eq(schema.timelines.id, timelineId))
+        .get();
+    if (!timeline) refuse(`timeline ${timelineId} does not exist`);
+    const endBeat = timeline.end_beat;
+    const marcherIds = moves.map((m) => m.marcherId);
+
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const rows = await tx
+        .select({
+            marcherId: a.marcher_id,
+            transitionId: a.transition_id,
+            slotIndex: a.slot_index,
+            end: a.end_beat,
+            layer: a.layer,
+            shapeId: t.dest_shape_id,
+            pathStyle: t.path_style,
+            slotCount: t.slot_count,
+        })
+        .from(a)
+        .innerJoin(t, eq(a.transition_id, t.id))
+        .where(
+            and(
+                inArray(a.marcher_id, marcherIds),
+                eq(t.timeline_id, timelineId),
+            ),
+        )
+        .all();
+    const byMarcher = new Map<number, (typeof rows)[number][]>();
+    for (const row of rows)
+        byMarcher.set(row.marcherId, [
+            ...(byMarcher.get(row.marcherId) ?? []),
+            row,
+        ]);
+
+    // R-2: the highest layer among each marcher's rows covering the last moment before the end
+    const covering = await tx
+        .select({ marcherId: a.marcher_id, layer: a.layer })
+        .from(a)
+        .where(
+            and(
+                inArray(a.marcher_id, marcherIds),
+                lt(a.start_beat, endBeat),
+                gte(a.end_beat, endBeat),
+            ),
+        )
+        .all();
+    const topLayer = new Map<number, number>();
+    for (const row of covering)
+        topLayer.set(
+            row.marcherId,
+            Math.max(topLayer.get(row.marcherId) ?? -Infinity, row.layer),
+        );
+
+    const plans: SlotMovePlan[] = [];
+    for (const move of moves) {
+        const own = byMarcher.get(move.marcherId) ?? [];
+        if (own.length === 0)
+            refuse(
+                `marcher ${await marcherLabel(tx, move.marcherId)} isn't in this timeline. Add it first: right-click the timeline and choose Add selected marchers.`,
+            );
+        if (own.length > 1)
+            refuse(
+                `marcher ${await marcherLabel(tx, move.marcherId)} has more than one move in this timeline. Edit its moves in the inspector.`,
+            );
+        const row = own[0]!;
+        if (row.end !== endBeat)
+            refuse(
+                `marcher ${await marcherLabel(tx, move.marcherId)}'s move in this timeline ends at beat ${row.end}, before the timeline's end (beat ${endBeat}). Edit it in the inspector.`,
+            );
+        if ((topLayer.get(move.marcherId) ?? row.layer) > row.layer)
+            refuse(
+                `marcher ${await marcherLabel(tx, move.marcherId)} is in a move on a higher layer at beat ${endBeat}, so this timeline doesn't set where it is there. Select that move's timeline instead.`,
+            );
+        plans.push({ move, row });
+    }
+    await writeSlotMoves({
+        tx,
+        plans,
+        where: `the timeline ending at beat ${endBeat}`,
+        result,
+    });
+    return result;
+};
+
+/**
+ * A canvas move as one undoable edit (UI-9 Editing, Home): the homes for `{kind: "home"}`, the
+ * endings in the timeline otherwise (`moveMarchersInTimelineInTransaction`). Nothing to move
+ * opens no edit.
+ */
+export const moveMarchersInTarget = async ({
+    db,
+    target,
+    moves,
+}: {
+    db: DbConnection;
+    target: TimelineEditTarget;
+    moves: readonly TimelineMarcherMove[];
+}): Promise<TimelineMoveResult> => {
+    if (moves.length === 0)
+        return { homes: [], slots: [], convertedTransitionIds: [] };
+    return await transactionWithHistory(db, "moveMarchers", async (tx) => {
+        if (target.kind === "timeline")
+            return await moveMarchersInTimelineInTransaction({
+                tx,
+                timelineId: target.timelineId,
+                moves,
+            });
+        refuseDuplicateMarchers(moves);
+        for (const m of moves)
+            assertValid(validateDestination([m.x, m.y]), "position");
+        await updateMarcherHomesInTransaction({
+            tx,
+            modifiedHomes: moves.map((m) => ({
+                marcherId: m.marcherId,
+                home: [m.x, m.y],
+            })),
+        });
+        return {
+            homes: moves.map((m) => m.marcherId),
+            slots: [],
+            convertedTransitionIds: [],
+        };
+    });
 };

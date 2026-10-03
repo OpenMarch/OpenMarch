@@ -50,19 +50,27 @@ const pathParamsFor = (t: TransitionRow): TimelinePathParams => {
     return null;
 };
 
-/** One timeline over every transition, when the fixture names none. */
+/**
+ * When the fixture names no timelines: one timeline per distinct transition range, holding every
+ * transition over that range, since a transition spans its whole timeline (C-11). Numbered from 1
+ * in order of first appearance.
+ */
 const defaultTimelines = (fixture: TimelineFixture): FixtureTimeline[] => {
-    const transitions = Object.values(fixture.show.transitions);
-    if (transitions.length === 0) return [];
-    return [
-        {
-            id: 1,
-            name: fixture.name,
-            start: Math.min(...transitions.map((t) => t.start)),
-            end: Math.max(...transitions.map((t) => t.end)),
-            transitions: transitions.map((t) => t.id),
-        },
-    ];
+    const byRange = new Map<string, FixtureTimeline>();
+    for (const t of Object.values(fixture.show.transitions)) {
+        const key = `${t.start}:${t.end}`;
+        const timeline = byRange.get(key);
+        if (timeline) timeline.transitions.push(t.id);
+        else
+            byRange.set(key, {
+                id: byRange.size + 1,
+                name: fixture.name,
+                start: t.start,
+                end: t.end,
+                transitions: [t.id],
+            });
+    }
+    return [...byRange.values()];
 };
 
 const nextDrillOrder = async (tx: DbTransaction): Promise<number> => {
@@ -127,6 +135,8 @@ export async function writeTimelineFixtureInTransaction({
     const timelineOf = new Map<number, number>();
     const createdTimelines = await createTimelinesInTransaction({
         tx,
+        // A scenario is loaded as written, and may share ranges (it predates C-12)
+        allowSharedRanges: true,
         newTimelines: timelines.map((l) => ({
             name: l.name,
             startBeat: l.start + beatOffset,

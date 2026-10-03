@@ -13,7 +13,7 @@ import {
     stopTimelineResolver,
     useTimelineResolverStore,
 } from "../timelineStore";
-import { marcherTrackId, shapeTrackId } from "../timelineViewModel";
+import { timelineTrackId } from "../timelineViewModel";
 import { useTimelineTracks } from "../useTimelineTracks";
 
 const lockCalls = vi.hoisted(() => ({ count: 0 }));
@@ -31,7 +31,7 @@ vi.mock("@/db-functions/history", async (importOriginal) => {
 
 /**
  * `useTimelineTracks` (P8.8) against a real database: it builds the tracks once the resolver is
- * ready, and rebuilds them after each committed edit and undo.
+ * ready, and rebuilds them after each committed edit and undo. One track per timeline (UI-9).
  */
 
 /** Two marchers moving into a line over [1, 9), on timeline 1. */
@@ -49,7 +49,7 @@ const seedShow = (db: DbConnection) =>
         );
         await tx
             .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 16 });
+            .values({ id: 1, name: "Opener", start_beat: 1, end_beat: 9 });
         await tx.insert(schema.timeline_shapes).values({
             id: 1,
             name: "Front line",
@@ -106,49 +106,49 @@ const stealMarcher1 = (db: DbConnection) =>
         });
     });
 
-const NONE = new Set<number>();
-
 afterEach(() => {
     stopTimelineResolver();
 });
 
 describeDbTests("useTimelineTracks", (it) => {
-    it("rebuilds the tracks after a committed edit and its undo", async ({
+    it("rebuilds one track per timeline after a committed edit and its undo (UI-9)", async ({
         db,
     }) => {
         await seedShow(db);
         await startTimelineResolver(db);
         const { result } = renderHook(() =>
-            useTimelineTracks({
-                database: db,
-                enabled: true,
-                selectedMarcherIds: NONE,
-            }),
+            useTimelineTracks({ database: db, enabled: true }),
         );
         await waitFor(() =>
             expect(result.current.map((t) => t.id)).toEqual([
-                shapeTrackId(1, 1),
+                timelineTrackId(1),
             ]),
         );
         expect(result.current[0]).toMatchObject({
-            label: "Front line",
+            label: "Opener",
+            linkId: 1,
+            targetType: "timeline",
             startBeatIndex: 1,
             endBeatIndex: 9,
         });
+        // Active where its members move in it
+        expect(result.current[0]!.activitySpans).toEqual([
+            { startBeatIndex: 1, endBeatIndex: 9, active: true },
+        ]);
 
         await stealMarcher1(db);
         await waitFor(() =>
             expect(result.current.map((t) => t.id)).toEqual([
-                shapeTrackId(1, 1),
-                marcherTrackId(2, 1),
+                timelineTrackId(1),
+                timelineTrackId(2),
             ]),
         );
         const breakaway = result.current[1]!;
-        expect(breakaway).toMatchObject({ label: "B1", linkId: 2 });
+        expect(breakaway).toMatchObject({ label: "Breakaway", linkId: 2 });
         expect(breakaway.activitySpans).toEqual([
             { startBeatIndex: 5, endBeatIndex: 9, active: true },
         ]);
-        // Marcher 2 still moves into the line, so its track stays active
+        // Marcher 2 still moves into the line, so the opener stays active
         expect(result.current[0]!.activitySpans).toEqual([
             { startBeatIndex: 1, endBeatIndex: 9, active: true },
         ]);
@@ -156,71 +156,67 @@ describeDbTests("useTimelineTracks", (it) => {
         await performUndo(db);
         await waitFor(() =>
             expect(result.current.map((t) => t.id)).toEqual([
-                shapeTrackId(1, 1),
+                timelineTrackId(1),
             ]),
         );
     });
 
-    it("refreshes after a shape rename and its undo and redo, which the change log doesn't carry (P7.15)", async ({
+    it("draws a stored timeline with nobody in it, inactive", async ({
+        db,
+    }) => {
+        await seedShow(db);
+        await transactionWithHistory(db, "emptyTimeline", (tx) =>
+            tx
+                .insert(schema.timelines)
+                .values({ id: 3, name: null, start_beat: 16, end_beat: 20 }),
+        );
+        await startTimelineResolver(db);
+        const { result } = renderHook(() =>
+            useTimelineTracks({ database: db, enabled: true }),
+        );
+        await waitFor(() => expect(result.current).toHaveLength(2));
+        expect(result.current[1]).toMatchObject({
+            id: timelineTrackId(3),
+            label: "Timeline 3",
+            activitySpans: [
+                { startBeatIndex: 16, endBeatIndex: 20, active: false },
+            ],
+        });
+    });
+
+    it("refreshes after a timeline rename and its undo and redo, which the change log doesn't carry (P7.15)", async ({
         db,
     }) => {
         await seedShow(db);
         await startTimelineResolver(db);
         const { result } = renderHook(() =>
-            useTimelineTracks({
-                database: db,
-                enabled: true,
-                selectedMarcherIds: NONE,
-            }),
+            useTimelineTracks({ database: db, enabled: true }),
         );
-        await waitFor(() =>
-            expect(result.current[0]?.label).toBe("Front line"),
-        );
+        await waitFor(() => expect(result.current[0]?.label).toBe("Opener"));
 
-        await transactionWithHistory(db, "renameShape", (tx) =>
+        await transactionWithHistory(db, "renameTimeline", (tx) =>
             tx
-                .update(schema.timeline_shapes)
-                .set({ name: "Back line" })
-                .where(eq(schema.timeline_shapes.id, 1)),
+                .update(schema.timelines)
+                .set({ name: "Closer" })
+                .where(eq(schema.timelines.id, 1)),
         );
-        await waitFor(() => expect(result.current[0]?.label).toBe("Back line"));
+        await waitFor(() => expect(result.current[0]?.label).toBe("Closer"));
         await performUndo(db);
-        await waitFor(() =>
-            expect(result.current[0]?.label).toBe("Front line"),
-        );
+        await waitFor(() => expect(result.current[0]?.label).toBe("Opener"));
         await performRedo(db);
-        await waitFor(() => expect(result.current[0]?.label).toBe("Back line"));
+        await waitFor(() => expect(result.current[0]?.label).toBe("Closer"));
     });
 
-    it("refreshes drill numbers, loading once for a write that moves both versions (P7.15)", async ({
+    it("loads once for a write that moves both versions (P7.15)", async ({
         db,
     }) => {
         await seedShow(db);
         await stealMarcher1(db);
         await startTimelineResolver(db);
-        const selected = new Set([1]);
         const { result } = renderHook(() =>
-            useTimelineTracks({
-                database: db,
-                enabled: true,
-                selectedMarcherIds: selected,
-            }),
+            useTimelineTracks({ database: db, enabled: true }),
         );
-        await waitFor(() =>
-            expect(result.current.map((t) => t.label)).toContain("B1"),
-        );
-        const loadsBefore = lockCalls.count;
-
-        await transactionWithHistory(db, "renumber", (tx) =>
-            tx
-                .update(schema.marchers)
-                .set({ drill_order: 9 })
-                .where(eq(schema.marchers.id, 1)),
-        );
-        await waitFor(() =>
-            expect(result.current.map((t) => t.label)).toContain("B9"),
-        );
-        expect(lockCalls.count - loadsBefore).toBe(1);
+        await waitFor(() => expect(result.current).toHaveLength(2));
 
         // A new marcher is in the change log too, so one write moves both versions
         const loads = lockCalls.count;
@@ -241,24 +237,6 @@ describeDbTests("useTimelineTracks", (it) => {
         expect(lockCalls.count - loads).toBe(1);
     });
 
-    it("shows the selected marchers' tracks", async ({ db }) => {
-        await seedShow(db);
-        await startTimelineResolver(db);
-        const { result } = renderHook(() =>
-            useTimelineTracks({
-                database: db,
-                enabled: true,
-                selectedMarcherIds: new Set([2]),
-            }),
-        );
-        await waitFor(() =>
-            expect(result.current.map((t) => t.id)).toEqual([
-                shapeTrackId(1, 1),
-                marcherTrackId(1, 2),
-            ]),
-        );
-    });
-
     it("never builds rows of one version against another version's resolver", async ({
         db,
     }) => {
@@ -266,11 +244,7 @@ describeDbTests("useTimelineTracks", (it) => {
         await startTimelineResolver(db);
         const seen: (readonly TimelineInput[])[] = [];
         const { result } = renderHook(() => {
-            const tracks = useTimelineTracks({
-                database: db,
-                enabled: true,
-                selectedMarcherIds: NONE,
-            });
+            const tracks = useTimelineTracks({ database: db, enabled: true });
             seen.push(tracks);
             return tracks;
         });
@@ -288,44 +262,11 @@ describeDbTests("useTimelineTracks", (it) => {
         ).toBe(true);
     });
 
-    it("a selection change reuses the version's spans and diagnostics", async ({
-        db,
-    }) => {
-        await seedShow(db);
-        await startTimelineResolver(db);
-        const { result, rerender } = renderHook(
-            ({ selected }: { selected: ReadonlySet<number> }) =>
-                useTimelineTracks({
-                    database: db,
-                    enabled: true,
-                    selectedMarcherIds: selected,
-                }),
-            { initialProps: { selected: NONE } },
-        );
-        await waitFor(() => expect(result.current).toHaveLength(1));
-        const resolver = useTimelineResolverStore.getState().resolver!;
-        const spanInfos = vi.spyOn(resolver, "spanInfos");
-        const diagnostics = vi.spyOn(resolver, "diagnostics");
-
-        // The shape track already asked for both members' spans
-        rerender({ selected: new Set([2]) });
-        expect(result.current.map((t) => t.id)).toEqual([
-            shapeTrackId(1, 1),
-            marcherTrackId(1, 2),
-        ]);
-        expect(spanInfos).not.toHaveBeenCalled();
-        expect(diagnostics).not.toHaveBeenCalled();
-    });
-
     it("builds nothing while disabled", async ({ db }) => {
         await seedShow(db);
         await startTimelineResolver(db);
         const { result } = renderHook(() =>
-            useTimelineTracks({
-                database: db,
-                enabled: false,
-                selectedMarcherIds: NONE,
-            }),
+            useTimelineTracks({ database: db, enabled: false }),
         );
         // Give a read the chance to land, had one started
         await new Promise((resolve) => setTimeout(resolve, 50));

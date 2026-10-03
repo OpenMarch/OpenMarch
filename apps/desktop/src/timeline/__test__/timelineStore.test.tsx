@@ -62,7 +62,7 @@ const SAMPLE_BEATS = [
 ];
 
 /**
- * Four marchers and one timeline over [0, 96):
+ * Four marchers and four timelines, one per transition, each spanned by it (C-11):
  * - transition 1: a line, direct, beats [1, 17)
  * - transition 2: a circle, arc, beats [17, 33)
  * - transition 3: a line, follow-the-leader, beats [33, 49)
@@ -80,9 +80,13 @@ const seedShow = (db: DbConnection) =>
                 home_y: 0,
             })),
         );
-        await tx
-            .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 96 });
+        // One timeline per transition, which spans it (C-11)
+        await tx.insert(schema.timelines).values([
+            { id: 1, name: "Opener", start_beat: 1, end_beat: 17 },
+            { id: 2, start_beat: 17, end_beat: 33 },
+            { id: 3, start_beat: 33, end_beat: 49 },
+            { id: 4, start_beat: 49, end_beat: 65 },
+        ]);
         await tx.insert(schema.timeline_shapes).values([
             { id: 1, kind: "line", geometry: '{"points":[[0,10],[30,10]]}' },
             {
@@ -107,7 +111,7 @@ const seedShow = (db: DbConnection) =>
             path_params: string | null = null,
         ) => ({
             id,
-            timeline_id: 1,
+            timeline_id: id,
             dest_shape_id,
             path_style,
             path_params,
@@ -304,6 +308,11 @@ describeDbTests("timeline resolver store", (it) => {
             await expectStoreMatchesTables(db);
 
             await edit(db, "stretchTransition", async (tx) => {
+                // Its timeline first, so the transition stays inside it and spans it (C-11)
+                await tx
+                    .update(schema.timelines)
+                    .set({ end_beat: 70 })
+                    .where(eq(schema.timelines.id, 4));
                 await tx
                     .update(schema.timeline_transitions)
                     .set({ end_beat: 70 })

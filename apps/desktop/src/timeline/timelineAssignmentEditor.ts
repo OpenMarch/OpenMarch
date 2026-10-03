@@ -8,11 +8,11 @@ import type { DbConnection } from "@/db-functions/types";
 import {
     castMarchersIntoTransition,
     recastTransition,
-    removeAssignment,
     setAssignmentSlot,
     updateAssignment,
     type CastResult,
 } from "@/db-functions/timelineAssignmentEdits";
+import { removeAssignmentFromTimeline } from "@/db-functions/timelineMembership";
 import { castsByNearestSlot, MAX_CAST_SLOTS } from "./timelineCasting";
 
 /**
@@ -272,7 +272,12 @@ export async function applyAssignmentEdit(
             });
             return;
         case "remove":
-            await removeAssignment({ db, assignmentId: plan.assignmentId });
+            // UI-9 Removing marchers: a marcher's own one-slot transition goes with its
+            // assignment, and the timeline stays (P8.14)
+            await removeAssignmentFromTimeline({
+                db,
+                assignmentId: plan.assignmentId,
+            });
             return;
     }
 }

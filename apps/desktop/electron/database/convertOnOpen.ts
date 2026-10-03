@@ -37,7 +37,6 @@ import {
     createAllUndoTriggers,
     dropAllUndoTriggers,
 } from "@/db-functions/historyTriggers";
-import { deleteTimelinesInTransaction } from "@/db-functions/timelines";
 import type { DbConnection, DbTransaction } from "@/db-functions/types";
 import { getOrm, schema } from "./db";
 import {
@@ -273,13 +272,6 @@ export async function convertFileOnOpen(
                                   }),
                           })
                         : undefined;
-                // Only page 0: the converter's timeline has no moves. Drop it, so the file
-                // matches a new one made with the gate on (homes stay seeded from page 0).
-                if (converted && converted.transitionIds.size === 0)
-                    await deleteTimelinesInTransaction({
-                        tx,
-                        timelineIds: new Set([converted.timelineId]),
-                    });
                 await step("convert");
                 await turnTimelineModeOnInTransaction(tx, convertedAt);
                 await step("flag");

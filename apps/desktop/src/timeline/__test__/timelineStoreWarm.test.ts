@@ -39,10 +39,15 @@ const seedChain = (db: DbConnection) =>
                 home_y: 0,
             })),
         );
-        await tx
-            .insert(schema.timelines)
-            .values({ id: 1, name: "Opener", start_beat: 0, end_beat: 40 });
         const ids = [1, 2, 3, 4, 5, 6];
+        // One timeline per move, which spans it (C-11)
+        await tx.insert(schema.timelines).values(
+            ids.map((id) => ({
+                id,
+                start_beat: 1 + 4 * (id - 1),
+                end_beat: 5 + 4 * (id - 1),
+            })),
+        );
         await tx.insert(schema.timeline_shapes).values(
             ids.map((id) => ({
                 id,
@@ -58,7 +63,7 @@ const seedChain = (db: DbConnection) =>
         await tx.insert(schema.timeline_transitions).values(
             ids.map((id) => ({
                 id,
-                timeline_id: 1,
+                timeline_id: id,
                 dest_shape_id: id,
                 path_style: "direct",
                 slot_count: 3,
