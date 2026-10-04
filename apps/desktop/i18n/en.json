@@ -1191,11 +1191,59 @@
         "trigger": "New Version Available!"
     },
     "view3d": {
-        "debug": {
-            "page": "Page",
-            "showTime": "Show time"
+        "camera": {
+            "blimp": "Blimp",
+            "corner": "Corner",
+            "endZone": "End zone",
+            "floor": "On the floor",
+            "frontRow": "Front row",
+            "geJudge": "GE judge",
+            "lowerBowl": "Lower bowl",
+            "podium": "Podium",
+            "pressBox": "Press box",
+            "sideline": "Sideline",
+            "topDown": "Top down",
+            "upperDeck": "Upper deck"
+        },
+        "kit": {
+            "bighs": "Big high school",
+            "blank": "Field only",
+            "college": "College bowl",
+            "gym": "Indoor gym",
+            "hs": "High school",
+            "pro": "Pro dome"
+        },
+        "lighting": {
+            "day": "Day",
+            "dusk": "Dusk",
+            "house": "House",
+            "night": "Night",
+            "roofClosed": "Roof closed",
+            "show": "Show"
         },
         "open": "Open 3D View",
+        "overlay": {
+            "cameras": "Camera",
+            "crowd": "Crowd",
+            "crowdTooltip": "Show or hide the crowd (C)",
+            "enterFullscreen": "Fullscreen (F)",
+            "exitFullscreen": "Exit fullscreen (F)",
+            "lighting": "Lighting",
+            "pickSeat": "Pick a seat",
+            "pickSeatTooltip": "Click a seat in the stands to sit there",
+            "venue": "Venue"
+        },
+        "readout": {
+            "camera": "Eye {eye} up · {distance} to center",
+            "count": "Count {count} of {total}",
+            "noPages": "No pages",
+            "page": "Page {page}",
+            "showTime": "Show time"
+        },
+        "unit": {
+            "feet": "{value} ft",
+            "meters": "{value} m"
+        },
         "window": {
             "title": "3D View — {showName}",
             "graphicsUnavailable": "3D View needs WebGL, which isn't available on this computer."
