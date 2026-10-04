@@ -62,8 +62,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.4: Pro dome kit
 
 - Owner: p2-4-worker (3d/p2-pro-dome)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/63
 - Parallel: yes
 - Depends on: P2.2
 
@@ -138,3 +138,11 @@ Nothing yet.
 - **Next:** render screenshots from every camera and lighting preset, compare with the demo, then open the PR.
 - **Blockers:** none.
 - **Resume from:** branch `3d/p2-pro-dome`; build the scratch capture page for `buildProKit` (see the PR body recipe) and take screenshots.
+
+### 2026-10-04 · p2-4-worker · P2.4
+
+- **Done:** `apps/desktop/src/view3d/core/kits/bowl.ts` and `pro.ts` (`buildProKit`) with tests, PR https://github.com/AlexDumo/OpenMarch-timeline/pull/63. Has every camera from design §6, presets day, night and roofClosed (default roofClosed, starts closed), and the roof animation and hide-from-above in `onFrame`. Deviations for review: end-zone boards moved inward so they clear the upper-deck crowd, a suite ledge under the `pressBox` camera, and the fascia texture mirrored so the text reads from inside the bowl.
+- **Checks:** from `apps/desktop`: `vitest run src/view3d` 79 passed; `tsc --noEmit` pass; `eslint src/view3d` 0 errors (warnings only in `crowd.ts` and `gym.ts`); `prettier --check src/view3d` pass; `cspell "src/view3d/**"` 0 issues. Screenshots of every camera and preset (24 PNGs) are in `/home/alex/om-capture/runs/20261004-p24-pro-dome/out/`, with the capture scripts one level up. Not run: test:history, e2e, `check:full`.
+- **Next:** lead review.
+- **Blockers:** none.
+- **Resume from:** address review comments on PR #63 (branch `3d/p2-pro-dome`).
