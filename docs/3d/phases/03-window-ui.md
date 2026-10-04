@@ -50,8 +50,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.3: Overlay UI
 
 - Owner: 3d-worker (3d/p3-overlay)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/69
 - Parallel: yes
 - Depends on: P3.1
 
@@ -130,3 +130,18 @@ Nothing yet.
 - **Next:** real-app screenshots (themes, widths, kits, fullscreen auto-hide, venue and lighting change, undo), then the PR.
 - **Blockers:** none.
 - **Resume from:** branch `3d/p3-overlay`; build the app and run a capture scenario based on `scratchpad/p31-capture/p31-scene.mjs`.
+
+### 2026-10-04 · 3d-worker (3d/p3-overlay) · P3.3
+
+- **Done:** opened [#69](https://github.com/AlexDumo/OpenMarch-timeline/pull/69) (`3d/p3-overlay`, rebased on `3d-async` with P4.2): `src/view3d/window/overlay/` (venue picker, Select when narrow, lighting, crowd, fullscreen with 3 s auto-hide, camera bar with Pick a seat, readout of page, count, show time, eye height and distance in ft or m), mounted in `View3dRoot` in place of the debug readout (test ids kept); `view3d.*` strings in `en.json`. `camera/cameraStore.ts` is a contract-only placeholder; take P3.2's file when merging.
+- **Checks:**
+  - Desktop `tsc --noEmit`: pass.
+  - `vitest run src/view3d`: 273 passed.
+  - `eslint src/view3d/window`: 0 problems.
+  - Root `format:check`: pass.
+  - cspell on the changed files: 0 issues.
+  - Real-app capture: run folder linked in the PR. Every kit, both themes, wide and narrow, a venue and a lighting click, two Ctrl+Z presses in the editor reverting them, crowd by button and C, fullscreen auto-hide and Esc.
+  - Not run: `test:history`, e2e, root `lint:check`.
+- **Next:** lead review; reconcile `cameraStore.ts` with P3.2.
+- **Blockers:** none.
+- **Resume from:** address review comments on #69 (branch `3d/p3-overlay`).
