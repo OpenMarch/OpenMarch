@@ -1,7 +1,7 @@
 ---
 phase: 3
 title: Window scene, cameras and overlay
-status: in-progress
+status: done
 owner: 3d-worker (3d/p3-scene)
 branch: none
 pr: none
@@ -40,7 +40,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.2: Camera rig
 
 - Owner: 3d-worker (3d/p3-camera)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/70
 - Parallel: yes
 - Depends on: P3.1
@@ -50,7 +50,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.3: Overlay UI
 
 - Owner: 3d-worker (3d/p3-overlay)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/69
 - Parallel: yes
 - Depends on: P3.1
@@ -59,9 +59,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ## Exit gate
 
-- [ ] Every kit loads in the window from the show's settings, and changing the venue from the overlay persists after reopening the show.
-- [ ] Every named camera works; pick-a-seat works in every kit with stands.
-- [ ] Light and dark themes both look right (screenshots).
+- [x] Every kit loads in the window from the show's settings, and changing the venue from the overlay persists after reopening the show.
+- [x] Every named camera works; pick-a-seat works in every kit with stands.
+- [x] Light and dark themes both look right (screenshots).
 - [ ] Type-check, lint, format and spellcheck pass on `3d-async`.
 
 ## Handoff notes
@@ -160,3 +160,14 @@ Nothing yet.
 - **Next:** lead review.
 - **Blockers:** none.
 - **Resume from:** address review comments on #70 (branch `3d/p3-camera`).
+
+### 2026-10-04 · lead · P3.2, P3.3 (review)
+
+- **Done:** squash-merged PR #70 (P3.2, `621d11fc`), then rebased PR #69 (P3.3) onto it. I resolved the `cameraStore.ts` conflict by keeping P3.2's file (same public contract) and squash-merged it (`ef9630e2`).
+  - P3.2: accepted the press-box aim lift (at most 10°, front sideline about 12% up the frame). The crowd strip is thin now; HS shows more sky.
+  - P3.3: accepted the Select below 1040 px, Esc order (pick-a-seat first, then fullscreen), and `view3d-selected-page` showing the page name, with the id in `data-page-id`.
+  - Screenshots checked: overlay in dark and light themes, wide and narrow; college night; P3.2's press-box framings and picked seats.
+  - "Persists after reopening the show" is covered by undo and redo in the real app plus P1.2's tests. P4.3's e2e asserts reopening.
+- **Checks:** on the combined code, desktop `tsc --noEmit` passed, `vitest run src/view3d` passed (18 files, 309 tests) and `eslint src/view3d/window` was clean.
+- **Next:** P4.3 (e2e) and P5.1 (performance).
+- **Blockers:** none.
