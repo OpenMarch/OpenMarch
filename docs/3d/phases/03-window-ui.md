@@ -30,8 +30,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Scene assembly
 
 - Owner: 3d-worker (3d/p3-scene)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/67
 - Parallel: yes
 - Depends on: P1.3, P1.4, P2.1, P2.2
 
@@ -77,3 +77,23 @@ Nothing yet.
 - **Next:** real-app screenshots of every kit and a lighting change, then the PR.
 - **Blockers:** none.
 - **Resume from:** branch `3d/p3-scene`; build the app and run a capture scenario based on the P1.4 worker's `scratchpad/p14-capture/p14-sync.mjs`.
+
+### 2026-10-04 · 3d-worker (3d/p3-scene) · P3.1
+
+- **Done:** opened [#67](https://github.com/AlexDumo/OpenMarch-timeline/pull/67), one commit on `3d/p3-scene`. It adds:
+  - `src/view3d/core/kits/index.ts`: `KIT_BUILDERS`, `KIT_FIELD_STYLE` and `DEFAULT_CROWD_DENSITY`;
+  - `src/view3d/window/Scene.tsx`: builds the field, kit, environment and one crowd, each memoized on its own inputs. Lighting changes don't rebuild anything. `onFrame` gets a snap `dt` on a new kit and, under reduced motion, after each lighting change. The camera starts at `cameras[0]`, then the crowd clears within 4.9 m;
+  - `sceneStore.ts`: `useView3dSceneStore` with kit, crowd, focus, lighting and quality, for P3.2 and P3.3;
+  - `useFieldImage.ts`;
+  - `View3dRoot` renders `Scene`; the debug readout stays.
+- **Checks:**
+  - Desktop `tsc --noEmit`: pass.
+  - `vitest run src/view3d`: 246 passed.
+  - `eslint src/view3d`: 0 errors.
+  - Prettier and root `format:check`: pass.
+  - cspell: 0 issues.
+  - Real-app screenshots (headless, SwiftShader) of every kit, lighting changes, crowd off and undo: the run folder linked in the PR body.
+  - Not run: `test:history`, e2e, root `lint:check`.
+- **Next:** lead review. P3.2 and P3.3 build on `useView3dSceneStore`.
+- **Blockers:** none.
+- **Resume from:** address review comments on #67 (branch `3d/p3-scene`).
