@@ -40,8 +40,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.2: Camera rig
 
 - Owner: 3d-worker (3d/p3-camera)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/70
 - Parallel: yes
 - Depends on: P3.1
 
@@ -145,3 +145,18 @@ Nothing yet.
 - **Next:** lead review; reconcile `cameraStore.ts` with P3.2.
 - **Blockers:** none.
 - **Resume from:** address review comments on #69 (branch `3d/p3-overlay`).
+
+### 2026-10-04 · 3d-worker (3d/p3-camera) · P3.2
+
+- **Done:** opened [#70](https://github.com/AlexDumo/OpenMarch-timeline/pull/70), one commit on `3d/p3-camera`, rebased on #68. `src/view3d/window/camera/` adds `cameraStore.ts` (the lead's contract), `CameraRig.tsx`, `rigController.ts`, `rigMath.ts` and `seatSnap.ts`. `Scene.tsx` mounts the rig and no longer places the camera itself. Press-box views lift the aim so the front sideline sits at NDC y -0.75 (lift only, at most 10°). No kit files changed.
+- **Checks:**
+  - Desktop `tsc --noEmit`: pass.
+  - `vitest run src/view3d`: 16 files, 292 passed.
+  - `eslint src/view3d/window`: 0 problems.
+  - `format:check`: pass.
+  - cspell on the changed files: 0 issues.
+  - Real-app capture (headless, SwiftShader) of fly-tos, orbit, pan, zoom, the ground limit, top-down, pick-a-seat in hs, pro and gym, Esc, and reduced motion, with video: the run folder in the PR body. It was captured before the rebase onto #68, so no performers.
+  - Not run: `test:history`, e2e, root `lint:check`.
+- **Next:** lead review.
+- **Blockers:** none.
+- **Resume from:** address review comments on #70 (branch `3d/p3-camera`).
