@@ -29,9 +29,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P1.1: World mapping in core
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: claude-p1.1 (3d/p1-world)
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/57
 - Parallel: yes
 - Depends on: —
 
@@ -80,3 +80,11 @@ Implement ADR D-4 and design §7: `src/view3d/sync/protocol.ts` (types and `show
 Nothing yet.
 
 ## Progress log
+
+### 2026-10-04 · claude-p1.1 (3d/p1-world) · P1.1
+
+- **Done:** `packages/core/src/field/world.ts` with tests, exported from `@openmarch/core`. PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/57. Real-template tests live in `apps/desktop/src/view3d/core/__test__/world.test.ts`, because the templates are in the desktop app and import `@openmarch/core`; a hand-built-field test is in core.
+- **Checks:** core tests pass; desktop world test passes; desktop `tsc --noEmit` pass; `format:check` pass; `spellcheck` pass; core and desktop `lint:check` 0 errors. Root `lint:check` crashed in the website package (exit 134), unrelated. Full history and e2e suites skipped per policy.
+- **Next:** lead review and merge.
+- **Blockers:** none. Note: claimed and moved to in-review in one commit.
+- **Resume from:** none; package is in review.
