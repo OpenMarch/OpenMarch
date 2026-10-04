@@ -40,8 +40,8 @@ Add `packages/core/src/field/world.ts` and export it from `@openmarch/core`: `st
 ### P1.2: Venue settings storage
 
 - Owner: claude-p1.2 (3d/p1-venue-storage)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/62
 - Parallel: yes
 - Depends on: —
 
@@ -103,3 +103,25 @@ Nothing yet.
 - **Checks:** `vitest run src/field` in core (21 passed); `vitest run src/view3d` in desktop (26 passed); `tsc --noEmit` in desktop passed, before and after the types change.
 - **Next:** P1.2, P1.3 and P2.2 in progress.
 - **Blockers:** none.
+
+### 2026-10-04 · claude-p1.2 (3d/p1-venue-storage) · P1.2
+
+- **Done:** opened [#62](https://github.com/AlexDumo/OpenMarch-timeline/pull/62), one squashed commit on `3d/p1-venue-storage`. It adds:
+  - the `view3d_venue` table and migration `0017_melted_sage.sql` (one `CREATE TABLE`, inspected), plus a regenerated `_blank.dots`;
+  - `src/view3d/core/venueSettings.ts`: the schema, `DEFAULT_VENUE_PARAMS`, `KIT_LIGHTING`, `lightingForKit` and `defaultVenueForField`;
+  - `src/db-functions/view3dVenue.ts`: read, plus an upsert through `transactionWithHistory`;
+  - `src/hooks/queries/useVenueSettings.ts`: `useVenueSettings` and `useUpdateVenueSettings`, which invalidate `["view3d_venue"]`;
+  - tests for all three files.
+  - Outside §1 ownership, one line: `view3d_venue` added to `tablesWithHistory` in `src/db-functions/history.ts`, which undo needs.
+- **Checks:**
+  - `tsc --noEmit`: pass.
+  - Focused vitest (`src/view3d`, the hook test, history, utility, `electron/database`): pass, 225 tests.
+  - `test:history src/db-functions/__test__/view3dVenue.test.ts`: pass, 8 tests.
+  - `test:history` on utility and history: pass, 58 tests.
+  - Desktop `lint:check`: 0 errors.
+  - Root `format:check`: pass.
+  - Desktop `spellcheck`: pass.
+  - Not run: the full history suite and e2e (policy), and opening an older `.dots` file in the app.
+- **Next:** lead review. For P1.4: call `updateVenueSettings({ db, settings })`, which validates unknown input and throws a ZodError, or `useUpdateVenueSettings()`. Then send `invalidate` with `[["view3d_venue"]]`. For kits: `KIT_LIGHTING` in `venueSettings.ts` is the source for `lightingPresets` and `defaultLighting`.
+- **Blockers:** none. The repo's `pnpm run migrate` fails at its `create-blank-db` step under `tsx` because `Constants.ts` reads `import.meta.env`; this happens on the base branch too. The PR gives the vite-node command that regenerates `_blank.dots`.
+- **Resume from:** nothing to resume. Address review comments on #62.
