@@ -40,7 +40,7 @@ Add `packages/core/src/field/world.ts` and export it from `@openmarch/core`: `st
 ### P1.2: Venue settings storage
 
 - Owner: claude-p1.2 (3d/p1-venue-storage)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/62
 - Parallel: yes
 - Depends on: —
@@ -49,9 +49,9 @@ Add the zod schema and defaults in `src/view3d/core/venueSettings.ts` (ADR D-5, 
 
 ### P1.3: 3D View window shell
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: 3d-worker (3d/p1-window)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/61
 - Parallel: yes
 - Depends on: —
 
@@ -125,3 +125,16 @@ Nothing yet.
 - **Next:** lead review. For P1.4: call `updateVenueSettings({ db, settings })`, which validates unknown input and throws a ZodError, or `useUpdateVenueSettings()`. Then send `invalidate` with `[["view3d_venue"]]`. For kits: `KIT_LIGHTING` in `venueSettings.ts` is the source for `lightingPresets` and `defaultLighting`.
 - **Blockers:** none. The repo's `pnpm run migrate` fails at its `create-blank-db` step under `tsx` because `Constants.ts` reads `import.meta.env`; this happens on the base branch too. The PR gives the vite-node command that regenerates `_blank.dots`.
 - **Resume from:** nothing to resume. Address review comments on #62.
+
+### 2026-10-04 · lead · P1.2, P1.3 (review)
+
+- **Done:** reviewed and squash-merged PR #62 (P1.2, `fed1d22a`) and PR #61 (P1.3, `b472bd7c`).
+  - P1.2: accepted the one-line `tablesWithHistory` addition in `src/db-functions/history.ts`, crowd on by default, and `KIT_LIGHTING` in `venueSettings.ts` as the source the kits must match.
+  - P1.2 follow-up for later: the error toast uses a plain string, not a Tolgee key.
+  - P1.2 found that `pnpm run migrate` fails at its blank-database step under `tsx` because `Constants.ts` reads `import.meta.env`; this also happens on `main`. The workaround (vite-node) is in PR #62.
+  - P1.3: accepted `titleBarOverlay` for the native window controls, the `window.view3d.isMacOS` constant, and the show name, theme and language passed in the URL. The window doesn't follow a theme change while open; that's fine for the MVP.
+  - P1.3: vite loads the tracked `vite.config.mjs`, and both configs were updated. Reads run with `query_only`.
+  - P1.3's worker couldn't push its claim or status to `3d-async` (the push was refused in its session), so this entry records its owner, PR and status.
+- **Checks:** on merged `3d-async`, `pnpm --filter "@openmarch/desktop^..." build` passed; desktop `tsc --noEmit` passed; `vitest run src/view3d electron/main electron/database` plus the venue db-function and hook tests: 17 files, 284 tests passed; eslint on the touched areas: 0 errors.
+- **Next:** P1.4 (sync protocol) is unblocked. `on`, `requestVenueChange` and the `hello` handling are still to do there.
+- **Blockers:** none.

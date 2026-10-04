@@ -52,7 +52,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.3: Stand kits: hs, bighs, college and blank
 
 - Owner: p2-3-worker (3d/p2-stand-kits)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/60
 - Parallel: yes
 - Depends on: P2.2
@@ -62,7 +62,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.4: Pro dome kit
 
 - Owner: p2-4-worker (3d/p2-pro-dome)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/63
 - Parallel: yes
 - Depends on: P2.2
@@ -146,3 +146,14 @@ Nothing yet.
 - **Next:** lead review.
 - **Blockers:** none.
 - **Resume from:** address review comments on PR #63 (branch `3d/p2-pro-dome`).
+
+### 2026-10-04 · lead · P2.3, P2.4 (review)
+
+- **Done:** reviewed and squash-merged PR #60 (P2.3, `3c87145b`; the squash kept a `wip:` title, so fix it when preparing the upstream PR) and PR #63 (P2.4, `a2e048b0`).
+  - I checked the P2.3 renders (hs press box and front row, bighs press box and blimp, college press box and end zone) against the reference; they match.
+  - Accepted P2.4's changes from the demo: boards moved in to clear the upper-deck crowd, a suite ledge under the press-box camera, and the mirrored fascia text.
+  - **Contract change (lead, `ca18bec7`):** kits never build the crowd. They return `seatRows` and an optional `crowdDensity` (new in `types.ts`), and the scene calls `buildCrowd` once. I removed the crowd from `stands.ts`, set densities on every kit (hs 0.5, bighs 0.56, college 0.65, pro 0.72, gym 0.75), and noted the rule in design.md §6.
+  - Reduced motion for the pro roof: P3.1 snaps it by passing a large `dt`.
+- **Checks:** after the contract change, desktop `tsc --noEmit` passed; `vitest run src/view3d`: 8 files, 165 tests passed; `eslint src/view3d`: 0 errors.
+- **Next:** P2.1 (field surface) is unblocked; then P3.1.
+- **Blockers:** none.
