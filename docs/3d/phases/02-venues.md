@@ -51,8 +51,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P2.3: Stand kits: hs, bighs, college and blank
 
-- Owner: none
-- Status: open
+- Owner: p2-3-worker (3d/p2-stand-kits)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P2.2
