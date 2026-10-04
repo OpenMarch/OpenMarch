@@ -31,9 +31,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P2.1: Field surface
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: 3d-worker (3d/p2-field)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/64
 - Parallel: yes
 - Depends on: P1.1, P1.2
 
@@ -156,4 +156,14 @@ Nothing yet.
   - Reduced motion for the pro roof: P3.1 snaps it by passing a large `dt`.
 - **Checks:** after the contract change, desktop `tsc --noEmit` passed; `vitest run src/view3d`: 8 files, 165 tests passed; `eslint src/view3d`: 0 errors.
 - **Next:** P2.1 (field surface) is unblocked; then P3.1.
+- **Blockers:** none.
+
+### 2026-10-04 · lead · P2.1 (review)
+
+- **Done:** reviewed and squash-merged PR #64 (field surface: `buildFieldSurface`, `planField`, `paintPlan`; turf, theme and tarp).
+  - Renders checked against the reference: HS press box (stripes, hashes, arrowed numbers, end zones), HS top-down (front at the bottom, side 1 on the left), pro press box, gym with the show image and with the generated tarp, and blank.
+  - Accepted: the tarp always uses the show image when there is one (ignoring `showFieldImage`, drawn opaque), and no midfield logo.
+  - The worker's session refused `coord.sh` edits, so this entry records its owner, PR and status.
+- **Checks:** on merged `3d-async`, desktop `tsc --noEmit` passed; `vitest run src/view3d` passed.
+- **Next:** P3.1 passes `renderer.capabilities.maxTextureSize` and `getMaxAnisotropy()`, picks the style per kit (turf for hs, bighs, college and pro; tarp for gym; theme for blank), and passes the show's field image. P3.1 is waiting on P1.4.
 - **Blockers:** none.
