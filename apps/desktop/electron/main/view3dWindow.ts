@@ -4,12 +4,21 @@
  * closed with the editor or the show. It loads the editor's renderer bundle
  * with `?view=3d` and gets its own read-only preload (`preload/view3d.ts`).
  *
- * P1.4 adds the sync relays (clock, selection, invalidate, venue changes).
+ * Sync (ADR 0002 D-4): main relays the editor's clock, selection and
+ * invalidations to the window, and the window's `hello` and venue-change
+ * requests to the editor, without reading the payloads. It tells the editor
+ * whether the window is open with `view3d:window-state`.
  */
 import { BrowserWindow, ipcMain, shell } from "electron";
 import { basename, extname } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { isReadOnlySql, isView3dSqlReadMethod } from "./view3dSql";
+import {
+    VIEW3D_HELLO_CHANNEL,
+    VIEW3D_PUBLISH_CHANNELS,
+    VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL,
+    VIEW3D_WINDOW_STATE_CHANNEL,
+} from "../../src/view3d/sync/protocol";
 
 export interface View3dWindowConfig {
     /** Absolute path of the built `preload/view3d.js`. */
@@ -23,6 +32,8 @@ export interface View3dWindowConfig {
     frame: boolean;
     getTheme: () => string;
     getLanguage: () => string;
+    /** The editor window, which publishes to and answers the 3D View. */
+    getEditorWindow: () => BrowserWindow | null;
 }
 
 /** Height of the app's TitleBar, so native window controls line up with it. */
@@ -77,15 +88,54 @@ async function handleSqlRead(
     );
 }
 
+function getEditorWebContents(): Electron.WebContents | null {
+    const editor = config?.getEditorWindow();
+    return editor && !editor.isDestroyed() ? editor.webContents : null;
+}
+
+function isEditorSender(sender: Electron.WebContents): boolean {
+    return sender === getEditorWebContents();
+}
+
+/** Tells the editor whether a 3D View window is open, so it publishes only then. */
+function sendWindowState(open: boolean) {
+    getEditorWebContents()?.send(VIEW3D_WINDOW_STATE_CHANNEL, open);
+}
+
 /** Registers the 3D View IPC handlers. Call once, after `app` is ready. */
 export function initView3dWindow(windowConfig: View3dWindowConfig) {
     config = windowConfig;
 
     ipcMain.handle("view3d:open", () => openView3dWindow());
     ipcMain.handle("view3d:sql-read", handleSqlRead);
-    // The window says it's ready. P1.4 relays this to the editor, which
-    // answers with a fresh clock and selection.
-    ipcMain.on("view3d:hello", () => undefined);
+
+    // Editor → window: clock, selection and invalidate, relayed as they are.
+    for (const channel of VIEW3D_PUBLISH_CHANNELS) {
+        ipcMain.on(channel, (event, payload: unknown) => {
+            if (!isEditorSender(event.sender)) return;
+            getView3dWindow()?.webContents.send(channel, payload);
+        });
+    }
+
+    // Window → editor: the window is ready, and the editor answers with a
+    // fresh clock and selection. Also tells an editor that missed the
+    // window-state push (for example after a reload) that the window is open.
+    ipcMain.on(VIEW3D_HELLO_CHANNEL, (event) => {
+        if (!isView3dSender(event.sender)) return;
+        getEditorWebContents()?.send(VIEW3D_HELLO_CHANNEL);
+    });
+
+    // Window → editor: the editor validates and writes the settings.
+    ipcMain.on(
+        VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL,
+        (event, payload: unknown) => {
+            if (!isView3dSender(event.sender)) return;
+            getEditorWebContents()?.send(
+                VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL,
+                payload,
+            );
+        },
+    );
 }
 
 function buildQuery(): Record<string, string> {
@@ -147,6 +197,7 @@ export function openView3dWindow(): boolean {
 
     created.on("closed", () => {
         if (view3dWindow === created) view3dWindow = null;
+        if (!view3dWindow) sendWindowState(false);
     });
 
     // Keep the window on the bundled renderer: no navigation, no popups.
@@ -166,6 +217,7 @@ export function openView3dWindow(): boolean {
         void created.loadFile(config.indexHtml, { query });
     }
 
+    sendWindowState(true);
     console.log("3D View window opened");
     return true;
 }
@@ -173,12 +225,13 @@ export function openView3dWindow(): boolean {
 /** Closes the 3D View window if it's open. Called when the show or the editor closes. */
 export function closeView3dWindow() {
     if (view3dWindow && !view3dWindow.isDestroyed()) {
+        // `destroy()` emits "closed", which sends the window state.
         view3dWindow.destroy();
     }
     view3dWindow = null;
 }
 
-/** The open 3D View window, if any. P1.4 uses it to relay sync messages. */
+/** The open 3D View window, if any. */
 export function getView3dWindow(): BrowserWindow | null {
     return view3dWindow && !view3dWindow.isDestroyed() ? view3dWindow : null;
 }

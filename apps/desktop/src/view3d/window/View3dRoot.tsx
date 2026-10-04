@@ -6,10 +6,11 @@
  * Tolgee and TitleBar, but none of the editor's contexts. Main passes the
  * show name, theme and language in the query string.
  *
- * The scene is a placeholder until P3.1 lands `Scene.tsx`.
+ * The scene is a placeholder until P3.1 lands `Scene.tsx`. A small readout
+ * shows the synced show time and selected page, for e2e and manual checks.
  */
 // cspell:ignore frameloop
-import { Component, type ReactNode, useEffect } from "react";
+import { Component, type ReactNode, useEffect, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import {
     QueryCache,
@@ -19,6 +20,10 @@ import {
 import { T, TolgeeProvider, useTranslate } from "@tolgee/react";
 import TitleBar from "@/components/titlebar/TitleBar";
 import tolgee from "@/global/singletons/Tolgee";
+import {
+    startView3dSync,
+    useView3dSyncStore,
+} from "@/view3d/sync/view3dSyncStore";
 
 export interface View3dWindowParams {
     showName: string;
@@ -63,7 +68,8 @@ export default function View3dRoot() {
         if (params.language !== "en") {
             void tolgee.changeLanguage(params.language);
         }
-        window.view3d.hello();
+        // Listens to the editor, then says hello for a fresh clock and selection.
+        return startView3dSync(window.view3d, queryClient);
     }, []);
 
     return (
@@ -99,6 +105,7 @@ function View3dWindow() {
                 >
                     <PlaceholderScene />
                 </ViewportErrorBoundary>
+                <SyncReadout />
             </div>
         </main>
     );
@@ -125,6 +132,63 @@ class ViewportErrorBoundary extends Component<
     render() {
         return this.state.failed ? this.props.fallback : this.props.children;
     }
+}
+
+/** Formats show milliseconds as `m:ss.mmm`. */
+export function formatShowTime(showMs: number): string {
+    const totalMs = Math.max(0, Math.round(showMs));
+    const minutes = Math.floor(totalMs / 60_000);
+    const seconds = Math.floor((totalMs % 60_000) / 1000);
+    const ms = totalMs % 1000;
+    return `${minutes}:${String(seconds).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
+}
+
+/**
+ * The window's show time and selected page. The time updates every frame
+ * through a ref, so the readout doesn't re-render React.
+ */
+function SyncReadout() {
+    const timeRef = useRef<HTMLSpanElement>(null);
+    const selectedPageId = useView3dSyncStore(
+        (state) => state.selection.selectedPageId,
+    );
+    const playing = useView3dSyncStore((state) => !!state.clock?.playing);
+
+    useEffect(() => {
+        let frame = 0;
+        const update = () => {
+            const showMs = useView3dSyncStore.getState().showMs();
+            if (timeRef.current) {
+                timeRef.current.textContent = formatShowTime(showMs);
+                timeRef.current.dataset.showMs = String(Math.round(showMs));
+            }
+            frame = requestAnimationFrame(update);
+        };
+        update();
+        return () => cancelAnimationFrame(frame);
+    }, []);
+
+    return (
+        <div
+            className="bg-bg-1/80 text-sub text-text border-stroke rounded-6 pointer-events-none absolute bottom-8 left-8 flex gap-12 border px-8 py-4 font-mono"
+            data-testid="view3d-sync-readout"
+            data-playing={playing}
+            data-selected-page-id={selectedPageId ?? ""}
+        >
+            <span>
+                <T keyName="view3d.debug.showTime" />{" "}
+                <span ref={timeRef} data-testid="view3d-show-time">
+                    {formatShowTime(0)}
+                </span>
+            </span>
+            <span>
+                <T keyName="view3d.debug.page" />{" "}
+                <span data-testid="view3d-selected-page">
+                    {selectedPageId ?? "-"}
+                </span>
+            </span>
+        </div>
+    );
 }
 
 /** A ground plane the size of a football field, until the real scene lands (P3.1). */

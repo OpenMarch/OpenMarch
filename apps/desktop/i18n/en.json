@@ -1191,6 +1191,10 @@
         "trigger": "New Version Available!"
     },
     "view3d": {
+        "debug": {
+            "page": "Page",
+            "showTime": "Show time"
+        },
         "open": "Open 3D View",
         "window": {
             "title": "3D View — {showName}",

@@ -6,6 +6,7 @@ import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
+import { View3dPublisher } from "@/view3d/sync/useView3dPublisher";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
@@ -265,6 +266,7 @@ function App() {
                                     <SelectedMarchersProvider>
                                         <SelectedAudioFileProvider>
                                             <StateInitializer />
+                                            <View3dPublisher />
                                             <RegisteredActionsHandler />
                                             <SvgPreviewHandler />
                                             <TitleBar showControls />

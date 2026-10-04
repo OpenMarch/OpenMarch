@@ -443,6 +443,7 @@ void app.whenReady().then(async () => {
         frame: isCodegen,
         getTheme: () => store.get("theme", "light") as string,
         getLanguage: () => store.get("language", "en") as string,
+        getEditorWindow: () => win,
     });
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
