@@ -42,8 +42,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.2: Shared environment and crowd
 
 - Owner: p2-2-worker (3d/p2-environment)
-- Status: claimed
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/58
 - Parallel: yes
 - Depends on: —
 
@@ -91,3 +91,11 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 Nothing yet.
 
 ## Progress log
+
+### 2026-10-04 · p2-2-worker · P2.2
+
+- **Done:** shared environment and crowd under `apps/desktop/src/view3d/core/environment/` (PR https://github.com/AlexDumo/OpenMarch-timeline/pull/58). API summary is the module comment in `environment/index.ts`. `lightPole` and `videoBoard` take a `SharedMaterials` last argument. Kits drive their own lights from `lightingValues(preset).kit`. Tests call `setTexturePainting(false)` because jsdom has no 2D canvas.
+- **Checks:** vitest `src/view3d` 21 passed; `tsc --noEmit` clean; prettier check clean; eslint 0 errors (1 max-lines warning); cspell 0 issues. Not run: `check:agent-guidance`, test:history, e2e.
+- **Next:** lead review; P2.3 to P2.5 can start from the PR branch `3d/p2-environment`.
+- **Blockers:** none.
+- **Resume from:** nothing pending; address review comments on the PR.
