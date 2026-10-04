@@ -28,8 +28,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P5.1: Performance pass
 
 - Owner: 3d-worker (3d/p5-perf)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/72
 - Parallel: yes
 - Depends on: P4.2
 
@@ -74,3 +74,24 @@ Nothing yet.
 - **Next:** measure every kit with a 300-marcher fixture in the real app (draw calls, triangles, build times, frame time), then cheap wins.
 - **Blockers:** none.
 - **Resume from:** branch `3d/p5-perf`; 300-marcher fixture generator in `scratchpad/p51/gen300.py`; build the app and run a measurement scenario based on `scratchpad/p42-capture/p42-performers.mjs`.
+
+### 2026-10-04 · 3d-worker (3d/p5-perf) · P5.1
+
+- **Done:** opened [#72](https://github.com/AlexDumo/OpenMarch-timeline/pull/72), one commit on `3d/p5-perf`.
+  - `positionAtInto` (allocation-free, exactly equal to `positionAt`) is used by the performers.
+  - `window/qualityFallback.ts` switches to `low` once after 3 s below 30 fps and logs it with `console.info`. It never switches back.
+  - The ring buffer upload is skipped while nothing is selected.
+  - The P5.1 measurements are in `findings.md`. Draw calls are at most 32 per kit. Kit build is at most 48 ms; pro with crowd and field is about 150 ms on its first build. CPU per frame while playing 300 performers is under 2 ms. fps on SwiftShader (1–11) is not representative.
+  - The `low` tier was already complete in kits, crowd, rig and performers.
+- **Checks:**
+  - Desktop `tsc --noEmit`: pass.
+  - `vitest run src/view3d`: 19 files, 321 passed.
+  - `eslint src/view3d`: 0 errors.
+  - `format:check`: pass.
+  - cspell on the changed files: 0 issues.
+  - e2e `view3d.spec.mts`: 1 passed, with the fallback active on SwiftShader.
+  - Real-app captures of every kit (high), hs, bighs and pro (low), and a fallback and selection run: the paths are in the PR.
+  - Not run: `test:history`, the full e2e suite, root `lint:check`.
+- **Next:** lead review. V6 still needs a real integrated GPU to check 60 fps for `pro`. The PR recommends capping `dpr` at 1 in `low`, which needs a design §9 decision.
+- **Blockers:** none.
+- **Resume from:** address review comments on #72 (branch `3d/p5-perf`). The measurement scenario `scratchpad/p51/capture/p51-perf.mjs` needs the temporary `__view3dDebug` hook described in the PR.
