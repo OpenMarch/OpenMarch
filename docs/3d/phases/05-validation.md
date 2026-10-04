@@ -28,7 +28,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P5.1: Performance pass
 
 - Owner: 3d-worker (3d/p5-perf)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P4.2
@@ -66,3 +66,11 @@ The project owner accepts the MVP or lists what must change.
 Nothing yet.
 
 ## Progress log
+
+### 2026-10-04 · 3d-worker (3d/p5-perf) · P5.1
+
+- **Done:** first step pushed to `3d/p5-perf` (`9abb259f`): `positionAtInto` (out-parameter, allocation-free for straight moves) in `src/view3d/positions.ts`, used by `performers/performerData.ts`; `src/view3d/window/qualityFallback.ts` (pure, 3 s below 30 fps switches to `low` once and logs) wired into `Scene.tsx`.
+- **Checks:** `vitest run src/view3d/window/__test__/qualityFallback.test.ts src/view3d/__test__/positions.test.tsx src/view3d/window/performers` (3 files, 28 passed).
+- **Next:** measure every kit with a 300-marcher fixture in the real app (draw calls, triangles, build times, frame time), then cheap wins.
+- **Blockers:** none.
+- **Resume from:** branch `3d/p5-perf`; 300-marcher fixture generator in `scratchpad/p51/gen300.py`; build the app and run a measurement scenario based on `scratchpad/p42-capture/p42-performers.mjs`.
