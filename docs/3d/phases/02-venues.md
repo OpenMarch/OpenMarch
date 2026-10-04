@@ -71,8 +71,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P2.5: Indoor gym kit
 
-- Owner: none
-- Status: open
+- Owner: p2-5-worker (3d/p2-gym)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P2.2
