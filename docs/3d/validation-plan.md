@@ -73,3 +73,22 @@ Append-only. Entry template:
 - Evidence/check commands:
 - Next/blocker:
 ```
+
+### 2026-10-04 · lead · V1, V2 (partial)
+
+- Status: pass (V1); pass with one issue (V2, partial)
+- Build/commit: `3d-async` at `3e9ab13c`
+- Fixture: the P5.1 300-marcher, 7-page football show
+- Steps: one recorded scenario (`scratchpad/p52/v-mvp.mjs`) through the capture toolkit with SwiftShader. Claude Code stopped it partway because the box ran critically low on memory (other services; about 580 MB free), so it ended in the gym.
+- Expected: V1 and V2 as written.
+- Actual:
+  - V1 pass. The window opens on the press box. Performers move during play, hold when paused and follow seek. Selection rings appear under all 300 performers after select-all.
+  - V2 pass for hs (6 cameras), bighs and college (4 each), pro (7) and gym (GE judge, front row, corner).
+  - Not reached: gym "On the floor" and "Top down", blank, the pro lighting cycle, and pick-a-seat. Those were covered earlier in the P3.1–P3.3 reviews.
+  - **Issue:** in the pro dome's `lowerBowl`, `upperDeck` and `endZone` seats, the nearest crowd blocks fill the bottom fifth of the frame. The 4.9 m clear radius is too small for bowl rows. Fix: a larger clear radius for seat cameras, or the press-box aim lift applied to every `seat` camera.
+- Evidence/check commands: `~/om-capture/runs/20261004-130737-p52-validation/` (28 PNGs, `contact.png`).
+- Next/blocker:
+  - V3 (persistence and undo) and V5 (offline) are covered by `e2e/tests/view3d.spec.mts`, which passed in the lead's run on 2026-10-04.
+  - V4 (live edits) still needs a run.
+  - V6 needs the owner's hardware: this box has no GPU, so frame rates here aren't representative.
+  - Re-running the full scenario waits for the owner, because of the memory pressure.

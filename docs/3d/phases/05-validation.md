@@ -38,7 +38,7 @@ Measure frame time, draw calls and build time per kit with 300 performers; add t
 ### P5.2: Validation run
 
 - Owner: lead
-- Status: open
+- Status: in-progress
 - PR: none
 - Parallel: no
 - Depends on: P4.3, P5.1
