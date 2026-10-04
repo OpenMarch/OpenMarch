@@ -7,6 +7,7 @@
  * front sideline), +X points toward side 2, +Y points up and +Z points toward
  * the audience, so the field occupies z <= 0.
  */
+import type { FieldFootprint } from "@openmarch/core";
 import type { Object3D, Vector3Tuple } from "three";
 
 /** Venue kits shipped in the MVP. `blank` is the field on a plain ground. */
@@ -33,15 +34,8 @@ export interface VenueParams {
     endZoneColor: string;
 }
 
-/** The performance surface in world meters, derived from FieldProperties. */
-export interface FieldFootprint {
-    minX: number;
-    maxX: number;
-    /** The back edge (most negative z). */
-    minZ: number;
-    /** The front edge; 0 for every built-in template. */
-    maxZ: number;
-}
+/** The performance surface in world meters (from `fieldFootprint`). */
+export type { FieldFootprint } from "@openmarch/core";
 
 export type CameraSeatKind = "seat" | "aerial" | "topDown" | "floor";
 
