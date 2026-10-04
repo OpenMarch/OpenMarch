@@ -59,9 +59,9 @@ Create `electron/main/view3dWindow.ts` (open or focus, close with the editor or 
 
 ### P1.4: Sync protocol
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: 3d-worker (3d/p1-sync)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/65
 - Parallel: no
 - Depends on: P1.3
 
@@ -71,8 +71,8 @@ Implement ADR D-4 and design §7: `src/view3d/sync/protocol.ts` (types and `show
 
 - [ ] `pnpm --dir packages/core test` passes, including the world tests.
 - [ ] Venue settings history tests pass.
-- [ ] The 3D View window opens from the editor, shows the placeholder, and closes with the show.
-- [ ] The window's show time follows play, pause and seek in the editor (manual check with a recording, or the P4.3 e2e test once it exists).
+- [x] The 3D View window opens from the editor, shows the placeholder, and closes with the show.
+- [x] The window's show time follows play, pause and seek in the editor (manual check with a recording, or the P4.3 e2e test once it exists).
 - [ ] `pnpm --dir apps/desktop exec tsc --noEmit`, `pnpm lint:check`, `pnpm format:check` and `pnpm spellcheck` pass on `3d-async`.
 
 ## Handoff notes
@@ -137,4 +137,16 @@ Nothing yet.
   - P1.3's worker couldn't push its claim or status to `3d-async` (the push was refused in its session), so this entry records its owner, PR and status.
 - **Checks:** on merged `3d-async`, `pnpm --filter "@openmarch/desktop^..." build` passed; desktop `tsc --noEmit` passed; `vitest run src/view3d electron/main electron/database` plus the venue db-function and hook tests: 17 files, 284 tests passed; eslint on the touched areas: 0 errors.
 - **Next:** P1.4 (sync protocol) is unblocked. `on`, `requestVenueChange` and the `hello` handling are still to do there.
+- **Blockers:** none.
+
+### 2026-10-04 · lead · P1.4 (review)
+
+- **Done:** reviewed and squash-merged PR #65 (sync protocol).
+  - Accepted relaying invalidations by wrapping the editor's `queryClient.invalidateQueries`: it's batched, restored on unmount, and covers writes, undo, redo and rollback without touching mutation helpers.
+  - Accepted the preloads repeating the channel names instead of importing them. A shared chunk broke the preload, which runs in a sandbox.
+  - Known gap: if the editor reloads while a window is open, it only learns about the window on the next `hello`.
+  - The worker's real-app run had the window within 30–55 ms of the editor clock while playing. Pause and seek were exact, a venue request wrote with history, and undo was relayed. The recording is `p14-sync.mp4` in the session scratchpad.
+  - The worker's session refused `coord.sh`, so this entry records its owner, PR and status.
+- **Checks:** on merged `3d-async`, desktop `tsc --noEmit` passed; `vitest run src/view3d electron/main` passed. Exit-gate items 3 and 4 ticked on the worker's real-app run, re-checked from its screenshots.
+- **Next:** P3.1 and P4.1 are unblocked.
 - **Blockers:** none.
