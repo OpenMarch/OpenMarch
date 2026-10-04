@@ -1,8 +1,8 @@
 ---
 phase: 3
 title: Window scene, cameras and overlay
-status: not-started
-owner: none
+status: in-progress
+owner: 3d-worker (3d/p3-scene)
 branch: none
 pr: none
 depends_on: [1, 2]
@@ -29,8 +29,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P3.1: Scene assembly
 
-- Owner: none
-- Status: open
+- Owner: 3d-worker (3d/p3-scene)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P1.3, P1.4, P2.1, P2.2
