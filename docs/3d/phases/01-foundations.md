@@ -40,7 +40,7 @@ Add `packages/core/src/field/world.ts` and export it from `@openmarch/core`: `st
 ### P1.2: Venue settings storage
 
 - Owner: claude-p1.2 (3d/p1-venue-storage)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: —
@@ -88,3 +88,11 @@ Nothing yet.
 - **Next:** lead review and merge.
 - **Blockers:** none. Note: claimed and moved to in-review in one commit.
 - **Resume from:** none; package is in review.
+
+### 2026-10-04 · claude-p1.2 (3d/p1-venue-storage) · P1.2
+
+- **Done:** `view3d_venue` table and migration `0017_melted_sage.sql` (one `CREATE TABLE`, checked), `_blank.dots` regenerated, `src/view3d/core/venueSettings.ts`, `src/db-functions/view3dVenue.ts`, `src/hooks/queries/useVenueSettings.ts`, and `view3d_venue` added to `tablesWithHistory`. Pushed as a `wip:` commit on `3d/p1-venue-storage`.
+- **Checks:** `pnpm --dir apps/desktop exec tsc --noEmit` passes. Tests not written yet.
+- **Next:** unit tests for the schema and defaults, and history tests for the db functions.
+- **Blockers:** none.
+- **Resume from:** check out `3d/p1-venue-storage`, then add `src/view3d/core/__test__/venueSettings.test.ts` and `src/db-functions/__test__/view3dVenue.test.ts`.
