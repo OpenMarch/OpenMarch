@@ -55,6 +55,7 @@ import type {
 import type { VenueSettings } from "@/view3d/core/venueSettings";
 import { CROWD_CLEAR_RADIUS, useView3dSceneStore } from "./sceneStore";
 import { useFieldImage } from "./useFieldImage";
+import Performers from "./performers/Performers";
 
 /** Default vertical field of view, as in the reference demo. */
 export const DEFAULT_FOV_DEG = 45;
@@ -288,7 +289,7 @@ function SceneContents({
         snapRef.current = false;
     });
 
-    return null;
+    return <Performers fieldProperties={fieldProperties} />;
 }
 
 const scratch = new Vector3();
