@@ -89,6 +89,12 @@ export interface KitResult {
     seatRows: SeatRow[];
     /** Meshes that pick-a-seat raycasts against. */
     pickTargets: Object3D[];
+    /**
+     * Suggested crowd density (0..1) for `buildCrowd`. Kits never build the
+     * crowd themselves: the scene builds it from `seatRows`, so it can toggle
+     * and recolor it without rebuilding the kit. Defaults to 0.6.
+     */
+    crowdDensity?: number;
     lightingPresets: LightingPreset[];
     defaultLighting: LightingPreset;
     /** Applies a preset; ignores ones not in `lightingPresets`. */

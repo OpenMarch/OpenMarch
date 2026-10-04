@@ -11,7 +11,7 @@ import {
     type Material,
     type Object3D,
 } from "three";
-import { setTexturePainting } from "../../environment";
+import { buildCrowd, setTexturePainting } from "../../environment";
 import type {
     FieldFootprint,
     KitBuilder,
@@ -216,7 +216,6 @@ describe.each(KITS)("$id kit", ({ build: builder, ...expected }) => {
         if (!expected.stands) {
             expect(kit.seatRows).toEqual([]);
             expect(kit.pickTargets).toEqual([]);
-            expect(kit.root.userData.crowd).toBeUndefined();
         } else {
             expect(kit.seatRows.length).toBeGreaterThan(40);
             expect(kit.pickTargets.length).toBeGreaterThanOrEqual(2);
@@ -228,13 +227,17 @@ describe.each(KITS)("$id kit", ({ build: builder, ...expected }) => {
                     expect(p[1]).toBeGreaterThan(0);
                 }
             }
-            const crowd = kit.root.userData.crowd;
+            expect(kit.crowdDensity).toBeGreaterThan(0);
+            const crowd = buildCrowd(kit.seatRows, {
+                density: kit.crowdDensity,
+            });
             expect(crowd.count).toBeGreaterThan(500);
             // the crowd handle works with the rows' frame
             const hidden = crowd.clearAround(kit.cameras[1].position, 5);
             expect(hidden).toBeGreaterThan(0);
             crowd.reset();
             expect(crowd.visibleCount()).toBe(crowd.count);
+            crowd.dispose();
         }
         kit.dispose();
     });
@@ -285,15 +288,10 @@ describe.each(KITS)("$id kit", ({ build: builder, ...expected }) => {
         kit.dispose();
     });
 
-    it("halves the crowd and drops shadows at low quality", () => {
+    it("drops shadows at low quality", () => {
         const high = build(builder);
         const low = build(builder, FOOTBALL, "low");
         low.root.traverse((o) => expect(o.castShadow).toBe(false));
-        if (expected.stands) {
-            const h = high.root.userData.crowd.count;
-            const l = low.root.userData.crowd.count;
-            expect(l).toBeLessThan(h * 0.65);
-        }
         high.dispose();
         low.dispose();
     });

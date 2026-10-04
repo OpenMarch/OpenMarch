@@ -207,6 +207,10 @@ approved reference, converted to meters (1 ft = 0.3048 m).
 
 ### All kits
 
+- **Kits never build the crowd.** They return `seatRows` and an optional
+  `crowdDensity`, and the scene (P3.1) calls `buildCrowd` once. That way the
+  crowd toggle and team colors don't rebuild the kit.
+
 - Return `seatRows` for every stand, so the crowd and pick-a-seat work the
   same everywhere.
 - `topDown` looks straight down, oriented like the 2D canvas: front at the

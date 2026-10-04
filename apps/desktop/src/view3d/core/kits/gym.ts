@@ -340,6 +340,7 @@ export const buildGym: KitBuilder = ({ footprint, quality }) => {
         cameras,
         seatRows,
         pickTargets,
+        crowdDensity: 0.75,
         lightingPresets,
         defaultLighting: "house",
         setLighting,

@@ -11,7 +11,6 @@ export const buildBighs: KitBuilder = (input) =>
     buildStandsKit(
         {
             id: "bighs",
-            seed: 17,
             groundColor: 0x55575c,
             infield: { extraW: ft(280), extraD: ft(170) },
             track: true,

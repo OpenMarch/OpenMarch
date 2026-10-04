@@ -11,7 +11,6 @@ export const buildCollege: KitBuilder = (input) =>
     buildStandsKit(
         {
             id: "college",
-            seed: 29,
             groundColor: 0x55575c,
             infield: { extraW: ft(260), extraD: ft(200) },
             track: false,

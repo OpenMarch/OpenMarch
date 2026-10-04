@@ -19,9 +19,7 @@ import {
     type Vector3Tuple,
 } from "three";
 import {
-    buildCrowd,
     createSharedMaterials,
-    defaultCrowdPalette,
     ft,
     lightingValues,
     lightPole,
@@ -398,8 +396,6 @@ export interface PoleSpot {
 
 export interface StandsKitConfig {
     id: Extract<VenueKitId, "hs" | "bighs" | "college">;
-    /** Seed for the crowd layout. */
-    seed: number;
     groundColor: number;
     /** Extra lawn around the footprint (inside a paved surround). */
     infield?: { extraW: number; extraD: number };
@@ -439,9 +435,8 @@ const PODIUM = { w: ft(6), h: ft(8), d: ft(6), z: ft(26) };
 
 /**
  * Shared builder for the three rectangular-stand kits. Builds the ground, the
- * apron around the footprint, the stands, extras, poles and a crowd, then
- * returns the `KitResult`. `root.userData.crowd` holds the crowd handle (it has
- * `clearAround` and `reset`) for the scene to call when a camera sits in a seat.
+ * apron around the footprint, the stands, extras and poles, then returns the
+ * `KitResult`. The scene builds the crowd from `seatRows` and `crowdDensity`.
  */
 export function buildStandsKit(
     cfg: StandsKitConfig,
@@ -583,14 +578,6 @@ export function buildStandsKit(
     });
 
     const seatRows = stands.flatMap((s) => s.seatRows);
-    const crowd = buildCrowd(seatRows, {
-        density: cfg.crowdDensity,
-        palette: defaultCrowdPalette(input.params),
-        quality: input.quality,
-        seed: cfg.seed,
-    });
-    root.add(crowd.mesh);
-    root.userData.crowd = crowd;
 
     const focus: Vector3Tuple = [f.cx, 0, f.cz];
     const cams: CameraSeat[] = [
@@ -652,11 +639,11 @@ export function buildStandsKit(
         cameras: cams,
         seatRows,
         pickTargets: stands.map((s) => s.pickTarget),
+        crowdDensity: cfg.crowdDensity,
         lightingPresets: [...OUTDOOR_PRESETS],
         defaultLighting: cfg.defaultLighting,
         setLighting,
         dispose() {
-            crowd.dispose();
             stands.forEach((s) => s.dispose());
             boards.forEach((b) => b.dispose());
             poles.forEach((p) => p.dispose());

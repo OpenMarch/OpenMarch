@@ -11,7 +11,6 @@ export const buildHs: KitBuilder = (input) =>
     buildStandsKit(
         {
             id: "hs",
-            seed: 11,
             groundColor: 0x4a6b35,
             track: true,
             front: {

@@ -165,6 +165,7 @@ export const buildProKit: KitBuilder = ({ footprint, params, quality }) => {
         cameras: proCameras(ctx, bowl.lower, bowl.upper),
         seatRows: bowl.seatRows,
         pickTargets: [bowl.treads],
+        crowdDensity: 0.72,
         lightingPresets: [...PRESETS],
         defaultLighting,
         setLighting: (preset) => roof.setLighting(preset, false),
