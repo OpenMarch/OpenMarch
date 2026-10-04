@@ -42,7 +42,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.2: Shared environment and crowd
 
 - Owner: p2-2-worker (3d/p2-environment)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/58
 - Parallel: yes
 - Depends on: —
@@ -99,3 +99,10 @@ Nothing yet.
 - **Next:** lead review; P2.3 to P2.5 can start from the PR branch `3d/p2-environment`.
 - **Blockers:** none.
 - **Resume from:** nothing pending; address review comments on the PR.
+
+### 2026-10-04 · lead · P2.2 (review)
+
+- **Done:** reviewed and squash-merged PR #58 (`57a4824f`). The API summary is the module comment in `src/view3d/core/environment/index.ts`; kit builders read it first. Accepted the deviations: `lightPole` and `videoBoard` take `SharedMaterials` last, the rig's light is `hemisphere`, the pro fascia passes `params.endZoneText || "OPENMARCH"` to `ribbonTexture`, and the camera far plane must exceed `SKY_RADIUS` (1524 m).
+- **Checks:** on the PR branch, `vitest run src/view3d` (21 passed), desktop `tsc --noEmit` passed, `eslint src/view3d` 0 errors and 1 warning (`buildCrowd` length).
+- **Next:** P2.3, P2.4 and P2.5 are unblocked.
+- **Blockers:** none.
