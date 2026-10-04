@@ -40,7 +40,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P4.2: Performer blocks
 
 - Owner: 3d-worker (3d/p4-performers)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/68
 - Parallel: yes
 - Depends on: P4.1, P3.1
@@ -60,7 +60,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ## Exit gate
 
 - [x] Positions tests pass.
-- [ ] Performers follow playback smoothly in a recording sent to the project owner.
+- [x] Performers follow playback smoothly in a recording sent to the project owner.
 - [ ] `view3d.spec.mts` passes headlessly.
 - [ ] Type-check, lint, format and spellcheck pass on `3d-async`.
 
@@ -107,3 +107,13 @@ Nothing yet.
 - **Next:** lead review. P4.3 can build on it.
 - **Blockers:** none.
 - **Resume from:** address review comments on #68 (branch `3d/p4-performers`).
+
+### 2026-10-04 · lead · P4.2 (review)
+
+- **Done:** reviewed and squash-merged PR #68.
+  - The top-down stills of pages 2 and 4 match the 2D canvas, row for row against the hashes and numbers. In the recording, the window's clock was within 20 ms of the editor's, and selection rings follow drag-select and select-all during playback.
+  - Accepted colors from `marcherAppearancesQueryOptions(selectedPageId)`, resolved like the 2D canvas, because `useMarchersWithVisuals` only returns theme defaults in the window. design.md §8 is updated.
+  - For P5.1: `positionAt` allocates one small object per marcher per frame. Add an out-parameter variant if profiling shows it matters.
+- **Checks:** on merged `3d-async`, desktop `tsc --noEmit` passed and `vitest run src/view3d` passed. The recording was sent to the project owner.
+- **Next:** P4.3 (e2e) once P3.3 merges.
+- **Blockers:** none.
