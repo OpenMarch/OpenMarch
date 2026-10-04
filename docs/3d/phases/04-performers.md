@@ -40,8 +40,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P4.2: Performer blocks
 
 - Owner: 3d-worker (3d/p4-performers)
-- Status: in-progress
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/68
 - Parallel: yes
 - Depends on: P4.1, P3.1
 
@@ -88,3 +88,22 @@ Nothing yet.
 - **Next:** build the app and capture playback, paused and selection frames against the 2D canvas.
 - **Blockers:** none.
 - **Resume from:** branch `3d/p4-performers`; build the desktop app and run a capture scenario based on `scratchpad/p31-capture/` with the 76-marcher fixture.
+
+### 2026-10-04 · 3d-worker (3d/p4-performers) · P4.2
+
+- **Done:** opened [#68](https://github.com/AlexDumo/OpenMarch-timeline/pull/68), one commit on `3d/p4-performers`.
+  - `src/view3d/window/performers/performerData.ts` holds the pure parts: slots, appearance cascade, positions, matrices and the ring set.
+  - `Performers.tsx` has one cylinder `InstancedMesh` and one accent-ring `InstancedMesh`, updated in `useFrame` from `showMs()`. A frame with an unchanged time and inputs does no work.
+  - `Scene.tsx` mounts it in one line.
+  - Colors come from `marcherAppearancesQueryOptions(selectedPageId)`, the same cascade the 2D canvas applies through `setAppearance`. In the window, `useMarchersWithVisuals` alone gives only the theme default; the PR explains this.
+- **Checks:**
+  - `vitest run src/view3d`: 14 files, 256 passed.
+  - Desktop `tsc --noEmit`: pass.
+  - `eslint src/view3d`: 0 errors.
+  - Root `format:check`: pass.
+  - cspell on the changed files: 0 issues.
+  - Real-app capture (76-marcher fixture): an mp4 of playback in `hs`, top-down formation stills matching the 2D canvas on pages 2 and 4, and selection rings. The paths are in the PR.
+  - Not run: `test:history`, e2e, root `lint:check`.
+- **Next:** lead review. P4.3 can build on it.
+- **Blockers:** none.
+- **Resume from:** address review comments on #68 (branch `3d/p4-performers`).
