@@ -1,8 +1,8 @@
 ---
 phase: 5
 title: MVP validation
-status: not-started
-owner: none
+status: in-progress
+owner: 3d-worker (3d/p5-perf)
 branch: none
 pr: none
 depends_on: [3, 4]
@@ -27,8 +27,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P5.1: Performance pass
 
-- Owner: none
-- Status: open
+- Owner: 3d-worker (3d/p5-perf)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P4.2
