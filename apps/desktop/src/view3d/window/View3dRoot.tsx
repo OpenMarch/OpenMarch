@@ -6,12 +6,10 @@
  * Tolgee and TitleBar, but none of the editor's contexts. Main passes the
  * show name, theme and language in the query string.
  *
- * The scene is a placeholder until P3.1 lands `Scene.tsx`. A small readout
- * shows the synced show time and selected page, for e2e and manual checks.
+ * `Scene.tsx` (P3.1) draws the venue. A small readout shows the synced show
+ * time and selected page, for e2e and manual checks.
  */
-// cspell:ignore frameloop
 import { Component, type ReactNode, useEffect, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
 import {
     QueryCache,
     QueryClient,
@@ -24,6 +22,7 @@ import {
     startView3dSync,
     useView3dSyncStore,
 } from "@/view3d/sync/view3dSyncStore";
+import Scene from "./Scene";
 
 export interface View3dWindowParams {
     showName: string;
@@ -103,7 +102,7 @@ function View3dWindow() {
                         </p>
                     }
                 >
-                    <PlaceholderScene />
+                    <Scene />
                 </ViewportErrorBoundary>
                 <SyncReadout />
             </div>
@@ -188,35 +187,5 @@ function SyncReadout() {
                 </span>
             </span>
         </div>
-    );
-}
-
-/** A ground plane the size of a football field, until the real scene lands (P3.1). */
-function PlaceholderScene() {
-    return (
-        <Canvas
-            frameloop="demand"
-            camera={{ position: [0, 45, 70], fov: 45, near: 0.5, far: 2000 }}
-            onCreated={({ camera }) => camera.lookAt(0, 0, -24)}
-        >
-            <color attach="background" args={["#8fb4d8"]} />
-            <hemisphereLight args={["#ffffff", "#4a5a3a", 1.2]} />
-            <directionalLight position={[40, 80, 60]} intensity={1.5} />
-            {/* Field: x is ±55 m around center front, z runs back from 0. */}
-            <mesh rotation-x={-Math.PI / 2} position={[0, 0, -24.4]}>
-                <planeGeometry args={[110, 48.8]} />
-                <meshStandardMaterial color="#3f7d3a" />
-            </mesh>
-            {/* Surrounding ground. */}
-            <mesh rotation-x={-Math.PI / 2} position={[0, -0.05, -24.4]}>
-                <planeGeometry args={[400, 300]} />
-                <meshStandardMaterial color="#5b6b4a" />
-            </mesh>
-            <gridHelper
-                args={[110, 22, "#ffffff", "#d8e8d0"]}
-                position={[0, 0.02, -24.4]}
-                scale={[1, 1, 48.8 / 110]}
-            />
-        </Canvas>
     );
 }
