@@ -39,8 +39,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P4.2: Performer blocks
 
-- Owner: none
-- Status: open
+- Owner: 3d-worker (3d/p4-performers)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P4.1, P3.1
