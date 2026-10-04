@@ -119,4 +119,59 @@ describe("ProjectStep file location", () => {
             screen.getByText("/Users/jo/Chosen/MyShow-part1.dots"),
         ).toBeTruthy();
     });
+
+    it("keeps a customized filename after the step is revisited", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn<(p: NewShowProjectData) => void>();
+        mockElectron("/unused.dots");
+
+        render(
+            <ProjectStep
+                project={{
+                    projectName: "MyShow",
+                    fileLocation: "/Users/jo/Chosen/MyShow-part1.dots",
+                }}
+                onChange={onChange}
+            />,
+            { wrapper: Providers },
+        );
+
+        const nameInput = screen.getByPlaceholderText(/show name/i);
+        await user.clear(nameInput);
+        await user.type(nameInput, "Totally Different");
+
+        expect(lastLocation(onChange)).toBe(
+            "/Users/jo/Chosen/MyShow-part1.dots",
+        );
+    });
+
+    it("warns when the renamed file already exists", async () => {
+        const user = userEvent.setup();
+        const onChange = vi.fn<(p: NewShowProjectData) => void>();
+        mockElectron("/Users/jo/Chosen/MyShow.dots");
+        const electron = window.electron as unknown as {
+            fileExists: ReturnType<typeof vi.fn>;
+        };
+        electron.fileExists.mockImplementation(
+            async (path: string) => path === "/Users/jo/Chosen/Taken.dots",
+        );
+
+        render(<ProjectStep project={null} onChange={onChange} />, {
+            wrapper: Providers,
+        });
+
+        const nameInput = screen.getByPlaceholderText(/show name/i);
+        await user.type(nameInput, "MyShow");
+        await user.click(screen.getByRole("button", { name: /browse/i }));
+        await waitFor(() =>
+            expect(lastLocation(onChange)).toBe("/Users/jo/Chosen/MyShow.dots"),
+        );
+
+        await user.clear(nameInput);
+        await user.type(nameInput, "Taken");
+
+        await waitFor(() =>
+            expect(screen.getByText(/already exists/i)).toBeTruthy(),
+        );
+    });
 });

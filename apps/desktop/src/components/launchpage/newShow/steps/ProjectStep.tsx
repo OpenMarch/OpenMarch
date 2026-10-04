@@ -62,8 +62,35 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
     const [defaultDirectory, setDefaultDirectory] = useState("");
     const [fileExists, setFileExists] = useState(false);
     const fileLocationManuallyEdited = useRef(!!project?.fileLocation);
-    /** True once the user picks a filename that isn't the one we generated. */
-    const filenameCustomized = useRef(false);
+    const initialFilename = project?.fileLocation
+        ? normalizePath(project.fileLocation).split("/").pop()
+        : undefined;
+    /**
+     * True once the user picks a filename that isn't the one we generated.
+     * Seeded from the incoming project so a custom name survives revisiting
+     * this step.
+     */
+    const filenameCustomized = useRef(
+        !!initialFilename &&
+            initialFilename.endsWith(".dots") &&
+            initialFilename !==
+                `${sanitizeFilename(project?.projectName ?? "")}.dots`,
+    );
+    /** Only the most recent fileExists check may update the warning. */
+    const latestFileExistsRequest = useRef(0);
+    const checkFileExists = useCallback((path: string) => {
+        const requestId = ++latestFileExistsRequest.current;
+        void window.electron
+            .fileExists(path)
+            .then((exists) => {
+                if (requestId === latestFileExistsRequest.current)
+                    setFileExists(exists);
+            })
+            .catch(() => {
+                if (requestId === latestFileExistsRequest.current)
+                    setFileExists(false);
+            });
+    }, []);
 
     const syncToParent = useCallback(
         (
@@ -129,21 +156,17 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
         );
         if (autoPath) {
             setFileLocation(autoPath);
-            let isCurrent = true;
-            void window.electron
-                .fileExists(autoPath)
-                .then((exists) => {
-                    if (isCurrent) setFileExists(exists);
-                })
-                .catch(() => {
-                    if (isCurrent) setFileExists(false);
-                });
+            checkFileExists(autoPath);
             syncToParent(projectName, autoPath, designer, client);
-            return () => {
-                isCurrent = false;
-            };
         }
-    }, [projectName, defaultDirectory, designer, client, syncToParent]);
+    }, [
+        projectName,
+        defaultDirectory,
+        designer,
+        client,
+        syncToParent,
+        checkFileExists,
+    ]);
 
     const hasSyncedDefaultDirectory = useRef(false);
     useEffect(() => {
@@ -183,8 +206,7 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                 filenameCustomized.current,
             );
             setFileLocation(withName);
-            const exists = await window.electron.fileExists(withName);
-            setFileExists(exists);
+            checkFileExists(withName);
             syncToParent(projectName, withName, designer, client);
         }
     };
@@ -209,33 +231,7 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                         );
                         if (nextLocation !== fileLocation) {
                             setFileLocation(nextLocation);
-                            const requestedPath = nextLocation;
-                            void window.electron
-                                .fileExists(nextLocation)
-                                .then((exists) => {
-                                    if (
-                                        ensureFileLocationHasProjectName(
-                                            fileLocation,
-                                            projectName,
-                                            defaultDirectory,
-                                            filenameCustomized.current,
-                                        ) === requestedPath
-                                    ) {
-                                        setFileExists(exists);
-                                    }
-                                })
-                                .catch(() => {
-                                    if (
-                                        ensureFileLocationHasProjectName(
-                                            fileLocation,
-                                            projectName,
-                                            defaultDirectory,
-                                            filenameCustomized.current,
-                                        ) === requestedPath
-                                    ) {
-                                        setFileExists(false);
-                                    }
-                                });
+                            checkFileExists(nextLocation);
                         }
                         syncToParent(name, fileLocation, designer, client);
                     }}
