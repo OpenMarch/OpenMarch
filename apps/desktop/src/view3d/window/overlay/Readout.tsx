@@ -22,7 +22,7 @@ import {
     pageCountAt,
     type PageCount,
     type ReadoutPage,
-} from "./readout";
+} from "./readoutMath";
 
 /** Formats show milliseconds as `m:ss.mmm`. */
 export function formatShowTime(showMs: number): string {

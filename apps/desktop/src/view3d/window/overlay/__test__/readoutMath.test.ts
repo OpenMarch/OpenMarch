@@ -4,7 +4,7 @@ import {
     pageAtSet,
     pageCountAt,
     type ReadoutPage,
-} from "../readout";
+} from "../readoutMath";
 
 /** Pages of `counts` beats at 0.5 s each, back to back, starting at 0. */
 function makePages(spec: [name: string, counts: number][]): ReadoutPage[] {
