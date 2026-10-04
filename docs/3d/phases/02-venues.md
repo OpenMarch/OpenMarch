@@ -61,8 +61,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P2.4: Pro dome kit
 
-- Owner: none
-- Status: open
+- Owner: p2-4-worker (3d/p2-pro-dome)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P2.2
