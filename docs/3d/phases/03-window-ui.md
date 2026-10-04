@@ -50,7 +50,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.3: Overlay UI
 
 - Owner: 3d-worker (3d/p3-overlay)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P3.1
@@ -122,3 +122,11 @@ Nothing yet.
 - **Next:** real-app capture (fly-tos, orbit, pick-a-seat, press-box framing), then the PR.
 - **Blockers:** none.
 - **Resume from:** branch `3d/p3-camera`; build the app and run a capture scenario based on `scratchpad/p31-capture/`.
+
+### 2026-10-04 · 3d-worker (3d/p3-overlay) · P3.3
+
+- **Done:** first pass pushed to `3d/p3-overlay`: `src/view3d/window/overlay/` (venue picker, lighting, crowd, fullscreen with auto-hide, camera bar, readout), mounted in `View3dRoot` in place of the debug readout; `view3d.*` strings in `en.json`. P3.2 hasn't merged, so `src/view3d/window/camera/cameraStore.ts` is a minimal store with exactly the lead's camera contract (no camera logic), for the lead to reconcile.
+- **Checks:** desktop `tsc --noEmit` pass; `vitest run src/view3d` 263 passed.
+- **Next:** real-app screenshots (themes, widths, kits, fullscreen auto-hide, venue and lighting change, undo), then the PR.
+- **Blockers:** none.
+- **Resume from:** branch `3d/p3-overlay`; build the app and run a capture scenario based on `scratchpad/p31-capture/p31-scene.mjs`.
