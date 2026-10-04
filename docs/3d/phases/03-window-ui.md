@@ -30,7 +30,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Scene assembly
 
 - Owner: 3d-worker (3d/p3-scene)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P1.3, P1.4, P2.1, P2.2
@@ -69,3 +69,11 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 Nothing yet.
 
 ## Progress log
+
+### 2026-10-04 · 3d-worker (3d/p3-scene) · P3.1
+
+- **Done:** first pass pushed to `3d/p3-scene` (`70aa6292`): `src/view3d/core/kits/index.ts` (registry and field style per kit), `src/view3d/window/Scene.tsx`, `sceneStore.ts` (kit, crowd, focus, lighting, quality for P3.2 and P3.3) and `useFieldImage.ts`; `View3dRoot` renders `Scene` instead of the placeholder.
+- **Checks:** desktop `tsc --noEmit` pass; `vitest run src/view3d` 240 passed.
+- **Next:** real-app screenshots of every kit and a lighting change, then the PR.
+- **Blockers:** none.
+- **Resume from:** branch `3d/p3-scene`; build the app and run a capture scenario based on the P1.4 worker's `scratchpad/p14-capture/p14-sync.mjs`.
