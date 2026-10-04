@@ -123,3 +123,6 @@ CONTEXT-MAP.md
 **/docs/agents/
 **/docs/adr/[0-9]*.md
 docs/superpowers/
+
+# 3D View reference demo (docs/3d/ref/README.md)
+docs/3d/ref/

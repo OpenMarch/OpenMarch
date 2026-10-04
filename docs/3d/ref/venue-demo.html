@@ -1,0 +1,1119 @@
+<title>OpenMarch 3D View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap">
+<style>
+/* Layout: one reading column (~72ch) under a full-bleed live 3D stage; the overlay UI copies OpenMarch's own toolbar tokens. */
+:root {
+  --bg: rgb(236, 235, 240);
+  --surface: rgb(246, 245, 250);
+  --panel: rgba(246, 245, 250, 0.82);
+  --stroke: rgba(0, 0, 0, 0.1);
+  --text: rgb(32, 32, 32);
+  --sub: rgba(32, 32, 32, 0.62);
+  --faint: rgba(32, 32, 32, 0.08);
+  --accent: rgb(100, 66, 255);
+  --accent-soft: rgba(100, 66, 255, 0.1);
+  --on-accent: #fff;
+  --green: rgb(72, 158, 51);
+  --yellow: rgb(160, 130, 0);
+  --red: rgb(176, 51, 51);
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: rgb(15, 14, 19);
+    --surface: rgb(24, 23, 30);
+    --panel: rgba(20, 19, 26, 0.78);
+    --stroke: rgba(255, 255, 255, 0.08);
+    --text: rgb(214, 214, 218);
+    --sub: rgba(214, 214, 218, 0.6);
+    --faint: rgba(255, 255, 255, 0.05);
+    --accent: rgb(150, 126, 255);
+    --accent-soft: rgba(150, 126, 255, 0.14);
+    --on-accent: rgb(10, 8, 20);
+    --green: rgb(113, 222, 86);
+    --yellow: rgb(236, 211, 71);
+    --red: rgb(227, 74, 74);
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: rgb(15, 14, 19);
+  --surface: rgb(24, 23, 30);
+  --panel: rgba(20, 19, 26, 0.78);
+  --stroke: rgba(255, 255, 255, 0.08);
+  --text: rgb(214, 214, 218);
+  --sub: rgba(214, 214, 218, 0.6);
+  --faint: rgba(255, 255, 255, 0.05);
+  --accent: rgb(150, 126, 255);
+  --accent-soft: rgba(150, 126, 255, 0.14);
+  --on-accent: rgb(10, 8, 20);
+  --green: rgb(113, 222, 86);
+  --yellow: rgb(236, 211, 71);
+  --red: rgb(227, 74, 74);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  padding-inline: 16px;
+  padding-block: 0 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; }
+.col { max-width: 72ch; }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(1.9rem, 4.6vw, 3rem); font-weight: 600; letter-spacing: -0.02em; }
+h2 { font-size: 1.6rem; font-weight: 600; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); }
+.lead { font-size: 1.12rem; color: var(--sub); max-width: 64ch; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--faint); padding: 1px 5px; border-radius: 4px; }
+
+header.top { display: flex; flex-direction: column; gap: 14px; padding-block: 40px 24px; }
+
+/* ---------- Stage (live demo) ---------- */
+.stage {
+  position: relative;
+  height: clamp(420px, 68vh, 720px);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--stroke);
+  background: #0d0f14;
+  touch-action: none;
+  user-select: none;
+}
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; }
+.stage.picking canvas { cursor: crosshair; }
+.ov { position: absolute; z-index: 2; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ov.tl { top: 10px; left: 10px; right: 10px; justify-content: space-between; pointer-events: none; }
+.ov.tl > * { pointer-events: auto; }
+.ov.bl { bottom: 10px; left: 10px; right: 10px; flex-direction: column; align-items: stretch; gap: 8px; pointer-events: none; }
+.ov.bl > * { pointer-events: auto; }
+.bar {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  border: 1px solid var(--stroke);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+.bar .lbl { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub); padding: 0 6px 0 6px; }
+.seg { display: flex; gap: 2px; }
+.btn {
+  font: 500 0.82rem/1 var(--font-sans);
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { background: var(--faint); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.btn.ghost[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.btn svg { width: 15px; height: 15px; }
+.sep { width: 1px; align-self: stretch; background: var(--stroke); margin: 2px 4px; }
+.cams { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+.cams::-webkit-scrollbar { display: none; }
+.hud {
+  align-self: flex-start;
+  font-family: var(--font-mono); font-size: 0.72rem; color: var(--text);
+  background: var(--panel); -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  border: 1px solid var(--stroke); border-radius: 6px; padding: 6px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.hint { position: absolute; z-index: 2; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.8rem; color: #fff; background: rgba(0,0,0,0.45); padding: 6px 12px; border-radius: 999px; pointer-events: none; transition: opacity 0.6s; white-space: nowrap; }
+.hint.gone { opacity: 0; }
+.loading, .failed-msg { position: absolute; inset: 0; display: grid; place-items: center; color: #cfd2dc; font-size: 0.9rem; z-index: 1; text-align: center; padding: 24px; }
+.failed-msg { display: none; }
+.stage.failed .failed-msg { display: grid; }
+.stage.failed .loading, .stage.ready .loading { display: none; }
+.caption { font-size: 0.86rem; color: var(--sub); margin-top: 10px; max-width: 80ch; }
+
+/* ---------- Sections ---------- */
+section { padding-block: 56px 0; display: flex; flex-direction: column; gap: 18px; }
+section > .col { display: flex; flex-direction: column; gap: 14px; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--stroke); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card p, .card li { color: var(--sub); font-size: 0.92rem; }
+.card ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.k { font-family: var(--font-mono); font-size: 0.7rem; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.tbl { overflow-x: auto; border: 1px solid var(--stroke); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 0.88rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--stroke); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sub); font-weight: 500; }
+tr:last-child td { border-bottom: none; }
+td.dim { color: var(--sub); }
+
+.principles { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.principles li { display: grid; grid-template-columns: 2.2em 1fr; gap: 6px; }
+.principles .n { font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; padding-top: 2px; }
+.principles b { font-weight: 600; }
+.principles span.d { color: var(--sub); }
+
+.flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; }
+.flow .node { background: var(--surface); border: 1px solid var(--stroke); border-radius: 8px; padding: 12px 14px; font-size: 0.86rem; min-width: 0; }
+.flow .node b { display: block; font-size: 0.92rem; margin-bottom: 4px; }
+.flow .node span { color: var(--sub); }
+.flow .arrow { display: grid; place-items: center; color: var(--accent); font-family: var(--font-mono); font-size: 0.72rem; text-align: center; }
+@media (max-width: 720px) {
+  .flow { grid-template-columns: 1fr; }
+  .flow .arrow { padding: 2px 0; }
+  .flow .arrow .h { display: none; }
+}
+@media (min-width: 721px) { .flow .arrow .v { display: none; } }
+
+pre { margin: 0; background: var(--surface); border: 1px solid var(--stroke); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; color: var(--text); }
+pre .c { color: var(--sub); }
+
+.ideas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.idea { background: var(--surface); border: 1px solid var(--stroke); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.idea p { color: var(--sub); font-size: 0.92rem; }
+.tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--stroke); color: var(--sub); }
+.tag.hi { color: var(--green); border-color: currentColor; }
+.tag.md { color: var(--yellow); border-color: currentColor; }
+.tag.moon { color: var(--accent); border-color: currentColor; }
+
+.phases { list-style: none; margin: 0; padding: 0; border: 1px solid var(--stroke); border-radius: 8px; background: var(--surface); }
+.phases li { display: grid; grid-template-columns: 3.4em 1fr; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--stroke); }
+.phases li:last-child { border-bottom: none; }
+.phases .id { font-family: var(--font-mono); color: var(--accent); font-size: 0.85rem; padding-top: 1px; }
+.phases b { font-weight: 600; }
+.phases p { color: var(--sub); font-size: 0.9rem; }
+
+.qs { counter-reset: q; list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.qs li { background: var(--accent-soft); border: 1px solid var(--stroke); border-radius: 8px; padding: 12px 16px; }
+.qs li b { display: block; margin-bottom: 2px; }
+.qs li span { color: var(--sub); font-size: 0.92rem; }
+.foot { font-size: 0.8rem; color: var(--sub); padding-top: 48px; max-width: 80ch; }
+@media (prefers-reduced-motion: reduce) { .hint { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">Proposal · 3D for OpenMarch · Oct 3, 2026 · branch 3d-async</span>
+    <h1>See the show from the seat that scores it.</h1>
+    <p class="lead">A plan for 3D View in OpenMarch. The 2D editor stays where drill gets written. 3D View follows it live: in its own window first, on a projector, and later docked in the editor. Venues come from parameters you control, not from a paid art team. Below is a working sketch of the venue approach. Drag it around.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" tabindex="0" aria-label="3D venue preview. Drag to orbit, scroll or pinch to zoom, shift-drag to pan."></canvas>
+    <div class="loading">Loading three.js…</div>
+    <div class="failed-msg">The 3D demo couldn't load (WebGL or the three.js download was blocked). The rest of the proposal still applies.</div>
+    <div class="ov tl">
+      <div class="bar" role="group" aria-label="Venue">
+        <span class="lbl">Venue</span>
+        <div class="seg" id="venueSeg">
+          <button class="btn" data-venue="hs" aria-pressed="true">High school</button>
+          <button class="btn" data-venue="bighs" aria-pressed="false">Big high school</button>
+          <button class="btn" data-venue="college" aria-pressed="false">College bowl</button>
+          <button class="btn" data-venue="pro" aria-pressed="false">Pro dome</button>
+          <button class="btn" data-venue="gym" aria-pressed="false">Indoor gym</button>
+        </div>
+      </div>
+      <div class="bar" role="group" aria-label="Venue options">
+        <div class="seg" id="hashSeg" aria-label="Hash style">
+          <span class="lbl">Hashes</span>
+          <button class="btn" data-hash="hs" aria-pressed="true">HS</button>
+          <button class="btn" data-hash="ncaa" aria-pressed="false">NCAA</button>
+          <button class="btn" data-hash="nfl" aria-pressed="false">NFL</button>
+        </div>
+        <span class="sep" id="hashSep"></span>
+        <div class="seg" id="lightSeg" aria-label="Lighting"></div>
+        <span class="sep"></span>
+        <button class="btn ghost" id="crowdBtn" aria-pressed="true">Crowd</button>
+      </div>
+    </div>
+    <div class="ov bl">
+      <div class="hud" id="hud">—</div>
+      <div class="bar cams" role="group" aria-label="Cameras">
+        <span class="lbl">Camera</span>
+        <div class="seg" id="camSeg"></div>
+        <span class="sep"></span>
+        <button class="btn ghost" id="seatBtn" aria-pressed="false" title="Click any seat in the stands to sit there">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 1v3M8 12v3M1 8h3M12 8h3"/></svg>
+          Pick a seat
+        </button>
+      </div>
+    </div>
+    <div class="hint" id="hint">Drag to orbit · scroll or pinch to zoom · shift-drag to pan</div>
+  </div>
+  <p class="caption">Nothing in this scene is a modeled asset. The field, hashes, track, stands, two-deck bowl, suites, retractable roof, video boards, light poles, gym, tarp and crowd are all built from a few parameters: field standard, row count, rake, press-box height and lighting. Every camera is a real place with a real eye height. This is plain three.js in this page. The product version reads the show's own field properties and theme.</p>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Where the bar is</span>
+      <h2>The competition has 3D. None of it is pleasant.</h2>
+      <p>Pyware owns the market, and its 3D window ("Real View") is the reference point. It ships a decent venue library and real cameras. Any custom look goes through a paid art-team quote, and the mobile viewer is rated 2.9★. Newer tools add venues and video, but nobody treats the view <em>from the judges' seats</em> as a design tool.</p>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Tool</th><th>Venues</th><th>Cameras</th><th>Custom venues</th><th>Price</th></tr></thead>
+        <tbody>
+          <tr><td><b>Pyware 3DX</b><br><span class="dim">Real View, Java</span></td><td>Football fields, gyms, streets, stages. Lucas Oil and Protective Stadium in v10.</td><td>Sky, Ground (follow), Helmet, Blimp. Up to 4 at once. 6 unnamed saved slots.</td><td>Grid Designer and image floor covers. 3D surfaces, uniforms and props come from a paid store.</td><td class="dim">$199–$799/yr</td></tr>
+          <tr><td><b>EnVision</b><br><span class="dim">Box5</span></td><td>"True 3D field." I couldn't confirm a venue library.</td><td>Interactive camera</td><td>Unknown</td><td class="dim">from $12/mo</td></tr>
+          <tr><td><b>Drill Studio</b><br><span class="dim">iPad</span></td><td>Stadiums, arenas, concert halls</td><td>Free view, 180° performer flip</td><td>Unknown</td><td class="dim">$98/yr</td></tr>
+          <tr><td><b>Drill Pirate</b><br><span class="dim">new, unverified</span></td><td>Fields, indoor floors, stages, parade routes</td><td>3D preview</td><td>"Customizable"</td><td class="dim">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="k">Table stakes</span><ul><li>Smooth 3D playback locked to the audio</li><li>Orbit, overhead and follow-performer cameras, plus saved views</li><li>HS and NCAA fields, gyms and custom grids</li><li>Logo or floor image with adjustable opacity</li><li>MP4 export, and a viewer students can use</li></ul></div>
+      <div class="card"><span class="k">Nobody does yet</span><ul><li>Named judge and audience cameras with real heights</li><li>Checking how forms read from the box (foreshortening)</li><li>Free, user-importable venue models</li><li>Lighting and sun position for the show date</li><li>A 3D link anyone can open in a browser</li><li>VR or AR "stand on your dot"</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Principles</span>
+      <h2>Five rules that keep 3D from becoming a second app</h2>
+    </div>
+    <ol class="principles col">
+      <li><span class="n">1</span><div><b>One source of truth.</b> <span class="d">3D reads the same field properties, the same marcher positions and later the same timeline resolver as the 2D canvas. There's never a second motion model. When the timeline project lands, 3D gets it for free.</span></div></li>
+      <li><span class="n">2</span><div><b>The field is data; the venue wraps it.</b> <span class="d">Field properties stay the grid of truth (checkpoints, hashes, step size). A new <em>venue</em> layer describes everything around it: surface, paint, stands, press box, lights, room.</span></div></li>
+      <li><span class="n">3</span><div><b>Every view is a seat.</b> <span class="d">A camera is a place where a judge, a parent or a drum major actually is, in real feet and meters. A free orbit is the exception.</span></div></li>
+      <li><span class="n">4</span><div><b>Follow, don't fork.</b> <span class="d">The 2D editor is where drill is written. 3D follows its playback, selected page and selection live, and never needs its own transport.</span></div></li>
+      <li><span class="n">5</span><div><b>Venues are free and shareable.</b> <span class="d">Procedural kits cover most bands. Import and a community library cover the rest. That's an open-source advantage Pyware can't copy.</span></div></li>
+    </ol>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Surfaces</span>
+      <h2>Three places 3D shows up</h2>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="k">A · 3D View window (MVP)</span><h3>A separate window that follows the editor</h3><p>Open it on a second monitor or a projector. It follows play, pause, scrub and page changes from the 2D editor and shows the current count. Open two to see the press box and the front row side by side. Fullscreen turns it into a rehearsal and booster-meeting screen.</p></div>
+      <div class="card"><span class="k">B · In-editor preview (later)</span><h3>Docked or picture-in-picture over the canvas</h3><p>A small live 3D view in a corner of the editor, or a split panel. It replaces today's CSS tilt slider with a real "tilt into 3D". The camera starts exactly on top of the 2D grid and swings down into the stands, so designers never lose their place.</p></div>
+      <div class="card"><span class="k">C · Out of the app</span><h3>Video, stills and a link anyone can open</h3><p>The existing video exporter (mediabunny) already accepts any canvas, so a WebGL frame drops in. Add camera moves on the timeline for cinematic exports. Export a self-contained web viewer for boosters and students, so they don't need an app-store app.</p></div>
+    </div>
+
+    <div class="col"><h3>How the 3D View window stays in sync</h3><p>Playback time lives in the editor's AudioContext, and data lives behind the editor's single database connection. So the editor publishes small facts through the main process, and each 3D View window keeps its own clock.</p></div>
+    <div class="flow" aria-label="Sync between editor and 3D View windows">
+      <div class="node"><b>Editor window</b><span>Audio clock, selected page, selection, undo history. Sends a clock anchor on play, pause or seek, and an invalidation after each committed edit.</span></div>
+      <div class="arrow"><span class="h">→<br>IPC</span><span class="v">↓ IPC</span></div>
+      <div class="node"><b>Main process</b><span>Relays <code>view3d:clock</code>, <code>view3d:selection</code> and <code>view3d:invalidate</code> to every open 3D View window. Owns window lifecycle and remembers which display each window was on.</span></div>
+      <div class="arrow"><span class="h">→<br>push</span><span class="v">↓ push</span></div>
+      <div class="node"><b>3D View window(s)</b><span>Extrapolate time from the anchor every frame (no per-frame IPC). Re-read only the invalidated queries, read-only. Minimal preload API.</span></div>
+    </div>
+    <pre><span class="c">// one message per play / pause / seek, re-sent every ~1 s while playing to correct audio-clock drift</span>
+view3d:clock     { playing: true, anchorShowMs: 48250, anchorWallMs: performance.timeOrigin + performance.now(), rate: 1 }
+view3d:selection { pageId: 14, marcherIds: [3, 7, 9] }
+view3d:invalidate{ keys: [["marcher_pages"], ["field_properties","detail"]] }   <span class="c">// after the history transaction commits</span>
+<span class="c">// 3D View window: showMs = anchorShowMs + (now - anchorWallMs) * rate</span></pre>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Venues</span>
+      <h2>A venue is a small spec around the show's field</h2>
+      <p>The show's field properties already say where every yard line, hash and checkpoint is. A venue adds the world around it, as data you can edit, save to a library, share and diff. The kits turn the spec into geometry in milliseconds, the way the demo above does.</p>
+    </div>
+    <pre>{
+  "kind": "stadium",
+  "surface": { "type": "turf", "stripes": "5yd",
+               "endZones": { "color": "#1f2a5c", "text": "EAGLES" },
+               "midfieldLogo": "logo.png" },            <span class="c">// the grid itself comes from the show's field properties</span>
+  "surround": { "track": { "lanes": 6 } },
+  "stands": [
+    { "side": "front", "rows": 28, "rakeDeg": 21, "length": "100yd",
+      "pressBox": { "eyeHeight": "40ft", "setback": "6ft" } },
+    { "side": "back", "rows": 16 }
+  ],
+  "lights": { "poles": 4 },
+  "site": { "lat": 39.76, "lon": -86.16, "facing": 152 },  <span class="c">// optional: sun position and map ground</span>
+  "cameras": [ { "name": "Press box", "at": "pressBox" },
+               { "name": "Judge 2", "at": [0, 52, 140], "look": "fieldCenter" } ]
+}</pre>
+    <div class="grid">
+      <div class="card"><span class="k">Kit</span><h3>Stadium</h3><p>HS home/visitor bleachers, college bowl with end stands, and a dome with roof and video boards. Track or no track, turf or mowed grass, end-zone paint and logos, light poles, press-box height and setback.</p></div>
+      <div class="card"><span class="k">Kit</span><h3>Indoor</h3><p>A gym or an arena floor, with a tarp image cropped to the performance area and a 5 ft safety zone. Pull-out bleachers on one or both sides, a GE judge seat ¾ of the way up, and house versus show lighting.</p></div>
+      <div class="card"><span class="k">Kit</span><h3>Parade and street</h3><p>A route spline with width, curbs and turns, plus building blocks along the street and a reviewing stand. It shares the grid model already used for custom fields.</p></div>
+      <div class="card"><span class="k">Kit</span><h3>Any grid</h3><p>Soccer, Canadian, stage or a blank floor follow from the existing grid templates. The venue only adds the room around them.</p></div>
+    </div>
+    <div class="col">
+      <h3>Beyond the kits</h3>
+      <p><b>Import a real venue.</b> A glTF/GLB file from SketchUp, Blender or a photogrammetry scan, aligned by clicking two goal-line corners and one more point. The show's field draws on top.</p>
+      <p><b>Shareable venue files.</b> A <code>.omvenue</code> file (spec JSON, plus optional GLB and images) you can export and send. Everything stays offline; nothing is hosted.</p>
+      <p><b>Crisp at the front row.</b> The demo paints lines into a 4096 px texture, and you can see it soften at ground level. The product version should draw lines, hashes and ticks in a shader straight from the checkpoints. They stay razor-sharp at any distance and update instantly when field properties change.</p>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Cameras</span>
+      <h2>Named seats, not unnamed slots</h2>
+      <p>Pyware gives four camera types and six numbered slots. OpenMarch gives every venue a set of seats that people actually use, plus tools to make your own.</p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="k">Built in</span><ul><li><b>Press box:</b> where DCI and BOA judge ensemble and GE</li><li><b>GE judge:</b> ¾ of the way up the gym bleachers</li><li><b>Front row and end zone:</b> the parent view</li><li><b>Podium:</b> the drum major's view</li><li><b>Blimp and top-down:</b> top-down matches the 2D canvas exactly</li><li><b>On the floor:</b> performer eye; helmet cam once performers exist</li></ul></div>
+      <div class="card"><span class="k">Tools</span><ul><li><b>Pick a seat:</b> click anywhere in the stands to sit there (try it above)</li><li><b>Saved views:</b> per show, named, shareable</li><li><b>Tilt morph:</b> animate from the 2D top-down into any seat</li><li><b>Split view:</b> 2 or 4 cameras in one 3D View window</li><li><b>Camera track:</b> camera keyframes on the timeline, used by video export</li></ul></div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Ideas</span>
+      <h2>What would make OpenMarch the best drill tool anywhere</h2>
+      <p>Tags show my guess at impact and effort. Moonshots are bets, not commitments.</p>
+    </div>
+    <div class="ideas">
+      <div class="idea"><h3>Judge's-eye form check</h3><p>Forms drawn on a top-down grid read differently from 40 ft up. Show the foreshortening factor as a heat overlay in the 2D editor, and flag depth intervals that collapse from the box. Add a small "box view" thumbnail next to the canvas. No competitor helps designers draw <em>for</em> the box.</p><div class="tags"><span class="tag hi">high impact</span><span class="tag md">medium effort</span></div></div>
+      <div class="idea"><h3>Rehearsal projector mode</h3><p>The 3D View window goes fullscreen on the band room projector and follows the editor. It shows big counts and the set number, and isolates a section. The staff runs sets while students watch the box view.</p><div class="tags"><span class="tag hi">high impact</span><span class="tag hi">low effort</span></div></div>
+      <div class="idea"><h3>Share a 3D link</h3><p>Export the show as a self-contained web viewer (static HTML plus show data) that boosters, admins and students orbit in any browser, including phones. Hosting it on openmarch.com is optional.</p><div class="tags"><span class="tag hi">high impact</span><span class="tag md">medium effort</span></div></div>
+      <div class="idea"><h3>Camera track on the timeline</h3><p>Keyframe the camera at counts, like any other property on the timeline: start in the press box, push in at the hit, end on the drum major. Video export follows it. This rides on the timeline project's property model.</p><div class="tags"><span class="tag hi">high impact</span><span class="tag md">medium effort</span></div></div>
+      <div class="idea"><h3>Sun, lights and show night</h3><p>Set the venue's location and the show date and time. See where the sun sits at 7:40 pm at state finals, whether the band faces into glare, and what the stadium lights look like after dark. Lighting-previz tools sell this; drill tools don't have it.</p><div class="tags"><span class="tag md">medium impact</span><span class="tag hi">low effort</span></div></div>
+      <div class="idea"><h3>Tarp and floor designer</h3><p>For indoor groups, the tarp <em>is</em> the venue. Paint or import tarp art at true scale, preview it in the gym under house and show lights, and export a print-ready file with the 5 ft markers.</p><div class="tags"><span class="tag md">medium impact</span><span class="tag md">medium effort</span></div></div>
+      <div class="idea"><h3>Venue import and community library</h3><p>glTF/GLB import with three-click alignment, plus a shared <code>.omvenue</code> library. Lucas Oil, your rival's stadium and your own gym, free.</p><div class="tags"><span class="tag hi">high impact</span><span class="tag md">medium effort</span></div></div>
+      <div class="idea"><h3>Your stadium from the map</h3><p>Type an address. OpenMarch drops the field onto satellite ground imagery and extrudes nearby buildings from OpenStreetMap, so you get the real setting in a minute. Imagery licences need checking first.</p><div class="tags"><span class="tag moon">moonshot</span></div></div>
+      <div class="idea"><h3>Stand on your dot</h3><p>WebXR on a headset puts a student on their own spot in the form. Phone AR puts the whole field on a band-room table. three.js supports both. In Electron it fits best through the shared web viewer.</p><div class="tags"><span class="tag moon">moonshot</span></div></div>
+      <div class="idea"><h3>Crowd and atmosphere presets</h3><p>From an empty Tuesday practice to a sold-out finals night: crowd density, team colors in the stands, field paint. It's small, and it sells shows to boosters.</p><div class="tags"><span class="tag md">medium impact</span><span class="tag hi">low effort</span></div></div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Architecture</span>
+      <h2>How it fits the codebase</h2>
+      <p><b>React Three Fiber for the scene, plain TypeScript for the builders.</b> Venue builders and the step-to-world math are framework-free functions (spec in, geometry and textures out) with unit tests. The R3F scene, cameras and overlay live in the desktop renderer and use OpenMarch's own components. Playback updates go through <code>useFrame</code> and refs, never React state.</p>
+      <p><b>The <code>3d-basic</code> prototype</b> is useful for its step-to-meter mapping and R3F scaffold. Its geometry needs a rewrite: Z signs are inconsistent, the grid props are unused, it creates hundreds of meshes, and drei's text fetches a font from a CDN, which breaks offline, so we bundle one.</p>
+      <p><b>World coordinates</b> keep the field's origin at center front, the same as field properties: +X toward side 2, −Z toward the back, +Y up, meters inside. The stands and press box sit on the +Z (front) side, which is how it works at real venues.</p>
+      <p><b>3D View window:</b> a new BrowserWindow that loads the same renderer bundle with a view flag, so it reuses providers, theme and i18n. It gets a minimal read-only preload, with context isolation on. The leftover <code>open-win</code> handler in main runs with node integration and no isolation, so it shouldn't be reused.</p>
+      <p><b>Budgets:</b> 60 fps at 1080p on an integrated GPU with 300 performers (later). Under 300 draw calls through instancing. A venue rebuilds in under 200 ms when a parameter changes.</p>
+      <p><b>Testing:</b> unit tests on the coordinate mapping, golden screenshots per kit and camera (rendered headless in the Docker + Xvfb setup I already use to send you videos), and e2e tests that the 3D View window follows play, pause and seek.</p>
+      <p><b>Needs an ADR</b> before any code: a new window, new IPC channels, a new package and a new venue file format all fall under the repo's architecture-decisions rule.</p>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Roadmap</span>
+      <h2>Phases, run like timeline-try-2</h2>
+      <p>The same workflow as the timeline project: <code>docs/3d/</code> with a README, WORKER.md, one file per phase and P-numbered work packages. <code>3d-async</code> on your fork is the coordination branch, and worker agents claim packages and open PRs there. Performers and instruments stay out until the venues are solid.</p>
+    </div>
+    <ol class="phases">
+      <li><span class="id">P0</span><div><b>Decisions</b><p>ADR covering the package boundary, renderer choice, sync contract, venue spec and file format, and coordinate system. Needs your sign-off.</p></div></li>
+      <li><span class="id">P1</span><div><b>Stage core and field surface</b><p><code>packages/stage</code> scaffold, step-to-world mapping in core, a shader field surface driven by field properties and the field theme, and golden screenshots.</p></div></li>
+      <li><span class="id">P2</span><div><b>Venue kits</b><p>Venue spec and validation, plus the stadium (HS, college, dome) and indoor gym kits. Can run in parallel with P3.</p></div></li>
+      <li><span class="id">P3</span><div><b>Cameras and overlay UI</b><p>Named seats, pick a seat, saved views and the top-down-to-3D morph. The overlay is built from <code>packages/ui</code> primitives and Phosphor icons.</p></div></li>
+      <li><span class="id">P4</span><div><b>Stage window and sync</b><p>The window, preload, the clock, selection and invalidation messages, multi-display memory and fullscreen projector mode.</p></div></li>
+      <li><span class="id">P5</span><div><b>In-editor preview</b><p>Docked and picture-in-picture preview, replacing the CSS tilt slider.</p></div></li>
+      <li><span class="id">P6</span><div><b>Presentation</b><p>Lighting and sun, crowd presets, WebGL video export and the camera track on the timeline.</p></div></li>
+      <li><span class="id">P7</span><div><b>Analysis</b><p>Judge's-eye form check and foreshortening overlay in 2D.</p></div></li>
+      <li><span class="id">P8</span><div><b>Share and import</b><p>Web viewer export, glTF import, the <code>.omvenue</code> library and the tarp designer.</p></div></li>
+      <li><span class="id">Later</span><div><b>Performers and beyond</b><p>Performer models, instruments, flags and props, the helmet cam, then XR.</p></div></li>
+    </ol>
+  </section>
+
+  <!-- ---------------------------------------------------------------- -->
+  <section>
+    <div class="col">
+      <span class="eyebrow">Decided · Oct 3–4, 2026</span>
+      <h2>What the MVP is</h2>
+    </div>
+    <ol class="qs col">
+      <li><b>Name: 3D View.</b><span>No separate brand. The menu item and window title say "3D View".</span></li>
+      <li><b>React Three Fiber.</b><span>Venue builders and coordinate math stay plain TypeScript so they can be tested on their own.</span></li>
+      <li><b>The separate window comes first.</b><span>It follows the editor's playback. The in-editor preview comes later.</span></li>
+      <li><b>The show file stores the venue selection and its small settings.</b><span>Heavy data (imported models, the venue library) stays in the app.</span></li>
+      <li><b>Offline only.</b><span>No map imagery and no hosted library. Fonts and assets are bundled.</span></li>
+      <li><b>Performers are blocks or cylinders</b><span>colored like the 2D canvas, moving with the same position math. No modeled figures.</span></li>
+      <li><b>Venues in the MVP:</b><span>high school, big high school, college bowl, pro dome (Lucas Oil-like, with a retractable roof) and indoor gym.</span></li>
+    </ol>
+  </section>
+
+  <p class="foot">Research notes: competitor details come from vendor pages and docs (pyware.com guide v9–11, the Real View store, App Store listings) checked on Oct 3, 2026. Drill Pirate's features are from a search summary only. Reddit and Facebook groups were unreachable, so user complaints come from App Store reviews and archived forum snippets. Venue dimensions: hashes measured from the sideline are 53′4″ (HS), 60′ (NCAA) and 70′9″ (NFL). WGI floors are at least 60 × 90 ft with a 5 ft safety zone. Bowl seating is typically rated at 20–22°. No published press-box heights were found, so the demo uses about 40 ft (HS) and about 62 ft (college) eye heights.</p>
+</div>
+
+<script type="module">
+const stageEl = document.getElementById("stage");
+const canvas = document.getElementById("gl");
+let THREE;
+try {
+  THREE = await import("https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js");
+  try { await document.fonts.load('700 64px "DM Sans"'); } catch (e) {}
+  init();
+  stageEl.classList.add("ready");
+} catch (e) {
+  console.error(e);
+  stageEl.classList.add("failed");
+}
+
+function init() {
+  // ---------------------------------------------------------------- renderer
+  // World units are feet. Origin = center of the front sideline (center front), +X = side 2, -Z = toward the back.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 1, 9000);
+
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color() }, bottom: { value: new THREE.Color() } },
+    vertexShader: "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+    fragmentShader: "uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ float h = clamp(vP.y * 1.5 + 0.06, 0.0, 1.0); gl_FragColor = vec4(mix(bottom, top, pow(h, 0.65)), 1.0); \n#include <colorspace_fragment>\n }",
+  });
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(5000, 32, 16), skyMat);
+  sky.frustumCulled = false;
+  scene.add(sky);
+  scene.fog = new THREE.Fog(0xcfe2f5, 1800, 5000);
+
+  const hemi = new THREE.HemisphereLight(0xcfe3ff, 0x4a5d33, 1);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, 2);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -420, right: 420, top: 420, bottom: -420, near: 10, far: 2200 });
+  sun.shadow.bias = -0.0004;
+  sun.shadow.camera.updateProjectionMatrix();
+  scene.add(sun, sun.target);
+
+  // ---------------------------------------------------------------- helpers
+  const mats = {};
+  const std = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...o });
+  const unitBox = new THREE.BoxGeometry(1, 1, 1);
+  const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const canvasTex = (c, repeat) => {
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
+    if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); }
+    return t;
+  };
+  function dispose(obj) {
+    obj.traverse((o) => {
+      if (o.geometry && o.geometry !== unitBox) o.geometry.dispose();
+      const ms = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
+      ms.forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+    });
+  }
+
+  // ---------------------------------------------------------------- football field texture
+  const HASH = { hs: 160 / 3, ncaa: 60, nfl: 70.75 };
+  function fieldTexture(hash) {
+    const L = 360, D = 160, W = 4096, H = Math.round((W * D) / L), s = W / L;
+    const c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    const X = (x) => (x + 180) * s, Y = (z) => (160 + z) * s;
+    const rect = (x0, z0, x1, z1) => g.fillRect(X(Math.min(x0, x1)), Y(Math.min(z0, z1)), Math.abs(x1 - x0) * s, Math.abs(z1 - z0) * s);
+    g.fillStyle = "#3d7a33"; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < 20; i++) { g.fillStyle = i % 2 ? "#3a7330" : "#44853a"; rect(-150 + i * 15, -160, -135 + i * 15, 0); }
+    g.fillStyle = "#1f2a5c"; rect(-180, -160, -150, 0); rect(150, -160, 180, 0);
+    const ez = (cx, rot) => { g.save(); g.translate(X(cx), Y(-80)); g.rotate(rot); g.fillStyle = "#f4f6f1"; g.font = `700 ${15 * s}px "DM Sans", sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("OPENMARCH", 0, 0); g.restore(); };
+    ez(-165, -Math.PI / 2); ez(165, Math.PI / 2);
+    g.fillStyle = "#f4f6f1";
+    const lw = 0.4;
+    rect(-180, -1, 180, 0); rect(-180, -160, 180, -159); rect(-180, -160, -179, 0); rect(179, -160, 180, 0);
+    for (let yd = 0; yd <= 100; yd += 5) { const x = -150 + yd * 3; rect(x - lw / 2, -160, x + lw / 2, 0); }
+    const h = HASH[hash];
+    for (let yd = 1; yd < 100; yd++) {
+      if (yd % 5 === 0) continue;
+      const x = -150 + yd * 3;
+      rect(x - lw / 2, -2, x + lw / 2, 0); rect(x - lw / 2, -160, x + lw / 2, -158);
+      rect(x - lw / 2, -h - 1, x + lw / 2, -h + 1); rect(x - lw / 2, -160 + h - 1, x + lw / 2, -160 + h + 1);
+    }
+    for (let yd = 0; yd <= 100; yd += 5) { const x = -150 + yd * 3; rect(x - 1, -h - lw / 2, x + 1, -h + lw / 2); rect(x - 1, -160 + h - lw / 2, x + 1, -160 + h + lw / 2); }
+    // yard numbers: 6 ft tall, tops 9 yd from each sideline, with arrows toward the nearer goal
+    const fs = 6 / 0.7 * s;
+    g.font = `600 ${fs}px "DM Sans", sans-serif`; g.textAlign = "center"; g.textBaseline = "alphabetic";
+    const tri = (cx, cz, dir, flip) => { g.beginPath(); const a = 1.6 * s, b = 1.1 * s; const px = X(cx), pz = Y(cz); g.moveTo(px + dir * a, pz); g.lineTo(px - dir * a * 0.2, pz - b); g.lineTo(px - dir * a * 0.2, pz + b); g.closePath(); g.fill(); };
+    for (let yd = 10; yd <= 90; yd += 10) {
+      const n = String(yd <= 50 ? yd : 100 - yd), x = -150 + yd * 3;
+      g.save(); g.translate(X(x), Y(-21)); g.fillText(n, 0, 0); g.restore();
+      g.save(); g.translate(X(x), Y(-139)); g.rotate(Math.PI); g.fillText(n, 0, 0); g.restore();
+      if (yd !== 50) { const dir = yd < 50 ? -1 : 1; tri(x + dir * 9, -25.5, dir); tri(x + dir * 9, -134.5, dir); }
+    }
+    g.beginPath(); g.arc(X(0), Y(-80), 13 * s, 0, Math.PI * 2); g.fillStyle = "#6442ff"; g.fill();
+    g.lineWidth = 0.8 * s; g.strokeStyle = "#f4f6f1"; g.stroke();
+    g.fillStyle = "#f4f6f1"; g.font = `700 ${11 * s}px "DM Sans", sans-serif`; g.textBaseline = "middle"; g.fillText("OM", X(0), Y(-80) + 0.5 * s);
+    return canvasTex(c);
+  }
+
+  // ---------------------------------------------------------------- stands
+  // A stand's local front edge is at z=0 and it rises toward +z. Rotate/position it in its venue.
+  function stand({ length, rows, depth = 2.6, rise = 1.0, base = 4, crowd = 0.6, pressBox = null, team = 0x6442ff, aisle = 7 }) {
+    const g = new THREE.Group();
+    const rowsMesh = new THREE.InstancedMesh(unitBox, std(0x8e9098, { roughness: 0.95 }), rows);
+    const bench = new THREE.InstancedMesh(unitBox, std(0xc8ccd4, { metalness: 0.5, roughness: 0.45 }), rows);
+    for (let i = 0; i < rows; i++) {
+      const h = base + i * rise;
+      tmpM.compose(tmpV.set(0, h / 2, i * depth + depth / 2), tmpQ.identity(), tmpS.set(length, h, depth)); rowsMesh.setMatrixAt(i, tmpM);
+      tmpM.compose(tmpV.set(0, h + 1.35, i * depth + depth * 0.32), tmpQ.identity(), tmpS.set(length, 0.25, 0.9)); bench.setMatrixAt(i, tmpM);
+    }
+    rowsMesh.castShadow = rowsMesh.receiveShadow = true; bench.receiveShadow = true;
+    rowsMesh.userData.seats = { rows, depth, rise, base };
+    g.add(rowsMesh, bench);
+    // crowd
+    const per = Math.floor(length / 1.9), people = [];
+    const palette = [team, team, 0xffffff, 0x22252c, 0x3b5b92, 0xb04a3a, 0xd9c48a, 0x5a6e4e];
+    for (let i = 0; i < rows; i++) for (let j = 0; j < per; j++) if (Math.abs(-length / 2 + (j + 0.5) * (length / per)) > aisle && rnd() < crowd * (0.75 + 0.25 * (1 - i / rows))) people.push([i, j]);
+    const crowdMesh = new THREE.InstancedMesh(unitBox, std(0xffffff), Math.max(1, people.length));
+    const col = new THREE.Color();
+    people.forEach(([i, j], k) => {
+      const h = base + i * rise;
+      tmpM.compose(tmpV.set(-length / 2 + (j + 0.5) * (length / per) + (rnd() - 0.5) * 0.4, h + 2.65, i * depth + depth * 0.42), tmpQ.identity(), tmpS.set(1.35, 2.6 + rnd() * 0.4, 1.0));
+      crowdMesh.setMatrixAt(k, tmpM); crowdMesh.setColorAt(k, col.setHex(palette[Math.floor(rnd() * palette.length)]));
+    });
+    crowdMesh.count = people.length; crowdMesh.userData.crowd = true;
+    g.add(crowdMesh);
+    if (pressBox) {
+      const top = base + (rows - 1) * rise, zb = rows * depth;
+      const pb = new THREE.Group();
+      const body = new THREE.Mesh(unitBox, std(0xe6e3dc)); body.scale.set(pressBox.width, pressBox.height, 14); body.position.set(0, top + pressBox.lift + pressBox.height / 2, zb + 7);
+      const stories = pressBox.stories || 1, storyH = pressBox.height / stories;
+      for (let k = 0; k < stories; k++) { const glass = new THREE.Mesh(unitBox, std(0x1d2a3d, { roughness: 0.15, metalness: 0.4, emissive: 0x0b1320 })); glass.scale.set(pressBox.width - 3, storyH * 0.45, 0.4); glass.position.set(0, top + pressBox.lift + storyH * (k + 0.58), zb - 0.1); pb.add(glass); }
+      const roof = new THREE.Mesh(unitBox, std(0x55585f)); roof.scale.set(pressBox.width + 4, 1.2, 18); roof.position.set(0, top + pressBox.lift + pressBox.height + 0.6, zb + 6);
+      [body, roof].forEach((m) => { m.castShadow = true; m.receiveShadow = true; });
+      if (pressBox.lift > 0) { const col2 = new THREE.Mesh(unitBox, std(0x8e9098)); col2.scale.set(pressBox.width * 0.9, pressBox.lift + 0.5, 12); col2.position.set(0, top + pressBox.lift / 2, zb + 7); col2.castShadow = true; pb.add(col2); }
+      pb.add(body, roof); g.add(pb);
+      g.userData.pressEye = new THREE.Vector3(0, top + pressBox.lift + storyH * (stories - 1 + 0.55), zb - 1.2);
+    }
+    g.userData.rowEye = (i) => new THREE.Vector3(0, base + i * rise + 4, i * depth + depth * 0.45);
+    return g;
+  }
+
+  // stadium-shaped outline (straights x in [-150,150], semicircle ends of radius r), in shape space (x, -z)
+  function stadiumPath(r, cz = 80) {
+    const p = new THREE.Path();
+    p.moveTo(-150, cz - r); p.lineTo(150, cz - r); p.absarc(150, cz, r, -Math.PI / 2, Math.PI / 2, false);
+    p.lineTo(-150, cz + r); p.absarc(-150, cz, r, Math.PI / 2, Math.PI * 1.5, false);
+    return p;
+  }
+
+  function lightPole(x, z, height, lookAt) {
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.4, height, 10), std(0x9a9da4, { metalness: 0.6, roughness: 0.4 }));
+    pole.position.set(x, height / 2, z); pole.castShadow = true;
+    const headMat = std(0x30333a, { emissive: 0xffffff, emissiveIntensity: 0 });
+    const head = new THREE.Mesh(unitBox, headMat); head.scale.set(22, 12, 2); head.position.set(x, height + 4, z); head.lookAt(lookAt.x, height + 4, lookAt.z);
+    const spot = new THREE.SpotLight(0xfff3e0, 0, 0, 0.62, 0.6, 0);
+    spot.position.set(x, height + 4, z); spot.target.position.copy(lookAt);
+    g.add(pole, head, spot, spot.target);
+    g.userData.setOn = (on, k = 1) => { headMat.emissiveIntensity = on ? 2.2 : 0; spot.intensity = on ? 1.6 * k : 0; };
+    return g;
+  }
+
+  // ---------------------------------------------------------------- venues
+  // Each venue returns { group, focus, cameras, lighting: {names, apply}, seats: [meshes], setHash?, onFrame? }
+  const SKY = {
+    Day: { top: 0x3d7fd6, bottom: 0xcfe2f5, hemi: [0xcfe3ff, 0x4a5d33, 1.1], sun: [0xffffff, 2.3, 300, 520, 260], poles: false, exp: 1 },
+    Dusk: { top: 0x27306a, bottom: 0xf2995a, hemi: [0xffc49a, 0x3a3440, 0.55], sun: [0xffa860, 1.4, -700, 120, -60], poles: true, k: 0.6, exp: 1.05 },
+    Night: { top: 0x04060d, bottom: 0x17203a, hemi: [0x1b2440, 0x0a0a0c, 0.3], sun: [0x8899cc, 0.0, 0, 500, 0], poles: true, k: 1, exp: 1.15 },
+  };
+  function applySky(L, focus) {
+    skyMat.uniforms.top.value.setHex(L.top); skyMat.uniforms.bottom.value.setHex(L.bottom); scene.fog.color.setHex(L.bottom); sky.visible = true;
+    hemi.color.setHex(L.hemi[0]); hemi.groundColor.setHex(L.hemi[1]); hemi.intensity = L.hemi[2];
+    sun.color.setHex(L.sun[0]); sun.intensity = L.sun[1]; sun.position.set(L.sun[2], L.sun[3], L.sun[4] - 80); sun.target.position.copy(focus); sun.castShadow = L.sun[1] > 0;
+    renderer.toneMappingExposure = L.exp;
+  }
+  function addField(g, hash, apronSize = [400, 200]) {
+    const fieldMat = std(0xffffff, { map: fieldTexture(hash), roughness: 0.95 });
+    const field = new THREE.Mesh(new THREE.PlaneGeometry(360, 160), fieldMat);
+    field.rotation.x = -Math.PI / 2; field.position.set(0, 0.06, -80); field.receiveShadow = true; g.add(field);
+    const apron = new THREE.Mesh(new THREE.PlaneGeometry(apronSize[0], apronSize[1]), std(0x3a7330, { roughness: 1 }));
+    apron.rotation.x = -Math.PI / 2; apron.position.set(0, 0.02, -80); apron.receiveShadow = true; g.add(apron);
+    return (h) => { fieldMat.map.dispose(); fieldMat.map = fieldTexture(h); fieldMat.needsUpdate = true; };
+  }
+  function addTrack(g) {
+    const shape = new THREE.Shape(stadiumPath(125).getPoints(64)); shape.holes.push(new THREE.Path(stadiumPath(95).getPoints(64).reverse()));
+    const track = new THREE.Mesh(new THREE.ShapeGeometry(shape, 24), std(0xa24a36, { roughness: 0.95 }));
+    track.rotation.x = -Math.PI / 2; track.position.y = 0.04; track.receiveShadow = true; g.add(track);
+    const laneMat = new THREE.LineBasicMaterial({ color: 0xf2f2f2, transparent: true, opacity: 0.8 });
+    for (let r = 95; r <= 125; r += 5) { const pts = stadiumPath(r).getPoints(64).map((p) => new THREE.Vector3(p.x, 0.08, -p.y)); g.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), laneMat)); }
+  }
+  function boardTexture(title, sub) {
+    const c = document.createElement("canvas"); c.width = 1024; c.height = 560; const g = c.getContext("2d");
+    const bg = g.createLinearGradient(0, 0, 1024, 560); bg.addColorStop(0, "#2a1880"); bg.addColorStop(1, "#0b0b1e"); g.fillStyle = bg; g.fillRect(0, 0, 1024, 560);
+    g.fillStyle = "#fff"; g.textAlign = "center"; g.font = '700 120px "DM Sans", sans-serif'; g.fillText(title, 512, 300);
+    g.font = '500 48px "DM Sans", sans-serif'; g.fillStyle = "rgba(255,255,255,0.75)"; g.fillText(sub, 512, 390);
+    g.fillStyle = "#6442ff"; g.fillRect(0, 520, 1024, 40);
+    return canvasTex(c);
+  }
+  function videoBoard(w, h, legs) {
+    const g = new THREE.Group();
+    const frame = new THREE.Mesh(unitBox, std(0x1a1b20)); frame.scale.set(w + 4, h + 4, 3); frame.castShadow = true;
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: boardTexture("SPRING SHOW", "OpenMarch · 3D View"), emissiveIntensity: 1.1 }));
+    screen.position.z = 1.6; g.add(frame, screen);
+    if (legs) for (const sx of [-1, 1]) { const leg = new THREE.Mesh(unitBox, std(0x5c5f66)); leg.scale.set(3, legs, 3); leg.position.set(sx * w * 0.3, -h / 2 - legs / 2, 0); leg.castShadow = true; g.add(leg); }
+    return g;
+  }
+
+  // HS, big HS and college: rectangular stands per side
+  function buildStadium(kind, hash, crowdOn) {
+    seed = { hs: 11, bighs: 17, college: 29 }[kind];
+    const college = kind === "college", big = kind === "bighs";
+    const g = new THREE.Group();
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), std(college || big ? 0x55575c : 0x4a6b35, { roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.3; ground.receiveShadow = true; g.add(ground);
+    if (college || big) { const infield = new THREE.Mesh(new THREE.PlaneGeometry(big ? 640 : 620, big ? 330 : 360), std(0x3d6e31, { roughness: 1 })); infield.rotation.x = -Math.PI / 2; infield.position.set(0, -0.2, -80); infield.receiveShadow = true; g.add(infield); }
+    const setHash = addField(g, hash);
+    let seats = [], frontStand, backStand;
+    if (kind === "hs") {
+      addTrack(g);
+      frontStand = stand({ length: 260, rows: 28, base: 4, crowd: crowdOn ? 0.55 : 0, pressBox: { width: 90, height: 12, lift: 8 } });
+      frontStand.position.set(0, 0, 52); g.add(frontStand);
+      backStand = stand({ length: 200, rows: 14, base: 3, crowd: crowdOn ? 0.4 : 0, team: 0xc23b3b });
+      backStand.rotation.y = Math.PI; backStand.position.set(0, 0, -160 - 52); g.add(backStand);
+      seats = [frontStand.children[0], backStand.children[0]];
+    } else if (big) {
+      addTrack(g);
+      frontStand = stand({ length: 340, rows: 44, depth: 2.7, rise: 1.1, base: 8, crowd: crowdOn ? 0.62 : 0, pressBox: { width: 180, height: 36, lift: 4, stories: 3 } });
+      frontStand.position.set(0, 0, 52); g.add(frontStand);
+      backStand = stand({ length: 300, rows: 30, depth: 2.7, rise: 1.05, base: 6, crowd: crowdOn ? 0.5 : 0, team: 0xc23b3b });
+      backStand.rotation.y = Math.PI; backStand.position.set(0, 0, -160 - 52); g.add(backStand);
+      seats = [frontStand.children[0], backStand.children[0]];
+      const board = videoBoard(96, 52, 34); board.position.set(318, 34 + 26, -80); board.rotation.y = -Math.PI / 2; g.add(board);
+      // end-zone plaza and fence
+      const plaza = new THREE.Mesh(new THREE.PlaneGeometry(160, 300), std(0x8a8c90, { roughness: 1 })); plaza.rotation.x = -Math.PI / 2; plaza.position.set(-360, -0.1, -80); plaza.receiveShadow = true; g.add(plaza);
+    } else {
+      frontStand = stand({ length: 400, rows: 50, depth: 2.7, rise: 1.05, base: 8, crowd: crowdOn ? 0.7 : 0, pressBox: { width: 180, height: 16, lift: 6 } });
+      frontStand.position.set(0, 0, 40); g.add(frontStand);
+      backStand = stand({ length: 400, rows: 50, depth: 2.7, rise: 1.05, base: 8, crowd: crowdOn ? 0.7 : 0, team: 0xc23b3b });
+      backStand.rotation.y = Math.PI; backStand.position.set(0, 0, -200); g.add(backStand);
+      seats = [frontStand.children[0], backStand.children[0]];
+      for (const sgn of [-1, 1]) { const end = stand({ length: 220, rows: 34, depth: 2.7, rise: 1.05, base: 8, crowd: crowdOn ? 0.6 : 0 }); end.rotation.y = sgn * Math.PI / 2; end.position.set(sgn * 225, 0, -80); g.add(end); seats.push(end.children[0]); }
+      const board = videoBoard(90, 34, 0); board.position.set(225 + 34 * 2.7 + 14, 70, -80); board.rotation.y = -Math.PI / 2; g.add(board);
+    }
+    if (!college) { const podium = new THREE.Mesh(unitBox, std(0xe6e3dc)); podium.scale.set(6, 8, 6); podium.position.set(0, 4, 26); podium.castShadow = true; g.add(podium); }
+    const poleSpots = college ? [[-270, 140], [270, 140], [-270, -300], [270, -300]] : big ? [[-205, 48], [205, 48], [-205, -208], [205, -208], [-300, 10], [-300, -170]] : [[-215, 40], [215, 40], [-215, -200], [215, -200]];
+    const poles = poleSpots.map(([x, z]) => { const p = lightPole(x, z, college ? 140 : big ? 120 : 90, new THREE.Vector3(x * 0.25, 0, -80 + (z + 80) * 0.15)); g.add(p); return p; });
+    const pressEye = frontStand.localToWorld(frontStand.userData.pressEye.clone());
+    const focus = new THREE.Vector3(0, 0, -80);
+    const rowEye = (i) => frontStand.localToWorld(frontStand.userData.rowEye(i));
+    const cams = [
+      { name: "Press box", pos: pressEye, target: new THREE.Vector3(0, 0, big ? -96 : -92) },
+      { name: "Front row", pos: rowEye(1).add(new THREE.Vector3(-36, 0, 0)), target: new THREE.Vector3(-12, 6, -80) },
+      ...(college ? [] : [{ name: "Podium", pos: new THREE.Vector3(0, 13.5, 24), target: new THREE.Vector3(0, 0, -70) }]),
+      { name: "End zone", pos: new THREE.Vector3(college ? 300 : big ? -330 : 250, college ? 60 : big ? 40 : 28, -80), target: new THREE.Vector3(0, 0, -80) },
+      { name: "Blimp", pos: new THREE.Vector3(-380, 420, 330), target: focus.clone() },
+      { name: "Top-down", pos: new THREE.Vector3(0, big ? 700 : 620, -79.5), target: focus.clone() },
+    ];
+    return {
+      group: g, focus, cameras: cams, seats, hasHash: true, setHash,
+      lighting: { names: ["Day", "Dusk", "Night"], apply(n) { const L = SKY[n]; applySky(L, focus); poles.forEach((p) => p.userData.setOn(L.poles, L.k)); } },
+    };
+  }
+
+  // ---------------------------------------------------------------- pro bowl (Lucas Oil-like)
+  // A continuous bowl: rows follow a rounded rectangle around the field, offset outward row by row.
+  function bowlOutline(ax, az, rc, cz) {
+    const NX = 28, NZ = 14, NA = 16, cx0 = ax - rc, cz0 = az - rc;
+    return (d, y) => {
+      const R = rc + d, pts = [];
+      const arc = (cx, cc, a0, a1) => { for (let j = 0; j < NA; j++) { const a = a0 + ((a1 - a0) * j) / NA; pts.push(new THREE.Vector3(cx + R * Math.cos(a), y, cz + cc + R * Math.sin(a))); } };
+      for (let i = 0; i < NX; i++) pts.push(new THREE.Vector3(-cx0 + (2 * cx0 * i) / NX, y, cz + cz0 + R));
+      arc(cx0, cz0, Math.PI / 2, 0);
+      for (let i = 0; i < NZ; i++) pts.push(new THREE.Vector3(cx0 + R, y, cz + cz0 - (2 * cz0 * i) / NZ));
+      arc(cx0, -cz0, 0, -Math.PI / 2);
+      for (let i = 0; i < NX; i++) pts.push(new THREE.Vector3(cx0 - (2 * cx0 * i) / NX, y, cz - cz0 - R));
+      arc(-cx0, -cz0, -Math.PI / 2, -Math.PI);
+      for (let i = 0; i < NZ; i++) pts.push(new THREE.Vector3(-cx0 - R, y, cz - cz0 + (2 * cz0 * i) / NZ));
+      arc(-cx0, cz0, Math.PI, Math.PI / 2);
+      return pts;
+    };
+  }
+  // quads between two closed rings with matching point counts; u runs along the ring in feet / tile
+  function ringBand(A, B, pos, uv, tile = 40) {
+    let u = 0;
+    for (let i = 0; i < A.length; i++) {
+      const j = (i + 1) % A.length, seg = A[i].distanceTo(A[j]);
+      const a = A[i], b = A[j], c = B[j], d = B[i], u0 = u / tile, u1 = (u + seg) / tile;
+      pos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z, a.x, a.y, a.z, c.x, c.y, c.z, d.x, d.y, d.z);
+      uv.push(u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1);
+      u += seg;
+    }
+  }
+  function bandMesh(pairs, mat) {
+    const pos = [], uv = [];
+    pairs.forEach(([A, B, tile]) => ringBand(A, B, pos, uv, tile));
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat); m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  function samplesAlong(ring, spacing) {
+    const out = [];
+    let carry = 0;
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length], seg = a.distanceTo(b);
+      let t = carry;
+      while (t < seg) { out.push(new THREE.Vector3().lerpVectors(a, b, t / seg)); t += spacing; }
+      carry = t - seg;
+    }
+    return out;
+  }
+  function ribbonTexture() {
+    const c = document.createElement("canvas"); c.width = 1024; c.height = 64; const g = c.getContext("2d");
+    g.fillStyle = "#120c3a"; g.fillRect(0, 0, 1024, 64);
+    g.fillStyle = "#b9a8ff"; g.font = '700 40px "DM Sans", sans-serif'; g.textBaseline = "middle"; g.fillText("SPRING SHOW  ·  OPENMARCH  ·", 16, 34);
+    const t = canvasTex(c); t.wrapS = THREE.RepeatWrapping; return t;
+  }
+  function buildPro(hash, crowdOn) {
+    seed = 53;
+    const g = new THREE.Group(), cz = -80, ax = 205, az = 105;
+    const ring = bowlOutline(ax, az, 70, cz);
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), std(0x55575c, { roughness: 1 }));
+    ground.rotation.x = -Math.PI / 2; ground.position.y = -0.3; ground.receiveShadow = true; g.add(ground);
+    const floorRing = new THREE.Mesh(new THREE.PlaneGeometry(2 * ax + 10, 2 * az + 10), std(0x2f5a2a, { roughness: 1 })); floorRing.rotation.x = -Math.PI / 2; floorRing.position.set(0, -0.1, cz); floorRing.receiveShadow = true; g.add(floorRing);
+    const setHash = addField(g, hash, [400, 196]);
+    const conc = std(0x9a9ca3, { roughness: 0.95, side: THREE.DoubleSide });
+    const seatMat = std(0x1f3f8f, { roughness: 0.8, side: THREE.DoubleSide });
+    const glassMat = std(0x16202e, { roughness: 0.15, metalness: 0.5, emissive: 0x3a3020, emissiveIntensity: 0.6, side: THREE.DoubleSide });
+    const ribbonMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: ribbonTexture(), emissiveIntensity: 1.2, side: THREE.DoubleSide });
+    const tiers = [
+      { off: 0, rows: 32, depth: 2.8, rise: 0.95, base: 5, bottom: 0 },
+      { off: 82, rows: 38, depth: 2.9, rise: 1.55, base: 58, bottom: 52 },
+    ];
+    const concPairs = [], seatPairs = [], ribbonPairs = [], glassPairs = [], rowRings = [];
+    tiers.forEach((t, ti) => {
+      let prevH = t.bottom;
+      for (let i = 0; i < t.rows; i++) {
+        const o = t.off + i * t.depth, h = t.base + i * t.rise;
+        (ti === 1 && i === 0 ? ribbonPairs : concPairs).push([ring(o, prevH), ring(o, h), ti === 1 && i === 0 ? 60 : 40]);
+        seatPairs.push([ring(o, h), ring(o + t.depth, h)]);
+        rowRings.push({ o: o + t.depth * 0.45, h });
+        prevH = h;
+      }
+      const back = t.off + t.rows * t.depth, top = t.base + (t.rows - 1) * t.rise;
+      t.back = back; t.top = top;
+      concPairs.push([ring(back, top + 4), ring(back, 0)]);
+      if (ti === 1) concPairs.push([ring(t.off, t.bottom), ring(back, t.bottom - 6)]); // soffit under the upper deck
+    });
+    // suite level between the decks
+    glassPairs.push([ring(tiers[0].back + 2, 37), ring(tiers[0].back + 2, 49)]);
+    concPairs.push([ring(tiers[0].back - 2, 50), ring(tiers[1].off + 4, 50)]);
+    g.add(bandMesh(concPairs, conc), bandMesh(seatPairs, seatMat), bandMesh(ribbonPairs, ribbonMat), bandMesh(glassPairs, glassMat));
+    const seatMesh = g.children[g.children.length - 3];
+    // crowd
+    if (crowdOn) {
+      const people = [];
+      rowRings.forEach(({ o, h }) => samplesAlong(ring(o, h + 2.65), 2.1).forEach((p, k) => { if (k % 18 !== 0 && rnd() < 0.72) people.push(p); }));
+      const crowdMesh = new THREE.InstancedMesh(unitBox, std(0xffffff), people.length);
+      const col = new THREE.Color(), pal = [0x1f3f8f, 0x1f3f8f, 0xffffff, 0x22252c, 0x6442ff, 0xb04a3a, 0xd9c48a, 0x5a6e4e];
+      people.forEach((p, k) => { tmpM.compose(p, tmpQ.identity(), tmpS.set(1.4, 2.6 + rnd() * 0.4, 1.0)); crowdMesh.setMatrixAt(k, tmpM); crowdMesh.setColorAt(k, col.setHex(pal[Math.floor(rnd() * pal.length)])); });
+      crowdMesh.userData.crowd = true; g.add(crowdMesh);
+    }
+    // clerestory glass between the bowl rim and the roof
+    const rimTop = tiers[1].top + 4, roofY = 168;
+    const clere = bandMesh([[ring(tiers[1].back, rimTop), ring(tiers[1].back, roofY)]], new THREE.MeshStandardMaterial({ color: 0x9fb6cc, transparent: true, opacity: 0.28, roughness: 0.1, side: THREE.DoubleSide, depthWrite: false }));
+    clere.castShadow = false; g.add(clere);
+    // roof: fixed frame plus two panels that slide over the ends
+    const roof = new THREE.Group();
+    const RX = ax + tiers[1].back + 6, RZ = az + tiers[1].back + 6, OX = 210, OZ = 120;
+    const roofMat = std(0xb9bcc2, { roughness: 0.7, side: THREE.DoubleSide });
+    const slab = (x0, x1, z0, z1, y = roofY) => { const m = new THREE.Mesh(unitBox, roofMat); m.scale.set(x1 - x0, 4, z1 - z0); m.position.set((x0 + x1) / 2, y, cz + (z0 + z1) / 2); m.castShadow = true; roof.add(m); return m; };
+    slab(-RX, RX, OZ, RZ); slab(-RX, RX, -RZ, -OZ); slab(-RX, -OX, -OZ, OZ); slab(OX, RX, -OZ, OZ);
+    const panels = [slab(-OX, 0, -OZ, OZ, roofY + 6), slab(0, OX, -OZ, OZ, roofY + 6)];
+    const panelX0 = panels.map((p) => p.position.x);
+    let roofOpen = 1, roofTarget = 1;
+    // roof-edge light bars and spots, used at night and with the roof closed
+    const barMat = std(0x30333a, { emissive: 0xffffff, emissiveIntensity: 0 });
+    const spots = [];
+    [[-OX, 0], [OX, 0], [0, OZ], [0, -OZ], [-OX * 0.6, OZ], [OX * 0.6, -OZ]].forEach(([x, z]) => {
+      const bar = new THREE.Mesh(unitBox, barMat); bar.scale.set(z ? 60 : 3, 3, z ? 3 : 60); bar.position.set(x, roofY - 4, cz + z); roof.add(bar);
+      const sp = new THREE.SpotLight(0xfff3e0, 0, 0, 0.7, 0.6, 0); sp.position.set(x, roofY - 6, cz + z); sp.target.position.set(x * 0.2, 0, cz + z * 0.2); g.add(sp, sp.target); spots.push(sp);
+    });
+    g.add(roof);
+    // end-zone video boards hung under the roof
+    for (const sx of [-1, 1]) { const b = videoBoard(110, 58, 0); b.position.set(sx * (ax + tiers[1].back - 30), 128, cz); b.rotation.y = -sx * Math.PI / 2; g.add(b); }
+    const focus = new THREE.Vector3(0, 0, cz);
+    const fz = cz + az; // front edge of the bowl (z of the lower tier's first row at x=0)
+    const cams = [
+      { name: "Press box", pos: new THREE.Vector3(0, 45, fz + tiers[0].back + 1), target: new THREE.Vector3(0, 0, -94) },
+      { name: "Lower bowl", pos: new THREE.Vector3(-30, 5 + 12 * 0.95 + 4, fz + 12 * 2.8 + 1.3), target: new THREE.Vector3(-10, 4, -80) },
+      { name: "Upper deck", pos: new THREE.Vector3(60, 58 + 24 * 1.55 + 4, fz + 82 + 24 * 2.9 + 1.3), target: new THREE.Vector3(0, 0, -86) },
+      { name: "End zone", pos: new THREE.Vector3(ax + 82 + 14 * 2.9, 58 + 14 * 1.55 + 4, cz), target: focus.clone() },
+      { name: "Sideline", pos: new THREE.Vector3(-20, 6, 14), target: new THREE.Vector3(10, 4, -60) },
+      { name: "Blimp", pos: new THREE.Vector3(-620, 640, 520), target: focus.clone() },
+      { name: "Top-down", pos: new THREE.Vector3(0, 980, -79.5), target: focus.clone() },
+    ];
+    return {
+      group: g, focus, cameras: cams, seats: [seatMesh], hasHash: true, setHash,
+      onFrame() {
+        roof.visible = camera.position.y < roofY - 2;
+        clere.visible = roof.visible;
+        if (Math.abs(roofOpen - roofTarget) > 0.001) { roofOpen += (roofTarget - roofOpen) * 0.06; }
+        panels.forEach((p, i) => (p.position.x = panelX0[i] + (i ? 1 : -1) * OX * roofOpen));
+      },
+      lighting: {
+        names: ["Day", "Night", "Roof closed"],
+        apply(n) {
+          if (n === "Roof closed") {
+            roofTarget = 0; applySky(SKY.Day, focus); sun.intensity = 0; sun.castShadow = false;
+            hemi.color.setHex(0xfff1e0); hemi.groundColor.setHex(0x554433); hemi.intensity = 0.9;
+          } else { roofTarget = 1; applySky(SKY[n], focus); }
+          const lit = n !== "Day";
+          barMat.emissiveIntensity = lit ? 2 : 0; spots.forEach((s) => (s.intensity = lit ? 1.4 : 0));
+          if (reduceMotion) roofOpen = roofTarget;
+        },
+      },
+    };
+  }
+
+  function tarpTexture() {
+    const W = 2400, H = 1600, s = W / 90; // 90 x 60 ft
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#15123a"); bg.addColorStop(1, "#0c1a2e"); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const rg = g.createRadialGradient(W * 0.72, H * 0.3, 10, W * 0.72, H * 0.3, W * 0.55); rg.addColorStop(0, "rgba(140,110,255,0.75)"); rg.addColorStop(1, "rgba(140,110,255,0)"); g.fillStyle = rg; g.fillRect(0, 0, W, H);
+    g.strokeStyle = "rgba(230,225,255,0.55)";
+    for (let i = 1; i < 9; i++) { g.lineWidth = i % 3 ? 3 : 9; g.beginPath(); g.arc(W * 0.72, H * 0.3, i * 4.2 * s, 0, Math.PI * 2); g.stroke(); }
+    g.fillStyle = "rgba(255,180,90,0.85)"; g.beginPath(); g.moveTo(0, H); g.lineTo(W * 0.42, H); g.lineTo(W * 0.08, H * 0.35); g.lineTo(0, H * 0.42); g.closePath(); g.fill();
+    g.fillStyle = "rgba(255,255,255,0.18)";
+    for (let x = 5; x < 90; x += 5) for (let z = 5; z < 60; z += 5) { g.beginPath(); g.arc(x * s, z * s, 4, 0, Math.PI * 2); g.fill(); }
+    g.fillStyle = "#f4f2ff";
+    for (let x = 0; x <= 90; x += 5) { g.fillRect(x * s - 3, H - 0.9 * s, 6, 0.9 * s); g.fillRect(x * s - 3, 0, 6, 0.9 * s); }
+    g.strokeStyle = "#f4f2ff"; g.lineWidth = 10; g.strokeRect(5, 5, W - 10, H - 10);
+    return canvasTex(c);
+  }
+  function courtTexture() {
+    const s = 10, Wf = 160, Df = 130, W = Wf * s, H = Df * s; // room floor 160 x 130 ft, center at (0,-25)
+    const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+    for (let i = 0; i < H; i += 4) { g.fillStyle = `hsl(33, ${45 + (i * 7) % 9}%, ${62 + ((i * 13) % 7)}%)`; g.fillRect(0, i, W, 4); }
+    const X = (x) => (x + Wf / 2) * s, Y = (z) => (z + 90) * s; // canvas top = back wall (z=-90), bottom = front (z=+40)
+    g.strokeStyle = "#1d2a5c"; g.lineWidth = 0.17 * s;
+    g.strokeRect(X(-47), Y(-55), 94 * s, 50 * s); g.beginPath(); g.moveTo(X(0), Y(-5)); g.lineTo(X(0), Y(-55)); g.stroke();
+    g.beginPath(); g.arc(X(0), Y(-30), 6 * s, 0, Math.PI * 2); g.stroke();
+    for (const sg of [-1, 1]) { g.strokeRect(X(sg * 47 - (sg > 0 ? 19 : 0)), Y(-36), 19 * s, 12 * s); g.beginPath(); g.arc(X(sg * (47 - 5.25)), Y(-30), 22 * s, sg > 0 ? Math.PI * 0.6 : -Math.PI * 0.4, sg > 0 ? Math.PI * 1.4 : Math.PI * 0.4); g.stroke(); }
+    // safety zone tape: 5 ft beyond the 90 x 60 performance area
+    g.strokeStyle = "#e5b800"; g.lineWidth = 0.33 * s; g.setLineDash([2 * s, 1.2 * s]); g.strokeRect(X(-50), Y(-65), 100 * s, 70 * s); g.setLineDash([]);
+    return canvasTex(c);
+  }
+  function bannerTexture(lines, color) {
+    const c = document.createElement("canvas"); c.width = 256; c.height = 360; const g = c.getContext("2d");
+    g.fillStyle = color; g.fillRect(0, 0, 256, 360); g.fillStyle = "rgba(255,255,255,0.9)"; g.fillRect(0, 300, 256, 18);
+    g.fillStyle = "#fff"; g.textAlign = "center"; g.font = '700 34px "DM Sans", sans-serif';
+    lines.forEach((l, i) => g.fillText(l, 128, 90 + i * 48));
+    return canvasTex(c);
+  }
+
+  function buildGym(crowdOn) {
+    seed = 41;
+    const g = new THREE.Group();
+    const RW = 160, RD = 130, RH = 36, cz = -25;
+    const room = new THREE.Mesh(new THREE.BoxGeometry(RW, RH, RD), [std(0xd3cdbf), std(0xd3cdbf), std(0x2a2b31), std(0x2a2b31), std(0xc9c2b2), std(0xc9c2b2)].map((m) => { m.side = THREE.BackSide; return m; }));
+    room.position.set(0, RH / 2 - 0.1, cz); room.receiveShadow = true; g.add(room);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(RW, RD), std(0xffffff, { map: courtTexture(), roughness: 0.45 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0.02, cz); floor.receiveShadow = true; g.add(floor);
+    const tarp = new THREE.Mesh(new THREE.PlaneGeometry(90, 60), std(0xffffff, { map: tarpTexture(), roughness: 0.7 }));
+    tarp.rotation.x = -Math.PI / 2; tarp.position.set(0, 0.1, -30); tarp.receiveShadow = true; g.add(tarp);
+    const panels = new THREE.InstancedMesh(unitBox, std(0x222222, { emissive: 0xfff6e6, emissiveIntensity: 1.4 }), 24);
+    let k = 0; for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) { tmpM.compose(tmpV.set(-62 + i * 24.8, RH - 1, cz - 45 + j * 30), tmpQ.identity(), tmpS.set(8, 0.6, 4)); panels.setMatrixAt(k++, tmpM); }
+    g.add(panels);
+    const bleach = stand({ length: 120, rows: 12, depth: 2.4, rise: 1.15, base: 1.4, crowd: crowdOn ? 0.75 : 0 });
+    bleach.position.set(0, 0, 10); g.add(bleach);
+    const folded = new THREE.Mesh(unitBox, std(0x8a7a62)); folded.scale.set(110, 13, 4); folded.position.set(0, 6.5, cz - RD / 2 + 2.2); folded.castShadow = true; g.add(folded);
+    const banners = [["REGIONAL", "FINALIST", "2024"], ["STATE", "CHAMPIONS", "2025"], ["WINTER", "GUARD", "A CLASS"], ["PERC", "SCHOLASTIC", "2025"]];
+    const bc = ["#6442ff", "#1f2a5c", "#a33a3a", "#1f5c46"];
+    banners.forEach((b, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(9, 12.6), new THREE.MeshStandardMaterial({ map: bannerTexture(b, bc[i]), roughness: 0.9 })); m.position.set(-36 + i * 24, 25, cz - RD / 2 + 0.3); g.add(m); });
+    const showSpots = [[-40, 25], [40, 25], [-40, -85], [40, -85]].map(([x, z]) => { const sp = new THREE.SpotLight(0xf3eaff, 0, 0, 0.42, 0.7, 0); sp.position.set(x, RH - 2, z); sp.target.position.set(x * 0.3, 0, -30); g.add(sp, sp.target); return sp; });
+    const overhead = new THREE.DirectionalLight(0xfff4e6, 1);
+    overhead.position.set(30, 200, 20); overhead.target.position.set(0, 0, -30); overhead.castShadow = true;
+    overhead.shadow.mapSize.set(2048, 2048); Object.assign(overhead.shadow.camera, { left: -100, right: 100, top: 100, bottom: -100, near: 50, far: 400 }); overhead.shadow.camera.updateProjectionMatrix();
+    g.add(overhead, overhead.target);
+    const rowEye = (i) => bleach.localToWorld(bleach.userData.rowEye(i));
+    const focus = new THREE.Vector3(0, 0, -30);
+    return {
+      group: g, focus, seats: [bleach.children[0]], hasHash: false,
+      onFrame() { panels.visible = camera.position.y < RH - 1.5; },
+      cameras: [
+        { name: "GE judge", pos: rowEye(9), target: new THREE.Vector3(0, 0, -32) },
+        { name: "Front row", pos: rowEye(0).add(new THREE.Vector3(-14, 0, 0)), target: new THREE.Vector3(-6, 4, -30) },
+        { name: "Corner", pos: new THREE.Vector3(-74, 24, 20), target: new THREE.Vector3(0, 0, -30) },
+        { name: "On the floor", pos: new THREE.Vector3(0, 5.5, -62), target: new THREE.Vector3(0, 6, 20) },
+        { name: "Top-down", pos: new THREE.Vector3(0, 230, -29.8), target: focus.clone() },
+      ],
+      lighting: {
+        names: ["House lights", "Show lights"],
+        apply(n) {
+          const show = n === "Show lights";
+          sky.visible = false; scene.fog.color.setHex(0x1a1a1f);
+          hemi.color.setHex(0xfff4e0); hemi.groundColor.setHex(0x6b5a44); hemi.intensity = show ? 0.12 : 0.9;
+          sun.intensity = 0; sun.castShadow = false; overhead.intensity = show ? 0.1 : 1.1;
+          panels.material.emissiveIntensity = show ? 0.08 : 1.4;
+          showSpots.forEach((s) => (s.intensity = show ? 2.4 : 0)); renderer.toneMappingExposure = show ? 1.2 : 1;
+        },
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------- camera rig: orbit + tweened presets
+  const rig = { target: new THREE.Vector3(), radius: 400, theta: 0, phi: 1, tween: null };
+  function syncFromPose(pos, target) {
+    rig.target.copy(target);
+    const off = tmpV.copy(pos).sub(target);
+    rig.radius = off.length(); rig.phi = Math.acos(THREE.MathUtils.clamp(off.y / rig.radius, -1, 1)); rig.theta = Math.atan2(off.x, off.z);
+  }
+  function applyRig() {
+    if (rig.tween) return;
+    const sp = Math.sin(rig.phi);
+    camera.position.set(rig.target.x + rig.radius * sp * Math.sin(rig.theta), rig.target.y + rig.radius * Math.cos(rig.phi), rig.target.z + rig.radius * sp * Math.cos(rig.theta));
+    camera.lookAt(rig.target);
+  }
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function flyTo(pos, target, ms = 1100) {
+    if (reduceMotion) ms = 0;
+    const p0 = camera.position.clone(), t0 = rig.tween ? rig.tween.curT.clone() : rig.target.clone();
+    rig.tween = { p0, t0, p1: pos.clone(), t1: target.clone(), start: performance.now(), ms, curT: t0.clone() };
+  }
+  function stepTween(now) {
+    const tw = rig.tween; if (!tw) return;
+    const u = tw.ms ? Math.min(1, (now - tw.start) / tw.ms) : 1;
+    const e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+    // lift the arc a little so long moves don't clip through stands
+    const lift = Math.sin(Math.PI * e) * Math.min(120, tw.p0.distanceTo(tw.p1) * 0.25);
+    camera.position.lerpVectors(tw.p0, tw.p1, e); camera.position.y += lift;
+    tw.curT.lerpVectors(tw.t0, tw.t1, e); camera.lookAt(tw.curT);
+    if (u >= 1) { rig.tween = null; syncFromPose(tw.p1, tw.t1); applyRig(); clearCrowdAround(tw.p1); }
+  }
+
+  // empty the seats right around the camera so a seat view isn't filled by the nearest blocks
+  function clearCrowdAround(p, r = 16) {
+    if (!venue) return;
+    venue.group.traverse((o) => {
+      if (!o.isInstancedMesh || !o.userData.crowd) return;
+      const arr = o.instanceMatrix.array;
+      if (!o.userData.base) o.userData.base = arr.slice();
+      const b = o.userData.base;
+      for (let k = 0; k < o.count; k++) {
+        const i = k * 16;
+        tmpV.set(b[i + 12], b[i + 13], b[i + 14]).applyMatrix4(o.matrixWorld);
+        const near = tmpV.distanceTo(p) < r;
+        for (let e = 0; e < 16; e++) arr[i + e] = near && e !== 15 ? 0 : b[i + e];
+      }
+      o.instanceMatrix.needsUpdate = true;
+    });
+  }
+
+  // ---------------------------------------------------------------- state + UI
+  const ui = { venue: "hs", hash: "hs", crowd: true, light: { hs: "Day", bighs: "Night", college: "Night", pro: "Day", gym: "House lights" }, cam: null };
+  let venue = null;
+  const $ = (id) => document.getElementById(id);
+  function setPressed(container, attr, val) { container.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset[attr] === val))); }
+  function buildVenue(keepCam) {
+    if (venue) { scene.remove(venue.group); dispose(venue.group); }
+    venue = ui.venue === "gym" ? buildGym(ui.crowd) : ui.venue === "pro" ? buildPro(ui.hash, ui.crowd) : buildStadium(ui.venue, ui.hash, ui.crowd);
+    scene.add(venue.group);
+    $("hashSeg").hidden = !venue.hasHash; $("hashSep").hidden = !venue.hasHash;
+    const ls = $("lightSeg"); ls.innerHTML = "";
+    venue.lighting.names.forEach((n) => { const b = document.createElement("button"); b.className = "btn"; b.dataset.light = n; b.textContent = n; b.onclick = () => { ui.light[ui.venue] = n; venue.lighting.apply(n); setPressed(ls, "light", n); }; ls.appendChild(b); });
+    venue.lighting.apply(ui.light[ui.venue]); setPressed(ls, "light", ui.light[ui.venue]);
+    const cs = $("camSeg"); cs.innerHTML = "";
+    venue.cameras.forEach((c) => { const b = document.createElement("button"); b.className = "btn"; b.dataset.cam = c.name; b.textContent = c.name; b.onclick = () => goCam(c.name); cs.appendChild(b); });
+    if (!keepCam) { const first = venue.cameras[0]; camera.position.copy(first.pos).add(new THREE.Vector3(-200, 140, 220)); syncFromPose(camera.position, venue.focus); goCam(first.name); }
+  }
+  function goCam(name) {
+    const c = venue.cameras.find((x) => x.name === name); if (!c) return;
+    ui.cam = name; setPressed($("camSeg"), "cam", name); flyTo(c.pos, c.target);
+  }
+  $("venueSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; ui.venue = b.dataset.venue; setPressed($("venueSeg"), "venue", ui.venue); buildVenue(false); });
+  $("hashSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; ui.hash = b.dataset.hash; setPressed($("hashSeg"), "hash", ui.hash); venue.setHash(ui.hash); });
+  $("crowdBtn").addEventListener("click", () => { ui.crowd = !ui.crowd; $("crowdBtn").setAttribute("aria-pressed", String(ui.crowd)); buildVenue(true); if (ui.cam) setPressed($("camSeg"), "cam", ui.cam); });
+  let picking = false;
+  $("seatBtn").addEventListener("click", () => { picking = !picking; $("seatBtn").setAttribute("aria-pressed", String(picking)); stageEl.classList.toggle("picking", picking); });
+
+  // ---------------------------------------------------------------- input
+  const pointers = new Map(); let downAt = null, moved = 0, pinch0 = 0;
+  const hint = $("hint"); let hinted = false;
+  const killHint = () => { if (!hinted) { hinted = true; hint.classList.add("gone"); } };
+  setTimeout(killHint, 6000);
+  canvas.addEventListener("pointerdown", (e) => {
+    canvas.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    downAt = { x: e.clientX, y: e.clientY }; moved = 0;
+    if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch0 = Math.hypot(a.x - b.x, a.y - b.y); }
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    const p = pointers.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
+    if (moved > 4) killHint();
+    if (rig.tween) return;
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch0) { rig.radius = THREE.MathUtils.clamp(rig.radius * (pinch0 / d), 8, 2200); } pinch0 = d;
+      pan(dx * 0.5, dy * 0.5); return;
+    }
+    if (e.shiftKey || e.button === 2 || e.buttons === 2) { pan(dx, dy); return; }
+    rig.theta -= dx * 0.005; rig.phi = THREE.MathUtils.clamp(rig.phi - dy * 0.005, 0.02, 1.53);
+    ui.cam = null; setPressed($("camSeg"), "cam", "");
+  });
+  const up = (e) => {
+    pointers.delete(e.pointerId); if (pointers.size < 2) pinch0 = 0;
+    if (picking && moved < 6 && downAt) pickSeat(e);
+  };
+  canvas.addEventListener("pointerup", up); canvas.addEventListener("pointercancel", (e) => pointers.delete(e.pointerId));
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  canvas.addEventListener("wheel", (e) => { e.preventDefault(); killHint(); if (rig.tween) return; rig.radius = THREE.MathUtils.clamp(rig.radius * Math.exp(e.deltaY * 0.0012), 8, 2200); }, { passive: false });
+  function pan(dx, dy) {
+    const k = rig.radius * 0.0016;
+    const right = new THREE.Vector3(Math.cos(rig.theta), 0, -Math.sin(rig.theta));
+    const fwd = new THREE.Vector3(-Math.sin(rig.theta), 0, -Math.cos(rig.theta));
+    rig.target.addScaledVector(right, -dx * k).addScaledVector(fwd, dy * k);
+  }
+  const ray = new THREE.Raycaster();
+  function pickSeat(e) {
+    const r = canvas.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+    const hit = ray.intersectObjects(venue.seats, false)[0];
+    if (!hit) return;
+    const pos = hit.point.clone(); pos.y += 4;
+    const tgt = venue.focus.clone();
+    picking = false; $("seatBtn").setAttribute("aria-pressed", "false"); stageEl.classList.remove("picking");
+    ui.cam = null; setPressed($("camSeg"), "cam", ""); flyTo(pos, tgt);
+  }
+
+  // ---------------------------------------------------------------- HUD, resize, loop
+  const hud = $("hud");
+  const fmt = (ft) => `${Math.round(ft)} ft (${(ft * 0.3048).toFixed(1)} m)`;
+  let lastHud = "";
+  function updateHud() {
+    const p = camera.position, f = venue.focus;
+    const s = `Eye ${fmt(p.y)} up · ${fmt(Math.hypot(p.x - f.x, p.z - f.z))} to ${ui.venue === "gym" ? "floor center" : "the 50"}`;
+    if (s !== lastHud) { hud.textContent = s; lastHud = s; }
+  }
+  function resize() {
+    const w = stageEl.clientWidth, h = stageEl.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < 560 ? 58 : 45; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stageEl); resize();
+  let visible = true;
+  new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(stageEl);
+  buildVenue(false);
+  renderer.setAnimationLoop((now) => {
+    if (!visible || document.hidden) return;
+    stepTween(now ?? performance.now()); applyRig(); venue.onFrame?.(); updateHud();
+    renderer.render(scene, camera);
+  });
+}
+</script>

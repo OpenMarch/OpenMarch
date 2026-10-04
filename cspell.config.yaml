@@ -1,4 +1,13 @@
 words:
+  - bighs
+  - drei
+  - frameless
+  - headlessly
+  - llvmpipe
+  - rrggbb
+  - toplevel
+  - worktree
+  - worktrees
   - acceelerandos
   - ADDME
   - aleksi
@@ -186,6 +195,7 @@ words:
   - 日本語
 ignorePaths:
   - node_modules/**
+  - docs/3d/ref/**
   - "**/node_modules/**"
   - "**/dist/**"
   - dist/**
