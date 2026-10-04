@@ -148,6 +148,23 @@ describeDbTests("dots-to-om", (it) => {
         expect(result.metadata.audioOffsetSeconds).toBe(1.25);
     });
 
+    it("applies pageNumberOffset from workspace settings to page names", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        const pageNumberOffset = 12;
+        const settings = workspaceSettingsSchema.parse({ pageNumberOffset });
+        await updateWorkspaceSettingsParsed({ db, settings });
+
+        const result = await toOpenMarchSchema(db as unknown as DB);
+        const expectedNames = generatePageNames(
+            result.pages.map((p) => p.isSubset === true),
+            pageNumberOffset,
+        );
+
+        expect(result.pages.map((p) => p.name)).toEqual(expectedNames);
+    });
+
     it("includes performerAppearance with default from field properties", async ({
         db,
     }) => {

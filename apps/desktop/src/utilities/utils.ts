@@ -28,6 +28,22 @@ export const conToastError = (message: string, ...additional: any[]) => {
 };
 
 /**
+ * Base64-encodes a string, unlike the browser's `btoa` this is safe for
+ * strings containing characters outside the Latin1 range (e.g. accented
+ * letters, emoji, or other Unicode text a user may have typed into a
+ * drill number/name that ends up embedded in an SVG).
+ *
+ * `btoa` throws `InvalidCharacterError` for any character outside 0-255,
+ * so we UTF-8 encode the string to bytes first.
+ */
+export const utf8ToBase64 = (str: string): string => {
+    const bytes = new TextEncoder().encode(str);
+    let binary = "";
+    bytes.forEach((byte) => (binary += String.fromCharCode(byte)));
+    return btoa(binary);
+};
+
+/**
  * Asserts that a condition is true without throwing an error.
  *
  * Errors are displayed in the console and toast.

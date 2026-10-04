@@ -400,9 +400,12 @@ export default function AudioPlayer() {
             const metroSource = audioContext.createBufferSource();
             metroGainNode.current = audioContext.createGain();
             const masterVolume = calculateMasterVolume(audioVolume, audioMuted);
+            // Read metronome settings at playback start, live changes update gain below without restarting
+            const { isMetronomeOn: metronomeOn, volume: metronomeVolume } =
+                useMetronomeStore.getState();
             metroGainNode.current.gain.value =
-                isMetronomeOn && masterVolume > 0
-                    ? volumeAdjustment(volume) * masterVolume
+                metronomeOn && masterVolume > 0
+                    ? volumeAdjustment(metronomeVolume) * masterVolume
                     : 0;
             metroSource.buffer = metronomeBuffer;
             metroSource
@@ -412,11 +415,12 @@ export default function AudioPlayer() {
             audioSource.start(startAt, playbackTimestamp);
             metroSource.start(startAt, playbackTimestamp);
 
+            // Only clear the ref if it still points at this source, a restart may have replaced it
             audioSource.onended = () => {
-                audioNode.current = null;
+                if (audioNode.current === audioSource) audioNode.current = null;
             };
             metroSource.onended = () => {
-                metroNode.current = null;
+                if (metroNode.current === metroSource) metroNode.current = null;
             };
 
             audioNode.current = audioSource;
@@ -449,8 +453,6 @@ export default function AudioPlayer() {
         playbackTimestamp,
         audioVolume,
         audioMuted,
-        isMetronomeOn,
-        volume,
     ]);
 
     // Initialize WaveSurfer and load waveform data

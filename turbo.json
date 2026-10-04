@@ -44,6 +44,10 @@
             "outputs": [],
             "cache": false
         },
+        "lint:check": {
+            "outputs": [],
+            "cache": false
+        },
         "preview": {
             "outputs": []
         },

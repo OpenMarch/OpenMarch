@@ -1,0 +1,169 @@
+---
+description: When working with the canvas, Fabric.js, canvas listeners, selection, rendering, or canvas objects
+alwaysApply: false
+---
+
+# Canvas System Reference
+
+## Overview
+
+The canvas is the central visual component where the drill field, marchers, props, shapes, and paths are rendered. It uses Fabric.js (custom `OpenMarchCanvas` extending `fabric.Canvas`) wrapped by a React component. User interactions are handled through a listener architecture with separate listener classes for different modes (default, line, lasso, prop drawing).
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/global/classes/canvasObjects/OpenMarchCanvas.ts` | Custom Fabric.js canvas class |
+| `src/components/canvas/Canvas.tsx` | React wrapper component |
+| `src/components/canvas/CanvasConstants.ts` | Canvas constants |
+| `src/components/canvas/CanvasZoomControls.tsx` | Zoom control UI |
+| **Listeners** | |
+| `src/components/canvas/listeners/CanvasListeners.ts` | Base listener interface/class |
+| `src/components/canvas/listeners/DefaultListeners.ts` | Default mode (select, drag) |
+| `src/components/canvas/listeners/LineListeners.ts` | Line drawing mode |
+| `src/components/canvas/listeners/LassoListeners.ts` | Lasso selection mode |
+| `src/components/canvas/listeners/PropDrawingListeners.ts` | Prop drawing mode |
+| `src/components/canvas/listeners/CodegenListeners.ts` | Codegen mode |
+| **Hooks** | |
+| `src/components/canvas/hooks/canvasListeners.selection.ts` | Selection handling |
+| `src/components/canvas/hooks/canvasListeners.movement.ts` | Movement handling |
+| `src/components/canvas/hooks/editablePath.tsx` | Editable path controls |
+| `src/components/canvas/hooks/shapes.ts` | Shape rendering hooks |
+| **Canvas Objects** | |
+| `src/global/classes/canvasObjects/CanvasMarcher.ts` | Marcher on canvas |
+| `src/global/classes/canvasObjects/CanvasProp.ts` | Prop on canvas |
+| `src/global/classes/canvasObjects/MarcherLine.ts` | Line between marchers |
+| `src/global/classes/canvasObjects/CollisionMarker.ts` | Collision indicator |
+| `src/global/classes/canvasObjects/Pathway.ts` | Path visualization |
+| `src/global/classes/canvasObjects/Midpoint.ts` | Midpoint marker |
+| `src/global/classes/canvasObjects/Endpoint.ts` | Endpoint marker |
+| `src/global/classes/canvasObjects/ControlPoint.ts` | Path control point |
+| `src/global/classes/canvasObjects/MarcherShape.ts` | Shape on canvas |
+| `src/global/classes/canvasObjects/interfaces/Selectable.ts` | Selectable interface |
+| **Stores** | |
+| `src/stores/CanvasStore.ts` | Canvas instance + viewport |
+| `src/stores/SelectionStore.ts` | Selected shape page IDs |
+| `src/stores/AlignmentEventStore.ts` | Alignment tool state |
+| `src/stores/CollisionStore.ts` | Collision data per page |
+
+## OpenMarchCanvas
+
+The core canvas class extends `fabric.Canvas`:
+
+```typescript
+class OpenMarchCanvas extends fabric.Canvas {
+    // Key properties
+    currentPage: Page | null;
+    fieldProperties: FieldProperties;
+    uiSettings: UiSettings;
+    marcherShapes: MarcherShape[];
+
+    // Rendering methods
+    renderMarchers(marchersWithVisuals, selectedPage);
+    renderPathVisuals(marchersWithVisuals, selectedPage);
+    renderFieldGrid(fieldProperties);
+    renderShapes(shapePages, selectedPage);
+    renderCollisionMarkers(collisions);
+
+    // Selection
+    setActiveObjects(objects);
+    getActiveObjects(): fabric.Object[];
+}
+```
+
+## Rendering Pipeline
+
+When the selected page changes:
+
+1. **Field grid** - Grid lines, yard lines, hash marks based on `FieldProperties`
+2. **Marchers** - `CanvasMarcher` objects positioned at their MarcherPage coordinates
+3. **Props** - `CanvasProp` objects with their per-page geometry
+4. **Shapes** - `MarcherShape` objects showing formation outlines
+5. **Pathways** - `Pathway` objects showing movement paths between pages
+6. **Collision markers** - `CollisionMarker` objects at collision points
+
+## Listener Architecture
+
+The canvas uses swappable listener classes for different interaction modes:
+
+```typescript
+// Base pattern - each listener class implements mouse/keyboard handlers
+interface CanvasListeners {
+    onMouseDown(event: fabric.TPointerEventInfo): void;
+    onMouseMove(event: fabric.TPointerEventInfo): void;
+    onMouseUp(event: fabric.TPointerEventInfo): void;
+    onKeyDown(event: KeyboardEvent): void;
+    cleanup(): void;
+}
+```
+
+Active listeners are determined by the current mode:
+- **Default mode** → `DefaultListeners` (select, drag, move marchers)
+- **Line mode** → `LineListeners` (draw alignment lines)
+- **Lasso mode** → `LassoListeners` (lasso selection)
+- **Prop drawing** → `PropDrawingListeners` (draw prop shapes)
+- **Codegen** → `CodegenListeners` (code generation mode)
+
+## Canvas Store (Zustand)
+
+```typescript
+import { useCanvasStore } from "@/stores/CanvasStore";
+
+const {
+    canvas,           // OpenMarchCanvas | null
+    viewport,         // { zoom, panX, panY }
+    setCanvas,        // Set canvas instance
+    zoomToFit,        // Zoom to fit all objects (or specific ones)
+    zoomToCollisions,  // Zoom to collision area
+    resetViewport,    // Reset to zoom=1, pan=0,0
+    setViewport,      // Manual zoom/pan
+} = useCanvasStore();
+```
+
+## Selectable Interface
+
+Canvas objects that can be selected implement:
+
+```typescript
+interface Selectable {
+    readonly marcherId: number;
+    readonly isSelectable: boolean;
+    select(): void;
+    deselect(): void;
+}
+```
+
+Used by `CanvasMarcher`, `CanvasProp`, and other interactive objects.
+
+## Selection Flow
+
+1. User clicks/drags on canvas → `DefaultListeners.onMouseDown`
+2. Selection hooks (`canvasListeners.selection.ts`) determine what was clicked
+3. `SelectedMarchersContext` updated with selected marcher IDs
+4. Canvas highlights selected objects
+5. `Inspector` panel shows editors for selected items
+
+## Canvas.tsx React Component
+
+The React wrapper in `Canvas.tsx`:
+- Creates `OpenMarchCanvas` on mount, stores in `CanvasStore`
+- Subscribes to: marchers, marcherPages, props, propGeometries, fieldProperties, appearances, shapes
+- On data change: calls `canvas.renderMarchers()`, `canvas.renderPathVisuals()`, etc.
+- On page change: re-renders all objects for new page
+- On selection change: syncs with `SelectedMarchersContext`
+- Wires stores: `useCanvasStore`, `useUiSettingsStore`, `usePropDrawingStore`, `useAlignmentEventStore`, `useCollisionStore`, `useSelectionStore`, `useFullscreenStore`
+
+## Integration Points
+
+- **Stores**: CanvasStore (instance), SelectionStore, AlignmentEventStore, CollisionStore, PropDrawingStore
+- **Context**: SelectedPageContext (which page to render), SelectedMarchersContext (highlighted marchers)
+- **Queries**: marchers, marcherPages, fieldProperties, shapes, props, appearances
+- **Animation**: `useAnimation` hook drives canvas updates during playback
+
+## Gotchas
+
+- The canvas is NOT React-rendered content. It's an imperative Fabric.js canvas. React manages data flow, but rendering is manual via `canvas.render*()` methods.
+- Always access canvas through `useCanvasStore()`, never hold direct references.
+- Canvas objects (CanvasMarcher, etc.) store references to domain data. They must be refreshed when data changes.
+- Viewport transforms use Fabric.js format: `[scaleX, 0, 0, scaleY, translateX, translateY]`.
+- Selection state lives in both SelectedMarchersContext (React) and canvas active objects (Fabric.js) - they must stay in sync.

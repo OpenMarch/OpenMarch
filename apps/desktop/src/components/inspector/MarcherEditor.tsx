@@ -21,6 +21,7 @@ import {
 } from "@openmarch/ui";
 import { StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./marcher/MarcherRotationInput";
+import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
@@ -699,7 +700,15 @@ function MarcherEditor() {
                                                     )?.drill_number
                                                 }
                                             </button>
-                                            <p className="text-body leading-none">
+                                            <p className="text-body flex items-center gap-4 leading-none">
+                                                <StepSizeWarningBadge
+                                                    over={
+                                                        !!fieldProperties &&
+                                                        minMaxStepSize.max.exceedsThreshold(
+                                                            fieldProperties.stepSizeWarningThresholdInches,
+                                                        )
+                                                    }
+                                                />
                                                 {minMaxStepSize.max.displayString()}
                                             </p>
                                         </div>
@@ -942,7 +951,15 @@ function MarcherEditor() {
                                                 <T keyName="inspector.marcher.stepSize" />
                                             </label>
 
-                                            <p className="text-body bg-transparent leading-none">
+                                            <p className="text-body flex items-center gap-4 bg-transparent leading-none">
+                                                <StepSizeWarningBadge
+                                                    over={
+                                                        !!fieldProperties &&
+                                                        stepSize.exceedsThreshold(
+                                                            fieldProperties.stepSizeWarningThresholdInches,
+                                                        )
+                                                    }
+                                                />
                                                 {stepSize.displayString()}
                                             </p>
                                         </div>

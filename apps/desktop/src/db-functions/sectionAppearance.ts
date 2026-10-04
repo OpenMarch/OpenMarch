@@ -51,8 +51,8 @@ const newSectionAppearanceArgsToRealNewSectionAppearanceArgs = (
         section: args.section,
         ...appearanceModelParsedToRawOptional({
             ...args,
-            visible: true,
-            label_visible: true,
+            visible: args.visible ?? true,
+            label_visible: args.label_visible ?? true,
         }),
     };
 };

@@ -1,9 +1,11 @@
 import { ReactNode } from "react";
 import NewShowProgressIndicator from "./components/NewShowProgressIndicator";
 import NewShowNavigationButtons from "./components/NewShowNavigationButtons";
+import { NewShowStepId } from "../newShowTypes";
 
 interface NewShowModalLayoutProps {
     currentStepIndex: number;
+    steps: NewShowStepId[];
     stepTitle: string;
     stepDescription?: string;
     children: ReactNode;
@@ -22,6 +24,7 @@ interface NewShowModalLayoutProps {
 
 export default function NewShowModalLayout({
     currentStepIndex,
+    steps,
     stepTitle,
     stepDescription,
     children,
@@ -41,6 +44,7 @@ export default function NewShowModalLayout({
         <div className="flex min-h-0 flex-col gap-16">
             <NewShowProgressIndicator
                 currentStepIndex={currentStepIndex}
+                steps={steps}
                 completedSteps={completedSteps}
             />
             <div className="text-center">

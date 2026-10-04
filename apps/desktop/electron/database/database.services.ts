@@ -3,9 +3,8 @@ import { ipcMain } from "electron";
 import type { DatabaseSync } from "node:sqlite";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
-import AudioFile, {
-    ModifiedAudioFileArgs,
-} from "../../src/global/classes/AudioFile";
+import type AudioFile from "../../src/global/classes/AudioFile";
+import type { ModifiedAudioFileArgs } from "../../src/global/classes/AudioFile";
 import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {

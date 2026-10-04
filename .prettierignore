@@ -110,3 +110,16 @@ out/
 **/playwright-report/
 
 .open-next/
+
+# Machine-local settings and workflow output
+.claude/settings.local.json
+.scratch/
+.superpowers/
+
+# Machine-local agent notes, kept untracked via .git/info/exclude. Numbered ADR
+# records are local; docs/adr/README.md is tracked and stays formatted.
+CONTEXT.md
+CONTEXT-MAP.md
+**/docs/agents/
+**/docs/adr/[0-9]*.md
+docs/superpowers/

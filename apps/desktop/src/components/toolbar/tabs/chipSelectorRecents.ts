@@ -1,0 +1,97 @@
+export const SELECT_TAB_RECENTS_STORAGE_KEY = "openmarch-select-tab-recents";
+export const DEFAULT_MAX_VISIBLE_CHIPS = 6;
+
+export type RecentsByCategory = Record<string, string[]>;
+
+/** If `id` is already present, leave order unchanged. Otherwise prepend and cap at `max`. */
+export function pushRecentId(
+    ids: string[],
+    id: string,
+    max = DEFAULT_MAX_VISIBLE_CHIPS,
+): string[] {
+    if (ids.includes(id)) return ids;
+    return [id, ...ids].slice(0, max);
+}
+
+/**
+ * Resolve stored recent ids against the current item list.
+ * Valid recents come first; leftover slots are filled with the remaining items
+ * in their original order, capped at `maxVisible`. Stale ids are skipped.
+ * If nothing valid remains, fall back to the first `maxVisible` items.
+ */
+export function resolveRecentItems<T>(
+    items: T[],
+    recentIds: string[],
+    getId: (item: T) => string | number,
+    maxVisible = DEFAULT_MAX_VISIBLE_CHIPS,
+): T[] {
+    const byId = new Map(items.map((item) => [String(getId(item)), item]));
+    const recents: T[] = [];
+    const seen = new Set<string>();
+    for (const id of recentIds) {
+        if (seen.has(id)) continue;
+        const item = byId.get(id);
+        if (item !== undefined) {
+            seen.add(id);
+            recents.push(item);
+            if (recents.length >= maxVisible) break;
+        }
+    }
+    if (recents.length === 0) return items.slice(0, maxVisible);
+
+    const recentIdSet = new Set(recents.map((item) => String(getId(item))));
+    const filled = [...recents];
+    for (const item of items) {
+        if (filled.length >= maxVisible) break;
+        if (!recentIdSet.has(String(getId(item)))) filled.push(item);
+    }
+    return filled;
+}
+
+export function readRecentIds(category: string): string[] {
+    try {
+        const stored = localStorage.getItem(SELECT_TAB_RECENTS_STORAGE_KEY);
+        if (!stored) return [];
+        const parsed = JSON.parse(stored) as RecentsByCategory;
+        const ids = parsed[category];
+        if (!Array.isArray(ids)) return [];
+        return ids.filter((id): id is string => typeof id === "string");
+    } catch (error) {
+        console.error(
+            "Failed to load select tab recents from localStorage:",
+            error,
+        );
+        return [];
+    }
+}
+
+export function writeRecentIds(category: string, ids: string[]): void {
+    try {
+        let parsed: RecentsByCategory = {};
+        const stored = localStorage.getItem(SELECT_TAB_RECENTS_STORAGE_KEY);
+        if (stored) {
+            try {
+                const existing = JSON.parse(stored) as RecentsByCategory;
+                if (
+                    existing &&
+                    typeof existing === "object" &&
+                    !Array.isArray(existing)
+                ) {
+                    parsed = existing;
+                }
+            } catch {
+                parsed = {};
+            }
+        }
+        parsed[category] = ids;
+        localStorage.setItem(
+            SELECT_TAB_RECENTS_STORAGE_KEY,
+            JSON.stringify(parsed),
+        );
+    } catch (error) {
+        console.error(
+            "Failed to save select tab recents to localStorage:",
+            error,
+        );
+    }
+}

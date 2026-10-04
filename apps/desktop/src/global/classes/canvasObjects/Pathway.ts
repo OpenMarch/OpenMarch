@@ -4,6 +4,9 @@ import { rgbaToString } from "@openmarch/core";
 import { RgbaColor } from "@uiw/react-color";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 
+// Default stroke width for a normal pathway
+export const DEFAULT_PATHWAY_STROKE_WIDTH = 2;
+
 /**
  * A Pathway is the object used on the canvas to represent a pathway between two marchers.
  */
@@ -24,7 +27,7 @@ export default class Pathway extends fabric.Line {
         start,
         end,
         color,
-        strokeWidth = 2,
+        strokeWidth = DEFAULT_PATHWAY_STROKE_WIDTH,
         dashed = false,
     }: {
         marcherId: number;
@@ -51,12 +54,13 @@ export default class Pathway extends fabric.Line {
 
     // Makes the endpoint invisible
     hide(): void {
-        this.set("visible", false);
+        // compare to the exact target since fabric renders an unset visible as visible
+        if (this.visible !== false) this.set("visible", false);
     }
 
     // Makes the endpoint visible
     show(): void {
-        this.set("visible", true);
+        if (this.visible !== true) this.set("visible", true);
     }
 
     // Update coords of start of pathway

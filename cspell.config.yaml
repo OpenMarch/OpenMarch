@@ -66,6 +66,7 @@ words:
   - idioma
   - importmap
   - Invalidators
+  - keyframed
   - launchpage
   - lightridge
   - localappdata
@@ -77,6 +78,7 @@ words:
   - mello
   - merch
   - Meuli
+  - mgmt
   - midset
   - midsets
   - monokai
@@ -108,6 +110,7 @@ words:
   - Pyware
   - Rcoords
   - rels
+  - recents
   - rgba
   - ritardandos
   - rootfile
@@ -115,6 +118,7 @@ words:
   - rwxr
   - saario
   - samuelmeuli
+  - sandboxing
   - Schachner
   - Segoe
   - seti
@@ -178,6 +182,7 @@ words:
   - youtu
   - zier
   - Zingali
+  - Zustand
   - 日本語
 ignorePaths:
   - node_modules/**
@@ -209,6 +214,15 @@ ignorePaths:
   - cloudflare-env.d.ts
   - apps/cms/.cursor/rules/*
   - apps/cms/AGENTS.md
+  # Machine-local agent notes, kept untracked via .git/info/exclude. Numbered ADR
+  # records are local; docs/adr/README.md is tracked and stays checked.
+  - "**/CONTEXT.md"
+  - CONTEXT-MAP.md
+  - "**/docs/agents/**"
+  - "**/docs/adr/[0-9]*.md"
+  - docs/superpowers/**
+  - .superpowers/**
+  - .scratch/**
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)

@@ -50,6 +50,22 @@ function UiSettingsToolbar() {
                         <EyeSlashIcon size={24} />
                     )}
                 </button>
+                <button
+                    onClick={() => {
+                        setUiSettings({
+                            ...uiSettings,
+                            stepSizeWarnings: !uiSettings.stepSizeWarnings,
+                        });
+                    }}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <T keyName="toolbar.view.stepSizeWarnings" />
+                    {uiSettings.stepSizeWarnings ? (
+                        <EyeIcon className="text-accent" size={24} />
+                    ) : (
+                        <EyeSlashIcon size={24} />
+                    )}
+                </button>
             </ToolbarSection>
             <ToolbarSection>
                 <button

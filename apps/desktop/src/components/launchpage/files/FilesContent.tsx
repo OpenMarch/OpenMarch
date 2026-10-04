@@ -6,8 +6,30 @@ import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
+import { utf8ToBase64 } from "@/utilities/utils";
 
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+
+/**
+ * Builds a `data:image/svg+xml;base64,...` URI from a cached SVG preview.
+ *
+ * The SVG can contain user-entered text (e.g. a marcher's drill prefix)
+ * with characters outside the Latin1 range, which a plain `btoa` call
+ * would throw on, so this uses a UTF-8-safe encoder. Returns `undefined`
+ * (falling back to the placeholder icon) if encoding fails for any reason,
+ * e.g. a preview cached before this fix.
+ */
+const getSvgPreviewDataUri = (
+    svgPreview: string | undefined,
+): string | undefined => {
+    if (!svgPreview) return undefined;
+    try {
+        return `data:image/svg+xml;base64,${utf8ToBase64(svgPreview)}`;
+    } catch (error) {
+        console.error("Failed to encode SVG preview:", error);
+        return undefined;
+    }
+};
 
 // eslint-disable-next-line max-lines-per-function
 export default function FilesTabContent() {
@@ -141,81 +163,87 @@ export default function FilesTabContent() {
                     <WelcomeContent />
                 ) : (
                     <div className="grid grid-cols-5 gap-12 max-[2000px]:grid-cols-4 max-[1420px]:grid-cols-3 max-[1150px]:grid-cols-2">
-                        {recentFiles.map((file) => (
-                            <div
-                                key={file.path}
-                                onClick={() => handleOpenFile(file)}
-                                className="bg-fg-1 border-stroke rounded-16 hover:border-accent flex cursor-pointer flex-col items-center gap-12 border p-8 transition-colors"
-                            >
-                                <div className="bg-fg-2 border-stroke rounded-6 flex aspect-video h-auto w-full items-center justify-center border">
-                                    {file.svgPreview ? (
-                                        <div className="flex h-fit w-full items-center justify-center">
-                                            <img
-                                                src={`data:image/svg+xml;base64,${btoa(
-                                                    file.svgPreview,
-                                                )}`}
-                                                alt={t(
-                                                    "launchpage.files.fieldPreview",
-                                                )}
-                                                className="max-h-full max-w-full object-contain"
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <FileDottedIcon
-                                            size={32}
-                                            className="text-text/40"
-                                        />
-                                    )}
-                                </div>
-                                <div className="flex w-full min-w-0 flex-1 justify-between p-4">
-                                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-6">
-                                        <div className="text-h5 min-w-0 break-words">
-                                            {file.name}
-                                        </div>
-                                        {file.isMissing && (
-                                            <div className="text-red text-body flex min-w-0 items-center gap-4">
-                                                <WarningCircleIcon
-                                                    size={16}
-                                                    className="flex-shrink-0"
-                                                />
-                                                <span className="min-w-0 break-words">
-                                                    {t(
-                                                        "launchpage.files.movedOrMissing",
+                        {recentFiles.map((file) => {
+                            const svgDataUri = getSvgPreviewDataUri(
+                                file.svgPreview,
+                            );
+                            return (
+                                <div
+                                    key={file.path}
+                                    onClick={() => handleOpenFile(file)}
+                                    className="bg-fg-1 border-stroke rounded-16 hover:border-accent flex cursor-pointer flex-col items-center gap-12 border p-8 transition-colors"
+                                >
+                                    <div className="bg-fg-2 border-stroke rounded-6 flex aspect-video h-auto w-full items-center justify-center border">
+                                        {svgDataUri ? (
+                                            <div className="flex h-fit w-full items-center justify-center">
+                                                <img
+                                                    src={svgDataUri}
+                                                    alt={t(
+                                                        "launchpage.files.fieldPreview",
                                                     )}
-                                                </span>
+                                                    className="max-h-full max-w-full object-contain"
+                                                    loading="lazy"
+                                                />
                                             </div>
+                                        ) : (
+                                            <FileDottedIcon
+                                                size={32}
+                                                className="text-text/40"
+                                            />
                                         )}
-                                        <div className="text-text-subtitle text-body min-w-0 break-words">
-                                            {new Date(
-                                                file.lastOpened,
-                                            ).toLocaleDateString()}{" "}
-                                            {new Date(
-                                                file.lastOpened,
-                                            ).toLocaleTimeString(undefined, {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                            })}
-                                        </div>
                                     </div>
-                                    <Button
-                                        size="compact"
-                                        variant="secondary"
-                                        tooltipText={t(
-                                            "launchpage.files.removeFile",
-                                        )}
-                                        tooltipDelay={300}
-                                        tooltipSide="top"
-                                        onClick={(e) =>
-                                            handleRemoveFile(file.path, e)
-                                        }
-                                        className="text-text/40 hover:text-red w-fit rounded-full px-4 transition-all"
-                                    >
-                                        <XIcon size={16} />
-                                    </Button>
+                                    <div className="flex w-full min-w-0 flex-1 justify-between p-4">
+                                        <div className="flex min-w-0 flex-1 flex-col justify-between gap-6">
+                                            <div className="text-h5 min-w-0 break-words">
+                                                {file.name}
+                                            </div>
+                                            {file.isMissing && (
+                                                <div className="text-red text-body flex min-w-0 items-center gap-4">
+                                                    <WarningCircleIcon
+                                                        size={16}
+                                                        className="flex-shrink-0"
+                                                    />
+                                                    <span className="min-w-0 break-words">
+                                                        {t(
+                                                            "launchpage.files.movedOrMissing",
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="text-text-subtitle text-body min-w-0 break-words">
+                                                {new Date(
+                                                    file.lastOpened,
+                                                ).toLocaleDateString()}{" "}
+                                                {new Date(
+                                                    file.lastOpened,
+                                                ).toLocaleTimeString(
+                                                    undefined,
+                                                    {
+                                                        hour: "2-digit",
+                                                        minute: "2-digit",
+                                                    },
+                                                )}
+                                            </div>
+                                        </div>
+                                        <Button
+                                            size="compact"
+                                            variant="secondary"
+                                            tooltipText={t(
+                                                "launchpage.files.removeFile",
+                                            )}
+                                            tooltipDelay={300}
+                                            tooltipSide="top"
+                                            onClick={(e) =>
+                                                handleRemoveFile(file.path, e)
+                                            }
+                                            className="text-text/40 hover:text-red w-fit rounded-full px-4 transition-all"
+                                        >
+                                            <XIcon size={16} />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

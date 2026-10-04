@@ -4,7 +4,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 echo "Running pre-commit checks. Check the output of this command for more information."
 
-nvm use 22
+nvm use
 
 # This should only print or be visible if the pre-commit hooks fail.
 pnpm exec lint-staged || (echo "❌ Linting failed. Please fix the issues and try again." && exit 1)
