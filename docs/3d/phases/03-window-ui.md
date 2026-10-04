@@ -30,7 +30,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.1: Scene assembly
 
 - Owner: 3d-worker (3d/p3-scene)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/67
 - Parallel: yes
 - Depends on: P1.3, P1.4, P2.1, P2.2
@@ -97,3 +97,20 @@ Nothing yet.
 - **Next:** lead review. P3.2 and P3.3 build on `useView3dSceneStore`.
 - **Blockers:** none.
 - **Resume from:** address review comments on #67 (branch `3d/p3-scene`).
+
+### 2026-10-04 · lead · P3.1 (review)
+
+- **Done:** reviewed and squash-merged PR #67 (`ba2f882f`). Checked the real-window screenshots of every kit and lighting preset, crowd off, and undo; they look right.
+  - Accepted: a new kit's first lighting snaps (no roof slide on load); `PCFShadowMap`, because three 0.186 removed `PCFSoftShadowMap`.
+  - Lead fix (`d682b0c1`): the blank kit opens on `blimp`, and its `frontRow` stands on a 6 m riser. Its ground-level default looked like a flat strip.
+- **Checks:** on merged `3d-async`, `vitest run src/view3d` (13 files, 246 passed) and desktop `tsc --noEmit` passed.
+- **Next:** P3.2, P3.3 and P4.2 in parallel. The camera contract between P3.2 and P3.3 is fixed below. Press-box views in bighs, college and pro have nearby crowd filling the bottom third of the frame; P3.2 handles it by aiming slightly higher, not by clearing more seats.
+- **Camera contract (lead):** P3.2 owns `src/view3d/window/camera/cameraStore.ts`, exporting `useCameraStore` (Zustand) with:
+  - `activeCameraId: string | null` (null after manual orbit);
+  - `selectCamera(id)`;
+  - `pickMode: boolean` and `setPickMode(on)`;
+  - `readout: { eyeHeightM: number; distanceToFocusM: number }`, updated at most 10 times a second.
+
+  P3.3 imports only these.
+
+- **Blockers:** none.
