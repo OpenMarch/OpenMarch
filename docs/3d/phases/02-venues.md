@@ -62,7 +62,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.4: Pro dome kit
 
 - Owner: p2-4-worker (3d/p2-pro-dome)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P2.2
@@ -130,3 +130,11 @@ Nothing yet.
 - **Blockers:** none.
 - **Cross-phase note for P3.1, P3.2, P2.4 and P2.5:** `KitResult` has no crowd field, so each kit that builds a crowd sets `kit.root.userData.crowd` to the `buildCrowd` handle (`clearAround(point, radius)`, `reset()`); the scene calls it when a seat camera is active. Kits also set `castShadow = false` on everything at `quality: "low"`.
 - **Resume from:** nothing pending; address review comments on PR 60.
+
+### 2026-10-04 · p2-4-worker · P2.4
+
+- **Done:** first pass of `apps/desktop/src/view3d/core/kits/bowl.ts` (outline, ring bands, tiers, seat rows) and `pro.ts` (`buildProKit`), with tests in `kits/__test__/`. Pushed to `3d/p2-pro-dome` (`be560b7a`).
+- **Checks:** `vitest run src/view3d` 61 passed; desktop `tsc --noEmit` clean; `eslint src/view3d/core/kits` clean; cspell clean via the pre-commit hook.
+- **Next:** render screenshots from every camera and lighting preset, compare with the demo, then open the PR.
+- **Blockers:** none.
+- **Resume from:** branch `3d/p2-pro-dome`; build the scratch capture page for `buildProKit` (see the PR body recipe) and take screenshots.
