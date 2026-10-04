@@ -40,7 +40,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P3.2: Camera rig
 
 - Owner: 3d-worker (3d/p3-camera)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P3.1
@@ -114,3 +114,11 @@ Nothing yet.
   P3.3 imports only these.
 
 - **Blockers:** none.
+
+### 2026-10-04 · 3d-worker (3d/p3-camera) · P3.2
+
+- **Done:** first pass pushed to `3d/p3-camera` (`c2c89af6`): `src/view3d/window/camera/` with `cameraStore.ts` (the lead's contract), `rigMath.ts`, `rigController.ts`, `seatSnap.ts` and `CameraRig.tsx`; `Scene.tsx` mounts the rig and no longer places the camera itself.
+- **Checks:** desktop `tsc --noEmit` pass; `vitest run src/view3d/window` 36 passed.
+- **Next:** real-app capture (fly-tos, orbit, pick-a-seat, press-box framing), then the PR.
+- **Blockers:** none.
+- **Resume from:** branch `3d/p3-camera`; build the app and run a capture scenario based on `scratchpad/p31-capture/`.
