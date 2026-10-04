@@ -249,7 +249,7 @@ approved reference, converted to meters (1 ft = 0.3048 m).
   marcher. It also exports `positionAt(timeline, ms) -> {x, z}` in world
   meters, built on `getCoordinatesAtTime` and `pixelsToWorld`.
 - Performers: one `InstancedMesh` of cylinders (radius 0.3 m, height 1.75 m),
-  with per-instance colors from `useMarchersWithVisuals`. Selected marchers
+  with per-instance colors resolved like the 2D canvas (`marcherAppearancesQueryOptions` for the selected page; `useMarchersWithVisuals` only returns theme defaults in the window). Selected marchers
   get an accent ring at their feet. Matrices update in `useFrame` from
   `showMs()`.
 
