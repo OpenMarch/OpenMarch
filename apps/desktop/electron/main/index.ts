@@ -37,6 +37,7 @@ import {
 } from "./update";
 import { repairDatabase } from "../database/repair";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
+import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -156,6 +157,7 @@ if (!app.requestSingleInstanceLock()) {
 let win: BrowserWindow | null = null;
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.js");
+const view3dPreload = join(__dirname, "../preload/view3d.js");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
 // eslint-disable-next-line max-lines-per-function
@@ -239,6 +241,7 @@ async function createWindow(title?: string) {
 
         event.preventDefault();
         win!.hide(); // use non-null assertion now that we're inside the if-block
+        closeView3dWindow();
 
         try {
             await closeCurrentFile(true);
@@ -432,6 +435,15 @@ void app.whenReady().then(async () => {
 
     initIpcHandlers();
     initGetters();
+    initView3dWindow({
+        preload: view3dPreload,
+        devServerUrl: url,
+        indexHtml,
+        icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
+        frame: isCodegen,
+        getTheme: () => store.get("theme", "light") as string,
+        getLanguage: () => store.get("language", "en") as string,
+    });
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
 
@@ -1187,6 +1199,8 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
     if (!win) return -1;
 
+    closeView3dWindow();
+
     if (currentNewShowDraftPath) {
         await discardNewShowDraft();
         if (!isAppQuitting) {
@@ -1333,6 +1347,9 @@ async function setActiveDb(path: string, isNewFile = false) {
         // Get the current path from the store if the path is "."
         // I.e. last opened file
         if (path === ".") path = store.get("databasePath") as string;
+
+        // The 3D View shows one show; close it when the editor switches shows.
+        closeView3dWindow();
 
         const resCode = DatabaseServices.setDbPath(path, isNewFile);
 

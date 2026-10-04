@@ -1,4 +1,5 @@
 import * as mainProcess from "./index";
+import { openView3dWindow } from "./view3dWindow";
 import { MenuItem } from "electron";
 import { app, dialog, Menu, shell } from "electron";
 
@@ -123,6 +124,13 @@ template.push(
         new MenuItem({
             label: "View",
             submenu: [
+                {
+                    label: "Open 3D View",
+                    click() {
+                        openView3dWindow();
+                    },
+                },
+                { type: "separator" },
                 { role: "reload" },
                 { role: "forceReload" },
                 { role: "toggleDevTools" },

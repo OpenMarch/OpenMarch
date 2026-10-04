@@ -285,6 +285,10 @@ const APP_API = {
         from: (data: any) => Buffer.from(data),
     },
 
+    // 3D View
+    /** Opens the 3D View window, or focuses it. Resolves false when no show is open. */
+    openView3d: () => ipcRenderer.invoke("view3d:open") as Promise<boolean>,
+
     // History
     /** Activates on undo or redo. */
     onHistoryAction: (callback: (args: HistoryResponse) => void) =>

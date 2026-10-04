@@ -5,6 +5,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import {
     closePersistentConnection,
+    handleReadOnlySqlProxy,
     handleSqlProxy,
     handleSqlProxyWithDb,
     insertAudioFile,
@@ -119,6 +120,52 @@ describe("Database Services", () => {
 
             expect(existsSync(renamedPath)).toBe(true);
             expect(existsSync(dbPath)).toBe(false);
+        });
+
+        describe("read-only proxy (3D View)", () => {
+            it("reads through the shared connection", async () => {
+                await handleSqlProxy(
+                    null,
+                    "INSERT INTO test (name) VALUES (?)",
+                    ["a"],
+                    "run",
+                );
+                const result = await handleReadOnlySqlProxy(
+                    "SELECT name FROM test",
+                    [],
+                    "all",
+                );
+                expect(result).toEqual({ rows: [["a"]] });
+            });
+
+            it("refuses writes, even behind a WITH", async () => {
+                await expect(
+                    handleReadOnlySqlProxy(
+                        "WITH x AS (SELECT 1) INSERT INTO test (name) VALUES ('b')",
+                        [],
+                        "all",
+                    ),
+                ).rejects.toThrow(/readonly|read-only|query_only/i);
+
+                const rows = await handleReadOnlySqlProxy(
+                    "SELECT COUNT(*) FROM test",
+                    [],
+                    "get",
+                );
+                expect(rows).toEqual({ rows: [0] });
+            });
+
+            it("leaves the editor's proxy writable afterwards", async () => {
+                await handleReadOnlySqlProxy("SELECT 1", [], "get");
+                await expect(
+                    handleSqlProxy(
+                        null,
+                        "INSERT INTO test (name) VALUES (?)",
+                        ["c"],
+                        "run",
+                    ),
+                ).resolves.toEqual({ rows: [] });
+            });
         });
     });
 

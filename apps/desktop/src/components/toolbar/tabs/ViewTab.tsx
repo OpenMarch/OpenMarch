@@ -1,13 +1,31 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
+import { CubeIcon, EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
 
 export default function ViewTab() {
     return (
         <div className="flex w-full flex-wrap gap-8">
             <UiSettingsToolbar />
+            <View3dToolbar />
         </div>
+    );
+}
+
+/** Opens the 3D View window, or focuses it (3D View UI-1). */
+function View3dToolbar() {
+    return (
+        <ToolbarSection>
+            <button
+                onClick={() => {
+                    void window.electron.openView3d();
+                }}
+                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+            >
+                <T keyName="view3d.open" />
+                <CubeIcon size={24} />
+            </button>
+        </ToolbarSection>
     );
 }
 

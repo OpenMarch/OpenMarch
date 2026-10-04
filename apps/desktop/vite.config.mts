@@ -73,7 +73,13 @@ export default defineConfig(({ command }) => {
                     },
                 },
                 {
-                    entry: "electron/preload/index.ts",
+                    // The editor's preload, and the 3D View window's. The 3D
+                    // View preload runs sandboxed, so it must import only
+                    // `electron` and share no chunk with the editor's.
+                    entry: {
+                        index: "electron/preload/index.ts",
+                        view3d: "electron/preload/view3d.ts",
+                    },
                     onstart(options) {
                         // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete,
                         // instead of restarting the entire Electron App.

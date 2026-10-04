@@ -1190,6 +1190,13 @@
         "title": "New Version Available",
         "trigger": "New Version Available!"
     },
+    "view3d": {
+        "open": "Open 3D View",
+        "window": {
+            "title": "3D View — {showName}",
+            "graphicsUnavailable": "3D View needs WebGL, which isn't available on this computer."
+        }
+    },
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
         "title": "Welcome to OpenMarch"
