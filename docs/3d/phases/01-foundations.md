@@ -30,7 +30,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P1.1: World mapping in core
 
 - Owner: claude-p1.1 (3d/p1-world)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/57
 - Parallel: yes
 - Depends on: —
@@ -96,3 +96,10 @@ Nothing yet.
 - **Next:** unit tests for the schema and defaults, and history tests for the db functions.
 - **Blockers:** none.
 - **Resume from:** check out `3d/p1-venue-storage`, then add `src/view3d/core/__test__/venueSettings.test.ts` and `src/db-functions/__test__/view3dVenue.test.ts`.
+
+### 2026-10-04 · lead · P1.1 (review)
+
+- **Done:** reviewed and squash-merged PR #57 (`bfd575c3`). Accepted the real-template tests living in `apps/desktop/src/view3d/core/__test__/world.test.ts` (core can't import the desktop templates). Confirmed `stepsToWorld` uses `z = ySteps * stepMeters` (checkpoint y is negative toward the back), consistent with `pixelsToWorld`. Removed the duplicate `FieldFootprint` from `view3d/core/types.ts`; it now re-exports core's (`e2a232a8`).
+- **Checks:** `vitest run src/field` in core (21 passed); `vitest run src/view3d` in desktop (26 passed); `tsc --noEmit` in desktop passed, before and after the types change.
+- **Next:** P1.2, P1.3 and P2.2 in progress.
+- **Blockers:** none.
