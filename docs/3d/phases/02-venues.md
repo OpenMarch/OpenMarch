@@ -72,7 +72,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.5: Indoor gym kit
 
 - Owner: p2-5-worker (3d/p2-gym)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/59
 - Parallel: yes
 - Depends on: P2.2
@@ -114,3 +114,10 @@ Nothing yet.
 - **Next:** lead review. The gym's bleacher code duplicates the stand's instanced rows; the lead may consolidate with P2.3's `stands.ts`.
 - **Blockers:** none.
 - **Resume from:** nothing pending; address review comments on the PR.
+
+### 2026-10-04 · lead · P2.5 (review)
+
+- **Done:** reviewed and squash-merged PR #59. Checked the headless screenshots (judge, front row, corner in show lights, floor, top-down, football footprint) against the reference gym: they match. Accepted the deeper front margin (about 12.4 m) so the wall clears the bleachers. The bleacher code duplicates P2.3's stand rows; consolidate after P2.3 merges if it's cheap.
+- **Checks:** on the PR branch, `vitest run src/view3d` passed and desktop `tsc --noEmit` passed.
+- **Next:** P3.1 must clear the crowd within 4.9 m of the camera (ui.md UI-3); the judge view needs it.
+- **Blockers:** none.
