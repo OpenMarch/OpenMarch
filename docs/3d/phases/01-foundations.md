@@ -1,8 +1,8 @@
 ---
 phase: 1
 title: Foundations
-status: not-started
-owner: none
+status: in-progress
+owner: claude-p1.2 (3d/p1-venue-storage)
 branch: none
 pr: none
 depends_on: [0]
@@ -39,8 +39,8 @@ Add `packages/core/src/field/world.ts` and export it from `@openmarch/core`: `st
 
 ### P1.2: Venue settings storage
 
-- Owner: none
-- Status: open
+- Owner: claude-p1.2 (3d/p1-venue-storage)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: —
