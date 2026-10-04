@@ -37,12 +37,15 @@ export const buildBlank: KitBuilder = (input) => {
     return {
         root,
         focus,
+        // Opens on the blimp: with no stands, a ground-level view reads as a
+        // flat strip. The front-row seat stands on a 6 m riser instead.
         cameras: [
+            blimpCamera(f),
             cameraSeat(
                 "frontRow",
                 "seat",
-                [f.cx - ft(36), ft(5.6), f.maxZ + ft(60)],
-                [f.cx - ft(12), ft(6), f.cz],
+                [f.cx - ft(36), ft(20), f.maxZ + ft(60)],
+                [f.cx - ft(12), 0, f.cz],
             ),
             cameraSeat(
                 "endZone",
@@ -50,7 +53,6 @@ export const buildBlank: KitBuilder = (input) => {
                 [f.maxX + ft(70), ft(28), f.cz],
                 [f.cx, 0, f.cz],
             ),
-            blimpCamera(f),
             topDownCamera(f, ft(620)),
         ],
         seatRows: [],

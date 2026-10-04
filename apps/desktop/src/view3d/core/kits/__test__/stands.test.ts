@@ -88,7 +88,7 @@ const KITS: {
     {
         id: "blank",
         build: buildBlank,
-        cameras: ["frontRow", "endZone", "blimp", "topDown"],
+        cameras: ["blimp", "frontRow", "endZone", "topDown"],
         defaultLighting: "day",
         stands: false,
     },
