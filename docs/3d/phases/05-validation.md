@@ -28,7 +28,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P5.1: Performance pass
 
 - Owner: 3d-worker (3d/p5-perf)
-- Status: in-review
+- Status: done
 - PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/72
 - Parallel: yes
 - Depends on: P4.2
@@ -95,3 +95,15 @@ Nothing yet.
 - **Next:** lead review. V6 still needs a real integrated GPU to check 60 fps for `pro`. The PR recommends capping `dpr` at 1 in `low`, which needs a design §9 decision.
 - **Blockers:** none.
 - **Resume from:** address review comments on #72 (branch `3d/p5-perf`). The measurement scenario `scratchpad/p51/capture/p51-perf.mjs` needs the temporary `__view3dDebug` hook described in the PR.
+
+### 2026-10-04 · lead · P5.1 (review)
+
+- **Done:** squash-merged PR #72.
+  - `positionAtInto` makes straight moves allocation-free and gives exactly the same results as `positionAt`.
+  - The quality fallback switches to `low` after 3 s below 30 fps, once, and logs it.
+  - Selection rings no longer re-upload every frame.
+  - Findings are recorded: at most 32 draw calls, pro builds in about 150 ms with crowd and field, under 0.5 ms of `useFrame` per frame and about 1.4 ms of render CPU, with 300 performers.
+  - Lead decision: `low` also renders at 1× pixel density (design §9 updated). The change is in `Scene.tsx`.
+- **Checks:** on merged `3d-async`, desktop `tsc --noEmit` passed and `vitest run src/view3d` passed (19 files, 321 tests).
+- **Next:** P5.2 validation run (lead). 60 fps on an integrated GPU (V6) needs the owner's hardware; this box has no GPU.
+- **Blockers:** none.
