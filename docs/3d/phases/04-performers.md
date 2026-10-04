@@ -1,7 +1,7 @@
 ---
 phase: 4
 title: Performers and playback
-status: in-progress
+status: done
 owner: lead (3d-async)
 branch: none
 pr: none
@@ -49,9 +49,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P4.3: End-to-end test
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: 3d-worker (3d/p4-e2e)
+- Status: done
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/71
 - Parallel: no
 - Depends on: P4.2, P3.3
 
@@ -61,8 +61,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 - [x] Positions tests pass.
 - [x] Performers follow playback smoothly in a recording sent to the project owner.
-- [ ] `view3d.spec.mts` passes headlessly.
-- [ ] Type-check, lint, format and spellcheck pass on `3d-async`.
+- [x] `view3d.spec.mts` passes headlessly.
+- [x] Type-check, lint, format and spellcheck pass on `3d-async`.
 
 ## Handoff notes
 
@@ -116,4 +116,15 @@ Nothing yet.
   - For P5.1: `positionAt` allocates one small object per marcher per frame. Add an out-parameter variant if profiling shows it matters.
 - **Checks:** on merged `3d-async`, desktop `tsc --noEmit` passed and `vitest run src/view3d` passed. The recording was sent to the project owner.
 - **Next:** P4.3 (e2e) once P3.3 merges.
+- **Blockers:** none.
+
+### 2026-10-04 · lead · P4.3 (review)
+
+- **Done:** squash-merged PR #71 (`e2e/tests/view3d.spec.mts`).
+  - The spec covers seek and pause exactly, playing within 50 ms (the worst run was 13 ms), venue and lighting from the overlay with undo and redo, reopening the show, and no network requests.
+  - It passes without WebGL (the sync and venue checks use DOM test ids). With SwiftShader it also checks `data-kit` and `data-lighting`.
+  - The worker's session refused `coord.sh`, so this entry records its owner, PR and status.
+  - **Finding outside 3D View:** the editor's on-screen `AudioClock` lags its real playback position by 100 ms or more under load. The spec compares against the clock messages instead. Worth a separate issue.
+- **Checks:** I ran `~/om-capture/e2e e2e/tests/view3d.spec.mts` on the PR branch: 1 passed (18.1 s), recording in `~/om-capture/runs/20261004-125845-e2e/`. The worker ran it 3 of 3 without WebGL and 2 of 2 with SwiftShader.
+- **Next:** P5.1, then the P5.2 validation run.
 - **Blockers:** none.
