@@ -72,8 +72,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.5: Indoor gym kit
 
 - Owner: p2-5-worker (3d/p2-gym)
-- Status: claimed
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/59
 - Parallel: yes
 - Depends on: P2.2
 
@@ -106,3 +106,11 @@ Nothing yet.
 - **Checks:** on the PR branch, `vitest run src/view3d` (21 passed), desktop `tsc --noEmit` passed, `eslint src/view3d` 0 errors and 1 warning (`buildCrowd` length).
 - **Next:** P2.3, P2.4 and P2.5 are unblocked.
 - **Blockers:** none.
+
+### 2026-10-04 · p2-5-worker · P2.5
+
+- **Done:** indoor gym kit in `apps/desktop/src/view3d/core/kits/gym.ts` (+ `kits/gym/textures.ts`, tests in `kits/__test__/gym.test.ts`), PR https://github.com/AlexDumo/OpenMarch-timeline/pull/59. The room's front extends past 9 m so the front wall clears the bleachers; the floor is at y = 0 under P2.1's tarp at y = 0.02. Screenshots from every camera in house and show lighting (indoor and football footprints) are in `/tmp/claude-1000/-home-alex-GitHub-OpenMarch-main-feature/1be98704-8f34-44f4-bf9a-c0cb4bb2fc1d/scratchpad/gym/out/`.
+- **Checks:** vitest `src/view3d` 65 passed; `tsc --noEmit` clean; eslint 0 errors (1 max-lines warning); prettier and cspell clean. Not run: test:history, e2e, check:agent-guidance.
+- **Next:** lead review. The gym's bleacher code duplicates the stand's instanced rows; the lead may consolidate with P2.3's `stands.ts`.
+- **Blockers:** none.
+- **Resume from:** nothing pending; address review comments on the PR.
