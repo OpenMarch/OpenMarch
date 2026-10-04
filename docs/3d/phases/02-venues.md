@@ -52,8 +52,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P2.3: Stand kits: hs, bighs, college and blank
 
 - Owner: p2-3-worker (3d/p2-stand-kits)
-- Status: claimed
-- PR: none
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/60
 - Parallel: yes
 - Depends on: P2.2
 
@@ -121,3 +121,12 @@ Nothing yet.
 - **Checks:** on the PR branch, `vitest run src/view3d` passed and desktop `tsc --noEmit` passed.
 - **Next:** P3.1 must clear the crowd within 4.9 m of the camera (ui.md UI-3); the judge view needs it.
 - **Blockers:** none.
+
+### 2026-10-04 · p2-3-worker · P2.3
+
+- **Done:** stand kits `hs`, `bighs`, `college`, `blank` and `stands.ts` under `apps/desktop/src/view3d/core/kits/` (PR https://github.com/AlexDumo/OpenMarch-timeline/pull/60). Shared builder `buildStandsKit` in `stands.ts`; no `kits/index.ts`. Screenshots of every kit from every camera (placeholder field plane, P2.1 not merged): `/tmp/claude-1000/p23-shots/out/<kit>-<camera>.png`.
+- **Checks:** vitest `src/view3d` 91 passed (44 new); `tsc --noEmit` clean; prettier check clean; cspell 0 issues; eslint 0 errors, 3 max-lines warnings. Draw calls hs 22, bighs 34, college 26, blank 1. Not run: test:history, e2e, check:agent-guidance.
+- **Next:** lead review.
+- **Blockers:** none.
+- **Cross-phase note for P3.1, P3.2, P2.4 and P2.5:** `KitResult` has no crowd field, so each kit that builds a crowd sets `kit.root.userData.crowd` to the `buildCrowd` handle (`clearAround(point, radius)`, `reset()`); the scene calls it when a seat camera is active. Kits also set `castShadow = false` on everything at `quality: "low"`.
+- **Resume from:** nothing pending; address review comments on PR 60.
