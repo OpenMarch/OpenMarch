@@ -259,7 +259,7 @@ approved reference, converted to meters (1 ft = 0.3048 m).
   `pro`, with crowd, shadows and 300 performers.
 - Under 300 draw calls in any kit.
 - Kit build under 200 ms, or under 400 ms for `pro` with crowd.
-- `quality: "low"` turns off shadows and halves crowd density. The window
+- `quality: "low"` turns off shadows, halves crowd density and renders at 1× pixel density. The window
   switches to it after 3 seconds below 30 fps, and logs that.
 - No network requests from the window.
 

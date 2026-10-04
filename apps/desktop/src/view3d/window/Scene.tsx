@@ -113,6 +113,7 @@ export default function Scene() {
     const fieldImage = useFieldImage();
     const kitId = useView3dSceneStore((s) => s.kitId);
     const lighting = useView3dSceneStore((s) => s.lighting);
+    const quality = useView3dSceneStore((s) => s.quality);
 
     const ready = venue.data && field.data && fieldImage.loaded;
     return (
@@ -124,7 +125,8 @@ export default function Scene() {
         >
             <Canvas
                 shadows
-                dpr={[1, 2]}
+                // `low` renders at 1x so HiDPI screens on integrated GPUs keep up.
+                dpr={quality === "low" ? 1 : [1, 2]}
                 camera={{
                     fov: DEFAULT_FOV_DEG,
                     near: CAMERA_NEAR,
