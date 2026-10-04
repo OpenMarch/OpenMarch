@@ -25,6 +25,7 @@ const tablesWithHistory = [
     schema.tags,
     schema.tag_appearances,
     schema.marcher_tags,
+    schema.view3d_venue,
 ];
 
 let transactionWithHistoryTail = Promise.resolve<void>(undefined);
