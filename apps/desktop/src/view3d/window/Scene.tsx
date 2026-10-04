@@ -15,8 +15,8 @@
  * - lighting: applied to the environment and the kit, never rebuilds.
  *
  * What it built is published in `useView3dSceneStore` (`sceneStore.ts`) for
- * the camera rig and the overlay. The camera is put at the kit's first seat
- * when a kit is built; P3.2 owns camera movement.
+ * the camera rig and the overlay. The camera rig (`camera/CameraRig.tsx`,
+ * P3.2) places and moves the camera.
  */
 // cspell:ignore frameloop
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -53,6 +53,7 @@ import type {
     VenueParams,
 } from "@/view3d/core/types";
 import type { VenueSettings } from "@/view3d/core/venueSettings";
+import CameraRig from "./camera/CameraRig";
 import { CROWD_CLEAR_RADIUS, useView3dSceneStore } from "./sceneStore";
 import { useFieldImage } from "./useFieldImage";
 import Performers from "./performers/Performers";
@@ -134,6 +135,7 @@ export default function Scene() {
                         image={fieldImage.image}
                     />
                 )}
+                {ready && <CameraRig />}
             </Canvas>
         </div>
     );
@@ -201,7 +203,6 @@ function SceneContents({
         const footprint = JSON.parse(footprintKey) as FieldFootprint;
         const built = KIT_BUILDERS[kitId]({ footprint, params, quality });
         scene.add(built.root);
-        if (built.cameras[0]) placeCamera(camera, built.cameras[0]);
         useView3dSceneStore.getState()._setKit(kitId, built);
         return () => {
             scene.remove(built.root);
@@ -209,7 +210,7 @@ function SceneContents({
             if (store.kit === built) store._setKit(null, null);
             built.dispose();
         };
-    }, [scene, camera, kitId, footprintKey, params, quality]);
+    }, [scene, kitId, footprintKey, params, quality]);
 
     // Field surface.
     useEffect(() => {

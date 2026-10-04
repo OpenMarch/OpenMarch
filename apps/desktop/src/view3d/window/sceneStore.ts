@@ -19,9 +19,8 @@
  * Read it in React with `useView3dSceneStore(selector)`, and in `useFrame` or
  * event handlers with `useView3dSceneStore.getState()`.
  *
- * The scene puts the camera at `kit.cameras[0]` (no animation) whenever it
- * builds a kit. P3.2 takes over camera placement from there; it can watch
- * `kit` to react to venue changes.
+ * The camera rig (`camera/CameraRig.tsx`, P3.2) places the camera: it
+ * watches `kit` and opens each new venue on its default camera.
  */
 import type { Vector3Tuple } from "three";
 import { create } from "zustand";
