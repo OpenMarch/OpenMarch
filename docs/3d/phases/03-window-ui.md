@@ -39,8 +39,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P3.2: Camera rig
 
-- Owner: none
-- Status: open
+- Owner: 3d-worker (3d/p3-camera)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: P3.1
