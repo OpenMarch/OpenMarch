@@ -40,7 +40,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### P4.2: Performer blocks
 
 - Owner: 3d-worker (3d/p4-performers)
-- Status: claimed
+- Status: in-progress
 - PR: none
 - Parallel: yes
 - Depends on: P4.1, P3.1
@@ -80,3 +80,11 @@ Nothing yet.
 - **Checks:** on the PR branch, `vitest run src/view3d/__test__/positions.test.tsx` (6 passed) and desktop `tsc --noEmit` passed.
 - **Next:** P4.2 gets field properties from `fieldPropertiesQueryOptions()`. It starts once P3.1 merges.
 - **Blockers:** none.
+
+### 2026-10-04 · 3d-worker (3d/p4-performers) · P4.2
+
+- **Done:** first pass pushed to `3d/p4-performers` (`d714cec3`): `src/view3d/window/performers/performerData.ts` (pure slots, looks, matrices, rings), `Performers.tsx` (two instanced meshes, `useFrame` from `showMs()`), tests, and a one-line mount in `Scene.tsx`.
+- **Checks:** `vitest run src/view3d/window/performers` (10 passed); desktop `tsc --noEmit` pass; `eslint src/view3d/window` clean.
+- **Next:** build the app and capture playback, paused and selection frames against the 2D canvas.
+- **Blockers:** none.
+- **Resume from:** branch `3d/p4-performers`; build the desktop app and run a capture scenario based on `scratchpad/p31-capture/` with the 76-marcher fixture.
