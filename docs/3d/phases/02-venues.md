@@ -1,8 +1,8 @@
 ---
 phase: 2
 title: Field surface, environment and venue kits
-status: not-started
-owner: none
+status: in-progress
+owner: p2-2-worker
 branch: none
 pr: none
 depends_on: [0]
@@ -41,8 +41,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P2.2: Shared environment and crowd
 
-- Owner: none
-- Status: open
+- Owner: p2-2-worker (3d/p2-environment)
+- Status: claimed
 - PR: none
 - Parallel: yes
 - Depends on: —
