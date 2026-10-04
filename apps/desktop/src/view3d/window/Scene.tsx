@@ -14,6 +14,9 @@
  * - crowd: kit, crowd toggle, team colors, quality;
  * - lighting: applied to the environment and the kit, never rebuilds.
  *
+ * Quality starts `high`. After 3 seconds below 30 fps the scene switches to
+ * `low` once and logs it (`qualityFallback.ts`, P5.1).
+ *
  * What it built is published in `useView3dSceneStore` (`sceneStore.ts`) for
  * the camera rig and the overlay. The camera rig (`camera/CameraRig.tsx`,
  * P3.2) places and moves the camera.
@@ -56,6 +59,11 @@ import type { VenueSettings } from "@/view3d/core/venueSettings";
 import CameraRig from "./camera/CameraRig";
 import { CROWD_CLEAR_RADIUS, useView3dSceneStore } from "./sceneStore";
 import { useFieldImage } from "./useFieldImage";
+import {
+    FALLBACK_LOG_MESSAGE,
+    createQualityFallbackState,
+    stepQualityFallback,
+} from "./qualityFallback";
 import Performers from "./performers/Performers";
 
 /** Default vertical field of view, as in the reference demo. */
@@ -273,6 +281,19 @@ function SceneContents({
         () => () => useView3dSceneStore.getState()._setLighting(null),
         [],
     );
+
+    // Automatic fallback (design.md §9): 3 s below 30 fps switches to low
+    // quality once. It never switches back on its own.
+    const fallbackRef = useRef(createQualityFallbackState());
+    useFrame((_, dt) => {
+        const store = useView3dSceneStore.getState();
+        if (store.quality !== "high") return;
+        if (stepQualityFallback(fallbackRef.current, dt)) {
+            // eslint-disable-next-line no-console -- design.md §9 asks for a log line
+            console.info(FALLBACK_LOG_MESSAGE);
+            store.setQuality("low");
+        }
+    });
 
     const cameraTuple = useRef<Vector3Tuple>([0, 0, 0]);
     useFrame((state, dt) => {

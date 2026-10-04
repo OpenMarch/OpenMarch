@@ -254,14 +254,17 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             );
             bodies.instanceMatrix.needsUpdate = true;
         }
-        rings.count = writeRingMatrices(
+        const ringCount = writeRingMatrices(
             slots,
             frame.selected,
             xz,
             placed,
             rings.instanceMatrix.array as Float32Array,
         );
-        rings.instanceMatrix.needsUpdate = true;
+        // With no selection there is nothing to upload (P5.1).
+        if (ringCount > 0 || rings.count > 0)
+            rings.instanceMatrix.needsUpdate = true;
+        rings.count = ringCount;
         frame.lastMs = ms;
         dirtyRef.current = false;
     });

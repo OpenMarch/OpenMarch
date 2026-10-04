@@ -34,6 +34,9 @@ import {
     type MarcherTimeline,
 } from "@/utilities/Keyframes";
 
+/** As in `@openmarch/core` `world.ts`. */
+const METERS_PER_INCH = 0.0254;
+
 /** One timeline per marcher ID, covering every page of the show. */
 export type PerformerTimelines = Map<number, MarcherTimeline>;
 
@@ -130,4 +133,76 @@ export function positionAt(
           : (pathMap.get(ms) ?? getCoordinatesAtTime(ms, timeline));
     if (!pixels) return null;
     return pixelsToWorld(fieldProperties, pixels);
+}
+
+/**
+ * {@link positionAt} without allocating, for the per-frame path: writes the
+ * position into `out` and returns true, or returns false (leaving `out`
+ * untouched) when the timeline has no keyframes. The result is identical to
+ * `positionAt`'s.
+ *
+ * Straight moves are interpolated here, with the same arithmetic as
+ * `getCoordinatesAtTime` and `pixelsToWorld`. A move along a pathway still
+ * goes through `getCoordinatesAtTime`, which allocates; pathways are rare.
+ *
+ * @param timeline - the performer's timeline from {@link usePerformerTimelines}
+ * @param ms - show time in milliseconds
+ * @param fieldProperties - the show's field, for the pixel-to-meter mapping
+ * @param out - receives the position in world meters
+ */
+export function positionAtInto(
+    timeline: MarcherTimeline,
+    ms: number,
+    fieldProperties: FieldProperties,
+    out: WorldPoint,
+): boolean {
+    const { sortedTimestamps, pathMap } = timeline;
+    const n = sortedTimestamps.length;
+    if (n === 0) return false;
+    const first = sortedTimestamps[0];
+    const last = sortedTimestamps[n - 1];
+
+    let px: number;
+    let py: number;
+    // `!(ms > first)` also catches NaN.
+    const held = !(ms > first) ? first : ms >= last ? last : null;
+    const exact = held ?? (pathMap.has(ms) ? ms : null);
+    if (exact !== null) {
+        const c = pathMap.get(exact);
+        if (!c) return false;
+        px = c.x;
+        py = c.y;
+    } else {
+        // first < ms < last and ms is not a keyframe: find the keyframes on
+        // either side (the same binary search as `findSurroundingTimestamps`).
+        let low = 0;
+        let high = n - 1;
+        while (low <= high) {
+            const mid = (low + high) >> 1;
+            if (sortedTimestamps[mid] < ms) low = mid + 1;
+            else high = mid - 1;
+        }
+        const t0 = sortedTimestamps[high];
+        const t1 = sortedTimestamps[low];
+        const c0 = pathMap.get(t0);
+        const c1 = pathMap.get(t1);
+        if (!c0 || !c1) return false;
+        if (c1.path) {
+            const p = getCoordinatesAtTime(ms, timeline);
+            if (!p) return false;
+            px = p.x;
+            py = p.y;
+        } else {
+            const progress = (ms - t0) / (t1 - t0);
+            px = c0.x + progress * (c1.x - c0.x);
+            py = c0.y + progress * (c1.y - c0.y);
+        }
+    }
+    // As `pixelsToWorld`.
+    const k =
+        (fieldProperties.stepSizeInches * METERS_PER_INCH) /
+        fieldProperties.pixelsPerStep;
+    out.x = (px - fieldProperties.centerFrontPoint.xPixels) * k;
+    out.z = (py - fieldProperties.centerFrontPoint.yPixels) * k;
+    return true;
 }

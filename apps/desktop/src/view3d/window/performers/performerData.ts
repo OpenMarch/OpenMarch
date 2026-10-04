@@ -13,7 +13,7 @@ import {
 } from "@/entity-components/appearance";
 import type { MarcherTimeline } from "@/utilities/Keyframes";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
-import { positionAt } from "@/view3d/positions";
+import { positionAtInto } from "@/view3d/positions";
 
 /** Cylinder radius in meters (0.6 m across, ADR 0002 D-7). */
 export const PERFORMER_RADIUS = 0.3;
@@ -113,6 +113,9 @@ export function writePerformerLooks(
     }
 }
 
+/** Reused by {@link writePerformerPositions}, so it allocates nothing. */
+const scratchPoint = { x: 0, z: 0 };
+
 /**
  * Writes every performer's ground position at `ms` into `xz` (two floats per
  * instance) and whether it is placed into `placed` (1 or 0). A performer is
@@ -126,13 +129,14 @@ export function writePerformerPositions(
     xz: Float32Array,
     placed: Uint8Array,
 ): void {
+    const point = scratchPoint;
     for (let i = 0; i < slots.ids.length; i++) {
         const timeline = slots.timelines[i];
-        const point =
-            timeline && visible[i]
-                ? positionAt(timeline, ms, fieldProperties)
-                : null;
-        if (point) {
+        if (
+            timeline &&
+            visible[i] &&
+            positionAtInto(timeline, ms, fieldProperties, point)
+        ) {
             xz[i * 2] = point.x;
             xz[i * 2 + 1] = point.z;
             placed[i] = 1;
