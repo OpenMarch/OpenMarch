@@ -23,7 +23,7 @@ test("adds a page that starts where the marchers already are", async ({
 
     // The new page is selected and starts on a later beat than page 0.
     await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
-    const pages = show.query<{ id: number; start: number }>(
+    const pages = await show.query<{ id: number; start: number }>(
         `SELECT pages.id, beats.position AS start
          FROM pages INNER JOIN beats ON beats.id = pages.start_beat
          ORDER BY beats.position`,
@@ -36,8 +36,8 @@ test("adds a page that starts where the marchers already are", async ({
             "SELECT marcher_id, x, y FROM marcher_pages WHERE page_id = ? ORDER BY marcher_id",
             pageId,
         );
-    expect(positions(1)).toHaveLength(4);
-    expect(positions(1)).toEqual(positions(0));
+    expect(await positions(1)).toHaveLength(4);
+    expect(await positions(1)).toEqual(await positions(0));
     await expectCanvasMatchesShow(show);
 });
 

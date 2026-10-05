@@ -31,6 +31,19 @@ replaces the wire between them:
 SQL runs through the app's own `sql:proxy` handler on `node:sqlite`, against a
 copy of `_blank.dots` in the test's output folder.
 
+## Checking the harness against Electron
+
+The same scenarios also run in the built Electron app, to catch the stand-ins
+above drifting from the real thing:
+
+```bash
+pnpm run build                    # the Electron build the app is launched from
+pnpm run e2e:scenarios:electron   # needs a display (Xvfb on a headless machine)
+```
+
+Each launch gets its own `--user-data-dir`, so these run in parallel too. Run
+them before merging a change to the harness, the preload or the main process.
+
 ## What belongs in the Electron suite instead
 
 A channel the host doesn't register rejects with Electron's own "No handler
@@ -58,7 +71,11 @@ test("creates marchers", async ({ show }) => {
 ```
 
 - `show.page` is the app with a blank show open.
-- `show.query(sql, ...params)` reads the show file, to assert on what was saved.
+- `await show.query(sql, ...params)` reads the show file, to assert on what was
+  saved. Don't open the file yourself: under Electron a second process reading
+  it makes the app's writes fail with "database is locked".
+- Don't rely on the window size or on a particular marcher being in view; the
+  two targets lay out slightly differently.
 - `expectCanvasMatchesShow(show)` waits until every marcher is drawn where the
   file says it is. Call it after any step that moves marchers or changes page.
 - `test.use({ seedSql: [...] })` starts from an existing show

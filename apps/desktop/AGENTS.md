@@ -10,7 +10,7 @@ adds what is specific to the Electron + React app.
 - Tests that use `getTestWithHistory` need history enabled: `pnpm run test:history <relative-test-file>`.
 - Desktop e2e tests run against a production build. First ensure `apps/desktop/dist-electron` exists via `pnpm run build:electron`, install browsers with `pnpm exec playwright install --with-deps`, then run `pnpm run e2e` from `apps/desktop`.
 - New desktop e2e files must be `apps/desktop/e2e/tests/*.spec.mts`; Playwright support files in that suite use `.mts`/`.mjs`.
-- Browser scenario tests (`apps/desktop/e2e/browser/tests/*.spec.mts`) run the renderer in headless Chromium against the real database handlers, with no Electron build or display: `pnpm run build:browser`, then `pnpm run e2e:browser`. Prefer them for user workflows inside an open show; keep Electron e2e for what only Electron does. See `e2e/browser/README.md`.
+- Browser scenario tests (`apps/desktop/e2e/browser/tests/*.spec.mts`) run the renderer in headless Chromium against the real database handlers, with no Electron build or display: `pnpm run build:browser`, then `pnpm run e2e:browser`. Prefer them for user workflows inside an open show; keep Electron e2e for what only Electron does. The same scenarios run in Electron with `pnpm run e2e:scenarios:electron`. See `e2e/browser/README.md`.
 
 ## Desktop Database
 

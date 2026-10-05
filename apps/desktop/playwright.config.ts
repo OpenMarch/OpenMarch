@@ -5,7 +5,8 @@
 //     maxFailures: 2,
 // });
 
-import { defineConfig, devices } from "@playwright/test";
+import { defineConfig } from "@playwright/test";
+import type { Target } from "./e2e/browser/fixtures.mjs";
 
 /**
  * Read environment variables from file.
@@ -16,7 +17,7 @@ import { defineConfig, devices } from "@playwright/test";
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-export default defineConfig({
+export default defineConfig<object, { target: Target }>({
     testDir: "./e2e",
     fullyParallel: false,
     workers: 1,
@@ -40,10 +41,15 @@ export default defineConfig({
             name: "browser",
             testDir: "./e2e/browser/tests",
             fullyParallel: true,
-            use: {
-                ...devices["Desktop Chrome"],
-                viewport: { width: 1600, height: 1000 },
-            },
+            use: { target: "browser" },
+        },
+        {
+            // The same scenarios in the packaged app, to catch the browser
+            // harness drifting from Electron. Needs `build` and a display.
+            name: "electron-scenarios",
+            testDir: "./e2e/browser/tests",
+            fullyParallel: true,
+            use: { target: "electron" },
         },
     ],
 });

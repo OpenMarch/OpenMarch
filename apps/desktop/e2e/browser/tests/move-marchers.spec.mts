@@ -26,31 +26,40 @@ async function dragMarcher(
     await page.mouse.up();
 }
 
-const savedPosition = (show: Show, marcherId: number, pageId = 0) =>
-    show.query<{ x: number; y: number }>(
-        "SELECT x, y FROM marcher_pages WHERE marcher_id = ? AND page_id = ?",
-        marcherId,
-        pageId,
+const savedPosition = async (show: Show, marcherId: number, pageId = 0) =>
+    (
+        await show.query<{ x: number; y: number }>(
+            "SELECT x, y FROM marcher_pages WHERE marcher_id = ? AND page_id = ?",
+            marcherId,
+            pageId,
+        )
     )[0];
 
-// New marchers line up from the field's top-left corner; B3 is the first one
-// inside the default view.
-const MARCHER = { id: 3, drillNumber: "B3" };
+/**
+ * New marchers line up from the field's top-left corner, and how many of them
+ * the default view shows depends on the window size. Picks one that is in it.
+ */
+async function visibleMarcher(page: Page) {
+    const marcher = (await drawnMarchers(page)).find((drawn) => drawn.onScreen);
+    if (!marcher) throw new Error("No marcher is visible on the canvas");
+    return marcher;
+}
 
 test("dragging a marcher saves its new position", async ({ show }) => {
     const { page } = show;
-    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await createMarchers(page, { quantity: 8, section: "Baritone" });
     await expectCanvasMatchesShow(show);
-    const before = savedPosition(show, MARCHER.id);
+    const marcher = await visibleMarcher(page);
+    const before = await savedPosition(show, marcher.id);
     const others = () =>
         show.query(
             "SELECT marcher_id, x, y FROM marcher_pages WHERE marcher_id != ? ORDER BY marcher_id",
-            MARCHER.id,
+            marcher.id,
         );
-    const othersBefore = others();
+    const othersBefore = await others();
 
     const drag = { x: 200, y: 150 };
-    await dragMarcher(page, MARCHER.drillNumber, drag);
+    await dragMarcher(page, marcher.drillNumber, drag);
 
     // The dot follows the pointer, within a field unit.
     const scale = await canvasScale(page);
@@ -59,36 +68,39 @@ test("dragging a marcher saves its new position", async ({ show }) => {
         y: before.y + drag.y / scale,
     };
     await expect
-        .poll(() => Math.abs(savedPosition(show, MARCHER.id).x - expected.x))
+        .poll(async () =>
+            Math.abs((await savedPosition(show, marcher.id)).x - expected.x),
+        )
         .toBeLessThan(1);
     expect(
-        Math.abs(savedPosition(show, MARCHER.id).y - expected.y),
+        Math.abs((await savedPosition(show, marcher.id)).y - expected.y),
     ).toBeLessThan(1);
-    expect(others()).toEqual(othersBefore);
+    expect(await others()).toEqual(othersBefore);
     await expectCanvasMatchesShow(show);
     await expect(
-        page.getByRole("heading", { name: `Marcher ${MARCHER.drillNumber}` }),
+        page.getByRole("heading", { name: `Marcher ${marcher.drillNumber}` }),
     ).toBeVisible();
 });
 
 test("undo and redo a move", async ({ show }) => {
     const { page } = show;
-    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await createMarchers(page, { quantity: 8, section: "Baritone" });
     await expectCanvasMatchesShow(show);
-    const before = savedPosition(show, MARCHER.id);
+    const marcher = await visibleMarcher(page);
+    const before = await savedPosition(show, marcher.id);
 
-    await dragMarcher(page, MARCHER.drillNumber, { x: 300, y: 200 });
+    await dragMarcher(page, marcher.drillNumber, { x: 300, y: 200 });
     await expect
-        .poll(() => savedPosition(show, MARCHER.id))
+        .poll(() => savedPosition(show, marcher.id))
         .not.toEqual(before);
-    const after = savedPosition(show, MARCHER.id);
+    const after = await savedPosition(show, marcher.id);
 
     await page.keyboard.press("Control+z");
-    await expect.poll(() => savedPosition(show, MARCHER.id)).toEqual(before);
+    await expect.poll(() => savedPosition(show, marcher.id)).toEqual(before);
     await expectCanvasMatchesShow(show);
 
     await page.keyboard.press("Control+Shift+Z");
-    await expect.poll(() => savedPosition(show, MARCHER.id)).toEqual(after);
+    await expect.poll(() => savedPosition(show, marcher.id)).toEqual(after);
     await expectCanvasMatchesShow(show);
 });
 
@@ -99,18 +111,19 @@ test("a move on one page leaves the other pages alone", async ({ show }) => {
         beatsPerMeasure: 4,
         measures: 8,
     });
-    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await createMarchers(page, { quantity: 8, section: "Baritone" });
     await page.locator("#pages").getByRole("button").click();
     await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
     await expectCanvasMatchesShow(show);
-    const onPage0 = savedPosition(show, MARCHER.id, 0);
+    const marcher = await visibleMarcher(page);
+    const onPage0 = await savedPosition(show, marcher.id, 0);
 
-    await dragMarcher(page, MARCHER.drillNumber, { x: 250, y: 100 });
+    await dragMarcher(page, marcher.drillNumber, { x: 250, y: 100 });
 
     await expect
-        .poll(() => savedPosition(show, MARCHER.id, 1))
+        .poll(() => savedPosition(show, marcher.id, 1))
         .not.toEqual(onPage0);
-    expect(savedPosition(show, MARCHER.id, 0)).toEqual(onPage0);
+    expect(await savedPosition(show, marcher.id, 0)).toEqual(onPage0);
 
     // Going back shows the marcher where page 0 has it.
     await page.keyboard.press("q");

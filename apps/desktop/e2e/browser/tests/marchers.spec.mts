@@ -4,7 +4,7 @@ import { createMarchers, expectCanvasMatchesShow } from "../app.mjs";
 test("creates marchers in a section", async ({ show }) => {
     await createMarchers(show.page, { quantity: 8, section: "Baritone" });
 
-    const marchers = show.query(
+    const marchers = await show.query(
         "SELECT section, drill_prefix, drill_order FROM marchers ORDER BY drill_order",
     );
     expect(marchers).toEqual(
@@ -16,7 +16,9 @@ test("creates marchers in a section", async ({ show }) => {
     );
     // Each marcher gets a position on the only page.
     expect(
-        show.query("SELECT marcher_id FROM marcher_pages WHERE page_id = 0"),
+        await show.query(
+            "SELECT marcher_id FROM marcher_pages WHERE page_id = 0",
+        ),
     ).toHaveLength(8);
     await expectCanvasMatchesShow(show);
 });
@@ -26,13 +28,11 @@ test("continues drill numbers when adding to a section", async ({ show }) => {
     await createMarchers(show.page, { quantity: 3, section: "Baritone" });
     await createMarchers(show.page, { quantity: 2, section: "Trumpet" });
 
-    const drillNumbers = show
-        .query<{
-            drill_number: string;
-        }>(
+    const drillNumbers = (
+        await show.query<{ drill_number: string }>(
             "SELECT drill_prefix || drill_order AS drill_number FROM marchers ORDER BY id",
         )
-        .map((row) => row.drill_number);
+    ).map((row) => row.drill_number);
     expect(drillNumbers).toEqual(["B1", "B2", "B3", "B4", "B5", "T1", "T2"]);
     await expectCanvasMatchesShow(show);
 });

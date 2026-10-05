@@ -18,12 +18,12 @@ test("adds a tempo group", async ({ show }) => {
 
     // A blank show has one zero-length beat for the first page to start on.
     await expect.poll(() => show.query(beats)).toHaveLength(17);
-    const [start, ...added] = show.query<Beat>(beats);
+    const [start, ...added] = await show.query<Beat>(beats);
     expect(start).toEqual({ position: 0, duration: 0 });
     // 120 bpm is half a second per beat.
     expect(added.map((beat) => beat.duration)).toEqual(Array(16).fill(0.5));
 
-    const measures = show.query(
+    const measures = await show.query(
         `SELECT beats.position AS start, measures.rehearsal_mark
          FROM measures INNER JOIN beats ON beats.id = measures.start_beat
          ORDER BY beats.position`,
@@ -51,8 +51,7 @@ test("adds a second tempo group after the first", async ({ show }) => {
     });
     await expect.poll(() => show.query(beats)).toHaveLength(15);
 
-    const durations = show
-        .query<Beat>(beats)
+    const durations = (await show.query<Beat>(beats))
         .slice(1)
         .map((beat) => Math.round(beat.duration * 1000) / 1000);
     expect(durations).toEqual([
@@ -60,5 +59,5 @@ test("adds a second tempo group after the first", async ({ show }) => {
         // 180 bpm is a third of a second per beat.
         ...Array(6).fill(0.333),
     ]);
-    expect(show.query("SELECT id FROM measures")).toHaveLength(4);
+    expect(await show.query("SELECT id FROM measures")).toHaveLength(4);
 });

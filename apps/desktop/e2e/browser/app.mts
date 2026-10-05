@@ -112,8 +112,8 @@ export async function expectCanvasMatchesShow(show: Show) {
             const pageId = await show.page.evaluate(
                 () => (window.canvas as any).currentPage.id as number,
             );
-            const saved = show
-                .query<{
+            const saved = (
+                await show.query<{
                     id: number;
                     x: number;
                     y: number;
@@ -121,7 +121,7 @@ export async function expectCanvasMatchesShow(show: Show) {
                     "SELECT marcher_id AS id, x, y FROM marcher_pages WHERE page_id = ? ORDER BY marcher_id",
                     pageId,
                 )
-                .map(({ id, x, y }) => ({ id, x: round(x), y: round(y) }));
+            ).map(({ id, x, y }) => ({ id, x: round(x), y: round(y) }));
             const drawn = (await drawnMarchers(show.page))
                 .map(({ id, x, y }) => ({ id, x: round(x), y: round(y) }))
                 .sort((a, b) => a.id - b.id);
