@@ -122,11 +122,8 @@ export function resolveNewShowFilePath(
         return pathParts.join("/");
     }
 
-    if (!lastPart.startsWith(sanitizedProjectName)) {
-        pathParts[pathParts.length - 1] = `${sanitizedProjectName}.dots`;
-        return pathParts.join("/");
-    }
-
+    // Keep a custom .dots filename (e.g. "My Show-part1.dots"); renaming it to
+    // the show name could replace an unrelated file already at that path.
     return trimmed;
 }
 

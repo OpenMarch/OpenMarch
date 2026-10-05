@@ -41,6 +41,7 @@ import {
     computeDefaultDirectoryToPersist,
     resolveDefaultFilesDirectory,
 } from "./services/default-files-directory";
+import { resolveFinalizeTargetPath } from "./services/new-show-target-path";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -868,32 +869,6 @@ export async function createNewShowDraft(): Promise<{ path: string } | number> {
 
     currentNewShowDraftPath = draftPath;
     return { path: draftPath };
-}
-
-const sanitizeNewShowFilename = (name: string): string =>
-    name.trim().replace(/[<>:"/\\|?*]/g, "_");
-
-function resolveFinalizeTargetPath(
-    projectName: string,
-    targetPath: string,
-): string {
-    const trimmed = targetPath.trim();
-    const normalizedPath = trimmed.replace(/\\/g, "/");
-    const pathParts = normalizedPath.split("/");
-    const sanitized = sanitizeNewShowFilename(projectName) || "Untitled";
-    const lastPart = pathParts[pathParts.length - 1] || "";
-
-    if (!lastPart.endsWith(".dots")) {
-        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
-        return pathParts.join("/");
-    }
-
-    if (!lastPart.startsWith(sanitizeNewShowFilename(projectName))) {
-        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
-        return pathParts.join("/");
-    }
-
-    return trimmed;
 }
 
 function sleep(ms: number): Promise<void> {
