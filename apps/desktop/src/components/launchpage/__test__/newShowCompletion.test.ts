@@ -35,6 +35,13 @@ describe("newShowCompletion helpers", () => {
         ).toBe("/Users/me/Documents/My Show.dots");
     });
 
+    it("resolveNewShowFilePath keeps a custom filename unrelated to the show name", () => {
+        // Rewriting this to Foo.dots would replace an existing Foo.dots on finalize.
+        expect(
+            resolveNewShowFilePath("Foo", "/Users/me/Documents/Bar-part1.dots"),
+        ).toBe("/Users/me/Documents/Bar-part1.dots");
+    });
+
     it("maps split audio and tempo wizard state to completion form state", () => {
         const wizardState: NewShowWizardState = {
             start: { mode: "blank" },
@@ -154,7 +161,7 @@ describeDbTests("completeNewShow", (it) => {
         expect(utility?.last_page_counts).toBe(8);
 
         expect(window.electron.finalizeNewShowDraft).toHaveBeenCalledWith(
-            "/tmp/Test Show.dots",
+            `/tmp/test-show-${task.id}.dots`,
             "Test Show",
         );
 

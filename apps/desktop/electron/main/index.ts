@@ -38,6 +38,11 @@ import {
 import { repairDatabase } from "../database/repair";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
+    computeDefaultDirectoryToPersist,
+    resolveDefaultFilesDirectory,
+} from "./services/default-files-directory";
+import { resolveFinalizeTargetPath } from "./services/new-show-target-path";
+import {
     initAuthBeforeReady,
     initAuthAfterReady,
     handleAuthSecondInstance,
@@ -319,6 +324,32 @@ function getPlaywrightDefaultDocumentsPath(): string | undefined {
     return undefined;
 }
 
+/** True when the path exists and is a directory. */
+function directoryExists(dir: string): boolean {
+    try {
+        return !!dir && fs.existsSync(dir) && fs.statSync(dir).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Persist the parent directory of a newly created file as the default files
+ * directory, honoring write-once semantics. No-op during Playwright sessions so
+ * e2e runs never write into the shared app store (which would leak the first
+ * test's output directory into every later test).
+ */
+function persistDefaultFilesDirectory(filePath: string) {
+    if (process.env.PLAYWRIGHT_SESSION) return;
+    const dirToPersist = computeDefaultDirectoryToPersist(
+        store.get("defaultFilesDirectory") as string | undefined,
+        filePath,
+    );
+    if (dirToPersist) {
+        store.set("defaultFilesDirectory", dirToPersist);
+    }
+}
+
 async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
     if (!win) return { canceled: true, filePath: "" };
     const playwrightPath = getPlaywrightDefaultDocumentsPath();
@@ -589,6 +620,33 @@ ipcMain.handle("set-language", (event, language) => {
     store.set("language", language);
 });
 
+// Default files directory
+
+ipcMain.handle("settings:getDefaultFilesDirectory", () => {
+    return resolveDefaultFilesDirectory(
+        store.get("defaultFilesDirectory", "") as string,
+        getPlaywrightDefaultDocumentsPath(),
+        directoryExists,
+    );
+});
+
+ipcMain.handle("settings:setDefaultFilesDirectory", (_event, dir: string) => {
+    if (!directoryExists(dir)) {
+        return false;
+    }
+    store.set("defaultFilesDirectory", dir);
+    return true;
+});
+
+ipcMain.handle("dialog:selectDirectory", async () => {
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, {
+        properties: ["openDirectory", "createDirectory"],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+});
+
 // file management
 
 ipcMain.handle("closeCurrentFile", () => {
@@ -731,6 +789,8 @@ async function createFileAtPath(filePath: string) {
 
     addRecentFile(filePath);
 
+    persistDefaultFilesDirectory(filePath);
+
     return 200;
 }
 
@@ -809,32 +869,6 @@ export async function createNewShowDraft(): Promise<{ path: string } | number> {
 
     currentNewShowDraftPath = draftPath;
     return { path: draftPath };
-}
-
-const sanitizeNewShowFilename = (name: string): string =>
-    name.trim().replace(/[<>:"/\\|?*]/g, "_");
-
-function resolveFinalizeTargetPath(
-    projectName: string,
-    targetPath: string,
-): string {
-    const trimmed = targetPath.trim();
-    const normalizedPath = trimmed.replace(/\\/g, "/");
-    const pathParts = normalizedPath.split("/");
-    const sanitized = sanitizeNewShowFilename(projectName) || "Untitled";
-    const lastPart = pathParts[pathParts.length - 1] || "";
-
-    if (!lastPart.endsWith(".dots")) {
-        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
-        return pathParts.join("/");
-    }
-
-    if (!lastPart.startsWith(sanitizeNewShowFilename(projectName))) {
-        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
-        return pathParts.join("/");
-    }
-
-    return trimmed;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -971,6 +1005,8 @@ export async function finalizeNewShowDraft(
     await setActiveDb(finalPath, false);
     addRecentFile(finalPath);
 
+    persistDefaultFilesDirectory(finalPath);
+
     return 200;
 }
 
@@ -1042,8 +1078,12 @@ export async function newFile() {
         );
         filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
     } else {
+        const storedDefaultDir = store.get("defaultFilesDirectory") as
+            | string
+            | undefined;
         const dialogResult = await dialog.showSaveDialog(win, {
             buttonLabel: "Create New",
+            defaultPath: storedDefaultDir || undefined,
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         });
         if (dialogResult.canceled || !dialogResult.filePath) return;
