@@ -28,4 +28,22 @@ export default defineConfig({
         screenshot: "only-on-failure",
     },
     outputDir: "./playwright-report",
+    projects: [
+        {
+            // The packaged app. Needs `build:electron` and a display.
+            name: "electron",
+            testDir: "./e2e/tests",
+        },
+        {
+            // The renderer in headless Chromium against the real database
+            // handlers (see e2e/browser/README.md). Needs `build:browser`.
+            name: "browser",
+            testDir: "./e2e/browser/tests",
+            fullyParallel: true,
+            use: {
+                ...devices["Desktop Chrome"],
+                viewport: { width: 1600, height: 1000 },
+            },
+        },
+    ],
 });
