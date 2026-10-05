@@ -113,19 +113,23 @@ describeDbTests("timeline play, pause, play", (it) => {
             });
         };
 
-        // The page at [5, 9): play starts at 5 (the flag ending the previous page)
+        // The page at [5, 9): Play previews it (UI-11); pausing holds the frame and leaves P at 9
         act(() => {
             store().selectRange(5, 9);
+            store().setPlayFromStart(true);
         });
         writes = 0;
         playPause(3.1); // beat 7.2
-        expect(store().playheadBeat).toBe(7);
+        expect(store().cursorBeat).toBe(7);
+        expect(store().playheadBeat).toBe(9);
+        // Play again resumes from the held frame
         playPause(3.4); // beat 7.8
-        expect(store().playheadBeat).toBe(7);
+        expect(store().cursorBeat).toBe(7);
+        expect(store().playheadBeat).toBe(9);
         unsubscribe();
 
         expect(maxDepthErrors()).toEqual([]);
-        // At most a start seek and a pause seek per play
+        // At most a start cue and a pause cue per play
         expect(writes).toBeLessThanOrEqual(4);
         expect(result.current.selectedPage?.id).toBe(2);
     });

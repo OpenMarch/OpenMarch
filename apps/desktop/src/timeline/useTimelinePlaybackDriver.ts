@@ -12,14 +12,17 @@ import { playbackStep } from "./timelinePlayhead";
 import { consumeStopRequest } from "./timelineTransport";
 
 /**
- * Timeline mode's playback rules while playing (docs/timeline/ui.md UI-9 Play; P8.11), once per
- * animation frame, independent of the canvas:
+ * Timeline mode's playback rules while playing (docs/timeline/ui.md UI-9 Play, UI-11; P8.11), once
+ * per animation frame, independent of the canvas. Playing never writes the playhead P; it moves the
+ * store's cursor instead (`cue`).
  *
- * - It plays on, with no loop, and stops at the end of the show (UI-10 Play). An isolated
- *   timeline loops over its range instead.
- * - Pausing, however it happens, leaves the playhead on the last whole beat played, and leaves
- *   the start flag where it is (`seekKeepingStart`).
- * - **Stop** (`stopTimelinePlayback`) returns the playhead to the start flag instead.
+ * - A **preview** (Play) runs from just before the start flag to just after P. At its end it loops
+ *   when the loop is on or a timeline is isolated, and otherwise ends with the cursor back on P.
+ *   Pausing it holds the frame where it paused (the cursor) and leaves P alone.
+ * - **Playing on** (P) stops at the end of the show; an isolated timeline loops over its range
+ *   instead. Pausing it moves P to the last whole beat played and leaves the start flag where it
+ *   is (`seekKeepingStart`), as in UI-10.
+ * - **Stop** (`stopTimelinePlayback`) puts the cursor back on P.
  *
  * Nothing follows playback in page mode (`enabled` false); `useAnimation` keeps its page rules.
  */
@@ -29,6 +32,8 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
     const isPlaying = isPlayingContext?.isPlaying ?? false;
     const setIsPlaying = isPlayingContext?.setIsPlaying;
     const lastLiveBeat = useRef<number | null>(null);
+    /** The preview reached its end: the pause that follows puts the cursor back on P */
+    const previewEnded = useRef(false);
 
     // The furthest the playhead can go
     useEffect(() => {
@@ -37,23 +42,37 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
         store.setShowEndBeat(enabled && beats.length > 0 ? beats.length : null);
     }, [enabled, beats.length]);
 
-    // Pausing: leave the playhead where playback was
+    // Pausing
     useEffect(() => {
         if (!enabled) return;
         if (isPlaying) {
             lastLiveBeat.current = null;
+            previewEnded.current = false;
+            // Started outside the transport: it plays on from where the audio starts
+            const store = useTimelineSelectionStore.getState();
+            if (store.playback === null) store.setPlayback({ kind: "on" });
             return;
         }
-        if (lastLiveBeat.current === null) {
-            // Stopped before the audio started: nothing played, but Stop still returns
-            if (consumeStopRequest())
-                useTimelineSelectionStore.getState().returnToStart();
-            return;
-        }
-        const beat = Math.min(Math.floor(lastLiveBeat.current), beats.length);
-        lastLiveBeat.current = null;
         const store = useTimelineSelectionStore.getState();
-        if (consumeStopRequest()) store.returnToStart();
+        const run = store.playback;
+        const stopped = consumeStopRequest();
+        const ended = previewEnded.current;
+        previewEnded.current = false;
+        const live = lastLiveBeat.current;
+        lastLiveBeat.current = null;
+        if (run === null) return;
+        store.setPlayback(null);
+        if (stopped || ended) {
+            store.clearCursor();
+            return;
+        }
+        // Paused before the audio started: nothing played, so there is no frame to hold
+        if (live === null) {
+            store.clearCursor();
+            return;
+        }
+        const beat = Math.min(Math.floor(live), beats.length);
+        if (run.kind === "preview") store.cue(beat);
         else store.seekKeepingStart(beat);
     }, [enabled, isPlaying, beats.length]);
 
@@ -61,27 +80,32 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
         if (!enabled || !isPlaying || !setIsPlaying) return;
         let frame = 0;
         const tick = () => {
+            const store = useTimelineSelectionStore.getState();
             // No live position until the audio player has started
-            if (playbackStartInfoRef.current) {
+            if (playbackStartInfoRef.current && store.playback) {
                 const live = beatAtTime(beats, getLivePlaybackPosition());
                 lastLiveBeat.current = live;
-                const store = useTimelineSelectionStore.getState();
                 const step = playbackStep(
-                    store.selection,
+                    store.playback,
                     live,
                     beats.length,
                     store.isolation,
+                    store.loopPreview,
                 );
                 if (step === "stop") {
                     lastLiveBeat.current = beats.length;
                     setIsPlaying(false);
                     return;
                 }
-                // An isolated timeline loops (docs/timeline/research/ownership/09-isolation.md)
+                if (step === "end") {
+                    previewEnded.current = true;
+                    setIsPlaying(false);
+                    return;
+                }
                 if (step) {
                     restartLivePlaybackAt(timeAtBeat(beats, step.loopTo));
                     lastLiveBeat.current = step.loopTo;
-                    store.seek(step.loopTo);
+                    store.cue(step.loopTo);
                 }
             }
             frame = requestAnimationFrame(tick);

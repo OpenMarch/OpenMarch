@@ -113,6 +113,10 @@ export type TimelineSelection =
            * **Stop** the playhead sits on the flag and the window falls back to the page box
            */
           readonly startFlagBeatIndex?: number;
+          /** **From start** is on (UI-11): the window is drawn as a bar that turns it off */
+          readonly fromStart?: boolean;
+          /** The range was drawn by dragging on empty timeline space, which turns From start on */
+          readonly drawn?: boolean;
       }
     | null;
 
@@ -124,6 +128,12 @@ export type TimelineNavigation =
 
 export interface TimelineInteractionProps {
     readonly positionBeat: BeatPosition;
+    /**
+     * While playing, the live position in view beats, fractional, or `null` when there is none.
+     * The playhead line reads it every animation frame so it moves smoothly; everything else
+     * follows `positionBeat`, which changes once per beat.
+     */
+    readonly livePositionBeat?: () => number | null;
     /** Names the page in the transport and playhead labels instead of the page under the cursor */
     readonly pageLabel?: string;
     readonly isPlaying: boolean;
@@ -162,6 +172,8 @@ export interface TimelineCommonProps
     readonly transportAccessories?: ReactNode;
     readonly className?: string;
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
+    /** Turns **From start** off (UI-11), from the range bar */
+    readonly onPlayFromStartOff?: () => void;
 }
 
 export interface TimelineRangeChange extends TimelineBeatRange {

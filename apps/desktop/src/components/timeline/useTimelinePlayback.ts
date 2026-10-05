@@ -1,16 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
-import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { beatIndexAtTime } from "@/timeline/timeMap";
+import {
+    displayedBeat,
+    useTimelineSelectionStore,
+} from "@/stores/TimelineSelectionStore";
+import { beatAtTime, beatIndexAtTime } from "@/timeline/timeMap";
 import { pageAtPlayhead } from "@/timeline/timelinePlayhead";
 import {
     navigateTimelinePages,
     stopTimelinePlayback,
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
-import { getLivePlaybackPosition } from "./audio/AudioPlayer";
+import {
+    getLivePlaybackPosition,
+    playbackStartInfoRef,
+} from "./audio/AudioPlayer";
 import type { TimelinePlayback } from "./Timeline";
 
 /**
@@ -20,12 +26,14 @@ import type { TimelinePlayback } from "./Timeline";
  *
  * - While playing, the cursor is `beatIndexAtTime(beats, seconds)`, updated once per animation
  *   frame and re-rendered only when the beat changes. With no beats it returns -1, which is never
- *   used as a position.
- * - While paused, the cursor is the playhead, which rests on any whole beat, the end of the show
- *   included.
+ *   used as a position. The playhead line itself follows the fractional `liveBeat` every frame,
+ *   without re-rendering the timeline.
+ * - While paused, the cursor is the frame a paused preview holds, or else the playhead, which
+ *   rests on any whole beat, the end of the show included (UI-11).
  * - Seeking moves only the playhead; the selection stays. Page navigation moves the playhead to a
  *   flag and selects that page (`navigateTimelinePages`). Neither does anything while playing.
- * - Play resumes from the playhead and loops a selected range (`toggleTimelinePlayback`).
+ * - Play previews the window, from just before the start flag to just after the playhead,
+ *   looping when the loop is on (`toggleTimelinePlayback`, UI-11).
  */
 export function useTimelinePlayback({
     beats,
@@ -35,29 +43,39 @@ export function useTimelinePlayback({
     pages: readonly Page[];
 }): TimelinePlayback {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
+    const playheadBeat = useTimelineSelectionStore(displayedBeat);
     const seek = useTimelineSelectionStore((s) => s.seek);
-    const [liveBeat, setLiveBeat] = useState<number | null>(null);
+    const [liveIndex, setLiveIndex] = useState<number | null>(null);
 
     useEffect(() => {
         if (!isPlaying) {
-            setLiveBeat(null);
+            setLiveIndex(null);
             return;
         }
         let frame = 0;
         const update = () => {
             const index = beatIndexAtTime(beats, getLivePlaybackPosition());
-            if (index >= 0) setLiveBeat(index);
+            if (index >= 0) setLiveIndex(index);
             frame = requestAnimationFrame(update);
         };
         update();
         return () => cancelAnimationFrame(frame);
     }, [beats, isPlaying]);
 
+    // The playhead line reads this every frame; nothing re-renders for it
+    const liveBeat = useCallback(
+        () =>
+            playbackStartInfoRef.current
+                ? beatAtTime(beats, getLivePlaybackPosition())
+                : null,
+        [beats],
+    );
+
     return useMemo<TimelinePlayback>(
         () => ({
+            liveBeat,
             positionBeat:
-                isPlaying && liveBeat != null ? liveBeat : playheadBeat,
+                isPlaying && liveIndex != null ? liveIndex : playheadBeat,
             // A page is named by its end flag, so on a flag the label names the page ending there
             pageLabel: isPlaying
                 ? undefined
@@ -83,6 +101,7 @@ export function useTimelinePlayback({
             beats.length,
             isPlaying,
             liveBeat,
+            liveIndex,
             pages,
             playheadBeat,
             seek,

@@ -45,6 +45,7 @@ import {
     stopTimelinePlayback,
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import tolgee from "@/global/singletons/Tolgee";
 import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
@@ -80,6 +81,7 @@ export enum RegisteredActionsEnum {
     firstPage = "firstPage",
     playPause = "playPause",
     stopPlayback = "stopPlayback",
+    togglePlayFromStart = "togglePlayFromStart",
     toggleMetronome = "toggleMetronome",
 
     // Batch editing
@@ -281,6 +283,14 @@ class KeyboardShortcut {
  * When adding a new action, use a translation key and translate it in the i18n files or on Tolgee.
  * The translation key should be in the format "actions.{category}.{action}".
  */
+/** Playback controls, which leave a held preview frame alone (UI-11) */
+const TRANSPORT_ACTIONS: ReadonlySet<RegisteredActionsEnum> = new Set([
+    RegisteredActionsEnum.playPause,
+    RegisteredActionsEnum.stopPlayback,
+    RegisteredActionsEnum.togglePlayFromStart,
+    RegisteredActionsEnum.toggleMetronome,
+]);
+
 export const RegisteredActionsObjects: {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     [key in RegisteredActionsEnum]: RegisteredAction;
@@ -353,6 +363,11 @@ export const RegisteredActionsObjects: {
         descKey: "actions.playback.stop",
         keyboardShortcut: new KeyboardShortcut({ key: " ", shift: true }),
         enumString: "stopPlayback",
+    }),
+    togglePlayFromStart: new RegisteredAction({
+        descKey: "actions.playback.togglePlayFromStart",
+        keyboardShortcut: new KeyboardShortcut({ key: "c" }),
+        enumString: "togglePlayFromStart",
     }),
     toggleMetronome: new RegisteredAction({
         descKey: "actions.playback.toggleMetronome",
@@ -778,6 +793,14 @@ function RegisteredActionsHandler() {
         (action: RegisteredActionsEnum) => {
             let isElectronAction = true;
 
+            // UI-11: anything but the transport puts a held preview frame back on the playhead, so
+            // edits start from the positions they change
+            if (!TRANSPORT_ACTIONS.has(action)) {
+                const timelineSelection = useTimelineSelectionStore.getState();
+                if (timelineSelection.playback === null)
+                    timelineSelection.clearCursor();
+            }
+
             // Check if this is an electron action
             switch (action) {
                 case RegisteredActionsEnum.launchLoadFileDialogue:
@@ -1009,9 +1032,15 @@ function RegisteredActionsHandler() {
                     if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
+                case RegisteredActionsEnum.togglePlayFromStart: {
+                    // UI-11 From start: Play previews the window from the start flag
+                    if (!timelineMode) break;
+                    useTimelineSelectionStore.getState().setPlayFromStart();
+                    break;
+                }
                 case RegisteredActionsEnum.playPause: {
                     if (!databaseReady || !pages || pages.length === 0) break;
-                    // UI-10 Play: plays on from the playhead
+                    // UI-11 Play: plays on, or previews the window with From start on
                     if (timelineMode) {
                         toggleTimelinePlayback({
                             isPlaying,
@@ -1025,7 +1054,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.stopPlayback: {
-                    // UI-10 Stop: returns the playhead to the start flag (timeline mode only)
+                    // UI-11 Stop: back to the playhead (timeline mode only)
                     if (!databaseReady || !timelineMode) break;
                     stopTimelinePlayback({ isPlaying, setIsPlaying });
                     break;

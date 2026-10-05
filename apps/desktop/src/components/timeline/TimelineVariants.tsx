@@ -220,7 +220,8 @@ function TimelineSurface({
     const pointer = useTimelinePointer({
         onSeek: props.onSeek,
         onRangeSelect: props.onSelectionChange
-            ? (range) => onSelectionChange({ kind: "range", range })
+            ? (range) =>
+                  onSelectionChange({ kind: "range", range, drawn: true })
             : undefined,
         pixelsPerBeat,
         beatCount: model.beatCount,
@@ -385,6 +386,9 @@ function TimelineSurface({
                     <TimelinePlayhead
                         model={model}
                         positionBeat={positionBeat}
+                        livePositionBeat={
+                            props.isPlaying ? props.livePositionBeat : undefined
+                        }
                         pageLabel={props.pageLabel}
                         pixelsPerBeat={pixelsPerBeat}
                         height={timelineHeight}
@@ -403,7 +407,7 @@ function TimelineSurface({
                             title="Add a page flag here"
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={props.onAddPageFlag}
-                            className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute top-6 z-50 flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
+                            className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute top-6 z-[60] flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
                             style={{
                                 left: beatToX(positionBeat, pixelsPerBeat) + 8,
                             }}
@@ -445,6 +449,11 @@ function TimelineSurface({
                                     ? selection.startFlagBeatIndex
                                     : undefined
                             }
+                            fromStart={
+                                selection?.kind === "range" &&
+                                selection.fromStart === true
+                            }
+                            onFromStartOff={props.onPlayFromStartOff}
                             beatCount={model.beatCount}
                             pixelsPerBeat={pixelsPerBeat}
                             height={timelineHeight}

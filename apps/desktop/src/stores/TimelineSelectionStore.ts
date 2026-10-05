@@ -34,6 +34,15 @@ import { create } from "zustand";
  * Esc, a page box or home, a dragged range, or the timeline going away ends isolation and puts S
  * and P back where they were.
  *
+ * **Playback** (UI-11): with **From start** on (`playFromStart`), Play previews the window from S;
+ * with it off, Play plays on from where the cursor is. Playing never writes the playhead. Audio plays from, and the paused canvas
+ * shows, the **cursor** (`cursorBeat`) when there is one, and the playhead otherwise. Play sets the
+ * cursor where playback starts and `playback` to what is running: a preview of the window, or
+ * playing on. A preview that loops moves the cursor back to its start; a preview that is paused
+ * leaves the cursor on the paused beat (a held frame) and P where it was. Every write of the window
+ * (navigation, seeking, a range) clears the cursor, so the canvas is back at P before anything
+ * edits there.
+ *
  * Page mode doesn't read this store.
  */
 
@@ -70,6 +79,19 @@ export interface TimelineIsolation {
     };
 }
 
+/**
+ * What is playing (UI-11): a **preview** of the window, from `from` (the start flag) to `to` (the
+ * playhead), or playing **on** from where it started to the end of the show. Taken
+ * when playback starts, so edits made while playing don't move its bounds.
+ */
+export type TimelinePlaybackRun =
+    | {
+          readonly kind: "preview";
+          readonly from: number;
+          readonly to: number;
+      }
+    | { readonly kind: "on" };
+
 /** A page's box: the previous flag to its own flag (`pageFlags`), in spec beats. */
 export interface PageBox {
     readonly start: number;
@@ -103,6 +125,21 @@ export interface TimelineSelectionState {
     readonly showEndBeat: number | null;
     /** The isolated timeline, or `null` (see the module comment) */
     readonly isolation: TimelineIsolation | null;
+    /**
+     * The playback cursor when it isn't the playhead (UI-11): where playback started or a loop
+     * went back to, or the frame a paused preview holds. `null` when it is the playhead.
+     */
+    readonly cursorBeat: number | null;
+    /** What is playing, or `null` while paused (UI-11) */
+    readonly playback: TimelinePlaybackRun | null;
+    /**
+     * **From start** (UI-11): Play previews the window from the start flag instead of playing on
+     * from where the cursor is. Only the user turns it on or off; turning it off keeps S and the
+     * window.
+     */
+    readonly playFromStart: boolean;
+    /** Whether a preview loops until stopped (UI-11, the loop toggle); isolation always loops */
+    readonly loopPreview: boolean;
 
     /**
      * Isolates the stored timeline `timelineId`: the window becomes its range with the playhead at
@@ -152,9 +189,22 @@ export interface TimelineSelectionState {
     readonly setStoredTimelines: (
         timelines: readonly StoredTimelineMembership[] | null,
     ) => void;
+    /**
+     * Moves the playback cursor to `beat` (clamped to the show) without moving the playhead, and
+     * restarts playback there if playing. A non-finite beat is ignored.
+     */
+    readonly cue: (beat: number) => void;
+    /** Puts the cursor back on the playhead: the canvas shows P again. */
+    readonly clearCursor: () => void;
+    /** Records what is playing (`null` once it stops). Used by the transport and the driver. */
+    readonly setPlayback: (playback: TimelinePlaybackRun | null) => void;
+    /** Turns **From start** on or off (`!playFromStart` without an argument). */
+    readonly setPlayFromStart: (on?: boolean) => void;
+    /** Turns the preview loop on or off (`!loopPreview` without an argument). */
+    readonly toggleLoopPreview: (loop?: boolean) => void;
     /** Used by `useTimelinePlaybackDriver` only. */
     readonly setShowEndBeat: (showEndBeat: number | null) => void;
-    /** Opening a show: home, playhead at 0, nothing loaded. */
+    /** Opening a show: home, playhead at 0, nothing loaded, From start off. */
     readonly reset: () => void;
 }
 
@@ -276,7 +326,7 @@ const HOME: TimelineEditSelection = { kind: "home" };
 
 type WindowFields = Pick<
     TimelineSelectionState,
-    "selection" | "startBeat" | "startPinned" | "playheadBeat"
+    "selection" | "startBeat" | "startPinned" | "playheadBeat" | "cursorBeat"
 >;
 
 /** The window fields for S, its pin and P, with `selection` derived from them. */
@@ -290,6 +340,8 @@ const windowFields = (
     startPinned,
     playheadBeat,
     selection: editWindow(startBeat, playheadBeat, boxes),
+    // Writing the window puts the canvas back at P (UI-11)
+    cursorBeat: null,
 });
 
 /** The timeline-mode edit window and playhead. See the module comment. */
@@ -320,6 +372,26 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 playheadBeat,
                 s.pageBoxes,
             );
+        // Reloads (page boxes, stored timelines, a clip move) rewrite the window without the user
+        // seeking; while playing, they keep the cursor and the revision, so the audio isn't
+        // restarted (UI-11)
+        const keepCursorWhilePlaying =
+            <T extends object>(
+                fn: (s: TimelineSelectionState) => T,
+            ): ((s: TimelineSelectionState) => T) =>
+            (s) => {
+                const next = fn(s);
+                if (s.playback === null) return next;
+                return {
+                    ...next,
+                    ...("cursorBeat" in next
+                        ? { cursorBeat: s.cursorBeat }
+                        : {}),
+                    ...("playheadRevision" in next
+                        ? { playheadRevision: s.playheadRevision }
+                        : {}),
+                };
+            };
         const restored = (s: TimelineSelectionState) => {
             const r = s.isolation!.restore;
             return {
@@ -345,6 +417,10 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
             storedTimelines: null,
             showEndBeat: null,
             isolation: null,
+            cursorBeat: null,
+            playback: null,
+            playFromStart: false,
+            loopPreview: false,
             isolate: (timelineId, restore) =>
                 set((s) => {
                     if (s.isolation?.timelineId === timelineId) return {};
@@ -390,7 +466,11 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     playheadRevision: s.playheadRevision + 1,
                 })),
             selectNothing: () =>
-                set({ selection: { kind: "none" }, isolation: null }),
+                set({
+                    selection: { kind: "none" },
+                    isolation: null,
+                    cursorBeat: null,
+                }),
             seek: (beat) =>
                 set((s) => {
                     if (!Number.isFinite(beat)) return {};
@@ -446,140 +526,183 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     playheadRevision: s.playheadRevision + 1,
                 })),
             followTimelineShift: (from, delta) =>
-                set((s) => {
-                    const isolation =
-                        s.isolation?.start === from.start &&
-                        s.isolation.end === from.end
-                            ? {
-                                  ...s.isolation,
-                                  start: from.start + delta,
-                                  end: from.end + delta,
-                              }
-                            : s.isolation;
-                    // The isolated clip moved: S and P go with it, wherever P was in it
-                    if (isolation && isolation !== s.isolation)
+                set(
+                    keepCursorWhilePlaying((s) => {
+                        const isolation =
+                            s.isolation?.start === from.start &&
+                            s.isolation.end === from.end
+                                ? {
+                                      ...s.isolation,
+                                      start: from.start + delta,
+                                      end: from.end + delta,
+                                  }
+                                : s.isolation;
+                        // The isolated clip moved: S and P go with it, wherever P was in it
+                        if (isolation && isolation !== s.isolation)
+                            return {
+                                isolation,
+                                ...isolatedWindow(
+                                    s,
+                                    isolation,
+                                    isolatedPlayhead(
+                                        isolation,
+                                        s.playheadBeat + delta,
+                                    ),
+                                ),
+                                storedTimelines:
+                                    s.storedTimelines?.map((t) =>
+                                        t.id === isolation.timelineId
+                                            ? {
+                                                  ...t,
+                                                  start: isolation.start,
+                                                  end: isolation.end,
+                                              }
+                                            : t,
+                                    ) ?? null,
+                                playheadRevision: s.playheadRevision + 1,
+                            };
+                        if (
+                            !selectionIsRange(s.selection, from.start, from.end)
+                        )
+                            return {};
+                        const moved = (t: StoredTimelineMembership) =>
+                            t.start === from.start && t.end === from.end
+                                ? {
+                                      ...t,
+                                      start: t.start + delta,
+                                      end: t.end + delta,
+                                  }
+                                : t;
+                        const start = from.start + delta;
+                        const end = from.end + delta;
                         return {
                             isolation,
-                            ...isolatedWindow(
-                                s,
-                                isolation,
-                                isolatedPlayhead(
-                                    isolation,
-                                    s.playheadBeat + delta,
-                                ),
+                            ...windowFields(
+                                start,
+                                start !== followingStart(end, s.pageBoxes),
+                                end,
+                                s.pageBoxes,
                             ),
+                            // Until the host reloads them, move the stored timeline too, so the moved
+                            // selection still resolves to it meanwhile
                             storedTimelines:
-                                s.storedTimelines?.map((t) =>
-                                    t.id === isolation.timelineId
-                                        ? {
-                                              ...t,
-                                              start: isolation.start,
-                                              end: isolation.end,
-                                          }
-                                        : t,
-                                ) ?? null,
-                            playheadRevision: s.playheadRevision + 1,
+                                s.storedTimelines?.map(moved) ?? null,
                         };
-                    if (!selectionIsRange(s.selection, from.start, from.end))
-                        return {};
-                    const moved = (t: StoredTimelineMembership) =>
-                        t.start === from.start && t.end === from.end
-                            ? {
-                                  ...t,
-                                  start: t.start + delta,
-                                  end: t.end + delta,
-                              }
-                            : t;
-                    const start = from.start + delta;
-                    const end = from.end + delta;
-                    return {
-                        isolation,
-                        ...windowFields(
-                            start,
-                            start !== followingStart(end, s.pageBoxes),
-                            end,
-                            s.pageBoxes,
-                        ),
-                        // Until the host reloads them, move the stored timeline too, so the moved
-                        // selection still resolves to it meanwhile
-                        storedTimelines: s.storedTimelines?.map(moved) ?? null,
-                    };
-                }),
+                    }),
+                ),
             setPageBoxes: (pageBoxes) =>
-                set((s) => {
-                    const same =
-                        pageBoxes.length === s.pageBoxes.length &&
-                        pageBoxes.every(
-                            (b, i) =>
-                                b.start === s.pageBoxes[i]!.start &&
-                                b.end === s.pageBoxes[i]!.end &&
-                                b.name === s.pageBoxes[i]!.name,
+                set(
+                    keepCursorWhilePlaying((s) => {
+                        const same =
+                            pageBoxes.length === s.pageBoxes.length &&
+                            pageBoxes.every(
+                                (b, i) =>
+                                    b.start === s.pageBoxes[i]!.start &&
+                                    b.end === s.pageBoxes[i]!.end &&
+                                    b.name === s.pageBoxes[i]!.name,
+                            );
+                        if (same) return {};
+                        if (s.isolation)
+                            return {
+                                pageBoxes,
+                                ...isolatedWindow(
+                                    { ...s, pageBoxes },
+                                    s.isolation,
+                                    s.playheadBeat,
+                                ),
+                            };
+                        // A pinned S that is where S would follow to now (set before the boxes
+                        // loaded, or a flag moved onto it) is unpinned, so it follows from here on
+                        const following = followingStart(
+                            s.playheadBeat,
+                            pageBoxes,
                         );
-                    if (same) return {};
-                    if (s.isolation)
+                        const pinned =
+                            s.startPinned && s.startBeat !== following;
                         return {
                             pageBoxes,
-                            ...isolatedWindow(
-                                { ...s, pageBoxes },
-                                s.isolation,
-                                s.playheadBeat,
-                            ),
+                            ...(s.selection.kind === "none"
+                                ? {
+                                      startBeat: pinned
+                                          ? s.startBeat
+                                          : following,
+                                      startPinned: pinned,
+                                  }
+                                : windowFields(
+                                      pinned ? s.startBeat : following,
+                                      pinned,
+                                      s.playheadBeat,
+                                      pageBoxes,
+                                  )),
                         };
-                    // A pinned S that is where S would follow to now (set before the boxes
-                    // loaded, or a flag moved onto it) is unpinned, so it follows from here on
-                    const following = followingStart(s.playheadBeat, pageBoxes);
-                    const pinned = s.startPinned && s.startBeat !== following;
-                    return {
-                        pageBoxes,
-                        ...(s.selection.kind === "none"
-                            ? {
-                                  startBeat: pinned ? s.startBeat : following,
-                                  startPinned: pinned,
-                              }
-                            : windowFields(
-                                  pinned ? s.startBeat : following,
-                                  pinned,
-                                  s.playheadBeat,
-                                  pageBoxes,
-                              )),
-                    };
-                }),
+                    }),
+                ),
             setStoredTimelines: (storedTimelines) =>
-                set((s) => {
-                    if (s.isolation === null || storedTimelines === null)
+                set(
+                    keepCursorWhilePlaying((s) => {
+                        // Stored timelines reload after every timeline edit, undo and redo, so
+                        // while paused this drops a held preview frame: whatever edited (the
+                        // canvas, the inspector, a shortcut) wrote at P, and the canvas goes back
+                        // to show it
+                        const dropHeld =
+                            s.playback === null && s.cursorBeat !== null;
+                        if (dropHeld && s.isolation === null)
+                            return { storedTimelines, cursorBeat: null };
+                        if (s.isolation === null || storedTimelines === null)
+                            return {
+                                storedTimelines,
+                                ...(storedTimelines === null && s.isolation
+                                    ? restored(s)
+                                    : {}),
+                            };
+                        const timeline = storedTimelines.find(
+                            (t) => t.id === s.isolation!.timelineId,
+                        );
+                        // The isolated timeline is gone (deleted, or undone away)
+                        if (!timeline)
+                            return { storedTimelines, ...restored(s) };
+                        if (
+                            timeline.start === s.isolation.start &&
+                            timeline.end === s.isolation.end
+                        )
+                            return { storedTimelines };
+                        // Its range changed (a clip move, a beat edit): follow it
+                        const isolation = {
+                            ...s.isolation,
+                            start: timeline.start,
+                            end: timeline.end,
+                        };
+                        const playhead = isolatedPlayhead(
+                            isolation,
+                            s.playheadBeat,
+                        );
                         return {
                             storedTimelines,
-                            ...(storedTimelines === null && s.isolation
-                                ? restored(s)
-                                : {}),
+                            isolation,
+                            ...isolatedWindow(s, isolation, playhead),
+                            playheadRevision: s.playheadRevision + 1,
                         };
-                    const timeline = storedTimelines.find(
-                        (t) => t.id === s.isolation!.timelineId,
-                    );
-                    // The isolated timeline is gone (deleted, or undone away)
-                    if (!timeline) return { storedTimelines, ...restored(s) };
-                    if (
-                        timeline.start === s.isolation.start &&
-                        timeline.end === s.isolation.end
-                    )
-                        return { storedTimelines };
-                    // Its range changed (a clip move, a beat edit): follow it
-                    const isolation = {
-                        ...s.isolation,
-                        start: timeline.start,
-                        end: timeline.end,
-                    };
-                    const playhead = isolatedPlayhead(
-                        isolation,
-                        s.playheadBeat,
-                    );
+                    }),
+                ),
+            cue: (beat) =>
+                set((s) => {
+                    if (!Number.isFinite(beat)) return {};
+                    const whole = normalizePlayheadBeat(beat);
                     return {
-                        storedTimelines,
-                        isolation,
-                        ...isolatedWindow(s, isolation, playhead),
+                        cursorBeat:
+                            s.showEndBeat === null
+                                ? whole
+                                : Math.min(whole, s.showEndBeat),
                         playheadRevision: s.playheadRevision + 1,
                     };
                 }),
+            clearCursor: () =>
+                set((s) => (s.cursorBeat === null ? {} : { cursorBeat: null })),
+            setPlayback: (playback) => set({ playback }),
+            setPlayFromStart: (on) =>
+                set((s) => ({ playFromStart: on ?? !s.playFromStart })),
+            toggleLoopPreview: (loop) =>
+                set((s) => ({ loopPreview: loop ?? !s.loopPreview })),
             setShowEndBeat: (showEndBeat) => set({ showEndBeat }),
             reset: () =>
                 set((s) => ({
@@ -588,10 +711,20 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     isolation: null,
                     storedTimelines: null,
                     showEndBeat: null,
+                    playback: null,
+                    playFromStart: false,
                 })),
         };
     },
 );
+
+/**
+ * The beat the timeline and the paused canvas show (UI-11): the frame a paused preview holds, or
+ * the playhead. Where audio starts, too.
+ */
+export const displayedBeat = (
+    state: Pick<TimelineSelectionState, "cursorBeat" | "playheadBeat">,
+): number => state.cursorBeat ?? state.playheadBeat;
 
 /** The stored timeline the selection resolves to (see `resolveStoredTimeline`). */
 export const useSelectedStoredTimeline = (): StoredTimelineMembership | null =>

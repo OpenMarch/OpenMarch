@@ -316,6 +316,7 @@ from it. The spec still wins on the model; this file decides presentation.
     unpins it. Clicking a page box unpins it.
   - **Play, Pause, Stop.** Play plays on from P to the end of the show, with no
     loop. Pause leaves P where playback was. **Stop** stops and returns P to S.
+    Superseded by UI-11.
   - **Dimming** (_lead default_). Nothing is dimmed and every marcher can be
     selected, since dragging is what adds. Showing who moves comes with the
     ghosts-and-paths work (report H1), not membership.
@@ -332,6 +333,64 @@ from it. The spec still wins on the model; this file decides presentation.
   right-click landing on the wrong timeline after a split). UI-10 keeps the
   model (the spec and C-11/C-12) and removes the membership step: who, where,
   leave when and arrive when are the selection, the drag, S and P.
+
+- **UI-11: Play from the start flag (project owner, 2026-10-05).** Supersedes
+  UI-10's **Play, Pause, Stop**. Built on branch `timeline/ui11-preview-playback`.
+  The owner asked for Logic-style "play from the start flag" so the move just
+  edited plays back, and for Play to behave normally otherwise. A first
+  proposal tied this to a pinned S and swapped keys by state; the critiques (a
+  drill designer, a DAW user, a state-machine review) rejected that because the
+  mode changed without the user asking and wasn't visible where they look. Here
+  the mode is an explicit toggle, modeled on Logic's cycle mode, and turning it
+  off loses nothing. Items marked _lead default_ were filled in by the lead.
+  - **From start** is a mode only the user switches. On: **C**, the flag button
+    on the transport, or dragging a range on empty timeline space (as Logic's
+    cycle drag does; dragging the start handle or clicking a page box doesn't).
+    Off: **C**, the button, the ✕ on the field badge, clicking the range bar,
+    or **Esc** (after deselecting marchers and leaving isolation, one step per
+    press). Turning it off keeps S, its pin and the window. Opening a show
+    turns it off.
+  - **No words on the timeline** (project owner, 2026-10-05, after three
+    critiques). The start flag is a line with a pennant, a right triangle
+    whose top is flat and whose long side faces down, hollow while From start
+    is off and filled while it is on, so the state doesn't rely on color. While on, the window is tinted yellow, a 3px bar
+    runs along the ruler's top edge (clear of the page numbers) inside a 10px
+    click target at least 24px wide that turns the mode off, and the
+    transport's flag button is lit in the same color. The words live on the
+    field badge, "Space replays Page 3's move ✕", which flashes once when it
+    appears. Light mode draws the flag's color as a darker ochre (about 3.6:1
+    on the ruler; the theme yellow is about 1.9:1); dark mode keeps the
+    yellow. The bar runs straight out of the pennant's top and the pennant's
+    left edge is the line, so flag and bar read as one shape. The pennant is
+    its own handle above the playhead's, so after **Stop**, when the flag is
+    drawn on the playhead, it can still be dragged.
+    Follow-ups from the critiques: end caps on the bar while looping, a faint
+    bar on hover while off so a click turns it on, and a one-time hint on the
+    first drag.
+  - **Play (Space), From start on**, previews exactly the window the bar
+    marks, S to P, with no roll on either side (project owner, 2026-10-05:
+    playing past the bar read as a bug; V-24). At the end the canvas is back at
+    P, which shows the arrival. With the loop on, it repeats until stopped.
+    With no window (home) it plays on.
+  - **Play (Space), From start off**, plays on from where you are (P, or a
+    frame a paused preview holds) to the end of the show, as in UI-10. Pausing
+    it moves P to the paused beat and keeps S.
+  - **Loop** (transport button, no shortcut) repeats the preview. It only
+    applies while From start is on. An isolated timeline previews its whole
+    range with no roll and always loops, as before.
+  - **Playing never writes P.** Playback moves a separate cursor
+    (`cursorBeat`), which the audio plays from and the paused canvas draws.
+    Any write of the window (seeking, ranges, pages, home) clears it.
+  - **Pausing a preview holds the frame** (_lead default_, V-25): the canvas
+    and ruler show the paused beat and P is unchanged. Play resumes from the
+    held frame. Clicking the ruler there makes it the new P. The first press on
+    the field only returns to P, so nothing is dragged from held positions,
+    and any shortcut other than the transport's does the same before acting.
+  - **Stop (Shift+Space)** stops and returns to P. Paused with no held frame,
+    it returns P to S as in UI-10.
+  - **The playhead line moves smoothly** while playing (it follows the live
+    position every frame); everything else, and every edit, stays on whole
+    beats.
 
 ## Mapping the spec onto the view model
 

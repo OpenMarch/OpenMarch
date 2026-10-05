@@ -12,7 +12,9 @@ import {
     WarningIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
+import { START_INK } from "./startFlagInk";
 import {
+    type KeyboardEvent as ReactKeyboardEvent,
     type PointerEvent as ReactPointerEvent,
     type ReactNode,
     type RefObject,
@@ -596,6 +598,8 @@ export const TimelineTrackClip = ({
 export const TimelineSelectionRange = ({
     range,
     startFlagBeatIndex,
+    fromStart = false,
+    onFromStartOff,
     beatCount,
     pixelsPerBeat,
     height,
@@ -606,6 +610,13 @@ export const TimelineSelectionRange = ({
     range: TimelineBeatRange;
     /** Where to draw the start flag when it isn't the range's start (UI-10, after Stop) */
     startFlagBeatIndex?: number;
+    /**
+     * **From start** is on (UI-11): the window is drawn in the start flag's color with a bar
+     * across its top; clicking the bar turns it off (`onFromStartOff`). Off, the start flag is
+     * dimmed, since Play doesn't go back to it.
+     */
+    fromStart?: boolean;
+    onFromStartOff?: () => void;
     beatCount: number;
     pixelsPerBeat: number;
     height: number;
@@ -713,130 +724,234 @@ export const TimelineSelectionRange = ({
         }
     };
 
-    const flag = (kind: "start" | "end", beatIndex: number) => (
-        <button
-            type="button"
-            data-timeline-interactive="true"
-            aria-label={kind === "start" ? "Start flag" : `Selection ${kind}`}
-            title={
+    const flagTitle = (kind: "start" | "end", beatIndex: number) =>
+        kind === "start"
+            ? "Start flag: dragged marchers leave from here. Drag to move it."
+            : `Selection ${kind}: beat boundary ${beatIndex}`;
+    const flagHandlers = (kind: "start" | "end", beatIndex: number) => ({
+        disabled: !onCommit,
+        onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
+            if (!onCommit || event.button !== 0) return;
+            event.stopPropagation();
+            const surface = event.currentTarget.parentElement?.parentElement;
+            if (!surface) return;
+            // Nothing moves until the pointer does: after Stop the start flag is drawn on the
+            // playhead, away from the fallback window's start, so a press must not jump it
+            dragRef.current = {
+                kind,
+                pointerId: event.pointerId,
+                surface,
+                startClientX: event.clientX,
+                moved: false,
+            };
+            event.currentTarget.setPointerCapture?.(event.pointerId);
+        },
+        onPointerMove: (event: ReactPointerEvent<HTMLButtonElement>) => {
+            const drag = dragRef.current;
+            if (!drag || drag.pointerId !== event.pointerId) return;
+            if (
+                !drag.moved &&
+                Math.abs(event.clientX - drag.startClientX) <
+                    TIMELINE_RANGE_DRAG_PX
+            )
+                return;
+            drag.moved = true;
+            updatePreview(
+                kind,
+                event.clientX,
+                drag.surface,
+                isPageSnapDisabled(event),
+            );
+        },
+        onPointerUp: finishDrag,
+        onPointerCancel: () => {
+            dragRef.current = null;
+            previewRef.current = range;
+            setPreview(range);
+            onInteractionChange?.(null);
+        },
+        onKeyDown: (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+            if (!onCommit) return;
+            const delta =
+                event.key === "ArrowLeft"
+                    ? -1
+                    : event.key === "ArrowRight"
+                      ? 1
+                      : 0;
+            if (delta === 0) return;
+            event.preventDefault();
+            // The arrow moves the flag, not the selected marchers (the window's nudge keys)
+            event.stopPropagation();
+            // The start flag stays before the playhead (UI-10): after Stop it is drawn on the
+            // playhead, so a step right has nowhere to go
+            if (
+                kind === "start" &&
+                (beatIndex + delta >= range.endBeatIndex ||
+                    beatIndex + delta < 0)
+            )
+                return;
+            onCommit(
                 kind === "start"
-                    ? `Start flag: marchers leave from here (beat boundary ${beatIndex}). Drag to pin it.`
-                    : `Selection ${kind}: beat boundary ${beatIndex}`
-            }
-            disabled={!onCommit}
-            onPointerDown={(event) => {
-                if (!onCommit || event.button !== 0) return;
-                event.stopPropagation();
-                const surface =
-                    event.currentTarget.parentElement?.parentElement;
-                if (!surface) return;
-                // Nothing moves until the pointer does: after Stop the start flag is drawn on the
-                // playhead, away from the fallback window's start, so a press must not jump it
-                dragRef.current = {
-                    kind,
-                    pointerId: event.pointerId,
-                    surface,
-                    startClientX: event.clientX,
-                    moved: false,
-                };
-                event.currentTarget.setPointerCapture?.(event.pointerId);
-            }}
-            onPointerMove={(event) => {
-                const drag = dragRef.current;
-                if (!drag || drag.pointerId !== event.pointerId) return;
-                if (
-                    !drag.moved &&
-                    Math.abs(event.clientX - drag.startClientX) <
-                        TIMELINE_RANGE_DRAG_PX
-                )
-                    return;
-                drag.moved = true;
-                updatePreview(
-                    kind,
-                    event.clientX,
-                    drag.surface,
-                    isPageSnapDisabled(event),
-                );
-            }}
-            onPointerUp={finishDrag}
-            onPointerCancel={() => {
-                dragRef.current = null;
-                previewRef.current = range;
-                setPreview(range);
-                onInteractionChange?.(null);
-            }}
-            onKeyDown={(event) => {
-                if (!onCommit) return;
-                const delta =
-                    event.key === "ArrowLeft"
-                        ? -1
-                        : event.key === "ArrowRight"
-                          ? 1
-                          : 0;
-                if (delta === 0) return;
-                event.preventDefault();
-                // The arrow moves the flag, not the selected marchers (the window's nudge keys)
-                event.stopPropagation();
-                // The start flag stays before the playhead (UI-10): after Stop it is drawn on the
-                // playhead, so a step right has nowhere to go
-                if (
-                    kind === "start" &&
-                    (beatIndex + delta >= range.endBeatIndex ||
-                        beatIndex + delta < 0)
-                )
-                    return;
-                onCommit(
-                    kind === "start"
-                        ? {
-                              startBeatIndex: clamp(
-                                  beatIndex + delta,
-                                  0,
-                                  range.endBeatIndex - 1,
-                              ),
-                              endBeatIndex: range.endBeatIndex,
-                          }
-                        : {
-                              startBeatIndex: range.startBeatIndex,
-                              endBeatIndex: clamp(
-                                  beatIndex + delta,
-                                  range.startBeatIndex + 1,
-                                  beatCount,
-                              ),
-                          },
-                );
-            }}
-            className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
-            style={{ left: beatToX(beatIndex, pixelsPerBeat), height }}
-        >
-            <span
-                className={clsx(
-                    "absolute inset-y-0 left-1/2",
-                    kind === "start" ? "bg-yellow w-0.5" : "bg-accent w-px",
-                )}
-            />
-            {kind === "start" ? (
-                // UI-10: the start flag, where movers leave from and Stop returns to
-                <span className="bg-yellow text-text-invert absolute top-0 left-1/2 rounded-r-sm px-3 font-mono text-[9px] leading-[14px] font-semibold tracking-wide">
-                    START
-                </span>
-            ) : (
-                <span className="bg-accent absolute top-0 right-1/2 h-10 w-8 rounded-l-sm" />
-            )}
-        </button>
-    );
+                    ? {
+                          startBeatIndex: clamp(
+                              beatIndex + delta,
+                              0,
+                              range.endBeatIndex - 1,
+                          ),
+                          endBeatIndex: range.endBeatIndex,
+                      }
+                    : {
+                          startBeatIndex: range.startBeatIndex,
+                          endBeatIndex: clamp(
+                              beatIndex + delta,
+                              range.startBeatIndex + 1,
+                              beatCount,
+                          ),
+                      },
+            );
+        },
+    });
 
-    const startX = beatToX(preview.startBeatIndex, pixelsPerBeat);
-    const endX = beatToX(preview.endBeatIndex, pixelsPerBeat);
+    const flag = (kind: "start" | "end", beatIndex: number) => {
+        // Whole pixels, so the stem and the pennant blur on the same pixels
+        const x = Math.round(beatToX(beatIndex, pixelsPerBeat));
+        if (kind === "end")
+            return (
+                <button
+                    type="button"
+                    data-timeline-interactive="true"
+                    aria-label={`Selection ${kind}`}
+                    title={flagTitle(kind, beatIndex)}
+                    {...flagHandlers(kind, beatIndex)}
+                    className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
+                    style={{ left: x, height }}
+                >
+                    <span className="bg-accent absolute inset-y-0 left-1/2 w-px" />
+                    <span className="bg-accent absolute top-0 right-1/2 h-10 w-8 rounded-l-sm" />
+                </button>
+            );
+        // UI-10, UI-11: the start flag, where movers leave from. No words: a line and a pennant,
+        // hollow while From start is off and filled while it is on
+        return (
+            <>
+                <button
+                    type="button"
+                    data-timeline-interactive="true"
+                    aria-label={`Start flag, beat ${beatIndex}`}
+                    title={flagTitle(kind, beatIndex)}
+                    {...flagHandlers(kind, beatIndex)}
+                    className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
+                    style={{ left: x, height }}
+                >
+                    <span
+                        className={clsx(
+                            "absolute top-px bottom-0 left-1/2",
+                            START_INK.bg,
+                            fromStart ? "w-2" : "w-px",
+                        )}
+                    />
+                </button>
+                {/* The pennant is its own handle above the playhead's (z-50): after Stop the flag
+                    is drawn on the playhead, and this is the part of it that can be grabbed. Its
+                    left edge is drawn on the stem's pixels, so the two read as one shape */}
+                <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    data-testid="timeline-start-pennant"
+                    data-timeline-interactive="true"
+                    title={flagTitle(kind, beatIndex)}
+                    {...flagHandlers(kind, beatIndex)}
+                    onKeyDown={undefined}
+                    className="pointer-events-auto absolute top-0 z-[55] h-14 w-14 touch-none border-0 bg-transparent p-0 outline-hidden enabled:cursor-ew-resize disabled:cursor-default"
+                    style={{ left: x }}
+                >
+                    <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 10 10"
+                        aria-hidden="true"
+                        className={clsx(
+                            "absolute top-px left-0",
+                            START_INK.text,
+                        )}
+                    >
+                        {/* A right triangle whose top lines up with the page boxes' (1px down, inside the
+                            ruler's border), so the From start bar runs straight out of it. Both are
+                            fills, not strokes, so no edge spills past the stem */}
+                        {fromStart ? (
+                            // Filled: the left edge sits inside the 2px stem
+                            <path d="M0 0 L10 0 L0 10 Z" fill="currentColor" />
+                        ) : (
+                            // Hollow: a 1px outline whose left side is the 1px stem
+                            <path
+                                d="M0 0 L10 0 L0 10 Z M1 1 L1 7.59 L7.59 1 Z"
+                                fill="currentColor"
+                                fillRule="evenodd"
+                            />
+                        )}
+                    </svg>
+                </button>
+            </>
+        );
+    };
+
+    // Rounded like the flag, so the window and the From start bar start on the stem's pixel
+    const startX = Math.round(beatToX(preview.startBeatIndex, pixelsPerBeat));
+    const endX = Math.round(beatToX(preview.endBeatIndex, pixelsPerBeat));
     return (
+        // No z-index here: one would make a stacking context, and the start pennant must rise
+        // above the playhead (z-50), which is outside it. Each child sets its own instead.
         <div
             data-testid="timeline-selection-range"
-            className="pointer-events-none absolute inset-0 z-30"
+            className="pointer-events-none absolute inset-0"
         >
             <span
                 aria-hidden="true"
-                className="bg-accent/8 absolute top-0"
-                style={{ left: startX, width: endX - startX, height }}
+                className={clsx(
+                    // 1px down, inside the ruler's border, like the flag and the page boxes
+                    "absolute top-px z-30",
+                    fromStart ? "bg-yellow/12" : "bg-accent/8",
+                )}
+                style={{
+                    left: startX,
+                    width: endX - startX,
+                    height: height - 1,
+                }}
             />
+            {fromStart && (
+                // UI-11: a thin bar along the ruler's top edge, out of the pennant's top and clear
+                // of the page numbers, inside a taller click target (at least 24px wide) that turns
+                // From start off
+                <button
+                    type="button"
+                    data-testid="timeline-from-start-bar"
+                    data-timeline-interactive="true"
+                    aria-label="From start is on. Click to turn it off"
+                    title="From start: Play replays from the start flag to the playhead. Click, C or Esc to turn off"
+                    onPointerDown={(event) => event.stopPropagation()}
+                    onClick={onFromStartOff}
+                    disabled={!onFromStartOff}
+                    className="group pointer-events-auto absolute top-0 z-40 h-10 border-0 bg-transparent p-0 enabled:cursor-pointer"
+                    style={{
+                        left: Math.min(startX, (startX + endX) / 2 - 12),
+                        width: Math.max(endX - startX, 24),
+                    }}
+                >
+                    <span
+                        className={clsx(
+                            "absolute top-px h-3 transition-[height] duration-100 group-hover:h-5",
+                            START_INK.bg,
+                        )}
+                        style={{
+                            left:
+                                startX -
+                                Math.min(startX, (startX + endX) / 2 - 12),
+                            width: endX - startX,
+                        }}
+                    />
+                </button>
+            )}
             <div className="pointer-events-none absolute inset-0">
                 {flag(
                     "start",
@@ -985,6 +1100,7 @@ export const TimelinePlayheadDetail = ({
 export const TimelinePlayhead = ({
     model,
     positionBeat,
+    livePositionBeat,
     pageLabel,
     pixelsPerBeat,
     height,
@@ -996,6 +1112,11 @@ export const TimelinePlayhead = ({
 }: {
     model: TimelineViewModel;
     positionBeat: BeatPosition;
+    /**
+     * While playing, the live position (view beats, fractional). The line follows it every
+     * animation frame by setting its own `left`, without re-rendering the timeline.
+     */
+    livePositionBeat?: () => number | null;
     pageLabel?: string;
     pixelsPerBeat: number;
     height: number;
@@ -1004,39 +1125,76 @@ export const TimelinePlayhead = ({
     onHoverChange: (hovered: boolean) => void;
     onFocusChange: (focused: boolean) => void;
     onSeek?: (beat: BeatPosition) => void;
-}) => (
-    <button
-        ref={anchorRef}
-        type="button"
-        data-testid="timeline-playhead"
-        data-timeline-scrub="true"
-        aria-label={`Playback position: ${getPlayheadLabel(model, positionBeat, pageLabel)}`}
-        onPointerDown={(event) => event.preventDefault()}
-        onPointerEnter={() => onHoverChange(true)}
-        onPointerLeave={() => onHoverChange(false)}
-        onFocus={() => onFocusChange(true)}
-        onBlur={() => onFocusChange(false)}
-        onKeyDown={(event) => {
-            const delta =
-                event.key === "ArrowLeft"
-                    ? -1
-                    : event.key === "ArrowRight"
-                      ? 1
-                      : 0;
-            if (delta === 0 || !onSeek) return;
-            event.preventDefault();
-            onSeek(clamp(Math.round(positionBeat) + delta, 0, beatCount));
-        }}
-        className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-50 w-12 -translate-x-1/2 cursor-ew-resize touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
-        style={{
-            left: beatToX(positionBeat, pixelsPerBeat),
-            height,
-        }}
-    >
-        <span className="border-t-accent absolute top-0 left-1/2 size-0 -translate-x-1/2 border-t-[6px] border-r-[4px] border-l-[4px] border-r-transparent border-l-transparent" />
-        <span className="bg-accent absolute top-6 bottom-0 left-1/2 w-px" />
-    </button>
-);
+}) => {
+    // Whole pixels at rest, like the start flag, so the head and the line land on the same pixels
+    const left = Math.round(beatToX(positionBeat, pixelsPerBeat));
+    // Where React last put the line; read when following stops (see below)
+    const restingLeft = useRef(left);
+    restingLeft.current = left;
+    useEffect(() => {
+        const element = anchorRef.current;
+        if (!livePositionBeat || !element) return;
+        let frame = 0;
+        const follow = () => {
+            const beat = livePositionBeat();
+            // Device pixels while playing: crisp, and still smooth on a high-density screen
+            const ratio = window.devicePixelRatio || 1;
+            if (beat !== null)
+                element.style.left = `${Math.round(beatToX(beat, pixelsPerBeat) * ratio) / ratio}px`;
+            frame = requestAnimationFrame(follow);
+        };
+        frame = requestAnimationFrame(follow);
+        return () => {
+            cancelAnimationFrame(frame);
+            // React only writes `left` when its value changes, so put the line back itself
+            element.style.left = `${restingLeft.current}px`;
+        };
+    }, [anchorRef, livePositionBeat, pixelsPerBeat]);
+
+    return (
+        <button
+            ref={anchorRef}
+            type="button"
+            data-testid="timeline-playhead"
+            data-timeline-scrub="true"
+            aria-label={`Playback position: ${getPlayheadLabel(model, positionBeat, pageLabel)}`}
+            onPointerDown={(event) => event.preventDefault()}
+            onPointerEnter={() => onHoverChange(true)}
+            onPointerLeave={() => onHoverChange(false)}
+            onFocus={() => onFocusChange(true)}
+            onBlur={() => onFocusChange(false)}
+            onKeyDown={(event) => {
+                const delta =
+                    event.key === "ArrowLeft"
+                        ? -1
+                        : event.key === "ArrowRight"
+                          ? 1
+                          : 0;
+                if (delta === 0 || !onSeek) return;
+                event.preventDefault();
+                onSeek(clamp(Math.round(positionBeat) + delta, 0, beatCount));
+            }}
+            className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-50 w-12 -translate-x-1/2 cursor-ew-resize touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
+            style={{
+                left,
+                height,
+            }}
+        >
+            {/* The line runs from the page boxes' top (1px down, inside the ruler's border), and
+                the head is a fill centered on the line's pixel, so its tip runs into the line */}
+            <span className="bg-accent absolute top-px bottom-0 left-1/2 w-px" />
+            <svg
+                width="9"
+                height="6"
+                viewBox="0 0 9 6"
+                aria-hidden="true"
+                className="text-accent absolute top-px left-[calc(50%-4px)]"
+            >
+                <path d="M0 0 L9 0 L4.5 6 Z" fill="currentColor" />
+            </svg>
+        </button>
+    );
+};
 
 /** How far, in pixels, a press on empty timeline space must move to select a range */
 export const TIMELINE_RANGE_DRAG_PX = 4;

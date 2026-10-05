@@ -71,13 +71,15 @@ export interface TimelineInput {
 export interface TimelinePlayback {
     /** The beat under the playback cursor, in `[0, beats.length]` (the end of the show included) */
     readonly positionBeat: number;
+    /** While playing, the live spec beat, fractional, for a smooth playhead; `null` when there is none */
+    readonly liveBeat?: () => number | null;
     /** Names the page in the transport and playhead labels, such as the selected page while paused */
     readonly pageLabel?: string;
     readonly isPlaying: boolean;
     /** Seek to a whole beat index, already clamped to the show */
     readonly onSeek?: (beatIndex: number) => void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
-    /** **Stop** (UI-10): back to the start flag */
+    /** **Stop** (UI-11): back to the playhead */
     readonly onStop?: () => void;
     /** Page navigation from the transport; without it, the transport seeks to page starts */
     readonly onNavigate?: (direction: TimelineNavigation) => void;
@@ -111,6 +113,8 @@ export interface TimelineProps {
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
     readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
+    /** Turns **From start** off (UI-11), from the range bar */
+    readonly onPlayFromStartOff?: () => void;
     /**
      * The right-click menu's **Add selected marchers** (UI-9, P8.14), for a page box, a clip's
      * timeline or a dragged range. It gets spec beats; the menu doesn't change the selection.
@@ -237,6 +241,7 @@ export const selectionToView = (
                         ),
                     }
                   : {}),
+              ...(selection.fromStart ? { fromStart: true } : {}),
           }
         : selection;
 
@@ -252,6 +257,7 @@ export const selectionToSpec = (
                   startBeatIndex: axis.toSpec(selection.range.startBeatIndex),
                   endBeatIndex: axis.toSpec(selection.range.endBeatIndex),
               },
+              ...(selection.drawn ? { drawn: true } : {}),
           }
         : selection;
 
@@ -288,6 +294,20 @@ export function Timeline(props: TimelineProps) {
         axis.toView(playback.positionBeat),
         0,
         model.beatCount,
+    );
+    const liveBeat = playback.liveBeat;
+    const beatCount = model.beatCount;
+    const livePositionBeat = useMemo(
+        () =>
+            liveBeat
+                ? () => {
+                      const beat = liveBeat();
+                      return beat === null
+                          ? null
+                          : clamp(axis.toView(beat), 0, beatCount);
+                  }
+                : undefined,
+        [axis, beatCount, liveBeat],
     );
     const seekToBeat = playback.onSeek
         ? (viewBeat: number) => {
@@ -375,6 +395,7 @@ export function Timeline(props: TimelineProps) {
     const commonProps = {
         model,
         positionBeat,
+        livePositionBeat,
         pageLabel: playback.pageLabel,
         isPlaying: playback.isPlaying,
         pixelsPerBeat,
@@ -392,6 +413,7 @@ export function Timeline(props: TimelineProps) {
         onAddPageFlag: props.onAddPageFlag,
         onOpenRange: onOpenRange && openRange,
         onTimelineRangeCommit: commitRange,
+        onPlayFromStartOff: props.onPlayFromStartOff,
         showTransport: props.showTransport ?? true,
         transportClock: props.transportClock,
         transportAccessories: props.transportAccessories,

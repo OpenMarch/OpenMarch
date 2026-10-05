@@ -1,5 +1,8 @@
 import type { TimelineNavigation } from "@/components/timeline/TimelineViewModel";
-import type { TimelineEditSelection } from "@/stores/TimelineSelectionStore";
+import type {
+    TimelineEditSelection,
+    TimelinePlaybackRun,
+} from "@/stores/TimelineSelectionStore";
 import { pageEndBeat } from "./pageEndBeat";
 
 /**
@@ -92,34 +95,56 @@ export function pageAtPlayhead<P extends FlagPage>(
     );
 }
 
-/** Where play starts (UI-10 Play): from the playhead. */
-export function playStartBeat(
-    _selection: TimelineEditSelection,
-    playheadBeat: number,
-): number {
-    return playheadBeat;
-}
-
-/** Whether play can start: there is time after where it would start. */
-export function canPlay(
-    selection: TimelineEditSelection,
-    playheadBeat: number,
-    showEndBeat: number,
-): boolean {
-    return playStartBeat(selection, playheadBeat) < showEndBeat;
+/** The fields of the selection store these rules read. */
+export interface PlaybackWindow {
+    readonly selection: TimelineEditSelection;
+    readonly isolation: {
+        readonly start: number;
+        readonly end: number;
+    } | null;
 }
 
 /**
- * What playback does at a live beat (UI-10 Play): it plays on, with no loop, until the end of the
- * show, where it stops. An isolated timeline loops instead: at its end, playback goes back to its
- * start.
+ * What **Play** previews (UI-11): exactly the window `[S, P)` the From start bar marks, with no
+ * roll on either side (project owner, V-24). An isolated timeline previews its whole range, as it
+ * always has (09-isolation.md). `null` when there is no window at least a beat long to preview
+ * (home, nothing selected), and Play plays on instead.
+ */
+export function previewBounds(
+    state: PlaybackWindow,
+): { readonly from: number; readonly to: number } | null {
+    if (state.isolation)
+        return { from: state.isolation.start, to: state.isolation.end };
+    const { selection } = state;
+    if (selection.kind !== "range" || selection.end - selection.start < 1)
+        return null;
+    return { from: selection.start, to: selection.end };
+}
+
+/** Whether playing on can start from `beat`: there is time after it. */
+export function canPlayOn(beat: number, showEndBeat: number): boolean {
+    return beat < showEndBeat;
+}
+
+/**
+ * What playback does at a live beat (UI-11):
+ *
+ * - A preview loops back to its start at its end when `loop` is on or a timeline is isolated, and
+ *   otherwise ends there (`"end"`; the cursor goes back to the playhead).
+ * - Playing on stops at the end of the show (`"stop"`; the playhead stays there). An isolated
+ *   timeline loops instead.
  */
 export function playbackStep(
-    _selection: TimelineEditSelection,
+    run: TimelinePlaybackRun,
     liveBeat: number,
     showEndBeat: number,
-    isolated?: { readonly start: number; readonly end: number } | null,
-): { readonly loopTo: number } | "stop" | null {
+    isolated: { readonly start: number; readonly end: number } | null,
+    loop: boolean,
+): { readonly loopTo: number } | "end" | "stop" | null {
+    if (run.kind === "preview") {
+        if (liveBeat < run.to) return null;
+        return loop || isolated ? { loopTo: run.from } : "end";
+    }
     if (isolated && liveBeat >= isolated.end) return { loopTo: isolated.start };
     if (liveBeat >= showEndBeat) return "stop";
     return null;

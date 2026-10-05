@@ -27,6 +27,8 @@ import { useTimelineTracks } from "@/timeline/useTimelineTracks";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { AudioClock } from "./Clock";
 import {
+    TimelineFromStartButton,
+    TimelineLoopButton,
     TimelineMetronomeButton,
     TimelineMuteButton,
 } from "./TimelineControls";
@@ -61,6 +63,7 @@ function FullscreenButton() {
 export const toTimelineSelection = (
     selection: TimelineEditSelection,
     startBeat?: number,
+    fromStart = false,
 ): TimelineSelection =>
     selection.kind === "range"
         ? {
@@ -73,6 +76,7 @@ export const toTimelineSelection = (
               ...(startBeat !== undefined && startBeat !== selection.start
                   ? { startFlagBeatIndex: startBeat }
                   : {}),
+              ...(fromStart ? { fromStart: true } : {}),
           }
         : selection.kind === "home"
           ? { kind: "home" }
@@ -103,9 +107,10 @@ export default function TimelineModePanel() {
             );
     }, [pages]);
     const startBeat = useTimelineSelectionStore((s) => s.startBeat);
+    const playFromStart = useTimelineSelectionStore((s) => s.playFromStart);
     const selection = useMemo(
-        () => toTimelineSelection(editSelection, startBeat),
-        [editSelection, startBeat],
+        () => toTimelineSelection(editSelection, startBeat, playFromStart),
+        [editSelection, startBeat, playFromStart],
     );
     const { isPlaying } = useIsPlaying()!;
     const selectedMarchers = useSelectedMarchers()?.selectedMarchers;
@@ -135,11 +140,13 @@ export default function TimelineModePanel() {
     });
     // UI-9 **+** after the free paused playhead; the new page becomes the selection
     const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
+    // Not while a paused preview holds a frame: + is drawn there, but would add at P (UI-11)
+    const holding = useTimelineSelectionStore((s) => s.cursorBeat !== null);
     const addPageFlag = useAddPageFlag({
         pages,
         beatCount: beats.length,
         playheadBeat,
-        isPlaying,
+        isPlaying: isPlaying || holding,
         onAdded: selectAddedPage,
     });
     const queryClient = useQueryClient();
@@ -152,12 +159,14 @@ export default function TimelineModePanel() {
         if (isPlaying) return;
         const store = useTimelineSelectionStore.getState();
         if (next?.kind === "home") store.selectHome();
-        else if (next?.kind === "range")
+        else if (next?.kind === "range") {
             store.selectRange(
                 next.range.startBeatIndex,
                 next.range.endBeatIndex,
             );
-        else store.selectNothing();
+            // UI-11: drawing a range is asking to play it, as Logic's cycle drag does
+            if (next.drawn) store.setPlayFromStart(true);
+        } else store.selectNothing();
     };
 
     return (
@@ -186,6 +195,8 @@ export default function TimelineModePanel() {
                 transportClock={<AudioClock />}
                 transportAccessories={
                     <>
+                        <TimelineFromStartButton />
+                        <TimelineLoopButton />
                         <TimelineMuteButton />
                         <TimelineMetronomeButton />
                         <FullscreenButton />
@@ -194,6 +205,9 @@ export default function TimelineModePanel() {
                 selection={selection}
                 onSelectionChange={changeSelection}
                 onTimelineRangeCommit={commands.commitTimelineRange}
+                onPlayFromStartOff={() =>
+                    useTimelineSelectionStore.getState().setPlayFromStart(false)
+                }
                 onOpenRange={(range) => {
                     if (isPlaying) return;
                     const store = useTimelineSelectionStore.getState();

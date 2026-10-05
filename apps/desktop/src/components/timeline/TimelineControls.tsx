@@ -12,6 +12,8 @@ import {
     SpeakerSimpleHighIcon,
     SpeakerSimpleLowIcon,
     SpeakerSimpleXIcon,
+    RepeatIcon,
+    FlagIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -19,11 +21,13 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
+import { START_INK } from "./startFlagInk";
 import { AudioClock } from "./Clock";
 import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -148,6 +152,79 @@ export function TimelineMetronomeButton() {
                 <MetronomeIcon size={24} />
             </button>
         </div>
+    );
+}
+
+/**
+ * **From start** (UI-11): while on (lit), Play previews the move from the start flag; while off,
+ * Play plays on from where you are. Shortcut C; Esc, or clicking the range bar, turns it off.
+ */
+export function TimelineFromStartButton() {
+    const on = useTimelineSelectionStore((s) => s.playFromStart);
+    const set = useTimelineSelectionStore((s) => s.setPlayFromStart);
+    const label = on
+        ? "From start: on. Play replays from the start flag (C, or Esc to turn off)"
+        : "From start: off. Play plays on from the playhead (C to turn on)";
+    return (
+        <>
+            <button
+                type="button"
+                data-testid="timeline-from-start"
+                className={clsx(
+                    "rounded-4 flex items-center gap-4 px-4 outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                    {
+                        // The start flag's ink, so the button reads as the flag's (TimelinePrimitives)
+                        [`${START_INK.bg} dark:text-text-invert text-white`]:
+                            on,
+                        "text-text enabled:hover:text-accent": !on,
+                    },
+                )}
+                aria-label="From start (C)"
+                aria-pressed={on}
+                title={label}
+                onClick={() => set()}
+            >
+                <FlagIcon size={20} weight={on ? "fill" : "regular"} />
+            </button>
+            {/* Announced however the mode changed: C, Esc, the bar or a dragged range */}
+            <span className="sr-only" aria-live="polite">
+                {on ? "From start on" : "From start off"}
+            </span>
+        </>
+    );
+}
+
+/**
+ * The preview loop (UI-11): with From start on, Play repeats the move until stopped. Off while
+ * From start is off, since playing on doesn't loop.
+ */
+export function TimelineLoopButton() {
+    const loop = useTimelineSelectionStore((s) => s.loopPreview);
+    const fromStart = useTimelineSelectionStore((s) => s.playFromStart);
+    const toggle = useTimelineSelectionStore((s) => s.toggleLoopPreview);
+    const label = !fromStart
+        ? "Loop the move (turn on Play from the start flag first)"
+        : loop
+          ? "Loop the move: on"
+          : "Loop the move: off";
+    return (
+        <button
+            type="button"
+            className={clsx(
+                "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                {
+                    "text-accent": loop && fromStart,
+                    "text-text enabled:hover:text-accent": !(loop && fromStart),
+                },
+            )}
+            aria-label="Loop the move"
+            aria-pressed={loop && fromStart}
+            title={label}
+            disabled={!fromStart}
+            onClick={() => toggle()}
+        >
+            <RepeatIcon size={24} />
+        </button>
     );
 }
 

@@ -8,20 +8,21 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "@/hooks";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
-    canPlay,
+    canPlayOn,
     navigationTarget,
     pageAtPlayhead,
     pageFlags,
     playbackStep,
-    playStartBeat,
+    previewBounds,
 } from "@/timeline/timelinePlayhead";
+import { startTimelinePlayOn } from "@/timeline/timelineTransport";
 import { useTimelinePageBridge } from "@/timeline/useTimelinePageBridge";
 import { useTimelinePlayback } from "../useTimelinePlayback";
 
 /**
  * The timeline-mode playhead (ui.md UI-9; P8.11): pages are flags, the paused playhead rests on any
  * whole beat, seeking doesn't change the selection, navigation selects a page's range (home for
- * the first), and play resumes from the playhead and loops a selected range.
+ * the first), Play previews the window and Play on plays on from the playhead (UI-11).
  */
 
 /** Pages as `fromDatabasePages` builds them: page 0 holds only the fixed beat 0. */
@@ -91,29 +92,57 @@ describe("play", () => {
     const range = { kind: "range", start: 1, end: 9 } as const;
     const home = { kind: "home" } as const;
 
-    it("starts at the playhead (UI-10 Play)", () => {
-        expect(playStartBeat(home, 5)).toBe(5);
-        expect(playStartBeat(range, 5)).toBe(5);
-        expect(playStartBeat(range, 9)).toBe(9);
-        expect(playStartBeat(range, 12)).toBe(12);
-        expect(canPlay(home, 17, 17)).toBe(false);
-        expect(canPlay(home, 16, 17)).toBe(true);
-        expect(canPlay(range, 17, 17)).toBe(false);
+    const on = { kind: "on" } as const;
+
+    it("previews exactly the window, with no roll (UI-11 Play)", () => {
+        const window = (start: number, end: number) => ({
+            selection: { kind: "range", start, end } as const,
+            isolation: null,
+        });
+        expect(previewBounds(window(5, 9))).toEqual({ from: 5, to: 9 });
+        expect(previewBounds(window(1, 17))).toEqual({ from: 1, to: 17 });
+        // Nothing to preview at home or with nothing selected: Play plays on
+        expect(previewBounds({ selection: home, isolation: null })).toBeNull();
+        expect(
+            previewBounds({ selection: { kind: "none" }, isolation: null }),
+        ).toBeNull();
+        // An isolated timeline previews its whole range
+        expect(
+            previewBounds({
+                selection: range,
+                isolation: { start: 3, end: 9 },
+            }),
+        ).toEqual({ from: 3, to: 9 });
     });
 
-    it("never loops, and stops at the end of the show (UI-10 Play)", () => {
-        expect(playbackStep(range, 8.5, 17)).toBeNull();
-        expect(playbackStep(range, 9, 17)).toBeNull();
-        expect(playbackStep(home, 9, 17)).toBeNull();
-        expect(playbackStep(home, 17, 17)).toBe("stop");
-        expect(playbackStep({ kind: "none" }, 17, 17)).toBe("stop");
+    it("plays on while there is time after the start", () => {
+        expect(canPlayOn(17, 17)).toBe(false);
+        expect(canPlayOn(16, 17)).toBe(true);
+    });
+
+    it("ends a preview at its end, or loops it when the loop is on (UI-11)", () => {
+        const preview = { kind: "preview", from: 3, to: 11 } as const;
+        expect(playbackStep(preview, 10.5, 17, null, false)).toBeNull();
+        expect(playbackStep(preview, 11, 17, null, false)).toBe("end");
+        expect(playbackStep(preview, 11, 17, null, true)).toEqual({
+            loopTo: 3,
+        });
+    });
+
+    it("plays on to the end of the show without looping", () => {
+        expect(playbackStep(on, 9, 17, null, true)).toBeNull();
+        expect(playbackStep(on, 17, 17, null, false)).toBe("stop");
     });
 
     it("loops over an isolated timeline (docs/timeline/research/ownership/09-isolation.md)", () => {
         const isolated = { start: 3, end: 9 };
-        expect(playbackStep(range, 8.5, 17, isolated)).toBeNull();
-        expect(playbackStep(range, 9, 17, isolated)).toEqual({ loopTo: 3 });
-        expect(playbackStep(range, 9, 17, null)).toBeNull();
+        const preview = { kind: "preview", from: 3, to: 9 } as const;
+        expect(playbackStep(on, 8.5, 17, isolated, false)).toBeNull();
+        expect(playbackStep(on, 9, 17, isolated, false)).toEqual({ loopTo: 3 });
+        expect(playbackStep(preview, 9, 17, isolated, false)).toEqual({
+            loopTo: 3,
+        });
+        expect(playbackStep(on, 9, 17, null, false)).toBeNull();
     });
 });
 
@@ -257,7 +286,7 @@ describeDbTests("useTimelinePlayback", (it) => {
         expect(result.current.playback.pageLabel).toBeUndefined();
     });
 
-    it("plays from the playhead, and pauses keeping the window", async ({
+    it("previews the window, and pauses keeping it (UI-11)", async ({
         db,
         wrapper,
     }) => {
@@ -265,24 +294,27 @@ describeDbTests("useTimelinePlayback", (it) => {
         const { result } = renderPlayback(wrapper);
         await waitFor(() => expect(result.current.pages).toHaveLength(3));
 
-        // At the end of the show with nothing to loop: nothing to play
+        // Playing on from the end of the show: nothing to play
         act(() => {
             store().seek(17);
         });
         act(() => {
-            result.current.playback.onPlayingChange!(true);
+            startTimelinePlayOn(17, result.current.playing.setIsPlaying);
         });
         expect(result.current.playback.isPlaying).toBe(false);
 
-        // UI-10: play starts at the playhead, the window's end
+        // UI-11: with From start on, Play starts at the start flag (beat 1, show time 0, written
+        // as 0); the playhead stays on the window's end
         act(() => {
             store().selectRange(1, 9);
+            store().setPlayFromStart(true);
         });
         act(() => {
             result.current.playback.onPlayingChange!(true);
         });
         expect(result.current.playback.isPlaying).toBe(true);
         expect(store().playheadBeat).toBe(9);
+        expect(store().cursorBeat).toBe(0);
         // While playing, the cursor follows the audio clock and is never -1
         expect(result.current.playback.positionBeat).toBeGreaterThanOrEqual(0);
 
@@ -296,14 +328,16 @@ describeDbTests("useTimelinePlayback", (it) => {
             end: 9,
         });
 
-        // Mid-range, play resumes where the playhead is
+        // Seeking clears the cursor; Play previews the new window
         act(() => {
             store().seek(5);
         });
+        expect(store().cursorBeat).toBeNull();
         act(() => {
             result.current.playback.onPlayingChange!(true);
         });
         expect(store().playheadBeat).toBe(5);
+        expect(store().cursorBeat).toBe(0);
     });
 
     it("keeps the legacy selected page on the playhead's page, and back (TEMPORARY, P8.12)", async ({
