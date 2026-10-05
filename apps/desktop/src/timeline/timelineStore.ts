@@ -21,6 +21,10 @@ import {
 } from "./timelineHost";
 import { readTimelineTables } from "./timelineRows";
 import {
+    editingPositionAt,
+    useIsolationPlanStore,
+} from "./timelineIsolationPlan";
+import {
     defaultWarmScheduler,
     startIdleWarming,
     transitionBoundaries,
@@ -296,12 +300,14 @@ export function timelineMarcherIds(): readonly number[] {
 /** A marcher's position at a beat, or null when there's no resolver or no such marcher. */
 export function usePositionAt(marcherId: number, beat: Beat): XY | null {
     const resolver = useTimelineResolverStore((s) => s.resolver);
+    // Isolation draws and edits its members at its plan (`editingPositionAt`)
+    const isolationPlan = useIsolationPlanStore((s) => s.current);
     const version = useTimelineResolverStore((s) => s.version);
     return useMemo(() => {
         void version; // a new version means new answers
         if (!resolver || !hasMarcher(resolver, marcherId)) return null;
-        return resolver.positionAt(marcherId, beat);
-    }, [resolver, version, marcherId, beat]);
+        return editingPositionAt(resolver, marcherId, beat, isolationPlan);
+    }, [resolver, version, marcherId, beat, isolationPlan]);
 }
 
 /** Why a marcher is where it is at a beat, or null when there's no resolver or no such marcher. */

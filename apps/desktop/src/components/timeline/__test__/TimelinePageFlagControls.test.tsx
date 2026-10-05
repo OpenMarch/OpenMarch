@@ -7,6 +7,7 @@ import { Timeline, type TimelineInput } from "../Timeline";
 import {
     selectAddedPage,
     selectionAfterFlagDelete,
+    timelinesOffPages,
 } from "../TimelineModePanel";
 
 /**
@@ -196,5 +197,22 @@ describe("the selection after deleting a flag (lead decision)", () => {
         expect(selectionAfterFlagDelete(PAGES, 2, range(9, 17))).toBeNull();
         expect(selectionAfterFlagDelete(PAGES, 2, { kind: "home" })).toBeNull();
         expect(selectionAfterFlagDelete(PAGES, 1, { kind: "home" })).toBeNull();
+    });
+});
+
+describe("clips only for timelines off the page boxes (UI-10)", () => {
+    it("hides a timeline with exactly a page box's range, and keeps the others", () => {
+        const t = (startBeatIndex: number, endBeatIndex: number) => ({
+            startBeatIndex,
+            endBeatIndex,
+        });
+        // Boxes for PAGES: [1, 9) and [9, 17)
+        expect(
+            timelinesOffPages(
+                [t(1, 9), t(9, 17), t(9, 13), t(5, 9), t(1, 17)],
+                PAGES,
+            ),
+        ).toEqual([t(9, 13), t(5, 9), t(1, 17)]);
+        expect(timelinesOffPages([t(1, 9)], [])).toEqual([t(1, 9)]);
     });
 });

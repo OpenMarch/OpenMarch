@@ -15,7 +15,6 @@ import {
 } from "@/stores/TimelineSelectionStore";
 import { shiftTimeline } from "@/db-functions/timelineCommands";
 import LassoListeners from "@/components/canvas/listeners/LassoListeners";
-import DefaultListeners from "@/components/canvas/listeners/DefaultListeners";
 import { startTimelineResolver, stopTimelineResolver } from "../timelineStore";
 import {
     readStoredTimelineMemberships,
@@ -168,7 +167,7 @@ describeDbTests("the stored timelines the selection resolves to", (it) => {
         }
     });
 
-    it("drops dimmed marchers from the marcher selection, however they were selected", async ({
+    it("keeps every selected marcher on a stored timeline: UI-10 dims nobody", async ({
         wrapper,
     }) => {
         store().setStoredTimelines([membership(1, 1, 9, [1, 2])]);
@@ -182,55 +181,14 @@ describeDbTests("the stored timelines the selection resolves to", (it) => {
         act(() => {
             result.current.setSelectedMarchers([1, 2, 3].map(marcher));
         });
-        // Home: nothing is dimmed
-        expect(result.current.selectedMarchers.map((m) => m.id)).toEqual([
-            1, 2, 3,
-        ]);
-
         act(() => {
             store().selectRange(1, 9);
         });
-        await waitFor(() =>
-            expect(result.current.selectedMarchers.map((m) => m.id)).toEqual([
-                1, 2,
-            ]),
-        );
-        // Selecting a dimmed marcher afterwards doesn't stick
-        act(() => {
-            result.current.setSelectedMarchers([3].map(marcher));
-        });
-        await waitFor(() =>
-            expect(result.current.selectedMarchers).toEqual([]),
-        );
-        // A range with no stored timeline dims nobody (P8.16): the selection stays
-        act(() => {
-            result.current.setSelectedMarchers([1].map(marcher));
-        });
-        act(() => {
-            store().selectRange(9, 17);
-        });
-        expect(result.current.selectedMarchers.map((m) => m.id)).toEqual([1]);
-        // ...and any marcher can be selected there, for Add selected marchers
-        act(() => {
-            result.current.setSelectedMarchers([1, 3].map(marcher));
-        });
+        // Marcher 3 isn't in the timeline, but dragging it is what adds it, so it stays
         expect(result.current.selectedMarchers.map((m) => m.id)).toEqual([
-            1, 3,
+            1, 2, 3,
         ]);
-        // Once that range is stored, non-members are dimmed and deselected
-        act(() => {
-            store().setStoredTimelines([
-                membership(1, 1, 9, [1, 2]),
-                membership(2, 9, 17, [3]),
-            ]);
-        });
-        await waitFor(() =>
-            expect(result.current.selectedMarchers.map((m) => m.id)).toEqual([
-                3,
-            ]),
-        );
     });
-
     it("keeps the marcher selection when a range with no stored timeline is selected", async ({
         wrapper,
     }) => {
@@ -320,7 +278,7 @@ describeDbTests("the stored timelines the selection resolves to", (it) => {
     });
 });
 
-describe("dimming on the canvas (UI-9 Selection)", () => {
+describe("dimming on the canvas (UI-10: nobody is dimmed)", () => {
     const setUpCanvas = () => {
         const canvas = new OpenMarchCanvas({
             canvasRef: null,
@@ -346,160 +304,12 @@ describe("dimming on the canvas (UI-9 Selection)", () => {
             evented: m.evented,
         }));
 
-    it("keeps dimmed marchers out of the select tool's Shift-drag lasso", () => {
+    it("UI-10: a stored timeline dims nobody, and the lasso selects anyone", () => {
         const { canvas, marchers } = setUpCanvas();
         store().setStoredTimelines([membership(1, 1, 9, [1])]);
         renderHook(() => useTimelineDimming({ canvas, enabled: true }));
         act(() => {
             store().selectRange(1, 9);
-        });
-        const listeners = new DefaultListeners({ canvas });
-        const lasso = listeners as unknown as {
-            startLassoSelection: (event: unknown) => void;
-            closeLassoAndSelect: () => void;
-            resetLassoState: () => void;
-        };
-        lasso.startLassoSelection({
-            e: new MouseEvent("mousedown", { clientX: 0, clientY: 0 }),
-        });
-        const far = 1e6;
-        Object.assign(listeners, {
-            lassoStartPoint: { x: -far, y: -far },
-            lassoCurrentPath: [
-                { x: -far, y: -far },
-                { x: far, y: -far },
-                { x: far, y: far },
-                { x: -far, y: far },
-            ],
-        });
-        lasso.closeLassoAndSelect();
-        expect(
-            canvas.getActiveObjects().map((o) => (o as CanvasMarcher).id),
-        ).toEqual([1]);
-        const hooked = (m: CanvasMarcher) => [m.selectable, m.evented];
-        expect(marchers.map(hooked)).toEqual([
-            [true, true],
-            [false, false],
-            [false, false],
-        ]);
-        lasso.resetLassoState();
-        expect(marchers.map(hooked)).toEqual([
-            [true, true],
-            [false, false],
-            [false, false],
-        ]);
-    });
-
-    it("keeps dimmed marchers unselectable through the line and lasso tools", () => {
-        const { canvas, marchers } = setUpCanvas();
-        store().setStoredTimelines([membership(1, 1, 9, [1])]);
-        renderHook(() => useTimelineDimming({ canvas, enabled: true }));
-        act(() => {
-            store().selectRange(1, 9);
-        });
-        const hooked = (m: CanvasMarcher) => [m.selectable, m.evented];
-
-        // The line tool (LineListeners) makes everyone selectable again when a line is finished
-        for (const m of marchers) m.makeSelectable();
-        expect(hooked(marchers[0]!)).toEqual([true, true]);
-        expect(hooked(marchers[1]!)).toEqual([false, false]);
-
-        // The lasso tool turns everything off, selects what it encloses, and turns things back on
-        // when put away. A lasso around everyone selects only the undimmed marcher.
-        const lasso = new LassoListeners({ canvas });
-        lasso.initiateListeners();
-        const far = 1e6;
-        Object.assign(lasso, {
-            startPoint: { x: -far, y: -far },
-            currentPath: [
-                { x: -far, y: -far },
-                { x: far, y: -far },
-                { x: far, y: far },
-                { x: -far, y: far },
-            ],
-        });
-        (
-            lasso as unknown as { closeLassoAndSelect: () => void }
-        ).closeLassoAndSelect();
-        expect(
-            canvas.getActiveObjects().map((o) => (o as CanvasMarcher).id),
-        ).toEqual([1]);
-        lasso.cleanupListeners();
-        expect(hooked(marchers[0]!)).toEqual([true, true]);
-        expect(hooked(marchers[1]!)).toEqual([false, false]);
-        expect(hooked(marchers[2]!)).toEqual([false, false]);
-        expect(marchers[1]!.timelineDimmed).toBe(true);
-
-        // Going home restores them
-        act(() => {
-            store().selectHome();
-        });
-        expect(hooked(marchers[1]!)).toEqual([true, true]);
-    });
-
-    it("dims and unhooks marchers outside the selected timeline, and restores them", () => {
-        const { canvas, marchers } = setUpCanvas();
-        store().setStoredTimelines([membership(1, 1, 9, [1])]);
-        const { rerender } = renderHook(
-            ({ enabled }: { enabled: boolean }) =>
-                useTimelineDimming({ canvas, enabled }),
-            { initialProps: { enabled: true } },
-        );
-        // Home: nothing is dimmed
-        expect(marchers.map((m) => m.timelineDimmed)).toEqual([
-            false,
-            false,
-            false,
-        ]);
-
-        act(() => {
-            store().selectRange(1, 9);
-        });
-        const dimmed = {
-            dimmed: true,
-            opacity: CanvasMarcher.DIMMED_OPACITY,
-            selectable: false,
-            evented: false,
-        };
-        expect(states(marchers)).toEqual([
-            { dimmed: false, opacity: 1, selectable: true, evented: true },
-            dimmed,
-            dimmed,
-        ]);
-        expect(marchers[1]!.textLabel.opacity).toBe(
-            CanvasMarcher.DIMMED_OPACITY,
-        );
-
-        // Page mode (the flag off) draws everyone alike
-        rerender({ enabled: false });
-        expect(marchers.map((m) => m.timelineDimmed)).toEqual([
-            false,
-            false,
-            false,
-        ]);
-        expect(states(marchers)[1]).toEqual({
-            dimmed: false,
-            opacity: 1,
-            selectable: true,
-            evented: true,
-        });
-    });
-
-    it("dims nobody on a range with no stored timeline, and the lasso selects anyone there", () => {
-        const { canvas, marchers } = setUpCanvas();
-        store().setStoredTimelines([membership(1, 1, 9, [1])]);
-        renderHook(() => useTimelineDimming({ canvas, enabled: true }));
-        act(() => {
-            store().selectRange(1, 9);
-        });
-        expect(marchers.map((m) => m.timelineDimmed)).toEqual([
-            false,
-            true,
-            true,
-        ]);
-        // A new page's box (or a dragged range) has no stored timeline yet
-        act(() => {
-            store().selectRange(9, 17);
         });
         const undimmed = {
             dimmed: false,
@@ -530,19 +340,5 @@ describe("dimming on the canvas (UI-9 Selection)", () => {
                 .map((o) => (o as CanvasMarcher).id)
                 .sort(),
         ).toEqual([1, 2, 3]);
-        lasso.cleanupListeners();
-
-        // Storing it (Add selected marchers adds marcher 3) dims the others
-        act(() => {
-            store().setStoredTimelines([
-                membership(1, 1, 9, [1]),
-                membership(2, 9, 17, [3]),
-            ]);
-        });
-        expect(marchers.map((m) => m.timelineDimmed)).toEqual([
-            true,
-            true,
-            false,
-        ]);
     });
 });

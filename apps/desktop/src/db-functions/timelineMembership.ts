@@ -32,8 +32,9 @@ export { findTimelineByRange };
  *   end, so adding changes no motion on a linear path. The timeline is created the first time
  *   marchers are added to its range; at most one timeline has a given range.
  * - **Layers:** the new assignment goes one layer above the marcher's highest layer over the
- *   range, so it steals those beats (R-2) from the timelines that wholly contain it. A timeline
- *   that only partly overlaps one of the marcher's timelines is refused (E-ARGS).
+ *   range, so it steals those beats (R-2) from the timelines that wholly contain it, and from a
+ *   timeline it starts inside and runs past the end of (an exit). A range that runs into one of
+ *   the marcher's timelines partway (a join) is refused (E-ARGS) until joins exist.
  * - **Remove** deletes the marcher's assignments in the timeline and the one-slot transitions they
  *   leave empty, but never the timeline: a timeline stays stored, and selectable, with nobody in
  *   it (an exception to P8.10's rule that a timeline goes with its last transition).
@@ -170,6 +171,22 @@ export interface AddMarchersToTimelineResult {
     added: OwnTransition[];
     /** Selected marchers that were already in the timeline and were left alone */
     alreadyIn: number[];
+    /**
+     * With `passThrough`: each added marcher's moves that lie inside the range, which the new
+     * move overrides for all of their beats (their rows stay stored underneath)
+     */
+    overridden: PassedMove[];
+    /**
+     * With `passThrough`: each added marcher's move that the range runs into partway, which
+     * resumes at the range's end and catches up to its own destination (R-5 rebase)
+     */
+    caughtUp: PassedMove[];
+}
+
+/** One marcher's move that an add over a range passes through or runs into. */
+export interface PassedMove extends BeatRange {
+    marcherId: number;
+    timelineId: number;
 }
 
 /**
@@ -182,20 +199,29 @@ export interface AddMarchersToTimelineResult {
  *
  * Refused before anything is written (E-ARGS): a range that isn't whole beats with its end after
  * its start, no marchers, a marcher named twice or missing, every marcher already in the
- * timeline, a marcher in a timeline that only partly overlaps the range, and a marcher in a
+ * timeline, a marcher in a timeline that the range runs into partway (it starts before that
+ * timeline and ends inside it; a range that starts inside a timeline and runs past its end is an
+ * exit and is allowed), and a marcher in a
  * timeline that lies inside the range (adding it would steal that whole move, so the add would
  * change its motion). A marcher off the field at the range's end is refused too, and so is a
  * layer past the limit (E-A3).
+ *
+ * With `passThrough` (a canvas drag, UI-10; research/ownership/10-cross-page-windows.md) neither
+ * layer refusal applies: the drag says where the marchers go, so the new move overrides the moves
+ * inside the range (they stay stored, and come back when it is deleted), and a move the range runs
+ * into partway resumes at the range's end and catches up (R-5). Both are reported.
  */
 // eslint-disable-next-line max-lines-per-function
 export const addMarchersToTimelineInTransaction = async ({
     tx,
     range,
     marcherIds,
+    passThrough = false,
 }: {
     tx: DbTransaction;
     range: BeatRange;
     marcherIds: readonly number[];
+    passThrough?: boolean;
 }): Promise<AddMarchersToTimelineResult> => {
     const { start, end } = range;
     if (
@@ -232,16 +258,38 @@ export const addMarchersToTimelineInTransaction = async ({
                 ? "the selected marcher is already in this timeline"
                 : "every selected marcher is already in this timeline",
         );
+    const overridden: PassedMove[] = [];
+    const caughtUp: PassedMove[] = [];
     for (const id of toAdd) {
         for (const other of timelinesOf.get(id) ?? []) {
-            if (partlyOverlaps(other, range))
+            const passed = {
+                marcherId: id,
+                timelineId: other.timelineId,
+                start: other.start,
+                end: other.end,
+            };
+            // Starting inside a move and running past its end is an exit (research/ownership
+            // 06 §2 D): the new row steals the rest of it. Running into a later move partway
+            // would need a join, which waits for live links (WP-O3): a drag lets it catch up
+            // (10 §4.2), and the add on its own refuses it
+            if (partlyOverlaps(other, range) && other.start >= range.start) {
+                if (passThrough) {
+                    caughtUp.push(passed);
+                    continue;
+                }
                 refuse(
-                    `${labels.get(id)} is in a timeline over beats ${rangeText(other)}, which only partly overlaps ${rangeText(range)}`,
+                    `${labels.get(id)} is in a timeline over beats ${rangeText(other)}, which only partly overlaps ${rangeText(range)}: joining a move partway isn't supported yet. End the range at beat ${other.start}.`,
                 );
-            if (!containsRange(other, range) && containsRange(range, other))
+            }
+            if (!containsRange(other, range) && containsRange(range, other)) {
+                if (passThrough) {
+                    overridden.push(passed);
+                    continue;
+                }
                 refuse(
                     `${labels.get(id)} is in a timeline over beats ${rangeText(other)}, inside ${rangeText(range)}; adding it would replace that move`,
                 );
+            }
         }
     }
 
@@ -287,6 +335,8 @@ export const addMarchersToTimelineInTransaction = async ({
         createdTimeline: existing === undefined,
         added,
         alreadyIn,
+        overridden,
+        caughtUp,
     };
 };
 

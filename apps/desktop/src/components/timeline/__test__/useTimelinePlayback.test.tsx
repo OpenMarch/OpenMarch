@@ -91,22 +91,29 @@ describe("play", () => {
     const range = { kind: "range", start: 1, end: 9 } as const;
     const home = { kind: "home" } as const;
 
-    it("starts at the playhead, or at a selected range's start from at or past its end", () => {
+    it("starts at the playhead (UI-10 Play)", () => {
         expect(playStartBeat(home, 5)).toBe(5);
         expect(playStartBeat(range, 5)).toBe(5);
-        expect(playStartBeat(range, 9)).toBe(1);
-        expect(playStartBeat(range, 12)).toBe(1);
+        expect(playStartBeat(range, 9)).toBe(9);
+        expect(playStartBeat(range, 12)).toBe(12);
         expect(canPlay(home, 17, 17)).toBe(false);
         expect(canPlay(home, 16, 17)).toBe(true);
-        expect(canPlay(range, 17, 17)).toBe(true);
+        expect(canPlay(range, 17, 17)).toBe(false);
     });
 
-    it("loops a selected range and stops at the end of the show otherwise", () => {
+    it("never loops, and stops at the end of the show (UI-10 Play)", () => {
         expect(playbackStep(range, 8.5, 17)).toBeNull();
-        expect(playbackStep(range, 9, 17)).toEqual({ loopTo: 1 });
+        expect(playbackStep(range, 9, 17)).toBeNull();
         expect(playbackStep(home, 9, 17)).toBeNull();
         expect(playbackStep(home, 17, 17)).toBe("stop");
         expect(playbackStep({ kind: "none" }, 17, 17)).toBe("stop");
+    });
+
+    it("loops over an isolated timeline (docs/timeline/research/ownership/09-isolation.md)", () => {
+        const isolated = { start: 3, end: 9 };
+        expect(playbackStep(range, 8.5, 17, isolated)).toBeNull();
+        expect(playbackStep(range, 9, 17, isolated)).toEqual({ loopTo: 3 });
+        expect(playbackStep(range, 9, 17, null)).toBeNull();
     });
 });
 
@@ -147,7 +154,7 @@ describeDbTests("useTimelinePlayback", (it) => {
             { wrapper },
         );
 
-    it("shows the playhead, and seeking moves only the playhead", async ({
+    it("shows the playhead, and seeking moves the playhead and the window's end", async ({
         db,
         wrapper,
     }) => {
@@ -165,10 +172,11 @@ describeDbTests("useTimelinePlayback", (it) => {
             result.current.playback.onSeek!(5);
         });
         expect(result.current.playback.positionBeat).toBe(5);
+        // UI-10: the window ends at the playhead
         expect(result.current.selection).toEqual({
             kind: "range",
             start: 1,
-            end: 9,
+            end: 5,
         });
         // Any whole beat, the end of the show (the last flag) included
         act(() => {
@@ -249,7 +257,7 @@ describeDbTests("useTimelinePlayback", (it) => {
         expect(result.current.playback.pageLabel).toBeUndefined();
     });
 
-    it("plays from the playhead, from a selected range's start past its end, and pauses keeping the selection", async ({
+    it("plays from the playhead, and pauses keeping the window", async ({
         db,
         wrapper,
     }) => {
@@ -266,7 +274,7 @@ describeDbTests("useTimelinePlayback", (it) => {
         });
         expect(result.current.playback.isPlaying).toBe(false);
 
-        // The playhead sits on the selected range's end: play starts at its start
+        // UI-10: play starts at the playhead, the window's end
         act(() => {
             store().selectRange(1, 9);
         });
@@ -274,7 +282,7 @@ describeDbTests("useTimelinePlayback", (it) => {
             result.current.playback.onPlayingChange!(true);
         });
         expect(result.current.playback.isPlaying).toBe(true);
-        expect(store().playheadBeat).toBe(0); // beat 1 is show time 0
+        expect(store().playheadBeat).toBe(9);
         // While playing, the cursor follows the audio clock and is never -1
         expect(result.current.playback.positionBeat).toBeGreaterThanOrEqual(0);
 
@@ -305,6 +313,13 @@ describeDbTests("useTimelinePlayback", (it) => {
         await seedShow(db);
         const { result } = renderPlayback(wrapper, true);
         await waitFor(() => expect(result.current.pages).toHaveLength(3));
+        // The page boxes `TimelineModePanel` keeps in the app, so the start flag follows
+        act(() => {
+            store().setPageBoxes([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]);
+        });
 
         act(() => {
             store().selectRange(9, 17);

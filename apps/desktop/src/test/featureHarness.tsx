@@ -1,6 +1,6 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { and, eq } from "drizzle-orm";
 import { TolgeeProvider } from "@tolgee/react";
 import {
@@ -95,6 +95,16 @@ function ProbeView() {
     const marcherPages = useQuery(
         marcherPagesByPageQueryOptions(selectedPageContext.selectedPage?.id),
     );
+    // The page boxes the start flag follows (UI-10), as `TimelineModePanel` keeps them in the app
+    useEffect(() => {
+        useTimelineSelectionStore
+            .getState()
+            .setPageBoxes(
+                pageFlags(pages).flatMap((f) =>
+                    f.range ? [{ ...f.range, name: f.page.name }] : [],
+                ),
+            );
+    }, [pages]);
     probe.current = {
         pages,
         marchers,

@@ -7,10 +7,9 @@ import {
 } from "@/stores/TimelineSelectionStore";
 
 /**
- * Timeline mode (docs/timeline/ui.md UI-9 Selection; P8.11, P8.16): with a stored timeline
- * selected, marchers without a transition in it are dimmed and can't be selected or hit, so clicks
- * and box selection pass over them. Nothing is dimmed at home, with nothing selected, or with a
- * range that has no stored timeline yet (`isMarcherDimmed`).
+ * Timeline mode (docs/timeline/ui.md UI-9 Selection; P8.11, P8.16): marchers that
+ * `isMarcherDimmed` names (under UI-10, those outside an isolated timeline) are dimmed and can't
+ * be selected or hit, so clicks and box selection pass over them.
  *
  * @param redrawKey anything whose change means the canvas marchers were re-created
  */
@@ -25,15 +24,16 @@ export function useTimelineDimming({
 }): void {
     const selection = useTimelineSelectionStore((s) => s.selection);
     const storedTimelines = useTimelineSelectionStore((s) => s.storedTimelines);
+    const isolation = useTimelineSelectionStore((s) => s.isolation);
     useEffect(() => {
         if (!canvas) return;
-        const state = { selection, storedTimelines };
+        const state = { selection, storedTimelines, isolation };
         for (const marcher of canvas.getCanvasMarchers())
             marcher.setTimelineDimmed(
                 enabled && isMarcherDimmed(state, marcher.marcherObj.id),
             );
         canvas.requestRenderAll();
-    }, [canvas, enabled, selection, storedTimelines, redrawKey]);
+    }, [canvas, enabled, selection, storedTimelines, isolation, redrawKey]);
 }
 
 /**
@@ -48,9 +48,10 @@ export function useDeselectDimmedMarchers(enabled: boolean): void {
     const setSelectedMarchers = selectedMarchersContext?.setSelectedMarchers;
     const selection = useTimelineSelectionStore((s) => s.selection);
     const storedTimelines = useTimelineSelectionStore((s) => s.storedTimelines);
+    const isolation = useTimelineSelectionStore((s) => s.isolation);
     useEffect(() => {
         if (!enabled || !selectedMarchers || !setSelectedMarchers) return;
-        const state = { selection, storedTimelines };
+        const state = { selection, storedTimelines, isolation };
         const kept = selectedMarchers.filter(
             (m) => !isMarcherDimmed(state, m.id),
         );
@@ -59,6 +60,7 @@ export function useDeselectDimmedMarchers(enabled: boolean): void {
         enabled,
         selection,
         storedTimelines,
+        isolation,
         selectedMarchers,
         setSelectedMarchers,
     ]);

@@ -274,6 +274,7 @@ function TimelineSurface({
                         pageLabel={props.pageLabel}
                         isPlaying={transportProps.isPlaying}
                         onPlayingChange={transportProps.onPlayingChange}
+                        onStop={transportProps.onStop}
                         onNavigate={transportProps.onNavigate}
                         onZoomOut={
                             expanded && props.onPixelsPerBeatChange
@@ -299,6 +300,10 @@ function TimelineSurface({
                 className="relative"
                 style={{ width: surfaceWidth, height: timelineHeight }}
                 onContextMenu={rangeMenu.onContextMenu}
+                onDoubleClick={(event) => {
+                    const marked = markedRangeAt(event.target);
+                    if (marked) props.onOpenRange?.(marked);
+                }}
             >
                 <div
                     {...pointer.pointerHandlers}
@@ -435,6 +440,11 @@ function TimelineSurface({
                     {selectionRange && (
                         <TimelineSelectionRange
                             range={selectionRange}
+                            startFlagBeatIndex={
+                                selection?.kind === "range"
+                                    ? selection.startFlagBeatIndex
+                                    : undefined
+                            }
                             beatCount={model.beatCount}
                             pixelsPerBeat={pixelsPerBeat}
                             height={timelineHeight}

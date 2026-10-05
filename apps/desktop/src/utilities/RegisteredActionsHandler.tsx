@@ -11,6 +11,7 @@ import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import type { ModifiedMarcherPageArgs } from "@/db-functions/marcherPage";
 import {
     planCanvasEdit,
+    snapIsolatedPlayheadToEnd,
     timelineCoordinateRecords,
     toTimelineMoves,
 } from "@/timeline/timelineCoordinateWrites";
@@ -41,6 +42,7 @@ import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
 import {
     navigateTimelinePages,
+    stopTimelinePlayback,
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
 import tolgee from "@/global/singletons/Tolgee";
@@ -77,6 +79,7 @@ export enum RegisteredActionsEnum {
     previousPage = "previousPage",
     firstPage = "firstPage",
     playPause = "playPause",
+    stopPlayback = "stopPlayback",
     toggleMetronome = "toggleMetronome",
 
     // Batch editing
@@ -345,6 +348,11 @@ export const RegisteredActionsObjects: {
         toggleOffKey: "actions.playback.pause",
         keyboardShortcut: new KeyboardShortcut({ key: " " }),
         enumString: "playPause",
+    }),
+    stopPlayback: new RegisteredAction({
+        descKey: "actions.playback.stop",
+        keyboardShortcut: new KeyboardShortcut({ key: " ", shift: true }),
+        enumString: "stopPlayback",
     }),
     toggleMetronome: new RegisteredAction({
         descKey: "actions.playback.toggleMetronome",
@@ -702,6 +710,7 @@ function RegisteredActionsHandler() {
                 return;
             }
             if (changes.length === 0) return;
+            snapIsolatedPlayheadToEnd();
             moveMarchersInTarget({
                 target: plan.target,
                 moves: toTimelineMoves(changes),
@@ -1002,7 +1011,7 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.playPause: {
                     if (!databaseReady || !pages || pages.length === 0) break;
-                    // UI-9 Play: resumes from the playhead and loops a selected range
+                    // UI-10 Play: plays on from the playhead
                     if (timelineMode) {
                         toggleTimelinePlayback({
                             isPlaying,
@@ -1013,6 +1022,12 @@ function RegisteredActionsHandler() {
                     }
                     const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage) setIsPlaying(!isPlaying);
+                    break;
+                }
+                case RegisteredActionsEnum.stopPlayback: {
+                    // UI-10 Stop: returns the playhead to the start flag (timeline mode only)
+                    if (!databaseReady || !timelineMode) break;
+                    stopTimelinePlayback({ isPlaying, setIsPlaying });
                     break;
                 }
                 case RegisteredActionsEnum.toggleMetronome: {

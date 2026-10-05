@@ -284,7 +284,8 @@ describeDbTests("P8.14 adversarial", (it) => {
                 [{ start: 1, end: 3 }, 1],
                 [{ start: 5, end: 7 }, /only partly overlaps/],
                 [{ start: 3, end: 13 }, /inside/],
-                [{ start: 8, end: 14 }, /only partly overlaps/],
+                // Starts inside a move and runs past its end (an exit), but [10, 12) lies inside it
+                [{ start: 8, end: 14 }, /inside/],
             ];
             for (const [range, expected] of cases) {
                 const before = await sample(db);

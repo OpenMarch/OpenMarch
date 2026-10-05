@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
@@ -443,9 +444,11 @@ function MarcherEditor() {
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const timelineMode = useTimelineMode();
+    // Isolation: the isolated move's plan at its end, where the canvas draws and edits it
+    const isolationEnd = useTimelineSelectionStore((s) => s.isolation?.end);
     const timelinePosition = usePositionAt(
         selectedMarchers.length === 1 ? selectedMarchers[0].id : -1,
-        selectedPage ? pageEndBeat(selectedPage) : 0,
+        isolationEnd ?? (selectedPage ? pageEndBeat(selectedPage) : 0),
     );
     // Timeline mode has no shape locks (P7.11): moving a marcher whose slot is in a shape-backed
     // transition switches that transition to individual points (P7.2), and shape pages are

@@ -199,6 +199,16 @@ Apply C-12's "no selected page": in timeline mode nothing reads `useSelectedPage
 
 UI-9 Selection (project owner, 2026-10-02): a selected range with no stored timeline (a new page's box after **+**, or a dragged range) dims nobody, so marchers stay selectable and **Add selected marchers** can create a timeline that isn't a page. Today `isMarcherDimmed` (`src/stores/TimelineSelectionStore.ts`) dims everyone for such a range and `useDeselectDimmedMarchers` clears the marcher selection, so drag-to-create is impossible. Change it so only a stored timeline dims non-members; canvas moves on such a range stay refused (P8.15's empty-timeline hint). Update the tests that assert such a range dims everyone (P8.11, P8.15 and their adversarial tests) and add tests for: drag a range with marchers selected keeps them selected; select marchers on such a range; right-click Add creates the timeline and then non-members dim; + then select and add without visiting home. Whole `test:focused` and `test:timeline` must pass.
 
+### P8.17: UI-10 core loop: start flag, playhead window, dragging adds
+
+- Owner: lead session (timeline/p8-17-core-loop)
+- Status: in-review
+- PR: https://github.com/AlexDumo/OpenMarch-timeline/pull/73
+- Parallel: no
+- Depends on: P8.11, P8.13, P8.14, P8.15, P8.16
+
+UI-10 in `ui.md` (project owner, 2026-10-03), from the "Origin and Arrival" timeline UX research. The editing context is the window from the **start flag** S to the paused playhead P. A canvas drag, nudge or alignment at P sets where the moved marchers arrive at P, leaving S, and in the same undoable edit creates the window's timeline (one per range still holds) and adds any moved marcher that isn't in it (`moveMarchersInRangeInTransaction`, target `{kind: "range"}`). **Add selected marchers** leaves the menu; nothing is dimmed; arrivals may be off a flag (a timeline, not a page). S follows navigation to the page box holding P unless pinned by dragging the start handle or a range; Play plays on from P with no loop; Pause leaves S; **Stop** (button, Shift+Space) returns P to S. Tests: store rules (follow, pin, unpin, Stop fallback), `planCanvasEdit`, range moves (create, add, join, undo as one edit, partial-overlap refusal writes nothing), playback driver (no loop, Stop while playing and before audio), variants (start flag, no end handle, stored flag after Stop). Whole `test:focused` and `test:timeline` on the touched areas must pass, plus focused `test:history` on the db-function tests.
+
 ## Exit gate
 
 Tick an item only after running its check, and paste the command and result into the log.
@@ -1028,3 +1038,15 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Checks:** #55: whole suites had only load timeouts in untouched files, each passing alone; focused 34/34 in all modes. #56: reproduction test red without the fix, green with it; 27/27 focused in both modes.
 - **Next:** continue MVP testing in the app; P8.12 stays paused (it deletes the bridge). Known: on every pause the bridge's selected page flickers to the previous page for one commit (fixed for good when P8.12 lands).
 - **Blockers:** none.
+
+### 2026-10-03 · lead session · UI-10 (decided)
+
+- **Decided (project owner, 2026-10-03):** after the "Origin and Arrival" timeline UX research (https://claude.ai/code/artifact/20d65511-24e2-495c-985c-119afcb88299), UI-10 in `ui.md`. The editing context is the window from a start flag to the paused playhead; dragging marchers adds them to that window's timeline, with no Add step; arrivals off a flag create a timeline, not a page; Stop returns to the start flag and Pause freezes; the one-timeline-per-range rule (C-12) stays; timelines matching a page box get no clip. Lead defaults (marked in UI-10): the start flag follows navigation unless pinned, nothing is dimmed, Stop is Shift+Space.
+
+### 2026-10-04 · lead session (timeline/p8-17-core-loop) · P8.17 (in review)
+
+- **Done:** PR #73, one commit on `timeline-try-2`. Store window (`startBeat`, `startPinned`, `pageBoxes`, derived `selection`), range edits (`moveMarchersInRangeInTransaction`), start flag overlay, Stop, no loop, no dimming, clips off the page boxes. Tests rewritten for UI-10 and new range-move tests.
+- **Evidence:** a recorded run on a converted 76-marcher show makes a mid-set arrival in 4 actions with no refusal; the UI-9 flow took 8 actions and two traps.
+- **Checks:** `tsc` pass; changed test files pass under `test:focused` and `test:timeline`; focused `test:history` on `timelineMovesByTimeline.test.ts` 14 passed. Whole `test:focused` and `test:timeline` reported on the PR. Not run: full `test:history`, e2e (policy).
+- **Blockers:** none.
+- **Resume from:** review findings on PR #73, then merge.

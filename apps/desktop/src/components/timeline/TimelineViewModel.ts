@@ -105,7 +105,15 @@ export interface TimelineViewModel {
  */
 export type TimelineSelection =
     | { readonly kind: "home" }
-    | { readonly kind: "range"; readonly range: TimelineBeatRange }
+    | {
+          readonly kind: "range";
+          readonly range: TimelineBeatRange;
+          /**
+           * Where the start flag is drawn (UI-10), when it isn't the range's start: just after
+           * **Stop** the playhead sits on the flag and the window falls back to the page box
+           */
+          readonly startFlagBeatIndex?: number;
+      }
     | null;
 
 export type TimelineNavigation =
@@ -123,6 +131,8 @@ export interface TimelineInteractionProps {
     readonly selectedTarget?: TimelineTarget | null;
     readonly onSeek?: (beat: BeatPosition) => void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
+    /** **Stop** (UI-10): stops and returns the playhead to the start flag; without it, no Stop button */
+    readonly onStop?: () => void;
     readonly onNavigate?: (direction: TimelineNavigation) => void;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
     readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
@@ -133,6 +143,8 @@ export interface TimelineInteractionProps {
      * while it's given and the timeline isn't playing; the owner passes it only where **+** applies.
      */
     readonly onAddPageFlag?: () => void;
+    /** Double-clicking a page box or clip opens (isolates) its range, in view beats here */
+    readonly onOpenRange?: (target: TimelineMenuTarget) => void;
 }
 
 export interface TimelineScaleProps {

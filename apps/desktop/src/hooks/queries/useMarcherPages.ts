@@ -24,6 +24,7 @@ import { conToastError } from "@/utilities/utils";
 import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
+import { toastPassThrough } from "@/timeline/timelinePassThrough";
 import { db, schema } from "@/global/database/db";
 import { invalidateByPage } from "./sharedInvalidators";
 import type MarcherPage from "@/global/classes/MarcherPage";
@@ -175,12 +176,14 @@ export const moveMarchersOnPageMutationOptions = () => {
 /**
  * Timeline mode's write for a canvas move (UI-9 Editing, P8.15): one undoable edit through
  * `moveMarchersInTarget`, setting homes or the endings in the selected timeline. A refused move
- * shows its friendly message.
+ * shows its friendly message; a move that passed through pages says so (`toastPassThrough`).
  */
 export const moveMarchersInTargetMutationOptions = () => {
     return mutationOptions({
         mutationFn: ({ target, moves }: TimelineEditRequest) =>
             moveMarchersInTarget({ db, target, moves }),
+        // A drag over a window that crosses pages says what it passed through (UI-10)
+        onSuccess: (result) => toastPassThrough(result.passThrough),
         onError: (e, variables) => {
             toastTimelineError(e, `Error moving marchers`, variables);
         },

@@ -4,6 +4,7 @@ import {
     MagnifyingGlassMinusIcon,
     MagnifyingGlassPlusIcon,
     PauseIcon,
+    StopIcon,
     PlayIcon,
     RewindIcon,
     SkipBackIcon,
@@ -95,6 +96,7 @@ export function TimelineTransport({
     pageLabel,
     isPlaying,
     onPlayingChange,
+    onStop,
     onNavigate,
     onZoomOut,
     onZoomIn,
@@ -110,6 +112,8 @@ export function TimelineTransport({
     pageLabel?: string;
     isPlaying: boolean;
     onPlayingChange?: (isPlaying: boolean) => void;
+    /** **Stop** (UI-10); without it, there is no Stop button */
+    onStop?: () => void;
     onNavigate?: (direction: TimelineNavigation) => void;
     onZoomOut?: () => void;
     onZoomIn?: () => void;
@@ -163,6 +167,11 @@ export function TimelineTransport({
                         <PlayIcon size={24} />
                     )}
                 </TransportButton>
+                {onStop && (
+                    <TransportButton label="Stop" onClick={onStop}>
+                        <StopIcon size={20} />
+                    </TransportButton>
+                )}
                 <TransportButton
                     label="Next page"
                     onClick={
@@ -586,6 +595,7 @@ export const TimelineTrackClip = ({
 
 export const TimelineSelectionRange = ({
     range,
+    startFlagBeatIndex,
     beatCount,
     pixelsPerBeat,
     height,
@@ -594,6 +604,8 @@ export const TimelineSelectionRange = ({
     onInteractionChange,
 }: {
     range: TimelineBeatRange;
+    /** Where to draw the start flag when it isn't the range's start (UI-10, after Stop) */
+    startFlagBeatIndex?: number;
     beatCount: number;
     pixelsPerBeat: number;
     height: number;
@@ -610,6 +622,9 @@ export const TimelineSelectionRange = ({
         kind: "start" | "end";
         pointerId: number;
         surface: HTMLElement;
+        startClientX: number;
+        /** The pointer has moved past the drag threshold: a drag, not a click */
+        moved: boolean;
     } | null>(null);
 
     useEffect(() => {
@@ -674,6 +689,13 @@ export const TimelineSelectionRange = ({
     const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
         const drag = dragRef.current;
         if (!drag || drag.pointerId !== event.pointerId) return;
+        if (!drag.moved) {
+            // A click: nothing changes
+            dragRef.current = null;
+            event.currentTarget.releasePointerCapture?.(event.pointerId);
+            onInteractionChange?.(null);
+            return;
+        }
         const next = updatePreview(
             drag.kind,
             event.clientX,
@@ -695,8 +717,12 @@ export const TimelineSelectionRange = ({
         <button
             type="button"
             data-timeline-interactive="true"
-            aria-label={`Selection ${kind}`}
-            title={`Selection ${kind}: beat boundary ${beatIndex}`}
+            aria-label={kind === "start" ? "Start flag" : `Selection ${kind}`}
+            title={
+                kind === "start"
+                    ? `Start flag: marchers leave from here (beat boundary ${beatIndex}). Drag to pin it.`
+                    : `Selection ${kind}: beat boundary ${beatIndex}`
+            }
             disabled={!onCommit}
             onPointerDown={(event) => {
                 if (!onCommit || event.button !== 0) return;
@@ -704,22 +730,27 @@ export const TimelineSelectionRange = ({
                 const surface =
                     event.currentTarget.parentElement?.parentElement;
                 if (!surface) return;
+                // Nothing moves until the pointer does: after Stop the start flag is drawn on the
+                // playhead, away from the fallback window's start, so a press must not jump it
                 dragRef.current = {
                     kind,
                     pointerId: event.pointerId,
                     surface,
+                    startClientX: event.clientX,
+                    moved: false,
                 };
                 event.currentTarget.setPointerCapture?.(event.pointerId);
-                updatePreview(
-                    kind,
-                    event.clientX,
-                    surface,
-                    isPageSnapDisabled(event),
-                );
             }}
             onPointerMove={(event) => {
                 const drag = dragRef.current;
                 if (!drag || drag.pointerId !== event.pointerId) return;
+                if (
+                    !drag.moved &&
+                    Math.abs(event.clientX - drag.startClientX) <
+                        TIMELINE_RANGE_DRAG_PX
+                )
+                    return;
+                drag.moved = true;
                 updatePreview(
                     kind,
                     event.clientX,
@@ -744,6 +775,16 @@ export const TimelineSelectionRange = ({
                           : 0;
                 if (delta === 0) return;
                 event.preventDefault();
+                // The arrow moves the flag, not the selected marchers (the window's nudge keys)
+                event.stopPropagation();
+                // The start flag stays before the playhead (UI-10): after Stop it is drawn on the
+                // playhead, so a step right has nowhere to go
+                if (
+                    kind === "start" &&
+                    (beatIndex + delta >= range.endBeatIndex ||
+                        beatIndex + delta < 0)
+                )
+                    return;
                 onCommit(
                     kind === "start"
                         ? {
@@ -767,15 +808,20 @@ export const TimelineSelectionRange = ({
             className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 h-full w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize disabled:cursor-default"
             style={{ left: beatToX(beatIndex, pixelsPerBeat), height }}
         >
-            <span className="bg-accent absolute inset-y-0 left-1/2 w-px" />
             <span
                 className={clsx(
-                    "bg-accent absolute top-0 h-10 w-8",
-                    kind === "start"
-                        ? "left-1/2 rounded-r-sm"
-                        : "right-1/2 rounded-l-sm",
+                    "absolute inset-y-0 left-1/2",
+                    kind === "start" ? "bg-yellow w-0.5" : "bg-accent w-px",
                 )}
             />
+            {kind === "start" ? (
+                // UI-10: the start flag, where movers leave from and Stop returns to
+                <span className="bg-yellow text-text-invert absolute top-0 left-1/2 rounded-r-sm px-3 font-mono text-[9px] leading-[14px] font-semibold tracking-wide">
+                    START
+                </span>
+            ) : (
+                <span className="bg-accent absolute top-0 right-1/2 h-10 w-8 rounded-l-sm" />
+            )}
         </button>
     );
 
@@ -792,8 +838,13 @@ export const TimelineSelectionRange = ({
                 style={{ left: startX, width: endX - startX, height }}
             />
             <div className="pointer-events-none absolute inset-0">
-                {flag("start", preview.startBeatIndex)}
-                {flag("end", preview.endBeatIndex)}
+                {flag(
+                    "start",
+                    startFlagBeatIndex !== undefined && !dragRef.current
+                        ? startFlagBeatIndex
+                        : preview.startBeatIndex,
+                )}
+                {/* UI-10: the playhead is the window's end, so it has no handle of its own */}
             </div>
         </div>
     );

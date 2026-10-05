@@ -9,17 +9,17 @@ import {
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { beatAtTime, timeAtBeat } from "./timeMap";
 import { playbackStep } from "./timelinePlayhead";
+import { consumeStopRequest } from "./timelineTransport";
 
 /**
  * Timeline mode's playback rules while playing (docs/timeline/ui.md UI-9 Play; P8.11), once per
  * animation frame, independent of the canvas:
  *
- * - With a range selected, at its end playback jumps back to its start. The live position moves
- *   at once (`restartLivePlaybackAt`), and the playhead write restarts the audio there, so the
- *   loop doesn't wait on the audio player and loops again however many times it comes round.
- * - Otherwise it plays on, and stops at the end of the show.
- * - Pausing, however it happens, leaves the playhead on the last whole beat played, and keeps
- *   the selection.
+ * - It plays on, with no loop, and stops at the end of the show (UI-10 Play). An isolated
+ *   timeline loops over its range instead.
+ * - Pausing, however it happens, leaves the playhead on the last whole beat played, and leaves
+ *   the start flag where it is (`seekKeepingStart`).
+ * - **Stop** (`stopTimelinePlayback`) returns the playhead to the start flag instead.
  *
  * Nothing follows playback in page mode (`enabled` false); `useAnimation` keeps its page rules.
  */
@@ -44,10 +44,17 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
             lastLiveBeat.current = null;
             return;
         }
-        if (lastLiveBeat.current === null) return;
+        if (lastLiveBeat.current === null) {
+            // Stopped before the audio started: nothing played, but Stop still returns
+            if (consumeStopRequest())
+                useTimelineSelectionStore.getState().returnToStart();
+            return;
+        }
         const beat = Math.min(Math.floor(lastLiveBeat.current), beats.length);
         lastLiveBeat.current = null;
-        useTimelineSelectionStore.getState().seek(beat);
+        const store = useTimelineSelectionStore.getState();
+        if (consumeStopRequest()) store.returnToStart();
+        else store.seekKeepingStart(beat);
     }, [enabled, isPlaying, beats.length]);
 
     useEffect(() => {
@@ -59,12 +66,18 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
                 const live = beatAtTime(beats, getLivePlaybackPosition());
                 lastLiveBeat.current = live;
                 const store = useTimelineSelectionStore.getState();
-                const step = playbackStep(store.selection, live, beats.length);
+                const step = playbackStep(
+                    store.selection,
+                    live,
+                    beats.length,
+                    store.isolation,
+                );
                 if (step === "stop") {
                     lastLiveBeat.current = beats.length;
                     setIsPlaying(false);
                     return;
                 }
+                // An isolated timeline loops (docs/timeline/research/ownership/09-isolation.md)
                 if (step) {
                     restartLivePlaybackAt(timeAtBeat(beats, step.loopTo));
                     lastLiveBeat.current = step.loopTo;

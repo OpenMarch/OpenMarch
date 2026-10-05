@@ -7,6 +7,7 @@ import { beatIndexAtTime } from "@/timeline/timeMap";
 import { pageAtPlayhead } from "@/timeline/timelinePlayhead";
 import {
     navigateTimelinePages,
+    stopTimelinePlayback,
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
 import { getLivePlaybackPosition } from "./audio/AudioPlayer";
@@ -68,6 +69,7 @@ export function useTimelinePlayback({
             onNavigate: (direction) => {
                 if (!isPlaying) navigateTimelinePages(pages, direction);
             },
+            onStop: () => stopTimelinePlayback({ isPlaying, setIsPlaying }),
             onPlayingChange: (next) => {
                 if (next === isPlaying) return;
                 toggleTimelinePlayback({

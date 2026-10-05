@@ -9,10 +9,7 @@ import {
 import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
 import type Page from "@/global/classes/Page";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
-import {
-    useTimelineSelectionStore,
-    type StoredTimelineMembership,
-} from "@/stores/TimelineSelectionStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     convertPagesToTimeline,
     readShowTiming,
@@ -116,138 +113,73 @@ const loadSelection = async (db: DbConnection) =>
         .getState()
         .setStoredTimelines(await readStoredTimelineMemberships(db));
 
-const stored = (
-    id: number,
-    start: number,
-    end: number,
-    marcherIds: number[] = [1],
-): StoredTimelineMembership => ({
-    id,
-    start,
-    end,
-    marcherIds: new Set(marcherIds),
-});
-
-describe("planCanvasEdit (UI-9 Editing, Home)", () => {
-    const timelines = [stored(7, 1, 9), stored(8, 9, 17)];
-
-    plainIt("home with the playhead on beat 0 edits homes", () => {
-        expect(
-            planCanvasEdit({
-                selection: { kind: "home" },
-                storedTimelines: null,
-                playheadBeat: 0,
-            }),
-        ).toEqual({ ok: true, target: { kind: "home" }, beat: 0 });
-        // Nothing selected at beat 0 is the same
-        expect(
-            planCanvasEdit({
-                selection: { kind: "none" },
-                storedTimelines: timelines,
-                playheadBeat: 0,
-            }),
-        ).toEqual({ ok: true, target: { kind: "home" }, beat: 0 });
-    });
-
-    plainIt("no timeline selected off beat 0 is refused", () => {
-        for (const selection of [
-            { kind: "home" } as const,
-            { kind: "none" } as const,
-        ]) {
-            const plan = planCanvasEdit({
-                selection,
-                storedTimelines: timelines,
-                playheadBeat: 5,
-            });
-            expect(plan.ok).toBe(false);
-            expect(!plan.ok && plan.error).toBeInstanceOf(
-                TimelineEditRefusedError,
-            );
-            expect(
-                !plan.ok && (plan.error as TimelineEditRefusedError).refusal,
-            ).toBe("noTimeline");
-        }
-    });
-
-    plainIt("a stored timeline with the playhead on its end edits it", () => {
-        expect(
-            planCanvasEdit({
-                selection: { kind: "range", start: 9, end: 17 },
-                storedTimelines: timelines,
-                playheadBeat: 17,
-            }),
-        ).toEqual({
+describe("planCanvasEdit (UI-10 edit window, Home)", () => {
+    plainIt("home edits homes", () => {
+        expect(planCanvasEdit({ selection: { kind: "home" } })).toEqual({
             ok: true,
-            target: { kind: "timeline", timelineId: 8 },
-            beat: 17,
+            target: { kind: "home" },
+            beat: 0,
         });
     });
 
     plainIt(
-        "off the selected timeline's end is refused (TEMPORARY), even at its start",
+        "a window edits the timeline over it, stored or not, at its end",
         () => {
-            for (const playheadBeat of [9, 12, 16, 18, 0]) {
-                const plan = planCanvasEdit({
-                    selection: { kind: "range", start: 9, end: 17 },
-                    storedTimelines: timelines,
-                    playheadBeat,
-                });
+            for (const [start, end] of [
+                [9, 17], // a page box
+                [9, 12], // mid-page: no page, no stored timeline needed
+                [3, 30], // across flags
+            ] as const) {
                 expect(
-                    !plan.ok &&
-                        (plan.error as TimelineEditRefusedError).refusal,
-                    `playhead ${playheadBeat}`,
-                ).toBe("offEnd");
+                    planCanvasEdit({
+                        selection: { kind: "range", start, end },
+                    }),
+                ).toEqual({
+                    ok: true,
+                    target: { kind: "range", start, end },
+                    beat: end,
+                });
             }
         },
     );
 
-    plainIt("a range with no stored timeline is refused", () => {
-        const plan = planCanvasEdit({
-            selection: { kind: "range", start: 3, end: 9 },
-            storedTimelines: timelines,
-            playheadBeat: 9,
-        });
+    plainIt("nothing selected is refused", () => {
+        const plan = planCanvasEdit({ selection: { kind: "none" } });
+        expect(!plan.ok && plan.error).toBeInstanceOf(TimelineEditRefusedError);
         expect(
             !plan.ok && (plan.error as TimelineEditRefusedError).refusal,
-        ).toBe("emptyTimeline");
+        ).toBe("noTimeline");
     });
 
-    plainIt("a range before the timelines load is not ready", () => {
-        const plan = planCanvasEdit({
-            selection: { kind: "range", start: 9, end: 17 },
-            storedTimelines: null,
-            playheadBeat: 17,
-        });
-        expect(!plan.ok && plan.error).toBeInstanceOf(TimelineNotReadyError);
-    });
-
-    plainIt("reads the selection store by default", () => {
+    plainIt("reads the store's edit window by default", () => {
         const store = useTimelineSelectionStore.getState();
-        store.setStoredTimelines(timelines);
+        store.setPageBoxes([
+            { start: 1, end: 9 },
+            { start: 9, end: 17 },
+        ]);
         store.selectRange(1, 9);
         expect(planCanvasEdit()).toEqual({
             ok: true,
-            target: { kind: "timeline", timelineId: 7 },
+            target: { kind: "range", start: 1, end: 9 },
             beat: 9,
         });
-        store.seek(4);
-        expect(planCanvasEdit().ok).toBe(false);
+        store.seek(13); // the start flag follows to the box holding the playhead
+        expect(planCanvasEdit()).toEqual({
+            ok: true,
+            target: { kind: "range", start: 9, end: 13 },
+            beat: 13,
+        });
+        store.setPageBoxes([]);
     });
 
-    plainIt("each refusal shows its own message", () => {
-        for (const refusal of [
-            "noTimeline",
-            "emptyTimeline",
-            "offEnd",
-        ] as const) {
-            const error = new TimelineEditRefusedError(refusal);
-            expect(
-                timelineErrorMessage(error, { translate: (_k, d) => d }),
-            ).toBe(error.message);
-            expect(
-                timelineErrorMessage(error, { translate: (key) => key }),
-            ).toBe(error.key);
-        }
+    plainIt("the refusal shows its message", () => {
+        const error = new TimelineEditRefusedError("noTimeline");
+        expect(timelineErrorMessage(error, { translate: (_k, d) => d })).toBe(
+            error.message,
+        );
+        expect(timelineErrorMessage(error, { translate: (key) => key })).toBe(
+            error.key,
+        );
     });
 });
 
@@ -299,7 +231,6 @@ describe("canvasCoordinateWriter", () => {
 
     plainIt("flag on: plans when the move ends, not when installed", () => {
         const store = useTimelineSelectionStore.getState();
-        store.setStoredTimelines([stored(4, 1, 9)]);
         store.selectHome();
         const writeTimeline = vi.fn();
         const onRefused = vi.fn();
@@ -312,7 +243,7 @@ describe("canvasCoordinateWriter", () => {
         store.selectRange(1, 9);
         write(changes);
         expect(writeTimeline).toHaveBeenCalledWith({
-            target: { kind: "timeline", timelineId: 4 },
+            target: { kind: "range", start: 1, end: 9 },
             moves: [{ marcherId: 1, x: 10, y: 20 }],
         });
         expect(onRefused).not.toHaveBeenCalled();
@@ -321,7 +252,7 @@ describe("canvasCoordinateWriter", () => {
     plainIt("flag on, refused by the selection: writes nothing", () => {
         const writeTimeline = vi.fn();
         const onRefused = vi.fn();
-        const error = new TimelineEditRefusedError("offEnd");
+        const error = new TimelineEditRefusedError("noTimeline");
         canvasCoordinateWriter({
             timelineMode: true,
             writePages: vi.fn(),
@@ -552,7 +483,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         expect(positionAt(6, endBeat)).toEqual([x0 + 10, y0]);
     });
 
-    it("nudge through the selection store: edits at the selected timeline's end, refused elsewhere", async ({
+    it("nudge through the selection store: at a flag edits that page's timeline; mid-page creates one ending at the playhead", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -578,18 +509,30 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         });
         await timelineResolverSettled();
         expect(positionAt(3, endBeat)).toEqual([x0, y0 + 4]);
+        const timelinesAfterFlagEdit = (
+            await db.select().from(schema.timelines).all()
+        ).length;
 
-        // Off the end (TEMPORARY): refused, nothing written
-        store.seek(timeline.start + 1);
-        const before = await timelineRows(db);
-        const error = await transformMarchersInSelection({
+        // UI-10: off the flag, the move arrives at the playhead in a new timeline, not a page
+        const mid = timeline.start + 3;
+        store.selectRange(timeline.start, mid);
+        const [mx, my] = positionAt(3, mid);
+        await transformMarchersInSelection({
             db,
             marcherIds: [3],
-            transform: (current) => current.map((c) => ({ ...c, y: c.y + 4 })),
-        }).catch((e: unknown) => e);
-        expect(error).toBeInstanceOf(TimelineEditRefusedError);
-        expect((error as TimelineEditRefusedError).refusal).toBe("offEnd");
-        expect(await timelineRows(db)).toEqual(before);
+            transform: (current) => current.map((c) => ({ ...c, x: c.x + 2 })),
+        });
+        await timelineResolverSettled();
+        expect(positionAt(3, mid)).toEqual([mx + 2, my]);
+        // ...and then resumes to where it already arrived at the flag
+        expect(positionAt(3, endBeat)).toEqual([x0, y0 + 4]);
+        const timelines = await db.select().from(schema.timelines).all();
+        expect(timelines.length).toBe(timelinesAfterFlagEdit + 1);
+        expect(
+            timelines.some(
+                (t) => t.start_beat === timeline.start && t.end_beat === mid,
+            ),
+        ).toBe(true);
     });
 
     it("swap, flag on: the two marchers exchange positions at the timeline's end", async ({

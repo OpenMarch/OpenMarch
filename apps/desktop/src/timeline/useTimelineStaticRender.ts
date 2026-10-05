@@ -1,3 +1,7 @@
+import {
+    applyIsolationPlan,
+    useIsolationPlanStore,
+} from "./timelineIsolationPlan";
 import { useEffect, useRef } from "react";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { pageEndBeat, TimelinePositionBuffer } from "./timelineCanvas";
@@ -38,12 +42,25 @@ export function useTimelineStaticRender({
     redrawKey?: unknown;
 }): void {
     const version = useTimelineResolverStore((s) => s.version);
+    // Isolation draws its members where the isolated move's plan puts them
+    const isolationPlan = useIsolationPlanStore((s) => s.current);
     const bufferRef = useRef<TimelinePositionBuffer | null>(null);
 
     useEffect(() => {
         if (!enabled || !canvas || !selectedPage || isPlaying) return;
         const buffer = (bufferRef.current ??= new TimelinePositionBuffer());
-        if (!buffer.fill(beat ?? pageEndBeat(selectedPage))) return;
+        const at = beat ?? pageEndBeat(selectedPage);
+        if (!buffer.fill(at)) return;
+        applyIsolationPlan(buffer.buffer, buffer.marcherIds, at, isolationPlan);
         canvas.renderMarcherPositions(buffer, selectedPage.id);
-    }, [enabled, canvas, selectedPage, beat, isPlaying, version, redrawKey]);
+    }, [
+        enabled,
+        canvas,
+        selectedPage,
+        beat,
+        isPlaying,
+        version,
+        redrawKey,
+        isolationPlan,
+    ]);
 }

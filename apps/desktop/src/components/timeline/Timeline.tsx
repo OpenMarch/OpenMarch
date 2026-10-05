@@ -22,6 +22,7 @@ import type {
 } from "./TimelineRangeMenu";
 import type {
     TimelineActivitySpan,
+    TimelineBeatRange,
     TimelineCreateTrackRequest,
     TimelineNavigation,
     TimelineRangeChange,
@@ -76,6 +77,8 @@ export interface TimelinePlayback {
     /** Seek to a whole beat index, already clamped to the show */
     readonly onSeek?: (beatIndex: number) => void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
+    /** **Stop** (UI-10): back to the start flag */
+    readonly onStop?: () => void;
     /** Page navigation from the transport; without it, the transport seeks to page starts */
     readonly onNavigate?: (direction: TimelineNavigation) => void;
 }
@@ -120,6 +123,11 @@ export interface TimelineProps {
     readonly onAddPageFlag?: () => void;
     /** The page box menu's **Delete page flag** (UI-9 Deleting a flag), by page id */
     readonly onDeletePageFlag?: (pageId: number) => void;
+    /**
+     * Double-clicking a page box or a clip: isolate that range's stored timeline. It gets the
+     * range in spec beats (a clip's stored range).
+     */
+    readonly onOpenRange?: (range: TimelineBeatRange) => void;
 }
 
 const TimelineWaveformContext = createContext<TimelineWaveform | null>(null);
@@ -222,6 +230,13 @@ export const selectionToView = (
                   startBeatIndex: axis.toView(selection.range.startBeatIndex),
                   endBeatIndex: axis.toView(selection.range.endBeatIndex),
               },
+              ...(selection.startFlagBeatIndex !== undefined
+                  ? {
+                        startFlagBeatIndex: axis.toView(
+                            selection.startFlagBeatIndex,
+                        ),
+                    }
+                  : {}),
           }
         : selection;
 
@@ -320,7 +335,25 @@ export function Timeline(props: TimelineProps) {
                   },
               })
         : undefined;
-    const { addSelectedMarchers, onDeletePageFlag } = props;
+    const { addSelectedMarchers, onDeletePageFlag, onOpenRange } = props;
+    // A clip's stored spec range, else the view range mapped back (as the menu's Add does)
+    const specRangeOf = ({ range, trackId }: TimelineMenuTarget) => {
+        const input =
+            trackId === undefined
+                ? undefined
+                : timelines.find((t) => String(t.id) === trackId);
+        return input
+            ? {
+                  startBeatIndex: input.startBeatIndex,
+                  endBeatIndex: input.endBeatIndex,
+              }
+            : {
+                  startBeatIndex: axis.toSpec(range.startBeatIndex),
+                  endBeatIndex: axis.toSpec(range.endBeatIndex),
+              };
+    };
+    const openRange = (target: TimelineMenuTarget) =>
+        onOpenRange?.(specRangeOf(target));
     // A clip sends its stored spec range: the view axis folds spec beats 0 and 1 together, so a
     // converted show's timeline over [0, N) would come back as [1, N). Page boxes and dragged
     // ranges start on a flag or a timed beat, which `toSpec` maps back exactly.
@@ -337,23 +370,7 @@ export function Timeline(props: TimelineProps) {
             : {}),
         onAdd:
             addSelectedMarchers?.onAdd &&
-            (({ range, trackId }) => {
-                const input =
-                    trackId === undefined
-                        ? undefined
-                        : timelines.find((t) => String(t.id) === trackId);
-                addSelectedMarchers.onAdd?.(
-                    input
-                        ? {
-                              startBeatIndex: input.startBeatIndex,
-                              endBeatIndex: input.endBeatIndex,
-                          }
-                        : {
-                              startBeatIndex: axis.toSpec(range.startBeatIndex),
-                              endBeatIndex: axis.toSpec(range.endBeatIndex),
-                          },
-                );
-            }),
+            ((target) => addSelectedMarchers.onAdd?.(specRangeOf(target))),
     };
     const commonProps = {
         model,
@@ -366,12 +383,14 @@ export function Timeline(props: TimelineProps) {
         className: props.className,
         onSeek: seekToBeat,
         onPlayingChange: playback.onPlayingChange,
+        onStop: playback.onStop,
         onNavigate: playback.onNavigate,
         onPixelsPerBeatChange: setPixelsPerBeat,
         onSelectionChange: changeSelection,
         onCreateTrack: createTrack,
         addSelectedMarchers: addMarchersMenu,
         onAddPageFlag: props.onAddPageFlag,
+        onOpenRange: onOpenRange && openRange,
         onTimelineRangeCommit: commitRange,
         showTransport: props.showTransport ?? true,
         transportClock: props.transportClock,

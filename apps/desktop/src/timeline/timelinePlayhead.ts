@@ -92,17 +92,12 @@ export function pageAtPlayhead<P extends FlagPage>(
     );
 }
 
-/**
- * Where play starts (UI-9 Play): from the playhead, except that with a range selected, play from
- * at or past its end starts at its start.
- */
+/** Where play starts (UI-10 Play): from the playhead. */
 export function playStartBeat(
-    selection: TimelineEditSelection,
+    _selection: TimelineEditSelection,
     playheadBeat: number,
 ): number {
-    return selection.kind === "range" && playheadBeat >= selection.end
-        ? selection.start
-        : playheadBeat;
+    return playheadBeat;
 }
 
 /** Whether play can start: there is time after where it would start. */
@@ -115,16 +110,17 @@ export function canPlay(
 }
 
 /**
- * What playback does at a live beat (UI-9 Play): with a range selected, at its end it loops back
- * to its start; otherwise it plays on until the end of the show, where it stops.
+ * What playback does at a live beat (UI-10 Play): it plays on, with no loop, until the end of the
+ * show, where it stops. An isolated timeline loops instead: at its end, playback goes back to its
+ * start.
  */
 export function playbackStep(
-    selection: TimelineEditSelection,
+    _selection: TimelineEditSelection,
     liveBeat: number,
     showEndBeat: number,
+    isolated?: { readonly start: number; readonly end: number } | null,
 ): { readonly loopTo: number } | "stop" | null {
-    if (selection.kind === "range" && liveBeat >= selection.end)
-        return { loopTo: selection.start };
+    if (isolated && liveBeat >= isolated.end) return { loopTo: isolated.start };
     if (liveBeat >= showEndBeat) return "stop";
     return null;
 }

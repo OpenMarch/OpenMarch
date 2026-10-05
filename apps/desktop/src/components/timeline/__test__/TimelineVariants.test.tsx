@@ -387,7 +387,7 @@ describe("timeline views", () => {
                 onCreateTrack={onCreateTrack}
             />,
         );
-        const start = screen.getByRole("button", { name: "Selection start" });
+        const start = screen.getByRole("button", { name: "Start flag" });
         const actions = screen.getByTestId("timeline-selection-actions");
 
         // Alt turns page snapping off, so the flag stops at beat 7 rather than the page line at 8
@@ -449,8 +449,7 @@ describe("timeline views", () => {
         });
     });
 
-    it("moves the count with the end flag and restores state on cancel", () => {
-        const onSelectionChange = vi.fn();
+    it("has no end handle: the playhead is the window's end (UI-10)", () => {
         render(
             <ExpandedTimeline
                 {...commonProps}
@@ -459,51 +458,119 @@ describe("timeline views", () => {
                     kind: "range",
                     range: { startBeatIndex: 5, endBeatIndex: 9 },
                 }}
-                selectedTarget={{ id: "marcher-1", type: "marcher" }}
-                onSelectionChange={onSelectionChange}
-                onCreateTrack={vi.fn()}
+                onSelectionChange={vi.fn()}
             />,
         );
-        const end = screen.getByRole("button", { name: "Selection end" });
-        const actions = screen.getByTestId("timeline-selection-actions");
+        expect(
+            screen.getByRole("button", { name: "Start flag" }),
+        ).toBeInTheDocument();
+        expect(
+            screen.queryByRole("button", { name: "Selection end" }),
+        ).not.toBeInTheDocument();
+    });
 
+    it("draws the start flag where the store has it when the window falls back (after Stop)", () => {
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 1, endBeatIndex: 9 },
+                    startFlagBeatIndex: 9,
+                }}
+                onSelectionChange={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByRole("button", { name: "Start flag" }),
+        ).toHaveAttribute("title", expect.stringContaining("beat boundary 9"));
+    });
+
+    it("after Stop, arrow keys on the start flag never cross the playhead", () => {
+        const onSelectionChange = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 1, endBeatIndex: 9 },
+                    startFlagBeatIndex: 9,
+                }}
+                onSelectionChange={onSelectionChange}
+            />,
+        );
+        const flag = screen.getByRole("button", { name: "Start flag" });
+        fireEvent.keyDown(flag, { key: "ArrowRight" });
+        expect(onSelectionChange).not.toHaveBeenCalled();
+        fireEvent.keyDown(flag, { key: "ArrowLeft" });
+        expect(onSelectionChange).toHaveBeenCalledWith({
+            kind: "range",
+            range: { startBeatIndex: 8, endBeatIndex: 9 },
+        });
+    });
+    it("after Stop, a click on the start flag changes nothing (review: P8.17)", () => {
+        const onSelectionChange = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 1, endBeatIndex: 9 },
+                    startFlagBeatIndex: 9,
+                }}
+                onSelectionChange={onSelectionChange}
+            />,
+        );
+        const flag = screen.getByRole("button", { name: "Start flag" });
         fireEvent(
-            end,
+            flag,
             new MouseEvent("pointerdown", {
                 bubbles: true,
                 button: 0,
-                clientX: 144,
+                clientX: 200,
             }),
         );
         fireEvent(
-            end,
-            new MouseEvent("pointermove", { bubbles: true, clientX: 192 }),
+            flag,
+            new MouseEvent("pointerup", {
+                bubbles: true,
+                button: 0,
+                clientX: 201,
+            }),
         );
-
-        expect(screen.getByText("7 counts")).toBeInTheDocument();
-        expect(actions).toHaveStyle({ left: "198px", transform: "" });
-        expect(
-            screen.queryByRole("button", { name: "Create Track" }),
-        ).not.toBeInTheDocument();
-
-        fireEvent(
-            end,
-            new MouseEvent("pointermove", { bubbles: true, clientX: 512 }),
-        );
-        expect(screen.getByText("27 counts")).toBeInTheDocument();
-        expect(actions).toHaveStyle({
-            left: "506px",
-            transform: "translateX(-100%)",
-        });
-
-        fireEvent(end, new MouseEvent("pointercancel", { bubbles: true }));
-
         expect(onSelectionChange).not.toHaveBeenCalled();
-        expect(screen.getByText("4 counts")).toBeInTheDocument();
-        expect(actions).toHaveStyle({ left: "150px", transform: "" });
-        expect(
-            screen.getByRole("button", { name: "Create Track" }),
-        ).toBeInTheDocument();
+        expect(flag).toHaveAttribute(
+            "title",
+            expect.stringContaining("beat boundary 9"),
+        );
+    });
+
+    it("an arrow key on the start flag doesn't reach the window's nudge keys (review: P8.17)", () => {
+        const onWindowKey = vi.fn();
+        window.addEventListener("keydown", onWindowKey);
+        try {
+            render(
+                <ExpandedTimeline
+                    {...commonProps}
+                    showTransport={false}
+                    selection={{
+                        kind: "range",
+                        range: { startBeatIndex: 5, endBeatIndex: 9 },
+                    }}
+                    onSelectionChange={vi.fn()}
+                />,
+            );
+            fireEvent.keyDown(
+                screen.getByRole("button", { name: "Start flag" }),
+                { key: "ArrowLeft" },
+            );
+            expect(onWindowKey).not.toHaveBeenCalled();
+        } finally {
+            window.removeEventListener("keydown", onWindowKey);
+        }
     });
 
     it("uses the playhead as the only hover detail and scrubs on drag", () => {
@@ -681,7 +748,7 @@ describe("production timeline interface", () => {
             </TimelineWaveformProvider>,
         );
         const start = screen.getByRole("button", {
-            name: "Selection start",
+            name: "Start flag",
         });
 
         fireEvent.keyDown(start, { key: "ArrowRight" });
@@ -718,36 +785,35 @@ describe("page snapping in drags (UI-2)", () => {
         );
         return {
             onSelectionChange,
-            end: screen.getByRole("button", { name: "Selection end" }),
+            start: screen.getByRole("button", { name: "Start flag" }),
         };
     };
 
-    it("snaps a dragged selection flag to a page line by default", () => {
-        const { onSelectionChange, end } = renderRange();
+    it("snaps a dragged start flag to a page line by default", () => {
+        const { onSelectionChange, start } = renderRange();
 
-        // Beat 15 is 16 px from the page line at 16
-        pointer(end, "pointerdown", 144);
-        pointer(end, "pointermove", 240);
-        expect(screen.getByText("11 counts")).toBeInTheDocument();
-        pointer(end, "pointerup", 240);
+        // Beat 7 is 16 px from the page line at 8
+        pointer(start, "pointerdown", 80);
+        pointer(start, "pointermove", 112);
+        pointer(start, "pointerup", 112);
 
         expect(onSelectionChange).toHaveBeenCalledWith({
             kind: "range",
-            range: { startBeatIndex: 5, endBeatIndex: 16 },
+            range: { startBeatIndex: 8, endBeatIndex: 9 },
         });
     });
 
-    it("places a dragged selection flag on any beat while Alt is held", () => {
-        const { onSelectionChange, end } = renderRange();
+    it("places a dragged start flag on any beat while Alt is held", () => {
+        const { onSelectionChange, start } = renderRange();
 
-        pointer(end, "pointerdown", 144, true);
-        pointer(end, "pointermove", 240, true);
-        expect(screen.getByText("10 counts")).toBeInTheDocument();
-        pointer(end, "pointerup", 240, true);
+        pointer(start, "pointerdown", 80, true);
+        pointer(start, "pointermove", 112, true);
+        expect(screen.getByText("2 counts")).toBeInTheDocument();
+        pointer(start, "pointerup", 112, true);
 
         expect(onSelectionChange).toHaveBeenCalledWith({
             kind: "range",
-            range: { startBeatIndex: 5, endBeatIndex: 15 },
+            range: { startBeatIndex: 7, endBeatIndex: 9 },
         });
     });
 

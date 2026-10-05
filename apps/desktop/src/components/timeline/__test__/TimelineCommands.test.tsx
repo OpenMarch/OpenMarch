@@ -279,8 +279,8 @@ describe("a clip move and the selection (UI-9)", () => {
             start: 5,
             end: 11,
         });
-        // The playhead stays where it was
-        expect(useTimelineSelectionStore.getState().playheadBeat).toBe(9);
+        // UI-10: the window's end is the playhead, so it moves with the clip
+        expect(useTimelineSelectionStore.getState().playheadBeat).toBe(11);
     });
 
     it("leaves another selection, and a refused move, alone", async () => {

@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { toast } from "sonner";
+import { useEffect, useMemo, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CornersInIcon, CornersOutIcon } from "@phosphor-icons/react";
 import type { AddedPageFlag } from "@/db-functions/pageFlags";
@@ -14,6 +15,7 @@ import {
     selectionIsRange,
     useTimelineSelectionStore,
     type TimelineEditSelection,
+    type TimelineIsolation,
 } from "@/stores/TimelineSelectionStore";
 import {
     pageFlags,
@@ -28,7 +30,11 @@ import {
     TimelineMetronomeButton,
     TimelineMuteButton,
 } from "./TimelineControls";
-import { Timeline, type TimelineSelection } from "./Timeline";
+import {
+    Timeline,
+    type TimelineInput,
+    type TimelineSelection,
+} from "./Timeline";
 import { useTimelineCommands } from "./useTimelineCommands";
 import { useTimelinePlayback } from "./useTimelinePlayback";
 
@@ -54,6 +60,7 @@ function FullscreenButton() {
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
 export const toTimelineSelection = (
     selection: TimelineEditSelection,
+    startBeat?: number,
 ): TimelineSelection =>
     selection.kind === "range"
         ? {
@@ -62,6 +69,10 @@ export const toTimelineSelection = (
                   startBeatIndex: selection.start,
                   endBeatIndex: selection.end,
               },
+              // UI-10: after Stop the window falls back, but the flag stays where it is
+              ...(startBeat !== undefined && startBeat !== selection.start
+                  ? { startFlagBeatIndex: startBeat }
+                  : {}),
           }
         : selection.kind === "home"
           ? { kind: "home" }
@@ -73,16 +84,28 @@ export const toTimelineSelection = (
  * selection is `useTimelineSelectionStore`'s (UI-9): the initial page box selects home, a page box
  * or a dragged range selects that range, and each seeks (home to beat 0, a range to its end).
  * **+** after the free paused playhead adds a page flag there and selects the new page; a page
- * box's right-click menu deletes its flag (P8.13's writes, wired by P8.15). Create Track isn't
- * offered: **Add selected marchers** replaces it (UI-9 Creating a timeline).
+ * box's right-click menu deletes its flag (P8.13's writes, wired by P8.15). Neither Create Track
+ * nor **Add selected marchers** is offered: dragging marchers adds them (UI-10). Double-clicking
+ * a page box or clip isolates its stored timeline (docs/timeline/research/ownership/09-isolation.md).
  */
 export default function TimelineModePanel() {
     const { beats, pages, measures } = useTimingObjects()!;
     const playback = useTimelinePlayback({ beats, pages });
     const editSelection = useTimelineSelectionStore((s) => s.selection);
+    // UI-10: the start flag follows the page boxes
+    useEffect(() => {
+        useTimelineSelectionStore
+            .getState()
+            .setPageBoxes(
+                pageFlags(pages).flatMap((f) =>
+                    f.range ? [{ ...f.range, name: f.page.name }] : [],
+                ),
+            );
+    }, [pages]);
+    const startBeat = useTimelineSelectionStore((s) => s.startBeat);
     const selection = useMemo(
-        () => toTimelineSelection(editSelection),
-        [editSelection],
+        () => toTimelineSelection(editSelection, startBeat),
+        [editSelection, startBeat],
     );
     const { isPlaying } = useIsPlaying()!;
     const selectedMarchers = useSelectedMarchers()?.selectedMarchers;
@@ -100,6 +123,11 @@ export default function TimelineModePanel() {
         database: db,
         enabled: useTimelineMode(),
     });
+    // UI-10: a page box already stands for its page timeline, so only the others get a clip
+    const offPage = useMemo(
+        () => timelinesOffPages(timelines, pages),
+        [timelines, pages],
+    );
     const commands = useTimelineCommands({
         database: db,
         timelines,
@@ -115,6 +143,7 @@ export default function TimelineModePanel() {
         onAdded: selectAddedPage,
     });
     const queryClient = useQueryClient();
+    const windowBeforeClick = useRef<TimelineIsolation["restore"] | null>(null);
     const { mutate: deletePageFlags } = useMutation(
         deletePageFlagsMutationOptions(queryClient),
     );
@@ -132,43 +161,77 @@ export default function TimelineModePanel() {
     };
 
     return (
-        <Timeline
-            mode="expanded"
-            className="w-full"
-            beats={beats}
-            pages={pages}
-            measures={measures}
-            timelines={timelines}
-            playback={playback}
-            transportClock={<AudioClock />}
-            transportAccessories={
-                <>
-                    <TimelineMuteButton />
-                    <TimelineMetronomeButton />
-                    <FullscreenButton />
-                </>
-            }
-            selection={selection}
-            onSelectionChange={changeSelection}
-            onTimelineRangeCommit={commands.commitTimelineRange}
-            addSelectedMarchers={commands.addSelectedMarchers}
-            onAddPageFlag={addPageFlag.insertion ? addPageFlag.add : undefined}
-            onDeletePageFlag={(pageId) => {
-                const after = selectionAfterFlagDelete(
-                    pages,
-                    pageId,
-                    useTimelineSelectionStore.getState().selection,
-                );
-                deletePageFlags(new Set([pageId]), {
-                    onSuccess: () => {
-                        if (!after) return;
-                        const store = useTimelineSelectionStore.getState();
-                        if (after.kind === "home") store.selectHome();
-                        else store.selectRange(after.start, after.end);
-                    },
-                });
+        // A double-click's two clicks select the range first; remember the window from before the
+        // first one, so leaving isolation goes back there (V-18)
+        <div
+            className="contents"
+            onMouseDownCapture={(event) => {
+                if (event.detail !== 1) return;
+                const s = useTimelineSelectionStore.getState();
+                windowBeforeClick.current = s.isolation?.restore ?? {
+                    startBeat: s.startBeat,
+                    startPinned: s.startPinned,
+                    playheadBeat: s.playheadBeat,
+                };
             }}
-        />
+        >
+            <Timeline
+                mode="expanded"
+                className="w-full"
+                beats={beats}
+                pages={pages}
+                measures={measures}
+                timelines={offPage}
+                playback={playback}
+                transportClock={<AudioClock />}
+                transportAccessories={
+                    <>
+                        <TimelineMuteButton />
+                        <TimelineMetronomeButton />
+                        <FullscreenButton />
+                    </>
+                }
+                selection={selection}
+                onSelectionChange={changeSelection}
+                onTimelineRangeCommit={commands.commitTimelineRange}
+                onOpenRange={(range) => {
+                    if (isPlaying) return;
+                    const store = useTimelineSelectionStore.getState();
+                    const timeline = store.storedTimelines?.find(
+                        (t) =>
+                            t.start === range.startBeatIndex &&
+                            t.end === range.endBeatIndex,
+                    );
+                    if (timeline)
+                        store.isolate(
+                            timeline.id,
+                            windowBeforeClick.current ?? undefined,
+                        );
+                    else
+                        toast.info(
+                            "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it.",
+                        );
+                }}
+                onAddPageFlag={
+                    addPageFlag.insertion ? addPageFlag.add : undefined
+                }
+                onDeletePageFlag={(pageId) => {
+                    const after = selectionAfterFlagDelete(
+                        pages,
+                        pageId,
+                        useTimelineSelectionStore.getState().selection,
+                    );
+                    deletePageFlags(new Set([pageId]), {
+                        onSuccess: () => {
+                            if (!after) return;
+                            const store = useTimelineSelectionStore.getState();
+                            if (after.kind === "home") store.selectHome();
+                            else store.selectRange(after.start, after.end);
+                        },
+                    });
+                }}
+            />
+        </div>
     );
 }
 
@@ -208,3 +271,22 @@ export const selectAddedPage = ({
     endBeat,
 }: Pick<AddedPageFlag, "startBeat" | "endBeat">) =>
     useTimelineSelectionStore.getState().selectRange(startBeat, endBeat);
+
+/**
+ * The timelines that don't match a page box (UI-10, project owner, 2026-10-03). A page box
+ * already stands for the stored timeline with exactly its range: clicking it sets the start flag
+ * and playhead to its edges, so a clip under it would only repeat it. Timelines that start or end
+ * off a flag (a mid-page arrival, a pinned start flag) keep their clips. Ranges are spec beats.
+ */
+export function timelinesOffPages<
+    T extends Pick<TimelineInput, "startBeatIndex" | "endBeatIndex">,
+>(timelines: readonly T[], pages: readonly FlagPage[]): T[] {
+    const boxes = new Set(
+        pageFlags(pages).flatMap((f) =>
+            f.range ? [`${f.range.start}:${f.range.end}`] : [],
+        ),
+    );
+    return timelines.filter(
+        (t) => !boxes.has(`${t.startBeatIndex}:${t.endBeatIndex}`),
+    );
+}

@@ -322,7 +322,8 @@ describeDbTests("timeline membership (P8.14, UI-9)", (it) => {
             expect(nested.added.map((x) => x.layer)).toEqual([2]);
             expect(await violations(db)).toEqual([]);
 
-            // Only partly overlapping one of its timelines
+            // Starting inside the page's move and running past its end is an exit now
+            // (research/ownership 06 §2 D), but the nested moves above lie inside this range
             await expectRefused(
                 db,
                 () =>
@@ -332,7 +333,7 @@ describeDbTests("timeline membership (P8.14, UI-9)", (it) => {
                         marcherIds: [id],
                     }),
                 "E-ARGS",
-                /only partly overlaps/,
+                /inside/,
             );
             // Around one of its timelines: the new move would steal all of that one
             await expectRefused(
@@ -345,6 +346,47 @@ describeDbTests("timeline membership (P8.14, UI-9)", (it) => {
                     }),
                 "E-ARGS",
                 /inside/,
+            );
+        });
+
+        it("an exit: a range that starts inside a move and runs past its end steals the rest of it", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const pages = await setUp(db);
+            const last = pageRange(pages, pages.length - 1);
+            const id = marchersAndPages.expectedMarchers[0]!.id;
+            const before = resolver();
+            const atStart = before.positionAt(id, last.start + 2);
+            const r = await addMarchersToTimeline({
+                db,
+                range: { start: last.start + 2, end: last.end + 2 },
+                marcherIds: [id],
+            });
+            expect(r.createdTimeline).toBe(true);
+            expect(r.added.map((x) => x.layer)).toEqual([1]);
+            // It leaves the page's move where it was at the range's start (R-4)
+            expect(resolver().positionAt(id, last.start + 2)).toEqual(atStart);
+            expect(await violations(db)).toEqual([]);
+        });
+
+        it("refuses a range that runs into a later move partway, naming the join", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const pages = await setUp(db);
+            const page = pageRange(pages, 2);
+            const id = marchersAndPages.expectedMarchers[0]!.id;
+            await expectRefused(
+                db,
+                () =>
+                    addMarchersToTimeline({
+                        db,
+                        range: { start: page.start + 1, end: page.end + 1 },
+                        marcherIds: [id],
+                    }),
+                "E-ARGS",
+                /joining a move partway isn't supported yet/,
             );
         });
 

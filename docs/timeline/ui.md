@@ -13,7 +13,7 @@ from it. The spec still wins on the model; this file decides presentation.
   page and track selection, range selection with Create Track, inactive spans
   and a 512-beat show.
 - Status: accepted by the project owner on 2026-09-30 (P8.0). Open questions U-Q1 to U-Q4 are deferred to the Phase 8 work that meets them, decided from the spec where it can, and recorded here when decided.
-- **UI-9 overrides (2026-10-01).** In timeline mode, UI-9 replaces page selection, Create Track and per-marcher and per-shape tracks. Text elsewhere in this file that describes those (UI-3, UI-6's Create Track, the view-model table, the inspector's "selected page") describes what is built today; the package that builds each part of UI-9 rewrites it. Where they disagree, UI-9 wins. Its open items and TODOs are in U-Q5 and the backlog at the end of this file.
+- **UI-9 overrides (2026-10-01).** In timeline mode, UI-9 replaces page selection, Create Track and per-marcher and per-shape tracks. Text elsewhere in this file that describes those (UI-3, UI-6's Create Track, the view-model table, the inspector's "selected page") describes what is built today; the package that builds each part of UI-9 rewrites it. Where they disagree, UI-9 wins. Its open items and TODOs are in U-Q5 and the backlog at the end of this file. **UI-10 (2026-10-03)** replaces parts of UI-9; where they disagree, UI-10 wins.
 
 ## What the reference UI is
 
@@ -277,6 +277,62 @@ from it. The spec still wins on the model; this file decides presentation.
   that a timeline goes with its last transition doesn't apply to removing
   marchers.
 
+- **UI-10: the start flag and the playhead; dragging adds (project owner,
+  2026-10-03).** Supersedes, in timeline mode, UI-9's **Adding marchers**
+  through the menu, **Selection** dimming, **Editing off the end**, **Play**'s
+  loop, and the line "anything that goes somewhere ends on a page's flag".
+  UI-9's other rules stand, including **One timeline per range** and **One
+  transition per marcher**. Built by P8.17 (phases/08-authoring-ui.md). Items
+  marked _lead default_ were filled in by the lead; the owner may change them.
+  Research and evidence: the "Origin and Arrival" report (P8.17 log).
+  - **The edit window.** The editing context is the range from the **start
+    flag** S to the paused **playhead** P. S is where movers leave from (their
+    origin is wherever they are at S, R-4); P is when they arrive. With P after
+    S the window is `[S, P)`. With P on or before S (just after **Stop**), the
+    window is the page box ending at or holding P, as if S followed P. At beat
+    0 it is home, which edits homes (UI-9 Home).
+  - **Dragging adds.** A canvas drag, nudge or alignment at P sets where each
+    moved marcher arrives at P, leaving S. In one undoable edit it creates the
+    window's timeline if none has that range (one per range still holds), adds
+    any moved marcher that isn't in it (UI-9's own transition and layer rules),
+    and sets their endings. There is no **Add selected marchers** step; the
+    menu item is removed. A window that crosses page flags passes through
+    (project owner, 2026-10-04; research/ownership/10-cross-page-windows.md):
+    the drag overrides the moved marchers' moves inside the window, which stay
+    stored underneath and come back when it is deleted, and a move the window
+    runs into partway catches up after it (R-5). An info toast names what was
+    passed through and offers **Only change Page N**, which moves them from the
+    last flag before P instead, as its own undoable edit.
+  - **Arrivals off a flag.** P may rest between flags. A drag there creates a
+    timeline ending at P, not a page (project owner, 2026-10-03). Pages stay
+    cosmetic flags; **+** still adds one.
+  - **The start flag follows navigation** (_lead default_). Unless pinned, S is
+    the start of the page box holding P (the previous flag), recomputed when P
+    is moved by navigation: clicking or dragging on the ruler, page boxes,
+    page navigation, **+**. Play, Pause and Stop never move S.
+  - **Pinning** (_lead default_). Dragging the start handle, or dragging a
+    range on empty timeline space, pins S where it is dropped (before P). A
+    pinned S stays through navigation until P moves to or before it, which
+    unpins it. Clicking a page box unpins it.
+  - **Play, Pause, Stop.** Play plays on from P to the end of the show, with no
+    loop. Pause leaves P where playback was. **Stop** stops and returns P to S.
+  - **Dimming** (_lead default_). Nothing is dimmed and every marcher can be
+    selected, since dragging is what adds. Showing who moves comes with the
+    ghosts-and-paths work (report H1), not membership.
+  - **Clips only off the page boxes** (project owner, 2026-10-03). A page box
+    stands for the stored timeline with exactly its range, so that timeline
+    gets no clip. Only timelines that start or end off a flag (a mid-page
+    arrival, a pinned start flag) are drawn as clips. To change when a page timeline happens, move its flags
+    (P7.5). Diagnostics of a hidden page timeline still
+    show in the inspector (spec §8.9); a badge on the page box is a follow-up.
+
+  Why: the community's most common complaint about drill tools is the number
+  of steps and hidden rules between "I want these marchers there" and the
+  edit. In UI-9 that path took 8 actions and two traps (a refused drag, and a
+  right-click landing on the wrong timeline after a split). UI-10 keeps the
+  model (the spec and C-11/C-12) and removes the membership step: who, where,
+  leave when and arrive when are the selection, the drag, S and P.
+
 ## Mapping the spec onto the view model
 
 The reference `TimelineViewModel` becomes a derived view: an adapter builds it
@@ -516,3 +572,9 @@ points (P7.2).
   - Clearing a marcher's dimming while the line or lasso tool has every marcher
     switched off makes it selectable mid-tool (`CanvasMarcher.setTimelineDimmed`).
   - Ctrl+click is ignored on the timeline on every platform, not only macOS.
+  - Start flag behavior (project owner, 2026-10-04: "a longer conversation",
+    out of scope for now). The flag is the base of every edit; open is when,
+    if ever, it moves on its own. Today a pinned flag survives navigation
+    (UI-10 _lead default_), so a forgotten pin can turn a drag into a move
+    straight through several pages
+    (research/ownership/10-cross-page-windows.md §4.3, VALIDATION V-22).

@@ -7,12 +7,16 @@ import {
 import type { DbConnection } from "@/db-functions/types";
 import { withTimelineWriteLock } from "@/db-functions/history";
 import {
-    selectedStoredTimeline,
     useTimelineSelectionStore,
     type TimelineSelectionState,
 } from "@/stores/TimelineSelectionStore";
+import {
+    editingPositionAt,
+    useIsolationPlanStore,
+} from "./timelineIsolationPlan";
 import type { CoordinateRecord } from "@/utilities/CoordinateActions";
 import { pageEndBeat } from "./timelineCanvas";
+import { toastPassThrough } from "./timelinePassThrough";
 import {
     timelineResolverSettled,
     useTimelineResolverStore,
@@ -20,19 +24,24 @@ import {
 
 /**
  * The seam between the page-era coordinate tools and timeline writes in timeline mode
- * (docs/timeline/phases/07-page-parity.md P7.2, reworked for UI-9 by P8.15). Canvas drag, nudges,
- * snap, align, distribute, flip, swap, circle, the line tool and the inspector's coordinate edits
- * all compute new x/y for the selected marchers. In timeline mode they edit against the
- * **selection** (docs/timeline/ui.md UI-9 Editing, Home), not a page (`planCanvasEdit`):
+ * (docs/timeline/phases/07-page-parity.md P7.2, reworked for UI-9 by P8.15 and UI-10 by P8.17).
+ * Canvas drag, nudges, snap, align, distribute, flip, swap, circle, the line tool and the
+ * inspector's coordinate edits all compute new x/y for the selected marchers. In timeline mode
+ * they edit against the **edit window** (docs/timeline/ui.md UI-10), not a page
+ * (`planCanvasEdit`):
  *
- * - a selected stored timeline, with the paused playhead on its end beat: the endings of the
- *   moved marchers' transitions in it (`moveMarchersInTimelineInTransaction`), starting from the
- *   resolver's positions at that end beat;
- * - no timeline selected (home or nothing) with the playhead on beat 0: the marchers' homes.
+ * - a window `[S, P)`: where the moved marchers arrive at the playhead P, leaving the start flag
+ *   S. The move creates the window's timeline and adds the marchers to it as needed
+ *   (`moveMarchersInRangeInTransaction`), starting from the resolver's positions at P;
+ * - home (the playhead on beat 0): the marchers' homes;
+ * - an isolated timeline (docs/timeline/research/ownership/09-isolation.md): the timeline's own
+ *   endings, from where its plan puts its members (`editingPositionAt`), for stolen members too.
+ *   The playhead goes to the timeline's end first (`snapIsolatedPlayheadToEnd`), so the edit is
+ *   seen where it lands.
  *
- * Anything else is refused with a hint (`TimelineEditRefusedError`). "Set marchers to the previous
- * or next page" (P7.6) still copies page positions through `copyPagePositions` until P8.12 moves
- * it onto the selection. With the flag off, nothing here runs.
+ * Nothing selected is refused with a hint (`TimelineEditRefusedError`). "Set marchers to the
+ * previous or next page" (P7.6) still copies page positions through `copyPagePositions` until
+ * P8.12 moves it onto the selection. With the flag off, nothing here runs.
  */
 
 /** The x/y fields every page-era coordinate tool reads and writes. */
@@ -54,27 +63,15 @@ export class TimelineNotReadyError extends Error {
 }
 
 /**
- * Why a canvas move can't run in timeline mode (UI-9 Editing, Editing off the end). Each has a
- * Tolgee key with the English text as its default; `timelineErrorMessage` shows it.
+ * Why a canvas move can't run in timeline mode (UI-10). Each has a Tolgee key with the English
+ * text as its default; `timelineErrorMessage` shows it.
  */
 export const CANVAS_EDIT_REFUSALS = {
-    /** No timeline is selected and the playhead isn't on beat 0 */
+    /** Nothing is selected and the playhead isn't on beat 0 */
     noTimeline: {
         key: "timeline.edit.selectTimeline",
         defaultMessage:
-            "Select a timeline (click a page box) to move marchers, or go to the start of the show to move their homes.",
-    },
-    /** The selected range has no stored timeline: nobody has been added to it */
-    emptyTimeline: {
-        key: "timeline.edit.emptyTimeline",
-        defaultMessage:
-            "Nobody is in this timeline yet. Right-click it and choose Add selected marchers first.",
-    },
-    /** TEMPORARY (UI-9 Editing off the end): the playhead isn't on the selected timeline's end */
-    offEnd: {
-        key: "timeline.edit.goToEnd",
-        defaultMessage:
-            "Go to the end of the selected timeline to move marchers. For now, a move sets where marchers are at its end.",
+            "Click the timeline to choose when marchers arrive, then move them.",
     },
 } as const;
 
@@ -95,7 +92,7 @@ export type CanvasEditPlan =
     | {
           readonly ok: true;
           readonly target: TimelineEditTarget;
-          /** Where the edited positions are read: 0 for homes, else the timeline's end beat */
+          /** Where the edited positions are read: 0 for homes, else the playhead (the window's end) */
           readonly beat: number;
       }
     | {
@@ -104,41 +101,88 @@ export type CanvasEditPlan =
       };
 
 /**
- * What a canvas move edits right now (UI-9 Editing, Editing off the end, Home), from the selection
- * and the paused playhead:
+ * What a canvas move edits right now (UI-10), from the edit window:
  *
- * - a range that resolves to a stored timeline, with the playhead on its end: that timeline;
- * - a range with no stored timeline: refused (nobody is in it yet; it dims nobody, so marchers can
- *   be selected and added to it);
- * - a stored timeline with the playhead elsewhere: refused (TEMPORARY);
- * - home or nothing with the playhead on beat 0: the homes; elsewhere: refused.
- *
- * A range before the stored timelines load is `TimelineNotReadyError`.
+ * - a window `[S, P)`: the timeline over it, created and joined by the move as needed;
+ * - home: the homes;
+ * - nothing selected: refused.
  */
 export function planCanvasEdit(
     state: Pick<
         TimelineSelectionState,
-        "selection" | "storedTimelines" | "playheadBeat"
+        "selection" | "isolation"
     > = useTimelineSelectionStore.getState(),
 ): CanvasEditPlan {
-    const refused = (refusal: CanvasEditRefusal): CanvasEditPlan => ({
-        ok: false,
-        error: new TimelineEditRefusedError(refusal),
-    });
-    if (state.selection.kind === "range") {
-        if (!state.storedTimelines)
+    const { selection, isolation } = state;
+    // Isolation always edits the isolated timeline's end (owner, 2026-10-04). Until its plan is
+    // loaded (or reloaded after an undo), positions would come from the real show: refuse
+    if (isolation) {
+        if (
+            useIsolationPlanStore.getState().current?.timelineId !==
+            isolation.timelineId
+        )
             return { ok: false, error: new TimelineNotReadyError() };
-        const timeline = selectedStoredTimeline(state);
-        if (!timeline) return refused("emptyTimeline");
-        if (state.playheadBeat !== timeline.end) return refused("offEnd");
         return {
             ok: true,
-            target: { kind: "timeline", timelineId: timeline.id },
-            beat: timeline.end,
+            target: {
+                kind: "timeline",
+                timelineId: isolation.timelineId,
+                ghosts: true,
+            },
+            beat: isolation.end,
         };
     }
-    if (state.playheadBeat !== 0) return refused("noTimeline");
-    return { ok: true, target: { kind: "home" }, beat: 0 };
+    if (selection.kind === "range")
+        return {
+            ok: true,
+            target: {
+                kind: "range",
+                start: selection.start,
+                end: selection.end,
+            },
+            beat: selection.end,
+        };
+    if (selection.kind === "home")
+        return { ok: true, target: { kind: "home" }, beat: 0 };
+    return { ok: false, error: new TimelineEditRefusedError("noTimeline") };
+}
+
+/**
+ * Inside isolation, an edit goes to the isolated timeline's end; the playhead goes there first,
+ * so the edit is drawn where it lands. Does nothing outside isolation or with the playhead there.
+ */
+export function snapIsolatedPlayheadToEnd(): void {
+    const store = useTimelineSelectionStore.getState();
+    if (store.isolation && store.playheadBeat !== store.isolation.end)
+        store.seek(store.isolation.end);
+}
+
+/**
+ * Canvas drops inside isolation with the playhead before the isolated move's end: each becomes
+ * the plan's position at the end plus the drag's offset from the plan's position at the playhead.
+ * Unchanged outside isolation, at the end, or before the plan loads.
+ */
+export function atIsolatedEnd<A extends MarcherXY>(changes: readonly A[]): A[] {
+    const { isolation, playheadBeat } = useTimelineSelectionStore.getState();
+    const plan = useIsolationPlanStore.getState().current;
+    const resolver = useTimelineResolverStore.getState().resolver;
+    if (!isolation || !plan || !resolver || playheadBeat === isolation.end)
+        return [...changes];
+    return changes.map((c) => {
+        const [px, py] = editingPositionAt(
+            resolver,
+            c.marcher_id,
+            playheadBeat,
+            plan,
+        );
+        const [ex, ey] = editingPositionAt(
+            resolver,
+            c.marcher_id,
+            isolation.end,
+            plan,
+        );
+        return { ...c, x: ex + (c.x - px), y: ey + (c.y - py) };
+    });
 }
 
 /**
@@ -158,7 +202,7 @@ export function withTimelinePositions<T extends MarcherXY>(
     return coordinates
         .filter((c) => known.has(c.marcher_id))
         .map((c) => {
-            const [x, y] = resolver.positionAt(c.marcher_id, beat);
+            const [x, y] = editingPositionAt(resolver, c.marcher_id, beat);
             return { ...c, x, y };
         });
 }
@@ -193,7 +237,8 @@ export function timelineCoordinateRecords(
 /**
  * Timeline mode's `useUpdateSelectedMarchers`: applies `transform` to the marchers' current
  * positions where the selection edits (`planCanvasEdit`; from the resolver, not `marcher_pages`)
- * and writes the result as one `moveMarchersInTarget` edit.
+ * and writes the result as one `moveMarchersInTarget` edit, saying what it passed through
+ * (`toastPassThrough`).
  *
  * @returns the transformed coordinates
  * @throws TimelineEditRefusedError when the selection refuses canvas moves
@@ -211,12 +256,15 @@ export async function transformMarchersInSelection<R extends MarcherXY>({
     plan?: CanvasEditPlan;
 }): Promise<R[]> {
     if (!plan.ok) throw plan.error;
+    snapIsolatedPlayheadToEnd();
     const next = transform(timelineCoordinateRecords(plan.beat, marcherIds));
-    await moveMarchersInTarget({
+    const moves = toTimelineMoves(next);
+    const result = await moveMarchersInTarget({
         db,
         target: plan.target,
-        moves: toTimelineMoves(next),
+        moves,
     });
+    toastPassThrough(result.passThrough);
     return next;
 }
 
@@ -336,9 +384,10 @@ export function canvasCoordinateWriter<A extends MarcherXY>({
             onRefused(current.error);
             return;
         }
-        writeTimeline({
-            target: current.target,
-            moves: toTimelineMoves(changes),
-        });
+        // A drop is where the marcher was dragged at the playhead; isolation writes the move's
+        // end, so carry the drag over as an offset from where the plan has it there
+        const moves = toTimelineMoves(atIsolatedEnd(changes));
+        snapIsolatedPlayheadToEnd();
+        writeTimeline({ target: current.target, moves });
     };
 }

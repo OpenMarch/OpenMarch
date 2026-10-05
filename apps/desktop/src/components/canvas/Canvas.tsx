@@ -39,6 +39,9 @@ import { useTimelineShapeCanvas } from "@/timeline/useTimelineShapeCanvas";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineDimming } from "@/timeline/useTimelineDimming";
+import TimelineIsolationBar from "@/components/timeline/TimelineIsolationBar";
+import { useTimelineFocusRender } from "@/timeline/useTimelineFocusRender";
+import { db } from "@/global/database/db";
 import { canvasCoordinateWriter } from "@/timeline/timelineCoordinateWrites";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 
@@ -652,6 +655,16 @@ export default function Canvas({
         theme: fieldProperties?.theme,
     });
 
+    // Isolation (docs/timeline/research/ownership/09-isolation.md): the isolated move's own paths and ghosts
+    // replace the page-pair paths below
+    const isolating = useTimelineSelectionStore((s) => s.isolation !== null);
+    useTimelineFocusRender({
+        canvas,
+        database: db,
+        enabled: drawFromResolver,
+        theme: fieldProperties?.theme,
+    });
+
     // Timeline mode (P7.10): paths, midpoints, endpoints and step-size warnings from the resolver
     // between page end beats, in place of the marcher_pages paths above
     useTimelinePathRender({
@@ -663,9 +676,9 @@ export default function Canvas({
         marcherIds,
         marcherVisuals,
         fieldProperties,
-        previousPathsEnabled: uiSettings.previousPaths,
-        nextPathsEnabled: uiSettings.nextPaths,
-        stepSizeWarningsEnabled: uiSettings.stepSizeWarnings,
+        previousPathsEnabled: uiSettings.previousPaths && !isolating,
+        nextPathsEnabled: uiSettings.nextPaths && !isolating,
+        stepSizeWarningsEnabled: uiSettings.stepSizeWarnings && !isolating,
     });
 
     // Render collision markers when paused
@@ -720,6 +733,7 @@ export default function Canvas({
                 transformStyle: "preserve-3d",
             }}
         >
+            {timelineMode && <TimelineIsolationBar />}
             {pages.length > 0 || canvas ? (
                 <div
                     ref={innerDivRef}

@@ -1,12 +1,10 @@
 import { act, cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, expect, vi } from "vitest";
-import { getTableName } from "drizzle-orm";
-import { DbConnection, describeDbTests, schema } from "@/test/base";
+import { describeDbTests, schema } from "@/test/base";
 import { timelineFixtureMode } from "@/test/timelineMode";
 import {
     harnessQueryClient,
     positionsOn,
-    probed,
     selectTimeline,
     setUpFeature,
 } from "@/test/featureHarness";
@@ -24,10 +22,10 @@ import RegisteredActionsHandler, {
 } from "@/utilities/RegisteredActionsHandler";
 
 /**
- * UI-9 Editing through the app's registered tools (P8.15), on a converted show in timeline mode:
- * a nudge edits the selected page timeline at its end, is refused off its end (TEMPORARY) and with
- * no timeline selected away from beat 0, and edits homes at home. A refusal writes nothing and
- * says why. Runs under `test:timeline`; the default run has no timeline selection.
+ * UI-10 Editing through the app's registered tools (P8.15, P8.17), on a converted show in timeline
+ * mode: a nudge edits the window from the start flag to the playhead. On a flag that is the page
+ * timeline; between flags the move arrives at the playhead in a new timeline, with no refusal. At
+ * beat 0 it edits homes. Runs under `test:timeline`; the default run has no timeline selection.
  */
 
 const app = vi.hoisted(() => ({ client: (): unknown => null }));
@@ -70,32 +68,8 @@ const trigger = async (action: RegisteredActionsEnum) => {
     }
 };
 
-const TABLES = [
-    schema.marchers,
-    schema.timeline_slot_destinations,
-    schema.timeline_assignments,
-];
-const rows = async (db: DbConnection) => {
-    const out: Record<string, unknown[]> = {};
-    for (const table of TABLES)
-        out[getTableName(table)] = await db.select().from(table).all();
-    return out;
-};
-
-/** Waits for a refusal toast, then checks nothing was written. */
-const expectRefused = async (
-    db: DbConnection,
-    before: Awaited<ReturnType<typeof rows>>,
-    message: RegExp,
-) => {
-    await waitFor(() => expect(conToastError).toHaveBeenCalled());
-    expect(vi.mocked(conToastError).mock.calls[0]![0]).toMatch(message);
-    await timelinePositionsSettled();
-    expect(await rows(db)).toEqual(before);
-};
-
-describeDbTests("canvas tools edit the UI-9 selection", (it) => {
-    it("a nudge edits the selected page timeline at its end, and is refused off it", async ({
+describeDbTests("canvas tools edit the UI-10 edit window", (it) => {
+    it("a nudge on a flag edits that page timeline; between flags it arrives at the playhead in a new timeline", async ({
         db,
         marchersAndPages,
     }) => {
@@ -120,22 +94,38 @@ describeDbTests("canvas tools edit the UI-9 selection", (it) => {
         });
         expect(conToastError).not.toHaveBeenCalled();
 
-        // Off the end (TEMPORARY): refused with a hint to go to the end
+        // Two counts before the flag: the window ends there, and the nudge lands there
         const { playheadBeat } = useTimelineSelectionStore.getState();
+        const mid = playheadBeat - 2;
         act(() => {
-            useTimelineSelectionStore.getState().seek(playheadBeat - 2);
+            useTimelineSelectionStore.getState().seek(mid);
         });
-        const snapshot = await rows(db);
+        const resolver = () => useTimelineResolverStore.getState().resolver!;
+        const atMid = ids.map((id) => resolver().positionAt(id, mid));
         await trigger(RegisteredActionsEnum.moveSelectedMarchersRight);
-        await expectRefused(db, snapshot, /end of the selected timeline/);
-
-        // Swap says why too, rather than doing nothing silently
-        vi.mocked(conToastError).mockReset();
-        await trigger(RegisteredActionsEnum.swapMarchers);
-        await expectRefused(db, snapshot, /end of the selected timeline/);
+        await waitFor(async () => {
+            await timelinePositionsSettled();
+            ids.forEach((id, i) => {
+                expect(resolver().positionAt(id, mid)[0]).toBeGreaterThan(
+                    atMid[i]![0],
+                );
+            });
+        });
+        expect(conToastError).not.toHaveBeenCalled();
+        const { selection } = useTimelineSelectionStore.getState();
+        expect(selection.kind === "range" && selection.end).toBe(mid);
+        const timelines = await db.select().from(schema.timelines).all();
+        expect(
+            timelines.some(
+                (t) =>
+                    selection.kind === "range" &&
+                    t.start_beat === selection.start &&
+                    t.end_beat === mid,
+            ),
+        ).toBe(true);
     });
 
-    it("with no timeline selected, moves edit homes at beat 0 and are refused elsewhere", async ({
+    it("moves edit homes at beat 0, and the page box's window off it", async ({
         db,
         marchersAndPages,
     }) => {
@@ -157,14 +147,19 @@ describeDbTests("canvas tools edit the UI-9 selection", (it) => {
         const home = await db.select().from(schema.marchers).all();
         expect(home.find((m) => m.id === ids[0])!.home_y).toBeGreaterThan(y0);
 
-        // Home stays selected, but the playhead is off beat 0: refused
-        const flag = probed().pages[2]!;
-        expect(flag).toBeDefined();
+        // Off beat 0 the start flag follows to the page box holding the playhead
         act(() => {
             useTimelineSelectionStore.getState().seek(9);
         });
-        const snapshot = await rows(db);
+        expect(useTimelineSelectionStore.getState().selection.kind).toBe(
+            "range",
+        );
+        const [, y9] = resolver().positionAt(ids[0]!, 9);
         await trigger(RegisteredActionsEnum.moveSelectedMarchersDown);
-        await expectRefused(db, snapshot, /Select a timeline/);
+        await waitFor(async () => {
+            await timelinePositionsSettled();
+            expect(resolver().positionAt(ids[0]!, 9)[1]).toBeGreaterThan(y9);
+        });
+        expect(conToastError).not.toHaveBeenCalled();
     });
 });

@@ -4,6 +4,8 @@ import Endpoint from "./Endpoint";
 import Pathway, { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 import Midpoint from "./Midpoint";
 import TimelinePathway from "./TimelinePathway";
+import TimelineFocusLayer from "./TimelineFocusLayer";
+import type { FocusScene } from "@/timeline/timelineFocusScene";
 import type TimelineShapeOverlay from "./TimelineShapeOverlay";
 import { FieldProperties } from "@openmarch/core";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
@@ -2383,6 +2385,39 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const pathways = this.getObjectsByType(TimelinePathway);
         if (pathways.length === 0) return;
         for (const pathway of pathways) this.remove(pathway);
+        this.requestRenderAll();
+    }
+
+    /**
+     * Draws an isolated timeline's scene (docs/timeline/research/ownership/09-isolation.md) above
+     * the grid and below the marchers, replacing any scene drawn before.
+     */
+    renderTimelineFocus(
+        scene: FocusScene,
+        ghostColor: string,
+        emphasis: ReadonlySet<number> | null = null,
+    ): void {
+        const existing = this.getObjectsByType(TimelineFocusLayer)[0];
+        if (existing) existing.update(scene, ghostColor, emphasis);
+        else
+            this.add(
+                new TimelineFocusLayer({
+                    scene,
+                    ghostColor,
+                    emphasis,
+                    width: this._fieldProperties.width,
+                    height: this._fieldProperties.height,
+                }),
+            );
+        this.sendCanvasMarchersToFront();
+        this.requestRenderAll();
+    }
+
+    /** Removes the isolated timeline's scene, if one is drawn. */
+    clearTimelineFocus(): void {
+        const layers = this.getObjectsByType(TimelineFocusLayer);
+        if (layers.length === 0) return;
+        for (const layer of layers) this.remove(layer);
         this.requestRenderAll();
     }
 

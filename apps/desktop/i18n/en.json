@@ -61,7 +61,8 @@
         "playback": {
             "pause": "Pause",
             "play": "Play",
-            "playPause": "Play or pause"
+            "playPause": "Play or pause",
+            "stop": "Stop and return to the start flag"
         },
         "select": {
             "selectAll": "Select all marchers"
