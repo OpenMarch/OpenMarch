@@ -34,6 +34,7 @@ export default defineConfig<object, { target: Target }>({
             // The packaged app. Needs `build:electron` and a display.
             name: "electron",
             testDir: "./e2e/tests",
+            fullyParallel: true,
         },
         {
             // The renderer in headless Chromium against the real database
