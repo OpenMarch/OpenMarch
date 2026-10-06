@@ -1043,6 +1043,7 @@
     },
     "settings": {
         "database": "Base de données",
+        "database.noShowOpen": "Ouvrez un spectacle pour réparer son fichier.",
         "developer": "Paramètres du développeur",
         "developer.refreshNotice": "Veuillez <a>recharger l'application</a> pour mettre à jour les paramètres.",
         "general": "Général",

@@ -11,9 +11,6 @@
     --palette-highlight: rgba(100, 66, 255, 0.1);
     --palette-divider: rgba(0, 0, 0, 0.07);
     --palette-rim: rgba(255, 255, 255, 0.7);
-    --palette-kbd: rgb(255, 255, 255);
-    --palette-kbd-border: rgba(0, 0, 0, 0.14);
-    --palette-kbd-edge: rgba(0, 0, 0, 0.14);
     --palette-ring-a: rgb(100, 66, 255);
     --palette-ring-b: rgb(0, 170, 255);
     --palette-ring-c: rgb(236, 72, 153);
@@ -27,9 +24,6 @@
     --palette-highlight: rgba(150, 126, 255, 0.16);
     --palette-divider: rgba(255, 255, 255, 0.07);
     --palette-rim: rgba(255, 255, 255, 0.07);
-    --palette-kbd: rgb(46, 45, 56);
-    --palette-kbd-border: rgba(255, 255, 255, 0.1);
-    --palette-kbd-edge: rgba(0, 0, 0, 0.55);
     --palette-ring-a: rgb(150, 126, 255);
     --palette-ring-b: rgb(86, 204, 255);
     --palette-ring-c: rgb(255, 122, 200);
@@ -244,33 +238,7 @@
     text-align: center;
 }
 
-/* ----------------------------------------------------------------- keys */
-
-/* A shortcut is a row of keycaps, one per key, so modifiers never blur into a single glyph run. */
-.palette-keys {
-    display: inline-flex;
-    flex-shrink: 0;
-    gap: 4px;
-}
-
-.palette-kbd {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 24px;
-    height: 24px;
-    padding: 0 7px;
-    border: 1px solid var(--palette-kbd-border);
-    border-radius: 6px;
-    background: var(--palette-kbd);
-    box-shadow: 0 1px 0 0 var(--palette-kbd-edge);
-    color: var(--color-text);
-    font-family: ui-sans-serif, system-ui, sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
-}
+/* ------------------------------------------------------------- footer */
 
 .palette-footer {
     display: flex;

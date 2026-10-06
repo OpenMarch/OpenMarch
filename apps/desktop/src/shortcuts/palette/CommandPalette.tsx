@@ -17,6 +17,7 @@ import {
     type PaletteItem,
 } from "./sources";
 import { getPaletteUsageScores, recordPaletteUsage } from "./usage";
+import Keycaps from "@/components/ui/Keycaps";
 import "./CommandPalette.css";
 
 interface Section {
@@ -342,20 +343,9 @@ export default function CommandPalette() {
                                                         </span>
                                                     )}
                                                     {item.shortcut && (
-                                                        <kbd className="palette-keys">
-                                                            {item.shortcut.map(
-                                                                (key) => (
-                                                                    <kbd
-                                                                        key={
-                                                                            key
-                                                                        }
-                                                                        className="palette-kbd"
-                                                                    >
-                                                                        {key}
-                                                                    </kbd>
-                                                                ),
-                                                            )}
-                                                        </kbd>
+                                                        <Keycaps
+                                                            keys={item.shortcut}
+                                                        />
                                                     )}
                                                 </div>
                                             ),
@@ -366,16 +356,16 @@ export default function CommandPalette() {
                         </div>
                         <div className="palette-footer" aria-hidden>
                             <span className="palette-footer-hint">
-                                <kbd className="palette-kbd">↑</kbd>
-                                <kbd className="palette-kbd">↓</kbd>
+                                <kbd className="keycap">↑</kbd>
+                                <kbd className="keycap">↓</kbd>
                                 {t("commandPalette.navigate")}
                             </span>
                             <span className="palette-footer-hint">
-                                <kbd className="palette-kbd">↵</kbd>
+                                <kbd className="keycap">↵</kbd>
                                 {t("commandPalette.run")}
                             </span>
                             <span className="palette-footer-hint">
-                                <kbd className="palette-kbd">Esc</kbd>
+                                <kbd className="keycap">Esc</kbd>
                                 {t("commandPalette.close")}
                             </span>
                         </div>

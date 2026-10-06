@@ -110,7 +110,7 @@ export default function PluginsContents() {
                                     <strong
                                         className="cursor-pointer"
                                         onClick={() => {
-                                            window.location.reload();
+                                            window.electron.reloadMainWindow();
                                         }}
                                     >
                                         {content}

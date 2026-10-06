@@ -5,6 +5,7 @@ import React, { useEffect } from "react";
 import tolgee from "@/global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import { RemoveInContextTools } from "@/global/singletons/Tolgee";
+import SettingRow from "@/settings/SettingRow";
 
 export default function DeveloperSettings() {
     const { t } = useTranslate();
@@ -33,7 +34,7 @@ export default function DeveloperSettings() {
     }, []);
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-16 border p-12">
+        <div className="divide-stroke flex flex-col divide-y">
             <Collapsible
                 trigger={
                     <p className="flex flex-col gap-16 px-8">
@@ -43,10 +44,10 @@ export default function DeveloperSettings() {
                 className="flex flex-col gap-16 pt-16"
             >
                 <div className="flex flex-col gap-16 px-12">
-                    <div className="flex w-full items-center justify-between gap-16">
-                        <p className="text-body">
-                            <T keyName="settings.tolgeeDevToolsToggle" />
-                        </p>
+                    <SettingRow
+                        label={<T keyName="settings.tolgeeDevToolsToggle" />}
+                        htmlFor="tolgee-dev-tools"
+                    >
                         <Switch
                             id="tolgee-dev-tools"
                             checked={tolgeeDevTools}
@@ -68,7 +69,7 @@ export default function DeveloperSettings() {
                                 }
                             }}
                         />
-                    </div>
+                    </SettingRow>
 
                     {tolgeeDevTools && (
                         <Input

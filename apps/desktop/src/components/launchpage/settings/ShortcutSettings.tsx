@@ -15,7 +15,11 @@ import {
     PlusIcon,
     XIcon,
 } from "@phosphor-icons/react";
-import { bindingFromEvent, formatBinding } from "@/shortcuts/bindings";
+import {
+    bindingFromEvent,
+    formatBinding,
+    formatBindingKeys,
+} from "@/shortcuts/bindings";
 import {
     ACTION_IDS,
     getActionDefinition,
@@ -26,6 +30,7 @@ import { findBindingOwners, getDisplayBindings } from "@/shortcuts/keymap";
 import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import { isMacPlatform } from "@/shortcuts/platform";
 import { searchItems } from "@/shortcuts/search";
+import Keycaps from "@/components/ui/Keycaps";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 
 const CATEGORY_ORDER: readonly ActionCategory[] = [
@@ -128,11 +133,8 @@ function ShortcutRow({
                 </span>
                 <div className="flex flex-wrap items-center justify-end gap-4">
                     {row.bindings.map((binding, i) => (
-                        <span
-                            key={binding}
-                            className="bg-fg-1 border-stroke rounded-6 text-sub text-text flex items-center gap-2 border py-2 pr-2 pl-6 font-mono shadow-[0_1px_0_0_var(--color-stroke)]"
-                        >
-                            {row.formatted[i]}
+                        <span key={binding} className="flex items-center gap-2">
+                            <Keycaps keys={formatBindingKeys(binding, isMac)} />
                             <button
                                 type="button"
                                 className="hover:text-red text-text-subtitle rounded-full p-2 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100"
@@ -264,7 +266,7 @@ export default function ShortcutSettings() {
 
     return (
         <div className="flex flex-col gap-8">
-            <div className="flex items-center gap-8">
+            <div className="bg-bg-1 sticky top-0 z-10 flex items-center gap-8 pb-8">
                 <div className="relative grow">
                     <MagnifyingGlassIcon
                         size={16}

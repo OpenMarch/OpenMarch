@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { Switch, Slider } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
+import SettingRow from "@/settings/SettingRow";
 
 export default function MouseSettings() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
@@ -23,15 +24,12 @@ export default function MouseSettings() {
     }, [uiSettings.mouseSettings.trackpadPanSensitivity]);
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-6 border p-12">
+        <div className="divide-stroke flex flex-col divide-y">
             {/* Zoom sensitivity */}
-            <div className="flex h-[2.5rem] items-center justify-between px-8">
-                <label
-                    htmlFor="zoomSensitivity"
-                    className="text-body text-text-subtitle"
-                >
-                    <T keyName="settings.mouse.zoomSensitivity" />
-                </label>
+            <SettingRow
+                label={<T keyName="settings.mouse.zoomSensitivity" />}
+                htmlFor="zoomSensitivity"
+            >
                 <div className="flex items-center gap-3">
                     <div className="w-[200px] shrink-0">
                         <Slider
@@ -58,16 +56,13 @@ export default function MouseSettings() {
                         </span>
                     </div>
                 </div>
-            </div>
+            </SettingRow>
 
             {/* Trackpad mode toggle */}
-            <div className="flex h-[2.5rem] items-center justify-between px-8">
-                <label
-                    htmlFor="trackpadMode"
-                    className="text-body text-text-subtitle"
-                >
-                    <T keyName="settings.mouse.trackpadMode" />
-                </label>
+            <SettingRow
+                label={<T keyName="settings.mouse.trackpadMode" />}
+                htmlFor="trackpadMode"
+            >
                 <Switch
                     id="trackpadMode"
                     checked={uiSettings.mouseSettings.trackpadMode}
@@ -81,17 +76,16 @@ export default function MouseSettings() {
                         })
                     }
                 />
-            </div>
+            </SettingRow>
 
             {/* Trackpad-specific sensitivities */}
             {uiSettings.mouseSettings.trackpadMode && (
-                <div className="flex h-[2.5rem] items-center justify-between px-8">
-                    <label
-                        htmlFor="trackpadPanSensitivity"
-                        className="text-body text-text-subtitle"
-                    >
+                <SettingRow
+                    label={
                         <T keyName="settings.mouse.trackpadPanSensitivity" />
-                    </label>
+                    }
+                    htmlFor="trackpadPanSensitivity"
+                >
                     <div className="flex items-center gap-3">
                         <div className="w-[200px] shrink-0">
                             <Slider
@@ -122,7 +116,7 @@ export default function MouseSettings() {
                             </span>
                         </div>
                     </div>
-                </div>
+                </SettingRow>
             )}
         </div>
     );

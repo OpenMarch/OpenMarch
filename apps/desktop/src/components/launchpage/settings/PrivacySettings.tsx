@@ -5,6 +5,7 @@ import { usePostHog } from "posthog-js/react";
 import { useState, useEffect } from "react";
 import { T } from "@tolgee/react";
 import * as Sentry from "@sentry/electron/renderer";
+import SettingRow from "@/settings/SettingRow";
 
 export default function PrivacySettings() {
     const posthog = usePostHog();
@@ -16,7 +17,7 @@ export default function PrivacySettings() {
         setHasOptedOut(posthog.has_opted_out_capturing());
     }, [posthog]);
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-16 border p-12">
+        <div className="divide-stroke flex flex-col divide-y">
             <Collapsible
                 trigger={
                     <p className="flex flex-col gap-16 px-8">
@@ -49,10 +50,10 @@ export default function PrivacySettings() {
                         }
                     />
                 </p>
-                <div className="flex w-full items-center justify-between gap-16 px-12">
-                    <p className="text-body">
-                        <T keyName={"settings.privacy.analytics.toggle"} />
-                    </p>
+                <SettingRow
+                    label={<T keyName="settings.privacy.analytics.toggle" />}
+                    htmlFor="share-usage-analytics"
+                >
                     <Switch
                         id="share-usage-analytics"
                         checked={!hasOptedOut}
@@ -76,7 +77,7 @@ export default function PrivacySettings() {
                             });
                         }}
                     />
-                </div>
+                </SettingRow>
             </Collapsible>
 
             <AnalyticsMessage hasOptedOut={hasOptedOut} />

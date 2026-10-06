@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { T, useTolgee } from "@tolgee/react";
 import { toast } from "sonner";
 import {
@@ -17,6 +17,17 @@ export default function DatabaseRepairSettings() {
     const [isOpen, setIsOpen] = useState(false);
     const [isRepairing, setIsRepairing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showOpen, setShowOpen] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        void window.electron.databaseIsReady().then((ready) => {
+            if (!cancelled) setShowOpen(ready);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const handleRepair = async () => {
         setIsRepairing(true);
@@ -33,11 +44,10 @@ export default function DatabaseRepairSettings() {
             // The IPC handler will handle setting the new path and reloading the window
             await window.electron.repairDatabase(currentPath);
 
-            // Show success toast before window reloads
             toast.success(t("settings.repairDotsFile.success"));
 
-            // If we get here without error, the window will reload automatically
-            // via setActiveDb() in the IPC handler, so we don't need to do anything else
+            // Settings live in their own window, so the main window has to be reloaded to pick up the repaired file
+            window.electron.reloadMainWindow();
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : "Unknown error occurred";
@@ -50,8 +60,18 @@ export default function DatabaseRepairSettings() {
         }
     };
 
+    if (showOpen === null) return null;
+
+    if (!showOpen) {
+        return (
+            <p className="text-body text-text-subtitle">
+                <T keyName="settings.database.noShowOpen" />
+            </p>
+        );
+    }
+
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-16 border p-12">
+        <div className="flex flex-col">
             <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
                 <AlertDialogTrigger asChild>
                     <Button variant="secondary">

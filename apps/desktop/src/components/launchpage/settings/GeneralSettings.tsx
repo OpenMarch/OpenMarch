@@ -11,6 +11,7 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import SettingRow from "@/settings/SettingRow";
 
 const languages = [
     { code: "en", name: "English" },
@@ -58,12 +59,8 @@ export default function GeneralSettings() {
         "English";
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex h-[110%] flex-col gap-6 border p-12">
-            <div className="flex h-[2.5rem] items-center justify-between px-8">
-                <p className="text-body text-text-subtitle">
-                    <T keyName="settings.general.appearance" />
-                </p>
-
+        <div className="divide-stroke flex flex-col divide-y">
+            <SettingRow label={<T keyName="settings.general.appearance" />}>
                 <ToggleGroup.Root
                     type="single"
                     value={theme}
@@ -87,13 +84,9 @@ export default function GeneralSettings() {
                         <T keyName="settings.general.appearance.dark" />
                     </ToggleGroup.Item>
                 </ToggleGroup.Root>
-            </div>
+            </SettingRow>
 
-            <div className="flex h-[2.5rem] items-center justify-between px-8">
-                <p className="text-body text-text-subtitle">
-                    <T keyName="settings.general.language" />
-                </p>
-
+            <SettingRow label={<T keyName="settings.general.language" />}>
                 <Select
                     value={currentLanguage}
                     onValueChange={handleLanguageChange}
@@ -113,12 +106,11 @@ export default function GeneralSettings() {
                         ))}
                     </SelectContent>
                 </Select>
-            </div>
+            </SettingRow>
 
-            <div className="flex h-[2.5rem] items-center justify-between px-8">
-                <p className="text-body text-text-subtitle">
-                    <T keyName="settings.general.showFullDatabasePath" />
-                </p>
+            <SettingRow
+                label={<T keyName="settings.general.showFullDatabasePath" />}
+            >
                 <Switch
                     checked={uiSettings.showFullDatabasePath}
                     onCheckedChange={(checked) =>
@@ -128,7 +120,7 @@ export default function GeneralSettings() {
                         })
                     }
                 />
-            </div>
+            </SettingRow>
         </div>
     );
 }
