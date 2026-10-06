@@ -44,3 +44,31 @@ export function resolveDefaultFilesDirectory(
     // callers fall back instead of resurrecting it with mkdir.
     return directoryExists(storedValue) ? storedValue : "";
 }
+
+/**
+ * Resolve the folder the legacy "New File" save dialog opens in: the stored
+ * default, then the last-opened file's folder, then Documents. Missing folders
+ * are skipped.
+ */
+export function resolveNewFileDialogDirectory(
+    storedValue: string | undefined | null,
+    lastOpenedFilePath: string | undefined | null,
+    documentsDirectory: string,
+    directoryExists: (dir: string) => boolean,
+): string {
+    const stored = resolveDefaultFilesDirectory(
+        storedValue,
+        undefined,
+        directoryExists,
+    );
+    if (stored) {
+        return stored;
+    }
+    if (lastOpenedFilePath) {
+        const lastOpenedDir = dirname(lastOpenedFilePath);
+        if (directoryExists(lastOpenedDir)) {
+            return lastOpenedDir;
+        }
+    }
+    return documentsDirectory;
+}

@@ -40,6 +40,7 @@ import { choosePreviousDotsFile } from "./services/previous-dots-import-service"
 import {
     computeDefaultDirectoryToPersist,
     resolveDefaultFilesDirectory,
+    resolveNewFileDialogDirectory,
 } from "./services/default-files-directory";
 import { resolveFinalizeTargetPath } from "./services/new-show-target-path";
 import {
@@ -1078,12 +1079,14 @@ export async function newFile() {
         );
         filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
     } else {
-        const storedDefaultDir = store.get("defaultFilesDirectory") as
-            | string
-            | undefined;
         const dialogResult = await dialog.showSaveDialog(win, {
             buttonLabel: "Create New",
-            defaultPath: storedDefaultDir || undefined,
+            defaultPath: resolveNewFileDialogDirectory(
+                store.get("defaultFilesDirectory") as string | undefined,
+                store.get("databasePath") as string | undefined,
+                app.getPath("documents"),
+                directoryExists,
+            ),
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         });
         if (dialogResult.canceled || !dialogResult.filePath) return;
