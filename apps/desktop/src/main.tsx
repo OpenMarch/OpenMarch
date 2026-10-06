@@ -44,6 +44,12 @@ window.electron
         console.warn("Failed to load saved language:", error);
     });
 
+// Listen for language changes from other windows
+window.electron?.onSettingsChanged((change) => {
+    if (typeof change.language === "string")
+        void tolgee.changeLanguage(change.language);
+});
+
 Sentry.init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
     enabled: false,
