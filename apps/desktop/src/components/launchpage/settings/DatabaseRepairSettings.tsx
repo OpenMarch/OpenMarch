@@ -49,22 +49,20 @@ export default function DatabaseRepairSettings() {
             }
 
             // Call repair function
-            // The IPC handler will handle setting the new path and reloading the window
+            // The IPC handler sets the new path, which also reloads the main window
             await window.electron.repairDatabase(currentPath);
 
             toast.success(t("settings.repairDotsFile.success"));
-
-            // Settings live in their own window, so the main window has to be reloaded to pick up the repaired file
-            window.electron.reloadMainWindow();
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : "Unknown error occurred";
             setError(errorMessage);
-            setIsRepairing(false);
             // Show error toast
             toast.error(
                 t("settings.repairDotsFile.error", { error: errorMessage }),
             );
+        } finally {
+            setIsRepairing(false);
         }
     };
 

@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
@@ -50,6 +51,47 @@ describe("DatabaseRepairSettings", () => {
             await screen.findByText("Open a show to repair its file."),
         ).toBeInTheDocument();
         expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
+    });
+
+    const repairFlow = async (repair: ReturnType<typeof vi.fn>) => {
+        const reloadMainWindow = vi.fn();
+        Object.assign(window, {
+            electron: {
+                databaseIsReady: vi.fn().mockResolvedValue(true),
+                databaseGetPath: vi.fn().mockResolvedValue("/shows/a.dots"),
+                repairDatabase: repair,
+                reloadMainWindow,
+            },
+        });
+        render(
+            <TolgeeProvider tolgee={tolgee} fallback="loading">
+                <DatabaseRepairSettings />
+            </TolgeeProvider>,
+        );
+        const user = userEvent.setup();
+        await user.click(await screen.findByRole("button"));
+        await user.click(await screen.findByRole("button", { name: "Repair" }));
+        return reloadMainWindow;
+    };
+
+    it("does not reload the main window itself after repair", async () => {
+        const repair = vi.fn().mockResolvedValue(undefined);
+        const reload = await repairFlow(repair);
+        await waitFor(() =>
+            expect(repair).toHaveBeenCalledWith("/shows/a.dots"),
+        );
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it("resets the repairing state when the repair fails", async () => {
+        const consoleError = vi
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+        const repair = vi.fn().mockRejectedValue(new Error("boom"));
+        await repairFlow(repair);
+        await waitFor(() => expect(repair).toHaveBeenCalled());
+        expect(screen.queryByText("Repairing...")).not.toBeInTheDocument();
         consoleError.mockRestore();
     });
 });
