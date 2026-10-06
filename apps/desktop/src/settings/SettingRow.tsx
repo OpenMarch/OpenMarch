@@ -13,7 +13,7 @@ export default function SettingRow({
     children: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-8 py-10 @[480px]:flex-row @[480px]:items-center @[480px]:justify-between @[480px]:gap-16">
+        <div className="flex flex-col gap-8 py-12 @[480px]:flex-row @[480px]:items-center @[480px]:justify-between @[480px]:gap-16">
             <div className="flex min-w-0 flex-col gap-2">
                 <label htmlFor={htmlFor} className="text-body text-text">
                     {label}

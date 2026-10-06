@@ -42,10 +42,15 @@ export default function SettingsWindow() {
             <div className="flex min-h-0 flex-1">
                 <SettingsSidebar selected={selected} onSelect={select} />
                 <section className="@container min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-24 pt-4 pb-24">
-                    <div className="flex max-w-[560px] flex-col gap-16">
-                        <h1 className="text-h5 leading-none">
-                            <T keyName={section.labelKey} />
-                        </h1>
+                    <div className="flex max-w-[640px] flex-col gap-24">
+                        <header className="flex flex-col gap-4">
+                            <h1 className="text-h4">
+                                <T keyName={section.labelKey} />
+                            </h1>
+                            <p className="text-body text-text-subtitle">
+                                <T keyName={section.descriptionKey} />
+                            </p>
+                        </header>
                         <section.Component />
                     </div>
                 </section>
