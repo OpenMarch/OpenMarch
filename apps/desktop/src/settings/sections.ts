@@ -59,7 +59,10 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         Icon: GearSixIcon,
         Component: GeneralSettings,
         descriptionKey: "settings.general.description",
-        searchKeys: ["settings.general.language"],
+        searchKeys: [
+            "settings.general.language",
+            "settings.general.automaticUpdates",
+        ],
     },
     {
         id: "appearance",

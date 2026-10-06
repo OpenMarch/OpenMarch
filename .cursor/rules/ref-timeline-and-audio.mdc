@@ -1,0 +1,148 @@
+---
+description: When working with the timeline, audio playback, animation, metronome, MusicXML import, or waveform display
+alwaysApply: false
+---
+
+# Timeline, Audio & Animation Reference
+
+## Overview
+
+The timeline system handles audio playback, beat/measure visualization, and canvas animation. The `TimelineContainer` at the bottom of the workspace shows pages, audio waveforms, and timing markers. During playback, `useAnimation` interpolates marcher positions between pages and drives the canvas.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| **Timeline Components** | |
+| `src/components/timeline/TimelineContainer.tsx` | Main timeline wrapper |
+| `src/components/timeline/PageTimeline.tsx` | Visual page timeline |
+| `src/components/timeline/PageTimeline.utils.ts` | Timeline utility functions |
+| `src/components/timeline/TimelineControls.tsx` | Play/pause/stop controls |
+| `src/components/timeline/PerspectiveSlider.tsx` | 3D perspective control |
+| **Audio Components** | |
+| `src/components/timeline/audio/AudioPlayer.tsx` | Read-only audio player |
+| `src/components/timeline/audio/EditableAudioPlayer.tsx` | Editable audio player |
+| `src/components/timeline/audio/EditableBeatAudioPlayer.tsx` | Beat-synced editable player |
+| `src/components/timeline/audio/WaveformTimingOverlay.tsx` | Waveform overlay |
+| `src/components/timeline/audio/TimingMarkersPlugin.ts` | Beat markers on waveform |
+| `src/components/timeline/audio/EditableTimingMarkersPlugin.ts` | Editable beat markers |
+| `src/components/timeline/audio/volume.ts` | Volume utilities |
+| **Music Components** | |
+| `src/components/music/MusicModal.tsx` | Music settings modal |
+| `src/components/music/AudioSelector.tsx` | Audio file selector |
+| `src/components/music/MetronomeModal.tsx` | Metronome settings |
+| `src/components/music/MusicXmlSelector.tsx` | MusicXML file selector |
+| `src/components/music/MusicXmlImport.ts` | MusicXML parser |
+| `src/components/music/TempoGroup/` | Tempo group management |
+| **Domain & Hooks** | |
+| `src/global/classes/AudioFile.ts` | Audio file domain class |
+| `src/global/classes/TimeSignature.ts` | Time signature handling |
+| `src/global/classes/BeatUnit.ts` | Beat unit calculations |
+| `src/hooks/useAnimation.ts` | Canvas animation during playback |
+| `src/hooks/useTimingObjects.ts` | Combined timing data |
+| **Stores & Context** | |
+| `src/stores/MetronomeStore.ts` | Metronome state |
+| `src/context/IsPlayingContext.tsx` | Playback state |
+| `src/context/SelectedAudioFileContext.tsx` | Current audio file |
+
+## Animation System
+
+`useAnimation` is the core playback hook:
+
+```typescript
+// src/hooks/useAnimation.ts
+// Called in Canvas.tsx, drives playback:
+// 1. When isPlaying becomes true, starts requestAnimationFrame loop
+// 2. Each frame: calculates current time position from audio
+// 3. Determines which page (and position within page) we're at
+// 4. Interpolates marcher positions between current and next page
+// 5. Calls canvas.setMarcherCoords() with interpolated positions
+// 6. When playback stops, snaps marchers to nearest page position
+```
+
+Key concepts:
+- Interpolation is linear between MarcherPage positions
+- Beat timestamps determine page boundaries
+- Pathways (if defined) override linear interpolation with curved paths
+- Animation respects the current audio playback position
+
+## Audio File System
+
+```typescript
+// src/global/classes/AudioFile.ts
+type AudioFile = {
+    id: number;
+    path: string;           // File path
+    nickname: string;       // Display name
+    data: ArrayBuffer;      // Audio data
+    selected: boolean;      // Is this the active audio file
+};
+
+// Static methods:
+AudioFile.getSelectedAudioFile()
+AudioFile.setSelectedAudioFile(id)
+AudioFile.deleteAudioFile(id)
+```
+
+Audio files are managed via Electron IPC (file system access in main process), not the SQLite DB functions pattern.
+
+## Timeline Layout
+
+```
+TimelineContainer
+├── TimelineControls (play/pause/stop/fullscreen)
+├── PerspectiveSlider (3D view control)
+├── PageTimeline (visual page blocks with counts)
+└── AudioPlayer / EditableAudioPlayer
+    └── WaveformTimingOverlay
+        └── TimingMarkersPlugin (beat/measure markers)
+```
+
+## MusicXML Import
+
+`MusicXmlImport.ts` parses MusicXML files to extract:
+- Time signatures
+- Tempo markings (BPM)
+- Rehearsal marks
+- Measure boundaries
+
+These are converted to beats and measures in the database.
+
+## Tempo Groups
+
+Tempo groups (`src/components/music/TempoGroup/`) manage BPM changes:
+- Each group has a start beat, BPM, and time signature
+- Beat durations are calculated from BPM
+- Groups can be edited, created, deleted
+
+## Metronome
+
+```typescript
+import { useMetronomeStore } from "@/stores/MetronomeStore";
+
+const {
+    metronomeOn,    // Is metronome active
+    accentOn,       // Accent on downbeats
+    volume,         // Metronome volume (0-1)
+    beatStyle,      // Click sound style
+    toggleMetronome,
+    setVolume,
+} = useMetronomeStore();
+```
+
+The metronome plays clicks synced to beat timestamps during playback.
+
+## Integration Points
+
+- **Canvas**: `useAnimation` drives canvas marcher positions during playback
+- **Timing**: `useTimingObjects` provides the unified timeline data
+- **Context**: `IsPlayingContext` tracks play/pause state, `SelectedAudioFileContext` tracks current audio
+- **UiSettings**: `pixelsPerSecond` in `UiSettingsStore` controls timeline zoom level
+
+## Gotchas
+
+- Audio files are stored on disk, referenced by path. Moving the file breaks the reference.
+- The animation loop uses `requestAnimationFrame` - it's tied to the browser's refresh rate.
+- Interpolation between pages assumes beats have timestamps. Missing timestamps break animation.
+- The timeline UI width depends on `pixelsPerSecond` from `UiSettingsStore`.
+- MusicXML import creates beats/measures in a single transaction. Importing over existing data replaces it.

@@ -5,6 +5,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTriggerButton,
+    Switch,
 } from "@openmarch/ui";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
@@ -20,6 +21,8 @@ const languages = [
 export default function GeneralSettings() {
     const tolgee = useTolgee();
     const [currentLanguage, setCurrentLanguage] = useState("en");
+    const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] =
+        useState(true);
 
     useEffect(() => {
         // Load saved language from electron store
@@ -35,6 +38,21 @@ export default function GeneralSettings() {
         };
         void loadLanguage();
     }, [tolgee]);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadAutomaticUpdatesSetting = async () => {
+            const savedValue = await window.electron.invoke(
+                "settings:get",
+                "automaticUpdates",
+            );
+            if (isMounted) setAutomaticUpdatesEnabled(savedValue !== false);
+        };
+        void loadAutomaticUpdatesSetting();
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleLanguageChange = async (languageCode: string) => {
         try {
@@ -77,6 +95,22 @@ export default function GeneralSettings() {
                         ))}
                     </SelectContent>
                 </Select>
+            </SettingRow>
+
+            <SettingRow
+                label={<T keyName="settings.general.automaticUpdates" />}
+                htmlFor="automatic-updates"
+            >
+                <Switch
+                    id="automatic-updates"
+                    checked={automaticUpdatesEnabled}
+                    onCheckedChange={(checked) => {
+                        setAutomaticUpdatesEnabled(checked);
+                        window.electron.send("settings:set", {
+                            automaticUpdates: checked,
+                        });
+                    }}
+                />
             </SettingRow>
         </SettingsPanel>
     );

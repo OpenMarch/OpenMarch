@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { ActionDefinition, ActionId } from "../definitions";
+import {
+    ACTIONS,
+    NUDGE_ACTION_IDS,
+    type ActionDefinition,
+    type ActionId,
+} from "../definitions";
 import {
     buildKeymap,
     compileKeymap,
@@ -231,6 +236,24 @@ describe("resolveKeyEvent", () => {
             "alignVertically",
         );
     });
+
+    it.each([
+        ["KeyA", "a", "selectAllMarchers"],
+        ["KeyS", "s", "swapMarchers"],
+    ])(
+        "resolves Control+%s to its own action and not a nudge off macOS",
+        (code, key, expected) => {
+            const compiled = compileKeymap(buildKeymap({}, ACTIONS, false));
+            const event = new KeyboardEvent("keydown", {
+                key,
+                code,
+                ctrlKey: true,
+            });
+            const resolved = resolveKeyEvent(event, compiled, canvas, always);
+            expect(resolved?.id).toBe(expected);
+            expect(NUDGE_ACTION_IDS).not.toContain(resolved?.id);
+        },
+    );
 
     it("requires exact modifiers", () => {
         const compiled = compileKeymap(buildKeymap());

@@ -32,7 +32,11 @@ import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
-import { getAutoUpdater } from "./update";
+import {
+    applyAutomaticUpdatesSetting,
+    automaticUpdatesAreEnabled,
+    startAutomaticUpdates,
+} from "./update";
 import { repairDatabase } from "../database/repair";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
@@ -86,6 +90,20 @@ ipcMain.on("settings:set", (event, settings) => {
         store.set(key, value);
     }
     broadcastSettingsChanged(event.sender, settings);
+
+    if (Object.prototype.hasOwnProperty.call(settings, "automaticUpdates")) {
+        const enabled = automaticUpdatesAreEnabled(settings.automaticUpdates);
+        if (app.isPackaged && !process.env.SNAP) {
+            // Applies immediately so opting out also cancels an already-staged install.
+            applyAutomaticUpdatesSetting(enabled);
+            if (enabled) {
+                void startAutomaticUpdates({
+                    isPackaged: true,
+                    automaticUpdatesEnabled: true,
+                });
+            }
+        }
+    }
 });
 
 ipcMain.handle("settings:get", (_, key) => {
@@ -281,10 +299,6 @@ async function createWindow(title?: string) {
         const menu = Menu.buildFromTemplate(template);
         menu.popup({ window: win! });
     });
-
-    // Apply electron-updater
-    const autoUpdater = getAutoUpdater();
-    await autoUpdater.checkForUpdatesAndNotify();
 }
 
 function resolveStartupDatabasePath(): string {
@@ -425,6 +439,14 @@ void app.whenReady().then(async () => {
     initGetters();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
+
+    void startAutomaticUpdates({
+        isPackaged: app.isPackaged,
+        automaticUpdatesEnabled: automaticUpdatesAreEnabled(
+            store.get("automaticUpdates"),
+        ),
+        isSnap: Boolean(process.env.SNAP),
+    });
 });
 
 function initGetters() {

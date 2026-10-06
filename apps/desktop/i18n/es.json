@@ -1054,6 +1054,7 @@
         "general.appearance": "Apariencia",
         "general.appearance.dark": "Oscuro",
         "general.appearance.light": "Claro",
+        "general.automaticUpdates": "Descargar e instalar actualizaciones automáticamente",
         "general.description": "Idioma y otras preferencias de toda la aplicación.",
         "general.language": "Idioma",
         "general.showFullDatabasePath": "Mostrar ruta completa del archivo",

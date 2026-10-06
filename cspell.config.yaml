@@ -69,8 +69,10 @@ words:
   - Invalidators
   - keycap
   - keycaps
+  - keyframed
   - keymap
   - launchpage
+  - libsql
   - lightridge
   - localappdata
   - Loudoun
@@ -81,6 +83,7 @@ words:
   - mello
   - merch
   - Meuli
+  - mgmt
   - midset
   - midsets
   - monokai
@@ -120,6 +123,7 @@ words:
   - rwxr
   - saario
   - samuelmeuli
+  - sandboxing
   - Schachner
   - Segoe
   - seti
@@ -185,6 +189,7 @@ words:
   - youtu
   - zier
   - Zingali
+  - Zustand
   - 日本語
 ignorePaths:
   - node_modules/**
@@ -207,6 +212,8 @@ ignorePaths:
   - patches/canvas.patch
   - apps/desktop/e2e/Dockerfile
   - "**/dist-electron/**"
+  - "**/dist-browser/**"
+  - "**/dist-browser-host/**"
   - "**/wasm/pkg/**"
   - "**/release/**"
   - "*.svg"
@@ -216,6 +223,15 @@ ignorePaths:
   - cloudflare-env.d.ts
   - apps/cms/.cursor/rules/*
   - apps/cms/AGENTS.md
+  # Machine-local agent notes, kept untracked via .git/info/exclude. Numbered ADR
+  # records are local; docs/adr/README.md is tracked and stays checked.
+  - "**/CONTEXT.md"
+  - CONTEXT-MAP.md
+  - "**/docs/agents/**"
+  - "**/docs/adr/[0-9]*.md"
+  - docs/superpowers/**
+  - .superpowers/**
+  - .scratch/**
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)
