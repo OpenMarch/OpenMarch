@@ -10,6 +10,7 @@ import * as Sentry from "@sentry/electron/renderer";
 import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
+import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import tolgee from "@/global/singletons/Tolgee";
 
 const isSettingsWindow = window.location.hash === "#settings";
@@ -51,6 +52,8 @@ window.electron
 window.electron?.onSettingsChanged((change) => {
     if (typeof change.language === "string")
         void tolgee.changeLanguage(change.language);
+    if (typeof change.optOutAnalytics === "boolean")
+        applyAnalyticsConsent(change.optOutAnalytics);
 });
 
 Sentry.init({

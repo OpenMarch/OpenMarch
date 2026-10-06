@@ -4,7 +4,7 @@ import { Switch } from "@openmarch/ui";
 import { usePostHog } from "posthog-js/react";
 import { useState, useEffect } from "react";
 import { T } from "@tolgee/react";
-import * as Sentry from "@sentry/electron/renderer";
+import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
 
@@ -62,19 +62,7 @@ export default function PrivacySettings() {
                             id="share-usage-analytics"
                             checked={!hasOptedOut}
                             onCheckedChange={(checked) => {
-                                if (checked) {
-                                    posthog.opt_in_capturing();
-                                    Sentry.init({
-                                        dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-                                        enabled: true,
-                                    });
-                                } else {
-                                    posthog.opt_out_capturing();
-                                    Sentry.init({
-                                        dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-                                        enabled: false,
-                                    });
-                                }
+                                applyAnalyticsConsent(!checked);
                                 setHasOptedOut(!checked);
                                 window.electron.send("settings:set", {
                                     optOutAnalytics: !checked,

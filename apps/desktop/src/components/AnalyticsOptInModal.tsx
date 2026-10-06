@@ -1,6 +1,5 @@
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
-import { usePostHog } from "posthog-js/react";
-import * as Sentry from "@sentry/electron/renderer";
+import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import { useState, useEffect } from "react";
 import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
 import { T } from "@tolgee/react";
@@ -13,7 +12,6 @@ interface AnalyticsOptInModalProps {
 export default function AnalyticsOptInModal({
     onChoice,
 }: AnalyticsOptInModalProps) {
-    const posthog = usePostHog();
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
@@ -22,11 +20,7 @@ export default function AnalyticsOptInModal({
         const checkEnv = async () => {
             const env = await window.electron.getEnv();
             if (env.isPlaywrightSession || env.isCI) {
-                posthog.opt_out_capturing();
-                Sentry.init({
-                    dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-                    enabled: false,
-                });
+                applyAnalyticsConsent(true);
                 window.electron.send("settings:set", {
                     optOutAnalytics: true,
                 });
@@ -44,25 +38,17 @@ export default function AnalyticsOptInModal({
         return () => {
             if (timer) clearTimeout(timer);
         };
-    }, [onChoice, posthog]);
+    }, [onChoice]);
 
     const handleOptIn = () => {
-        posthog.opt_in_capturing();
-        Sentry.init({
-            dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-            enabled: true,
-        });
+        applyAnalyticsConsent(false);
         window.electron.send("settings:set", { optOutAnalytics: false });
         onChoice(true);
         window.location.reload();
     };
 
     const handleOptOut = () => {
-        posthog.opt_out_capturing();
-        Sentry.init({
-            dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-            enabled: false,
-        });
+        applyAnalyticsConsent(true);
         window.electron.send("settings:set", { optOutAnalytics: true });
         onChoice(false);
         window.location.reload();
