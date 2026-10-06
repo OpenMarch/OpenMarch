@@ -31,52 +31,94 @@ export interface SettingsSection {
     labelKey: string;
     Icon: Icon;
     Component: ComponentType;
+    /** Subtitle shown under the section title (Task 12 adds real description keys). */
+    descriptionKey: string;
+    /** i18n keys of the labels of the settings in this section, matched by the sidebar search. */
+    searchKeys: readonly string[];
 }
 
 export const SETTINGS_SECTION_STORAGE_KEY = "openmarch:settingsSection";
 
+/*
+ * Grouping, once there are enough sections to need it: give each section an optional
+ * `group` id and add a `SETTINGS_GROUPS` list of `{ id, labelKey }`. The sidebar would
+ * render each group as a collapsible heading above its sections. Not implemented yet
+ * because there are only a few sections.
+ */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
     {
         id: "general",
         labelKey: "settings.general",
         Icon: GearSixIcon,
         Component: GeneralSettings,
+        descriptionKey: "settings.general",
+        searchKeys: [
+            "settings.general.appearance",
+            "settings.general.appearance.light",
+            "settings.general.appearance.dark",
+            "settings.general.language",
+            "settings.general.showFullDatabasePath",
+        ],
     },
     {
         id: "mouse",
         labelKey: "settings.mouse",
         Icon: CursorClickIcon,
         Component: MouseSettings,
+        descriptionKey: "settings.mouse",
+        searchKeys: [
+            "settings.mouse.zoomSensitivity",
+            "settings.mouse.trackpadMode",
+            "settings.mouse.trackpadPanSensitivity",
+            "settings.mouse.panSensitivity",
+        ],
     },
     {
         id: "shortcuts",
         labelKey: "settings.shortcuts",
         Icon: KeyboardIcon,
         Component: ShortcutSettings,
+        descriptionKey: "settings.shortcuts",
+        searchKeys: [],
     },
     {
         id: "plugins",
         labelKey: "settings.plugins",
         Icon: PuzzlePieceIcon,
         Component: PluginsContents,
+        descriptionKey: "settings.plugins",
+        searchKeys: [
+            "settings.plugins.installed",
+            "settings.plugins.official",
+            "settings.plugins.community",
+        ],
     },
     {
         id: "privacy",
         labelKey: "settings.privacy",
         Icon: ShieldCheckIcon,
         Component: PrivacySettings,
+        descriptionKey: "settings.privacy",
+        searchKeys: [
+            "settings.privacy.analytics",
+            "settings.privacy.analytics.toggle",
+        ],
     },
     {
         id: "developer",
         labelKey: "settings.developer",
         Icon: WrenchIcon,
         Component: DeveloperSettings,
+        descriptionKey: "settings.developer",
+        searchKeys: ["settings.tolgeeDevToolsToggle"],
     },
     {
         id: "database",
         labelKey: "settings.database",
         Icon: DatabaseIcon,
         Component: DatabaseRepairSettings,
+        descriptionKey: "settings.database",
+        searchKeys: ["settings.repairDotsFile.title"],
     },
 ];
 

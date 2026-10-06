@@ -6,7 +6,7 @@ export interface Rectangle {
     height: number;
 }
 
-export const SETTINGS_MIN = { width: 560, height: 420 };
+export const SETTINGS_MIN = { width: 640, height: 420 };
 export const SETTINGS_DEFAULT = { width: 760, height: 560 };
 
 /** Saved bounds if at least their top-left 100×40 is on a connected display; else the fallback. */

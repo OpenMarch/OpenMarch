@@ -22,7 +22,7 @@ describe("fitBounds", () => {
     it("never returns less than the minimum size", () => {
         const saved = { x: 0, y: 0, width: 200, height: 100 };
         expect(fitBounds(saved, [display], fallback)).toMatchObject({
-            width: 560,
+            width: 640,
             height: 420,
         });
     });

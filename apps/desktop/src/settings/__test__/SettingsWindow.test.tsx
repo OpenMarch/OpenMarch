@@ -58,7 +58,9 @@ describe("SettingsWindow", () => {
         expect(
             screen.getByRole("heading", { name: "Keyboard shortcuts" }),
         ).toBeVisible();
-        expect(screen.getByRole("searchbox")).toBeVisible();
+        expect(
+            screen.getByRole("searchbox", { name: "Search shortcuts" }),
+        ).toBeVisible();
     });
 
     it("moves between sections with the arrow keys", async () => {
