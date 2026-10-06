@@ -40,7 +40,13 @@ type Query = <T = Record<string, unknown>>(
     ...params: SQLInputValue[]
 ) => Promise<T[]>;
 
-type App = { page: Page; query: Query; close: () => Promise<void> };
+type App = {
+    page: Page;
+    query: Query;
+    close: () => Promise<void>;
+    /** Main-process output, for diagnosing a failure. Electron only. */
+    log?: () => string;
+};
 
 /**
  * The renderer in headless Chromium, with IPC carried to the app's database
@@ -142,6 +148,9 @@ async function openInElectron(
             PLAYWRIGHT_SESSION: "true",
         },
     });
+    const log: string[] = [];
+    app.process().stdout?.on("data", (data) => log.push(String(data)));
+    app.process().stderr?.on("data", (data) => log.push(String(data)));
     const page = await app.firstWindow();
     // Same size as the browser target, so both lay the app out alike.
     await app.evaluate(({ BrowserWindow }, size) => {
@@ -167,6 +176,7 @@ async function openInElectron(
                 [databasePath, sql, params] as const,
             ) as Promise<T[]>,
         close: () => app.close(),
+        log: () => log.join(""),
     };
 }
 
@@ -263,15 +273,29 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
             pageErrors.push(message.text());
         });
 
+        let failed = false;
         try {
-            await expect(page.locator("canvas").first()).toBeVisible();
+            // Allow for several apps starting at once on a busy machine.
+            await expect(page.locator("canvas").first()).toBeVisible({
+                timeout: 20_000,
+            });
             await page.waitForFunction(() => !!window.canvas);
             await use({ page, databasePath, pageErrors, query: app.query });
+        } catch (error) {
+            failed = true;
+            throw error;
         } finally {
-            if (testInfo.status !== testInfo.expectedStatus)
+            failed ||= testInfo.status !== testInfo.expectedStatus;
+            if (failed) {
+                if (app.log)
+                    await testInfo.attach("main-process.log", {
+                        body: app.log(),
+                        contentType: "text/plain",
+                    });
                 await page
                     .screenshot({ path: testInfo.outputPath("failure.png") })
                     .catch(() => {});
+            }
             closing = true;
             await app.close();
         }
