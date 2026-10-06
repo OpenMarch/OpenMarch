@@ -33,6 +33,7 @@ export function openSettingsWindow({
 }: OpenOptions) {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
         if (settingsWindow.isMinimized()) settingsWindow.restore();
+        settingsWindow.show();
         settingsWindow.focus();
         return settingsWindow;
     }
@@ -73,7 +74,7 @@ export function openSettingsWindow({
     );
     created.once("ready-to-show", () => created.show());
     created.on("close", () => {
-        store.set(BOUNDS_KEY, created.getBounds());
+        store.set(BOUNDS_KEY, created.getNormalBounds());
     });
     created.on("closed", () => {
         settingsWindow = null;

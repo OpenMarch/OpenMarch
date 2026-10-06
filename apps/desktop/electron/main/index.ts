@@ -696,7 +696,9 @@ ipcMain.handle(
 
 app.on("activate", () => {
     const allWindows = BrowserWindow.getAllWindows();
-    if (allWindows.length) {
+    if (win && !win.isDestroyed()) {
+        win.focus();
+    } else if (allWindows.length) {
         allWindows[0].focus();
     } else {
         void createWindow();
