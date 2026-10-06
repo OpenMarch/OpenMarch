@@ -7,6 +7,7 @@ import {
     type ShortcutOverrides,
 } from "@/shortcuts/keymap";
 import { isMacPlatform } from "@/shortcuts/platform";
+import { syncFromStorage } from "@/stores/syncFromStorage";
 
 export const SHORTCUT_OVERRIDES_STORAGE_KEY = "openmarch:shortcutOverrides";
 
@@ -79,4 +80,10 @@ export const useShortcutOverridesStore = create<ShortcutOverridesStore>(
             resetAll: () => update({}),
         };
     },
+);
+
+syncFromStorage(
+    SHORTCUT_OVERRIDES_STORAGE_KEY,
+    (raw) => normalizeOverrides(JSON.parse(raw)),
+    (overrides) => useShortcutOverridesStore.setState({ overrides }),
 );
