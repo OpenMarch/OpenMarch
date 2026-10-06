@@ -176,3 +176,39 @@ export async function marcherRowAction(
         .click();
     await page.getByRole("button", { name: item, exact: true }).click();
 }
+
+/**
+ * Waits until the app has made no database calls for `quietMs`, i.e. every
+ * write a step started has finished. Lets a test act at a person's pace
+ * instead of pressing the next key mid-write.
+ */
+export async function waitForIdle(page: Page, quietMs = 250) {
+    await page.evaluate(() => {
+        const w = window as any;
+        if (w.__omIdle) return;
+        const state = { inFlight: 0, last: performance.now() };
+        w.__omIdle = state;
+        for (const name of ["sqlProxy", "unsafeSqlProxy"]) {
+            const original = w.electron[name];
+            w.electron[name] = async (...args: unknown[]) => {
+                state.inFlight++;
+                try {
+                    return await original(...args);
+                } finally {
+                    state.inFlight--;
+                    state.last = performance.now();
+                }
+            };
+        }
+    });
+    await page.waitForFunction(
+        (quiet) => {
+            const state = (window as any).__omIdle;
+            return (
+                state.inFlight === 0 && performance.now() - state.last > quiet
+            );
+        },
+        quietMs,
+        { polling: 50 },
+    );
+}

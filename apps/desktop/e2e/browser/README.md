@@ -82,5 +82,22 @@ test("creates marchers", async ({ show }) => {
   (see `tests/existing-show.spec.mts`).
 - A test fails if the page logs an error or throws. Allow a known message with
   `test.use({ allowedPageErrors: [/.../] })`.
+- `await waitForIdle(page)` waits until the app's writes have finished. Use it
+  before a step that must not overlap the previous one.
 - Put steps a user takes (fill a form, drag a dot) in `app.mts` so specs read
   as scenarios.
+
+## Random editing sessions
+
+`tests/random-walk.spec.mts` makes seeded random edits (drags, page changes,
+alignment, swaps, copying positions, undo and redo). After each step it checks
+the canvas against the file and watches for page errors; at the end it undoes
+everything and expects the show it started with.
+
+```bash
+RANDOM_WALK_SEEDS=10,11,12 RANDOM_WALK_STEPS=40 pnpm run e2e:browser random-walk
+```
+
+By default each step waits for the previous one's writes to finish. With
+`RANDOM_WALK_FAST=1` it doesn't, so writes overlap as they do when a key is
+held down. That mode finds races, and its failures depend on timing.
