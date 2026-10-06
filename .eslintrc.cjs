@@ -10,6 +10,8 @@ module.exports = {
         "**/node_modules/*",
         "**/dist/*",
         "**/dist-electron/*",
+        "**/dist-browser/*",
+        "**/dist-browser-host/*",
         "**/build/*",
         "**/src/styles/**/*.css",
         ".eslintrc.cjs",
