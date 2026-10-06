@@ -1,36 +1,57 @@
 import { test } from "../fixtures.mjs";
 import { expect, type Page } from "playwright/test";
+import type { ElectronApplication } from "playwright";
 
-const navigateToLaunchPageSettings = async (page: Page) => {
+const openSettingsWindow = async (
+    app: ElectronApplication,
+    open: () => Promise<void>,
+) => {
+    const [settings] = await Promise.all([app.waitForEvent("window"), open()]);
+    await settings.waitForLoadState("domcontentloaded");
+    await expect(settings.getByRole("heading", { level: 1 })).toBeVisible();
+    return settings;
+};
+
+const goToSection = async (settings: Page, name: string) => {
+    await settings.getByRole("button", { name, exact: true }).click();
+    await expect(
+        settings.getByRole("heading", { name, level: 1, exact: true }),
+    ).toBeVisible();
+};
+
+const navigateToLaunchPageSettings = async (
+    app: ElectronApplication,
+    page: Page,
+) => {
     await page.getByRole("tab", { name: "File" }).click();
     await page.getByRole("button", { name: "Exit File" }).click();
     await expect(page.getByRole("button", { name: "New File" })).toBeVisible();
 
-    await page.getByRole("tab", { name: "Settings" }).click();
-    await expect(
-        page.getByRole("heading", { name: "Settings", exact: true }),
-    ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Plugins" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
+    return openSettingsWindow(app, () =>
+        page.getByRole("button", { name: "Settings" }).click(),
+    );
 };
 
-const navigateToInAppModalSettings = async (page: Page) => {
+const navigateToInAppSettings = async (
+    app: ElectronApplication,
+    page: Page,
+) => {
     await page.getByRole("tab", { name: "File" }).click();
-    await page
-        .locator("div")
-        .filter({ hasText: /^App Settings$/ })
-        .click();
+    return openSettingsWindow(app, () =>
+        page.getByRole("button", { name: "App Settings" }).click(),
+    );
 };
 
 const settingsMenus = [
     { name: "Launch page", navigate: navigateToLaunchPageSettings },
-    { name: "In-app modal", navigate: navigateToInAppModalSettings },
+    { name: "In-app", navigate: navigateToInAppSettings },
 ];
 
 settingsMenus.forEach(({ name, navigate }) => {
     test(`${name} - Light and dark mode`, async ({ electronApp }) => {
-        const { page } = electronApp;
-        await navigate(page);
+        const { app, page: mainPage } = electronApp;
+        const page = await navigate(app, mainPage);
+        await goToSection(page, "General");
         await page.getByRole("radio", { name: "Dark" }).click();
         await expect(page.getByRole("group")).toMatchAriaSnapshot(`
         - radio "Dark" [checked]:
@@ -71,13 +92,14 @@ settingsMenus.forEach(({ name, navigate }) => {
 
 settingsMenus.forEach(({ name, navigate }) => {
     test(`${name} - Language`, async ({ electronApp }) => {
-        const { page } = electronApp;
-        await navigate(page);
+        const { app, page: mainPage } = electronApp;
+        const page = await navigate(app, mainPage);
+        await goToSection(page, "General");
         await page.getByRole("combobox").click();
         await page.getByRole("option", { name: "Español" }).click();
         await expect(page.getByText("Idioma")).toBeVisible();
         await expect(
-            page.getByRole("heading", { name: "Configuración", exact: true }),
+            page.getByRole("navigation", { name: "Configuración" }),
         ).toBeVisible();
 
         // await expect(page.getByText("Configuración")).toBeVisible();
@@ -92,9 +114,10 @@ settingsMenus.forEach(({ name, navigate }) => {
         await expect(page.getByText("言語")).toBeVisible();
         await page.getByRole("combobox").click();
         await page.getByRole("option", { name: "English" }).click();
-        await expect(page.getByLabel("Settings")).toContainText(
-            "LanguageEnglish",
-        );
+        await expect(
+            page.getByRole("navigation", { name: "Settings" }),
+        ).toBeVisible();
+        await expect(page.getByRole("combobox")).toContainText("English");
     });
 });
 
@@ -102,8 +125,9 @@ settingsMenus.forEach(({ name, navigate }) => {
     test(`${name} - Mouse and trackpad settings don't crash app`, async ({
         electronApp,
     }) => {
-        const { page } = electronApp;
-        await navigate(page);
+        const { app, page: mainPage } = electronApp;
+        const page = await navigate(app, mainPage);
+        await goToSection(page, "Mouse & Trackpad");
 
         const trackpadSwitch = page.getByRole("switch", {
             name: "Trackpad mode (recommended",
@@ -132,8 +156,9 @@ settingsMenus.forEach(({ name, navigate }) => {
 
 settingsMenus.forEach(({ name, navigate }) => {
     test(`${name} - Plugins and usage`, async ({ electronApp }) => {
-        const { page } = electronApp;
-        await navigate(page);
+        const { app, page: mainPage } = electronApp;
+        const page = await navigate(app, mainPage);
+        await goToSection(page, "Privacy");
         await page
             .getByRole("button", { name: "Share usage analytics" })
             .click();
@@ -142,6 +167,7 @@ settingsMenus.forEach(({ name, navigate }) => {
         await page
             .getByRole("button", { name: "Share usage analytics" })
             .click();
+        await goToSection(page, "Plugins");
         await page.getByRole("tab", { name: "Official" }).click();
         await page.getByRole("tab", { name: "Community" }).click();
     });
