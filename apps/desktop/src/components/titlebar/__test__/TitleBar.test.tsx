@@ -28,8 +28,11 @@ describe("TitleBar", () => {
         expect(path.closest(".main-app-titlebar")).toHaveClass("grid");
     });
 
-    it("hides the file path when asked", () => {
+    it("hides the file path when asked", async () => {
         renderBar({ showFilePath: false });
+        // Let any async path fetch settle before asserting it never showed up.
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(window.electron.databaseGetPath).not.toHaveBeenCalled();
         expect(screen.queryByText("Halftime.dots")).not.toBeInTheDocument();
     });
 });
