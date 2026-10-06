@@ -26,6 +26,7 @@ beforeEach(() => {
             onSettingsChanged: () => () => {},
             invoke: vi.fn().mockResolvedValue(undefined),
             send: vi.fn(),
+            closeWindow: vi.fn(),
             databaseIsReady: vi.fn().mockResolvedValue(false),
             databaseGetPath: vi.fn().mockResolvedValue(""),
         },
@@ -100,4 +101,13 @@ describe("SettingsWindow", () => {
             ).toBeVisible();
         },
     );
+
+    it("closes the window on Cmd+W but not on a plain W", async () => {
+        renderWindow();
+        await screen.findByRole("navigation");
+        fireEvent.keyDown(window, { key: "w" });
+        expect(window.electron.closeWindow).not.toHaveBeenCalled();
+        fireEvent.keyDown(window, { key: "w", metaKey: true });
+        expect(window.electron.closeWindow).toHaveBeenCalledTimes(1);
+    });
 });

@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { T, useTranslate } from "@tolgee/react";
 import { clsx } from "clsx";
 import Toaster from "@/components/ui/Toaster";
@@ -17,6 +17,21 @@ export default function SettingsWindow() {
         useState<SettingsSectionId>(readSavedSection);
     const buttons = useRef(new Map<SettingsSectionId, HTMLButtonElement>());
     const section = SETTINGS_SECTIONS.find((s) => s.id === selected)!;
+
+    // The settings window has no app menu close role, so handle Cmd/Ctrl+W here.
+    // Bubble phase and defaultPrevented check leave the shortcut recorder alone.
+    useEffect(() => {
+        const onKeyDown = (event: globalThis.KeyboardEvent) => {
+            if (event.defaultPrevented || event.key.toLowerCase() !== "w")
+                return;
+            const mod = window.electron.isMacOS ? event.metaKey : event.ctrlKey;
+            if (!mod) return;
+            event.preventDefault();
+            window.electron.closeWindow();
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, []);
 
     const select = (id: SettingsSectionId, focus = false) => {
         setSelected(id);
