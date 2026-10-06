@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import SettingsWindow from "@/settings/SettingsWindow";
 import "./styles/index.css";
 import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
@@ -10,6 +11,8 @@ import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+
+const isSettingsWindow = window.location.hash === "#settings";
 
 // Check for Playwright session from either build-time or runtime environment
 const isPlaywrightSession =
@@ -63,7 +66,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 fallback="Loading..." // loading fallback
             >
                 <ThemeProvider>
-                    <App />
+                    {isSettingsWindow ? <SettingsWindow /> : <App />}
                 </ThemeProvider>
             </TolgeeProvider>
         </PostHogProvider>
