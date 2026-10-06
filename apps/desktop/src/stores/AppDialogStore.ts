@@ -8,8 +8,6 @@ export type ExportTab =
 
 /** Open state for app-level dialogs, so actions (shortcuts, the command palette) can open them from anywhere. */
 interface AppDialogStore {
-    settingsOpen: boolean;
-    setSettingsOpen: (open: boolean) => void;
     exportOpen: boolean;
     exportTab: ExportTab;
     setExportOpen: (open: boolean) => void;
@@ -18,8 +16,6 @@ interface AppDialogStore {
 }
 
 export const useAppDialogStore = create<AppDialogStore>((set) => ({
-    settingsOpen: false,
-    setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
     exportOpen: false,
     exportTab: "mobile",
     setExportOpen: (exportOpen) => set({ exportOpen }),

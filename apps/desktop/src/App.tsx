@@ -9,7 +9,6 @@ import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
 import CommandPalette from "@/shortcuts/palette/CommandPalette";
-import SettingsModal from "@/components/toolbar/SettingsModal";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
 import {
@@ -255,7 +254,6 @@ function App() {
                                             <StateInitializer />
                                             <FileActionHandlers />
                                             <EditorActionHandlers />
-                                            <SettingsModal />
                                             <ExportCoordinatesModal />
                                             <SvgPreviewHandler />
                                             <TitleBar showControls />

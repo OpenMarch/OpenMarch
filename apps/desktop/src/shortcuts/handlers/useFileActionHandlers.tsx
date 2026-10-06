@@ -21,6 +21,10 @@ export function useFileActionHandlers() {
     const setSelectedAudioFile =
         selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
 
+    useActionHandler("openSettings", () => {
+        void window.electron.openSettingsWindow();
+    });
+
     useActionHandler("launchLoadFileDialogue", () => {
         void window.electron.databaseLoad();
     });
