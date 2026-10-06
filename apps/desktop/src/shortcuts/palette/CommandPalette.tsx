@@ -370,7 +370,6 @@ export default function CommandPalette() {
                             </span>
                         </div>
                     </div>
-                    <div className="palette-ring" aria-hidden />
                 </RadixDialog.Content>
             </RadixDialog.Portal>
         </RadixDialog.Root>

@@ -1,35 +1,21 @@
 /*
- * Command palette. Every animation here is transform/opacity only so it runs on the compositor:
- * the border ring is a rotating child clipped by a static mask, never an animated gradient.
+ * Command palette. A plain surface with a hairline border. Every animation here is
+ * transform/opacity only so it runs on the compositor.
  */
 
 .command-palette {
     --palette-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --palette-ease-in: cubic-bezier(0.5, 0, 0.75, 0);
-    --palette-radius: 16px;
-    --palette-surface: rgba(250, 249, 252, 0.95);
-    --palette-highlight: rgba(100, 66, 255, 0.1);
+    --palette-radius: 6px;
+    /* Opaque so the panel reads cleanly without a blur; the fg tokens are translucent gradients. */
+    --palette-surface: var(--color-bg-1);
+    --palette-surface-tint: var(--background-image-fg-1);
+    --palette-highlight: var(--background-image-fg-2);
     --palette-divider: rgba(0, 0, 0, 0.07);
-    --palette-rim: rgba(255, 255, 255, 0.7);
-    --palette-ring-a: rgb(100, 66, 255);
-    --palette-ring-b: rgb(0, 170, 255);
-    --palette-ring-c: rgb(236, 72, 153);
-    --palette-shadow:
-        0 28px 70px -16px rgba(20, 16, 40, 0.35),
-        0 10px 24px -12px rgba(20, 16, 40, 0.2);
 }
 
 .dark .command-palette {
-    --palette-surface: rgba(24, 23, 30, 0.95);
-    --palette-highlight: rgba(150, 126, 255, 0.16);
     --palette-divider: rgba(255, 255, 255, 0.07);
-    --palette-rim: rgba(255, 255, 255, 0.07);
-    --palette-ring-a: rgb(150, 126, 255);
-    --palette-ring-b: rgb(86, 204, 255);
-    --palette-ring-c: rgb(255, 122, 200);
-    --palette-shadow:
-        0 28px 80px -12px rgba(0, 0, 0, 0.7),
-        0 10px 30px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* ---------------------------------------------------------------- overlay */
@@ -61,7 +47,6 @@
     translate: -50% 0;
     transform-origin: 50% 0;
     border-radius: var(--palette-radius);
-    box-shadow: var(--palette-shadow);
     outline: none;
     will-change: transform, opacity;
 }
@@ -76,51 +61,10 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--palette-radius);
-    background: var(--palette-surface);
-    backdrop-filter: blur(32px) saturate(180%);
-    -webkit-backdrop-filter: blur(32px) saturate(180%);
-    box-shadow: inset 0 1px 0 0 var(--palette-rim);
-}
-
-/* Animated border: a 1px ring (static mask) over a slowly rotating conic gradient. */
-.palette-ring {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    padding: 1px;
-    overflow: hidden;
-    border-radius: var(--palette-radius);
-    pointer-events: none;
-    -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-        linear-gradient(#000 0 0) content-box exclude,
-        linear-gradient(#000 0 0);
-    animation: palette-ring-settle 1400ms var(--palette-ease-out) both;
-}
-.palette-ring::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 200%;
-    aspect-ratio: 1;
-    translate: -50% -50%;
-    background: conic-gradient(
-        from 0deg,
-        transparent 0deg,
-        var(--palette-ring-a) 50deg,
-        var(--palette-ring-b) 100deg,
-        transparent 150deg,
-        transparent 180deg,
-        var(--palette-ring-c) 230deg,
-        var(--palette-ring-a) 280deg,
-        transparent 330deg
-    );
-    animation: palette-spin 7s linear infinite;
-    will-change: transform;
+    background-color: var(--palette-surface);
+    background-image: var(--palette-surface-tint);
+    border: 1px solid var(--color-stroke);
+    box-shadow: var(--shadow-modal);
 }
 
 /* ------------------------------------------------------------------ input */
@@ -144,7 +88,7 @@
     color: var(--color-text);
     font-size: 17px;
     letter-spacing: -0.01em;
-    caret-color: var(--palette-ring-a);
+    caret-color: var(--color-accent);
 }
 .palette-input::placeholder {
     color: var(--color-text-subtitle);
@@ -194,7 +138,7 @@
     transition: color 150ms ease;
 }
 .palette-item[aria-selected="true"] .palette-item-icon {
-    color: var(--palette-ring-a);
+    color: var(--color-text);
 }
 .palette-item-label {
     flex: 1;
@@ -222,8 +166,7 @@
     z-index: 0;
     height: 42px;
     border-radius: 10px;
-    background: var(--palette-highlight);
-    box-shadow: inset 0 0 0 1px var(--palette-highlight);
+    background-image: var(--palette-highlight);
     pointer-events: none;
     will-change: transform;
 }
@@ -289,24 +232,6 @@
         opacity: 0;
     }
 }
-@keyframes palette-spin {
-    to {
-        transform: rotate(1turn);
-    }
-}
-/* The ring flares as the palette opens, then settles to a quiet shimmer. */
-@keyframes palette-ring-settle {
-    0% {
-        opacity: 0;
-    }
-    25% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.55;
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .palette-shell[data-state="open"],
     .palette-shell[data-state="closed"] {
@@ -315,9 +240,6 @@
     }
     .palette-shell[data-state="closed"] {
         animation-name: palette-fade-out;
-    }
-    .palette-ring::before {
-        animation: none;
     }
     .palette-highlight[data-animate="true"],
     .palette-list {

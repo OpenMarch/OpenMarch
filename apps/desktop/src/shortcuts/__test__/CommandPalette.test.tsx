@@ -156,6 +156,11 @@ describe("CommandPalette", () => {
         expect(second).toHaveAttribute("aria-disabled", "true");
     });
 
+    it("has no decorative border ring", () => {
+        renderPalette();
+        expect(document.querySelector(".palette-ring")).toBeNull();
+    });
+
     it("positions the selection highlight once the portal content mounts", () => {
         handle("swapMarchers");
         renderPalette();
