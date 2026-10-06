@@ -1431,8 +1431,9 @@ function RegisteredActionsHandler() {
                             uiSettings.coordinateRounding?.nearestXSteps || 1;
                     }
 
-                    // Prevent meta+WASD
-                    if (!(e.metaKey && code.includes("Key"))) {
+                    // Ctrl/Cmd+W/A/S/D are shortcuts of their own (select all, swap),
+                    // not moves.
+                    if (!((e.metaKey || e.ctrlKey) && code.includes("Key"))) {
                         // Trigger the action based on the key code
                         switch (code) {
                             case "KeyW":
