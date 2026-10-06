@@ -205,6 +205,8 @@ ignorePaths:
   - patches/canvas.patch
   - apps/desktop/e2e/Dockerfile
   - "**/dist-electron/**"
+  - "**/dist-browser/**"
+  - "**/dist-browser-host/**"
   - "**/wasm/pkg/**"
   - "**/release/**"
   - "*.svg"
