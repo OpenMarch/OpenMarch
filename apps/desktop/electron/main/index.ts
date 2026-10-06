@@ -16,6 +16,7 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { openSettingsWindow } from "./settings-window";
+import { handleWindowOpen } from "./window-open-policy";
 import { PDFExportService } from "./services/export-service";
 import { VideoExportService } from "./services/video-export-service";
 import {
@@ -240,10 +241,9 @@ async function createWindow(title?: string) {
     });
 
     // Make all links open with the browser, not with the application
-    win.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith("https:")) void shell.openExternal(url);
-        return { action: "deny" };
-    });
+    win.webContents.setWindowOpenHandler(({ url }) =>
+        handleWindowOpen(url, (u) => void shell.openExternal(u)),
+    );
 
     // Context menu with spellcheck suggestions and basic edit actions
     win.webContents.on("context-menu", (event, params) => {

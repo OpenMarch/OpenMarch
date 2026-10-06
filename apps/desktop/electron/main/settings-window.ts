@@ -1,5 +1,6 @@
-import { BrowserWindow, screen } from "electron";
+import { BrowserWindow, screen, shell } from "electron";
 import type Store from "electron-store";
+import { handleWindowOpen } from "./window-open-policy";
 import {
     fitBounds,
     SETTINGS_DEFAULT,
@@ -67,6 +68,9 @@ export function openSettingsWindow({
         },
     });
     settingsWindow = created;
+    created.webContents.setWindowOpenHandler(({ url }) =>
+        handleWindowOpen(url, (u) => void shell.openExternal(u)),
+    );
     created.once("ready-to-show", () => created.show());
     created.on("close", () => {
         store.set(BOUNDS_KEY, created.getBounds());
