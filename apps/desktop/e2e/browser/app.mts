@@ -132,3 +132,29 @@ export async function expectCanvasMatchesShow(show: Show) {
         })
         .toBe("canvas matches the show file");
 }
+
+/** Clicks a marcher's dot; with `add`, adds it to the selection (Shift+click). */
+export async function clickMarcher(
+    page: Page,
+    drillNumber: string,
+    { add = false }: { add?: boolean } = {},
+) {
+    const marcher = (await drawnMarchers(page)).find(
+        (drawn) => drawn.drillNumber === drillNumber,
+    );
+    if (!marcher?.onScreen)
+        throw new Error(`${drillNumber} is not visible on the canvas`);
+    if (add) await page.keyboard.down("Shift");
+    await page.mouse.click(marcher.screen.x, marcher.screen.y);
+    if (add) await page.keyboard.up("Shift");
+}
+
+/** The drill numbers of the marchers selected on the canvas. */
+export const selectedDrillNumbers = (page: Page): Promise<string[]> =>
+    page.evaluate(() =>
+        (window.canvas as any)
+            .getActiveObjects()
+            .filter((object: any) => object.marcherObj)
+            .map((object: any) => object.marcherObj.drill_number as string)
+            .sort(),
+    );
