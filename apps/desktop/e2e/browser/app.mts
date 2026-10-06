@@ -158,3 +158,21 @@ export const selectedDrillNumbers = (page: Page): Promise<string[]> =>
             .map((object: any) => object.marcherObj.drill_number as string)
             .sort(),
     );
+
+/** Opens a marcher's row menu in the Marchers sidebar and picks an item. */
+export async function marcherRowAction(
+    page: Page,
+    drillNumber: string,
+    item: "Edit" | "Delete",
+) {
+    const sidebar = page.locator("#marcherListForm");
+    if (!(await sidebar.isVisible()))
+        await page.locator("#sidebar-launcher-marchers").click();
+    // The row's menu button has no accessible name; it's the row's only button.
+    await sidebar
+        .getByText(drillNumber, { exact: true })
+        .locator("xpath=../..")
+        .getByRole("button")
+        .click();
+    await page.getByRole("button", { name: item, exact: true }).click();
+}
