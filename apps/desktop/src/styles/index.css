@@ -102,9 +102,9 @@
 .main-app-titlebar .titlebar-button {
     -webkit-app-region: no-drag;
 }
-/* On macOS, start after the traffic lights. 88px was the old hard-coded gap. */
+/* On macOS, start after the traffic lights. 88px total was the old hard-coded gap. */
 .titlebar-mac .titlebar-leading {
-    padding-left: env(titlebar-area-x, 88px);
+    padding-left: calc(env(titlebar-area-x, 64px) + 24px);
 }
 
 /* Number input arrows */
