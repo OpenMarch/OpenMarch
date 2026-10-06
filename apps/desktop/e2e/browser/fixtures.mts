@@ -151,6 +151,9 @@ async function openInElectron(
     const log: string[] = [];
     app.process().stdout?.on("data", (data) => log.push(String(data)));
     app.process().stderr?.on("data", (data) => log.push(String(data)));
+    // No network, as in the browser target: the app's update check and
+    // analytics would otherwise make results depend on outside services.
+    await app.context().route(/^https?:/, (route) => route.abort());
     const page = await app.firstWindow();
     // Same size as the browser target, so both lay the app out alike.
     await app.evaluate(({ BrowserWindow }, size) => {
