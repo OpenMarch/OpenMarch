@@ -80,8 +80,8 @@ export default function TimelineContainer() {
     // mounted, hidden, because it runs playback and the timeline reads its clock.
     if (timelineMode && uiSettings.focussedComponent !== "timeline") {
         return (
+            // UI-12: perspective and fullscreen live on the field's zoom widget in timeline mode
             <div className="flex gap-8" data-testid="timeline-mode-container">
-                {isFullscreen && <PerspectiveSlider />}
                 <TimelineModePanel />
                 <div style={{ display: "none" }}>
                     <AudioPlayer />

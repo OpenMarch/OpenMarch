@@ -138,7 +138,7 @@ describe("TimelineSelectionStore (UI-9, UI-10)", () => {
         expect(store().selection).toEqual({ kind: "home" });
     });
 
-    it("a dragged range pins the start flag until the playhead reaches it", () => {
+    it("a dragged range pins the start flag until something unpins it explicitly (UI-12)", () => {
         store().setPageBoxes(BOXES);
         store().selectRange(12, 17);
         expect(store().startPinned).toBe(true);
@@ -148,9 +148,17 @@ describe("TimelineSelectionStore (UI-9, UI-10)", () => {
             start: 12,
             end: 22,
         });
-        store().seek(12); // reaching it unpins it
-        expect(store().startPinned).toBe(false);
+        store().seek(12); // reaching it keeps it: the window falls back to the box, as after Stop
+        expect(store().startPinned).toBe(true);
+        expect(store().startBeat).toBe(12);
         expect(store().selection).toEqual({ kind: "range", start: 9, end: 12 });
+        store().seek(5); // scrubbing back past it keeps it too
+        store().seek(16);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 12,
+            end: 16,
+        });
         store().selectRange(9, 17); // a page box is unpinned
         expect(store().startPinned).toBe(false);
     });
@@ -391,6 +399,106 @@ describe("TimelineSelectionStore (UI-9, UI-10)", () => {
             expect(store().isolation).toBeNull();
             expect(isMarcherDimmed(store(), 1)).toBe(false);
         });
+    });
+});
+
+describe("unpinning the start flag (UI-12)", () => {
+    beforeEach(() => {
+        store().reset();
+        store().setPageBoxes(BOXES);
+    });
+
+    it("sends a pinned S back to the page box holding P, which it then follows", () => {
+        store().selectRange(5, 17);
+        expect(store().startPinned).toBe(true);
+        store().unpinStart();
+        expect(store().startPinned).toBe(false);
+        expect(store().startBeat).toBe(9);
+        expect(store().playheadBeat).toBe(17);
+        expect(store().selection).toEqual({ kind: "range", start: 9, end: 17 });
+        store().seek(21);
+        expect(store().startBeat).toBe(17);
+    });
+
+    it("leaves an unpinned S, and isolation's S, alone", () => {
+        store().selectRange(9, 17);
+        const before = store().selection;
+        store().unpinStart();
+        expect(store().selection).toBe(before);
+        store().setStoredTimelines([timeline(1, 5, 17, [1])]);
+        store().isolate(1);
+        const isolated = store().startBeat;
+        store().unpinStart();
+        expect(store().startBeat).toBe(isolated);
+    });
+});
+
+describe("the start flag during a gesture (UI-12 review)", () => {
+    beforeEach(() => {
+        store().reset();
+        store().setPageBoxes(BOXES);
+    });
+
+    it("stays put while a scrub moves the playhead, without pinning", () => {
+        store().selectRange(9, 17);
+        store().beginScrub();
+        store().seek(21);
+        expect(store().startBeat).toBe(9);
+        expect(store().startPinned).toBe(false);
+        expect(store().selection).toEqual({ kind: "range", start: 9, end: 21 });
+        // Back on or before S: the window falls back to the page box holding P, as after Stop
+        store().seek(5);
+        expect(store().startBeat).toBe(9);
+        expect(store().selection).toEqual({ kind: "range", start: 1, end: 5 });
+        store().seek(23);
+        expect(store().startBeat).toBe(9);
+    });
+
+    it("follows the playhead once when the scrub ends", () => {
+        store().selectRange(9, 17);
+        store().beginScrub();
+        store().seek(23);
+        const revision = store().playheadRevision;
+        store().endScrub();
+        expect(store().scrubbing).toBe(false);
+        expect(store().startBeat).toBe(17);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 17,
+            end: 23,
+        });
+        // The playhead didn't move, so nothing restarts
+        expect(store().playheadRevision).toBe(revision);
+        // Not scrubbing: seeking follows at once again
+        store().seek(5);
+        expect(store().startBeat).toBe(1);
+    });
+
+    it("leaves a pinned S, and isolation's S, where they are", () => {
+        store().selectRange(5, 17);
+        store().beginScrub();
+        store().seek(21);
+        store().endScrub();
+        expect(store().startBeat).toBe(5);
+        expect(store().startPinned).toBe(true);
+        store().setStoredTimelines([timeline(1, 5, 17, [1])]);
+        store().isolate(1);
+        store().beginScrub();
+        store().seek(9);
+        store().endScrub();
+        expect(store().startBeat).toBe(5);
+    });
+
+    it("a page box, home or opening a show ends the gesture", () => {
+        store().beginScrub();
+        store().selectRange(9, 17);
+        expect(store().scrubbing).toBe(false);
+        store().beginScrub();
+        store().selectHome();
+        expect(store().scrubbing).toBe(false);
+        store().beginScrub();
+        store().reset();
+        expect(store().scrubbing).toBe(false);
     });
 });
 

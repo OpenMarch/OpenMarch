@@ -7,9 +7,10 @@ import {
     useTimelineSelectionStore,
 } from "@/stores/TimelineSelectionStore";
 import { beatAtTime, beatIndexAtTime } from "@/timeline/timeMap";
-import { pageAtPlayhead } from "@/timeline/timelinePlayhead";
 import {
+    jumpTimelinePages,
     navigateTimelinePages,
+    seekTimeline,
     stopTimelinePlayback,
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
@@ -31,7 +32,9 @@ import type { TimelinePlayback } from "./Timeline";
  * - While paused, the cursor is the frame a paused preview holds, or else the playhead, which
  *   rests on any whole beat, the end of the show included (UI-11).
  * - Seeking moves only the playhead; the selection stays. Page navigation moves the playhead to a
- *   flag and selects that page (`navigateTimelinePages`). Neither does anything while playing.
+ *   flag and selects that page (`navigateTimelinePages`). While playing, both jump playback
+ *   instead and leave the playhead alone (UI-12, `jumpTimelinePlayback`); a scrub suspends
+ *   playback until it ends, then plays on from there once (`seekTimeline`, UI-12 review).
  * - Play previews the window, from just before the start flag to just after the playhead,
  *   looping when the loop is on (`toggleTimelinePlayback`, UI-11).
  */
@@ -44,7 +47,6 @@ export function useTimelinePlayback({
 }): TimelinePlayback {
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const playheadBeat = useTimelineSelectionStore(displayedBeat);
-    const seek = useTimelineSelectionStore((s) => s.seek);
     const [liveIndex, setLiveIndex] = useState<number | null>(null);
 
     useEffect(() => {
@@ -76,16 +78,23 @@ export function useTimelinePlayback({
             liveBeat,
             positionBeat:
                 isPlaying && liveIndex != null ? liveIndex : playheadBeat,
-            // A page is named by its end flag, so on a flag the label names the page ending there
-            pageLabel: isPlaying
-                ? undefined
-                : pageAtPlayhead(pages, playheadBeat)?.name,
             isPlaying,
-            onSeek: (beatIndex) => {
-                if (!isPlaying) seek(beatIndex);
-            },
+            // UI-12: while playing, a click or page button jumps playback there, and a scrub
+            // suspends it until it ends (`seekTimeline`)
+            onSeek: (beatIndex, options) =>
+                seekTimeline(beats, beatIndex, options?.gesture, {
+                    isPlaying,
+                    setIsPlaying,
+                }),
             onNavigate: (direction) => {
                 if (!isPlaying) navigateTimelinePages(pages, direction);
+                else
+                    jumpTimelinePages(
+                        beats,
+                        pages,
+                        Math.floor(liveBeat() ?? liveIndex ?? playheadBeat),
+                        direction,
+                    );
             },
             onStop: () => stopTimelinePlayback({ isPlaying, setIsPlaying }),
             onPlayingChange: (next) => {
@@ -98,13 +107,12 @@ export function useTimelinePlayback({
             },
         }),
         [
-            beats.length,
+            beats,
             isPlaying,
             liveBeat,
             liveIndex,
             pages,
             playheadBeat,
-            seek,
             setIsPlaying,
         ],
     );

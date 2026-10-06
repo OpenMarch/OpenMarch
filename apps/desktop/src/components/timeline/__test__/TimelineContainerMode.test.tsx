@@ -104,12 +104,13 @@ describeDbTests("TimelineContainer and the timeline flag", (it) => {
             expect(container.querySelector("#timeline")).toBeNull();
             // No tracks until the view-model adapter (P8.8)
             expect(screen.queryByLabelText(/ timeline, beats /)).toBeNull();
-            // The transport keeps the page timeline's extra controls
+            // The transport is the timeline's header row; fullscreen is on the field's zoom
+            // widget now (UI-12), and Sound and Compact are in the row
             expect(
-                screen.getByRole("button", {
-                    name: "Toggle timeline fullscreen",
-                }),
+                screen.getByRole("group", { name: "Transport" }),
             ).toBeInTheDocument();
+            expect(screen.getByTestId("timeline-sound")).toBeInTheDocument();
+            expect(screen.getByTestId("timeline-compact")).toBeInTheDocument();
         });
 
         it("selects the page clicked in the ruler", async ({ db, wrapper }) => {
@@ -139,9 +140,9 @@ describeDbTests("TimelineContainer and the timeline flag", (it) => {
 
             // The ruler also seeks to beat 9, which alone would select page 1 (it ends there)
             await waitFor(() =>
-                expect(screen.getByRole("complementary")).toHaveTextContent(
-                    "Pg 2",
-                ),
+                expect(
+                    screen.getByRole("group", { name: "Transport" }),
+                ).toHaveTextContent("Pg 2"),
             );
             expect(page2).toHaveAttribute("aria-pressed", "true");
         });

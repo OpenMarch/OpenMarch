@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
     clientXToNearestBeat,
     filterMarkersByMinimumSpacing,
+    getPageCountAt,
+    parseTimelineGoTo,
     getPageRange,
     getPageSnapBeats,
     getPlayheadLabel,
+    getPlayheadReadout,
+    getVisiblePageCounts,
+    getWindowCountLabel,
     getSelectionRange,
     isPageSnapDisabled,
     packTimelineTracks,
@@ -131,13 +136,40 @@ describe("timeline geometry", () => {
         ).toEqual(["measure-1", "measure-3", "measure-5", "measure-7"]);
     });
 
-    it("formats the playhead as page, measure, and count", () => {
-        expect(getPlayheadLabel(timelineStoryModel, 0)).toBe("Pg 1 · m1.1");
-        expect(getPlayheadLabel(timelineStoryModel, 11)).toBe("Pg 2 · m3.4");
-        // A caller-named page (the selected page while paused) wins over the page under the beat
-        expect(getPlayheadLabel(timelineStoryModel, 16, "2")).toBe(
-            "Pg 2 · m5.1",
+    it("formats the playhead as page, count and measure (UI-13)", () => {
+        expect(getPlayheadLabel(timelineStoryModel, 0)).toBe("Home");
+        expect(getPlayheadLabel(timelineStoryModel, 11)).toBe(
+            "Pg 2 · ct 3/8 · m3 beat 4",
         );
+        // On a flag, the page ending there, as the transport counts it
+        expect(getPlayheadLabel(timelineStoryModel, 16)).toBe(
+            "Pg 2 · ct 8/8 · m5 beat 1",
+        );
+        // The last page has no flag in this model, so no total
+        expect(getPlayheadLabel(timelineStoryModel, 27)).toBe(
+            "Pg 4 · ct 3 · m7 beat 4",
+        );
+    });
+
+    it("leaves the measure out when the show has none (UI-13)", () => {
+        const model = { ...timelineStoryModel, measures: [] };
+        expect(getPlayheadLabel(model, 11)).toBe("Pg 2 · ct 3/8");
+        expect(getPlayheadReadout(model, 11).spoken).toBe(
+            "Page 2, count 3 of 8",
+        );
+        expect(getPlayheadReadout(timelineStoryModel, 11).spoken).toBe(
+            "Page 2, count 3 of 8, measure 3 beat 4",
+        );
+    });
+
+    it("reads past the last flag as after that page (UI-13)", () => {
+        const model = {
+            ...timelineStoryModel,
+            pages: timelineStoryModel.pages.map((page) =>
+                page.id === "page-4" ? { ...page, endBeat: 28 } : page,
+            ),
+        };
+        expect(getPlayheadReadout(model, 30).page).toBe("After pg 4 · +2");
     });
 
     it("accepts normalized activity partitions", () => {
@@ -265,5 +297,137 @@ describe("page snapping (UI-2)", () => {
     it("turns snapping off while Alt is held", () => {
         expect(isPageSnapDisabled({ altKey: true })).toBe(true);
         expect(isPageSnapDisabled({ altKey: false })).toBe(false);
+    });
+});
+
+describe("getPageCountAt (UI-12)", () => {
+    it("counts to a page's flag: its flag is its last count, the next beat is the next page's 1", () => {
+        expect(getPageCountAt(timelineStoryModel, 8)).toEqual({
+            pageLabel: "1",
+            count: 8,
+            total: 8,
+            startBeat: 0,
+        });
+        expect(getPageCountAt(timelineStoryModel, 9)).toEqual({
+            pageLabel: "2",
+            count: 1,
+            total: 8,
+            startBeat: 8,
+        });
+        expect(getPageCountAt(timelineStoryModel, 0)).toEqual({
+            pageLabel: "0",
+            count: 0,
+            home: true,
+        });
+    });
+});
+
+describe("getVisiblePageCounts (UI-13)", () => {
+    it("numbers every count when there is room, always ending on the flag", () => {
+        expect(getVisiblePageCounts(8, 20)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    });
+
+    it("doubles the step until the numbers fit, keeping the flag's count", () => {
+        // Two digits need 18px: every 2nd count at 10px a beat, every 4th at 5px
+        expect(getVisiblePageCounts(16, 10)).toEqual([
+            2, 4, 6, 8, 10, 12, 14, 16,
+        ]);
+        expect(getVisiblePageCounts(16, 5)).toEqual([4, 8, 12, 16]);
+        // A number too close to the flag's gives way to it
+        expect(getVisiblePageCounts(14, 5)).toEqual([4, 8, 14]);
+    });
+
+    it("still numbers a short page's flag, and nothing when it can't fit one", () => {
+        expect(getVisiblePageCounts(3, 4)).toEqual([3]);
+        expect(getVisiblePageCounts(2, 4)).toEqual([]);
+    });
+});
+
+describe("getWindowCountLabel (UI-13)", () => {
+    it("names the counts inside one page box, counted to its flag", () => {
+        expect(
+            getWindowCountLabel(timelineStoryModel, {
+                startBeatIndex: 10,
+                endBeatIndex: 14,
+            }),
+        ).toBe("counts 3–6");
+        expect(
+            getWindowCountLabel(timelineStoryModel, {
+                startBeatIndex: 12,
+                endBeatIndex: 13,
+            }),
+        ).toBe("count 5");
+    });
+
+    it("gives a length when the window passes a flag", () => {
+        expect(
+            getWindowCountLabel(timelineStoryModel, {
+                startBeatIndex: 4,
+                endBeatIndex: 16,
+            }),
+        ).toBe("12 counts");
+    });
+});
+
+describe("parseTimelineGoTo (UI-12)", () => {
+    const model = {
+        beatCount: 11,
+        pages: [
+            { id: "p0", label: "0", atBeat: 0, isInitial: true },
+            { id: "p1", label: "1", atBeat: 0, isInitial: false },
+            { id: "p2a", label: "2A", atBeat: 8, isInitial: false },
+        ],
+        measures: [
+            { id: "m1", label: "M1", atBeat: 0 },
+            { id: "m2", label: "M2", atBeat: 4, rehearsalMark: "B" },
+            { id: "m3", label: "M3", atBeat: 8 },
+        ],
+    };
+    it("reads measures, pages and rehearsal marks as designers type them", () => {
+        expect(parseTimelineGoTo("m2", model)).toEqual({
+            kind: "beat",
+            beat: 4,
+        });
+        expect(parseTimelineGoTo("M2.3", model)).toEqual({
+            kind: "beat",
+            beat: 6,
+        });
+        expect(parseTimelineGoTo("m1.4", model)).toEqual({
+            kind: "beat",
+            beat: 3,
+        });
+        expect(parseTimelineGoTo("b", model)).toEqual({
+            kind: "beat",
+            beat: 4,
+        });
+        expect(parseTimelineGoTo("2a", model)).toEqual({
+            kind: "page",
+            pageId: "p2a",
+        });
+        expect(parseTimelineGoTo("pg 1", model)).toEqual({
+            kind: "page",
+            pageId: "p1",
+        });
+        expect(parseTimelineGoTo("page 0", model)).toEqual({
+            kind: "page",
+            pageId: "p0",
+        });
+        expect(parseTimelineGoTo("m9", model)).toBeNull();
+        expect(parseTimelineGoTo("", model)).toBeNull();
+        expect(parseTimelineGoTo("zz", model)).toBeNull();
+    });
+
+    it("misses a count the measure doesn't have, rather than guessing (UI-12 review)", () => {
+        expect(parseTimelineGoTo("m1.0", model)).toBeNull();
+        // Measure 1 runs to measure 2, beats 0-3
+        expect(parseTimelineGoTo("m1.5", model)).toBeNull();
+        expect(parseTimelineGoTo("m1.9", model)).toBeNull();
+        // The last measure runs to the show's end: beats 8-10
+        expect(parseTimelineGoTo("m3.3", model)).toEqual({
+            kind: "beat",
+            beat: 10,
+        });
+        expect(parseTimelineGoTo("m3.4", model)).toBeNull();
+        expect(parseTimelineGoTo("m3.40", model)).toBeNull();
     });
 });

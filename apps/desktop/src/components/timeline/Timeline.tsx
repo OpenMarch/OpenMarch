@@ -26,6 +26,7 @@ import type {
     TimelineCreateTrackRequest,
     TimelineNavigation,
     TimelineRangeChange,
+    TimelineSeekOptions,
     TimelineSelection,
     TimelineTarget,
     TimelineTrack,
@@ -73,11 +74,15 @@ export interface TimelinePlayback {
     readonly positionBeat: number;
     /** While playing, the live spec beat, fractional, for a smooth playhead; `null` when there is none */
     readonly liveBeat?: () => number | null;
-    /** Names the page in the transport and playhead labels, such as the selected page while paused */
-    readonly pageLabel?: string;
     readonly isPlaying: boolean;
-    /** Seek to a whole beat index, already clamped to the show */
-    readonly onSeek?: (beatIndex: number) => void;
+    /**
+     * Seek to a whole beat index, already clamped to the show. `options.gesture` says where the
+     * seek sits in a scrub (UI-12 review); without it, the seek is one explicit action.
+     */
+    readonly onSeek?: (
+        beatIndex: number,
+        options?: TimelineSeekOptions,
+    ) => void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** **Stop** (UI-11): back to the playhead */
     readonly onStop?: () => void;
@@ -106,7 +111,17 @@ export interface TimelineProps {
     readonly transportClock?: ReactNode;
     /** Extra transport controls, such as volume, the metronome and fullscreen */
     readonly transportAccessories?: ReactNode;
+    /** Transport controls that fold into "⋯" on a narrow panel, such as Sound */
+    readonly transportSecondary?: ReactNode;
+    /** View controls at the transport's end, such as Compact */
+    readonly transportViewControls?: ReactNode;
     readonly showTransport?: boolean;
+    /** The zoom, in pixels per beat; without it the timeline keeps its own (starting at 16) */
+    readonly pixelsPerBeat?: number;
+    readonly onPixelsPerBeatChange?: (pixelsPerBeat: number) => void;
+    /** Whether the zoom was fitted to the show; the timeline opens fitted when it was (UI-12) */
+    readonly zoomFitted?: boolean;
+    readonly onZoomFittedChange?: (fitted: boolean) => void;
     readonly selection?: TimelineSelection;
     readonly selectedTarget?: TimelineTarget | null;
     readonly className?: string;
@@ -115,6 +130,8 @@ export interface TimelineProps {
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
     /** Turns **From start** off (UI-11), from the range bar */
     readonly onPlayFromStartOff?: () => void;
+    /** Unpins the start flag (UI-12), from its pin */
+    readonly onUnpinStart?: () => void;
     /**
      * The right-click menu's **Add selected marchers** (UI-9, P8.14), for a page box, a clip's
      * timeline or a dragged range. It gets spec beats; the menu doesn't change the selection.
@@ -242,6 +259,7 @@ export const selectionToView = (
                     }
                   : {}),
               ...(selection.fromStart ? { fromStart: true } : {}),
+              ...(selection.startPinned ? { startPinned: true } : {}),
           }
         : selection;
 
@@ -287,7 +305,9 @@ export function Timeline(props: TimelineProps) {
         ],
     );
     const playback = props.playback ?? STOPPED_AT_START;
-    const [pixelsPerBeat, setPixelsPerBeat] = useState(16);
+    const [ownPixelsPerBeat, setOwnPixelsPerBeat] = useState(16);
+    const pixelsPerBeat = props.pixelsPerBeat ?? ownPixelsPerBeat;
+    const setPixelsPerBeat = props.onPixelsPerBeatChange ?? setOwnPixelsPerBeat;
 
     // The playhead may rest on the end of the show (the last flag, UI-9), one past the last beat
     const positionBeat = clamp(
@@ -310,7 +330,7 @@ export function Timeline(props: TimelineProps) {
         [axis, beatCount, liveBeat],
     );
     const seekToBeat = playback.onSeek
-        ? (viewBeat: number) => {
+        ? (viewBeat: number, options?: TimelineSeekOptions) => {
               if (props.beats.length === 0) return;
               playback.onSeek?.(
                   clamp(
@@ -318,6 +338,7 @@ export function Timeline(props: TimelineProps) {
                       0,
                       props.beats.length,
                   ),
+                  options,
               );
           }
         : undefined;
@@ -396,7 +417,6 @@ export function Timeline(props: TimelineProps) {
         model,
         positionBeat,
         livePositionBeat,
-        pageLabel: playback.pageLabel,
         isPlaying: playback.isPlaying,
         pixelsPerBeat,
         selection,
@@ -407,6 +427,8 @@ export function Timeline(props: TimelineProps) {
         onStop: playback.onStop,
         onNavigate: playback.onNavigate,
         onPixelsPerBeatChange: setPixelsPerBeat,
+        zoomFitted: props.zoomFitted,
+        onZoomFittedChange: props.onZoomFittedChange,
         onSelectionChange: changeSelection,
         onCreateTrack: createTrack,
         addSelectedMarchers: addMarchersMenu,
@@ -414,6 +436,9 @@ export function Timeline(props: TimelineProps) {
         onOpenRange: onOpenRange && openRange,
         onTimelineRangeCommit: commitRange,
         onPlayFromStartOff: props.onPlayFromStartOff,
+        onUnpinStart: props.onUnpinStart,
+        transportSecondary: props.transportSecondary,
+        transportViewControls: props.transportViewControls,
         showTransport: props.showTransport ?? true,
         transportClock: props.transportClock,
         transportAccessories: props.transportAccessories,
@@ -430,6 +455,8 @@ export type {
     TimelineActivitySpan,
     TimelineBeatRange,
     TimelineCreateTrackRequest,
+    TimelineSeekGesture,
+    TimelineSeekOptions,
     TimelineSelection,
     TimelineTarget,
 } from "./TimelineViewModel";

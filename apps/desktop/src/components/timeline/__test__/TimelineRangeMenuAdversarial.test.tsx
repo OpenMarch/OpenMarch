@@ -154,6 +154,7 @@ describe("right-click menu, adversarial", () => {
     });
 
     it("macOS ctrl+click (button 0 with ctrlKey) on the surface doesn't seek", () => {
+        vi.spyOn(navigator, "platform", "get").mockReturnValue("MacIntel");
         const onSeek = vi.fn();
         show({ menu: { onAdd: vi.fn() }, onSeek, selection: RANGE });
         const surface = screen.getByTestId("timeline-pointer-surface");
@@ -168,6 +169,7 @@ describe("right-click menu, adversarial", () => {
         fireEvent.contextMenu(surface, opts);
         fireEvent.pointerUp(surface, opts);
         expect(onSeek).not.toHaveBeenCalled();
+        vi.restoreAllMocks();
     });
 
     it("a clip whose timeline starts at spec beat 0 sends its stored range [0, 8)", () => {

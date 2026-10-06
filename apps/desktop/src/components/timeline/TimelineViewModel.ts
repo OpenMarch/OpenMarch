@@ -117,8 +117,26 @@ export type TimelineSelection =
           readonly fromStart?: boolean;
           /** The range was drawn by dragging on empty timeline space, which turns From start on */
           readonly drawn?: boolean;
+          /**
+           * The start flag was placed by hand and stays through navigation (UI-10 pinning); UI-12
+           * draws it with a pin that unpins it
+           */
+          readonly startPinned?: boolean;
       }
     | null;
+
+/**
+ * Where a seek sits in a pointer or key gesture (UI-12 review). `press` is the pointer going down
+ * (a click so far), `drag` is the gesture moving the playhead, and `end` is its release or cancel.
+ * A seek without a gesture is one explicit action (a rehearsal tab, the go-to box). While playing,
+ * a drag suspends playback, which resumes once from where the gesture ends; a press that ends
+ * without a drag jumps playback there. The start flag moves once, when the gesture ends.
+ */
+export type TimelineSeekGesture = "press" | "drag" | "end";
+
+export interface TimelineSeekOptions {
+    readonly gesture?: TimelineSeekGesture;
+}
 
 export type TimelineNavigation =
     | "first-page"
@@ -134,12 +152,13 @@ export interface TimelineInteractionProps {
      * follows `positionBeat`, which changes once per beat.
      */
     readonly livePositionBeat?: () => number | null;
-    /** Names the page in the transport and playhead labels instead of the page under the cursor */
-    readonly pageLabel?: string;
     readonly isPlaying: boolean;
     readonly selection?: TimelineSelection;
     readonly selectedTarget?: TimelineTarget | null;
-    readonly onSeek?: (beat: BeatPosition) => void;
+    readonly onSeek?: (
+        beat: BeatPosition,
+        options?: TimelineSeekOptions,
+    ) => void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** **Stop** (UI-10): stops and returns the playhead to the start flag; without it, no Stop button */
     readonly onStop?: () => void;
@@ -160,6 +179,9 @@ export interface TimelineInteractionProps {
 export interface TimelineScaleProps {
     readonly pixelsPerBeat: number;
     readonly onPixelsPerBeatChange?: (pixelsPerBeat: number) => void;
+    /** The zoom was fitted to the show last time (UI-12): the timeline opens fitted */
+    readonly zoomFitted?: boolean;
+    readonly onZoomFittedChange?: (fitted: boolean) => void;
 }
 
 export interface TimelineCommonProps
@@ -174,6 +196,12 @@ export interface TimelineCommonProps
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
     /** Turns **From start** off (UI-11), from the range bar */
     readonly onPlayFromStartOff?: () => void;
+    /** Unpins the start flag (UI-12), from its pin */
+    readonly onUnpinStart?: () => void;
+    /** Transport controls that fold into "⋯" on a narrow panel, such as Sound (UI-12) */
+    readonly transportSecondary?: ReactNode;
+    /** View controls at the transport's end, such as Compact (UI-12); they fold too */
+    readonly transportViewControls?: ReactNode;
 }
 
 export interface TimelineRangeChange extends TimelineBeatRange {

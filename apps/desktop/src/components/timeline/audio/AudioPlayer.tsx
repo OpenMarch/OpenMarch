@@ -26,6 +26,10 @@ import {
 } from "@/stores/TimelineSelectionStore";
 import { timeAtBeat } from "@/timeline/timeMap";
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
+import {
+    audioEnvelope,
+    useAudioEnvelopeStore,
+} from "@/timeline/timelineWaveform";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import type Page from "@/global/classes/Page";
 
@@ -33,6 +37,8 @@ export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
 const PLAYBACK_DELAY = 0.1; // Delay in seconds to start playback
+// Stopping fades the sources out over this many seconds, so a stop or restart doesn't click
+const STOP_FADE = 0.008;
 const WAVEFORM_HEIGHT = 60;
 
 // Helper function to adjust volume based on percentage
@@ -165,6 +171,9 @@ export default function AudioPlayer() {
     // is none), not the selected page. Every cursor or playhead write restarts playback from it,
     // which is how a preview loops back to its start.
     const timelineMode = useTimelineMode();
+    // In timeline mode, mute silences the music only, so the metronome can count through it
+    // (UI-12); page mode's mute still silences both
+    const metroMuted = audioMuted && !timelineMode;
     const playheadBeat = useTimelineSelectionStore(displayedBeat);
     const playheadRevision = useTimelineSelectionStore(
         (s) => s.playheadRevision,
@@ -245,6 +254,21 @@ export default function AudioPlayer() {
             largestMinimumDuration.current = cappedDuration;
         return largestMinimumDuration.current;
     }, [pages]);
+
+    // The timeline's waveform lane (UI-12) reads the offset audio's envelope; page mode has no
+    // lane, so it skips the work
+    useEffect(() => {
+        const { setEnvelope } = useAudioEnvelopeStore.getState();
+        setEnvelope(
+            timelineMode && audioBuffer && selectedAudioFile
+                ? audioEnvelope(audioBuffer)
+                : null,
+        );
+    }, [timelineMode, audioBuffer, selectedAudioFile]);
+    useEffect(
+        () => () => useAudioEnvelopeStore.getState().setEnvelope(null),
+        [],
+    );
 
     // Populate audio data when selectedAudioFile changes
     useEffect(() => {
@@ -388,28 +412,40 @@ export default function AudioPlayer() {
         )
             return;
 
+        // Fades a source out and stops it, then disconnects it and its gain
+        const fadeOut = (
+            source: AudioBufferSourceNode,
+            gain: GainNode | null,
+        ) => {
+            const now = audioContext.currentTime;
+            if (gain) {
+                gain.gain.cancelScheduledValues(now);
+                gain.gain.setValueAtTime(gain.gain.value, now);
+                gain.gain.linearRampToValueAtTime(0, now + STOP_FADE);
+            }
+            try {
+                source.stop(now + STOP_FADE);
+            } catch (e) {
+                // Already stopped or not playing, ignore
+            }
+            setTimeout(
+                () => {
+                    source.disconnect();
+                    gain?.disconnect();
+                },
+                STOP_FADE * 1000 + 20,
+            );
+        };
+
         // Helper to stop playback
         const stopPlayback = () => {
             if (audioNode.current) {
-                try {
-                    audioNode.current.stop();
-                } catch (e) {
-                    // Audio already stopped or not playing, ignore
-                }
-                audioNode.current.disconnect();
+                fadeOut(audioNode.current, audioGainNode.current);
                 audioNode.current = null;
-            }
-            if (audioGainNode.current) {
-                audioGainNode.current.disconnect();
-                audioGainNode.current = null;
-            }
+            } else audioGainNode.current?.disconnect();
+            audioGainNode.current = null;
             if (metroNode.current) {
-                try {
-                    metroNode.current.stop();
-                } catch (e) {
-                    // Metronome already stopped or not playing, ignore
-                }
-                metroNode.current.disconnect();
+                fadeOut(metroNode.current, metroGainNode.current);
                 metroNode.current = null;
             }
         };
@@ -433,7 +469,8 @@ export default function AudioPlayer() {
 
             const metroSource = audioContext.createBufferSource();
             metroGainNode.current = audioContext.createGain();
-            const masterVolume = calculateMasterVolume(audioVolume, audioMuted);
+            // The volume scales both; mute reaches the metronome only in page mode (metroMuted)
+            const masterVolume = calculateMasterVolume(audioVolume, metroMuted);
             // Read metronome settings at playback start, live changes update gain below without restarting
             const { isMetronomeOn: metronomeOn, volume: metronomeVolume } =
                 useMetronomeStore.getState();
@@ -495,6 +532,7 @@ export default function AudioPlayer() {
         timelineMode,
         audioVolume,
         audioMuted,
+        metroMuted,
     ]);
 
     // Initialize WaveSurfer and load waveform data
@@ -550,13 +588,13 @@ export default function AudioPlayer() {
     // Update metronome on/off state and volume
     useEffect(() => {
         if (metroGainNode.current) {
-            const masterVolume = calculateMasterVolume(audioVolume, audioMuted);
+            const masterVolume = calculateMasterVolume(audioVolume, metroMuted);
             metroGainNode.current.gain.value =
                 isMetronomeOn && masterVolume > 0
                     ? volumeAdjustment(volume) * masterVolume
                     : 0;
         }
-    }, [audioMuted, audioVolume, isMetronomeOn, volume]);
+    }, [audioVolume, metroMuted, isMetronomeOn, volume]);
 
     useEffect(() => {
         if (audioGainNode.current) {

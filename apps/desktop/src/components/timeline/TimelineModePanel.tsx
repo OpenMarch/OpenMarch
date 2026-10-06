@@ -1,7 +1,6 @@
 import { toast } from "sonner";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CornersInIcon, CornersOutIcon } from "@phosphor-icons/react";
 import type { AddedPageFlag } from "@/db-functions/pageFlags";
 import {
     deletePageFlagsMutationOptions,
@@ -12,6 +11,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { db } from "@/global/database/db";
 import {
+    displayedBeat,
     selectionIsRange,
     useTimelineSelectionStore,
     type TimelineEditSelection,
@@ -24,46 +24,36 @@ import {
 } from "@/timeline/timelinePlayhead";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useTimelineTracks } from "@/timeline/useTimelineTracks";
-import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { AudioClock } from "./Clock";
 import {
-    TimelineFromStartButton,
-    TimelineLoopButton,
-    TimelineMetronomeButton,
-    TimelineMuteButton,
+    TimelineCompactButton,
+    TimelinePreviewButtons,
+    TimelineSoundButton,
 } from "./TimelineControls";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
     Timeline,
+    TimelineWaveformProvider,
     type TimelineInput,
     type TimelineSelection,
 } from "./Timeline";
+import {
+    peaksByBeat,
+    useAudioEnvelopeStore,
+} from "@/timeline/timelineWaveform";
+import { createTimelineBeatAxis } from "@/timeline/timelineViewModel";
+import { timeAtBeat } from "@/timeline/timeMap";
 import { useTimelineCommands } from "./useTimelineCommands";
 import { useTimelinePlayback } from "./useTimelinePlayback";
 
-/** The page timeline's fullscreen toggle, for the timeline's transport */
-function FullscreenButton() {
-    const { isFullscreen, toggleFullscreen } = useFullscreenStore();
-    return (
-        <button
-            className="text-text enabled:hover:text-accent focus-visible:ring-accent duration-150 ease-out focus-visible:ring-2 focus-visible:outline-none"
-            onClick={toggleFullscreen}
-            aria-label="Toggle timeline fullscreen"
-            aria-pressed={isFullscreen}
-        >
-            {isFullscreen ? (
-                <CornersInIcon size={20} />
-            ) : (
-                <CornersOutIcon size={20} />
-            )}
-        </button>
-    );
-}
+const NO_WAVEFORM = { peaksByBeat: [] };
 
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
 export const toTimelineSelection = (
     selection: TimelineEditSelection,
     startBeat?: number,
     fromStart = false,
+    startPinned = false,
 ): TimelineSelection =>
     selection.kind === "range"
         ? {
@@ -77,6 +67,7 @@ export const toTimelineSelection = (
                   ? { startFlagBeatIndex: startBeat }
                   : {}),
               ...(fromStart ? { fromStart: true } : {}),
+              ...(startPinned ? { startPinned: true } : {}),
           }
         : selection.kind === "home"
           ? { kind: "home" }
@@ -108,10 +99,60 @@ export default function TimelineModePanel() {
     }, [pages]);
     const startBeat = useTimelineSelectionStore((s) => s.startBeat);
     const playFromStart = useTimelineSelectionStore((s) => s.playFromStart);
-    const selection = useMemo(
-        () => toTimelineSelection(editSelection, startBeat, playFromStart),
-        [editSelection, startBeat, playFromStart],
+    // UI-12: the pin shows outside isolation, whose start flag is the isolated move's own
+    const startPinned = useTimelineSelectionStore(
+        (s) => s.startPinned && s.isolation === null,
     );
+    const selection = useMemo(
+        () =>
+            toTimelineSelection(
+                editSelection,
+                startBeat,
+                playFromStart,
+                startPinned,
+            ),
+        [editSelection, startBeat, playFromStart, startPinned],
+    );
+    // UI-12: the paused clock reads the beat the timeline shows, not the selected page's end
+    const shownBeat = useTimelineSelectionStore(displayedBeat);
+    const pausedSeconds =
+        beats.length > 0
+            ? timeAtBeat(beats, Math.min(shownBeat, beats.length))
+            : undefined;
+    const compact = useUiSettingsStore((s) => s.uiSettings.timelineCompact);
+    // UI-12: the waveform lane, from the audio player's envelope, per beat on the view axis
+    const envelope = useAudioEnvelopeStore((s) => s.envelope);
+    const waveform = useMemo(
+        () =>
+            envelope
+                ? {
+                      peaksByBeat: peaksByBeat(
+                          envelope,
+                          beats,
+                          createTimelineBeatAxis(beats).offset,
+                      ),
+                  }
+                : null,
+        [envelope, beats],
+    );
+    // The zoom changes every frame of a pinch: keep it here, and save it once the gesture settles
+    const [pixelsPerBeat, setPixelsPerBeat] = useState(
+        () => useUiSettingsStore.getState().uiSettings.timelinePixelsPerBeat,
+    );
+    useEffect(() => {
+        const timeout = setTimeout(
+            () =>
+                useUiSettingsStore
+                    .getState()
+                    .setTimelinePixelsPerBeat(pixelsPerBeat),
+            400,
+        );
+        return () => clearTimeout(timeout);
+    }, [pixelsPerBeat]);
+    const zoomFitted = useUiSettingsStore(
+        (s) => s.uiSettings.timelineZoomFitted,
+    );
+    const setZoomFitted = useUiSettingsStore((s) => s.setTimelineZoomFitted);
     const { isPlaying } = useIsPlaying()!;
     const selectedMarchers = useSelectedMarchers()?.selectedMarchers;
     const selectedIdsKey = (selectedMarchers ?? []).map((m) => m.id).join(",");
@@ -184,67 +225,75 @@ export default function TimelineModePanel() {
                 };
             }}
         >
-            <Timeline
-                mode="expanded"
-                className="w-full"
-                beats={beats}
-                pages={pages}
-                measures={measures}
-                timelines={offPage}
-                playback={playback}
-                transportClock={<AudioClock />}
-                transportAccessories={
-                    <>
-                        <TimelineFromStartButton />
-                        <TimelineLoopButton />
-                        <TimelineMuteButton />
-                        <TimelineMetronomeButton />
-                        <FullscreenButton />
-                    </>
-                }
-                selection={selection}
-                onSelectionChange={changeSelection}
-                onTimelineRangeCommit={commands.commitTimelineRange}
-                onPlayFromStartOff={() =>
-                    useTimelineSelectionStore.getState().setPlayFromStart(false)
-                }
-                onOpenRange={(range) => {
-                    if (isPlaying) return;
-                    const store = useTimelineSelectionStore.getState();
-                    const timeline = store.storedTimelines?.find(
-                        (t) =>
-                            t.start === range.startBeatIndex &&
-                            t.end === range.endBeatIndex,
-                    );
-                    if (timeline)
-                        store.isolate(
-                            timeline.id,
-                            windowBeforeClick.current ?? undefined,
+            <TimelineWaveformProvider waveform={waveform ?? NO_WAVEFORM}>
+                <Timeline
+                    mode={compact ? "collapsed" : "expanded"}
+                    pixelsPerBeat={pixelsPerBeat}
+                    onPixelsPerBeatChange={setPixelsPerBeat}
+                    zoomFitted={zoomFitted}
+                    onZoomFittedChange={setZoomFitted}
+                    className="w-full"
+                    beats={beats}
+                    pages={pages}
+                    measures={measures}
+                    timelines={offPage}
+                    playback={playback}
+                    transportClock={
+                        <AudioClock pausedSeconds={pausedSeconds} />
+                    }
+                    transportAccessories={<TimelinePreviewButtons />}
+                    transportSecondary={<TimelineSoundButton />}
+                    transportViewControls={<TimelineCompactButton />}
+                    selection={selection}
+                    onSelectionChange={changeSelection}
+                    onTimelineRangeCommit={commands.commitTimelineRange}
+                    onPlayFromStartOff={() =>
+                        useTimelineSelectionStore
+                            .getState()
+                            .setPlayFromStart(false)
+                    }
+                    onUnpinStart={() =>
+                        useTimelineSelectionStore.getState().unpinStart()
+                    }
+                    onOpenRange={(range) => {
+                        if (isPlaying) return;
+                        const store = useTimelineSelectionStore.getState();
+                        const timeline = store.storedTimelines?.find(
+                            (t) =>
+                                t.start === range.startBeatIndex &&
+                                t.end === range.endBeatIndex,
                         );
-                    else
-                        toast.info(
-                            "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it.",
+                        if (timeline)
+                            store.isolate(
+                                timeline.id,
+                                windowBeforeClick.current ?? undefined,
+                            );
+                        else
+                            toast.info(
+                                "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it.",
+                            );
+                    }}
+                    onAddPageFlag={
+                        addPageFlag.insertion ? addPageFlag.add : undefined
+                    }
+                    onDeletePageFlag={(pageId) => {
+                        const after = selectionAfterFlagDelete(
+                            pages,
+                            pageId,
+                            useTimelineSelectionStore.getState().selection,
                         );
-                }}
-                onAddPageFlag={
-                    addPageFlag.insertion ? addPageFlag.add : undefined
-                }
-                onDeletePageFlag={(pageId) => {
-                    const after = selectionAfterFlagDelete(
-                        pages,
-                        pageId,
-                        useTimelineSelectionStore.getState().selection,
-                    );
-                    deletePageFlags(new Set([pageId]), {
-                        onSuccess: () => {
-                            if (!after) return;
-                            const store = useTimelineSelectionStore.getState();
-                            if (after.kind === "home") store.selectHome();
-                            else store.selectRange(after.start, after.end);
-                        },
-                    });
-                }}
-            />
+                        deletePageFlags(new Set([pageId]), {
+                            onSuccess: () => {
+                                if (!after) return;
+                                const store =
+                                    useTimelineSelectionStore.getState();
+                                if (after.kind === "home") store.selectHome();
+                                else store.selectRange(after.start, after.end);
+                            },
+                        });
+                    }}
+                />
+            </TimelineWaveformProvider>
         </div>
     );
 }

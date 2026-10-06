@@ -300,9 +300,10 @@ export default meta;
 type TimelineStoryObj = Story<TimelineStoryProps>;
 
 export const Expanded: TimelineStoryObj = {
-    play: async ({ canvas, canvasElement }) => {
-        await expect(await canvas.findByText("16 counts")).toBeInTheDocument();
-        await expect(canvas.getByText("Create Track")).toBeInTheDocument();
+    play: async ({ canvas }) => {
+        await expect(
+            await canvas.findByText("Create Track"),
+        ).toBeInTheDocument();
         const end = canvas.getByRole("button", { name: "Selection end" });
         const endBounds = end.getBoundingClientRect();
         const pointerY = endBounds.top + endBounds.height / 2;
@@ -319,7 +320,10 @@ export const Expanded: TimelineStoryObj = {
             },
             { keys: "[/MouseLeft]" },
         ]);
-        await expect(canvas.getByText("24 counts")).toBeInTheDocument();
+        // UI-13: from a page line the window's count is the playhead's, so the badge hides
+        await expect(
+            canvas.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
         const actions = canvas.getByTestId("timeline-selection-actions");
         await expect(actions).toHaveClass("flex-col");
         await expect(actions.style.transform).toBe("translateX(-100%)");
@@ -336,10 +340,10 @@ export const Expanded: TimelineStoryObj = {
         const playhead = canvas.getByRole("button", {
             name: /^Playback position:/,
         });
-        await userEvent.hover(playhead);
-        await expect(
-            within(canvasElement.ownerDocument.body).getByRole("tooltip"),
-        ).toHaveTextContent(/^Pg /);
+        // UI-13: no hover tooltip; the transport's readout is the one place it's shown
+        await expect(playhead).toHaveAccessibleName(
+            /^Playback position: (Home|Page )/,
+        );
     },
 };
 
@@ -353,7 +357,10 @@ export const PageSelected: TimelineStoryObj = {
         await expect(
             canvas.getByTestId("timeline-selection-range"),
         ).toBeInTheDocument();
-        await expect(canvas.getByText("8 counts")).toBeInTheDocument();
+        // UI-13: from a page line the window's count is the playhead's, so the badge hides
+        await expect(
+            canvas.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
         await expect(
             canvas.queryByRole("button", { name: "Create Track" }),
         ).not.toBeInTheDocument();
@@ -366,7 +373,10 @@ export const TrackSelected: TimelineStoryObj = {
     play: async ({ canvas }) => {
         const track = canvas.getByLabelText(/SH timeline/);
         await expect(track).toHaveAttribute("aria-pressed", "true");
-        await expect(canvas.getByText("16 counts")).toBeInTheDocument();
+        // UI-13: from a page line the window's count is the playhead's, so the badge hides
+        await expect(
+            canvas.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
         await expect(
             canvas.queryByRole("button", { name: "Create Track" }),
         ).not.toBeInTheDocument();
@@ -380,7 +390,10 @@ export const ActiveBeatsAcrossTracks: TimelineStoryObj = {
         await expect(
             canvasElement.querySelector('[data-activity="inactive"]'),
         ).not.toBeNull();
-        await expect(canvas.getByText("24 counts")).toBeInTheDocument();
+        // UI-13: from a page line the window's count is the playhead's, so the badge hides
+        await expect(
+            canvas.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
         await expect(
             canvas.getByRole("button", { name: "Create Track" }),
         ).toBeInTheDocument();
@@ -403,13 +416,17 @@ export const NoTracks: TimelineStoryObj = {
 export const Collapsed: TimelineStoryObj = {
     args: { mode: "collapsed", state: "collapsed" },
     play: async ({ canvas }) => {
+        // UI-12 compact: a thin waveform lane, and zoom is Fit and Ctrl+scroll
         await expect(
             canvas.getByLabelText("Audio waveform"),
         ).toBeInTheDocument();
         await expect(
             canvas.queryByRole("button", { name: "Zoom in" }),
         ).not.toBeInTheDocument();
-        await expect(canvas.getByText("16 counts")).toBeInTheDocument();
+        // UI-13: from a page line the window's count is the playhead's, so the badge hides
+        await expect(
+            canvas.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
         await expect(
             canvas.getByRole("button", { name: "Create Track" }),
         ).toBeInTheDocument();

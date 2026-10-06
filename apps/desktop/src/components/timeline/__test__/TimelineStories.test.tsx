@@ -54,7 +54,10 @@ describe("timeline stories", () => {
 
     it("plays and selects in the Expanded story (its drag needs a real layout)", () => {
         renderStory(Expanded);
-        expect(screen.getByText("16 counts")).toBeInTheDocument();
+        // UI-13: the window starts on a page line, so its count is the playhead's and hides
+        expect(
+            screen.queryByTestId("timeline-selection-count"),
+        ).not.toBeInTheDocument();
         expect(
             screen.getByRole("button", { name: "Create Track" }),
         ).toBeInTheDocument();

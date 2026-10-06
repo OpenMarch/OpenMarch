@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
+import clsx from "clsx";
 import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
+import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
+import {
+    FullscreenButton,
+    PerspectiveButton,
+} from "@/components/timeline/PerspectiveSlider";
 
 interface CanvasZoomControlsProps {
     canvas: OpenMarchCanvas | undefined;
@@ -10,6 +16,8 @@ export default function CanvasZoomControls({
     canvas,
 }: CanvasZoomControlsProps) {
     const [currentZoom, setCurrentZoom] = useState(100); // Represents percentage
+    // Timeline mode puts the field's view controls here (UI-12): fullscreen and perspective
+    const timelineMode = useTimelineMode();
 
     // Min and Max zoom levels for Fabric.js (consistent with OpenMarchCanvas._applyZoom)
     const FABRIC_MIN_ZOOM = 0.2;
@@ -136,7 +144,18 @@ export default function CanvasZoomControls({
     // );
 
     return (
-        <div className="group border-stroke bg-bg-1 absolute right-6 bottom-6 z-10 flex w-128 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
+        <div
+            className={clsx(
+                "group border-stroke bg-bg-1 pointer-events-auto absolute right-6 bottom-6 z-10 flex items-stretch justify-between overflow-hidden rounded-lg border shadow-lg",
+                timelineMode ? "min-w-200" : "w-128",
+            )}
+        >
+            {timelineMode && (
+                <>
+                    <PerspectiveButton />
+                    <FullscreenButton />
+                </>
+            )}
             {/* Hamburger Icon (placeholder for future menu) */}
             {/* <button
                 className="text-text hover:bg-fg-2 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"

@@ -259,33 +259,6 @@ describeDbTests("useTimelinePlayback", (it) => {
         expect(store().playheadBeat).toBe(0);
     });
 
-    it("names the page containing or ending at the playhead while paused", async ({
-        db,
-        wrapper,
-    }) => {
-        await seedShow(db);
-        const { result } = renderPlayback(wrapper);
-        await waitFor(() => expect(result.current.pages).toHaveLength(3));
-
-        act(() => {
-            store().seek(9);
-        });
-        // Beat 9 is page 1's flag (and page 2's first beat): page 1 ends there
-        expect(result.current.playback.pageLabel).toBe(
-            result.current.pages[1]!.name,
-        );
-        act(() => {
-            store().seek(10);
-        });
-        expect(result.current.playback.pageLabel).toBe(
-            result.current.pages[2]!.name,
-        );
-        act(() => {
-            result.current.playing.setIsPlaying(true);
-        });
-        expect(result.current.playback.pageLabel).toBeUndefined();
-    });
-
     it("previews the window, and pauses keeping it (UI-11)", async ({
         db,
         wrapper,

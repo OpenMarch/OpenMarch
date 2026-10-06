@@ -1,13 +1,15 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
-import { afterEach, beforeEach, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 import { describeDbTests, type DbConnection, schema } from "@/test/base";
 import { transactionWithHistory } from "@/db-functions/history";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useTimingObjects } from "@/hooks";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelinePlaybackDriver } from "../useTimelinePlaybackDriver";
+import type { TimelineSeekGesture } from "@/components/timeline/TimelineViewModel";
 import {
+    seekTimeline,
     startTimelinePlayback,
     stopTimelinePlayback,
 } from "../timelineTransport";
@@ -222,6 +224,42 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         expect(store().selection).toEqual({ kind: "range", start: 1, end: 5 });
     });
 
+    it("pausing a play-on run moves an unpinned start flag with the playhead; a pinned one stays (UI-12 review)", async ({
+        db,
+        wrapper,
+    }) => {
+        const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().setPageBoxes([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]);
+            store().selectRange(1, 9);
+        });
+        expect(store().startPinned).toBe(false);
+        audio.seconds = 6.1; // beat 13.2
+        play(result);
+        frame();
+        act(() => {
+            result.current.playing.setIsPlaying(false);
+        });
+        expect(store().playheadBeat).toBe(13);
+        expect(store().startBeat).toBe(9);
+        expect(store().selection).toEqual({ kind: "range", start: 9, end: 13 });
+
+        act(() => {
+            store().selectRange(5, 9);
+        });
+        expect(store().startPinned).toBe(true);
+        play(result);
+        frame();
+        act(() => {
+            result.current.playing.setIsPlaying(false);
+        });
+        expect(store().playheadBeat).toBe(13);
+        expect(store().startBeat).toBe(5);
+    });
+
     it("does nothing before the audio has started", async ({ db, wrapper }) => {
         const { result } = await setUp(db, wrapper);
         act(() => {
@@ -390,5 +428,127 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         });
         expect(store().cursorBeat).toBeNull();
         expect(store().playheadBeat).toBe(13);
+    });
+
+    describe("scrubbing while playing (UI-12 review)", () => {
+        /** Sends seeks as the timeline does, recording each play/pause they cause */
+        const scrubber = (result: {
+            current: {
+                beats: readonly { timestamp: number; duration: number }[];
+                playing: {
+                    isPlaying: boolean;
+                    setIsPlaying: (p: boolean) => void;
+                };
+            };
+        }) => {
+            const playChanges: boolean[] = [];
+            const setIsPlaying = (playing: boolean) => {
+                playChanges.push(playing);
+                result.current.playing.setIsPlaying(playing);
+            };
+            const send = (beat: number, gesture?: TimelineSeekGesture) =>
+                act(() => {
+                    seekTimeline(result.current.beats, beat, gesture, {
+                        isPlaying: result.current.playing.isPlaying,
+                        setIsPlaying,
+                    });
+                });
+            return { playChanges, send };
+        };
+
+        it("suspends playback for a drag, follows it, and resumes once from the release", async ({
+            db,
+            wrapper,
+        }) => {
+            const { result } = await setUp(db, wrapper);
+            act(() => {
+                store().selectRange(9, 13);
+            });
+            preview(result);
+            audio.seconds = 4.6; // beat 10.2
+            frame();
+            const { playChanges, send } = scrubber(result);
+
+            send(11, "press");
+            send(11.3, "drag");
+            // Still on the pressed beat: nothing has moved yet
+            expect(playChanges).toEqual([]);
+            expect(result.current.playing.isPlaying).toBe(true);
+
+            send(12, "drag");
+            expect(playChanges).toEqual([false]);
+            // The suspension writes neither the playhead nor the frame the scrub shows
+            expect(store().playheadBeat).toBe(13);
+            expect(store().cursorBeat).toBe(12);
+            expect(store().playback).toBeNull();
+            const revision = store().playheadRevision;
+            send(12.4, "drag");
+            expect(store().playheadRevision).toBe(revision);
+            send(11, "drag");
+            expect(store().cursorBeat).toBe(11);
+
+            send(10, "end");
+            expect(playChanges).toEqual([false, true]);
+            expect(result.current.playing.isPlaying).toBe(true);
+            expect(store().playback).toEqual({
+                kind: "preview",
+                from: 9,
+                to: 13,
+            });
+            expect(store().cursorBeat).toBe(10);
+            expect(store().playheadBeat).toBe(13);
+            expect(audio.restarts).toEqual([]);
+
+            // The next ordinary pause is a pause again, not a suspension
+            audio.seconds = 5.1; // beat 11.2
+            frame();
+            act(() => {
+                result.current.playing.setIsPlaying(false);
+            });
+            expect(store().cursorBeat).toBe(11);
+        });
+
+        it("a click jumps playback without suspending it", async ({
+            db,
+            wrapper,
+        }) => {
+            const { result } = await setUp(db, wrapper);
+            act(() => {
+                store().selectRange(9, 13);
+            });
+            preview(result);
+            audio.seconds = 4.6;
+            frame();
+            const { playChanges, send } = scrubber(result);
+
+            send(15, "press");
+            send(15, "end");
+            expect(playChanges).toEqual([]);
+            expect(result.current.playing.isPlaying).toBe(true);
+            expect(audio.restarts).toEqual([7]); // beat 15
+            // Outside the preview's window it plays on
+            expect(store().playback).toEqual({ kind: "on" });
+            expect(store().playheadBeat).toBe(13);
+        });
+
+        it("a drag released outside the preview's window plays on from there", async ({
+            db,
+            wrapper,
+        }) => {
+            const { result } = await setUp(db, wrapper);
+            act(() => {
+                store().selectRange(9, 13);
+            });
+            preview(result);
+            audio.seconds = 4.6;
+            frame();
+            const { playChanges, send } = scrubber(result);
+
+            send(14, "drag");
+            send(16, "end");
+            expect(playChanges).toEqual([false, true]);
+            expect(store().playback).toEqual({ kind: "on" });
+            expect(store().cursorBeat).toBe(16);
+        });
     });
 });

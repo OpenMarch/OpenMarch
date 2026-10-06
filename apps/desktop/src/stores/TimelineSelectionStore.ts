@@ -17,8 +17,11 @@ import { create } from "zustand";
  *
  * The start flag follows navigation unless pinned (UI-10, _lead default_): `seek` and
  * `selectRange` put S on the start of the page box holding P. `selectRange` pins S when it isn't
- * there (a dragged range, the start handle). A pinned S stays until P moves to or before it.
- * Playback never moves S: pausing and **Stop** use `seekKeepingStart`.
+ * there (a dragged range, the start handle). A pinned S stays until it is unpinned (UI-12). During
+ * a gesture (a scrub, arrow keys held on the playhead) S stays put and follows once the gesture
+ * ends (`beginScrub`, `endScrub`; UI-12 review), so it doesn't chase the playhead page by page.
+ * Pausing a play-on run moves P, and an unpinned S follows it; **Stop** and a paused preview keep
+ * S (`seekKeepingStart`).
  *
  * Every beat here is a spec beat position (`beats` index, spec §7). The zero-length beat 0 and
  * beat 1 are both show time 0; the playhead writes that time as 0 (`normalizePlayheadBeat`).
@@ -140,6 +143,8 @@ export interface TimelineSelectionState {
     readonly playFromStart: boolean;
     /** Whether a preview loops until stopped (UI-11, the loop toggle); isolation always loops */
     readonly loopPreview: boolean;
+    /** A gesture is moving the playhead: an unpinned S waits for it to end (UI-12 review) */
+    readonly scrubbing: boolean;
 
     /**
      * Isolates the stored timeline `timelineId`: the window becomes its range with the playhead at
@@ -164,13 +169,25 @@ export interface TimelineSelectionState {
     /** Clears the selection; the playhead and S stay. */
     readonly selectNothing: () => void;
     /**
+     * Unpins S (UI-12, the pin mark): it goes back to following the playhead, to the start of the
+     * page box holding P. Does nothing in isolation, whose S is the isolated timeline's start.
+     */
+    readonly unpinStart: () => void;
+    /**
      * Navigation: moves the playhead (`normalizePlayheadBeat`, at most `showEndBeat`). An unpinned
-     * S follows it, and so does a pinned S that the playhead reaches or passes. A non-finite beat
-     * is ignored.
+     * S follows it, except during a gesture (`beginScrub`); a pinned S stays (UI-12). A non-finite
+     * beat is ignored.
      */
     readonly seek: (beat: number) => void;
     /** Playback (pause, **Stop**): moves the playhead and leaves S where it is. */
     readonly seekKeepingStart: (beat: number) => void;
+    /**
+     * A gesture that moves the playhead began (a scrub, a page-box drag, arrow keys): `seek` leaves
+     * an unpinned S where it is until `endScrub`.
+     */
+    readonly beginScrub: () => void;
+    /** The gesture ended: an unpinned S follows the playhead, once. */
+    readonly endScrub: () => void;
     /** **Stop**: the playhead returns to S. */
     readonly returnToStart: () => void;
     /**
@@ -421,6 +438,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
             playback: null,
             playFromStart: false,
             loopPreview: false,
+            scrubbing: false,
             isolate: (timelineId, restore) =>
                 set((s) => {
                     if (s.isolation?.timelineId === timelineId) return {};
@@ -452,11 +470,13 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 set((s) => ({
                     ...windowFields(0, false, 0, s.pageBoxes),
                     isolation: null,
+                    scrubbing: false,
                     playheadRevision: s.playheadRevision + 1,
                 })),
             selectRange: (start, end) =>
                 set((s) => ({
                     isolation: null,
+                    scrubbing: false,
                     ...windowFields(
                         start,
                         start !== followingStart(end, s.pageBoxes),
@@ -471,6 +491,17 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     isolation: null,
                     cursorBeat: null,
                 }),
+            unpinStart: () =>
+                set((s) =>
+                    s.isolation !== null || !s.startPinned
+                        ? {}
+                        : windowFields(
+                              followingStart(s.playheadBeat, s.pageBoxes),
+                              false,
+                              s.playheadBeat,
+                              s.pageBoxes,
+                          ),
+                ),
             seek: (beat) =>
                 set((s) => {
                     if (!Number.isFinite(beat)) return {};
@@ -480,13 +511,17 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                             ...isolatedWindow(s, s.isolation, playhead),
                             playheadRevision: s.playheadRevision + 1,
                         };
-                    const keep = s.startPinned && playhead > s.startBeat;
+                    // UI-12: only an explicit action unpins S (the pin, a page box, home), never
+                    // moving the playhead, since dragging now scrubs. With P on or before a pinned
+                    // S the window falls back to the page box holding P, as after Stop. During a
+                    // gesture an unpinned S waits for it to end (UI-12 review)
+                    const keep = s.startPinned || s.scrubbing;
                     return {
                         ...windowFields(
                             keep
                                 ? s.startBeat
                                 : followingStart(playhead, s.pageBoxes),
-                            keep,
+                            s.startPinned,
                             playhead,
                             s.pageBoxes,
                         ),
@@ -506,6 +541,27 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                                   s.pageBoxes,
                               )),
                         playheadRevision: s.playheadRevision + 1,
+                    };
+                }),
+            beginScrub: () =>
+                set((s) => (s.scrubbing ? {} : { scrubbing: true })),
+            endScrub: () =>
+                set((s) => {
+                    if (!s.scrubbing) return {};
+                    if (
+                        s.isolation ||
+                        s.startPinned ||
+                        s.selection.kind === "none"
+                    )
+                        return { scrubbing: false };
+                    return {
+                        scrubbing: false,
+                        ...windowFields(
+                            followingStart(s.playheadBeat, s.pageBoxes),
+                            false,
+                            s.playheadBeat,
+                            s.pageBoxes,
+                        ),
                     };
                 }),
             returnToStart: () =>
@@ -713,6 +769,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     showEndBeat: null,
                     playback: null,
                     playFromStart: false,
+                    scrubbing: false,
                 })),
         };
     },

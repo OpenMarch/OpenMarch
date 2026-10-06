@@ -5,9 +5,11 @@ import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer
 import { useSelectedPage } from "@/context/SelectedPageContext";
 
 /**
- * Live clock component that displays the current playback position
+ * Live clock component that displays the current playback position. While paused it shows
+ * `pausedSeconds` when given (timeline mode passes the time at the playhead, UI-12), else the
+ * selected page's end.
  */
-export function AudioClock() {
+export function AudioClock({ pausedSeconds }: { pausedSeconds?: number }) {
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage } = useSelectedPage()!;
     const [displayTime, setDisplayTime] = useState<number>(0);
@@ -25,14 +27,16 @@ export function AudioClock() {
             update();
         } else {
             setDisplayTime(
-                (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0),
+                pausedSeconds ??
+                    (selectedPage?.timestamp ?? 0) +
+                        (selectedPage?.duration ?? 0),
             );
         }
 
         return () => {
             cancelAnimationFrame(rafId);
         };
-    }, [isPlaying, selectedPage]);
+    }, [isPlaying, pausedSeconds, selectedPage]);
 
     // Helper function to format time in MM:SS.mmm format
     const formatTime = (seconds: number) => {

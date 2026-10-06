@@ -104,11 +104,11 @@ export const beatToX = (
     startBeat = 0,
 ) => (beat - startBeat) * pixelsPerBeat;
 
-export const filterMarkersByMinimumSpacing = (
-    markers: readonly TimelineMarker[],
+export const filterMarkersByMinimumSpacing = <T extends TimelineMarker>(
+    markers: readonly T[],
     pixelsPerBeat: number,
     minimumSpacingPx = 32,
-) => {
+): T[] => {
     const ordered = [...markers].sort((a, b) => a.atBeat - b.atBeat);
     let lastVisibleX = Number.NEGATIVE_INFINITY;
 
@@ -120,6 +120,10 @@ export const filterMarkersByMinimumSpacing = (
     });
 };
 
+/**
+ * The beat under a pointer, fractional, from 0 to `beatCount`: the end of the show is a place the
+ * playhead rests (UI-11), so a scrub reaches it as the ruler's does.
+ */
 export const clientXToBeat = ({
     clientX,
     surfaceLeft,
@@ -136,7 +140,7 @@ export const clientXToBeat = ({
     clamp(
         startBeat + (clientX - surfaceLeft) / pixelsPerBeat,
         0,
-        Math.max(beatCount - 1, 0),
+        Math.max(beatCount, 0),
     );
 
 export const clientXToNearestBeat = (
@@ -165,41 +169,169 @@ const latestMarkerAt = (
         .sort((a, b) => b.atBeat - a.atBeat)[0];
 
 /**
- * The page and measure.count under a beat. `pageLabel`, when given, names the page instead: the
- * app passes the selected page while paused, because the paused cursor sits on that page's end
- * beat, which is also the next page's first beat.
+ * The measure and its beat under a position, counted from the measure's downbeat (beat 1), or
+ * null when the show has no measure there.
  */
-export const getFrameContext = (
-    model: Pick<TimelineViewModel, "pages" | "measures" | "beatCount">,
+export const getMeasureAt = (
+    model: Pick<TimelineViewModel, "measures" | "beatCount">,
     positionBeat: BeatPosition,
-    pageLabel?: string,
-) => {
+): { readonly measure: string; readonly beat: number } | null => {
     const beat = clamp(
         Math.floor(positionBeat),
         0,
         Math.max(model.beatCount - 1, 0),
     );
-    const timedPages = model.pages.filter((page) => !page.isInitial);
-    const page = latestMarkerAt(
-        timedPages.length > 0 ? timedPages : model.pages,
-        beat,
-    );
     const measure = latestMarkerAt(model.measures, beat);
-    const count = measure ? beat - measure.atBeat + 1 : beat + 1;
-    const measureLabel = measure?.label.replace(/^m/i, "") ?? "—";
+    if (!measure) return null;
     return {
-        pageLabel: pageLabel ?? page?.label ?? "—",
-        measureAndCount: `m${measureLabel}.${count}`,
+        measure: measure.label.replace(/^m/i, ""),
+        beat: beat - measure.atBeat + 1,
     };
 };
 
+/**
+ * The page and count at a playhead, counted as designers count them (UI-12): a page's counts run
+ * from 1 on the beat after the previous flag to N on its own flag, so the playhead on page 3's
+ * flag is "Pg 3, count 8". Home (before the first timed page) is the initial page, count 0.
+ */
+export const getPageCountAt = (
+    model: Pick<TimelineViewModel, "pages">,
+    positionBeat: BeatPosition,
+): {
+    readonly pageLabel: string;
+    readonly count: number;
+    /** The page's counts, when it has a flag (UI-13) */
+    readonly total?: number;
+    /** The beat before the page's count 1, when it has a flag (UI-13) */
+    readonly startBeat?: number;
+    /** Past the last flag: `count` is how far past it */
+    readonly after?: boolean;
+    /** At home, before the first timed page (UI-13) */
+    readonly home?: boolean;
+} => {
+    const beat = Math.round(positionBeat);
+    const timed = model.pages
+        .filter((page) => !page.isInitial)
+        .sort((a, b) => a.atBeat - b.atBeat);
+    // A page's flag is its end beat, or else the next page's first beat
+    const endOf = (index: number) =>
+        timed[index].endBeat ??
+        timed[index + 1]?.atBeat ??
+        Number.POSITIVE_INFINITY;
+    const index = timed.findIndex(
+        (p, i) => p.atBeat < beat && beat <= endOf(i),
+    );
+    if (index >= 0) {
+        const page = timed[index];
+        const end = endOf(index);
+        return {
+            pageLabel: page.label,
+            count: beat - page.atBeat,
+            startBeat: page.atBeat,
+            ...(Number.isFinite(end) ? { total: end - page.atBeat } : {}),
+        };
+    }
+    const initial = model.pages.find((p) => p.isInitial);
+    const last = timed[timed.length - 1];
+    if (last && beat > endOf(timed.length - 1))
+        return {
+            pageLabel: last.label,
+            count: beat - endOf(timed.length - 1),
+            after: true,
+        };
+    return {
+        pageLabel: initial?.label ?? timed[0]?.label ?? "—",
+        count: 0,
+        home: true,
+    };
+};
+
+/**
+ * The playhead's page, count and measure, as the transport shows them (UI-13): "Pg 2 · ct 7/16"
+ * and "m4 beat 4", or "Home", or "After pg 4 · +4". `spoken` spells them out for screen readers.
+ * `measure` is null when the show has no measure there.
+ */
+export const getPlayheadReadout = (
+    model: Pick<TimelineViewModel, "pages" | "measures" | "beatCount">,
+    positionBeat: BeatPosition,
+) => {
+    const at = getPageCountAt(model, positionBeat);
+    const measureAt = at.home ? null : getMeasureAt(model, positionBeat);
+    const page = at.home
+        ? "Home"
+        : at.after
+          ? `After pg ${at.pageLabel} · +${at.count}`
+          : `Pg ${at.pageLabel} · ct ${at.count}${at.total != null ? `/${at.total}` : ""}`;
+    const measure = measureAt
+        ? `m${measureAt.measure} beat ${measureAt.beat}`
+        : null;
+    const spokenPage = at.home
+        ? `Home, page ${at.pageLabel}`
+        : at.after
+          ? `${at.count} counts after page ${at.pageLabel}`
+          : `Page ${at.pageLabel}, count ${at.count}${at.total != null ? ` of ${at.total}` : ""}`;
+    const spoken = measureAt
+        ? `${spokenPage}, measure ${measureAt.measure} beat ${measureAt.beat}`
+        : spokenPage;
+    return { page, measure, spoken };
+};
+
+/** The playhead's position in one line, as the transport's readout shows it (UI-13) */
 export const getPlayheadLabel = (
     model: Pick<TimelineViewModel, "pages" | "measures" | "beatCount">,
     positionBeat: BeatPosition,
-    pageLabel?: string,
 ) => {
-    const context = getFrameContext(model, positionBeat, pageLabel);
-    return `Pg ${context.pageLabel} · ${context.measureAndCount}`;
+    const readout = getPlayheadReadout(model, positionBeat);
+    return readout.measure
+        ? `${readout.page} · ${readout.measure}`
+        : readout.page;
+};
+
+/**
+ * The window's count badge (UI-13), in the field line's words: "counts 3–6" inside one page box,
+ * counted to that page's flag, or "12 counts" when it passes a flag.
+ */
+export const getWindowCountLabel = (
+    model: Pick<TimelineViewModel, "pages">,
+    range: { readonly startBeatIndex: number; readonly endBeatIndex: number },
+) => {
+    const length = range.endBeatIndex - range.startBeatIndex;
+    const at = getPageCountAt(model, range.endBeatIndex);
+    if (
+        length > 0 &&
+        !at.home &&
+        !at.after &&
+        at.startBeat != null &&
+        range.startBeatIndex >= at.startBeat
+    ) {
+        const first = range.startBeatIndex - at.startBeat + 1;
+        return first === at.count
+            ? `count ${first}`
+            : `counts ${first}–${at.count}`;
+    }
+    return length === 1 ? "1 count" : `${length} counts`;
+};
+
+/**
+ * The page counts to number along a page box at a zoom (UI-13): every `step`th count from the
+ * page's start, with `step` doubling until the numbers fit, and always the flag's count. A number
+ * too close to the flag's gives way to it.
+ */
+export const getVisiblePageCounts = (
+    total: number,
+    pixelsPerBeat: number,
+): number[] => {
+    if (total <= 0 || pixelsPerBeat <= 0) return [];
+    // A number takes about 6px a digit at 10px mono, plus room either side
+    const minimumPx = String(total).length * 6 + 6;
+    if (total * pixelsPerBeat < minimumPx) return [];
+    let step = 1;
+    while (step * pixelsPerBeat < minimumPx) step *= 2;
+    const counts: number[] = [];
+    for (let count = step; count < total; count += step)
+        if ((total - count) * pixelsPerBeat >= minimumPx) counts.push(count);
+    counts.push(total);
+    return counts;
 };
 
 /**
@@ -371,4 +503,55 @@ export const validateTimelineViewModel = (
         }
     }
     return errors;
+};
+
+/** Where the transport's go-to box sends the playhead (UI-12) */
+export type TimelineGoTo =
+    | { readonly kind: "page"; readonly pageId: TimelinePageMarker["id"] }
+    | { readonly kind: "beat"; readonly beat: BeatPosition };
+
+/**
+ * Reads what a designer types in the transport's go-to box (UI-12), on the view axis:
+ * - "m23" or "m23.3": measure 23 (count 3 of it, which must be one the measure has);
+ * - "p7", "pg 7" or "page 7": page 7;
+ * - "C": rehearsal mark C (letters match marks first);
+ * - "7" or "2A": the page with that name.
+ * Case and spaces don't matter. `null` when nothing matches.
+ */
+export const parseTimelineGoTo = (
+    text: string,
+    model: Pick<TimelineViewModel, "beatCount" | "pages" | "measures">,
+): TimelineGoTo | null => {
+    const typed = text.trim().toLowerCase().replace(/\s+/g, "");
+    if (!typed) return null;
+    const measureName = (label: string) =>
+        label.replace(/^m/i, "").toLowerCase();
+    const measure = typed.match(/^m(\d+)(?:[.:](\d+))?$/);
+    if (measure) {
+        const sorted = [...model.measures].sort((a, b) => a.atBeat - b.atBeat);
+        const index = sorted.findIndex(
+            (m) => measureName(m.label) === measure[1],
+        );
+        if (index < 0) return null;
+        const start = sorted[index]!.atBeat;
+        // The measure runs to the next one, or the last to the show's end
+        const length = (sorted[index + 1]?.atBeat ?? model.beatCount) - start;
+        const count = measure[2] ? Number(measure[2]) : 1;
+        // A count the measure doesn't have is a miss, not a guess (m23.0, m23.9 in 4/4)
+        if (count < 1 || count > length) return null;
+        return { kind: "beat", beat: start + count - 1 };
+    }
+    const pageOf = (name: string) =>
+        model.pages.find((p) => String(p.label).toLowerCase() === name);
+    const prefixed = typed.match(/^(?:page|pg|p)(.+)$/);
+    if (prefixed) {
+        const page = pageOf(prefixed[1]!);
+        if (page) return { kind: "page", pageId: page.id };
+    }
+    const mark = model.measures.find(
+        (m) => m.rehearsalMark?.trim().toLowerCase() === typed,
+    );
+    if (mark) return { kind: "beat", beat: mark.atBeat };
+    const page = pageOf(typed);
+    return page ? { kind: "page", pageId: page.id } : null;
 };

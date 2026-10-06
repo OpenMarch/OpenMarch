@@ -8,4 +8,6 @@ export const START_INK = {
     text: "text-[rgb(150,120,0)] dark:text-yellow",
     border: "border-[rgb(150,120,0)] dark:border-yellow",
     ring: "ring-[rgb(150,120,0)]/40 dark:ring-yellow/40",
+    /** For small text: a darker ochre in light mode (above 4.5:1 on bg-1, AA for small text) */
+    strongText: "text-[rgb(115,90,0)] dark:text-yellow",
 } as const;

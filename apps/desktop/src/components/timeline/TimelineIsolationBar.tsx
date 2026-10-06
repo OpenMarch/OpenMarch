@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { Button } from "@openmarch/ui";
-import { FlagIcon, XIcon } from "@phosphor-icons/react";
+import { FlagIcon, PushPinSlashIcon, XIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
+import { isTyping, overlayOpen } from "./timelineHotkeys";
 import { useTimingObjects } from "@/hooks";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import {
     isolatedTimeline,
     useTimelineSelectionStore,
+    type TimelineEditSelection,
 } from "@/stores/TimelineSelectionStore";
 import { pageFlags, type FlagPage } from "@/timeline/timelinePlayhead";
 
@@ -31,6 +33,10 @@ export function isolatedTimelineName(
         boxes.find((f) => f.range!.start <= beat && beat < f.range!.end);
     const first = at(range.start);
     const last = at(range.end - 1);
+    // Past the last flag, where the next page gets written (UI-12)
+    const lastBox = boxes[boxes.length - 1];
+    if (!first && lastBox && range.start >= lastBox.range!.end)
+        return `After page ${lastBox.page.name}, counts ${range.start - lastBox.range!.end + 1}–${range.end - lastBox.range!.end}`;
     if (!first || !last) return `Beats ${range.start}–${range.end}`;
     const from = range.start - first.range!.start + 1;
     const to = range.end - last.range!.start;
@@ -38,17 +44,6 @@ export function isolatedTimelineName(
         ? `Page ${first.page.name}, counts ${from}–${to}`
         : `Page ${first.page.name} count ${from} to page ${last.page.name} count ${to}`;
 }
-
-/** A popover, menu or dialog is open: its Esc closes it, and nothing else */
-const overlayOpen = () =>
-    document.querySelector(
-        '[data-radix-popper-content-wrapper], [role="menu"], [role="dialog"][data-state="open"], [role="alertdialog"]',
-    ) !== null;
-
-const isTyping = (target: EventTarget | null) =>
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
 /**
  * Esc ends isolation (V-14), and after that turns **From start** off (UI-11): the first Esc
@@ -80,54 +75,187 @@ export function useIsolationEscape(): void {
     }, [active]);
 }
 
+/** The page flags strictly inside `[start, end)`: the pages a window passes through (UI-12) */
+export function flagsInside(
+    range: { readonly start: number; readonly end: number },
+    pages: readonly (FlagPage & { readonly name: string })[],
+): string[] {
+    return pageFlags(pages).flatMap((f) =>
+        f.range && f.range.end > range.start && f.range.end < range.end
+            ? [f.page.name]
+            : [],
+    );
+}
+
 /**
- * The badge over the field while **From start** is on (UI-11): what Space will replay, and the
- * ways out (the badge's ✕, C, Esc). It flashes once when it appears, since a dragged range turns
- * the mode on without a key press. Shows only with a window to play; renders nothing otherwise.
+ * The window is an ordinary page's: home, or exactly a page box's range. The field line stays
+ * quiet for it (UI-12); anything else is unusual.
+ */
+export function isWholePageWindow(
+    selection: TimelineEditSelection,
+    pages: readonly FlagPage[],
+): boolean {
+    if (selection.kind === "home") return true;
+    if (selection.kind !== "range") return false;
+    return pageFlags(pages).some(
+        (f) =>
+            f.range !== null &&
+            f.range.start === selection.start &&
+            f.range.end === selection.end,
+    );
+}
+
+/** "page 3's set", "pages 3 and 4's sets", "pages 3, 4 and 5's sets" */
+export const passedSets = (names: readonly string[]) =>
+    names.length === 1
+        ? `page ${names[0]}'s set`
+        : `pages ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}'s sets`;
+
+/**
+ * The line over the field (UI-12, replacing UI-11's From start badge): what a drag edits now, so
+ * the window is never only a tint on the timeline. Quiet (no border, subtitle text) for an
+ * ordinary page: a whole page box, start flag not pinned, From start off. Prominent, and flashed
+ * once, when anything is unusual: a partial window, a pinned start flag (with **Unpin**), a window
+ * passing page flags (that part never truncates), past the last flag, or From start on ("Space
+ * replays it", with the way out). Only the buttons take the pointer, so the field under it stays
+ * usable. Screen readers hear the sentence once it settles, not on every scrubbed beat. Hidden
+ * while isolated: the isolation bar says it instead.
  */
 export function TimelineFromStartBadge() {
     const on = useTimelineSelectionStore((s) => s.playFromStart);
     const selection = useTimelineSelectionStore((s) => s.selection);
+    const startBeat = useTimelineSelectionStore((s) => s.startBeat);
+    const pinned = useTimelineSelectionStore((s) => s.startPinned);
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
+    const playing = useTimelineSelectionStore((s) => s.playback !== null);
+    const holding = useTimelineSelectionStore(
+        (s) => s.playback === null && s.cursorBeat !== null,
+    );
     const { pages } = useTimingObjects()!;
-    const shown = on && !isolated && selection.kind === "range";
+    const range = selection.kind === "range" ? selection : null;
+    const fromStartShown = on && !isolated && range !== null;
+    // The pin only matters while it bounds the window (not after Stop, when P is on or before it)
+    const pinShown = pinned && range !== null && range.start === startBeat;
+    const through = range ? flagsInside(range, pages) : [];
+    const name =
+        selection.kind === "home"
+            ? "home positions"
+            : range
+              ? isolatedTimelineName(range, pages)
+              : "";
+    const wholePage = isWholePageWindow(selection, pages);
+    const unusual =
+        fromStartShown || pinShown || through.length > 0 || !wholePage;
+    const sentence =
+        selection.kind === "none"
+            ? ""
+            : `Editing ${name}${through.length ? `, passing through ${passedSets(through)}` : ""}${pinShown ? ", start flag pinned" : ""}${fromStartShown ? ". Space replays it" : ""}`;
+    // Flash when it turns prominent for a new reason: From start, a pin, or crossing flags
+    const flashKey = `${fromStartShown}|${pinShown}|${through.join(",")}`;
     const [fresh, setFresh] = useState(false);
     useEffect(() => {
-        if (!shown) return;
+        if (!fromStartShown && !pinShown && through.length === 0) return;
         setFresh(true);
         const timeout = setTimeout(() => setFresh(false), 900);
         return () => clearTimeout(timeout);
-    }, [shown]);
-    if (!shown) return null;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [flashKey]);
+    // Announced once the window settles, not on every beat of a scrub
+    const [announced, setAnnounced] = useState(sentence);
+    useEffect(() => {
+        const timeout = setTimeout(() => setAnnounced(sentence), 600);
+        return () => clearTimeout(timeout);
+    }, [sentence]);
+    if (isolated || selection.kind === "none") return null;
     return (
         <div
-            data-testid="timeline-from-start-badge"
-            role="status"
+            data-testid="timeline-window-line"
+            data-prominent={unusual || undefined}
             className={clsx(
-                "bg-bg-1 text-text rounded-6 text-sub pointer-events-auto absolute top-8 left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 border px-8 py-4 whitespace-nowrap shadow-md transition-shadow duration-300",
-                START_INK.border,
+                "rounded-6 text-sub pointer-events-none absolute top-8 left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 px-8 py-4 whitespace-nowrap transition-[opacity,box-shadow] duration-300",
+                unusual
+                    ? clsx(
+                          "bg-bg-1 text-text border shadow-md",
+                          fromStartShown || pinShown || through.length
+                              ? START_INK.border
+                              : "border-stroke",
+                      )
+                    : "bg-bg-1/70 text-text-subtitle",
                 fresh && `ring-4 ${START_INK.ring}`,
+                (playing || holding) && "opacity-60",
             )}
         >
+            <span className="sr-only" role="status">
+                {announced}
+            </span>
             <FlagIcon
                 size={14}
-                weight="fill"
+                aria-hidden="true"
+                weight={fromStartShown ? "fill" : "regular"}
                 className={clsx("shrink-0", START_INK.text)}
             />
-            <span className="truncate">
-                Space replays {isolatedTimelineName(selection, pages)}
+            <span className="truncate" aria-hidden="true">
+                Editing {name}
             </span>
-            <button
-                type="button"
-                aria-label="Turn off From start"
-                title="Turn off (C or Esc)"
-                className="text-text-subtitle hover:text-text flex items-center"
-                onClick={() =>
-                    useTimelineSelectionStore.getState().setPlayFromStart(false)
-                }
-            >
-                <XIcon size={12} weight="bold" />
-            </button>
+            {through.length > 0 && (
+                <span
+                    data-testid="timeline-window-through"
+                    aria-hidden="true"
+                    className={clsx(
+                        "shrink-0 font-medium",
+                        START_INK.strongText,
+                    )}
+                >
+                    · passes through {passedSets(through)}
+                </span>
+            )}
+            {holding && (
+                <span
+                    aria-hidden="true"
+                    className="text-text-subtitle shrink-0"
+                >
+                    · paused frame
+                </span>
+            )}
+            {pinShown && (
+                <button
+                    type="button"
+                    data-testid="timeline-window-unpin"
+                    title="The start flag is pinned: it stays here when you move to other pages. Unpin it to follow the page again."
+                    className={clsx(
+                        "rounded-4 hover:bg-fg-2 pointer-events-auto flex shrink-0 items-center gap-4 border px-6 py-1 text-[11px]",
+                        START_INK.border,
+                        START_INK.strongText,
+                    )}
+                    onClick={() =>
+                        useTimelineSelectionStore.getState().unpinStart()
+                    }
+                >
+                    <PushPinSlashIcon size={11} weight="fill" />
+                    Unpin
+                </button>
+            )}
+            {fromStartShown && (
+                <span
+                    data-testid="timeline-from-start-badge"
+                    className="border-stroke flex shrink-0 items-center gap-6 border-l pl-8"
+                >
+                    <span aria-hidden="true">Space replays it</span>
+                    <button
+                        type="button"
+                        aria-label="Turn off From start"
+                        title="Turn off From start (C or Esc)"
+                        className="text-text-subtitle hover:text-text pointer-events-auto flex items-center"
+                        onClick={() =>
+                            useTimelineSelectionStore
+                                .getState()
+                                .setPlayFromStart(false)
+                        }
+                    >
+                        <XIcon size={12} weight="bold" />
+                    </button>
+                </span>
+            )}
         </div>
     );
 }

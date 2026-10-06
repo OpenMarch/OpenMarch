@@ -1,10 +1,6 @@
 import { memo, useCallback, useEffect, useRef } from "react";
 import { beatToX, clamp } from "./TimelineGeometry";
-import type {
-    BeatPosition,
-    TimelineMarker,
-    TimelineWaveform,
-} from "./TimelineViewModel";
+import type { TimelineMarker, TimelineWaveform } from "./TimelineViewModel";
 
 const colorFromTheme = (
     canvas: HTMLCanvasElement,
@@ -57,7 +53,8 @@ interface TimelineGridCanvasProps {
     showMeasureLines?: boolean;
     showBeatTicks?: boolean;
     topTickY?: number;
-    bottomTickY?: number;
+    /** Where the lower row of beat ticks ends; `null` for none */
+    bottomTickY?: number | null;
 }
 
 export const TimelineGridCanvas = memo(function TimelineGridCanvas({
@@ -119,8 +116,10 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
             context.beginPath();
             context.moveTo(x + 0.5, topTickY);
             context.lineTo(x + 0.5, topTickY + 4);
-            context.moveTo(x + 0.5, bottomTickY - 4);
-            context.lineTo(x + 0.5, bottomTickY);
+            if (bottomTickY !== null) {
+                context.moveTo(x + 0.5, bottomTickY - 4);
+                context.lineTo(x + 0.5, bottomTickY);
+            }
             context.stroke();
         }
         context.globalAlpha = 1;
@@ -155,16 +154,22 @@ interface TimelineWaveformCanvasProps {
     width: number;
     height: number;
     pixelsPerBeat: number;
-    positionBeat: BeatPosition;
+    /** Which color the bars are drawn in: the played part is the accent (UI-12) */
+    tone: "played" | "rest";
     startBeat?: number;
 }
 
+/**
+ * The waveform as filled bars, a slice of a beat each, centered on a baseline that runs only as
+ * far as the audio does. Drawn in one tone; the timeline lays the played tone over the rest and
+ * clips it at the playhead, so playing never redraws the canvas.
+ */
 export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
     waveform,
     width,
     height,
     pixelsPerBeat,
-    positionBeat,
+    tone,
     startBeat = 0,
 }: TimelineWaveformCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -175,12 +180,14 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
         const prepared = prepareCanvas(canvas, width, height);
         if (!prepared) return;
         const { context } = prepared;
-        const accent = colorFromTheme(canvas, "--color-accent", "#967eff");
-        const inactive = colorFromTheme(
-            canvas,
-            "--color-text-subtitle",
-            "rgba(208, 208, 208, 0.6)",
-        );
+        const color =
+            tone === "played"
+                ? colorFromTheme(canvas, "--color-accent", "#967eff")
+                : colorFromTheme(
+                      canvas,
+                      "--color-text-subtitle",
+                      "rgba(208, 208, 208, 0.6)",
+                  );
         const centerY = height / 2;
         const firstBeat = Math.max(0, Math.floor(startBeat));
         const endBeat = startBeat + width / pixelsPerBeat;
@@ -188,43 +195,60 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
             waveform.peaksByBeat.length,
             Math.ceil(endBeat),
         );
+        let audioEnd = 0;
+        for (let beat = waveform.peaksByBeat.length - 1; beat >= 0; beat--)
+            if (waveform.peaksByBeat[beat]!.length > 0) {
+                audioEnd = beat + 1;
+                break;
+            }
 
-        context.lineWidth = 1;
-        context.strokeStyle = inactive;
-        context.globalAlpha = 0.2;
-        context.beginPath();
-        context.moveTo(0, Math.round(centerY) + 0.5);
-        context.lineTo(width, Math.round(centerY) + 0.5);
-        context.stroke();
+        context.fillStyle = color;
+        context.globalAlpha = 0.25;
+        context.fillRect(
+            0,
+            Math.round(centerY),
+            Math.max(0, beatToX(audioEnd, pixelsPerBeat, startBeat)),
+            1,
+        );
         context.globalAlpha = 1;
         for (let beat = firstBeat; beat < lastBeat; beat++) {
             const peaks = waveform.peaksByBeat[beat];
             if (!peaks || peaks.length === 0) continue;
             const beatX = beatToX(beat, pixelsPerBeat, startBeat);
             const sampleWidth = pixelsPerBeat / peaks.length;
+            // A gap between bars only once they're wide enough; narrower, they read as one shape
+            const barWidth =
+                sampleWidth >= 3 ? sampleWidth - 1 : Math.max(1, sampleWidth);
             for (let index = 0; index < peaks.length; index++) {
-                const sampleBeat = beat + (index + 0.5) / peaks.length;
-                const x = beatX + (index + 0.5) * sampleWidth;
-                if (x < 0 || x > width) continue;
-                const magnitude =
-                    clamp(Math.abs(peaks[index]), 0, 1) * (height / 2 - 2);
-                context.strokeStyle =
-                    sampleBeat <= positionBeat ? accent : inactive;
-                context.beginPath();
-                context.moveTo(Math.round(x) + 0.5, centerY - magnitude);
-                context.lineTo(Math.round(x) + 0.5, centerY + magnitude);
-                context.stroke();
+                const x = beatX + index * sampleWidth;
+                if (x + barWidth < 0 || x > width) continue;
+                const magnitude = Math.max(
+                    0.5,
+                    clamp(Math.abs(peaks[index]!), 0, 1) * (height / 2 - 1),
+                );
+                context.fillRect(
+                    x,
+                    centerY - magnitude,
+                    barWidth,
+                    magnitude * 2,
+                );
             }
         }
-    }, [height, pixelsPerBeat, positionBeat, startBeat, waveform, width]);
+    }, [height, pixelsPerBeat, startBeat, tone, waveform, width]);
 
     useCanvasDraw(canvasRef, draw);
 
     return (
         <canvas
             ref={canvasRef}
-            data-testid="timeline-waveform-canvas"
-            aria-label="Audio waveform"
+            data-testid={
+                tone === "rest"
+                    ? "timeline-waveform-canvas"
+                    : "timeline-waveform-played"
+            }
+            role={tone === "rest" ? "img" : undefined}
+            aria-label={tone === "rest" ? "Audio waveform" : undefined}
+            aria-hidden={tone === "played" || undefined}
             className="block"
             style={{ width, height }}
         />
