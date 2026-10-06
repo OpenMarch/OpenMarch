@@ -28,11 +28,28 @@ describe("TitleBar", () => {
         expect(path.closest(".main-app-titlebar")).toHaveClass("grid");
     });
 
-    it("hides the file path when asked", async () => {
-        renderBar({ showFilePath: false });
+    it("settings variant hides the file path", async () => {
+        renderBar({ variant: "settings" });
         // Let any async path fetch settle before asserting it never showed up.
         await new Promise((resolve) => setTimeout(resolve, 0));
         expect(window.electron.databaseGetPath).not.toHaveBeenCalled();
         expect(screen.queryByText("Halftime.dots")).not.toBeInTheDocument();
+    });
+
+    it("settings variant skips the update check and version", async () => {
+        const fetchSpy = vi.fn().mockResolvedValue({ ok: false });
+        vi.stubGlobal("fetch", fetchSpy);
+        renderBar({ variant: "settings" });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(fetchSpy).not.toHaveBeenCalled();
+        vi.unstubAllGlobals();
+    });
+
+    it("main variant runs the update check", async () => {
+        const fetchSpy = vi.fn().mockResolvedValue({ ok: false });
+        vi.stubGlobal("fetch", fetchSpy);
+        renderBar();
+        await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+        vi.unstubAllGlobals();
     });
 });

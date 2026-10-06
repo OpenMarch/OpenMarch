@@ -21,11 +21,13 @@ import MarcherLogo from "@/components/MarcherLogo";
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({
     showControls,
-    showFilePath = true,
+    variant = "main",
 }: {
     showControls?: boolean;
-    showFilePath?: boolean;
+    /** "settings" is a minimal bar: no version, update check, file controls or file path. */
+    variant?: "main" | "settings";
 }) {
+    const showFilePath = variant === "main";
     const isMacOS = window.electron.isMacOS;
     const { uiSettings } = useUiSettingsStore();
 
@@ -106,11 +108,15 @@ export default function TitleBar({
                         <p className="text-body min-w-0 leading-none">
                             OpenMarch
                         </p>
-                        <p className="text-body leading-none opacity-50">
-                            {currentVersion}
-                        </p>
-                        <VersionChecker />
-                        {showControls && <FileControls />}
+                        {variant === "main" && (
+                            <>
+                                <p className="text-body leading-none opacity-50">
+                                    {currentVersion}
+                                </p>
+                                <VersionChecker />
+                                {showControls && <FileControls />}
+                            </>
+                        )}
                     </div>
                 </div>
                 <p className="text-sub truncate text-center">

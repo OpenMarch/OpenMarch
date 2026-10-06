@@ -38,7 +38,7 @@ export default function SettingsWindow() {
 
     return (
         <main className="bg-bg-1 text-text @container flex h-screen w-screen min-w-0 flex-col overflow-hidden font-sans">
-            <TitleBar showFilePath={false} />
+            <TitleBar variant="settings" />
             <div className="flex min-h-0 flex-1">
                 <SettingsSidebar selected={selected} onSelect={select} />
                 <section className="@container min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-24 pt-4 pb-24">
