@@ -124,7 +124,9 @@ test("Refresh during wizard discards draft and returns to launch page", async ({
     await page.reload();
 
     await expect(
-        page.getByRole("heading", { name: "Recent Files", level: 2 }),
+        // The tab, not the list heading: the heading only shows when there
+        // are recent files, and each test starts with none.
+        page.getByRole("tab", { name: "Recent Files" }),
     ).toBeVisible();
     await expect(page.getByText("Timeline")).not.toBeVisible();
     await expect(dialog).not.toBeVisible();
