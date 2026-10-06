@@ -49,7 +49,7 @@ test.use({
     ],
 });
 
-/** mulberry32: small, fast and seedable. */
+/** mulberry32: a small, fast random number generator that takes a seed. */
 function random(seed: number) {
     let state = seed >>> 0;
     return () => {
