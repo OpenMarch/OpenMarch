@@ -9,6 +9,8 @@ import {
     WrenchIcon,
     type Icon,
 } from "@phosphor-icons/react";
+import { ACTION_IDS, getActionDefinition } from "@/shortcuts/definitions";
+import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import GeneralSettings from "@/components/launchpage/settings/GeneralSettings";
 import MouseSettings from "@/components/launchpage/settings/MouseSettings";
 import ShortcutSettings from "@/components/launchpage/settings/ShortcutSettings";
@@ -35,6 +37,8 @@ export interface SettingsSection {
     descriptionKey: string;
     /** i18n keys of the labels of the settings in this section, matched by the sidebar search. */
     searchKeys: readonly string[];
+    /** Extra searchable labels that need translating at runtime, e.g. one per keyboard action. */
+    searchLabels?: (t: Translate) => readonly string[];
 }
 
 export const SETTINGS_SECTION_STORAGE_KEY = "openmarch:settingsSection";
@@ -80,6 +84,16 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         Component: ShortcutSettings,
         descriptionKey: "settings.shortcuts",
         searchKeys: [],
+        searchLabels: (t) => [
+            ...ACTION_IDS.map((id) => getActionLabel(id, t)),
+            ...new Set(
+                ACTION_IDS.map((id) =>
+                    t(
+                        `settings.shortcuts.category.${getActionDefinition(id).category}`,
+                    ),
+                ),
+            ),
+        ],
     },
     {
         id: "plugins",

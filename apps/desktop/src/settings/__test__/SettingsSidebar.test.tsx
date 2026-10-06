@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { getActionLabel } from "@/shortcuts/labels";
 import SettingsSidebar from "../SettingsSidebar";
 import { SETTINGS_SECTIONS, type SettingsSectionId } from "../sections";
 
@@ -62,6 +63,18 @@ describe("SettingsSidebar", () => {
         ).toEqual(["General"]);
     });
 
+    it("finds Keyboard shortcuts by the label of one of its actions", async () => {
+        render(<Harness />);
+        const { t } = tolgee;
+        const label = getActionLabel("performUndo", t);
+        fireEvent.change(await search(), { target: { value: label } });
+        expect(
+            within(nav())
+                .getAllByRole("button")
+                .map((b) => b.textContent),
+        ).toContain("Keyboard shortcuts");
+    });
+
     it("shows a message when nothing matches", async () => {
         render(<Harness />);
         fireEvent.change(await search(), {
@@ -84,7 +97,7 @@ describe("SettingsSidebar", () => {
 
     it("arrows move through visible sections only", async () => {
         render(<Harness />);
-        fireEvent.change(await search(), { target: { value: "p" } });
+        fireEvent.change(await search(), { target: { value: "database" } });
         const names = within(nav())
             .getAllByRole("button")
             .map((b) => b.textContent!);

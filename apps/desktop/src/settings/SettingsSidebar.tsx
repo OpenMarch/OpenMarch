@@ -25,6 +25,7 @@ export default function SettingsSidebar({
             searchItems(SETTINGS_SECTIONS, query, (s) => [
                 t(s.labelKey),
                 ...s.searchKeys.map((key) => t(key)),
+                ...(s.searchLabels?.(t) ?? []),
             ]),
         [query, t],
     );
