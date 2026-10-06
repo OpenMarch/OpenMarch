@@ -51,7 +51,7 @@ settingsMenus.forEach(({ name, navigate }) => {
     test(`${name} - Light and dark mode`, async ({ electronApp }) => {
         const { app, page: mainPage } = electronApp;
         const page = await navigate(app, mainPage);
-        await goToSection(page, "General");
+        await goToSection(page, "Appearance");
         await page.getByRole("radio", { name: "Dark" }).click();
         await expect(page.getByRole("group")).toMatchAriaSnapshot(`
         - radio "Dark" [checked]:
@@ -97,7 +97,7 @@ settingsMenus.forEach(({ name, navigate }) => {
         await goToSection(page, "General");
         await page.getByRole("combobox").click();
         await page.getByRole("option", { name: "Español" }).click();
-        await expect(page.getByText("Idioma")).toBeVisible();
+        await expect(page.getByText("Idioma", { exact: true })).toBeVisible();
         await expect(
             page.getByRole("navigation", { name: "Configuración" }),
         ).toBeVisible();
@@ -111,7 +111,7 @@ settingsMenus.forEach(({ name, navigate }) => {
         ).toBeVisible();
         await page.getByRole("combobox").click();
         await page.getByRole("option", { name: "日本語" }).click();
-        await expect(page.getByText("言語")).toBeVisible();
+        await expect(page.getByText("言語", { exact: true })).toBeVisible();
         await page.getByRole("combobox").click();
         await page.getByRole("option", { name: "English" }).click();
         await expect(

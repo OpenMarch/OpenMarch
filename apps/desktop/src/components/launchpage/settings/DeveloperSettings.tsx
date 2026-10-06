@@ -6,6 +6,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import { RemoveInContextTools } from "@/global/singletons/Tolgee";
 import SettingRow from "@/settings/SettingRow";
+import SettingsPanel from "@/settings/SettingsPanel";
 
 export default function DeveloperSettings() {
     const { t } = useTranslate();
@@ -34,16 +35,16 @@ export default function DeveloperSettings() {
     }, []);
 
     return (
-        <div className="divide-stroke flex flex-col divide-y">
+        <SettingsPanel>
             <Collapsible
                 trigger={
-                    <p className="flex flex-col gap-16 px-8">
+                    <p className="text-body text-text py-12">
                         <T keyName="settings.developer" />
                     </p>
                 }
-                className="flex flex-col gap-16 pt-16"
+                className="flex flex-col pb-12"
             >
-                <div className="flex flex-col gap-16 px-12">
+                <div className="flex flex-col gap-8">
                     <SettingRow
                         label={<T keyName="settings.tolgeeDevToolsToggle" />}
                         htmlFor="tolgee-dev-tools"
@@ -73,7 +74,9 @@ export default function DeveloperSettings() {
 
                     {tolgeeDevTools && (
                         <Input
+                            id="tolgee-api-key"
                             type="text"
+                            aria-label={t("settings.tolgeeApiKeyPlaceholder")}
                             value={tolgeeApiKey}
                             placeholder={t("settings.tolgeeApiKeyPlaceholder")}
                             onChange={(e) => {
@@ -91,6 +94,6 @@ export default function DeveloperSettings() {
                     )}
                 </div>
             </Collapsible>
-        </div>
+        </SettingsPanel>
     );
 }

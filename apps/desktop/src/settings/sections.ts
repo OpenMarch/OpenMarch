@@ -4,6 +4,7 @@ import {
     DatabaseIcon,
     GearSixIcon,
     KeyboardIcon,
+    PaletteIcon,
     PuzzlePieceIcon,
     ShieldCheckIcon,
     WrenchIcon,
@@ -12,6 +13,7 @@ import {
 import { ACTION_IDS, getActionDefinition } from "@/shortcuts/definitions";
 import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import GeneralSettings from "@/components/launchpage/settings/GeneralSettings";
+import AppearanceSettings from "@/components/launchpage/settings/AppearanceSettings";
 import MouseSettings from "@/components/launchpage/settings/MouseSettings";
 import ShortcutSettings from "@/components/launchpage/settings/ShortcutSettings";
 import PluginsContents from "@/components/launchpage/settings/plugins/Plugins";
@@ -21,6 +23,7 @@ import DatabaseRepairSettings from "@/components/launchpage/settings/DatabaseRep
 
 export type SettingsSectionId =
     | "general"
+    | "appearance"
     | "mouse"
     | "shortcuts"
     | "plugins"
@@ -33,7 +36,7 @@ export interface SettingsSection {
     labelKey: string;
     Icon: Icon;
     Component: ComponentType;
-    /** Subtitle shown under the section title (Task 12 adds real description keys). */
+    /** i18n key of the one-line subtitle shown under the section title. */
     descriptionKey: string;
     /** i18n keys of the labels of the settings in this section, matched by the sidebar search. */
     searchKeys: readonly string[];
@@ -55,12 +58,19 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.general",
         Icon: GearSixIcon,
         Component: GeneralSettings,
-        descriptionKey: "settings.general",
+        descriptionKey: "settings.general.description",
+        searchKeys: ["settings.general.language"],
+    },
+    {
+        id: "appearance",
+        labelKey: "settings.appearance",
+        Icon: PaletteIcon,
+        Component: AppearanceSettings,
+        descriptionKey: "settings.appearance.description",
         searchKeys: [
             "settings.general.appearance",
             "settings.general.appearance.light",
             "settings.general.appearance.dark",
-            "settings.general.language",
             "settings.general.showFullDatabasePath",
         ],
     },
@@ -69,7 +79,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.mouse",
         Icon: CursorClickIcon,
         Component: MouseSettings,
-        descriptionKey: "settings.mouse",
+        descriptionKey: "settings.mouse.description",
         searchKeys: [
             "settings.mouse.zoomSensitivity",
             "settings.mouse.trackpadMode",
@@ -82,7 +92,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.shortcuts",
         Icon: KeyboardIcon,
         Component: ShortcutSettings,
-        descriptionKey: "settings.shortcuts",
+        descriptionKey: "settings.shortcuts.description",
         searchKeys: [],
         searchLabels: (t) => [
             ...ACTION_IDS.map((id) => getActionLabel(id, t)),
@@ -100,7 +110,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.plugins",
         Icon: PuzzlePieceIcon,
         Component: PluginsContents,
-        descriptionKey: "settings.plugins",
+        descriptionKey: "settings.plugins.description",
         searchKeys: [
             "settings.plugins.installed",
             "settings.plugins.official",
@@ -112,7 +122,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.privacy",
         Icon: ShieldCheckIcon,
         Component: PrivacySettings,
-        descriptionKey: "settings.privacy",
+        descriptionKey: "settings.privacy.description",
         searchKeys: [
             "settings.privacy.analytics",
             "settings.privacy.analytics.toggle",
@@ -123,7 +133,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.developer",
         Icon: WrenchIcon,
         Component: DeveloperSettings,
-        descriptionKey: "settings.developer",
+        descriptionKey: "settings.developer.description",
         searchKeys: ["settings.tolgeeDevToolsToggle"],
     },
     {
@@ -131,7 +141,7 @@ export const SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.database",
         Icon: DatabaseIcon,
         Component: DatabaseRepairSettings,
-        descriptionKey: "settings.database",
+        descriptionKey: "settings.database.description",
         searchKeys: ["settings.repairDotsFile.title"],
     },
 ];

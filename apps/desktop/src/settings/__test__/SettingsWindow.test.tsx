@@ -47,6 +47,46 @@ const renderWindow = () =>
     );
 
 describe("SettingsWindow", () => {
+    it("lists the eight sections in order", () => {
+        expect(SETTINGS_SECTIONS.map((section) => section.id)).toEqual([
+            "general",
+            "appearance",
+            "mouse",
+            "shortcuts",
+            "plugins",
+            "privacy",
+            "developer",
+            "database",
+        ]);
+    });
+
+    it("keeps the language in General and the theme in Appearance", async () => {
+        renderWindow();
+        expect(await screen.findByRole("combobox")).toBeVisible();
+        expect(screen.queryByRole("radio", { name: "Light" })).toBeNull();
+
+        const nav = screen.getByRole("navigation");
+        fireEvent.click(
+            within(nav).getByRole("button", { name: "Appearance" }),
+        );
+        expect(screen.getByRole("radio", { name: "Light" })).toBeVisible();
+        expect(screen.getByRole("radio", { name: "Dark" })).toBeVisible();
+        expect(screen.queryByRole("combobox")).toBeNull();
+    });
+
+    it.each(SETTINGS_SECTIONS.map((section) => section.id))(
+        "shows a real description for the %s section",
+        async (id) => {
+            localStorage.setItem(SETTINGS_SECTION_STORAGE_KEY, id);
+            renderWindow();
+            const heading = await screen.findByRole("heading", { level: 1 });
+            const description = heading.nextElementSibling;
+            expect(description?.textContent?.trim()).toBeTruthy();
+            expect(description?.textContent).not.toBe(heading.textContent);
+            expect(description?.textContent).not.toMatch(/^settings\./);
+        },
+    );
+
     it("opens on General and switches section from the sidebar", async () => {
         renderWindow();
         const nav = await screen.findByRole("navigation");
@@ -70,10 +110,10 @@ describe("SettingsWindow", () => {
         general.focus();
         fireEvent.keyDown(general, { key: "ArrowDown" });
         expect(
-            screen.getByRole("heading", { name: "Mouse & Trackpad" }),
+            screen.getByRole("heading", { name: "Appearance" }),
         ).toBeVisible();
         expect(
-            within(nav).getByRole("button", { name: "Mouse & Trackpad" }),
+            within(nav).getByRole("button", { name: "Appearance" }),
         ).toHaveFocus();
     });
 

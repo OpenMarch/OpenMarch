@@ -3,6 +3,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { Switch, Slider } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
 import SettingRow from "@/settings/SettingRow";
+import SettingsPanel from "@/settings/SettingsPanel";
 
 export default function MouseSettings() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
@@ -24,7 +25,7 @@ export default function MouseSettings() {
     }, [uiSettings.mouseSettings.trackpadPanSensitivity]);
 
     return (
-        <div className="divide-stroke flex flex-col divide-y">
+        <SettingsPanel>
             {/* Zoom sensitivity */}
             <SettingRow
                 label={<T keyName="settings.mouse.zoomSensitivity" />}
@@ -33,6 +34,7 @@ export default function MouseSettings() {
                 <div className="flex items-center gap-3">
                     <div className="w-[200px] shrink-0">
                         <Slider
+                            id="zoomSensitivity"
                             min={0.5}
                             max={4.0}
                             step={0.1}
@@ -89,6 +91,7 @@ export default function MouseSettings() {
                     <div className="flex items-center gap-3">
                         <div className="w-[200px] shrink-0">
                             <Slider
+                                id="trackpadPanSensitivity"
                                 min={0.1}
                                 max={3.0}
                                 step={0.1}
@@ -118,6 +121,6 @@ export default function MouseSettings() {
                     </div>
                 </SettingRow>
             )}
-        </div>
+        </SettingsPanel>
     );
 }

@@ -126,7 +126,7 @@ function ShortcutRow({
     onDismissConflict: () => void;
 }) {
     return (
-        <li className="group/row rounded-6 hover:bg-fg-2 flex flex-col gap-4 px-8 py-4">
+        <li className="group/row flex flex-col gap-4 py-8">
             <div className="flex min-h-[2rem] items-center justify-between gap-8">
                 <span className="text-body text-text-subtitle">
                     {row.label}
@@ -265,7 +265,7 @@ export default function ShortcutSettings() {
     ]);
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-16">
             <div className="bg-bg-1 sticky top-0 z-10 flex items-center gap-8 pb-8">
                 <div className="relative grow">
                     <MagnifyingGlassIcon
@@ -325,7 +325,7 @@ export default function ShortcutSettings() {
                         open={normalizedQuery !== "" || undefined}
                         className="group/category"
                     >
-                        <summary className="text-sub text-text-subtitle hover:text-text flex cursor-pointer list-none items-center gap-6 px-8 py-6 select-none [&::-webkit-details-marker]:hidden">
+                        <summary className="text-sub text-text-subtitle hover:text-text flex cursor-pointer list-none items-center gap-6 py-6 select-none [&::-webkit-details-marker]:hidden">
                             <CaretRightIcon
                                 size={12}
                                 aria-hidden
@@ -338,7 +338,8 @@ export default function ShortcutSettings() {
                                 {categoryRows.length}
                             </span>
                         </summary>
-                        <ul className="flex flex-col">
+                        {/* Same look as SettingsPanel, but a list, so the rows stay <li>s. */}
+                        <ul className="bg-fg-1 rounded-6 divide-stroke flex flex-col divide-y px-16">
                             {categoryRows.map((row) => (
                                 <ShortcutRow
                                     key={row.id}

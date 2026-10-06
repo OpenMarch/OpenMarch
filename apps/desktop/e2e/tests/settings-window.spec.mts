@@ -42,7 +42,7 @@ test("settings opens one window and changes apply to the main window", async ({
         .evaluate((el) => el.classList.contains("dark"));
     try {
         await settings
-            .getByRole("button", { name: "General", exact: true })
+            .getByRole("button", { name: "Appearance", exact: true })
             .click();
         await settings.getByRole("radio", { name: "Light" }).click();
         await expect(page.locator("html")).not.toHaveClass(/dark/);

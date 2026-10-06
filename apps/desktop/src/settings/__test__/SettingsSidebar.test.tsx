@@ -33,6 +33,7 @@ describe("SettingsSidebar", () => {
         await search();
         for (const label of [
             "General",
+            "Appearance",
             "Mouse & Trackpad",
             "Keyboard shortcuts",
             "Plugins",
@@ -55,12 +56,12 @@ describe("SettingsSidebar", () => {
 
     it("filters by a setting label from another section", async () => {
         render(<Harness />);
-        fireEvent.change(await search(), { target: { value: "language" } });
+        fireEvent.change(await search(), { target: { value: "dark" } });
         expect(
             within(nav())
                 .getAllByRole("button")
                 .map((b) => b.textContent),
-        ).toEqual(["General"]);
+        ).toEqual(["Appearance"]);
     });
 
     it("finds Keyboard shortcuts by the label of one of its actions", async () => {

@@ -1,17 +1,13 @@
-import * as ToggleGroup from "@radix-ui/react-toggle-group";
-import { SunIcon, MoonIcon } from "@phosphor-icons/react";
-import { useTheme } from "@/context/ThemeContext";
 import { useTolgee, T } from "@tolgee/react";
 import { useState, useEffect } from "react";
 import {
-    Switch,
     Select,
     SelectContent,
     SelectItem,
     SelectTriggerButton,
 } from "@openmarch/ui";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import SettingRow from "@/settings/SettingRow";
+import SettingsPanel from "@/settings/SettingsPanel";
 
 const languages = [
     { code: "en", name: "English" },
@@ -21,12 +17,9 @@ const languages = [
     { code: "ja", name: "日本語" },
 ];
 
-// eslint-disable-next-line max-lines-per-function
 export default function GeneralSettings() {
-    const { theme, setTheme } = useTheme();
     const tolgee = useTolgee();
     const [currentLanguage, setCurrentLanguage] = useState("en");
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     useEffect(() => {
         // Load saved language from electron store
@@ -59,39 +52,17 @@ export default function GeneralSettings() {
         "English";
 
     return (
-        <div className="divide-stroke flex flex-col divide-y">
-            <SettingRow label={<T keyName="settings.general.appearance" />}>
-                <ToggleGroup.Root
-                    type="single"
-                    value={theme}
-                    onValueChange={(theme) => {
-                        if (theme) setTheme(theme);
-                    }}
-                    className="flex h-fit w-fit gap-8"
-                >
-                    <ToggleGroup.Item
-                        value="light"
-                        className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
-                    >
-                        <SunIcon size={20} />
-                        <T keyName="settings.general.appearance.light" />
-                    </ToggleGroup.Item>
-                    <ToggleGroup.Item
-                        value="dark"
-                        className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
-                    >
-                        <MoonIcon size={20} />
-                        <T keyName="settings.general.appearance.dark" />
-                    </ToggleGroup.Item>
-                </ToggleGroup.Root>
-            </SettingRow>
-
-            <SettingRow label={<T keyName="settings.general.language" />}>
+        <SettingsPanel>
+            <SettingRow
+                label={<T keyName="settings.general.language" />}
+                htmlFor="language"
+            >
                 <Select
                     value={currentLanguage}
                     onValueChange={handleLanguageChange}
                 >
                     <SelectTriggerButton
+                        id="language"
                         label={currentLanguageName}
                         className="min-w-[120px]"
                     />
@@ -107,20 +78,6 @@ export default function GeneralSettings() {
                     </SelectContent>
                 </Select>
             </SettingRow>
-
-            <SettingRow
-                label={<T keyName="settings.general.showFullDatabasePath" />}
-            >
-                <Switch
-                    checked={uiSettings.showFullDatabasePath}
-                    onCheckedChange={(checked) =>
-                        setUiSettings({
-                            ...uiSettings,
-                            showFullDatabasePath: checked,
-                        })
-                    }
-                />
-            </SettingRow>
-        </div>
+        </SettingsPanel>
     );
 }

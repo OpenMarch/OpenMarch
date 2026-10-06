@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { T, useTolgee } from "@tolgee/react";
 import { toast } from "sonner";
+import SettingRow from "@/settings/SettingRow";
+import SettingsPanel from "@/settings/SettingsPanel";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -77,57 +79,62 @@ export default function DatabaseRepairSettings() {
     }
 
     return (
-        <div className="flex flex-col">
-            <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-                <AlertDialogTrigger asChild>
-                    <Button variant="secondary">
-                        <T keyName="settings.repairDotsFile" />
-                    </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogTitle>
-                        <T keyName="settings.repairDotsFile.title" />
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                        <T keyName="settings.repairDotsFile.description" />
-                    </AlertDialogDescription>
-                    {error && (
-                        <div className="text-red text-body">
-                            <T
-                                keyName="settings.repairDotsFile.error"
-                                params={{ error }}
-                            />
+        <SettingsPanel>
+            <SettingRow
+                label={<T keyName="settings.repairDotsFile.title" />}
+                htmlFor="repair-dots-file"
+            >
+                <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="secondary" id="repair-dots-file">
+                            <T keyName="settings.repairDotsFile" />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogTitle>
+                            <T keyName="settings.repairDotsFile.title" />
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            <T keyName="settings.repairDotsFile.description" />
+                        </AlertDialogDescription>
+                        {error && (
+                            <div className="text-red text-body">
+                                <T
+                                    keyName="settings.repairDotsFile.error"
+                                    params={{ error }}
+                                />
+                            </div>
+                        )}
+                        <div className="flex w-full justify-end gap-8">
+                            <AlertDialogCancel asChild>
+                                <Button
+                                    variant="secondary"
+                                    disabled={isRepairing}
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        setError(null);
+                                    }}
+                                >
+                                    <T keyName="settings.repairDotsFile.cancel" />
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction>
+                                <Button
+                                    variant="primary"
+                                    disabled={isRepairing}
+                                    onClick={handleRepair}
+                                >
+                                    {isRepairing ? (
+                                        <T keyName="settings.repairDotsFile.repairing" />
+                                    ) : (
+                                        <T keyName="settings.repairDotsFile.confirm" />
+                                    )}
+                                </Button>
+                            </AlertDialogAction>
                         </div>
-                    )}
-                    <div className="flex w-full justify-end gap-8">
-                        <AlertDialogCancel asChild>
-                            <Button
-                                variant="secondary"
-                                disabled={isRepairing}
-                                onClick={() => {
-                                    setIsOpen(false);
-                                    setError(null);
-                                }}
-                            >
-                                <T keyName="settings.repairDotsFile.cancel" />
-                            </Button>
-                        </AlertDialogCancel>
-                        <AlertDialogAction>
-                            <Button
-                                variant="primary"
-                                disabled={isRepairing}
-                                onClick={handleRepair}
-                            >
-                                {isRepairing ? (
-                                    <T keyName="settings.repairDotsFile.repairing" />
-                                ) : (
-                                    <T keyName="settings.repairDotsFile.confirm" />
-                                )}
-                            </Button>
-                        </AlertDialogAction>
-                    </div>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </SettingRow>
+        </SettingsPanel>
     );
 }

@@ -1,3 +1,4 @@
+import SettingsPanel from "@/settings/SettingsPanel";
 import Plugin, { PluginMetadata } from "@/global/classes/Plugin";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -100,7 +101,7 @@ export default function PluginsContents() {
     return (
         <div className="text-text flex flex-col gap-16">
             {showRefreshNotice && (
-                <div className="bg-fg-1 rounded-6 text-body border-yellow flex w-full items-center gap-8 border px-12 py-8">
+                <div className="bg-yellow/20 rounded-6 text-body flex w-full items-center gap-8 px-12 py-8">
                     <PuzzlePieceIcon size={20} />
                     <p>
                         <T
@@ -133,327 +134,329 @@ export default function PluginsContents() {
                         <T keyName="settings.plugins.community" />
                     </TabItem>
                 </TabsList>
-                <TabContent
-                    value="installed"
-                    className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
-                >
+                <TabContent value="installed" className="flex flex-col pt-12">
                     {plugins.length > 0 ? (
-                        // eslint-disable-next-line max-lines-per-function
-                        plugins.map((plugin, index) => (
-                            <div
-                                className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-6 border p-12"
-                                key={index}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex gap-8">
-                                        <h5 className="text-h5">
-                                            {plugin.name}
-                                        </h5>
-                                        <Badge variant="secondary">
-                                            v{plugin.version}
-                                        </Badge>
-                                    </div>
-                                    <div className="text-text">
-                                        <Button
-                                            data-plugin={plugin.name}
-                                            size="compact"
-                                            variant="secondary"
-                                            onClick={async () => {
-                                                const button =
-                                                    document.querySelector(
-                                                        `button[data-plugin="${plugin.name}"]`,
-                                                    );
-                                                if (button) {
-                                                    button.textContent = t(
-                                                        "settings.plugins.uninstalling",
-                                                    );
-                                                }
+                        <SettingsPanel>
+                            {/* eslint-disable-next-line max-lines-per-function */}
+                            {plugins.map((plugin, index) => (
+                                <div
+                                    className="flex flex-col gap-6 py-12"
+                                    key={index}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex gap-8">
+                                            <h5 className="text-h5">
+                                                {plugin.name}
+                                            </h5>
+                                            <Badge variant="secondary">
+                                                v{plugin.version}
+                                            </Badge>
+                                        </div>
+                                        <div className="text-text">
+                                            <Button
+                                                data-plugin={plugin.name}
+                                                size="compact"
+                                                variant="secondary"
+                                                onClick={async () => {
+                                                    const button =
+                                                        document.querySelector(
+                                                            `button[data-plugin="${plugin.name}"]`,
+                                                        );
+                                                    if (button) {
+                                                        button.textContent = t(
+                                                            "settings.plugins.uninstalling",
+                                                        );
+                                                    }
 
-                                                let status =
-                                                    await window.plugins.uninstall(
-                                                        plugin.file,
-                                                    );
-                                                if (button) {
-                                                    button.textContent = status
-                                                        ? t(
-                                                              "settings.plugins.uninstalled",
-                                                          )
-                                                        : t(
-                                                              "settings.plugins.uninstallFailed",
-                                                          );
-                                                }
-                                                if (status) {
-                                                    toast.success(
-                                                        t(
-                                                            "settings.plugins.toast.uninstallSuccess",
-                                                            {
-                                                                pluginName:
-                                                                    plugin.name,
-                                                            },
-                                                        ),
-                                                    );
-                                                    Plugin.remove(plugin);
-                                                    setPlugins([
-                                                        ...Plugin.getPlugins(),
-                                                    ]);
-                                                    setShowRefreshNotice(true);
-                                                } else {
-                                                    toast.error(
-                                                        t(
-                                                            "settings.plugins.toast.uninstallFailed",
-                                                            {
-                                                                pluginName:
-                                                                    plugin.name,
-                                                            },
-                                                        ),
-                                                    );
-                                                }
-                                            }}
-                                        >
-                                            <T keyName="settings.plugins.uninstall" />
-                                        </Button>
+                                                    let status =
+                                                        await window.plugins.uninstall(
+                                                            plugin.file,
+                                                        );
+                                                    if (button) {
+                                                        button.textContent =
+                                                            status
+                                                                ? t(
+                                                                      "settings.plugins.uninstalled",
+                                                                  )
+                                                                : t(
+                                                                      "settings.plugins.uninstallFailed",
+                                                                  );
+                                                    }
+                                                    if (status) {
+                                                        toast.success(
+                                                            t(
+                                                                "settings.plugins.toast.uninstallSuccess",
+                                                                {
+                                                                    pluginName:
+                                                                        plugin.name,
+                                                                },
+                                                            ),
+                                                        );
+                                                        Plugin.remove(plugin);
+                                                        setPlugins([
+                                                            ...Plugin.getPlugins(),
+                                                        ]);
+                                                        setShowRefreshNotice(
+                                                            true,
+                                                        );
+                                                    } else {
+                                                        toast.error(
+                                                            t(
+                                                                "settings.plugins.toast.uninstallFailed",
+                                                                {
+                                                                    pluginName:
+                                                                        plugin.name,
+                                                                },
+                                                            ),
+                                                        );
+                                                    }
+                                                }}
+                                            >
+                                                <T keyName="settings.plugins.uninstall" />
+                                            </Button>
+                                        </div>
                                     </div>
+                                    <p className="text-text-subtitle text-sub">
+                                        {plugin.author}
+                                    </p>
+                                    <p className="text-text text-body w-full">
+                                        {plugin.description}
+                                    </p>
                                 </div>
-                                <p className="text-text-subtitle text-sub">
-                                    {plugin.author}
-                                </p>
-                                <p className="text-text text-body w-full">
-                                    {plugin.description}
-                                </p>
-                            </div>
-                        ))
+                            ))}
+                        </SettingsPanel>
                     ) : (
-                        <p className="text-body p-8">
+                        <p className="text-body text-text-subtitle">
                             <T keyName="settings.plugins.noPlugins" />
                         </p>
                     )}
                 </TabContent>
-                <TabContent
-                    value="official"
-                    className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
-                >
+                <TabContent value="official" className="flex flex-col pt-12">
                     {officialPlugins.length > 0 ? (
-                        // eslint-disable-next-line max-lines-per-function
-                        officialPlugins.map((plugin, index) => (
-                            <div
-                                className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-6 border p-12"
-                                key={index}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex gap-8">
-                                        <h5 className="text-h5">
-                                            {plugin.name}
-                                        </h5>
-                                        <Badge variant="secondary">
-                                            v{plugin.version}
-                                        </Badge>
-                                    </div>
-                                    <div className="text-text">
-                                        {plugins.some((p) =>
-                                            p.equals(plugin),
-                                        ) ? (
-                                            t("settings.plugins.installed")
-                                        ) : (
-                                            <Button
-                                                data-plugin={plugin.name}
-                                                variant="primary"
-                                                size="compact"
-                                                onClick={async () => {
-                                                    const button =
-                                                        document.querySelector(
-                                                            `button[data-plugin="${plugin.name}"]`,
-                                                        );
-                                                    if (button) {
-                                                        button.textContent = t(
-                                                            "settings.plugins.installing",
-                                                        );
-                                                    }
+                        <SettingsPanel>
+                            {/* eslint-disable-next-line max-lines-per-function */}
+                            {officialPlugins.map((plugin, index) => (
+                                <div
+                                    className="flex flex-col gap-6 py-12"
+                                    key={index}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex gap-8">
+                                            <h5 className="text-h5">
+                                                {plugin.name}
+                                            </h5>
+                                            <Badge variant="secondary">
+                                                v{plugin.version}
+                                            </Badge>
+                                        </div>
+                                        <div className="text-text">
+                                            {plugins.some((p) =>
+                                                p.equals(plugin),
+                                            ) ? (
+                                                t("settings.plugins.installed")
+                                            ) : (
+                                                <Button
+                                                    data-plugin={plugin.name}
+                                                    variant="primary"
+                                                    size="compact"
+                                                    onClick={async () => {
+                                                        const button =
+                                                            document.querySelector(
+                                                                `button[data-plugin="${plugin.name}"]`,
+                                                            );
+                                                        if (button) {
+                                                            button.textContent =
+                                                                t(
+                                                                    "settings.plugins.installing",
+                                                                );
+                                                        }
 
-                                                    let status =
-                                                        await window.plugins.install(
-                                                            plugin.download_url ||
-                                                                "",
-                                                        );
-                                                    if (button) {
-                                                        button.textContent =
-                                                            status
-                                                                ? t(
-                                                                      "settings.plugins.installed",
-                                                                  )
-                                                                : t(
-                                                                      "settings.plugins.installFailed",
-                                                                  );
-                                                    }
-                                                    if (status) {
-                                                        toast.success(
-                                                            t(
-                                                                "settings.plugins.toast.installSuccess",
-                                                                {
-                                                                    pluginName:
-                                                                        plugin.name,
-                                                                },
-                                                            ),
-                                                        );
-                                                        let path =
-                                                            plugin.download_url
-                                                                ?.split("/")
-                                                                .pop();
-                                                        new Plugin(
-                                                            plugin.name,
-                                                            plugin.version,
-                                                            plugin.description,
-                                                            plugin.author,
-                                                            path || "",
-                                                        );
-                                                        setPlugins([
-                                                            ...Plugin.getPlugins(),
-                                                        ]);
-                                                        setShowRefreshNotice(
-                                                            true,
-                                                        );
-                                                    } else {
-                                                        toast.error(
-                                                            t(
-                                                                "settings.plugins.toast.installFailed",
-                                                                {
-                                                                    pluginName:
-                                                                        plugin.name,
-                                                                },
-                                                            ),
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                <T keyName="settings.plugins.install" />
-                                            </Button>
-                                        )}
+                                                        let status =
+                                                            await window.plugins.install(
+                                                                plugin.download_url ||
+                                                                    "",
+                                                            );
+                                                        if (button) {
+                                                            button.textContent =
+                                                                status
+                                                                    ? t(
+                                                                          "settings.plugins.installed",
+                                                                      )
+                                                                    : t(
+                                                                          "settings.plugins.installFailed",
+                                                                      );
+                                                        }
+                                                        if (status) {
+                                                            toast.success(
+                                                                t(
+                                                                    "settings.plugins.toast.installSuccess",
+                                                                    {
+                                                                        pluginName:
+                                                                            plugin.name,
+                                                                    },
+                                                                ),
+                                                            );
+                                                            let path =
+                                                                plugin.download_url
+                                                                    ?.split("/")
+                                                                    .pop();
+                                                            new Plugin(
+                                                                plugin.name,
+                                                                plugin.version,
+                                                                plugin.description,
+                                                                plugin.author,
+                                                                path || "",
+                                                            );
+                                                            setPlugins([
+                                                                ...Plugin.getPlugins(),
+                                                            ]);
+                                                            setShowRefreshNotice(
+                                                                true,
+                                                            );
+                                                        } else {
+                                                            toast.error(
+                                                                t(
+                                                                    "settings.plugins.toast.installFailed",
+                                                                    {
+                                                                        pluginName:
+                                                                            plugin.name,
+                                                                    },
+                                                                ),
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <T keyName="settings.plugins.install" />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
+                                    <p className="text-text-subtitle text-sub">
+                                        {plugin.author}
+                                    </p>
+                                    <p className="text-text text-body w-full">
+                                        {plugin.description}
+                                    </p>
                                 </div>
-                                <p className="text-text-subtitle text-sub">
-                                    {plugin.author}
-                                </p>
-                                <p className="text-text text-body w-full">
-                                    {plugin.description}
-                                </p>
-                            </div>
-                        ))
+                            ))}
+                        </SettingsPanel>
                     ) : (
-                        <p className="text-body p-8">
+                        <p className="text-body text-text-subtitle">
                             <T keyName="settings.plugins.noOfficialPlugins" />
                         </p>
                     )}
                 </TabContent>
-                <TabContent
-                    value="community"
-                    className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
-                >
+                <TabContent value="community" className="flex flex-col pt-12">
                     {communityPlugins.length > 0 ? (
-                        // eslint-disable-next-line max-lines-per-function
-                        communityPlugins.map((plugin, index) => (
-                            <div
-                                className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-6 border p-12"
-                                key={index}
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="flex gap-8">
-                                        <h5 className="text-h5">
-                                            {plugin.name}
-                                        </h5>
-                                        <Badge variant="secondary">
-                                            v{plugin.version}
-                                        </Badge>
-                                    </div>
-                                    <div className="text-text">
-                                        {plugins.some((p) =>
-                                            p.equals(plugin),
-                                        ) ? (
-                                            t("settings.plugins.installed")
-                                        ) : (
-                                            <Button
-                                                data-plugin={plugin.name}
-                                                variant="primary"
-                                                size="compact"
-                                                onClick={async () => {
-                                                    const button =
-                                                        document.querySelector(
-                                                            `button[data-plugin="${plugin.name}"]`,
-                                                        );
-                                                    if (button) {
-                                                        button.textContent = t(
-                                                            "settings.plugins.installing",
-                                                        );
-                                                    }
+                        <SettingsPanel>
+                            {/* eslint-disable-next-line max-lines-per-function */}
+                            {communityPlugins.map((plugin, index) => (
+                                <div
+                                    className="flex flex-col gap-6 py-12"
+                                    key={index}
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex gap-8">
+                                            <h5 className="text-h5">
+                                                {plugin.name}
+                                            </h5>
+                                            <Badge variant="secondary">
+                                                v{plugin.version}
+                                            </Badge>
+                                        </div>
+                                        <div className="text-text">
+                                            {plugins.some((p) =>
+                                                p.equals(plugin),
+                                            ) ? (
+                                                t("settings.plugins.installed")
+                                            ) : (
+                                                <Button
+                                                    data-plugin={plugin.name}
+                                                    variant="primary"
+                                                    size="compact"
+                                                    onClick={async () => {
+                                                        const button =
+                                                            document.querySelector(
+                                                                `button[data-plugin="${plugin.name}"]`,
+                                                            );
+                                                        if (button) {
+                                                            button.textContent =
+                                                                t(
+                                                                    "settings.plugins.installing",
+                                                                );
+                                                        }
 
-                                                    let status =
-                                                        await window.plugins.install(
-                                                            plugin.download_url ||
-                                                                "",
-                                                        );
-                                                    if (button) {
-                                                        button.textContent =
-                                                            status
-                                                                ? t(
-                                                                      "settings.plugins.installed",
-                                                                  )
-                                                                : t(
-                                                                      "settings.plugins.installFailed",
-                                                                  );
-                                                    }
-                                                    if (status) {
-                                                        toast.success(
-                                                            t(
-                                                                "settings.plugins.toast.installSuccess",
-                                                                {
-                                                                    pluginName:
-                                                                        plugin.name,
-                                                                },
-                                                            ),
-                                                        );
-                                                        let path =
-                                                            plugin.download_url
-                                                                ?.split("/")
-                                                                .pop();
-                                                        new Plugin(
-                                                            plugin.name,
-                                                            plugin.version,
-                                                            plugin.description,
-                                                            plugin.author,
-                                                            path || "",
-                                                        );
-                                                        setPlugins([
-                                                            ...Plugin.getPlugins(),
-                                                        ]);
-                                                        setShowRefreshNotice(
-                                                            true,
-                                                        );
-                                                    } else {
-                                                        toast.error(
-                                                            t(
-                                                                "settings.plugins.toast.installFailed",
-                                                                {
-                                                                    pluginName:
-                                                                        plugin.name,
-                                                                },
-                                                            ),
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                <T keyName="settings.plugins.install" />
-                                            </Button>
-                                        )}
+                                                        let status =
+                                                            await window.plugins.install(
+                                                                plugin.download_url ||
+                                                                    "",
+                                                            );
+                                                        if (button) {
+                                                            button.textContent =
+                                                                status
+                                                                    ? t(
+                                                                          "settings.plugins.installed",
+                                                                      )
+                                                                    : t(
+                                                                          "settings.plugins.installFailed",
+                                                                      );
+                                                        }
+                                                        if (status) {
+                                                            toast.success(
+                                                                t(
+                                                                    "settings.plugins.toast.installSuccess",
+                                                                    {
+                                                                        pluginName:
+                                                                            plugin.name,
+                                                                    },
+                                                                ),
+                                                            );
+                                                            let path =
+                                                                plugin.download_url
+                                                                    ?.split("/")
+                                                                    .pop();
+                                                            new Plugin(
+                                                                plugin.name,
+                                                                plugin.version,
+                                                                plugin.description,
+                                                                plugin.author,
+                                                                path || "",
+                                                            );
+                                                            setPlugins([
+                                                                ...Plugin.getPlugins(),
+                                                            ]);
+                                                            setShowRefreshNotice(
+                                                                true,
+                                                            );
+                                                        } else {
+                                                            toast.error(
+                                                                t(
+                                                                    "settings.plugins.toast.installFailed",
+                                                                    {
+                                                                        pluginName:
+                                                                            plugin.name,
+                                                                    },
+                                                                ),
+                                                            );
+                                                        }
+                                                    }}
+                                                >
+                                                    <T keyName="settings.plugins.install" />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
+                                    <p className="text-text-subtitle text-sub">
+                                        {plugin.author}
+                                    </p>
+                                    <p className="text-text text-body w-full">
+                                        {plugin.description}
+                                    </p>
                                 </div>
-                                <p className="text-text-subtitle text-sub">
-                                    {plugin.author}
-                                </p>
-                                <p className="text-text text-body w-full">
-                                    {plugin.description}
-                                </p>
-                            </div>
-                        ))
+                            ))}
+                        </SettingsPanel>
                     ) : (
-                        <p className="text-body p-8">
+                        <p className="text-body text-text-subtitle">
                             <T keyName="settings.plugins.noCommunityPlugins" />
                         </p>
                     )}
