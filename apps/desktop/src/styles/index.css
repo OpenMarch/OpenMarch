@@ -64,6 +64,10 @@
 .main-app-titlebar .titlebar-button {
     -webkit-app-region: no-drag;
 }
+/* On macOS, start after the traffic lights. 88px was the old hard-coded gap. */
+.titlebar-mac .titlebar-leading {
+    padding-left: env(titlebar-area-x, 88px);
+}
 
 /* Number input arrows */
 

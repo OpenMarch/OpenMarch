@@ -14,11 +14,18 @@ import {
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T } from "@tolgee/react";
+import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
 
 // eslint-disable-next-line max-lines-per-function
-export default function TitleBar({ showControls }: { showControls?: boolean }) {
+export default function TitleBar({
+    showControls,
+    showFilePath = true,
+}: {
+    showControls?: boolean;
+    showFilePath?: boolean;
+}) {
     const isMacOS = window.electron.isMacOS;
     const { uiSettings } = useUiSettingsStore();
 
@@ -26,6 +33,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const [dbPathError, setDbPathError] = useState<boolean>(false);
 
     useEffect(() => {
+        if (!showFilePath) return;
         const fetchDbPath = async () => {
             try {
                 const path = await window.electron.databaseGetPath();
@@ -40,7 +48,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
         };
 
         void fetchDbPath();
-    }, []);
+    }, [showFilePath]);
 
     const displayDbPath = uiSettings.showFullDatabasePath
         ? dbPath
@@ -72,10 +80,13 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                     </div>
                 </AlertDialogContent>
             </AlertDialog>
-            <div className="main-app-titlebar text-text relative flex h-fit w-full items-center justify-between">
-                <div
-                    className={`flex items-center gap-20 px-24 py-8 ${isMacOS && "ml-64"}`}
-                >
+            <div
+                className={clsx(
+                    "main-app-titlebar text-text grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-12",
+                    isMacOS && "titlebar-mac",
+                )}
+            >
+                <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
                     {!isMacOS && (
                         <button
                             className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
@@ -102,8 +113,8 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                         {showControls && <FileControls />}
                     </div>
                 </div>
-                <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
-                    {displayDbPath}
+                <p className="text-sub truncate text-center">
+                    {showFilePath ? displayDbPath : null}
                 </p>
                 <div
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}

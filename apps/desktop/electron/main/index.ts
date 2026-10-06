@@ -69,6 +69,7 @@ function isNewShowDraftPath(filePath: string): boolean {
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
+const isMacOS = process.platform === "darwin";
 
 const enableSentry =
     process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
@@ -151,6 +152,8 @@ async function createWindow(title?: string) {
         // Show frame in codegen mode for easier interaction
         frame: isCodegen,
         trafficLightPosition: { x: 24, y: 9 },
+        // Exposes env(titlebar-area-x) so the title bar can start after the traffic lights.
+        titleBarOverlay: isMacOS,
         titleBarStyle: "hidden",
         webPreferences: {
             preload,
@@ -521,8 +524,6 @@ app.on("second-instance", (_event, commandLine) => {
 });
 
 // Custom title bar buttons
-
-const isMacOS = process.platform === "darwin";
 
 ipcMain.on("window:minimize", () => {
     win?.minimize();
