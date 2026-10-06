@@ -97,7 +97,7 @@ describe("SettingsSidebar", () => {
 
     it("arrows move through visible sections only", async () => {
         render(<Harness />);
-        fireEvent.change(await search(), { target: { value: "database" } });
+        fireEvent.change(await search(), { target: { value: "file" } });
         const names = within(nav())
             .getAllByRole("button")
             .map((b) => b.textContent!);
