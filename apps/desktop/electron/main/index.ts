@@ -15,6 +15,7 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
+import { openSettingsWindow } from "./settings-window";
 import { PDFExportService } from "./services/export-service";
 import { VideoExportService } from "./services/video-export-service";
 import {
@@ -79,10 +80,11 @@ init({
     enabled: enableSentry,
 });
 
-ipcMain.on("settings:set", (_, settings) => {
+ipcMain.on("settings:set", (event, settings) => {
     for (const [key, value] of Object.entries(settings)) {
         store.set(key, value);
     }
+    broadcastSettingsChanged(event.sender, settings);
 });
 
 ipcMain.handle("settings:get", (_, key) => {
@@ -525,22 +527,51 @@ app.on("second-instance", (_event, commandLine) => {
 
 // Custom title bar buttons
 
-ipcMain.on("window:minimize", () => {
-    win?.minimize();
+ipcMain.on("window:minimize", (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize();
 });
 
-ipcMain.on("window:maximize", () => {
-    if (win?.isMaximized()) {
-        win.unmaximize();
+ipcMain.on("window:maximize", (event) => {
+    const sender = BrowserWindow.fromWebContents(event.sender);
+    if (sender?.isMaximized()) {
+        sender.unmaximize();
     } else {
-        win?.maximize();
+        sender?.maximize();
     }
 });
 
-ipcMain.on("window:close", () => {
-    void closeCurrentFile();
-    win?.close();
+ipcMain.on("window:close", (event) => {
+    const sender = BrowserWindow.fromWebContents(event.sender);
+    if (sender && sender === win) void closeCurrentFile();
+    sender?.close();
 });
+
+ipcMain.handle("settings:open", () => {
+    openSettingsWindow({
+        store,
+        parent: win,
+        preload,
+        frame: isCodegen,
+        isMacOS,
+        load: (settings) =>
+            url
+                ? void settings.loadURL(`${url}#settings`)
+                : void settings.loadFile(indexHtml, { hash: "settings" }),
+    });
+});
+
+ipcMain.on("main-window:reload", () => win?.reload());
+
+/** Tells every window except the one that made the change. */
+function broadcastSettingsChanged(
+    sender: Electron.WebContents,
+    change: Record<string, unknown>,
+) {
+    for (const other of BrowserWindow.getAllWindows()) {
+        if (other.webContents !== sender)
+            other.webContents.send("settings:changed", change);
+    }
+}
 
 ipcMain.on(`menu:open`, () => {
     if (!isMacOS) {
@@ -556,6 +587,7 @@ ipcMain.handle("get-theme", () => {
 
 ipcMain.handle("set-theme", (event, theme) => {
     store.set("theme", theme);
+    broadcastSettingsChanged(event.sender, { theme });
 });
 
 // Language stores
@@ -566,6 +598,7 @@ ipcMain.handle("get-language", () => {
 
 ipcMain.handle("set-language", (event, language) => {
     store.set("language", language);
+    broadcastSettingsChanged(event.sender, { language });
 });
 
 // file management
