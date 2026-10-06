@@ -1094,6 +1094,7 @@
         "shortcuts": "Atajos de teclado",
         "shortcuts.add": "Añadir atajo para {action}",
         "shortcuts.cancel": "Cancelar",
+        "shortcuts.clearSearch": "Borrar búsqueda",
         "shortcuts.category.alignment": "Alineación",
         "shortcuts.category.batchEdit": "Edición por lotes",
         "shortcuts.category.cursor": "Modo de cursor",

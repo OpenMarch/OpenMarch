@@ -342,8 +342,19 @@ export default function CommandPalette() {
                                                         </span>
                                                     )}
                                                     {item.shortcut && (
-                                                        <kbd className="palette-kbd">
-                                                            {item.shortcut}
+                                                        <kbd className="palette-keys">
+                                                            {item.shortcut.map(
+                                                                (key) => (
+                                                                    <kbd
+                                                                        key={
+                                                                            key
+                                                                        }
+                                                                        className="palette-kbd"
+                                                                    >
+                                                                        {key}
+                                                                    </kbd>
+                                                                ),
+                                                            )}
                                                         </kbd>
                                                     )}
                                                 </div>
@@ -364,7 +375,7 @@ export default function CommandPalette() {
                                 {t("commandPalette.run")}
                             </span>
                             <span className="palette-footer-hint">
-                                <kbd className="palette-kbd">esc</kbd>
+                                <kbd className="palette-kbd">Esc</kbd>
                                 {t("commandPalette.close")}
                             </span>
                         </div>

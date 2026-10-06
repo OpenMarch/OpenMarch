@@ -10,6 +10,8 @@ import { T, useTolgee } from "@tolgee/react";
 import { Button, Input } from "@openmarch/ui";
 import {
     ArrowCounterClockwiseIcon,
+    CaretRightIcon,
+    MagnifyingGlassIcon,
     PlusIcon,
     XIcon,
 } from "@phosphor-icons/react";
@@ -119,7 +121,7 @@ function ShortcutRow({
     onDismissConflict: () => void;
 }) {
     return (
-        <li className="flex flex-col gap-4 px-8 py-4">
+        <li className="group/row rounded-6 hover:bg-fg-2 flex flex-col gap-4 px-8 py-4">
             <div className="flex min-h-[2rem] items-center justify-between gap-8">
                 <span className="text-body text-text-subtitle">
                     {row.label}
@@ -128,12 +130,12 @@ function ShortcutRow({
                     {row.bindings.map((binding, i) => (
                         <span
                             key={binding}
-                            className="bg-fg-2 border-stroke rounded-6 text-sub flex items-center gap-2 border py-2 pr-2 pl-6 font-mono"
+                            className="bg-fg-1 border-stroke rounded-6 text-sub text-text flex items-center gap-2 border py-2 pr-2 pl-6 font-mono shadow-[0_1px_0_0_var(--color-stroke)]"
                         >
                             {row.formatted[i]}
                             <button
                                 type="button"
-                                className="hover:text-red rounded-full p-2"
+                                className="hover:text-red text-text-subtitle rounded-full p-2 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100"
                                 aria-label={t("settings.shortcuts.remove", {
                                     binding: row.formatted[i],
                                 })}
@@ -153,7 +155,7 @@ function ShortcutRow({
                     ) : (
                         <button
                             type="button"
-                            className="hover:text-accent rounded-6 p-4"
+                            className={`hover:text-accent text-text-subtitle rounded-6 p-4 ${row.bindings.length > 0 ? "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100" : ""}`}
                             aria-label={t("settings.shortcuts.add", {
                                 action: row.label,
                             })}
@@ -165,7 +167,7 @@ function ShortcutRow({
                     {isOverridden && (
                         <button
                             type="button"
-                            className="hover:text-accent rounded-6 p-4"
+                            className="hover:text-accent text-text-subtitle rounded-6 p-4"
                             aria-label={t("settings.shortcuts.reset", {
                                 action: row.label,
                             })}
@@ -261,16 +263,34 @@ export default function ShortcutSettings() {
     ]);
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-6 border p-12">
-            <div className="flex items-center gap-8 px-8">
-                <Input
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t("settings.shortcuts.search")}
-                    aria-label={t("settings.shortcuts.search")}
-                    className="grow"
-                />
+        <div className="flex flex-col gap-8">
+            <div className="flex items-center gap-8">
+                <div className="relative grow">
+                    <MagnifyingGlassIcon
+                        size={16}
+                        aria-hidden
+                        className="text-text-subtitle pointer-events-none absolute top-1/2 left-12 -translate-y-1/2"
+                    />
+                    <Input
+                        type="search"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder={t("settings.shortcuts.search")}
+                        aria-label={t("settings.shortcuts.search")}
+                        // Hide WebKit's built-in blue clear button; ours below matches the theme.
+                        className="w-full pr-36 pl-36 [&::-webkit-search-cancel-button]:appearance-none"
+                    />
+                    {query !== "" && (
+                        <button
+                            type="button"
+                            className="text-text-subtitle hover:text-text absolute top-1/2 right-8 -translate-y-1/2 rounded-full p-4"
+                            aria-label={t("settings.shortcuts.clearSearch")}
+                            onClick={() => setQuery("")}
+                        >
+                            <XIcon size={14} />
+                        </button>
+                    )}
+                </div>
                 {Object.keys(overrides).length > 0 && (
                     <Button
                         variant="secondary"
@@ -286,7 +306,7 @@ export default function ShortcutSettings() {
             </div>
 
             {visible.length === 0 && (
-                <p className="text-body text-text-subtitle px-8 py-4">
+                <p className="text-body text-text-subtitle px-8 py-8">
                     <T keyName="settings.shortcuts.noResults" />
                 </p>
             )}
@@ -301,11 +321,20 @@ export default function ShortcutSettings() {
                     <details
                         key={`${category}-${normalizedQuery !== ""}`}
                         open={normalizedQuery !== "" || undefined}
+                        className="group/category"
                     >
-                        <summary className="text-body text-text cursor-pointer px-8 py-6 select-none">
+                        <summary className="text-sub text-text-subtitle hover:text-text flex cursor-pointer list-none items-center gap-6 px-8 py-6 select-none [&::-webkit-details-marker]:hidden">
+                            <CaretRightIcon
+                                size={12}
+                                aria-hidden
+                                className="transition-transform duration-150 group-open/category:rotate-90"
+                            />
                             <T
                                 keyName={`settings.shortcuts.category.${category}`}
                             />
+                            <span className="text-text-disabled ml-auto tabular-nums">
+                                {categoryRows.length}
+                            </span>
                         </summary>
                         <ul className="flex flex-col">
                             {categoryRows.map((row) => (

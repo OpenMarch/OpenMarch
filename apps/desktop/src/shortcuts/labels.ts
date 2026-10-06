@@ -1,4 +1,4 @@
-import { formatBinding } from "./bindings";
+import { formatBinding, formatBindingKeys } from "./bindings";
 import { getActionDefinition, type ActionId } from "./definitions";
 import { getEffectiveBindings, type ShortcutOverrides } from "./keymap";
 import { isMacPlatform } from "./platform";
@@ -25,6 +25,18 @@ export function getActionShortcutLabel(
 ): string | undefined {
     const [first] = getEffectiveBindings(id, overrides);
     return first ? formatBinding(first, isMac) : undefined;
+}
+
+/** The first binding split into keycaps, e.g. ["⌘", "K"]. */
+export function getActionShortcutKeys(
+    id: ActionId,
+    {
+        overrides,
+        isMac = isMacPlatform(),
+    }: { overrides?: ShortcutOverrides; isMac?: boolean } = {},
+): string[] | undefined {
+    const [first] = getEffectiveBindings(id, overrides);
+    return first ? formatBindingKeys(first, isMac) : undefined;
 }
 
 export function getActionTooltip(

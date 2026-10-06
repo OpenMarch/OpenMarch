@@ -20,7 +20,7 @@ import {
     type ActionId,
 } from "../definitions";
 import type { ShortcutOverrides } from "../keymap";
-import { getActionLabel, getActionShortcutLabel } from "../labels";
+import { getActionLabel, getActionShortcutKeys } from "../labels";
 import { hasActionHandler, isActionEnabled, runAction } from "../registry";
 import type { PaletteContext, PaletteItem } from "./sources";
 
@@ -91,7 +91,7 @@ export function getActionPaletteItems(
                 keywords: def.keywordsKey
                     ? t(def.keywordsKey).split(/\s+/)
                     : [],
-                shortcut: getActionShortcutLabel(id, { overrides }),
+                shortcut: getActionShortcutKeys(id, { overrides }),
                 disabled: !isActionEnabled(id),
                 suggestedRank: SUGGESTED_ACTIONS.includes(id)
                     ? SUGGESTED_ACTIONS.indexOf(id)

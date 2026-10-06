@@ -1094,6 +1094,7 @@
         "shortcuts": "Raccourcis clavier",
         "shortcuts.add": "Ajouter un raccourci pour {action}",
         "shortcuts.cancel": "Annuler",
+        "shortcuts.clearSearch": "Effacer la recherche",
         "shortcuts.category.alignment": "Alignement",
         "shortcuts.category.batchEdit": "Modification groupée",
         "shortcuts.category.cursor": "Mode curseur",

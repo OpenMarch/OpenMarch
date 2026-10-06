@@ -1094,6 +1094,7 @@
         "shortcuts": "キーボードショートカット",
         "shortcuts.add": "{action}のショートカットを追加",
         "shortcuts.cancel": "キャンセル",
+        "shortcuts.clearSearch": "検索をクリア",
         "shortcuts.category.alignment": "整列",
         "shortcuts.category.batchEdit": "一括編集",
         "shortcuts.category.cursor": "カーソルモード",

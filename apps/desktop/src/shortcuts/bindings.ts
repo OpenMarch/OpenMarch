@@ -207,16 +207,17 @@ function formatKey(key: string, isMac: boolean): string {
     return key;
 }
 
-export function formatBinding(binding: string, isMac: boolean): string {
+/** Each key of a binding as it's shown on its own keycap, e.g. ["⇧", "⌘", "Z"] or ["Ctrl", "Shift", "Z"]. */
+export function formatBindingKeys(binding: string, isMac: boolean): string[] {
     const { modifiers, key } = parseBinding(binding);
-    if (isMac) {
-        const symbols = MAC_SYMBOL_ORDER.filter((m) => modifiers.includes(m))
-            .map((m) => MAC_MODIFIER_SYMBOLS[m])
-            .join("");
-        return `${symbols}${formatKey(key, true)}`;
-    }
-    return [
-        ...modifiers.map((m) => OTHER_MODIFIER_NAMES[m]),
-        formatKey(key, false),
-    ].join("+");
+    const modifierKeys = isMac
+        ? MAC_SYMBOL_ORDER.filter((m) => modifiers.includes(m)).map(
+              (m) => MAC_MODIFIER_SYMBOLS[m],
+          )
+        : modifiers.map((m) => OTHER_MODIFIER_NAMES[m]);
+    return [...modifierKeys, formatKey(key, isMac)];
+}
+
+export function formatBinding(binding: string, isMac: boolean): string {
+    return formatBindingKeys(binding, isMac).join(isMac ? "" : "+");
 }

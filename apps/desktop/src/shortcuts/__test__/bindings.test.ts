@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     canonicalBinding,
     formatBinding,
+    formatBindingKeys,
     parseBinding,
     toTinykeys,
     bindingFromEvent,
@@ -118,6 +119,22 @@ describe("formatBinding", () => {
         expect(formatBinding("Alt+V", false)).toBe("Alt+V");
         expect(formatBinding("Escape", false)).toBe("Esc");
         expect(formatBinding("Space", false)).toBe("Space");
+    });
+});
+
+describe("formatBindingKeys", () => {
+    it("returns one keycap per key", () => {
+        expect(formatBindingKeys("$mod+Shift+Z", true)).toEqual([
+            "⇧",
+            "⌘",
+            "Z",
+        ]);
+        expect(formatBindingKeys("$mod+Shift+Z", false)).toEqual([
+            "Ctrl",
+            "Shift",
+            "Z",
+        ]);
+        expect(formatBindingKeys("Escape", false)).toEqual(["Esc"]);
     });
 });
 /* cspell: enable */

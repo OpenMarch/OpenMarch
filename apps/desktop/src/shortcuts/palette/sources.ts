@@ -11,8 +11,8 @@ export interface PaletteItem {
     icon?: ReactNode;
     /** Extra search words that aren't shown. */
     keywords?: readonly string[];
-    /** Formatted shortcut, e.g. "⌘K". */
-    shortcut?: string;
+    /** Shortcut split into keycaps, e.g. ["⌘", "K"]. */
+    shortcut?: readonly string[];
     /** Shown greyed out and can't be run. */
     disabled?: boolean;
     /** Curated position in "Suggested" before usage history exists (lower comes first). */

@@ -1119,6 +1119,7 @@
         "shortcuts": "Keyboard shortcuts",
         "shortcuts.add": "Add shortcut for {action}",
         "shortcuts.cancel": "Cancel",
+        "shortcuts.clearSearch": "Clear search",
         "shortcuts.category.alignment": "Alignment",
         "shortcuts.category.batchEdit": "Batch editing",
         "shortcuts.category.cursor": "Cursor mode",
