@@ -21,9 +21,15 @@ export default function DatabaseRepairSettings() {
 
     useEffect(() => {
         let cancelled = false;
-        void window.electron.databaseIsReady().then((ready) => {
-            if (!cancelled) setShowOpen(ready);
-        });
+        void window.electron
+            .databaseIsReady()
+            .then((ready) => {
+                if (!cancelled) setShowOpen(ready);
+            })
+            .catch((err: unknown) => {
+                console.error("Failed to check database state:", err);
+                if (!cancelled) setShowOpen(false);
+            });
         return () => {
             cancelled = true;
         };
