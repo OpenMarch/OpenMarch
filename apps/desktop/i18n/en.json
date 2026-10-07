@@ -98,7 +98,9 @@
             "swap": "Swap two marchers"
         },
         "timeline": {
+            "nextPage": "Next page (timeline)",
             "playPause": "Play / pause audio",
+            "previousPage": "Previous page (timeline)",
             "tapBeats": "Add {count} temporary beats"
         },
         "ui": {
@@ -1154,6 +1156,7 @@
         "shortcuts.reset": "Reset {action} to default",
         "shortcuts.resetAll": "Reset all",
         "shortcuts.search": "Search shortcuts",
+        "shortcuts.tapBeats": "Tap beats",
         "title": "Settings",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating"

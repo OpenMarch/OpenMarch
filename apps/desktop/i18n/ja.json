@@ -89,6 +89,10 @@
             "success": "スワップしました マーチャーズ {marcher1} と {marcher2}",
             "swap": "2人のメンバーを入れ替え"
         },
+        "timeline": {
+            "nextPage": "次のページ（タイムライン）",
+            "previousPage": "前のページ（タイムライン）"
+        },
         "ui": {
             "exitTimelineFocus": "タイムラインの編集を終了",
             "focusCanvas": "キャンバスにフォーカス",
@@ -1129,6 +1133,7 @@
         "shortcuts.reset": "{action}を初期設定に戻す",
         "shortcuts.resetAll": "すべてリセット",
         "shortcuts.search": "ショートカットを検索",
+        "shortcuts.tapBeats": "ビートをタップ",
         "title": "設定",
         "tolgeeApiKeyPlaceholder": "Tolgee API キー",
         "tolgeeDevToolsToggle": "Tolgee インコンテキスト 翻訳"

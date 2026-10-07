@@ -89,6 +89,10 @@
             "success": "Échangé les marcheurs {{marcher1}} et {{marcher2}}",
             "swap": "Échanger deux musiciens"
         },
+        "timeline": {
+            "nextPage": "Page suivante (chronologie)",
+            "previousPage": "Page précédente (chronologie)"
+        },
         "ui": {
             "exitTimelineFocus": "Terminer l’édition de la chronologie",
             "focusCanvas": "Activer le canevas",
@@ -1129,6 +1133,7 @@
         "shortcuts.reset": "Réinitialiser {action}",
         "shortcuts.resetAll": "Tout réinitialiser",
         "shortcuts.search": "Rechercher des raccourcis",
+        "shortcuts.tapBeats": "Marquer les temps",
         "title": "Paramètres",
         "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
         "tolgeeDevToolsToggle": "Tolgee Traduction In-Context"

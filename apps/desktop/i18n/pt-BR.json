@@ -89,6 +89,10 @@
             "success": "Trocou marchadores {marcher1} e {marcher2}",
             "swap": "Trocar dois integrantes"
         },
+        "timeline": {
+            "nextPage": "Próxima página (linha do tempo)",
+            "previousPage": "Página anterior (linha do tempo)"
+        },
         "ui": {
             "exitTimelineFocus": "Concluir edição da linha do tempo",
             "focusCanvas": "Focar o canvas",
@@ -1129,6 +1133,7 @@
         "shortcuts.reset": "Redefinir {action}",
         "shortcuts.resetAll": "Redefinir tudo",
         "shortcuts.search": "Pesquisar atalhos",
+        "shortcuts.tapBeats": "Marcar tempos",
         "title": "Configurações",
         "tolgeeApiKeyPlaceholder": "Chave de API Tolgee",
         "tolgeeDevToolsToggle": "Tradução de Contexto em Tolgee"

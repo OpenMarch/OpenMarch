@@ -10,7 +10,6 @@ import { T, useTolgee } from "@tolgee/react";
 import { Button, Input } from "@openmarch/ui";
 import {
     ArrowCounterClockwiseIcon,
-    CaretRightIcon,
     MagnifyingGlassIcon,
     PlusIcon,
     XIcon,
@@ -22,6 +21,7 @@ import {
 } from "@/shortcuts/bindings";
 import {
     ACTION_IDS,
+    TAP_BEATS_ACTION_IDS,
     getActionDefinition,
     type ActionCategory,
     type ActionId,
@@ -33,20 +33,25 @@ import { searchItems } from "@/shortcuts/search";
 import Keycaps from "@/components/ui/Keycaps";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 
-const CATEGORY_ORDER: readonly ActionCategory[] = [
-    "file",
-    "edit",
-    "navigation",
-    "playback",
-    "movement",
-    "alignment",
-    "batchEdit",
-    "select",
-    "cursor",
-    "shape",
-    "ui",
-    "timeline",
+/** What the settings view shows as one group; the command palette still groups by raw category. */
+const DISPLAY_GROUPS: readonly {
+    id: ActionCategory;
+    categories: readonly ActionCategory[];
+}[] = [
+    { id: "file", categories: ["file"] },
+    { id: "edit", categories: ["edit"] },
+    { id: "timeline", categories: ["navigation", "playback", "timeline"] },
+    { id: "movement", categories: ["movement"] },
+    { id: "alignment", categories: ["alignment"] },
+    { id: "batchEdit", categories: ["batchEdit"] },
+    { id: "select", categories: ["select"] },
+    { id: "cursor", categories: ["cursor"] },
+    { id: "shape", categories: ["shape"] },
+    { id: "ui", categories: ["ui"] },
 ];
+
+const TAP_BEATS_ROW_ID = "tapBeats";
+const TAP_BEATS_DIGITS = Array.from({ length: 9 }, (_, i) => String(i + 1));
 
 interface PendingConflict {
     id: ActionId;
@@ -93,11 +98,21 @@ function useKeyRecorder(
 }
 
 interface Row {
-    id: ActionId;
+    /** The nine "tap N beats" actions are folded into one read-only row. */
+    id: ActionId | typeof TAP_BEATS_ROW_ID;
     category: ActionCategory;
     label: string;
     bindings: string[];
     formatted: string[];
+}
+
+function TapBeatsRow({ row }: { row: Row }) {
+    return (
+        <li className="flex min-h-[48px] items-center justify-between gap-16 py-12">
+            <span className="text-body text-text">{row.label}</span>
+            <Keycaps keys={["1–9"]} />
+        </li>
+    );
 }
 
 function ShortcutRow({
@@ -113,7 +128,7 @@ function ShortcutRow({
     onReassign,
     onDismissConflict,
 }: {
-    row: Row;
+    row: Row & { id: ActionId };
     isOverridden: boolean;
     isRecording: boolean;
     conflict: PendingConflict | null;
@@ -126,11 +141,9 @@ function ShortcutRow({
     onDismissConflict: () => void;
 }) {
     return (
-        <li className="group/row flex flex-col gap-4 py-8">
-            <div className="flex min-h-[2rem] items-center justify-between gap-8">
-                <span className="text-body text-text-subtitle">
-                    {row.label}
-                </span>
+        <li className="group/row flex flex-col gap-4 py-12">
+            <div className="flex min-h-[24px] items-center justify-between gap-16">
+                <span className="text-body text-text min-w-0">{row.label}</span>
                 <div className="flex flex-wrap items-center justify-end gap-4">
                     {row.bindings.map((binding, i) => (
                         <span key={binding} className="flex items-center gap-2">
@@ -244,8 +257,10 @@ export default function ShortcutSettings() {
     );
 
     const rows = useMemo<Row[]>(
-        () =>
-            ACTION_IDS.map((id) => {
+        () => [
+            ...ACTION_IDS.filter(
+                (id) => !TAP_BEATS_ACTION_IDS.includes(id),
+            ).map((id) => {
                 const bindings = getDisplayBindings(id, overrides, isMac);
                 return {
                     id,
@@ -255,17 +270,24 @@ export default function ShortcutSettings() {
                     formatted: bindings.map((b) => formatBinding(b, isMac)),
                 };
             }),
+            {
+                id: TAP_BEATS_ROW_ID,
+                category: "timeline",
+                label: t("settings.shortcuts.tapBeats"),
+                bindings: TAP_BEATS_DIGITS,
+                formatted: TAP_BEATS_DIGITS,
+            },
+        ],
         [overrides, isMac, t],
     );
 
-    const normalizedQuery = query.trim();
     const visible = searchItems(rows, query, (row) => [
         row.label,
         ...row.formatted,
     ]);
 
     return (
-        <div className="flex flex-col gap-16">
+        <div className="flex flex-col gap-24">
             <div className="bg-bg-1 sticky top-0 z-10 flex items-center gap-8 pb-8">
                 <div className="relative grow">
                     <MagnifyingGlassIcon
@@ -313,68 +335,69 @@ export default function ShortcutSettings() {
                 </p>
             )}
 
-            {CATEGORY_ORDER.map((category) => {
-                const categoryRows = visible.filter(
-                    (row) => row.category === category,
+            {DISPLAY_GROUPS.map(({ id: groupId, categories }) => {
+                const groupRows = categories.flatMap((category) =>
+                    visible.filter((row) => row.category === category),
                 );
-                if (categoryRows.length === 0) return null;
+                if (groupRows.length === 0) return null;
                 return (
-                    // Re-keyed on search so groups open while searching and collapse again after.
-                    <details
-                        key={`${category}-${normalizedQuery !== ""}`}
-                        open={normalizedQuery !== "" || undefined}
-                        className="group/category"
-                    >
-                        <summary className="text-sub text-text-subtitle hover:text-text flex cursor-pointer list-none items-center gap-6 py-6 select-none [&::-webkit-details-marker]:hidden">
-                            <CaretRightIcon
-                                size={12}
-                                aria-hidden
-                                className="transition-transform duration-150 group-open/category:rotate-90"
-                            />
+                    // Same look as SettingsPanel, but a list, so the rows stay <li>s.
+                    <div key={groupId} className="flex flex-col gap-8">
+                        <h2 className="text-sub text-text-subtitle font-medium">
                             <T
-                                keyName={`settings.shortcuts.category.${category}`}
+                                keyName={`settings.shortcuts.category.${groupId}`}
                             />
-                            <span className="text-text-disabled ml-auto tabular-nums">
-                                {categoryRows.length}
-                            </span>
-                        </summary>
-                        {/* Same look as SettingsPanel, but a list, so the rows stay <li>s. */}
+                        </h2>
                         <ul className="bg-fg-1 rounded-6 divide-stroke flex flex-col divide-y px-16">
-                            {categoryRows.map((row) => (
-                                <ShortcutRow
-                                    key={row.id}
-                                    row={row}
-                                    isOverridden={
-                                        overrides[row.id] !== undefined
-                                    }
-                                    isRecording={recording === row.id}
-                                    conflict={
-                                        pending?.id === row.id ? pending : null
-                                    }
-                                    t={t}
-                                    isMac={isMac}
-                                    onStartRecording={() => {
-                                        setPending(null);
-                                        setRecording(row.id);
-                                    }}
-                                    onRemove={(binding) =>
-                                        removeBinding(row.id, binding)
-                                    }
-                                    onReset={() => resetAction(row.id)}
-                                    onReassign={() => {
-                                        if (!pending) return;
-                                        addBinding(
-                                            pending.id,
-                                            pending.binding,
-                                            pending.owners,
-                                        );
-                                        setPending(null);
-                                    }}
-                                    onDismissConflict={() => setPending(null)}
-                                />
-                            ))}
+                            {groupRows.map((row) =>
+                                row.id === TAP_BEATS_ROW_ID ? (
+                                    <TapBeatsRow key={row.id} row={row} />
+                                ) : (
+                                    <ShortcutRow
+                                        key={row.id}
+                                        row={row as Row & { id: ActionId }}
+                                        isOverridden={
+                                            overrides[row.id as ActionId] !==
+                                            undefined
+                                        }
+                                        isRecording={recording === row.id}
+                                        conflict={
+                                            pending?.id === row.id
+                                                ? pending
+                                                : null
+                                        }
+                                        t={t}
+                                        isMac={isMac}
+                                        onStartRecording={() => {
+                                            setPending(null);
+                                            setRecording(row.id as ActionId);
+                                        }}
+                                        onRemove={(binding) =>
+                                            removeBinding(
+                                                row.id as ActionId,
+                                                binding,
+                                            )
+                                        }
+                                        onReset={() =>
+                                            resetAction(row.id as ActionId)
+                                        }
+                                        onReassign={() => {
+                                            if (!pending) return;
+                                            addBinding(
+                                                pending.id,
+                                                pending.binding,
+                                                pending.owners,
+                                            );
+                                            setPending(null);
+                                        }}
+                                        onDismissConflict={() =>
+                                            setPending(null)
+                                        }
+                                    />
+                                ),
+                            )}
                         </ul>
-                    </details>
+                    </div>
                 );
             })}
         </div>

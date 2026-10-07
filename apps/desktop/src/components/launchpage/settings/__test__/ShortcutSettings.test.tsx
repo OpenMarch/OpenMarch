@@ -115,4 +115,34 @@ describe("ShortcutSettings", () => {
         expect(within(row).getByText("E")).toBeInTheDocument();
         expect(useShortcutOverridesStore.getState().overrides).toEqual({});
     });
+
+    it("shows every group open, with page navigation in Timeline, without any click", () => {
+        const { container } = render(<ShortcutSettings />, {
+            wrapper: Providers,
+        });
+        expect(container.querySelector("details")).toBeNull();
+        const heading = screen.getByRole("heading", { name: "Timeline" });
+        const panel = heading.nextElementSibling as HTMLElement;
+        expect(within(panel).getByText(/^Previous page$/)).toBeVisible();
+        expect(within(panel).getByText(/^Next page$/)).toBeVisible();
+        expect(
+            screen.queryByRole("heading", { name: "Navigation" }),
+        ).toBeNull();
+    });
+
+    it("folds the tap-beats actions into one read-only row", () => {
+        render(<ShortcutSettings />, { wrapper: Providers });
+        expect(screen.getAllByText("Tap beats")).toHaveLength(1);
+        const row = rowFor(/^Tap beats$/);
+        expect(within(row).getByText("1–9")).toBeInTheDocument();
+        expect(within(row).queryByRole("button")).toBeNull();
+        expect(screen.queryByText(/temporary beats/)).toBeNull();
+    });
+
+    it("finds the tap-beats row by search", () => {
+        render(<ShortcutSettings />, { wrapper: Providers });
+        search("tap");
+        expect(screen.getByText("Tap beats")).toBeInTheDocument();
+        expect(screen.queryByText(/^Next page$/)).toBeNull();
+    });
 });
