@@ -267,3 +267,44 @@ describe("resolveKeyEvent", () => {
         );
     });
 });
+
+describe("page navigation shortcuts", () => {
+    const timeline: ShortcutContext = { ...canvas, baseScope: "timeline" };
+    const press = (code: string, key: string) =>
+        new KeyboardEvent("keydown", { key, code });
+    const resolve = (event: KeyboardEvent, context: ShortcutContext) =>
+        resolveKeyEvent(
+            event,
+            compileKeymap(buildKeymap({}, ACTIONS, false)),
+            context,
+            always,
+        )?.id;
+
+    it.each([
+        ["KeyE", "e", "nextPage"],
+        ["KeyQ", "q", "previousPage"],
+    ])("%s resolves to %s on the canvas and the timeline", (code, key, id) => {
+        expect(resolve(press(code, key), canvas)).toBe(id);
+        expect(resolve(press(code, key), timeline)).toBe(id);
+    });
+
+    it("arrow keys step pages on the timeline", () => {
+        expect(resolve(press("ArrowRight", "ArrowRight"), timeline)).toBe(
+            "timelineNextPage",
+        );
+        expect(resolve(press("ArrowLeft", "ArrowLeft"), timeline)).toBe(
+            "timelinePreviousPage",
+        );
+    });
+
+    it("arrow keys still nudge marchers on the canvas", () => {
+        for (const key of ["ArrowRight", "ArrowLeft"]) {
+            const id = resolve(press(key, key), canvas);
+            expect(NUDGE_ACTION_IDS).toContain(id);
+        }
+    });
+
+    it("default bindings have no conflicts", () => {
+        expect(findConflicts()).toEqual([]);
+    });
+});

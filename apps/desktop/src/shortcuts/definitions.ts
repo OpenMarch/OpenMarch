@@ -241,25 +241,25 @@ const STATIC_ACTIONS = {
     nextPage: {
         labelKey: "actions.navigation.nextPage",
         category: "navigation",
-        scope: "canvas",
+        scope: "global",
         defaultBindings: ["E"],
     },
     lastPage: {
         labelKey: "actions.navigation.lastPage",
         category: "navigation",
-        scope: "canvas",
+        scope: "global",
         defaultBindings: ["Shift+E"],
     },
     previousPage: {
         labelKey: "actions.navigation.previousPage",
         category: "navigation",
-        scope: "canvas",
+        scope: "global",
         defaultBindings: ["Q"],
     },
     firstPage: {
         labelKey: "actions.navigation.firstPage",
         category: "navigation",
-        scope: "canvas",
+        scope: "global",
         defaultBindings: ["Shift+Q"],
     },
     playPause: {
@@ -475,6 +475,21 @@ const STATIC_ACTIONS = {
         category: "timeline",
         scope: "timeline",
         defaultBindings: ["Space"],
+        hiddenFromPalette: true,
+    },
+    // Arrow keys step between pages while the timeline has focus (on the canvas they nudge marchers).
+    timelinePreviousPage: {
+        labelKey: "actions.timeline.previousPage",
+        category: "timeline",
+        scope: "timeline",
+        defaultBindings: ["ArrowLeft"],
+        hiddenFromPalette: true,
+    },
+    timelineNextPage: {
+        labelKey: "actions.timeline.nextPage",
+        category: "timeline",
+        scope: "timeline",
+        defaultBindings: ["ArrowRight"],
         hiddenFromPalette: true,
     },
 } satisfies Record<string, ActionDefinition>;

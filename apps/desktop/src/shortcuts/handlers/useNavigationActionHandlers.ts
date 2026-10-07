@@ -21,14 +21,14 @@ export function useNavigationActionHandlers() {
         if (target && !isPlaying) setSelectedPage(target);
     };
 
-    useActionHandler("nextPage", () => go(getNextPage(selectedPage!, pages)), {
-        enabled: canNavigate,
-    });
-    useActionHandler(
-        "previousPage",
-        () => go(getPreviousPage(selectedPage!, pages)),
-        { enabled: canNavigate },
-    );
+    const goNext = () => go(getNextPage(selectedPage!, pages));
+    const goPrevious = () => go(getPreviousPage(selectedPage!, pages));
+    const enabled = { enabled: canNavigate };
+
+    useActionHandler("nextPage", goNext, enabled);
+    useActionHandler("timelineNextPage", goNext, enabled);
+    useActionHandler("previousPage", goPrevious, enabled);
+    useActionHandler("timelinePreviousPage", goPrevious, enabled);
     useActionHandler("firstPage", () => go(pages[0]), {
         enabled: canNavigate,
     });
