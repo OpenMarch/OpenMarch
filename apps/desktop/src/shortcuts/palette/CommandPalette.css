@@ -8,8 +8,6 @@
     --palette-ease-in: cubic-bezier(0.5, 0, 0.75, 0);
     --palette-radius: 6px;
     /* Opaque so the panel reads cleanly without a blur; the fg tokens are translucent gradients. */
-    --palette-surface: var(--color-bg-1);
-    --palette-surface-tint: var(--background-image-fg-1);
     --palette-highlight: var(--background-image-fg-2);
     --palette-divider: rgba(0, 0, 0, 0.07);
 }
@@ -48,7 +46,8 @@
     transform-origin: 50% 0;
     border-radius: var(--palette-radius);
     outline: none;
-    will-change: transform, opacity;
+    /* No will-change here: it would make this a backdrop root and stop the panel's
+       backdrop blur from seeing the app behind it. */
 }
 .palette-shell[data-state="open"] {
     animation: palette-in 260ms var(--palette-ease-out);
@@ -57,14 +56,11 @@
     animation: palette-out 130ms var(--palette-ease-in) forwards;
 }
 
+/* Surface (background, blur, border, shadow) comes from the same Tailwind classes as the
+   app's sidebar panels, set on the element in CommandPalette.tsx. */
 .palette-panel {
     position: relative;
     overflow: hidden;
-    border-radius: var(--palette-radius);
-    background-color: var(--palette-surface);
-    background-image: var(--palette-surface-tint);
-    border: 1px solid var(--color-stroke);
-    box-shadow: var(--shadow-modal);
 }
 
 /* ------------------------------------------------------------------ input */

@@ -247,7 +247,7 @@ export default function CommandPalette() {
                     <RadixDialog.Title className="sr-only">
                         {t("commandPalette.title")}
                     </RadixDialog.Title>
-                    <div className="palette-panel">
+                    <div className="palette-panel rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 border">
                         <div className="palette-input-row">
                             <MagnifyingGlassIcon size={20} aria-hidden />
                             <input
