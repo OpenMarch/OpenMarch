@@ -110,7 +110,11 @@ function TapBeatsRow({ row }: { row: Row }) {
     return (
         <li className="flex min-h-[48px] items-center justify-between gap-16 py-12">
             <span className="text-body text-text">{row.label}</span>
-            <Keycaps keys={["1–9"]} />
+            <div className="flex items-center gap-4">
+                <Keycaps keys={["1–9"]} />
+                {/* Matches the hidden remove (16px + 2px gap) and add (22px) buttons on other rows, so keycaps line up. */}
+                <span aria-hidden className="h-[22px] w-[40px] shrink-0" />
+            </div>
         </li>
     );
 }
@@ -288,7 +292,7 @@ export default function ShortcutSettings() {
 
     return (
         <div className="flex flex-col gap-24">
-            <div className="bg-bg-1 sticky top-0 z-10 flex items-center gap-8 pb-8">
+            <div className="bg-bg-1 sticky top-0 z-10 flex items-center gap-8 pb-8 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-16 after:bg-gradient-to-b after:from-[var(--color-bg-1)] after:to-transparent after:content-['']">
                 <div className="relative grow">
                     <MagnifyingGlassIcon
                         size={16}
