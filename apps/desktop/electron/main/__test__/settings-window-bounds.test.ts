@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitBounds } from "../settings-window-bounds";
+import { defaultSettingsSize, fitBounds } from "../settings-window-bounds";
 
 const display = { x: 0, y: 0, width: 1440, height: 900 };
 const fallback = { x: 340, y: 170, width: 760, height: 560 };
@@ -25,5 +25,31 @@ describe("fitBounds", () => {
             width: 640,
             height: 420,
         });
+    });
+});
+
+describe("defaultSettingsSize", () => {
+    it("scales with a large screen but stays within a readable maximum", () => {
+        expect(
+            defaultSettingsSize({ x: 0, y: 0, width: 3008, height: 1692 }),
+        ).toEqual({ width: 1200, height: 900 });
+    });
+
+    it("uses a share of a laptop screen", () => {
+        expect(
+            defaultSettingsSize({ x: 0, y: 0, width: 1512, height: 944 }),
+        ).toEqual({ width: 907, height: 661 });
+    });
+
+    it("never goes below the default on a small screen", () => {
+        expect(
+            defaultSettingsSize({ x: 0, y: 0, width: 1024, height: 700 }),
+        ).toEqual({ width: 760, height: 560 });
+    });
+
+    it("never exceeds the screen", () => {
+        expect(
+            defaultSettingsSize({ x: 0, y: 0, width: 700, height: 500 }),
+        ).toEqual({ width: 700, height: 500 });
     });
 });

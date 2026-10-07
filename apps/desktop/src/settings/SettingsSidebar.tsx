@@ -50,7 +50,7 @@ export default function SettingsSidebar({
     };
 
     return (
-        <div className="flex w-[200px] shrink-0 flex-col gap-8 px-8 pt-4 pb-12">
+        <div className="flex w-[clamp(220px,24vw,300px)] shrink-0 flex-col gap-8 px-12 pt-4 pb-12">
             <div className="relative">
                 <MagnifyingGlassIcon
                     size={16}
@@ -101,7 +101,7 @@ export default function SettingsSidebar({
                             aria-current={isSelected ? "page" : undefined}
                             onClick={() => select(id)}
                             className={clsx(
-                                "rounded-6 text-sub flex items-start gap-10 px-8 py-6 text-left outline-hidden duration-150 ease-out",
+                                "rounded-6 text-body flex items-start gap-10 px-10 py-8 text-left outline-hidden duration-150 ease-out",
                                 "focus-visible:ring-accent focus-visible:ring-1",
                                 isSelected
                                     ? "bg-accent/15 text-text"

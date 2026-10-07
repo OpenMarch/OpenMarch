@@ -3,7 +3,7 @@ import type Store from "electron-store";
 import { handleWindowOpen } from "./window-open-policy";
 import {
     fitBounds,
-    SETTINGS_DEFAULT,
+    defaultSettingsSize,
     SETTINGS_MIN,
     type Rectangle,
 } from "./settings-window-bounds";
@@ -39,11 +39,13 @@ export function openSettingsWindow({
     }
 
     const anchor = parent?.getBounds() ?? screen.getPrimaryDisplay().workArea;
+    const size = defaultSettingsSize(
+        screen.getDisplayMatching(anchor).workArea,
+    );
     const fallback: Rectangle = {
-        width: SETTINGS_DEFAULT.width,
-        height: SETTINGS_DEFAULT.height,
-        x: Math.round(anchor.x + (anchor.width - SETTINGS_DEFAULT.width) / 2),
-        y: Math.round(anchor.y + (anchor.height - SETTINGS_DEFAULT.height) / 2),
+        ...size,
+        x: Math.round(anchor.x + (anchor.width - size.width) / 2),
+        y: Math.round(anchor.y + (anchor.height - size.height) / 2),
     };
     const bounds = fitBounds(
         store.get(BOUNDS_KEY) as Rectangle | undefined,

@@ -8,6 +8,32 @@ export interface Rectangle {
 
 export const SETTINGS_MIN = { width: 640, height: 420 };
 export const SETTINGS_DEFAULT = { width: 760, height: 560 };
+const SETTINGS_DEFAULT_MAX = { width: 1200, height: 900 };
+
+const clamp = (value: number, min: number, max: number) =>
+    Math.min(Math.max(value, min), max);
+
+/** A first-open size that suits the screen: a share of its work area, within sensible bounds. */
+export function defaultSettingsSize(workArea: Rectangle) {
+    return {
+        width: Math.min(
+            workArea.width,
+            clamp(
+                Math.round(workArea.width * 0.6),
+                SETTINGS_DEFAULT.width,
+                SETTINGS_DEFAULT_MAX.width,
+            ),
+        ),
+        height: Math.min(
+            workArea.height,
+            clamp(
+                Math.round(workArea.height * 0.7),
+                SETTINGS_DEFAULT.height,
+                SETTINGS_DEFAULT_MAX.height,
+            ),
+        ),
+    };
+}
 
 /** Saved bounds if at least their top-left 100×40 is on a connected display; else the fallback. */
 export function fitBounds(

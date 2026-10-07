@@ -31,9 +31,10 @@ export default function MouseSettings() {
                 label={<T keyName="settings.mouse.zoomSensitivity" />}
                 htmlFor="zoomSensitivity"
             >
-                <div className="flex items-center gap-3">
-                    <div className="w-[200px] shrink-0">
+                <div className="flex items-center gap-12">
+                    <div className="w-[clamp(140px,20vw,240px)] shrink-0">
                         <Slider
+                            className="w-full"
                             id="zoomSensitivity"
                             min={0.5}
                             max={4.0}
@@ -52,8 +53,8 @@ export default function MouseSettings() {
                             aria-label={`${t("settings.mouse.zoomSensitivity")}`}
                         />
                     </div>
-                    <div className="w-14 shrink-0 text-right">
-                        <span className="text-body text-text font-mono tabular-nums">
+                    <div className="w-48 shrink-0 text-right">
+                        <span className="text-body text-text tabular-nums">
                             {zoomValue.toFixed(1)}x
                         </span>
                     </div>
@@ -88,9 +89,10 @@ export default function MouseSettings() {
                     }
                     htmlFor="trackpadPanSensitivity"
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="w-[200px] shrink-0">
+                    <div className="flex items-center gap-12">
+                        <div className="w-[clamp(140px,20vw,240px)] shrink-0">
                             <Slider
+                                className="w-full"
                                 id="trackpadPanSensitivity"
                                 min={0.1}
                                 max={3.0}
@@ -113,8 +115,8 @@ export default function MouseSettings() {
                                 )}`}
                             />
                         </div>
-                        <div className="w-14 shrink-0 text-right">
-                            <span className="text-body text-text font-mono tabular-nums">
+                        <div className="w-48 shrink-0 text-right">
+                            <span className="text-body text-text tabular-nums">
                                 {trackpadPanValue.toFixed(1)}x
                             </span>
                         </div>

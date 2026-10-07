@@ -41,8 +41,9 @@ export default function SettingsWindow() {
             <TitleBar variant="settings" />
             <div className="flex min-h-0 flex-1">
                 <SettingsSidebar selected={selected} onSelect={select} />
-                <section className="@container min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-24 pt-4 pb-24">
-                    <div className="flex max-w-[640px] flex-col gap-24">
+                <section className="@container min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-[clamp(24px,4vw,64px)] pt-4 pb-32">
+                    {/* Centred column that grows with the window, capped so rows stay readable. */}
+                    <div className="mx-auto flex w-full max-w-[960px] flex-col gap-24">
                         <header className="flex flex-col gap-4">
                             <h1 className="text-h4">
                                 <T keyName={section.labelKey} />
