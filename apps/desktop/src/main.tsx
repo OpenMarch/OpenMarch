@@ -3,8 +3,13 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import SettingsWindow from "@/settings/SettingsWindow";
 import "./styles/index.css";
-import "@fontsource/dm-mono";
-import "@fontsource/dm-sans";
+// Load every weight the UI uses, or Chromium fakes medium/semibold/bold by smearing 400.
+import "@fontsource/dm-sans/400.css";
+import "@fontsource/dm-sans/500.css";
+import "@fontsource/dm-sans/600.css";
+import "@fontsource/dm-sans/700.css";
+import "@fontsource/dm-mono/400.css";
+import "@fontsource/dm-mono/500.css";
 import { ThemeProvider } from "./context/ThemeContext";
 import * as Sentry from "@sentry/electron/renderer";
 import posthog, { type PostHogConfig } from "posthog-js";
