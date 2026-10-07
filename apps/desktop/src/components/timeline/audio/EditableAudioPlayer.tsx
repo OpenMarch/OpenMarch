@@ -170,8 +170,7 @@ export default function EditableAudioPlayer() {
             if (
                 !isNaN(eventNum) &&
                 beatsToDisplay === "temporary" &&
-                eventNum > 0 &&
-                waveSurfer
+                eventNum > 0
             ) {
                 const currentTime = waveSurfer.getCurrentTime();
                 const totalDuration = waveSurfer.getDuration();
