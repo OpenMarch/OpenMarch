@@ -1,5 +1,6 @@
 import {
     Tolgee,
+    TolgeeCore,
     FormatSimple,
     TolgeeInstance,
     PluginTools,
@@ -33,13 +34,21 @@ const isPlaywrightSession = (): boolean => {
     }
 };
 
-/** Vitest and other non-browser test runners: avoid Tolgee dev backend window listeners. */
-const isUnitTestEnvironment = (): boolean => import.meta.env.VITEST === true;
+/**
+ * Vitest and other non-browser test runners: avoid Tolgee dev backend window listeners.
+ * Vite exposes env flags as strings, so VITEST is "true", not the boolean.
+ */
+const isUnitTestEnvironment = (): boolean => !!import.meta.env.VITEST;
 
 const isOfflineTolgeeEnvironment = (): boolean =>
     isPlaywrightSession() || isUnitTestEnvironment();
 
-const tolgeeBuilder = Tolgee().use(FormatSimple()).use(FormatIcu());
+// Tolgee() adds the browser-extension handshake, which retries on 300ms timers for
+// ~1.2s after run(). In tests nothing answers it, and a timer outliving its test
+// file's jsdom throws "window is not defined" and fails the run. Skip it offline.
+const tolgeeBuilder = (isOfflineTolgeeEnvironment() ? TolgeeCore() : Tolgee())
+    .use(FormatSimple())
+    .use(FormatIcu());
 
 if (isOfflineTolgeeEnvironment()) {
     tolgeeBuilder.use(RemoveInContextTools());

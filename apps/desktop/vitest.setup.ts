@@ -1,8 +1,15 @@
-import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
+// Register jest-dom on this package's own `expect`. The "@testing-library/jest-dom/vitest"
+// entry imports `vitest` itself, and since jest-dom doesn't depend on vitest that import
+// resolves to whichever copy pnpm hoisted — often the workspace's vitest 3, not desktop's
+// vitest 4 — leaving matchers like toBeInTheDocument missing ("Invalid Chai property").
+import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
+import type {} from "@testing-library/jest-dom/vitest"; // types only
+import { expect, vi } from "vitest";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { schema } from "./electron/database/db";
 import { createRendererSqlProxyQueue } from "./src/global/database/sqlProxyQueue";
+
+expect.extend(jestDomMatchers);
 
 // @ts-ignore
 global.jest = vi;
