@@ -104,6 +104,88 @@ export const beatToX = (
     startBeat = 0,
 ) => (beat - startBeat) * pixelsPerBeat;
 
+/** A horizontal span of a layer, in CSS pixels from the layer's left edge */
+export interface TimelineSpan {
+    readonly left: number;
+    readonly width: number;
+}
+
+/**
+ * Where a canvas window's left edge may sit, in CSS pixels. At any device pixel ratio that is a
+ * multiple of 1/8 (1, 1.25, 1.5, 2...), a multiple of 8 is a whole number of device pixels, so the
+ * window's pixels line up with the layer's and lines stay crisp.
+ */
+export const TIMELINE_CANVAS_ALIGN_PX = 8;
+
+/**
+ * The part of a show-wide layer that a viewport-sized canvas draws: what the viewport shows of the
+ * layer, plus `overscan` on either side so a short scroll needs no redraw, kept inside the layer.
+ * A layer no wider than that is drawn whole, from 0.
+ *
+ * @param layerWidth the layer's full width (the whole show)
+ * @param visibleLeft where the viewport's left edge is, from the layer's left edge
+ * @param visibleWidth the viewport's width
+ */
+export const getCanvasWindow = ({
+    layerWidth,
+    visibleLeft,
+    visibleWidth,
+    overscan,
+    align = TIMELINE_CANVAS_ALIGN_PX,
+}: {
+    layerWidth: number;
+    visibleLeft: number;
+    visibleWidth: number;
+    overscan: number;
+    align?: number;
+}): TimelineSpan => {
+    if (!(layerWidth > 0)) return { left: 0, width: 0 };
+    const wanted = Math.max(0, visibleWidth) + 2 * Math.max(0, overscan);
+    if (wanted >= layerWidth) return { left: 0, width: layerWidth };
+    const ideal = clamp(visibleLeft - overscan, 0, layerWidth - wanted);
+    const left = Math.floor(ideal / align) * align;
+    const width = Math.min(
+        Math.ceil((ideal - left + wanted) / align) * align,
+        layerWidth - left,
+    );
+    return { left, width };
+};
+
+/**
+ * Whether a drawn window still holds everything the viewport shows of the layer, and `margin`
+ * pixels more either side (within the layer), so a scroll that lands a frame before the redraw
+ * (an edge-scroll in an animation frame, a fast scrollbar drag) still finds pixels drawn
+ */
+export const canvasWindowCovers = (
+    drawn: TimelineSpan,
+    {
+        layerWidth,
+        visibleLeft,
+        visibleWidth,
+    }: { layerWidth: number; visibleLeft: number; visibleWidth: number },
+    margin = 0,
+) => {
+    const from = clamp(visibleLeft - margin, 0, layerWidth);
+    const to = clamp(visibleLeft + visibleWidth + margin, 0, layerWidth);
+    return from >= drawn.left && to <= drawn.left + drawn.width;
+};
+
+/**
+ * The whole beats whose lines (at `Math.round(beat * pixelsPerBeat)`, 1px wide) can fall inside
+ * `span`, as an inclusive range clamped to `[0, lastBeat]`. Empty when `first > last`.
+ */
+export const getBeatsInSpan = (
+    span: TimelineSpan,
+    pixelsPerBeat: number,
+    lastBeat: number,
+) => ({
+    first: Math.max(0, Math.floor((span.left - 1) / pixelsPerBeat)),
+    last: Math.min(
+        lastBeat,
+        Math.ceil((span.left + span.width + 1) / pixelsPerBeat),
+    ),
+});
+
 export const filterMarkersByMinimumSpacing = <T extends TimelineMarker>(
     markers: readonly T[],
     pixelsPerBeat: number,

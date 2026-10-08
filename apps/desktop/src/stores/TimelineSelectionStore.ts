@@ -361,10 +361,47 @@ const windowFields = (
     cursorBeat: null,
 });
 
+/** Whether two selections are the same window. */
+const sameSelection = (
+    a: TimelineEditSelection,
+    b: TimelineEditSelection,
+): boolean =>
+    a.kind === b.kind &&
+    (a.kind !== "range" ||
+        (b.kind === "range" && a.start === b.start && a.end === b.end));
+
+/**
+ * Keeps the current `selection` object when an update writes an equal one, so `s => s.selection`
+ * subscribers (the canvas, the timeline, dimming) don't run again for a playhead move inside the
+ * same window, or for every scrub beat that rewrites it unchanged.
+ */
+const keepEqualSelection = (
+    s: TimelineSelectionState,
+    next: Partial<TimelineSelectionState>,
+): Partial<TimelineSelectionState> =>
+    next.selection !== undefined &&
+    next.selection !== s.selection &&
+    sameSelection(next.selection, s.selection)
+        ? { ...next, selection: s.selection }
+        : next;
+
 /** The timeline-mode edit window and playhead. See the module comment. */
 export const useTimelineSelectionStore = create<TimelineSelectionState>(
     // eslint-disable-next-line max-lines-per-function
-    (set) => {
+    (rawSet) => {
+        const set = (
+            update:
+                | Partial<TimelineSelectionState>
+                | ((
+                      s: TimelineSelectionState,
+                  ) => Partial<TimelineSelectionState>),
+        ) =>
+            rawSet((s) =>
+                keepEqualSelection(
+                    s,
+                    typeof update === "function" ? update(s) : update,
+                ),
+            );
         const clamp = (s: TimelineSelectionState, beat: number) => {
             const whole = normalizePlayheadBeat(beat);
             const bounded =

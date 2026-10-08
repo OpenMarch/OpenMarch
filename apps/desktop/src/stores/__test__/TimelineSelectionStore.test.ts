@@ -65,6 +65,29 @@ describe("TimelineSelectionStore (UI-9, UI-10)", () => {
         expect(store().playheadRevision).toBe(revision + 2);
     });
 
+    it("keeps the selection object when a write leaves the window unchanged", () => {
+        store().setPageBoxes(BOXES);
+        store().selectRange(1, 9);
+        const range = store().selection;
+        store().seek(9);
+        store().seekKeepingStart(9);
+        store().beginScrub();
+        store().endScrub();
+        expect(store().selection).toBe(range);
+        store().seek(5);
+        expect(store().selection).not.toBe(range);
+        expect(store().selection).toEqual({ kind: "range", start: 1, end: 5 });
+
+        store().selectHome();
+        const home = store().selection;
+        store().seek(0);
+        expect(store().selection).toBe(home);
+        store().selectNothing();
+        const none = store().selection;
+        store().selectNothing();
+        expect(store().selection).toBe(none);
+    });
+
     it("writes show time 0 as beat 0", () => {
         store().seek(1);
         expect(store().playheadBeat).toBe(0);

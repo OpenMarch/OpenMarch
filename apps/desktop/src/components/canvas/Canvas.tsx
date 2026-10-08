@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
@@ -20,6 +21,10 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
 import { useAnimation } from "@/hooks/useAnimation";
+import {
+    useTimelineAppearance,
+    useTimelinePausedAppearance,
+} from "@/hooks/useTimelineAppearance";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
@@ -29,6 +34,8 @@ import { useTimingObjects } from "@/hooks";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
+import { useCanvasUiSettings } from "./hooks/useCanvasUiSettings";
+import { usePageAppearances } from "./hooks/usePageAppearances";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
@@ -37,10 +44,7 @@ import { useTimelineStaticRender } from "@/timeline/useTimelineStaticRender";
 import { useTimelinePathRender } from "@/timeline/useTimelinePathRender";
 import { useTimelineShapeCanvas } from "@/timeline/useTimelineShapeCanvas";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
-import {
-    displayedBeat,
-    useTimelineSelectionStore,
-} from "@/stores/TimelineSelectionStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineDimming } from "@/timeline/useTimelineDimming";
 import TimelineIsolationBar, {
     TimelineFromStartBadge,
@@ -77,20 +81,39 @@ export default function Canvas({
     const { data: marcherVisuals } = useQuery(
         marcherWithVisualsQueryOptions(queryClient),
     );
+    const timelineMode = useTimelineMode();
+    // Page mode: the selected page's appearance. Timeline mode reads none (no selected page drives
+    // appearance); it styles marchers by beat instead (useTimelineAppearance below)
     const { data: marcherAppearances } = useQuery(
-        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
+        marcherAppearancesQueryOptions(
+            timelineMode ? null : selectedPage?.id,
+            queryClient,
+        ),
     );
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
-    // MarcherPage queries
+    // Draw from the resolver only once it's ready. Until the first cold build finishes (or if it
+    // fails), keep drawing from marcher_pages instead of leaving every marcher at (0, 0).
+    const timelineResolverReady = useTimelineResolverStore(
+        (s) => s.status === "ready",
+    );
+    const drawFromResolver = timelineMode && timelineResolverReady;
+
+    // MarcherPage queries. The previous and next pages' rows only feed page mode's paths, which
+    // timeline mode draws from the resolver, so they aren't read there. The selected page's rows
+    // still gate the page-mode renders below (and other observers read them).
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(
+            drawFromResolver ? null : selectedPage?.previousPageId,
+        ),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(
+            drawFromResolver ? null : selectedPage?.nextPageId,
+        ),
     );
 
     const updateMarcherPages = useMutation(
@@ -101,22 +124,22 @@ export default function Canvas({
     );
     const { setSelectedShapePageIds } = useSelectionStore()!;
     const databaseReady = useDatabaseReady();
-    const timelineMode = useTimelineMode();
-    // Draw from the resolver only once it's ready. Until the first cold build finishes (or if it
-    // fails), keep drawing from marcher_pages instead of leaving every marcher at (0, 0).
-    const timelineResolverReady = useTimelineResolverStore(
-        (s) => s.status === "ready",
-    );
-    const drawFromResolver = timelineMode && timelineResolverReady;
-    // UI-9, UI-11: the paused canvas shows positions at the playhead, or at the frame a paused
-    // preview holds
-    const playheadBeat = useTimelineSelectionStore(displayedBeat);
     const marcherIds = useMemo(() => marchers?.map((m) => m.id), [marchers]);
 
     const { data: fieldProperties } = useQuery(
         fieldPropertiesQueryOptions(databaseReady),
     );
-    const { uiSettings } = useUiSettingsStore()!;
+    // Only the fields this component renders from; the canvas itself is kept in sync with the
+    // whole settings object by a store subscription below, so timeline zoom saves and other
+    // unrelated settings don't re-render the field
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            previousPaths: s.uiSettings.previousPaths,
+            nextPaths: s.uiSettings.nextPaths,
+            stepSizeWarnings: s.uiSettings.stepSizeWarnings,
+            showCollisions: s.uiSettings.showCollisions,
+        })),
+    );
     const {
         alignmentEvent,
         alignmentEventMarchers,
@@ -135,7 +158,14 @@ export default function Canvas({
     // Custom hooks for the canvas
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
-    useAnimation({ canvas });
+    // Timeline mode (UI-9): appearance of the last flag crossed, at the live beat while playing
+    // (from useAnimation's frame) and at the displayed beat when paused (below)
+    const applyTimelineAppearanceAt = useTimelineAppearance({
+        canvas,
+        enabled: timelineMode,
+        redrawKey: marcherVisuals,
+    });
+    useAnimation({ canvas, onTimelineBeat: applyTimelineAppearanceAt });
     // Page mode draws the selected page's page-era shapes; timeline mode draws none (P7.11)
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying, timelineMode });
 
@@ -196,7 +226,7 @@ export default function Canvas({
             newCanvasInstance = new OpenMarchCanvas({
                 canvasRef: canvasRef.current,
                 fieldProperties,
-                uiSettings,
+                uiSettings: useUiSettingsStore.getState().uiSettings,
                 currentPage: selectedPage,
             });
         }
@@ -212,14 +242,7 @@ export default function Canvas({
         requestAnimationFrame(() => {
             newCanvasInstance.centerAtBaseZoom?.();
         });
-    }, [
-        selectedPage,
-        fieldProperties,
-        testCanvas,
-        uiSettings,
-        canvas,
-        onCanvasReady,
-    ]);
+    }, [selectedPage, fieldProperties, testCanvas, canvas, onCanvasReady]);
 
     // Initiate listeners
     useEffect(() => {
@@ -355,39 +378,21 @@ export default function Canvas({
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher appearances
-    useEffect(() => {
-        if (
-            !canvas ||
-            !marchers ||
-            marcherAppearances == null ||
-            marcherVisuals == null
-        )
-            return;
-
-        // Add all marcher appearances to the canvas
-        marchers.forEach((marcher) => {
-            const visualGroup = marcherVisuals[marcher.id];
-            const appearancesForMarcher = marcherAppearances[marcher.id];
-            if (!visualGroup || !appearancesForMarcher) return;
-
-            const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(
-                appearancesForMarcher,
-                {
-                    requestRenderAll: false,
-                },
-                fieldProperties?.theme.defaultMarcher.label,
-            );
-        });
-
-        canvas.requestRenderAll();
-    }, [
+    usePageAppearances({
         canvas,
         marchers,
-        marcherAppearances,
         marcherVisuals,
-        fieldProperties?.theme.defaultMarcher.label,
-    ]);
+        marcherAppearances,
+        labelColor: fieldProperties?.theme.defaultMarcher.label,
+        timelineMode,
+    });
+
+    // Timeline mode: in place of the selected page's appearance above
+    useTimelinePausedAppearance({
+        canvas,
+        isPlaying,
+        applyAt: applyTimelineAppearanceAt,
+    });
 
     // Setters for alignmentEvent state
     useEffect(() => {
@@ -398,9 +403,7 @@ export default function Canvas({
     }, [canvas, setAlignmentEventMarchers, setAlignmentEventNewMarcherPages]);
 
     // Set the canvas UI settings to the global UI settings
-    useEffect(() => {
-        if (canvas) canvas.setUiSettings(uiSettings);
-    }, [canvas, uiSettings]);
+    useCanvasUiSettings(canvas);
 
     // Render the marchers when the selected page or the marcher pages change
     useEffect(() => {
@@ -673,7 +676,9 @@ export default function Canvas({
     useTimelineStaticRender({
         canvas,
         selectedPage,
-        beat: playheadBeat,
+        // UI-9, UI-11: the paused canvas shows positions at the playhead, or at the frame a
+        // paused preview holds. The hook follows it itself, so a scrub doesn't re-render the field
+        followPlayhead: true,
         isPlaying,
         enabled: timelineMode,
         redrawKey: marcherVisuals,

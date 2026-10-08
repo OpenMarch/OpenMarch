@@ -68,10 +68,10 @@ function App() {
     const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(
         null,
     );
-    const {
-        fetchUiSettings,
-        uiSettings: { focussedComponent },
-    } = useUiSettingsStore();
+    const fetchUiSettings = useUiSettingsStore((s) => s.fetchUiSettings);
+    const focussedComponent = useUiSettingsStore(
+        (s) => s.uiSettings.focussedComponent,
+    );
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
 

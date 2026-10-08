@@ -112,14 +112,23 @@ export const restartLivePlaybackAt = (seconds: number): void => {
 /**
  * The audio player handles playback via Web Audio API.
  * Metronome controls are managed by MetronomeModal.
+ *
+ * `headless` runs only the engine: the AudioContext, the music and metronome sources, the live
+ * playback clock and the timeline's waveform envelope. It renders nothing, so it builds no
+ * wavesurfer (no second decode of the song, no per-frame seeks) and no beat and measure markers.
+ * Timeline mode uses it, since the timeline draws its own waveform lane and playhead.
  */
 // eslint-disable-next-line max-lines-per-function
-export default function AudioPlayer() {
+export default function AudioPlayer({
+    headless = false,
+}: { headless?: boolean } = {}) {
     const { t } = useTolgee();
     const { theme } = useTheme();
-    const { uiSettings } = useUiSettingsStore();
-    const audioMuted = uiSettings.audioMuted;
-    const audioVolume = uiSettings.audioVolume;
+    const audioMuted = useUiSettingsStore((s) => s.uiSettings.audioMuted);
+    const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
+    const timelinePixelsPerSecond = useUiSettingsStore(
+        (s) => s.uiSettings.timelinePixelsPerSecond,
+    );
     const selectedPageContext = useSelectedPage();
     const isPlayingContext = useIsPlaying();
     const selectedAudioFileContext = useSelectedAudioFile();
@@ -174,9 +183,13 @@ export default function AudioPlayer() {
     // In timeline mode, mute silences the music only, so the metronome can count through it
     // (UI-12); page mode's mute still silences both
     const metroMuted = audioMuted && !timelineMode;
-    const playheadBeat = useTimelineSelectionStore(displayedBeat);
-    const playheadRevision = useTimelineSelectionStore(
-        (s) => s.playheadRevision,
+    // Only read while playing (where playback starts, and each restart); paused, a scrub's seeks
+    // don't re-render the player
+    const playheadBeat = useTimelineSelectionStore((s) =>
+        isPlaying ? displayedBeat(s) : 0,
+    );
+    const playheadRevision = useTimelineSelectionStore((s) =>
+        isPlaying ? s.playheadRevision : -1,
     );
     const startSeconds = timelineMode
         ? timeAtBeat(beats, playheadBeat)
@@ -368,6 +381,8 @@ export default function AudioPlayer() {
                             },
                             offsetSeconds: audioOffsetSeconds,
                             minimumDuration: minimumAudioDuration,
+                            // Only the wavesurfer view reads the WAV copy
+                            encodeWaveform: !headless,
                         },
                         transferList,
                     );
@@ -392,6 +407,7 @@ export default function AudioPlayer() {
         selectedAudioFile,
         audioOffsetSeconds,
         minimumAudioDuration,
+        headless,
         t,
     ]);
 
@@ -537,7 +553,7 @@ export default function AudioPlayer() {
 
     // Initialize WaveSurfer and load waveform data
     useEffect(() => {
-        if (!waveformRef.current || !waveformBuffer) return;
+        if (headless || !waveformRef.current || !waveformBuffer) return;
 
         // Clean up previous instance
         if (waveSurfer) {
@@ -583,7 +599,7 @@ export default function AudioPlayer() {
             setWaveSurfer(null);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [waveformRef, waveformBuffer, theme]);
+    }, [waveformRef, waveformBuffer, theme, headless]);
 
     // Update metronome on/off state and volume
     useEffect(() => {
@@ -650,23 +666,21 @@ export default function AudioPlayer() {
 
     const audioWaveformWidth = useMemo(() => {
         if (audioDuration <= 0) return 0;
-        return audioDuration * uiSettings.timelinePixelsPerSecond;
-    }, [audioDuration, uiSettings.timelinePixelsPerSecond]);
+        return audioDuration * timelinePixelsPerSecond;
+    }, [audioDuration, timelinePixelsPerSecond]);
 
     // Update WaveSurfer style if duration or zoom changes
     useEffect(() => {
         if (waveSurfer) {
             waveSurfer.setOptions({
-                minPxPerSec: uiSettings.timelinePixelsPerSecond,
+                minPxPerSec: timelinePixelsPerSecond,
                 width: audioWaveformWidth,
             });
         }
-    }, [waveSurfer, audioWaveformWidth, uiSettings.timelinePixelsPerSecond]);
+    }, [waveSurfer, audioWaveformWidth, timelinePixelsPerSecond]);
 
     const waveformWidth =
-        renderedDuration > 0
-            ? renderedDuration * uiSettings.timelinePixelsPerSecond
-            : 0;
+        renderedDuration > 0 ? renderedDuration * timelinePixelsPerSecond : 0;
 
     if (!contextsReady) {
         console.warn(
@@ -674,6 +688,8 @@ export default function AudioPlayer() {
         );
         return null;
     }
+
+    if (headless) return null;
 
     return (
         <div className="w-fit pl-[40px]">
@@ -717,7 +733,7 @@ export default function AudioPlayer() {
                     measures={measures}
                     beatIdsOnPages={beatIdsOnPages}
                     duration={renderedDuration}
-                    pixelsPerSecond={uiSettings.timelinePixelsPerSecond}
+                    pixelsPerSecond={timelinePixelsPerSecond}
                     height={WAVEFORM_HEIGHT}
                     width={waveformWidth}
                 />

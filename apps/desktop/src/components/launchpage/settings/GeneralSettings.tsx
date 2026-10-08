@@ -11,6 +11,7 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 
 const languages = [
     { code: "en", name: "English" },
@@ -27,7 +28,13 @@ export default function GeneralSettings() {
     const [currentLanguage, setCurrentLanguage] = useState("en");
     const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] =
         useState(true);
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
+    // Only the fields shown here; a change writes over the latest settings at that moment
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            showFullDatabasePath: s.uiSettings.showFullDatabasePath,
+        })),
+    );
 
     useEffect(() => {
         // Load saved language from electron store
@@ -140,7 +147,7 @@ export default function GeneralSettings() {
                     checked={uiSettings.showFullDatabasePath}
                     onCheckedChange={(checked) =>
                         setUiSettings({
-                            ...uiSettings,
+                            ...useUiSettingsStore.getState().uiSettings,
                             showFullDatabasePath: checked,
                         })
                     }

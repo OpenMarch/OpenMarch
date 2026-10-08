@@ -26,7 +26,9 @@ export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
     const { measures } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
-    const { uiSettings } = useUiSettingsStore();
+    const focussedComponent = useUiSettingsStore(
+        (s) => s.uiSettings.focussedComponent,
+    );
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
     const timelineMode = useTimelineMode();
@@ -77,24 +79,21 @@ export default function TimelineContainer() {
 
     // With the file's timeline dev flag on, the timeline replaces the page timeline and its controls.
     // Editing beats (the focused timeline) still uses the page timeline. The audio player stays
-    // mounted, hidden, because it runs playback and the timeline reads its clock.
-    if (timelineMode && uiSettings.focussedComponent !== "timeline") {
+    // mounted, headless, because it runs playback and the timeline reads its clock. The timeline
+    // draws its own waveform lane, so the player builds no wavesurfer or markers here.
+    if (timelineMode && focussedComponent !== "timeline") {
         return (
             // UI-12: perspective and fullscreen live on the field's zoom widget in timeline mode
             <div className="flex gap-8" data-testid="timeline-mode-container">
                 <TimelineModePanel />
-                <div style={{ display: "none" }}>
-                    <AudioPlayer />
-                </div>
+                <AudioPlayer headless />
             </div>
         );
     }
 
     return (
         <div className="flex gap-8">
-            {uiSettings.focussedComponent !== "timeline" && (
-                <TimelineControls />
-            )}
+            {focussedComponent !== "timeline" && <TimelineControls />}
             {isFullscreen && <PerspectiveSlider />}
             <div
                 ref={timelineRef}
@@ -117,7 +116,7 @@ export default function TimelineContainer() {
                                 <p className="text-sub">
                                     <T keyName="timeline.audio" />
                                 </p>
-                                {uiSettings.focussedComponent !== "timeline" ? (
+                                {focussedComponent !== "timeline" ? (
                                     <RegisteredActionButton
                                         registeredAction={
                                             RegisteredActionsObjects.focusTimeline
@@ -139,7 +138,7 @@ export default function TimelineContainer() {
                             </div>
                         )}
 
-                        {uiSettings.focussedComponent === "timeline" ? (
+                        {focussedComponent === "timeline" ? (
                             <EditableAudioPlayer />
                         ) : (
                             <div
@@ -163,9 +162,11 @@ const TIMELINE_MAX_PX_PER_SEC = 200;
 const TIMELINE_BASE_PX_PER_SEC = defaultSettings.timelinePixelsPerSecond;
 
 function TimelineZoomControls() {
-    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
+    const setPixelsPerSecond = useUiSettingsStore((s) => s.setPixelsPerSecond);
+    const currentPixels = useUiSettingsStore(
+        (s) => s.uiSettings.timelinePixelsPerSecond,
+    );
     const { isFullscreen } = useFullscreenStore();
-    const currentPixels = uiSettings.timelinePixelsPerSecond;
     const zoomPercent = Math.round(
         (currentPixels / TIMELINE_BASE_PX_PER_SEC) * 100,
     );

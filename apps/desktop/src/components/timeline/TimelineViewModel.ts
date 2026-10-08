@@ -138,6 +138,17 @@ export interface TimelineSeekOptions {
     readonly gesture?: TimelineSeekGesture;
 }
 
+/**
+ * A seek to a whole beat. During a scrub (`press` and `drag`) the owner may return the beat the
+ * playhead is on once the seek has landed, in the same beats as the seek: the beat sent, or
+ * another when the playhead couldn't follow (held inside an isolated range), so the scrub's line
+ * stays on it (`scrubLineBeat`). Nothing when it can't tell, or for any other seek.
+ */
+export type TimelineSeek = (
+    beat: BeatPosition,
+    options?: TimelineSeekOptions,
+) => number | void;
+
 export type TimelineNavigation =
     | "first-page"
     | "previous-page"
@@ -155,10 +166,7 @@ export interface TimelineInteractionProps {
     readonly isPlaying: boolean;
     readonly selection?: TimelineSelection;
     readonly selectedTarget?: TimelineTarget | null;
-    readonly onSeek?: (
-        beat: BeatPosition,
-        options?: TimelineSeekOptions,
-    ) => void;
+    readonly onSeek?: TimelineSeek;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** **Stop** (UI-10): stops and returns the playhead to the start flag; without it, no Stop button */
     readonly onStop?: () => void;

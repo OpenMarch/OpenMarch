@@ -155,10 +155,16 @@ from it. The spec still wins on the model; this file decides presentation.
     editing uses the selected timeline, and rendering, playback and the
     inspector use the playhead. Data that still belongs to a page reads the
     page containing the playhead (or ending at it). Marcher appearance stays
-    by page, but is resolved into a step function of time keyed by each
-    flag's timestamp and sampled at the playhead, as on the `coordinates-v2`
-    branch (`dbToMarcherAppearanceTimeline`, `getAppearanceAtTime`), without
-    the dropped per-marcher-page overrides (P7.14).
+    by page, but is resolved into a step function keyed by each flag's beat
+    and sampled at the playhead, or at the live beat while playing, as on the
+    `coordinates-v2` branch (`dbToMarcherAppearanceTimeline`,
+    `getAppearanceAtTime`), without the dropped per-marcher-page overrides
+    (P7.14). Between two flags the field shows the appearance of the last
+    flag crossed, playing and paused, as page-mode playback and the video
+    export do (project owner, 2026-10-06; VALIDATION.md V-37). This differs
+    from page data such as notes, which reads the page containing the
+    playhead. Built in `services/appearance/appearanceSteps.ts`; hidden
+    marchers can't be selected by the same rule.
   - **Page-relative tools (project owner, 2026-10-02).** Features built on
     "the selected page" keep working, relative to flags and the selection:
     - Next, previous, first and last page (shortcuts and transport) move the
@@ -476,7 +482,14 @@ from it. The spec still wins on the model; this file decides presentation.
     Ctrl+drag (Cmd+drag on macOS, where Ctrl+click is a right-click) draws a range, on page boxes
     and clips too, which still turns From start on (UI-11's cycle drag). A click or scrub lands on
     a downbeat or page line within 6px; Alt turns that off, as it does for dragged flags (Shift is
-    the canvas's fine nudge and the transport's first/last page).
+    the canvas's fine nudge and the transport's first/last page). While the pointer is down the
+    playhead line (with **+**, the played waveform and the window's tint) steps beat by beat with
+    the playhead, on the beat a release would land on: the nearest beat, or the downbeat or page
+    line within 6px (project owner, 2026-10-07: "I like the beat-level drag in the playhead", after
+    trying a line that glided under the pointer between beats). Each step is drawn in the pointer
+    move that makes it, not after React renders the new beat, so the line never lags the pointer.
+    Where the playhead can't follow (isolation holds it inside the isolated range), the line stays
+    on it.
   - **A pinned start flag stays pinned until unpinned** (supersedes UI-10's "until P moves to or
     before it"): scrubbing is now the commonest gesture, so moving the playhead never unpins it.
     With P on or before a pinned S the window falls back to the page box holding P, as after Stop.

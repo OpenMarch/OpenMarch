@@ -11,6 +11,7 @@ import {
 } from "@/hooks/queries";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { useTimingObjects } from "@/hooks";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
@@ -21,7 +22,13 @@ export const useMovementListeners = ({
 }: {
     canvas: OpenMarchCanvas | null;
 }) => {
-    const { uiSettings } = useUiSettingsStore()!;
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            previousPaths: s.uiSettings.previousPaths,
+            nextPaths: s.uiSettings.nextPaths,
+            stepSizeWarnings: s.uiSettings.stepSizeWarnings,
+        })),
+    );
     const { selectedPage } = useSelectedPage()!;
     const { pages } = useTimingObjects()!;
     const { selectedMarchers } = useSelectedMarchers()!;
@@ -30,17 +37,6 @@ export const useMovementListeners = ({
         marcherWithVisualsQueryOptions(queryClient),
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-
-    // MarcherPage queries
-    const { data: marcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
-    );
-    const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
-    );
-    const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
-    );
 
     // Timeline mode (P7.10): once the resolver is ready, the paths come from it
     // (useTimelinePathRender) and a drag leaves them alone, as page mode's redraw from the stored
@@ -51,6 +47,22 @@ export const useMovementListeners = ({
         (s) => s.status === "ready",
     );
     const drawFromResolver = timelineMode && timelineResolverReady;
+
+    // MarcherPage queries. The previous and next pages' rows only feed the page-mode path redraw
+    // below, so they aren't read once the resolver draws the paths.
+    const { data: marcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.id),
+    );
+    const { data: previousMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(
+            drawFromResolver ? null : selectedPage?.previousPageId,
+        ),
+    );
+    const { data: nextMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(
+            drawFromResolver ? null : selectedPage?.nextPageId,
+        ),
+    );
 
     const frameRef = useRef<number | null>(null);
 

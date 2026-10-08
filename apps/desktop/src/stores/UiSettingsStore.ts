@@ -194,39 +194,17 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             saveSettings(uiSettings);
         },
 
-        setPixelsPerSecond: (pixelsPerSecond: number) => {
-            const newSettings = {
-                ...get().uiSettings,
-                timelinePixelsPerSecond: pixelsPerSecond,
-            };
-            set({ uiSettings: newSettings });
-            saveSettings(newSettings);
-        },
-        setTimelinePixelsPerBeat: (pixelsPerBeat: number) => {
-            const newSettings = {
-                ...get().uiSettings,
-                timelinePixelsPerBeat: pixelsPerBeat,
-            };
-            set({ uiSettings: newSettings });
-            saveSettings(newSettings);
-        },
-        setTimelineZoomFitted: (fitted: boolean) => {
-            const newSettings = {
-                ...get().uiSettings,
-                timelineZoomFitted: fitted,
-            };
-            set({ uiSettings: newSettings });
-            saveSettings(newSettings);
-        },
-        setTimelineCompact: (compact?: boolean) => {
-            const current = get().uiSettings;
-            const newSettings = {
-                ...current,
-                timelineCompact: compact ?? !current.timelineCompact,
-            };
-            set({ uiSettings: newSettings });
-            saveSettings(newSettings);
-        },
+        setPixelsPerSecond: (pixelsPerSecond: number) =>
+            setSetting("timelinePixelsPerSecond", pixelsPerSecond),
+        setTimelinePixelsPerBeat: (pixelsPerBeat: number) =>
+            setSetting("timelinePixelsPerBeat", pixelsPerBeat),
+        setTimelineZoomFitted: (fitted: boolean) =>
+            setSetting("timelineZoomFitted", fitted),
+        setTimelineCompact: (compact?: boolean) =>
+            setSetting(
+                "timelineCompact",
+                compact ?? !get().uiSettings.timelineCompact,
+            ),
         toggleAudioMute: () => {
             const current = get().uiSettings;
             const newSettings = {
@@ -252,3 +230,15 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
         },
     }),
 );
+
+/**
+ * Sets one setting and saves it. An unchanged value keeps the settings object, so nothing
+ * re-renders and nothing is written (the timeline saves its zoom and fit after every gesture).
+ */
+function setSetting<K extends keyof UiSettings>(key: K, value: UiSettings[K]) {
+    const current = useUiSettingsStore.getState().uiSettings;
+    if (current[key] === value) return;
+    const newSettings = { ...current, [key]: value };
+    useUiSettingsStore.setState({ uiSettings: newSettings });
+    saveSettings(newSettings);
+}

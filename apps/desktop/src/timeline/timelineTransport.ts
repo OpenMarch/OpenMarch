@@ -145,6 +145,11 @@ export function consumeSuspendRequest(): boolean {
  *   jumps playback there and plays on (`jumpTimelinePlayback`). A drag suspends playback
  *   (`suspendTimelinePlayback`) and the canvas follows the pointer; when it ends, playback resumes
  *   once, from there (`resumeTimelinePlayback`). The playhead stays put throughout.
+ *
+ * During a scrub (`press`, `drag`) it returns the beat the timeline shows once the seek has landed
+ * (`displayedBeat`): the beat sent, or another when the playhead can't follow it (isolation keeps
+ * it inside the isolated range). `null` when the seek moved nothing the timeline shows (a press
+ * over playback, which only marks where a click would jump), and for any other seek.
  */
 export function seekTimeline(
     beats: readonly BeatTiming[],
@@ -157,8 +162,8 @@ export function seekTimeline(
         isPlaying: boolean;
         setIsPlaying: (isPlaying: boolean) => void;
     },
-): void {
-    if (!Number.isFinite(beat)) return;
+): number | null {
+    if (!Number.isFinite(beat)) return null;
     const state = useTimelineSelectionStore.getState();
     if (gesture === undefined || gesture === "end") {
         const ended = scrub;
@@ -170,21 +175,25 @@ export function seekTimeline(
             state.seek(beat);
             state.endScrub();
         }
-        return;
+        return null;
     }
     const whole = Math.round(beat);
     scrub ??= { beat: null, playing: isPlaying, suspended: null };
-    if (scrub.beat === whole) return;
-    scrub.beat = whole;
-    if (!scrub.playing) {
-        state.beginScrub();
-        state.seek(beat);
-        return;
+    if (scrub.beat !== whole) {
+        scrub.beat = whole;
+        if (!scrub.playing) {
+            state.beginScrub();
+            state.seek(beat);
+        }
+        // A press over playback only marks where a click would jump to
+        else if (gesture === "drag") {
+            scrub.suspended ??= suspendTimelinePlayback(setIsPlaying);
+            if (scrub.suspended) state.cue(playbackTarget(beats, beat));
+        }
     }
-    // A press over playback only marks where a click would jump to
-    if (gesture === "press") return;
-    scrub.suspended ??= suspendTimelinePlayback(setIsPlaying);
-    if (scrub.suspended) state.cue(playbackTarget(beats, beat));
+    return !scrub.playing || scrub.suspended
+        ? displayedBeat(useTimelineSelectionStore.getState())
+        : null;
 }
 
 /**

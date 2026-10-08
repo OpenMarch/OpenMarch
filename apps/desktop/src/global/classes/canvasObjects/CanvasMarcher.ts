@@ -18,6 +18,44 @@ import {
 
 export const DEFAULT_DOT_RADIUS = 5;
 
+type CacheDims = {
+    width: number;
+    height: number;
+    zoomX: number;
+    zoomY: number;
+    capped?: boolean;
+};
+type TightCache = { _limitCacheSize(dims: CacheDims): CacheDims };
+
+/**
+ * Fabric's `_limitCacheSize` without its 256 px floor (`fabric.minCacheSideLimit`), for marchers
+ * and their labels. With the floor, a dot or label (about 12x12 and 29x26 px at the default zoom)
+ * is cached in, and drawn every playback frame from, a 256x256 canvas that is nearly all
+ * transparent. Without it the cache is the size Fabric works out for the object: its size at the
+ * current zoom plus Fabric's 2 px antialiasing margin (and the font size, for text). Fabric keeps
+ * the drawing at the same sub-pixel offset inside any cache size, so the picture is the same,
+ * except that on the GPU sampling the smaller bitmap can round a few antialiased edge pixels by
+ * 1/255. Caches over Fabric's upper limits are still scaled down by Fabric.
+ */
+export function limitCacheSizeTightly(
+    this: fabric.Object,
+    dims: CacheDims,
+): CacheDims {
+    const limits = fabric as unknown as {
+        maxCacheSideLimit: number;
+        perfLimitSizeTotal: number;
+    };
+    if (
+        dims.width <= limits.maxCacheSideLimit &&
+        dims.height <= limits.maxCacheSideLimit &&
+        dims.width * dims.height <= limits.perfLimitSizeTotal
+    )
+        return dims;
+    return (
+        fabric.Object.prototype as unknown as TightCache
+    )._limitCacheSize.call(this, dims);
+}
+
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
  * It includes things such as the fabric objects and other canvas-specific properties.
@@ -235,6 +273,8 @@ export default class CanvasMarcher
             hasBorders: false,
             visible: labelVisible === true,
         });
+        (this.textLabel as unknown as TightCache)._limitCacheSize =
+            limitCacheSizeTightly;
 
         // Apply visibility to the marcher
         const isVisible = visible === true;
@@ -612,11 +652,15 @@ export default class CanvasMarcher
      *
      * @param coordinate The MarcherPage object to set the coordinates from.
      * @param uiSettings Optional UI settings for coordinate rounding
+     * @param options.bringToFront `false` leaves the marcher where it is in the canvas's stacking
+     * order. Callers that move many marchers pass it and then raise them all in one pass
+     * (`OpenMarchCanvas.bringObjectsToFront`), since raising each one walks every canvas object.
      */
     setMarcherCoords(
         coordinate: CoordinateLike,
         updateMarcherPageObj = true,
         uiSettings?: UiSettings,
+        { bringToFront = true }: { bringToFront?: boolean } = {},
     ) {
         if (!this.canvas) return;
 
@@ -637,7 +681,7 @@ export default class CanvasMarcher
         this.top = newCanvasCoords.y;
 
         // This is needed for the canvas to register the change - http://fabricjs.com/fabric-gotchas
-        this.getCanvas().bringToFront(this);
+        if (bringToFront) this.getCanvas().bringToFront(this);
         this.setCoords();
         this.refreshLockedStatus();
     }
@@ -752,13 +796,49 @@ export default class CanvasMarcher
      * @param coords The new coordinates (in database terms) to set the marcher to.
      */
     setLiveCoordinates(coords: { x: number; y: number }) {
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
+        const dot = this.dotObject;
+        // The dot sits exactly on the database coordinate (databaseCoordsToCanvasCoords)
+        const dotX = coords.x + CanvasMarcher.gridOffset;
+        const dotY = coords.y + CanvasMarcher.gridOffset;
+        const simple =
+            !this.group &&
+            !this.angle &&
+            this.scaleX === 1 &&
+            this.scaleY === 1 &&
+            !this.flipX &&
+            !this.flipY;
+        if (
+            simple &&
+            dot.originX === "center" &&
+            dot.originY === "center" &&
+            dot.left !== undefined &&
+            dot.top !== undefined
+        ) {
+            // databaseCoordsToCanvasCoords without a group, without its checks and objects
+            this.left = dotX - dot.left;
+            this.top = dotY - dot.top;
+        } else {
+            const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
+            this.left = newCanvasCoords.x;
+            this.top = newCanvasCoords.y;
+        }
 
-        this.left = newCanvasCoords.x;
-        this.top = newCanvasCoords.y;
-
-        this.updateTextLabelPosition();
-        this.setCoords();
+        // One update of the marcher and one of its label, skipping the control corners: the
+        // bounding coords keep offscreen culling and hit tests right, and the corners (only used
+        // for a selected object's controls) come back with the next full setCoords, which
+        // setMarcherCoords and the end of playback do.
+        if (!setTranslatedCoords(this)) super.setCoords(true);
+        if (simple) {
+            this.textLabel.left = dotX;
+            this.textLabel.top = dotY - CanvasMarcher.dotRadius * 2.2;
+        } else {
+            const absoluteCoords = this.getAbsoluteCoords();
+            this.textLabel.left = absoluteCoords.x;
+            this.textLabel.top =
+                absoluteCoords.y - CanvasMarcher.dotRadius * 2.2;
+        }
+        if (!setTranslatedCoords(this.textLabel))
+            this.textLabel.setCoords(true);
     }
 
     /**
@@ -855,6 +935,97 @@ export default class CanvasMarcher
 export function tempoToDuration(tempo: number) {
     return (60 / tempo) * 1000;
 }
+
+type Corners = {
+    tl: fabric.Point;
+    tr: fabric.Point;
+    bl: fabric.Point;
+    br: fabric.Point;
+};
+
+/** Corner sets made by `setTranslatedCoords`, which it updates in place on the next call */
+const liveCorners = new WeakSet<Corners>();
+
+/** `current` when `setTranslatedCoords` made it, otherwise a new corner set */
+const reusableCorners = (current: Corners | undefined): Corners => {
+    if (current && liveCorners.has(current)) return current;
+    const corners = {
+        tl: new fabric.Point(0, 0),
+        tr: new fabric.Point(0, 0),
+        bl: new fabric.Point(0, 0),
+        br: new fabric.Point(0, 0),
+    };
+    liveCorners.add(corners);
+    return corners;
+};
+
+/** fabric.util.transformPoint, into `out` */
+const transformInto = (out: fabric.Point, p: fabric.Point, t: number[]) => {
+    const x = p.x;
+    const y = p.y;
+    out.x = t[0] * x + t[2] * y + t[4];
+    out.y = t[1] * x + t[3] * y + t[5];
+};
+
+/**
+ * Fabric's `setCoords(true)` (bounding and line coords, no control corners) for an object that is
+ * only translated: no group or rotation, and a centred origin. Gives the same numbers without
+ * Fabric's matrices, works out the corners once instead of twice, and reuses the corner points
+ * it made on the previous call. Returns false, doing nothing, for any other object.
+ */
+export function setTranslatedCoords(obj: fabric.Object): boolean {
+    if (
+        obj.group ||
+        obj.angle ||
+        obj.originX !== "center" ||
+        obj.originY !== "center" ||
+        !obj.canvas
+    )
+        return false;
+    const internals = obj as unknown as {
+        _getTransformedDimensions(): { x: number; y: number };
+        lineCoords?: Corners;
+    };
+    const dim = internals._getTransformedDimensions();
+    const w = dim.x / 2;
+    const h = dim.y / 2;
+    const x = obj.left!;
+    const y = obj.top!;
+    // calcACoords: the corners through [1, 0, 0, 1, x, y]
+    const a = reusableCorners(obj.aCoords);
+    a.tl.x = -w + x;
+    a.tl.y = -h + y;
+    a.tr.x = w + x;
+    a.tr.y = -h + y;
+    a.bl.x = -w + x;
+    a.bl.y = h + y;
+    a.br.x = w + x;
+    a.br.y = h + y;
+    obj.aCoords = a;
+    // calcLineCoords: the same corners through the viewport, then the padding
+    const vpt = obj.getViewportTransform();
+    const line = reusableCorners(internals.lineCoords);
+    transformInto(line.tl, a.tl, vpt);
+    transformInto(line.tr, a.tr, vpt);
+    transformInto(line.bl, a.bl, vpt);
+    transformInto(line.br, a.br, vpt);
+    const padding = obj.padding;
+    if (padding) {
+        line.tl.x -= padding;
+        line.tl.y -= padding;
+        line.tr.x += padding;
+        line.tr.y -= padding;
+        line.bl.x -= padding;
+        line.bl.y += padding;
+        line.br.x += padding;
+        line.br.y += padding;
+    }
+    internals.lineCoords = line;
+    return true;
+}
+
+(CanvasMarcher.prototype as unknown as TightCache)._limitCacheSize =
+    limitCacheSizeTightly;
 
 const linearEasing = function (t: number, b: number, c: number, d: number) {
     return (c * t) / d + b;

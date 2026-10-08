@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
@@ -19,6 +19,59 @@ import {
     playbackStartInfoRef,
 } from "./audio/AudioPlayer";
 import type { TimelinePlayback } from "./Timeline";
+
+interface PlaybackState {
+    readonly beats: readonly Beat[];
+    readonly pages: readonly Page[];
+    readonly isPlaying: boolean;
+    readonly setIsPlaying: (isPlaying: boolean) => void;
+    readonly liveIndex: number | null;
+    readonly playheadBeat: number;
+}
+
+/** The playback commands, reading the latest state, so they keep their identity across beats */
+const playbackCommands = (
+    latest: { readonly current: PlaybackState },
+    liveBeat: () => number | null,
+): Pick<
+    TimelinePlayback,
+    "onSeek" | "onNavigate" | "onStop" | "onPlayingChange"
+> => ({
+    // UI-12: while playing, a click or page button jumps playback there, and a scrub suspends it
+    // until it ends (`seekTimeline`), which says where a scrub's seek landed
+    onSeek: (beatIndex, options) => {
+        const { beats, isPlaying, setIsPlaying } = latest.current;
+        return seekTimeline(beats, beatIndex, options?.gesture, {
+            isPlaying,
+            setIsPlaying,
+        });
+    },
+    onNavigate: (direction) => {
+        const { beats, pages, isPlaying, liveIndex, playheadBeat } =
+            latest.current;
+        if (!isPlaying) navigateTimelinePages(pages, direction);
+        else
+            jumpTimelinePages(
+                beats,
+                pages,
+                Math.floor(liveBeat() ?? liveIndex ?? playheadBeat),
+                direction,
+            );
+    },
+    onStop: () => {
+        const { isPlaying, setIsPlaying } = latest.current;
+        stopTimelinePlayback({ isPlaying, setIsPlaying });
+    },
+    onPlayingChange: (next) => {
+        const { beats, isPlaying, setIsPlaying } = latest.current;
+        if (next === isPlaying) return;
+        toggleTimelinePlayback({
+            isPlaying,
+            showEndBeat: beats.length,
+            setIsPlaying,
+        });
+    },
+});
 
 /**
  * Feeds the timeline from the timeline-mode playhead (docs/timeline/ui.md UI-9, P8.11):
@@ -73,47 +126,29 @@ export function useTimelinePlayback({
         [beats],
     );
 
+    const state: PlaybackState = {
+        beats,
+        pages,
+        isPlaying,
+        setIsPlaying,
+        liveIndex,
+        playheadBeat,
+    };
+    const latest = useRef(state);
+    latest.current = state;
+    const commands = useMemo(
+        () => playbackCommands(latest, liveBeat),
+        [liveBeat],
+    );
+
     return useMemo<TimelinePlayback>(
         () => ({
             liveBeat,
             positionBeat:
                 isPlaying && liveIndex != null ? liveIndex : playheadBeat,
             isPlaying,
-            // UI-12: while playing, a click or page button jumps playback there, and a scrub
-            // suspends it until it ends (`seekTimeline`)
-            onSeek: (beatIndex, options) =>
-                seekTimeline(beats, beatIndex, options?.gesture, {
-                    isPlaying,
-                    setIsPlaying,
-                }),
-            onNavigate: (direction) => {
-                if (!isPlaying) navigateTimelinePages(pages, direction);
-                else
-                    jumpTimelinePages(
-                        beats,
-                        pages,
-                        Math.floor(liveBeat() ?? liveIndex ?? playheadBeat),
-                        direction,
-                    );
-            },
-            onStop: () => stopTimelinePlayback({ isPlaying, setIsPlaying }),
-            onPlayingChange: (next) => {
-                if (next === isPlaying) return;
-                toggleTimelinePlayback({
-                    isPlaying,
-                    showEndBeat: beats.length,
-                    setIsPlaying,
-                });
-            },
+            ...commands,
         }),
-        [
-            beats,
-            isPlaying,
-            liveBeat,
-            liveIndex,
-            pages,
-            playheadBeat,
-            setIsPlaying,
-        ],
+        [commands, isPlaying, liveBeat, liveIndex, playheadBeat],
     );
 }

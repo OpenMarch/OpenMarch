@@ -625,9 +625,9 @@ function RegisteredActionsHandler() {
     );
     const { data: canUndo } = useQuery(canUndoQueryOptions(databaseReady));
     const { data: canRedo } = useQuery(canRedoQueryOptions(databaseReady));
-    const uiSettingsStore = useUiSettingsStore();
-    const uiSettings = uiSettingsStore?.uiSettings;
-    const setUiSettings = uiSettingsStore?.setUiSettings ?? (() => {});
+    // The settings are only read when an action runs, so read them then rather than re-rendering
+    // (and re-creating every action) on each settings change, such as a timeline zoom save
+    const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
     const selectionStore = useSelectionStore();
     const setSelectedShapePageIds =
         selectionStore?.setSelectedShapePageIds ?? (() => {});
@@ -791,6 +791,7 @@ function RegisteredActionsHandler() {
     const triggerAction = useCallback(
         // eslint-disable-next-line max-lines-per-function
         (action: RegisteredActionsEnum) => {
+            const { uiSettings } = useUiSettingsStore.getState();
             let isElectronAction = true;
 
             // UI-11: anything but the transport puts a held preview frame back on the playhead, so
@@ -1423,7 +1424,6 @@ function RegisteredActionsHandler() {
             t,
             canRedo,
             setUiSettings,
-            uiSettings,
             performHistoryAction,
             pages,
             beats,
@@ -1482,6 +1482,7 @@ function RegisteredActionsHandler() {
     const handleKeyDown = useCallback(
         // eslint-disable-next-line max-lines-per-function
         (e: KeyboardEvent) => {
+            const { uiSettings } = useUiSettingsStore.getState();
             if (
                 uiSettings.focussedComponent === "canvas" &&
                 !document.activeElement?.matches(
@@ -1615,7 +1616,7 @@ function RegisteredActionsHandler() {
                 });
             }
         },
-        [setUiSettings, triggerAction, uiSettings],
+        [setUiSettings, triggerAction],
     );
 
     /**

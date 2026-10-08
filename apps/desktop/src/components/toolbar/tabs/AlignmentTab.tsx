@@ -1,4 +1,5 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
     ArrowsHorizontalIcon,
@@ -15,7 +16,12 @@ import { T, useTolgee } from "@tolgee/react";
 
 export default function AlignmentTab() {
     const { t } = useTolgee();
-    const { uiSettings } = useUiSettingsStore();
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            lockX: s.uiSettings.lockX,
+            lockY: s.uiSettings.lockY,
+        })),
+    );
     return (
         <div className="flex w-full flex-wrap gap-8">
             <CoordinateRoundingSettings />

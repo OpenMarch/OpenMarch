@@ -5,9 +5,9 @@ import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { InfoIcon } from "@phosphor-icons/react";
 
 export default function FocusNotice() {
-    const {
-        uiSettings: { focussedComponent },
-    } = useUiSettingsStore();
+    const focussedComponent = useUiSettingsStore(
+        (s) => s.uiSettings.focussedComponent,
+    );
 
     if (focussedComponent !== "timeline") {
         return null;

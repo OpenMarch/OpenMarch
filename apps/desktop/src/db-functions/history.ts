@@ -442,12 +442,16 @@ async function refreshCurrentGroups(db: DbConnection | DbTransaction) {
  * Switch the triggers to either undo or redo mode.
  * This is so when performing an undo action, the redo history is updated and vice versa.
  *
- * @param db The database connection
+ * It runs inside the undo or redo's own transaction (`db` is the transaction), so the switch,
+ * the replay and the switch back commit together: one commit (one sync to disk) instead of one
+ * per trigger statement, and a failure part way rolls the switch back with everything else.
+ *
+ * @param db The transaction
  * @param mode The mode to switch to, either "undo" or "redo"
  * @param deleteRedoRows true if the redo rows should be deleted when inserting new undo rows.
  */
-const switchTriggerMode = async (
-    db: DbConnection | DB,
+const switchTriggerModeInTransaction = async (
+    db: DbTransaction,
     mode: HistoryType,
     deleteRedoRows: boolean,
     tableNames?: Set<string>,
@@ -508,7 +512,7 @@ const switchTriggerMode = async (
         await db.run(sql.raw(`DROP TRIGGER IF EXISTS ${trigger.name};`));
     }
     for (const table of tables) {
-        await createTriggers(db, table, mode, deleteRedoRows);
+        await createTriggers(db, table, mode, deleteRedoRows, true);
     }
     mainProcessLog(
         "info",
@@ -616,23 +620,34 @@ async function executeHistoryActionUnlocked(
             }
         }
 
-        // Switch the triggers so that the replay's inverses go to the other stack. In undo mode,
-        // don't clear the redo table while redoing. Trigger DDL stays outside the transaction; the
-        // finally block below always switches back.
-        if (type === "undo")
-            await switchTriggerMode(db, "redo", false, tableNames);
-        else await switchTriggerMode(db, "undo", false, tableNames);
-
         let error: Error | undefined;
         let committedBatch: ChangeBatch | undefined;
         try {
-            // Temporarily disable foreign key checks
+            // Temporarily disable foreign key checks (a no-op inside a transaction, so first)
             await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
 
             // Every write of the action is in one transaction, so a rejected undo or redo rolls
-            // back and leaves the data and both stacks unchanged (spec §6.1): the new redo group
-            // and its pruning, the replay, the removal of the replayed group and the group refresh
+            // back and leaves the data, both stacks and the triggers unchanged (spec §6.1): the
+            // switch of the triggers to the other stack, the new redo group and its pruning, the
+            // replay, the removal of the replayed group, the group refresh and the switch back
             const drained = await db.transaction(async (tx) => {
+                // Switch the triggers so that the replay's inverses go to the other stack. In
+                // undo mode, don't clear the redo table while redoing.
+                if (type === "undo")
+                    await switchTriggerModeInTransaction(
+                        tx,
+                        "redo",
+                        false,
+                        tableNames,
+                    );
+                else
+                    await switchTriggerModeInTransaction(
+                        tx,
+                        "undo",
+                        false,
+                        tableNames,
+                    );
+
                 // The redo triggers log the undo's inverses under this new group
                 if (type === "undo") await incrementGroup(tx, "redo");
 
@@ -651,7 +666,18 @@ async function executeHistoryActionUnlocked(
 
                 // Undo and redo are edits (spec §6.1, C-6): the same commit-time check and
                 // change-log drain as `transactionWithHistory`
-                return checkAndDrainTimelineChangesInTransaction(tx);
+                const batch =
+                    await checkAndDrainTimelineChangesInTransaction(tx);
+
+                // Switch the triggers back to undo mode, deleting the redo rows when new undo
+                // rows come in
+                await switchTriggerModeInTransaction(
+                    tx,
+                    "undo",
+                    true,
+                    tableNames,
+                );
+                return batch;
             });
             committedBatch = drained;
         } catch (err: any) {
@@ -659,9 +685,6 @@ async function executeHistoryActionUnlocked(
         } finally {
             // Re-enable foreign key checks
             await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
-
-            // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
-            await switchTriggerMode(db, "undo", true, tableNames);
         }
 
         if (error) {

@@ -35,6 +35,7 @@ import {
     Timeline,
     TimelineWaveformProvider,
     type TimelineInput,
+    type TimelineProps,
     type TimelineSelection,
 } from "./Timeline";
 import {
@@ -47,6 +48,12 @@ import { useTimelineCommands } from "./useTimelineCommands";
 import { useTimelinePlayback } from "./useTimelinePlayback";
 
 const NO_WAVEFORM = { peaksByBeat: [] };
+
+// The transport's controls read their own state: the same elements every render, so the
+// memoized transport doesn't re-render for them
+const PREVIEW_BUTTONS = <TimelinePreviewButtons />;
+const SOUND_BUTTON = <TimelineSoundButton />;
+const COMPACT_BUTTON = <TimelineCompactButton />;
 
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
 export const toTimelineSelection = (
@@ -85,8 +92,6 @@ export const toTimelineSelection = (
  */
 export default function TimelineModePanel() {
     const { beats, pages, measures } = useTimingObjects()!;
-    const playback = useTimelinePlayback({ beats, pages });
-    const editSelection = useTimelineSelectionStore((s) => s.selection);
     // UI-10: the start flag follows the page boxes
     useEffect(() => {
         useTimelineSelectionStore
@@ -97,28 +102,6 @@ export default function TimelineModePanel() {
                 ),
             );
     }, [pages]);
-    const startBeat = useTimelineSelectionStore((s) => s.startBeat);
-    const playFromStart = useTimelineSelectionStore((s) => s.playFromStart);
-    // UI-12: the pin shows outside isolation, whose start flag is the isolated move's own
-    const startPinned = useTimelineSelectionStore(
-        (s) => s.startPinned && s.isolation === null,
-    );
-    const selection = useMemo(
-        () =>
-            toTimelineSelection(
-                editSelection,
-                startBeat,
-                playFromStart,
-                startPinned,
-            ),
-        [editSelection, startBeat, playFromStart, startPinned],
-    );
-    // UI-12: the paused clock reads the beat the timeline shows, not the selected page's end
-    const shownBeat = useTimelineSelectionStore(displayedBeat);
-    const pausedSeconds =
-        beats.length > 0
-            ? timeAtBeat(beats, Math.min(shownBeat, beats.length))
-            : undefined;
     const compact = useUiSettingsStore((s) => s.uiSettings.timelineCompact);
     // UI-12: the waveform lane, from the audio player's envelope, per beat on the view axis
     const envelope = useAudioEnvelopeStore((s) => s.envelope);
@@ -135,20 +118,6 @@ export default function TimelineModePanel() {
                 : null,
         [envelope, beats],
     );
-    // The zoom changes every frame of a pinch: keep it here, and save it once the gesture settles
-    const [pixelsPerBeat, setPixelsPerBeat] = useState(
-        () => useUiSettingsStore.getState().uiSettings.timelinePixelsPerBeat,
-    );
-    useEffect(() => {
-        const timeout = setTimeout(
-            () =>
-                useUiSettingsStore
-                    .getState()
-                    .setTimelinePixelsPerBeat(pixelsPerBeat),
-            400,
-        );
-        return () => clearTimeout(timeout);
-    }, [pixelsPerBeat]);
     const zoomFitted = useUiSettingsStore(
         (s) => s.uiSettings.timelineZoomFitted,
     );
@@ -178,17 +147,6 @@ export default function TimelineModePanel() {
         database: db,
         timelines,
         selectedMarcherIds,
-    });
-    // UI-9 **+** after the free paused playhead; the new page becomes the selection
-    const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
-    // Not while a paused preview holds a frame: + is drawn there, but would add at P (UI-11)
-    const holding = useTimelineSelectionStore((s) => s.cursorBeat !== null);
-    const addPageFlag = useAddPageFlag({
-        pages,
-        beatCount: beats.length,
-        playheadBeat,
-        isPlaying: isPlaying || holding,
-        onAdded: selectAddedPage,
     });
     const queryClient = useQueryClient();
     const windowBeforeClick = useRef<TimelineIsolation["restore"] | null>(null);
@@ -226,10 +184,8 @@ export default function TimelineModePanel() {
             }}
         >
             <TimelineWaveformProvider waveform={waveform ?? NO_WAVEFORM}>
-                <Timeline
+                <PlayingTimeline
                     mode={compact ? "collapsed" : "expanded"}
-                    pixelsPerBeat={pixelsPerBeat}
-                    onPixelsPerBeatChange={setPixelsPerBeat}
                     zoomFitted={zoomFitted}
                     onZoomFittedChange={setZoomFitted}
                     className="w-full"
@@ -237,14 +193,9 @@ export default function TimelineModePanel() {
                     pages={pages}
                     measures={measures}
                     timelines={offPage}
-                    playback={playback}
-                    transportClock={
-                        <AudioClock pausedSeconds={pausedSeconds} />
-                    }
-                    transportAccessories={<TimelinePreviewButtons />}
-                    transportSecondary={<TimelineSoundButton />}
-                    transportViewControls={<TimelineCompactButton />}
-                    selection={selection}
+                    transportAccessories={PREVIEW_BUTTONS}
+                    transportSecondary={SOUND_BUTTON}
+                    transportViewControls={COMPACT_BUTTON}
                     onSelectionChange={changeSelection}
                     onTimelineRangeCommit={commands.commitTimelineRange}
                     onPlayFromStartOff={() =>
@@ -273,9 +224,6 @@ export default function TimelineModePanel() {
                                 "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it.",
                             );
                     }}
-                    onAddPageFlag={
-                        addPageFlag.insertion ? addPageFlag.add : undefined
-                    }
                     onDeletePageFlag={(pageId) => {
                         const after = selectionAfterFlagDelete(
                             pages,
@@ -295,6 +243,90 @@ export default function TimelineModePanel() {
                 />
             </TimelineWaveformProvider>
         </div>
+    );
+}
+
+/**
+ * The timeline fed by the audio playback, with its zoom, its window and **+**. The playback
+ * position changes once a beat while playing or scrubbing, the window (from the start flag to the
+ * playhead) with it, and the zoom every frame of a pinch, so all of them are read here, under the
+ * panel: they re-render the timeline, not the panel and its queries.
+ */
+function PlayingTimeline(
+    props: Omit<
+        TimelineProps,
+        | "playback"
+        | "pixelsPerBeat"
+        | "onPixelsPerBeatChange"
+        | "selection"
+        | "transportClock"
+        | "onAddPageFlag"
+    >,
+) {
+    const { beats, pages } = props;
+    const playback = useTimelinePlayback({ beats, pages });
+    const editSelection = useTimelineSelectionStore((s) => s.selection);
+    const startBeat = useTimelineSelectionStore((s) => s.startBeat);
+    const playFromStart = useTimelineSelectionStore((s) => s.playFromStart);
+    // UI-12: the pin shows outside isolation, whose start flag is the isolated move's own
+    const startPinned = useTimelineSelectionStore(
+        (s) => s.startPinned && s.isolation === null,
+    );
+    const selection = useMemo(
+        () =>
+            toTimelineSelection(
+                editSelection,
+                startBeat,
+                playFromStart,
+                startPinned,
+            ),
+        [editSelection, startBeat, playFromStart, startPinned],
+    );
+    // UI-12: the paused clock reads the beat the timeline shows, not the selected page's end
+    const shownBeat = useTimelineSelectionStore(displayedBeat);
+    const pausedSeconds =
+        beats.length > 0
+            ? timeAtBeat(beats, Math.min(shownBeat, beats.length))
+            : undefined;
+    const clock = useMemo(
+        () => <AudioClock pausedSeconds={pausedSeconds} />,
+        [pausedSeconds],
+    );
+    // UI-9 **+** after the free paused playhead; the new page becomes the selection
+    const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
+    // Not while a paused preview holds a frame: + is drawn there, but would add at P (UI-11)
+    const holding = useTimelineSelectionStore((s) => s.cursorBeat !== null);
+    const addPageFlag = useAddPageFlag({
+        pages,
+        beatCount: beats.length,
+        playheadBeat,
+        isPlaying: playback.isPlaying || holding,
+        onAdded: selectAddedPage,
+    });
+    // The zoom changes every frame of a pinch: keep it here, and save it once the gesture settles
+    const [pixelsPerBeat, setPixelsPerBeat] = useState(
+        () => useUiSettingsStore.getState().uiSettings.timelinePixelsPerBeat,
+    );
+    useEffect(() => {
+        const timeout = setTimeout(
+            () =>
+                useUiSettingsStore
+                    .getState()
+                    .setTimelinePixelsPerBeat(pixelsPerBeat),
+            400,
+        );
+        return () => clearTimeout(timeout);
+    }, [pixelsPerBeat]);
+    return (
+        <Timeline
+            {...props}
+            selection={selection}
+            transportClock={clock}
+            onAddPageFlag={addPageFlag.insertion ? addPageFlag.add : undefined}
+            playback={playback}
+            pixelsPerBeat={pixelsPerBeat}
+            onPixelsPerBeatChange={setPixelsPerBeat}
+        />
     );
 }
 

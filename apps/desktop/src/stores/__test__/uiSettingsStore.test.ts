@@ -178,4 +178,49 @@ describe("uiSettings Store", () => {
         expectedSettings.lockX = false;
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });
+
+    it("keeps the settings object and skips the save when a timeline setter gets the same value", () => {
+        const store = useUiSettingsStore.getState();
+        const before = store.uiSettings;
+
+        store.setTimelinePixelsPerBeat(before.timelinePixelsPerBeat);
+        store.setTimelineZoomFitted(before.timelineZoomFitted);
+        store.setPixelsPerSecond(before.timelinePixelsPerSecond);
+        store.setTimelineCompact(before.timelineCompact);
+
+        expect(useUiSettingsStore.getState().uiSettings).toBe(before);
+        expect(localStorageMock.setItem).not.toHaveBeenCalled();
+
+        store.setTimelinePixelsPerBeat(before.timelinePixelsPerBeat + 4);
+        expect(
+            useUiSettingsStore.getState().uiSettings.timelinePixelsPerBeat,
+        ).toBe(before.timelinePixelsPerBeat + 4);
+        expect(localStorageMock.setItem).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not re-render a component reading one field when the timeline zoom is saved", () => {
+        let renders = 0;
+        renderHook(() => {
+            renders++;
+            return useUiSettingsStore((s) => s.uiSettings.focussedComponent);
+        });
+        expect(renders).toBe(1);
+
+        act(() => {
+            const store = useUiSettingsStore.getState();
+            store.setTimelinePixelsPerBeat(
+                store.uiSettings.timelinePixelsPerBeat + 2,
+            );
+            store.setTimelineZoomFitted(!store.uiSettings.timelineZoomFitted);
+        });
+        expect(renders).toBe(1);
+
+        act(() =>
+            useUiSettingsStore.getState().setUiSettings({
+                ...useUiSettingsStore.getState().uiSettings,
+                focussedComponent: "timeline",
+            }),
+        );
+        expect(renders).toBe(2);
+    });
 });

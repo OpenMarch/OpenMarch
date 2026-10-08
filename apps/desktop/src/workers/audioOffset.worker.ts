@@ -13,6 +13,8 @@ interface AudioOffsetMessage {
     };
     offsetSeconds: number;
     minimumDuration?: number;
+    /** Whether to build the WAV copy for the wavesurfer view (default true) */
+    encodeWaveform?: boolean;
 }
 
 interface AudioOffsetResponse {
@@ -23,7 +25,8 @@ interface AudioOffsetResponse {
         sampleRate: number;
         channelData: Float32Array[];
     };
-    waveformBuffer: ArrayBuffer;
+    /** `null` when the caller asked for no waveform */
+    waveformBuffer: ArrayBuffer | null;
 }
 
 interface ErrorResponse {
@@ -176,7 +179,12 @@ function createWaveformBuffer(
 // Listen for messages from the main thread
 onmessage = async (e: MessageEvent<AudioOffsetMessage>) => {
     try {
-        const { audioBuffer, offsetSeconds, minimumDuration } = e.data;
+        const {
+            audioBuffer,
+            offsetSeconds,
+            minimumDuration,
+            encodeWaveform = true,
+        } = e.data;
         const { numberOfChannels, length, sampleRate, channelData } =
             audioBuffer;
 
@@ -211,12 +219,14 @@ onmessage = async (e: MessageEvent<AudioOffsetMessage>) => {
         }
 
         // Create waveform buffer
-        const waveformBuffer = createWaveformBuffer(
-            processedChannelData,
-            processedLength,
-            numberOfChannels,
-            sampleRate,
-        );
+        const waveformBuffer = encodeWaveform
+            ? createWaveformBuffer(
+                  processedChannelData,
+                  processedLength,
+                  numberOfChannels,
+                  sampleRate,
+              )
+            : null;
 
         // Send the processed data back to the main thread
         const response: AudioOffsetResponse = {
@@ -231,7 +241,9 @@ onmessage = async (e: MessageEvent<AudioOffsetMessage>) => {
         };
 
         // Transfer the buffers to avoid copying
-        const transferList: Transferable[] = [waveformBuffer];
+        const transferList: Transferable[] = waveformBuffer
+            ? [waveformBuffer]
+            : [];
         processedChannelData.forEach((data) => transferList.push(data.buffer));
 
         postMessage(response, { transfer: transferList });

@@ -32,7 +32,9 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
-    const { uiSettings } = useUiSettingsStore();
+    const focussedComponent = useUiSettingsStore(
+        (s) => s.uiSettings.focussedComponent,
+    );
     return (
         <div
             className={clsx(
@@ -67,7 +69,7 @@ export default function TimelineControls() {
                         onClick={toggleFullscreen}
                         aria-label="Toggle timeline fullscreen"
                         aria-pressed={isFullscreen}
-                        disabled={uiSettings.focussedComponent === "timeline"}
+                        disabled={focussedComponent === "timeline"}
                     >
                         {isFullscreen ? (
                             <CornersInIcon size={24} />
@@ -379,7 +381,9 @@ export function TimelineCompactButton() {
 function PlaybackControls() {
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
-    const { uiSettings } = useUiSettingsStore();
+    const focussedComponent = useUiSettingsStore(
+        (s) => s.uiSettings.focussedComponent,
+    );
     const { t } = useTolgee();
 
     return (
@@ -393,7 +397,7 @@ function PlaybackControls() {
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
                     isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
+                    focussedComponent === "timeline"
                 }
             >
                 <RewindIcon size={24} />
@@ -405,7 +409,7 @@ function PlaybackControls() {
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
                     isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
+                    focussedComponent === "timeline"
                 }
             >
                 <SkipBackIcon size={24} />
@@ -428,7 +432,7 @@ function PlaybackControls() {
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
                     isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
+                    focussedComponent === "timeline"
                 }
             >
                 <SkipForwardIcon size={24} />
@@ -440,7 +444,7 @@ function PlaybackControls() {
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
                     isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
+                    focussedComponent === "timeline"
                 }
             >
                 <FastForwardIcon size={24} />

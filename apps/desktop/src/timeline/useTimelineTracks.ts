@@ -80,22 +80,77 @@ interface VersionedTables {
     readonly tables: TimelineViewTables;
 }
 
+/** A read queued for the write lock and not started yet, which later callers can share. */
+let queuedRead: {
+    readonly database: DbConnection;
+    readonly promise: Promise<VersionedTables>;
+    started: boolean;
+} | null = null;
+/** The last read that finished, for callers that come while its versions are still current. */
+let lastRead: {
+    readonly database: DbConnection;
+    /** The resolver at the read: a new session starts its versions again from 0 */
+    readonly resolver: unknown;
+    readonly read: VersionedTables;
+} | null = null;
+
 /**
  * Reads the rows under the write lock, tagged with the store version at that moment. Batches are
  * applied to the resolver before the lock is released, so the rows and that version's resolver
  * describe the same commit.
+ *
+ * The views that follow these versions (the tracks, the inspector, the stored timelines) share one
+ * read per version pair rather than each reading the five tables after every edit:
+ * - while the last finished read's versions and resolver (one is ready) are still the store's, it is the
+ *   answer: the tables only change with those versions, which is what these views already assume
+ *   by reloading on them alone;
+ * - otherwise a read still waiting for the lock is joined: it starts after the call, so it sees
+ *   everything committed before the call;
+ * - otherwise a new read is queued.
+ *
+ * The result is shared: treat it as read only.
  */
 export const readVersionedTimelineViewTables = (
     database: DbConnection,
-): Promise<VersionedTables> =>
-    withTimelineWriteLock(async () => {
-        const tables = await readTimelineViewTables(database);
-        return {
-            version: useTimelineResolverStore.getState().version,
-            displayVersion: timelineDisplayVersion(),
-            tables,
-        };
-    });
+): Promise<VersionedTables> => {
+    const store = useTimelineResolverStore.getState();
+    if (
+        lastRead?.database === database &&
+        store.resolver !== null &&
+        lastRead.resolver === store.resolver &&
+        lastRead.read.version === store.version &&
+        lastRead.read.displayVersion === timelineDisplayVersion()
+    )
+        return Promise.resolve(lastRead.read);
+    if (queuedRead?.database === database && !queuedRead.started)
+        return queuedRead.promise;
+    const entry: {
+        database: DbConnection;
+        promise: Promise<VersionedTables>;
+        started: boolean;
+    } = {
+        database,
+        started: false,
+        promise: withTimelineWriteLock(async () => {
+            entry.started = true;
+            const tables = await readTimelineViewTables(database);
+            const { version, resolver } = useTimelineResolverStore.getState();
+            const read = {
+                version,
+                displayVersion: timelineDisplayVersion(),
+                tables,
+            };
+            lastRead = { database, resolver, read };
+            return read;
+        }),
+    };
+    queuedRead = entry;
+    const clear = () => {
+        if (queuedRead === entry) queuedRead = null;
+    };
+    entry.promise.then(clear, clear);
+    return entry.promise;
+};
 
 /**
  * The timeline's tracks for the open file (P8.8): the view-model adapter over the stored tables

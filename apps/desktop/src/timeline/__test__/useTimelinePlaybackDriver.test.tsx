@@ -446,13 +446,17 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
                 playChanges.push(playing);
                 result.current.playing.setIsPlaying(playing);
             };
-            const send = (beat: number, gesture?: TimelineSeekGesture) =>
+            // Returns where the seek says it landed (`seekTimeline`)
+            const send = (beat: number, gesture?: TimelineSeekGesture) => {
+                let landed: number | null = null;
                 act(() => {
-                    seekTimeline(result.current.beats, beat, gesture, {
+                    landed = seekTimeline(result.current.beats, beat, gesture, {
                         isPlaying: result.current.playing.isPlaying,
                         setIsPlaying,
                     });
                 });
+                return landed;
+            };
             return { playChanges, send };
         };
 
@@ -469,20 +473,22 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
             frame();
             const { playChanges, send } = scrubber(result);
 
-            send(11, "press");
-            send(11.3, "drag");
+            // Over playback a press only marks where a click would jump: nothing has landed
+            expect(send(11, "press")).toBeNull();
+            expect(send(11.3, "drag")).toBeNull();
             // Still on the pressed beat: nothing has moved yet
             expect(playChanges).toEqual([]);
             expect(result.current.playing.isPlaying).toBe(true);
 
-            send(12, "drag");
+            // Suspended, the frame the scrub shows is where it landed
+            expect(send(12, "drag")).toBe(12);
             expect(playChanges).toEqual([false]);
             // The suspension writes neither the playhead nor the frame the scrub shows
             expect(store().playheadBeat).toBe(13);
             expect(store().cursorBeat).toBe(12);
             expect(store().playback).toBeNull();
             const revision = store().playheadRevision;
-            send(12.4, "drag");
+            expect(send(12.4, "drag")).toBe(12);
             expect(store().playheadRevision).toBe(revision);
             send(11, "drag");
             expect(store().cursorBeat).toBe(11);

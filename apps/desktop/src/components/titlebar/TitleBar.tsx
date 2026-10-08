@@ -20,7 +20,9 @@ import MarcherLogo from "@/components/MarcherLogo";
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
-    const { uiSettings } = useUiSettingsStore();
+    const showFullDatabasePath = useUiSettingsStore(
+        (s) => s.uiSettings.showFullDatabasePath,
+    );
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
@@ -42,7 +44,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
         void fetchDbPath();
     }, []);
 
-    const displayDbPath = uiSettings.showFullDatabasePath
+    const displayDbPath = showFullDatabasePath
         ? dbPath
         : (dbPath
               .split(/[/\\]/)

@@ -16,10 +16,18 @@ import {
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
+    /**
+     * Timeline mode: called each playback frame with the live beat, before the frame renders, to
+     * style the marchers there (`useTimelineAppearance`)
+     */
+    onTimelineBeat?: (
+        beat: number,
+        canvasMarchers: ReturnType<OpenMarchCanvas["getLiveCanvasMarchers"]>,
+    ) => unknown;
 }
 
 // eslint-disable-next-line max-lines-per-function
-export const useAnimation = ({ canvas }: UseAnimationProps) => {
+export const useAnimation = ({ canvas, onTimelineBeat }: UseAnimationProps) => {
     const { pages, beats } = useTimingObjects()!;
     const timelineMode = useTimelineMode();
     const pagesById: Record<number, Page> = useMemo(() => {
@@ -165,13 +173,13 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setCurrentCollision(selectedPage);
     }, [selectedPage, getCollisionsForSelectedPage, setCurrentCollision]);
 
-    // Set marcher positions at a specific time
-    const setPageMarcherPositionsAtTime = useCallback(
+    // Move the marchers to their positions at a time, without drawing
+    const placePageMarchersAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
             let output = true;
 
-            const canvasMarchers = canvas.getCanvasMarchers();
+            const canvasMarchers = canvas.getLiveCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
                 const timeline = marcherTimelines.get(
                     canvasMarcher.marcherObj.id,
@@ -193,7 +201,6 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 }
             }
 
-            canvas.requestRenderAll();
             return output;
         },
         [canvas, marcherTimelines],
@@ -201,34 +208,43 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
     // Timeline mode (P5.4): one reused buffer, filled from the resolver each frame
     const timelineBufferRef = useRef<TimelinePositionBuffer | null>(null);
-    const setTimelineMarcherPositionsAtTime = useCallback(
+    const placeTimelineMarchersAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
             const buffer = (timelineBufferRef.current ??=
                 new TimelinePositionBuffer());
+            const beat = playbackBeat(beats, timeMilliseconds);
+            const canvasMarchers = canvas.getLiveCanvasMarchers();
             // Not ready (or rebuilding with a new marcher count): leave marchers where they are
-            if (buffer.fill(playbackBeat(beats, timeMilliseconds))) {
+            if (buffer.fill(beat)) {
                 const coords = { x: 0, y: 0 };
-                buffer.forEachMarcher(
-                    canvas.getCanvasMarchers(),
-                    (canvasMarcher, x, y) => {
-                        coords.x = x;
-                        coords.y = y;
-                        canvasMarcher.setLiveCoordinates(coords);
-                    },
-                );
+                buffer.forEachMarcher(canvasMarchers, (canvasMarcher, x, y) => {
+                    coords.x = x;
+                    coords.y = y;
+                    canvasMarcher.setLiveCoordinates(coords);
+                });
             }
-            canvas.requestRenderAll();
+            onTimelineBeat?.(beat, canvasMarchers);
             // The resolver has a position at every beat; the end of the show stops playback
             // through useTimelinePlaybackDriver (UI-9)
             return true;
         },
-        [canvas, beats],
+        [canvas, beats, onTimelineBeat],
     );
 
-    const setMarcherPositionsAtTime = timelineMode
-        ? setTimelineMarcherPositionsAtTime
-        : setPageMarcherPositionsAtTime;
+    const placeMarchersAtTime = timelineMode
+        ? placeTimelineMarchersAtTime
+        : placePageMarchersAtTime;
+
+    // Set marcher positions at a specific time, and draw them on the next frame
+    const setMarcherPositionsAtTime = useCallback(
+        (timeMilliseconds: number) => {
+            const output = placeMarchersAtTime(timeMilliseconds);
+            canvas?.requestRenderAll();
+            return output;
+        },
+        [canvas, placeMarchersAtTime],
+    );
 
     // Update the selected page based on playback timestamp
     const updateSelectedPage = useCallback(
@@ -260,6 +276,24 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         [pages, canvas, selectedPage, pagesById, setSelectedPage, setIsPlaying],
     );
 
+    // The effect below restarts whenever its inputs change, which in page mode is every page
+    // playback enters (the selected page and the keyframes around it). Its end-of-playback work
+    // (every marcher's setCoords, freeing the frame atlas) runs only when playback really stops:
+    // `isPlaying` goes false, the canvas changes, or the hook unmounts.
+    const playingNow = useRef(isPlaying);
+    playingNow.current = isPlaying;
+    const canvasNow = useRef(canvas);
+    canvasNow.current = canvas;
+    const unmounted = useRef(false);
+    useEffect(() => {
+        unmounted.current = false;
+        return () => {
+            unmounted.current = true;
+        };
+    }, []);
+    // setLiveCoordinates skips the control corners; refreshed once playback stops
+    const liveCoordsStale = useRef(false);
+
     // Animate the canvas based on playback timestamp
     useEffect(() => {
         // Helper to sync the animation with the live playback position
@@ -268,8 +302,10 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
             try {
                 const currentTime = getLivePlaybackPosition() * 1000; // s to ms
-                const continueAnimation =
-                    setMarcherPositionsAtTime(currentTime);
+                const continueAnimation = placeMarchersAtTime(currentTime);
+                liveCoordsStale.current = true;
+                // Draw now, in this frame; requestRenderAll would draw a frame late
+                canvas.renderPlaybackFrame();
                 // Timeline mode: useTimelinePlaybackDriver loops and stops; no page follows playback
                 if (!timelineMode) void updateSelectedPage(currentTime);
                 animationFrameRef.current = requestAnimationFrame(animate);
@@ -294,11 +330,21 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
+            const continuing =
+                playingNow.current &&
+                canvasNow.current === canvas &&
+                !unmounted.current;
+            if (liveCoordsStale.current && canvas && !continuing) {
+                liveCoordsStale.current = false;
+                for (const marcher of canvas.getLiveCanvasMarchers())
+                    marcher.setCoords();
+                canvas.endPlaybackFrames();
+            }
         };
     }, [
         isPlaying,
         canvas,
-        setMarcherPositionsAtTime,
+        placeMarchersAtTime,
         updateSelectedPage,
         timelineMode,
         marcherTimelines,

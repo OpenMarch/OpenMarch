@@ -5,6 +5,7 @@ import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { useTimingObjects } from "@/hooks";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
@@ -18,7 +19,13 @@ import { normalizeVolume } from "./volume";
  */
 // eslint-disable-next-line max-lines-per-function
 export default function EditableBeatAudioPlayer() {
-    const { uiSettings } = useUiSettingsStore();
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            audioMuted: s.uiSettings.audioMuted,
+            audioVolume: s.uiSettings.audioVolume,
+            timelinePixelsPerSecond: s.uiSettings.timelinePixelsPerSecond,
+        })),
+    );
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
     const { beats, measures, utility, fetchTimingObjects } = useTimingObjects();

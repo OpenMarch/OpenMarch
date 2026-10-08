@@ -35,11 +35,14 @@ const SvgPreviewHandler: React.FC = () => {
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { pages = [] } = useTimingObjects() ?? {};
-    const { data: marcherPages } = useQuery(
-        allMarcherPagesQueryOptions({
+    // Only page mode reads them: timeline mode samples the resolver for the preview, and the
+    // appearances ignore them. Off, every page or flag edit no longer reads all of them again.
+    const { data: marcherPages } = useQuery({
+        ...allMarcherPagesQueryOptions({
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
-    );
+        enabled: !timelineMode,
+    });
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),

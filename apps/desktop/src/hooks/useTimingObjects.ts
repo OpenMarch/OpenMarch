@@ -28,6 +28,35 @@ export type TimingObjects = {
     hasError: boolean;
 };
 
+const fetchTimingObjects = async () => {
+    await queryClient.invalidateQueries({
+        queryKey: allDatabaseBeatsQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: getUtilityQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: workspaceSettingsQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: allDatabasePagesQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: allDatabaseMeasuresQueryOptions().queryKey,
+    });
+};
+
+/**
+ * The last timing objects built, with what they were built from. Every `useTimingObjects` caller
+ * owns its own query observer, and each runs the combine, so without this every mounted caller
+ * (about 15 in timeline mode) rebuilt the same beats, measures and pages after each change. The
+ * inputs are TanStack's cached data, so equal identities mean equal answers.
+ */
+let lastBuilt: {
+    readonly inputs: readonly unknown[];
+    readonly result: TimingObjects;
+} | null = null;
+
 // eslint-disable-next-line max-lines-per-function
 export const _combineTimingObjects = (
     results: [
@@ -106,24 +135,6 @@ export const _combineTimingObjects = (
             ? 1
             : (workspaceSettings?.measurementOffset ?? 1);
 
-    const fetchTimingObjects = async () => {
-        await queryClient.invalidateQueries({
-            queryKey: allDatabaseBeatsQueryOptions().queryKey,
-        });
-        await queryClient.invalidateQueries({
-            queryKey: getUtilityQueryOptions().queryKey,
-        });
-        await queryClient.invalidateQueries({
-            queryKey: workspaceSettingsQueryOptions().queryKey,
-        });
-        await queryClient.invalidateQueries({
-            queryKey: allDatabasePagesQueryOptions().queryKey,
-        });
-        await queryClient.invalidateQueries({
-            queryKey: allDatabaseMeasuresQueryOptions().queryKey,
-        });
-    };
-
     // Check if any query is still loading
     const isLoading =
         pagesLoading || measuresLoading || beatsLoading || utilityLoading;
@@ -173,14 +184,29 @@ export const _combineTimingObjects = (
         };
     }
 
+    const inputs = [
+        pages,
+        measures,
+        beats,
+        utility,
+        pageNumberOffset,
+        measurementNumberOffset,
+    ];
+    if (
+        lastBuilt &&
+        lastBuilt.inputs.every((input, i) => Object.is(input, inputs[i]))
+    )
+        return lastBuilt.result;
+
+    // The query data is TanStack's cache: sort copies, never the cached arrays
     // First create beats with default timestamps
-    const rawBeats = beats
+    const rawBeats = [...beats]
         .sort((a, b) => a.position - b.position)
         .map((beat, index) => fromDatabaseBeat(beat, index));
     // Then calculate the actual timestamps based on durations
     const createdBeats = calculateTimestamps(rawBeats);
     const createdMeasures = fromDatabaseMeasures({
-        databaseMeasures: measures,
+        databaseMeasures: [...measures],
         allBeats: createdBeats,
         measurementNumberOffset: measurementNumberOffset,
     });
@@ -188,7 +214,7 @@ export const _combineTimingObjects = (
     const lastPageCounts = utility.last_page_counts;
 
     const createdPages = fromDatabasePages({
-        databasePages: pages,
+        databasePages: [...pages],
         allMeasures: createdMeasures,
         allBeats: createdBeats,
         lastPageCounts,
@@ -204,6 +230,7 @@ export const _combineTimingObjects = (
         isLoading: false,
         hasError: false,
     };
+    lastBuilt = { inputs, result: processedData };
     return processedData;
 };
 

@@ -15,6 +15,7 @@ import {
 } from "@/timeline/timelineViewModel";
 import { pageEndBeat } from "@/timeline/pageEndBeat";
 import { clamp } from "./TimelineGeometry";
+import { useLatestCallback } from "./useLatestCallback";
 import { CollapsedTimeline, ExpandedTimeline } from "./TimelineVariants";
 import type {
     TimelineAddMarchersMenu,
@@ -77,12 +78,13 @@ export interface TimelinePlayback {
     readonly isPlaying: boolean;
     /**
      * Seek to a whole beat index, already clamped to the show. `options.gesture` says where the
-     * seek sits in a scrub (UI-12 review); without it, the seek is one explicit action.
+     * seek sits in a scrub (UI-12 review); without it, the seek is one explicit action. During a
+     * scrub it may return the beat the playhead landed on (`TimelineSeek`, `seekTimeline`).
      */
     readonly onSeek?: (
         beatIndex: number,
         options?: TimelineSeekOptions,
-    ) => void;
+    ) => number | null | void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** **Stop** (UI-11): back to the playhead */
     readonly onStop?: () => void;
@@ -329,53 +331,70 @@ export function Timeline(props: TimelineProps) {
                 : undefined,
         [axis, beatCount, liveBeat],
     );
-    const seekToBeat = playback.onSeek
-        ? (viewBeat: number, options?: TimelineSeekOptions) => {
-              if (props.beats.length === 0) return;
-              playback.onSeek?.(
-                  clamp(
-                      axis.toSpec(Math.round(viewBeat)),
-                      0,
-                      props.beats.length,
-                  ),
-                  options,
-              );
-          }
-        : undefined;
+    // Every command below keeps its identity across renders (`useLatestCallback`), and the
+    // objects are memoized, so the memoized parts of the timeline only re-render for what they show
+    const { beats } = props;
+    const seekToBeat = useLatestCallback(
+        playback.onSeek
+            ? (viewBeat: number, options?: TimelineSeekOptions) => {
+                  if (beats.length === 0) return;
+                  const target = Math.round(viewBeat);
+                  const spec = clamp(axis.toSpec(target), 0, beats.length);
+                  const landed = playback.onSeek?.(spec, options);
+                  if (typeof landed !== "number") return;
+                  // The beat sent comes back as sent: the view axis folds spec beats 0 and 1
+                  // together, so mapping it back could move it
+                  return landed === spec
+                      ? target
+                      : clamp(axis.toView(landed), 0, beatCount);
+              }
+            : undefined,
+    );
     const { onSelectionChange } = props;
-    const selection = selectionToView(props.selection, axis);
-    const changeSelection = onSelectionChange
-        ? (next: TimelineSelection) =>
-              onSelectionChange(selectionToSpec(next, axis))
-        : undefined;
+    const selection = useMemo(
+        () => selectionToView(props.selection, axis),
+        [props.selection, axis],
+    );
+    const changeSelection = useLatestCallback(
+        onSelectionChange
+            ? (next: TimelineSelection) =>
+                  onSelectionChange(selectionToSpec(next, axis))
+            : undefined,
+    );
     const { onTimelineRangeCommit, onCreateTrack, timelines } = props;
     // A clip move keeps its length: send the spec range shifted by the move, so a clip whose start
     // was hidden with beat 0 moves by exactly the beats it was dragged
-    const commitRange = onTimelineRangeCommit
-        ? (change: TimelineRangeChange) => {
-              const input = timelines.find(
-                  (timeline) => timeline.id === change.timelineId,
-              );
-              if (!input) return;
-              const shift =
-                  change.startBeatIndex - axis.toView(input.startBeatIndex);
-              onTimelineRangeCommit({
-                  timelineId: change.timelineId,
-                  startBeatIndex: input.startBeatIndex + shift,
-                  endBeatIndex: input.endBeatIndex + shift,
-              });
-          }
-        : undefined;
-    const createTrack = onCreateTrack
-        ? (request: TimelineCreateTrackRequest) =>
-              onCreateTrack({
-                  target: request.target,
-                  range: {
-                      startBeatIndex: axis.toSpec(request.range.startBeatIndex),
-                      endBeatIndex: axis.toSpec(request.range.endBeatIndex),
-                  },
-              })
-        : undefined;
+    const commitRange = useLatestCallback(
+        onTimelineRangeCommit
+            ? (change: TimelineRangeChange) => {
+                  const input = timelines.find(
+                      (timeline) => timeline.id === change.timelineId,
+                  );
+                  if (!input) return;
+                  const shift =
+                      change.startBeatIndex - axis.toView(input.startBeatIndex);
+                  onTimelineRangeCommit({
+                      timelineId: change.timelineId,
+                      startBeatIndex: input.startBeatIndex + shift,
+                      endBeatIndex: input.endBeatIndex + shift,
+                  });
+              }
+            : undefined,
+    );
+    const createTrack = useLatestCallback(
+        onCreateTrack
+            ? (request: TimelineCreateTrackRequest) =>
+                  onCreateTrack({
+                      target: request.target,
+                      range: {
+                          startBeatIndex: axis.toSpec(
+                              request.range.startBeatIndex,
+                          ),
+                          endBeatIndex: axis.toSpec(request.range.endBeatIndex),
+                      },
+                  })
+            : undefined,
+    );
     const { addSelectedMarchers, onDeletePageFlag, onOpenRange } = props;
     // A clip's stored spec range, else the view range mapped back (as the menu's Add does)
     const specRangeOf = ({ range, trackId }: TimelineMenuTarget) => {
@@ -393,26 +412,41 @@ export function Timeline(props: TimelineProps) {
                   endBeatIndex: axis.toSpec(range.endBeatIndex),
               };
     };
-    const openRange = (target: TimelineMenuTarget) =>
-        onOpenRange?.(specRangeOf(target));
+    const openRange = useLatestCallback(
+        onOpenRange
+            ? (target: TimelineMenuTarget) => onOpenRange(specRangeOf(target))
+            : undefined,
+    );
     // A clip sends its stored spec range: the view axis folds spec beats 0 and 1 together, so a
     // converted show's timeline over [0, N) would come back as [1, N). Page boxes and dragged
     // ranges start on a flag or a timed beat, which `toSpec` maps back exactly.
     // The right-click menu has an entry for each command given: add, and delete on page boxes
-    const addMarchersMenu:
-        | TimelineAddMarchersMenu<TimelineMenuTarget>
-        | undefined = (addSelectedMarchers || onDeletePageFlag) && {
-        disabledReason: addSelectedMarchers?.disabledReason,
-        ...(onDeletePageFlag
-            ? {
-                  onDeleteFlag: (pageId: string | number) =>
-                      onDeletePageFlag(Number(pageId)),
-              }
-            : {}),
-        onAdd:
-            addSelectedMarchers?.onAdd &&
-            ((target) => addSelectedMarchers.onAdd?.(specRangeOf(target))),
-    };
+    const deleteFlag = useLatestCallback(
+        onDeletePageFlag
+            ? (pageId: string | number) => onDeletePageFlag(Number(pageId))
+            : undefined,
+    );
+    const addMarchers = useLatestCallback(
+        addSelectedMarchers?.onAdd
+            ? (target: TimelineMenuTarget) =>
+                  addSelectedMarchers.onAdd?.(specRangeOf(target))
+            : undefined,
+    );
+    const hasMarchersMenu = !!(addSelectedMarchers || onDeletePageFlag);
+    const disabledReason = addSelectedMarchers?.disabledReason;
+    const addMarchersMenu = useMemo<
+        TimelineAddMarchersMenu<TimelineMenuTarget> | undefined
+    >(
+        () =>
+            hasMarchersMenu
+                ? {
+                      disabledReason,
+                      ...(deleteFlag ? { onDeleteFlag: deleteFlag } : {}),
+                      onAdd: addMarchers,
+                  }
+                : undefined,
+        [addMarchers, deleteFlag, disabledReason, hasMarchersMenu],
+    );
     const commonProps = {
         model,
         positionBeat,
@@ -423,20 +457,20 @@ export function Timeline(props: TimelineProps) {
         selectedTarget: props.selectedTarget,
         className: props.className,
         onSeek: seekToBeat,
-        onPlayingChange: playback.onPlayingChange,
-        onStop: playback.onStop,
-        onNavigate: playback.onNavigate,
-        onPixelsPerBeatChange: setPixelsPerBeat,
+        onPlayingChange: useLatestCallback(playback.onPlayingChange),
+        onStop: useLatestCallback(playback.onStop),
+        onNavigate: useLatestCallback(playback.onNavigate),
+        onPixelsPerBeatChange: useLatestCallback(setPixelsPerBeat),
         zoomFitted: props.zoomFitted,
-        onZoomFittedChange: props.onZoomFittedChange,
+        onZoomFittedChange: useLatestCallback(props.onZoomFittedChange),
         onSelectionChange: changeSelection,
         onCreateTrack: createTrack,
         addSelectedMarchers: addMarchersMenu,
-        onAddPageFlag: props.onAddPageFlag,
-        onOpenRange: onOpenRange && openRange,
+        onAddPageFlag: useLatestCallback(props.onAddPageFlag),
+        onOpenRange: openRange,
         onTimelineRangeCommit: commitRange,
-        onPlayFromStartOff: props.onPlayFromStartOff,
-        onUnpinStart: props.onUnpinStart,
+        onPlayFromStartOff: useLatestCallback(props.onPlayFromStartOff),
+        onUnpinStart: useLatestCallback(props.onUnpinStart),
         transportSecondary: props.transportSecondary,
         transportViewControls: props.transportViewControls,
         showTransport: props.showTransport ?? true,

@@ -66,6 +66,26 @@ describe("scrubbing while paused", () => {
         expect(store().playheadRevision).toBe(revision + 2);
     });
 
+    it("says where each scrub seek landed: the beat sent, or the held playhead", () => {
+        // Inside a seeked beat too, so a move that doesn't seek still knows
+        expect(seekTimeline(BEATS, 5, "press", paused)).toBe(5);
+        expect(seekTimeline(BEATS, 5, "drag", paused)).toBe(5);
+        expect(seekTimeline(BEATS, 7, "drag", paused)).toBe(7);
+        // Not for the release or a seek outside a scrub
+        expect(seekTimeline(BEATS, 7, "end", paused)).toBeNull();
+        expect(seekTimeline(BEATS, 3, undefined, paused)).toBeNull();
+        // Isolation holds the playhead inside [9, 13], after its start
+        store().setStoredTimelines([
+            { id: 1, start: 9, end: 13, marcherIds: new Set([1]) },
+        ]);
+        store().isolate(1);
+        expect(seekTimeline(BEATS, 11, "press", paused)).toBe(11);
+        expect(seekTimeline(BEATS, 15, "drag", paused)).toBe(13);
+        expect(seekTimeline(BEATS, 16, "drag", paused)).toBe(13);
+        expect(seekTimeline(BEATS, 4, "drag", paused)).toBe(10);
+        seekTimeline(BEATS, 4, "end", paused);
+    });
+
     it("reaches the end of the show from the timeline surface", () => {
         expect(
             clientXToBeat({

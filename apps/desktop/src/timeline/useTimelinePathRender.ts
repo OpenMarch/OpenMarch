@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useRef } from "react";
 import type { FieldProperties } from "@openmarch/core";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { canShowPath } from "@/global/classes/canvasObjects/stepSizeWarning";
@@ -24,6 +24,35 @@ const findPage = (
 
 const NO_PATHS: ReadonlyMap<number, TimelinePath> = new Map();
 
+type Paths = ReadonlyMap<number, TimelinePath>;
+
+/**
+ * `compute()` kept until one of `deps` changes, like `useMemo`, except that while `active` is
+ * false it neither computes nor forgets: it returns the last value. Playing turns `active` off,
+ * so pressing Play and then Stop on the same page reuses the samples instead of resampling every
+ * marcher's path twice.
+ */
+function useSamplesWhileActive(
+    active: boolean,
+    compute: () => Paths,
+    deps: readonly unknown[],
+): Paths {
+    const cache = useRef<{ deps: readonly unknown[]; paths: Paths } | null>(
+        null,
+    );
+    const cached = cache.current;
+    if (!active) return cached?.paths ?? NO_PATHS;
+    if (
+        cached &&
+        cached.deps.length === deps.length &&
+        cached.deps.every((d, i) => Object.is(d, deps[i]))
+    )
+        return cached.paths;
+    const paths = compute();
+    cache.current = { deps, paths };
+    return paths;
+}
+
 /**
  * Draws the selected page's path visuals from the resolver in timeline mode
  * (docs/timeline/phases/07-page-parity.md P7.10): the move into the selected page and the move
@@ -32,8 +61,9 @@ const NO_PATHS: ReadonlyMap<number, TimelinePath> = new Map();
  * from `marcher_pages`.
  *
  * Cost: the samples are kept per resolver version and page pair, so toggles and visual changes
- * redraw without resampling; a side that can't show (its toggle off and no forced warning) isn't
- * sampled; nothing is sampled or drawn while playing, as with `useTimelineStaticRender`.
+ * redraw without resampling, and so do Play and Stop; a side that can't show (its toggle off and
+ * no forced warning) isn't sampled; nothing is sampled or drawn while playing, as with
+ * `useTimelineStaticRender`, and stopping on the page that was drawn doesn't draw it again.
  *
  * Does nothing while `enabled` is false (the flag is off, or the resolver isn't ready yet, when
  * the page-mode paths stand in, as the marchers do). When it turns false, the curved paths are
@@ -86,9 +116,10 @@ export function useTimelinePathRender({
         warningsEnabled: stepSizeWarningsEnabled,
     });
 
-    const previousPaths = useMemo(
+    const previousPaths = useSamplesWhileActive(
+        active,
         () =>
-            active && sampleInto && marcherIds
+            sampleInto && marcherIds
                 ? pathsIntoPage(
                       resolver!,
                       marcherIds,
@@ -97,38 +128,27 @@ export function useTimelinePathRender({
                   )
                 : NO_PATHS,
         // `version` changes whenever the resolver's answers may have
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [
-            active,
-            sampleInto,
-            resolver,
-            version,
-            marcherIds,
-            selectedPage,
-            previousPage,
-        ],
+        [sampleInto, resolver, version, marcherIds, selectedPage, previousPage],
     );
-    const nextPaths = useMemo(
+    const nextPaths = useSamplesWhileActive(
+        active,
         () =>
-            active && sampleOut && marcherIds
+            sampleOut && marcherIds
                 ? pathsIntoPage(resolver!, marcherIds, nextPage, selectedPage)
                 : NO_PATHS,
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [
-            active,
-            sampleOut,
-            resolver,
-            version,
-            marcherIds,
-            selectedPage,
-            nextPage,
-        ],
+        [sampleOut, resolver, version, marcherIds, selectedPage, nextPage],
     );
 
+    /**
+     * What the last draw drew; the paths stay on the canvas while playing, so a draw with the same
+     * inputs after playback stops would only redo the same work.
+     */
+    const lastDraw = useRef<readonly unknown[] | null>(null);
     useEffect(() => {
         if (!canvas) return;
         if (!enabled) {
             canvas.removeTimelinePathways();
+            lastDraw.current = null;
             return;
         }
         if (
@@ -139,6 +159,21 @@ export function useTimelinePathRender({
             !fieldProperties
         )
             return;
+
+        const draw = [
+            canvas,
+            marcherIds,
+            marcherVisuals,
+            fieldProperties,
+            previousPaths,
+            nextPaths,
+            previousPathsEnabled,
+            nextPathsEnabled,
+            stepSizeWarningsEnabled,
+        ];
+        const last = lastDraw.current;
+        if (last && last.every((d, i) => Object.is(d, draw[i]))) return;
+        lastDraw.current = draw;
 
         canvas.renderTimelinePathVisuals({
             marcherVisuals,

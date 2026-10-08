@@ -39,46 +39,34 @@ function StateInitializer() {
         updateShapePagesMutationOptions(queryClient),
     );
     // Timeline mode plays and draws from the resolver, so it prefetches no page-mode keyframes
-    // (P7.13). Appearances are still read per page in both modes.
+    // (P7.13), and styles marchers by beat from show-wide appearance steps
+    // (`useMarcherAppearanceSteps`), so it prefetches no per-page appearances either
     const timelineMode = useTimelineMode();
-    const prefetchCoordinates = (
+    const prefetchPage = (
         page: Parameters<typeof coordinateDataQueryOptions>[0],
     ) => {
-        if (!timelineMode)
-            void queryClient.prefetchQuery(
-                coordinateDataQueryOptions(page, queryClient),
-            );
+        if (timelineMode) return;
+        void queryClient.prefetchQuery(
+            coordinateDataQueryOptions(page, queryClient),
+        );
+        void queryClient.prefetchQuery(
+            marcherAppearancesQueryOptions(page.id, queryClient),
+        );
     };
 
     if (selectedPage) {
-        prefetchCoordinates(selectedPage);
-        void queryClient.prefetchQuery(
-            marcherAppearancesQueryOptions(selectedPage.id, queryClient),
-        );
+        prefetchPage(selectedPage);
         if (selectedPage.nextPageId != null) {
             const nextPage = pages.find(
                 (page) => page.id === selectedPage.nextPageId,
             );
-            if (nextPage) {
-                prefetchCoordinates(nextPage);
-                void queryClient.prefetchQuery(
-                    marcherAppearancesQueryOptions(nextPage.id, queryClient),
-                );
-            }
+            if (nextPage) prefetchPage(nextPage);
         }
         if (selectedPage.previousPageId != null) {
             const previousPage = pages.find(
                 (page) => page.id === selectedPage.previousPageId,
             );
-            if (previousPage) {
-                prefetchCoordinates(previousPage);
-                void queryClient.prefetchQuery(
-                    marcherAppearancesQueryOptions(
-                        previousPage.id,
-                        queryClient,
-                    ),
-                );
-            }
+            if (previousPage) prefetchPage(previousPage);
         }
     }
 

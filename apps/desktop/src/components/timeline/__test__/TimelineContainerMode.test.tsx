@@ -76,6 +76,8 @@ describeDbTests("TimelineContainer and the timeline flag", (it) => {
                     expect(container.querySelector("#timeline")).not.toBeNull(),
                 { timeout: 5000 },
             );
+            // Page mode keeps the legacy waveform
+            expect(container.querySelector("#waveform")).not.toBeNull();
             expect(
                 screen.queryByTestId("timeline-mode-container"),
             ).not.toBeInTheDocument();
@@ -102,6 +104,8 @@ describeDbTests("TimelineContainer and the timeline flag", (it) => {
             );
             expect(screen.getByTestId("timeline-viewport")).toBeInTheDocument();
             expect(container.querySelector("#timeline")).toBeNull();
+            // The audio player runs headless: no legacy waveform or beat markers behind the timeline
+            expect(container.querySelector("#waveform")).toBeNull();
             // No tracks until the view-model adapter (P8.8)
             expect(screen.queryByLabelText(/ timeline, beats /)).toBeNull();
             // The transport is the timeline's header row; fullscreen is on the field's zoom

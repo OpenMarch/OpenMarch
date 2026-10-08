@@ -5,6 +5,12 @@ import Pathway, { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 import Midpoint from "./Midpoint";
 import TimelinePathway from "./TimelinePathway";
 import TimelineFocusLayer from "./TimelineFocusLayer";
+import {
+    cacheAtViewportResolution,
+    cacheFitsAtFullResolution,
+} from "./viewportRasterCache";
+import { renderObjectsFromCaches } from "./drawFromCache";
+import { CacheAtlas } from "./cacheAtlas";
 import type { FocusScene } from "@/timeline/timelineFocusScene";
 import type TimelineShapeOverlay from "./TimelineShapeOverlay";
 import { FieldProperties } from "@openmarch/core";
@@ -313,6 +319,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         this.requestRenderAll();
 
+        const dropLiveMarchers = (e: fabric.IEvent) => {
+            if (e.target instanceof CanvasMarcher) this._liveMarchers = null;
+        };
+        this.on("object:added", dropLiveMarchers);
+        this.on("object:removed", dropLiveMarchers);
+
         this.on("selection:created", this.handleSelection);
         this.on("selection:updated", this.handleSelection);
         this.on("selection:cleared", this.handleSelection);
@@ -503,24 +515,41 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.zoomToPoint(pointer, newZoom);
         this.checkCanvasBounds();
 
-        // set objectCaching to false after 100ms to improve performance after zooming
-        // This is why the grid is blurry but fast while zooming, and sharp while not.
-        // If it was always sharp (object caching on), it would be horrendously slow
+        // The grid uses Fabric's (size-capped, so blurry) cache while the zoom is in progress,
+        // which keeps zooming smooth. 75 ms after the last tick it goes back to its sharp
+        // viewport-sized bitmap, and objects too big for a full-resolution Fabric cache at the new
+        // zoom (long pathways) draw as vectors so they stay sharp too. Everything else keeps its
+        // cache: drawing every marcher as vectors each frame made playback slow after any zoom.
         clearTimeout(this._zoomTimeout);
         this._zoomTimeout = setTimeout(() => {
-            this.getObjects().forEach((obj) => {
-                if (
-                    !(
-                        obj instanceof fabric.Text ||
-                        obj instanceof fabric.IText ||
-                        obj instanceof fabric.Textbox
-                    )
-                ) {
-                    obj.objectCaching = false;
-                }
-            });
+            this.staticGridRef.objectCaching = false;
+            this.refreshCachingForZoom();
             this.requestRenderAll();
         }, 75);
+    }
+
+    /** Objects whose Fabric cache `refreshCachingForZoom` switched off */
+    private _uncachedForZoom = new WeakSet<fabric.Object>();
+
+    /**
+     * After a zoom, switches Fabric's object cache off for objects whose cache would be capped
+     * below the zoomed resolution (so they'd be blurry), and back on for those this turned off
+     * earlier that now fit again. Text and the grid are left alone.
+     */
+    private refreshCachingForZoom() {
+        for (const obj of this.getObjects()) {
+            if (obj === this.staticGridRef || obj instanceof fabric.Text)
+                continue;
+            if (this._uncachedForZoom.has(obj)) {
+                if (cacheFitsAtFullResolution(obj)) {
+                    obj.objectCaching = true;
+                    this._uncachedForZoom.delete(obj);
+                }
+            } else if (obj.objectCaching && !cacheFitsAtFullResolution(obj)) {
+                obj.objectCaching = false;
+                this._uncachedForZoom.add(obj);
+            }
+        }
     }
 
     public checkCanvasBounds() {
@@ -1167,12 +1196,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
         // update coordinate for every canvas marcher
+        const moved: CanvasMarcher[] = [];
         Object.values(marcherPages).forEach((marcherPage) => {
             const visual = marcherVisuals[marcherPage.marcher_id];
             if (!visual) return;
 
-            visual.getCanvasMarcher().setMarcherCoords(marcherPage);
+            const canvasMarcher = visual.getCanvasMarcher();
+            canvasMarcher.setMarcherCoords(marcherPage, true, undefined, {
+                bringToFront: false,
+            });
+            moved.push(canvasMarcher);
         });
+        this.bringObjectsToFront(moved);
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
@@ -1186,6 +1221,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * marcher's `coordinate`, so `refreshMarchers` returns marchers to it. Marchers missing from
      * the buffer stay where they are.
      *
+     * A marcher the user is dragging (the target of Fabric's transform in progress, or one of its
+     * selection) isn't moved: only its `coordinate` is updated, so it stays under the pointer and
+     * a refused move still returns it to this render's position. A draw can land mid-drag, such
+     * as the full update 300 ms after an arrow-key run.
+     *
      * @param pageId the page drawn, stamped on each `coordinate` so its `page_id` isn't left over
      * from an earlier page render (P7.2). Timeline writes don't read it, but other canvas code may.
      */
@@ -1195,21 +1235,32 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     ) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
+        const held = this.heldObjects();
+        const moved: CanvasMarcher[] = [];
         positions.forEachMarcher(
             this.getCanvasMarchers(),
             (canvasMarcher, x, y) => {
-                canvasMarcher.setMarcherCoords({
+                const coordinate = {
                     ...canvasMarcher.coordinate,
                     ...(pageId !== undefined ? { page_id: pageId } : {}),
                     x,
                     y,
-                    // Timeline mode has no shape locks (P7.11): a page-era lock from an earlier
-                    // marcher_pages render must not stop a drag that P7.2 can write
+                    // Timeline mode has no shape locks (P7.11): a page-era lock from an
+                    // earlier marcher_pages render must not stop a drag that P7.2 can write
                     isLocked: false,
                     lockedReason: "",
+                };
+                if (held?.has(canvasMarcher)) {
+                    canvasMarcher.coordinate = coordinate;
+                    return;
+                }
+                canvasMarcher.setMarcherCoords(coordinate, true, undefined, {
+                    bringToFront: false,
                 });
+                moved.push(canvasMarcher);
             },
         );
+        this.bringObjectsToFront(moved);
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
@@ -1217,11 +1268,35 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.requestRenderAll();
     };
 
+    /**
+     * The objects a drag, scale or rotate in progress holds: the transform's target, or each
+     * object of a held selection. Null when nothing is held.
+     */
+    private heldObjects(): ReadonlySet<fabric.Object> | null {
+        const target = (
+            this as unknown as {
+                _currentTransform?: { target?: fabric.Object } | null;
+            }
+        )._currentTransform?.target;
+        if (!target) return null;
+        return new Set(
+            target instanceof fabric.ActiveSelection
+                ? target.getObjects()
+                : [target],
+        );
+    }
+
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
         canvasMarchers.forEach((canvasMarcher) => {
-            canvasMarcher.setMarcherCoords(canvasMarcher.coordinate);
+            canvasMarcher.setMarcherCoords(
+                canvasMarcher.coordinate,
+                true,
+                undefined,
+                { bringToFront: false },
+            );
         });
+        this.bringObjectsToFront(canvasMarchers);
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.requestRenderAll();
@@ -1263,12 +1338,33 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Brings all of the canvasMarchers to the front of the canvas
      */
     sendCanvasMarchersToFront = () => {
-        const curCanvasMarchers: CanvasMarcher[] = this.getCanvasMarchers();
-        curCanvasMarchers.forEach((canvasMarcher) => {
-            this.bringToFront(canvasMarcher);
-        });
+        this.bringObjectsToFront(this.getCanvasMarchers());
         this.bringAllControlPointsTooFront();
     };
+
+    /**
+     * Moves `objects` to the top of the stacking order, in the order given, in one pass. The same
+     * order as calling `bringToFront` on each in turn, which walks every canvas object per call.
+     * Objects that aren't on this canvas are left out, as `setMarcherCoords` skips them.
+     */
+    bringObjectsToFront(objects: readonly fabric.Object[]): void {
+        if (objects.length === 0) return;
+        const raised = new Set<fabric.Object>();
+        for (const object of objects)
+            if (object.canvas === this) raised.add(object);
+        if (raised.size === 0) return;
+        const stack = this._objects;
+        const found = new Set<fabric.Object>();
+        let kept = 0;
+        for (const object of stack) {
+            if (raised.has(object)) found.add(object);
+            else stack[kept++] = object;
+        }
+        stack.length = kept;
+        // In the order given; anything not in the stack (already removed) stays out
+        for (const object of raised) if (found.has(object)) stack.push(object);
+        if (this.renderOnAddRemove) this.requestRenderAll();
+    }
 
     /**
      * Brings the specified canvasMarcher to the front of the canvas
@@ -1707,7 +1803,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             gridLines,
             halfLines,
         });
+        // Off so the grid draws from a canvas-sized bitmap that is redrawn only on zoom, pan,
+        // resize or a new grid (cacheAtViewportResolution), sharp at any zoom. Fabric's own object
+        // cache is switched on only while a wheel zoom is in progress (_applyZoom).
         this.staticGridRef.objectCaching = false;
+        cacheAtViewportResolution(this.staticGridRef, this);
 
         this.add(this.staticGridRef);
         this.sendToBack(this.staticGridRef);
@@ -2332,6 +2432,64 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return active
             ? this.getActiveObjectsByType(CanvasMarcher)
             : this.getObjectsByType(CanvasMarcher);
+    }
+
+    /** The canvas marchers for `getLiveCanvasMarchers`; null after one is added or removed */
+    private _liveMarchers: readonly CanvasMarcher[] | null = null;
+
+    /**
+     * Every CanvasMarcher on the canvas, kept between calls so the playback loop doesn't walk
+     * every canvas object each frame. Rebuilt after a marcher is added or removed. The order is
+     * not kept in step with z-order changes; use `getCanvasMarchers` where order matters.
+     */
+    getLiveCanvasMarchers(): readonly CanvasMarcher[] {
+        return (this._liveMarchers ??= this.getCanvasMarchers());
+    }
+
+    /** Set while `renderPlaybackFrame` draws */
+    private _drawingPlaybackFrame = false;
+    /** Copies of the object caches that playback frames draw from; freed by `endPlaybackFrames` */
+    private _playbackAtlas = new CacheAtlas();
+
+    /**
+     * `renderAll` for the playback loop: objects whose Fabric cache is still valid are drawn
+     * straight from it, without Fabric's per-object save, matrix and cache checks
+     * (`renderObjectsFromCaches`). The picture is the same as `renderAll`'s.
+     */
+    renderPlaybackFrame(): void {
+        this._drawingPlaybackFrame = true;
+        try {
+            this.renderAll();
+        } finally {
+            this._drawingPlaybackFrame = false;
+        }
+    }
+
+    /** Frees what `renderPlaybackFrame` kept for the next frame, once playback stops */
+    endPlaybackFrames(): void {
+        this._playbackAtlas.release();
+    }
+
+    /** Fabric's object loop, replaced for `renderPlaybackFrame` on the visible canvas */
+    _renderObjects(
+        ctx: CanvasRenderingContext2D,
+        objects: (fabric.Object | undefined)[],
+    ): void {
+        if (
+            this._drawingPlaybackFrame &&
+            ctx === (this as { contextContainer?: unknown }).contextContainer
+        ) {
+            renderObjectsFromCaches(this, ctx, objects, this._playbackAtlas);
+            return;
+        }
+        (
+            fabric.StaticCanvas.prototype as unknown as {
+                _renderObjects(
+                    ctx: CanvasRenderingContext2D,
+                    objects: (fabric.Object | undefined)[],
+                ): void;
+            }
+        )._renderObjects.call(this, ctx, objects);
     }
 
     /**

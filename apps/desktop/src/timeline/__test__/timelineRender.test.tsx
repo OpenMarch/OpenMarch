@@ -1,8 +1,8 @@
 import type { ComponentType, ReactNode } from "react";
 import { skipInTimelineMode } from "@/test/timelineMode";
-import { afterEach, describe, expect } from "vitest";
+import { afterEach, describe, expect, vi } from "vitest";
 import { sql } from "drizzle-orm";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { transactionWithHistory } from "@/db-functions/history";
 import {
@@ -32,6 +32,9 @@ import {
     useTimelineResolverStore,
 } from "../timelineStore";
 import { useTimelineStaticRender } from "../useTimelineStaticRender";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useIsPlaying } from "@/context/IsPlayingContext";
 
 /**
  * Timeline-mode rendering (docs/timeline/phases/05-rendering.md P5.4 and P5.5) against a real
@@ -261,6 +264,74 @@ describeDbTests("timeline rendering", (it) => {
             }
         });
 
+        it("follows the playhead itself with followPlayhead, without a re-render", async ({
+            db,
+        }) => {
+            await seedShow(db);
+            await startTimelineResolver(db);
+            const resolver = useTimelineResolverStore.getState().resolver!;
+            const { pages } = await readTiming(db);
+            const canvas = await createCanvasWithMarchers(db);
+            const store = useTimelineSelectionStore.getState();
+            store.reset();
+            store.seek(9);
+            let renders = 0;
+            renderHook(() => {
+                renders++;
+                useTimelineStaticRender({
+                    canvas,
+                    selectedPage: pages[1]!,
+                    followPlayhead: true,
+                    isPlaying: false,
+                    enabled: true,
+                });
+            });
+            const expectAtBeat = (beat: number) => {
+                const coords = coordsById(canvas);
+                for (const id of MARCHER_IDS)
+                    expectAt(
+                        coords[id]!,
+                        resolver.positionAt(id, beat),
+                        `marcher ${id} at beat ${beat}`,
+                    );
+            };
+            expectAtBeat(9);
+            const rendersBefore = renders;
+            // A scrub: each beat is drawn as the store changes, and nothing re-renders
+            store.beginScrub();
+            for (const beat of [11, 13, 15]) {
+                store.seek(beat);
+                expectAtBeat(beat);
+            }
+            // Each beat of the scrub only moved the marchers; the end updates their coordinates
+            const marcher1 = () =>
+                canvas.getCanvasMarchers().find((m) => m.marcherObj.id === 1)!;
+            expectAt(
+                marcher1().coordinate as { x: number; y: number },
+                resolver.positionAt(1, 9),
+                "coordinate during the scrub",
+            );
+            store.seek(17);
+            store.endScrub();
+            expectAtBeat(17);
+            expectAt(
+                marcher1().coordinate as { x: number; y: number },
+                resolver.positionAt(1, 17),
+                "coordinate once the scrub ends",
+            );
+            // A scrub that ends on the beat it last drew still gets the full update
+            store.beginScrub();
+            store.seek(13);
+            store.endScrub();
+            expectAt(
+                marcher1().coordinate as { x: number; y: number },
+                resolver.positionAt(1, 13),
+                "coordinate after a scrub ending on its last beat",
+            );
+            expect(renders).toBe(rendersBefore);
+            store.reset();
+        });
+
         it("redraws when a committed edit changes the resolver", async ({
             db,
         }) => {
@@ -395,6 +466,148 @@ describeDbTests("timeline rendering", (it) => {
             }
             expect(playbackBeat(beats, 4000)).toBe(9);
             expectAt(coordsById(canvas)[2]!, [70, 80], "the end of page 2");
+        });
+
+        describe("page crossings while playing", () => {
+            // Animation frames run only when a test says so
+            let frames: FrameRequestCallback[] = [];
+            const runFrame = () => {
+                const queued = frames;
+                frames = [];
+                for (const callback of queued) callback(performance.now());
+            };
+            const stubFrames = () => {
+                frames = [];
+                vi.stubGlobal(
+                    "requestAnimationFrame",
+                    (callback: FrameRequestCallback) => frames.push(callback),
+                );
+                vi.stubGlobal("cancelAnimationFrame", () => {
+                    frames = [];
+                });
+            };
+            afterEach(() => {
+                vi.unstubAllGlobals();
+            });
+
+            const renderPlayback = (
+                canvas: OpenMarchCanvas,
+                wrapper: ComponentType<{ children: ReactNode }>,
+            ) =>
+                renderHook(
+                    () => ({
+                        animation: useAnimation({ canvas }),
+                        timelineMode: useTimelineMode(),
+                        timing: useTimingObjects()!,
+                        selection: useSelectedPage()!,
+                        playing: useIsPlaying()!,
+                    }),
+                    { wrapper },
+                );
+
+            /**
+             * Plays a frame, crosses into another page, plays another, then stops: the end-of-
+             * playback work (control corners, the frame atlas) runs once, at the stop
+             */
+            const playAcrossPages = (
+                canvas: OpenMarchCanvas,
+                result: {
+                    current: ReturnType<
+                        typeof renderPlayback
+                    >["result"]["current"];
+                },
+            ) => {
+                const { pages } = result.current.timing;
+                const endFrames = vi.spyOn(canvas, "endPlaybackFrames");
+                const marcher = canvas.getCanvasMarchers()[0]!;
+                const setCoords = vi.spyOn(marcher, "setCoords");
+                stubFrames();
+                act(() => {
+                    result.current.selection.setSelectedPage(pages[1]!);
+                });
+                act(() => {
+                    result.current.playing.setIsPlaying(true);
+                });
+                act(() => {
+                    runFrame();
+                });
+                expect(result.current.playing.isPlaying).toBe(true);
+                act(() => {
+                    result.current.selection.setSelectedPage(pages[2]!);
+                });
+                act(() => {
+                    runFrame();
+                });
+                act(() => {
+                    result.current.selection.setSelectedPage(pages[1]!);
+                });
+                act(() => {
+                    runFrame();
+                });
+                expect(result.current.playing.isPlaying).toBe(true);
+                expect(endFrames).not.toHaveBeenCalled();
+                expect(setCoords).not.toHaveBeenCalled();
+                act(() => {
+                    result.current.playing.setIsPlaying(false);
+                });
+                expect(endFrames).toHaveBeenCalledTimes(1);
+                expect(setCoords).toHaveBeenCalledTimes(1);
+            };
+
+            it("page mode keeps its frame state until playback stops", async ({
+                db,
+                wrapper,
+            }) => {
+                await seedShow(db);
+                await setTimelineMode(db, false);
+                const { pages } = await readTiming(db);
+                await transactionWithHistory(db, "seedMarcherPages", (tx) =>
+                    tx.insert(schema.marcher_pages).values(
+                        pages.flatMap((page, i) =>
+                            MARCHER_IDS.map((marcher_id) => ({
+                                marcher_id,
+                                page_id: page.id,
+                                x: 10 * i + marcher_id,
+                                y: 10 * i,
+                            })),
+                        ),
+                    ),
+                );
+                const canvas = await createCanvasWithMarchers(db);
+                const { result } = renderPlayback(canvas, wrapper);
+                await waitFor(() => {
+                    expect(result.current.timelineMode).toBe(false);
+                    expect(result.current.timing.pages).toHaveLength(3);
+                });
+                act(() => {
+                    result.current.selection.setSelectedPage(
+                        result.current.timing.pages[1]!,
+                    );
+                });
+                // The page path has keyframes once the marcher_pages around the page load
+                await waitFor(() =>
+                    expect(
+                        result.current.animation.setMarcherPositionsAtTime(0),
+                    ).toBe(true),
+                );
+                playAcrossPages(canvas, result);
+            });
+
+            it("timeline mode keeps its frame state until playback stops", async ({
+                db,
+                wrapper,
+            }) => {
+                await seedShow(db);
+                await setTimelineMode(db, true);
+                await startTimelineResolver(db);
+                const canvas = await createCanvasWithMarchers(db);
+                const { result } = renderPlayback(canvas, wrapper);
+                await waitFor(() => {
+                    expect(result.current.timelineMode).toBe(true);
+                    expect(result.current.timing.pages).toHaveLength(3);
+                });
+                playAcrossPages(canvas, result);
+            });
         });
 
         it("with the flag on, leaves marchers in place while the resolver isn't ready", async ({

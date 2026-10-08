@@ -356,4 +356,48 @@ describeDbTests("useTimelinePlayback", (it) => {
         await waitFor(() => expect(store().playheadBeat).toBe(0));
         expect(result.current.selected.selectedPage?.id).toBe(0);
     });
+
+    it("waits for a scrub to end before following the playhead's page", async ({
+        db,
+        wrapper,
+    }) => {
+        await seedShow(db);
+        const { result } = renderPlayback(wrapper, true);
+        await waitFor(() => expect(result.current.pages).toHaveLength(3));
+        act(() => {
+            store().setPageBoxes([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]);
+        });
+        act(() => {
+            store().selectRange(9, 17);
+        });
+        await waitFor(() =>
+            expect(result.current.selected.selectedPage?.id).toBe(2),
+        );
+
+        // Scrub back across page 2's flag into page 1, then forward to page 2 and back again
+        act(() => {
+            store().beginScrub();
+            store().seek(12);
+        });
+        act(() => {
+            store().seek(4);
+        });
+        act(() => {
+            store().seek(3);
+        });
+        expect(store().playheadBeat).toBe(3);
+        expect(result.current.selected.selectedPage?.id).toBe(2);
+
+        act(() => {
+            store().endScrub();
+        });
+        await waitFor(() =>
+            expect(result.current.selected.selectedPage?.id).toBe(1),
+        );
+        // The bridge's own write isn't read back as a page change
+        expect(store().playheadBeat).toBe(3);
+    });
 });

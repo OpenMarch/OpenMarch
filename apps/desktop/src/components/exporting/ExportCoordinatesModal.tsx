@@ -60,6 +60,7 @@ import {
     getFieldPropertiesImageElement,
 } from "./utils/svg-generator";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
 import { useQueryClient } from "@tanstack/react-query";
@@ -671,7 +672,12 @@ function DrillChartExport() {
     const { data: tagAppearanceIdsByPageId } = useQuery(
         tagAppearanceByPageIdMapQueryOptions(),
     );
-    const { uiSettings } = useUiSettingsStore();
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            gridLines: s.uiSettings.gridLines,
+            halfLines: s.uiSettings.halfLines,
+        })),
+    );
 
     const marcherAppearancesByPageId = useMemo(() => {
         if (
@@ -1258,7 +1264,12 @@ function VideoExport() {
                 (file) => file.selected,
             ) ?? null,
     });
-    const { uiSettings } = useUiSettingsStore();
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            gridLines: s.uiSettings.gridLines,
+            halfLines: s.uiSettings.halfLines,
+        })),
+    );
     const { theme } = useTheme();
     const queryClient = useQueryClient();
 

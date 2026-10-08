@@ -8,7 +8,7 @@ import * as schema from "@om-electron/database/migrations/schema";
 import type { DB } from "../global/database/db";
 import { Constants } from "../global/Constants";
 import { mainProcessLog } from "../utilities/mainProcessLog";
-import type { DbConnection } from "./types";
+import type { DbConnection, DbTransaction } from "./types";
 
 export type HistoryType = "undo" | "redo";
 
@@ -72,7 +72,7 @@ export async function createAllUndoTriggers(db: DbConnection | DB) {
  * @param tableName name of the table to drop triggers for
  */
 export async function dropUndoTriggers(
-    db: DbConnection | DB,
+    db: DbConnection | DB | DbTransaction,
     tableName: string,
 ) {
     await db.run(sql.raw(`DROP TRIGGER IF EXISTS "${tableName}_it";`));
@@ -199,7 +199,7 @@ const columnsInHistoryTrigger = (triggerSql: string): Set<string> =>
  * @returns true if stale triggers were dropped
  */
 async function dropStaleHistoryTriggers(
-    db: DbConnection | DB,
+    db: DbConnection | DB | DbTransaction,
     tableName: string,
     columnNames: readonly string[],
 ): Promise<boolean> {
@@ -241,12 +241,16 @@ async function dropStaleHistoryTriggers(
  * This is only used when switching to "undo" mode.
  * The default behavior of the application has this to true so that the redo history is cleared when a new undo action is inserted.
  * It should be false when a redo is being performed and there are triggers inserting into the undo table.
+ * @param onConnection True to create the triggers on `db` itself, as every other statement here is.
+ * Required inside a transaction (`db` is then the transaction): the renderer's default path runs
+ * them on a separate connection, which would wait on the transaction's lock.
  */
 export async function createTriggers(
-    db: DbConnection | DB,
+    db: DbConnection | DB | DbTransaction,
     tableName: string,
     type: HistoryType,
     deleteRedoRows: boolean = true,
+    onConnection: boolean = false,
 ) {
     const forbiddenTables = new Set<string>([
         Constants.UndoHistoryTableName,
@@ -285,6 +289,7 @@ export async function createTriggers(
     // Tests, the main process and its workers (convert on open) have no renderer bridge, and run
     // the statement on their own `node:sqlite` connection.
     const runDirectly =
+        onConnection ||
         (typeof process !== "undefined" && process.env.VITEST) ||
         typeof window === "undefined";
     for (const triggerSql of [

@@ -29,7 +29,9 @@ import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSetti
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
     const queryClient = useQueryClient();
-    const { uiSettings } = useUiSettingsStore();
+    const timelinePixelsPerSecond = useUiSettingsStore(
+        (s) => s.uiSettings.timelinePixelsPerSecond,
+    );
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore()!;
@@ -69,9 +71,9 @@ export default function PageTimeline() {
         (page: Page) => {
             // Use the page's duration to calculate the width
             // Add a small buffer (equivalent to 1 beat) to ensure all beats are visually included
-            return page.duration * uiSettings.timelinePixelsPerSecond;
+            return page.duration * timelinePixelsPerSecond;
         },
-        [uiSettings.timelinePixelsPerSecond],
+        [timelinePixelsPerSecond],
     );
 
     // Function to handle the start of resizing
@@ -89,7 +91,7 @@ export default function PageTimeline() {
             currentPage: page,
             nextPage: pages[pages.indexOf(page) + 1] || null,
             allBeats: beats,
-        }).map((offset) => offset * uiSettings.timelinePixelsPerSecond);
+        }).map((offset) => offset * timelinePixelsPerSecond);
 
         // Add event listeners for mouse move and mouse up
         document.addEventListener("mousemove", handlePageResizeMove);
@@ -118,7 +120,7 @@ export default function PageTimeline() {
             // Calculate new duration based on the new width
             // Subtract the buffer we added in getWidth to get the actual duration
 
-            const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
+            const newDuration = newWidth / timelinePixelsPerSecond;
 
             // Calculate new counts for the tooltip display
             const newBeats = durationToBeats({
@@ -170,15 +172,14 @@ export default function PageTimeline() {
 
                     // Calculate and store the next page's new duration
                     const nextPageNewDuration =
-                        finalNextPageWidth /
-                            uiSettings.timelinePixelsPerSecond -
+                        finalNextPageWidth / timelinePixelsPerSecond -
                         nextPageBuffer;
                     nextPageElement.dataset.newDuration =
                         nextPageNewDuration.toString();
                 }
             }
         },
-        [pages, uiSettings.timelinePixelsPerSecond, beats, getWidth],
+        [pages, timelinePixelsPerSecond, beats, getWidth],
     );
 
     // Function to handle the end of resizing

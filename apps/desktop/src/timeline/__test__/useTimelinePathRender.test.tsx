@@ -154,6 +154,29 @@ describe("useTimelinePathRender", () => {
         expect(canvas.renderTimelinePathVisuals).toHaveBeenCalledTimes(1);
     });
 
+    it("keeps the samples and the drawn paths through Play and Stop on the same page", () => {
+        const r = ready();
+        const canvas = stubCanvas();
+        const { rerender } = renderHook(
+            ({ isPlaying }) =>
+                useTimelinePathRender(props(canvas, true, { isPlaying })),
+            { initialProps: { isPlaying: false } },
+        );
+        expect(canvas.renderTimelinePathVisuals).toHaveBeenCalledTimes(1);
+        const spy = vi.spyOn(r, "positionAt");
+        rerender({ isPlaying: true });
+        rerender({ isPlaying: false });
+        expect(spy).not.toHaveBeenCalled();
+        expect(canvas.renderTimelinePathVisuals).toHaveBeenCalledTimes(1);
+
+        // A change while playing is drawn once playback stops
+        rerender({ isPlaying: true });
+        act(() => useTimelineResolverStore.setState({ version: 2 }));
+        expect(canvas.renderTimelinePathVisuals).toHaveBeenCalledTimes(1);
+        rerender({ isPlaying: false });
+        expect(canvas.renderTimelinePathVisuals).toHaveBeenCalledTimes(2);
+    });
+
     it("doesn't sample a side that can't show", () => {
         const r = ready();
         const canvas = stubCanvas();

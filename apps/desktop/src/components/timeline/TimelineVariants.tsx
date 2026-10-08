@@ -1,4 +1,5 @@
 import {
+    memo,
     useCallback,
     useEffect,
     useLayoutEffect,
@@ -7,6 +8,7 @@ import {
     useState,
     type MouseEvent,
 } from "react";
+import { flushSync } from "react-dom";
 import { PlusIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { TimelineGridCanvas, TimelineWaveformCanvas } from "./TimelineCanvas";
@@ -27,6 +29,7 @@ import {
     TimelinePageLines,
     TimelinePlayhead,
     TimelineRehearsalMarkers,
+    TimelineRangePreview,
     TimelineRuler,
     TimelineSelectionRange,
     type TimelineSelectionInteraction,
@@ -34,14 +37,23 @@ import {
     TimelineTrackClip,
     TimelineTransport,
     useElementWidth,
+    useScrubFollow,
     useTimelinePointer,
 } from "./TimelinePrimitives";
 import { markedRangeAt, useTimelineRangeMenu } from "./TimelineRangeMenu";
 import { isTyping, overlayOpen } from "./timelineHotkeys";
+import { useLatestCallback } from "./useLatestCallback";
+import {
+    createLiveValue,
+    type TimelineLiveValue,
+    useLiveValue,
+} from "./timelineLiveValue";
 import type {
+    TimelineBeatRange,
     TimelineCommonProps,
     TimelineNavigation,
-    TimelineSelection,
+    TimelineTarget,
+    TimelineTrackId,
 } from "./TimelineViewModel";
 
 type TimelineDensity = "expanded" | "collapsed";
@@ -152,7 +164,9 @@ const useTimelineZoom = ({
                     (viewport.scrollLeft + anchorPx - leadingInset) / current,
             };
             latest.current = { ...latest.current, pixelsPerBeat: bounded };
-            change(bounded);
+            // Drawn now, in this frame, rather than in a later task once the frame has painted
+            // with the old zoom, so the zoom isn't a frame behind the gesture (h-dom H4)
+            flushSync(() => change(bounded));
         },
         [leadingInset, viewportRef],
     );
@@ -248,7 +262,8 @@ const useTimelineZoom = ({
         onFittedChange?.(isFitted);
     }, [fitValue, isFitted, onFittedChange, rememberedFitted]);
 
-    const fit = useCallback(() => {
+    // The same function across zooms and beats, so the transport and the Shift+Z listener stay put
+    const fit = useLatestCallback(() => {
         const viewport = viewportRef.current;
         if (!viewport || !onPixelsPerBeatChange || fitValue === null) return;
         if (isFitted) {
@@ -261,15 +276,7 @@ const useTimelineZoom = ({
         zoomBeforeFit.current = pixelsPerBeat;
         onPixelsPerBeatChange(fitValue);
         viewport.scrollLeft = 0;
-    }, [
-        fitValue,
-        isFitted,
-        onPixelsPerBeatChange,
-        pixelsPerBeat,
-        playheadBeat,
-        viewportRef,
-        zoomTo,
-    ]);
+    })!;
 
     // Shift+Z fits, or goes back, unless a text field, popover, menu or dialog has the keys
     useEffect(() => {
@@ -342,7 +349,7 @@ const transportNavigation = (props: TimelineCommonProps) =>
  * to the playhead. While playing the played part follows the live position every frame by
  * resizing its clip, so the canvases are never redrawn for it.
  */
-function TimelineWaveformLane({
+const TimelineWaveformLane = memo(function TimelineWaveformLane({
     waveform,
     top,
     width,
@@ -350,32 +357,52 @@ function TimelineWaveformLane({
     pixelsPerBeat,
     positionBeat,
     livePositionBeat,
+    scrubLine,
+    viewportRef,
+    layerLeft,
 }: {
     waveform: TimelineCommonProps["model"]["waveform"];
+    viewportRef: React.RefObject<HTMLDivElement | null>;
+    /** How far into the scroller's content the lane's left edge is */
+    layerLeft: number;
     top: number;
     width: number;
     height: number;
     pixelsPerBeat: number;
     positionBeat: number;
     livePositionBeat?: () => number | null;
+    /** While a scrub is down, the played part follows its line (`scrubLineBeat`) */
+    scrubLine?: TimelineLiveValue<number | null>;
 }) {
     const playedRef = useRef<HTMLDivElement>(null);
-    useEffect(() => {
+    useLayoutEffect(() => {
         const played = playedRef.current;
         if (!played) return;
         if (!livePositionBeat) {
-            played.style.width = `${Math.max(0, positionBeat * pixelsPerBeat)}px`;
-            return;
+            const draw = () => {
+                const beat = scrubLine?.get() ?? positionBeat;
+                played.style.width = `${Math.max(0, beat * pixelsPerBeat)}px`;
+            };
+            draw();
+            return scrubLine?.subscribe(draw);
         }
+        // While playing, and under the pointer while it is down on the timeline (`TimelinePlayhead`)
+        const draw = () => {
+            const beat = scrubLine?.get() ?? livePositionBeat() ?? positionBeat;
+            played.style.width = `${Math.max(0, beat * pixelsPerBeat)}px`;
+        };
         let frame = 0;
         const update = () => {
-            const beat = livePositionBeat() ?? positionBeat;
-            played.style.width = `${Math.max(0, beat * pixelsPerBeat)}px`;
+            draw();
             frame = requestAnimationFrame(update);
         };
         update();
-        return () => cancelAnimationFrame(frame);
-    }, [livePositionBeat, pixelsPerBeat, positionBeat]);
+        const unsubscribe = scrubLine?.subscribe(draw);
+        return () => {
+            cancelAnimationFrame(frame);
+            unsubscribe?.();
+        };
+    }, [livePositionBeat, pixelsPerBeat, positionBeat, scrubLine]);
     return (
         <div
             className="rounded-4 pointer-events-none absolute left-0 overflow-hidden"
@@ -386,6 +413,8 @@ function TimelineWaveformLane({
                 width={width}
                 height={height}
                 pixelsPerBeat={pixelsPerBeat}
+                viewportRef={viewportRef}
+                layerLeft={layerLeft}
                 tone="rest"
             />
             <div
@@ -397,14 +426,112 @@ function TimelineWaveformLane({
                     width={width}
                     height={height}
                     pixelsPerBeat={pixelsPerBeat}
+                    viewportRef={viewportRef}
+                    layerLeft={layerLeft}
                     tone="played"
                 />
             </div>
         </div>
     );
-}
+});
 
-function TimelineSurface({
+const sameInteraction = (
+    a: TimelineSelectionInteraction | null,
+    b: TimelineSelectionInteraction | null,
+) =>
+    a === b ||
+    (a !== null &&
+        b !== null &&
+        sameRange(a.range, b.range) &&
+        a.activeHandle === b.activeHandle &&
+        a.dragging === b.dragging);
+
+/**
+ * The window's count and Create Track, beside the window's end, or its start while the start flag
+ * is dragged. It follows a dragged flag (`interaction`) on its own, without re-rendering the
+ * timeline on each move.
+ */
+const TimelineSelectionActions = memo(function TimelineSelectionActions({
+    model,
+    range,
+    interaction,
+    pixelsPerBeat,
+    expanded,
+    snapBeats,
+    createTrackTarget,
+    onCreateTrack,
+}: {
+    model: TimelineCommonProps["model"];
+    range: TimelineBeatRange;
+    interaction: TimelineLiveValue<TimelineSelectionInteraction | null>;
+    pixelsPerBeat: number;
+    expanded: boolean;
+    snapBeats: readonly number[];
+    /** What Create Track would make a track for; `null` hides it */
+    createTrackTarget: TimelineTarget | null | undefined;
+    onCreateTrack: TimelineCommonProps["onCreateTrack"];
+}) {
+    const current = useLiveValue(interaction);
+    const displayedRange = current?.range ?? range;
+    const dragging = current?.dragging ?? false;
+    const countFollowsStart = dragging && current?.activeHandle === "start";
+    const countRendersToLeft = countFollowsStart
+        ? displayedRange.startBeatIndex > 0
+        : displayedRange.endBeatIndex >= model.beatCount;
+    // UI-13: the window's count shows while a handle is dragged, or when the window starts off a
+    // page line; from a page line, it is the playhead's count, which the transport already shows
+    const showWindowCount =
+        dragging || !snapBeats.includes(displayedRange.startBeatIndex);
+    const showCreateTrack = createTrackTarget != null && !dragging;
+    return (
+        <div
+            data-testid="timeline-selection-actions"
+            className="absolute z-40 flex flex-col gap-4"
+            style={{
+                left:
+                    (countFollowsStart
+                        ? displayedRange.startBeatIndex
+                        : displayedRange.endBeatIndex) *
+                        pixelsPerBeat +
+                    (countRendersToLeft ? -6 : 6),
+                top: expanded ? 31 : 29,
+                alignItems: countRendersToLeft ? "flex-end" : "flex-start",
+                transform: countRendersToLeft ? "translateX(-100%)" : undefined,
+            }}
+        >
+            {showWindowCount && (
+                <span
+                    data-testid="timeline-selection-count"
+                    className={clsx(
+                        "border-stroke bg-bg-1 text-text rounded-6 border font-mono whitespace-nowrap",
+                        expanded
+                            ? "px-8 py-2 text-[10px]"
+                            : "px-6 py-0 text-[9px]",
+                    )}
+                >
+                    {getWindowCountLabel(model, displayedRange)}
+                </span>
+            )}
+            {showCreateTrack && (
+                <button
+                    type="button"
+                    data-timeline-interactive="true"
+                    onClick={() =>
+                        onCreateTrack?.({
+                            target: createTrackTarget,
+                            range: displayedRange,
+                        })
+                    }
+                    className="bg-accent text-text-invert rounded-full px-8 py-3 text-[11px] leading-none whitespace-nowrap"
+                >
+                    Create Track
+                </button>
+            )}
+        </div>
+    );
+});
+
+const TimelineSurface = memo(function TimelineSurface({
     density,
     ...props
 }: TimelineCommonProps & { density: TimelineDensity }) {
@@ -420,6 +547,7 @@ function TimelineSurface({
     const expanded = density === "expanded";
     const viewportRef = useRef<HTMLDivElement>(null);
     const playheadRef = useRef<HTMLButtonElement>(null);
+    const addPageFlagRef = useRef<HTMLButtonElement>(null);
     const rows = useMemo(
         () => packTimelineTracks(model.tracks),
         [model.tracks],
@@ -454,27 +582,22 @@ function TimelineSurface({
     const trackBandHeight = Math.max(rows.length, 1) * rowPitch;
     const timelineHeight = trackTop + trackBandHeight + (expanded ? 2 : 0);
     const selectionRange = getSelectionRange(selection);
-    const [selectionInteraction, setSelectionInteraction] =
-        useState<TimelineSelectionInteraction | null>(null);
+    // A dragged start flag's range: only the window's count reads it (`TimelineSelectionActions`)
+    const [selectionInteraction] = useState(() =>
+        createLiveValue<TimelineSelectionInteraction | null>(
+            null,
+            sameInteraction,
+        ),
+    );
     const selectionIdentity = selection?.kind ?? "none";
     useEffect(() => {
-        setSelectionInteraction(null);
+        selectionInteraction.set(null);
     }, [
+        selectionInteraction,
         selectionIdentity,
         selectionRange?.endBeatIndex,
         selectionRange?.startBeatIndex,
     ]);
-    const displayedSelectionRange = selectionRange
-        ? (selectionInteraction?.range ?? selectionRange)
-        : null;
-    const selectionDragging = selectionInteraction?.dragging ?? false;
-    const countFollowsStart =
-        selectionDragging && selectionInteraction?.activeHandle === "start";
-    const countRendersToLeft = displayedSelectionRange
-        ? countFollowsStart
-            ? displayedSelectionRange.startBeatIndex > 0
-            : displayedSelectionRange.endBeatIndex >= model.beatCount
-        : false;
     const zoom = useTimelineZoom({
         viewportRef,
         pixelsPerBeat,
@@ -486,8 +609,7 @@ function TimelineSurface({
         onFittedChange: props.onZoomFittedChange,
     });
     // The owner seeks on a selection (UI-9: to a range's end, or home's beat 0)
-    const onSelectionChange = (next: TimelineSelection) =>
-        props.onSelectionChange?.(next);
+    const onSelectionChange = useLatestCallback(props.onSelectionChange);
     // UI-12: clicks and scrubs land on a nearby downbeat or page line
     const seekSnapBeats = useMemo(
         () =>
@@ -502,7 +624,7 @@ function TimelineSurface({
     const pointer = useTimelinePointer({
         seekSnapBeats,
         onSeek: props.onSeek,
-        onRangeSelect: props.onSelectionChange
+        onRangeSelect: onSelectionChange
             ? (range) =>
                   onSelectionChange({ kind: "range", range, drawn: true })
             : undefined,
@@ -510,22 +632,30 @@ function TimelineSurface({
         beatCount: model.beatCount,
         snapBeats,
     });
-    // UI-13: the window's count shows while a handle is dragged, or when the window starts off a
-    // page line; from a page line, it is the playhead's count, which the transport already shows
-    const showWindowCount =
-        displayedSelectionRange != null &&
-        (selectionDragging ||
-            !snapBeats.includes(displayedSelectionRange.startBeatIndex));
-    const showCreateTrack =
-        selection?.kind === "range" &&
-        selectedTarget != null &&
-        selectionRange != null &&
-        props.onCreateTrack != null &&
-        !selectionDragging;
-    const transportProps = {
-        ...props,
-        onNavigate: transportNavigation(props),
-    };
+    // **+** sits just after the playhead, so a scrub carries it along with the line
+    useScrubFollow(
+        addPageFlagRef,
+        pointer.scrubLine,
+        beatToX(positionBeat, pixelsPerBeat),
+        pixelsPerBeat,
+    );
+    const onNavigate = useLatestCallback(transportNavigation(props));
+    // A clip is its timeline: clicking it selects that range (UI-12)
+    const selectTrack = useLatestCallback(
+        onSelectionChange
+            ? (trackId: TimelineTrackId) => {
+                  const track = model.tracks.find((t) => t.id === trackId);
+                  const range = track && getTrackRange(track);
+                  if (range) onSelectionChange({ kind: "range", range });
+              }
+            : undefined,
+    );
+    const commitSelection = useLatestCallback(
+        onSelectionChange
+            ? (range: TimelineBeatRange) =>
+                  onSelectionChange({ kind: "range", range })
+            : undefined,
+    );
     // The right-click menu's target: a page box or clip under the pointer, else a dragged range
     // the pointer is inside (UI-9 Adding marchers, Creating a timeline)
     const rangeMenu = useTimelineRangeMenu({
@@ -561,16 +691,12 @@ function TimelineSurface({
                         secondary={props.transportSecondary}
                         viewControls={props.transportViewControls}
                         onSeek={props.onSeek}
-                        onSelectionChange={
-                            props.onSelectionChange
-                                ? onSelectionChange
-                                : undefined
-                        }
+                        onSelectionChange={onSelectionChange}
                         positionBeat={positionBeat}
-                        isPlaying={transportProps.isPlaying}
-                        onPlayingChange={transportProps.onPlayingChange}
-                        onStop={transportProps.onStop}
-                        onNavigate={transportProps.onNavigate}
+                        isPlaying={props.isPlaying}
+                        onPlayingChange={props.onPlayingChange}
+                        onStop={props.onStop}
+                        onNavigate={onNavigate}
                         onFit={
                             props.onPixelsPerBeatChange ? zoom.fit : undefined
                         }
@@ -602,6 +728,8 @@ function TimelineSurface({
                         width={width}
                         height={timelineHeight}
                         pixelsPerBeat={pixelsPerBeat}
+                        viewportRef={viewportRef}
+                        layerLeft={initialPageWidth}
                         measures={model.measures}
                         lineTop={28}
                         topTickY={34}
@@ -624,7 +752,13 @@ function TimelineSurface({
                         initialPageWidth={initialPageWidth}
                         showMeasures={expanded}
                         seekSnapBeats={seekSnapBeats}
-                        positionBeat={positionBeat}
+                        scrubLine={pointer.scrubLine}
+                        // Only a show without measures numbers the playhead page's counts
+                        positionBeat={
+                            expanded && model.measures.length === 0
+                                ? positionBeat
+                                : undefined
+                        }
                     />
                     {rows.flatMap((row, rowIndex) =>
                         row.map((track) => (
@@ -645,19 +779,7 @@ function TimelineSurface({
                                     getTrackRange(track),
                                     selectionRange,
                                 )}
-                                onSelect={
-                                    props.onSelectionChange
-                                        ? () => {
-                                              const range =
-                                                  getTrackRange(track);
-                                              if (range)
-                                                  onSelectionChange({
-                                                      kind: "range",
-                                                      range,
-                                                  });
-                                          }
-                                        : undefined
-                                }
+                                onSelect={selectTrack}
                                 onRangeCommit={props.onTimelineRangeCommit}
                                 beatCount={model.beatCount}
                                 snapBeats={snapBeats}
@@ -668,6 +790,8 @@ function TimelineSurface({
                     {showWaveform && (
                         <TimelineWaveformLane
                             waveform={model.waveform}
+                            viewportRef={viewportRef}
+                            layerLeft={initialPageWidth}
                             top={audioTop}
                             width={width}
                             height={waveformHeight}
@@ -678,6 +802,7 @@ function TimelineSurface({
                                     ? props.livePositionBeat
                                     : undefined
                             }
+                            scrubLine={pointer.scrubLine}
                         />
                     )}
                     <TimelineRehearsalMarkers
@@ -699,9 +824,11 @@ function TimelineSurface({
                         anchorRef={playheadRef}
                         onSeek={props.onSeek}
                         isPlaying={props.isPlaying}
+                        scrubLine={pointer.scrubLine}
                     />
                     {props.onAddPageFlag && !props.isPlaying && (
                         <button
+                            ref={addPageFlagRef}
                             type="button"
                             data-testid="timeline-add-page-flag"
                             data-timeline-interactive="true"
@@ -717,23 +844,11 @@ function TimelineSurface({
                             <PlusIcon size={10} weight="bold" />
                         </button>
                     )}
-                    {pointer.rangePreview && (
-                        <div
-                            data-testid="timeline-range-preview"
-                            aria-hidden="true"
-                            className="bg-accent/15 border-accent pointer-events-none absolute top-28 z-30 border-x"
-                            style={{
-                                left:
-                                    pointer.rangePreview.startBeatIndex *
-                                    pixelsPerBeat,
-                                width:
-                                    (pointer.rangePreview.endBeatIndex -
-                                        pointer.rangePreview.startBeatIndex) *
-                                    pixelsPerBeat,
-                                height: Math.max(0, timelineHeight - 28),
-                            }}
-                        />
-                    )}
+                    <TimelineRangePreview
+                        preview={pointer.rangePreview}
+                        pixelsPerBeat={pixelsPerBeat}
+                        height={timelineHeight}
+                    />
                     {selectionRange && (
                         <TimelineSelectionRange
                             range={selectionRange}
@@ -758,82 +873,44 @@ function TimelineSurface({
                             pixelsPerBeat={pixelsPerBeat}
                             height={timelineHeight}
                             snapBeats={snapBeats}
-                            onCommit={
-                                props.onSelectionChange
-                                    ? (range) =>
-                                          props.onSelectionChange?.({
-                                              kind: "range",
-                                              range,
-                                          })
-                                    : undefined
-                            }
-                            onInteractionChange={setSelectionInteraction}
+                            onCommit={commitSelection}
+                            onInteractionChange={selectionInteraction.set}
+                            positionBeat={positionBeat}
+                            scrubLine={pointer.scrubLine}
                         />
                     )}
-                    {displayedSelectionRange && (
-                        <div
-                            data-testid="timeline-selection-actions"
-                            className="absolute z-40 flex flex-col gap-4"
-                            style={{
-                                left:
-                                    (countFollowsStart
-                                        ? displayedSelectionRange.startBeatIndex
-                                        : displayedSelectionRange.endBeatIndex) *
-                                        pixelsPerBeat +
-                                    (countRendersToLeft ? -6 : 6),
-                                top: expanded ? 31 : 29,
-                                alignItems: countRendersToLeft
-                                    ? "flex-end"
-                                    : "flex-start",
-                                transform: countRendersToLeft
-                                    ? "translateX(-100%)"
-                                    : undefined,
-                            }}
-                        >
-                            {showWindowCount && (
-                                <span
-                                    data-testid="timeline-selection-count"
-                                    className={clsx(
-                                        "border-stroke bg-bg-1 text-text rounded-6 border font-mono whitespace-nowrap",
-                                        expanded
-                                            ? "px-8 py-2 text-[10px]"
-                                            : "px-6 py-0 text-[9px]",
-                                    )}
-                                >
-                                    {getWindowCountLabel(
-                                        model,
-                                        displayedSelectionRange,
-                                    )}
-                                </span>
-                            )}
-                            {showCreateTrack && selectedTarget && (
-                                <button
-                                    type="button"
-                                    data-timeline-interactive="true"
-                                    onClick={() =>
-                                        props.onCreateTrack?.({
-                                            target: selectedTarget,
-                                            range: displayedSelectionRange,
-                                        })
-                                    }
-                                    className="bg-accent text-text-invert rounded-full px-8 py-3 text-[11px] leading-none whitespace-nowrap"
-                                >
-                                    Create Track
-                                </button>
-                            )}
-                        </div>
+                    {selectionRange && (
+                        <TimelineSelectionActions
+                            model={model}
+                            range={selectionRange}
+                            interaction={selectionInteraction}
+                            pixelsPerBeat={pixelsPerBeat}
+                            expanded={expanded}
+                            snapBeats={snapBeats}
+                            createTrackTarget={
+                                selection?.kind === "range" &&
+                                props.onCreateTrack != null
+                                    ? selectedTarget
+                                    : null
+                            }
+                            onCreateTrack={props.onCreateTrack}
+                        />
                     )}
                 </div>
                 {rangeMenu.element}
             </div>
         </TimelineShell>
     );
-}
+});
 
-export function ExpandedTimeline(props: TimelineCommonProps) {
+export const ExpandedTimeline = memo(function ExpandedTimeline(
+    props: TimelineCommonProps,
+) {
     return <TimelineSurface {...props} density="expanded" />;
-}
+});
 
-export function CollapsedTimeline(props: TimelineCommonProps) {
+export const CollapsedTimeline = memo(function CollapsedTimeline(
+    props: TimelineCommonProps,
+) {
     return <TimelineSurface {...props} density="collapsed" />;
-}
+});

@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { Switch, Slider } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
 
 export default function MouseSettings() {
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
+    // Only the fields shown here; a change writes over the latest settings at that moment
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            mouseSettings: s.uiSettings.mouseSettings,
+        })),
+    );
     const { t } = useTranslate();
     const [zoomValue, setZoomValue] = useState(
         uiSettings.mouseSettings.zoomSensitivity,
@@ -42,7 +49,7 @@ export default function MouseSettings() {
                             onValueChange={([value]) => setZoomValue(value)}
                             onValueCommit={([value]) =>
                                 setUiSettings({
-                                    ...uiSettings,
+                                    ...useUiSettingsStore.getState().uiSettings,
                                     mouseSettings: {
                                         ...uiSettings.mouseSettings,
                                         zoomSensitivity: value,
@@ -73,7 +80,7 @@ export default function MouseSettings() {
                     checked={uiSettings.mouseSettings.trackpadMode}
                     onCheckedChange={(checked) =>
                         setUiSettings({
-                            ...uiSettings,
+                            ...useUiSettingsStore.getState().uiSettings,
                             mouseSettings: {
                                 ...uiSettings.mouseSettings,
                                 trackpadMode: checked,
@@ -104,7 +111,8 @@ export default function MouseSettings() {
                                 }
                                 onValueCommit={([value]) =>
                                     setUiSettings({
-                                        ...uiSettings,
+                                        ...useUiSettingsStore.getState()
+                                            .uiSettings,
                                         mouseSettings: {
                                             ...uiSettings.mouseSettings,
                                             trackpadPanSensitivity: value,

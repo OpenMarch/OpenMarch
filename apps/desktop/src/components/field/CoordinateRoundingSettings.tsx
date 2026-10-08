@@ -1,4 +1,5 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useShallow } from "zustand/react/shallow";
 import { Input } from "@openmarch/ui";
 import { useEffect, useState, useCallback } from "react";
 import clsx from "clsx";
@@ -166,7 +167,13 @@ function AxisSettings({
 }
 
 export default function CoordinateRoundingSettings() {
-    const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
+    // Only the fields shown here; a change writes over the latest settings at that moment
+    const uiSettings = useUiSettingsStore(
+        useShallow((s) => ({
+            coordinateRounding: s.uiSettings.coordinateRounding,
+        })),
+    );
     const [showReferencePoint, setShowReferencePoint] = useState(() =>
         JSON.parse(
             localStorage.getItem("coordinateRounding.offsetEnabled") ?? "true",
@@ -177,7 +184,7 @@ export default function CoordinateRoundingSettings() {
 
     const handleStepChange = (axis: "X" | "Y", value: number) => {
         setUiSettings({
-            ...uiSettings,
+            ...useUiSettingsStore.getState().uiSettings,
             coordinateRounding: {
                 ...uiSettings.coordinateRounding,
                 [`nearest${axis}Steps`]: value,
@@ -219,7 +226,7 @@ export default function CoordinateRoundingSettings() {
                 uiSettings.coordinateRounding?.[`referencePoint${axis}`];
             if (currentValue !== value) {
                 setUiSettings({
-                    ...uiSettings,
+                    ...useUiSettingsStore.getState().uiSettings,
                     coordinateRounding: {
                         ...uiSettings.coordinateRounding,
                         [`referencePoint${axis}`]: value,

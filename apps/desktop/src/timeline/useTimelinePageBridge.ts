@@ -14,6 +14,10 @@ import { pageAtPlayhead, pageFlags } from "./timelinePlayhead";
  * code path, a test's `setSelectedPage`), the playhead moves to that page's flag. The selection
  * (home or a range) is never changed here; selecting a page doesn't select its timeline. Neither
  * direction runs while playing.
+ *
+ * While a gesture scrubs the playhead (`scrubbing`), the playhead-to-page direction waits and
+ * runs once when it ends, so dragging across page flags doesn't select (and load) every page it
+ * passes. The page selected after the gesture is the same.
  */
 export function useTimelinePageBridge(enabled: boolean): void {
     const { pages } = useTimingObjects();
@@ -21,7 +25,11 @@ export function useTimelinePageBridge(enabled: boolean): void {
     const selectedPage = selectedPageContext?.selectedPage ?? null;
     const setSelectedPage = selectedPageContext?.setSelectedPage;
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
-    const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
+    const scrubbing = useTimelineSelectionStore((s) => s.scrubbing);
+    // Not read while scrubbing (below), so a scrub's seeks don't re-render the host
+    const playheadBeat = useTimelineSelectionStore((s) =>
+        s.scrubbing ? null : s.playheadBeat,
+    );
     /**
      * Pages this bridge selected that the effect below hasn't seen yet, so its own writes aren't
      * read back as someone else's. More than one can be in flight: on pause, the stale playhead's
@@ -35,7 +43,14 @@ export function useTimelinePageBridge(enabled: boolean): void {
 
     // Playhead to page
     useEffect(() => {
-        if (!enabled || isPlaying || !setSelectedPage) return;
+        if (
+            !enabled ||
+            isPlaying ||
+            scrubbing ||
+            playheadBeat === null ||
+            !setSelectedPage
+        )
+            return;
         const page = pageAtPlayhead(pages, playheadBeat);
         if (!page || page.id === selectedPage?.id) return;
         bridged.current.add(page.id);
@@ -43,7 +58,7 @@ export function useTimelinePageBridge(enabled: boolean): void {
         setSelectedPage(page);
         // Only the playhead and pages drive this direction
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [enabled, isPlaying, pages, playheadBeat, setSelectedPage]);
+    }, [enabled, isPlaying, scrubbing, pages, playheadBeat, setSelectedPage]);
 
     // Page to playhead: only when the selected page changed, and not by the effect above
     useEffect(() => {

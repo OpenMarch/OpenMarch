@@ -1,8 +1,17 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { ClockIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+
+/** A time in MM:SS.mmm */
+const formatTime = (seconds: number) => {
+    const ms = Math.floor((seconds % 1) * 1000);
+    const totalSeconds = Math.floor(seconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
+};
 
 /**
  * Live clock component that displays the current playback position. While paused it shows
@@ -12,45 +21,34 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 export function AudioClock({ pausedSeconds }: { pausedSeconds?: number }) {
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage } = useSelectedPage()!;
-    const [displayTime, setDisplayTime] = useState<number>(0);
+    const pausedTime =
+        pausedSeconds ??
+        (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
+    const textRef = useRef<HTMLSpanElement>(null);
 
-    // Animation frame loop to update the displayed time
-    useEffect(() => {
-        let rafId: number;
-
+    // The text is written here, before paint: while playing, every animation frame, without
+    // re-rendering the clock or the transport around it
+    useLayoutEffect(() => {
+        const text = textRef.current;
+        if (!text) return;
+        if (!isPlaying) {
+            text.textContent = formatTime(pausedTime);
+            return;
+        }
+        let rafId = 0;
         const update = () => {
-            setDisplayTime(getLivePlaybackPosition());
+            const next = formatTime(getLivePlaybackPosition());
+            if (text.textContent !== next) text.textContent = next;
             rafId = requestAnimationFrame(update);
         };
-
-        if (isPlaying) {
-            update();
-        } else {
-            setDisplayTime(
-                pausedSeconds ??
-                    (selectedPage?.timestamp ?? 0) +
-                        (selectedPage?.duration ?? 0),
-            );
-        }
-
-        return () => {
-            cancelAnimationFrame(rafId);
-        };
-    }, [isPlaying, pausedSeconds, selectedPage]);
-
-    // Helper function to format time in MM:SS.mmm format
-    const formatTime = (seconds: number) => {
-        const ms = Math.floor((seconds % 1) * 1000);
-        const totalSeconds = Math.floor(seconds);
-        const minutes = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
-        return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
-    };
+        update();
+        return () => cancelAnimationFrame(rafId);
+    }, [isPlaying, pausedTime]);
 
     return (
         <div className="text-text flex items-center gap-6">
             <ClockIcon size={14} />
-            <span className="font-mono text-xs">{formatTime(displayTime)}</span>
+            <span ref={textRef} className="font-mono text-xs" />
         </div>
     );
 }

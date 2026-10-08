@@ -55,6 +55,8 @@ interface RSpan {
     end: Beat;
     m: number;
     k: number;
+    /** `key(span)`, kept so the playback loop doesn't build the string on every lookup */
+    key?: string;
 }
 
 /** The internal FTL entry (R-9): the public {@link FtlEntryInfo} plus the trail and lookup maps. */
@@ -295,7 +297,7 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
     let originsDirtied = 0;
     let ftlEntriesDirtied = 0;
 
-    const key = (s: RSpan) => `${s.m}|${s.start}`;
+    const key = (s: RSpan) => (s.key ??= `${s.m}|${s.start}`);
     const idx = (tid: number) => setOf(byT, tid);
     const build = (m: number): RSpan[] =>
         flatten(rowsOfMarcher(m)).map((s, k) => ({

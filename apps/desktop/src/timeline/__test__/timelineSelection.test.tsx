@@ -18,8 +18,10 @@ import LassoListeners from "@/components/canvas/listeners/LassoListeners";
 import { startTimelineResolver, stopTimelineResolver } from "../timelineStore";
 import {
     readStoredTimelineMemberships,
+    storedTimelineMembershipsFromTables,
     useTimelineSelectionHost,
 } from "../useTimelineSelectionHost";
+import { readTimelineViewTables } from "../useTimelineTracks";
 import {
     useDeselectDimmedMarchers,
     useTimelineDimming,
@@ -120,6 +122,12 @@ describeDbTests("the stored timelines the selection resolves to", (it) => {
             membership(1, 1, 9, [1, 2]),
             membership(2, 9, 17, []),
         ]);
+        // The host derives the same from the rows the timeline views share
+        expect(
+            storedTimelineMembershipsFromTables(
+                await readTimelineViewTables(db),
+            ),
+        ).toEqual(timelines);
     });
 
     it("keeps them current after a commit and its undo, and clears them when disabled", async ({
@@ -212,7 +220,9 @@ describeDbTests("the stored timelines the selection resolves to", (it) => {
             store().selectRange(3, 12);
         });
         expect(selectedStoredTimeline(store())).toBeNull();
-        await waitFor(() => expect(seen.length).toBeGreaterThan(0));
+        // Outside isolation nothing is dimmed, so the hook needn't even re-render; let any
+        // effects run before checking
+        await act(async () => {});
         expect(result.current.selectedMarchers.map((m) => m.id)).toEqual([
             1, 2, 3,
         ]);
