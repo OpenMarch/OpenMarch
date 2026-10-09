@@ -1,6 +1,8 @@
+import type { TimelineClipResizeCommands } from "./TimelineClipResize";
 import type { ReactNode } from "react";
 import type {
     TimelineAddMarchersMenu,
+    TimelineMoveCommands,
     TimelineMenuTarget,
 } from "./TimelineRangeMenu";
 
@@ -32,6 +34,38 @@ export interface TimelinePageMarker extends TimelineMarker {
      * the end of the beats. Without it, a page ends where the next one starts, or at the end.
      */
     readonly endBeat?: BeatPosition;
+}
+
+/** Where a page flag can go, in view beats, and what stops it at each end, in words */
+export interface TimelinePageFlagLimits {
+    /** The flag's beat now */
+    readonly flag: BeatPosition;
+    readonly min: BeatPosition;
+    readonly max: BeatPosition;
+    /** Why it stops at `min`, such as "Page 2's flag" */
+    readonly minReason: string;
+    readonly maxReason: string;
+    /** Beats between `min` and `max` the flag passes over but can't land on, and why */
+    readonly holes?: readonly {
+        readonly beat: BeatPosition;
+        readonly reason: string;
+    }[];
+}
+
+/** Moving a page flag (docs/timeline/research/move-page-flag), in view beats */
+export interface TimelinePageFlagMove {
+    /** Where page `pageId`'s flag can go now; null where it can't move */
+    readonly limits: (
+        pageId: string | number,
+    ) => Promise<TimelinePageFlagLimits | null>;
+    /**
+     * Moves page `pageId`'s flag to `beat`, as one undoable edit. It may return a promise that
+     * settles once the pages show the move (or the move was refused); it never rejects.
+     */
+    readonly commit: (
+        pageId: string | number,
+        beat: BeatPosition,
+    ) => Promise<void> | void;
 }
 
 export interface TimelineMeasureMarker extends TimelineMarker {
@@ -82,6 +116,13 @@ export interface TimelineTrack {
     /** A gap-free, non-overlapping partition of the track's complete range. */
     readonly activitySpans: readonly TimelineActivitySpan[];
     readonly diagnostics?: TimelineTrackDiagnostics;
+    /**
+     * What screen readers call the clip, when the owner can say more than the label (UI-14 review:
+     * "Move 1, Page 3, counts 1–4"); without it, the label and its beats
+     */
+    readonly accessibleName?: string;
+    /** More about the clip, for its tooltip and screen readers (UI-14 review: why it is dashed) */
+    readonly description?: string;
 }
 
 export interface TimelineWaveform {
@@ -175,11 +216,18 @@ export interface TimelineInteractionProps {
     readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
     /** The right-click menu's **Add selected marchers** (UI-9, P8.14), in view beats here */
     readonly addSelectedMarchers?: TimelineAddMarchersMenu<TimelineMenuTarget>;
+    /** A clip's move commands (UI-14), by track id here: its menu, ⋯ button and keys */
+    readonly moveCommands?: TimelineMoveCommands<TimelineTrackId>;
     /**
      * UI-9 **+**: adds a page whose flag is at the paused playhead. Shown just after the playhead
      * while it's given and the timeline isn't playing; the owner passes it only where **+** applies.
      */
     readonly onAddPageFlag?: () => void;
+    /**
+     * Moving page flags by their grips (docs/timeline/research/move-page-flag), in view beats here.
+     * The owner passes it only where flags can move (paused, not isolated).
+     */
+    readonly pageFlagMove?: TimelinePageFlagMove;
     /** Double-clicking a page box or clip opens (isolates) its range, in view beats here */
     readonly onOpenRange?: (target: TimelineMenuTarget) => void;
 }
@@ -202,6 +250,8 @@ export interface TimelineCommonProps
     readonly transportAccessories?: ReactNode;
     readonly className?: string;
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
+    /** Resizing a clip by its edges (resize-move), in view beats; without it clips have no handles */
+    readonly clipResize?: TimelineClipResizeCommands;
     /** Turns **From start** off (UI-11), from the range bar */
     readonly onPlayFromStartOff?: () => void;
     /** Unpins the start flag (UI-12), from its pin */

@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { Button } from "@openmarch/ui";
 import { FlagIcon, PushPinSlashIcon, XIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
-import { isTyping, overlayOpen } from "./timelineHotkeys";
+import { isTyping, overlayOpen, spaceStaysPlay } from "./timelineHotkeys";
+import { clipGestureActive } from "./TimelineClipResize";
 import { useTimingObjects } from "@/hooks";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import {
@@ -40,16 +41,20 @@ export function isolatedTimelineName(
     if (!first || !last) return `Beats ${range.start}–${range.end}`;
     const from = range.start - first.range!.start + 1;
     const to = range.end - last.range!.start;
+    // "count 3" for one count, not "counts 3–3" (UI-14 review)
+    const counts = from === to ? `count ${from}` : `counts ${from}–${to}`;
     return first === last
-        ? `Page ${first.page.name}, counts ${from}–${to}`
+        ? `Page ${first.page.name}, ${counts}`
         : `Page ${first.page.name} count ${from} to page ${last.page.name} count ${to}`;
 }
 
 /**
- * Esc ends isolation (V-14), and after that turns **From start** off (UI-11): the first Esc
- * deselects marchers as it always does (the registered Escape action), so these happen only on an
- * Esc with nothing selected, one per press. Text fields, open popovers, menus and dialogs, and the
- * line or lasso tool keep their Esc.
+ * Esc ends isolation (V-14), and after that turns **From start** off (UI-11), one per press.
+ * Since the UI-14 round-2 review one Esc leaves isolation however it was entered, also with
+ * marchers selected (the registered Escape action deselects them in the same press; **Edit move**
+ * selects nobody). **From start** still turns off only on an Esc with nothing selected, as the
+ * first Esc deselects. Text fields, open popovers, menus and dialogs, and the line or lasso tool
+ * keep their Esc.
  * Listens in the capture phase, before the registered actions, which mark Escape handled.
  */
 export function useIsolationEscape(): void {
@@ -65,10 +70,15 @@ export function useIsolationEscape(): void {
             if (event.key !== "Escape" || isTyping(event.target)) return;
             if (useAlignmentEventStore.getState().alignmentEvent !== "default")
                 return;
-            if (selected.current > 0 || overlayOpen()) return;
+            if (overlayOpen()) return;
+            // A clip move or resize in progress takes this Esc (resize-move E14)
+            if (clipGestureActive()) return;
             const store = useTimelineSelectionStore.getState();
+            // UI-14 round-2 review: the bar says "Done (Esc)", so one Esc leaves isolation, with
+            // or without a selection (the registered Escape action deselects in the same press)
             if (store.isolation) store.exitIsolation();
-            else if (store.playFromStart) store.setPlayFromStart(false);
+            else if (selected.current === 0 && store.playFromStart)
+                store.setPlayFromStart(false);
         };
         window.addEventListener("keydown", onKeyDown, true);
         return () => window.removeEventListener("keydown", onKeyDown, true);
@@ -160,13 +170,23 @@ export function TimelineFromStartBadge() {
         return () => clearTimeout(timeout);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [flashKey]);
-    // Announced once the window settles, not on every beat of a scrub
+    // Announced once the window settles, not on every beat of a scrub; and at once when the line
+    // comes back (leaving isolation, UI-14 round-2 review), not with what it said while hidden
+    const hidden = isolated || selection.kind === "none";
     const [announced, setAnnounced] = useState(sentence);
-    useEffect(() => {
+    const wasHidden = useRef(hidden);
+    // Before paint, so the live region never shows the stale sentence
+    useLayoutEffect(() => {
+        const reappeared = wasHidden.current && !hidden;
+        wasHidden.current = hidden;
+        if (reappeared) {
+            setAnnounced(sentence);
+            return;
+        }
         const timeout = setTimeout(() => setAnnounced(sentence), 600);
         return () => clearTimeout(timeout);
-    }, [sentence]);
-    if (isolated || selection.kind === "none") return null;
+    }, [sentence, hidden]);
+    if (hidden) return null;
     return (
         <div
             data-testid="timeline-window-line"
@@ -274,6 +294,10 @@ export default function TimelineIsolationBar() {
     return (
         <div
             data-testid="timeline-isolation-bar"
+            // UI-14 round-2 review: Enter presses Done, Space plays
+            data-timeline-own-keys="true"
+            onKeyDown={spaceStaysPlay}
+            onKeyUp={spaceStaysPlay}
             role="status"
             className="border-accent bg-bg-1 text-text rounded-6 text-sub pointer-events-auto absolute top-8 left-1/2 z-10 flex max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-12 border px-12 py-6 whitespace-nowrap shadow-md"
         >
@@ -295,12 +319,17 @@ export default function TimelineIsolationBar() {
                     />
                 </svg>
                 <span className="truncate">
+                    {/* UI-14 review: read as a key, not run on into the line before */}
+                    <span className="sr-only">
+                        Key: dotted gray paths show{" "}
+                    </span>
                     where this move would take marchers who left it
                 </span>
             </span>
             <Button
                 size="compact"
                 variant="secondary"
+                className="focus-visible:ring-accent focus-visible:ring-2"
                 onClick={() =>
                     useTimelineSelectionStore.getState().exitIsolation()
                 }

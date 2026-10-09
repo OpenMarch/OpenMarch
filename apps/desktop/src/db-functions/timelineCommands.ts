@@ -1,20 +1,42 @@
 import { and, eq, inArray, lt, gt, notInArray, sql } from "drizzle-orm";
-import { createResolver, validateDestination } from "@openmarch/core";
+import {
+    createResolver,
+    validateDestination,
+    type PathStyle,
+} from "@openmarch/core";
 import { schema } from "@/global/database/db";
 import { readTimelineTables, shapeFromRow } from "@/timeline/timelineRows";
+import {
+    autoMoveNumber,
+    normalizeMoveName,
+} from "@/timeline/timelineViewModel";
 import { castSlots, transitionSlotPoints } from "@/timeline/timelineCasting";
+import { DEFAULT_BULGE } from "@/timeline/timelinePathDefaults";
 import { DbConnection, DbTransaction } from "./types";
+import {
+    createRangeTimelineInTransaction,
+    nextMoveNameInTransaction,
+} from "./timelineMoveNames";
 import { transactionWithHistory } from "./history";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
-import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
+import {
+    deleteTimelinesInTransaction,
+    findTimelineByRange,
+    updateTimelinesInTransaction,
+    type DatabaseTimeline,
+} from "./timelines";
 import { createTimelineTransitionsInTransaction } from "./timelineTransitions";
 import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
+import {
+    updateTimelineTransitionsInTransaction,
+    type ModifiedTimelineTransitionArgs,
+} from "./timelineTransitionsInTransaction";
 
 /**
  * The timeline's commands (docs/timeline/phases/08-authoring-ui.md P8.9, ui.md's mapping table):
  * moving a clip moves its whole spec timeline, and Create Track makes a timeline with one
  * transition and its assignments. Both are one undoable edit, decided before the first write, so
- * a refusal writes nothing.
+ * a refusal writes nothing. A move (a clip's timeline) can be deleted and renamed (ui.md UI-14).
  */
 
 /** The largest beat a row may hold (spec I-N2). */
@@ -418,12 +440,7 @@ export const createTrackInTransaction = async ({
     // takes the new transition alongside its others (C-11)
     const timeline =
         (await findTimelineByRange(tx, { start: startBeat, end: endBeat })) ??
-        (
-            await createTimelinesInTransaction({
-                tx,
-                newTimelines: [{ startBeat, endBeat }],
-            })
-        )[0];
+        (await createRangeTimelineInTransaction(tx, { startBeat, endBeat }));
     const [transition] = await createTimelineTransitionsInTransaction({
         tx,
         newTransitions: [
@@ -470,3 +487,209 @@ export const createTrack = async ({
     await transactionWithHistory(db, "createTrack", (tx) =>
         createTrackInTransaction({ tx, target, startBeat, endBeat }),
     );
+
+// ---------------------------------------------------------------------------
+// Deleting and renaming a move (ui.md UI-14)
+// ---------------------------------------------------------------------------
+
+/** Thrown inside an edit that finds nothing to write, to leave without an (empty, refused) edit */
+class NoEdit extends Error {}
+
+/**
+ * `transactionWithHistory` for an edit that decides from the stored state whether it writes
+ * anything: `func` reads under the write lock, so it sees every committed edit and none can come
+ * between its read and its write, and returns `NO_EDIT` to write nothing. That rolls the edit back
+ * before it is recorded (an edit that writes nothing is refused) and returns `null`; no history
+ * step, no change notice.
+ */
+const NO_EDIT = Symbol("no edit");
+const transactionWithHistoryUnlessUnchanged = async <T>(
+    db: DbConnection,
+    funcName: string,
+    func: (tx: DbTransaction) => Promise<T | typeof NO_EDIT>,
+): Promise<T | null> => {
+    try {
+        return await transactionWithHistory(db, funcName, async (tx) => {
+            const result = await func(tx);
+            if (result === NO_EDIT) throw new NoEdit(funcName);
+            return result;
+        });
+    } catch (error: unknown) {
+        if (error instanceof NoEdit) return null;
+        throw error;
+    }
+};
+
+/**
+ * Deletes a move (UI-14): the timeline, its transitions and their assignments, as one undoable
+ * edit (`deleteTimelinesInTransaction`, child first). Moves it passed through are stored
+ * underneath it (UI-10) and come back. Refused (E-ARGS) for a timeline that doesn't exist.
+ */
+export const deleteTimeline = async ({
+    db,
+    timelineId,
+}: {
+    db: DbConnection;
+    timelineId: number;
+}): Promise<DatabaseTimeline> =>
+    await transactionWithHistory(db, "deleteTimeline", async (tx) => {
+        const [deleted] = await deleteTimelinesInTransaction({
+            tx,
+            timelineIds: new Set([timelineId]),
+        });
+        if (!deleted) refuse(`timeline ${timelineId} does not exist`);
+        return deleted;
+    });
+
+/**
+ * Renames a move (UI-14) as one undoable edit; `normalizeMoveName` decides what is stored. A move
+ * always has a name since the round-2 review, so its label never shifts: clearing an automatic
+ * "Move N" keeps it, and clearing a typed name gives the move the next number
+ * (`nextMoveNameInTransaction`), as a new move would get. The stored name is read inside the edit,
+ * under the write lock; when it already equals the new one, the edit is rolled back before it is
+ * recorded (`transactionWithHistoryUnlessUnchanged`) and it returns `null`: no history step, no
+ * change notice, and so a rename sent twice is one edit. Clearing an automatic "Move N" is the
+ * same. A timeline that no longer exists (a name field left open while its move was deleted) has
+ * nothing to rename: `null` too, not an error.
+ */
+export const renameTimeline = async ({
+    db,
+    timelineId,
+    name,
+}: {
+    db: DbConnection;
+    timelineId: number;
+    name: string | null;
+}): Promise<DatabaseTimeline | null> => {
+    const next = normalizeMoveName(name);
+    return await transactionWithHistoryUnlessUnchanged(
+        db,
+        "renameTimeline",
+        async (tx) => {
+            // Read in the edit, so a rename sent twice (or after an undo) compares with what is
+            // stored now
+            const stored = await tx
+                .select({ name: schema.timelines.name })
+                .from(schema.timelines)
+                .where(eq(schema.timelines.id, timelineId))
+                .get();
+            if (!stored || stored.name === next) return NO_EDIT;
+            if (next === null && autoMoveNumber(stored.name) !== null)
+                return NO_EDIT;
+            const [renamed] = await updateTimelinesInTransaction({
+                tx,
+                modifiedTimelines: [
+                    {
+                        id: timelineId,
+                        name: next ?? (await nextMoveNameInTransaction(tx)),
+                    },
+                ],
+            });
+            return renamed!;
+        },
+    );
+};
+
+/** The path styles a whole move can take (UI-14): follow the leader needs a shape, which a move's
+ * one-slot transitions don't have. */
+export type MovePathStyle = Extract<PathStyle, "direct" | "arc">;
+
+/** A move's path as its Move card shows it (UI-14). */
+export interface MovePath {
+    /** Every transition's style, `"mixed"` when they differ, `null` with no transitions */
+    readonly style: PathStyle | "mixed" | null;
+    /** The arcs' bulge when every transition is an arc with the same bulge, else `null` */
+    readonly bulge: number | null;
+    readonly transitions: number;
+}
+
+const bulgeOf = (params: string | null): number | null => {
+    if (params === null) return null;
+    const parsed = JSON.parse(params) as { bulge?: unknown } | null;
+    return typeof parsed?.bulge === "number" ? parsed.bulge : null;
+};
+
+/** The transitions of a move, with their style and bulge. */
+const moveTransitions = async (
+    db: DbConnection | DbTransaction,
+    timelineId: number,
+) =>
+    (
+        await db
+            .select({
+                id: schema.timeline_transitions.id,
+                style: schema.timeline_transitions.path_style,
+                params: schema.timeline_transitions.path_params,
+            })
+            .from(schema.timeline_transitions)
+            .where(eq(schema.timeline_transitions.timeline_id, timelineId))
+            .all()
+    ).map((t) => ({
+        id: t.id,
+        style: t.style as PathStyle,
+        bulge: bulgeOf(t.params),
+    }));
+
+/** What a move's member transitions' paths are, for the Move card (UI-14). */
+export const readMovePath = async (
+    db: DbConnection | DbTransaction,
+    timelineId: number,
+): Promise<MovePath> => {
+    const rows = await moveTransitions(db, timelineId);
+    if (rows.length === 0) return { style: null, bulge: null, transitions: 0 };
+    const style = rows.every((r) => r.style === rows[0]!.style)
+        ? rows[0]!.style
+        : "mixed";
+    const bulge =
+        style === "arc" && rows.every((r) => r.bulge === rows[0]!.bulge)
+            ? rows[0]!.bulge
+            : null;
+    return { style, bulge, transitions: rows.length };
+};
+
+/**
+ * Gives every transition of a move the same path (UI-14's Move card): `direct`, or `arc` with
+ * `bulge`, as one undoable edit. A move is one one-slot transition per marcher (UI-9), so this is
+ * how the move as a whole bends. The paths are read inside the edit, under the write lock.
+ * Transitions that already have that path are left alone; when all of them do, the edit is rolled
+ * back before it is recorded (`transactionWithHistoryUnlessUnchanged`) and it returns `null`: no
+ * history step, no change notice. Otherwise it returns how many changed. The
+ * bulge is validated by the write (|bulge| at most 0.5, spec §5.2).
+ */
+export const setMovePath = async ({
+    db,
+    timelineId,
+    style,
+    bulge = DEFAULT_BULGE,
+}: {
+    db: DbConnection;
+    timelineId: number;
+    style: MovePathStyle;
+    bulge?: number;
+}): Promise<number | null> => {
+    return await transactionWithHistoryUnlessUnchanged(
+        db,
+        "setMovePath",
+        async (tx) => {
+            // Read in the edit: what changes is judged on the committed paths
+            const rows = await moveTransitions(tx, timelineId);
+            const changed: ModifiedTimelineTransitionArgs[] = rows
+                .filter((r) =>
+                    style === "arc"
+                        ? r.style !== "arc" || r.bulge !== bulge
+                        : r.style !== "direct",
+                )
+                .map((r) => ({
+                    id: r.id,
+                    pathStyle: style,
+                    pathParams: style === "arc" ? { bulge } : null,
+                }));
+            if (changed.length === 0) return NO_EDIT;
+            await updateTimelineTransitionsInTransaction({
+                tx,
+                modifiedTransitions: changed,
+            });
+            return changed.length;
+        },
+    );
+};

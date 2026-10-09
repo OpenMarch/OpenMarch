@@ -11,7 +11,7 @@ import {
     useTimelineSelectionStore,
 } from "@/stores/TimelineSelectionStore";
 import { getTimelineHost, useTimelineResolverStore } from "./timelineStore";
-import { TIMELINE_TRACK_COLORS } from "./timelineViewModel";
+import { timelineColor } from "./timelineViewModel";
 import {
     buildFocusScene,
     planResolver,
@@ -74,15 +74,6 @@ export function ghostColorFor(theme: Pick<FieldTheme, "background">): string {
     const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     return luminance > 0.5 ? "#6f6f6f" : "#c4c4c4";
 }
-
-/** A timeline's color as the strip draws it: by start order over every timeline. */
-const stripColors = (timelines: readonly { readonly id: number }[]) => {
-    const index = new Map(timelines.map((t, i) => [t.id, i]));
-    return (id: number) =>
-        TIMELINE_TRACK_COLORS[
-            (index.get(id) ?? 0) % TIMELINE_TRACK_COLORS.length
-        ];
-};
 
 /** Publishes the plan, so the static render and the coordinate tools draw and edit at it. */
 function usePublishIsolationPlan(plan: IsolationPlan | null): void {
@@ -164,7 +155,7 @@ export function useTimelineFocusRender({
             !storedTimelines
         )
             return null;
-        const colorOf = stripColors(storedTimelines);
+        const colorOf = timelineColor;
         const input = {
             resolver,
             timeline,

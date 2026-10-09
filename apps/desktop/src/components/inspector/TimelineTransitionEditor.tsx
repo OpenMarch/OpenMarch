@@ -284,7 +284,7 @@ function WaypointsEditor({
     );
 }
 
-function BulgeEditor({
+export function BulgeEditor({
     bulge,
     onCommit,
     disabled,

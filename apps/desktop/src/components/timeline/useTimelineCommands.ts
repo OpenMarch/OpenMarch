@@ -1,8 +1,22 @@
 import { useCallback, useMemo } from "react";
-import { shiftTimeline } from "@/db-functions/timelineCommands";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+    deleteTimeline,
+    renameTimeline,
+    shiftTimeline,
+} from "@/db-functions/timelineCommands";
 import { addMarchersToTimeline } from "@/db-functions/timelineMembership";
 import type { DbConnection } from "@/db-functions/types";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
+import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
+import { moveLabel, moveLabels } from "@/timeline/timelineViewModel";
+import { subscribeHistoryChanges } from "@/db-functions/history";
+import { timelineExists } from "@/db-functions/timelines";
+import { useMoveCardRevealStore } from "@/stores/MoveCardRevealStore";
+import { useMoveMemberSelectionStore } from "@/stores/MoveMemberSelectionStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import type { TimelineInput } from "./Timeline";
 import type { TimelineAddMarchersMenu } from "./TimelineRangeMenu";
@@ -116,4 +130,171 @@ function useAddSelectedMarchers(
         }),
         [database, selectedMarcherIds],
     );
+}
+
+/** Why **Edit move** and **Delete move** are unavailable (UI-14), or null when they can run. */
+export function moveCommandBlocker(isPlaying: boolean): string | null {
+    return isPlaying ? "Pause to edit or delete a move." : null;
+}
+
+/**
+ * Before a move's clip goes (UI-14 review): focus moves to the next clip, else the previous one,
+ * else the timeline itself, never to the page (where Space and the arrows would act unseen).
+ */
+export function focusAfterMoveDelete(timelineId: number): void {
+    const clips = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-testid="timeline-clip"]'),
+    );
+    const index = clips.findIndex(
+        (clip) => clip.dataset.moveId === String(timelineId),
+    );
+    const next =
+        (index >= 0 ? (clips[index + 1] ?? clips[index - 1]) : undefined) ??
+        document.querySelector<HTMLElement>(
+            '[data-testid="timeline-viewport"]',
+        );
+    next?.focus({ preventScroll: true });
+}
+
+/** Moves being deleted now, across every caller, so a repeated Delete doesn't delete twice */
+const deletingMoves = new Set<number>();
+
+/** How long the delete toast stays, unless another edit, undo or redo closes it first */
+const DELETE_TOAST_MS = 8000;
+
+/**
+ * Shows "Deleted <label>" with **Undo** (UI-14). Its Undo runs the app's undo, so the toast closes
+ * on the next history change (an edit, an undo, a redo): then Undo could only undo something else.
+ */
+export function toastMoveDeleted(label: string, undo: () => void): void {
+    let unsubscribe = () => {};
+    const id = toast.success(`Deleted ${label}`, {
+        duration: DELETE_TOAST_MS,
+        action: { label: "Undo", onClick: undo },
+        onDismiss: () => unsubscribe(),
+        onAutoClose: () => unsubscribe(),
+    });
+    unsubscribe = subscribeHistoryChanges(() => {
+        unsubscribe();
+        toast.dismiss(id);
+    });
+}
+
+/**
+ * A move's commands (ui.md UI-14), for the timeline's clips and the inspector's Move card. Each
+ * write is one undoable edit, and a refusal is a toast (P8.6).
+ *
+ * - **Delete move** deletes the timeline, its transitions and assignments; moves it passed through
+ *   come back (UI-10). The window stays put, and an isolated move that goes ends isolation (the
+ *   store's "timeline goes away" path). A toast names what went, with **Undo**
+ *   (`toastMoveDeleted`). A move already being deleted, or already gone (a repeated Delete, a
+ *   stale button), is ignored without an error.
+ * - **Rename** stores the name as `renameTimeline` normalizes it; an unchanged name writes nothing,
+ *   and a move that is gone (its field left open while it was deleted) is skipped.
+ * - **Select its marchers** selects the marchers with an assignment in it on the canvas, and
+ *   records them, so going to another move clears them (`useClearLeftoverMoveSelection`).
+ * - **Edit move** isolates the move (09-isolation.md), so its paths show and canvas drags edit
+ *   where it ends; on a move already isolated it stays so. It selects nobody (one Esc leaves),
+ *   and brings the inspector's Move card into view, with focus on it.
+ * - Deleting moves focus to the next clip, else the previous one, else the timeline.
+ */
+export function useMoveCommands(database: DbConnection) {
+    const { mutate: performHistoryAction } = usePerformHistoryAction();
+    const queryClient = useQueryClient();
+    const setSelectedMarchers = useSelectedMarchers()?.setSelectedMarchers;
+    return useMemo(
+        () =>
+            createMoveCommands({
+                database,
+                undo: () => performHistoryAction("undo"),
+                selectMarchers: async (members) => {
+                    if (!setSelectedMarchers) return;
+                    try {
+                        const marchers = await queryClient.ensureQueryData(
+                            allMarchersQueryOptions(),
+                        );
+                        setSelectedMarchers(
+                            marchers.filter((m) => members.has(m.id)),
+                        );
+                    } catch (error: unknown) {
+                        console.error("Couldn't read the marchers", error);
+                    }
+                },
+            }),
+        [database, performHistoryAction, queryClient, setSelectedMarchers],
+    );
+}
+
+/** `useMoveCommands` without React: the app's undo and marcher selection are passed in. */
+export function createMoveCommands({
+    database,
+    undo,
+    selectMarchers: selectMembers,
+}: {
+    database: DbConnection;
+    undo: () => void;
+    selectMarchers: (members: ReadonlySet<number>) => Promise<void>;
+}) {
+    const stored = (timelineId: number) =>
+        useTimelineSelectionStore
+            .getState()
+            .storedTimelines?.find((t) => t.id === timelineId);
+    const labelOf = (timelineId: number) => {
+        const s = useTimelineSelectionStore.getState();
+        return (
+            moveLabels(s.storedTimelines ?? [], s.pageBoxes).get(timelineId) ??
+            moveLabel({ name: stored(timelineId)?.name })
+        );
+    };
+    /** A refusal is shown, unless the move is gone by now (then there's nothing to say) */
+    const report = async (timelineId: number, error: unknown) => {
+        if (!(await timelineExists(database, timelineId).catch(() => true)))
+            return;
+        toastTimelineError(error);
+    };
+    const selectMarchers = async (timelineId: number) => {
+        const members = stored(timelineId)?.marcherIds;
+        if (!members) return;
+        await selectMembers(members);
+        // Going to another move clears them while they are still the selection
+        useMoveMemberSelectionStore
+            .getState()
+            .record({ timelineId, marcherIds: new Set(members) });
+    };
+    return {
+        /** Resolves once the delete has settled (tests wait on it) */
+        deleteMove: async (timelineId: number): Promise<void> => {
+            if (deletingMoves.has(timelineId) || !stored(timelineId)) return;
+            deletingMoves.add(timelineId);
+            const label = labelOf(timelineId);
+            focusAfterMoveDelete(timelineId);
+            try {
+                await deleteTimeline({ db: database, timelineId });
+                toastMoveDeleted(label, undo);
+            } catch (error: unknown) {
+                await report(timelineId, error);
+            } finally {
+                deletingMoves.delete(timelineId);
+            }
+        },
+        renameMove: async (
+            timelineId: number,
+            name: string | null,
+        ): Promise<void> => {
+            if (!stored(timelineId) || deletingMoves.has(timelineId)) return;
+            try {
+                await renameTimeline({ db: database, timelineId, name });
+            } catch (error: unknown) {
+                await report(timelineId, error);
+            }
+        },
+        selectMarchers,
+        editMove: (timelineId: number) => {
+            if (!stored(timelineId)) return;
+            // UI-14 review: isolation shows who is in it, so nobody is selected (one Esc
+            // leaves); **Select them** on the card selects them
+            useTimelineSelectionStore.getState().isolate(timelineId);
+            useMoveCardRevealStore.getState().reveal(timelineId);
+        },
+    };
 }

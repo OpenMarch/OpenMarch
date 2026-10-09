@@ -59,6 +59,7 @@ const membership = (
     start,
     end,
     marcherIds: new Set(marcherIds),
+    name: null,
 });
 
 /** Marchers 1 and 2 move over [1, 9) on timeline 1; marcher 3 is in no timeline. */

@@ -1,6 +1,12 @@
 import { useState, type MouseEvent, type ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { FlagIcon, UserPlusIcon } from "@phosphor-icons/react";
+import {
+    CursorTextIcon,
+    FlagIcon,
+    PencilSimpleIcon,
+    TrashIcon,
+    UserPlusIcon,
+} from "@phosphor-icons/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
@@ -8,8 +14,109 @@ import type { TimelineBeatRange } from "./TimelineViewModel";
  * marchers** on a page box, a clip (its timeline) or a dragged range, for the range under the
  * pointer. Opening it doesn't change the timeline selection: the marchers to add are picked first,
  * where they can be selected. On a page box it also offers **Delete page flag** (UI-9 Deleting a
- * flag, P8.15).
+ * flag, P8.15). On a clip it offers the move's entries (UI-14): **Edit move**, **Rename move…** and
+ * **Delete move**, the same entries as the selected clip's ⋯ button.
  */
+
+/** The menus' entry style; `data-[disabled]` dims an unavailable one */
+const ITEM_CLASS =
+    "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50";
+
+/** The menus' panel style */
+export const TIMELINE_MENU_CONTENT_CLASS =
+    "bg-modal text-text rounded-6 border-stroke shadow-modal z-50 flex min-w-[180px] flex-col gap-4 border p-4 backdrop-blur-md";
+
+/**
+ * For a menu's content: React events bubble out of a portal through the component tree, so a
+ * press in a menu rendered inside the timeline would reach the timeline too, and scrub there.
+ */
+export const KEEP_MENU_EVENTS = {
+    onPointerDown: (event: { stopPropagation: () => void }) =>
+        event.stopPropagation(),
+    onClick: (event: { stopPropagation: () => void }) =>
+        event.stopPropagation(),
+    onDoubleClick: (event: { stopPropagation: () => void }) =>
+        event.stopPropagation(),
+    onContextMenu: (event: { stopPropagation: () => void }) =>
+        event.stopPropagation(),
+} as const;
+
+/**
+ * What a move's entries do, for one clip (UI-14). Rename only asks for the inline name field; the
+ * clip's owner commits it.
+ */
+export interface TimelineMoveMenuActions {
+    readonly onEdit: () => void;
+    readonly onRename: () => void;
+    readonly onDelete: () => void;
+    /** Why **Edit move** and **Delete move** are unavailable (while playing), or null */
+    readonly disabledReason?: string | null;
+}
+
+/**
+ * The move commands (UI-14) `Timeline` takes, by stored timeline id (`Id`); inside, the surface
+ * gets them by track id. `onRename` commits the inline name field: `name` is what was typed,
+ * stored as `renameTimeline` normalizes it.
+ */
+export interface TimelineMoveCommands<Id = number> {
+    readonly onEdit: (id: Id) => void;
+    readonly onRename: (id: Id, name: string) => void;
+    readonly onDelete: (id: Id) => void;
+    /** Why **Edit move** and **Delete move** are unavailable (while playing), or null */
+    readonly disabledReason?: string | null;
+}
+
+/**
+ * A move's entries (UI-14), for the clip's right-click menu and its ⋯ button: **Edit move**,
+ * **Rename move…**, then **Delete move**, red and last. Editing and deleting wait while playing,
+ * with the reason; renaming only changes a label, so it doesn't.
+ */
+export function TimelineMoveMenuItems({
+    actions,
+}: {
+    actions: TimelineMoveMenuActions;
+}) {
+    const reason = actions.disabledReason ?? null;
+    return (
+        <>
+            <DropdownMenu.Item
+                data-testid="timeline-move-menu-edit"
+                disabled={reason !== null}
+                onSelect={actions.onEdit}
+                className={ITEM_CLASS}
+            >
+                <PencilSimpleIcon size={14} />
+                Edit move
+            </DropdownMenu.Item>
+            <DropdownMenu.Item
+                data-testid="timeline-move-menu-rename"
+                onSelect={actions.onRename}
+                className={ITEM_CLASS}
+            >
+                <CursorTextIcon size={14} />
+                Rename move…
+            </DropdownMenu.Item>
+            <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+            <DropdownMenu.Item
+                data-testid="timeline-move-menu-delete"
+                disabled={reason !== null}
+                onSelect={actions.onDelete}
+                className={`${ITEM_CLASS} text-red`}
+            >
+                <TrashIcon size={14} />
+                Delete move
+            </DropdownMenu.Item>
+            {reason !== null && (
+                <p
+                    data-testid="timeline-move-menu-reason"
+                    className="text-text-subtitle px-8 pb-4 text-[11px]"
+                >
+                    {reason}
+                </p>
+            )}
+        </>
+    );
+}
 
 /**
  * The menu's command. `Timeline` takes it in spec beats; inside, it gets `TimelineMenuTarget`s
@@ -90,9 +197,12 @@ export const markedRangeAt = (
  */
 export function useTimelineRangeMenu({
     menu,
+    movesFor,
     resolveRange,
 }: {
     menu?: TimelineAddMarchersMenu<TimelineMenuTarget>;
+    /** A clip's move entries (UI-14) by its track id, or null where it has none */
+    movesFor?: (trackId: string) => TimelineMoveMenuActions | null;
     resolveRange: (event: MouseEvent<HTMLElement>) => TimelineMenuTarget | null;
 }): {
     onContextMenu: (event: MouseEvent<HTMLElement>) => void;
@@ -103,19 +213,24 @@ export function useTimelineRangeMenu({
         x: number;
         y: number;
     } | null>(null);
+    const movesOf = (target: TimelineMenuTarget) =>
+        target.trackId === undefined
+            ? null
+            : (movesFor?.(target.trackId) ?? null);
     const onContextMenu = (event: MouseEvent<HTMLElement>) => {
-        if (!menu) return;
+        if (!menu && !movesFor) return;
         const target = resolveRange(event);
         if (!target) return;
-        // Nothing to offer here: no add, and no page box to delete the flag of
+        // Nothing to offer here: no add, no page box to delete the flag of, and no move
         const canDelete =
-            menu.onDeleteFlag !== undefined && target.pageId !== undefined;
-        if (!menu.onAdd && !canDelete) return;
+            menu?.onDeleteFlag !== undefined && target.pageId !== undefined;
+        if (!menu?.onAdd && !canDelete && !movesOf(target)) return;
         event.preventDefault();
         setOpen({ target, x: event.clientX, y: event.clientY });
     };
     const disabledReason = menu?.disabledReason ?? null;
-    const element = menu && open && (
+    const moves = open ? movesOf(open.target) : null;
+    const element = open && (
         <DropdownMenu.Root
             open
             modal={false}
@@ -134,19 +249,23 @@ export function useTimelineRangeMenu({
                 <DropdownMenu.Content
                     data-testid="timeline-range-menu"
                     align="start"
-                    className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 flex min-w-[180px] flex-col gap-4 border p-4 backdrop-blur-md"
+                    // The trigger is an invisible point; focus stays where an entry puts it (the
+                    // rename field, UI-14)
+                    onCloseAutoFocus={(event) => event.preventDefault()}
+                    {...KEEP_MENU_EVENTS}
+                    className={TIMELINE_MENU_CONTENT_CLASS}
                 >
-                    {menu.onAdd && (
+                    {menu?.onAdd && (
                         <DropdownMenu.Item
                             disabled={disabledReason !== null}
                             onSelect={() => menu.onAdd?.(open.target)}
-                            className="rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50"
+                            className={ITEM_CLASS}
                         >
                             <UserPlusIcon size={14} />
                             Add selected marchers
                         </DropdownMenu.Item>
                     )}
-                    {menu.onAdd && disabledReason !== null && (
+                    {menu?.onAdd && disabledReason !== null && (
                         <p
                             data-testid="timeline-range-menu-reason"
                             className="text-text-subtitle px-8 pb-4 text-[11px]"
@@ -154,18 +273,19 @@ export function useTimelineRangeMenu({
                             {disabledReason}
                         </p>
                     )}
-                    {menu.onDeleteFlag && open.target.pageId !== undefined && (
+                    {menu?.onDeleteFlag && open.target.pageId !== undefined && (
                         <DropdownMenu.Item
                             data-testid="timeline-range-menu-delete-flag"
                             onSelect={() =>
                                 menu.onDeleteFlag?.(open.target.pageId!)
                             }
-                            className="rounded-4 data-[highlighted]:bg-fg-2 text-red flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none"
+                            className={`${ITEM_CLASS} text-red`}
                         >
                             <FlagIcon size={14} />
                             Delete page flag
                         </DropdownMenu.Item>
                     )}
+                    {moves && <TimelineMoveMenuItems actions={moves} />}
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>

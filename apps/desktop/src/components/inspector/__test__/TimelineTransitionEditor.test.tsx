@@ -1,3 +1,4 @@
+import { DEFAULT_BULGE } from "@/timeline/timelinePathDefaults";
 import {
     act,
     cleanup,
@@ -21,7 +22,6 @@ import type { DbConnection } from "@/db-functions/types";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import {
     buildTransitionEditTarget,
-    DEFAULT_BULGE,
     type TransitionShapeOption,
 } from "@/timeline/timelineTransitionEditor";
 import { TIMELINE_INSPECTOR_STRINGS } from "../timelineInspectorStrings";

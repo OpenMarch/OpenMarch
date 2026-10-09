@@ -5,6 +5,7 @@ import ShapeEditor from "./ShapeEditor";
 import ShapeSelector from "./ShapeSelector";
 import { PageNotesSection } from "./PageNotesSection";
 import { TimelineInspectorSection } from "./TimelineInspectorSection";
+import { TimelineMoveCardSlot } from "./TimelineMoveCard";
 import { T } from "@tolgee/react";
 
 function Inspector() {
@@ -17,6 +18,8 @@ function Inspector() {
             {/* Scrollable inspector content */}
             {/* relative so Radix's visually-hidden native selects are contained here instead of escaping to the document */}
             <div className="relative mt-8 flex min-h-0 flex-1 flex-col gap-48 overflow-y-auto">
+                {/* UI-14 review: a selected move's card comes first */}
+                <TimelineMoveCardSlot />
                 <PageEditor />
                 <MarcherEditor />
                 <ShapeEditor />

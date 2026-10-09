@@ -1,9 +1,14 @@
 import { toast } from "sonner";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { AddedPageFlag } from "@/db-functions/pageFlags";
+import {
+    pageFlagMoveLimits,
+    type AddedPageFlag,
+    type PageFlagMoveBlock,
+} from "@/db-functions/pageFlags";
 import {
     deletePageFlagsMutationOptions,
+    movePageFlagMutationOptions,
     useAddPageFlag,
 } from "@/hooks/queries/usePageFlags";
 import { useTimingObjects } from "@/hooks";
@@ -44,8 +49,16 @@ import {
 } from "@/timeline/timelineWaveform";
 import { createTimelineBeatAxis } from "@/timeline/timelineViewModel";
 import { timeAtBeat } from "@/timeline/timeMap";
-import { useTimelineCommands } from "./useTimelineCommands";
+import {
+    moveCommandBlocker,
+    useMoveCommands,
+    useTimelineCommands,
+} from "./useTimelineCommands";
+import { useTimelineClipResize } from "./useTimelineClipResize";
 import { useTimelinePlayback } from "./useTimelinePlayback";
+import { describeMoveClips } from "./moveClipText";
+import { useMoveNotesStore } from "@/stores/MoveNotesStore";
+import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
 
 const NO_WAVEFORM = { peaksByBeat: [] };
 
@@ -89,6 +102,7 @@ export const toTimelineSelection = (
  * box's right-click menu deletes its flag (P8.13's writes, wired by P8.15). Neither Create Track
  * nor **Add selected marchers** is offered: dragging marchers adds them (UI-10). Double-clicking
  * a page box or clip isolates its stored timeline (docs/timeline/research/ownership/09-isolation.md).
+ * A clip is a move: its menu, its ⋯ button and Delete edit, rename and delete it (UI-14).
  */
 export default function TimelineModePanel() {
     const { beats, pages, measures } = useTimingObjects()!;
@@ -138,17 +152,106 @@ export default function TimelineModePanel() {
         database: db,
         enabled: useTimelineMode(),
     });
-    // UI-10: a page box already stands for its page timeline, so only the others get a clip
-    const offPage = useMemo(
-        () => timelinesOffPages(timelines, pages),
-        [timelines, pages],
+    // UI-10: a page box already stands for its page timeline, so only the others get a clip.
+    // UI-14: each is a move, labelled by its name ("Move 2" since it was made), named for
+    // screen readers in counts, and saying why it is dashed where it is (`describeMoveClips`)
+    const storedTimelines = useTimelineSelectionStore((s) => s.storedTimelines);
+    const pageBoxes = useTimelineSelectionStore((s) => s.pageBoxes);
+    const { clips: offPage, overridden } = useMemo(
+        () =>
+            describeMoveClips({
+                clips: timelinesOffPages(timelines, pages),
+                storedTimelines: storedTimelines ?? [],
+                pageBoxes,
+                pages,
+            }),
+        [timelines, pages, storedTimelines, pageBoxes],
     );
+    // The Move card says it too
+    useEffect(() => {
+        useMoveNotesStore.getState().setOverridden(overridden);
+    }, [overridden]);
+    // UI-14 round-2 review: a "Select them" selection doesn't follow you to another move
+    useClearLeftoverMoveSelection();
     const commands = useTimelineCommands({
         database: db,
         timelines,
         selectedMarcherIds,
     });
+    // UI-14: a clip is a move; it can be edited, renamed and deleted
+    const moves = useMoveCommands(db);
+    const moveCommands = useMemo(
+        () => ({
+            disabledReason: moveCommandBlocker(isPlaying),
+            onEdit: (id: number) => {
+                if (!isPlaying) moves.editMove(id);
+            },
+            onRename: (id: number, name: string) =>
+                void moves.renameMove(id, name),
+            onDelete: (id: number) => {
+                if (!isPlaying) void moves.deleteMove(id);
+            },
+        }),
+        [isPlaying, moves],
+    );
+    const clipResize = useTimelineClipResize({ database: db, timelines });
     const queryClient = useQueryClient();
+    // Moving a page flag (research/move-page-flag): the playhead and start flag on it go with it
+    const { mutateAsync: movePageFlag } = useMutation(
+        movePageFlagMutationOptions(queryClient, ({ from, to }) =>
+            useTimelineSelectionStore.getState().followPageFlagMove(from, to),
+        ),
+    );
+    const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
+    const latestBlockText = useRef({ pages, timelines });
+    latestBlockText.current = { pages, timelines };
+    // Flags don't move while playing or isolated (cases 21, 22)
+    const pageFlagMove = useMemo<TimelineProps["pageFlagMove"]>(
+        () =>
+            isPlaying || isolated
+                ? undefined
+                : {
+                      limits: async (pageId) => {
+                          const limits = await pageFlagMoveLimits({
+                              db,
+                              pageId: Number(pageId),
+                          });
+                          if (!limits) return null;
+                          const { pages, timelines } = latestBlockText.current;
+                          return {
+                              flag: limits.flag,
+                              min: limits.min,
+                              max: limits.max,
+                              minReason: describePageFlagBlock(
+                                  limits.minBlock,
+                                  pages,
+                                  timelines,
+                              ),
+                              maxReason: describePageFlagBlock(
+                                  limits.maxBlock,
+                                  pages,
+                                  timelines,
+                              ),
+                              holes: limits.holes.map((h) => ({
+                                  beat: h.beat,
+                                  reason: describePageFlagBlock(
+                                      h.block,
+                                      pages,
+                                      timelines,
+                                  ),
+                              })),
+                          };
+                      },
+                      commit: async (pageId, beat) => {
+                          // A refusal is shown as a toast by the mutation
+                          await movePageFlag({
+                              pageId: Number(pageId),
+                              beat,
+                          }).catch(() => {});
+                      },
+                  },
+        [isPlaying, isolated, movePageFlag],
+    );
     const windowBeforeClick = useRef<TimelineIsolation["restore"] | null>(null);
     const { mutate: deletePageFlags } = useMutation(
         deletePageFlagsMutationOptions(queryClient),
@@ -198,6 +301,7 @@ export default function TimelineModePanel() {
                     transportViewControls={COMPACT_BUTTON}
                     onSelectionChange={changeSelection}
                     onTimelineRangeCommit={commands.commitTimelineRange}
+                    clipResize={clipResize}
                     onPlayFromStartOff={() =>
                         useTimelineSelectionStore
                             .getState()
@@ -224,6 +328,8 @@ export default function TimelineModePanel() {
                                 "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it.",
                             );
                     }}
+                    moveCommands={moveCommands}
+                    pageFlagMove={pageFlagMove}
                     onDeletePageFlag={(pageId) => {
                         const after = selectionAfterFlagDelete(
                             pages,
@@ -366,6 +472,48 @@ export const selectAddedPage = ({
     endBeat,
 }: Pick<AddedPageFlag, "startBeat" | "endBeat">) =>
     useTimelineSelectionStore.getState().selectRange(startBeat, endBeat);
+
+/**
+ * What stops a dragged page flag, in words for its readout (research/move-page-flag cases 1, 4, 6,
+ * 9, 10): the neighboring flag, the show's end, or the move in the way, named by its page when it
+ * is a page's move. `timelines` are the tracks (`useTimelineTracks`); ranges are spec beats.
+ */
+export function describePageFlagBlock(
+    block: PageFlagMoveBlock,
+    pages: readonly (FlagPage & { readonly name: string })[],
+    timelines: readonly Pick<
+        TimelineInput,
+        "linkId" | "label" | "startBeatIndex" | "endBeatIndex"
+    >[],
+): string {
+    if (block.kind === "show-end") return "The end of the show";
+    const flags = pageFlags(pages);
+    if (block.kind === "flag") {
+        const flag = flags.find((f) => f.page.id === block.pageId);
+        return !flag || !flag.range ? "Home" : `Page ${flag.page.name}'s flag`;
+    }
+    const track =
+        block.timelineId === undefined
+            ? undefined
+            : timelines.find((t) => t.linkId === block.timelineId);
+    const page = track
+        ? flags.find(
+              (f) =>
+                  f.range?.start === track.startBeatIndex &&
+                  f.range.end === track.endBeatIndex,
+          )
+        : undefined;
+    const who = page
+        ? `Page ${page.page.name}'s move`
+        : track && !/^Timeline \d+$/.test(track.label)
+          ? `"${track.label}"`
+          : "A move";
+    if (block.message.includes("share"))
+        return `${who} already has these counts`;
+    if (block.message.includes("left behind"))
+        return `${who} starts or ends on this flag`;
+    return `${who} is in the way`;
+}
 
 /**
  * The timelines that don't match a page box (UI-10, project owner, 2026-10-03). A page box

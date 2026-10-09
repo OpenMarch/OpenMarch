@@ -1,14 +1,22 @@
-import { Fragment, useMemo, type ReactNode } from "react";
+import { Fragment, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslate } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
-import { WarningIcon, InfoIcon } from "@phosphor-icons/react";
+import {
+    CaretDownIcon,
+    CaretRightIcon,
+    WarningIcon,
+    InfoIcon,
+} from "@phosphor-icons/react";
 import type { Diagnostic, SpanKind, XY } from "@openmarch/core";
 import { db } from "@/global/database/db";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
-import { pageEndBeat } from "@/timeline/timelineCanvas";
+import {
+    useTimelineSelectionStore,
+    windowMove,
+    type StoredTimelineMembership,
+} from "@/stores/TimelineSelectionStore";
 import {
     groupDiagnosticsByTransition,
     type MarcherInspection,
@@ -356,10 +364,41 @@ export function ShowDiagnosticsList({
     );
 }
 
+/**
+ * The playhead's beat and the move the window is on, held together while the playhead is scrubbed
+ * (code review): the inspector's explanations and editors are rebuilt once the scrub ends, not on
+ * every beat it passes, and keep showing the last settled ones meanwhile rather than going blank.
+ * Held together, the held beat is never clamped into a move the scrubbing window passes over. As
+ * `useTimelinePageBridge` waits for the scrub. While scrubbing the store's selectors return the
+ * same value, so the scrub doesn't render this at all.
+ */
+export function useSettledInspectorWindow(): {
+    beat: number;
+    move: StoredTimelineMembership | null;
+} {
+    const liveBeat = useTimelineSelectionStore((s) =>
+        s.scrubbing ? null : s.playheadBeat,
+    );
+    const liveMove = useTimelineSelectionStore((s) =>
+        s.scrubbing ? undefined : windowMove(s),
+    );
+    const held = useRef<{
+        beat: number;
+        move: StoredTimelineMembership | null;
+    } | null>(null);
+    if (held.current === null) {
+        // Mounted mid-scrub: what the store has now
+        const state = useTimelineSelectionStore.getState();
+        held.current = { beat: state.playheadBeat, move: windowMove(state) };
+    }
+    if (liveBeat !== null && liveMove !== undefined)
+        held.current = { beat: liveBeat, move: liveMove };
+    return held.current;
+}
+
 function TimelineInspectorContent() {
     const t = useInspectorTranslate();
     const { selectedMarchers } = useSelectedMarchers()!;
-    const { selectedPage } = useSelectedPage()!;
     const marcherIds = useMemo(
         () => selectedMarchers.map((m) => m.id),
         [selectedMarchers],
@@ -368,7 +407,17 @@ function TimelineInspectorContent() {
         () => new Map(selectedMarchers.map((m) => [m.id, m.drill_number])),
         [selectedMarchers],
     );
-    const beat = selectedPage ? pageEndBeat(selectedPage) : null;
+    // UI-14: in timeline mode the inspector explains at the paused playhead P, where edits land
+    // (UI-10). On a flag that is the page's end beat, as before; between flags a mid-page move's
+    // transitions show.
+    // With the move the window is (isolated, P may be anywhere inside it), if it has a clip
+    const { beat: playheadBeat, move } = useSettledInspectorWindow();
+    // UI-14: with a move, explain inside it: at P, or its last beat when P is on its end, where
+    // the next move starts. So the details below are about this move's transitions.
+    const beat = move
+        ? Math.min(Math.max(playheadBeat, move.start), move.end - 1)
+        : playheadBeat;
+    const [detailsOpen, setDetailsOpen] = useState(false);
     const {
         inspections,
         omitted,
@@ -389,15 +438,9 @@ function TimelineInspectorContent() {
         () => shapeFrameFor(fieldProperties ?? null),
         [fieldProperties],
     );
-    return (
-        <InspectorCollapsible
-            defaultOpen
-            translatableTitle={{ keyName: "inspector.timeline.title" }}
-            className="mt-12 flex flex-col gap-16"
-        >
-            {selectedMarchers.length > 0 && beat === null && (
-                <p className="text-sub">{t("inspector.timeline.noPage")}</p>
-            )}
+    // Each selected marcher's explanation and its transition's editors
+    const details = (
+        <>
             {inspections.map((inspection) => (
                 <MarcherInspectionView
                     key={inspection.marcherId}
@@ -430,19 +473,69 @@ function TimelineInspectorContent() {
                     </Fragment>
                 );
             })}
-            {omitted > 0 && (
-                <p className="text-sub text-text/60">
-                    {t("inspector.timeline.omitted", { count: omitted })}
-                </p>
+        </>
+    );
+    return (
+        <InspectorCollapsible
+            defaultOpen
+            translatableTitle={{ keyName: "inspector.timeline.title" }}
+            className="mt-12 flex flex-col gap-16"
+        >
+            {move ? (
+                inspections.length > 0 && (
+                    <div className="flex flex-col gap-16">
+                        <button
+                            type="button"
+                            data-testid="timeline-move-details-toggle"
+                            // A move's control (UI-14 round-2 review): Enter opens it, rather than
+                            // reaching the app's Enter shortcut (create a shape)
+                            data-timeline-own-keys="true"
+                            aria-expanded={detailsOpen}
+                            onClick={() => setDetailsOpen((o) => !o)}
+                            className="text-body focus-visible:text-accent flex items-center gap-6 text-left font-medium outline-hidden"
+                        >
+                            {detailsOpen ? (
+                                <CaretDownIcon size={16} />
+                            ) : (
+                                <CaretRightIcon size={16} />
+                            )}
+                            {t("inspector.timeline.move.details", {
+                                count: inspections.length + omitted,
+                            })}
+                        </button>
+                        {detailsOpen && omitted > 0 && (
+                            <p
+                                className="text-sub text-text/60"
+                                data-testid="timeline-move-details-capped"
+                            >
+                                {t("inspector.timeline.move.detailsCapped", {
+                                    shown: inspections.length,
+                                    count: inspections.length + omitted,
+                                })}
+                            </p>
+                        )}
+                        {detailsOpen && details}
+                    </div>
+                )
+            ) : (
+                <>
+                    {details}
+                    {omitted > 0 && (
+                        <p className="text-sub text-text/60">
+                            {t("inspector.timeline.omitted", {
+                                count: omitted,
+                            })}
+                        </p>
+                    )}
+                </>
             )}
-            {beat !== null &&
-                unknownMarcherIds.map((id) => (
-                    <p key={id} className="text-sub text-text/60">
-                        {t("inspector.timeline.notInTimeline", {
-                            marcher: labels.get(id) ?? "",
-                        })}
-                    </p>
-                ))}
+            {unknownMarcherIds.map((id) => (
+                <p key={id} className="text-sub text-text/60">
+                    {t("inspector.timeline.notInTimeline", {
+                        marcher: labels.get(id) ?? "",
+                    })}
+                </p>
+            ))}
             <TimelineShapesEditor
                 shapes={shapeEdits.targets}
                 version={shapeEdits.version}
@@ -466,8 +559,10 @@ function TimelineInspectorContent() {
 
 /**
  * The inspector's timeline section (P8.5): for the selected marchers, why each is where it is at
- * the selected page's end beat, from the resolver's `explain`, and the show's diagnostics. Only in
- * timeline mode; with the flag off it renders nothing and reads nothing.
+ * the paused playhead (UI-14; it read the selected page's end beat before), from the resolver's
+ * `explain`, and the show's diagnostics. While the window is a move with a clip, its Move card
+ * comes first (UI-14). Only in timeline mode; with the flag off it renders nothing and reads
+ * nothing.
  */
 export function TimelineInspectorSection() {
     const timelineMode = useTimelineMode();

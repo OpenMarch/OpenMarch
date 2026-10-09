@@ -621,6 +621,9 @@ const TimelineSurface = memo(function TimelineSurface({
             ].sort((a, b) => a - b),
         [model.measures, snapBeats],
     );
+    // A dragged page flag also lands on the playhead when near; read when a drag starts, so the
+    // ruler doesn't re-render as the playhead moves
+    const playheadAt = useLatestCallback(() => positionBeat)!;
     const pointer = useTimelinePointer({
         seekSnapBeats,
         onSeek: props.onSeek,
@@ -658,8 +661,32 @@ const TimelineSurface = memo(function TimelineSurface({
     );
     // The right-click menu's target: a page box or clip under the pointer, else a dragged range
     // the pointer is inside (UI-9 Adding marchers, Creating a timeline)
+    // UI-14: the clip whose inline name field is open
+    const [renaming, setRenaming] = useState<string | null>(null);
+    const { moveCommands } = props;
+    // Stable, so the memoized clips don't redraw on every render
+    const startRename = useCallback(
+        (trackId: TimelineTrackId) => setRenaming(String(trackId)),
+        [],
+    );
+    const endRename = useCallback(() => setRenaming(null), []);
+    const moveActions = (trackId: TimelineTrackId) =>
+        moveCommands && {
+            onEdit: () => moveCommands.onEdit(trackId),
+            onRename: () => setRenaming(String(trackId)),
+            onDelete: () => moveCommands.onDelete(trackId),
+            disabledReason: moveCommands.disabledReason,
+        };
     const rangeMenu = useTimelineRangeMenu({
         menu: props.addSelectedMarchers,
+        movesFor: moveCommands
+            ? (trackId) => {
+                  const track = model.tracks.find(
+                      (t) => String(t.id) === trackId,
+                  );
+                  return track ? (moveActions(track.id) ?? null) : null;
+              }
+            : undefined,
         resolveRange: (event: MouseEvent<HTMLElement>) => {
             const marked = markedRangeAt(event.target);
             if (marked) return marked;
@@ -753,6 +780,11 @@ const TimelineSurface = memo(function TimelineSurface({
                         showMeasures={expanded}
                         seekSnapBeats={seekSnapBeats}
                         scrubLine={pointer.scrubLine}
+                        pageFlagMove={
+                            props.isPlaying ? undefined : props.pageFlagMove
+                        }
+                        height={timelineHeight}
+                        flagSnapPlayhead={playheadAt}
                         // Only a show without measures numbers the playhead page's counts
                         positionBeat={
                             expanded && model.measures.length === 0
@@ -781,9 +813,16 @@ const TimelineSurface = memo(function TimelineSurface({
                                 )}
                                 onSelect={selectTrack}
                                 onRangeCommit={props.onTimelineRangeCommit}
+                                resize={props.clipResize}
+                                downbeats={seekSnapBeats}
+                                snapPlayhead={playheadAt}
                                 beatCount={model.beatCount}
                                 snapBeats={snapBeats}
                                 micro={!expanded}
+                                moveCommands={moveCommands}
+                                renaming={renaming === String(track.id)}
+                                onRenameStart={startRename}
+                                onRenameEnd={endRename}
                             />
                         )),
                     )}
@@ -825,6 +864,9 @@ const TimelineSurface = memo(function TimelineSurface({
                         onSeek={props.onSeek}
                         isPlaying={props.isPlaying}
                         scrubLine={pointer.scrubLine}
+                        // UI-14: below the ruler and measure rows (over the waveform and the clip
+                        // rows) the playhead is drawn, not grabbed
+                        hitHeight={audioTop}
                     />
                     {props.onAddPageFlag && !props.isPlaying && (
                         <button
@@ -872,6 +914,10 @@ const TimelineSurface = memo(function TimelineSurface({
                             beatCount={model.beatCount}
                             pixelsPerBeat={pixelsPerBeat}
                             height={timelineHeight}
+                            // UI-14: below the ruler and measure rows the flags are drawn, not
+                            // grabbed, so a Ctrl+drag or a short clip there isn't taken by a flag
+                            // (round-2 review: the waveform row took it)
+                            hitHeight={audioTop}
                             snapBeats={snapBeats}
                             onCommit={commitSelection}
                             onInteractionChange={selectionInteraction.set}

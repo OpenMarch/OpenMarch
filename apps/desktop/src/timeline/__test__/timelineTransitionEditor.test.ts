@@ -1,3 +1,4 @@
+import { DEFAULT_BULGE } from "@/timeline/timelinePathDefaults";
 import { describe, expect, it } from "vitest";
 import type {
     ShapeRow,
@@ -13,7 +14,6 @@ import {
     clampSlotCount,
     MAX_SLOT_COUNT,
     shapeBlocker,
-    DEFAULT_BULGE,
     editableTransitionId,
     followTheLeaderBlocker,
     planTransitionEdit,

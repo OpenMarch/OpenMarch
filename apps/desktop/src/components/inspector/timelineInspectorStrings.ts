@@ -7,10 +7,26 @@
 export const TIMELINE_INSPECTOR_STRINGS = {
     "inspector.timeline.title": "Timeline",
     "inspector.timeline.marcherTitle": "{marcher} at beat {beat}",
-    "inspector.timeline.noPage":
-        "Select a page to see why each marcher is where it is.",
     "inspector.timeline.omitted": "and {count} more selected marchers",
     "inspector.timeline.notInTimeline": "{marcher} isn't in the timeline yet.",
+
+    "inspector.timeline.move.title": "Move",
+    "inspector.timeline.move.name": "Name",
+    "inspector.timeline.move.counts": "Counts",
+    "inspector.timeline.move.marchers":
+        "{count, plural, one {# marcher} other {# marchers}}",
+    "inspector.timeline.move.selectMarchers": "Select them",
+    "inspector.timeline.move.delete": "Delete move",
+    "inspector.timeline.move.paused": "Pause to delete a move.",
+    "inspector.timeline.move.nameLimit": "{max} characters at most.",
+    "inspector.timeline.move.path": "Path",
+    "inspector.timeline.move.pathMixed": "Mixed",
+    "inspector.timeline.move.endHelp":
+        "To change where they end up, drag marchers on the field at the move's end.",
+    "inspector.timeline.move.goToEnd": "Go to end",
+    "inspector.timeline.move.details": "Per-marcher details ({count})",
+    "inspector.timeline.move.detailsCapped":
+        "Showing the first {shown} of {count} marchers. Select fewer to see the others.",
 
     "inspector.timeline.label.span": "Span",
     "inspector.timeline.label.beats": "Beats",

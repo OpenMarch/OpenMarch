@@ -5,11 +5,7 @@ import { readTimelineTables } from "@/timeline/timelineRows";
 import { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { mapDbErrors, refuse } from "./timelineErrors";
-import {
-    createTimelinesInTransaction,
-    findTimelineByRange,
-    type DatabaseTimeline,
-} from "./timelines";
+import { findTimelineByRange, type DatabaseTimeline } from "./timelines";
 import {
     createTimelineTransitionsInTransaction,
     deleteTimelineTransitionRowsInTransaction,
@@ -19,6 +15,7 @@ import {
     type DatabaseTimelineAssignment,
 } from "./timelineAssignments";
 import { stealLayer } from "./timelineCommands";
+import { createRangeTimelineInTransaction } from "./timelineMoveNames";
 
 export { findTimelineByRange };
 
@@ -317,14 +314,13 @@ export const addMarchersToTimelineInTransaction = async ({
         });
     }
 
+    // UI-14 review: a new move gets its number for good
     const timeline =
         existing ??
-        (
-            await createTimelinesInTransaction({
-                tx,
-                newTimelines: [{ startBeat: start, endBeat: end }],
-            })
-        )[0]!;
+        (await createRangeTimelineInTransaction(tx, {
+            startBeat: start,
+            endBeat: end,
+        }));
     const added = await createOwnTransitionsInTransaction(
         tx,
         timeline,

@@ -1,6 +1,6 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
-import { DbTransaction } from "./types";
+import { DbConnection, DbTransaction } from "./types";
 import { mapDbErrors, refuse } from "./timelineErrors";
 import {
     deleteTimelineTransitionRowsInTransaction,
@@ -183,3 +183,14 @@ export const deleteTimelinesInTransaction = async ({
             .returning(),
     );
 };
+
+/** Whether timeline `id` is stored (UI-14: a stale button or field may name one that's gone). */
+export const timelineExists = async (
+    db: DbConnection | DbTransaction,
+    id: number,
+): Promise<boolean> =>
+    (await db
+        .select({ id: schema.timelines.id })
+        .from(schema.timelines)
+        .where(eq(schema.timelines.id, id))
+        .get()) !== undefined;

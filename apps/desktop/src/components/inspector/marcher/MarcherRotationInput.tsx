@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { DragInput } from "@openmarch/ui";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { rotateGroup } from "@/global/classes/canvasObjects/GroupUtils";
@@ -9,10 +9,14 @@ import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 function MarcherRotationInput({ disabled }: { disabled: boolean }) {
     const [rotationAngle, setRotationAngle] = useState<number>(0);
     const [activeGroup, setActiveGroup] = useState<fabric.Group | null>(null);
+    // Whether the group turned since the last save: tabbing through the field (a blur with no
+    // change) mustn't write every selected marcher, which in timeline mode makes a new move
+    const rotated = useRef(false);
 
     const handleRotationChange = useCallback(
         (newAngle: number) => {
             if (activeGroup) {
+                rotated.current = true;
                 rotateGroup({
                     group: activeGroup,
                     angle: newAngle,
@@ -65,6 +69,8 @@ function MarcherRotationInput({ disabled }: { disabled: boolean }) {
             console.error("No group selected");
             return;
         }
+        if (!rotated.current) return;
+        rotated.current = false;
         const canvas = activeGroup.canvas as OpenMarchCanvas;
         if (canvas.listeners instanceof DefaultListeners) {
             canvas.listeners.handleObjectModified();

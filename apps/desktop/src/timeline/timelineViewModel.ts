@@ -123,6 +123,18 @@ export const TIMELINE_TRACK_COLORS = [
     "#4aa3e0",
 ] as const;
 
+/**
+ * A stored timeline's color on the clip strip and its isolated paths (UI-14 round-2 review): by
+ * its id, so a move keeps its color when others are made or deleted, and through undo and reload
+ * (an undone delete restores the same id).
+ */
+export const timelineColor = (timelineId: number): string =>
+    TIMELINE_TRACK_COLORS[
+        (((timelineId - 1) % TIMELINE_TRACK_COLORS.length) +
+            TIMELINE_TRACK_COLORS.length) %
+            TIMELINE_TRACK_COLORS.length
+    ]!;
+
 // ---------------------------------------------------------------------------
 // Interval helpers (half-open [start, end), spec §7)
 // ---------------------------------------------------------------------------
@@ -263,6 +275,116 @@ export function buildTimelineTracks(
 
 export const timelineTrackId = (timelineId: number) => `timeline-${timelineId}`;
 
+/** The N of an automatic move name, "Move N" (UI-14 review), or `null` for any other name. */
+export function autoMoveNumber(name: string | null | undefined): number | null {
+    const match = /^Move (\d+)$/.exec(name ?? "");
+    return match ? Number(match[1]) : null;
+}
+
+/**
+ * A move's label (UI-14): its name, or "Move {number}" for a move stored without one (a move made
+ * before moves got their number at creation, or by a converted show).
+ */
+export const moveLabel = ({
+    name,
+    number,
+}: {
+    readonly name?: string | null;
+    readonly number?: number;
+}): string => name ?? (number === undefined ? "Move" : `Move ${number}`);
+
+/**
+ * Every move's label by stored timeline id (UI-14). Moves are the stored timelines off the page
+ * boxes (the ones drawn as clips, UI-10). A move made since the review stores its own "Move N"
+ * (`nextAutoMoveName`), which never changes; a move stored without a name is numbered after the
+ * highest of those, by start, then id.
+ */
+export function moveLabels(
+    timelines: readonly {
+        readonly id: number;
+        readonly start: number;
+        readonly end: number;
+        readonly name?: string | null;
+    }[],
+    pageBoxes: readonly { readonly start: number; readonly end: number }[],
+): Map<number, string> {
+    const boxes = new Set(pageBoxes.map((b) => `${b.start}:${b.end}`));
+    const moves = timelines
+        .filter((t) => !boxes.has(`${t.start}:${t.end}`))
+        .sort((a, b) => a.start - b.start || a.id - b.id);
+    let next =
+        Math.max(0, ...timelines.map((t) => autoMoveNumber(t.name) ?? 0)) + 1;
+    return new Map(
+        moves.map((t) => [t.id, t.name ?? moveLabel({ number: next++ })]),
+    );
+}
+
+/** The longest name a move keeps (UI-14); a longer one is cut to it. */
+export const MOVE_NAME_MAX_LENGTH = 80;
+
+/**
+ * The name a move's name field stores (UI-14): trimmed and cut to `MOVE_NAME_MAX_LENGTH`; a field
+ * left empty clears the name, so the move shows its default label again.
+ */
+export function normalizeMoveName(name: string | null): string | null {
+    const trimmed = (name ?? "").trim().slice(0, MOVE_NAME_MAX_LENGTH).trim();
+    return trimmed === "" ? null : trimmed;
+}
+
+/**
+ * A clip's members' winning spans (R-2): `active`, those in its own transitions; `winners`, those
+ * in other timelines' transitions, by timeline, cut to the clip's range.
+ */
+function memberSpans(
+    members: ReadonlySet<number>,
+    spansOf: (marcherId: number) => readonly SpanInfo[],
+    own: ReadonlySet<number>,
+    timelineOfTransition: ReadonlyMap<number, number>,
+    range: { readonly start: number; readonly end: number },
+): { active: Interval[]; winners: Map<number, Interval[]> } {
+    const active: Interval[] = [];
+    const winners = new Map<number, Interval[]>();
+    for (const marcherId of members)
+        for (const span of spansOf(marcherId)) {
+            if (span.transitionId == null) continue;
+            if (own.has(span.transitionId)) {
+                active.push({ start: span.start, end: span.end });
+                continue;
+            }
+            const other = timelineOfTransition.get(span.transitionId);
+            const start = Math.max(span.start, range.start);
+            const end = Math.min(span.end, range.end);
+            if (other === undefined || end <= start) continue;
+            const list = winners.get(other) ?? [];
+            list.push({ start, end });
+            winners.set(other, list);
+        }
+    return { active, winners };
+}
+
+/**
+ * Where a clip is dashed, which other timelines took it (UI-14 round-2 review): each one's winning
+ * spans over the clip's members (`winners`, inside the clip's range), cut to the inactive parts of
+ * its activity, by start, then timeline id.
+ */
+function overridingSpans(
+    winners: ReadonlyMap<number, readonly Interval[]>,
+    activity: readonly TimelineActivitySpan[],
+): { timelineId: number; start: number; end: number }[] {
+    const inactive = activity.filter((a) => !a.active);
+    return [...winners]
+        .flatMap(([timelineId, spans]) =>
+            union([...spans]).flatMap((w) =>
+                inactive.flatMap((a) => {
+                    const start = Math.max(w.start, a.startBeatIndex);
+                    const end = Math.min(w.end, a.endBeatIndex);
+                    return end > start ? [{ timelineId, start, end }] : [];
+                }),
+            ),
+        )
+        .sort((a, b) => a.start - b.start || a.timelineId - b.timelineId);
+}
+
 /**
  * One track per stored timeline (ui.md UI-9 "Tracks"; P8.11), however many transitions it holds,
  * so a group of one-slot transitions is one clip. This supersedes the marcher and shape tracks of
@@ -274,7 +396,10 @@ export const timelineTrackId = (timelineId: number) => `timeline-${timelineId}`;
  *   transitions, and inactive where every member is stolen or there are none (UI-4's rule over
  *   the whole timeline).
  * - **Diagnostics:** every diagnostic of its transitions.
- * - **Order and color:** by start, then id; one color per timeline, as `buildTimelineTracks`.
+ * - **Order and color:** by start, then id; the color goes by the timeline's id
+ *   (`timelineColor`), so it never changes while the timeline exists.
+ * - **Overridden by:** where it is dashed, the other timelines whose spans took its members
+ *   (`overridingSpans`, UI-14 round-2 review).
  *
  * How a selected marcher's spans (UI-1) show inside the one track is open (ui.md U-Q5 TODO).
  */
@@ -291,6 +416,9 @@ export function buildTimelineClipTracks(
         sources.diagnostics,
         (d) => d.transitionId,
     );
+    const timelineOfTransition = new Map(
+        tables.transitions.map((t) => [t.id, t.timelineId]),
+    );
     const spanCache = new Map<number, readonly SpanInfo[]>();
     const spansOf = (marcherId: number) => {
         let spans = spanCache.get(marcherId);
@@ -300,7 +428,7 @@ export function buildTimelineClipTracks(
     };
     return [...tables.timelines]
         .sort((a, b) => a.start - b.start || a.id - b.id)
-        .map((timeline, index) => {
+        .map((timeline) => {
             const transitions = transitionsByTimeline.get(timeline.id) ?? [];
             const ids = new Set(transitions.map((t) => t.id));
             const members = new Set(
@@ -308,22 +436,24 @@ export function buildTimelineClipTracks(
                     (rowsByTransition.get(t.id) ?? []).map((r) => r.marcher),
                 ),
             );
-            const active: Interval[] = [];
-            for (const marcherId of members)
-                for (const span of spansOf(marcherId))
-                    if (span.transitionId != null && ids.has(span.transitionId))
-                        active.push({ start: span.start, end: span.end });
+            const { active, winners } = memberSpans(
+                members,
+                spansOf,
+                ids,
+                timelineOfTransition,
+                timeline,
+            );
             const id = timelineTrackId(timeline.id);
             const clip: Interval = { start: timeline.start, end: timeline.end };
+            const activity = activityOver(clip, union(active));
+            const overriddenBy = overridingSpans(winners, activity);
             return {
                 id,
                 linkId: timeline.id,
                 targetId: timeline.id,
                 targetType: "timeline",
                 label: timeline.name ?? `Timeline ${timeline.id}`,
-                color: TIMELINE_TRACK_COLORS[
-                    index % TIMELINE_TRACK_COLORS.length
-                ],
+                color: timelineColor(timeline.id),
                 startBeatIndex: clip.start,
                 endBeatIndex: clip.end,
                 legs: [
@@ -334,7 +464,8 @@ export function buildTimelineClipTracks(
                         texture: "move",
                     },
                 ],
-                activitySpans: activityOver(clip, union(active)),
+                activitySpans: activity,
+                ...(overriddenBy.length > 0 ? { overriddenBy } : {}),
                 diagnostics: diagnosticsBadge(
                     [...ids]
                         .sort((a, b) => a - b)

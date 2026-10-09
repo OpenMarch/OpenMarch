@@ -17,6 +17,7 @@ import {
 } from "@/db-functions/timelineTransitions";
 import type { MarcherInspection } from "./timelineInspector";
 import type { TimelineViewShape } from "./timelineViewModel";
+import { DEFAULT_BULGE } from "./timelinePathDefaults";
 
 /**
  * The inspector's transition editor (P8.3): what it edits, and how each control's change becomes
@@ -29,9 +30,6 @@ import type { TimelineViewShape } from "./timelineViewModel";
  * write over that edit. So the editor plans nothing until the target is rebuilt after its last
  * edit (`TimelineTransitionEditor`).
  */
-
-/** The bulge a transition gets when it becomes an arc. */
-export const DEFAULT_BULGE = 0.25;
 
 /** One shape a transition can head to. */
 export interface TransitionShapeOption {

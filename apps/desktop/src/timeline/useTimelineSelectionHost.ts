@@ -11,8 +11,8 @@ import { readVersionedTimelineViewTables } from "./useTimelineTracks";
 import type { TimelineViewTables } from "./timelineViewModel";
 
 /**
- * Every stored timeline with the marchers that have an assignment in one of its transitions,
- * ordered by start, then id.
+ * Every stored timeline with its name and the marchers that have an assignment in one of its
+ * transitions, ordered by start, then id.
  */
 export async function readStoredTimelineMemberships(
     db: DbConnection | DbTransaction,
@@ -22,6 +22,7 @@ export async function readStoredTimelineMemberships(
             id: schema.timelines.id,
             start: schema.timelines.start_beat,
             end: schema.timelines.end_beat,
+            name: schema.timelines.name,
         })
         .from(schema.timelines)
         .all();
@@ -73,7 +74,7 @@ export function storedTimelineMembershipsFromTables(
         set.add(a.marcher);
     }
     return tables.timelines
-        .map((t) => ({ id: t.id, start: t.start, end: t.end }))
+        .map((t) => ({ id: t.id, start: t.start, end: t.end, name: t.name }))
         .sort((a, b) => a.start - b.start || a.id - b.id)
         .map((t) => ({ ...t, marcherIds: members.get(t.id) ?? new Set() }));
 }

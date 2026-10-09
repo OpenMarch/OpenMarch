@@ -9,7 +9,8 @@ import {
     createTimelineTransitionsInTransaction,
     deleteTimelineTransitionsInTransaction,
 } from "./timelineTransitions";
-import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
+import { findTimelineByRange } from "./timelines";
+import { createRangeTimelineInTransaction } from "./timelineMoveNames";
 import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
 
 /**
@@ -302,23 +303,15 @@ const isPageMove = (
             a.end_beat === t.end_beat,
     );
 
-/**
- * Rewrites the timeline rows after a page or beat edit that changed the grid from `before` to the
- * grid now in the database. Does nothing when the grid didn't change. See the module comment for
- * the rules, the refusals and the statement order.
- */
-// eslint-disable-next-line max-lines-per-function
-export async function rippleTimelineToPageGridInTransaction({
-    tx,
-    before,
-}: {
-    tx: DbTransaction;
-    before: PageGrid;
-}): Promise<void> {
-    const after = await readPageGrid(tx);
-    if (sameGrid(before, after)) return;
-    const map = new GridEdgeMap(before, after);
+/** The timeline rows the ripple rewrites, as read from the database. */
+export interface RippleRows {
+    timelines: (typeof schema.timelines.$inferSelect)[];
+    transitions: (typeof schema.timeline_transitions.$inferSelect)[];
+    assignments: (typeof schema.timeline_assignments.$inferSelect)[];
+}
 
+/** Reads every timeline, transition and assignment row (`RippleRows`). */
+export async function readRippleRows(tx: DbTransaction): Promise<RippleRows> {
     const timelines = await tx.select().from(schema.timelines).all();
     const transitions = await tx
         .select()
@@ -328,6 +321,22 @@ export async function rippleTimelineToPageGridInTransaction({
         .select()
         .from(schema.timeline_assignments)
         .all();
+    return { timelines, transitions, assignments };
+}
+
+/**
+ * Plans the ripple from the `before` grid to the `after` grid without writing anything: which
+ * page moves go with removed pages, and every remaining row's new range. Throws the ripple's
+ * refusals (`E-ARGS`, `E-T1`, `E-A1`, `E-A3`; see the module comment). Pure, so a gesture can ask
+ * whether a grid is reachable before it commits (`pageFlagMoveLimits`).
+ */
+// eslint-disable-next-line max-lines-per-function
+export function planTimelineRipple(
+    before: PageGrid,
+    after: PageGrid,
+    { timelines, transitions, assignments }: RippleRows,
+) {
+    const map = new GridEdgeMap(before, after);
 
     // Removed pages take their page moves with them, and nothing else (see `isPageMove`)
     const afterIds = new Set(after.pages.map((p) => p.id));
@@ -431,6 +440,42 @@ export async function rippleTimelineToPageGridInTransaction({
                 );
         }
     }
+
+    return {
+        removed,
+        rippled,
+        newTimeline,
+        newTransition,
+        newAssignment,
+        chains,
+    };
+}
+
+/**
+ * Rewrites the timeline rows after a page or beat edit that changed the grid from `before` to the
+ * grid now in the database. Does nothing when the grid didn't change. See the module comment for
+ * the rules, the refusals and the statement order.
+ */
+// eslint-disable-next-line max-lines-per-function
+export async function rippleTimelineToPageGridInTransaction({
+    tx,
+    before,
+}: {
+    tx: DbTransaction;
+    before: PageGrid;
+}): Promise<void> {
+    const after = await readPageGrid(tx);
+    if (sameGrid(before, after)) return;
+    const rows = await readRippleRows(tx);
+    const { transitions } = rows;
+    const {
+        removed,
+        rippled,
+        newTimeline,
+        newTransition,
+        newAssignment,
+        chains,
+    } = planTimelineRipple(before, after, rows);
 
     const T = schema.timeline_transitions;
     const L = schema.timelines;
@@ -609,12 +654,10 @@ async function addHoldingMoves(tx: DbTransaction, page: GridPage) {
             // Add selected marchers) holds the holds too
             const [timeline] = [
                 (await findTimelineByRange(tx, { start: m, end: e })) ??
-                    (
-                        await createTimelinesInTransaction({
-                            tx,
-                            newTimelines: [{ startBeat: m, endBeat: e }],
-                        })
-                    )[0],
+                    (await createRangeTimelineInTransaction(tx, {
+                        startBeat: m,
+                        endBeat: e,
+                    })),
             ];
             timelineId = timeline!.id;
         }

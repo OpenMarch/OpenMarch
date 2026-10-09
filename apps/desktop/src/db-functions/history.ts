@@ -58,6 +58,28 @@ export const withTimelineWriteLock = <T>(
     operation: () => Promise<T>,
 ): Promise<T> => withTransactionWithHistoryLock(operation);
 
+const historyChangeListeners = new Set<() => void>();
+
+/**
+ * Calls `listener` after every committed undoable edit, undo and redo, until the returned function
+ * unsubscribes it. A toast whose action undoes one edit (UI-14's delete toast) closes on the next
+ * change, so its Undo can't undo something else.
+ */
+export function subscribeHistoryChanges(listener: () => void): () => void {
+    historyChangeListeners.add(listener);
+    return () => historyChangeListeners.delete(listener);
+}
+
+function notifyHistoryChange(): void {
+    for (const listener of [...historyChangeListeners]) {
+        try {
+            listener();
+        } catch (error) {
+            console.error("A history change listener failed", error);
+        }
+    }
+}
+
 /**
  * Runs a function in a transaction with undo/redo history tracking.
  *
@@ -201,6 +223,7 @@ export const transactionWithHistory = async <T>(
         // Only reached once the transaction has committed
         notifyTimelineBatch(drained);
         if (touchedDisplayTables) bumpTimelineDisplayVersion();
+        notifyHistoryChange();
         return output;
     }
 
@@ -722,6 +745,7 @@ async function executeHistoryActionUnlocked(
         notifyTimelineBatch(committedBatch);
         if (touchesTimelineDisplayTables(tableNames))
             bumpTimelineDisplayVersion();
+        notifyHistoryChange();
 
         response = {
             success: true,
