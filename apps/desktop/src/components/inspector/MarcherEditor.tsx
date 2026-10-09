@@ -8,8 +8,7 @@ import {
 } from "@/hooks/queries";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
-import RegisteredActionButton from "../RegisteredActionButton";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import ActionButton from "@/shortcuts/ActionButton";
 import {
     Button,
     getButtonClassName,
@@ -252,8 +251,8 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             {/* Align buttons */}
             <h5 className="text-h5">Align</h5>
             <div className="flex gap-8">
-                <RegisteredActionButton
-                    registeredAction={RegisteredActionsObjects.alignVertically}
+                <ActionButton
+                    action="alignVertically"
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
@@ -264,11 +263,9 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                     )}
                 >
                     <AlignCenterVerticalSimpleIcon size={16} weight="bold" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.alignHorizontally
-                    }
+                </ActionButton>
+                <ActionButton
+                    action="alignHorizontally"
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
@@ -279,10 +276,10 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                     )}
                 >
                     <AlignCenterHorizontalSimpleIcon size={16} weight="bold" />
-                </RegisteredActionButton>
+                </ActionButton>
 
-                <RegisteredActionButton
-                    registeredAction={RegisteredActionsObjects.flipHorizontal}
+                <ActionButton
+                    action="flipHorizontal"
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
@@ -293,9 +290,9 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                     )}
                 >
                     <FlipHorizontalIcon size={16} weight="bold" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={RegisteredActionsObjects.flipVertical}
+                </ActionButton>
+                <ActionButton
+                    action="flipVertical"
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
@@ -306,7 +303,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                     )}
                 >
                     <FlipVerticalIcon size={16} weight="bold" />
-                </RegisteredActionButton>
+                </ActionButton>
             </div>
 
             {/* Distribute buttons */}
@@ -398,22 +395,18 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                     </Dropdown.Trigger>
                     <Dropdown.Portal>
                         <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <RegisteredActionButton
-                                registeredAction={
-                                    RegisteredActionsObjects.setSelectedMarchersToPreviousPage
-                                }
+                            <ActionButton
+                                action="setSelectedMarchersToPreviousPage"
                                 className="text-text px-6 py-4"
                             >
                                 <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                            </RegisteredActionButton>
-                            <RegisteredActionButton
-                                registeredAction={
-                                    RegisteredActionsObjects.setSelectedMarchersToNextPage
-                                }
+                            </ActionButton>
+                            <ActionButton
+                                action="setSelectedMarchersToNextPage"
                                 className="text-text px-6 py-4"
                             >
                                 <T keyName="toolbar.alignment.toNextPagePositions" />
-                            </RegisteredActionButton>
+                            </ActionButton>
                         </Dropdown.Content>
                     </Dropdown.Portal>
                 </Dropdown.Root>
@@ -715,10 +708,8 @@ function MarcherEditor() {
                                     </div>
                                 )}
                             {selectedMarchers.length === 2 && (
-                                <RegisteredActionButton
-                                    registeredAction={
-                                        RegisteredActionsObjects.swapMarchers
-                                    }
+                                <ActionButton
+                                    action="swapMarchers"
                                     className={clsx(
                                         getButtonClassName({
                                             variant: "primary",
@@ -728,11 +719,11 @@ function MarcherEditor() {
                                     )}
                                 >
                                     <T keyName="inspector.marcher.swapMarchers" />
-                                </RegisteredActionButton>
+                                </ActionButton>
                             )}
                             {selectedMarchers.length >= 3 &&
                                 createLineIsVisible() && (
-                                    <RegisteredActionButton
+                                    <ActionButton
                                         className={clsx(
                                             getButtonClassName({
                                                 variant: "primary",
@@ -740,12 +731,10 @@ function MarcherEditor() {
                                             }),
                                             "enabled:hover:text-text-invert",
                                         )}
-                                        registeredAction={
-                                            RegisteredActionsObjects.alignmentEventLine
-                                        }
+                                        action="alignmentEventLine"
                                     >
                                         <T keyName="inspector.marcher.createLine" />
-                                    </RegisteredActionButton>
+                                    </ActionButton>
                                 )}
 
                             {/* Alignment, distribution, and transformation buttons */}

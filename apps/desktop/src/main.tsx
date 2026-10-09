@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import SettingsWindow from "@/settings/SettingsWindow";
 import "./styles/index.css";
 // Load every weight the UI uses, or Chromium fakes medium/semibold/bold by smearing 400.
 import "@fontsource/dm-sans/400.css";
@@ -14,7 +15,10 @@ import * as Sentry from "@sentry/electron/renderer";
 import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
+import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import tolgee from "@/global/singletons/Tolgee";
+
+const isSettingsWindow = window.location.hash === "#settings";
 
 // Check for Playwright session from either build-time or runtime environment
 const isPlaywrightSession =
@@ -49,6 +53,14 @@ window.electron
         console.warn("Failed to load saved language:", error);
     });
 
+// Listen for language changes from other windows
+window.electron?.onSettingsChanged((change) => {
+    if (typeof change.language === "string")
+        void tolgee.changeLanguage(change.language);
+    if (typeof change.optOutAnalytics === "boolean")
+        applyAnalyticsConsent(change.optOutAnalytics);
+});
+
 Sentry.init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
     enabled: false,
@@ -62,7 +74,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 fallback="Loading..." // loading fallback
             >
                 <ThemeProvider>
-                    <App />
+                    {isSettingsWindow ? <SettingsWindow /> : <App />}
                 </ThemeProvider>
             </TolgeeProvider>
         </PostHogProvider>

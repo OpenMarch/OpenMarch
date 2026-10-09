@@ -30,6 +30,7 @@ words:
   - Cinnaminson
   - clsx
   - codegen
+  - contenteditable
   - colours
   - Configuración
   - cooldown
@@ -38,6 +39,7 @@ words:
   - dbstat
   - DELME
   - Dhruva
+  - domcontentloaded
   - DMEA
   - dorico
   - dorny
@@ -66,8 +68,12 @@ words:
   - idioma
   - importmap
   - Invalidators
+  - keycap
+  - keycaps
   - keyframed
+  - keymap
   - launchpage
+  - libsql
   - lightridge
   - localappdata
   - Loudoun
@@ -145,6 +151,8 @@ words:
   - toks
   - tolgee
   - Tolgee
+  - Tinykeys
+  - tinykeys
   - Topbar
   - trackpad
   - trackpads

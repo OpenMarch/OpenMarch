@@ -10,8 +10,7 @@ import {
 import { defaultSettings, useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import AudioPlayer from "./audio/AudioPlayer";
-import RegisteredActionButton from "../RegisteredActionButton";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import ActionButton from "@/shortcuts/ActionButton";
 import EditableAudioPlayer from "./audio/EditableAudioPlayer";
 import TimelineControls from "./TimelineControls";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -100,23 +99,19 @@ export default function TimelineContainer() {
                                     <T keyName="timeline.audio" />
                                 </p>
                                 {uiSettings.focussedComponent !== "timeline" ? (
-                                    <RegisteredActionButton
-                                        registeredAction={
-                                            RegisteredActionsObjects.focusTimeline
-                                        }
+                                    <ActionButton
+                                        action="focusTimeline"
                                         className="w-fit"
                                     >
                                         <PencilSimpleIcon />
-                                    </RegisteredActionButton>
+                                    </ActionButton>
                                 ) : (
-                                    <RegisteredActionButton
-                                        registeredAction={
-                                            RegisteredActionsObjects.focusCanvas
-                                        }
+                                    <ActionButton
+                                        action="focusCanvas"
                                         className="w-fit"
                                     >
                                         <XIcon />
-                                    </RegisteredActionButton>
+                                    </ActionButton>
                                 )}
                             </div>
                         )}

@@ -20,15 +20,9 @@ import {
     DialogClose,
     DialogContent,
     DialogTitle,
-    DialogTrigger,
     TooltipClassName,
 } from "@openmarch/ui";
-import {
-    ArrowSquareOutIcon,
-    InfoIcon,
-    MoonIcon,
-    SunIcon,
-} from "@phosphor-icons/react";
+import { InfoIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import {
@@ -46,6 +40,7 @@ import { useTimingObjects } from "@/hooks";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
+import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
@@ -2001,8 +1996,13 @@ function ExportModalContents({
 }: {
     onMobileExportClick: () => void;
 }) {
+    const { exportTab, setExportTab } = useAppDialogStore();
     return (
-        <Tabs defaultValue="mobile" className="gap-12">
+        <Tabs
+            value={exportTab}
+            onValueChange={(tab) => setExportTab(tab as ExportTab)}
+            className="gap-12"
+        >
             <TabsList>
                 <TabItem value="mobile">
                     <T keyName="exportCoordinates.mobile" />
@@ -2037,31 +2037,22 @@ function ExportModalContents({
     );
 }
 
+/** The export dialog. Mount once; open it with the export actions. */
 export default function ExportCoordinatesModal() {
-    const [open, setOpen] = useState(false);
+    const { exportOpen: open, setExportOpen: setOpen } = useAppDialogStore();
     const { setContent, setOpen: setSidebarOpen } = useSidebarModalStore();
 
     const handleMobileExportClick = useCallback(() => {
         setOpen(false);
         setContent(<MobileExportModalContents />, "mobile-export");
         setSidebarOpen(true);
-    }, [setContent, setSidebarOpen]);
+    }, [setContent, setSidebarOpen, setOpen]);
 
     return (
         <>
             <style>{`.export-coordinates-dialog + [data-radix-popper-content-wrapper],
                 .export-coordinates-dialog ~ [data-radix-popper-content-wrapper]{z-index:10000 !important;}`}</style>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogTrigger
-                    asChild
-                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                >
-                    <button type="button" className="flex items-center gap-8">
-                        <ArrowSquareOutIcon size={24} />
-                        <T keyName="exportCoordinates.exportButton" />
-                    </button>
-                </DialogTrigger>
-
                 {/* Dialog Setup */}
                 <DialogContent className="export-coordinates-dialog max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>

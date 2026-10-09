@@ -3,8 +3,7 @@ import { InspectorCollapsible } from "./InspectorCollapsible";
 import { T } from "@tolgee/react";
 import { CircleIcon } from "@phosphor-icons/react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import RegisteredActionButton from "../RegisteredActionButton";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
+import ActionButton from "@/shortcuts/ActionButton";
 import { marcherPagesByPageQueryOptions } from "@/hooks/queries/useMarcherPages";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useQuery } from "@tanstack/react-query";
@@ -47,15 +46,13 @@ function ShapeSelector() {
                         <T keyName="inspector.shapes.selectShape" />
                     </label>
                     <div className="grid grid-cols-4 gap-8">
-                        <RegisteredActionButton
+                        <ActionButton
                             className="aspect-square justify-center"
                             disabled={editingDisabled}
-                            registeredAction={
-                                RegisteredActionsObjects.createCircle
-                            }
+                            action="createCircle"
                         >
                             <CircleIcon size={32} weight="regular" />
-                        </RegisteredActionButton>
+                        </ActionButton>
                     </div>
                     <div className="text-text-subtitle text-xs">
                         <T keyName="inspector.shapes.moreShapesComingSoon" />

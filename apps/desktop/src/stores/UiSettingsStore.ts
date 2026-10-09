@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { syncFromStorage } from "@/stores/syncFromStorage";
 
 export type FocusableComponents = "canvas" | "timeline";
 export interface UiSettings {
@@ -82,40 +83,44 @@ export const defaultSettings: UiSettings = {
     tolgeeDevTools: false,
 };
 
-const STORAGE_KEY = "openmarch:uiSettings";
+export const UI_SETTINGS_STORAGE_KEY = "openmarch:uiSettings";
 
 const clampZoomSensitivity = (value: number): number =>
     Math.min(4.0, Math.max(0.5, value));
 
+// Helper function to parse settings from a JSON string
+// Throws on bad JSON or invalid structure
+const parseSettings = (raw: string): UiSettings => {
+    const parsed = JSON.parse(raw) as UiSettings;
+    const mergedMouseSettings = {
+        ...defaultSettings.mouseSettings,
+        ...parsed.mouseSettings,
+    };
+    if (mergedMouseSettings.zoomSensitivity !== undefined) {
+        mergedMouseSettings.zoomSensitivity = clampZoomSensitivity(
+            mergedMouseSettings.zoomSensitivity,
+        );
+    }
+    // Merge with default settings to ensure all properties exist
+    // Deep merge nested objects to preserve new properties in defaults
+    return {
+        ...defaultSettings,
+        ...parsed,
+        mouseSettings: mergedMouseSettings,
+        coordinateRounding: parsed.coordinateRounding
+            ? {
+                  ...defaultSettings.coordinateRounding,
+                  ...parsed.coordinateRounding,
+              }
+            : defaultSettings.coordinateRounding,
+    };
+};
+
 // Helper function to load settings from localStorage
 const loadSettings = (): UiSettings => {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return defaultSettings;
-
-        const parsed = JSON.parse(stored) as UiSettings;
-        const mergedMouseSettings = {
-            ...defaultSettings.mouseSettings,
-            ...parsed.mouseSettings,
-        };
-        if (mergedMouseSettings.zoomSensitivity !== undefined) {
-            mergedMouseSettings.zoomSensitivity = clampZoomSensitivity(
-                mergedMouseSettings.zoomSensitivity,
-            );
-        }
-        // Merge with default settings to ensure all properties exist
-        // Deep merge nested objects to preserve new properties in defaults
-        return {
-            ...defaultSettings,
-            ...parsed,
-            mouseSettings: mergedMouseSettings,
-            coordinateRounding: parsed.coordinateRounding
-                ? {
-                      ...defaultSettings.coordinateRounding,
-                      ...parsed.coordinateRounding,
-                  }
-                : defaultSettings.coordinateRounding,
-        };
+        const stored = localStorage.getItem(UI_SETTINGS_STORAGE_KEY);
+        return stored ? parseSettings(stored) : defaultSettings;
     } catch (error) {
         console.error("Failed to load UI settings from localStorage:", error);
         return defaultSettings;
@@ -125,7 +130,7 @@ const loadSettings = (): UiSettings => {
 // Helper function to save settings to localStorage
 const saveSettings = (settings: UiSettings): void => {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        localStorage.setItem(UI_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
         console.error("Failed to save UI settings to localStorage:", error);
     }
@@ -213,4 +218,8 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             saveSettings(newSettings);
         },
     }),
+);
+
+syncFromStorage(UI_SETTINGS_STORAGE_KEY, parseSettings, (uiSettings) =>
+    useUiSettingsStore.setState({ uiSettings }),
 );
