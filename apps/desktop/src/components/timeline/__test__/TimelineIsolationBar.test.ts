@@ -24,6 +24,14 @@ describe("isolatedTimelineName", () => {
         expect(isolatedTimelineName({ start: 9, end: 17 }, PAGES)).toBe(
             "Page 2's move",
         );
+        // Beat 0 is page 1's start too (a flag pinned there)
+        expect(isolatedTimelineName({ start: 0, end: 9 }, PAGES)).toBe(
+            "Page 1's move",
+        );
+        // Whole pages read as pages (UI-17 follow-up)
+        expect(isolatedTimelineName({ start: 9, end: 25 }, PAGES)).toBe(
+            "Pages 2–3",
+        );
         expect(isolatedTimelineName({ start: 13, end: 17 }, PAGES)).toBe(
             "Page 2, counts 5–8",
         );
@@ -43,9 +51,9 @@ describe("the field line's words (UI-12)", () => {
     it("names the sets a window passes through, not the page it ends on", () => {
         expect(flagsInside({ start: 5, end: 21 }, PAGES)).toEqual(["1", "2"]);
         expect(flagsInside({ start: 9, end: 17 }, PAGES)).toEqual([]);
-        expect(passedSets(["2"])).toBe("page 2's set");
-        expect(passedSets(["1", "2"])).toBe("pages 1 and 2's sets");
-        expect(passedSets(["1", "2", "3"])).toBe("pages 1, 2 and 3's sets");
+        expect(passedSets(["2"])).toBe("set 2");
+        expect(passedSets(["1", "2"])).toBe("sets 1 and 2");
+        expect(passedSets(["1", "2", "3"])).toBe("sets 1, 2 and 3");
     });
 });
 

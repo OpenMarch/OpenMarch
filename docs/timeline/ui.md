@@ -347,7 +347,8 @@ from it. The spec still wins on the model; this file decides presentation.
   leave when and arrive when are the selection, the drag, S and P.
 
 - **UI-11: Play from the start flag (project owner, 2026-10-05).** Supersedes
-  UI-10's **Play, Pause, Stop**. Built on branch `timeline/ui11-preview-playback`.
+  UI-10's **Play, Pause, Stop**. Its **From start** mode, **Pause** and **Stop** are superseded by
+  UI-17 (two play buttons). Built on branch `timeline/ui11-preview-playback`.
   The owner asked for Logic-style "play from the start flag" so the move just
   edited plays back, and for Play to behave normally otherwise. A first
   proposal tied this to a pinned S and swapped keys by state; the critiques (a
@@ -760,6 +761,98 @@ from it. The spec still wins on the model; this file decides presentation.
     pointer, or a drag brought back writes nothing.
   - Not built: clips on the flag only move on release, not during the drag; edge scrolling while
     dragging a flag; a ripple variant (Shift-drag, shifting every later flag).
+
+- **UI-17: one Play, and a pinned start flag loops (project owner, 2026-10-09).** Supersedes UI-11's
+  **From start** mode, **Pause** and **Stop**, and UI-12's Stop button. The owner disliked the
+  stop-versus-pause distinction and asked for keys for the flag and the loop that are easy to
+  communicate. A survey of DAWs and video editors (Logic, Ableton, Pro Tools, Reaper, Cubase, Studio
+  One, FL Studio, GarageBand, Premiere, Resolve, Final Cut) found that what confuses people is a
+  global mode that silently changes what Space does.
+  - **First build, changed after the owner tried it (2026-10-08 to 09).** It had two play buttons
+    (Space played from here and stopped in place; Shift+Space played the flag window and returned),
+    a Loop toggle (Shift+L) and a "stop here" key (K). Trying it, the owner found two play buttons
+    with stops that land in different places disorienting, the switch between them not useful, and
+    K pointless next to Stop. They noted the two kinds of user: one edits a transition and wants to
+    see the end and then watch it play back; the other expects Play to play from where it is. They
+    proposed: with a pin down, Play plays from the pin and loops. UI-11 had rejected "the mode
+    follows whether S is pinned" because the pin was invisible; UI-12 has since drawn it (the pin,
+    the window's bar, the field line), which removes that objection. It is also Logic's model:
+    Cycle on (C) makes Play loop the yellow region.
+  - **Play (Space), looping off**, plays on from the playhead to the end of the show. Stopping stays
+    there: the playhead moves to the last whole beat played, and an unpinned start flag follows.
+  - **Play (Space), looping on**, loops exactly the loop's region (no roll, V-24) until stopped,
+    wherever the playhead is. Stopping puts the canvas back on the playhead, which looping never
+    moved (project owner). An isolated move loops its range the same way.
+  - **One Play button**, which reads Stop while playing. While looping its icon is a short bar in the
+    start flag's color, then Play (the owner picked it from mockups), and its name is "Play the
+    loop". There is no Pause and no separate Stop or second play button; Loop is its own button.
+  - **A click, scrub or page jump while looping**: inside the loop it jumps and keeps looping;
+    outside it, playback plays on from there and the stop stays (UI-11, UI-12).
+  - **The loop is its own region** (project owner, 2026-10-09, after trying the follow model by
+    hand: moving the playhead to look at another count shouldn't change what loops), drawn as a
+    yellow bar along the ruler's top edge, as Logic draws its cycle region. It is apart from the
+    start flag and the edit window, which go back to UI-12's editing roles (owner, 2026-10-09, after trying
+    both by hand: with the flag tied to the loop's start, a scrub to another page stretched the edit
+    window from the loop's start, V-180). While looping is on,
+    Space loops the region wherever the playhead is, and stopping returns to the playhead (Logic's
+    cycle; owner). A scrub, a click on a count or the arrow keys never change it. Going to a page (E,
+    Q, a page box) moves it to that page, as the round 2 test chose ("the loop follows your page").
+    Shift+click on page boxes, with looping on, sets it to those pages. The field line names the loop
+    only while it is elsewhere than the window being edited ("Space loops Page 3's move"); on its
+    own page the lit Loop button, the bar and Play's icon say it (owner, 2026-10-09).
+  - **Turning looping on and off**: C, or the **Loop** button on the transport (lit while on), loops
+    the window being edited (the page, or the pages Shift+click selected); again turns it off.
+    **Ctrl+drag** (Cmd on macOS) on the timeline draws the loop and turns looping on, as dragging
+    Logic's cycle bar does; it also sets the edit window, as UI-12 had it. An isolated move always
+    loops its own range, and shows it: the bar over its range (read-only) and the Loop button lit,
+    saying "Loop is always on for an isolated move" (owner, 2026-10-09).
+  - **The loop's ends drag**: each end of the bar is a handle above the page flag's grip, so it
+    never moves a page. Dragging snaps to page lines and downbeats (Alt turns snapping off); a
+    focused end steps with the arrow keys. At rest the bar's rounded ends are the handles; a knob
+    shows on hover. (It replaced a tab on the window's end that the owner found awkward.)
+  - **C used to pin the start flag**, first at the playhead (a blind A/B test with four simulated
+    users found all four expected the page's start) and then at the page's start; round 2 of the
+    tests then chose a pin that follows your page over a stay-put locator (4/4, because the
+    locator's loop end was the playhead, so navigating stretched it). The separate loop region keeps
+    both lessons: it covers whole pages and follows page navigation, and the playhead never resizes
+    it.
+  - **Space plays on from the playhead; Shift+Space plays the page's move once** and goes back to
+    its set when it ends or is stopped (project owner, 2026-10-09, after trying round 3's choice by
+    hand). Looping a page is loop mode's job (C); Shift+Space is the one-shot check. With a page
+    selected and nothing pinned, Play's tooltip names both. Round 3 of the simulated-user tests
+    had picked a hybrid (Space on a selected page plays its move once, Space straight after plays
+    on); the owner found it asked two presses to play on from the playhead, and that page-from-start
+    playing belongs to loop mode. Testers had expected Space to play a page they'd just selected;
+    the tooltip and the menu's "Play Page Once" are the answer to that, to watch (V-176).
+  - **Playing on stops where it is**, and when that is a new page the field line says so with a ring
+    ("Stopped on a new page · Editing Page 4…") for a few seconds (owner; the quiet line was missed
+    by every tester who then edited the wrong set).
+  - **⏮ is the previous page; Shift+click (or Shift+Q) goes to the start of the show**, as before
+    (owner, 2026-10-09: briefly swapped after testers read ⏮ as "start"; the owner wants the
+    common step on the plain click). The tooltip says Shift+click goes to the start.
+  - **A click on a beat seeks to that count** (UI-12); the page box row selects the page (owner,
+    2026-10-09, after briefly making any click select the page).
+  - **Home while playing jumps playback to the start**; transport buttons don't take keyboard focus
+    on a click, so Space after clicking one is still Play; the transport's tooltips open above it.
+  - **While playing, the readout counts the count being marched**: the beat the playhead is in
+    lands on the next count, so a loop's first count reads "Pg 2 · ct 1/8", not the previous page's
+    "ct 8/8". The paused playhead still reads the count it rests on.
+  - **Plainer words on the field line**: whole pages read "Pages 2–3", and a window crossing a flag
+    says "through set 2" (was "passes through page 2's set").
+  - **Communicating the shortcuts**: every transport button has a tooltip with its name, the
+    shortcut as keycaps (500 ms, 300 ms between neighbors, at once on keyboard focus, as Figma and
+    Linear do), and a hint line that says what Play will do and how to change it ("Unpin it (C) to
+    play on from here"). Keycaps are not drawn inside buttons (the survey found that noisy). The
+    transport's keys are checked against the action registry by a test.
+  - **`?` lists every shortcut**, as GitHub's and Figma's `?` do: a dialog grouped Playback, Pages,
+    Timeline and the rest, read from the action registry so it can't go stale, plus the timeline's
+    own keys and gestures (G, Shift+Z, Esc, Ctrl+drag, Ctrl+scroll, Alt+drag) and the WASD nudge. It
+    is also Help → Keyboard Shortcuts (_lead default_).
+  - **App menu items**: a **Playback** menu (Play / Stop, Play Page Once, Loop On / Off) and Help →
+    Keyboard Shortcuts. They show their keys without registering them, so text fields keep Space
+    and letters; macOS puts the key in the label (docs/adr/0003-menu-actions-ipc.md).
+  - Deferred: a one-time hint the first time someone pins (dropped with the second play button,
+    whose first click carried it).
 
 ## Mapping the spec onto the view model
 

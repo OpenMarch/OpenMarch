@@ -218,9 +218,18 @@ export function createResolver(host: TimelineSnapshot): Resolver;
 
 // Write-path validators for the invariants SQLite can't check (I-S1, I-T2):
 // finiteness, the point bound, per-kind geometry and path parameters.
-export function validateShapeGeometry(kind: ShapeKind, geometry: unknown): ValidationResult;
-export function validatePathParams(style: PathStyle, params: unknown): ValidationResult;
-export function validateDestinations(points: unknown, slotCount: number): ValidationResult;
+export function validateShapeGeometry(
+  kind: ShapeKind,
+  geometry: unknown,
+): ValidationResult;
+export function validatePathParams(
+  style: PathStyle,
+  params: unknown,
+): ValidationResult;
+export function validateDestinations(
+  points: unknown,
+  slotCount: number,
+): ValidationResult;
 
 // The uncached reference oracle (spec §8), for tests and debug checks only.
 export function createTimelineOracleForTesting(host: TimelineSnapshot): Oracle;

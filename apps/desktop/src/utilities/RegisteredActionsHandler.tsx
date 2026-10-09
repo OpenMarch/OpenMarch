@@ -38,12 +38,15 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import { useCreateMarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useSelectionStore } from "@/stores/SelectionStore";
+import { useShortcutsDialogStore } from "@/stores/ShortcutsDialogStore";
+import { isMenuAction } from "@/global/menuActions";
 import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
 import {
     navigateTimelinePages,
-    stopTimelinePlayback,
+    playTimelinePage,
     toggleTimelinePlayback,
+    toggleTimelineLoop,
 } from "@/timeline/timelineTransport";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import tolgee from "@/global/singletons/Tolgee";
@@ -84,8 +87,9 @@ export enum RegisteredActionsEnum {
     previousPage = "previousPage",
     firstPage = "firstPage",
     playPause = "playPause",
-    stopPlayback = "stopPlayback",
-    togglePlayFromStart = "togglePlayFromStart",
+    showShortcuts = "showShortcuts",
+    playPage = "playPage",
+    toggleLoop = "toggleLoop",
     toggleMetronome = "toggleMetronome",
 
     // Batch editing
@@ -259,6 +263,8 @@ class KeyboardShortcut {
      * @returns The string representation of the key and modifiers. E.g. "Ctrl + Shift + Q"
      */
     toString() {
+        // "?" is Shift plus a key that varies by layout, so it is written alone (UI-17 follow-up)
+        if (this.key === "?") return "?";
         const keyStr = this.key === " " ? "Space" : this.key.toUpperCase();
         return `${this.control ? "Ctrl + " : ""}${this.alt ? "Alt + " : ""}${
             this.shift ? "Shift + " : ""
@@ -290,8 +296,8 @@ class KeyboardShortcut {
 /** Playback controls, which leave a held preview frame alone (UI-11) */
 const TRANSPORT_ACTIONS: ReadonlySet<RegisteredActionsEnum> = new Set([
     RegisteredActionsEnum.playPause,
-    RegisteredActionsEnum.stopPlayback,
-    RegisteredActionsEnum.togglePlayFromStart,
+    RegisteredActionsEnum.toggleLoop,
+    RegisteredActionsEnum.playPage,
     RegisteredActionsEnum.toggleMetronome,
 ]);
 
@@ -363,15 +369,20 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: " " }),
         enumString: "playPause",
     }),
-    stopPlayback: new RegisteredAction({
-        descKey: "actions.playback.stop",
-        keyboardShortcut: new KeyboardShortcut({ key: " ", shift: true }),
-        enumString: "stopPlayback",
+    showShortcuts: new RegisteredAction({
+        descKey: "actions.ui.showShortcuts",
+        keyboardShortcut: new KeyboardShortcut({ key: "?", shift: true }),
+        enumString: "showShortcuts",
     }),
-    togglePlayFromStart: new RegisteredAction({
-        descKey: "actions.playback.togglePlayFromStart",
+    playPage: new RegisteredAction({
+        descKey: "actions.playback.playPage",
+        keyboardShortcut: new KeyboardShortcut({ key: " ", shift: true }),
+        enumString: "playPage",
+    }),
+    toggleLoop: new RegisteredAction({
+        descKey: "actions.playback.toggleLoop",
         keyboardShortcut: new KeyboardShortcut({ key: "c" }),
-        enumString: "togglePlayFromStart",
+        enumString: "toggleLoop",
     }),
     toggleMetronome: new RegisteredAction({
         descKey: "actions.playback.toggleMetronome",
@@ -1037,15 +1048,25 @@ function RegisteredActionsHandler() {
                     if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
-                case RegisteredActionsEnum.togglePlayFromStart: {
-                    // UI-11 From start: Play previews the window from the start flag
+                case RegisteredActionsEnum.playPage: {
+                    // UI-17: Shift+Space plays the page's move once, back to its set
+                    if (!databaseReady || !timelineMode) break;
+                    playTimelinePage({
+                        isPlaying,
+                        showEndBeat: beats.length,
+                        setIsPlaying,
+                    });
+                    break;
+                }
+                case RegisteredActionsEnum.toggleLoop: {
+                    // UI-17: C turns looping on over the page being edited, or off
                     if (!timelineMode) break;
-                    useTimelineSelectionStore.getState().setPlayFromStart();
+                    toggleTimelineLoop();
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {
                     if (!databaseReady || !pages || pages.length === 0) break;
-                    // UI-11 Play: plays on, or previews the window with From start on
+                    // UI-17 Play: loops a pinned window, or plays on; playing, it stops
                     if (timelineMode) {
                         toggleTimelinePlayback({
                             isPlaying,
@@ -1058,10 +1079,9 @@ function RegisteredActionsHandler() {
                     if (nextPage) setIsPlaying(!isPlaying);
                     break;
                 }
-                case RegisteredActionsEnum.stopPlayback: {
-                    // UI-11 Stop: back to the playhead (timeline mode only)
-                    if (!databaseReady || !timelineMode) break;
-                    stopTimelinePlayback({ isPlaying, setIsPlaying });
+                case RegisteredActionsEnum.showShortcuts: {
+                    // UI-17 follow-up: ? lists every shortcut
+                    useShortcutsDialogStore.getState().setOpen(true);
                     break;
                 }
                 case RegisteredActionsEnum.toggleMetronome: {
@@ -1510,6 +1530,7 @@ function RegisteredActionsHandler() {
                     "Alt",
                     "Meta",
                     " ",
+                    "?",
                     "Enter",
                     "Escape",
                     "ArrowUp",
@@ -1626,6 +1647,19 @@ function RegisteredActionsHandler() {
             }
         },
         [setUiSettings, triggerAction],
+    );
+
+    /**
+     * The app menu's playback and help items run their registered action here, and only those
+     * (docs/adr/0003-menu-actions-ipc.md).
+     */
+    useEffect(
+        () =>
+            window.electron.onMenuAction?.((action) => {
+                if (isMenuAction(action))
+                    triggerAction(action as RegisteredActionsEnum);
+            }),
+        [triggerAction],
     );
 
     /**

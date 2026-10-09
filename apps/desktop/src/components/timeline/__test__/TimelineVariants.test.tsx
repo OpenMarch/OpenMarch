@@ -88,6 +88,85 @@ describe("timeline views", () => {
         });
     });
 
+    it("Shift+click on a page box extends the window over every page to it (UI-17 follow-up)", () => {
+        const onSelectionChange = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 8, endBeatIndex: 16 },
+                }}
+                onSelectionChange={onSelectionChange}
+            />,
+        );
+        // A plain click selects page 2A alone, which says where it ends
+        fireEvent.click(screen.getByRole("button", { name: "Page 2A" }));
+        const page2a = onSelectionChange.mock.lastCall![0].range;
+        expect(page2a.startBeatIndex).toBe(16);
+        fireEvent.click(screen.getByRole("button", { name: "Page 2A" }), {
+            shiftKey: true,
+        });
+        expect(onSelectionChange).toHaveBeenLastCalledWith({
+            kind: "range",
+            range: { startBeatIndex: 8, endBeatIndex: page2a.endBeatIndex },
+            via: "pages",
+        });
+    });
+
+    it("draws the loop bar and steps its ends with the arrow keys (UI-17)", () => {
+        const onLoopChange = vi.fn();
+        const loop = { startBeatIndex: 8, endBeatIndex: 16 };
+        const { rerender } = render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                onLoopChange={onLoopChange}
+            />,
+        );
+        expect(screen.queryByTestId("timeline-loop-bar")).toBeNull();
+        expect(screen.queryByTestId("timeline-loop-end")).toBeNull();
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport={false}
+                loop={loop}
+                onLoopChange={onLoopChange}
+            />,
+        );
+        expect(screen.getByTestId("timeline-loop-bar")).toBeInTheDocument();
+        const start = screen.getByTestId("timeline-loop-start");
+        const end = screen.getByTestId("timeline-loop-end");
+        expect(end).toHaveAttribute(
+            "title",
+            "Drag to move this end of the loop",
+        );
+        expect(end).toHaveAttribute("aria-label", "Loop end, beat 16");
+        expect(start).toHaveAttribute("aria-label", "Loop start, beat 8");
+        // jsdom has no layout, so the ends move by key, not by drag
+        fireEvent.keyDown(end, { key: "ArrowRight" });
+        expect(onLoopChange).toHaveBeenCalledWith({
+            startBeatIndex: 8,
+            endBeatIndex: 17,
+        });
+        fireEvent.keyDown(end, { key: "ArrowLeft" });
+        expect(onLoopChange).toHaveBeenLastCalledWith({
+            startBeatIndex: 8,
+            endBeatIndex: 15,
+        });
+        fireEvent.keyDown(start, { key: "ArrowLeft" });
+        expect(onLoopChange).toHaveBeenLastCalledWith({
+            startBeatIndex: 7,
+            endBeatIndex: 16,
+        });
+        fireEvent.keyDown(start, { key: "ArrowRight" });
+        expect(onLoopChange).toHaveBeenLastCalledWith({
+            startBeatIndex: 9,
+            endBeatIndex: 16,
+        });
+    });
+
     it("presses the initial box for home", () => {
         render(
             <ExpandedTimeline
@@ -149,7 +228,7 @@ describe("timeline views", () => {
                 altKey: true,
             }),
         );
-        // Marked drawn, which turns From start on in the app (UI-11)
+        // Marked drawn: a range dragged on empty space (UI-12)
         expect(onSelectionChange).toHaveBeenCalledWith({
             kind: "range",
             range: { startBeatIndex: 3, endBeatIndex: 6 },
@@ -193,6 +272,32 @@ describe("timeline views", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Play" }));
         expect(onPlayingChange).toHaveBeenCalledWith(true);
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                isPlaying
+                onPlayingChange={onPlayingChange}
+                onPixelsPerBeatChange={onPixelsPerBeatChange}
+            />,
+        );
+        expect(
+            screen.getByRole("button", { name: "Stop" }),
+        ).toBeInTheDocument();
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                playLoops
+                onPlayingChange={onPlayingChange}
+                onPixelsPerBeatChange={onPixelsPerBeatChange}
+            />,
+        );
+        expect(
+            screen.getByRole("button", {
+                name: "Play the loop",
+            }),
+        ).toBeInTheDocument();
         expect(
             screen.queryByRole("button", { name: "Zoom in" }),
         ).not.toBeInTheDocument();

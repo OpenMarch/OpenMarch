@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { Button } from "@openmarch/ui";
-import { FlagIcon, PushPinSlashIcon, XIcon } from "@phosphor-icons/react";
+import { FlagIcon, PushPinSlashIcon } from "@phosphor-icons/react";
+import { Keycaps } from "./ShortcutTooltip";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
 import { isTyping, overlayOpen, spaceStaysPlay } from "./timelineHotkeys";
@@ -26,6 +26,10 @@ export function isolatedTimelineName(
     pages: readonly (FlagPage & { readonly name: string })[],
 ): string {
     const boxes = pageFlags(pages).filter((f) => f.range !== null);
+    // Page 1's box starts at beat 1, show time 0, which the store writes as beat 0 (a flag
+    // pinned on page 1's start): the same moment, so name it as page 1's
+    if (range.start === 0 && boxes[0]?.range?.start === 1)
+        range = { start: 1, end: range.end };
     const exact = boxes.find(
         (f) => f.range!.start === range.start && f.range!.end === range.end,
     );
@@ -39,6 +43,13 @@ export function isolatedTimelineName(
     if (!first && lastBox && range.start >= lastBox.range!.end)
         return `After page ${lastBox.page.name}, counts ${range.start - lastBox.range!.end + 1}–${range.end - lastBox.range!.end}`;
     if (!first || !last) return `Beats ${range.start}–${range.end}`;
+    // Whole pages: "Pages 2–3" (UI-17 follow-up, plainer than counts from page to page)
+    if (
+        first !== last &&
+        first.range!.start === range.start &&
+        last.range!.end === range.end
+    )
+        return `Pages ${first.page.name}–${last.page.name}`;
     const from = range.start - first.range!.start + 1;
     const to = range.end - last.range!.start;
     // "count 3" for one count, not "counts 3–3" (UI-14 review)
@@ -49,21 +60,14 @@ export function isolatedTimelineName(
 }
 
 /**
- * Esc ends isolation (V-14), and after that turns **From start** off (UI-11), one per press.
- * Since the UI-14 round-2 review one Esc leaves isolation however it was entered, also with
- * marchers selected (the registered Escape action deselects them in the same press; **Edit move**
- * selects nobody). **From start** still turns off only on an Esc with nothing selected, as the
- * first Esc deselects. Text fields, open popovers, menus and dialogs, and the line or lasso tool
- * keep their Esc.
+ * Esc ends isolation (V-14). Since the UI-14 round-2 review one Esc leaves isolation however it
+ * was entered, also with marchers selected (the registered Escape action deselects them in the
+ * same press; **Edit move** selects nobody). Text fields, open popovers, menus and dialogs, and
+ * the line or lasso tool keep their Esc.
  * Listens in the capture phase, before the registered actions, which mark Escape handled.
  */
 export function useIsolationEscape(): void {
-    const active = useTimelineSelectionStore(
-        (s) => s.isolation !== null || s.playFromStart,
-    );
-    const selectedCount = useSelectedMarchers()?.selectedMarchers.length ?? 0;
-    const selected = useRef(selectedCount);
-    selected.current = selectedCount;
+    const active = useTimelineSelectionStore((s) => s.isolation !== null);
     useEffect(() => {
         if (!active) return;
         const onKeyDown = (event: KeyboardEvent) => {
@@ -73,12 +77,9 @@ export function useIsolationEscape(): void {
             if (overlayOpen()) return;
             // A clip move or resize in progress takes this Esc (resize-move E14)
             if (clipGestureActive()) return;
-            const store = useTimelineSelectionStore.getState();
             // UI-14 round-2 review: the bar says "Done (Esc)", so one Esc leaves isolation, with
             // or without a selection (the registered Escape action deselects in the same press)
-            if (store.isolation) store.exitIsolation();
-            else if (selected.current === 0 && store.playFromStart)
-                store.setPlayFromStart(false);
+            useTimelineSelectionStore.getState().exitIsolation();
         };
         window.addEventListener("keydown", onKeyDown, true);
         return () => window.removeEventListener("keydown", onKeyDown, true);
@@ -115,37 +116,41 @@ export function isWholePageWindow(
     );
 }
 
-/** "page 3's set", "pages 3 and 4's sets", "pages 3, 4 and 5's sets" */
+/** "set 3", "sets 3 and 4", "sets 3, 4 and 5" (UI-17 follow-up: plainer than "page 3's set") */
 export const passedSets = (names: readonly string[]) =>
     names.length === 1
-        ? `page ${names[0]}'s set`
-        : `pages ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}'s sets`;
+        ? `set ${names[0]}`
+        : `sets ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 
 /**
  * The line over the field (UI-12, replacing UI-11's From start badge): what a drag edits now, so
  * the window is never only a tint on the timeline. Quiet (no border, subtitle text) for an
- * ordinary page: a whole page box, start flag not pinned, From start off. Prominent, and flashed
+ * ordinary page: a whole page box, start flag not pinned. Prominent, and flashed
  * once, when anything is unusual: a partial window, a pinned start flag (with **Unpin**), a window
- * passing page flags (that part never truncates), past the last flag, or From start on ("Space
- * replays it", with the way out). Only the buttons take the pointer, so the field under it stays
+ * passing page flags (that part never truncates), or past the last flag. With looping on it
+ * names it while it is elsewhere ("Space loops Page 3's move", UI-17). Only the buttons take the pointer, so the field under it stays
  * usable. Screen readers hear the sentence once it settles, not on every scrubbed beat. Hidden
  * while isolated: the isolation bar says it instead.
  */
 export function TimelineFromStartBadge() {
-    const on = useTimelineSelectionStore((s) => s.playFromStart);
     const selection = useTimelineSelectionStore((s) => s.selection);
     const startBeat = useTimelineSelectionStore((s) => s.startBeat);
     const pinned = useTimelineSelectionStore((s) => s.startPinned);
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
-    const holding = useTimelineSelectionStore(
-        (s) => s.playback === null && s.cursorBeat !== null,
-    );
     const { pages } = useTimingObjects()!;
     const range = selection.kind === "range" ? selection : null;
-    const fromStartShown = on && !isolated && range !== null;
-    // The pin only matters while it bounds the window (not after Stop, when P is on or before it)
+    // The pin only matters while it bounds the window (not when P is on or before it)
     const pinShown = pinned && range !== null && range.start === startBeat;
+    // UI-17: with looping on, the loop's name when it isn't the window being edited
+    const loop = useTimelineSelectionStore((s) => s.loop);
+    const loopName =
+        loop && !(range && range.start === loop.start && range.end === loop.end)
+            ? isolatedTimelineName(loop, pages)
+            : null;
+    // Only when the loop is elsewhere: on the page being edited, the lit Loop button, the bar and
+    // Play's icon say it (owner, 2026-10-09)
+    const loopShown = !isolated && loopName !== null;
     const through = range ? flagsInside(range, pages) : [];
     const name =
         selection.kind === "home"
@@ -154,17 +159,35 @@ export function TimelineFromStartBadge() {
               ? isolatedTimelineName(range, pages)
               : "";
     const wholePage = isWholePageWindow(selection, pages);
+    // UI-17: playing on that stops on another page says so loudly (round 3: all four testers
+    // missed the quiet line and edited the next page's set)
+    const [movedOn, setMovedOn] = useState(false);
+    const nameAtPlay = useRef<string | null>(null);
+    useEffect(() => {
+        if (playing) {
+            nameAtPlay.current ??= name;
+            setMovedOn(false);
+            return;
+        }
+        const from = nameAtPlay.current;
+        nameAtPlay.current = null;
+        if (from === null || from === name) return;
+        setMovedOn(true);
+        const timeout = setTimeout(() => setMovedOn(false), 4000);
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [playing]);
     const unusual =
-        fromStartShown || pinShown || through.length > 0 || !wholePage;
+        loopShown || pinShown || through.length > 0 || !wholePage || movedOn;
     const sentence =
         selection.kind === "none"
             ? ""
-            : `Editing ${name}${through.length ? `, passing through ${passedSets(through)}` : ""}${pinShown ? ", start flag pinned" : ""}${fromStartShown ? ". Space replays it" : ""}`;
-    // Flash when it turns prominent for a new reason: From start, a pin, or crossing flags
-    const flashKey = `${fromStartShown}|${pinShown}|${through.join(",")}`;
+            : `${movedOn ? "Stopped on a new page. " : ""}Editing ${name}${through.length ? `, through ${passedSets(through)}` : ""}${pinShown ? ", start flag pinned" : ""}${loopShown ? `. Space loops ${loopName}` : ""}`;
+    // Flash when it turns prominent for a new reason: a pin, or crossing flags
+    const flashKey = `${loopShown}|${pinShown}|${through.join(",")}`;
     const [fresh, setFresh] = useState(false);
     useEffect(() => {
-        if (!fromStartShown && !pinShown && through.length === 0) return;
+        if (!loopShown && !pinShown && through.length === 0) return;
         setFresh(true);
         const timeout = setTimeout(() => setFresh(false), 900);
         return () => clearTimeout(timeout);
@@ -196,13 +219,13 @@ export function TimelineFromStartBadge() {
                 unusual
                     ? clsx(
                           "bg-bg-1 text-text border shadow-md",
-                          fromStartShown || pinShown || through.length
+                          loopShown || pinShown || through.length
                               ? START_INK.border
                               : "border-stroke",
                       )
                     : "bg-bg-1/70 text-text-subtitle",
-                fresh && `ring-4 ${START_INK.ring}`,
-                (playing || holding) && "opacity-60",
+                (fresh || movedOn) && `ring-4 ${START_INK.ring}`,
+                playing && "opacity-60",
             )}
         >
             <span className="sr-only" role="status">
@@ -211,10 +234,15 @@ export function TimelineFromStartBadge() {
             <FlagIcon
                 size={14}
                 aria-hidden="true"
-                weight={fromStartShown ? "fill" : "regular"}
+                weight={loopShown ? "fill" : "regular"}
                 className={clsx("shrink-0", START_INK.text)}
             />
             <span className="truncate" aria-hidden="true">
+                {movedOn && (
+                    <strong className={START_INK.strongText}>
+                        Stopped on a new page ·{" "}
+                    </strong>
+                )}
                 Editing {name}
             </span>
             {through.length > 0 && (
@@ -226,15 +254,7 @@ export function TimelineFromStartBadge() {
                         START_INK.strongText,
                     )}
                 >
-                    · passes through {passedSets(through)}
-                </span>
-            )}
-            {holding && (
-                <span
-                    aria-hidden="true"
-                    className="text-text-subtitle shrink-0"
-                >
-                    · paused frame
+                    · through {passedSets(through)}
                 </span>
             )}
             {pinShown && (
@@ -255,25 +275,18 @@ export function TimelineFromStartBadge() {
                     Unpin
                 </button>
             )}
-            {fromStartShown && (
+            {loopShown && (
                 <span
-                    data-testid="timeline-from-start-badge"
+                    data-testid="timeline-loop-badge"
                     className="border-stroke flex shrink-0 items-center gap-6 border-l pl-8"
                 >
-                    <span aria-hidden="true">Space replays it</span>
-                    <button
-                        type="button"
-                        aria-label="Turn off From start"
-                        title="Turn off From start (C or Esc)"
-                        className="text-text-subtitle hover:text-text pointer-events-auto flex items-center"
-                        onClick={() =>
-                            useTimelineSelectionStore
-                                .getState()
-                                .setPlayFromStart(false)
-                        }
+                    <span
+                        aria-hidden="true"
+                        className="flex items-center gap-4"
                     >
-                        <XIcon size={12} weight="bold" />
-                    </button>
+                        <Keycaps shortcut="Space" />
+                        loops {loopName}
+                    </span>
                 </span>
             )}
         </div>

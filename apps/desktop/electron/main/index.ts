@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
 import {
     app,
     BrowserWindow,
@@ -1017,6 +1018,11 @@ export async function discardNewShowDraft(): Promise<number> {
     }
 
     return 200;
+}
+
+/** Runs a renderer action chosen in the app menu (docs/adr/0003-menu-actions-ipc.md) */
+export function sendMenuAction(action: string) {
+    win?.webContents.send(MENU_ACTION_CHANNEL, action);
 }
 
 /**

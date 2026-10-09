@@ -150,13 +150,13 @@ export type TimelineSelection =
           readonly kind: "range";
           readonly range: TimelineBeatRange;
           /**
-           * Where the start flag is drawn (UI-10), when it isn't the range's start: just after
-           * **Stop** the playhead sits on the flag and the window falls back to the page box
+           * Where the start flag is drawn (UI-10), when it isn't the range's start: after C the
+           * flag sits on the playhead and the window falls back to the page box
            */
           readonly startFlagBeatIndex?: number;
-          /** **From start** is on (UI-11): the window is drawn as a bar that turns it off */
-          readonly fromStart?: boolean;
-          /** The range was drawn by dragging on empty timeline space, which turns From start on */
+          /** How the user set this window (UI-17): `pages` for Shift+click on page boxes */
+          readonly via?: "pages";
+          /** The range was drawn by dragging on empty timeline space (Ctrl+drag) */
           readonly drawn?: boolean;
           /**
            * The start flag was placed by hand and stays through navigation (UI-10 pinning); UI-12
@@ -209,8 +209,12 @@ export interface TimelineInteractionProps {
     readonly selectedTarget?: TimelineTarget | null;
     readonly onSeek?: TimelineSeek;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
-    /** **Stop** (UI-10): stops and returns the playhead to the start flag; without it, no Stop button */
-    readonly onStop?: () => void;
+    /** Looping is on, so Play loops (UI-17) */
+    readonly playLoops?: boolean;
+    /** With no pin, a page is selected (UI-17) */
+    readonly playNext?: "page";
+    /** Shift+Space's once-through is playing (UI-17) */
+    readonly playingOnce?: boolean;
     readonly onNavigate?: (direction: TimelineNavigation) => void;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
     readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
@@ -252,10 +256,12 @@ export interface TimelineCommonProps
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
     /** Resizing a clip by its edges (resize-move), in view beats; without it clips have no handles */
     readonly clipResize?: TimelineClipResizeCommands;
-    /** Turns **From start** off (UI-11), from the range bar */
-    readonly onPlayFromStartOff?: () => void;
     /** Unpins the start flag (UI-12), from its pin */
     readonly onUnpinStart?: () => void;
+    /** The loop (UI-17), view beats; `null` or absent when looping is off */
+    readonly loop?: TimelineBeatRange | null;
+    /** A loop end dragged or stepped (UI-17), view beats */
+    readonly onLoopChange?: (loop: TimelineBeatRange) => void;
     /** Transport controls that fold into "⋯" on a narrow panel, such as Sound (UI-12) */
     readonly transportSecondary?: ReactNode;
     /** View controls at the transport's end, such as Compact (UI-12); they fold too */

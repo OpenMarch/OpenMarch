@@ -9,7 +9,7 @@ import { create } from "zustand";
  * window is stored as `selection`, derived from S, P and the page boxes on every change:
  *
  * - **home**: P at beat 0. No timeline is selected; nothing is dimmed and moves edit homes.
- * - **range**: `[S, P)` when P is after S; otherwise (P on or before S, just after **Stop**) the
+ * - **range**: `[S, P)` when P is after S; otherwise (P on or before S, as just after C pins S on P) the
  *   page box ending at or holding P, as if S followed P. A range resolves to the stored timeline
  *   with exactly that range when there is one (at most one per range, C-12). Read it with
  *   `selectedStoredTimeline` or `useSelectedStoredTimeline`.
@@ -20,8 +20,7 @@ import { create } from "zustand";
  * there (a dragged range, the start handle). A pinned S stays until it is unpinned (UI-12). During
  * a gesture (a scrub, arrow keys held on the playhead) S stays put and follows once the gesture
  * ends (`beginScrub`, `endScrub`; UI-12 review), so it doesn't chase the playhead page by page.
- * Pausing a play-on run moves P, and an unpinned S follows it; **Stop** and a paused preview keep
- * S (`seekKeepingStart`).
+ * Stopping a play-on run moves P, and an unpinned S follows it; a stopped preview leaves both.
  *
  * Every beat here is a spec beat position (`beats` index, spec §7). The zero-length beat 0 and
  * beat 1 are both show time 0; the playhead writes that time as 0 (`normalizePlayheadBeat`).
@@ -37,12 +36,12 @@ import { create } from "zustand";
  * Esc, a page box or home, a dragged range, or the timeline going away ends isolation and puts S
  * and P back where they were.
  *
- * **Playback** (UI-11): with **From start** on (`playFromStart`), Play previews the window from S;
- * with it off, Play plays on from where the cursor is. Playing never writes the playhead. Audio plays from, and the paused canvas
- * shows, the **cursor** (`cursorBeat`) when there is one, and the playhead otherwise. Play sets the
- * cursor where playback starts and `playback` to what is running: a preview of the window, or
- * playing on. A preview that loops moves the cursor back to its start; a preview that is paused
- * leaves the cursor on the paused beat (a held frame) and P where it was. Every write of the window
+ * **Playback** (UI-11, UI-17): with a loop set (`loop`), **Play** loops it (a preview); with none it
+ * plays on from the playhead. Playing never writes the playhead. Audio plays from, and the
+ * paused canvas shows, the **cursor** (`cursorBeat`) when there is one, and the playhead
+ * otherwise. Play sets the cursor where playback starts and `playback` to what is running: a
+ * preview of the window, or playing on. A preview that loops moves the cursor back to its start;
+ * a preview that stops clears the cursor, so the canvas is back at P. Every write of the window
  * (navigation, seeking, a range) clears the cursor, so the canvas is back at P before anything
  * edits there.
  *
@@ -94,8 +93,16 @@ export type TimelinePlaybackRun =
           readonly kind: "preview";
           readonly from: number;
           readonly to: number;
+          /** Plays once and stops instead of looping (UI-17: Shift+Space plays the page once) */
+          readonly once?: boolean;
       }
     | { readonly kind: "on" };
+
+/** The loop's region (UI-17), spec beats: `[start, end)` */
+export interface TimelineLoop {
+    readonly start: number;
+    readonly end: number;
+}
 
 /** A page's box: the previous flag to its own flag (`pageFlags`), in spec beats. */
 export interface PageBox {
@@ -108,7 +115,7 @@ export interface PageBox {
 export interface TimelineSelectionState {
     /** The edit window, derived from the start flag, the playhead and the page boxes */
     readonly selection: TimelineEditSelection;
-    /** The start flag S (UI-10): where movers leave from, and where **Stop** returns to */
+    /** The start flag S (UI-10): where movers leave from */
     readonly startBeat: number;
     /** Whether S was placed by hand; an unpinned S follows navigation */
     readonly startPinned: boolean;
@@ -132,19 +139,18 @@ export interface TimelineSelectionState {
     readonly isolation: TimelineIsolation | null;
     /**
      * The playback cursor when it isn't the playhead (UI-11): where playback started or a loop
-     * went back to, or the frame a paused preview holds. `null` when it is the playhead.
+     * went back to, or the beat a scrub over playback shows. `null` when it is the playhead.
      */
     readonly cursorBeat: number | null;
     /** What is playing, or `null` while paused (UI-11) */
     readonly playback: TimelinePlaybackRun | null;
     /**
-     * **From start** (UI-11): Play previews the window from the start flag instead of playing on
-     * from where the cursor is. Only the user turns it on or off; turning it off keeps S and the
-     * window.
+     * The loop (UI-17): its own region, apart from the edit window, as Logic's cycle region. While
+     * set, Play loops it wherever the playhead is and stopping returns to the playhead. Moving the
+     * playhead (a scrub, a click on a count, arrow keys) leaves it; going to a page (E, Q, a page
+     * box) moves it to that page. `null` when looping is off.
      */
-    readonly playFromStart: boolean;
-    /** Whether a preview loops until stopped (UI-11, the loop toggle); isolation always loops */
-    readonly loopPreview: boolean;
+    readonly loop: TimelineLoop | null;
     /** A gesture is moving the playhead: an unpinned S waits for it to end (UI-12 review) */
     readonly scrubbing: boolean;
 
@@ -181,7 +187,7 @@ export interface TimelineSelectionState {
      * beat is ignored.
      */
     readonly seek: (beat: number) => void;
-    /** Playback (pause, **Stop**): moves the playhead and leaves S where it is. */
+    /** Moves the playhead and leaves S where it is. */
     readonly seekKeepingStart: (beat: number) => void;
     /**
      * A gesture that moves the playhead began (a scrub, a page-box drag, arrow keys): `seek` leaves
@@ -190,8 +196,6 @@ export interface TimelineSelectionState {
     readonly beginScrub: () => void;
     /** The gesture ended: an unpinned S follows the playhead, once. */
     readonly endScrub: () => void;
-    /** **Stop**: the playhead returns to S. */
-    readonly returnToStart: () => void;
     /**
      * A stored timeline moved from `from` by `delta` beats (a clip move): a selection of exactly
      * `from` moves with it, and so does the loaded stored timeline at `from` until the host
@@ -235,13 +239,11 @@ export interface TimelineSelectionState {
     readonly clearCursor: () => void;
     /** Records what is playing (`null` once it stops). Used by the transport and the driver. */
     readonly setPlayback: (playback: TimelinePlaybackRun | null) => void;
-    /** Turns **From start** on or off (`!playFromStart` without an argument). */
-    readonly setPlayFromStart: (on?: boolean) => void;
-    /** Turns the preview loop on or off (`!loopPreview` without an argument). */
-    readonly toggleLoopPreview: (loop?: boolean) => void;
+    /** Sets the loop, or turns looping off with `null` (UI-17) */
+    readonly setLoop: (loop: TimelineLoop | null) => void;
     /** Used by `useTimelinePlaybackDriver` only. */
     readonly setShowEndBeat: (showEndBeat: number | null) => void;
-    /** Opening a show: home, playhead at 0, nothing loaded, From start off. */
+    /** Opening a show: home, playhead at 0, nothing loaded. */
     readonly reset: () => void;
 }
 
@@ -512,9 +514,8 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
             showEndBeat: null,
             isolation: null,
             cursorBeat: null,
+            loop: null,
             playback: null,
-            playFromStart: false,
-            loopPreview: false,
             scrubbing: false,
             isolate: (timelineId, restore) =>
                 set((s) => {
@@ -641,23 +642,6 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                         ),
                     };
                 }),
-            returnToStart: () =>
-                set((s) => ({
-                    ...(s.isolation
-                        ? isolatedWindow(
-                              s,
-                              s.isolation,
-                              isolatedPlayhead(s.isolation, s.isolation.start),
-                          )
-                        : // Page 1's box starts at beat 1, show time 0: written as beat 0, home
-                          windowFields(
-                              s.startBeat,
-                              s.startPinned,
-                              clamp(s, s.startBeat),
-                              s.pageBoxes,
-                          )),
-                    playheadRevision: s.playheadRevision + 1,
-                })),
             followTimelineRange: (from, to) =>
                 set(
                     keepCursorWhilePlaying((s) => {
@@ -896,10 +880,21 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
             clearCursor: () =>
                 set((s) => (s.cursorBeat === null ? {} : { cursorBeat: null })),
             setPlayback: (playback) => set({ playback }),
-            setPlayFromStart: (on) =>
-                set((s) => ({ playFromStart: on ?? !s.playFromStart })),
-            toggleLoopPreview: (loop) =>
-                set((s) => ({ loopPreview: loop ?? !s.loopPreview })),
+            setLoop: (loop) =>
+                set((s) =>
+                    loop === s.loop ||
+                    (loop !== null &&
+                        s.loop !== null &&
+                        loop.start === s.loop.start &&
+                        loop.end === s.loop.end)
+                        ? {}
+                        : {
+                              loop:
+                                  loop === null || loop.end - loop.start < 1
+                                      ? null
+                                      : loop,
+                          },
+                ),
             setShowEndBeat: (showEndBeat) => set({ showEndBeat }),
             reset: () =>
                 set((s) => ({
@@ -909,7 +904,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     storedTimelines: null,
                     showEndBeat: null,
                     playback: null,
-                    playFromStart: false,
+                    loop: null,
                     scrubbing: false,
                 })),
         };
@@ -917,7 +912,8 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
 );
 
 /**
- * The beat the timeline and the paused canvas show (UI-11): the frame a paused preview holds, or
+ * The beat the timeline and the paused canvas show (UI-11): the cursor while a scrub suspends
+ * playback, or
  * the playhead. Where audio starts, too.
  */
 export const displayedBeat = (

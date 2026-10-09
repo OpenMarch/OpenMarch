@@ -105,8 +105,12 @@ export interface TimelinePlayback {
         options?: TimelineSeekOptions,
     ) => number | null | void;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
-    /** **Stop** (UI-11): back to the playhead */
-    readonly onStop?: () => void;
+    /** Looping is on, so Play loops (UI-17): the button says so */
+    readonly playLoops?: boolean;
+    /** With no pin, a page is selected (UI-17): Play's tooltip names Shift+Space and C */
+    readonly playNext?: "page";
+    /** Shift+Space's once-through is playing (UI-17) */
+    readonly playingOnce?: boolean;
     /** Page navigation from the transport; without it, the transport seeks to page starts */
     readonly onNavigate?: (direction: TimelineNavigation) => void;
 }
@@ -151,10 +155,12 @@ export interface TimelineProps {
     readonly onTimelineRangeCommit?: (change: TimelineRangeChange) => void;
     /** Resizing a clip by its edges (resize-move), in spec beats */
     readonly clipResize?: TimelineClipResizeCommands;
-    /** Turns **From start** off (UI-11), from the range bar */
-    readonly onPlayFromStartOff?: () => void;
     /** Unpins the start flag (UI-12), from its pin */
     readonly onUnpinStart?: () => void;
+    /** The loop (UI-17), spec beats; `null` or absent when looping is off */
+    readonly loop?: TimelineBeatRange | null;
+    /** A loop end dragged or stepped (UI-17), spec beats */
+    readonly onLoopChange?: (loop: TimelineBeatRange) => void;
     /**
      * The right-click menu's **Add selected marchers** (UI-9, P8.14), for a page box, a clip's
      * timeline or a dragged range. It gets spec beats; the menu doesn't change the selection.
@@ -296,7 +302,6 @@ export const selectionToView = (
                         ),
                     }
                   : {}),
-              ...(selection.fromStart ? { fromStart: true } : {}),
               ...(selection.startPinned ? { startPinned: true } : {}),
           }
         : selection;
@@ -314,6 +319,7 @@ export const selectionToSpec = (
                   endBeatIndex: axis.toSpec(selection.range.endBeatIndex),
               },
               ...(selection.drawn ? { drawn: true } : {}),
+              ...(selection.via ? { via: selection.via } : {}),
           }
         : selection;
 
@@ -395,6 +401,27 @@ export function Timeline(props: TimelineProps) {
         onSelectionChange
             ? (next: TimelineSelection) =>
                   onSelectionChange(selectionToSpec(next, axis))
+            : undefined,
+    );
+    // UI-17: the loop, mapped onto the view axis and back
+    const { loop } = props;
+    const viewLoop = useMemo(
+        () =>
+            loop
+                ? {
+                      startBeatIndex: axis.toView(loop.startBeatIndex),
+                      endBeatIndex: axis.toView(loop.endBeatIndex),
+                  }
+                : null,
+        [loop, axis],
+    );
+    const changeLoop = useLatestCallback(
+        props.onLoopChange
+            ? (next: TimelineBeatRange) =>
+                  props.onLoopChange?.({
+                      startBeatIndex: axis.toSpec(next.startBeatIndex),
+                      endBeatIndex: axis.toSpec(next.endBeatIndex),
+                  })
             : undefined,
     );
     const { onTimelineRangeCommit, onCreateTrack, timelines } = props;
@@ -620,7 +647,9 @@ export function Timeline(props: TimelineProps) {
         className: props.className,
         onSeek: seekToBeat,
         onPlayingChange: useLatestCallback(playback.onPlayingChange),
-        onStop: useLatestCallback(playback.onStop),
+        playLoops: playback.playLoops,
+        playNext: playback.playNext,
+        playingOnce: playback.playingOnce,
         onNavigate: useLatestCallback(playback.onNavigate),
         onPixelsPerBeatChange: useLatestCallback(setPixelsPerBeat),
         zoomFitted: props.zoomFitted,
@@ -634,8 +663,9 @@ export function Timeline(props: TimelineProps) {
         onOpenRange: openRange,
         onTimelineRangeCommit: commitRange,
         clipResize: viewClipResize,
-        onPlayFromStartOff: useLatestCallback(props.onPlayFromStartOff),
         onUnpinStart: useLatestCallback(props.onUnpinStart),
+        loop: viewLoop,
+        onLoopChange: changeLoop,
         transportSecondary: props.transportSecondary,
         transportViewControls: props.transportViewControls,
         showTransport: props.showTransport ?? true,

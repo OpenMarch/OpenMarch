@@ -186,25 +186,64 @@ describe("TimelineSelectionStore (UI-9, UI-10)", () => {
         expect(store().startPinned).toBe(false);
     });
 
-    it("playback moves only the playhead, and Stop returns it to the start flag", () => {
+    it("setLoop stores a drawn range apart from S and P, and ignores one under a beat (UI-17)", () => {
         store().setPageBoxes(BOXES);
         store().selectRange(9, 17);
-        store().seekKeepingStart(30); // paused far past the flag: the flag stays
-        expect(store().selection).toEqual({ kind: "range", start: 9, end: 30 });
-        store().returnToStart();
-        expect(store().playheadBeat).toBe(9);
+        expect(store().startPinned).toBe(false);
+        expect(store().playheadBeat).toBe(17);
+        expect(store().loop).toBeNull();
+        // Ctrl+drag (`drawn`) commits through setLoop: the loop turns on, the window stays
+        store().setLoop({ start: 12, end: 16 });
+        expect(store().loop).toEqual({ start: 12, end: 16 });
         expect(store().startBeat).toBe(9);
-        // On the flag, the window falls back to the page box ending there
-        expect(store().selection).toEqual({ kind: "range", start: 1, end: 9 });
+        expect(store().startPinned).toBe(false);
+        expect(store().playheadBeat).toBe(17);
+        expect(store().selection).toEqual({ kind: "range", start: 9, end: 17 });
+        // The same region is not a new write
+        const loop = store().loop;
+        store().setLoop({ start: 12, end: 16 });
+        expect(store().loop).toBe(loop);
+        // Shorter than one beat is off, including a zero-length one
+        store().setLoop({ start: 12, end: 12.5 });
+        expect(store().loop).toBeNull();
+        store().setLoop({ start: 4, end: 4 });
+        expect(store().loop).toBeNull();
     });
 
-    it("Stop inside page 1 returns home: page 1's box starts at beat 1, show time 0", () => {
+    it("seek and selectRange leave the loop where it is (UI-17)", () => {
+        store().setPageBoxes(BOXES);
+        store().setLoop({ start: 1, end: 9 });
+        const loop = store().loop;
+        store().seek(14);
+        store().selectRange(17, 25);
+        store().beginScrub();
+        store().seek(20);
+        store().endScrub();
+        expect(store().loop).toBe(loop);
+        expect(store().playheadBeat).toBe(20);
+    });
+
+    it("while looping, the start flag follows the page you scrub to and the loop stays (UI-17, V-180)", () => {
+        store().setPageBoxes(BOXES);
+        store().selectRange(9, 17);
+        store().setLoop({ start: 9, end: 17 });
+        // A page added doesn't tie the flag to the loop or move either
+        store().setPageBoxes([...BOXES, { start: 25, end: 33 }]);
+        store().seek(28);
+        expect(store().loop).toEqual({ start: 9, end: 17 });
+        expect(store().startBeat).toBe(25);
+        expect(store().startPinned).toBe(false);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 25,
+            end: 28,
+        });
+    });
+
+    it("page 1's box starts at beat 1, and show time 0 is home", () => {
         store().setPageBoxes(BOXES);
         store().seek(5);
         expect(store().startBeat).toBe(1);
-        store().returnToStart();
-        expect(store().playheadBeat).toBe(0);
-        expect(store().selection).toEqual({ kind: "home" });
         expect(editWindow(1, 1, BOXES)).toEqual({ kind: "home" });
         expect(followingStart(1, BOXES)).toBe(0);
     });
@@ -343,16 +382,10 @@ describe("TimelineSelectionStore (UI-9, UI-10)", () => {
             expect(isMarcherDimmed(store(), 1)).toBe(false);
         });
 
-        it("Stop and the loop's wrap keep the window on the isolated move (code review 1)", () => {
+        it("seeking onto the isolated start keeps the window on the isolated move (code review 1)", () => {
             store().isolate(2);
-            store().returnToStart();
-            expect(store().playheadBeat).toBe(10);
-            expect(store().selection).toEqual({
-                kind: "range",
-                start: 9,
-                end: 10,
-            });
             store().seek(9);
+            expect(store().playheadBeat).toBe(10);
             expect(store().selection).toEqual({
                 kind: "range",
                 start: 9,
@@ -594,11 +627,17 @@ describe("the playback cursor (UI-11)", () => {
         expect(store().playheadBeat).toBe(17);
     });
 
-    it("toggles the preview loop", () => {
-        expect(store().loopPreview).toBe(false);
-        store().toggleLoopPreview();
-        expect(store().loopPreview).toBe(true);
-        store().toggleLoopPreview(true);
-        expect(store().loopPreview).toBe(true);
+    it("reset clears the loop (UI-17)", () => {
+        store().setPageBoxes(BOXES);
+        store().selectRange(12, 17);
+        store().setLoop({ start: 9, end: 17 });
+        expect(store().startPinned).toBe(true);
+        expect(store().loop).toEqual({ start: 9, end: 17 });
+        store().reset();
+        expect(store().loop).toBeNull();
+        expect(store().startPinned).toBe(false);
+        expect(store().startBeat).toBe(0);
+        expect(store().playheadBeat).toBe(0);
+        expect(store().playback).toBeNull();
     });
 });

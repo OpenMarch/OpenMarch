@@ -4,7 +4,6 @@ import {
     ArrowsOutLineHorizontalIcon,
     DotsThreeIcon,
     HouseIcon,
-    PauseIcon,
     PushPinIcon,
     StopIcon,
     PlayIcon,
@@ -14,6 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
+import { ShortcutTooltip, TransportTooltipProvider } from "./ShortcutTooltip";
 import {
     isPlainNudgeKey,
     isTyping,
@@ -109,42 +109,77 @@ export interface TimelineSelectionInteraction {
 
 // The same elements every render, so the memoized transport buttons don't re-render for them
 const SKIP_BACK_ICON = <SkipBackIcon size={16} />;
-const PAUSE_ICON = <PauseIcon size={18} weight="fill" />;
 const PLAY_ICON = <PlayIcon size={18} weight="fill" />;
-const STOP_ICON = <StopIcon size={16} />;
+const STOP_ICON = <StopIcon size={16} weight="fill" />;
 const SKIP_FORWARD_ICON = <SkipForwardIcon size={16} />;
 const FIT_ICON = <ArrowsOutLineHorizontalIcon size={16} />;
 const HOUSE_ICON = <HouseIcon size={14} aria-hidden="true" />;
+/**
+ * Play's icon while the start flag is pinned (UI-17, project owner's pick): a bar in the start
+ * flag's color, echoing the flag's line on the ruler, then Play ("loop from the mark")
+ */
+const PLAY_FROM_FLAG_ICON = (
+    <span className="flex items-center gap-2">
+        <span
+            aria-hidden
+            className={clsx("rounded-2 h-14 w-[2.5px]", START_INK.bg)}
+        />
+        <PlayIcon size={14} weight="fill" />
+    </span>
+);
+
+/**
+ * The transport's shortcuts as the tooltips show them (UI-17), in `KeyboardShortcut.toString`'s
+ * form. They mirror `RegisteredActionsObjects`, which a test checks; this file doesn't import the
+ * app's action registry.
+ */
+export const TRANSPORT_SHORTCUTS = {
+    previousPage: "Q",
+    nextPage: "E",
+    play: "Space",
+    playPage: "Shift + Space",
+} as const;
 
 const TransportButton = memo(function TransportButton({
     label,
-    title,
+    shortcut,
+    hint,
     children,
     onClick,
     pressed,
+    testId,
 }: {
     label: string;
-    /** The tooltip, when it says more than the label (shortcuts) */
-    title?: string;
+    /** The shortcut the tooltip shows as keycaps */
+    shortcut?: string;
+    /** A second tooltip line */
+    hint?: string;
     children: ReactNode;
     onClick?: (event: ReactMouseEvent) => void;
     pressed?: boolean;
+    testId?: string;
 }) {
     return (
-        <button
-            type="button"
-            aria-label={label}
-            aria-pressed={pressed}
-            title={title ?? label}
-            onClick={onClick}
-            disabled={!onClick}
-            className={clsx(
-                "focus-visible:ring-accent rounded-4 enabled:hover:text-accent enabled:hover:bg-fg-2 flex size-24 items-center justify-center outline-hidden transition-[color,background-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent enabled:active:translate-y-px disabled:cursor-not-allowed disabled:opacity-30",
-                pressed ? "text-accent" : "text-text",
-            )}
-        >
-            {children}
-        </button>
+        <ShortcutTooltip label={label} shortcut={shortcut} hint={hint}>
+            <button
+                type="button"
+                aria-label={label}
+                aria-keyshortcuts={shortcut?.replace(/\s*\+\s*/g, "+")}
+                aria-pressed={pressed}
+                data-testid={testId}
+                // UI-17 follow-up: a click doesn't take keyboard focus, so Space after clicking
+                // a transport button is still the app's Play, not a second press of the button
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={onClick}
+                disabled={!onClick}
+                className={clsx(
+                    "focus-visible:ring-accent rounded-4 enabled:hover:text-accent enabled:hover:bg-fg-2 flex size-24 items-center justify-center outline-hidden transition-[color,background-color,transform] duration-150 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent enabled:active:translate-y-px disabled:cursor-not-allowed disabled:opacity-30",
+                    pressed ? "text-accent" : "text-text",
+                )}
+            >
+                {children}
+            </button>
+        </ShortcutTooltip>
     );
 });
 
@@ -155,12 +190,15 @@ const TRANSPORT_TIGHT_PX = 500;
 
 /**
  * The transport (UI-12): the timeline panel's one header row, as animation tools do it (Figma's
- * Motion timeline, Rive, Blender). Previous, Play, Stop, Next; the caller's pinned accessories
- * (From start with Loop) and secondary ones (Sound); the clock and the readout, which is also the
- * go-to box (click it or press G, then type a page, "m23" or a rehearsal mark); then Fit and the
- * caller's view controls (Compact). Play, the page buttons, From start and the readout never
- * leave: on a narrow panel the rest folds into "⋯". Shift+click on Previous or Next goes to the
- * first or last page (as Shift+Q/E do). While playing, page navigation jumps playback to the flag.
+ * Motion timeline, Rive, Blender). Previous, Play, Next (UI-17); the caller's pinned accessories
+ * and secondary ones (Sound); the clock and the readout,
+ * which is also the go-to box (click it or press G, then type a page, "m23" or a rehearsal mark);
+ * then Fit and the caller's view controls (Compact). The play and page buttons, the accessories
+ * and the readout never leave: on a narrow panel the rest folds into "⋯". Shift+click on Previous
+ * or Next goes to the first or last page (as Shift+Q/E do). While playing, page navigation jumps
+ * playback to the flag.
+ *
+ * With looping on, Play loops the loop and shows its bar in its icon (UI-17).
  */
 export const TimelineTransport = memo(function TimelineTransport({
     model,
@@ -168,7 +206,9 @@ export const TimelineTransport = memo(function TimelineTransport({
     positionBeat,
     isPlaying,
     onPlayingChange,
-    onStop,
+    playLoops = false,
+    playNext,
+    playingOnce = false,
     onNavigate,
     onFit,
     fitted = false,
@@ -184,14 +224,18 @@ export const TimelineTransport = memo(function TimelineTransport({
     positionBeat: BeatPosition;
     isPlaying: boolean;
     onPlayingChange?: (isPlaying: boolean) => void;
-    /** **Stop** (UI-10); without it, there is no Stop button */
-    onStop?: () => void;
+    /** Looping is on, so Play loops and shows the loop's bar (UI-17) */
+    playLoops?: boolean;
+    /** With no pin, a page is selected (UI-17): Play's tooltip names Shift+Space and C */
+    playNext?: "page";
+    /** Shift+Space's once-through is playing (UI-17) */
+    playingOnce?: boolean;
     onNavigate?: (direction: TimelineNavigation) => void;
     /** Fit the show in view, or back to the zoom from before fitting */
     onFit?: () => void;
     /** The show is fitted, so Fit goes back */
     fitted?: boolean;
-    /** Controls after Next that never fold, such as From start and Loop */
+    /** Controls after Next that never fold */
     accessories?: ReactNode;
     /** Controls after those that fold into "⋯" on a narrow panel, such as Sound */
     secondary?: ReactNode;
@@ -206,7 +250,13 @@ export const TimelineTransport = memo(function TimelineTransport({
     const width = useElementWidth(rowRef);
     const folded = width > 0 && width < TRANSPORT_FOLD_PX;
     const tight = width > 0 && width < TRANSPORT_TIGHT_PX;
-    const readoutText = getPlayheadReadout(model, positionBeat);
+    // While playing, the count being marched: the beat the playhead is in lands on the next count,
+    // so a loop's first count reads as its own page's count 1, not the previous page's last
+    // (UI-17 follow-up; the paused playhead rests on a landed count)
+    const readoutText = getPlayheadReadout(
+        model,
+        isPlaying ? Math.min(positionBeat + 1, model.beatCount) : positionBeat,
+    );
     const mod = isMac() ? "⌘" : "Ctrl";
     const [goTo, setGoTo] = useState<string | null>(null);
     const [goToFailed, setGoToFailed] = useState(false);
@@ -323,7 +373,8 @@ export const TimelineTransport = memo(function TimelineTransport({
     const fit = onFit && (
         <TransportButton
             label="Fit the show"
-            title={`Fit the show (Shift+Z). Press again to go back. Pinch or ${mod}+scroll to zoom`}
+            shortcut="Shift + Z"
+            hint={`Press again to go back. Pinch or ${mod}+scroll to zoom`}
             pressed={fitted}
             onClick={onFit}
         >
@@ -334,95 +385,112 @@ export const TimelineTransport = memo(function TimelineTransport({
         <span aria-hidden="true" className="bg-stroke h-16 w-px shrink-0" />
     );
     return (
-        <div
-            ref={rowRef}
-            role="group"
-            aria-label="Transport"
-            data-testid="timeline-transport"
-            className="border-stroke flex h-32 min-w-0 shrink-0 items-center gap-6 border-b px-6"
-        >
-            <div className="flex shrink-0 items-center gap-2">
-                <TransportButton
-                    label="Previous page"
-                    title="Previous page (Q). Shift+click or Shift+Q: first page"
-                    onClick={onNavigate ? previousPage : undefined}
-                >
-                    {SKIP_BACK_ICON}
-                </TransportButton>
-                <TransportButton
-                    label={isPlaying ? "Pause" : "Play"}
-                    title={isPlaying ? "Pause (Space)" : "Play (Space)"}
-                    pressed={isPlaying}
-                    onClick={onPlayingChange ? togglePlaying : undefined}
-                >
-                    {isPlaying ? PAUSE_ICON : PLAY_ICON}
-                </TransportButton>
-                {onStop && (
+        <TransportTooltipProvider>
+            <div
+                ref={rowRef}
+                role="group"
+                aria-label="Transport"
+                data-testid="timeline-transport"
+                className="border-stroke flex h-32 min-w-0 shrink-0 items-center gap-6 border-b px-6"
+            >
+                <div className="flex shrink-0 items-center gap-2">
                     <TransportButton
-                        label="Stop"
-                        title="Stop (Shift+Space)"
-                        onClick={onStop}
+                        label="Previous page"
+                        shortcut={TRANSPORT_SHORTCUTS.previousPage}
+                        hint="Shift+click or Shift+Q: the start of the show"
+                        onClick={onNavigate ? previousPage : undefined}
                     >
-                        {STOP_ICON}
+                        {SKIP_BACK_ICON}
                     </TransportButton>
-                )}
-                <TransportButton
-                    label="Next page"
-                    title="Next page (E). Shift+click or Shift+E: last page"
-                    onClick={onNavigate ? nextPage : undefined}
-                >
-                    {SKIP_FORWARD_ICON}
-                </TransportButton>
-            </div>
-            {(accessories != null || (secondary != null && !folded)) && (
-                <>
-                    {divider}
-                    <div className="flex shrink-0 items-center gap-6">
-                        {accessories}
-                        {!folded && secondary}
-                    </div>
-                </>
-            )}
-            {divider}
-            <div className="text-text-subtitle flex min-w-0 items-center gap-8">
-                {!folded && clock}
-                {readout}
-            </div>
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-                {folded ? (
-                    <Popover.Root>
-                        <Popover.Trigger asChild>
-                            <button
-                                type="button"
-                                aria-label="More controls"
-                                title="More: sound, the clock, Fit and Compact"
-                                className="rounded-4 text-text enabled:hover:bg-fg-2 focus-visible:ring-accent flex size-24 items-center justify-center outline-hidden focus-visible:ring-2"
-                            >
-                                <DotsThreeIcon size={18} weight="bold" />
-                            </button>
-                        </Popover.Trigger>
-                        <Popover.Portal>
-                            <Popover.Content
-                                side="top"
-                                align="end"
-                                sideOffset={6}
-                                className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex items-center gap-8 border px-8 py-6"
-                            >
-                                {clock}
-                                {secondary}
-                                {fit}
-                                {viewControls}
-                            </Popover.Content>
-                        </Popover.Portal>
-                    </Popover.Root>
-                ) : (
+                    <TransportButton
+                        label={
+                            isPlaying
+                                ? "Stop"
+                                : playLoops
+                                  ? "Play the loop"
+                                  : "Play"
+                        }
+                        shortcut={TRANSPORT_SHORTCUTS.play}
+                        hint={
+                            isPlaying
+                                ? playLoops || playingOnce
+                                    ? "Goes back to where you were editing"
+                                    : "Stops where it is"
+                                : playLoops
+                                  ? "Loops the yellow bar, wherever the playhead is. C or Loop turns looping off"
+                                  : playNext === "page"
+                                    ? "Plays on from here. Shift+Space plays this page's move once; C loops it"
+                                    : "Plays on from here. C loops the page you're on"
+                        }
+                        testId="timeline-play"
+                        pressed={isPlaying}
+                        onClick={onPlayingChange ? togglePlaying : undefined}
+                    >
+                        {isPlaying
+                            ? STOP_ICON
+                            : playLoops
+                              ? PLAY_FROM_FLAG_ICON
+                              : PLAY_ICON}
+                    </TransportButton>
+                    <TransportButton
+                        label="Next page"
+                        shortcut={TRANSPORT_SHORTCUTS.nextPage}
+                        hint="Shift+click or Shift+E: last page"
+                        onClick={onNavigate ? nextPage : undefined}
+                    >
+                        {SKIP_FORWARD_ICON}
+                    </TransportButton>
+                </div>
+                {(accessories != null || (secondary != null && !folded)) && (
                     <>
-                        {fit}
-                        {viewControls}
+                        {divider}
+                        <div className="flex shrink-0 items-center gap-6">
+                            {accessories}
+                            {!folded && secondary}
+                        </div>
                     </>
                 )}
+                {divider}
+                <div className="text-text-subtitle flex min-w-0 items-center gap-8">
+                    {!folded && clock}
+                    {readout}
+                </div>
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                    {folded ? (
+                        <Popover.Root>
+                            <Popover.Trigger asChild>
+                                <button
+                                    type="button"
+                                    aria-label="More controls"
+                                    title="More: sound, the clock, Fit and Compact"
+                                    className="rounded-4 text-text enabled:hover:bg-fg-2 focus-visible:ring-accent flex size-24 items-center justify-center outline-hidden focus-visible:ring-2"
+                                >
+                                    <DotsThreeIcon size={18} weight="bold" />
+                                </button>
+                            </Popover.Trigger>
+                            <Popover.Portal>
+                                <Popover.Content
+                                    side="top"
+                                    align="end"
+                                    sideOffset={6}
+                                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex items-center gap-8 border px-8 py-6"
+                                >
+                                    {clock}
+                                    {secondary}
+                                    {fit}
+                                    {viewControls}
+                                </Popover.Content>
+                            </Popover.Portal>
+                        </Popover.Root>
+                    ) : (
+                        <>
+                            {fit}
+                            {viewControls}
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+        </TransportTooltipProvider>
     );
 });
 
@@ -861,14 +929,36 @@ export const TimelineRuler = memo(function TimelineRuler({
             : null;
     const countsTotal = countsAt?.total ?? null;
     const countsStart = countsAt?.startBeat ?? null;
-    const selectPage = useLatestCallback((page: TimelinePageMarker) => {
-        if (page.isInitial) {
-            onSelectionChange?.({ kind: "home" });
-            return;
-        }
-        const range = pageRanges.get(page.id) ?? null;
-        if (range) onSelectionChange?.({ kind: "range", range });
-    })!;
+    // Shift+click (UI-17 follow-up) extends the window over every page from the selected one to
+    // the clicked one, as Shift+click selects a run of clips; the start flag pins at the first
+    const selectPage = useLatestCallback(
+        (page: TimelinePageMarker, extend = false) => {
+            if (page.isInitial) {
+                onSelectionChange?.({ kind: "home" });
+                return;
+            }
+            const range = pageRanges.get(page.id) ?? null;
+            if (!range) return;
+            if (extend && selectedRange) {
+                onSelectionChange?.({
+                    kind: "range",
+                    range: {
+                        startBeatIndex: Math.min(
+                            selectedRange.startBeatIndex,
+                            range.startBeatIndex,
+                        ),
+                        endBeatIndex: Math.max(
+                            selectedRange.endBeatIndex,
+                            range.endBeatIndex,
+                        ),
+                    },
+                    via: "pages",
+                });
+                return;
+            }
+            onSelectionChange?.({ kind: "range", range });
+        },
+    )!;
     return (
         <>
             <TimelineRulerBoxes
@@ -933,7 +1023,7 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
     pixelsPerBeat: number;
     initialPageWidth: number;
     scrub: RulerScrub;
-    onSelectPage: (page: TimelinePageMarker) => void;
+    onSelectPage: (page: TimelinePageMarker, extend?: boolean) => void;
 }) {
     const selectedIds = new Set(selectedBoxIds.split("\n"));
     return (
@@ -1000,7 +1090,7 @@ const TimelinePageBox = memo(function TimelinePageBox({
     pixelsPerBeat: number;
     initialPageWidth: number;
     scrub: RulerScrub;
-    onSelectPage: (page: TimelinePageMarker) => void;
+    onSelectPage: (page: TimelinePageMarker, extend?: boolean) => void;
 }) {
     const boxWidth =
         (range.endBeatIndex - range.startBeatIndex) * pixelsPerBeat;
@@ -1015,7 +1105,7 @@ const TimelinePageBox = memo(function TimelinePageBox({
             onClick={(event) => {
                 if (scrub.consumeClick(event)) return;
                 // macOS ctrl+click opens the context menu (UI-9: no selection change)
-                if (!event.ctrlKey) onSelectPage(page);
+                if (!event.ctrlKey) onSelectPage(page, event.shiftKey);
             }}
             className="border-stroke text-text focus-visible:ring-accent absolute top-0 flex h-full items-center justify-end border-r px-8 text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
             style={{
@@ -1801,8 +1891,6 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
 export const TimelineSelectionRange = memo(function TimelineSelectionRange({
     range,
     startFlagBeatIndex,
-    fromStart = false,
-    onFromStartOff,
     startPinned = false,
     onUnpin,
     pinTop = 30,
@@ -1820,13 +1908,6 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
     range: TimelineBeatRange;
     /** Where to draw the start flag when it isn't the range's start (UI-10, after Stop) */
     startFlagBeatIndex?: number;
-    /**
-     * **From start** is on (UI-11): the window is drawn in the start flag's color with a bar
-     * across its top; clicking the bar turns it off (`onFromStartOff`). Off, the start flag is
-     * dimmed, since Play doesn't go back to it.
-     */
-    fromStart?: boolean;
-    onFromStartOff?: () => void;
     /**
      * The start flag is pinned (UI-10): it stays through navigation. UI-12 draws a pin beside its
      * stem, under the ruler, so a forgotten pin can be seen; clicking the pin unpins (`onUnpin`).
@@ -1857,7 +1938,6 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
 }) {
     const [preview, setPreview] = useState(range);
     const tintRef = useRef<HTMLSpanElement>(null);
-    const barRef = useRef<HTMLSpanElement>(null);
     const previewRef = useRef(range);
     const dragRef = useRef<{
         kind: "start" | "end";
@@ -2104,7 +2184,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 </button>
             );
         // UI-10, UI-11: the start flag, where movers leave from. No words: a line and a pennant,
-        // hollow while From start is off and filled while it is on
+        // hollow (UI-17: the loop is its own bar, `TimelineLoopBar`)
         return (
             <>
                 <button
@@ -2120,7 +2200,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                         className={clsx(
                             "pointer-events-none absolute top-px left-1/2",
                             START_INK.bg,
-                            fromStart ? "w-2" : "w-px",
+                            "w-px",
                         )}
                         style={{ height: Math.max(0, height - 1) }}
                     />
@@ -2176,33 +2256,27 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                             START_INK.text,
                         )}
                     >
-                        {/* A right triangle whose top lines up with the page boxes' (1px down, inside the
-                            ruler's border), so the From start bar runs straight out of it. Both are
-                            fills, not strokes, so no edge spills past the stem */}
-                        {fromStart ? (
-                            // Filled: the left edge sits inside the 2px stem
-                            <path d="M0 0 L10 0 L0 10 Z" fill="currentColor" />
-                        ) : (
-                            // Hollow: a 1px outline whose left side is the 1px stem
-                            <path
-                                d="M0 0 L10 0 L0 10 Z M1 1 L1 7.59 L7.59 1 Z"
-                                fill="currentColor"
-                                fillRule="evenodd"
-                            />
-                        )}
+                        {/* A hollow right triangle whose top lines up with the page boxes' (1px down,
+                            inside the ruler's border): a 1px outline whose left side is the 1px stem,
+                            a fill, not a stroke, so no edge spills past it */}
+                        <path
+                            d="M0 0 L10 0 L0 10 Z M1 1 L1 7.59 L7.59 1 Z"
+                            fill="currentColor"
+                            fillRule="evenodd"
+                        />
                     </svg>
                 </button>
             </>
         );
     };
 
-    // Rounded like the flag, so the window and the From start bar start on the stem's pixel
+    // Rounded like the flag, so the window and its bar start on the stem's pixel
     const startX = Math.round(beatToX(preview.startBeatIndex, pixelsPerBeat));
     const endX = Math.round(beatToX(preview.endBeatIndex, pixelsPerBeat));
     const endsOnPlayhead =
         positionBeat !== undefined && preview.endBeatIndex === positionBeat;
     useScrubStretch(
-        [tintRef, barRef],
+        [tintRef],
         endsOnPlayhead ? scrubLine : undefined,
         startX,
         endX,
@@ -2221,7 +2295,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 className={clsx(
                     // 1px down, inside the ruler's border, like the flag and the page boxes
                     "absolute top-px z-30 origin-left",
-                    fromStart ? "bg-yellow/12" : "bg-accent/8",
+                    "bg-accent/8",
                 )}
                 style={{
                     left: startX,
@@ -2229,40 +2303,6 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                     height: height - 1,
                 }}
             />
-            {fromStart && (
-                // UI-11: a thin bar along the ruler's top edge, out of the pennant's top and clear
-                // of the page numbers, inside a taller click target (at least 24px wide) that turns
-                // From start off
-                <button
-                    type="button"
-                    data-testid="timeline-from-start-bar"
-                    data-timeline-interactive="true"
-                    aria-label="From start is on. Click to turn it off"
-                    title="From start: Play replays from the start flag to the playhead. Click, C or Esc to turn off"
-                    onPointerDown={(event) => event.stopPropagation()}
-                    onClick={onFromStartOff}
-                    disabled={!onFromStartOff}
-                    className="group pointer-events-auto absolute top-0 z-40 h-10 border-0 bg-transparent p-0 enabled:cursor-pointer"
-                    style={{
-                        left: Math.min(startX, (startX + endX) / 2 - 12),
-                        width: Math.max(endX - startX, 24),
-                    }}
-                >
-                    <span
-                        ref={barRef}
-                        className={clsx(
-                            "absolute top-px h-3 origin-left transition-[height] duration-100 group-hover:h-5",
-                            START_INK.bg,
-                        )}
-                        style={{
-                            left:
-                                startX -
-                                Math.min(startX, (startX + endX) / 2 - 12),
-                            width: endX - startX,
-                        }}
-                    />
-                </button>
-            )}
             <div className="pointer-events-none absolute inset-0">
                 {flag(
                     "start",

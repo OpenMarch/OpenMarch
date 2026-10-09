@@ -8,6 +8,7 @@ import {
     useState,
     type MouseEvent,
 } from "react";
+import { TimelineLoopBar } from "./TimelineLoopBar";
 import { flushSync } from "react-dom";
 import { PlusIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
@@ -722,7 +723,9 @@ const TimelineSurface = memo(function TimelineSurface({
                         positionBeat={positionBeat}
                         isPlaying={props.isPlaying}
                         onPlayingChange={props.onPlayingChange}
-                        onStop={props.onStop}
+                        playLoops={props.playLoops}
+                        playNext={props.playNext}
+                        playingOnce={props.playingOnce}
                         onNavigate={onNavigate}
                         onFit={
                             props.onPixelsPerBeatChange ? zoom.fit : undefined
@@ -891,6 +894,15 @@ const TimelineSurface = memo(function TimelineSurface({
                         pixelsPerBeat={pixelsPerBeat}
                         height={timelineHeight}
                     />
+                    {props.loop && (
+                        <TimelineLoopBar
+                            loop={props.loop}
+                            beatCount={model.beatCount}
+                            pixelsPerBeat={pixelsPerBeat}
+                            snapBeats={snapBeats}
+                            onChange={props.onLoopChange}
+                        />
+                    )}
                     {selectionRange && (
                         <TimelineSelectionRange
                             range={selectionRange}
@@ -899,11 +911,6 @@ const TimelineSurface = memo(function TimelineSurface({
                                     ? selection.startFlagBeatIndex
                                     : undefined
                             }
-                            fromStart={
-                                selection?.kind === "range" &&
-                                selection.fromStart === true
-                            }
-                            onFromStartOff={props.onPlayFromStartOff}
                             startPinned={
                                 selection?.kind === "range" &&
                                 selection.startPinned === true

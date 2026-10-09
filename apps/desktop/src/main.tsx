@@ -10,6 +10,9 @@ import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { installClickFocusMarker } from "@/utilities/clickFocus";
+
+installClickFocusMarker();
 
 // Check for Playwright session from either build-time or runtime environment
 const isPlaywrightSession =

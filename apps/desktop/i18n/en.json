@@ -61,9 +61,10 @@
         "playback": {
             "pause": "Pause",
             "play": "Play",
-            "playPause": "Play or pause",
-            "stop": "Stop and return to the playhead",
-            "togglePlayFromStart": "Play from the start flag"
+            "playPage": "Play this page's move once",
+            "playPause": "Play or stop (with Loop on, plays the loop)",
+            "toggleMetronome": "Turn the metronome on or off",
+            "toggleLoop": "Loop the page you're on, or stop looping"
         },
         "select": {
             "selectAll": "Select all marchers"
@@ -86,6 +87,7 @@
             "focusTimeline": "Focus the timeline",
             "hideNextPaths": "Hide next page dots/paths",
             "hidePreviousPaths": "Hide previous page dots/paths",
+            "showShortcuts": "Show keyboard shortcuts",
             "showNextPaths": "Show next page dots/paths",
             "showPreviousPaths": "Show previous page dots/paths",
             "toggleNextPaths": "Toggle viewing next page paths",

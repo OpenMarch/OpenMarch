@@ -1,8 +1,37 @@
 import * as mainProcess from "./index";
 import { MenuItem } from "electron";
 import { app, dialog, Menu, shell } from "electron";
+import type { MenuItemConstructorOptions } from "electron";
+import {
+    HELP_MENU_ACTIONS,
+    PLAYBACK_MENU_ACTIONS,
+    type MenuAction,
+} from "../../src/global/menuActions";
 
 const isMacOS = process.platform === "darwin";
+
+/**
+ * A menu item that runs a renderer action (docs/adr/0003-menu-actions-ipc.md). The shortcut is
+ * shown but never registered: the renderer's keyboard handler owns the key, so Space and single
+ * letters still type in text fields. macOS always registers a menu accelerator, so there the
+ * shortcut goes in the label instead.
+ */
+const rendererActionItem = ({
+    action,
+    label,
+    accelerator,
+}: MenuAction): MenuItemConstructorOptions =>
+    isMacOS
+        ? {
+              label: `${label}  (${accelerator.replace("Shift+/", "?")})`,
+              click: () => mainProcess.sendMenuAction(action),
+          }
+        : {
+              label,
+              accelerator,
+              registerAccelerator: false,
+              click: () => mainProcess.sendMenuAction(action),
+          };
 
 const template: MenuItem[] = [];
 
@@ -134,6 +163,10 @@ template.push(
                 { role: "togglefullscreen" },
             ],
         }),
+        new MenuItem({
+            label: "Playback",
+            submenu: PLAYBACK_MENU_ACTIONS.map(rendererActionItem),
+        }),
         // { role: 'windowMenu' }
         isMacOS
             ? new MenuItem({
@@ -158,6 +191,8 @@ template.push(
         new MenuItem({
             role: "help",
             submenu: [
+                ...HELP_MENU_ACTIONS.map(rendererActionItem),
+                { type: "separator" },
                 {
                     label: "Website",
                     click: async () => {

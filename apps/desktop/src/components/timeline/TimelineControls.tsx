@@ -12,9 +12,8 @@ import {
     SpeakerSimpleHighIcon,
     SpeakerSimpleLowIcon,
     SpeakerSimpleXIcon,
-    RepeatIcon,
-    FlagIcon,
     RowsIcon,
+    RepeatIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -22,13 +21,15 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
-import { START_INK } from "./startFlagInk";
 import { AudioClock } from "./Clock";
 import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import { toggleTimelineLoop } from "@/timeline/timelineTransport";
+import { ShortcutTooltip } from "./ShortcutTooltip";
+import { START_INK } from "./startFlagInk";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -159,91 +160,54 @@ export function TimelineMetronomeButton() {
 }
 
 /**
- * **From start** (UI-11): while on (lit), Play previews the move from the start flag; while off,
- * Play plays on from where you are. Shortcut C; Esc, or clicking the range bar, turns it off.
- */
-export function TimelineFromStartButton() {
-    const on = useTimelineSelectionStore((s) => s.playFromStart);
-    const set = useTimelineSelectionStore((s) => s.setPlayFromStart);
-    const label = on
-        ? "From start: on. Play replays from the start flag (C, or Esc to turn off)"
-        : "From start: off. Play plays on from the playhead (C to turn on)";
-    return (
-        <>
-            <button
-                type="button"
-                data-testid="timeline-from-start"
-                className={clsx(
-                    "rounded-4 focus-visible:ring-accent flex h-24 min-w-24 items-center justify-center px-3 outline-hidden duration-150 ease-out focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
-                    {
-                        // The start flag's ink, so the button reads as the flag's (TimelinePrimitives)
-                        [`${START_INK.bg} dark:text-text-invert text-white`]:
-                            on,
-                        "text-text enabled:hover:text-accent": !on,
-                    },
-                )}
-                aria-label="From start (C)"
-                aria-pressed={on}
-                title={label}
-                onClick={() => set()}
-            >
-                <FlagIcon size={18} weight={on ? "fill" : "regular"} />
-            </button>
-            {/* Announced however the mode changed: C, Esc, the bar or a dragged range */}
-            <span className="sr-only" aria-live="polite">
-                {on ? "From start on" : "From start off"}
-            </span>
-        </>
-    );
-}
-
-/**
- * The preview loop (UI-11): with From start on, Play repeats the move until stopped. Off while
- * From start is off, since playing on doesn't loop.
+ * Loop (UI-17, C): turns looping on over the page being edited, or off. Lit while on; the loop is
+ * then a bar on the ruler whose ends drag.
  */
 export function TimelineLoopButton() {
-    const loop = useTimelineSelectionStore((s) => s.loopPreview);
-    const fromStart = useTimelineSelectionStore((s) => s.playFromStart);
-    const toggle = useTimelineSelectionStore((s) => s.toggleLoopPreview);
-    const label = !fromStart
-        ? "Loop the move (turn on Play from the start flag first)"
-        : loop
-          ? "Loop the move: on"
-          : "Loop the move: off";
-    return (
-        <button
-            type="button"
-            className={clsx(
-                "rounded-4 focus-visible:ring-accent flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
-                {
-                    "text-accent": loop && fromStart,
-                    "text-text enabled:hover:text-accent": !(loop && fromStart),
-                },
-            )}
-            aria-label="Loop the move"
-            aria-pressed={loop && fromStart}
-            title={label}
-            disabled={!fromStart}
-            onClick={() => toggle()}
-        >
-            <RepeatIcon size={18} />
-        </button>
+    const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
+    // An isolated move always loops (UI-17): lit, and it can't be turned off
+    const looping = useTimelineSelectionStore(
+        (s) => s.loop !== null || s.isolation !== null,
     );
-}
-
-/**
- * From start and its Loop as one pair (UI-12): Loop only does anything while From start is on,
- * so it sits beside it, always drawn (disabled while off) so the transport doesn't shift.
- */
-export function TimelinePreviewButtons() {
+    const shortcut =
+        RegisteredActionsObjects.toggleLoop.keyboardShortcut?.toString();
     return (
-        <div
-            data-testid="timeline-preview-buttons"
-            className="border-stroke rounded-6 flex h-28 items-center gap-2 border px-1"
+        <ShortcutTooltip
+            label={looping ? "Loop: on" : "Loop: off"}
+            shortcut={isolated ? undefined : shortcut}
+            hint={
+                isolated
+                    ? "Loop is always on for an isolated move"
+                    : looping
+                      ? "Space loops the bar on the ruler; drag its ends to change it"
+                      : "Loops the page you're on"
+            }
         >
-            <TimelineFromStartButton />
-            <TimelineLoopButton />
-        </div>
+            <button
+                type="button"
+                data-testid="timeline-loop"
+                aria-label="Loop"
+                aria-pressed={looping}
+                aria-keyshortcuts={shortcut?.replace(/\s*\+\s*/g, "+")}
+                // Not `disabled` in isolation, so the tooltip still says why it can't turn off
+                aria-disabled={isolated || undefined}
+                // Keeps keyboard focus off, so Space after a click is still Play
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                    if (!isolated) toggleTimelineLoop();
+                }}
+                className={clsx(
+                    "rounded-4 focus-visible:ring-accent flex size-24 items-center justify-center outline-hidden duration-150 focus-visible:ring-2",
+                    // In isolation: on (lit) but disabled (dimmed), and still takes the pointer for the
+                    // tooltip that says why
+                    isolated ? "cursor-default opacity-50" : "hover:bg-fg-2",
+                    // Lit in the loop bar's color, so the button reads as the bar's (UI-17)
+                    looping ? START_INK.text : "text-text hover:text-accent",
+                )}
+            >
+                <RepeatIcon size={16} weight={looping ? "bold" : "regular"} />
+            </button>
+        </ShortcutTooltip>
     );
 }
 

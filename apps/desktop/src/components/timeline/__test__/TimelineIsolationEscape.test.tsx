@@ -48,16 +48,12 @@ describe("Esc in isolation (UI-14 round-2 review)", () => {
         expect(isolated()).toBeNull();
     });
 
-    it("turns From start off only with nobody selected, one step per press", () => {
+    it("does nothing outside isolation: there is no From start mode to turn off (UI-17)", () => {
         const store = useTimelineSelectionStore.getState();
-        store.isolate(7);
-        store.setPlayFromStart(true);
-        selection.marchers = [{ id: 1 }];
+        store.selectRange(1, 9);
+        const before = useTimelineSelectionStore.getState().selection;
         render(<Listener />);
         fireEvent.keyDown(window, { key: "Escape" });
-        expect(isolated()).toBeNull();
-        expect(useTimelineSelectionStore.getState().playFromStart).toBe(true);
-        fireEvent.keyDown(window, { key: "Escape" });
-        expect(useTimelineSelectionStore.getState().playFromStart).toBe(true);
+        expect(useTimelineSelectionStore.getState().selection).toBe(before);
     });
 });

@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     pageFlagMoveLimits,
@@ -32,7 +32,7 @@ import { useTimelineTracks } from "@/timeline/useTimelineTracks";
 import { AudioClock } from "./Clock";
 import {
     TimelineCompactButton,
-    TimelinePreviewButtons,
+    TimelineLoopButton,
     TimelineSoundButton,
 } from "./TimelineControls";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -56,6 +56,7 @@ import {
 } from "./useTimelineCommands";
 import { useTimelineClipResize } from "./useTimelineClipResize";
 import { useTimelinePlayback } from "./useTimelinePlayback";
+import { jumpTimelinePlayback } from "@/timeline/timelineTransport";
 import { describeMoveClips } from "./moveClipText";
 import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
@@ -64,15 +65,14 @@ const NO_WAVEFORM = { peaksByBeat: [] };
 
 // The transport's controls read their own state: the same elements every render, so the
 // memoized transport doesn't re-render for them
-const PREVIEW_BUTTONS = <TimelinePreviewButtons />;
 const SOUND_BUTTON = <TimelineSoundButton />;
+const LOOP_BUTTON = <TimelineLoopButton />;
 const COMPACT_BUTTON = <TimelineCompactButton />;
 
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
 export const toTimelineSelection = (
     selection: TimelineEditSelection,
     startBeat?: number,
-    fromStart = false,
     startPinned = false,
 ): TimelineSelection =>
     selection.kind === "range"
@@ -82,11 +82,10 @@ export const toTimelineSelection = (
                   startBeatIndex: selection.start,
                   endBeatIndex: selection.end,
               },
-              // UI-10: after Stop the window falls back, but the flag stays where it is
+              // UI-10: with P on or before S the window falls back, but the flag stays where it is
               ...(startBeat !== undefined && startBeat !== selection.start
                   ? { startFlagBeatIndex: startBeat }
                   : {}),
-              ...(fromStart ? { fromStart: true } : {}),
               ...(startPinned ? { startPinned: true } : {}),
           }
         : selection.kind === "home"
@@ -258,16 +257,30 @@ export default function TimelineModePanel() {
     );
     // UI-9: selecting home seeks to beat 0 and a range to its end; not while playing
     const changeSelection = (next: TimelineSelection) => {
+        // UI-17 follow-up: home while playing jumps playback to the start (a page box jumps by
+        // its own scrub; home has nowhere else to go)
+        if (isPlaying && next?.kind === "home") {
+            jumpTimelinePlayback(beats, 0);
+            return;
+        }
         if (isPlaying) return;
         const store = useTimelineSelectionStore.getState();
         if (next?.kind === "home") store.selectHome();
         else if (next?.kind === "range") {
-            store.selectRange(
-                next.range.startBeatIndex,
-                next.range.endBeatIndex,
+            const { startBeatIndex: start, endBeatIndex: end } = next.range;
+            store.selectRange(start, end);
+            // UI-17: a drawn range (Ctrl+drag) is the loop, and turns looping on, as dragging
+            // Logic's cycle bar does; a page box or Shift+click takes a loop that is on to the
+            // pages selected. A dragged start flag only moves the edit window
+            const pageBox = store.pageBoxes.some(
+                (b) => b.start === start && b.end === end,
             );
-            // UI-11: drawing a range is asking to play it, as Logic's cycle drag does
-            if (next.drawn) store.setPlayFromStart(true);
+            if (
+                store.isolation === null &&
+                (next.drawn ||
+                    (store.loop && (next.via === "pages" || pageBox)))
+            )
+                store.setLoop({ start, end });
         } else store.selectNothing();
     };
 
@@ -296,17 +309,12 @@ export default function TimelineModePanel() {
                     pages={pages}
                     measures={measures}
                     timelines={offPage}
-                    transportAccessories={PREVIEW_BUTTONS}
+                    transportAccessories={LOOP_BUTTON}
                     transportSecondary={SOUND_BUTTON}
                     transportViewControls={COMPACT_BUTTON}
                     onSelectionChange={changeSelection}
                     onTimelineRangeCommit={commands.commitTimelineRange}
                     clipResize={clipResize}
-                    onPlayFromStartOff={() =>
-                        useTimelineSelectionStore
-                            .getState()
-                            .setPlayFromStart(false)
-                    }
                     onUnpinStart={() =>
                         useTimelineSelectionStore.getState().unpinStart()
                     }
@@ -367,26 +375,39 @@ function PlayingTimeline(
         | "selection"
         | "transportClock"
         | "onAddPageFlag"
+        | "loop"
+        | "onLoopChange"
     >,
 ) {
     const { beats, pages } = props;
     const playback = useTimelinePlayback({ beats, pages });
     const editSelection = useTimelineSelectionStore((s) => s.selection);
     const startBeat = useTimelineSelectionStore((s) => s.startBeat);
-    const playFromStart = useTimelineSelectionStore((s) => s.playFromStart);
+    // UI-17: the loop, drawn as a bar with draggable ends; an isolated move always loops, so its
+    // range is drawn as the loop too, read-only
+    const storeLoop = useTimelineSelectionStore((s) => s.loop);
+    const isolation = useTimelineSelectionStore((s) => s.isolation);
+    const loop = useMemo(() => {
+        const region = isolation ?? storeLoop;
+        return region
+            ? { startBeatIndex: region.start, endBeatIndex: region.end }
+            : null;
+    }, [isolation, storeLoop]);
+    const changeLoop = useCallback(
+        (next: { startBeatIndex: number; endBeatIndex: number }) =>
+            useTimelineSelectionStore.getState().setLoop({
+                start: next.startBeatIndex,
+                end: next.endBeatIndex,
+            }),
+        [],
+    );
     // UI-12: the pin shows outside isolation, whose start flag is the isolated move's own
     const startPinned = useTimelineSelectionStore(
         (s) => s.startPinned && s.isolation === null,
     );
     const selection = useMemo(
-        () =>
-            toTimelineSelection(
-                editSelection,
-                startBeat,
-                playFromStart,
-                startPinned,
-            ),
-        [editSelection, startBeat, playFromStart, startPinned],
+        () => toTimelineSelection(editSelection, startBeat, startPinned),
+        [editSelection, startBeat, startPinned],
     );
     // UI-12: the paused clock reads the beat the timeline shows, not the selected page's end
     const shownBeat = useTimelineSelectionStore(displayedBeat);
@@ -432,6 +453,8 @@ function PlayingTimeline(
             playback={playback}
             pixelsPerBeat={pixelsPerBeat}
             onPixelsPerBeatChange={setPixelsPerBeat}
+            loop={loop}
+            onLoopChange={isolation ? undefined : changeLoop}
         />
     );
 }

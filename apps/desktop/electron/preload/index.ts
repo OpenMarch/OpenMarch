@@ -20,6 +20,7 @@ import type {
     AccessTokenResult,
 } from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
+import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
 import type { HistoryResponse } from "@/db-functions";
 
 function domReady(
@@ -213,6 +214,14 @@ const APP_API = {
         ipcRenderer.invoke("newShow:getPending") as Promise<boolean>,
     clearPendingNewShowDialog: () =>
         ipcRenderer.invoke("newShow:clearPending") as Promise<void>,
+    /** An app menu item chose a renderer action (docs/adr/0003-menu-actions-ipc.md) */
+    onMenuAction: (callback: (action: unknown) => void) => {
+        const listener = (_event: unknown, action: unknown) => callback(action);
+        ipcRenderer.on(MENU_ACTION_CHANNEL, listener);
+        return () => {
+            ipcRenderer.removeListener(MENU_ACTION_CHANNEL, listener);
+        };
+    },
     onNewShowOpen: (callback: () => void) => {
         const listener = () => callback();
         ipcRenderer.on("new-show:open", listener);
