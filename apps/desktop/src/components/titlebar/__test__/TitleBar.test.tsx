@@ -8,6 +8,7 @@ beforeEach(() => {
     Object.assign(window, {
         electron: {
             isMacOS: true,
+            getZoomFactor: () => 1,
             databaseGetPath: vi.fn().mockResolvedValue("/shows/Halftime.dots"),
         },
     });

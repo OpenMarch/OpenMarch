@@ -19,6 +19,7 @@ beforeEach(() => {
     Object.assign(window, {
         electron: {
             isMacOS: true,
+            getZoomFactor: () => 1,
             getTheme: vi.fn().mockResolvedValue("dark"),
             setTheme: vi.fn(),
             getLanguage: vi.fn().mockResolvedValue("en"),

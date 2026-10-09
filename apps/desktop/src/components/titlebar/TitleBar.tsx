@@ -18,6 +18,19 @@ import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
 
+/** Page zoom changes the viewport's CSS size, so it always fires a resize. */
+function usePageZoomFactor() {
+    const [zoomFactor, setZoomFactor] = useState(() =>
+        window.electron.getZoomFactor(),
+    );
+    useEffect(() => {
+        const update = () => setZoomFactor(window.electron.getZoomFactor());
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+    return zoomFactor;
+}
+
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({
     showControls,
@@ -30,6 +43,7 @@ export default function TitleBar({
     const showFilePath = variant === "main";
     const isMacOS = window.electron.isMacOS;
     const { uiSettings } = useUiSettingsStore();
+    const zoomFactor = usePageZoomFactor();
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
@@ -87,6 +101,8 @@ export default function TitleBar({
                     "main-app-titlebar text-text grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-12",
                     isMacOS && "titlebar-mac",
                 )}
+                // The traffic lights ignore page zoom, so the bar does too or they drift apart.
+                style={isMacOS ? { zoom: 1 / zoomFactor } : undefined}
             >
                 <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
                     {!isMacOS && (

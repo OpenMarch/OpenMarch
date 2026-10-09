@@ -4,6 +4,7 @@ import type Page from "@/global/classes/Page";
 import {
     contextBridge,
     ipcRenderer,
+    webFrame,
     type IpcRendererEvent,
     type SaveDialogOptions,
 } from "electron";
@@ -142,6 +143,8 @@ const APP_API = {
         return () => ipcRenderer.removeListener("settings:changed", listener);
     },
     isMacOS: process.platform === "darwin",
+    /** Page zoom (View → Zoom In/Out), so native-sized UI can undo it. */
+    getZoomFactor: () => webFrame.getZoomFactor(),
 
     // Environment
     getEnv: () => ipcRenderer.invoke("env:get"),

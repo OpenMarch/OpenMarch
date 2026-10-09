@@ -17,6 +17,7 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { openSettingsWindow } from "./settings-window";
+import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { handleWindowOpen } from "./window-open-policy";
 import { PDFExportService } from "./services/export-service";
 import { VideoExportService } from "./services/video-export-service";
@@ -173,9 +174,7 @@ async function createWindow(title?: string) {
         autoHideMenuBar: true,
         // Show frame in codegen mode for easier interaction
         frame: isCodegen,
-        trafficLightPosition: { x: 24, y: 9 },
-        // Exposes env(titlebar-area-x) so the title bar can start after the traffic lights.
-        titleBarOverlay: isMacOS,
+        trafficLightPosition: TRAFFIC_LIGHT_POSITION,
         titleBarStyle: "hidden",
         webPreferences: {
             preload,
@@ -575,7 +574,6 @@ ipcMain.handle("settings:open", () => {
         parent: win,
         preload,
         frame: isCodegen,
-        isMacOS,
         load: (settings) =>
             url
                 ? void settings.loadURL(`${url}#settings`)

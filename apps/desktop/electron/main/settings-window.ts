@@ -1,6 +1,7 @@
 import { BrowserWindow, screen, shell } from "electron";
 import type Store from "electron-store";
 import { handleWindowOpen } from "./window-open-policy";
+import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import {
     fitBounds,
     defaultSettingsSize,
@@ -18,7 +19,6 @@ interface OpenOptions {
     preload: string;
     /** Same value the main window uses for `frame` (true only in Playwright codegen). */
     frame: boolean;
-    isMacOS: boolean;
     load: (win: BrowserWindow) => void;
 }
 
@@ -28,7 +28,6 @@ export function openSettingsWindow({
     parent,
     preload,
     frame,
-    isMacOS,
     load,
 }: OpenOptions) {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
@@ -62,8 +61,7 @@ export function openSettingsWindow({
         autoHideMenuBar: true,
         frame,
         titleBarStyle: "hidden",
-        titleBarOverlay: isMacOS,
-        trafficLightPosition: { x: 24, y: 9 },
+        trafficLightPosition: TRAFFIC_LIGHT_POSITION,
         webPreferences: {
             preload,
             contextIsolation: true,
