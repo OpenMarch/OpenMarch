@@ -39,9 +39,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 export const SelectTriggerButton = forwardRef<
     HTMLButtonElement,
     RadixSelectTriggerProps & { label: string }
->(({ label, className }, ref) => {
+>(({ label, className, ...props }, ref) => {
     return (
         <RadixSelect.Trigger
+            {...props}
             ref={ref}
             className={twMerge(
                 clsx(

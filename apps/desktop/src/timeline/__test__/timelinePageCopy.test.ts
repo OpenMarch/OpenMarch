@@ -53,7 +53,7 @@ keepFixturesInPageMode(
 /**
  * "Set all or selected marchers to the previous or next page"
  * (docs/timeline/phases/07-page-parity.md P7.6), through `setMarchersToNeighborPage`, the function
- * `RegisteredActionsHandler` runs for the four actions, with the flag on and off.
+ * `useBatchEditActionHandlers` runs for the four actions, with the flag on and off.
  */
 
 afterEach(() => stopTimelineResolver());

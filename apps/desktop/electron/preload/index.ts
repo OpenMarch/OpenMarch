@@ -4,6 +4,7 @@ import type Page from "@/global/classes/Page";
 import {
     contextBridge,
     ipcRenderer,
+    webFrame,
     type IpcRendererEvent,
     type SaveDialogOptions,
 } from "electron";
@@ -130,7 +131,21 @@ const APP_API = {
     maximizeWindow: () => ipcRenderer.send("window:maximize"),
     closeWindow: () => ipcRenderer.send("window:close"),
     openMenu: () => ipcRenderer.send("menu:open"),
+    openSettingsWindow: () => ipcRenderer.invoke("settings:open"),
+    reloadMainWindow: () => ipcRenderer.send("main-window:reload"),
+    onSettingsChanged: (
+        callback: (change: Record<string, unknown>) => void,
+    ) => {
+        const listener = (
+            _event: Electron.IpcRendererEvent,
+            change: Record<string, unknown>,
+        ) => callback(change);
+        ipcRenderer.on("settings:changed", listener);
+        return () => ipcRenderer.removeListener("settings:changed", listener);
+    },
     isMacOS: process.platform === "darwin",
+    /** Page zoom (View → Zoom In/Out), so native-sized UI can undo it. */
+    getZoomFactor: () => webFrame.getZoomFactor(),
 
     // Environment
     getEnv: () => ipcRenderer.invoke("env:get"),

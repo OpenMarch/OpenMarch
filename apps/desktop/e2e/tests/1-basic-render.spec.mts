@@ -27,12 +27,16 @@ test("Launch page sub-menus", async ({ electronAppEmpty }) => {
     await expect(page.getByRole("button", { name: "New File" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Open File" })).toBeVisible();
 
-    await page.getByRole("tab", { name: "Settings" }).click();
+    const { app } = electronAppEmpty;
+    const [settings] = await Promise.all([
+        app.waitForEvent("window"),
+        page.getByRole("button", { name: "Settings" }).click(),
+    ]);
+    await settings.waitForLoadState("domcontentloaded");
+    await expect(settings.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(
-        page.getByRole("heading", { name: "Settings", exact: true }),
+        settings.getByRole("button", { name: "Privacy", exact: true }),
     ).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Plugins" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 });
 
 const canvasIsVisible = async (page: Page) => {

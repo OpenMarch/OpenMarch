@@ -1,6 +1,7 @@
 /**
  * Guards for the timeline's raw window key listeners (G, Shift+Z, Esc), which sit outside the
- * app's registered keyboard actions and so must check for themselves what owns the key.
+ * app's shortcut actions and so must check for themselves what owns the key, and the timeline's
+ * rules for the shortcut dispatcher (`shortcuts/ShortcutDispatcher.tsx`).
  */
 
 /**
@@ -21,6 +22,15 @@ export const isTyping = (target: EventTarget | null) =>
     (target.isContentEditable ||
         ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
+/** Key presses whose default a move control cancelled but whose app shortcut still runs */
+const keepsShortcut = new WeakSet<Event>();
+
+/**
+ * Whether the app's shortcuts still run a key press whose default was cancelled: Space on a move
+ * control (`spaceStaysPlay`). The shortcut dispatcher skips any other cancelled key press.
+ */
+export const shortcutStillRuns = (event: Event) => keepsShortcut.has(event);
+
 /**
  * Space always plays (docs/timeline/ui.md UI-14, round-2 review): on the move controls (a clip,
  * its ⋯ button, the Move card, the isolation bar) Space doesn't also press the focused button or
@@ -30,12 +40,15 @@ export const isTyping = (target: EventTarget | null) =>
 export const spaceStaysPlay = (event: {
     readonly key: string;
     readonly target: EventTarget | null;
+    readonly nativeEvent?: Event;
     preventDefault: () => void;
 }) => {
-    if (event.key === " " && !isTyping(event.target)) event.preventDefault();
+    if (event.key !== " " || isTyping(event.target)) return;
+    event.preventDefault();
+    if (event.nativeEvent) keepsShortcut.add(event.nativeEvent);
 };
 
-/** The WASD nudge keys, by physical key as the app's nudge reads them (`RegisteredActionsHandler`) */
+/** The WASD nudge keys, by physical key as the app's nudge bindings match them (`shortcuts/definitions.ts`) */
 const NUDGE_CODES = new Set(["KeyW", "KeyA", "KeyS", "KeyD"]);
 
 type KeyFields = Pick<KeyboardEvent, "key" | "code" | "ctrlKey" | "metaKey">;
@@ -44,17 +57,16 @@ const isArrow = (event: KeyFields) =>
     event.key.startsWith("Arrow") || event.code.startsWith("Arrow");
 
 /**
- * A key the app's nudge (`RegisteredActionsHandler`) moves the selected marchers on, exactly as it
- * matches them: any arrow, or W, A, S or D by physical key (`event.code`, so another keyboard
- * layout can't slip one past), with any modifier but Cmd. Ctrl+S and Ctrl+A nudge there too,
- * before their own shortcuts (save, select all) run.
+ * A key that can be one of the app's nudge shortcuts (the `moveSelectedMarchers*` actions): any
+ * arrow, or W, A, S or D by physical key (`event.code`, so another keyboard layout can't slip one
+ * past), with any modifier but Cmd.
  */
 export const isNudgeKey = (event: KeyFields): boolean =>
     isArrow(event) || (NUDGE_CODES.has(event.code) && !event.metaKey);
 
 /**
- * A nudge key that is nothing else: an arrow, or WASD without Ctrl or Cmd. With Ctrl it is also
- * another shortcut (Ctrl+S saves), which a move control lets through, without the nudge.
+ * A nudge key that is nothing else: an arrow, or WASD without Ctrl or Cmd. With Ctrl it is another
+ * shortcut (Ctrl+S swaps, Ctrl+A selects all), which a move control lets through.
  */
 export const isPlainNudgeKey = (event: KeyFields): boolean =>
     isNudgeKey(event) && (isArrow(event) || !event.ctrlKey);
@@ -81,9 +93,9 @@ const isPlainSpace = (event: KeyFields) =>
  * Whether a key belongs to the focused timeline move control (UI-14 round-2 review): on a clip,
  * its ⋯ button or name field, the Move card or the isolation bar (`data-timeline-own-keys`),
  * Enter activates the control and the arrows (and WASD) work it or do nothing, as anywhere else on
- * a web page. The app's registered shortcuts skip these keys there: Enter would create a shape,
- * the arrows and WASD would nudge the selected marchers unseen. Space isn't one: it still plays,
- * except on a button marked `OWN_KEYS_WITH_SPACE`, which Space presses.
+ * a web page. The app's shortcuts skip these keys there: Enter would create a shape, the arrows
+ * and WASD would nudge the selected marchers unseen. Space isn't one: it still plays, except on a
+ * button marked `OWN_KEYS_WITH_SPACE`, which Space presses.
  */
 export const isTimelineOwnKey = (
     event: KeyFields,
@@ -96,7 +108,7 @@ export const isTimelineOwnKey = (
 
 /**
  * Whether the app's nudge must skip a key (code review): on a move control no nudge key moves the
- * selected marchers, Ctrl+WASD included; Ctrl+S still saves and Ctrl+A still selects all.
+ * selected marchers; other shortcuts on the same keys (Ctrl+S, Ctrl+A) still run.
  */
 export const skipsAppNudge = (
     event: KeyFields,

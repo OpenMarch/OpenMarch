@@ -141,15 +141,16 @@ const PLAY_FROM_FLAG_ICON = (
 );
 
 /**
- * The transport's shortcuts as the tooltips show them (UI-17), in `KeyboardShortcut.toString`'s
- * form. They mirror `RegisteredActionsObjects`, which a test checks; this file doesn't import the
- * app's action registry.
+ * The transport's shortcuts as the tooltips show them (UI-17), as keycaps joined with " + ". They
+ * mirror the actions' default bindings (`shortcuts/definitions.ts`), which a test checks; this
+ * file doesn't import the app's shortcut registry. A rebound shortcut isn't shown here.
  */
 export const TRANSPORT_SHORTCUTS = {
     previousPage: "Q",
     nextPage: "E",
     play: "Space",
     playPage: "Shift + Space",
+    loop: "C",
 } as const;
 
 const TransportButton = memo(function TransportButton({

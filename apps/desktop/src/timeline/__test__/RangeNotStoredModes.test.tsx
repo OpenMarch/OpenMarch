@@ -12,16 +12,15 @@ import {
 import tolgee from "@/global/singletons/Tolgee";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { useAddPageFlag } from "@/hooks/queries/usePageFlags";
-import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import {
     isMarcherDimmed,
     useTimelineSelectionStore,
 } from "@/stores/TimelineSelectionStore";
 import { selectAddedPage } from "@/components/timeline/TimelineModePanel";
 import { conToastError } from "@/utilities/utils";
-import RegisteredActionsHandler, {
-    RegisteredActionsEnum,
-} from "@/utilities/RegisteredActionsHandler";
+import { EditorActionHandlers } from "@/shortcuts/ActionHandlers";
+import type { ActionId } from "@/shortcuts/definitions";
+import { runActionWhenReady } from "@/test/runActionWhenReady";
 import { stopTimelineResolver } from "../timelineStore";
 import { timelinePositionsSettled } from "../timelineCoordinateWrites";
 import { pageFlags } from "../timelinePlayhead";
@@ -77,23 +76,8 @@ function PanelCommands() {
     return null;
 }
 
-const trigger = async (action: RegisteredActionsEnum) => {
-    const button = document.createElement("button");
-    const ref = { current: button };
-    act(() => {
-        useRegisteredActionsStore.getState().linkRegisteredAction(action, ref);
-    });
-    try {
-        await waitFor(() => expect(button.onclick).toBeTypeOf("function"));
-        act(() => button.click());
-    } finally {
-        act(() => {
-            useRegisteredActionsStore
-                .getState()
-                .removeRegisteredAction(action, ref);
-        });
-    }
-};
+/** Runs an action the way a toolbar button or its key does */
+const trigger = (action: ActionId) => runActionWhenReady(action);
 
 const selectedIds = () =>
     probed()
@@ -154,7 +138,7 @@ describeDbTests("windows not stored yet (UI-10 Dragging adds)", (it) => {
         await setUpFeature(
             <>
                 <PanelCommands />
-                <RegisteredActionsHandler />
+                <EditorActionHandlers />
             </>,
             2,
             picked,
@@ -169,7 +153,7 @@ describeDbTests("windows not stored yet (UI-10 Dragging adds)", (it) => {
         // Any marcher can be selected, and moving them is what adds them
         const chosen = [ids[0]!, ids[2]!];
         await selectMarchers(chosen);
-        await trigger(RegisteredActionsEnum.moveSelectedMarchersRight);
+        await trigger("moveSelectedMarchersRight");
         const members = await storedOver(range);
         expect([...members].sort((a, b) => a - b)).toEqual(
             [...chosen].sort((a, b) => a - b),
@@ -195,7 +179,7 @@ describeDbTests("windows not stored yet (UI-10 Dragging adds)", (it) => {
         await setUpFeature(
             <>
                 <PanelCommands />
-                <RegisteredActionsHandler />
+                <EditorActionHandlers />
             </>,
             2,
             [],
@@ -221,7 +205,7 @@ describeDbTests("windows not stored yet (UI-10 Dragging adds)", (it) => {
         const chosen = ids.slice(1, 3);
         await selectMarchers(chosen);
         await settle();
-        await trigger(RegisteredActionsEnum.moveSelectedMarchersRight);
+        await trigger("moveSelectedMarchersRight");
         const members = await storedOver({ start: range!.start, end: beat });
         expect([...members].sort((a, b) => a - b)).toEqual(
             [...chosen].sort((a, b) => a - b),

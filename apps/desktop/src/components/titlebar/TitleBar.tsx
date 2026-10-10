@@ -14,20 +14,44 @@ import {
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T } from "@tolgee/react";
+import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
 
+/** Page zoom changes the viewport's CSS size, so it always fires a resize. */
+function usePageZoomFactor() {
+    const [zoomFactor, setZoomFactor] = useState(() =>
+        window.electron.getZoomFactor(),
+    );
+    useEffect(() => {
+        const update = () => setZoomFactor(window.electron.getZoomFactor());
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+    return zoomFactor;
+}
+
 // eslint-disable-next-line max-lines-per-function
-export default function TitleBar({ showControls }: { showControls?: boolean }) {
+export default function TitleBar({
+    showControls,
+    variant = "main",
+}: {
+    showControls?: boolean;
+    /** "settings" is a minimal bar: no version, update check, file controls or file path. */
+    variant?: "main" | "settings";
+}) {
+    const showFilePath = variant === "main";
     const isMacOS = window.electron.isMacOS;
     const showFullDatabasePath = useUiSettingsStore(
         (s) => s.uiSettings.showFullDatabasePath,
     );
+    const zoomFactor = usePageZoomFactor();
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
 
     useEffect(() => {
+        if (!showFilePath) return;
         const fetchDbPath = async () => {
             try {
                 const path = await window.electron.databaseGetPath();
@@ -42,7 +66,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
         };
 
         void fetchDbPath();
-    }, []);
+    }, [showFilePath]);
 
     const displayDbPath = showFullDatabasePath
         ? dbPath
@@ -74,10 +98,15 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                     </div>
                 </AlertDialogContent>
             </AlertDialog>
-            <div className="main-app-titlebar text-text relative flex h-fit w-full items-center justify-between">
-                <div
-                    className={`flex items-center gap-20 px-24 py-8 ${isMacOS && "ml-64"}`}
-                >
+            <div
+                className={clsx(
+                    "main-app-titlebar text-text grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-12",
+                    isMacOS && "titlebar-mac",
+                )}
+                // The traffic lights ignore page zoom, so the bar does too or they drift apart.
+                style={isMacOS ? { zoom: 1 / zoomFactor } : undefined}
+            >
+                <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
                     {!isMacOS && (
                         <button
                             className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
@@ -97,15 +126,19 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                         <p className="text-body min-w-0 leading-none">
                             OpenMarch
                         </p>
-                        <p className="text-body leading-none opacity-50">
-                            {currentVersion}
-                        </p>
-                        <VersionChecker />
-                        {showControls && <FileControls />}
+                        {variant === "main" && (
+                            <>
+                                <p className="text-body leading-none opacity-50">
+                                    {currentVersion}
+                                </p>
+                                <VersionChecker />
+                                {showControls && <FileControls />}
+                            </>
+                        )}
                     </div>
                 </div>
-                <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
-                    {displayDbPath}
+                <p className="text-sub truncate text-center">
+                    {showFilePath ? displayDbPath : null}
                 </p>
                 <div
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}

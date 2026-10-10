@@ -1,10 +1,4 @@
-import {
-    act,
-    cleanup,
-    fireEvent,
-    screen,
-    waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, expect, vi } from "vitest";
 import { describeDbTests } from "@/test/base";
 import { timelineFixtureMode } from "@/test/timelineMode";
@@ -16,11 +10,10 @@ import {
     timelineSelection,
 } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
-import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
-import RegisteredActionsHandler, {
-    RegisteredActionsEnum,
-} from "@/utilities/RegisteredActionsHandler";
+import { EditorActionHandlers } from "@/shortcuts/ActionHandlers";
+import type { ActionId } from "@/shortcuts/definitions";
+import { runActionWhenReady } from "@/test/runActionWhenReady";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import {
     Timeline,
@@ -53,24 +46,8 @@ afterEach(() => {
     stopTimelineResolver();
 });
 
-/** Runs a registered action the way a toolbar button does. */
-const trigger = async (action: RegisteredActionsEnum) => {
-    const button = document.createElement("button");
-    const ref = { current: button };
-    act(() => {
-        useRegisteredActionsStore.getState().linkRegisteredAction(action, ref);
-    });
-    try {
-        await waitFor(() => expect(button.onclick).toBeTypeOf("function"));
-        act(() => button.click());
-    } finally {
-        act(() => {
-            useRegisteredActionsStore
-                .getState()
-                .removeRegisteredAction(action, ref);
-        });
-    }
-};
+/** Runs an action the way a toolbar button or its key does */
+const trigger = (action: ActionId) => runActionWhenReady(action);
 
 /** The selection a page's box makes: its range, or home for the first page */
 const boxOf = (pageIndex: number) => {
@@ -87,12 +64,12 @@ describeDbTests("page navigation and the selection", (it) => {
     }) => {
         void db;
         void marchersAndPages;
-        await setUpFeature(<RegisteredActionsHandler />, 0, []);
+        await setUpFeature(<EditorActionHandlers />, 0, []);
         const pages = probed().pages;
         expect(pages.length).toBeGreaterThan(3);
 
         if (!timelineFixtureMode()) {
-            await trigger(RegisteredActionsEnum.nextPage);
+            await trigger("nextPage");
             await waitFor(() =>
                 expect(probed().selectedPage?.id).toBe(pages[1]!.id),
             );
@@ -102,7 +79,7 @@ describeDbTests("page navigation and the selection", (it) => {
         }
 
         const flags = pageFlags(pages);
-        await trigger(RegisteredActionsEnum.nextPage);
+        await trigger("nextPage");
         await waitFor(() =>
             expect(timelineSelection().selection).toEqual(boxOf(1)),
         );
@@ -111,24 +88,24 @@ describeDbTests("page navigation and the selection", (it) => {
             expect(probed().selectedPage?.id).toBe(pages[1]!.id),
         );
 
-        await trigger(RegisteredActionsEnum.nextPage);
+        await trigger("nextPage");
         await waitFor(() =>
             expect(timelineSelection().selection).toEqual(boxOf(2)),
         );
 
-        await trigger(RegisteredActionsEnum.lastPage);
+        await trigger("lastPage");
         const last = pages.length - 1;
         await waitFor(() =>
             expect(timelineSelection().selection).toEqual(boxOf(last)),
         );
         expect(timelineSelection().playheadBeat).toBe(flags[last]!.flag);
 
-        await trigger(RegisteredActionsEnum.previousPage);
+        await trigger("previousPage");
         await waitFor(() =>
             expect(timelineSelection().selection).toEqual(boxOf(last - 1)),
         );
 
-        await trigger(RegisteredActionsEnum.firstPage);
+        await trigger("firstPage");
         await waitFor(() =>
             expect(timelineSelection().selection).toEqual({ kind: "home" }),
         );
@@ -144,7 +121,7 @@ describeDbTests("page navigation and the selection", (it) => {
     }) => {
         void db;
         void marchersAndPages;
-        await setUpFeature(<RegisteredActionsHandler />, 0, []);
+        await setUpFeature(<EditorActionHandlers />, 0, []);
         if (!timelineFixtureMode()) return;
         const page = probed().pages[2]!;
         await selectTimeline(page);

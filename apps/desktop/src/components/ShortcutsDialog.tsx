@@ -1,10 +1,21 @@
 import { useTolgee } from "@tolgee/react";
 import { Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { Keycaps } from "@/components/timeline/ShortcutTooltip";
 import { useShortcutsDialogStore } from "@/stores/ShortcutsDialogStore";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import { formatBindingKeys, platformBinding } from "@/shortcuts/bindings";
+import {
+    ACTION_IDS,
+    NUDGE_ACTION_IDS,
+    TAP_BEATS_ACTION_IDS,
+    getActionDefinition,
+    type ActionId,
+} from "@/shortcuts/definitions";
+import { getDisplayBindings, type ShortcutOverrides } from "@/shortcuts/keymap";
+import { getActionLabel, type Translate } from "@/shortcuts/labels";
+import { isMacPlatform } from "@/shortcuts/platform";
 
-/** The order and names of the groups, by the category in each action's `actions.{category}.*` key */
+/** The order and names of the groups, by each action's category (`shortcuts/definitions.ts`) */
 const GROUPS: readonly (readonly [category: string, title: string])[] = [
     ["playback", "Playback"],
     ["navigation", "Pages"],
@@ -12,7 +23,6 @@ const GROUPS: readonly (readonly [category: string, title: string])[] = [
     ["edit", "Edit"],
     ["select", "Selection"],
     ["movement", "Move marchers"],
-    ["swap", "Move marchers"],
     ["alignment", "Alignment"],
     ["shape", "Shapes"],
     ["batchEdit", "Batch editing"],
@@ -27,8 +37,8 @@ interface Row {
 }
 
 /**
- * Keys outside the registered actions: the timeline's own listeners and gestures (UI-12, UI-14),
- * and the nudge, whose registered actions carry no shortcut of their own
+ * Keys outside the shortcut actions: the timeline's own listeners and gestures (UI-12, UI-14),
+ * and the nudge, whose many actions (one per direction and step) show as one row
  */
 const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
     timeline: [
@@ -42,34 +52,39 @@ const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
     movement: [{ label: "Nudge the selected marchers", keys: "W A S D" }],
 };
 
-/** Named keys as people write them: "ESCAPE" is "Esc", "ENTER" is "Enter" */
-const readableKeys = (keys: string) =>
-    keys
-        .split(" + ")
-        .map((key) =>
-            key === "ESCAPE"
-                ? "Esc"
-                : key.length > 1 && key === key.toUpperCase()
-                  ? key[0] + key.slice(1).toLowerCase()
-                  : key,
-        )
-        .join(" + ");
+/** Shown elsewhere: the nudge (`EXTRA_ROWS`), the tap-beat digits and the beat editor's keys */
+const LISTED_ELSEWHERE: ReadonlySet<ActionId> = new Set([
+    ...NUDGE_ACTION_IDS,
+    ...TAP_BEATS_ACTION_IDS,
+]);
 
-/** Every shortcut, grouped (`RegisteredActionsObjects` plus `EXTRA_ROWS`) */
+/**
+ * An action's shortcut as keycaps joined with " + ". "?" is Shift plus a key that varies by
+ * layout, so it is written alone.
+ */
+const shortcutKeys = (binding: string, isMac: boolean) =>
+    platformBinding(binding, isMac) === platformBinding("Shift+Slash", isMac)
+        ? "?"
+        : formatBindingKeys(binding, isMac).join(" + ");
+
+/** Every shortcut, grouped (the actions in `shortcuts/definitions.ts`, as rebound, plus `EXTRA_ROWS`) */
 export function shortcutGroups(
-    translate: (key: string) => string,
+    translate: Translate,
+    overrides: ShortcutOverrides = {},
+    isMac: boolean = isMacPlatform(),
 ): readonly { readonly title: string; readonly rows: readonly Row[] }[] {
     const byCategory = new Map<string, Row[]>();
-    for (const action of Object.values(RegisteredActionsObjects)) {
-        const shortcut = action.keyboardShortcut;
-        if (!shortcut || shortcut.key === "") continue;
-        const category = action.descKey.split(".")[1] ?? "";
-        const rows = byCategory.get(category) ?? [];
+    for (const id of ACTION_IDS) {
+        const action = getActionDefinition(id);
+        if (LISTED_ELSEWHERE.has(id) || action.scope === "timeline") continue;
+        const [binding] = getDisplayBindings(id, overrides, isMac);
+        if (!binding) continue;
+        const rows = byCategory.get(action.category) ?? [];
         rows.push({
-            label: translate(action.descKey),
-            keys: readableKeys(shortcut.toString()),
+            label: getActionLabel(id, translate),
+            keys: shortcutKeys(binding, isMac),
         });
-        byCategory.set(category, rows);
+        byCategory.set(action.category, rows);
     }
     const groups: { title: string; rows: Row[] }[] = [];
     for (const [category, title] of GROUPS) {
@@ -93,15 +108,20 @@ export function shortcutGroups(
 }
 
 /**
- * The keyboard shortcuts list (UI-17 follow-up), as GitHub's and Figma's `?`: every registered
- * shortcut by group, read from the action registry so it stays right, plus the timeline's own keys.
+ * The keyboard shortcuts list (UI-17 follow-up), as GitHub's and Figma's `?`: every shortcut by
+ * group, read from the action definitions and the user's changed shortcuts so it stays right,
+ * plus the timeline's own keys. Settings has the full list, where shortcuts can be changed.
  */
 export default function ShortcutsDialog() {
     const open = useShortcutsDialogStore((s) => s.open);
     const setOpen = useShortcutsDialogStore((s) => s.setOpen);
+    const overrides = useShortcutOverridesStore((s) => s.overrides);
     const { t } = useTolgee(["language"]);
     if (!open) return null;
-    const groups = shortcutGroups((key) => t(key));
+    const groups = shortcutGroups(
+        (key, params) => t(key, params as never),
+        overrides,
+    );
     return (
         <Dialog open onOpenChange={setOpen}>
             <DialogContent

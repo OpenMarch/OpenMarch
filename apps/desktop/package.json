@@ -36,8 +36,12 @@
         "test:watch": "vitest",
         "test:coverage": "pnpm test -- --coverage",
         "test:clearCache": "vitest --clearCache",
-        "e2e": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test",
+        "e2e": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test --project=electron",
+        "build:browser": "pnpm run apply-styles && cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true vite build -c vite.browser.config.mts && vite build -c vite.browser.config.mts --mode host",
+        "e2e:browser": "playwright test --project=browser --workers=4",
+        "e2e:scenarios:electron": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test --project=electron-scenarios --workers=4",
         "e2e:codegen": "node e2e/_codegen.mjs",
+        "check:gate": "tsc --noEmit && pnpm run test && pnpm run build:browser && pnpm run e2e:browser",
         "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts"
     },
     "dependencies": {
@@ -101,6 +105,7 @@
         "sonner": "^1.7.4",
         "svg-to-pdfkit": "^0.1.8",
         "tailwind-merge": "^2.6.0",
+        "tinykeys": "^4.0.0",
         "uuid": "^11.1.0",
         "wavesurfer.js": "^7.9.9",
         "zod": "^4.1.12",

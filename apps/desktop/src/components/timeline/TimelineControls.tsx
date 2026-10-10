@@ -1,4 +1,3 @@
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
     RewindIcon,
     SkipBackIcon,
@@ -15,7 +14,7 @@ import {
     RowsIcon,
     RepeatIcon,
 } from "@phosphor-icons/react";
-import RegisteredActionButton from "@/components/RegisteredActionButton";
+import ActionButton from "@/shortcuts/ActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -29,6 +28,7 @@ import { Slider } from "@openmarch/ui";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { toggleTimelineLoop } from "@/timeline/timelineTransport";
 import { ShortcutTooltip } from "./ShortcutTooltip";
+import { TRANSPORT_SHORTCUTS } from "./TimelinePrimitives";
 import { START_INK } from "./startFlagInk";
 
 export default function TimelineControls() {
@@ -169,8 +169,7 @@ export function TimelineLoopButton() {
     const looping = useTimelineSelectionStore(
         (s) => s.loop !== null || s.isolation !== null,
     );
-    const shortcut =
-        RegisteredActionsObjects.toggleLoop.keyboardShortcut?.toString();
+    const shortcut = TRANSPORT_SHORTCUTS.loop;
     return (
         <ShortcutTooltip
             label={looping ? "Loop: on" : "Loop: off"}
@@ -355,8 +354,8 @@ function PlaybackControls() {
             className={clsx("flex gap-12")}
             aria-label={t("timeline.controls.label")}
         >
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.firstPage}
+            <ActionButton
+                action="firstPage"
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
@@ -365,10 +364,10 @@ function PlaybackControls() {
                 }
             >
                 <RewindIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.previousPage}
+            <ActionButton
+                action="previousPage"
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
@@ -377,10 +376,10 @@ function PlaybackControls() {
                 }
             >
                 <SkipBackIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.playPause}
+            <ActionButton
+                action="playPause"
                 className="focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-2"
                 disabled={
                     !selectedPage ||
@@ -388,10 +387,10 @@ function PlaybackControls() {
                 }
             >
                 {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.nextPage}
+            <ActionButton
+                action="nextPage"
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
@@ -400,10 +399,10 @@ function PlaybackControls() {
                 }
             >
                 <SkipForwardIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.lastPage}
+            <ActionButton
+                action="lastPage"
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
@@ -412,7 +411,7 @@ function PlaybackControls() {
                 }
             >
                 <FastForwardIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
         </div>
     );
 }

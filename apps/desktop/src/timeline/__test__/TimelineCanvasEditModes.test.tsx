@@ -9,7 +9,6 @@ import {
     setUpFeature,
 } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
-import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { conToastError } from "@/utilities/utils";
 import {
@@ -17,9 +16,9 @@ import {
     useTimelineResolverStore,
 } from "../timelineStore";
 import { timelinePositionsSettled } from "../timelineCoordinateWrites";
-import RegisteredActionsHandler, {
-    RegisteredActionsEnum,
-} from "@/utilities/RegisteredActionsHandler";
+import { EditorActionHandlers } from "@/shortcuts/ActionHandlers";
+import type { ActionId } from "@/shortcuts/definitions";
+import { runActionWhenReady } from "@/test/runActionWhenReady";
 
 /**
  * UI-10 Editing through the app's registered tools (P8.15, P8.17), on a converted show in timeline
@@ -50,23 +49,8 @@ afterEach(() => {
     stopTimelineResolver();
 });
 
-const trigger = async (action: RegisteredActionsEnum) => {
-    const button = document.createElement("button");
-    const ref = { current: button };
-    act(() => {
-        useRegisteredActionsStore.getState().linkRegisteredAction(action, ref);
-    });
-    try {
-        await waitFor(() => expect(button.onclick).toBeTypeOf("function"));
-        act(() => button.click());
-    } finally {
-        act(() => {
-            useRegisteredActionsStore
-                .getState()
-                .removeRegisteredAction(action, ref);
-        });
-    }
-};
+/** Runs an action the way a toolbar button or its key does */
+const trigger = (action: ActionId) => runActionWhenReady(action);
 
 describeDbTests("canvas tools edit the UI-10 edit window", (it) => {
     it("a nudge on a flag edits that page timeline; between flags it arrives at the playhead in a new timeline", async ({
@@ -77,14 +61,10 @@ describeDbTests("canvas tools edit the UI-10 edit window", (it) => {
         const ids = marchersAndPages.expectedMarchers
             .slice(0, 2)
             .map((m) => m.id);
-        const { page } = await setUpFeature(
-            <RegisteredActionsHandler />,
-            3,
-            ids,
-        );
+        const { page } = await setUpFeature(<EditorActionHandlers />, 3, ids);
         const before = await positionsOn(db, page, ids);
 
-        await trigger(RegisteredActionsEnum.moveSelectedMarchersRight);
+        await trigger("moveSelectedMarchersRight");
         await waitFor(async () => {
             const after = await positionsOn(db, page, ids);
             after.forEach(([x, y], i) => {
@@ -102,7 +82,7 @@ describeDbTests("canvas tools edit the UI-10 edit window", (it) => {
         });
         const resolver = () => useTimelineResolverStore.getState().resolver!;
         const atMid = ids.map((id) => resolver().positionAt(id, mid));
-        await trigger(RegisteredActionsEnum.moveSelectedMarchersRight);
+        await trigger("moveSelectedMarchersRight");
         await waitFor(async () => {
             await timelinePositionsSettled();
             ids.forEach((id, i) => {
@@ -131,13 +111,13 @@ describeDbTests("canvas tools edit the UI-10 edit window", (it) => {
     }) => {
         if (!timelineFixtureMode()) return;
         const ids = [marchersAndPages.expectedMarchers[4]!.id];
-        await setUpFeature(<RegisteredActionsHandler />, 0, ids);
+        await setUpFeature(<EditorActionHandlers />, 0, ids);
         await selectTimeline("home");
         const resolver = () => useTimelineResolverStore.getState().resolver!;
         const [x0, y0] = resolver().positionAt(ids[0]!, 0);
 
-        await trigger(RegisteredActionsEnum.alignHorizontally);
-        await trigger(RegisteredActionsEnum.moveSelectedMarchersDown);
+        await trigger("alignHorizontally");
+        await trigger("moveSelectedMarchersDown");
         await waitFor(async () => {
             await timelinePositionsSettled();
             const [x, y] = resolver().positionAt(ids[0]!, 0);
@@ -155,7 +135,7 @@ describeDbTests("canvas tools edit the UI-10 edit window", (it) => {
             "range",
         );
         const [, y9] = resolver().positionAt(ids[0]!, 9);
-        await trigger(RegisteredActionsEnum.moveSelectedMarchersDown);
+        await trigger("moveSelectedMarchersDown");
         await waitFor(async () => {
             await timelinePositionsSettled();
             expect(resolver().positionAt(ids[0]!, 9)[1]).toBeGreaterThan(y9);

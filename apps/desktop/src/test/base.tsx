@@ -4,6 +4,7 @@ import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
 import { DatabaseSync, type StatementResultingChanges } from "node:sqlite";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
+import os from "os";
 import path from "path";
 import * as mockDataMarchersAndPages from "./mock-data/marchers-and-pages.mjs";
 import * as mockDataMarchers from "./mock-data/marchers.mjs";
@@ -48,9 +49,17 @@ type DbConnection = BaseSQLiteDatabase<
     StatementResultingChanges | void | SqliteRemoteResult<unknown>,
     typeof schema
 >;
+/**
+ * Test databases go in the system temp folder, named by process. Task ids are
+ * only unique within one run, so two runs writing to the working directory
+ * (two agents, or a watch run beside a full run) used to share files.
+ */
+const tempDotsDir = path.join(os.tmpdir(), "openmarch-test");
+fs.ensureDirSync(tempDotsDir);
+
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
     const taskId = task.id.startsWith("-") ? task.id.slice(1) : task.id;
-    return path.resolve(`${taskId}.tmp.dots`);
+    return path.join(tempDotsDir, `${process.pid}-${taskId}.tmp.dots`);
 };
 
 const getTempDb = async (task: Readonly<{ id: string }>) => {

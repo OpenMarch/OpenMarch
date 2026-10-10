@@ -6,10 +6,10 @@ import { harnessQueryClient, setUpFeature } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
 import { toggleKeepOnPage } from "@/timeline/timelineKeepCommands";
-import RegisteredActionsHandler, {
-    RegisteredActionsEnum,
-    RegisteredActionsObjects,
-} from "../RegisteredActionsHandler";
+import { EditorActionHandlers } from "@/shortcuts/ActionHandlers";
+import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
+import { getActionDefinition } from "@/shortcuts/definitions";
+import { findConflicts } from "@/shortcuts/keymap";
 
 /**
  * **K** (UI-18 keep later pages): in timeline mode, keeps the selected marchers on the page after
@@ -55,27 +55,21 @@ const press = (target: EventTarget = window, repeat = false) =>
 
 describe("the K shortcut", () => {
     it("says what it does in its description", () => {
-        expect(
-            tolgee.t(
-                RegisteredActionsObjects[RegisteredActionsEnum.toggleKeepOnPage]
-                    .descKey,
-            ),
-        ).toBe(
+        expect(tolgee.t(getActionDefinition("toggleKeepOnPage").labelKey)).toBe(
             "Keep the selected marchers where they hold on this page (on the next page if they move here), or let them follow again",
         );
     });
 
     it("is K alone, and no other action uses it", () => {
-        const shortcut =
-            RegisteredActionsObjects[RegisteredActionsEnum.toggleKeepOnPage]
-                .keyboardShortcut!;
-        expect(shortcut.toString()).toBe("K");
-        const others = Object.values(RegisteredActionsObjects).filter(
-            (a) =>
-                a.enumString !== RegisteredActionsEnum.toggleKeepOnPage &&
-                a.keyboardShortcut?.toString() === "K",
+        expect(getActionDefinition("toggleKeepOnPage").defaultBindings).toEqual(
+            ["K"],
         );
-        expect(others).toEqual([]);
+        for (const isMac of [false, true])
+            expect(
+                findConflicts({}, undefined, isMac).filter((c) =>
+                    c.actionIds.includes("toggleKeepOnPage"),
+                ),
+            ).toEqual([]);
     });
 });
 
@@ -90,7 +84,10 @@ describeDbTests(
                 .slice(0, 2)
                 .map((m) => m.id);
             const { page } = await setUpFeature(
-                <RegisteredActionsHandler />,
+                <>
+                    <ShortcutDispatcher />
+                    <EditorActionHandlers />
+                </>,
                 2,
                 ids,
             );

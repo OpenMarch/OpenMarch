@@ -10,7 +10,7 @@ export default function AnalyticsMessage({
 }: AnalyticsMessageProps) {
     if (!hasOptedOut) {
         return (
-            <div className="bg-green/20 text-green-foreground border-green mx-12 flex items-center gap-8 rounded-md border p-12 text-sm">
+            <div className="bg-green/20 text-green-foreground rounded-6 flex items-center gap-8 p-12 text-sm">
                 <CheckCircleIcon size={32} className="text-green" />
                 <T keyName="settings.privacy.analytics.enabled" />
             </div>
@@ -18,7 +18,7 @@ export default function AnalyticsMessage({
     }
 
     return (
-        <div className="bg-red/20 text-red-foreground mx-12 flex items-center gap-8 rounded-md border border-red-500/50 p-12 text-sm">
+        <div className="bg-red/20 text-red-foreground rounded-6 flex items-center gap-8 p-12 text-sm">
             <XCircleIcon size={64} className="text-red-500" />
             <p>
                 <T

@@ -1,7 +1,16 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { registerActionHandler } from "@/shortcuts/registry";
 import AlignmentEditor from "../AlignmentEditor";
 
 /**
@@ -31,7 +40,18 @@ vi.mock("@/stores/AlignmentEventStore", () => ({
 beforeAll(async () => {
     await tolgee.run();
 });
-afterEach(cleanup);
+// The buttons run their actions, whose handlers the editor mounts
+const offs: (() => void)[] = [];
+beforeEach(() => {
+    for (const id of ["createMarcherShape", "applyQuickShape"] as const)
+        offs.push(
+            registerActionHandler(id, { run: vi.fn(), isEnabled: () => true }),
+        );
+});
+afterEach(() => {
+    cleanup();
+    offs.splice(0).forEach((off) => off());
+});
 
 const show = () =>
     render(

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { TRANSPORT_SHORTCUTS } from "../TimelinePrimitives";
+import { formatBindingKeys } from "@/shortcuts/bindings";
 import {
-    RegisteredActionsEnum,
-    RegisteredActionsObjects,
-} from "@/utilities/RegisteredActionsHandler";
+    ACTIONS,
+    getActionDefinition,
+    type ActionId,
+} from "@/shortcuts/definitions";
 import {
     HELP_MENU_ACTIONS,
     PLAYBACK_MENU_ACTIONS,
@@ -11,9 +13,15 @@ import {
 } from "@/global/menuActions";
 import { shortcutGroups } from "@/components/ShortcutsDialog";
 
+/** An action's first default binding as the tooltips write it, e.g. "Shift + Space" */
+const shown = (id: ActionId) =>
+    formatBindingKeys(getActionDefinition(id).defaultBindings[0]!, false).join(
+        " + ",
+    );
+
 /**
- * The transport tooltips show the same shortcuts as the registered actions (UI-17).
- * `TimelinePrimitives` doesn't import the action registry; this test is the link.
+ * The transport tooltips show the same shortcuts as the actions' default bindings (UI-17).
+ * `TimelinePrimitives` doesn't import the shortcut registry; this test is the link.
  */
 describe("transport shortcuts (UI-17)", () => {
     it("matches the registered playback and page shortcuts", () => {
@@ -22,19 +30,13 @@ describe("transport shortcuts (UI-17)", () => {
             nextPage: "E",
             play: "Space",
             playPage: "Shift + Space",
+            loop: "C",
         });
-        expect(TRANSPORT_SHORTCUTS.playPage).toBe(
-            RegisteredActionsObjects.playPage.keyboardShortcut!.toString(),
-        );
-        expect(TRANSPORT_SHORTCUTS.play).toBe(
-            RegisteredActionsObjects.playPause.keyboardShortcut!.toString(),
-        );
-        expect(TRANSPORT_SHORTCUTS.previousPage).toBe(
-            RegisteredActionsObjects.previousPage.keyboardShortcut!.toString(),
-        );
-        expect(TRANSPORT_SHORTCUTS.nextPage).toBe(
-            RegisteredActionsObjects.nextPage.keyboardShortcut!.toString(),
-        );
+        expect(TRANSPORT_SHORTCUTS.playPage).toBe(shown("playPage"));
+        expect(TRANSPORT_SHORTCUTS.play).toBe(shown("playPause"));
+        expect(TRANSPORT_SHORTCUTS.previousPage).toBe(shown("previousPage"));
+        expect(TRANSPORT_SHORTCUTS.nextPage).toBe(shown("nextPage"));
+        expect(TRANSPORT_SHORTCUTS.loop).toBe(shown("toggleLoop"));
     });
 });
 
@@ -64,21 +66,15 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
         ]);
     });
 
-    it("names registered actions and shows their registered shortcuts", () => {
+    it("names actions and shows their default shortcuts", () => {
         for (const item of items) {
-            const action =
-                RegisteredActionsObjects[
-                    item.action as keyof typeof RegisteredActionsObjects
-                ];
-            expect(action, item.action).toBeDefined();
-            expect(Object.values(RegisteredActionsEnum)).toContain(item.action);
-            // Electron's "Shift+/" is the registry's "?"
-            const shown =
-                item.accelerator === "Shift+/"
-                    ? "?"
-                    : item.accelerator.replace(/\+/g, " + ");
-            expect(shown, item.action).toBe(
-                action.keyboardShortcut!.toString(),
+            expect(item.action in ACTIONS, item.action).toBe(true);
+            const [binding] = getActionDefinition(
+                item.action as ActionId,
+            ).defaultBindings;
+            // Electron's accelerators name the slash "/"; the bindings name it by key code
+            expect(item.accelerator, item.action).toBe(
+                binding!.replace("Slash", "/"),
             );
         }
     });
@@ -92,7 +88,7 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
 
 describe("the shortcuts list (UI-17 follow-up)", () => {
     it("groups every shortcut, playback first, with the timeline's own keys", () => {
-        const groups = shortcutGroups((key) => key);
+        const groups = shortcutGroups((key) => key, {}, false);
         expect(groups[0]?.title).toBe("Playback");
         const playback = groups[0]!.rows.map((row) => row.keys);
         expect(playback).toEqual(["Space", "Shift + Space", "C", "Ctrl + M"]);

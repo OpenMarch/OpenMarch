@@ -74,7 +74,11 @@ export default function MarcherList({
             await deleteMarchers(marcherIdsSet);
         }
 
-        const result = updateMarchers(modifiedMarchers);
+        // An update that changes nothing fails the undo-history check.
+        const result =
+            modifiedMarchers.length > 0
+                ? updateMarchers(modifiedMarchers)
+                : undefined;
         changesRef.current = {};
         deletionsRef.current = [];
         return result;

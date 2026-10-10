@@ -1,4 +1,4 @@
-import { act, cleanup, waitFor } from "@testing-library/react";
+import { cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, expect, vi } from "vitest";
 import { and, eq, inArray } from "drizzle-orm";
 import { toast } from "sonner";
@@ -10,17 +10,16 @@ import {
     setUpFeature,
 } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
-import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
-import RegisteredActionsHandler, {
-    RegisteredActionsEnum,
-} from "../RegisteredActionsHandler";
+import { EditorActionHandlers } from "@/shortcuts/ActionHandlers";
+import type { ActionId } from "@/shortcuts/definitions";
+import { runActionWhenReady } from "@/test/runActionWhenReady";
 
 /**
  * Coverage gap 6 of the defined-coordinates change catalog
  * (docs/timeline/research/defined-coordinates/CHANGES.md section 7, B-14): in page mode, set to
  * previous / next page (Shift+P, Ctrl+Shift+P, Shift+N, Ctrl+Shift+N) writes through
- * `updateMarcherPages`, so it carries forward like any other edit. Run from the handler itself.
+ * `updateMarcherPages`, so it carries forward like any other edit. Run from the action handlers themselves.
  *
  * Timeline mode's set to previous / next is covered by `timelineSparseWrites.test.ts` (B-05).
  */
@@ -48,25 +47,8 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-/** Runs a registered action the way a toolbar button does. */
-const trigger = async (action: RegisteredActionsEnum) => {
-    const button = document.createElement("button");
-    const ref = { current: button };
-    const store = useRegisteredActionsStore.getState();
-    act(() => {
-        store.linkRegisteredAction(action, ref);
-    });
-    try {
-        await waitFor(() => expect(button.onclick).toBeTypeOf("function"));
-        act(() => button.click());
-    } finally {
-        act(() => {
-            useRegisteredActionsStore
-                .getState()
-                .removeRegisteredAction(action, ref);
-        });
-    }
-};
+/** Runs an action the way a toolbar button or its key does */
+const trigger = (action: ActionId) => runActionWhenReady(action);
 
 /** The page edited: page 3 (index 3 after home) of the `marchersAndPages` show (pages 0 to 6) */
 const PAGE = 3;
@@ -137,12 +119,10 @@ describeDbTests(
             const previous = (await spots(db, m!, [2]))[0]!;
             const page6 = (await spots(db, m!, [6]))[0]!;
             const otherBefore = await spots(db, other!, PAGE_IDS);
-            await setUpFeature(<RegisteredActionsHandler />, PAGE, [m!]);
+            await setUpFeature(<EditorActionHandlers />, PAGE, [m!]);
             expect(probed().pages.map((p) => p.id)).toEqual(PAGE_IDS);
 
-            await trigger(
-                RegisteredActionsEnum.setSelectedMarchersToPreviousPage,
-            );
+            await trigger("setSelectedMarchersToPreviousPage");
 
             await waitFor(async () =>
                 expect(await spots(db, m!, [3, 4, 5, 6])).toEqual([
@@ -169,9 +149,9 @@ describeDbTests(
             const prev2 = (await spots(db, m2!, [2]))[0]!;
             const before1 = await spots(db, m1!, [6]);
             const before2 = await spots(db, m2!, [5, 6]);
-            await setUpFeature(<RegisteredActionsHandler />, PAGE, [m1!]);
+            await setUpFeature(<EditorActionHandlers />, PAGE, [m1!]);
 
-            await trigger(RegisteredActionsEnum.setAllMarchersToPreviousPage);
+            await trigger("setAllMarchersToPreviousPage");
 
             await waitFor(async () => {
                 expect(await spots(db, m1!, [3, 4, 5])).toEqual([
@@ -204,9 +184,9 @@ describeDbTests(
             const laterBefore = new Map<number, XY[]>();
             for (const id of ids)
                 laterBefore.set(id, await spots(db, id, [5, 6]));
-            await setUpFeature(<RegisteredActionsHandler />, PAGE, [m!]);
+            await setUpFeature(<EditorActionHandlers />, PAGE, [m!]);
 
-            await trigger(RegisteredActionsEnum.setAllMarchersToNextPage);
+            await trigger("setAllMarchersToNextPage");
 
             await waitFor(async () =>
                 expect((await spots(db, m!, [3]))[0]).toEqual(next),
@@ -233,10 +213,10 @@ describeDbTests(
                 .select()
                 .from(schema.marcher_pages)
                 .all();
-            await setUpFeature(<RegisteredActionsHandler />, 2, [m!]);
+            await setUpFeature(<EditorActionHandlers />, 2, [m!]);
             const success = vi.spyOn(toast, "success");
 
-            await trigger(RegisteredActionsEnum.setSelectedMarchersToNextPage);
+            await trigger("setSelectedMarchersToNextPage");
 
             // The action ran and reports success, but its write is within the tolerance, so it is
             // skipped (B-15): nothing changes, and no later copy is touched

@@ -46,8 +46,8 @@ keepFixturesInPageMode(
  * The routed coordinate tools (docs/timeline/phases/07-page-parity.md P7.2), with the timeline
  * flag on and off, editing against the UI-9 selection (P8.15): canvas drag
  * (`canvasCoordinateWriter`, as `Canvas.tsx` installs it) and the tools as
- * `RegisteredActionsHandler` runs them (read the selected marchers, apply `CoordinateActions`,
- * write).
+ * the shortcut action handlers (`shortcuts/handlers`) run them (read the
+ * selected marchers, apply `CoordinateActions`, write).
  */
 
 afterEach(() => {
@@ -425,7 +425,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
             pageId: page.id,
         });
 
-        // RegisteredActionsHandler: getSelectedMarcherPages → alignVertically → updateCoordinates
+        // useAlignmentActionHandlers: getSelectedMarcherPages → alignVertically → updateCoordinates
         const selected = timelineCoordinateRecords(plan.beat, [1, 2, 3]);
         expect(selected.map((mp) => mp.marcher_id).sort()).toEqual([1, 2, 3]);
         for (const mp of selected)
@@ -553,7 +553,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         const b = positionAt(9, endBeat);
         const before = await marcherPagesByPageId({ db, pageId: page.id });
 
-        // RegisteredActionsHandler's swapMarchers case in timeline mode
+        // useAlignmentActionHandlers's swapMarchers in timeline mode
         const [p, q] = timelineCoordinateRecords(plan.beat, [8, 9]);
         await moveMarchersInTarget({
             db,

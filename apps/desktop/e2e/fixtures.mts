@@ -50,13 +50,24 @@ const PLAYWRIGHT_ENV = {
     DEBUG: "pw:browser",
 };
 
-const launchElectron = (options: {
-    args: string[];
-    env?: typeof PLAYWRIGHT_ENV;
-}) =>
+/**
+ * Each launch gets its own user-data folder, so its settings and
+ * single-instance lock are private and tests can run in parallel.
+ */
+const launchElectron = (
+    testInfo: { outputDir: string },
+    options: {
+        args: string[];
+        env?: typeof PLAYWRIGHT_ENV;
+    },
+) =>
     electron.launch({
         executablePath: electronExecutable,
         ...options,
+        args: [
+            ...options.args,
+            `--user-data-dir=${path.resolve(testInfo.outputDir, "user-data")}`,
+        ],
     });
 
 const getTempDotsPath = (testInfo: { outputDir: string }) => {
@@ -156,7 +167,7 @@ export const test = base.extend<MyFixtures>({
 
         let browser: ElectronApplication | undefined;
         try {
-            browser = await launchElectron({
+            browser = await launchElectron(testInfo, {
                 args: [
                     mainFile,
                     tempDatabaseFile,
@@ -185,10 +196,10 @@ export const test = base.extend<MyFixtures>({
             }
         }
     },
-    electronAppEmpty: async ({}, use) => {
+    electronAppEmpty: async ({}, use, testInfo) => {
         let browser: ElectronApplication | undefined;
         try {
-            browser = await launchElectron({
+            browser = await launchElectron(testInfo, {
                 args: [
                     mainFile,
                     ".",
@@ -239,7 +250,7 @@ export const test = base.extend<MyFixtures>({
 
         let browser: ElectronApplication | undefined;
         try {
-            browser = await launchElectron({
+            browser = await launchElectron(testInfo, {
                 args: [
                     mainFile,
                     ".",

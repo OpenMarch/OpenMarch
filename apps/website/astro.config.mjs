@@ -58,8 +58,11 @@ export default defineConfig({
             favicon: "./public/favicon.png",
             customCss: [
                 "@fontsource/dm-sans/400.css",
+                "@fontsource/dm-sans/500.css",
                 "@fontsource/dm-sans/600.css",
+                "@fontsource/dm-sans/700.css",
                 "@fontsource/dm-mono/400.css",
+                "@fontsource/dm-mono/500.css",
                 "./src/styles/starlight.css",
             ],
             sidebar: [

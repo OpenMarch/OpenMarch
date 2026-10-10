@@ -1,14 +1,14 @@
 /**
  * The app menu's playback and help items (UI-17 follow-up; docs/adr/0003-menu-actions-ipc.md).
  * The main process builds menu items from this list and sends the chosen item's `action` on
- * `MENU_ACTION_CHANNEL`; the renderer runs it as the registered action of that name, and nothing
+ * `MENU_ACTION_CHANNEL`; the renderer runs the action of that name, and nothing
  * outside this list. Shared by the main process, the preload and the renderer, so it imports
  * nothing.
  */
 export const MENU_ACTION_CHANNEL = "menu:action";
 
 export interface MenuAction {
-    /** A `RegisteredActionsEnum` value */
+    /** An action id (`shortcuts/definitions.ts`) */
     readonly action: string;
     readonly label: string;
     /**

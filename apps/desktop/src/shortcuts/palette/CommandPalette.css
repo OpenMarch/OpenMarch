@@ -1,0 +1,244 @@
+/*
+ * Command palette. A plain surface with a hairline border. Every animation here is
+ * transform/opacity only so it runs on the compositor.
+ */
+
+.command-palette {
+    --palette-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --palette-ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+    --palette-radius: 6px;
+    /* Opaque so the panel reads cleanly without a blur; the fg tokens are translucent gradients. */
+    --palette-highlight: var(--background-image-fg-2);
+    --palette-divider: rgba(0, 0, 0, 0.07);
+}
+
+.dark .command-palette {
+    --palette-divider: rgba(255, 255, 255, 0.07);
+}
+
+/* ---------------------------------------------------------------- overlay */
+
+.palette-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: rgba(12, 10, 20, 0.12);
+}
+.dark .palette-overlay {
+    background: rgba(0, 0, 0, 0.3);
+}
+.palette-overlay[data-state="open"] {
+    animation: palette-fade-in 200ms var(--palette-ease-out);
+}
+.palette-overlay[data-state="closed"] {
+    animation: palette-fade-out 130ms var(--palette-ease-in) forwards;
+}
+
+/* ------------------------------------------------------------------ shell */
+
+.palette-shell {
+    position: fixed;
+    top: 14vh;
+    left: 50%;
+    z-index: 901;
+    width: min(640px, calc(100vw - 32px));
+    translate: -50% 0;
+    transform-origin: 50% 0;
+    border-radius: var(--palette-radius);
+    outline: none;
+    /* No will-change here: it would make this a backdrop root and stop the panel's
+       backdrop blur from seeing the app behind it. */
+}
+.palette-shell[data-state="open"] {
+    animation: palette-in 260ms var(--palette-ease-out);
+}
+.palette-shell[data-state="closed"] {
+    animation: palette-out 130ms var(--palette-ease-in) forwards;
+}
+
+/* Surface (background, blur, border, shadow) comes from the same Tailwind classes as the
+   app's sidebar panels, set on the element in CommandPalette.tsx. */
+.palette-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ input */
+
+.palette-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--palette-divider);
+    color: var(--color-text-subtitle);
+}
+.palette-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--color-text);
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    caret-color: var(--color-accent);
+}
+.palette-input::placeholder {
+    color: var(--color-text-subtitle);
+}
+
+/* ------------------------------------------------------------------- list */
+
+.palette-list {
+    height: var(--palette-list-height, auto);
+    max-height: min(400px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scroll-padding-block: 8px;
+    transition: height 200ms var(--palette-ease-out);
+}
+.palette-list-inner {
+    position: relative;
+    padding: 8px;
+}
+.palette-group-heading {
+    padding: 10px 12px 6px;
+    color: var(--color-text-subtitle);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    user-select: none;
+}
+.palette-item {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 42px;
+    padding: 0 12px;
+    border-radius: 10px;
+    color: var(--color-text);
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+.palette-item-icon {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--color-text-subtitle);
+    transition: color 150ms ease;
+}
+.palette-item[aria-selected="true"] .palette-item-icon {
+    color: var(--color-text);
+}
+.palette-item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.palette-item-group {
+    flex-shrink: 0;
+    color: var(--color-text-subtitle);
+    font-size: 12px;
+}
+.palette-item[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.45;
+}
+
+/* The selection highlight glides between rows instead of jumping. */
+.palette-highlight {
+    position: absolute;
+    top: 0;
+    right: 8px;
+    left: 8px;
+    z-index: 0;
+    height: 42px;
+    border-radius: 10px;
+    background-image: var(--palette-highlight);
+    pointer-events: none;
+    will-change: transform;
+}
+.palette-highlight[data-animate="true"] {
+    transition: transform 170ms var(--palette-ease-out);
+}
+
+.palette-empty {
+    padding: 28px 12px;
+    color: var(--color-text-subtitle);
+    font-size: 14px;
+    text-align: center;
+}
+
+/* ------------------------------------------------------------- footer */
+
+.palette-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    height: 40px;
+    padding: 0 16px;
+    border-top: 1px solid var(--palette-divider);
+    color: var(--color-text-subtitle);
+    font-size: 12px;
+}
+.palette-footer-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ------------------------------------------------------------- keyframes */
+
+@keyframes palette-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.965);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+@keyframes palette-out {
+    from {
+        opacity: 1;
+        transform: none;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+    }
+}
+@keyframes palette-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+@keyframes palette-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .palette-shell[data-state="open"],
+    .palette-shell[data-state="closed"] {
+        animation-name: palette-fade-in;
+        animation-duration: 120ms;
+    }
+    .palette-shell[data-state="closed"] {
+        animation-name: palette-fade-out;
+    }
+    .palette-highlight[data-animate="true"],
+    .palette-list {
+        transition: none;
+    }
+}

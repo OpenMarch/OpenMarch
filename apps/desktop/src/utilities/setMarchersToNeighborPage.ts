@@ -13,7 +13,7 @@ import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 
 /**
  * "Set all or selected marchers to the previous or next page", the four batch-edit actions in
- * `RegisteredActionsHandler`, as a plain function so both modes can be tested without React.
+ * `useBatchEditActionHandlers`, as a plain function so both modes can be tested without React.
  *
  * - **Page mode** (unchanged): copies the neighbor page's `marcher_pages` rows to the selected page.
  * - **Timeline mode** (docs/timeline/phases/07-page-parity.md P7.6, reworked for sparse rows by
