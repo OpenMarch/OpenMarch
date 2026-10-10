@@ -18,6 +18,7 @@ import {
     nextMoveNameInTransaction,
 } from "./timelineMoveNames";
 import { transactionWithHistory } from "./history";
+import { changedPagesAround, type NamedPage } from "./pageDelete";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
 import {
     deleteTimelinesInTransaction,
@@ -539,6 +540,33 @@ export const deleteTimeline = async ({
         });
         if (!deleted) refuse(`timeline ${timelineId} does not exist`);
         return deleted;
+    });
+
+/**
+ * `deleteTimeline`, also saying which pages now look different (UI-14 with defined coordinates):
+ * marchers that held after the move fall back to where they were before it, so later pages can
+ * change too. Each page's own flag is compared before and after (`changedPagesAround`).
+ */
+export const deleteTimelineAndCompare = async ({
+    db,
+    timelineId,
+}: {
+    db: DbConnection;
+    timelineId: number;
+}): Promise<{ deleted: DatabaseTimeline; changedPages: NamedPage[] }> =>
+    await transactionWithHistory(db, "deleteTimeline", async (tx) => {
+        const { value: deleted, changedPages } = await changedPagesAround(
+            tx,
+            async () =>
+                (
+                    await deleteTimelinesInTransaction({
+                        tx,
+                        timelineIds: new Set([timelineId]),
+                    })
+                )[0],
+        );
+        if (!deleted) refuse(`timeline ${timelineId} does not exist`);
+        return { deleted, changedPages };
     });
 
 /**

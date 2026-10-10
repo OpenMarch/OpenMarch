@@ -98,6 +98,11 @@ describe("the shortcuts list (UI-17 follow-up)", () => {
         expect(playback).toEqual(["Space", "Shift + Space", "C", "Ctrl + M"]);
         const timeline = groups.find((g) => g.title === "Timeline");
         expect(timeline?.rows.map((row) => row.keys)).toContain("G");
+        // K keeps the selection on this page, or lets it follow again (UI-18)
+        expect(timeline?.rows).toContainEqual({
+            label: "actions.timeline.toggleKeepOnPage",
+            keys: "K",
+        });
         const view = groups.find((g) => g.title === "View");
         expect(view?.rows.map((row) => row.keys)).toContain("?");
         // Nothing without a key, such as the nudge's own actions

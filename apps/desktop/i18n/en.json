@@ -82,6 +82,9 @@
             "success": "Swapped marchers {marcher1} and {marcher2}",
             "swap": "Swap marchers"
         },
+        "timeline": {
+            "toggleKeepOnPage": "Keep the selected marchers where they hold on this page (on the next page if they move here), or let them follow again"
+        },
         "ui": {
             "focusCanvas": "Focus the canvas",
             "focusTimeline": "Focus the timeline",
@@ -586,6 +589,30 @@
             "stepSize": "Step Size",
             "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
+            "timeline": {
+                "countOfSelected": "{count} of the {total} selected",
+                "followAgain": "Follow again",
+                "followAgainHint": "Let {who} follow Page {from} again, so editing Page {from} moves them here too",
+                "followAgainHintEarlier": "Let {who} follow earlier pages again",
+                "goToPage": "Go to Page {page}, where these marchers last moved",
+                "goToStart": "Go to the start",
+                "holdFrom": "Hold from Page {page}",
+                "holdFromStart": "Hold from the start",
+                "holdHere": "These marchers hold here",
+                "keepHere": "Keep here",
+                "keepHereHint": "Keep {who} on Page {page}, so editing Page {from} won't move them here",
+                "keepHereHintEarlier": "Keep {who} on Page {page}, so editing earlier pages won't move them here",
+                "keptOnThisPage": "Kept on this page",
+                "movesOnThisPage": "Moves on this page",
+                "namesOfSelected": "{names} ({count} of the {total} selected)",
+                "pageFollows": "Page {page} follows these marchers",
+                "pageFollowsSome": "Page {page} follows some of these marchers",
+                "pagesFollow": "Pages {first}–{last} follow these marchers",
+                "pagesFollowSome": "Pages {first}–{last} follow some of these marchers",
+                "someHoldHere": "Some of these marchers hold here",
+                "someKeptOnThisPage": "Some of these marchers are kept on this page",
+                "theseMarchers": "these marchers"
+            },
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}"
         },
@@ -1050,6 +1077,22 @@
         "updateButton": "Update Marcher",
         "year": "Year"
     },
+    "marcherPages": {
+        "carryForward": {
+            "only": "Only Page {page}",
+            "onlyEdited": "Only the edited pages",
+            "onePage": "Page {page} followed (it was a copy)",
+            "pages": "Pages {first}–{last} followed (they were copies)"
+        },
+        "moveThemToo": {
+            "action": "Move them too",
+            "laterMoves": "{names} have their own later moves, so they kept their spots",
+            "namesAndOthers": "{first}, {second} and {count} others",
+            "oneMarcher": "{names} has its own move on Page {page}, so it kept its spot",
+            "onePage": "{names} have their own move on Page {page}, so they kept their spot",
+            "withFollowed": "{followed}. {kept}"
+        }
+    },
     "measures": {
         "createFailed": "Failed to create measures - {error}",
         "deleteFailed": "Failed to delete measures - {error}",
@@ -1350,6 +1393,23 @@
         "controls": {
             "label": "Playback Controls"
         },
+        "edit": {
+            "passThrough": {
+                "catchUp": "Now catches up to the set at the end of {caughtUp}",
+                "keepStops": {
+                    "many": "Keep Pages {first}–{last} as stops",
+                    "one": "Keep Page {page} as a stop",
+                    "unnamed": "Keep them as stops"
+                },
+                "noLongerStop": {
+                    "many": "Pages {first}–{last} are no longer stops",
+                    "one": "Page {page} is no longer a stop",
+                    "unnamed": "The sets inside this move are no longer stops"
+                },
+                "through": "Now moves straight through {through}",
+                "throughAndCatchUp": "Now moves straight through {through}, then catches up to the set at the end of {caughtUp}"
+            }
+        },
         "errors": {
             "assignmentDoesNotFit": "That marcher's move doesn't fit the transition: it must stay inside the transition's range, and use a slot the transition has.",
             "assignmentOutsideTransition": "A marcher's move must stay inside its transition. Adjust the transition's range, or the move's.",
@@ -1370,8 +1430,65 @@
             "transitionSpansTimeline": "A transition must span its whole timeline, starting and ending with it. Change the timeline's range instead, and its transitions move with it.",
             "unknown": "The timeline couldn't make that change."
         },
+        "holdMarks": {
+            "holds": "Selected marchers hold from Page {page}",
+            "holdsFromStart": "Selected marchers hold from the start",
+            "holdsFromStartHint": "They stand where they started",
+            "holdsHere": "Selected marchers hold on this page",
+            "holdsHereHint": "They stand where their last move left them",
+            "holdsHint": "They stand where Page {page} left them",
+            "kept": "Selected marchers are kept here",
+            "keptHint": "They stay here when earlier pages change",
+            "mixed": "Some selected marchers hold from Page {page}",
+            "mixedFromStart": "Some selected marchers hold from the start",
+            "mixedHere": "Some selected marchers hold on this page",
+            "mixedHint": "Some have their own move here",
+            "moves": "Selected marchers move on this page",
+            "movesHint": "They have their own move here"
+        },
+        "keep": {
+            "chain": {
+                "ariaLabel": "Page {page}: {label}. {hint}",
+                "followHint": "Click to follow Page {from} again",
+                "followHintEarlier": "Click to follow earlier pages again",
+                "keep": "Keep {count} marchers on Page {page}",
+                "keepHint": "They won't follow Page {from} any more",
+                "keepHintEarlier": "They won't follow earlier pages any more",
+                "keepHintOne": "It won't follow Page {from} any more",
+                "keepNamed": "Keep {names} on Page {page}",
+                "keepOne": "Keep 1 marcher on Page {page}",
+                "kept": "{count} marchers kept on Page {page}",
+                "keptNamed": "{names} kept on Page {page}",
+                "keptOne": "1 marcher kept on Page {page}",
+                "mixed": "{kept} of the {total} selected are kept on Page {page}",
+                "mixedHint": "Click to keep the other {count} too",
+                "mixedHintOne": "Click to keep the other one too",
+                "mixedNamed": "{kept} of the {total} selected are kept on Page {page} ({names})",
+                "mixedNamedOne": "1 of the {total} selected is kept on Page {page} ({names})",
+                "mixedOne": "1 of the {total} selected is kept on Page {page}"
+            },
+            "field": {
+                "kept": "Kept on Page {page} · won't follow Page {from}",
+                "keptEarlier": "Kept on Page {page} · won't follow earlier pages"
+            },
+            "followed": {
+                "onePage": "Page {page} followed",
+                "only": "Only Page {page}",
+                "pages": "Pages {first}–{last} followed"
+            },
+            "names": {
+                "many": "{first}, {second} and {count} others",
+                "three": "{first}, {second} and {third}",
+                "two": "{first} and {second}"
+            }
+        },
         "label": "Timeline",
         "masterVolume": "Master Volume",
+        "moveDeleted": {
+            "message": "Deleted {label}",
+            "withPage": "Deleted {label} · Page {pages} changed",
+            "withPages": "Deleted {label} · Pages {pages} changed"
+        },
         "music": {
             "add": "Add Music"
         },
@@ -1379,8 +1496,11 @@
             "contextMenu": {
                 "delete": "Delete",
                 "deleteInPlace": "In Place",
+                "deleteInPlaceTimelineTooltip": "Delete this page. Later pages keep their timing and look.",
                 "deleteInPlaceTooltip": "Delete this page and keep later pages where they are.",
                 "deletePage": "Delete",
+                "deleteWithMoves": "With Its Moves",
+                "deleteWithMovesTooltip": "Delete this page and its moves. Later pages that held its positions change.",
                 "deleteYank": "Yank",
                 "deleteYankTooltip": "Delete this page and pull later pages back by its length.",
                 "subsetToggle": "Subset",
@@ -1395,6 +1515,11 @@
         "pages": "Pages",
         "perspective": {
             "label": "Perspective"
+        },
+        "rangeMenu": {
+            "deleteWithMoves": "Delete page and its moves",
+            "followAgain": "Let selected marchers follow again",
+            "keepHere": "Keep selected marchers here"
         }
     },
     "titlebar": {

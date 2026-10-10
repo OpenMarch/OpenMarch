@@ -20,6 +20,7 @@ import {
     updateLastPageCounts,
     type DatabasePage,
 } from "./page";
+import { moveTagAppearancesOffPagesInTransaction } from "./tagAppearancePageDelete";
 
 /**
  * Page flags in timeline mode (docs/timeline/ui.md UI-9 **+** and Deleting a flag; P8.13).
@@ -211,7 +212,8 @@ export async function addPageFlag({
  * and the page after it takes N's start, so it keeps its own flag, id and data, and its box now
  * covers N's too (the inverse of **+**). For the last page there is no page after it: its row is
  * deleted and the page before becomes the last one, ending at its own flag (`last_page_counts`).
- * N's per-page data goes with its row. No timeline row is written, so motion is unchanged.
+ * N's per-page data goes with its row, except its tag appearances, which move to the page after it
+ * (`moveTagAppearancesOffPagesInTransaction`). No timeline row is written, so motion is unchanged.
  *
  * Returns the deleted pages.
  */
@@ -245,6 +247,11 @@ export async function deletePageFlagsInTransaction({
             .from(schema.pages)
             .where(eq(schema.pages.id, id))
             .get();
+        // Its tag appearances move to the next page first, which takes over its box
+        await moveTagAppearancesOffPagesInTransaction({
+            tx,
+            pageIds: new Set([id]),
+        });
         // The page goes before the next one takes its start: `pages.start_beat` is unique.
         // Its marcher pages are frozen in timeline mode (P9.5) and may go only once it's gone; they
         // follow through the cascade, or the delete after it where foreign keys are off.

@@ -50,6 +50,7 @@ import TimelineIsolationBar, {
     TimelineFromStartBadge,
 } from "@/components/timeline/TimelineIsolationBar";
 import { useTimelineFocusRender } from "@/timeline/useTimelineFocusRender";
+import TimelineKeptMarks from "./TimelineKeptMarks";
 import { db } from "@/global/database/db";
 import { canvasCoordinateWriter } from "@/timeline/timelineCoordinateWrites";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
@@ -779,6 +780,16 @@ export default function Canvas({
         >
             {timelineMode && <TimelineIsolationBar />}
             {timelineMode && <TimelineFromStartBadge />}
+            {drawFromResolver && (
+                // UI-18: a broken chain beside each marcher kept on the current page
+                <TimelineKeptMarks
+                    canvas={canvas}
+                    isPlaying={isPlaying}
+                    pages={pages}
+                    pageId={selectedPage?.id}
+                    marcherIds={marcherIds}
+                />
+            )}
             {pages.length > 0 || canvas ? (
                 <div
                     ref={innerDivRef}

@@ -721,6 +721,39 @@ describeDbTests("completeNewShow", (it) => {
                 expect([m.home_x, m.home_y]).not.toEqual([321, 654]);
     });
 
+    // Defined coordinates (B-14, catalog gap 6): the import writes the first page through
+    // `updateMarcherPagesInTransaction`, so the later pages, copies made when the marchers were
+    // added, follow it
+    it("in page mode, imported first-page coordinates carry to every later page", async ({
+        task,
+        db,
+    }) => {
+        await setTimelineModeFlag(db, false);
+
+        await completeNewShow(
+            wizardStateToFormState(importedTrumpets(task.id)),
+            queryClient,
+        );
+
+        const pageIds = (await db.query.pages.findMany()).map((p) => p.id);
+        expect(pageIds.length).toBeGreaterThan(1);
+        const marchers = await getMarchers({ db });
+        const rows = await db.query.marcher_pages.findMany();
+        for (const [drill, x, y] of [
+            ["T1", 321, 654],
+            ["T2", 987, 123],
+        ] as const) {
+            const marcher = marchers.find(
+                (m) => `${m.drill_prefix}${m.drill_order}` === drill,
+            )!;
+            const own = rows.filter((r) => r.marcher_id === marcher.id);
+            expect(own.map((r) => r.page_id).sort()).toEqual(
+                [...pageIds].sort(),
+            );
+            for (const row of own) expect([row.x, row.y]).toEqual([x, y]);
+        }
+    });
+
     it("finishes quietly when the main process stopped the open and already said why", async ({
         task,
         db,

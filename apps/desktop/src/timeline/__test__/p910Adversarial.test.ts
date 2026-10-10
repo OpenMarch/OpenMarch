@@ -247,7 +247,10 @@ const commitViolations = async (db: DbConnection) =>
         };
     });
 
-/** One timeline per timed page, exact range, one spanning transition, one layer-0 assignment per marcher. */
+/**
+ * One timeline per timed page someone moves on, exact range, one spanning transition, one layer-0
+ * assignment per marcher that moves there.
+ */
 async function expectStructure(
     db: DbConnection,
     skippedPageIds: ReadonlySet<number> = new Set(),
@@ -313,12 +316,18 @@ async function expectStructure(
 async function convertAndCheck(db: DbConnection) {
     await setTimelineModeFlag(db, true);
     const result = await convertPagesToTimeline(db);
-    const skipped = new Set(
+    // Skipped pages, and pages where nobody moves (C-12), have no timeline
+    const withoutTimeline = new Set(
         result.report.pages
-            .filter((p) => p.skipped !== null)
+            .filter((p) => !result.timelineIds.has(p.pageId))
             .map((p) => p.pageId),
     );
-    const timelines = await expectStructure(db, skipped);
+    expect(
+        result.report.pages.filter(
+            (p) => p.skipped !== null && result.timelineIds.has(p.pageId),
+        ),
+    ).toEqual([]);
+    const timelines = await expectStructure(db, withoutTimeline);
     await startTimelineResolver(db);
     expect(resolver().diagnostics()).toEqual([]);
     const checked = await expectQuarterBeatEquality(db);
@@ -363,8 +372,11 @@ describeDbTests("P9.10 adversarial", (it) => {
             holdPages: [3, 6],
             lastPageCounts: 8,
         });
-        const { timelines } = await convertAndCheck(db);
-        expect(timelines.length).toBe(9);
+        const { timelines, result } = await convertAndCheck(db);
+        // Held pages 3 and 6 copy the page before: nobody moves there, so they get no timeline
+        // (C-12), and that isn't reported as a loss
+        expect(timelines.length).toBe(7);
+        expect(result.report.pages.every((p) => p.skipped === null)).toBe(true);
     });
 
     it("non-ordinal beat ids", async ({ db }) => {
@@ -585,8 +597,8 @@ describeDbTests("P9.10 adversarial", (it) => {
             ],
         });
         await expectStructure(db);
-        // Add a page splitting page 1
-        await createPages({
+        // Add a page splitting page 1: nobody moves on the new page, so it gets no timeline
+        const [split] = await createPages({
             db,
             newPages: [{ start_beat: beats2[5]!.id, is_subset: true }],
         });
@@ -597,10 +609,13 @@ describeDbTests("P9.10 adversarial", (it) => {
             .orderBy(asc(schema.timelines.start_beat))
             .all();
         expect(tls.map((t) => [t.start_beat, t.end_beat])).toEqual(
-            grid.pages.slice(1).map((p) => [p.start, p.end]),
+            grid.pages
+                .slice(1)
+                .filter((p) => p.id !== split!.id)
+                .map((p) => [p.start, p.end]),
         );
         expect(await commitViolations(db)).toEqual([]);
-        // Delete page 2
+        // Delete page 2 (the split-off page): page 1 stretches back over it
         const after = [...(await readShowTiming(db)).pages].sort(
             (a, b) => a.order - b.order,
         );
@@ -673,7 +688,10 @@ describeDbTests("P9.10 adversarial", (it) => {
         });
         await setTimelineModeFlag(db, true);
         await convertPagesToTimeline(db);
-        const gridMatches = async (label: string) => {
+        const gridMatches = async (
+            label: string,
+            withoutTimeline: ReadonlySet<number> = new Set(),
+        ) => {
             const grid = await readPageGrid(db as unknown as DbTransaction);
             const tls = await db
                 .select()
@@ -686,7 +704,9 @@ describeDbTests("P9.10 adversarial", (it) => {
             ).toEqual(
                 grid.pages
                     .slice(1)
-                    .filter((p) => p.end > p.start)
+                    .filter(
+                        (p) => p.end > p.start && !withoutTimeline.has(p.id),
+                    )
                     .map((p) => [p.start, p.end]),
             );
             expect(await commitViolations(db), label).toEqual([]);
@@ -721,11 +741,12 @@ describeDbTests("P9.10 adversarial", (it) => {
             .from(schema.beats)
             .orderBy(asc(schema.beats.position))
             .all();
-        await createPages({
+        // Nobody moves on the new page, so it gets no timeline (C-12)
+        const [added] = await createPages({
             db,
             newPages: [{ start_beat: beats.at(-2)!.id, is_subset: false }],
         });
-        await gridMatches("add page near end");
+        await gridMatches("add page near end", new Set([added!.id]));
     });
 
     // ------------------------------------------------------------------ legacy layout

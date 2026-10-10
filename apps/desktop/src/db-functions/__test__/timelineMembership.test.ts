@@ -345,7 +345,8 @@ describeDbTests("timeline membership (P8.14, UI-9)", (it) => {
                         marcherIds: [id],
                     }),
                 "E-ARGS",
-                /inside/,
+                // Named in pages and counts, never beats (wp18)
+                /^E-ARGS: T1 is in Page 2's move, inside the counts from Page 2 count 1 to Page 3 count 1; adding it would replace that move$/,
             );
         });
 
@@ -386,7 +387,7 @@ describeDbTests("timeline membership (P8.14, UI-9)", (it) => {
                         marcherIds: [id],
                     }),
                 "E-ARGS",
-                /joining a move partway isn't supported yet/,
+                /^E-ARGS: T1 is in Page 3's move, which only partly overlaps the counts from Page 2 count 2 to Page 3 count 1: joining a move partway isn't supported yet\. End the range at Page 2 count 8\.$/,
             );
         });
 

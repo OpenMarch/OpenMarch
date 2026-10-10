@@ -12,7 +12,10 @@ import { shapePageKeys } from "@/hooks/queries";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { db } from "@/global/database/db";
-import { invalidateByPage } from "@/hooks/queries/sharedInvalidators";
+import {
+    invalidateAllMarcherPages,
+    invalidateByPage,
+} from "@/hooks/queries/sharedInvalidators";
 import {
     timelineErrorCode,
     toastTimelineError,
@@ -269,6 +272,8 @@ export const useCreateMarcherShape = () => {
             void queryClient.invalidateQueries({
                 queryKey: shapePageKeys.all(),
             });
+            // A new shape carries forward to later pages that held there
+            invalidateAllMarcherPages(queryClient);
             invalidateByPage(queryClient, new Set([pageId]));
         },
         onError: (error) => {

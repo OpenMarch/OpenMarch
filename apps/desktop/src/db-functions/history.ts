@@ -8,7 +8,7 @@ import { DbConnection, DbTransaction } from "./types";
 import { asc, lt, max } from "drizzle-orm";
 import { DB, schema } from "../global/database/db";
 import { Constants } from "../global/Constants";
-import { getTableName, gt, sql, eq, desc, count } from "drizzle-orm";
+import { getTableName, gt, sql, eq, desc, count, inArray } from "drizzle-orm";
 import { tableNamesToQueryKeys } from "../hooks/queries/utils";
 import type { ChangeBatch } from "@openmarch/core";
 import {
@@ -978,9 +978,62 @@ const sqlActionFromSql = (
     return "ERROR";
 };
 
-const rowIdFromSql = (sql: string): number => {
-    return parseInt(sql.match(/WHERE rowid=(\d+)/)?.[0] || "-1");
+/** The row id a history statement's `WHERE rowid=N` names, or -1 when it names none. */
+export const rowIdFromSql = (sql: string): number => {
+    return parseInt(sql.match(/WHERE rowid=(\d+)/)?.[1] ?? "-1");
 };
+
+/**
+ * The page with the lowest start beat among the given marcher page rows, and the marchers changed
+ * on it. One query per 500 rows rather than one per statement.
+ */
+async function earliestChangedPage(
+    db: DB | DbConnection,
+    marcherPageIds: number[],
+): Promise<{
+    pageIdToGoTo: number | undefined;
+    marcherIdsToSelect: Set<number> | undefined;
+}> {
+    let earliest: { pageId: number; position: number } | undefined;
+    const marchersByPage = new Map<number, Set<number>>();
+    for (let i = 0; i < marcherPageIds.length; i += 500) {
+        const rows = await (db as DbConnection)
+            .select({
+                page_id: schema.marcher_pages.page_id,
+                marcher_id: schema.marcher_pages.marcher_id,
+                position: schema.beats.position,
+            })
+            .from(schema.marcher_pages)
+            .innerJoin(
+                schema.pages,
+                eq(schema.pages.id, schema.marcher_pages.page_id),
+            )
+            .innerJoin(
+                schema.beats,
+                eq(schema.beats.id, schema.pages.start_beat),
+            )
+            .where(
+                inArray(
+                    schema.marcher_pages.id,
+                    marcherPageIds.slice(i, i + 500),
+                ),
+            )
+            .all();
+        for (const row of rows) {
+            const marchers = marchersByPage.get(row.page_id) ?? new Set();
+            marchers.add(row.marcher_id);
+            marchersByPage.set(row.page_id, marchers);
+            if (earliest === undefined || row.position < earliest.position)
+                earliest = { pageId: row.page_id, position: row.position };
+        }
+    }
+    return {
+        pageIdToGoTo: earliest?.pageId,
+        marcherIdsToSelect: earliest
+            ? marchersByPage.get(earliest.pageId)
+            : undefined,
+    };
+}
 
 type PerformHistoryActionResponse = {
     pageIdToGoTo: number | undefined;
@@ -1060,40 +1113,20 @@ export async function performHistoryAction(
             queriesToInvalidate,
         };
 
-    const modifiedPageIds: Set<number> = new Set();
-    const modifiedMarcherIdsForPage: Record<number, Set<number>> = {};
-
+    // Page mode: go to the earliest page the action changed, and select its changed marchers
+    const marcherPageIds = new Set<number>();
     for (const sqlStatement of response.sqlStatements) {
-        const tableName = tableNameFromSql(sqlStatement);
         if (
-            tableName === "marcher_pages" &&
+            tableNameFromSql(sqlStatement) === "marcher_pages" &&
             sqlActionFromSql(sqlStatement) !== "DELETE"
         ) {
             const marcherPageId = rowIdFromSql(sqlStatement);
-            const marcherPage = await db.query.marcher_pages.findFirst({
-                where: (marcher_pages, { eq }) =>
-                    eq(marcher_pages.id, marcherPageId),
-            });
-            if (marcherPage) {
-                if (!modifiedMarcherIdsForPage[marcherPage.page_id]) {
-                    modifiedMarcherIdsForPage[marcherPage.page_id] = new Set();
-                }
-                modifiedMarcherIdsForPage[marcherPage.page_id].add(
-                    marcherPage.marcher_id,
-                );
-                modifiedPageIds.add(marcherPage.page_id);
-            }
+            if (marcherPageId >= 0) marcherPageIds.add(marcherPageId);
         }
     }
-
-    const pageIdToGoTo =
-        modifiedPageIds.size > 0
-            ? Math.max(...Array.from(modifiedPageIds))
-            : undefined;
-    const marcherIdsToSelect =
-        pageIdToGoTo !== undefined
-            ? modifiedMarcherIdsForPage[pageIdToGoTo]
-            : undefined;
+    const { pageIdToGoTo, marcherIdsToSelect } = await earliestChangedPage(db, [
+        ...marcherPageIds,
+    ]);
 
     return { pageIdToGoTo, marcherIdsToSelect, queriesToInvalidate };
 }

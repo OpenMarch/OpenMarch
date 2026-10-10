@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { toast } from "sonner";
 import {
     mutationOptions,
     QueryClient,
@@ -6,6 +7,7 @@ import {
     useQueryClient,
 } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     addPageFlag,
     deletePageFlags,
@@ -16,8 +18,16 @@ import {
     type AddedPageFlag,
     type PageFlagInsertion,
 } from "@/db-functions/pageFlags";
+import {
+    deletePageYankWithMoves,
+    deletePagesWithMoves,
+    pageDeleteWithMovesMessage,
+    type PageDeleteWithMovesResult,
+} from "@/db-functions/pageDelete";
+import { subscribeHistoryChanges } from "@/db-functions/history";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { invalidatePageQueries } from "./usePages";
+import { invalidateTagQueries } from "./tags/queries";
 
 /**
  * Page flag writes in timeline mode (ui.md UI-9 **+** and Deleting a flag, P8.13). They change only
@@ -42,12 +52,84 @@ export const addPageFlagMutationOptions = (
         onError: (e) => toastTimelineError(e),
     });
 
-/** Deleting page flags: each page's row only, so motion is unchanged. */
+/**
+ * Deleting page flags: each page's row only, so motion is unchanged. In timeline mode this is
+ * **Delete page**. A deleted page's tag appearances move to the next page.
+ */
 export const deletePageFlagsMutationOptions = (qc: QueryClient) =>
     mutationOptions({
         mutationFn: (pageIds: ReadonlySet<number>) =>
             deletePageFlags({ db, pageIds }),
-        onSuccess: () => void invalidatePageQueries(qc),
+        onSuccess: () => {
+            void invalidatePageQueries(qc);
+            invalidateTagQueries(qc);
+        },
+        onError: (e) => toastTimelineError(e),
+    });
+
+/** Runs the app's normal undo (Ctrl+Z): `usePerformHistoryAction`'s `"undo"`. */
+export type UndoAction = () => void;
+
+/**
+ * The delete-with-moves toast. Its Undo runs the app's undo, so the toast closes on the next
+ * history change (an edit, an undo, a redo), as Delete move's does: then Undo could only undo
+ * something else.
+ */
+const toastDeleteWithMoves = (
+    result: PageDeleteWithMovesResult,
+    undo?: UndoAction,
+) => {
+    if (result.deleted.length === 0) return;
+    let unsubscribe = () => {};
+    const id = toast.success(pageDeleteWithMovesMessage(result), {
+        duration: 10000,
+        action: undo
+            ? {
+                  label: tolgee.t("fileTab.undo", "Undo"),
+                  onClick: undo,
+              }
+            : undefined,
+        onDismiss: () => unsubscribe(),
+        onAutoClose: () => unsubscribe(),
+    });
+    unsubscribe = subscribeHistoryChanges(() => {
+        unsubscribe();
+        toast.dismiss(id);
+    });
+};
+
+/**
+ * **Delete page and its moves** (timeline mode): the page goes with its page moves, through the
+ * timeline ripple. The toast says what happened in set and count terms, with **Undo** (`undo`)
+ * when given.
+ */
+export const deletePagesWithMovesMutationOptions = (
+    qc: QueryClient,
+    undo?: UndoAction,
+) =>
+    mutationOptions({
+        mutationFn: (pageIds: ReadonlySet<number>) =>
+            deletePagesWithMoves({ db, pageIds }),
+        onSuccess: (result) => {
+            void invalidatePageQueries(qc);
+            invalidateTagQueries(qc);
+            toastDeleteWithMoves(result, undo);
+        },
+        onError: (e) => toastTimelineError(e),
+    });
+
+/** **Yank** in timeline mode, with the same toast as `deletePagesWithMovesMutationOptions`. */
+export const deletePageYankWithMovesMutationOptions = (
+    qc: QueryClient,
+    undo?: UndoAction,
+) =>
+    mutationOptions({
+        mutationFn: (pageId: number) => deletePageYankWithMoves({ db, pageId }),
+        onSuccess: (result) => {
+            void invalidatePageQueries(qc);
+            invalidateTagQueries(qc);
+            toastDeleteWithMoves(result, undo);
+        },
         onError: (e) => toastTimelineError(e),
     });
 

@@ -6,6 +6,7 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { Timeline, type TimelineInput } from "../Timeline";
 import {
     selectAddedPage,
+    selectionAfterDeleteWithMoves,
     selectionAfterFlagDelete,
     timelinesOffPages,
 } from "../TimelineModePanel";
@@ -74,12 +75,14 @@ const show = ({
     isPlaying = false,
     onAddPageFlag,
     onDeletePageFlag,
+    onDeletePageWithMoves,
     withAdd = true,
 }: {
     positionBeat?: number;
     isPlaying?: boolean;
     onAddPageFlag?: () => void;
     onDeletePageFlag?: (pageId: number) => void;
+    onDeletePageWithMoves?: (pageId: number) => void;
     withAdd?: boolean;
 }) =>
     render(
@@ -96,6 +99,7 @@ const show = ({
             addSelectedMarchers={withAdd ? { onAdd: vi.fn() } : undefined}
             onAddPageFlag={onAddPageFlag}
             onDeletePageFlag={onDeletePageFlag}
+            onDeletePageWithMoves={onDeletePageWithMoves}
         />,
     );
 
@@ -132,13 +136,13 @@ describe("**+** at the paused playhead (UI-9)", () => {
     });
 });
 
-describe("Delete page flag on a page box (UI-9)", () => {
+describe("Delete page on a page box (UI-9)", () => {
     it("deletes the right-clicked page's flag, by page id", () => {
         const onDeletePageFlag = vi.fn();
         show({ onDeletePageFlag });
         fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
         const item = screen.getByTestId("timeline-range-menu-delete-flag");
-        expect(item.textContent).toContain("Delete page flag");
+        expect(item.textContent).toBe("Delete page");
         fireEvent.click(item);
         expect(onDeletePageFlag).toHaveBeenCalledWith(3);
     });
@@ -169,6 +173,76 @@ describe("Delete page flag on a page box (UI-9)", () => {
         show({ onDeletePageFlag, withAdd: false });
         fireEvent.contextMenu(screen.getByLabelText(/^A1 timeline/));
         expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+    });
+});
+
+describe("Delete page and its moves on a page box (defined coordinates)", () => {
+    it("comes right after Delete page, and deletes the right-clicked page", () => {
+        const onDeletePageWithMoves = vi.fn();
+        show({
+            onDeletePageFlag: vi.fn(),
+            onDeletePageWithMoves,
+            withAdd: false,
+        });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
+        expect(
+            screen.getAllByRole("menuitem").map((item) => item.textContent),
+        ).toEqual(["Delete page", "Delete page and its moves"]);
+        fireEvent.click(
+            screen.getByTestId("timeline-range-menu-delete-with-moves"),
+        );
+        expect(onDeletePageWithMoves).toHaveBeenCalledWith(3);
+    });
+
+    it("isn't offered on a clip, or without the command", () => {
+        show({ onDeletePageFlag: vi.fn(), onDeletePageWithMoves: vi.fn() });
+        fireEvent.contextMenu(screen.getByLabelText(/^A1 timeline/));
+        expect(
+            screen.queryByTestId("timeline-range-menu-delete-with-moves"),
+        ).toBeNull();
+        cleanup();
+        show({ onDeletePageFlag: vi.fn() });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
+        expect(
+            screen.queryByTestId("timeline-range-menu-delete-with-moves"),
+        ).toBeNull();
+    });
+});
+
+describe("the selection after Delete page and its moves (lead default)", () => {
+    const range = (start: number, end: number) =>
+        ({ kind: "range", start, end }) as const;
+    const PAGES4 = [
+        ...PAGES,
+        page(4, "3", appBeats(24).slice(17, 25)),
+    ] as Page[];
+
+    it("the selected page: the previous page's box, now running to its flag", () => {
+        // Pages "1" [1, 9), "2" [9, 17), "3" [17, 25)
+        expect(selectionAfterDeleteWithMoves(PAGES4, 3, range(9, 17))).toEqual(
+            range(1, 17),
+        );
+        expect(selectionAfterDeleteWithMoves(PAGES4, 4, range(17, 25))).toEqual(
+            range(9, 25),
+        );
+    });
+
+    it("the first page after home: the next page, which starts where it did", () => {
+        expect(selectionAfterDeleteWithMoves(PAGES4, 2, range(1, 9))).toEqual(
+            range(1, 17),
+        );
+        expect(
+            selectionAfterDeleteWithMoves(PAGES.slice(0, 2), 2, range(1, 9)),
+        ).toEqual({ kind: "home" });
+    });
+
+    it("leaves another selection alone", () => {
+        expect(
+            selectionAfterDeleteWithMoves(PAGES4, 3, range(1, 9)),
+        ).toBeNull();
+        expect(
+            selectionAfterDeleteWithMoves(PAGES4, 3, { kind: "home" }),
+        ).toBeNull();
     });
 });
 

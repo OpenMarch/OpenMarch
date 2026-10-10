@@ -254,6 +254,25 @@ describe("en.json", () => {
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });
 
+    it("carries the keep menu entries, the chain's name and the Delete-move toast (pre-merge review U8)", () => {
+        for (const [key, text] of Object.entries({
+            "timeline.rangeMenu.keepHere": "Keep selected marchers here",
+            "timeline.rangeMenu.followAgain":
+                "Let selected marchers follow again",
+            "timeline.rangeMenu.deleteWithMoves": "Delete page and its moves",
+            "timeline.keep.chain.ariaLabel": "Page {page}: {label}. {hint}",
+            "timeline.moveDeleted.message": "Deleted {label}",
+            "timeline.moveDeleted.withPage":
+                "Deleted {label} · Page {pages} changed",
+            "timeline.moveDeleted.withPages":
+                "Deleted {label} · Pages {pages} changed",
+            "timeline.holdMarks.kept": "Selected marchers are kept here",
+            "timeline.holdMarks.keptHint":
+                "They stay here when earlier pages change",
+        }))
+            expect(lookup(key), key).toBe(text);
+    });
+
     it("carries every inspector string", () => {
         for (const [key, text] of Object.entries(TIMELINE_INSPECTOR_STRINGS))
             expect(lookup(key), key).toBe(text);

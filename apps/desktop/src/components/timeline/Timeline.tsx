@@ -21,8 +21,11 @@ import { pageEndBeat } from "@/timeline/pageEndBeat";
 import { clamp } from "./TimelineGeometry";
 import { useLatestCallback } from "./useLatestCallback";
 import { CollapsedTimeline, ExpandedTimeline } from "./TimelineVariants";
+import type { LabeledHoldMarks } from "./PageHoldMark";
+import type { PageKeepChains } from "./PageKeepChain";
 import type {
     TimelineAddMarchersMenu,
+    TimelineKeepHereMenu,
     TimelineMenuTarget,
     TimelineMoveCommands,
 } from "./TimelineRangeMenu";
@@ -171,8 +174,10 @@ export interface TimelineProps {
      * show (on a flag, at home, past the beats).
      */
     readonly onAddPageFlag?: () => void;
-    /** The page box menu's **Delete page flag** (UI-9 Deleting a flag), by page id */
+    /** The page box menu's **Delete page** (UI-9 Deleting a flag), by page id */
     readonly onDeletePageFlag?: (pageId: number) => void;
+    /** The page box menu's **Delete page and its moves**, by page id */
+    readonly onDeletePageWithMoves?: (pageId: number) => void;
     /**
      * A clip's move commands (UI-14): **Edit move**, **Rename move…** and **Delete move**, from
      * its right-click menu, the selected clip's ⋯ button, and Delete on the focused clip. They get
@@ -189,6 +194,12 @@ export interface TimelineProps {
      * range in spec beats (a clip's stored range).
      */
     readonly onOpenRange?: (range: TimelineBeatRange) => void;
+    /** Where the selected marchers hold, by page id (UI-18); none without a selection */
+    readonly holdMarks?: LabeledHoldMarks;
+    /** The chains on the page boxes (UI-18 keep later pages), by page id; none without a selection */
+    readonly keepChains?: PageKeepChains;
+    /** The page box menu's **Keep selected marchers here** and **Let selected marchers follow again** */
+    readonly keepHere?: TimelineKeepHereMenu;
 }
 
 const TimelineWaveformContext = createContext<TimelineWaveform | null>(null);
@@ -509,7 +520,13 @@ export function Timeline(props: TimelineProps) {
                   })
             : undefined,
     );
-    const { addSelectedMarchers, onDeletePageFlag, onOpenRange } = props;
+    const {
+        addSelectedMarchers,
+        onDeletePageFlag,
+        onDeletePageWithMoves,
+        onOpenRange,
+        keepHere,
+    } = props;
     // A clip's stored spec range, else the view range mapped back (as the menu's Add does)
     const specRangeOf = ({ range, trackId }: TimelineMenuTarget) => {
         const input =
@@ -540,13 +557,23 @@ export function Timeline(props: TimelineProps) {
             ? (pageId: string | number) => onDeletePageFlag(Number(pageId))
             : undefined,
     );
+    const deleteWithMoves = useLatestCallback(
+        onDeletePageWithMoves
+            ? (pageId: string | number) => onDeletePageWithMoves(Number(pageId))
+            : undefined,
+    );
     const addMarchers = useLatestCallback(
         addSelectedMarchers?.onAdd
             ? (target: TimelineMenuTarget) =>
                   addSelectedMarchers.onAdd?.(specRangeOf(target))
             : undefined,
     );
-    const hasMarchersMenu = !!(addSelectedMarchers || onDeletePageFlag);
+    const hasMarchersMenu = !!(
+        addSelectedMarchers ||
+        onDeletePageFlag ||
+        onDeletePageWithMoves ||
+        keepHere
+    );
     const disabledReason = addSelectedMarchers?.disabledReason;
     const addMarchersMenu = useMemo<
         TimelineAddMarchersMenu<TimelineMenuTarget> | undefined
@@ -556,10 +583,21 @@ export function Timeline(props: TimelineProps) {
                 ? {
                       disabledReason,
                       ...(deleteFlag ? { onDeleteFlag: deleteFlag } : {}),
+                      ...(deleteWithMoves
+                          ? { onDeleteWithMoves: deleteWithMoves }
+                          : {}),
+                      ...(keepHere ? { keepHere } : {}),
                       onAdd: addMarchers,
                   }
                 : undefined,
-        [addMarchers, deleteFlag, disabledReason, hasMarchersMenu],
+        [
+            addMarchers,
+            deleteFlag,
+            deleteWithMoves,
+            disabledReason,
+            hasMarchersMenu,
+            keepHere,
+        ],
     );
     // A clip's track id to its stored timeline (`linkId`), for the move commands (UI-14)
     const { moveCommands } = props;
@@ -671,6 +709,8 @@ export function Timeline(props: TimelineProps) {
         showTransport: props.showTransport ?? true,
         transportClock: props.transportClock,
         transportAccessories: props.transportAccessories,
+        holdMarks: props.holdMarks,
+        keepChains: props.keepChains,
     };
 
     return props.mode === "expanded" ? (

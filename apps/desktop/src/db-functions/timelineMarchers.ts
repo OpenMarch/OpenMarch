@@ -1,4 +1,4 @@
-import { asc, desc, inArray, notInArray } from "drizzle-orm";
+import { asc, inArray, notInArray } from "drizzle-orm";
 import {
     FieldProperties,
     validateDestination,
@@ -9,13 +9,8 @@ import { schema } from "@/global/database/db";
 import { DbTransaction } from "./types";
 import { updateMarcherHomesInTransaction } from "./marcherHome";
 import { assertValid } from "./timelineErrors";
-import { stealLayer } from "./timelineCommands";
 import {
-    createOwnTransitionsInTransaction,
-    partlyOverlaps,
     removeAssignmentRowsInTransaction,
-    type BeatRange,
-    type OwnTransition,
     type RemoveAssignmentsResult,
 } from "./timelineMembership";
 
@@ -25,20 +20,14 @@ import {
  * as the page-era create or delete (`createMarchers`, `deleteMarchers`, when the file's flag is
  * on), so each is one undo step.
  *
- * **Add** (UI-9 New marchers). A new marcher gets a home (C-5) and joins every stored timeline,
- * so it stands at home through the show and nothing else moves:
+ * **Add** (UI-9 New marchers). A new marcher gets a home (C-5) and nothing else: with no move it
+ * stands at home until the designer moves it, and a move it gets later carries forward until its
+ * next move (C-12: no path writes timeline rows on behalf of a page). Nothing else moves.
  *
  * - The home is a free spot found the way page mode finds one for page 0 (a column four steps in
  *   from the top left of the field, moved down two steps at a time until no marcher's home is
  *   there), with new marchers side by side two steps apart. Page mode checks page rows; this
  *   checks homes, because page rows are frozen in timeline mode.
- * - **Joining:** in each stored timeline the marcher gets its own one-slot shapeless `direct`
- *   transition spanning it (C-11), whose destination is its home, with an assignment over the
- *   whole timeline one layer above its highest layer there (UI-9 Layers), as **Add selected
- *   marchers** does. Timelines are taken in start order (a longer one first when two start
- *   together, so containers come before what they contain), and one that only partly overlaps a
- *   timeline already joined, or has the same range as one, is skipped (_lead default_, UI-9 New
- *   marchers and overlaps).
  *
  * **Delete.** The marcher's assignments are deleted explicitly before the marcher, children
  * first (C-1). Its own one-slot transitions are deleted with them and their timelines stay (UI-9
@@ -84,31 +73,23 @@ const findStartingPoint = async (
     return start;
 };
 
-/** Where `joinNewMarchersToTimelinesInTransaction` put each new marcher. */
+/** Where `giveNewMarchersHomesInTransaction` put each new marcher. */
 export interface TimelineMarcherAddResult {
     homes: { marcherId: number; home: XY }[];
-    /** Each new marcher's own transition in each timeline it joined, in join order */
-    joined: OwnTransition[];
-    /** Stored timelines the new marchers didn't join, because of a partial overlap */
-    skippedTimelineIds: number[];
 }
 
 /**
- * Gives newly created marchers a home and their own transition in every stored timeline (see the
- * module comment). Call it in the same edit as `createMarchersInTransaction`, after it.
+ * Gives newly created marchers a home (see the module comment). Call it in the same edit as
+ * `createMarchersInTransaction`, after it.
  */
-export const joinNewMarchersToTimelinesInTransaction = async ({
+export const giveNewMarchersHomesInTransaction = async ({
     tx,
     marcherIds,
 }: {
     tx: DbTransaction;
     marcherIds: readonly number[];
 }): Promise<TimelineMarcherAddResult> => {
-    const result: TimelineMarcherAddResult = {
-        homes: [],
-        joined: [],
-        skippedTimelineIds: [],
-    };
+    const result: TimelineMarcherAddResult = { homes: [] };
     if (marcherIds.length === 0) return result;
 
     // Homes, side by side from the first free starting spot
@@ -126,44 +107,6 @@ export const joinNewMarchersToTimelinesInTransaction = async ({
             home,
         })),
     });
-
-    const l = schema.timelines;
-    const timelines = await tx
-        .select()
-        .from(l)
-        .orderBy(asc(l.start_beat), desc(l.end_beat), asc(l.id))
-        .all();
-    const joined: BeatRange[] = [];
-    for (const timeline of timelines) {
-        const range = { start: timeline.start_beat, end: timeline.end_beat };
-        if (
-            joined.some(
-                (j) =>
-                    partlyOverlaps(j, range) ||
-                    (j.start === range.start && j.end === range.end),
-            )
-        ) {
-            result.skippedTimelineIds.push(timeline.id);
-            continue;
-        }
-        joined.push(range);
-        const members = [];
-        for (const { marcherId, home } of result.homes)
-            members.push({
-                marcherId,
-                point: home,
-                layer: await stealLayer(
-                    tx,
-                    [marcherId],
-                    range.start,
-                    range.end,
-                    "so the new marcher can't join this timeline",
-                ),
-            });
-        result.joined.push(
-            ...(await createOwnTransitionsInTransaction(tx, timeline, members)),
-        );
-    }
     return result;
 };
 

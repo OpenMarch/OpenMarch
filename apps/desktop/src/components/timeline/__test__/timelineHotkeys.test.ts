@@ -50,6 +50,21 @@ describe("isTimelineOwnKey", () => {
     });
 });
 
+describe("isTimelineOwnKey on a button Space presses (pre-merge review)", () => {
+    it("takes Enter and Space on a with-space button; Space still plays on other move controls", () => {
+        document.body.innerHTML = `<button id="keep" data-timeline-own-keys="with-space">Keep here</button><section data-timeline-own-keys="true"><button id="clip">Move 1</button></section>`;
+        const keep = document.getElementById("keep");
+        const clip = document.getElementById("clip");
+        expect(isTimelineOwnKey(key("Enter"), keep)).toBe(true);
+        expect(isTimelineOwnKey(key(" "), keep)).toBe(true);
+        // Ctrl+Space, and Space on the move controls, are still the app's
+        expect(isTimelineOwnKey(key(" ", { ctrlKey: true }), keep)).toBe(false);
+        expect(isTimelineOwnKey(key(" "), clip)).toBe(false);
+        // K, G and the rest still reach the app
+        expect(isTimelineOwnKey(key("k"), keep)).toBe(false);
+    });
+});
+
 describe("isTimelineOwnKey on other keyboard layouts", () => {
     it("matches WASD by physical key, as the app's nudge does", () => {
         document.body.innerHTML = `<section data-timeline-own-keys="true"><button id="in">Move 1</button></section>`;

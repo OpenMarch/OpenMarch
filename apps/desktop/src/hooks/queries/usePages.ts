@@ -31,6 +31,7 @@ import { utilityKeys } from "./useUtility";
 import { marcherPageKeys } from "./useMarcherPages";
 import { coordinateDataKeys } from "./useCoordinateData";
 import { beatKeys } from "./useBeats";
+import { invalidateTagQueries } from "./tags/queries";
 
 const { pages } = schema;
 
@@ -213,8 +214,9 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
         mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
         onSuccess: async (_, variables) => {
             toast.success(tolgee.t("pages.deletedSuccessfully"));
-            // Invalidate all page queries
+            // Invalidate all page queries, and tags: a deleted page's tag appearances move
             void invalidatePageQueries(qc);
+            invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(
@@ -232,6 +234,7 @@ export const deletePageYankMutationOptions = (qc: QueryClient) => {
         onSuccess: async (_, variables) => {
             toast.success(tolgee.t("pages.deletedSuccessfully"));
             await invalidatePageQueries(qc);
+            invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(

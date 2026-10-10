@@ -4,7 +4,7 @@ import {
     fieldPropertiesQueryOptions,
     swapMarchersMutationOptions,
     useUpdateSelectedMarchersOnSelectedPage,
-    moveMarchersOnPageMutationOptions,
+    moveMarchersToNeighborPageMutationOptions,
     moveMarchersInTargetMutationOptions,
 } from "@/hooks/queries";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
@@ -16,6 +16,7 @@ import {
     toTimelineMoves,
 } from "@/timeline/timelineCoordinateWrites";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
+import { toggleKeepOnPage } from "@/timeline/timelineKeepCommands";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import { PAGE_SHAPES_TIMELINE_MESSAGE } from "@/db-functions/shapePages";
 import {
@@ -133,6 +134,9 @@ export enum RegisteredActionsEnum {
 
     // Shapes
     createCircle = "createCircle",
+
+    // Timeline
+    toggleKeepOnPage = "toggleKeepOnPage",
 }
 
 /**
@@ -574,6 +578,13 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "o" }),
         enumString: "createCircle",
     }),
+
+    // Timeline (UI-18 keep later pages; timeline mode only)
+    toggleKeepOnPage: new RegisteredAction({
+        descKey: "actions.timeline.toggleKeepOnPage",
+        keyboardShortcut: new KeyboardShortcut({ key: "k" }),
+        enumString: "toggleKeepOnPage",
+    }),
 } as const;
 
 /**
@@ -619,9 +630,9 @@ function RegisteredActionsHandler() {
     const { mutate: updateMarcherPages } = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    // "Set marchers to the previous or next page" still writes by page (P7.6) until P8.12
-    const { mutateAsync: moveMarchersOnPageAsync } = useMutation(
-        moveMarchersOnPageMutationOptions(),
+    // "Set marchers to the previous or next page" writes over the selected page's box (P7.6)
+    const { mutateAsync: moveMarchersToNeighborPageAsync } = useMutation(
+        moveMarchersToNeighborPageMutationOptions(),
     );
     const { mutate: moveMarchersInTarget } = useMutation(
         moveMarchersInTargetMutationOptions(),
@@ -776,7 +787,7 @@ function RegisteredActionsHandler() {
                         ? previousMarcherPages
                         : nextMarcherPages,
                 writePages: updateMarcherPages,
-                writeTimeline: moveMarchersOnPageAsync,
+                writeTimeline: moveMarchersToNeighborPageAsync,
                 notify: toast,
                 t: (key, params) => t(key, params),
             });
@@ -790,7 +801,7 @@ function RegisteredActionsHandler() {
             previousMarcherPages,
             nextMarcherPages,
             updateMarcherPages,
-            moveMarchersOnPageAsync,
+            moveMarchersToNeighborPageAsync,
             t,
         ],
     );
@@ -1434,6 +1445,20 @@ function RegisteredActionsHandler() {
                     break;
                 }
 
+                /****************** Timeline ******************/
+                case RegisteredActionsEnum.toggleKeepOnPage: {
+                    // UI-18 keep later pages: keep the selection where it holds on this page (on
+                    // the next page where it moves here), or let it follow again. No toast: the
+                    // chain and the inspector line show it
+                    if (!timelineMode || isPlaying || !pages) break;
+                    void toggleKeepOnPage({
+                        pages,
+                        currentPageId: selectedPage.id,
+                        marcherIds: selectedMarchers.map((m) => m.id),
+                    });
+                    break;
+                }
+
                 default:
                     console.error(`No action registered for "${action}"`);
                     return;
@@ -1582,8 +1607,9 @@ function RegisteredActionsHandler() {
                             uiSettings.coordinateRounding?.nearestXSteps || 1;
                     }
 
-                    // Prevent meta+WASD
-                    if (!(e.metaKey && code.includes("Key"))) {
+                    // Ctrl/Cmd+W/A/S/D are shortcuts of their own (select all, swap),
+                    // not moves.
+                    if (!((e.metaKey || e.ctrlKey) && code.includes("Key"))) {
                         // Trigger the action based on the key code
                         switch (code) {
                             case "KeyW":
@@ -1633,10 +1659,18 @@ function RegisteredActionsHandler() {
                     shift: e.shiftKey,
                 });
                 const keyString = keyboardAction.toString();
-                if (keyboardShortcutDictionary.current[keyString]) {
-                    triggerAction(
-                        keyboardShortcutDictionary.current[keyString],
-                    );
+                const shortcutAction =
+                    keyboardShortcutDictionary.current[keyString];
+                if (shortcutAction) {
+                    // K toggles: a held key would flip it back and forth (pre-merge review)
+                    if (
+                        !(
+                            e.repeat &&
+                            shortcutAction ===
+                                RegisteredActionsEnum.toggleKeepOnPage
+                        )
+                    )
+                        triggerAction(shortcutAction);
                     e.preventDefault();
                 }
             } else if (e.key === "Escape") {

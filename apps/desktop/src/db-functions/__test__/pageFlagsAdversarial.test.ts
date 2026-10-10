@@ -336,7 +336,7 @@ describeDbTests("page flags, adversarial (P8.13)", (it) => {
         expect(await snapshot(db)).toEqual(before);
     });
 
-    it("a tag appearance on a deleted page goes with it, and undo restores it", async ({
+    it("a tag appearance on a deleted page moves to the next page, and undo restores it", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -353,12 +353,17 @@ describeDbTests("page flags, adversarial (P8.13)", (it) => {
                 (r) => r.start_page_id,
             ),
         ).toEqual([3, 2]);
+        // Page 4 takes page 3's box, so page 3's appearance now starts there (defined coordinates)
         await deletePageFlags({ db, pageIds: new Set([3]) });
         expect(
-            (await db.select().from(schema.tag_appearances).all()).map(
-                (r) => r.id,
-            ),
-        ).toEqual([2]);
+            (await db.select().from(schema.tag_appearances).all()).map((r) => [
+                r.id,
+                r.start_page_id,
+            ]),
+        ).toEqual([
+            [1, 4],
+            [2, 2],
+        ]);
         expect((await performUndo(db)).success).toBe(true);
         expect((await performUndo(db)).success).toBe(true);
         expect(await snapshot(db)).toEqual(before);

@@ -15,7 +15,15 @@ import {
     type DatabaseTimelineAssignment,
 } from "./timelineAssignments";
 import { stealLayer } from "./timelineCommands";
-import { createRangeTimelineInTransaction } from "./timelineMoveNames";
+import {
+    createRangeTimelineInTransaction,
+    readMoveWords,
+} from "./timelineMoveNames";
+import {
+    beatWhere,
+    countsText,
+    moveInSentence,
+} from "@/timeline/timelineRangeWords";
 
 export { findTimelineByRange };
 
@@ -274,8 +282,9 @@ export const addMarchersToTimelineInTransaction = async ({
                     caughtUp.push(passed);
                     continue;
                 }
+                const { boxes, moves } = await readMoveWords(tx);
                 refuse(
-                    `${labels.get(id)} is in a timeline over beats ${rangeText(other)}, which only partly overlaps ${rangeText(range)}: joining a move partway isn't supported yet. End the range at beat ${other.start}.`,
+                    `${labels.get(id)} is in ${moveInSentence(other, boxes, moves)}, which only partly overlaps ${countsText(range, boxes)}: joining a move partway isn't supported yet. End the range at ${beatWhere(other.start, boxes) ?? "that move's start"}.`,
                 );
             }
             if (!containsRange(other, range) && containsRange(range, other)) {
@@ -283,8 +292,9 @@ export const addMarchersToTimelineInTransaction = async ({
                     overridden.push(passed);
                     continue;
                 }
+                const { boxes, moves } = await readMoveWords(tx);
                 refuse(
-                    `${labels.get(id)} is in a timeline over beats ${rangeText(other)}, inside ${rangeText(range)}; adding it would replace that move`,
+                    `${labels.get(id)} is in ${moveInSentence(other, boxes, moves)}, inside ${countsText(range, boxes)}; adding it would replace that move`,
                 );
             }
         }

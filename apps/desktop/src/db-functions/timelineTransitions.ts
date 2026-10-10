@@ -1,5 +1,8 @@
+import { eq } from "drizzle-orm";
+import { schema } from "@/global/database/db";
 import type { DbConnection } from "./types";
 import { transactionWithHistory } from "./history";
+import { clearKeptMarkersInTransaction } from "./timelineKeptMarkers";
 import {
     setTimelineTransitionDestinationInTransaction,
     updateTimelineTransitionsInTransaction,
@@ -34,7 +37,11 @@ export const updateTimelineTransition = async ({
     return row!;
 };
 
-/** `setTimelineTransitionDestinationInTransaction` as one undoable edit (P8.3). */
+/**
+ * `setTimelineTransitionDestinationInTransaction` as one undoable edit (P8.3). A kept spot whose
+ * destination the inspector sets is the marcher's own move from then on, so its kept marker goes
+ * in the same edit (keep later pages, 2026-10-09).
+ */
 export const setTimelineTransitionDestination = async ({
     db,
     transitionId,
@@ -44,10 +51,25 @@ export const setTimelineTransitionDestination = async ({
     transitionId: number;
     destination: TimelineTransitionDestination;
 }): Promise<DatabaseTimelineTransition> =>
-    await transactionWithHistory(db, "setTimelineTransitionDestination", (tx) =>
-        setTimelineTransitionDestinationInTransaction({
-            tx,
-            transitionId,
-            destination,
-        }),
+    await transactionWithHistory(
+        db,
+        "setTimelineTransitionDestination",
+        async (tx) => {
+            const row = await setTimelineTransitionDestinationInTransaction({
+                tx,
+                transitionId,
+                destination,
+            });
+            const a = schema.timeline_assignments;
+            const members = await tx
+                .select({ id: a.id })
+                .from(a)
+                .where(eq(a.transition_id, transitionId))
+                .all();
+            await clearKeptMarkersInTransaction(
+                tx,
+                members.map((m) => m.id),
+            );
+            return row;
+        },
     );

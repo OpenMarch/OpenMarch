@@ -307,8 +307,10 @@ from it. The spec still wins on the model; this file decides presentation.
     the drag overrides the moved marchers' moves inside the window, which stay
     stored underneath and come back when it is deleted, and a move the window
     runs into partway catches up after it (R-5). An info toast names what was
-    passed through and offers **Only change Page N**, which moves them from the
-    last flag before P instead, as its own undoable edit.
+    passed through, including page flags with no stored move under sparse rows,
+    and offers **Start from Page N** (was "Only change Page N", renamed by
+    defined-coordinates 07c §2), which moves them from the last flag before P
+    instead, as its own undoable edit.
   - **Arrivals off a flag.** P may rest between flags. A drag there creates a
     timeline ending at P, not a page (project owner, 2026-10-03). Pages stay
     cosmetic flags; **+** still adds one.
@@ -560,7 +562,7 @@ from it. The spec still wins on the model; this file decides presentation.
   and focus going astray, move numbers shifting, a leftover selection, and dashed clips that
   didn't say why; the items marked _round 2_ are its fixes.
   - **The clip menu.** Right-clicking a clip opens **Edit move**, **Rename move…** and **Delete
-    move** (red, last, after a separator). Page boxes keep **Delete page flag**; a dragged range
+    move** (red, last, after a separator). Page boxes keep **Delete page** and **Delete page and its moves** (UI-18); a dragged range
     still has no menu in timeline mode. While playing, Edit and Delete are disabled with the reason
     ("Pause to edit or delete a move."); Rename stays, since it changes only a label (_lead
     default_, V-42).
@@ -853,6 +855,122 @@ from it. The spec still wins on the model; this file decides presentation.
     and letters; macOS puts the key in the label (docs/adr/0003-menu-actions-ipc.md).
   - Deferred: a one-time hint the first time someone pins (dropped with the second play button,
     whose first click carried it).
+- **UI-18: a page has a position only where a marcher was moved (project owner, 2026-10-08).**
+  The owner made pages 2–4 after page 1, edited page 2, and found page 3 still showing page 1's
+  set. Research and validation are in `research/defined-coordinates/`. Numbered after UI-17 (transport keys, #115).
+  - **The rule.** A marcher has a coordinate on a page only where the designer moved them there.
+    Everywhere else they hold where they last were (spec R-6). An edit carries forward, per marcher,
+    to that marcher's next page with its own move, and stops there.
+  - **Nothing is written on a page's behalf.** Adding, splitting or appending a page writes only
+    page rows (ADR 0001 C-12, now true on every path). New marchers get a home and no moves. The
+    converter writes a slot only where a marcher's position changes. A range write (a page box or a
+    window) that leaves a marcher where it already is writes nothing for that marcher, so aligning or distributing on a held page
+    doesn't freeze the others. Dragging a marcher back onto the start of its own page move clears
+    that move.
+  - **Set to previous page** clears the marcher's own move on that page, so the page follows
+    earlier pages again. **Set to next page** writes a move, and works on a held page.
+  - **Delete page** (timeline mode) deletes the flag only. Motion is unchanged, the deleted page's
+    move ends between flags, and later pages keep their look. **Delete page and its moves** is the
+    old ripple delete, an explicit command. Its toast says where the counts went and which old pages
+    changed ("Deleted Page 2 · Page 1 is now 32 counts · old Pages 3–4 changed") and has **Undo**.
+    The view stays on the merged page. Tag appearances on a deleted page move to the next page.
+  - **Where the selection holds is shown on the page boxes, not in toasts** (owner, 2026-10-08,
+    after a persona study, `research/defined-coordinates/08-ux-study-feedback-text.md`). With
+    marchers selected, in both modes: a page where they all hold gets a thin hold bar along its
+    bottom; a page where they move gets a small diamond by its flag; a page where some hold gets a
+    dashed bar. Nothing shows without a selection. Ordinary edits and nudges show no toast (but see
+    **Only Page 2** under keep later pages).
+  - **Toasts are kept for surprises only, and short.** A window passing a flag: "Page 3 is no
+    longer a stop", with **Keep Page 3 as a stop** (it was "Only change Page N"; the action starts
+    the move from the last flag inside, so every passed flag is a stop again). Page mode's
+    carry-forward: "Pages 3–4 followed (they were copies)" with **Only Page 2**. Delete with its
+    moves, above. Toast buttons never wrap.
+  - **Move them too** (owner asked to see it, 2026-10-09; `research/defined-coordinates/09`). When an
+    edit splits a group at a later page (some of the marchers it moved follow into that page because
+    they hold, others keep their spot because they have their own move there), a toast names the
+    ones who kept their spot: "OT1 and OT8 have their own move on Page 3, so they kept their spot",
+    with **Move them too**, which shifts their move on that page by the same amount, as its own undo
+    step. Edits that split nobody stay silent. A window passing a flag shows its own toast instead;
+    in page mode it shares one toast with the "followed" message and **Only Page 2**.
+    Consecutive edits of the same page or window that move the same marchers add up behind one
+    toast, so **Move them too** and **Only Page 2** act on the whole run (V-184). A toast with two
+    buttons puts them on their own row under the text.
+  - **Delete move** (UI-14) names the pages that change, because later held pages fall back:
+    "Deleted Move 2 · Pages 2–3 changed".
+  - **The inspector line** sits under Step Size in normal text: "Hold from Page 2 →" (or "Hold from
+    the start"), a link to that page, or "Moves on this page".
+  - **Keep later pages** (owner, 2026-10-09, after a study of three prototypes,
+    `research/defined-coordinates/10-keep-later-pages-study.md`; timeline mode only). After page 2
+    is written and pages 3–4 follow it, the designer can keep some marchers where they are on page 3,
+    so that editing page 2 no longer moves them there. A kept spot is stored (ADR 0001 amendment
+    2026-10-09): the marcher's own move over the page that goes nowhere, marked kept. Pages after
+    it follow the kept spot. Marchers that have never moved follow the start, so they can be kept
+    too, ahead of any move (wp19, after the final study): a later first move then doesn't reach the
+    kept page. They get no chain on the page boxes (lead, wp19: it showed on every box); the
+    inspector, the page box menu and **K** offer to keep them, and a kept one shows the kept chip.
+    - **Chains on the page boxes.** With marchers selected, each page box they follow into shows a
+      chain as a quiet outline. A box where they were kept shows a broken chain on a filled accent
+      chip. A box with some of each shows a chain outlined in the accent with a filled kept count.
+      Linked and kept are meant to differ at a glance (wp19). Nothing shows without a selection
+      (owner). The
+      chain is a 20 px target, 22 px in from the flag before its box, so the selected page's flag, the
+      start flag and the playhead never cover it. Its tooltip names the marchers a click changes, up
+      to three ("OT1, OT2 and 4 others" past that): "Keep OT1 and OT8 on Page 3 · They won't follow
+      Page 2 any more", "OT1 and OT8 kept on Page 3 · Click to follow Page 2 again", or "2 of the 8
+      selected are kept on Page 3 (OT1, OT8) · Click to keep the other 6 too". It counts the
+      selection only. The chain that **K** would toggle adds "(K)" to its tooltip. A click keeps
+      or lets follow again exactly those marchers, as one undo step. On a mixed chain a click keeps
+      the rest (_lead default_). A press never selects, scrubs or drags the box, and a right-click
+      opens the box's menu.
+    - **The inspector line** on a page they follow into: "Hold from Page 2 → · **Keep here**" (or
+      "Hold from the start → · **Keep here**"). The link's tooltip says "Go to Page 2, where these
+      marchers last moved". Where
+      they were kept: "Kept on this page · **Follow again**". Mixed selections say "Some of these
+      marchers are kept on this page" or "Some of these marchers hold here", with the buttons on
+      their own row. Each button has a tooltip that names the marchers: "Keep OT1 and OT8 on Page 3,
+      so editing Page 2 won't move them here", with the count of the selection when not all apply
+      ("Keep OT1 (1 of the 2 selected)…"), and "(K)" on the button K would run. A
+      quiet line under it names the later pages that follow from this page: "Pages 3–4 follow these
+      marchers" ("…some of these marchers" when not all follow into all of them). Marchers that
+      haven't moved yet don't count there: every later page follows them.
+    - **The page box menu** has **Keep selected marchers here** and **Let selected marchers follow
+      again** above the deletes, each enabled by the selection's state on that page. Neither shows
+      without a selection. The entry **K** would run from the current page shows a quiet "K" on its
+      right.
+    - **K** works from the current page (the page box the playhead is in). Where some selected
+      marchers hold on it (they follow, or were kept there), K toggles keep there, for those. Where
+      they all move on it, K toggles keep on the next page. Toggling keeps the ones that follow, or,
+      when none does, lets the kept ones follow again (wp19, after the final study, where K on a
+      held page 3 kept page 4). It shows
+      no toast; the chain and the inspector line show the result. It doesn't fire while typing in a
+      field. The `?` shortcuts list (UI-17) shows it under Timeline. The Alt-drag shortcut from the
+      study was dropped (owner).
+    - **After an edit: "Pages 3–4 followed" · Only Page 2.** When an edit changes an existing move on
+      page 2 and carries into later pages for some of the marchers it moved, one surprise toast says
+      so. **Only Page 2**, as its own undo step, keeps those marchers on page 3 at their spots from
+      before the edit, so pages 3–4 look as they did. Their kept move walks back from the edited spot,
+      and the chain shows it as kept. A page's first move stays silent, because its later pages
+      following is what the designer meant. Kept marchers don't follow, so they don't count.
+      Consecutive nudges share one toast, and Only Page 2 goes back to before the first (V-184).
+      The pass-through and **Move them too** toasts win.
+    - **Kept marchers on the field** (owner chose mock-up D over opacity, 2026-10-09; wp20). On the
+      current page, each marcher kept there gets a small broken chain beside its dot, whatever is
+      selected: the kept chip's symbol in the accent on a small white rounded square, so it reads
+      over yard lines. It sits just right of the dot, clear of the drill number, and stays small at
+      any zoom (10–16 px on screen, _lead default_). Hovering the mark or the dot shows "Kept on
+      Page 3 · won't follow Page 2" ("… won't follow earlier pages" when kept ahead of any move).
+      It follows keep, follow again, undo and page changes, and goes when the kept move is edited
+      into an ordinary move. Hidden while playing or scrubbing and while a move is isolated
+      (_lead default_). Page mode shows nothing (V-191).
+  - **The hold marks' words are a tooltip** (a label and a hint, after a short hover or on keyboard
+    focus; a press closes it), like the transport's tooltips (UI-17).
+  - **Page mode** (until the flip) gets the same rule on its dense rows. An edit on page N also
+    moves the run of later pages that still equal the old position, per marcher, compared within
+    1e-6. The run stops at a different value, a page shape or the marcher's own pathway. Shape edits
+    carry forward too (owner). A new page no longer shares the previous page's curved pathway.
+  - Deferred: a stored "lock here" for every later page (an Eos-style block), look-preserving
+    ripple delete, live return links, hold marks and chains without a selection, and
+    "Hold" on coordinate sheets. Marchers are never "pinned": the start flag owns that word.
 
 ## Mapping the spec onto the view model
 

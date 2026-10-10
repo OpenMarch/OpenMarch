@@ -172,7 +172,7 @@ describe("the clip's menu (UI-14)", () => {
         expect(moves.onEdit).toHaveBeenCalledWith(7);
     });
 
-    it("keeps Delete page flag alone on a page box, and nothing on a dragged range", () => {
+    it("keeps Delete page alone on a page box, and nothing on a dragged range", () => {
         show({
             onDeletePageFlag: vi.fn(),
             selection: {
@@ -181,7 +181,7 @@ describe("the clip's menu (UI-14)", () => {
             },
         });
         fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
-        expect(items()).toEqual(["Delete page flag"]);
+        expect(items()).toEqual(["Delete page"]);
         cleanup();
         show({
             selection: {

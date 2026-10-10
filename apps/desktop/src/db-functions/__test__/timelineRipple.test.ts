@@ -429,6 +429,10 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             }).catch((e: unknown) => e);
             expect(error).toBeInstanceOf(TimelineWriteError);
             expect((error as TimelineWriteError).code).toBe("E-ARGS");
+            // Named in pages and counts, never beats (wp18)
+            expect((error as Error).message).toBe(
+                "E-ARGS: this change would leave Move 1 (Page 2, counts 3–4) with no counts; delete or shorten it first",
+            );
             expect(await snapshot(db)).toEqual(before);
         });
 
@@ -538,7 +542,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
     });
 
     describe("page insert and delete (P7.4)", () => {
-        it("splitting a page: the move finishes at the split, then a holding move to the old page end", async ({
+        it("splitting a page: the move finishes at the split, and the marchers hold through the new page", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -553,16 +557,18 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             await timelineResolverSettled();
 
             const pagesAfter = await pagesInOrder(db);
+            // No move is written over the new page (C-12): nobody moved there
             expect(await ranges(db)).toEqual([
                 [1, 9],
                 [9, 13],
-                [13, 17],
                 [17, 25],
                 [25, 33],
                 [33, 41],
                 [41, 49],
             ]);
-            expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
+            expect(await ranges(db)).toEqual(
+                pageRanges(pagesAfter).filter(([start]) => start !== 13),
+            );
             await expectAssignmentsCoverTransitions(db);
             // Every page keeps its positions; the new page holds page 2's
             const endsAfter = pageEnds(pagesAfter);
@@ -572,33 +578,25 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
                 expect(Object.is(x, page2.get(id)![0])).toBe(true);
                 expect(Object.is(y, page2.get(id)![1])).toBe(true);
             }
-            // The holding move has a slot for every marcher, as the page moves do
-            const hold = (await transitions(db))[2]!;
-            expect(hold.slot_count).toBe(
-                (await transitions(db))[1]!.slot_count,
-            );
             expect(await violations(db)).toEqual([]);
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("adding a last page: a holding move after the last one, in a timeline of its own (C-11)", async ({
+        it("adding a last page writes no timeline rows: the marchers hold through it", async ({
             db,
             marchersAndPages: _,
         }) => {
             const pages = await setUp(db);
             const endsBefore = pageEnds(pages);
             const before = await snapshot(db);
+            const rowsBefore = await snapshot(db, TIMELINE_TABLES);
 
             const created = await createLastPage({ db, newPageCounts: 8 });
             await timelineResolverSettled();
 
             const pagesAfter = await pagesInOrder(db);
-            expect(await ranges(db)).toEqual(pageRanges(pagesAfter));
-            expect((await ranges(db)).at(-1)).toEqual([49, 57]);
-            // The holding move spans a new timeline; the converted ones are unchanged
-            expect(await timelineRanges(db)).toEqual([...ORIGINAL, [49, 57]]);
-            const hold = (await transitions(db)).at(-1)!;
-            expect(hold.timeline_id).toBe((await timeline(db)).at(-1)!.id);
+            expect(await snapshot(db, TIMELINE_TABLES)).toEqual(rowsBefore);
+            expect(await timelineRanges(db)).toEqual(ORIGINAL);
             const endsAfter = pageEnds(pagesAfter);
             expectSamePageEnds(endsBefore, endsAfter);
             const page6 = endsBefore.get(6)!;
@@ -609,7 +607,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("adding a last page over a stored timeline puts the holds in it, not a second timeline over that range (C-12)", async ({
+        it("adding a last page over a stored timeline writes nothing into it", async ({
             db,
             marchersAndPages,
         }) => {
@@ -628,16 +626,26 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             const created = await createLastPage({ db, newPageCounts: 8 });
             await timelineResolverSettled();
 
-            // The page timelines (P9.10), then the stored one: no second timeline over [49, 57)
+            // The page timelines (P9.10), then the stored one, which holds only its own move
             expect(await timelineRanges(db)).toEqual([...ORIGINAL, [49, 57]]);
             expect(
                 (await timeline(db)).find((t) => t.start_beat === 49)!.id,
             ).toBe(stored.timelineId);
-            // The holds went into the stored timeline; the marcher already there has its own move
             const inStored = (await transitions(db)).filter(
                 (t) => t.timeline_id === stored.timelineId,
             );
-            expect(inStored.length).toBe(2);
+            expect(inStored.length).toBe(1);
+            expect(
+                await snapshot(db, TIMELINE_TABLES),
+                "nothing written",
+            ).toEqual(
+                Object.fromEntries(
+                    TIMELINE_TABLES.map((t) => [
+                        getTableName(t),
+                        before[getTableName(t)],
+                    ]),
+                ),
+            );
             expect(await violations(db)).toEqual([]);
             const endsAfter = pageEnds(await pagesInOrder(db));
             expectSamePageEnds(endsBefore, endsAfter);
@@ -649,20 +657,23 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("deleting an added page deletes its holding move's timeline with it (C-11)", async ({
+        it("deleting an added page nobody moved on leaves the timeline rows alone", async ({
             db,
             marchersAndPages: _,
         }) => {
-            await setUp(db);
+            const pages = await setUp(db);
+            const endsBefore = pageEnds(pages);
+            const rowsBefore = await snapshot(db, TIMELINE_TABLES);
             const created = await createLastPage({ db, newPageCounts: 8 });
             await timelineResolverSettled();
             const before = await snapshot(db);
-            expect(await timeline(db)).toHaveLength(7);
+            expect(await timeline(db)).toHaveLength(6);
 
             await deletePages({ db, pageIds: new Set([created.id]) });
             await timelineResolverSettled();
 
-            expect(await timelineRanges(db)).toEqual(await ranges(db));
+            expect(await snapshot(db, TIMELINE_TABLES)).toEqual(rowsBefore);
+            expectSamePageEnds(endsBefore, pageEnds(await pagesInOrder(db)));
             expect(await violations(db)).toEqual([]);
             await roundTrip(db, before, await snapshot(db));
         });
@@ -868,7 +879,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             expect(error).toBeInstanceOf(TimelineWriteError);
             expect((error as TimelineWriteError).code).toBe("E-ARGS");
             expect((error as Error).message).toMatch(
-                /the move over beats \[18, 22\) in timeline/,
+                /^E-ARGS: this change would leave Move 1 \(Page 3, counts 2–5\) with no counts; delete or shorten it first$/,
             );
             expect(await snapshot(db)).toEqual(before);
         });

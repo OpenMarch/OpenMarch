@@ -1,4 +1,4 @@
-import { asc, gt, eq, lt, desc, and } from "drizzle-orm";
+import { asc, gt, eq, lt, desc, and, inArray } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
@@ -139,21 +139,340 @@ export async function getPreviousMarcherPage(
     return getMarcherPageByPosition(tx, id, "previous");
 }
 
+/**
+ * Two coordinates closer than this, in pixels, are the same spot. A write that moves nothing
+ * isn't always bit-exact (fabric's transform round trip on a selection drifts by ~1e-14), so
+ * equality for carrying an edit forward, and for skipping a write, uses this tolerance.
+ */
+export const COORDINATE_TOLERANCE = 1e-6;
+
+export const sameCoordinate = (a: number, b: number): boolean =>
+    Math.abs(a - b) <= COORDINATE_TOLERANCE;
+
+/** A marcher's later rows that one write carried its edit to (page mode). */
+export interface CarriedRun {
+    marcherId: number;
+    /** The page the write was on */
+    pageId: number;
+    /** The position the run was moved to */
+    x: number;
+    y: number;
+    /** The rows the edit carried to, in page order, with the position each had before */
+    rows: { id: number; pageId: number; x: number; y: number }[];
+    /** The pathway, on the row after the run, whose start moved with the run */
+    nextPathwayId: number | null;
+    /** The page of that row */
+    nextPageId: number | null;
+}
+
+/**
+ * A moved marcher whose edit stopped at a later page of its own (page mode): the first later row
+ * that isn't a copy, because it is somewhere else. **Move them too** shifts that row by the same
+ * offset (`moveLaterMovesToo`).
+ */
+export interface OwnMoveStop {
+    marcherId: number;
+    /** The page the write was on */
+    pageId: number;
+    /** The later page with the marcher's own move, where the edit stopped */
+    stopPageId: number;
+    /** How far the write moved the marcher on `pageId` */
+    dx: number;
+    dy: number;
+}
+
+export interface MarcherPagesWriteResult {
+    /** Every marcher page row written, including the rows an edit carried to */
+    updatedIds: number[];
+    /** One entry per write that carried forward */
+    carried: CarriedRun[];
+    /**
+     * The moved marchers whose edit stopped at a later page with their own move, on pages where
+     * the write split them from others that followed there; none where every moved marcher
+     * stopped (a written show) or every one followed
+     */
+    ownMoveStops: OwnMoveStop[];
+    /** The pages any edit carried to, in page order */
+    followedPageIds: number[];
+    /** The pages whose pathway the write moved an end of */
+    pathwayPageIds: number[];
+}
+
+export const emptyMarcherPagesWriteResult = (): MarcherPagesWriteResult => ({
+    updatedIds: [],
+    carried: [],
+    ownMoveStops: [],
+    followedPageIds: [],
+    pathwayPageIds: [],
+});
+
+type MarcherPageRowState = {
+    id: number;
+    page_id: number;
+    x: number;
+    y: number;
+    path_data_id: number | null;
+    position: number;
+};
+
+/** SQLite caps bound parameters; batches stay well under it. */
+const IN_CHUNK = 500;
+
+const chunks = <T>(items: readonly T[]): T[][] => {
+    const out: T[][] = [];
+    for (let i = 0; i < items.length; i += IN_CHUNK)
+        out.push(items.slice(i, i + IN_CHUNK));
+    return out;
+};
+
+/** Every row of the given marchers, each marcher's in page (start beat) order. */
+async function marcherRowsInPageOrder(
+    tx: DbTransaction,
+    marcherIds: number[],
+): Promise<Map<number, MarcherPageRowState[]>> {
+    const byMarcher = new Map<number, MarcherPageRowState[]>();
+    for (const ids of chunks(marcherIds)) {
+        const rows = await tx
+            .select({
+                id: marcher_pages.id,
+                marcher_id: marcher_pages.marcher_id,
+                page_id: marcher_pages.page_id,
+                x: marcher_pages.x,
+                y: marcher_pages.y,
+                path_data_id: marcher_pages.path_data_id,
+                position: schema.beats.position,
+            })
+            .from(marcher_pages)
+            .innerJoin(schema.pages, eq(schema.pages.id, marcher_pages.page_id))
+            .innerJoin(
+                schema.beats,
+                eq(schema.beats.id, schema.pages.start_beat),
+            )
+            .where(inArray(marcher_pages.marcher_id, ids))
+            .orderBy(asc(schema.beats.position))
+            .all();
+        for (const { marcher_id, ...row } of rows) {
+            const list = byMarcher.get(marcher_id) ?? [];
+            list.push(row);
+            byMarcher.set(marcher_id, list);
+        }
+    }
+    return byMarcher;
+}
+
+/** The pages on which each of the given marchers is in a shape. */
+async function shapePageIdsByMarcher(
+    tx: DbTransaction,
+    marcherIds: number[],
+): Promise<Map<number, Set<number>>> {
+    const byMarcher = new Map<number, Set<number>>();
+    for (const ids of chunks(marcherIds)) {
+        const rows = await tx
+            .select({
+                marcher_id: schema.shape_page_marchers.marcher_id,
+                page_id: schema.shape_pages.page_id,
+            })
+            .from(schema.shape_page_marchers)
+            .innerJoin(
+                schema.shape_pages,
+                eq(
+                    schema.shape_pages.id,
+                    schema.shape_page_marchers.shape_page_id,
+                ),
+            )
+            .where(inArray(schema.shape_page_marchers.marcher_id, ids))
+            .all();
+        for (const row of rows) {
+            const set = byMarcher.get(row.marcher_id) ?? new Set<number>();
+            set.add(row.page_id);
+            byMarcher.set(row.marcher_id, set);
+        }
+    }
+    return byMarcher;
+}
+
+/** True when the write changes nothing but x and y. */
+const writesOnlyCoordinates = (
+    updateData: Omit<ModifiedMarcherPageArgs, "marcher_id" | "page_id">,
+) =>
+    Object.entries(updateData).every(
+        ([key, value]) => key === "x" || key === "y" || value === undefined,
+    );
+
+/**
+ * Writes marcher pages (page mode).
+ *
+ * **Carry forward** (on by default): an edit that moves a marcher on page N from `v` to `w` also
+ * moves that marcher's later pages that still hold at `v` (within `COORDINATE_TOLERANCE`), in page
+ * order, until the first page that differs, is in a shape, or has its own pathway. Those pages are
+ * copies of page N, not moves of their own, so they follow it; the first later page with its own
+ * move keeps it, and its pathway starts from `w`. Followed rows lose their copied pathway (a copy
+ * is a hold). Pass `carryForward: false` to write only the given pages ("Only Page N").
+ *
+ * A write that moves nothing (equal within the tolerance, no other field) is skipped, so a click
+ * that doesn't move a marcher can't break a later carry. If every write is skipped, the first is
+ * written anyway so the caller's undo group isn't empty.
+ *
+ * Known limit: equality can't tell a copy from a page the designer moved back onto the same spot
+ * on purpose, so such a page follows too (07b §1d, the merge leak). The toast's "Only Page N"
+ * and undo are the way back.
+ */
+// eslint-disable-next-line max-lines-per-function
 export async function updateMarcherPagesInTransaction({
     tx,
     modifiedMarcherPages,
+    carryForward = true,
 }: {
     tx: DbTransaction;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
-}): Promise<number[]> {
+    carryForward?: boolean;
+}): Promise<MarcherPagesWriteResult> {
     // Timeline mode: marcher pages and their pathways are frozen (P9.5)
     await refusePageEraWriteInTimelineMode(tx);
-    const updatedIds: number[] = [];
+    const result = emptyMarcherPagesWriteResult();
+    if (modifiedMarcherPages.length === 0) return result;
+
+    const marcherIds = [
+        ...new Set(modifiedMarcherPages.map((m) => m.marcher_id)),
+    ];
+    const rowsByMarcher = await marcherRowsInPageOrder(tx, marcherIds);
+    const shapePages = carryForward
+        ? await shapePageIdsByMarcher(tx, marcherIds)
+        : new Map<number, Set<number>>();
+    const followedPositions = new Map<number, number>();
+    const pathwayPageIds = new Set<number>();
+    let skipped: ModifiedMarcherPageArgs | undefined;
 
     for (const modifiedMarcherPage of modifiedMarcherPages) {
         const { marcher_id, page_id, ...updateData } = modifiedMarcherPage;
+        const rows = rowsByMarcher.get(marcher_id) ?? [];
+        const index = rows.findIndex((r) => r.page_id === page_id);
+        if (index < 0)
+            throw new Error(
+                `No marcher page for marcher ${marcher_id} on page ${page_id}`,
+            );
+        const row = rows[index];
+        const old = { x: row.x, y: row.y, path_data_id: row.path_data_id };
+        const moved =
+            !sameCoordinate(old.x, updateData.x) ||
+            !sameCoordinate(old.y, updateData.y);
+        if (!moved && writesOnlyCoordinates(updateData)) {
+            skipped ??= modifiedMarcherPage;
+            continue;
+        }
 
-        const currentMarcherPage = await tx
+        // A pathway shared with the previous page was copied with it, so it isn't this page's
+        // move: moving its end would bend the previous page's curve. The page holds instead.
+        const sharesPreviousPathway =
+            old.path_data_id != null &&
+            index > 0 &&
+            rows[index - 1].path_data_id === old.path_data_id;
+        const set =
+            moved && sharesPreviousPathway && !("path_data_id" in updateData)
+                ? { ...updateData, path_data_id: null }
+                : updateData;
+        await tx
+            .update(marcher_pages)
+            .set(set)
+            .where(eq(marcher_pages.id, row.id));
+        row.x = set.x;
+        row.y = set.y;
+        if (set.path_data_id !== undefined) row.path_data_id = set.path_data_id;
+        result.updatedIds.push(row.id);
+
+        if (row.path_data_id != null) {
+            await updateEndPoint({
+                tx,
+                pathwayId: row.path_data_id,
+                newPoint: { x: row.x, y: row.y },
+                type: "end",
+            });
+            pathwayPageIds.add(row.page_id);
+        }
+
+        // The pathway the previous row had before this write; a later row with the same one
+        // shares it (a copy) rather than having its own
+        let previousPathway = old.path_data_id;
+        let last = index;
+        const followed: CarriedRun["rows"] = [];
+        if (carryForward && moved) {
+            const inShape = shapePages.get(marcher_id);
+            for (let j = index + 1; j < rows.length; j++) {
+                const later = rows[j];
+                const elsewhere =
+                    !sameCoordinate(later.x, old.x) ||
+                    !sameCoordinate(later.y, old.y);
+                if (
+                    elsewhere ||
+                    inShape?.has(later.page_id) ||
+                    (later.path_data_id != null &&
+                        later.path_data_id !== previousPathway)
+                ) {
+                    // Somewhere else, and not in a shape: the marcher's own move, where it stops
+                    if (elsewhere && !inShape?.has(later.page_id))
+                        result.ownMoveStops.push({
+                            marcherId: marcher_id,
+                            pageId: page_id,
+                            stopPageId: later.page_id,
+                            dx: row.x - old.x,
+                            dy: row.y - old.y,
+                        });
+                    break;
+                }
+                followed.push({
+                    id: later.id,
+                    pageId: later.page_id,
+                    x: later.x,
+                    y: later.y,
+                });
+                followedPositions.set(later.page_id, later.position);
+                previousPathway = later.path_data_id;
+                later.x = row.x;
+                later.y = row.y;
+                later.path_data_id = null;
+                last = j;
+            }
+            for (const ids of chunks(followed.map((f) => f.id)))
+                await tx
+                    .update(marcher_pages)
+                    .set({ x: row.x, y: row.y, path_data_id: null })
+                    .where(inArray(marcher_pages.id, ids));
+            result.updatedIds.push(...followed.map((f) => f.id));
+        }
+
+        // The next page's own pathway starts where this run ends. One it shares with the run's
+        // last page is a copy, and is left alone.
+        const next = rows[last + 1];
+        const nextPathwayId =
+            next?.path_data_id != null && next.path_data_id !== previousPathway
+                ? next.path_data_id
+                : null;
+        if (nextPathwayId != null) {
+            await updateEndPoint({
+                tx,
+                pathwayId: nextPathwayId,
+                newPoint: { x: row.x, y: row.y },
+                type: "start",
+            });
+            pathwayPageIds.add(next.page_id);
+        }
+
+        if (followed.length > 0)
+            result.carried.push({
+                marcherId: marcher_id,
+                pageId: page_id,
+                x: row.x,
+                y: row.y,
+                rows: followed,
+                nextPathwayId,
+                nextPageId: nextPathwayId != null ? next.page_id : null,
+            });
+    }
+
+    // Keep the caller's undo group from being empty when nothing moved
+    if (result.updatedIds.length === 0 && skipped) {
+        const { marcher_id, page_id, ...updateData } = skipped;
+        const written = await tx
             .update(marcher_pages)
             .set(updateData)
             .where(
@@ -162,59 +481,88 @@ export async function updateMarcherPagesInTransaction({
                     eq(marcher_pages.page_id, page_id),
                 ),
             )
-            .returning({
-                id: marcher_pages.id,
-                path_data_id: marcher_pages.path_data_id,
+            .returning({ id: marcher_pages.id })
+            .get();
+        if (written) result.updatedIds.push(written.id);
+    }
+
+    // A stop on a page this write also edits for that marcher isn't left behind
+    const written = new Set(
+        modifiedMarcherPages.map((m) => marcherPageToKeyString(m)),
+    );
+    result.ownMoveStops = result.ownMoveStops.filter(
+        (s) =>
+            !written.has(
+                marcherPageToKeyString({
+                    marcher_id: s.marcherId,
+                    page_id: s.stopPageId,
+                }),
+            ),
+    );
+    // Only a split is a surprise: a stop counts where another marcher this write moved followed
+    // into the same page. Where everyone stopped (a written show) or followed, it says nothing
+    result.ownMoveStops = result.ownMoveStops.filter((s) =>
+        followedPositions.has(s.stopPageId),
+    );
+    result.followedPageIds = [...followedPositions.entries()]
+        .sort((a, b) => a[1] - b[1])
+        .map(([pageId]) => pageId);
+    result.pathwayPageIds = [...pathwayPageIds];
+    return result;
+}
+
+/**
+ * Drops the writes that move nothing (see `updateMarcherPagesInTransaction`), reading the rows'
+ * current positions in one query per batch.
+ */
+async function withoutNoOpWrites(
+    db: DbConnection,
+    modifiedMarcherPages: ModifiedMarcherPageArgs[],
+): Promise<ModifiedMarcherPageArgs[]> {
+    const pageIds = [...new Set(modifiedMarcherPages.map((m) => m.page_id))];
+    const current = new Map<string, { x: number; y: number }>();
+    for (const ids of chunks(pageIds)) {
+        const rows = await db
+            .select({
+                marcher_id: marcher_pages.marcher_id,
+                page_id: marcher_pages.page_id,
                 x: marcher_pages.x,
                 y: marcher_pages.y,
             })
-            .get();
-
-        if (currentMarcherPage.path_data_id) {
-            await updateEndPoint({
-                tx,
-                pathwayId: currentMarcherPage.path_data_id,
-                newPoint: {
-                    x: currentMarcherPage.x,
-                    y: currentMarcherPage.y,
-                },
-                type: "end",
-            });
-        }
-
-        const nextMarcherPage = await getNextMarcherPage(tx, {
-            marcherPageId: currentMarcherPage.id,
-        });
-
-        if (nextMarcherPage && nextMarcherPage.path_data_id) {
-            await updateEndPoint({
-                tx,
-                pathwayId: nextMarcherPage.path_data_id,
-                newPoint: {
-                    x: currentMarcherPage.x,
-                    y: currentMarcherPage.y,
-                },
-                type: "start",
-            });
-        }
-
-        updatedIds.push(currentMarcherPage.id);
+            .from(marcher_pages)
+            .where(inArray(marcher_pages.page_id, ids))
+            .all();
+        for (const row of rows) current.set(marcherPageToKeyString(row), row);
     }
-
-    return updatedIds;
+    return modifiedMarcherPages.filter((m) => {
+        const { marcher_id: _m, page_id: _p, ...updateData } = m;
+        const row = current.get(marcherPageToKeyString(m));
+        return (
+            row == null ||
+            !writesOnlyCoordinates(updateData) ||
+            !sameCoordinate(row.x, m.x) ||
+            !sameCoordinate(row.y, m.y)
+        );
+    });
 }
 
 export async function updateMarcherPages({
     db,
     modifiedMarcherPages,
+    carryForward = true,
 }: {
     db: DbConnection;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
-}): Promise<number[]> {
+    /** See `updateMarcherPagesInTransaction`; false writes only the given pages */
+    carryForward?: boolean;
+}): Promise<MarcherPagesWriteResult> {
     // Early return if no marcher pages to update
     if (modifiedMarcherPages.length === 0) {
-        return [];
+        return emptyMarcherPagesWriteResult();
     }
+    // Nothing moves: no undo step
+    const writes = await withoutNoOpWrites(db, modifiedMarcherPages);
+    if (writes.length === 0) return emptyMarcherPagesWriteResult();
 
     const transactionResult = await transactionWithHistory(
         db,
@@ -222,11 +570,139 @@ export async function updateMarcherPages({
         async (tx) => {
             return await updateMarcherPagesInTransaction({
                 tx,
-                modifiedMarcherPages,
+                modifiedMarcherPages: writes,
+                carryForward,
             });
         },
     );
     return transactionResult;
+}
+
+/**
+ * **Move them too** (page mode, defined-coordinates 09): shifts each stop's row (the marcher's own
+ * later move, `OwnMoveStop`) by the offset the edit moved the marcher, as its own undoable edit.
+ * It carries forward like any edit, so later pages that copied the stop's page follow. Rows that
+ * are gone are skipped.
+ *
+ * @returns the write's result (empty when nothing was left to move)
+ */
+export async function moveLaterMovesToo({
+    db,
+    stops,
+}: {
+    db: DbConnection;
+    stops: readonly OwnMoveStop[];
+}): Promise<MarcherPagesWriteResult> {
+    const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
+    for (const stop of stops) {
+        const row = await db
+            .select({ x: marcher_pages.x, y: marcher_pages.y })
+            .from(marcher_pages)
+            .where(
+                and(
+                    eq(marcher_pages.marcher_id, stop.marcherId),
+                    eq(marcher_pages.page_id, stop.stopPageId),
+                ),
+            )
+            .get();
+        if (row)
+            modifiedMarcherPages.push({
+                marcher_id: stop.marcherId,
+                page_id: stop.stopPageId,
+                x: row.x + stop.dx,
+                y: row.y + stop.dy,
+            });
+    }
+    return await updateMarcherPages({ db, modifiedMarcherPages });
+}
+
+/**
+ * "Only Page N": puts the rows an edit carried to back where they were, as its own undoable edit.
+ * A row that has changed since (it no longer holds the carried position) is left alone. Restored
+ * rows keep no pathway: the one they had was a copy of the edited page's.
+ *
+ * @returns the pages it restored (empty when nothing was left to restore)
+ */
+export async function restoreCarriedRuns({
+    db,
+    carried,
+}: {
+    db: DbConnection;
+    carried: readonly CarriedRun[];
+}): Promise<number[]> {
+    const ids = carried.flatMap((run) => run.rows.map((r) => r.id));
+    if (ids.length === 0) return [];
+    const current = new Map<number, { x: number; y: number }>();
+    for (const batch of chunks(ids)) {
+        const rows = await db
+            .select({
+                id: marcher_pages.id,
+                x: marcher_pages.x,
+                y: marcher_pages.y,
+            })
+            .from(marcher_pages)
+            .where(inArray(marcher_pages.id, batch))
+            .all();
+        for (const row of rows) current.set(row.id, row);
+    }
+    const stillCarried = (run: CarriedRun, row: CarriedRun["rows"][number]) => {
+        const now = current.get(row.id);
+        return (
+            now != null &&
+            sameCoordinate(now.x, run.x) &&
+            sameCoordinate(now.y, run.y)
+        );
+    };
+    const restoring = carried
+        .map((run) => ({
+            run,
+            rows: run.rows.filter((row) => stillCarried(run, row)),
+        }))
+        .filter(({ rows }) => rows.length > 0);
+    if (restoring.length === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "restoreCarriedRuns",
+        async (tx) => {
+            await refusePageEraWriteInTimelineMode(tx);
+            const pageIds: number[] = [];
+            for (const { run, rows } of restoring) {
+                // Rows with the same old position are written together
+                const byPosition = new Map<string, typeof rows>();
+                for (const row of rows) {
+                    const key = `${row.x},${row.y}`;
+                    byPosition.set(key, [...(byPosition.get(key) ?? []), row]);
+                }
+                for (const group of byPosition.values())
+                    for (const batch of chunks(group.map((r) => r.id)))
+                        await tx
+                            .update(marcher_pages)
+                            .set({ x: group[0].x, y: group[0].y })
+                            .where(inArray(marcher_pages.id, batch));
+                pageIds.push(...rows.map((r) => r.pageId));
+
+                // The next page's pathway starts from the run's last page again
+                const lastRow = run.rows[run.rows.length - 1];
+                if (
+                    run.nextPathwayId != null &&
+                    rows.includes(lastRow) &&
+                    (await tx.query.pathways.findFirst({
+                        where: eq(schema.pathways.id, run.nextPathwayId),
+                    }))
+                ) {
+                    await updateEndPoint({
+                        tx,
+                        pathwayId: run.nextPathwayId,
+                        newPoint: { x: lastRow.x, y: lastRow.y },
+                        type: "start",
+                    });
+                    if (run.nextPageId != null) pageIds.push(run.nextPageId);
+                }
+            }
+            return [...new Set(pageIds)];
+        },
+    );
 }
 
 // eslint-disable-next-line max-lines-per-function

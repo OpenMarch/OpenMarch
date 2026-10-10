@@ -394,8 +394,12 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
             }),
         });
 
+        // Equal within the coordinate tolerance, not bit-exact (page-mode writes compare with it)
         for (const id of [1, 2, 3])
-            expect((await marcherPage(db, id, page.id))!.y).toBe(averageY);
+            expect((await marcherPage(db, id, page.id))!.y).toBeCloseTo(
+                averageY,
+                6,
+            );
         expect(await timelineRows(db)).toEqual(before);
     });
 

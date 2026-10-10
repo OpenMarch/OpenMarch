@@ -43,12 +43,14 @@ const singleTableNameToQueryKey = (tableName: string): string[][] => {
         // Timeline data tables (ADR 0001 §3). No React Query reads them: the resolver store, and
         // every view that follows its version, picks up their changes from each edit's change
         // batch (P7.13). Mapping them to no keys keeps undo and redo from invalidating keys that
-        // never exist. A query added over these tables must add its keys here.
+        // never exist. A query added over these tables must add its keys here. The kept markers
+        // aren't in the change log: their views follow the display version (`timelineDisplay.ts`).
         case "timelines":
         case "timeline_shapes":
         case "timeline_transitions":
         case "timeline_assignments":
         case "timeline_slot_destinations":
+        case "timeline_kept_assignments":
             return [];
         default:
             return [[tableName]];

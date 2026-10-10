@@ -299,6 +299,45 @@ describeDbTests("registered coordinate actions in the file's mode", (it) => {
         });
     });
 
+    it("Ctrl+A and Ctrl+S don't nudge the selection; A alone does", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        // Ctrl+A is select all and Ctrl+S is swap. On Windows and Linux the W/A/S/D nudge used
+        // to skip only Cmd, so Ctrl+A moved a selected marcher a step left first (and with
+        // nothing selected warned "No marchers selected").
+        const ids = marchersAndPages.expectedMarchers
+            .slice(14, 15)
+            .map((m) => m.id);
+        const { page } = await setUp(PAGE, ids);
+        const before = await positionsOn(db, page, ids);
+        const press = (code: string, ctrlKey: boolean) =>
+            act(() => {
+                window.dispatchEvent(
+                    new KeyboardEvent("keydown", {
+                        code,
+                        key: code.replace("Key", "").toLowerCase(),
+                        ctrlKey,
+                        bubbles: true,
+                    }),
+                );
+            });
+
+        press("KeyA", true);
+        press("KeyS", true);
+        // Give a nudge the Ctrl+keys started time to land
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        expectAt(await positionsOn(db, page, ids), before);
+
+        // A plain A still nudges, so the keys reach the handler
+        press("KeyA", false);
+        await waitFor(async () => {
+            const [[x, y]] = (await positionsOn(db, page, ids)) as [XY];
+            expect(x).toBeLessThan(before[0]![0]);
+            expect(y).toBeCloseTo(before[0]![1], 6);
+        });
+    });
+
     it("undo restores a nudge, goes back to its page and selects the moved marchers", async ({
         db,
         marchersAndPages,

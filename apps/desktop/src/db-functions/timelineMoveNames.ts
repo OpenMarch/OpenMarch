@@ -3,7 +3,9 @@ import * as schema from "@om-electron/database/migrations/schema";
 import { readShowTiming } from "@/timeline/convert/convertPagesInTransaction";
 import { pageFlags } from "@/timeline/timelinePlayhead";
 import { autoMoveNumber, moveLabels } from "@/timeline/timelineViewModel";
+import type { NamedMove, NamedPageBox } from "@/timeline/timelineRangeWords";
 import type { DbConnection, DbTransaction } from "./types";
+import { readPageGrid } from "./timelineRipple";
 import {
     createTimelinesInTransaction,
     type DatabaseTimeline,
@@ -26,6 +28,27 @@ export const readPageBoxes = async (
     return pageFlags([...pages].sort((a, b) => a.order - b.order)).flatMap(
         (f) => (f.range ? [{ start: f.range.start, end: f.range.end }] : []),
     );
+};
+
+/**
+ * What a refusal needs to name a moment or a move in pages and counts (`beatWhere`, `moveName` in
+ * `timelineRangeWords`): the named page boxes and every stored timeline.
+ */
+export const readMoveWords = async (
+    db: DbTransaction,
+): Promise<{ boxes: NamedPageBox[]; moves: NamedMove[] }> => {
+    // A page's grid range is its box (`pageEndBeat` of the page before it to its own); home has none
+    const boxes = (await readPageGrid(db)).pages.slice(1);
+    const moves = await db
+        .select({
+            id: schema.timelines.id,
+            start: schema.timelines.start_beat,
+            end: schema.timelines.end_beat,
+            name: schema.timelines.name,
+        })
+        .from(schema.timelines)
+        .all();
+    return { boxes, moves };
 };
 
 type PageBoxes = readonly { start: number; end: number }[];

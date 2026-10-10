@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, lt } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, lt } from "drizzle-orm";
 import {
     createResolver,
     validateDestination,
@@ -18,10 +18,24 @@ import {
 import { assertValid, refuse, TimelineWriteError } from "./timelineErrors";
 import {
     addMarchersToTimelineInTransaction,
+    removeAssignmentRowsInTransaction,
     removeMarchersFromTimelineInTransaction,
     type BeatRange,
 } from "./timelineMembership";
 import { deleteTimelinesInTransaction, timelinesWithRange } from "./timelines";
+import { readPageGrid, type PageGrid } from "./timelineRipple";
+import {
+    beatWhere,
+    moveInSentence,
+    moveName,
+} from "@/timeline/timelineRangeWords";
+import { readMoveWords } from "./timelineMoveNames";
+import { FIRST_PAGE_ID } from "./rowMappers";
+import type { DatabaseTimelineAssignment } from "./timelineAssignments";
+import {
+    clearKeptMarkersInTransaction,
+    keptAmong,
+} from "./timelineKeptMarkers";
 
 /**
  * "Move a marcher on page N" in timeline mode (docs/timeline/phases/07-page-parity.md P7.2, spec
@@ -75,13 +89,20 @@ export interface TimelineMoveResult {
     convertedTransitionIds: number[];
     /** A range move that passed through or ran into other moves (`TimelinePassThrough`) */
     passThrough?: TimelinePassThrough;
+    /**
+     * A range move over a page's box: marchers whose own move there was deleted, because the edit
+     * left them where the box starts (a drag back) or cleared it (set to previous page)
+     */
+    cleared?: number[];
 }
 
 /**
  * What a range move (UI-10 drag) did to the moved marchers' other moves
- * (research/ownership/10-cross-page-windows.md): the moves inside the range it overrides, and the
- * moves it runs into partway, which catch up after it. Only marchers it added are listed: one
- * already in the range's timeline changes nothing else.
+ * (research/ownership/10-cross-page-windows.md): the moves inside the range it overrides, the
+ * moves it runs into partway, which catch up after it, and the page flags inside the range, which
+ * they now pass through whether or not a stored move ended there (sparse rows, defined-coordinates
+ * README). Only marchers it added are listed: one already in the range's timeline changes nothing
+ * else.
  */
 export interface TimelinePassThrough {
     /** The range moved over */
@@ -94,6 +115,8 @@ export interface TimelinePassThrough {
     overridden: BeatRange[];
     /** The distinct ranges of the moves that now catch up, by start */
     caughtUp: BeatRange[];
+    /** The page flags strictly inside the range, by beat */
+    flags: number[];
     /** The timeline over the range, when this move created it */
     createdTimelineId?: number;
 }
@@ -105,6 +128,16 @@ const distinctRanges = (moves: readonly BeatRange[]): BeatRange[] =>
             moves.map(({ start, end }) => [`${start}:${end}`, { start, end }]),
         ).values(),
     ].sort((a, b) => a.start - b.start || a.end - b.end);
+
+/**
+ * How far apart (in canvas units, per axis) two positions may be and still count as the same, when
+ * deciding that a write would move nobody (defined-coordinates README, Recommendation 2).
+ */
+export const SAME_POSITION_TOLERANCE = 1e-6;
+
+export const samePosition = (a: XY, b: XY): boolean =>
+    Math.abs(a[0] - b[0]) <= SAME_POSITION_TOLERANCE &&
+    Math.abs(a[1] - b[1]) <= SAME_POSITION_TOLERANCE;
 
 const pageLabel = (page: TimelineMovePage) =>
     page.name !== undefined ? `page ${page.name}` : "this page";
@@ -261,7 +294,7 @@ export const moveMarchersOnPageInTransaction = async ({
             refuse(
                 `marcher ${await marcherLabel(tx, move.marcherId)} has no move that ends at the end of ${pageLabel(
                     page,
-                )} (beat ${endBeat}), so there is no destination to change there`,
+                )}, so there is no destination to change there`,
             );
         plans.push({ move, row });
     }
@@ -284,7 +317,8 @@ interface SlotMovePlan {
 /**
  * Sets each planned slot's destination. Refuses follow-the-leader into a shape (`E-T5`), and
  * switches a shape-backed transition to individual points first (Q-14), reading and sampling
- * every shape before the first write, so a refusal writes nothing.
+ * every shape before the first write, so a refusal writes nothing. A kept spot whose ending moves
+ * loses its kept marker (`keptAssignmentsMovedBy`).
  */
 const writeSlotMoves = async ({
     tx,
@@ -294,15 +328,15 @@ const writeSlotMoves = async ({
 }: {
     tx: DbTransaction;
     plans: readonly SlotMovePlan[];
-    /** Names the page or timeline in refusals */
-    where: string;
+    /** Names the page or move in refusals; a function when naming it needs a read */
+    where: string | (() => Promise<string>);
     result: TimelineMoveResult;
 }): Promise<void> => {
     for (const { move, row } of plans)
         if (row.shapeId !== null && row.pathStyle === "follow_the_leader")
             throw new TimelineWriteError(
                 "E-T5",
-                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${where}; move the shape instead`,
+                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${typeof where === "string" ? where : await where()}; move the shape instead`,
             );
 
     // Shape-backed transitions switch to individual points (Q-14), copying the shape's samples.
@@ -318,6 +352,8 @@ const writeSlotMoves = async ({
         if (!shape) refuse(`shape ${row.shapeId} does not exist`);
         toConvert.set(row.transitionId, sampleShape(shape, row.slotCount));
     }
+
+    const unkept = await keptAssignmentsMovedBy(tx, plans);
 
     // Writes
     for (const [transitionId, points] of toConvert) {
@@ -342,6 +378,62 @@ const writeSlotMoves = async ({
             slotIndex: row.slotIndex,
         });
     }
+    // An edited kept spot is the marcher's own move from now on (keep later pages, 2026-10-09)
+    await clearKeptMarkersInTransaction(tx, unkept);
+};
+
+/**
+ * The kept assignments (`timeline_kept_assignments`) whose slot `plans` move somewhere else: a
+ * kept move whose ending is edited becomes an ordinary own move. A plan that leaves a kept spot
+ * where it is (within `SAME_POSITION_TOLERANCE`) keeps it.
+ */
+const keptAssignmentsMovedBy = async (
+    tx: DbTransaction,
+    plans: readonly SlotMovePlan[],
+): Promise<number[]> => {
+    if (plans.length === 0) return [];
+    const a = schema.timeline_assignments;
+    const k = schema.timeline_kept_assignments;
+    const d = schema.timeline_slot_destinations;
+    const transitionIds = [...new Set(plans.map((p) => p.row.transitionId))];
+    const kept = await tx
+        .select({
+            id: a.id,
+            transitionId: a.transition_id,
+            slotIndex: a.slot_index,
+        })
+        .from(a)
+        .innerJoin(k, eq(k.assignment_id, a.id))
+        .where(inArray(a.transition_id, transitionIds))
+        .all();
+    if (kept.length === 0) return [];
+    const key = (transitionId: number, slotIndex: number) =>
+        `${transitionId}:${slotIndex}`;
+    const points = new Map(
+        (
+            await tx
+                .select()
+                .from(d)
+                .where(
+                    inArray(
+                        d.transition_id,
+                        kept.map((r) => r.transitionId),
+                    ),
+                )
+                .all()
+        ).map((r) => [key(r.transition_id, r.slot_index), [r.x, r.y] as XY]),
+    );
+    const planned = new Map(
+        plans.map((p) => [key(p.row.transitionId, p.row.slotIndex), p.move]),
+    );
+    return kept
+        .filter((r) => {
+            const move = planned.get(key(r.transitionId, r.slotIndex));
+            if (!move) return false;
+            const stored = points.get(key(r.transitionId, r.slotIndex));
+            return !stored || !samePosition(stored, [move.x, move.y]);
+        })
+        .map((r) => r.id);
 };
 
 /** `moveMarchersOnPageInTransaction` as one undoable edit. */
@@ -405,11 +497,14 @@ export const moveMarchersInTimelineInTransaction = async ({
     timelineId,
     moves,
     ghosts = false,
+    skipUnchanged = false,
 }: {
     tx: DbTransaction;
     timelineId: number;
     moves: readonly TimelineMarcherMove[];
     ghosts?: boolean;
+    /** Write nothing for a marcher whose ending is already where it is moved (range moves) */
+    skipUnchanged?: boolean;
 }): Promise<TimelineMoveResult> => {
     const result: TimelineMoveResult = {
         homes: [],
@@ -483,6 +578,11 @@ export const moveMarchersInTimelineInTransaction = async ({
         if (!best || row.layer > best.layer) top.set(row.marcherId, row);
     }
 
+    // Read only when a refusal needs them
+    let words: Awaited<ReturnType<typeof readMoveWords>> | undefined;
+    const moveWords = async () => (words ??= await readMoveWords(tx));
+    const at = async (beat: number) =>
+        beatWhere(beat, (await moveWords()).boxes) ?? "home";
     const plans: SlotMovePlan[] = [];
     for (const move of moves) {
         const own = byMarcher.get(move.marcherId) ?? [];
@@ -497,22 +597,67 @@ export const moveMarchersInTimelineInTransaction = async ({
         const row = own[0]!;
         if (row.end !== endBeat)
             refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)}'s move in this timeline ends at beat ${row.end}, before the timeline's end (beat ${endBeat}). Edit it in the inspector.`,
+                `marcher ${await marcherLabel(tx, move.marcherId)} stops at ${await at(row.end)}, before this move ends (${await at(endBeat)}). Edit it in the inspector.`,
             );
         const winner = top.get(move.marcherId);
-        if (!ghosts && winner && winner.layer > row.layer)
-            refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)} has another move over beats [${winner.start}, ${winner.end}) that decides where it is at beat ${endBeat}. Put the start flag and playhead on that move's edges to edit it.`,
+        if (!ghosts && winner && winner.layer > row.layer) {
+            const { boxes, moves: stored } = await moveWords();
+            const other = moveInSentence(
+                { start: winner.start, end: winner.end },
+                boxes,
+                stored,
             );
+            refuse(
+                `marcher ${await marcherLabel(tx, move.marcherId)}'s position at ${await at(endBeat)} comes from ${other}, not this move. Put the start flag and playhead on that move's edges to edit it.`,
+            );
+        }
         plans.push({ move, row });
     }
     await writeSlotMoves({
         tx,
-        plans,
-        where: `the timeline ending at beat ${endBeat}`,
+        plans: skipUnchanged ? await changedPlans(tx, plans) : plans,
+        where: async () => {
+            const { boxes, moves: stored } = await moveWords();
+            return moveName(
+                { start: timeline.start_beat, end: endBeat },
+                boxes,
+                stored,
+            );
+        },
         result,
     });
     return result;
+};
+
+/**
+ * `plans` without the ones that would leave a shapeless slot where it is (within
+ * `SAME_POSITION_TOLERANCE`), so an align or distribute that keeps a marcher still writes nothing
+ * for it.
+ */
+const changedPlans = async (
+    tx: DbTransaction,
+    plans: readonly SlotMovePlan[],
+): Promise<SlotMovePlan[]> => {
+    const shapeless = plans.filter((p) => p.row.shapeId === null);
+    if (shapeless.length === 0) return [...plans];
+    const d = schema.timeline_slot_destinations;
+    const points = await tx
+        .select()
+        .from(d)
+        .where(
+            inArray(d.transition_id, [
+                ...new Set(shapeless.map((p) => p.row.transitionId)),
+            ]),
+        )
+        .all();
+    const pointOf = new Map(
+        points.map((r) => [`${r.transition_id}:${r.slot_index}`, r]),
+    );
+    return plans.filter(({ move, row }) => {
+        if (row.shapeId !== null) return true;
+        const stored = pointOf.get(`${row.transitionId}:${row.slotIndex}`);
+        return !stored || !samePosition([stored.x, stored.y], [move.x, move.y]);
+    });
 };
 
 /**
@@ -545,6 +690,124 @@ const timelineOfMarchers = async (
     return out;
 };
 
+/** Whether `range` is exactly the box of a page after home in `grid`. */
+export const isPageBox = (grid: PageGrid, range: BeatRange): boolean =>
+    grid.pages.some(
+        (p) =>
+            p.id !== FIRST_PAGE_ID &&
+            p.start === range.start &&
+            p.end === range.end,
+    );
+
+/**
+ * Each of `marcherIds`' **own move over the page box** `range`, where it has one: its one-slot
+ * shapeless transition (C-11) in a timeline over exactly the box, assigned over the whole box, and
+ * the marcher's only row over any of the box's beats. Deleting that row changes nothing before the
+ * box, and leaves the marcher holding through the box where the box starts. Empty when `range`
+ * isn't a page's box.
+ */
+export const ownPageMoves = async (
+    tx: DbTransaction,
+    grid: PageGrid,
+    range: BeatRange,
+    marcherIds: readonly number[],
+): Promise<Map<number, DatabaseTimelineAssignment>> => {
+    const out = new Map<number, DatabaseTimelineAssignment>();
+    if (marcherIds.length === 0 || !isPageBox(grid, range)) return out;
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const l = schema.timelines;
+    const rows = await tx
+        .select({
+            row: a,
+            slotCount: t.slot_count,
+            shapeId: t.dest_shape_id,
+            transitionStart: t.start_beat,
+            transitionEnd: t.end_beat,
+            timelineStart: l.start_beat,
+            timelineEnd: l.end_beat,
+        })
+        .from(a)
+        .innerJoin(t, eq(t.id, a.transition_id))
+        .innerJoin(l, eq(l.id, t.timeline_id))
+        .where(
+            and(
+                inArray(a.marcher_id, [...marcherIds]),
+                lt(a.start_beat, range.end),
+                gt(a.end_beat, range.start),
+            ),
+        )
+        .all();
+    const byMarcher = new Map<number, (typeof rows)[number][]>();
+    for (const r of rows)
+        byMarcher.set(r.row.marcher_id, [
+            ...(byMarcher.get(r.row.marcher_id) ?? []),
+            r,
+        ]);
+    const exact = (s: number, e: number) =>
+        s === range.start && e === range.end;
+    for (const [marcherId, list] of byMarcher) {
+        if (list.length !== 1) continue;
+        const r = list[0]!;
+        if (
+            r.slotCount === 1 &&
+            r.shapeId === null &&
+            exact(r.row.start_beat, r.row.end_beat) &&
+            exact(r.transitionStart, r.transitionEnd) &&
+            exact(r.timelineStart, r.timelineEnd)
+        )
+            out.set(marcherId, r.row);
+    }
+    return out;
+};
+
+/**
+ * Deletes `rows` (marchers' own page moves, `ownPageMoves`) with their kept markers and one-slot
+ * transitions, and then each of their timelines that has no transition left, children first.
+ */
+export const clearOwnPageMoves = async (
+    tx: DbTransaction,
+    rows: readonly DatabaseTimelineAssignment[],
+): Promise<void> => {
+    if (rows.length === 0) return;
+    // A kept spot's marker goes first (children first, as C-1)
+    await clearKeptMarkersInTransaction(
+        tx,
+        rows.map((r) => r.id),
+    );
+    const t = schema.timeline_transitions;
+    const timelineIds = (
+        await tx
+            .selectDistinct({ id: t.timeline_id })
+            .from(t)
+            .where(
+                inArray(
+                    t.id,
+                    rows.map((r) => r.transition_id),
+                ),
+            )
+            .all()
+    ).map((r) => r.id);
+    await removeAssignmentRowsInTransaction({
+        tx,
+        removed: rows,
+        compact: false,
+    });
+    const left = new Set(
+        (
+            await tx
+                .selectDistinct({ id: t.timeline_id })
+                .from(t)
+                .where(inArray(t.timeline_id, timelineIds))
+                .all()
+        ).map((r) => r.id),
+    );
+    await deleteTimelinesInTransaction({
+        tx,
+        timelineIds: new Set(timelineIds.filter((id) => !left.has(id))),
+    });
+};
+
 /**
  * UI-10 Dragging adds: sets where each moved marcher arrives at `range.end`, leaving
  * `range.start`. Creates the timeline over `range` when none has it (one per range, C-12), adds
@@ -553,21 +816,45 @@ const timelineOfMarchers = async (
  * (`moveMarchersInTimelineInTransaction`). Refusals are the add's and the move's, decided before
  * they write; inside one transaction, a refused move rolls back the add too.
  *
+ * Only real moves are written (defined-coordinates README, Recommendation 2; positions compared
+ * within `SAME_POSITION_TOLERANCE`):
+ *
+ * - **No-op:** a marcher moved to where it already is at `range.end` gets no row and no write, so
+ *   an align or distribute that keeps a marcher still plants nothing there. When nobody moves, no
+ *   timeline is created.
+ * - **Drag back:** on a page's box, a marcher whose own move there (`ownPageMoves`) is moved back to
+ *   where the box starts loses that move instead of keeping one that goes nowhere, so the page
+ *   follows earlier pages again. Its timeline goes when that leaves it empty. A zero-motion ending
+ *   in a shared transition, or in a window that isn't a page's box, is kept. So is a **kept** spot
+ *   (`timeline_kept_assignments`): the drag writes its new ending instead, and like any edit that
+ *   moves a kept spot's ending, makes it an ordinary own move (`writeSlotMoves`).
+ * - **`clearOwn`** (set to previous page): every moved marcher's own move over the box is deleted
+ *   the same way, whatever the move says; the others are moved as usual.
+ *
  * The add passes through (research/ownership/10-cross-page-windows.md): the drag overrides the
- * moved marchers' moves inside the range, and a move the range runs into partway catches up after
- * it. The result's `passThrough` names them, so the app can say so.
+ * moved marchers' moves inside the range, a move the range runs into partway catches up after it,
+ * and every page flag inside the range is passed. The result's `passThrough` names them, so the
+ * app can say so.
  */
+// eslint-disable-next-line max-lines-per-function
 export const moveMarchersInRangeInTransaction = async ({
     tx,
     range,
     moves,
+    clearOwn = false,
 }: {
     tx: DbTransaction;
     range: BeatRange;
     moves: readonly TimelineMarcherMove[];
+    /** Delete the marchers' own moves over the page box `range` (set to previous page) */
+    clearOwn?: boolean;
 }): Promise<TimelineMoveResult> => {
-    if (moves.length === 0)
-        return { homes: [], slots: [], convertedTransitionIds: [] };
+    const result: TimelineMoveResult = {
+        homes: [],
+        slots: [],
+        convertedTransitionIds: [],
+    };
+    if (moves.length === 0) return result;
     refuseDuplicateMarchers(moves);
     for (const m of moves)
         assertValid(validateDestination([m.x, m.y]), "position");
@@ -575,7 +862,54 @@ export const moveMarchersInRangeInTransaction = async ({
     // Membership by range, not by one timeline: a file from before C-12 may hold two over it
     const sameRange = (await timelinesWithRange(tx, range)).map((t) => t.id);
     const timelineOf = await timelineOfMarchers(tx, sameRange, marcherIds);
-    const toAdd = marcherIds.filter((id) => !timelineOf.has(id));
+    const grid = await readPageGrid(tx);
+    const own = await ownPageMoves(tx, grid, range, marcherIds);
+
+    // Where the marchers are now, read once and only when needed, before anything is written
+    let resolver: ReturnType<typeof createResolver> | undefined;
+    const positionAt = async (marcherId: number, beat: number): Promise<XY> => {
+        resolver ??= createResolver((await readTimelineTables(tx)).snapshot);
+        return resolver.positionAt(marcherId, beat);
+    };
+    // A kept spot is the designer's: dragging it back never clears it (only `clearOwn` does)
+    const keptOwn = await keptAmong(
+        tx,
+        [...own.values()].map((r) => r.id),
+    );
+    const toClear: DatabaseTimelineAssignment[] = [];
+    const kept: TimelineMarcherMove[] = [];
+    for (const move of moves) {
+        const point: XY = [move.x, move.y];
+        const ownMove = own.get(move.marcherId);
+        if (ownMove) {
+            const arrival = await positionAt(move.marcherId, range.end);
+            const back =
+                !samePosition(point, arrival) &&
+                samePosition(
+                    point,
+                    await positionAt(move.marcherId, range.start),
+                );
+            if (clearOwn || (back && !keptOwn.has(ownMove.id)))
+                toClear.push(ownMove);
+            else kept.push(move);
+            continue;
+        }
+        // In the range's timeline already: `skipUnchanged` below drops a move that changes nothing
+        if (
+            !timelineOf.has(move.marcherId) &&
+            samePosition(point, await positionAt(move.marcherId, range.end))
+        )
+            continue;
+        kept.push(move);
+    }
+
+    await clearOwnPageMoves(tx, toClear);
+    if (toClear.length > 0)
+        result.cleared = toClear.map((r) => r.marcher_id).sort((x, y) => x - y);
+
+    const toAdd = kept
+        .map((m) => m.marcherId)
+        .filter((id) => !timelineOf.has(id));
     let passThrough: TimelinePassThrough | undefined;
     if (toAdd.length > 0) {
         const { timelineId, createdTimeline, overridden, caughtUp } =
@@ -586,9 +920,22 @@ export const moveMarchersInRangeInTransaction = async ({
                 passThrough: true,
             });
         for (const id of toAdd) timelineOf.set(id, timelineId);
-        const passed = [
-            ...new Set([...overridden, ...caughtUp].map((m) => m.marcherId)),
-        ].sort((a, b) => a - b);
+        const flags = [
+            ...new Set(
+                grid.pages
+                    .map((p) => p.end)
+                    .filter((beat) => range.start < beat && beat < range.end),
+            ),
+        ].sort((x, y) => x - y);
+        // Every added marcher passes the flags inside the range, stored moves or not
+        const passed =
+            flags.length > 0
+                ? [...toAdd].sort((x, y) => x - y)
+                : [
+                      ...new Set(
+                          [...overridden, ...caughtUp].map((m) => m.marcherId),
+                      ),
+                  ].sort((x, y) => x - y);
         if (passed.length > 0) {
             const labels: string[] = [];
             for (const id of passed) labels.push(await marcherLabel(tx, id));
@@ -598,23 +945,22 @@ export const moveMarchersInRangeInTransaction = async ({
                 labels,
                 overridden: distinctRanges(overridden),
                 caughtUp: distinctRanges(caughtUp),
+                flags,
                 ...(createdTimeline ? { createdTimelineId: timelineId } : {}),
             };
         }
     }
     // One move per timeline the marchers are in (one, except in a file from before C-12)
-    const result: TimelineMoveResult = {
-        homes: [],
-        slots: [],
-        convertedTransitionIds: [],
-    };
-    for (const timelineId of new Set(timelineOf.values())) {
+    for (const timelineId of new Set(
+        kept.map((m) => timelineOf.get(m.marcherId)!),
+    )) {
         const part = await moveMarchersInTimelineInTransaction({
             tx,
             timelineId,
-            moves: moves.filter(
+            moves: kept.filter(
                 (m) => timelineOf.get(m.marcherId) === timelineId,
             ),
+            skipUnchanged: true,
         });
         result.slots.push(...part.slots);
         result.convertedTransitionIds.push(...part.convertedTransitionIds);
@@ -624,8 +970,9 @@ export const moveMarchersInRangeInTransaction = async ({
 };
 
 /**
- * **Only change Page N** (research/ownership/10-cross-page-windows.md §4.1): the toast's way back
- * from a drag that passed through pages. Takes `marcherIds` out of the timeline over `range` (the
+ * **Keep Page N as a stop** (research/ownership/10-cross-page-windows.md §4.1, named "Only change
+ * Page N" there, then "Start from Page N" by defined-coordinates 07c §2, and named for what it
+ * restores by 08): the toast's way back from a drag that passed through pages. Takes `marcherIds` out of the timeline over `range` (the
  * drag's), deletes that timeline when the drag created it (`deleteIfEmpty`) and nobody is left in
  * it, then moves them over `[from, range.end)` instead, `from` being the last flag inside the
  * range. Each marcher keeps where it is at the range's end now, so later nudges in the window are
@@ -712,51 +1059,206 @@ export const moveMarchersFromFlagInstead = async ({
         },
     );
 
+/** Thrown inside an edit that turned out to write nothing, so it rolls back instead of failing. */
+class NothingWritten extends Error {
+    constructor(readonly result: TimelineMoveResult) {
+        super("nothing to write");
+    }
+}
+
+const wroteSomething = (r: TimelineMoveResult): boolean =>
+    r.homes.length > 0 ||
+    r.slots.length > 0 ||
+    r.convertedTransitionIds.length > 0 ||
+    (r.cleared?.length ?? 0) > 0;
+
 /**
  * A canvas move as one undoable edit (UI-9 Editing, Home; UI-10): the homes for `{kind: "home"}`,
  * the endings in the timeline for `{kind: "timeline"}` (`moveMarchersInTimelineInTransaction`),
  * and the window's timeline, joined as needed, for `{kind: "range"}`
- * (`moveMarchersInRangeInTransaction`). Nothing to move opens no edit.
+ * (`moveMarchersInRangeInTransaction`, which `clearOwn` is passed to). Nothing to move, or a range
+ * move that moves nobody, opens no edit.
  */
 export const moveMarchersInTarget = async ({
     db,
     target,
     moves,
+    clearOwn = false,
+    onStart,
 }: {
     db: DbConnection;
     target: TimelineEditTarget;
     moves: readonly TimelineMarcherMove[];
+    /** Range moves only: delete the marchers' own moves over the page box (set to previous page) */
+    clearOwn?: boolean;
+    /**
+     * Called inside the edit before it writes, when every earlier write has reached the resolver,
+     * so it can read the positions the edit starts from (**Move them too**)
+     */
+    onStart?: () => void;
 }): Promise<TimelineMoveResult> => {
     if (moves.length === 0)
         return { homes: [], slots: [], convertedTransitionIds: [] };
-    return await transactionWithHistory(db, "moveMarchers", async (tx) => {
-        if (target.kind === "timeline")
-            return await moveMarchersInTimelineInTransaction({
+    try {
+        return await transactionWithHistory(db, "moveMarchers", async (tx) => {
+            onStart?.();
+            if (target.kind === "timeline")
+                return await moveMarchersInTimelineInTransaction({
+                    tx,
+                    timelineId: target.timelineId,
+                    moves,
+                    ghosts: target.ghosts ?? false,
+                });
+            if (target.kind === "range") {
+                const result = await moveMarchersInRangeInTransaction({
+                    tx,
+                    range: { start: target.start, end: target.end },
+                    moves,
+                    clearOwn,
+                });
+                // An edit that writes nothing can't be an undo step
+                if (!wroteSomething(result)) throw new NothingWritten(result);
+                return result;
+            }
+            refuseDuplicateMarchers(moves);
+            for (const m of moves)
+                assertValid(validateDestination([m.x, m.y]), "position");
+            await updateMarcherHomesInTransaction({
                 tx,
-                timelineId: target.timelineId,
-                moves,
-                ghosts: target.ghosts ?? false,
+                modifiedHomes: moves.map((m) => ({
+                    marcherId: m.marcherId,
+                    home: [m.x, m.y],
+                })),
             });
-        if (target.kind === "range")
-            return await moveMarchersInRangeInTransaction({
-                tx,
-                range: { start: target.start, end: target.end },
-                moves,
-            });
-        refuseDuplicateMarchers(moves);
-        for (const m of moves)
-            assertValid(validateDestination([m.x, m.y]), "position");
-        await updateMarcherHomesInTransaction({
-            tx,
-            modifiedHomes: moves.map((m) => ({
-                marcherId: m.marcherId,
-                home: [m.x, m.y],
-            })),
+            return {
+                homes: moves.map((m) => m.marcherId),
+                slots: [],
+                convertedTransitionIds: [],
+            };
         });
-        return {
-            homes: moves.map((m) => m.marcherId),
-            slots: [],
-            convertedTransitionIds: [],
-        };
-    });
+    } catch (e) {
+        if (e instanceof NothingWritten) return e.result;
+        throw e;
+    }
+};
+
+/** One marcher's later move that **Move them too** shifts: the slot it arrives in, and by how much. */
+export interface SlotShift {
+    marcherId: number;
+    transitionId: number;
+    slotIndex: number;
+    dx: number;
+    dy: number;
+}
+
+/** The transitions among `transitionIds` whose destination is a shape. */
+export const shapeBackedTransitionIds = async ({
+    db,
+    transitionIds,
+}: {
+    db: DbConnection;
+    transitionIds: readonly number[];
+}): Promise<Set<number>> => {
+    if (transitionIds.length === 0) return new Set();
+    const t = schema.timeline_transitions;
+    const rows = await db
+        .select({ id: t.id, shapeId: t.dest_shape_id })
+        .from(t)
+        .where(inArray(t.id, [...new Set(transitionIds)]))
+        .all();
+    return new Set(rows.filter((r) => r.shapeId !== null).map((r) => r.id));
+};
+
+class NothingShifted extends Error {
+    constructor() {
+        super("nothing to shift");
+    }
+}
+
+/**
+ * **Move them too** (timeline mode, defined-coordinates 09): moves each slot's destination by its
+ * offset, as one undoable edit. Shape-backed transitions are skipped (their slots have no point of
+ * their own), as are slots that are gone. Later pages that hold from the moved destinations follow.
+ *
+ * @returns the shifts written (empty, with no edit, when none could be)
+ */
+export const shiftSlotDestinations = async ({
+    db,
+    shifts,
+}: {
+    db: DbConnection;
+    shifts: readonly SlotShift[];
+}): Promise<SlotShift[]> => {
+    if (shifts.length === 0) return [];
+    try {
+        return await transactionWithHistory(
+            db,
+            "shiftSlotDestinations",
+            async (tx) => {
+                const t = schema.timeline_transitions;
+                const d = schema.timeline_slot_destinations;
+                const shapeless = new Set(
+                    (
+                        await tx
+                            .select({ id: t.id, shapeId: t.dest_shape_id })
+                            .from(t)
+                            .where(
+                                inArray(
+                                    t.id,
+                                    shifts.map((s) => s.transitionId),
+                                ),
+                            )
+                            .all()
+                    )
+                        .filter((r) => r.shapeId === null)
+                        .map((r) => r.id),
+                );
+                const written: SlotShift[] = [];
+                for (const shift of shifts) {
+                    if (!shapeless.has(shift.transitionId)) continue;
+                    const point = await tx
+                        .select({ x: d.x, y: d.y })
+                        .from(d)
+                        .where(
+                            and(
+                                eq(d.transition_id, shift.transitionId),
+                                eq(d.slot_index, shift.slotIndex),
+                            ),
+                        )
+                        .get();
+                    if (!point) continue;
+                    await updateTimelineSlotDestinationInTransaction({
+                        tx,
+                        transitionId: shift.transitionId,
+                        slotIndex: shift.slotIndex,
+                        point: [point.x + shift.dx, point.y + shift.dy],
+                    });
+                    written.push(shift);
+                }
+                // An edit that writes nothing can't be an undo step
+                if (written.length === 0) throw new NothingShifted();
+                // A moved kept spot is its marcher's own move from now on (as writeSlotMoves)
+                const a = schema.timeline_assignments;
+                const moved: number[] = [];
+                for (const shift of written) {
+                    const rows = await tx
+                        .select({ id: a.id })
+                        .from(a)
+                        .where(
+                            and(
+                                eq(a.transition_id, shift.transitionId),
+                                eq(a.slot_index, shift.slotIndex),
+                            ),
+                        )
+                        .all();
+                    moved.push(...rows.map((r) => r.id));
+                }
+                await clearKeptMarkersInTransaction(tx, moved);
+                return written;
+            },
+        );
+    } catch (e) {
+        if (e instanceof NothingShifted) return [];
+        throw e;
+    }
 };

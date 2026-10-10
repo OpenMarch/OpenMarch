@@ -11,7 +11,10 @@ import {
     marcherPagesByPageId,
     updateMarcherPages,
 } from "@/db-functions/marcherPage";
-import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
+import {
+    moveMarchersInTarget,
+    moveMarchersOnPage,
+} from "@/db-functions/timelineMoves";
 import { createTimelineShapesInTransaction } from "@/db-functions/timelineShapes";
 import {
     setTimelineTransitionDestinationInTransaction,
@@ -32,7 +35,7 @@ import { pageEndBeat } from "../timelineCanvas";
 import {
     copyPagePositions,
     TimelineNotReadyError,
-    type TimelineMoveRequest,
+    type TimelineNeighborPageRequest,
 } from "../timelineCoordinateWrites";
 import {
     startTimelineResolver,
@@ -121,7 +124,8 @@ const t = (key: string, params?: Record<string, string | number>) =>
 
 /**
  * Runs the action as the handler does, with the flag on: `writeTimeline` is the real
- * `moveMarchersOnPage` (the mutation's `mutateAsync` in the app). Returns the result and the spies.
+ * `moveMarchersInTarget` (the mutation's `mutateAsync` in the app). Returns the result and the
+ * spies.
  */
 const runTimeline = async (
     db: DbConnection,
@@ -141,8 +145,8 @@ const runTimeline = async (
         onSuccess?: () => void;
     },
 ) => {
-    const writeTimeline = vi.fn((request: TimelineMoveRequest) =>
-        moveMarchersOnPage({ db, ...request }),
+    const writeTimeline = vi.fn((request: TimelineNeighborPageRequest) =>
+        moveMarchersInTarget({ db, ...request }),
     );
     const writePages = vi.fn();
     const notify = {
@@ -573,16 +577,26 @@ describeDbTests("set marchers to the previous or next page, flag on", (it) => {
         await runTimeline(db, args);
         const history = await undoRows(db);
 
-        // Marcher 4 is already there
+        // Marcher 4 is already there. Previous still asks (it may have an own move to clear),
+        // but its move is shared with the others, so nothing is written
         const again = await runTimeline(db, args);
-
         expect(again.result).toBe(1);
-        expect(again.writeTimeline).not.toHaveBeenCalled();
+        expect(again.writeTimeline).toHaveBeenCalledTimes(1);
         expect(again.notify.success).toHaveBeenCalledTimes(1);
         expect(await undoRows(db)).toEqual(history);
+
+        // Next with every marcher already there doesn't write at all
+        await runTimeline(db, { ...args, page: pages[2]!, direction: "next" });
+        const next = await runTimeline(db, {
+            ...args,
+            page: pages[2]!,
+            direction: "next",
+        });
+        expect(next.result).toBe(1);
+        expect(next.writeTimeline).not.toHaveBeenCalled();
     });
 
-    it("a marcher with no move ending at the page is refused; nothing is written and no success shows", async ({
+    it("next on a page the marcher only holds through moves it there (sparse rows), as one undoable edit", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -596,8 +610,8 @@ describeDbTests("set marchers to the previous or next page, flag on", (it) => {
         await deleteAssignmentEndingAt(db, 1, endBeat);
         await startTimelineResolver(db);
         const before = await timelineRows(db);
-        const history = await undoRows(db);
-        const writes: Promise<unknown>[] = [];
+        const target = positionsAt(pageEndBeat(pages[4]!));
+        const others = positionsAt(endBeat);
 
         const { result, writeTimeline, notify } = await runTimeline(db, {
             page,
@@ -606,13 +620,17 @@ describeDbTests("set marchers to the previous or next page, flag on", (it) => {
             scope: "all",
         });
 
-        expect(result).toBeNull();
+        expect(result).toBe(resolver().marcherIds().length);
         expect(writeTimeline).toHaveBeenCalledTimes(1);
-        writes.push(writeTimeline.mock.results[0]!.value as Promise<unknown>);
-        await expect(writes[0]).rejects.toMatchObject({ code: "E-ARGS" });
-        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.success).toHaveBeenCalledTimes(1);
+        const after = positionsAt(endBeat);
+        for (const id of resolver().marcherIds())
+            expect(after[id], `marcher ${id}`).toEqual(target[id]);
+        expect(others[1]).not.toEqual(target[1]);
+
+        const undo = await performUndo(db);
+        expect(undo.success, undo.error?.message).toBe(true);
         expect(await timelineRows(db)).toEqual(before);
-        expect(await undoRows(db)).toEqual(history);
     });
 
     it("a shape-backed transition switches to individual destinations", async ({

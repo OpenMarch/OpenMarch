@@ -1,5 +1,4 @@
 import {
-    moveMarchersInTarget,
     type TimelineEditTarget,
     type TimelineMarcherMove,
     type TimelineMovePage,
@@ -16,7 +15,7 @@ import {
 } from "./timelineIsolationPlan";
 import type { CoordinateRecord } from "@/utilities/CoordinateActions";
 import { pageEndBeat } from "./timelineCanvas";
-import { toastPassThrough } from "./timelinePassThrough";
+import { moveMarchersAndOfferFollowUp } from "./timelineMoveThemToo";
 import {
     timelineResolverSettled,
     useTimelineResolverStore,
@@ -40,8 +39,9 @@ import {
  *   seen where it lands.
  *
  * Nothing selected is refused with a hint (`TimelineEditRefusedError`). "Set marchers to the
- * previous or next page" (P7.6) still copies page positions through `copyPagePositions` until
- * P8.12 moves it onto the selection. With the flag off, nothing here runs.
+ * previous or next page" (P7.6) plans with `copyPagePositions` and writes over the selected page's
+ * box with the same range writer (`neighborPageTarget`), so it works on a page the marchers only
+ * hold through. With the flag off, nothing here runs.
  */
 
 /** The x/y fields every page-era coordinate tool reads and writes. */
@@ -50,9 +50,6 @@ export interface MarcherXY {
     x: number;
     y: number;
 }
-
-/** The parts of a `Page` the page-based write path needs. */
-export type TimelineWritePage = TimelineMovePage & { readonly id: number };
 
 /** Thrown when timeline mode can't read positions because the resolver isn't ready yet. */
 export class TimelineNotReadyError extends Error {
@@ -237,8 +234,8 @@ export function timelineCoordinateRecords(
 /**
  * Timeline mode's `useUpdateSelectedMarchers`: applies `transform` to the marchers' current
  * positions where the selection edits (`planCanvasEdit`; from the resolver, not `marcher_pages`)
- * and writes the result as one `moveMarchersInTarget` edit, saying what it passed through
- * (`toastPassThrough`).
+ * and writes the result as one `moveMarchersInTarget` edit, saying what it passed through and
+ * offering **Move them too** (`moveMarchersAndOfferFollowUp`).
  *
  * @returns the transformed coordinates
  * @throws TimelineEditRefusedError when the selection refuses canvas moves
@@ -259,12 +256,11 @@ export async function transformMarchersInSelection<R extends MarcherXY>({
     snapIsolatedPlayheadToEnd();
     const next = transform(timelineCoordinateRecords(plan.beat, marcherIds));
     const moves = toTimelineMoves(next);
-    const result = await moveMarchersInTarget({
-        db,
+    await moveMarchersAndOfferFollowUp({
+        database: db,
         target: plan.target,
         moves,
     });
-    toastPassThrough(result.passThrough);
     return next;
 }
 
@@ -285,18 +281,20 @@ export interface PagePositionCopy {
     marcherIds: number[];
     /** One move per marcher whose position on the target page changes */
     moves: TimelineMarcherMove[];
+    /** One move per marcher in `marcherIds`, to its source position, changed or not */
+    targets: TimelineMarcherMove[];
 }
 
 /**
  * "Set all or selected marchers to the previous or next page" in timeline mode
  * (docs/timeline/phases/07-page-parity.md P7.6). Copies each marcher's position on `source` (the
- * resolver at its end beat, what the canvas draws there) to `page`, as moves for
- * `moveMarchersOnPage`. `marcher_pages` is never read: its rows can be stale or missing in timeline
- * mode.
+ * resolver at its end beat, what the canvas draws there) to `page`, as moves over the page's box
+ * (`neighborPageTarget`). `marcher_pages` is never read: its rows can be stale or missing in
+ * timeline mode.
  *
- * Marchers already at the source position on `page` get no move, so a marcher that holds still
- * across the two pages is not touched (it may have no move ending at the page's end beat, which
- * `moveMarchersOnPage` would refuse). Positions are compared exactly, since they are copied.
+ * `moves` leaves out marchers already at the source position on `page` (compared exactly, since
+ * they are copied); `targets` has every marcher, for set to previous page, which also clears a
+ * marcher's own move on the page when it already goes nowhere.
  *
  * @param marcherIds the marchers to copy; all marchers the resolver knows when omitted. Marchers
  *   the resolver doesn't know are dropped.
@@ -322,12 +320,28 @@ export function copyPagePositions({
     const sourceBeat = pageEndBeat(source);
     const targetBeat = pageEndBeat(page);
     const moves: TimelineMarcherMove[] = [];
+    const targets: TimelineMarcherMove[] = [];
     for (const marcherId of ids) {
         const [x, y] = resolver.positionAt(marcherId, sourceBeat);
         const [currentX, currentY] = resolver.positionAt(marcherId, targetBeat);
+        targets.push({ marcherId, x, y });
         if (x !== currentX || y !== currentY) moves.push({ marcherId, x, y });
     }
-    return { marcherIds: ids, moves };
+    return { marcherIds: ids, moves, targets };
+}
+
+/**
+ * Where set to previous or next page writes on `page`: the homes on the first page, otherwise the
+ * page's box `[first beat, end beat)` through the range writer, like a drag with the start flag on
+ * the previous page's flag and the playhead on this one's (UI-10).
+ *
+ * @throws Error for a page with no beats
+ */
+export function neighborPageTarget(page: TimelineMovePage): TimelineEditTarget {
+    if (page.previousPageId === null) return { kind: "home" };
+    const first = page.beats[0];
+    if (!first) throw new Error("This page has no beats, so it has no box.");
+    return { kind: "range", start: first.index, end: pageEndBeat(page) };
 }
 
 /** The timeline move for each changed coordinate. Any `page_id` on them is ignored. */
@@ -337,12 +351,14 @@ export const toTimelineMoves = (
     changes.map((c) => ({ marcherId: c.marcher_id, x: c.x, y: c.y }));
 
 /**
- * What "set marchers to the previous or next page" hands to `moveMarchersOnPage`: the page and its
- * moves. P8.12 moves that action onto the selection.
+ * What "set marchers to the previous or next page" hands to `moveMarchersInTarget`: the page's box
+ * or the homes (`neighborPageTarget`), the moves, and whether to clear the marchers' own moves on
+ * the page first (set to previous page).
  */
-export interface TimelineMoveRequest {
-    page: TimelineWritePage;
+export interface TimelineNeighborPageRequest {
+    target: TimelineEditTarget;
     moves: TimelineMarcherMove[];
+    clearOwn: boolean;
 }
 
 /** What a canvas move hands to the timeline write path (`moveMarchersInTarget`). */

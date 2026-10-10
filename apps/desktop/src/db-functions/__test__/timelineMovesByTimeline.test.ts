@@ -290,12 +290,10 @@ describeDbTests("moving marchers in the selected timeline (UI-9)", (it) => {
             end: timeline.end_beat,
             layer: 1,
         });
-        // UI-10: the refusal names the move in the way by its beats
+        // UI-10: the refusal names the move in the way, in pages and counts (never beats)
         await expectRefused(
             db,
-            new RegExp(
-                `another move over beats \\[${timeline.end_beat - 1}, ${timeline.end_beat}\\)`,
-            ),
+            /^E-ARGS: marcher T6's position at Page 2 count 8 comes from Move 1 \(Page 2, count 8\), not this move\. Put the start flag and playhead on that move's edges to edit it\.$/,
             () =>
                 moveMarchersInTarget({
                     db,
@@ -360,7 +358,7 @@ describeDbTests("moving marchers in the selected timeline (UI-9)", (it) => {
         });
         await expectRefused(
             db,
-            /ends at beat .* before the timeline's end/,
+            /^E-ARGS: marcher T7 stops at Page 2 count 7, before this move ends \(Page 2 count 8\)\. Edit it in the inspector\.$/,
             () =>
                 moveMarchersInTarget({
                     db,
@@ -627,15 +625,84 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
             layer: 5,
         });
         // Marcher 5 would be added before marcher 6's move is refused: nothing may stay written
-        await expectRefused(db, /another move over beats/, () =>
-            moveMarchersInTarget({
-                db,
-                target: window,
-                moves: [
-                    { marcherId: 5, x: 230, y: 240 },
-                    { marcherId: 6, x: 201, y: 211 },
-                ],
-            }),
+        await expectRefused(
+            db,
+            /position at Page 3 count 3 comes from Move 2 \(Page 3, count 3\), not this move/,
+            () =>
+                moveMarchersInTarget({
+                    db,
+                    target: window,
+                    moves: [
+                        { marcherId: 5, x: 230, y: 240 },
+                        { marcherId: 6, x: 201, y: 211 },
+                    ],
+                }),
+        );
+    });
+
+    it("names a page's move in the way by its page, never beats (wp18)", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const pages = await setUp(db);
+        const page3 = await timelineOf(db, pages[3]!);
+        const window = {
+            kind: "range" as const,
+            start: page3.start_beat,
+            end: page3.start_beat + 3,
+        };
+        await moveMarchersInTarget({
+            db,
+            target: window,
+            moves: [{ marcherId: 6, x: 200, y: 210 }],
+        });
+        // A higher layer over page 3's whole box, in page 3's own timeline
+        await addRow(db, {
+            marcherId: 6,
+            start: page3.start_beat,
+            end: page3.end_beat,
+            layer: 5,
+            timelineId: page3.id,
+        });
+        await expectRefused(
+            db,
+            /^E-ARGS: marcher T6's position at Page 3 count 3 comes from Page 3's move, not this move\. Put the start flag and playhead on that move's edges to edit it\.$/,
+            () =>
+                moveMarchersInTarget({
+                    db,
+                    target: window,
+                    moves: [{ marcherId: 6, x: 201, y: 211 }],
+                }),
+        );
+    });
+
+    it("names pages as the file numbers them (pageNumberOffset, wp18)", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const pages = await setUp(db);
+        await db.delete(schema.workspace_settings);
+        await db.insert(schema.workspace_settings).values({
+            id: 1,
+            json_data: JSON.stringify({ pageNumberOffset: 1 }),
+        });
+        const timeline = await timelineOf(db, pages[2]!);
+        await addRow(db, {
+            marcherId: 6,
+            start: timeline.end_beat - 1,
+            end: timeline.end_beat,
+            layer: 1,
+        });
+        // The page that is "Page 2" with no offset is "Page 3" with an offset of 1
+        await expectRefused(
+            db,
+            /^E-ARGS: marcher T6's position at Page 3 count 8 comes from Move 1 \(Page 3, count 8\), not this move\./,
+            () =>
+                moveMarchersInTarget({
+                    db,
+                    target: { kind: "timeline", timelineId: timeline.id },
+                    moves: [{ marcherId: 6, x: 10, y: 10 }],
+                }),
         );
     });
 
@@ -690,6 +757,7 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
                 { start: second.start_beat, end: second.end_beat },
             ],
             caughtUp: [],
+            flags: [first.end_beat],
             createdTimelineId: expect.any(Number),
         });
         await timelineResolverSettled();
@@ -752,7 +820,7 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
         expect(result.passThrough).toBeUndefined();
     });
 
-    it("Only change Page N: takes the marchers out of the long move, deletes it when empty, and edits the last page instead, as one undoable edit", async ({
+    it("Keep Page N as a stop: takes the marchers out of the long move, deletes it when empty, and edits the last page instead, as one undoable edit", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -797,7 +865,7 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
         expect(await snapshot(db)).toEqual(passedThrough);
     });
 
-    it("Only change Page N refuses a flag outside the range, and marchers no longer in the move", async ({
+    it("Keep Page N as a stop refuses a flag outside the range, and marchers no longer in the move", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -822,7 +890,7 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
             }),
         );
     });
-    it("Only change Page N keeps where the marchers are now, not where the first drag put them", async ({
+    it("Keep Page N as a stop keeps where the marchers are now, not where the first drag put them", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -855,7 +923,7 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
         expect(resolver().positionAt(5, range.end)).toEqual([204, 210]);
     });
 
-    it("Only change Page N keeps a timeline it didn't create, and other marchers in the long move", async ({
+    it("Keep Page N as a stop keeps a timeline it didn't create, and other marchers in the long move", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -901,7 +969,7 @@ describeDbTests("moving marchers in an edit window (UI-10)", (it) => {
         expect(resolver().positionAt(5, range.end)).toEqual([200, 210]);
     });
 
-    it("Only change Page N never deletes an empty timeline the user kept over the range", async ({
+    it("Keep Page N as a stop never deletes an empty timeline the user kept over the range", async ({
         db,
         marchersAndPages: _,
     }) => {

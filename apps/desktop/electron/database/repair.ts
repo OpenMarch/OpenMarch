@@ -48,6 +48,8 @@ const DEPENDENT_TABLE_COPY_ORDER = [
     "timeline_transitions",
     "timeline_slot_destinations",
     "timeline_assignments",
+    // A kept marker after the assignment it marks
+    "timeline_kept_assignments",
 ];
 
 /**

@@ -64,17 +64,35 @@ const onMoveControl = (focused: Element | null) =>
     focused?.closest("[data-timeline-own-keys]") != null;
 
 /**
+ * The `data-timeline-own-keys` value for a plain button whose Space presses it too (the keep
+ * chain, the inspector's hold line buttons; pre-merge review): Space doesn't play there.
+ */
+export const OWN_KEYS_WITH_SPACE = "with-space";
+
+const takesSpace = (focused: Element | null) =>
+    focused
+        ?.closest("[data-timeline-own-keys]")
+        ?.getAttribute("data-timeline-own-keys") === OWN_KEYS_WITH_SPACE;
+
+const isPlainSpace = (event: KeyFields) =>
+    event.key === " " && !event.ctrlKey && !event.metaKey;
+
+/**
  * Whether a key belongs to the focused timeline move control (UI-14 round-2 review): on a clip,
  * its ⋯ button or name field, the Move card or the isolation bar (`data-timeline-own-keys`),
  * Enter activates the control and the arrows (and WASD) work it or do nothing, as anywhere else on
  * a web page. The app's registered shortcuts skip these keys there: Enter would create a shape,
- * the arrows and WASD would nudge the selected marchers unseen. Space isn't one: it still plays.
+ * the arrows and WASD would nudge the selected marchers unseen. Space isn't one: it still plays,
+ * except on a button marked `OWN_KEYS_WITH_SPACE`, which Space presses.
  */
 export const isTimelineOwnKey = (
     event: KeyFields,
     focused: Element | null,
 ): boolean =>
-    onMoveControl(focused) && (event.key === "Enter" || isPlainNudgeKey(event));
+    onMoveControl(focused) &&
+    (event.key === "Enter" ||
+        isPlainNudgeKey(event) ||
+        (isPlainSpace(event) && takesSpace(focused)));
 
 /**
  * Whether the app's nudge must skip a key (code review): on a move control no nudge key moves the

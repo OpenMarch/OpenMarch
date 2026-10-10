@@ -4,9 +4,10 @@ import type Page from "@/global/classes/Page";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import {
     copyPagePositions,
+    neighborPageTarget,
     timelinePositionsSettled,
     type PagePositionCopy,
-    type TimelineMoveRequest,
+    type TimelineNeighborPageRequest,
 } from "@/timeline/timelineCoordinateWrites";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 
@@ -15,11 +16,19 @@ import { toastTimelineError } from "@/timeline/timelineErrorMessages";
  * `RegisteredActionsHandler`, as a plain function so both modes can be tested without React.
  *
  * - **Page mode** (unchanged): copies the neighbor page's `marcher_pages` rows to the selected page.
- * - **Timeline mode** (docs/timeline/phases/07-page-parity.md P7.6): waits for earlier timeline
- *   writes to reach the resolver, plans the moves with `copyPagePositions` (the resolver at the
- *   neighbor page's end beat), and writes them as one `moveMarchersOnPage` edit. `marcher_pages` is
- *   never read. The success message shows only once the edit is written; a refused edit writes
- *   nothing and the write's own error handler shows why.
+ * - **Timeline mode** (docs/timeline/phases/07-page-parity.md P7.6, reworked for sparse rows by
+ *   defined-coordinates README, Recommendation 3): waits for earlier timeline writes to reach the
+ *   resolver, plans the moves with `copyPagePositions` (the resolver at the neighbor page's end
+ *   beat), and writes them as one edit over the selected page's box with the range writer
+ *   (`neighborPageTarget`, `moveMarchersInTarget`), so it works on a page the marchers only hold
+ *   through:
+ *   - **Next page** moves each marcher to its next-page position there.
+ *   - **Previous page** clears each marcher's own move on the page, so the page follows earlier
+ *     pages again (and later edits before it carry through). A marcher whose move there is shared
+ *     with others, or longer than the page, is moved to its previous-page position instead.
+ *
+ *   `marcher_pages` is never read. The success message shows only once the edit is written; a
+ *   refused edit writes nothing and the write's own error handler shows why.
  */
 
 export type NeighborPageDirection = "previous" | "next";
@@ -37,10 +46,10 @@ export interface SetMarchersToNeighborPageArgs {
     /** Page mode's write (`updateMarcherPages`) */
     writePages: (changes: ModifiedMarcherPageArgs[]) => void;
     /**
-     * Timeline mode's write (`moveMarchersOnPage`'s `mutateAsync`). It rejects when the edit is
+     * Timeline mode's write (`moveMarchersInTarget`'s `mutateAsync`). It rejects when the edit is
      * refused, after its own error handler has shown the reason.
      */
-    writeTimeline: (request: TimelineMoveRequest) => Promise<unknown>;
+    writeTimeline: (request: TimelineNeighborPageRequest) => Promise<unknown>;
     notify: {
         success: (message: string) => unknown;
         error: (message: string) => unknown;
@@ -136,21 +145,26 @@ export async function setMarchersToNeighborPage({
     // plan starts from stale positions
     await timelinePositionsSettled();
     let copy: PagePositionCopy;
+    let target: TimelineNeighborPageRequest["target"];
     try {
         copy = copyPagePositions({
             page: selectedPage,
             source: neighbor,
             marcherIds,
         });
+        target = neighborPageTarget(selectedPage);
     } catch (e) {
         reportError(e);
         return null;
     }
     const count = copy.marcherIds.length;
     if (count === 0) return null;
-    if (copy.moves.length > 0) {
+    // Previous clears own moves even where they already go nowhere, so every marcher is sent
+    const clearOwn = direction === "previous" && target.kind === "range";
+    const moves = clearOwn ? copy.targets : copy.moves;
+    if (moves.length > 0) {
         try {
-            await writeTimeline({ page: selectedPage, moves: copy.moves });
+            await writeTimeline({ target, moves, clearOwn });
         } catch {
             // Refused or failed: nothing was written, and the write's error handler said why
             return null;

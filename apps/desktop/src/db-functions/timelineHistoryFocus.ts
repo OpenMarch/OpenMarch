@@ -16,7 +16,10 @@ import {
  * those marchers. In timeline mode those rows are frozen page-era data, so the same answer comes
  * from the action's committed change batch instead:
  *
- * - **Page of a change:** a marcher's home is where it stands on the first page. A transition,
+ * - **Page of a change:** a marcher's home is where it stands on the first page. A marcher the
+ *   action added or removed belongs to the current page instead (the first page when there is
+ *   none): a new marcher has only a home and stands there on every page until moved, so undoing
+ *   "add marcher" keeps you where you are rather than jumping to the first page. A transition,
  *   assignment or slot destination belongs to the page its move ends on: the page whose beats
  *   `(start, end]` hold the row's end beat, which is the page "move a marcher on page N" edits
  *   (D-16). A shape belongs to the pages of the transitions that end on it. Rows are read as they
@@ -31,7 +34,7 @@ import {
  *   exist, and undoing a marcher delete selects the restored marchers.
  * - **Page to show:** the current page if the action changed it, so undoing an edit on the page
  *   you are looking at doesn't move you; otherwise the earliest changed page, which is where a
- *   ripple or a marcher add begins.
+ *   ripple begins.
  * - **Marchers to select:** the marchers changed on that page, or no change to the selection when
  *   there are none (for example a shape no transition uses).
  */
@@ -86,6 +89,8 @@ interface BatchScan {
     transitionIds: Set<number>;
     /** Transitions whose assignments or destinations changed: those name the marchers */
     transitionsWithSlotChanges: Set<number>;
+    /** Marchers whose row the action inserted or deleted, rather than only moved their home */
+    addedOrRemovedMarchers: Set<number>;
 }
 
 const scanBatch = (batch: ChangeBatch, beatsChanged: boolean): BatchScan => {
@@ -96,6 +101,7 @@ const scanBatch = (batch: ChangeBatch, beatsChanged: boolean): BatchScan => {
         shapeIds: new Set(),
         transitionIds: new Set(),
         transitionsWithSlotChanges: new Set(),
+        addedOrRemovedMarchers: new Set(),
     };
     for (const change of batch.changes) {
         const image = current(change, scan.beatsChanged);
@@ -116,6 +122,11 @@ const scanBatch = (batch: ChangeBatch, beatsChanged: boolean): BatchScan => {
             scan.transitionsWithSlotChanges.add(change.rowId);
         } else if (change.table === "shapes") {
             scan.shapeIds.add(change.rowId);
+        } else if (
+            change.table === "marchers" &&
+            (change.before === null || change.after === null)
+        ) {
+            scan.addedOrRemovedMarchers.add(change.rowId);
         }
     }
     return scan;
@@ -161,6 +172,7 @@ const changedPages = (
     pages: readonly GridPage[],
     scan: BatchScan,
     live: Awaited<ReturnType<typeof readLiveRows>>,
+    currentPage: GridPage | undefined,
 ): Map<number, Set<number>> => {
     /** Marchers with an assignment in `transitionId` (in `slot`, if given), now or in the batch */
     const marchersIn = (transitionId: number, slot?: number): number[] => {
@@ -199,7 +211,12 @@ const changedPages = (
         const image = current(change, scan.beatsChanged);
         switch (change.table) {
             case "marchers":
-                add(pages[0], [change.rowId]);
+                add(
+                    scan.addedOrRemovedMarchers.has(change.rowId)
+                        ? (currentPage ?? pages[0])
+                        : pages[0],
+                    [change.rowId],
+                );
                 break;
             case "assignments": {
                 const end = num(image, "end");
@@ -259,7 +276,11 @@ export async function timelineHistoryFocus(
 
     const scan = scanBatch(batch, beatsChanged);
     const live = await readLiveRows(reader, scan);
-    const byPage = changedPages(batch, pages, scan, live);
+    const currentPage =
+        currentPageId === undefined
+            ? undefined
+            : pages.find((p) => p.id === currentPageId);
+    const byPage = changedPages(batch, pages, scan, live, currentPage);
     // A shape-only change (to a shape no transition uses) has no page
     if (byPage.size === 0) return NO_FOCUS();
 

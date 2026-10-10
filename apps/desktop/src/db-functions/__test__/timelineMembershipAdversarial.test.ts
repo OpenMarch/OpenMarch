@@ -643,7 +643,7 @@ describeDbTests("P8.14 adversarial", (it) => {
     });
 
     describe("new marchers", () => {
-        it("join every stored timeline in start order, nested 4 deep, skipping partial overlaps and duplicate ranges", async ({
+        it("join no stored timeline, nested 4 deep, partly overlapping or duplicated: home only (C-12)", async ({
             db,
             marchersAndPages,
         }) => {
@@ -676,47 +676,18 @@ describeDbTests("P8.14 adversarial", (it) => {
             });
             const id = created!.id;
             const home = await homeOf(db, id);
-            const rows = await db
-                .select({
-                    timeline: schema.timeline_transitions.timeline_id,
-                    layer: schema.timeline_assignments.layer,
-                })
-                .from(schema.timeline_assignments)
-                .innerJoin(
-                    schema.timeline_transitions,
-                    eq(
-                        schema.timeline_transitions.id,
-                        schema.timeline_assignments.transition_id,
-                    ),
-                )
-                .where(eq(schema.timeline_assignments.marcher_id, id))
-                .all();
+            // No timeline row was written for it
+            expect(await layersOf(db, id)).toEqual([]);
+            const snapAfter = await snapshot(db);
+            for (const table of [
+                "timelines",
+                "timeline_transitions",
+                "timeline_assignments",
+                "timeline_slot_destinations",
+            ])
+                expect(snapAfter[table], table).toEqual(snapBefore[table]);
             const tl = await db.select().from(schema.timelines).all();
-            const range = (tid: number) => {
-                const t = tl.find((x) => x.id === tid)!;
-                return `${t.start_beat}-${t.end_beat}`;
-            };
-            const got = rows
-                .map((r) => `${range(r.timeline)}@${r.layer}`)
-                .sort();
-            expect(got).toEqual(
-                [
-                    "0-32@0",
-                    "0-2@1",
-                    "4-12@1",
-                    "6-10@2",
-                    "8-9@3",
-                    "32-36@0",
-                ].sort(),
-            );
-            // one of the [4,12) pair joined
-            expect(
-                rows.filter((r) =>
-                    made
-                        .filter((m) => m.start_beat === 4)
-                        .some((m) => m.id === r.timeline),
-                ).length,
-            ).toBe(1);
+            expect(tl).toHaveLength(made.length + 1);
             const after = await sample(db);
             expect(diffs(before, after)).toEqual([]);
             for (const p of after.get(id)!) expect(p).toEqual(home);
@@ -759,16 +730,8 @@ describeDbTests("P8.14 adversarial", (it) => {
             const after = await sample(db, beats);
             expect(diffs(before, after, beats)).toEqual([]);
             for (const p of after.get(created!.id)!) expect(p).toEqual(home);
-            // Each page timeline (P9.10) at layer 0, and the range inside page 2 one layer up
-            const expected = [];
-            for (let i = 1; i < pages.length; i++) {
-                const range = pageRange(pages, i);
-                if (range.end > range.start)
-                    expected.push({ ...range, layer: 0 });
-                if (i === 2)
-                    expected.push({ ...insidePage(pages, 2), layer: 1 });
-            }
-            expect(await layersOf(db, created!.id)).toEqual(expected);
+            // No rows: it joins neither the page timelines (P9.10) nor the range inside page 2
+            expect(await layersOf(db, created!.id)).toEqual([]);
             expect(end).toBe(pageRange(pages, pages.length - 1).end);
         });
     });

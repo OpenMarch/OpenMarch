@@ -24,9 +24,10 @@ import { conToastError } from "@/utilities/utils";
 import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
-import { toastPassThrough } from "@/timeline/timelinePassThrough";
+import { moveMarchersAndOfferFollowUp } from "@/timeline/timelineMoveThemToo";
 import { db, schema } from "@/global/database/db";
-import { invalidateByPage } from "./sharedInvalidators";
+import { invalidateAfterMarcherPagesWrite } from "./sharedInvalidators";
+import { toastCarryForward } from "@/utilities/carryForwardToast";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -36,13 +37,9 @@ import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 import { appearanceModelRawToParsed } from "@/entity-components/appearance";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import {
-    moveMarchersInTarget,
-    moveMarchersOnPage,
-} from "@/db-functions/timelineMoves";
-import {
     transformMarchersInSelection,
     type TimelineEditRequest,
-    type TimelineMoveRequest,
+    type TimelineNeighborPageRequest,
 } from "@/timeline/timelineCoordinateWrites";
 import { useTimelineMode } from "./useWorkspaceSettings";
 
@@ -146,10 +143,13 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarcherPages: ModifiedMarcherPageArgs[]) =>
             updateMarcherPages({ db, modifiedMarcherPages }),
-        onSuccess: (_, variables) => {
-            // Invalidate all marcher pages queries
-            const pageIds = new Set<number>(variables.map((m) => m.page_id));
-            invalidateByPage(queryClient, pageIds);
+        onSuccess: (result, variables) => {
+            invalidateAfterMarcherPagesWrite(
+                queryClient,
+                variables.map((m) => m.page_id),
+                result,
+            );
+            void toastCarryForward(queryClient, result);
         },
         onError: (e, variables) => {
             toastTimelineError(e, `Error updating pages`, variables);
@@ -158,15 +158,21 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
 };
 
 /**
- * Timeline mode's write for "move these marchers on this page" (P7.2): one undoable edit through
- * `moveMarchersOnPage`. The resolver store picks the change up from the change log, so there is
- * nothing to invalidate. A refused move (for example a marcher with no move ending on the page)
- * shows its friendly message (P8.6).
+ * Timeline mode's write for "set marchers to the previous or next page" (P7.6): one undoable edit
+ * through `moveMarchersInTarget` over the page's box, clearing the marchers' own moves there for
+ * set to previous page. The resolver store picks the change up from the change log, so there is
+ * nothing to invalidate. A refused move shows its friendly message (P8.6); one that passed through
+ * page flags or other moves says so, and one that left later own moves behind offers **Move them
+ * too** (`moveMarchersAndOfferFollowUp`).
  */
-export const moveMarchersOnPageMutationOptions = () => {
+export const moveMarchersToNeighborPageMutationOptions = () => {
     return mutationOptions({
-        mutationFn: ({ page, moves }: TimelineMoveRequest) =>
-            moveMarchersOnPage({ db, page, moves }),
+        mutationFn: ({
+            target,
+            moves,
+            clearOwn,
+        }: TimelineNeighborPageRequest) =>
+            moveMarchersAndOfferFollowUp({ target, moves, clearOwn }),
         onError: (e, variables) => {
             toastTimelineError(e, `Error moving marchers`, variables);
         },
@@ -176,14 +182,15 @@ export const moveMarchersOnPageMutationOptions = () => {
 /**
  * Timeline mode's write for a canvas move (UI-9 Editing, P8.15): one undoable edit through
  * `moveMarchersInTarget`, setting homes or the endings in the selected timeline. A refused move
- * shows its friendly message; a move that passed through pages says so (`toastPassThrough`).
+ * shows its friendly message; a move that passed through page flags says so, and one that left
+ * later own moves behind offers **Move them too** (`moveMarchersAndOfferFollowUp`).
  */
 export const moveMarchersInTargetMutationOptions = () => {
     return mutationOptions({
+        // A drag over a window that crosses pages says what it passed through (UI-10), and one
+        // that left marchers' later moves behind offers to move them too
         mutationFn: ({ target, moves }: TimelineEditRequest) =>
-            moveMarchersInTarget({ db, target, moves }),
-        // A drag over a window that crosses pages says what it passed through (UI-10)
-        onSuccess: (result) => toastPassThrough(result.passThrough),
+            moveMarchersAndOfferFollowUp({ target, moves }),
         onError: (e, variables) => {
             toastTimelineError(e, `Error moving marchers`, variables);
         },
@@ -201,8 +208,13 @@ export const swapMarchersMutationOptions = (queryClient: QueryClient) => {
             marcher1Id: number;
             marcher2Id: number;
         }) => swapMarchers({ db, pageId, marcher1Id, marcher2Id }),
-        onSuccess: (_, variables) => {
-            void invalidateByPage(queryClient, new Set([variables.pageId]));
+        onSuccess: (result, variables) => {
+            invalidateAfterMarcherPagesWrite(
+                queryClient,
+                [variables.pageId],
+                result,
+            );
+            void toastCarryForward(queryClient, result);
 
             // Get the marchers so we can get the drill numbers for the success message
             const marcher1Promise = db.query.marchers.findFirst({
@@ -348,18 +360,20 @@ export const useUpdateSelectedMarchers = (
                     };
                 });
 
-            await updateMarcherPages({
+            const write = await updateMarcherPages({
                 db,
                 modifiedMarcherPages,
             });
-            return { newCoordinates };
+            return { newCoordinates, write };
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             // Timeline mode: the resolver store follows the change log
             if (timelineMode) return;
-            if (pageId != null)
-                void invalidateByPage(queryClient, new Set([pageId]));
-            else
+            if (pageId != null) {
+                const write = data && "write" in data ? data.write : undefined;
+                invalidateAfterMarcherPagesWrite(queryClient, [pageId], write);
+                void toastCarryForward(queryClient, write);
+            } else
                 console.error(
                     "No page ID provided on update success. This should never happen.",
                 );

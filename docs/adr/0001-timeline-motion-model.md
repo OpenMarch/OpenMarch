@@ -147,6 +147,58 @@ selected page. Rules on stored data, enforced by the write functions
 - Adding or deleting a page writes only page rows (and `last_page_counts`),
   never timeline rows.
 
+**Amendment (2026-10-08, project owner): a page has a position only where a marcher was
+moved.** No path writes timeline rows on a page's behalf:
+
+- Adding, splitting or appending a page writes only page rows. This removes the P7.4 holding
+  moves, which contradicted the rule above.
+- New marchers get a home and no moves.
+- The converter writes a slot only where a marcher's position differs from its previous one,
+  compared exactly. Positions at every flag are unchanged.
+
+A stored zero-motion move is designer intent, not filler. A marcher with no move over a page holds
+(spec R-6), so an edit carries forward to that marcher's next move. Deleting a page in timeline mode
+deletes its flag only by default; "Delete page and its moves" and Yank still remove the page's own
+moves, as an explicit command.
+
+Page mode applies the same meaning to its dense `marcher_pages` rows until the flip, with no schema
+change. A page-mode edit also rewrites the following run of rows that equal the old position, within
+1e-6.
+
+There is no schema or file-version change. Files converted by earlier development builds keep their
+holding moves and are converted again by hand, as for C-11. Research and the decision record are in
+`docs/timeline/research/defined-coordinates/`; the interaction is UI-18 in `docs/timeline/ui.md`.
+
+**Amendment (2026-10-09, project owner): kept spots are stored.** A designer can keep selected
+marchers on a later page, so that editing an earlier page no longer carries into it. This is
+timeline mode only; page mode keeps its runtime comparison. A kept spot must survive reopening the
+file and be told apart from a move that happens to go nowhere, so it is stored:
+
+- The move is an ordinary one: the marcher's own one-slot shapeless transition over the page box,
+  ending where the marcher stands there, with its assignment (C-12).
+- A new table, `timeline_kept_assignments`, marks that assignment as kept. It has
+  `assignment_id INTEGER PRIMARY KEY REFERENCES timeline_assignments(id) ON DELETE CASCADE` and
+  `created_at`, one row per kept assignment. Migration 0018 only creates the table.
+- It is a separate table so that the resolver and the change log are untouched. No column is
+  added to `timeline_assignments` or `timeline_transitions`, so the change log's row images (§5),
+  the `@openmarch/core` API (§4) and `ref/` stay as they are. The table has no change-log triggers
+  and the resolver never reads it. Views that show it follow the display version (P7.15).
+- Undo (§3): the table is in `tablesWithHistory`. Its key is the assignment id, which is the rowid,
+  so the delete inverse restores the same row (C-2). Deleting an assignment cascades to its marker.
+  The history triggers then log the marker after its assignment, so undo, which replays with
+  foreign keys off, re-inserts the marker first. No trigger reads the table, so that order is safe
+  (C-1). The keep commands delete the marker explicitly, before the move.
+- Edits: an edit that moves a kept spot's ending (a canvas drag on that page, or the inspector's
+  destination) makes it an ordinary own move and clears the marker in the same edit. A drag back
+  never clears a kept spot, and **Move them too** never offers one. Page deletes that take a
+  page's moves take a kept move like any other, with its marker; the flag delete and flag drags
+  keep both. The converter writes no markers.
+- File format (§6): the version stays 8, which is unreleased. Files from earlier development
+  builds get the empty table from migration 0018 when they open. A build without 0018 shows a kept
+  spot as an ordinary move that goes nowhere.
+
+The study is `docs/timeline/research/defined-coordinates/10-keep-later-pages-study.md`.
+
 Beat editing can still make two timelines share a range; that is in the
 `ui.md` backlog. The interaction is UI-9 in `docs/timeline/ui.md`.
 

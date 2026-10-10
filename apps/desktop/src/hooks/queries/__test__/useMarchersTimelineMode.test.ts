@@ -1,5 +1,5 @@
 import { vi, expect } from "vitest";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { QueryClient } from "@tanstack/react-query";
 import { describeDbTests, schema } from "@/test/base";
 import { timelineFixtureMode } from "@/test/timelineMode";
@@ -40,29 +40,22 @@ describeDbTests("marcher mutations take the file's mode", (it) => {
             .where(eq(schema.timeline_assignments.marcher_id, created!.id))
             .all();
         if (timelineFixtureMode()) {
-            // Its own one-slot move in every stored timeline of the converted show (UI-9 New
-            // marchers, P8.14), not a slot in the page moves
+            // A home and no moves (UI-18, ADR 0001 C-12: no row is written on a page's behalf):
+            // the converted show's transitions are untouched, and the marcher stands at home
             expect(transitions.length).toBeGreaterThan(0);
-            const timelines = await db.select().from(schema.timelines).all();
-            // Exactly one assignment per stored timeline
-            expect(assignments).toHaveLength(timelines.length);
-            const own = await db
-                .select()
-                .from(schema.timeline_transitions)
-                .where(
-                    inArray(
-                        schema.timeline_transitions.id,
-                        assignments.map((a) => a.transition_id),
-                    ),
-                )
-                .all();
-            expect(own.map((t) => t.timeline_id).sort()).toEqual(
-                timelines.map((t) => t.id).sort(),
-            );
-            for (const t of own) expect(t.slot_count).toBe(1);
+            expect(assignments).toEqual([]);
             expect(
-                own.some((t) => transitions.some((p) => p.id === t.id)),
-            ).toBe(false);
+                await db.select().from(schema.timeline_transitions).all(),
+            ).toEqual(transitions);
+            // Its home is its own, not on top of anyone else's
+            const marchers = await db.select().from(schema.marchers).all();
+            const own = marchers.find((m) => m.id === created!.id)!;
+            for (const m of marchers)
+                if (m.id !== own.id)
+                    expect([m.home_x, m.home_y]).not.toEqual([
+                        own.home_x,
+                        own.home_y,
+                    ]);
         } else {
             expect(transitions).toEqual([]);
             expect(assignments).toEqual([]);

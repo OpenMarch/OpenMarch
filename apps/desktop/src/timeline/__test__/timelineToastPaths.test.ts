@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
-import { moveMarchersOnPageMutationOptions } from "@/hooks/queries/useMarcherPages";
+import { moveMarchersToNeighborPageMutationOptions } from "@/hooks/queries/useMarcherPages";
 import {
     createMarchersMutationOptions,
     deleteMarchersMutationOptions,
@@ -35,7 +35,7 @@ const toasted = () => vi.mocked(conToastError).mock.calls[0]![0];
 describe("timeline write paths toast the mapped message", () => {
     it("a refused move (P7.2)", () => {
         fail(
-            moveMarchersOnPageMutationOptions(),
+            moveMarchersToNeighborPageMutationOptions(),
             new TimelineWriteError("E-A3", "overlap"),
         );
         expect(toasted()).toBe(TIMELINE_ERROR_MESSAGES["E-A3"]!.defaultMessage);
@@ -43,7 +43,7 @@ describe("timeline write paths toast the mapped message", () => {
 
     it("a refused move's E-ARGS keeps its own words", () => {
         fail(
-            moveMarchersOnPageMutationOptions(),
+            moveMarchersToNeighborPageMutationOptions(),
             new TimelineWriteError("E-ARGS", "marcher 3 has no move here"),
         );
         expect(toasted()).toBe("marcher 3 has no move here");

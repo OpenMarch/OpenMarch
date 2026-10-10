@@ -334,11 +334,12 @@ describe("planPageConversion", () => {
                 row(2, 103, 7, 7),
             ],
         });
-        // Marcher 2's first row is on page 2: it waits at its home on page 1. Marcher 3's last
-        // row is on page 1: it holds on pages 2 and 3.
+        // Marcher 2's first row is on page 2: it waits at its home on page 1, and that row is its
+        // home, so it has nothing to move to until page 3. Marcher 3's last row is on page 1: it
+        // holds on pages 2 and 3.
         expect(plan.transitions.map((t) => t.marcherIds)).toEqual([
             [1, 3],
-            [1, 2],
+            [1],
             [1, 2],
         ]);
         expect(plan.report.pages.map((p) => p.missingMarchers)).toEqual([
@@ -356,6 +357,69 @@ describe("planPageConversion", () => {
             "Page 2 [3, 5): marchers without a row hold: 3",
             "Page 3 [5, 7): marchers without a row hold: 3",
             "Homes from a later page (no page-0 row): marchers 2",
+        ]);
+    });
+
+    it("a marcher whose point is exactly where it already stands gets no slot (C-12)", () => {
+        const plan = planPageConversion({
+            pages: pagesOf(2, 2, 2, 2, 2),
+            marcherIds: [1, 2, 3],
+            marcherPages: [
+                row(1, 100, 0, 0),
+                row(2, 100, 5, 5),
+                row(3, 100, 3, 3),
+                // Marcher 1 moves, stays (a copied page), moves away and comes back
+                row(1, 101, 1, 1),
+                row(1, 102, 1, 1),
+                row(1, 103, 2, 2),
+                row(1, 104, 1, 1),
+                row(1, 105, 1, 1 + Number.EPSILON),
+                // Marcher 2 stands at home until page 4
+                row(2, 101, 5, 5),
+                row(2, 102, 5, 5),
+                row(2, 103, 5, 5),
+                row(2, 104, 6, 6),
+                row(2, 105, 6, 6),
+                // Marcher 3 has no row on page 2: it glides to the point it already stands on
+                row(3, 101, 3, 3),
+                row(3, 103, 3, 3),
+                row(3, 104, 3, 3),
+                row(3, 105, 3, 3),
+            ],
+        });
+        expect(
+            plan.transitions.map((t) => [t.pageId, t.marcherIds, t.points]),
+        ).toEqual([
+            [101, [1], [[1, 1]]],
+            // Page 2 (102): nobody moves, so no transition
+            [103, [1], [[2, 2]]],
+            [
+                104,
+                [1, 2],
+                [
+                    [1, 1],
+                    [6, 6],
+                ],
+            ],
+            // Only bit-equal points are left out
+            [105, [1], [[1, 1 + Number.EPSILON]]],
+        ]);
+        // A page nobody moves on is not a loss
+        expect(plan.report.pages.map((p) => p.skipped)).toEqual([
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+        ]);
+        expect(pageHasLoss(plan.report.pages[1]!)).toBe(false);
+        // Marcher 3's glide is still reported: its row is missing either way
+        expect(plan.report.pages[2]!.interpolated).toEqual([
+            { marcherId: 3, pathwayId: null, unusablePathwayId: null },
+        ]);
+        expect(describePageConversionReport(plan.report)).toEqual([
+            "Page 2 [3, 5): marchers without a row glide to an interpolated point: 3",
         ]);
     });
 

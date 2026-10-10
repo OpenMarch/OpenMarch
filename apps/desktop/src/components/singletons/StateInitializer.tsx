@@ -16,6 +16,7 @@ import {
     marcherShapeToShapePageArgs,
 } from "@/global/classes/canvasObjects/MarcherShape";
 import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
+import { pageAtPlayhead } from "@/timeline/timelinePlayhead";
 
 /**
  * A component that initializes the state of the application.
@@ -72,12 +73,20 @@ function StateInitializer() {
 
     /*******************************************************************/
 
-    // Select page 0 (first page in show order) when none are selected (e.g. app load / refresh)
+    // Select page 0 (first page in show order) when none are selected (e.g. app load / refresh).
+    // In timeline mode, the page at the paused playhead: when the selected page is deleted, the
+    // page that took its box, rather than home, which would move the playhead there (defined-coordinates 08)
     useEffect(() => {
         if (selectedPage == null && pages.length > 0) {
-            setSelectedPage(pages[0]);
+            const atPlayhead = timelineMode
+                ? pageAtPlayhead(
+                      pages,
+                      useTimelineSelectionStore.getState().playheadBeat,
+                  )
+                : null;
+            setSelectedPage(atPlayhead ?? pages[0]);
         }
-    }, [pages, selectedPage, setSelectedPage]);
+    }, [pages, selectedPage, setSelectedPage, timelineMode]);
 
     // Timeline mode (UI-9): opening a show selects home, with the playhead at beat 0
     useEffect(() => {

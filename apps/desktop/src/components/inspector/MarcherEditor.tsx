@@ -45,6 +45,8 @@ import {
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
+import TimelineHoldLine from "./TimelineHoldLine";
+import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 
 const DEFAULT_SORTING_THRESHOLD = 0.1;
 
@@ -542,6 +544,8 @@ function MarcherEditor() {
         () => selectedMarchers.map((marcher) => marcher.id),
         [selectedMarchers],
     );
+    // UI-18 keep later pages: the keep tooltips name the selected marchers
+    const selectedNameOf = useMarcherNameOf(selectedMarchers);
     const previousPage = useMemo(
         () => pages.find((p) => p.id === selectedPage?.previousPageId) ?? null,
         [pages, selectedPage?.previousPageId],
@@ -779,6 +783,11 @@ function MarcherEditor() {
                                         </div>
                                     </div>
                                 )}
+                            {/* Under the step sizes: hold or move on this page (UI-18) */}
+                            <TimelineHoldLine
+                                marcherIds={selectedMarcherIdList}
+                                nameOf={selectedNameOf}
+                            />
                             {selectedMarchers.length === 2 && (
                                 <RegisteredActionButton
                                     registeredAction={
@@ -1010,25 +1019,32 @@ function MarcherEditor() {
                                             </Select>
                                         </div>
                                     </div>
-                                    {stepSize !== undefined && (
-                                        <div className="flex justify-between px-6">
-                                            <label className="text-body leading-none opacity-80">
-                                                <T keyName="inspector.marcher.stepSize" />
-                                            </label>
+                                    <div className="flex flex-col gap-12">
+                                        {stepSize !== undefined && (
+                                            <div className="flex justify-between px-6">
+                                                <label className="text-body leading-none opacity-80">
+                                                    <T keyName="inspector.marcher.stepSize" />
+                                                </label>
 
-                                            <p className="text-body flex items-center gap-4 bg-transparent leading-none">
-                                                <StepSizeWarningBadge
-                                                    over={
-                                                        !!fieldProperties &&
-                                                        stepSize.exceedsThreshold(
-                                                            fieldProperties.stepSizeWarningThresholdInches,
-                                                        )
-                                                    }
-                                                />
-                                                {stepSize.displayString()}
-                                            </p>
-                                        </div>
-                                    )}
+                                                <p className="text-body flex items-center gap-4 bg-transparent leading-none">
+                                                    <StepSizeWarningBadge
+                                                        over={
+                                                            !!fieldProperties &&
+                                                            stepSize.exceedsThreshold(
+                                                                fieldProperties.stepSizeWarningThresholdInches,
+                                                            )
+                                                        }
+                                                    />
+                                                    {stepSize.displayString()}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {/* Under Step Size: hold or move on this page (UI-18) */}
+                                        <TimelineHoldLine
+                                            marcherIds={selectedMarcherIdList}
+                                            nameOf={selectedNameOf}
+                                        />
+                                    </div>
                                     {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
                                     <button
                                         type="submit"

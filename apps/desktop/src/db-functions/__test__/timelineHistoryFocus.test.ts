@@ -22,8 +22,8 @@ import {
     transactionWithHistory,
 } from "../history";
 import { deletePages } from "../page";
-import { createMarchers } from "../marcher";
-import { moveMarchersOnPage } from "../timelineMoves";
+import { createMarchers, deleteMarchers } from "../marcher";
+import { moveMarchersInTarget, moveMarchersOnPage } from "../timelineMoves";
 import { pageForEndBeat, timelineHistoryFocus } from "../timelineHistoryFocus";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
 
@@ -186,13 +186,13 @@ describeDbTests("undo and redo in timeline mode", (it) => {
         });
         const id = created!.id;
 
-        // The add touched the first page (a home) and the last (its own move over the converted
-        // show's one timeline, UI-9 New marchers), not the pages in between
-        const last = pages[pages.length - 1]!;
+        // The add only gave it a home (C-12); a new marcher stands there on every page, so the
+        // page you are on is kept rather than jumping to the first
+        const middle = pages[3]!;
         const undo = await performHistoryAction("undo", db, {
-            currentPageId: last.id,
+            currentPageId: middle.id,
         });
-        expect(undo.pageIdToGoTo).toBe(last.id);
+        expect(undo.pageIdToGoTo).toBe(middle.id);
         expect(undo.marcherIdsToSelect).toEqual(new Set([id]));
         await expectStoreMatchesColdBuild(db, pages);
         expect(
@@ -207,6 +207,22 @@ describeDbTests("undo and redo in timeline mode", (it) => {
         expect(
             useTimelineResolverStore.getState().resolver!.marcherIds(),
         ).toContain(id);
+    });
+
+    it("a marcher delete: undo stays on the current page and selects the restored marcher", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const pages = await setUp(db);
+        const [a] = await marcherIds(db);
+        await deleteMarchers({ db, marcherIds: new Set([a!]) });
+        const undo = await performHistoryAction("undo", db, {
+            currentPageId: pages[4]!.id,
+        });
+        expect(undo.pageIdToGoTo).toBe(pages[4]!.id);
+        // With the marcher whose slot the delete compacted into its place
+        expect(undo.marcherIdsToSelect?.has(a!)).toBe(true);
+        await expectStoreMatchesColdBuild(db, pages);
     });
 
     it("a change to a move's path selects everyone in it, on its page", async ({
@@ -257,7 +273,7 @@ describeDbTests("undo and redo in timeline mode", (it) => {
         const pages = await setUp(db);
         const page = pages[pages.length - 1]!;
         const t = schema.timeline_transitions;
-        // Edit 1 adds a marcher, who gets its own move in each page's timeline (UI-9, P9.10)
+        // Edit 1 adds a marcher (a home only, C-12) and moves it on the last page
         const [created] = await createMarchers({
             db,
             newMarchers: [
@@ -265,7 +281,16 @@ describeDbTests("undo and redo in timeline mode", (it) => {
             ],
         });
         const id = created!.id;
-        // Edit 2 changes its move on the last page, which selects everyone in it
+        await moveMarchersInTarget({
+            db,
+            target: {
+                kind: "range",
+                start: page.beats[0]!.index,
+                end: pageEndBeat(page),
+            },
+            moves: [{ marcherId: id, x: 123, y: 456 }],
+        });
+        // Edit 2 changes the path of its move on the last page, which selects everyone in it
         const own = new Set(
             (
                 await db
@@ -295,7 +320,7 @@ describeDbTests("undo and redo in timeline mode", (it) => {
             performHistoryAction("undo", db, { currentPageId: pages[0]!.id }),
         ]);
         // Read after the first undo only: the new marcher is still in the move. Read after both,
-        // it would be gone.
+        // it would be gone. The second undoes its move, which names only it.
         expect(first.pageIdToGoTo).toBe(page.id);
         expect(first.marcherIdsToSelect?.has(id)).toBe(true);
         expect(second.marcherIdsToSelect).toEqual(new Set([id]));

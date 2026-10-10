@@ -8,6 +8,7 @@ import { useTimelineSelectionHost } from "./useTimelineSelectionHost";
 import { useTimelinePageBridge } from "./useTimelinePageBridge";
 import { useDeselectDimmedMarchers } from "./useTimelineDimming";
 import { useTimelinePlaybackDriver } from "./useTimelinePlaybackDriver";
+import { useKeptAssignmentsHost } from "./useKeepLaterPages";
 import {
     createTimelineDevApi,
     type TimelineDevApi,
@@ -75,6 +76,8 @@ export default function TimelineResolverHost() {
     useDeselectDimmedMarchers(enabled);
     // UI-9 Play: loop a selected range, stop at the end, leave the playhead where a pause lands
     useTimelinePlaybackDriver(enabled);
+    // UI-18 keep later pages: the kept spots the chains and the inspector line read
+    useKeptAssignmentsHost(db, enabled);
     // The console API can write fixtures into the file. The flag lives in the file itself, so it
     // alone mustn't expose a write path in a release build: development builds only.
     useTimelineDevApi(db, enabled && import.meta.env.DEV);

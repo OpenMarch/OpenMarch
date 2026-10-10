@@ -18,6 +18,8 @@ export const tablesWithHistory = [
     schema.measures,
     schema.marchers,
     schema.marcher_pages,
+    // Page-mode edits move pathway ends with their marcher pages, so undo restores both
+    schema.pathways,
     schema.shapes,
     schema.shape_pages,
     schema.shape_page_marchers,
@@ -34,6 +36,8 @@ export const tablesWithHistory = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
+    // App data beside them: which assignments are kept spots (ADR 0001 amendment 2026-10-09)
+    schema.timeline_kept_assignments,
 ];
 
 /**

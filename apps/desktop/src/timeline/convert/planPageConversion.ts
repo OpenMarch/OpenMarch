@@ -25,6 +25,11 @@ import { pageEndBeat } from "../pageEndBeat";
  *   marchers that have a `marcher_pages` row on N, in ascending marcher id; slot i's destination
  *   is that row's coordinate, copied exactly. Each of those marchers gets one layer-0 assignment
  *   over the whole transition.
+ * - Only marchers that move get a slot (C-12: a coordinate exists only where the designer moved
+ *   someone). A marcher whose point on N is exactly (bit for bit) where it already stands, its
+ *   previous slot's point or its home, holds there without one, so a page copied from the one
+ *   before converts to no rows and a later edit to the earlier page carries through it. A page
+ *   where nobody moves gets no timeline, and that is not a loss.
  * - A marcher with no row on page N (only in damaged files) glides across the gap like page mode
  *   (P6.7): it gets a slot on N whose destination is linear in beats (C-7) between its neighboring
  *   rows, the point that fraction of the beats from the previous row's end beat to the next row's
@@ -404,6 +409,39 @@ export function planPageConversion(
     };
 
     const transitions: PlannedPageTransition[] = [];
+    // Where each marcher stands after the pages planned so far: its last slot's point, or home
+    const lastPoint = new Map<number, XY>(
+        homes.map(({ marcherId, home }) => [marcherId, home]),
+    );
+    /** Page `pageId`'s transition, with a slot for each marcher that moves there. */
+    const planMoves = (
+        pageId: number,
+        range: { startBeat: number; endBeat: number },
+        slotted: number[],
+        rows: Map<number, ConversionMarcherPage>,
+        glides: Map<number, GapGlide>,
+    ) => {
+        const pointOf = (id: number): XY => {
+            const mp = rows.get(id);
+            return mp ? ([mp.x, mp.y] as XY) : glides.get(id)!.point;
+        };
+        // A marcher already standing on its point holds there without a slot (C-12): only
+        // exactly equal points are left out, so every flag's positions are unchanged
+        const moved = slotted.filter((id) => {
+            const [x, y] = pointOf(id);
+            const [px, py] = lastPoint.get(id) ?? [NaN, NaN];
+            return x !== px || y !== py;
+        });
+        for (const id of slotted) lastPoint.set(id, pointOf(id));
+        if (moved.length > 0)
+            transitions.push({
+                pageId,
+                startBeat: range.startBeat,
+                endBeat: range.endBeat,
+                marcherIds: moved,
+                points: moved.map(pointOf),
+            });
+    };
     const pages: PageLossReport[] = input.pages.map((page, i) => {
         const rows = rowOf.get(page.id)!;
         const range = ranges[i] ?? null;
@@ -423,16 +461,7 @@ export function planPageConversion(
                     ? "no-marchers"
                     : null;
         if (i > 0 && range && !skipped)
-            transitions.push({
-                pageId: page.id,
-                startBeat: range.startBeat,
-                endBeat: range.endBeat,
-                marcherIds: slotted,
-                points: slotted.map((id) => {
-                    const mp = rows.get(id);
-                    return mp ? ([mp.x, mp.y] as XY) : glides.get(id)!.point;
-                }),
-            });
+            planMoves(page.id, range, slotted, rows, glides);
         const sortedRows = [...rows.values()].sort(
             (a, b) => a.marcher_id - b.marcher_id,
         );

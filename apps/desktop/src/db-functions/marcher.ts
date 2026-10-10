@@ -5,7 +5,7 @@ import { schema } from "@/global/database/db";
 import { transactionWithHistory, createAllUndoTriggers } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
 import {
-    joinNewMarchersToTimelinesInTransaction,
+    giveNewMarchersHomesInTransaction,
     removeDeletedMarchersFromTimelinesInTransaction,
 } from "./timelineMarchers";
 import { timelineModeInTransaction } from "./timelineRipple";
@@ -197,10 +197,10 @@ export async function createMarchersInTransaction({
  * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
  *
  *
- * In timeline mode (the file's flag, read inside the edit), the new marchers also get a home and
- * their own transition in every stored timeline, holding the home, in the same edit
- * (`joinNewMarchersToTimelinesInTransaction`, P7.3 and UI-9), and no `marcher_pages` rows, which
- * are frozen in timeline mode (P9.5).
+ * In timeline mode (the file's flag, read inside the edit), the new marchers also get a home in
+ * the same edit and no moves, so they stand at home until moved
+ * (`giveNewMarchersHomesInTransaction`, P7.3 and UI-9), and no `marcher_pages` rows, which are
+ * frozen in timeline mode (P9.5).
  *
  * @param newMarchers Array of NewMarcherArgs containing the marcher data to create
  * @param db The database connection
@@ -223,7 +223,7 @@ export async function createMarchers({
                 tx,
             });
             if (await timelineModeInTransaction(tx))
-                await joinNewMarchersToTimelinesInTransaction({
+                await giveNewMarchersHomesInTransaction({
                     tx,
                     marcherIds: created.map((m) => m.id),
                 });

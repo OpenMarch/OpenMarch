@@ -5,6 +5,7 @@ import Pathway, { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 import Midpoint from "./Midpoint";
 import TimelinePathway from "./TimelinePathway";
 import TimelineFocusLayer from "./TimelineFocusLayer";
+import TimelineKeptLayer, { type TimelineKeptMark } from "./TimelineKeptLayer";
 import {
     cacheAtViewportResolution,
     cacheFitsAtFullResolution,
@@ -140,6 +141,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     marcherShapes: MarcherShape[] = [];
     /** Timeline mode's picked spec shape, while one is drawn (P7.11, `useTimelineShapeCanvas`) */
     timelineShapeOverlay: TimelineShapeOverlay | null = null;
+    /** The kept marks beside the dots in timeline mode (`renderTimelineKeptMarks`), if drawn */
+    timelineKeptLayer: TimelineKeptLayer | null = null;
     /**
      * The reference to the grid (the lines on the field) object to use for caching
      * This is needed to disable object caching while zooming, which greatly improves responsiveness.
@@ -1122,6 +1125,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 controlPoint.bringToFront();
             });
         }
+        this.timelineKeptLayer?.bringToFront();
         this.timelineShapeOverlay?.bringToFront();
     }
 
@@ -1208,6 +1212,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             moved.push(canvasMarcher);
         });
         this.bringObjectsToFront(moved);
+        this.fitActiveSelectionToMarchers();
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
@@ -1261,12 +1266,60 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             },
         );
         this.bringObjectsToFront(moved);
+        this.fitActiveSelectionToMarchers();
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.bringAllControlPointsTooFront();
         this.requestRenderAll();
     };
+
+    /**
+     * Fits a multi-marcher selection's box to where its marchers are now. Moving a selected
+     * marcher (`setMarcherCoords`) moves it inside the selection but leaves the box where it was,
+     * so after a render that moved selected marchers (an undo, **Only Page 2**, another page) an
+     * empty box would stay behind. Not during a drag or transform, which owns the box: then it
+     * fits once the transform ends (a refused or snapped-back drop refreshes the marchers from
+     * `object:modified`, while Fabric still holds the transform; pre-merge review).
+     */
+    fitActiveSelectionToMarchers = () => {
+        const active = this.getActiveObject();
+        if (!(active instanceof fabric.ActiveSelection)) return;
+        if (this.isTransforming()) {
+            this.fitAfterTransform();
+            return;
+        }
+        (active as fabric.Group).addWithUpdate();
+    };
+
+    private isTransforming = () =>
+        !!(this as unknown as { _currentTransform: unknown })._currentTransform;
+
+    private fitPending = false;
+
+    /**
+     * Fits the selection's box once the transform in progress ends: Fabric clears it at the end
+     * of its mouse up, after `object:modified` and `mouse:up`, so this checks again right after
+     * (a microtask), and after the next mouse up for a drag still going.
+     */
+    private fitAfterTransform() {
+        if (this.fitPending) return;
+        this.fitPending = true;
+        const check = () => {
+            if (this.isTransforming()) {
+                const onUp = () => {
+                    this.off("mouse:up", onUp);
+                    queueMicrotask(check);
+                };
+                this.on("mouse:up", onUp);
+                return;
+            }
+            this.fitPending = false;
+            this.fitActiveSelectionToMarchers();
+            this.requestRenderAll();
+        };
+        queueMicrotask(check);
+    }
 
     /**
      * The objects a drag, scale or rotate in progress holds: the transform's target, or each
@@ -1297,6 +1350,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
         });
         this.bringObjectsToFront(canvasMarchers);
+        // The kept marks and shape handles stay above the marchers just raised
+        this.bringAllControlPointsTooFront();
+        this.fitActiveSelectionToMarchers();
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.requestRenderAll();
@@ -2576,6 +2632,40 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const layers = this.getObjectsByType(TimelineFocusLayer);
         if (layers.length === 0) return;
         for (const layer of layers) this.remove(layer);
+        this.requestRenderAll();
+    }
+
+    /**
+     * Draws the broken chains beside the dots of the marchers kept on the current page
+     * (docs/timeline/ui.md UI-18, kept marchers on the field) above the marchers, replacing any
+     * drawn before. No marks removes the layer.
+     */
+    renderTimelineKeptMarks(marks: readonly TimelineKeptMark[]): void {
+        if (marks.length === 0) {
+            this.clearTimelineKeptMarks();
+            return;
+        }
+        if (this.timelineKeptLayer?.canvas === this)
+            this.timelineKeptLayer.update(marks);
+        else {
+            this.timelineKeptLayer = new TimelineKeptLayer({
+                marks,
+                width: this._fieldProperties.width,
+                height: this._fieldProperties.height,
+            });
+            this.add(this.timelineKeptLayer);
+        }
+        this.timelineKeptLayer.bringToFront();
+        this.timelineShapeOverlay?.bringToFront();
+        this.requestRenderAll();
+    }
+
+    /** Removes the kept marks, if drawn. */
+    clearTimelineKeptMarks(): void {
+        const layer = this.timelineKeptLayer;
+        this.timelineKeptLayer = null;
+        if (!layer || layer.canvas !== this) return;
+        this.remove(layer);
         this.requestRenderAll();
     }
 
