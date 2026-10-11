@@ -1,0 +1,8 @@
+{
+    "source": "Trumpet by Kagelok (sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c), CC BY 4.0",
+    "parts": { "Gold": 16, "Silver": 18, "Black": 22, "White": 23 },
+    "scale": 0.05375,
+    "origin": [-1.43, -0.05, -0.015],
+    "lods": { "high": 0.38, "low": 0.105 },
+    "minTriangles": 24
+}

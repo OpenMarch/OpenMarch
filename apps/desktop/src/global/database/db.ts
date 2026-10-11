@@ -3,9 +3,13 @@ import * as schema from "../../../electron/database/migrations/schema";
 import { ExtractTablesWithRelations } from "drizzle-orm/relations";
 import { createRendererSqlProxyQueue } from "./sqlProxyQueue";
 
+// The 3D View window has no `window.electron`; it reads through its
+// read-only proxy, so the editor's query options work there unchanged.
 const queuedSqlProxy = createRendererSqlProxyQueue(
     async (sql, params, method) =>
-        window.electron.sqlProxy(sql, params, method),
+        window.electron
+            ? window.electron.sqlProxy(sql, params, method)
+            : window.view3d.sqlRead(sql, params, method),
 );
 
 // Create the Drizzle database instance using the SQLite proxy

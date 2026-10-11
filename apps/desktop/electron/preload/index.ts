@@ -23,6 +23,20 @@ import type {
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
 import type { HistoryResponse } from "@/db-functions";
+// Types only, so this preload doesn't share a chunk with the sandboxed 3D
+// View preload.
+import type {
+    View3dPayloads,
+    View3dPlaybackRequest,
+    View3dPublishChannel,
+    View3dVenueChangeRequest,
+} from "../../src/view3d/sync/protocol";
+
+const VIEW3D_PUBLISH_CHANNELS: readonly string[] = [
+    "view3d:clock",
+    "view3d:selection",
+    "view3d:invalidate",
+] satisfies View3dPublishChannel[];
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -311,6 +325,67 @@ const APP_API = {
 
     buffer: {
         from: (data: any) => Buffer.from(data),
+    },
+
+    // 3D View
+    /**
+     * Opens the 3D View window, or focuses it. With `background`, it opens
+     * without taking focus and leaves an open window alone. Resolves false
+     * when no show is open.
+     */
+    openView3d: (options?: { background?: boolean }) =>
+        ipcRenderer.invoke("view3d:open", options) as Promise<boolean>,
+    /** Sends a clock, selection or invalidate to the 3D View, through main. */
+    publishToView3d: <C extends View3dPublishChannel>(
+        channel: C,
+        payload: View3dPayloads[C],
+    ) => {
+        if (!VIEW3D_PUBLISH_CHANNELS.includes(channel))
+            throw new Error(`Unknown 3D View channel ${String(channel)}`);
+        ipcRenderer.send(channel, payload);
+    },
+    /** Main says whether a 3D View window is open. Returns an unsubscribe function. */
+    onView3dWindowState: (callback: (open: boolean) => void) => {
+        const listener = (_event: IpcRendererEvent, open: boolean) =>
+            callback(open === true);
+        ipcRenderer.on("view3d:window-state", listener);
+        return () => {
+            ipcRenderer.removeListener("view3d:window-state", listener);
+        };
+    },
+    /** The 3D View window is ready for a fresh clock and selection. */
+    onView3dHello: (callback: () => void) => {
+        const listener = () => callback();
+        ipcRenderer.on("view3d:hello", listener);
+        return () => {
+            ipcRenderer.removeListener("view3d:hello", listener);
+        };
+    },
+    /** The 3D View asks for new venue settings. The payload is unchecked. */
+    onView3dVenueChangeRequest: (
+        callback: (request: View3dVenueChangeRequest) => void,
+    ) => {
+        const listener = (
+            _event: IpcRendererEvent,
+            request: View3dVenueChangeRequest,
+        ) => callback(request);
+        ipcRenderer.on("view3d:venue-change-request", listener);
+        return () => {
+            ipcRenderer.removeListener("view3d:venue-change-request", listener);
+        };
+    },
+    /** The 3D View asks for a playback action. The payload is unchecked. */
+    onView3dPlaybackRequest: (
+        callback: (request: View3dPlaybackRequest) => void,
+    ) => {
+        const listener = (
+            _event: IpcRendererEvent,
+            request: View3dPlaybackRequest,
+        ) => callback(request);
+        ipcRenderer.on("view3d:playback-request", listener);
+        return () => {
+            ipcRenderer.removeListener("view3d:playback-request", listener);
+        };
     },
 
     // History

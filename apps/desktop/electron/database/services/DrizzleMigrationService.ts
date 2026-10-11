@@ -22,6 +22,31 @@ import {
 } from "../fileVersion";
 
 /**
+ * `created_at` of `0017_melted_sage`, the 3D View venue migration of the fork's `3d-async`
+ * branch before it merged into the timeline line, where the same table is `0019_gray_brood`.
+ * Drizzle only runs migrations dated after a file's newest recorded one, and this one is dated
+ * after `0017_powerful_edwin_jarvis`, so a file opened by a `3d-async` build would skip the
+ * timeline tables. Fork development files only; no released build ever wrote it.
+ */
+export const FORK_3D_VENUE_MIGRATION_MS = 1791099628919;
+
+/**
+ * Forgets the fork's old venue migration (see {@link FORK_3D_VENUE_MIGRATION_MS}), so every
+ * later migration runs. Its table stays; `0019` creates it only if it is missing.
+ */
+export function forgetFork3dVenueMigration(rawDb: DatabaseSync): void {
+    const hasMigrationsTable = rawDb
+        .prepare(
+            "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = '__drizzle_migrations'",
+        )
+        .get();
+    if (!hasMigrationsTable) return;
+    rawDb
+        .prepare("DELETE FROM __drizzle_migrations WHERE created_at = ?")
+        .run(FORK_3D_VENUE_MIGRATION_MS);
+}
+
+/**
  * Service for handling Drizzle migrations at runtime
  * This is used after the database has been transitioned to v7+ and uses Drizzle migration system
  */
@@ -91,6 +116,8 @@ export class DrizzleMigrationService {
         try {
             // console.log("Dropping history triggers...");
             // await dropAllUndoTriggers(this.db);
+
+            forgetFork3dVenueMigration(this.rawDb);
 
             console.log("Applying pending Drizzle migrations...");
 

@@ -1,0 +1,8 @@
+{
+    "source": "Built by build-horns.py from the valve block and mouthpiece of Trumpet by Kagelok (sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c), CC BY 4.0",
+    "parts": { "Gold": 16, "Silver": 18, "Black": 22, "White": 23 },
+    "scale": 1,
+    "origin": [0, 0, 0],
+    "lods": { "high": 0.42, "low": 0.11 },
+    "minTriangles": 24
+}

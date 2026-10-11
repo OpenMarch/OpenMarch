@@ -1,8 +1,13 @@
-import "@testing-library/jest-dom/vitest";
-import { vi } from "vitest";
+import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
+import { expect, vi } from "vitest";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { schema } from "./electron/database/db";
 import { createRendererSqlProxyQueue } from "./src/global/database/sqlProxyQueue";
+
+// jest-dom's matchers, on this app's own vitest. `@testing-library/jest-dom/vitest` extends
+// whichever `vitest` pnpm hoists to the repo root, and other workspace packages still use
+// vitest 3.x (types: src/jest-dom-vitest.d.ts).
+expect.extend(jestDomMatchers);
 
 // @ts-ignore
 global.jest = vi;

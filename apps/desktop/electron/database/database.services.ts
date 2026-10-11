@@ -206,6 +206,20 @@ export const getOrmConnection = () => {
     return getOrm(persistentConnection);
 };
 
+/** The long-lived connection the SQL proxies share, reopened when the show changes. */
+function getPersistentConnection(): DatabaseSync {
+    if (persistentConnectionPath !== DB_PATH) {
+        closePersistentConnection();
+    }
+
+    if (!persistentConnection) {
+        persistentConnection = connect();
+        persistentConnection.prepare("PRAGMA foreign_keys = ON").run();
+        persistentConnectionPath = DB_PATH;
+    }
+    return persistentConnection;
+}
+
 /** The current suspension of the renderer's SQL, or null when it isn't suspended. */
 let sqlProxySuspension: { token: number; reason: string } | null = null;
 let lastSqlProxySuspensionToken = 0;
@@ -270,18 +284,8 @@ export async function handleSqlProxy(
 ) {
     assertSqlProxyNotSuspended();
     try {
-        if (persistentConnectionPath !== DB_PATH) {
-            closePersistentConnection();
-        }
-
-        if (!persistentConnection) {
-            persistentConnection = connect();
-            persistentConnection.prepare("PRAGMA foreign_keys = ON").run();
-            persistentConnectionPath = DB_PATH;
-        }
-
         return await handleSqlProxyWithDb(
-            persistentConnection,
+            getPersistentConnection(),
             sql,
             params,
             method,
@@ -290,6 +294,32 @@ export async function handleSqlProxy(
         console.error("Error from SQL proxy:", error);
         throw error;
     }
+}
+
+/**
+ * Runs a read for the 3D View window on the shared connection, with
+ * `PRAGMA query_only` on so SQLite refuses any write. Callers check the
+ * statement's first keyword first.
+ *
+ * `node:sqlite` is synchronous, so the statement has finished before
+ * `query_only` is turned off again; no other IPC call can run in between.
+ */
+export async function handleReadOnlySqlProxy(
+    sql: string,
+    params: any[],
+    method: "all" | "get" | "values",
+) {
+    // Like the editor's SQL, refused while an open suspends it (the file may be converting).
+    assertSqlProxyNotSuspended();
+    const db = getPersistentConnection();
+    db.exec("PRAGMA query_only = ON");
+    let result: ReturnType<typeof handleSqlProxyWithDb>;
+    try {
+        result = handleSqlProxyWithDb(db, sql, params, method);
+    } finally {
+        db.exec("PRAGMA query_only = OFF");
+    }
+    return await result;
 }
 
 /** Directly executes the SQL query without any parameters */

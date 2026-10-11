@@ -1,0 +1,64 @@
+{
+  "source": "https://github.com/OpenMarch/om-pose",
+  "commit": "87cc16e816f0d4a074098b9cb27fdb9431c95dac",
+  "from": {
+    "bodies": "assets/body-v4u/*.glb",
+    "clips": "out/body/animations/*.glb, packed one GLB per height class",
+    "manifest": "out/body/manifest.json"
+  },
+  "license": "om-pose is OpenMarch's own repository; these files ship under the app's license",
+  "files": {
+    "clips/clips-h090.glb": {
+      "bytes": 5842340,
+      "sha256": "b605212f2e6b2484ffe537dbc89033b6e526406d7ad87379f73ca43fd10a3a85"
+    },
+    "clips/clips-h095.glb": {
+      "bytes": 5856648,
+      "sha256": "b6f87e4d2c11aa43fc2213791381392096ecaa730e5c64a1cc8d981984c6ec49"
+    },
+    "clips/clips-h100.glb": {
+      "bytes": 5859460,
+      "sha256": "9d502ff0c4db6e92dda2115cbc17aed347c8bd1161394a9fbcdd8780363fda7f"
+    },
+    "clips/clips-h105.glb": {
+      "bytes": 5858444,
+      "sha256": "a547c65806c075ceef05ad98712ef93c83f941f764e474da2b317a8052da2159"
+    },
+    "clips/clips-h110.glb": {
+      "bytes": 5855712,
+      "sha256": "9e22540b726d208e3234f66e16896d259354412dd5031a362bba5f1b00f776a6"
+    },
+    "bodies/feminine-average.glb": {
+      "bytes": 249144,
+      "sha256": "f23ff4f14c9279fe2663d1d3709455ba8364533f5126dd4a32f004e5c743f7db"
+    },
+    "bodies/masculine-average.glb": {
+      "bytes": 249144,
+      "sha256": "da2e75082864e8b2a37a0f5238dd1c72fed6680a188cabf7aca0aed357918a46"
+    },
+    "bodies/neutral-athletic.glb": {
+      "bytes": 249144,
+      "sha256": "4f6ef8abce242e7ad9988ef78a2c1bd29581094a564ff26d4044aba95286a80e"
+    },
+    "bodies/neutral-average.glb": {
+      "bytes": 249144,
+      "sha256": "18e278cbebc8ef66b31252ad7af2d9bfbd3db07a44821244cb841fd8915e93f4"
+    },
+    "bodies/neutral-broad.glb": {
+      "bytes": 249144,
+      "sha256": "e5ee115ccbbbf3cab06f2dd117930020f2c71200491c89cd0be83e4a0a1730f8"
+    },
+    "bodies/neutral-full.glb": {
+      "bytes": 249144,
+      "sha256": "5e2407617ea1ace0c862128e1ae9441e1a87deb2474c34f8cb92d97906785a5f"
+    },
+    "bodies/neutral-slim.glb": {
+      "bytes": 249144,
+      "sha256": "e6228db3a46579bfb1ed6c3b45ee8e8fbe81466d5ee829924c06b94fffd88f77"
+    },
+    "manifest.json": {
+      "bytes": 1115198,
+      "sha256": "fdc3d2a5a121520173495b7370e56eb2a09235db0e3baec0e4a30e155a5cba94"
+    }
+  }
+}

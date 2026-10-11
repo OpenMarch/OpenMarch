@@ -7,6 +7,7 @@ import {
     SelectTriggerButton,
     Switch,
 } from "@openmarch/ui";
+import { VIEW3D_AUTO_OPEN_SETTING } from "@/view3d/sync/protocol";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
 
@@ -23,6 +24,7 @@ export default function GeneralSettings() {
     const [currentLanguage, setCurrentLanguage] = useState("en");
     const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] =
         useState(true);
+    const [view3dAutoOpen, setView3dAutoOpen] = useState(false);
 
     useEffect(() => {
         // Load saved language from electron store
@@ -49,6 +51,11 @@ export default function GeneralSettings() {
             if (isMounted) setAutomaticUpdatesEnabled(savedValue !== false);
         };
         void loadAutomaticUpdatesSetting();
+        void window.electron
+            .invoke("settings:get", VIEW3D_AUTO_OPEN_SETTING)
+            .then((savedValue: unknown) => {
+                if (isMounted) setView3dAutoOpen(savedValue === true);
+            });
         return () => {
             isMounted = false;
         };
@@ -108,6 +115,23 @@ export default function GeneralSettings() {
                         setAutomaticUpdatesEnabled(checked);
                         window.electron.send("settings:set", {
                             automaticUpdates: checked,
+                        });
+                    }}
+                />
+            </SettingRow>
+
+            <SettingRow
+                label={<T keyName="settings.general.openView3dWithShow" />}
+                htmlFor="view3d-auto-open"
+            >
+                <Switch
+                    id="view3d-auto-open"
+                    checked={view3dAutoOpen}
+                    data-testid="settings-view3d-auto-open"
+                    onCheckedChange={(checked) => {
+                        setView3dAutoOpen(checked);
+                        window.electron.send("settings:set", {
+                            [VIEW3D_AUTO_OPEN_SETTING]: checked,
                         });
                     }}
                 />

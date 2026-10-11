@@ -1365,6 +1365,7 @@
         "general.automaticUpdates": "Automatically download and install updates",
         "general.description": "Language and other app-wide preferences.",
         "general.language": "Language",
+        "general.openView3dWithShow": "Open 3D View when a show opens",
         "general.showFullDatabasePath": "Show full file path",
         "general.showFullDatabasePath.description": "Show the full path of the open file in the title bar instead of just its name.",
         "mouse": "Mouse & Trackpad",
@@ -1647,6 +1648,149 @@
         "skipVersion": "Skip this version",
         "title": "New Version Available",
         "trigger": "New Version Available!"
+    },
+    "view3d": {
+        "camera": {
+            "blimp": "Blimp",
+            "corner": "Corner",
+            "endZone": "End zone",
+            "floor": "On the floor",
+            "frontRow": "Front row",
+            "geJudge": "GE judge",
+            "lowerBowl": "Lower bowl",
+            "podium": "Podium",
+            "pressBox": "Press box",
+            "sideline": "Sideline",
+            "topDown": "Top down",
+            "upperDeck": "Upper deck"
+        },
+        "kit": {
+            "bighs": "Big high school",
+            "blank": "Field only",
+            "college": "College bowl",
+            "gym": "Indoor gym",
+            "hs": "High school",
+            "pro": "Pro dome"
+        },
+        "lighting": {
+            "day": "Day",
+            "dusk": "Dusk",
+            "house": "House",
+            "night": "Night",
+            "roofClosed": "Roof closed",
+            "show": "Show"
+        },
+        "open": "Open 3D View",
+        "overlay": {
+            "cameras": "Camera",
+            "crowd": "Crowd",
+            "enterFullscreen": "Fullscreen (F)",
+            "exitFullscreen": "Exit fullscreen (F)",
+            "lighting": "Lighting",
+            "pickSeat": "Pick a seat",
+            "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
+            "venue": "Venue",
+            "freeCamera": "Free view"
+        },
+        "readout": {
+            "camera": "Eye {eye} up · {distance} to center",
+            "count": "Count {count} of {total}",
+            "noPages": "No pages",
+            "page": "Page {page}",
+            "showTime": "Show time"
+        },
+        "unit": {
+            "feet": "{value} ft",
+            "meters": "{value} m"
+        },
+        "window": {
+            "title": "3D View — {showName}",
+            "graphicsUnavailable": "3D View needs WebGL, which isn't available on this computer."
+        },
+        "playback": {
+            "label": "Playback",
+            "play": "Play (Space)",
+            "pause": "Pause (Space)",
+            "previousPage": "Previous page (Q)",
+            "nextPage": "Next page (E)"
+        },
+        "settings": {
+            "title": "View settings",
+            "close": "Close",
+            "venueSection": "This show",
+            "venueHint": "Saved in the show file. Undo in the editor reverts a change.",
+            "crowdColors": "Crowd colors",
+            "homeColor": "Home",
+            "awayColor": "Visitors",
+            "endZones": "End zones",
+            "endZoneText": "End-zone lettering",
+            "endZoneTextPlaceholder": "No lettering",
+            "endZoneColor": "Color",
+            "graphicsSection": "This computer",
+            "graphicsHint": "Not saved in the show, so it can differ on each computer.",
+            "quality": "Quality",
+            "qualityMode": {
+                "auto": "Automatic",
+                "low": "Low",
+                "high": "High"
+            },
+            "qualityHint": {
+                "auto": "Starts on High and switches to Low if the view stutters.",
+                "low": "No shadows and a lighter crowd, for older or battery-powered computers.",
+                "high": "Shadows and a full crowd. Choose Low if playback stutters."
+            },
+            "qualityAutoLowered": "Switched to Low because the view was stuttering. Choose High to keep full quality.",
+            "pauseWhenIdle": "Pause drawing when nothing moves",
+            "saveOnBattery": "Save power on battery",
+            "hornState": "Horn state",
+            "hornStateMode": {
+                "up": "Up",
+                "carry": "Carry",
+                "trail": "Trail"
+            },
+            "hornStateHint": "Shows always play horns up. The other positions are here to check the poses.",
+            "guardEquipment": "Guard equipment",
+            "guardEquipmentMode": {
+                "section": "By section",
+                "flag6": "6 ft flag",
+                "swingFlag": "Swing flag",
+                "doubleSwingFlag": "Double swing",
+                "rifle": "Rifle",
+                "sabre": "Sabre"
+            },
+            "guardEquipmentHint": "By section gives flags the 6 ft flag and rifles the rifle. Pick one piece to put it in every guard member's hands.",
+            "stepOffFoot": "Step off",
+            "stepOffFootMode": {
+                "left": "Performer's left",
+                "right": "Performer's right"
+            },
+            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right.",
+            "keysSection": "Keyboard and mouse"
+        },
+        "keys": {
+            "playPause": "Play or pause",
+            "previousNext": "Previous or next page",
+            "firstLast": "First or last page",
+            "cameras": "Cameras, in menu order",
+            "fullscreen": "Fullscreen",
+            "crowd": "Show or hide the crowd",
+            "escape": "Cancel a seat pick, close settings, leave fullscreen",
+            "orbit": "Orbit",
+            "pan": "Pan (or right-drag)",
+            "zoom": "Zoom"
+        },
+        "keyNames": {
+            "playPause": "Space",
+            "previousNext": "Q / E",
+            "firstLast": "Shift+Q / E",
+            "cameras": "1–9",
+            "fullscreen": "F",
+            "crowd": "C",
+            "escape": "Esc",
+            "orbit": "Drag",
+            "pan": "Shift+drag",
+            "zoom": "Scroll"
+        }
     },
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",

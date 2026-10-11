@@ -31,13 +31,76 @@ function usePageZoomFactor() {
     return zoomFactor;
 }
 
+type TitleBarProps =
+    | {
+          showControls?: boolean;
+          /** "settings" is a minimal bar: no version, update check, file controls or file path. */
+          variant?: "main" | "settings";
+          windowTitle?: undefined;
+      }
+    | {
+          /** A secondary window's title, such as the 3D View's. */
+          windowTitle: string;
+          isMacOS: boolean;
+      };
+
+/**
+ * The app's title bar. With `windowTitle` it renders the slim bar for a
+ * secondary window (the 3D View): the logo and the title, with the window
+ * controls drawn by the system. That bar doesn't touch `window.electron`,
+ * which secondary windows don't have, and makes no network requests.
+ */
+export default function TitleBar(props: TitleBarProps) {
+    if (props.windowTitle !== undefined) {
+        return (
+            <SecondaryWindowTitleBar
+                title={props.windowTitle}
+                isMacOS={props.isMacOS}
+            />
+        );
+    }
+    return (
+        <EditorTitleBar
+            showControls={props.showControls}
+            variant={props.variant}
+        />
+    );
+}
+
+function SecondaryWindowTitleBar({
+    title,
+    isMacOS,
+}: {
+    title: string;
+    isMacOS: boolean;
+}) {
+    return (
+        <div
+            className="main-app-titlebar text-text relative flex h-fit w-full items-center"
+            // Leave room for the system's window controls overlay.
+            style={{
+                paddingRight:
+                    "calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))",
+            }}
+        >
+            <div
+                className={`flex min-w-0 items-center gap-12 px-24 py-8 ${isMacOS ? "ml-64" : ""}`}
+            >
+                <MarcherLogo width={8} height={21} className="text-accent" />
+                <p className="text-body min-w-0 truncate leading-none">
+                    {title}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 // eslint-disable-next-line max-lines-per-function
-export default function TitleBar({
+function EditorTitleBar({
     showControls,
     variant = "main",
 }: {
     showControls?: boolean;
-    /** "settings" is a minimal bar: no version, update check, file controls or file path. */
     variant?: "main" | "settings";
 }) {
     const showFilePath = variant === "main";

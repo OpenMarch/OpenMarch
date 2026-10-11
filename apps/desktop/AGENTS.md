@@ -27,6 +27,10 @@ adds what is specific to the Electron + React app.
 - Multi-query hooks should put transformation logic in an exported stable combine function prefixed with `_`; do not pass inline `combine` functions to `useQueries`.
 - `src/global/classes` is moving away from classes toward readonly interfaces plus pure exported functions; avoid adding new class-style data models there.
 
+## Fork-only Code
+
+- `apps/desktop/view3d-web/` (the 3D View web preview, with real demo shows) and the `view3d-web:*` scripts in `package.json` are fork-only. They may sit on the fork's `main`, but delete them from any branch before opening a PR to `OpenMarch/OpenMarch`; `view3d-web/README.md` lists everything to remove.
+
 ## Generated Or Derived Files
 
 - `apps/desktop/src/styles/apply-tailwind-vars.cjs` is run by desktop `dev` and `build`; run `pnpm run apply-styles` manually if you need regenerated desktop style variables without starting Vite.

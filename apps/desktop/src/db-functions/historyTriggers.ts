@@ -29,6 +29,8 @@ export const tablesWithHistory = [
     schema.tags,
     schema.tag_appearances,
     schema.marcher_tags,
+    // The show's 3D View venue (ADR 0002 D-5)
+    schema.view3d_venue,
     // Timeline data tables (ADR 0001 §3, spec §6.1). `timeline_change_log` is bookkeeping and
     // gets no history triggers.
     schema.timelines,

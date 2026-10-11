@@ -1,0 +1,5 @@
+/* TEMPORARY (see host.ts). The app's styles, scanning the app's source for
+   classes: Tailwind otherwise scans only from this folder, the Vite root. */
+@import "../src/styles/index.css";
+@source "../src";
+@source ".";

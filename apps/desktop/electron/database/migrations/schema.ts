@@ -414,6 +414,21 @@ export const workspace_settings = sqliteTable(
     (_table) => [check("workspace_settings_id_check", sql`id = 1`)],
 );
 
+/**
+ * The show's 3D View venue (ADR 0002 D-5). A single row with `id = 1` whose
+ * `json_data` is validated by `venueSettingsSchema` in
+ * `src/view3d/core/venueSettings.ts`. No row means "use the default for the
+ * field"; the row is created on the first change.
+ */
+export const view3d_venue = sqliteTable(
+    "view3d_venue",
+    {
+        id: integer().primaryKey(),
+        json_data: text().notNull(),
+    },
+    (_table) => [check("view3d_venue_id_check", sql`id = 1`)],
+);
+
 /* ========================= TIMELINES ========================= */
 /*
  * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0001). Column names follow the

@@ -126,6 +126,15 @@ CONTEXT-MAP.md
 **/docs/adr/[0-9]*.md
 docs/superpowers/
 
+# 3D View reference demo (docs/3d/ref/README.md)
+docs/3d/ref/
+
+# Vendored om-pose modules (apps/desktop/src/view3d/vendor/om-pose/README.md)
+**/view3d/vendor/
+# om-pose assets, byte-identical to their SOURCE.json hashes
+**/view3d/assets/om-pose/
+# baked instrument meshes, written by apps/desktop/scripts/view3d-assets/export-horn.py
+**/view3d/assets/instruments/*.json
 # Timeline spec and reference suite: external documents, kept verbatim
 docs/timeline/spec.md
 docs/timeline/ref/
