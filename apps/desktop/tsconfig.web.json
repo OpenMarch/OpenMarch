@@ -1,0 +1,12 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": { "types": [] },
+    "include": [
+        "web/*.ts",
+        "web/shims",
+        "src/vite-env.d.ts",
+        "src/preload.d.ts"
+    ],
+    "exclude": ["web/dist"],
+    "references": []
+}

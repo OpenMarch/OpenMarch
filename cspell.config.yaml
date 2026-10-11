@@ -97,6 +97,7 @@ words:
   - musescore
   - musicxml
   - Nativewind
+  - noopener
   - notarytool
   - NSIS
   - nums
@@ -226,6 +227,7 @@ ignorePaths:
   - "**/dist-electron/**"
   - "**/dist-browser/**"
   - "**/dist-browser-host/**"
+  - apps/desktop/web/dist/**
   - "**/wasm/pkg/**"
   - "**/release/**"
   - "*.svg"

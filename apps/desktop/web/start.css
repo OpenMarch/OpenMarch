@@ -1,0 +1,101 @@
+/* TEMPORARY (see README.md). The web build's start screen and toolbar. */
+#om-web-start {
+    --bg: #111114;
+    --panel: #1b1b20;
+    --line: #2c2c34;
+    --text: #ececf1;
+    --muted: #9a9aa6;
+    --accent: #7c5cff;
+    font-family: "DM Sans", system-ui, sans-serif;
+    color: var(--text);
+}
+#om-web-start:empty {
+    display: none;
+}
+.omw-screen {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+    padding: 16px;
+    overflow: auto;
+}
+.omw-card {
+    width: min(520px, 100%);
+    display: grid;
+    gap: 20px;
+}
+.omw-card h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+.omw-card p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.omw-options {
+    display: grid;
+    gap: 8px;
+}
+.omw-option {
+    display: grid;
+    gap: 2px;
+    text-align: left;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+.omw-option:hover,
+.omw-option:focus-visible {
+    border-color: var(--accent);
+    outline: none;
+}
+.omw-option strong {
+    font-weight: 600;
+}
+.omw-option span {
+    color: var(--muted);
+    font-size: 14px;
+}
+.omw-option.omw-drop {
+    border-style: dashed;
+}
+.omw-error {
+    color: #ff8080 !important;
+}
+.omw-toolbar {
+    position: fixed;
+    left: 12px;
+    bottom: 12px;
+    z-index: 2147483000;
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 999px;
+    background: rgba(20, 20, 24, 0.88);
+    border: 1px solid #2c2c34;
+    font:
+        500 12px "DM Sans",
+        system-ui,
+        sans-serif;
+}
+.omw-toolbar button {
+    background: none;
+    border: 0;
+    color: #c9c9d3;
+    font: inherit;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.omw-toolbar button:hover {
+    background: #2c2c34;
+    color: #fff;
+}

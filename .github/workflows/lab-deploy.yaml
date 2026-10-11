@@ -1,0 +1,169 @@
+# Publishes a pull request's web test build to the OpenMarch lab, where
+# testers try it and send feedback. Fork-only: don't merge into OpenMarch's
+# main.
+#
+# Add the `lab` label to a pull request that adds or changes one
+# lab/<id>/experiment.md (the test's title, intro and questions; see
+# apps/desktop/web/README.md). The test is published, with credit to the pull
+# request's author, and again on every push while the label is on. Removing
+# the label or closing the pull request closes the test; its feedback stays.
+#
+# Only people with triage access can add labels, and pull requests from other
+# people's forks never get the token. The optional variable LAB_PUBLISHERS (a
+# JSON list of GitHub logins) narrows who can publish further.
+#
+# Needs, in the repository's Actions settings: the variable LAB_URL (e.g.
+# https://lab.openmarch.com) and the secret LAB_DEPLOY_TOKEN (the lab
+# Worker's DEPLOY_TOKEN).
+# cspell:ignore startswith
+name: Lab test build
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lab:
+    # Label events only count for the `lab` label itself
+    if: >-
+      ((github.event.action == 'labeled' || github.event.action == 'unlabeled')
+        && github.event.label.name == 'lab')
+      || (github.event.action != 'labeled' && github.event.action != 'unlabeled'
+        && contains(github.event.pull_request.labels.*.name, 'lab'))
+    runs-on: ubuntu-latest
+    concurrency:
+      group: lab-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    env:
+      LAB_URL: ${{ vars.LAB_URL }}
+      LAB_DEPLOY_TOKEN: ${{ secrets.LAB_DEPLOY_TOKEN }}
+      LAB_PUBLISHERS: ${{ vars.LAB_PUBLISHERS }}
+      ACTION: ${{ github.event.action }}
+      SENDER: ${{ github.event.sender.login }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR: ${{ github.event.pull_request.number }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Find the test
+        id: test
+        run: |
+          if [ -z "$LAB_URL" ] || [ -z "$LAB_DEPLOY_TOKEN" ]; then
+            echo "::warning::No LAB_URL variable or LAB_DEPLOY_TOKEN secret (pull requests from other forks never get it); nothing to publish."
+            exit 0
+          fi
+          manifests=$(git diff --name-only --diff-filter=AMR "$BASE_SHA...$HEAD_SHA" -- 'lab/*/experiment.md')
+          count=$(printf '%s' "$manifests" | grep -c . || true)
+          if [ "$count" != 1 ]; then
+            echo "::error::A lab pull request adds or changes exactly one lab/<id>/experiment.md; this one has $count."
+            exit 1
+          fi
+          id=$(sed -n 's/^id:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$manifests" | head -1)
+          title=$(sed -n 's/^title:[[:space:]]*//p' "$manifests" | head -1)
+          if [ -z "$id" ]; then
+            echo "::error::$manifests has no id."
+            exit 1
+          fi
+          if [ "$ACTION" = closed ] || [ "$ACTION" = unlabeled ]; then
+            mode=close
+          else
+            mode=publish
+            if [ -n "$LAB_PUBLISHERS" ] &&
+              ! jq -e --arg who "$SENDER" 'any(.[]; . == $who)' <<<"$LAB_PUBLISHERS" >/dev/null; then
+              echo "::error::$SENDER isn't on LAB_PUBLISHERS, so this can't publish to the lab."
+              exit 1
+            fi
+          fi
+          {
+            echo "mode=$mode"
+            echo "manifest=$manifests"
+            echo "id=$id"
+            echo "title=$title"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        if: steps.test.outputs.mode != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Download the lab's deploy script
+        if: steps.test.outputs.mode != ''
+        run: curl -fsSL "$LAB_URL/deploy-experiment.mjs" -o "$RUNNER_TEMP/deploy-experiment.mjs"
+
+      - name: Setup pnpm
+        if: steps.test.outputs.mode == 'publish'
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Install dependencies
+        if: steps.test.outputs.mode == 'publish'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build the web test build
+        if: steps.test.outputs.mode == 'publish'
+        run: |
+          pnpm turbo run build --filter="@openmarch/desktop^..."
+          pnpm --filter @openmarch/desktop run web:build
+
+      - name: Publish to the lab
+        if: steps.test.outputs.mode == 'publish'
+        env:
+          LAB_PR_URL: ${{ github.event.pull_request.html_url }}
+          LAB_PR_NUMBER: ${{ github.event.pull_request.number }}
+          LAB_PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          MANIFEST: ${{ steps.test.outputs.manifest }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          node "$RUNNER_TEMP/deploy-experiment.mjs" \
+            --lab "$LAB_URL" \
+            --manifest "$MANIFEST" \
+            --build apps/desktop/web/dist \
+            --branch "$BRANCH" \
+            --commit "$HEAD_SHA"
+
+      - name: Close the test
+        if: steps.test.outputs.mode == 'close'
+        env:
+          ID: ${{ steps.test.outputs.id }}
+        run: |
+          node "$RUNNER_TEMP/deploy-experiment.mjs" \
+            --lab "$LAB_URL" --id "$ID" --status closed
+
+      - name: Say so on the pull request
+        if: steps.test.outputs.mode != ''
+        env:
+          MODE: ${{ steps.test.outputs.mode }}
+          ID: ${{ steps.test.outputs.id }}
+          TITLE: ${{ steps.test.outputs.title }}
+        run: |
+          marker="<!-- om-lab -->"
+          if [ "$MODE" = publish ]; then
+            body="$marker
+          **Lab test: $TITLE** is live for testers, built from ${HEAD_SHA:0:8}.
+
+          - Test page and feedback: $LAB_URL/t/$ID
+          - Test build: $LAB_URL/x/$ID/
+
+          It's published again on every push while the \`lab\` label is on."
+          else
+            body="$marker
+          **Lab test: $TITLE** is closed to new feedback. What testers sent is kept: $LAB_URL/t/$ID
+
+          Add the \`lab\` label again to reopen it."
+          fi
+          comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty")
+          if [ -n "$comment" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" -f body="$body" >/dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" >/dev/null
+          fi
