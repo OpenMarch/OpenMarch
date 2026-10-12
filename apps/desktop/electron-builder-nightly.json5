@@ -14,6 +14,12 @@
     mac: {
         artifactName: "OpenMarch-Nightly-macos-${arch}.${ext}",
         notarize: false,
+        // Ad-hoc sign the whole bundle. Left unsigned, the renamed main binary and
+        // Electron's prebuilt frameworks keep mismatched signatures and macOS refuses
+        // to load "Electron Framework" ("different Team IDs").
+        identity: "-",
+        // Hardened runtime only matters for notarization, which nightlies skip.
+        hardenedRuntime: false,
     },
     dmg: {
         sign: false,
