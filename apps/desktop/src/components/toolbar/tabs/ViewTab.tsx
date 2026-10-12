@@ -3,6 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { CubeIcon, EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
+import ActionButton from "@/shortcuts/ActionButton";
 
 export default function ViewTab() {
     return (
@@ -17,15 +18,13 @@ export default function ViewTab() {
 function View3dToolbar() {
     return (
         <ToolbarSection>
-            <button
-                onClick={() => {
-                    void window.electron.openView3d();
-                }}
+            <ActionButton
+                action="openView3d"
                 className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
                 <T keyName="view3d.open" />
                 <CubeIcon size={24} />
-            </button>
+            </ActionButton>
         </ToolbarSection>
     );
 }

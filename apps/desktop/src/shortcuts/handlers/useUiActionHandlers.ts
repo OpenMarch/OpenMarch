@@ -22,6 +22,9 @@ export function useUiActionHandlers() {
     useActionHandler("focusCanvas", () => focus("canvas"));
     useActionHandler("exitTimelineFocus", () => focus("canvas"));
     useActionHandler("focusTimeline", () => focus("timeline"));
+    useActionHandler("openView3d", () => {
+        void window.electron.openView3d();
+    });
     // UI-17 follow-up: ? lists every shortcut
     useActionHandler("showShortcuts", () =>
         useShortcutsDialogStore.getState().setOpen(true),

@@ -420,6 +420,14 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+Comma"],
     },
+    // Opens the 3D View window, or focuses it (3D View UI-1). Unbound by default.
+    openView3d: {
+        labelKey: "actions.ui.openView3d",
+        keywordsKey: "actions.ui.openView3dKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
     // UI-17 follow-up: ? lists every shortcut
     showShortcuts: {
         labelKey: "actions.ui.showShortcuts",
