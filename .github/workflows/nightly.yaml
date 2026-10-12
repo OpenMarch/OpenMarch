@@ -135,7 +135,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.version.outputs.version }}
         run: |
-          ls -la dist
+          # Artifacts keep the release/<version>/ folder, so take the files from any depth.
+          # Installer names (electron-builder-nightly.json5) have no spaces.
+          FILES=$(find dist -type f)
+          echo "$FILES"
           gh release delete nightly --cleanup-tag --yes || true
           cat > notes.md <<EOF
           Nightly build **${VERSION}** of [\`${GITHUB_SHA::8}\`](https://github.com/${GH_REPO}/commit/${GITHUB_SHA}), for internal testing only.
@@ -144,7 +147,7 @@ jobs:
           - Builds are unsigned. On macOS, run \`xattr -cr "/Applications/OpenMarch Nightly.app"\` after installing if macOS says the app is damaged. On Windows, choose **More info → Run anyway**.
           - Back up show files before opening them in a nightly.
           EOF
-          gh release create nightly dist/* \
+          gh release create nightly $FILES \
             --target "$GITHUB_SHA" \
             --title "Nightly ${VERSION}" \
             --notes-file notes.md \
