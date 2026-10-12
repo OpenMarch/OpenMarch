@@ -1,0 +1,152 @@
+name: Nightly
+
+# Unsigned desktop builds of every push to main, published as one rolling
+# "nightly" prerelease for internal team testing. Nightlies install as
+# "OpenMarch Nightly" next to the released app (electron-builder-nightly.json5).
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "apps/website/**"
+      - "apps/cms/**"
+      - "lab/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+# Only the newest push matters; a newer one replaces an in-progress build.
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute nightly version
+        id: version
+        run: |
+          BASE=$(node -p "require('./apps/desktop/package.json').version")
+          echo "version=${BASE}-nightly.$(date -u +%Y%m%d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: --mac dmg
+          - os: macos-15-intel
+            platform: --mac dmg
+          - os: ubuntu-latest
+            platform: --linux AppImage
+          - os: ubuntu-24.04-arm
+            platform: --linux AppImage
+          - os: windows-latest
+            platform: --win nsis
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Create Sentry env file
+        working-directory: apps/desktop
+        shell: bash
+        run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
+      - name: Install pnpm dependencies
+        run: pnpm install
+        env:
+          CI: true
+          ADBLOCK: true
+
+      - name: Set nightly version
+        working-directory: apps/desktop
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.version = '${{ needs.version.outputs.version }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Build for production
+        shell: bash
+        run: pnpm run build --filter='!@openmarch/website'
+
+      - name: Replace package name in package.json - ubuntu
+        working-directory: apps/desktop
+        if: startsWith(matrix.os, 'ubuntu')
+        # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
+        run: |
+          sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
+
+      - name: Build Electron app (unsigned)
+        working-directory: apps/desktop
+        shell: bash
+        run: pnpm exec electron-builder ${{ matrix.platform }} --publish=never --config electron-builder-nightly.json5
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ matrix.os }}
+          path: |
+            apps/desktop/release/*/*.dmg
+            apps/desktop/release/*/*.exe
+            apps/desktop/release/*/*.AppImage
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: nightly-*
+          path: dist
+          merge-multiple: true
+
+      - name: Replace the nightly release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          ls -la dist
+          gh release delete nightly --cleanup-tag --yes || true
+          cat > notes.md <<EOF
+          Nightly build **${VERSION}** of [\`${GITHUB_SHA::8}\`](https://github.com/${GH_REPO}/commit/${GITHUB_SHA}), for internal testing only.
+
+          - Installs as **OpenMarch Nightly** next to the released app, with its own settings. It does not auto-update; download again for a newer build.
+          - Builds are unsigned. On macOS, run \`xattr -cr "/Applications/OpenMarch Nightly.app"\` after installing if macOS says the app is damaged. On Windows, choose **More info → Run anyway**.
+          - Back up show files before opening them in a nightly.
+          EOF
+          gh release create nightly dist/* \
+            --target "$GITHUB_SHA" \
+            --title "Nightly ${VERSION}" \
+            --notes-file notes.md \
+            --prerelease \
+            --latest=false

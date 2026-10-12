@@ -17,3 +17,7 @@ snapcraft export-login <credentials-filename>
 ```
 
 > NOTE - These credentials expire after one year
+
+## Nightly builds (fork)
+
+`nightly.yaml` builds unsigned installers for every push to `main` and replaces the rolling `nightly` prerelease. Nightlies use `apps/desktop/electron-builder-nightly.json5`, so they install as "OpenMarch Nightly" next to the released app and never auto-update.

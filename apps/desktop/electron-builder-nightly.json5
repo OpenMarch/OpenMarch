@@ -1,0 +1,30 @@
+/**
+ * Electron builder configuration for nightly builds (internal testing).
+ * Extends the base config so a nightly installs next to the released app
+ * instead of replacing it, with its own settings, and never auto-updates.
+ * Used by .github/workflows/nightly.yaml, which picks the targets on the command
+ * line (dmg, nsis, AppImage) because `extends` merges target lists instead of replacing them.
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+    extends: "./electron-builder.json5",
+    appId: "com.openmarch.app.nightly",
+    productName: "OpenMarch Nightly",
+    artifactName: "OpenMarch-Nightly-${platform}-${arch}.${ext}",
+    mac: {
+        artifactName: "OpenMarch-Nightly-macos-${arch}.${ext}",
+        notarize: false,
+    },
+    dmg: {
+        sign: false,
+    },
+    win: {
+        artifactName: "OpenMarch-Nightly-windows-${arch}.${ext}",
+    },
+    linux: {
+        artifactName: "OpenMarch-Nightly-linux-${arch}.${ext}",
+        executableName: "openmarch-nightly",
+    },
+    // No app-update.yml: nightlies must not pull a release build over themselves.
+    publish: null,
+}
