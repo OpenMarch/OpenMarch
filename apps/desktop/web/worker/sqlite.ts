@@ -146,12 +146,6 @@ function openConnection(path: string): Connection {
     return connection;
 }
 
-/** Closes every connection, e.g. before the page goes away. */
-export function closeAll() {
-    for (const connection of connections.values()) connection.close();
-    connections.clear();
-}
-
 type Param = null | number | string | bigint | boolean | Uint8Array | undefined;
 
 function toBindable(value: Param) {

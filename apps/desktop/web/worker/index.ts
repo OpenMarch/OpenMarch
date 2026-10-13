@@ -23,7 +23,6 @@ import { ipcHandlers, ipcListeners, ipcMain } from "./electron";
 import { MIGRATIONS_FOLDER } from "./fs";
 import {
     changeState,
-    closeAll,
     deleteDatabase,
     exportDatabase,
     listDatabases,
@@ -46,7 +45,6 @@ const scope = globalThis as unknown as {
         type: "message",
         listener: (event: MessageEvent<ToWorker>) => void,
     ): void;
-    addEventListener(type: "unload", listener: () => void): void;
 };
 const post = (message: FromWorker) => scope.postMessage(message);
 
@@ -102,6 +100,9 @@ function removeOtherShows(keep?: string) {
     for (const path of listDatabases()) if (path !== keep) deleteDatabase(path);
 }
 
+/** A stored show that couldn't be reopened, kept until it is replaced. */
+let keptShow: string | null = null;
+
 /** Reopens the show that was open before the page reloaded, if there is one. */
 async function restoreShow() {
     const saved = await readShow();
@@ -109,12 +110,14 @@ async function restoreShow() {
     const path = showPath(saved.name);
     try {
         writeDatabase(path, saved.bytes);
-        await openShowAt(path, false);
+        const status = await openShowAt(path, false);
+        if (status !== 200) throw new Error(`Status ${status}`);
         savedCopy = { path, changes: changeState(path)?.changes ?? 0 };
         markDownloaded();
     } catch (error) {
         // Keep the stored copy for a later build to try.
         console.error("Couldn't reopen the last show:", error);
+        keptShow = saved.name;
         deleteDatabase(path);
         DatabaseServices.setDbPath("", false);
     }
@@ -195,6 +198,31 @@ async function saveCopy(): Promise<void> {
     }
 }
 
+/**
+ * Stores a show that just took the open one's place. If storage fails, the
+ * old show's copy is removed and storage is no longer used, so a reload
+ * can't bring the old show back; the page then hands the new one across
+ * the reload as a memory-only tab does.
+ */
+async function storeNewShow() {
+    // A different show, even under the same name and change count.
+    savedCopy = null;
+    try {
+        await saveCopy();
+        keptShow = null;
+    } catch (error) {
+        console.error("Couldn't store the show; keeping it in memory:", error);
+        storageEnabled = false;
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = null;
+        keptShow = null;
+        await clearShow().catch((clearError) =>
+            console.error("Couldn't remove the old show's copy:", clearError),
+        );
+        post({ type: "emit", channel: WEB_EVENTS.storageLost, args: [] });
+    }
+}
+
 function scheduleSave(minimumWait = 0) {
     if (!storageEnabled || saveTimer) return;
     const wait = Math.max(
@@ -260,7 +288,7 @@ function registerNewShowHandlers() {
             removeOtherShows(path);
             const status = DatabaseServices.setDbPath(path);
             if (status === 200) {
-                await saveCopy();
+                await storeNewShow();
                 // Never downloaded: the page marks a new show as changed.
                 markDownloaded();
             }
@@ -317,7 +345,7 @@ function registerWebHandlers() {
             draftPath = null;
             status = DatabaseServices.setDbPath(path);
             if (status === 200) {
-                await saveCopy();
+                await storeNewShow();
                 markDownloaded();
             }
             return status;
@@ -330,8 +358,10 @@ function registerWebHandlers() {
         draftPath = null;
         savedCopy = null;
         downloadedChanges = null;
+        keptShow = null;
         await clearShow();
     });
+    ipcMain.handle(WEB_CHANNELS.keptShow, () => keptShow);
     ipcMain.handle(WEB_CHANNELS.flush, () => saveCopy());
     ipcMain.handle(WEB_CHANNELS.exportShow, () => {
         const path = DatabaseServices.getDbPath();
@@ -416,7 +446,6 @@ async function start() {
     scope.addEventListener("message", (event: MessageEvent<ToWorker>) => {
         void serially(() => handle(event.data));
     });
-    scope.addEventListener("unload", closeAll);
     post({
         type: "ready",
         status:

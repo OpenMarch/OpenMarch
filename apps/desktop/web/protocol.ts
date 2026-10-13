@@ -50,10 +50,21 @@ export const WEB_CHANNELS = {
     readPreviousDots: "web:readPreviousDots",
     /** (data: ArrayBuffer, name: string) => LegacyDatabaseResponse */
     insertAudio: "web:insertAudio",
+    /**
+     * () => string | null: the name of a show kept from an earlier visit that
+     * couldn't be reopened (e.g. saved by a newer build), which creating or
+     * opening a show replaces.
+     */
+    keptShow: "web:keptShow",
 } as const;
 
 /** Messages the worker sends the page unasked, like `webContents.send`. */
 export const WEB_EVENTS = {
     /** The show has changes its last download doesn't. */
     changed: "web:changed",
+    /**
+     * Browser storage failed (e.g. it's full), so the worker stopped keeping
+     * the show there: the page treats it as kept in memory only.
+     */
+    storageLost: "web:storageLost",
 } as const;

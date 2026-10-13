@@ -438,6 +438,9 @@ importers:
       '@faker-js/faker':
         specifier: ^10.0.0
         version: 10.4.0
+      '@noble/hashes':
+        specifier: 1.8.0
+        version: 1.8.0
       '@playwright/test':
         specifier: 1.60.0
         version: 1.60.0

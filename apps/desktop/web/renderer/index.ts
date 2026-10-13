@@ -13,6 +13,7 @@ import {
     isReloadingOnPurpose,
     markChanged,
     setStoredInBrowser,
+    storageLost,
 } from "./handlers";
 import { takeHandedOffShow } from "./handoff";
 import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
@@ -113,8 +114,9 @@ function warnAboutStorage(status: WorkerStatus) {
 }
 
 /**
- * A memory-only tab hands its show off before reloading into it (see
- * ./handoff.ts); opens it again before the app asks for it.
+ * A memory-only tab, or one whose storage failed, hands its show off before
+ * reloading into it (see ./handoff.ts); opens it again before the app asks
+ * for it.
  */
 async function reopenHandedOffShow() {
     let show;
@@ -146,10 +148,17 @@ async function start() {
 
     if (!isSettingsTab) {
         ipcRenderer.on(WEB_EVENTS.changed, markChanged);
+        ipcRenderer.on(WEB_EVENTS.storageLost, () => {
+            storageLost();
+            showNotice(
+                "This browser couldn't store your show (it may be out of space), so it's only kept in this tab until you close or reload it. Download it to keep your changes.",
+            );
+        });
         try {
             const status = await startWorker();
             setStoredInBrowser(status.storage === "opfs");
-            if (status.storage === "memory") await reopenHandedOffShow();
+            // Also with storage: one that failed hands its show off too.
+            await reopenHandedOffShow();
             warnAboutStorage(status);
         } catch (error) {
             document.body.textContent = `OpenMarch couldn't start in this browser: ${

@@ -70,7 +70,11 @@ its show in memory and says so, as does a private window without OPFS.
 Opening or creating a show reloads the page, so such a tab hands the show to
 its next page through IndexedDB (`renderer/handoff.ts`), and keeps its
 "changed since download" flag to itself rather than in the shared
-`localStorage` key. Storage is also namespaced by channel, for
+`localStorage` key. A tab whose storage fails while opening or creating a
+show (e.g. it's full) removes the old show's copy and becomes memory-only
+the same way. A stored show this build can't reopen is kept for a later
+build, and opening or creating a show asks before replacing it. Storage is
+also namespaced by channel, for
 builds that share an origin (such as local `web:dev` and `web:preview`).
 
 ## What doesn't work on the web

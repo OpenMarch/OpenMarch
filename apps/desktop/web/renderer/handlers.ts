@@ -127,6 +127,34 @@ export function setStoredInBrowser(stored: boolean) {
 }
 
 /**
+ * Storage failed and the worker removed the stored show (see
+ * `storeNewShow` in the worker): from now on the tab is memory-only, and
+ * the shared flag describes a show that is gone.
+ */
+export function storageLost() {
+    try {
+        localStorage.removeItem(UNSAVED_KEY);
+    } catch {
+        // See markChanged.
+    }
+    storedInBrowser = false;
+}
+
+/**
+ * Asks before creating or opening a show replaces one this browser kept
+ * from an earlier visit but couldn't reopen.
+ */
+async function confirmReplaceKept(action: string): Promise<boolean> {
+    const kept = await invokeWorker<string | null>(WEB_CHANNELS.keptShow);
+    return (
+        !kept ||
+        window.confirm(
+            `This browser still keeps "${kept}" from an earlier visit, but this version of OpenMarch couldn't reopen it. ${action} replaces it.\n\nContinue?`,
+        )
+    );
+}
+
+/**
  * Before reloading into a show just opened or created: a stored show comes
  * back from storage, and a memory-only one is handed off (see ./handoff.ts).
  * False, after telling the person, if it can't be.
@@ -285,6 +313,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     // is just the show's name.
     handleInPage("database:load", async () => {
         if (!confirmDiscard()) return 0;
+        if (!(await confirmReplaceKept("Opening a show"))) return 0;
         const file = await pickFile(".dots");
         return file ? openShowFile(file) : 0;
     });
@@ -312,6 +341,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     handleInPage(
         "newShow:finalizeDraft",
         async (targetPath: string, projectName: string) => {
+            if (!(await confirmReplaceKept("Creating this show"))) return -1;
             const status = await invokeWorker<number>(
                 "newShow:finalizeDraft",
                 targetPath,
