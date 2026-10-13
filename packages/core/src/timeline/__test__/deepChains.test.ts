@@ -15,9 +15,16 @@ import { runDeepChains } from "../../../scripts/deep-chains.mjs";
 import { createResolver } from "..";
 
 describe("deep chains (QA-REG-6, CI size)", () => {
-    it("20,000 direct, the same after editing the first shape, and 5,000 FTL", () => {
-        const results = runDeepChains(createResolver, 20000);
-        expect(results).toHaveLength(3);
-        for (const r of results) expect(r.ok, r.message).toBe(true);
-    });
+    // This checks for recursion, not speed. It takes about 3.5 s alone in CI
+    // and twice that while the desktop tests share the runner, past Vitest's
+    // 5 s default, so it gets room.
+    it(
+        "20,000 direct, the same after editing the first shape, and 5,000 FTL",
+        { timeout: 30_000 },
+        () => {
+            const results = runDeepChains(createResolver, 20000);
+            expect(results).toHaveLength(3);
+            for (const r of results) expect(r.ok, r.message).toBe(true);
+        },
+    );
 });
