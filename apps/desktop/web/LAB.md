@@ -65,9 +65,10 @@ and questions) and, optionally, an intro video or GIF. To publish one:
 `.github/workflows/lab-deploy.yaml` builds this site and publishes it to the
 OpenMarch lab, with a link to the pull request and credit to its author, and
 comments on the pull request with the test's link. It publishes again on
-every push while the label is on. Removing the label or closing the pull
-request closes the test; its feedback stays. The lab adds its feedback widget
-to the page; nothing here knows about it. The manifest format and the lab
+every push while the label is on. Merging the pull request archives the
+test: it's closed and hidden from testers. Removing the label or closing the
+pull request unmerged closes it. Its feedback stays either way. The lab adds
+its feedback widget to the page; nothing here knows about it. The manifest format and the lab
 itself are in the `OpenMarch/om-lab` repository.
 
 ## Demo shows

@@ -5,8 +5,10 @@
 # Add the `lab` label to a pull request that adds or changes one
 # lab/<id>/experiment.md (the test's title, intro and questions; see
 # apps/desktop/web/LAB.md). The test is published, with credit to the pull
-# request's author, and again on every push while the label is on. Removing
-# the label or closing the pull request closes the test; its feedback stays.
+# request's author, and again on every push while the label is on. Merging
+# the pull request archives the test (closed, and hidden from testers);
+# removing the label or closing it unmerged closes the test. Its feedback
+# stays either way.
 #
 # Only people with triage access can add labels, and pull requests from other
 # people's forks never get the token. The optional variable LAB_PUBLISHERS (a
@@ -15,7 +17,7 @@
 # Needs, in the repository's Actions settings: the variable LAB_URL (e.g.
 # https://lab.openmarch.com) and the secret LAB_DEPLOY_TOKEN (the lab
 # Worker's DEPLOY_TOKEN).
-# cspell:ignore startswith
+# cspell:ignore startswith elif
 name: Lab test build
 
 on:
@@ -46,6 +48,7 @@ jobs:
       SENDER: ${{ github.event.sender.login }}
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      MERGED: ${{ github.event.pull_request.merged }}
       PR: ${{ github.event.pull_request.number }}
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -61,22 +64,45 @@ jobs:
             echo "::warning::No LAB_URL variable or LAB_DEPLOY_TOKEN secret (pull requests from other forks never get it); nothing to publish."
             exit 0
           fi
-          manifests=$(git diff --name-only --diff-filter=AMR "$BASE_SHA...$HEAD_SHA" -- 'lab/*/experiment.md')
-          count=$(printf '%s' "$manifests" | grep -c . || true)
-          if [ "$count" != 1 ]; then
-            echo "::error::A lab pull request adds or changes exactly one lab/<id>/experiment.md; this one has $count."
-            exit 1
-          fi
-          id=$(sed -n 's/^id:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$manifests" | head -1)
-          title=$(sed -n 's/^title:[[:space:]]*//p' "$manifests" | head -1)
-          if [ -z "$id" ]; then
-            echo "::error::$manifests has no id."
-            exit 1
-          fi
-          if [ "$ACTION" = closed ] || [ "$ACTION" = unlabeled ]; then
+          id=
+          if [ "$MERGED" = true ]; then
+            mode=archive
+          elif [ "$ACTION" = closed ] || [ "$ACTION" = unlabeled ]; then
             mode=close
           else
             mode=publish
+          fi
+          if [ "$mode" != publish ]; then
+            # The test this pull request published is named in its comment
+            comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+              --jq '[.[] | select(.body | startswith("<!-- om-lab"))][0].body // empty')
+            if [ -z "$comment" ]; then
+              echo "This pull request never published a test; nothing to $mode."
+              exit 0
+            fi
+            id=$(printf '%s\n' "$comment" | sed -n 's/^<!-- om-lab id=\([a-z0-9-]*\) -->.*/\1/p' | head -1)
+          fi
+          if [ -n "$id" ]; then
+            manifests="lab/$id/experiment.md"
+          else
+            # A manifest this pull request changes, both from where it branched
+            # and from its base now: files the base gained since (from other
+            # merged pull requests) only differ by one of those.
+            changed() { git diff --name-only --diff-filter=AMR "$@" -- 'lab/*/experiment.md' | sort; }
+            manifests=$(comm -12 <(changed "$BASE_SHA...$HEAD_SHA") <(changed "$BASE_SHA" "$HEAD_SHA"))
+            count=$(printf '%s' "$manifests" | grep -c . || true)
+            if [ "$count" != 1 ]; then
+              echo "::error::A lab pull request adds or changes exactly one lab/<id>/experiment.md; this one has $count."
+              exit 1
+            fi
+            id=$(sed -n 's/^id:[[:space:]]*\([a-z0-9-]*\).*/\1/p' "$manifests" | head -1)
+            if [ -z "$id" ]; then
+              echo "::error::$manifests has no id."
+              exit 1
+            fi
+          fi
+          title=$(sed -n 's/^title:[[:space:]]*//p' "$manifests" 2>/dev/null | head -1)
+          if [ "$mode" = publish ]; then
             if [ -n "$LAB_PUBLISHERS" ] &&
               ! jq -e --arg who "$SENDER" 'any(.[]; . == $who)' <<<"$LAB_PUBLISHERS" >/dev/null; then
               echo "::error::$SENDER isn't on LAB_PUBLISHERS, so this can't publish to the lab."
@@ -130,13 +156,14 @@ jobs:
             --branch "$BRANCH" \
             --commit "$HEAD_SHA"
 
-      - name: Close the test
-        if: steps.test.outputs.mode == 'close'
+      - name: Close or archive the test
+        if: steps.test.outputs.mode == 'close' || steps.test.outputs.mode == 'archive'
         env:
           ID: ${{ steps.test.outputs.id }}
+          STATUS: ${{ steps.test.outputs.mode == 'archive' && 'archived' || 'closed' }}
         run: |
           node "$RUNNER_TEMP/deploy-experiment.mjs" \
-            --lab "$LAB_URL" --id "$ID" --status closed
+            --lab "$LAB_URL" --id "$ID" --status "$STATUS"
 
       - name: Say so on the pull request
         if: steps.test.outputs.mode != ''
@@ -145,23 +172,27 @@ jobs:
           ID: ${{ steps.test.outputs.id }}
           TITLE: ${{ steps.test.outputs.title }}
         run: |
-          marker="<!-- om-lab -->"
+          marker="<!-- om-lab id=$ID -->"
+          title=${TITLE:-$ID}
           if [ "$MODE" = publish ]; then
             body="$marker
-          **Lab test: $TITLE** is live for testers, built from ${HEAD_SHA:0:8}.
+          **Lab test: $title** is live for testers, built from ${HEAD_SHA:0:8}.
 
           - Test page and feedback: $LAB_URL/t/$ID
           - Test build: $LAB_URL/x/$ID/
 
           It's published again on every push while the \`lab\` label is on."
+          elif [ "$MODE" = archive ]; then
+            body="$marker
+          **Lab test: $title** is archived now that this pull request is merged: testers no longer see it. Admins can still read its feedback: $LAB_URL/t/$ID"
           else
             body="$marker
-          **Lab test: $TITLE** is closed to new feedback. What testers sent is kept: $LAB_URL/t/$ID
+          **Lab test: $title** is closed to new feedback. What testers sent is kept: $LAB_URL/t/$ID
 
           Add the \`lab\` label again to reopen it."
           fi
           comment=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
-            --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id // empty")
+            --jq '[.[] | select(.body | startswith("<!-- om-lab"))][0].id // empty')
           if [ -n "$comment" ]; then
             gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment" -f body="$body" >/dev/null
           else
