@@ -11,6 +11,12 @@ interface ImportMetaEnv {
     readonly VITE_API_URL?: string;
     /** OpenMarch editor API base URL */
     readonly VITE_EDITOR_API_URL?: string;
+    /** "true" in the web build (vite.web.config.mts). */
+    readonly VITE_PUBLIC_WEB_BUILD?: string;
+    /** The web build's release channel: "stable", "nightly" or "dev". */
+    readonly VITE_PUBLIC_WEB_CHANNEL?: string;
+    /** The app's version, in the web build's worker. */
+    readonly VITE_PUBLIC_APP_VERSION?: string;
 }
 declare module "@fontsource/dm-mono";
 declare module "@fontsource/dm-sans";

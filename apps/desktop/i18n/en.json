@@ -1265,6 +1265,12 @@
         "title": "New Version Available",
         "trigger": "New Version Available!"
     },
+    "web": {
+        "download": "Download .dots",
+        "downloaded": "Downloaded {name}",
+        "fileMenu": "File",
+        "notDownloadedYet": "Changes since your last download are only in this browser"
+    },
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
         "title": "Welcome to OpenMarch"

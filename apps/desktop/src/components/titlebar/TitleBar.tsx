@@ -17,6 +17,8 @@ import { T } from "@tolgee/react";
 import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
+import { isWebBuild, webChannel } from "@/utilities/webBuild";
+import WebFileMenu from "./WebFileMenu";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
 function usePageZoomFactor() {
@@ -41,7 +43,9 @@ export default function TitleBar({
     variant?: "main" | "settings";
 }) {
     const showFilePath = variant === "main";
-    const isMacOS = window.electron.isMacOS;
+    // In a browser there are no traffic lights, native menu or window buttons.
+    const isMacOS = window.electron.isMacOS && !isWebBuild;
+    const showWindowControls = !isMacOS && !isWebBuild;
     const { uiSettings } = useUiSettingsStore();
     const zoomFactor = usePageZoomFactor();
 
@@ -105,7 +109,8 @@ export default function TitleBar({
                 style={isMacOS ? { zoom: 1 / zoomFactor } : undefined}
             >
                 <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
-                    {!isMacOS && (
+                    {isWebBuild && variant === "main" && <WebFileMenu />}
+                    {showWindowControls && (
                         <button
                             className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
                             onClick={() => {
@@ -128,8 +133,9 @@ export default function TitleBar({
                             <>
                                 <p className="text-body leading-none opacity-50">
                                     {currentVersion}
+                                    {webChannel === "nightly" && " nightly"}
                                 </p>
-                                <VersionChecker />
+                                {!isWebBuild && <VersionChecker />}
                                 {showControls && <FileControls />}
                             </>
                         )}
@@ -142,7 +148,7 @@ export default function TitleBar({
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
                 >
                     <BugReport />
-                    {!isMacOS && (
+                    {showWindowControls && (
                         <div className="titlebar-button flex">
                             <button
                                 className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"

@@ -6,6 +6,7 @@ import AudioFile from "@/global/classes/AudioFile";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
+import { isWebBuild } from "@/utilities/webBuild";
 import { useActionHandler } from "../useActionHandler";
 
 // eslint-disable-next-line max-lines-per-function
@@ -30,6 +31,17 @@ export function useFileActionHandlers() {
     });
 
     useActionHandler("launchSaveFileDialogue", () => {
+        if (isWebBuild) {
+            // On the web, saving is downloading: there is no copy to explain.
+            window.electron
+                .databaseSave()
+                .catch((err: Error) =>
+                    toast.error(
+                        `${t("fileTab.toasts.error")}. Error ${err.message}`,
+                    ),
+                );
+            return;
+        }
         // Set alert modal with help text to confirm the user wants to save a copy
         setAlertModalTitle("fileTab.saveFile");
         setAlertModalContent(<T keyName="fileTab.saveCopyDialogDescription" />);

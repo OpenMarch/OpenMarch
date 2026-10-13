@@ -60,7 +60,7 @@ import {
 
 let isQuitting = false;
 const store = new Store();
-const DB_USER_VERSION = 7;
+const { DB_USER_VERSION } = DatabaseServices;
 
 /** Active new-show draft file in userData/new-show-drafts (not in recent files until finalized). */
 let currentNewShowDraftPath: string | null = null;
