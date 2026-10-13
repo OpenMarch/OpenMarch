@@ -18,6 +18,15 @@ const pending = new Map<
 
 let worker: Worker | null = null;
 let nextId = 1;
+
+/** The worker is gone: fails every waiting call, and later calls at once. */
+function workerFailed(error: Error) {
+    worker?.terminate();
+    worker = null;
+    for (const call of pending.values()) call.reject(error);
+    pending.clear();
+}
+
 /** Handles an `invoke` channel in the page instead of the worker. */
 export function handleInPage(channel: string, handler: Handler) {
     pageHandlers.set(channel, handler);
@@ -61,20 +70,32 @@ export function startWorker(): Promise<WorkerStatus> {
             type: "module",
             name: "openmarch-main",
         });
-        worker.addEventListener("error", (event) =>
-            reject(new Error(event.message || "The worker failed to start")),
-        );
+        let ready = false;
+        // After `ready`, an uncaught error leaves the worker running (calls
+        // still get answers), so only a failure to start ends it.
+        worker.addEventListener("error", (event) => {
+            if (ready) return;
+            const error = new Error(
+                event.message || "The worker failed to start",
+            );
+            workerFailed(error);
+            reject(error);
+        });
         worker.addEventListener(
             "message",
             (event: MessageEvent<FromWorker>) => {
                 const message = event.data;
                 switch (message.type) {
                     case "ready":
+                        ready = true;
                         resolve(message.status);
                         break;
-                    case "fatal":
-                        reject(new Error(message.message));
+                    case "fatal": {
+                        const error = new Error(message.message);
+                        workerFailed(error);
+                        reject(error);
                         break;
+                    }
                     case "emit":
                         emit(message.channel, ...message.args);
                         break;

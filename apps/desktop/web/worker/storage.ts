@@ -133,11 +133,22 @@ export function writeShow(name: string, bytes: Uint8Array): Promise<void> {
             }
         ).createSyncAccessHandle();
         try {
-            access.truncate(0);
-            access.write(bytes, { at: 0 });
-            access.flush();
-        } finally {
-            access.close();
+            let written: number;
+            try {
+                access.truncate(0);
+                written = access.write(bytes, { at: 0 });
+                if (written === bytes.byteLength) access.flush();
+            } finally {
+                access.close();
+            }
+            if (written !== bytes.byteLength)
+                throw new Error(
+                    `Only ${written} of ${bytes.byteLength} bytes were stored`,
+                );
+        } catch (error) {
+            // Cut short (e.g. out of space): keep the previous copy.
+            await folder.removeEntry(file).catch(() => {});
+            throw error;
         }
         for (const entry of await entries())
             if (entry.file !== file) await folder.removeEntry(entry.file);

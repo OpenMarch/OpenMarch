@@ -52,6 +52,8 @@ const post = (message: FromWorker) => scope.postMessage(message);
 
 /** New-show drafts live here until the wizard finishes. */
 const DRAFTS = "/drafts/";
+/** An opened file waits here until it has been checked and migrated. */
+const INCOMING = "/incoming/";
 
 let draftPath: string | null = null;
 
@@ -159,7 +161,13 @@ async function saveCopy(): Promise<void> {
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = null;
     const path = DatabaseServices.getDbPath();
-    if (!storageEnabled || !path || path.startsWith(DRAFTS)) return;
+    if (
+        !storageEnabled ||
+        !path ||
+        path.startsWith(DRAFTS) ||
+        path.startsWith(INCOMING)
+    )
+        return;
     const state = changeState(path);
     if (!state) return;
     if (savedCopy?.path === path && savedCopy.changes === state.changes) return;
@@ -170,19 +178,39 @@ async function saveCopy(): Promise<void> {
     }
     lastSaveAt = Date.now();
     const bytes = exportDatabase(path);
-    savedCopy = { path, changes: state.changes };
-    await writeShow(path.slice(1).replace(/\.dots$/, ""), bytes);
+    const copy = { path, changes: state.changes };
+    savedCopy = copy;
+    try {
+        await writeShow(path.slice(1).replace(/\.dots$/, ""), bytes);
+    } catch (error) {
+        // Not stored, so the next save tries again.
+        if (savedCopy === copy) savedCopy = null;
+        throw error;
+    }
 }
 
 function scheduleSave() {
     if (!storageEnabled || saveTimer) return;
     const wait = Math.max(0, lastSaveAt + SAVE_INTERVAL_MS - Date.now());
     const save = () =>
-        saveCopy().catch((error) =>
+        serially(saveCopy).catch((error) =>
             console.error("Couldn't keep a copy of the show:", error),
         );
     if (wait === 0) void save();
     else saveTimer = setTimeout(save, wait);
+}
+
+/** Messages and timed saves run one at a time, in order. */
+let operations: Promise<unknown> = Promise.resolve();
+
+/**
+ * Runs `operation` after the ones before it, so a close or a save can't run
+ * while an open is still migrating the show.
+ */
+function serially<T>(operation: () => Promise<T>): Promise<T> {
+    const result = operations.then(operation, operation);
+    operations = result.catch(() => {});
+    return result;
 }
 
 /** The few handlers in electron/main/index.ts a show needs, restated. */
@@ -248,27 +276,42 @@ function registerWebHandlers() {
     ipcMain.handle(
         WEB_CHANNELS.openShow,
         async (_, bytes: Uint8Array, name: string) => {
+            // Check and migrate the file apart from the open show, which
+            // stays open (and stored) if the file can't be opened.
+            const previous = DatabaseServices.getDbPath();
+            const incoming = `${INCOMING}${crypto.randomUUID()}.dots`;
+            const restore = (status: number) => {
+                deleteDatabase(incoming);
+                if (previous) DatabaseServices.setDbPath(previous);
+                else DatabaseServices.setDbPath("", false);
+                return status;
+            };
             DatabaseServices.closePersistentConnection();
-            const path = showPath(name);
-            removeOtherShows();
             try {
-                writeDatabase(path, bytes);
+                writeDatabase(incoming, bytes);
             } catch (error) {
                 console.error("Not a SQLite file:", error);
-                return 415;
+                return restore(415);
             }
+            let status: number;
             try {
-                const status = await openShowAt(path, false);
-                if (status !== 200) deleteDatabase(path);
-                else {
-                    await saveCopy();
-                    markDownloaded();
-                }
-                return status;
+                status = await openShowAt(incoming, false);
             } catch {
-                deleteDatabase(path);
-                return 500;
+                return restore(500);
             }
+            if (status !== 200) return restore(status);
+
+            const path = showPath(name);
+            DatabaseServices.closePersistentConnection();
+            renameDatabase(incoming, path);
+            removeOtherShows(path);
+            draftPath = null;
+            status = DatabaseServices.setDbPath(path);
+            if (status === 200) {
+                await saveCopy();
+                markDownloaded();
+            }
+            return status;
         },
     );
     ipcMain.handle(WEB_CHANNELS.closeShow, async () => {
@@ -362,7 +405,7 @@ async function start() {
     registerHandlers();
     if (storageEnabled) await restoreShow();
     scope.addEventListener("message", (event: MessageEvent<ToWorker>) => {
-        void handle(event.data);
+        void serially(() => handle(event.data));
     });
     scope.addEventListener("unload", closeAll);
     post({
