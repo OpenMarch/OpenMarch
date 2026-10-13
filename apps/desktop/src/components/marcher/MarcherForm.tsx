@@ -356,6 +356,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                     <MarcherCsvImportForm
                         existing={marchers ?? []}
                         importDisabled={
+                            disabledProp ||
                             waitingForMarchers ||
                             createMarchersMutation.isPending
                         }

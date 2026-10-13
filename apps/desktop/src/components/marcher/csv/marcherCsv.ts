@@ -249,10 +249,7 @@ export function planMarcherCsv(
         ignoredColumns: [],
         missingColumns: [],
     };
-    if (records.length === 0) {
-        plan.missingColumns = [required];
-        return plan;
-    }
+    if (records.length === 0) return plan;
 
     const header = records[0].cells.map(canonicalHeader);
     if (!header.includes(required)) plan.missingColumns.push(required);

@@ -67,6 +67,7 @@ export default function MarcherCsvImportForm({
 }: MarcherCsvImportFormProps) {
     const { t } = useTolgee();
     const fileInput = useRef<HTMLInputElement>(null);
+    const readGeneration = useRef(0);
     const [mode, setMode] = useState<MarcherCsvMode>("section");
     const [file, setFile] = useState<{ name: string; text: string }>();
     const [readError, setReadError] = useState(false);
@@ -82,10 +83,15 @@ export default function MarcherCsvImportForm({
 
     const onFile = async (f: File | undefined) => {
         if (!f) return;
+        const request = ++readGeneration.current;
+        setReadError(false);
+        setFile(undefined);
         try {
-            setReadError(false);
-            setFile({ name: f.name, text: await readText(f) });
+            const text = await readText(f);
+            if (readGeneration.current !== request) return;
+            setFile({ name: f.name, text });
         } catch {
+            if (readGeneration.current !== request) return;
             setReadError(true);
             setFile(undefined);
         }
