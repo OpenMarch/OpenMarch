@@ -12,7 +12,9 @@ import {
     changedSinceDownload,
     isReloadingOnPurpose,
     markChanged,
+    setStoredInBrowser,
 } from "./handlers";
+import { takeHandedOffShow } from "./handoff";
 import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
 import { WEB_CHANNELS, WEB_EVENTS, type WorkerStatus } from "../protocol";
@@ -115,6 +117,32 @@ function warnAboutStorage(status: WorkerStatus) {
     );
 }
 
+/**
+ * A memory-only tab hands its show off before reloading into it (see
+ * ./handoff.ts); opens it again before the app asks for it.
+ */
+async function reopenHandedOffShow() {
+    let show;
+    try {
+        show = await takeHandedOffShow();
+    } catch (error) {
+        console.error(
+            "Couldn't take back the show from before the reload:",
+            error,
+        );
+        return;
+    }
+    if (!show) return;
+    const status = await invokeWorker<number>(
+        WEB_CHANNELS.openShow,
+        show.bytes,
+        show.name,
+    );
+    if (status !== 200)
+        console.error(`Couldn't reopen the show after the reload (${status})`);
+    else if (show.changed) markChanged();
+}
+
 async function start() {
     window.__openmarchPlatform = detectPlatform();
     suppressBrowserContextMenu();
@@ -124,7 +152,10 @@ async function start() {
     if (!isSettingsTab) {
         ipcRenderer.on(WEB_EVENTS.changed, markChanged);
         try {
-            warnAboutStorage(await startWorker());
+            const status = await startWorker();
+            setStoredInBrowser(status.storage === "opfs");
+            if (status.storage === "memory") await reopenHandedOffShow();
+            warnAboutStorage(status);
         } catch (error) {
             document.body.textContent = `OpenMarch couldn't start in this browser: ${
                 error instanceof Error ? error.message : String(error)

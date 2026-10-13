@@ -150,6 +150,12 @@ function reportChanges() {
  * can reload; a drag's stream of writes is copied a few times a second.
  */
 const SAVE_INTERVAL_MS = 500;
+/**
+ * How long to wait before trying again when a save finds a transaction open.
+ * Must be a real timer: the transaction's next statement is a later message,
+ * and the worker only reads it once this save stops retrying.
+ */
+const TRANSACTION_RETRY_MS = 50;
 /** The show and change count the stored copy has. */
 let savedCopy: { path: string; changes: number } | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -173,7 +179,7 @@ async function saveCopy(): Promise<void> {
     if (savedCopy?.path === path && savedCopy.changes === state.changes) return;
     if (!state.idle) {
         // Mid-transaction: the copy would hold half a change. Try again soon.
-        scheduleSave();
+        scheduleSave(TRANSACTION_RETRY_MS);
         return;
     }
     lastSaveAt = Date.now();
@@ -189,9 +195,12 @@ async function saveCopy(): Promise<void> {
     }
 }
 
-function scheduleSave() {
+function scheduleSave(minimumWait = 0) {
     if (!storageEnabled || saveTimer) return;
-    const wait = Math.max(0, lastSaveAt + SAVE_INTERVAL_MS - Date.now());
+    const wait = Math.max(
+        minimumWait,
+        lastSaveAt + SAVE_INTERVAL_MS - Date.now(),
+    );
     const save = () =>
         serially(saveCopy).catch((error) =>
             console.error("Couldn't keep a copy of the show:", error),

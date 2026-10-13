@@ -66,7 +66,11 @@ and the `opfs` VFS needs cross-origin isolation headers, which would block
 cross-origin scripts, images and embeds.
 
 Only one tab per channel holds the storage (a Web Lock). A second tab keeps
-its show in memory and says so. Storage is also namespaced by channel, for
+its show in memory and says so, as does a private window without OPFS.
+Opening or creating a show reloads the page, so such a tab hands the show to
+its next page through IndexedDB (`renderer/handoff.ts`), and keeps its
+"changed since download" flag to itself rather than in the shared
+`localStorage` key. Storage is also namespaced by channel, for
 builds that share an origin (such as local `web:dev` and `web:preview`).
 
 ## What doesn't work on the web

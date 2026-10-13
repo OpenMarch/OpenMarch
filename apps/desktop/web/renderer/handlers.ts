@@ -11,6 +11,7 @@
 import { WEB_CHANNELS } from "../protocol";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
+import { handOffShow } from "./handoff";
 
 const SETTINGS_KEY = storageKey("settings");
 /** Tells this build's other tabs (e.g. the settings tab) about a change. */
@@ -108,11 +109,45 @@ export async function openShowFile(file: File): Promise<number> {
         new Uint8Array(await file.arrayBuffer()),
         file.name,
     );
-    if (status === 200) {
-        markDownloaded();
-        reloadPage();
-    } else emit("load-file-response", status);
+    if (status !== 200) {
+        emit("load-file-response", status);
+        return status;
+    }
+    markDownloaded();
+    if (!(await keepAcrossReload(false))) return 500;
+    reloadPage();
     return status;
+}
+
+let storedInBrowser = false;
+
+/** Whether the worker keeps the show in browser storage, from its status. */
+export function setStoredInBrowser(stored: boolean) {
+    storedInBrowser = stored;
+}
+
+/**
+ * Before reloading into a show just opened or created: a stored show comes
+ * back from storage, and a memory-only one is handed off (see ./handoff.ts).
+ * False, after telling the person, if it can't be.
+ */
+async function keepAcrossReload(changed: boolean): Promise<boolean> {
+    if (storedInBrowser) return true;
+    try {
+        const show = await invokeWorker<{
+            name: string;
+            bytes: Uint8Array;
+        } | null>(WEB_CHANNELS.exportShow);
+        if (!show) return false;
+        await handOffShow({ ...show, changed });
+        return true;
+    } catch (error) {
+        console.error("Couldn't keep the show across the reload:", error);
+        window.alert(
+            "This browser window can't open a show, because it won't let OpenMarch keep anything even for a moment. Try a normal (not private) window.",
+        );
+        return false;
+    }
 }
 
 /**
@@ -120,7 +155,15 @@ export async function openShowFile(file: File): Promise<number> {
  * those changes is in this browser. Kept across visits, like the show.
  */
 const UNSAVED_KEY = storageKey("changedSinceDownload");
+/**
+ * In a memory-only tab the flag is the page's own: the shared key describes
+ * the stored show, which belongs to the tab holding storage, and another tab
+ * clearing it would drop that tab's warning.
+ */
+let changedInPage = false;
 export function markChanged() {
+    changedInPage = true;
+    if (!storedInBrowser) return;
     try {
         localStorage.setItem(UNSAVED_KEY, "1");
     } catch {
@@ -128,6 +171,8 @@ export function markChanged() {
     }
 }
 function markDownloaded() {
+    changedInPage = false;
+    if (!storedInBrowser) return;
     try {
         localStorage.removeItem(UNSAVED_KEY);
     } catch {
@@ -135,10 +180,11 @@ function markDownloaded() {
     }
 }
 export function changedSinceDownload() {
+    if (!storedInBrowser) return changedInPage;
     try {
         return localStorage.getItem(UNSAVED_KEY) === "1";
     } catch {
-        return false;
+        return changedInPage;
     }
 }
 
@@ -271,10 +317,11 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
                 targetPath,
                 projectName,
             );
-            if (status === 200) {
-                markChanged();
-                reloadPage();
-            }
+            if (status !== 200) return status;
+            // Never downloaded.
+            markChanged();
+            if (!(await keepAcrossReload(true))) return 500;
+            reloadPage();
             return status;
         },
     );
