@@ -38,6 +38,22 @@ function detectPlatform(): string {
     return "linux";
 }
 
+/**
+ * Electron shows no context menu of its own; a browser does, so right-drag
+ * panning on the canvas would end on "Save image as". Listening on the window
+ * in the bubble phase runs after the app's handlers, so its own context menus
+ * (which bail out on an already-prevented event) still open. Text fields keep
+ * the browser's menu for copy and paste.
+ */
+function suppressBrowserContextMenu() {
+    window.addEventListener("contextmenu", (event) => {
+        const target = event.target as HTMLElement | null;
+        if (target?.closest?.("input, textarea, [contenteditable='true']"))
+            return;
+        event.preventDefault();
+    });
+}
+
 /** A bar along the bottom of the page, for problems the person should know about. */
 function showNotice(text: string) {
     const bar = document.createElement("div");
@@ -101,6 +117,7 @@ function warnAboutStorage(status: WorkerStatus) {
 
 async function start() {
     window.__openmarchPlatform = detectPlatform();
+    suppressBrowserContextMenu();
     const isSettingsTab = window.location.hash === "#settings";
     registerPageHandlers({ isSettingsTab });
 
