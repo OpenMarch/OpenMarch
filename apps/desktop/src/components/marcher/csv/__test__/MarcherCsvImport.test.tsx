@@ -4,16 +4,22 @@ import userEvent from "@testing-library/user-event";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { allMarchersQueryOptions } from "@/hooks/queries";
 import MarcherCsvImport from "../MarcherCsvImport";
 
-const renderImport = () =>
-    render(
-        <QueryClientProvider client={new QueryClient()}>
+/** Marchers already in the show; the import waits for this query to load */
+const renderImport = (loaded = true) => {
+    const queryClient = new QueryClient();
+    if (loaded)
+        queryClient.setQueryData(allMarchersQueryOptions().queryKey, []);
+    return render(
+        <QueryClientProvider client={queryClient}>
             <TolgeeProvider tolgee={tolgee} fallback="Loading...">
                 <MarcherCsvImport />
             </TolgeeProvider>
         </QueryClientProvider>,
     );
+};
 
 describe("MarcherCsvImport", () => {
     beforeAll(async () => {
@@ -42,6 +48,22 @@ describe("MarcherCsvImport", () => {
 
     it("disables import until a file with valid rows is chosen", () => {
         renderImport();
+        expect(
+            (
+                screen.getByRole("button", {
+                    name: /^Import/,
+                }) as HTMLButtonElement
+            ).disabled,
+        ).toBe(true);
+    });
+
+    it("keeps import disabled until the existing marchers have loaded", async () => {
+        renderImport(false);
+        await userEvent.upload(
+            screen.getByLabelText("Marcher CSV file"),
+            new File(["section\nFlute\n"], "band.csv", { type: "text/csv" }),
+        );
+        await waitFor(() => expect(screen.getByText(/band\.csv/)).toBeTruthy());
         expect(
             (
                 screen.getByRole("button", {

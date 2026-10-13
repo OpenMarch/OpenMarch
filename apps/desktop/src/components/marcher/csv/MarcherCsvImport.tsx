@@ -84,7 +84,9 @@ export default function MarcherCsvImport() {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
     const { setContent } = useSidebarModalStore();
-    const { data: marchers } = useQuery(allMarchersQueryOptions());
+    const { data: marchers, isSuccess: marchersLoaded } = useQuery(
+        allMarchersQueryOptions(),
+    );
     const createMarchers = useMutation(
         createMarchersMutationOptions(queryClient),
     );
@@ -292,7 +294,11 @@ export default function MarcherCsvImport() {
 
             <Button
                 className="w-full"
-                disabled={valid.length === 0 || createMarchers.isPending}
+                disabled={
+                    !marchersLoaded ||
+                    valid.length === 0 ||
+                    createMarchers.isPending
+                }
                 onClick={onImport}
             >
                 {t("marchers.csv.importButton", { count: valid.length })}

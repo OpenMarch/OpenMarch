@@ -214,15 +214,19 @@ function planDrillNumberRow(ctx: RowContext): RowResult {
         sectionName = candidates[0].name;
     }
 
-    const key = `${parsed.prefix}\u0000${parsed.order}`;
+    // Use the section's own casing, so "f7" collides with "F7"
+    const prefix =
+        sectionsForPrefix(parsed.prefix)[0]?.prefix ??
+        parsed.prefix.toUpperCase();
+    const key = `${prefix}\u0000${parsed.order}`;
     if (ctx.existingKeys.has(key)) return err("duplicateInShow", rawNumber);
     if (ctx.inFile.has(key)) return err("duplicateInFile", rawNumber);
     ctx.inFile.add(key);
-    takenFor(ctx, parsed.prefix).add(parsed.order);
+    takenFor(ctx, prefix).add(parsed.order);
     return {
         marcher: {
             section: sectionName,
-            drill_prefix: parsed.prefix,
+            drill_prefix: prefix,
             drill_order: parsed.order,
         },
     };

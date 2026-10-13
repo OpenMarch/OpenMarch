@@ -151,6 +151,20 @@ describe("planMarcherCsv by drill number", () => {
         ]);
     });
 
+    it("treats prefix case as the same drill number", () => {
+        const plan = planMarcherCsv(
+            "drill_number\nf7\nF7\nF8\n",
+            "drillNumber",
+            [{ drill_prefix: "F", drill_order: 8 }],
+        );
+        expect(errors(plan)).toEqual([
+            undefined,
+            "duplicateInFile",
+            "duplicateInShow",
+        ]);
+        expect(ok(plan)[0]?.drill_prefix).toBe("F");
+    });
+
     it("accepts header aliases", () => {
         const plan = planMarcherCsv(
             "Drill Number,Instrument\nF1,Flute\n",
