@@ -5,7 +5,7 @@ import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries";
-import MarcherCsvImport from "../MarcherCsvImport";
+import MarcherForm from "../../MarcherForm";
 
 /** Marchers already in the show; the import waits for this query to load */
 const renderImport = (loaded = true) => {
@@ -15,13 +15,13 @@ const renderImport = (loaded = true) => {
     return render(
         <QueryClientProvider client={queryClient}>
             <TolgeeProvider tolgee={tolgee} fallback="Loading...">
-                <MarcherCsvImport />
+                <MarcherForm initialAddMethod="csv" />
             </TolgeeProvider>
         </QueryClientProvider>,
     );
 };
 
-describe("MarcherCsvImport", () => {
+describe("MarcherForm CSV import", () => {
     beforeAll(async () => {
         await tolgee.run();
     });
