@@ -99,7 +99,7 @@ importers:
         version: 5.96.2(eslint@8.57.1)(typescript@6.0.3)
       '@types/bun':
         specifier: latest
-        version: 1.3.14
+        version: 1.4.3
       '@types/sanitize-html':
         specifier: ^2.16.0
         version: 2.16.1
@@ -147,7 +147,7 @@ importers:
         version: 1.19.11(encoding@0.1.13)(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4))(wrangler@4.94.0)
       '@payloadcms/db-d1-sqlite':
         specifier: 3.84.1
-        version: 3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)
+        version: 3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)
       '@payloadcms/next':
         specifier: 3.84.1
         version: 3.84.1(@types/react@19.2.9)(graphql@16.13.2)(monaco-editor@0.55.1)(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4))(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@6.0.3)
@@ -367,7 +367,7 @@ importers:
         version: 3.4.5
       drizzle-orm:
         specifier: '>=0.45.2'
-        version: 0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(sql.js@1.14.1)
+        version: 0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(sql.js@1.14.1)
       electron-store:
         specifier: ^8.2.0
         version: 8.2.0
@@ -447,9 +447,15 @@ importers:
       '@faker-js/faker':
         specifier: ^10.0.0
         version: 10.4.0
+      '@noble/hashes':
+        specifier: 1.8.0
+        version: 1.8.0
       '@playwright/test':
         specifier: 1.60.0
         version: 1.60.0
+      '@sqlite.org/sqlite-wasm':
+        specifier: 3.53.4-build1
+        version: 3.53.4-build1
       '@tailwindcss/vite':
         specifier: 4.1.18
         version: 4.1.18(vite@8.0.14(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
@@ -558,6 +564,9 @@ importers:
       vitest:
         specifier: ^4.0.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.12.2)(@vitest/ui@4.1.2)(happy-dom@20.10.6)(jsdom@24.1.3(canvas@3.2.3(patch_hash=cbe6ad11ca8470108282514a34931732726ed7ea9376666ba672d81e688df32f)))(vite@8.0.14(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+      wrangler:
+        specifier: ^4.94.0
+        version: 4.94.0
 
   apps/website:
     dependencies:
@@ -801,7 +810,7 @@ importers:
         version: 1.2.8(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tailwindcss/vite':
         specifier: ^4.1.11
-        version: 4.1.18(vite@8.0.14(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
+        version: 4.1.18(vite@7.3.3(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
       '@types/react':
         specifier: ^19.1.8
         version: 19.2.9
@@ -2502,11 +2511,11 @@ packages:
 
   '@esbuild-kit/core-utils@3.3.2':
     resolution: {integrity: sha512-sPRAnw9CdSsRmEtnsl2WXWdyquogVpB3yZ3dgwJfe8zrOzTsV7cJvmwrKVa+0ma5BoiGJ+BoqkMvawbayKUsqQ==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild-kit/esm-loader@2.6.5':
     resolution: {integrity: sha512-FxEMIkJKnodyA1OaCUoEvbYRkoZlLZ4d/eXFu9Fh8CbBBgP5EmZxrfTRyN0qpXZ4vOvqnE5YdRdcrmUUXuU+dA==}
-    deprecated: 'Merged into tsx: https://tsx.is'
+    deprecated: 'Merged into tsx: https://tsx.hirok.io'
 
   '@esbuild/aix-ppc64@0.25.12':
     resolution: {integrity: sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA==}
@@ -5487,6 +5496,10 @@ packages:
   '@speed-highlight/core@1.2.15':
     resolution: {integrity: sha512-BMq1K3DsElxDWawkX6eLg9+CKJrTVGCBAWVuHXVUV2u0s2711qiChLSId6ikYPfxhdYocLNt3wWwSvDiTvFabw==}
 
+  '@sqlite.org/sqlite-wasm@3.53.4-build1':
+    resolution: {integrity: sha512-U8pvL0patYHMgieD8JxxYJTlh9m1LUX8+BDYb7MiKQzBI89f2qbdmdcG/PvnPaLm9wsBbv4VlVG453ixnxBOnA==}
+    engines: {node: '>=22'}
+
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
@@ -5593,7 +5606,7 @@ packages:
   '@tailwindcss/vite@4.1.18':
     resolution: {integrity: sha512-jVA+/UpKL1vRLg6Hkao5jldawNmRo7mQYrZtNHMIVpLfLhDml5nMRUo/8MwoX2vNXvnaXNNMedrMfMugAVX1nA==}
     peerDependencies:
-      vite: '>=7.3.2'
+      vite: '>=6.4.2'
 
   '@tanstack/eslint-plugin-query@5.96.2':
     resolution: {integrity: sha512-OsXCATZ+YmG8TyHrunfYy2IDB+dqY87en2im2A60JPgDAg66cCoHTzJWbe9uH8Cw9/K3NiKYlyyo1erVFu3qFw==}
@@ -5879,8 +5892,8 @@ packages:
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
-  '@types/bun@1.3.14':
-    resolution: {integrity: sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw==}
+  '@types/bun@1.4.3':
+    resolution: {integrity: sha512-N67Pqy8JXbAY/j0tNraS3V5mubGvc6rrrNDmDCtZLlFzccbUJPDb0tvgUBC5q4m8ybkP93Jcn1QB+RYQ6PvBhw==}
 
   '@types/busboy@1.5.4':
     resolution: {integrity: sha512-kG7WrUuAKK0NoyxfQHsVE6j1m01s6kMma64E+OZenQABMQyTJop1DumUWcLwAQ2JzpefU7PDYoRDKl8uZosFjw==}
@@ -6358,6 +6371,7 @@ packages:
 
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
+    deprecated: Potential CWE-502 - Update to 1.3.1 or higher
 
   '@unrs/resolver-binding-android-arm-eabi@1.11.1':
     resolution: {integrity: sha512-ppLRUgHVaGRWUx0R0Ut06Mjo9gBaBkg3v/8AxusGLhsIotbBLuRk51rAzqLC8gq6NyyAojEXglNjzf6R948DNw==}
@@ -6584,6 +6598,7 @@ packages:
   '@xmldom/xmldom@0.9.10':
     resolution: {integrity: sha512-A9gOqLdi6cV4ibazAjcQufGj0B1y/vDqYrcuP6d/6x8P27gRS8643Dj9o1dEKtB6O7fwxb2FgBmJS2mX7gpvdw==}
     engines: {node: '>=14.6'}
+    deprecated: this version has critical issues, please update to the latest version
 
   '@yarnpkg/lockfile@1.1.0':
     resolution: {integrity: sha512-GpSwvyXOcOOlV70vbnzjj4fW5xW/FdUF6nQEt1ENy7m4ZCczi1+/buVUPAqmGfqznsORNFzUMjctTIp8a9tuCQ==}
@@ -6850,6 +6865,7 @@ packages:
 
   astro-integration-kit@0.18.0:
     resolution: {integrity: sha512-Z0QW5IQjosuKQDEGYYkvUX6EhEtrmE4/oViqWz23QveV8U7AuyFsTdg00WRNPevWZl/5a4lLUeDpv4bCRynRRg==}
+    deprecated: 'Check the migration guide: https://astro-integration-kit.netlify.app/migration-guide/'
     peerDependencies:
       astro: '>=6.1.10'
 
@@ -7058,8 +7074,8 @@ packages:
   builder-util@26.8.1:
     resolution: {integrity: sha512-pm1lTYbGyc90DHgCDO7eo8Rl4EqKLciayNbZqGziqnH9jrlKe8ZANGdityLZU+pJh16dfzjAx2xQq9McuIPEtw==}
 
-  bun-types@1.3.14:
-    resolution: {integrity: sha512-4N0ig0fEomHt5R0KCFWjovxow98rIoRwKolrYdCcknNwMekCXRnWEUvgu5soYV8QXtVsrUD8B95MBOZGPvr6KQ==}
+  bun-types@1.4.3:
+    resolution: {integrity: sha512-tinRJNGOmUN+tEAsn2y2e942n9JHRHR42iUYzDH75NmhJqVBokGSQkkfSFdNWwsANIdrK6ACH9t01M452YyTwg==}
 
   bundle-require@5.1.0:
     resolution: {integrity: sha512-3WrrOuZiyaaZPWiEt4G3+IffISVC9HYlWueJEBWED4ZH4aIAC2PnkdnuRrR94M+w6yGWn4AglWtJtBI8YqvgoA==}
@@ -7447,6 +7463,7 @@ packages:
 
   crypto-js@4.2.0:
     resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
 
   cspell-config-lib@9.7.0:
     resolution: {integrity: sha512-pguh8A3+bSJ1OOrKCiQan8bvaaY125de76OEFz7q1Pq309lIcDrkoL/W4aYbso/NjrXaIw6OjkgPMGRBI/IgGg==}
@@ -8270,6 +8287,7 @@ packages:
   eslint@9.39.4:
     resolution: {integrity: sha512-XoMjdBOwe/esVgEvLmNsD3IRHkm7fbKIUGvrleloJXUZgDHig2IPWNniv+GwjyJXzuNqVjlr5+4yVUZjycJwfQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -12334,6 +12352,7 @@ packages:
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
     engines: {node: ^18 || >=20}
+    deprecated: unmaintained
     hasBin: true
     peerDependencies:
       typescript: ^5.0.0
@@ -17733,12 +17752,12 @@ snapshots:
   '@pagefind/windows-x64@1.4.0':
     optional: true
 
-  '@payloadcms/db-d1-sqlite@3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)':
+  '@payloadcms/db-d1-sqlite@3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)':
     dependencies:
-      '@payloadcms/drizzle': 3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)
+      '@payloadcms/drizzle': 3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)
       console-table-printer: 2.12.1
       drizzle-kit: 0.31.7
-      drizzle-orm: 0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(sql.js@1.14.1)
+      drizzle-orm: 0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(sql.js@1.14.1)
       payload: 3.84.1(graphql@16.13.2)(typescript@6.0.3)
       prompts: 2.4.2
       to-snake-case: 1.0.0
@@ -17775,11 +17794,11 @@ snapshots:
       - sqlite3
       - supports-color
 
-  '@payloadcms/drizzle@3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)':
+  '@payloadcms/drizzle@3.84.1(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(payload@3.84.1(graphql@16.13.2)(typescript@6.0.3))(sql.js@1.14.1)':
     dependencies:
       console-table-printer: 2.12.1
       dequal: 2.0.3
-      drizzle-orm: 0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(sql.js@1.14.1)
+      drizzle-orm: 0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(sql.js@1.14.1)
       payload: 3.84.1(graphql@16.13.2)(typescript@6.0.3)
       prompts: 2.4.2
       to-snake-case: 1.0.0
@@ -19447,6 +19466,8 @@ snapshots:
 
   '@speed-highlight/core@1.2.15': {}
 
+  '@sqlite.org/sqlite-wasm@3.53.4-build1': {}
+
   '@standard-schema/spec@1.1.0': {}
 
   '@swc/helpers@0.5.15':
@@ -19526,6 +19547,13 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.0.10
       tailwindcss: 4.2.2
+
+  '@tailwindcss/vite@4.1.18(vite@7.3.3(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@tailwindcss/node': 4.1.18
+      '@tailwindcss/oxide': 4.1.18
+      tailwindcss: 4.1.18
+      vite: 7.3.3(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
 
   '@tailwindcss/vite@4.1.18(vite@8.0.14(@types/node@24.12.2)(esbuild@0.27.7)(jiti@2.6.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
@@ -19839,9 +19867,9 @@ snapshots:
       '@types/node': 24.12.2
     optional: true
 
-  '@types/bun@1.3.14':
+  '@types/bun@1.4.3':
     dependencies:
-      bun-types: 1.3.14
+      bun-types: 1.4.3
 
   '@types/busboy@1.5.4':
     dependencies:
@@ -21428,9 +21456,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  bun-types@1.3.14:
+  bun-types@1.4.3:
     dependencies:
       '@types/node': 24.12.2
+      undici-types: 7.16.0
 
   bundle-require@5.1.0(esbuild@0.27.7):
     dependencies:
@@ -22221,7 +22250,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.3.14)(sql.js@1.14.1):
+  drizzle-orm@0.45.2(@libsql/client@0.17.2(encoding@0.1.13))(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.6.1)(@types/sql.js@1.4.11)(better-sqlite3@12.8.0)(bun-types@1.4.3)(sql.js@1.14.1):
     optionalDependencies:
       '@libsql/client': 0.17.2(encoding@0.1.13)
       '@opentelemetry/api': 1.9.1
@@ -22229,7 +22258,7 @@ snapshots:
       '@types/pg': 8.6.1
       '@types/sql.js': 1.4.11
       better-sqlite3: 12.8.0
-      bun-types: 1.3.14
+      bun-types: 1.4.3
       sql.js: 1.14.1
 
   dset@3.1.4: {}

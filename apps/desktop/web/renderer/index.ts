@@ -1,0 +1,175 @@
+/**
+ * The web build's entry, in place of Electron starting the app: start the
+ * worker that stands in for the main process, which reopens the show from
+ * before a reload, then load the app's own preload and renderer, in that
+ * order, as Electron loads them.
+ *
+ * The settings tab (`#settings`, Electron's settings window) needs no show,
+ * so it runs without a worker.
+ */
+import {
+    registerPageHandlers,
+    changedSinceDownload,
+    isReloadingOnPurpose,
+    markChanged,
+    setStoredInBrowser,
+    storageLost,
+} from "./handlers";
+import { takeHandedOffShow } from "./handoff";
+import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
+import { storageKey } from "./channel";
+import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
+import { WEB_CHANNELS, WEB_EVENTS, type WorkerStatus } from "../protocol";
+
+declare global {
+    interface Window {
+        /** Read by the preload as `process.platform`, for the shortcut keys. */
+        __openmarchPlatform: string;
+    }
+}
+
+function detectPlatform(): string {
+    const nav = navigator as Navigator & {
+        userAgentData?: { platform?: string };
+    };
+    const platform = (
+        nav.userAgentData?.platform ||
+        navigator.platform ||
+        navigator.userAgent
+    ).toLowerCase();
+    if (platform.includes("mac")) return "darwin";
+    if (platform.includes("win")) return "win32";
+    return "linux";
+}
+
+/**
+ * Electron shows no context menu of its own; a browser does, so right-drag
+ * panning on the canvas would end on "Save image as". Listening on the window
+ * in the bubble phase runs after the app's handlers, so its own context menus
+ * (which bail out on an already-prevented event) still open. Text fields keep
+ * the browser's menu for copy and paste.
+ */
+function suppressBrowserContextMenu() {
+    window.addEventListener("contextmenu", (event) => {
+        const target = event.target as HTMLElement | null;
+        if (target?.closest?.("input, textarea, [contenteditable='true']"))
+            return;
+        event.preventDefault();
+    });
+}
+
+/** A bar along the bottom of the page, for problems the person should know about. */
+function showNotice(text: string) {
+    const bar = document.createElement("div");
+    bar.setAttribute("role", "status");
+    bar.style.cssText =
+        "position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:2147483000;" +
+        "max-width:min(640px,calc(100vw - 32px));padding:8px 36px 8px 14px;border-radius:6px;" +
+        "background:#3b2a00;color:#ffe7a3;font:13px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px #0005";
+    bar.textContent = text;
+    const close = document.createElement("button");
+    close.textContent = "×";
+    close.setAttribute("aria-label", "Dismiss");
+    close.style.cssText =
+        "position:absolute;right:8px;top:4px;background:none;border:0;color:inherit;font-size:18px;cursor:pointer";
+    close.onclick = () => bar.remove();
+    bar.append(close);
+    document.body.append(bar);
+}
+
+/**
+ * The show is only backed up in the browser; the saved copy is the download.
+ * Says so once per browser session, and asks before the tab closes with
+ * changes that haven't been downloaded.
+ */
+function warnAboutStorage(status: WorkerStatus) {
+    window.addEventListener("beforeunload", (event) => {
+        if (changedSinceDownload() && !isReloadingOnPurpose())
+            event.preventDefault();
+    });
+    if (status.storage === "opfs") {
+        const remindedKey = storageKey("reminded");
+        try {
+            if (!sessionStorage.getItem(remindedKey)) {
+                sessionStorage.setItem(remindedKey, "1");
+                useWebWelcomeStore.getState().setOpen(true);
+            }
+        } catch {
+            // Storage blocked: the browser keeps nothing anyway (see below).
+        }
+        // Ask the browser not to clear the show when space runs low.
+        void navigator.storage?.persist?.().catch(() => {});
+        // Copy the latest edits now, in case the tab is about to close.
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden")
+                void invokeWorker(WEB_CHANNELS.flush).catch(() => {});
+        });
+        return;
+    }
+    showNotice(
+        status.storageProblem === "other-tab"
+            ? "OpenMarch is open in another tab. In this tab, your show is only kept until you close or reload it. Download it to keep your changes."
+            : "This browser can't keep your show between visits (for example, in a private window). Download it to keep your changes.",
+    );
+}
+
+/**
+ * A memory-only tab, or one whose storage failed, hands its show off before
+ * reloading into it (see ./handoff.ts); opens it again before the app asks
+ * for it.
+ */
+async function reopenHandedOffShow() {
+    let show;
+    try {
+        show = await takeHandedOffShow();
+    } catch (error) {
+        console.error(
+            "Couldn't take back the show from before the reload:",
+            error,
+        );
+        return;
+    }
+    if (!show) return;
+    const status = await invokeWorker<number>(
+        WEB_CHANNELS.openShow,
+        show.bytes,
+        show.name,
+    );
+    if (status !== 200)
+        console.error(`Couldn't reopen the show after the reload (${status})`);
+    else if (show.changed) markChanged();
+}
+
+async function start() {
+    window.__openmarchPlatform = detectPlatform();
+    suppressBrowserContextMenu();
+    const isSettingsTab = window.location.hash === "#settings";
+    registerPageHandlers({ isSettingsTab });
+
+    if (!isSettingsTab) {
+        ipcRenderer.on(WEB_EVENTS.changed, markChanged);
+        ipcRenderer.on(WEB_EVENTS.storageLost, () => {
+            storageLost();
+            showNotice(
+                "This browser couldn't store your show (it may be out of space), so it's only kept in this tab until you close or reload it. Download it to keep your changes.",
+            );
+        });
+        try {
+            const status = await startWorker();
+            setStoredInBrowser(status.storage === "opfs");
+            // Also with storage: one that failed hands its show off too.
+            await reopenHandedOffShow();
+            warnAboutStorage(status);
+        } catch (error) {
+            document.body.textContent = `OpenMarch couldn't start in this browser: ${
+                error instanceof Error ? error.message : String(error)
+            }`;
+            throw error;
+        }
+    }
+
+    await import("@om-electron/preload/index");
+    await import("@/main");
+}
+
+void start();

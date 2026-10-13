@@ -52,6 +52,7 @@ words:
   - BRHS
   - Bézier
   - canvas
+  - capi
   - Catmull
   - ccpa
   - Chakravarthi
@@ -90,6 +91,7 @@ words:
   - flac
   - forwardslash
   - français
+  - FREEONCLOSE
   - frontfield
   - frontmatter
   - Geral
@@ -126,6 +128,8 @@ words:
   - musicxml
   - Nativewind
   - noopener
+  - noreferrer
+  - nosniff
   - notarytool
   - NSIS
   - nums
@@ -134,6 +138,7 @@ words:
   - ONTHEMOVE
   - openmarch
   - openmarchdev
+  - opfs
   - OTMDEMO
   - overscan
   - pacman
@@ -151,12 +156,15 @@ words:
   - Rcoords
   - recents
   - rels
+  - RESIZEABLE
   - rgba
   - ritardandos
   - rootfile
+  - rotr
   - rw-r
   - rwxr
   - saario
+  - sahpool
   - samuelmeuli
   - sandboxing
   - Schachner
@@ -260,6 +268,7 @@ ignorePaths:
   - "**/dist-browser/**"
   - "**/dist-browser-host/**"
   - apps/desktop/web/dist/**
+  - "**/dist-web/**"
   - "**/wasm/pkg/**"
   - "**/release/**"
   - "*.svg"

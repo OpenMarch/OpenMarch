@@ -28,6 +28,10 @@ import {
     updateMarchersMutationOptions,
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs, NewMarcherArgs } from "@/db-functions";
+import { CaretLeftIcon, FileCsvIcon } from "@phosphor-icons/react";
+import MarcherCsvImportForm from "./csv/MarcherCsvImportForm";
+
+export type MarcherAddMethod = "manual" | "csv";
 
 export interface MarcherFormProps {
     disabledProp?: boolean;
@@ -37,6 +41,8 @@ export interface MarcherFormProps {
     existingMarchers?: Marcher[];
     wizardMode?: boolean;
     marcherIdToEdit?: number;
+    /** Which add option is selected when the form opens. Ignored while editing. */
+    initialAddMethod?: MarcherAddMethod;
 }
 
 const defaultSection = (t: (key: string) => string) =>
@@ -55,6 +61,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     existingMarchers,
     wizardMode = false,
     marcherIdToEdit,
+    initialAddMethod = "manual",
 }) => {
     // Stored as the raw string so the field can be emptied while typing. Keep
     // this input controlled: resetForm() calls formRef.current.reset(), which
@@ -80,7 +87,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
     const queryClient = useQueryClient();
-    const { data: dbMarchers } = useQuery({
+    const { data: dbMarchers, isSuccess: dbMarchersLoaded } = useQuery({
         ...allMarchersQueryOptions(),
         enabled: !existingMarchers && !wizardMode,
     });
@@ -92,6 +99,8 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         updateMarchersMutationOptions(queryClient),
     ).mutate;
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
+    const [addMethod, setAddMethod] =
+        useState<MarcherAddMethod>(initialAddMethod);
     const formRef = useRef<HTMLFormElement>(null);
     const { setContent } = useSidebarModalStore();
 
@@ -257,6 +266,21 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         return newDrillOrder;
     }, [existingMarcher, section, marchers, drillPrefix]);
 
+    const handleCsvImport = (rows: NewMarcherArgs[]) => {
+        if (onMarchersCreate) {
+            onMarchersCreate(rows);
+            return;
+        }
+        if (wizardMode) return;
+        createMarchersMutation.mutate(rows, {
+            onSuccess: () => {
+                if (!skipSidebarContent) {
+                    setContent(<MarcherListContents />, "marchers");
+                }
+            },
+        });
+    };
+
     function makeButtonString(quantity: number, section: string | undefined) {
         if (isEditMode) {
             return t("marchers.updateButton");
@@ -312,134 +336,187 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         t,
     ]);
 
-    return (
-        <Form.Root
-            onSubmit={handleSubmit}
-            id="marcherForm"
-            ref={formRef}
-            className="flex h-full flex-col gap-16"
-        >
-            <div className="flex flex-col gap-16">
-                {!isEditMode && (
-                    <FormField label={t("marchers.quantity")}>
-                        <Input
-                            type="number"
-                            value={quantityInput}
-                            onChange={handleQuantityChange}
-                            step={1}
-                            min={1}
-                            max={100}
-                        />
-                    </FormField>
-                )}
-                <FormField label={t("marchers.section")}>
-                    <Select
-                        value={section}
-                        onValueChange={handleSectionChange}
-                        required
-                    >
-                        <SelectTriggerButton
-                            label={section || t("marchers.section")}
-                        />
-                        <SelectContent>
-                            {Object.values(SECTIONS).map((section) => {
-                                return (
-                                    <SelectItem
-                                        key={section.name}
-                                        value={section.name}
-                                    >
-                                        {getTranslatedSectionName(
-                                            section.name,
-                                            t,
-                                        )}
-                                    </SelectItem>
-                                );
-                            })}
-                        </SelectContent>
-                    </Select>
-                </FormField>
-                {isEditMode && existingMarcher && (
-                    <>
-                        <FormField label={t("marchers.name")}>
-                            <Input
-                                type="text"
-                                placeholder="-"
-                                aria-label="Marcher name input"
-                                title="Marcher name input"
-                                onChange={(event) =>
-                                    setName(event.target.value)
-                                }
-                                value={name}
-                            />
-                        </FormField>
-                        <FormField label={t("marchers.year")}>
-                            <Input
-                                type="text"
-                                placeholder="-"
-                                aria-label="Marcher year input"
-                                title="Marcher year input"
-                                onChange={(event) =>
-                                    setYear(event.target.value)
-                                }
-                                value={year}
-                            />
-                        </FormField>
-                    </>
-                )}
-                <FormField label={t("marchers.drillPrefix")}>
-                    <Input
-                        type="text"
-                        placeholder="-"
-                        onChange={handlePrefixChange}
-                        value={drillPrefix}
-                        required
-                        maxLength={3}
-                    />
-                </FormField>
-                <FormField label={t("marchers.drillOrder")}>
-                    <Input
-                        type="number"
-                        placeholder="-"
-                        onChange={handleOrderChange}
-                        value={drillOrder}
-                        required
-                        maxLength={3}
-                    />
-                </FormField>
-                {isEditMode && existingMarcher && (
-                    <FormField label={t("marchers.notes")}>
-                        <TextArea
-                            className="max-w-[60%]"
-                            rows={5}
-                            placeholder={t("marchers.notesPlaceholder")}
-                            aria-label="Marcher notes input"
-                            title="Marcher notes input"
-                            onChange={(event) => setNotes(event.target.value)}
-                            value={notes}
-                        />
-                    </FormField>
-                )}
-            </div>
+    const showCsvImport = !isEditMode && addMethod === "csv";
+    const waitingForMarchers =
+        !wizardMode && existingMarchers == null && !dbMarchersLoaded;
 
-            <div className="flex flex-col gap-8">
-                <Button
-                    type="submit"
-                    className="w-full"
-                    aria-label="Create Marcher Button"
-                    disabled={submitIsDisabled || disabledProp || !isEditReady}
+    return (
+        <div className="flex h-full flex-col gap-16">
+            {showCsvImport ? (
+                <>
+                    <Button
+                        variant="ghost"
+                        size="compact"
+                        className="-ml-8"
+                        onClick={() => setAddMethod("manual")}
+                    >
+                        <CaretLeftIcon size={16} />
+                        <T keyName="marchers.addMethod.manual" />
+                    </Button>
+                    <MarcherCsvImportForm
+                        existing={marchers ?? []}
+                        importDisabled={
+                            disabledProp ||
+                            waitingForMarchers ||
+                            createMarchersMutation.isPending
+                        }
+                        resetAfterImport={onMarchersCreate != null}
+                        showInfoNote={!hideInfoNote}
+                        onImport={handleCsvImport}
+                    />
+                </>
+            ) : (
+                <Form.Root
+                    onSubmit={handleSubmit}
+                    id="marcherForm"
+                    ref={formRef}
+                    className="flex h-full flex-col gap-16"
                 >
-                    {makeButtonString(
-                        quantity,
-                        getTranslatedSectionName(section || "Other", t),
+                    <div className="flex flex-col gap-16">
+                        {!isEditMode && (
+                            <FormField label={t("marchers.quantity")}>
+                                <Input
+                                    type="number"
+                                    value={quantityInput}
+                                    onChange={handleQuantityChange}
+                                    step={1}
+                                    min={1}
+                                    max={100}
+                                />
+                            </FormField>
+                        )}
+                        <FormField label={t("marchers.section")}>
+                            <Select
+                                value={section}
+                                onValueChange={handleSectionChange}
+                                required
+                            >
+                                <SelectTriggerButton
+                                    label={section || t("marchers.section")}
+                                />
+                                <SelectContent>
+                                    {Object.values(SECTIONS).map((section) => {
+                                        return (
+                                            <SelectItem
+                                                key={section.name}
+                                                value={section.name}
+                                            >
+                                                {getTranslatedSectionName(
+                                                    section.name,
+                                                    t,
+                                                )}
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
+                        </FormField>
+                        {isEditMode && existingMarcher && (
+                            <>
+                                <FormField label={t("marchers.name")}>
+                                    <Input
+                                        type="text"
+                                        placeholder="-"
+                                        aria-label="Marcher name input"
+                                        title="Marcher name input"
+                                        onChange={(event) =>
+                                            setName(event.target.value)
+                                        }
+                                        value={name}
+                                    />
+                                </FormField>
+                                <FormField label={t("marchers.year")}>
+                                    <Input
+                                        type="text"
+                                        placeholder="-"
+                                        aria-label="Marcher year input"
+                                        title="Marcher year input"
+                                        onChange={(event) =>
+                                            setYear(event.target.value)
+                                        }
+                                        value={year}
+                                    />
+                                </FormField>
+                            </>
+                        )}
+                        <FormField label={t("marchers.drillPrefix")}>
+                            <Input
+                                type="text"
+                                placeholder="-"
+                                onChange={handlePrefixChange}
+                                value={drillPrefix}
+                                required
+                                maxLength={3}
+                            />
+                        </FormField>
+                        <FormField label={t("marchers.drillOrder")}>
+                            <Input
+                                type="number"
+                                placeholder="-"
+                                onChange={handleOrderChange}
+                                value={drillOrder}
+                                required
+                                maxLength={3}
+                            />
+                        </FormField>
+                        {isEditMode && existingMarcher && (
+                            <FormField label={t("marchers.notes")}>
+                                <TextArea
+                                    className="max-w-[60%]"
+                                    rows={5}
+                                    placeholder={t("marchers.notesPlaceholder")}
+                                    aria-label="Marcher notes input"
+                                    title="Marcher notes input"
+                                    onChange={(event) =>
+                                        setNotes(event.target.value)
+                                    }
+                                    value={notes}
+                                />
+                            </FormField>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-8">
+                        <Button
+                            type="submit"
+                            className="w-full"
+                            aria-label="Create Marcher Button"
+                            disabled={
+                                submitIsDisabled || disabledProp || !isEditReady
+                            }
+                        >
+                            {makeButtonString(
+                                quantity,
+                                getTranslatedSectionName(section || "Other", t),
+                            )}
+                        </Button>
+                        {!hideInfoNote && (
+                            <InfoNote>
+                                <T keyName="marchers.createInfo" />
+                            </InfoNote>
+                        )}
+                    </div>
+                    {!isEditMode && (
+                        <div className="flex flex-col gap-16">
+                            <div className="text-sub text-text/60 flex items-center gap-8">
+                                <span className="bg-stroke h-px flex-1" />
+                                <T keyName="marchers.addMethod.or" />
+                                <span className="bg-stroke h-px flex-1" />
+                            </div>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="w-full"
+                                onClick={() => setAddMethod("csv")}
+                            >
+                                <FileCsvIcon size={20} />
+                                <T keyName="marchers.csv.title" />
+                            </Button>
+                        </div>
                     )}
-                </Button>
-                {!hideInfoNote && (
-                    <InfoNote>
-                        <T keyName="marchers.createInfo" />
-                    </InfoNote>
-                )}
-            </div>
-        </Form.Root>
+                </Form.Root>
+            )}
+        </div>
     );
 };
 

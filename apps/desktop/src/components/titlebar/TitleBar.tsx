@@ -17,6 +17,9 @@ import { T } from "@tolgee/react";
 import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
+import { isWebBuild, webChannel } from "@/utilities/webBuild";
+import WebFileMenu from "./WebFileMenu";
+import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
 function usePageZoomFactor() {
@@ -104,11 +107,14 @@ function EditorTitleBar({
     variant?: "main" | "settings";
 }) {
     const showFilePath = variant === "main";
-    const isMacOS = window.electron.isMacOS;
+    // In a browser there are no traffic lights, native menu or window buttons.
+    const isMacOS = window.electron.isMacOS && !isWebBuild;
+    const showWindowControls = !isMacOS && !isWebBuild;
     const showFullDatabasePath = useUiSettingsStore(
         (s) => s.uiSettings.showFullDatabasePath,
     );
     const zoomFactor = usePageZoomFactor();
+    const openWebWelcome = useWebWelcomeStore((state) => state.setOpen);
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
@@ -170,7 +176,8 @@ function EditorTitleBar({
                 style={isMacOS ? { zoom: 1 / zoomFactor } : undefined}
             >
                 <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
-                    {!isMacOS && (
+                    {isWebBuild && variant === "main" && <WebFileMenu />}
+                    {showWindowControls && (
                         <button
                             className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
                             onClick={() => {
@@ -193,8 +200,18 @@ function EditorTitleBar({
                             <>
                                 <p className="text-body leading-none opacity-50">
                                     {currentVersion}
+                                    {webChannel === "nightly" && " nightly"}
                                 </p>
-                                <VersionChecker />
+                                {isWebBuild && (
+                                    <button
+                                        type="button"
+                                        className="bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
+                                        onClick={() => openWebWelcome(true)}
+                                    >
+                                        Web
+                                    </button>
+                                )}
+                                {!isWebBuild && <VersionChecker />}
                                 {showControls && <FileControls />}
                             </>
                         )}
@@ -207,7 +224,7 @@ function EditorTitleBar({
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
                 >
                     <BugReport />
-                    {!isMacOS && (
+                    {showWindowControls && (
                         <div className="titlebar-button flex">
                             <button
                                 className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"

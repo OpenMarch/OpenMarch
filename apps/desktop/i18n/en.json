@@ -1055,12 +1055,56 @@
     "marchers": {
         "addMarcher": "Add",
         "addMarchers": "Add Marchers",
+        "addMethod": {
+            "manual": "Add manually",
+            "or": "or"
+        },
         "cancelDeleteButton": "Cancel",
         "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",
         "createButtonWithSection": "{quantity, plural, one {Create {section} Marcher} other {Create {quantity} {section} Marchers}}",
         "created": "{count, plural, one {Marcher {drillNumbers} created successfully} other {Marchers {drillNumbers} created successfully}}",
         "createError": "{count, plural, one {Error creating marcher {drillNumbers}} other {Error creating marchers {drillNumbers}}}",
         "createInfo": "New marchers may not show up until a refresh",
+        "csv": {
+            "chooseFile": "Choose CSV file",
+            "copySections": "Copy",
+            "downloadExample": "Example CSV",
+            "error": {
+                "unknownSection": "Unknown section \"{value}\"",
+                "missingSection": "Missing section",
+                "missingDrillNumber": "Missing drill number",
+                "invalidDrillNumber": "\"{value}\" is not a drill number like F12",
+                "unknownPrefix": "No section uses the prefix \"{value}\"; add a section column",
+                "ambiguousPrefix": "The prefix \"{value}\" is shared by several sections; add a section column",
+                "duplicateInFile": "{value} appears more than once in the file",
+                "duplicateInShow": "{value} already exists in this show"
+            },
+            "ignoredColumns": "Ignoring columns: {columns}",
+            "importButton": "{count, plural, =0 {Import} one {Import 1 marcher} other {Import {count} marchers}}",
+            "info": "Name, year and notes are optional. Rows with errors are skipped; fix them and import again. Undo with [Ctrl/Cmd+Z].",
+            "line": "Line {line}",
+            "missingColumns": "The file needs a {columns} column",
+            "mode": {
+                "section": {
+                    "title": "By section",
+                    "help": "Give each marcher a section. Drill numbers are created automatically (F1, F2, …), skipping ones already in the show."
+                },
+                "drillNumber": {
+                    "title": "By drill number",
+                    "help": "Give each marcher a drill number such as F12. The section comes from the prefix, or from an optional section column."
+                }
+            },
+            "readError": "Could not read that file",
+            "result": {
+                "success": "{valid, plural, one {1 marcher is ready to import} other {All {valid} marchers are ready to import}}",
+                "partial": "{valid, plural, one {1 marcher is} other {{valid} marchers are}} ready to import. {invalid, plural, one {1 row has a problem and will be skipped:} other {{invalid} rows have problems and will be skipped:}}",
+                "failed": "None of the rows could be imported. Fix the problems below and choose the file again:",
+                "empty": "This file doesn't have any marchers in it"
+            },
+            "sections": "Sections and drill prefixes",
+            "sectionsHelp": "Use these section names (or prefixes) in the section column. Drill numbers start with the section's prefix, for example F12 for Flute 12.",
+            "title": "Import from CSV"
+        },
         "deleteButton": "Delete",
         "deleteDescription": "You are about to delete these section styles: {sections}. This can be undone with [Ctrl/Cmd+Z].",
         "deleteTitle": "Warning",
@@ -1793,6 +1837,12 @@
             "pan": "Shift+drag",
             "zoom": "Scroll"
         }
+    },
+    "web": {
+        "download": "Download .dots",
+        "downloaded": "Downloaded {name}",
+        "fileMenu": "File",
+        "notDownloadedYet": "Changes since your last download are only in this browser"
     },
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",

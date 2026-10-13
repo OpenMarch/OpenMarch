@@ -21,7 +21,7 @@
         "types": ["vite/client"],
         "typeRoots": ["./node_modules/@types", "./types"]
     },
-    "include": ["src", "electron", "vitest.setup.ts"],
+    "include": ["src", "electron", "web", "vitest.setup.ts"],
     "exclude": [
         "**/__test__/**",
         "**/*.test.ts",
@@ -29,7 +29,13 @@
         "**/*.spec.mts",
         "e2e",
         "vitest.setup.ts",
-        "**/*.msw.ts"
+        "**/*.msw.ts",
+        "web/main.ts",
+        "web/host.ts",
+        "web/demos.ts",
+        "web/vite.config.mts",
+        "web/shims",
+        "web/dist"
     ],
     "references": [
         {

@@ -111,6 +111,11 @@ jobs:
       - name: Build monorepo
         run: pnpm run build
 
+      # The web editor (editor.openmarch.com) shares the desktop app's code.
+      - name: Build web editor
+        working-directory: apps/desktop
+        run: pnpm run web:build
+
       - name: Ensure Electron binary is installed
         run: node node_modules/electron/install.js
 

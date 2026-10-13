@@ -2,8 +2,8 @@
  * TEMPORARY (see README.md). Builds the web test build of the editor into
  * `web/dist`, a static site:
  *
- *   pnpm run web:dev     # local server
- *   pnpm run web:build   # then deploy web/dist
+ *   pnpm run lab:dev     # local server
+ *   pnpm run lab:build   # then deploy web/dist
  *
  * The renderer, the preload and the main-process database code are the
  * app's own. Only the Node and Electron modules they import are swapped for

@@ -4,7 +4,7 @@
 #
 # Add the `lab` label to a pull request that adds or changes one
 # lab/<id>/experiment.md (the test's title, intro and questions; see
-# apps/desktop/web/README.md). The test is published, with credit to the pull
+# apps/desktop/web/LAB.md). The test is published, with credit to the pull
 # request's author, and again on every push while the label is on. Removing
 # the label or closing the pull request closes the test; its feedback stays.
 #
@@ -112,7 +112,7 @@ jobs:
         if: steps.test.outputs.mode == 'publish'
         run: |
           pnpm turbo run build --filter="@openmarch/desktop^..."
-          pnpm --filter @openmarch/desktop run web:build
+          pnpm --filter @openmarch/desktop run lab:build
 
       - name: Publish to the lab
         if: steps.test.outputs.mode == 'publish'

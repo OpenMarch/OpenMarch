@@ -1,0 +1,49 @@
+# Points the `stable` branch at the latest published release. Cloudflare
+# Workers Builds deploys the web editor (apps/desktop/web) from branches:
+#
+#   editor.openmarch.com          stable, built from the `stable` branch
+#   editor-nightly.openmarch.com  nightly, built from `main`
+#
+# The build settings live in the Cloudflare dashboard. See
+# apps/desktop/web/README.md.
+name: Web Editor
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to put on the stable site (e.g. v0.2.0), such as an older one to roll back"
+        required: true
+        type: string
+
+# The push uses the STABLE_DEPLOY_KEY deploy key: the `stable` ruleset lets
+# only deploy keys through, and GITHUB_TOKEN can't push changes to workflow
+# files.
+permissions:
+  contents: read
+
+concurrency:
+  group: web-editor-stable
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    # Pre-releases don't go to the stable site.
+    if: github.event_name != 'release' || !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          ssh-key: ${{ secrets.STABLE_DEPLOY_KEY }}
+
+      # Forced, so `stable` can move back for a rollback or a patch release
+      # of an older version.
+      - name: Move stable to this release
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          echo "Moving stable to $TAG"
+          git push --force origin "HEAD:refs/heads/stable"

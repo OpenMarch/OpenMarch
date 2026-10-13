@@ -33,6 +33,9 @@ export class LegacyDatabaseResponse<T> {
 }
 
 /* ============================ DATABASE ============================ */
+/** The `user_version` a new show file starts with. */
+export const DB_USER_VERSION = 7;
+
 let DB_PATH = "";
 
 let persistentConnection: DatabaseSync | null = null;

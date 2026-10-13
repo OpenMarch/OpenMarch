@@ -12,6 +12,11 @@ adds what is specific to the Electron + React app.
 - New desktop e2e files must be `apps/desktop/e2e/tests/*.spec.mts`; Playwright support files in that suite use `.mts`/`.mjs`.
 - Browser scenario tests (`apps/desktop/e2e/browser/tests/*.spec.mts`) run the renderer in headless Chromium against the real database handlers, with no Electron build or display: `pnpm run build:browser`, then `pnpm run e2e:browser`. Prefer them for user workflows inside an open show; keep Electron e2e for what only Electron does. The same scenarios run in Electron with `pnpm run e2e:scenarios:electron`. See `e2e/browser/README.md`.
 
+## Web Editor
+
+- `web/` and `vite.web.config.mts` build the app for the browser (editor.openmarch.com): the main process's database code runs in a worker. Read `web/README.md` before changing the preload, IPC channels, `database.services.ts`, or anything that opens or saves files.
+- Gate browser-only behavior on `isWebBuild` from `src/utilities/webBuild.ts`. Check with `pnpm run web:build`.
+
 ## Desktop Database
 
 - Current renderer database access goes through Drizzle SQLite proxy in `apps/desktop/src/global/database/db.ts`, backed by schema in `apps/desktop/electron/database/migrations/schema.ts`.

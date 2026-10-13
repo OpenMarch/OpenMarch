@@ -5,6 +5,7 @@ import { T, useTranslate } from "@tolgee/react";
 import { FolderOpenIcon } from "@phosphor-icons/react";
 import type { NewShowProjectData } from "../../newShowTypes";
 import { sanitizeFilename } from "../../newShowCompletion";
+import { isWebBuild } from "@/utilities/webBuild";
 
 const normalizePath = (path: string) => path.replace(/\\/g, "/");
 
@@ -165,22 +166,25 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                     placeholder={t("launchpage.newShow.showName")}
                     autoFocus
                 />
-                <div className="flex items-center gap-8">
-                    <div className="text-text-subtitle bg-fg-2 rounded-6 border-stroke min-h-30 grow border px-8 py-4 text-sm">
-                        {fileLocation ?? ""}
+                {/* A web show lives in the browser until downloaded: no location. */}
+                {!isWebBuild && (
+                    <div className="flex items-center gap-8">
+                        <div className="text-text-subtitle bg-fg-2 rounded-6 border-stroke min-h-30 grow border px-8 py-4 text-sm">
+                            {fileLocation ?? ""}
+                        </div>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="compact"
+                            onClick={() => void handleBrowse()}
+                        >
+                            <FolderOpenIcon size={20} />
+                            <T keyName="launchpage.newShow.browse" />
+                        </Button>
                     </div>
-                    <Button
-                        type="button"
-                        variant="secondary"
-                        size="compact"
-                        onClick={() => void handleBrowse()}
-                    >
-                        <FolderOpenIcon size={20} />
-                        <T keyName="launchpage.newShow.browse" />
-                    </Button>
-                </div>
+                )}
             </WizardFormField>
-            {fileExists && (
+            {fileExists && !isWebBuild && (
                 <WarningNote>
                     <T keyName="launchpage.newShow.fileExistsWarning" />
                 </WarningNote>

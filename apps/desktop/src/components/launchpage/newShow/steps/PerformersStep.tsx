@@ -38,9 +38,9 @@ export default function PerformersStep({
                 drill_prefix: m.drill_prefix,
                 drill_order: m.drill_order,
                 drill_number: `${m.drill_prefix}${m.drill_order}`,
-                name: null,
-                year: null,
-                notes: null,
+                name: m.name ?? null,
+                year: m.year ?? null,
+                notes: m.notes ?? null,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
                 home_x: 0,
@@ -90,8 +90,8 @@ export default function PerformersStep({
 
     return (
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-24">
-            <div className="grid grid-cols-1 gap-16 lg:grid-cols-2">
-                <div className="flex flex-col gap-12">
+            <div className="grid grid-cols-1 gap-24 lg:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-12">
                     <h5 className="text-body font-medium">
                         <T keyName="launchpage.newShow.steps.performers.addNew" />
                     </h5>
@@ -157,8 +157,17 @@ export default function PerformersStep({
                                                     key={marcher.tempId}
                                                     className="rounded-6 bg-fg-2 flex items-center justify-between px-12 py-8"
                                                 >
-                                                    <span className="text-body">
-                                                        {marcher.drill_number}
+                                                    <span className="text-body flex min-w-0 gap-8">
+                                                        <span className="shrink-0">
+                                                            {
+                                                                marcher.drill_number
+                                                            }
+                                                        </span>
+                                                        {marcher.name && (
+                                                            <span className="text-text/70 truncate">
+                                                                {marcher.name}
+                                                            </span>
+                                                        )}
                                                     </span>
                                                     <Button
                                                         variant="secondary"
