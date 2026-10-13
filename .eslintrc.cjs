@@ -12,6 +12,7 @@ module.exports = {
         "**/dist-electron/*",
         "**/dist-browser/*",
         "**/dist-browser-host/*",
+        "**/dist-web/**",
         "**/build/*",
         "**/src/styles/**/*.css",
         ".eslintrc.cjs",

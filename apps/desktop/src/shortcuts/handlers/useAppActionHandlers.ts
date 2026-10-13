@@ -3,6 +3,7 @@ import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
 import { EXPORT_ACTION_IDS } from "../definitions";
 import { useActionHandler, useActionHandlerGroup } from "../useActionHandler";
+import { isWebBuild } from "@/utilities/webBuild";
 
 /** App-level commands: exporting and closing the show. */
 export function useAppActionHandlers() {
@@ -10,7 +11,8 @@ export function useAppActionHandlers() {
     const openExport = useAppDialogStore((s) => s.openExport);
 
     useActionHandlerGroup(
-        EXPORT_ACTION_IDS,
+        // Export needs Electron (printToPDF, file streams, sign-in).
+        isWebBuild ? [] : EXPORT_ACTION_IDS,
         (_id, args) => openExport(args?.tab as ExportTab | undefined),
         { enabled: databaseReady },
     );

@@ -64,7 +64,7 @@ export interface PreviousDotsImportResult {
 }
 
 // eslint-disable-next-line max-lines-per-function
-async function readPreviousDotsFile(
+export async function readPreviousDotsFile(
     sourcePath: string,
 ): Promise<PreviousDotsImportResult> {
     const db = new DatabaseSync(sourcePath, { readOnly: true });

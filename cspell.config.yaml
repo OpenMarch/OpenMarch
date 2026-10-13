@@ -22,6 +22,7 @@ words:
   - bostick
   - BRHS
   - canvas
+  - capi
   - Catmull
   - ccpa
   - Chakravarthi
@@ -59,6 +60,7 @@ words:
   - flac
   - forwardslash
   - français
+  - FREEONCLOSE
   - frontfield
   - frontmatter
   - Geral
@@ -93,6 +95,9 @@ words:
   - musescore
   - musicxml
   - Nativewind
+  - noopener
+  - noreferrer
+  - nosniff
   - notarytool
   - NSIS
   - nums
@@ -100,6 +105,7 @@ words:
   - oklch
   - openmarch
   - openmarchdev
+  - opfs
   - OTMDEMO
   - ONTHEMOVE
   - overscan
@@ -117,12 +123,15 @@ words:
   - Rcoords
   - rels
   - recents
+  - RESIZEABLE
   - rgba
   - ritardandos
   - rootfile
+  - rotr
   - rw-r
   - rwxr
   - saario
+  - sahpool
   - samuelmeuli
   - sandboxing
   - Schachner
@@ -215,6 +224,7 @@ ignorePaths:
   - "**/dist-electron/**"
   - "**/dist-browser/**"
   - "**/dist-browser-host/**"
+  - "**/dist-web/**"
   - "**/wasm/pkg/**"
   - "**/release/**"
   - "*.svg"

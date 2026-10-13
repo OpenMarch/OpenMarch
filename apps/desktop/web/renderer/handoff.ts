@@ -1,0 +1,106 @@
+/**
+ * Carries the show across a reload in a tab that keeps it in memory only
+ * (a private window, or a second tab while another holds the stored copy).
+ *
+ * Opening or creating a show reloads the page, as Electron reloads the
+ * window, and the worker reopens the show from storage. A memory-only tab
+ * has no stored copy, so just before reloading it puts the show here, under
+ * an id only this tab knows, and takes it back as the page starts again.
+ *
+ * Uses IndexedDB, which browsers allow in private windows (kept in memory
+ * until the window closes) where they may not allow the origin private file
+ * system.
+ */
+import { storageKey } from "./channel";
+
+export type HandedOffShow = {
+    bytes: Uint8Array;
+    name: string;
+    /** Whether the show had changes that weren't downloaded. */
+    changed: boolean;
+};
+
+type Entry = HandedOffShow & { at: number };
+
+const DATABASE = storageKey("handoff");
+const STORE = "shows";
+const TAB_KEY = storageKey("tab");
+/** A show no tab took back by then was left by a tab that closed. */
+const STALE_MS = 60 * 60 * 1000;
+
+/** This tab's id. sessionStorage is per tab and survives a reload. */
+function tabId(): string {
+    let id = sessionStorage.getItem(TAB_KEY);
+    if (!id) {
+        id = crypto.randomUUID();
+        sessionStorage.setItem(TAB_KEY, id);
+    }
+    return id;
+}
+
+function request<T>(req: IDBRequest<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+function openDatabase(): Promise<IDBDatabase> {
+    const req = indexedDB.open(DATABASE, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    return request(req);
+}
+
+async function withStore<T>(
+    mode: IDBTransactionMode,
+    use: (store: IDBObjectStore) => Promise<T>,
+): Promise<T> {
+    const db = await openDatabase();
+    try {
+        const transaction = db.transaction(STORE, mode);
+        const done = new Promise<void>((resolve, reject) => {
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject(transaction.error);
+            transaction.onabort = () => reject(transaction.error);
+        });
+        // Reported by `use` when it fails first.
+        done.catch(() => {});
+        const result = await use(transaction.objectStore(STORE));
+        await done;
+        return result;
+    } finally {
+        db.close();
+    }
+}
+
+/** Keeps `show` for this tab's next page. Throws if the browser won't. */
+export async function handOffShow(show: HandedOffShow): Promise<void> {
+    const id = tabId();
+    const entry: Entry = { ...show, at: Date.now() };
+    await withStore("readwrite", (store) => request(store.put(entry, id)));
+}
+
+/** Takes back the show this tab handed off before reloading, if any. */
+export async function takeHandedOffShow(): Promise<HandedOffShow | null> {
+    let id: string;
+    try {
+        id = tabId();
+        if (typeof indexedDB === "undefined") return null;
+    } catch {
+        return null;
+    }
+    return withStore("readwrite", async (store) => {
+        const entry = (await request(store.get(id))) as Entry | undefined;
+        await request(store.delete(id));
+        // Clear shows left by tabs that closed before taking theirs back.
+        const ids = (await request(store.getAllKeys())) as string[];
+        const entries = (await request(store.getAll())) as Entry[];
+        const now = Date.now();
+        for (const [index, other] of entries.entries())
+            if (now - other.at > STALE_MS)
+                await request(store.delete(ids[index]));
+        return entry
+            ? { bytes: entry.bytes, name: entry.name, changed: entry.changed }
+            : null;
+    });
+}

@@ -16,6 +16,8 @@ dist-ssr
 dist-electron
 dist-browser
 dist-browser-host
+dist-web
+.wrangler
 release
 *.local
 
