@@ -328,7 +328,12 @@ function registerHandlers() {
 
 async function handle(message: ToWorker) {
     if (message.type === "send") {
-        ipcListeners.get(message.channel)?.({}, ...message.args);
+        if (!ipcListeners.has(message.channel))
+            throw new Error(`No listener registered for '${message.channel}'`);
+        const listener = ipcListeners.get(message.channel);
+        if (typeof listener !== "function")
+            throw new Error(`Listener for '${message.channel}' is not callable`);
+        listener({}, ...message.args);
         scheduleSave();
         reportChanges();
         return;
