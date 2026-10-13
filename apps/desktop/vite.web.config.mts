@@ -13,19 +13,14 @@ import { version } from "./package.json";
  *   pnpm run web:build   # static site in dist-web/
  *
  * Environment:
- * - `WEB_CHANNEL`: "stable" or "nightly". Keeps each channel's show and
- *   settings apart in the browser, since both are served from one origin.
- * - `WEB_BASE`: the path the site is served from, e.g. "/nightly/".
- *
- * `dist-web/` is the site's root as Cloudflare serves it (see
- * `web/wrangler.jsonc`), so the build goes in `dist-web/<WEB_BASE>`.
+ * `WEB_CHANNEL` ("stable" or "nightly"; "dev" if unset) names the release
+ * channel; the nightly build says so next to the version.
  */
 
 const channel = process.env.WEB_CHANNEL ?? "dev";
-const base = process.env.WEB_BASE ?? "/";
 
 const web = (file: string) => path.join(__dirname, "web", file);
-const siteRoot = path.join(__dirname, "dist-web");
+const outDir = path.join(__dirname, "dist-web");
 
 /**
  * Cloudflare's static asset headers: hashed assets never change, so browsers
@@ -37,9 +32,9 @@ const writeHeaders = (): Plugin => ({
     apply: "build",
     closeBundle() {
         fs.writeFileSync(
-            path.join(siteRoot, "_headers"),
+            path.join(outDir, "_headers"),
             [
-                `${base}assets/*`,
+                "/assets/*",
                 "  Cache-Control: public, max-age=31536000, immutable",
                 "/*",
                 "  X-Content-Type-Options: nosniff",
@@ -97,7 +92,6 @@ const webEntry = (): Plugin => ({
 });
 
 export default defineConfig({
-    base,
     resolve: {
         alias: [
             { find: /^@\//, replacement: path.join(__dirname, "src") + "/" },
@@ -136,13 +130,16 @@ export default defineConfig({
         "import.meta.env.VITE_PUBLIC_WEB_BUILD": JSON.stringify("true"),
         "import.meta.env.VITE_PUBLIC_WEB_CHANNEL": JSON.stringify(channel),
         "import.meta.env.VITE_PUBLIC_APP_VERSION": JSON.stringify(version),
+        // No analytics on the web (PostHog stays uninitialized; Sentry is
+        // stubbed in renderer/sentry.ts).
+        "import.meta.env.VITE_PUBLIC_POSTHOG_KEY": JSON.stringify(""),
     },
     optimizeDeps: {
         // Loads its .wasm next to itself, which pre-bundling breaks.
         exclude: ["@sqlite.org/sqlite-wasm"],
     },
     build: {
-        outDir: path.join(siteRoot, base),
+        outDir,
         emptyOutDir: true,
         sourcemap: true,
         target: "es2022",

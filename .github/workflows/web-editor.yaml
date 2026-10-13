@@ -1,10 +1,10 @@
 # Deploys the web editor (apps/desktop/web) to Cloudflare:
 #
-#   editor.openmarch.com/          stable, built from the latest published release
-#   editor.openmarch.com/nightly/  nightly, built from every push to main
+#   editor.openmarch.com          stable, built from the latest published release
+#   editor-nightly.openmarch.com  nightly, built from every push to main
 #
-# Needs the CLOUDFLARE_API_TOKEN secret (Workers Scripts: Edit, Workers Routes:
-# Edit, and Zone DNS: Edit on openmarch.com for the Custom Domain) and the
+# Needs the CLOUDFLARE_API_TOKEN secret (Workers Scripts: Edit, and Workers
+# Routes: Edit and DNS: Edit on openmarch.com for the Custom Domains) and the
 # CLOUDFLARE_ACCOUNT_ID variable. See apps/desktop/web/README.md.
 name: Web Editor
 
@@ -93,7 +93,6 @@ jobs:
         working-directory: apps/desktop
         env:
           WEB_CHANNEL: ${{ env.CHANNEL }}
-          WEB_BASE: ${{ env.CHANNEL == 'nightly' && '/nightly/' || '/' }}
         run: pnpm run web:build
 
       - name: Deploy to Cloudflare

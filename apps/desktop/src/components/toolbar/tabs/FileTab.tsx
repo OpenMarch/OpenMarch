@@ -19,6 +19,7 @@ import {
 } from "@/hooks/queries/useHistory";
 import { useQuery } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
+import { isWebBuild } from "@/utilities/webBuild";
 
 export function FileTab() {
     const { isFullscreen } = useFullscreenStore();
@@ -80,15 +81,18 @@ export function FileTab() {
                     </button>
                 </ToolbarSection>
             )}
-            <ToolbarSection>
-                <ActionButton
-                    action="openExportDialog"
-                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                >
-                    <ArrowSquareOutIcon size={24} />
-                    <T keyName="exportCoordinates.exportButton" />
-                </ActionButton>
-            </ToolbarSection>
+            {/* Export needs Electron (printToPDF, file streams, sign-in). */}
+            {!isWebBuild && (
+                <ToolbarSection>
+                    <ActionButton
+                        action="openExportDialog"
+                        className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                    >
+                        <ArrowSquareOutIcon size={24} />
+                        <T keyName="exportCoordinates.exportButton" />
+                    </ActionButton>
+                </ToolbarSection>
+            )}
             <ToolbarSection>
                 <ActionButton
                     action="openSettings"

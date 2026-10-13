@@ -10,8 +10,10 @@
 import {
     registerPageHandlers,
     changedSinceDownload,
+    isReloadingOnPurpose,
     markChanged,
 } from "./handlers";
+import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
 import { WEB_CHANNELS, WEB_EVENTS, type WorkerStatus } from "../protocol";
 
@@ -55,8 +57,32 @@ function showNotice(text: string) {
     document.body.append(bar);
 }
 
+/**
+ * The show is only backed up in the browser; the saved copy is the download.
+ * Says so once per browser session, and asks before the tab closes with
+ * changes that haven't been downloaded.
+ */
 function warnAboutStorage(status: WorkerStatus) {
+    window.addEventListener("beforeunload", (event) => {
+        if (changedSinceDownload() && !isReloadingOnPurpose())
+            event.preventDefault();
+    });
     if (status.storage === "opfs") {
+        const remindedKey = storageKey("reminded");
+        try {
+            if (!sessionStorage.getItem(remindedKey)) {
+                sessionStorage.setItem(remindedKey, "1");
+                showNotice(
+                    `Download your show (${
+                        window.__openmarchPlatform === "darwin"
+                            ? "⌘S"
+                            : "Ctrl+S"
+                    }) when you finish. This browser keeps a backup between visits, but it can clear it, so the downloaded .dots file is your saved copy.`,
+                );
+            }
+        } catch {
+            // Storage blocked: the browser keeps nothing anyway (see below).
+        }
         // Ask the browser not to clear the show when space runs low.
         void navigator.storage?.persist?.().catch(() => {});
         // Copy the latest edits now, in case the tab is about to close.
@@ -71,10 +97,6 @@ function warnAboutStorage(status: WorkerStatus) {
             ? "OpenMarch is open in another tab. In this tab, your show is only kept until you close or reload it. Download it to keep your changes."
             : "This browser can't keep your show between visits (for example, in a private window). Download it to keep your changes.",
     );
-    // Shows in memory are lost with the page.
-    window.addEventListener("beforeunload", (event) => {
-        if (changedSinceDownload()) event.preventDefault();
-    });
 }
 
 async function start() {

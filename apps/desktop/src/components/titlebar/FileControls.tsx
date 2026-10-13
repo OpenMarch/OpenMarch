@@ -11,6 +11,7 @@ import {
     usePerformHistoryAction,
 } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
+import { isWebBuild } from "@/utilities/webBuild";
 
 export default function FileControls() {
     const { isFullscreen } = useFullscreenStore();
@@ -23,12 +24,15 @@ export default function FileControls() {
         <div className="titlebar-button flex w-fit gap-8">
             {!isFullscreen && (
                 <>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="hover:text-accent focus-visible:text-accent outline-hidden duration-150 ease-out disabled:opacity-50"
-                    >
-                        <ArrowCounterClockwiseIcon size={18} />
-                    </button>
+                    {/* The browser has its own reload. */}
+                    {!isWebBuild && (
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="hover:text-accent focus-visible:text-accent outline-hidden duration-150 ease-out disabled:opacity-50"
+                        >
+                            <ArrowCounterClockwiseIcon size={18} />
+                        </button>
+                    )}
                     <button
                         disabled={!canUndo}
                         onClick={() => performHistoryAction("undo")}

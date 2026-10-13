@@ -1,8 +1,8 @@
 /**
- * The release channel this build was made for. The stable and nightly
- * builds share an origin (editor.openmarch.com and /nightly), so everything
- * they keep in the browser is namespaced by channel: a show migrated by
- * nightly may not open in stable.
+ * The release channel this build was made for. What a build keeps in the
+ * browser is namespaced by channel, so builds served from one origin (such
+ * as `web:dev` and `web:preview` on localhost) don't share a show: one
+ * migrated by nightly may not open in stable.
  */
 export const WEB_CHANNEL: string =
     import.meta.env.VITE_PUBLIC_WEB_CHANNEL || "dev";

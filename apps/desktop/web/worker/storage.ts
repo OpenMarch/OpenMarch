@@ -54,8 +54,8 @@ function holdLock(name: string): Promise<boolean> {
 /**
  * Claims this release channel's storage.
  *
- * @param namespace keeps the stable and nightly builds' shows apart, since
- * they share an origin and a show migrated by nightly may not open in stable.
+ * @param namespace keeps each release channel's show apart, for builds
+ * served from one origin (see `../renderer/channel.ts`).
  */
 export async function claimStorage(namespace: string): Promise<StorageStatus> {
     if (

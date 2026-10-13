@@ -53,6 +53,17 @@ settingsBroadcast?.addEventListener(
     },
 );
 
+let reloading = false;
+
+/** Reloads into the show just opened or closed, as Electron reloads the window. */
+export function reloadPage() {
+    reloading = true;
+    window.location.reload();
+}
+
+/** Whether the page is reloading itself, so leaving loses nothing. */
+export const isReloadingOnPurpose = () => reloading;
+
 /** Asks the person for one file, like the app's native open dialog. */
 export function pickFile(accept: string): Promise<File | null> {
     return new Promise((resolve) => {
@@ -99,7 +110,7 @@ export async function openShowFile(file: File): Promise<number> {
     );
     if (status === 200) {
         markDownloaded();
-        window.location.reload();
+        reloadPage();
     } else emit("load-file-response", status);
     return status;
 }
@@ -153,14 +164,17 @@ async function closeShow() {
     }
     await invokeWorker(WEB_CHANNELS.closeShow);
     markDownloaded();
-    window.location.reload();
+    reloadPage();
     return 200;
 }
 
 // eslint-disable-next-line max-lines-per-function
 export function registerPageHandlers({ isSettingsTab = false } = {}) {
     // Settings, theme and language, from electron/main/index.ts.
-    handleInPage("settings:get", (key: string) => settings.get(key));
+    handleInPage("settings:get", (key: string) =>
+        // No analytics on the web, so there's nothing to ask about.
+        key === "optOutAnalytics" ? true : settings.get(key),
+    );
     listenInPage("settings:set", (values: Record<string, unknown>) =>
         setSettings(values),
     );
@@ -191,7 +205,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     for (const channel of ["window:minimize", "window:maximize", "menu:open"])
         listenInPage(channel, () => {});
     listenInPage("window:close", () => window.close());
-    listenInPage("main-window:reload", () => window.location.reload());
+    listenInPage("main-window:reload", () => reloadPage());
     handleInPage("settings:open", () => {
         const url = new URL(window.location.href);
         url.hash = "settings";
@@ -259,7 +273,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
             );
             if (status === 200) {
                 markChanged();
-                window.location.reload();
+                reloadPage();
             }
             return status;
         },
