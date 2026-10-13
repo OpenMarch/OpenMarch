@@ -18,6 +18,8 @@ import "./process";
 import * as DatabaseServices from "@om-electron/database/database.services";
 import { getOrm } from "@om-electron/database/db";
 import { DrizzleMigrationService } from "@om-electron/database/services/DrizzleMigrationService";
+import * as schema from "@om-electron/database/migrations/schema";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { readPreviousDotsFile } from "@om-electron/main/services/previous-dots-import-service";
 import { ipcHandlers, ipcListeners, ipcMain } from "./electron";
 import { MIGRATIONS_FOLDER } from "./fs";
@@ -85,6 +87,20 @@ async function openShowAt(path: string, isNewFile: boolean): Promise<number> {
         await migrator.applyPendingMigrations(MIGRATIONS_FOLDER);
         if (isNewFile)
             await DrizzleMigrationService.initializeDatabase(orm, db);
+        // Shows from before workspace settings have no row, and the app adds
+        // one as it loads (initializeWorkspaceSettings), which would count as
+        // a change the person must download. Adding it while opening, as a
+        // migration would, keeps an untouched show unchanged.
+        else
+            await orm
+                .insert(schema.workspace_settings)
+                .values({
+                    id: 1,
+                    json_data: JSON.stringify(
+                        workspaceSettingsSchema.parse({}),
+                    ),
+                })
+                .onConflictDoNothing();
         return 200;
     } catch (error) {
         console.error("Error opening show:", error);
