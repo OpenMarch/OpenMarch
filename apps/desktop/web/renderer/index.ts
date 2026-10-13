@@ -15,6 +15,7 @@ import {
     setStoredInBrowser,
 } from "./handlers";
 import { takeHandedOffShow } from "./handoff";
+import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
 import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
 import { WEB_CHANNELS, WEB_EVENTS, type WorkerStatus } from "../protocol";
@@ -90,13 +91,7 @@ function warnAboutStorage(status: WorkerStatus) {
         try {
             if (!sessionStorage.getItem(remindedKey)) {
                 sessionStorage.setItem(remindedKey, "1");
-                showNotice(
-                    `Download your show (${
-                        window.__openmarchPlatform === "darwin"
-                            ? "⌘S"
-                            : "Ctrl+S"
-                    }) when you finish. This browser keeps a backup between visits, but it can clear it, so the downloaded .dots file is your saved copy.`,
-                );
+                useWebWelcomeStore.getState().setOpen(true);
             }
         } catch {
             // Storage blocked: the browser keeps nothing anyway (see below).

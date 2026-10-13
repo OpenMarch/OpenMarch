@@ -19,6 +19,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
 import { isWebBuild, webChannel } from "@/utilities/webBuild";
 import WebFileMenu from "./WebFileMenu";
+import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
 function usePageZoomFactor() {
@@ -48,6 +49,7 @@ export default function TitleBar({
     const showWindowControls = !isMacOS && !isWebBuild;
     const { uiSettings } = useUiSettingsStore();
     const zoomFactor = usePageZoomFactor();
+    const openWebWelcome = useWebWelcomeStore((state) => state.setOpen);
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
@@ -135,6 +137,15 @@ export default function TitleBar({
                                     {currentVersion}
                                     {webChannel === "nightly" && " nightly"}
                                 </p>
+                                {isWebBuild && (
+                                    <button
+                                        type="button"
+                                        className="bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
+                                        onClick={() => openWebWelcome(true)}
+                                    >
+                                        Web
+                                    </button>
+                                )}
                                 {!isWebBuild && <VersionChecker />}
                                 {showControls && <FileControls />}
                             </>

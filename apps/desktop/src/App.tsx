@@ -44,6 +44,8 @@ import tolgee from "./global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
+import WebWelcomeModal from "./components/WebWelcomeModal";
+import { isWebBuild } from "./utilities/webBuild";
 import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
 import { version as currentVersion } from "../package.json";
@@ -253,6 +255,7 @@ function App() {
                         </div>
                     )}
                     <AlertModal />
+                    {isWebBuild && <WebWelcomeModal />}
                     <ShortcutDispatcher />
                     <CommandPalette />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
