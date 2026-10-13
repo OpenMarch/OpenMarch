@@ -2,6 +2,7 @@ import { FieldProperties } from "@openmarch/core";
 import { eq } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
+import { getSectionObjectByName } from "@/global/classes/Sections";
 import { transactionWithHistory, createAllUndoTriggers } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
 
@@ -160,13 +161,18 @@ export async function createMarchersInTransaction({
     // Create a marcherPage for each marcher
     const newMarcherPages: ModifiedMarcherPageArgs[] = [];
 
-    // Each section gets its own row, in the order the sections first appear
+    // Each section gets its own row, ordered the way the app orders sections (family, then score)
     const sectionRows = new Map<string, typeof createdMarchers>();
     for (const marcher of createdMarchers) {
         const row = sectionRows.get(marcher.section) ?? [];
         row.push(marcher);
         sectionRows.set(marcher.section, row);
     }
+    const orderedRows = [...sectionRows.entries()]
+        .sort(([a], [b]) =>
+            getSectionObjectByName(a).compareTo(getSectionObjectByName(b)),
+        )
+        .map(([, row]) => row);
 
     for (const page of allPages) {
         const startingData = await calculateStartingData(tx, page.id);
@@ -181,7 +187,7 @@ export async function createMarchersInTransaction({
             !occupiedYs.some((other) => Math.abs(other - y) < 1);
 
         let y = startingData.point.y;
-        for (const row of sectionRows.values()) {
+        for (const row of orderedRows) {
             while (!rowIsFree(y)) y += startingData.spacing;
             for (const [index, marcher] of row.entries()) {
                 newMarcherPages.push({

@@ -8,6 +8,7 @@ import {
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { inArray } from "drizzle-orm";
+import { performRedo, performUndo } from "../history";
 
 describeDbTests("marchers", (it) => {
     describe("database interactions", () => {
@@ -46,6 +47,104 @@ describeDbTests("marchers", (it) => {
         });
 
         describe("createMarchers", () => {
+            testWithHistory(
+                "creating a batch is one history action, undone and redone together",
+                async ({ db, expectNumberOfChanges }) => {
+                    await createMarchers({
+                        newMarchers: [
+                            {
+                                section: "Trumpet",
+                                drill_prefix: "T",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Flute",
+                                drill_prefix: "F",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Trumpet",
+                                drill_prefix: "T",
+                                drill_order: 2,
+                            },
+                            {
+                                section: "Snare",
+                                drill_prefix: "S",
+                                drill_order: 1,
+                            },
+                        ],
+                        db,
+                    });
+                    await expectNumberOfChanges.test(db, 1);
+                    const pageRows = (await db.query.marcher_pages.findMany())
+                        .length;
+                    expect(pageRows).toBeGreaterThan(0);
+
+                    await performUndo(db);
+                    expect(await db.query.marchers.findMany()).toHaveLength(0);
+                    expect(
+                        await db.query.marcher_pages.findMany(),
+                    ).toHaveLength(0);
+
+                    await performRedo(db);
+                    expect(await db.query.marchers.findMany()).toHaveLength(4);
+                    expect(
+                        await db.query.marcher_pages.findMany(),
+                    ).toHaveLength(pageRows);
+                },
+            );
+
+            testWithHistory(
+                "rows follow the app's section order, not file order",
+                async ({ db, pages }) => {
+                    const created = await createMarchers({
+                        newMarchers: [
+                            {
+                                section: "Snare",
+                                drill_prefix: "S",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Trumpet",
+                                drill_prefix: "T",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Flute",
+                                drill_prefix: "F",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Flute",
+                                drill_prefix: "F",
+                                drill_order: 2,
+                            },
+                        ],
+                        db,
+                    });
+                    const sectionOf = new Map(
+                        created.map((m) => [m.id, m.section]),
+                    );
+                    const firstPage = pages.expectedPages[0].id;
+                    const onPage = (
+                        await db.query.marcher_pages.findMany()
+                    ).filter((mp) => mp.page_id === firstPage);
+                    const yBySection = new Map(
+                        onPage.map((mp) => [
+                            sectionOf.get(mp.marcher_id)!,
+                            mp.y,
+                        ]),
+                    );
+                    // Woodwind, then Brass, then Battery: top to bottom
+                    expect(yBySection.get("Flute")!).toBeLessThan(
+                        yBySection.get("Trumpet")!,
+                    );
+                    expect(yBySection.get("Trumpet")!).toBeLessThan(
+                        yBySection.get("Snare")!,
+                    );
+                },
+            );
+
             testWithHistory(
                 "puts each section in its own row on every page",
                 async ({ db, pages }) => {
