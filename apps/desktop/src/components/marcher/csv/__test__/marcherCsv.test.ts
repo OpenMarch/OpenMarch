@@ -84,6 +84,16 @@ describe("planMarcherCsv by section", () => {
         expect(plan.rows).toEqual([]);
     });
 
+    it("treats a file with no records as empty", () => {
+        for (const mode of ["section", "drillNumber"] as const) {
+            for (const text of ["", "\n", " \n,\n"]) {
+                const plan = planMarcherCsv(text, mode, []);
+                expect(plan.missingColumns).toEqual([]);
+                expect(plan.rows).toEqual([]);
+            }
+        }
+    });
+
     it("lists unused columns", () => {
         const plan = planMarcherCsv(
             "section,drill_number,height\nFlute,F1,5\n",

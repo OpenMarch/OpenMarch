@@ -788,6 +788,10 @@
     "marchers": {
         "addMarcher": "Add",
         "addMarchers": "Add Marchers",
+        "addMethod": {
+            "manual": "Add manually",
+            "or": "or"
+        },
         "cancelDeleteButton": "Cancel",
         "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",
         "createButtonWithSection": "{quantity, plural, one {Create {section} Marcher} other {Create {quantity} {section} Marchers}}",
@@ -796,6 +800,7 @@
         "createInfo": "New marchers may not show up until a refresh",
         "csv": {
             "chooseFile": "Choose CSV file",
+            "copySections": "Copy",
             "downloadExample": "Example CSV",
             "error": {
                 "unknownSection": "Unknown section \"{value}\"",
@@ -822,11 +827,15 @@
                     "help": "Give each marcher a drill number such as F12. The section comes from the prefix, or from an optional section column."
                 }
             },
-            "more": "…and {count} more",
             "readError": "Could not read that file",
+            "result": {
+                "success": "{valid, plural, one {1 marcher is ready to import} other {All {valid} marchers are ready to import}}",
+                "partial": "{valid, plural, one {1 marcher is} other {{valid} marchers are}} ready to import. {invalid, plural, one {1 row has a problem and will be skipped:} other {{invalid} rows have problems and will be skipped:}}",
+                "failed": "None of the rows could be imported. Fix the problems below and choose the file again:",
+                "empty": "This file doesn't have any marchers in it"
+            },
             "sections": "Sections and drill prefixes",
             "sectionsHelp": "Use these section names (or prefixes) in the section column. Drill numbers start with the section's prefix, for example F12 for Flute 12.",
-            "summary": "{valid, plural, one {1 marcher} other {{valid} marchers}} ready, {invalid, plural, =0 {no errors} one {1 row with an error} other {{invalid} rows with errors}}",
             "title": "Import from CSV"
         },
         "deleteButton": "Delete",

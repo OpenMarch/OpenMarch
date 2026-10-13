@@ -7,7 +7,6 @@ import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 import { T } from "@tolgee/react";
 import { AppearanceModalContents } from "./appearance/AppearanceModal";
-import { MarcherCsvImportContents } from "./csv/MarcherCsvImport";
 
 export default function MarchersModal() {
     return (
@@ -40,18 +39,6 @@ export function MarcherListContents() {
                         variant="secondary"
                     >
                         <T keyName="marchers.marcherAppearance" />
-                    </Button>
-                    <Button
-                        onClick={() => {
-                            setContent(
-                                <MarcherCsvImportContents />,
-                                "marcher-csv-import",
-                            );
-                        }}
-                        size="compact"
-                        variant="secondary"
-                    >
-                        <T keyName="marchers.csv.title" />
                     </Button>
                     <Button
                         onClick={() => {
