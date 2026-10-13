@@ -328,12 +328,9 @@ function registerHandlers() {
 
 async function handle(message: ToWorker) {
     if (message.type === "send") {
-        if (!ipcListeners.has(message.channel))
-            throw new Error(`No listener registered for '${message.channel}'`);
         const listener = ipcListeners.get(message.channel);
-        if (typeof listener !== "function")
-            throw new Error(`Listener for '${message.channel}' is not callable`);
-        listener({}, ...message.args);
+        // Electron drops a message no one listens for; so does this.
+        if (typeof listener === "function") listener({}, ...message.args);
         scheduleSave();
         reportChanges();
         return;
