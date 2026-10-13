@@ -1,10 +1,11 @@
 // The web editor on Cloudflare: two static-asset Workers, each on its own
 // hostname as a Custom Domain.
 //
-//   editor.openmarch.com          stable: the latest release   (top level)
+//   editor.openmarch.com          stable: the `stable` branch  (top level)
 //   editor-nightly.openmarch.com  nightly: the latest main     (env.nightly)
 //
-// .github/workflows/web-editor.yaml builds into ../dist-web and deploys:
+// Cloudflare Workers Builds builds into ../dist-web and deploys (see
+// web/README.md):
 //
 //   wrangler deploy -c web/wrangler.jsonc               # stable
 //   wrangler deploy -c web/wrangler.jsonc --env nightly # nightly

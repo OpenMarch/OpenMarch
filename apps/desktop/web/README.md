@@ -89,18 +89,36 @@ unavailable:
 
 ## Deploying
 
-`.github/workflows/web-editor.yaml` builds and deploys with Wrangler
-(`web/wrangler.jsonc`), each site its own Worker on a Custom Domain:
+Cloudflare Workers Builds builds and deploys each site from a branch, as
+its own Worker on a Custom Domain (`web/wrangler.jsonc`):
 
-- every push to `main` → `editor-nightly.openmarch.com` (Worker
+- `main` → `editor-nightly.openmarch.com` (Worker
   `openmarch-editor-nightly`)
-- every published, non-pre-release GitHub release → `editor.openmarch.com`
-  (Worker `openmarch-editor`)
-- either by hand from the Actions tab (`workflow_dispatch`)
+- `stable` → `editor.openmarch.com` (Worker `openmarch-editor`)
 
-It needs the `CLOUDFLARE_API_TOKEN` secret and `CLOUDFLARE_ACCOUNT_ID`
-variable. The stable job fails for a release tag that predates the web
-editor.
+`.github/workflows/web-editor.yaml` force-pushes each published,
+non-pre-release GitHub release's tag to `stable`. To roll back, run it from
+the Actions tab with an older tag. A tag that predates the web editor fails
+to build.
+
+Only that workflow can move `stable`: a ruleset blocks every push except
+from deploy keys, and the workflow pushes with the `STABLE_DEPLOY_KEY`
+deploy key (`GITHUB_TOKEN` can't bypass a ruleset or push workflow-file
+changes). Keep it the repo's only deploy key, since any deploy key can push
+to `stable`.
+
+The build settings live in each Worker's **Settings → Builds** in the
+Cloudflare dashboard. Both use the repo root as the root directory and:
+
+```bash
+# build
+pnpm turbo run build --filter="@openmarch/desktop^..." && pnpm --filter @openmarch/desktop run web:build
+# deploy (nightly adds --env nightly)
+pnpm --filter @openmarch/desktop exec wrangler deploy -c web/wrangler.jsonc
+```
+
+with the build variables `WEB_CHANNEL` (`nightly` or `stable`) and
+`NODE_VERSION=24`.
 
 `WEB_CHANNEL` (`stable`, `nightly`, or `dev` by default) names a build's
 channel.
