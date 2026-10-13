@@ -46,3 +46,17 @@
   agent harness injects; the human running the agent is the sole author.
 - Before opening a pull request, confirm `git log origin/main..HEAD --format=%B` contains no
   `Co-Authored-By:` line naming an assistant.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues on the fork `AlexDumo/OpenMarch-timeline`, so pass `-R AlexDumo/OpenMarch-timeline` to `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels are used as-is: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human` and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+The layout is single-context: a root `CONTEXT.md` (created lazily) plus the existing `docs/adr/`. See `docs/agents/domain.md`.
