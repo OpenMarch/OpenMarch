@@ -145,7 +145,11 @@ async function restoreShow() {
 let downloadedChanges: number | null = null;
 let reportedChanged = false;
 
-/** Counts from now: the show was just opened or downloaded. */
+/**
+ * Counts from now: the show was just opened or downloaded. The worker resets
+ * this when it opens or exports a show; the page resets its own flag in
+ * `markDownloaded` (renderer/handlers.ts) at the same moments.
+ */
 function markDownloaded() {
     const state = changeState(DatabaseServices.getDbPath());
     downloadedChanges = state?.changes ?? null;
@@ -198,6 +202,9 @@ async function saveCopy(): Promise<void> {
     if (savedCopy?.path === path && savedCopy.changes === state.changes) return;
     if (!state.idle) {
         // Mid-transaction: the copy would hold half a change. Try again soon.
+        // This can't wait here: the transaction's next statement is a later
+        // message, which is only read once this save returns. So a flush in
+        // this state defers to the retry timer rather than saving now.
         scheduleSave(TRANSACTION_RETRY_MS);
         return;
     }
@@ -460,7 +467,9 @@ async function start() {
     registerHandlers();
     if (storageEnabled) await restoreShow();
     scope.addEventListener("message", (event: MessageEvent<ToWorker>) => {
-        void serially(() => handle(event.data));
+        serially(() => handle(event.data)).catch((error) =>
+            console.error("Couldn't handle a message from the page:", error),
+        );
     });
     post({
         type: "ready",
