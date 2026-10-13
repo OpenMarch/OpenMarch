@@ -46,6 +46,72 @@ describeDbTests("marchers", (it) => {
         });
 
         describe("createMarchers", () => {
+            testWithHistory(
+                "puts each section in its own row on every page",
+                async ({ db, pages }) => {
+                    const created = await createMarchers({
+                        newMarchers: [
+                            {
+                                section: "Flute",
+                                drill_prefix: "F",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Trumpet",
+                                drill_prefix: "T",
+                                drill_order: 1,
+                            },
+                            {
+                                section: "Flute",
+                                drill_prefix: "F",
+                                drill_order: 2,
+                            },
+                            {
+                                section: "Flute",
+                                drill_prefix: "F",
+                                drill_order: 3,
+                            },
+                            {
+                                section: "Trumpet",
+                                drill_prefix: "T",
+                                drill_order: 2,
+                            },
+                        ],
+                        db,
+                    });
+                    const sectionOf = new Map(
+                        created.map((m) => [m.id, m.section]),
+                    );
+                    const marcherPages =
+                        await db.query.marcher_pages.findMany();
+                    for (const page of pages.expectedPages) {
+                        const onPage = marcherPages.filter(
+                            (mp) => mp.page_id === page.id,
+                        );
+                        const rows = new Map<string, Set<number>>();
+                        for (const mp of onPage) {
+                            const section = sectionOf.get(mp.marcher_id)!;
+                            rows.set(
+                                section,
+                                (rows.get(section) ?? new Set()).add(mp.y),
+                            );
+                        }
+                        // one y per section, and different sections on different ys
+                        expect([...rows.values()].map((ys) => ys.size)).toEqual(
+                            [1, 1],
+                        );
+                        const [fluteY, trumpetY] = [...rows.values()].map(
+                            (ys) => [...ys][0],
+                        );
+                        expect(fluteY).not.toBe(trumpetY);
+                        // no two marchers share a spot
+                        expect(
+                            new Set(onPage.map((mp) => `${mp.x},${mp.y}`)).size,
+                        ).toBe(onPage.length);
+                    }
+                },
+            );
+
             describe("insert with no existing marchers", () => {
                 describe.each([
                     {

@@ -207,15 +207,11 @@ export default function MarcherCsvImport() {
                                 <td>{t(s.tName)}</td>
                                 <td>
                                     <code>{s.prefix}</code>
-                                    {s.shared && " *"}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-                <p className="text-text/70 mt-8">
-                    * <T keyName="marchers.csv.sharedPrefix" />
-                </p>
             </details>
 
             {readError && (

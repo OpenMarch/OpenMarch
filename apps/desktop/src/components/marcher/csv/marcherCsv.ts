@@ -60,7 +60,6 @@ export const sectionPrefixTable = () =>
             prefix: s.prefix,
             family: s.family.name,
             tName: s.tName,
-            shared: sectionsForPrefix(s.prefix).length > 1,
         }));
 
 const BOM = new RegExp(`^${String.fromCharCode(0xfeff)}`);
@@ -310,7 +309,7 @@ export function exampleMarcherCsv(mode: MarcherCsvMode): string {
               "F1,Ada Lovelace,,12,Section leader",
               "F2,,,11,",
               "T4,Louis Armstrong,,10,",
-              "C1,,Clarinet,,Shared prefix: section given",
-              "C2,,Cymbals,,Shared prefix: section given",
+              "C1,,,,",
+              "CY1,,,,",
           ].join("\n") + "\n";
 }

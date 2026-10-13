@@ -112,14 +112,28 @@ describe("planMarcherCsv by drill number", () => {
         ]);
     });
 
-    it("requires a section for the shared prefix C, and honours an explicit section", () => {
+    it("maps C to Clarinet and CY to Cymbals", () => {
         const plan = planMarcherCsv(
-            "drill_number,section\nC1,\nC2,Cymbals\n",
+            "drill_number\nC1\nCY2\n",
             "drillNumber",
             [],
         );
-        expect(errors(plan)).toEqual(["ambiguousPrefix", undefined]);
-        expect(ok(plan)[1]?.section).toBe("Cymbals");
+        expect(ok(plan)).toMatchObject([
+            { section: "Clarinet", drill_prefix: "C" },
+            { section: "Cymbals", drill_prefix: "CY" },
+        ]);
+    });
+
+    it("honours an explicit section over the prefix", () => {
+        const plan = planMarcherCsv(
+            "drill_number,section\nC1,Cymbals\n",
+            "drillNumber",
+            [],
+        );
+        expect(ok(plan)[0]).toMatchObject({
+            section: "Cymbals",
+            drill_prefix: "C",
+        });
     });
 
     it("rejects unknown prefixes, bad numbers and duplicates", () => {
@@ -157,11 +171,8 @@ describe("examples and reference", () => {
         }
     });
 
-    it("flags the shared prefix in the reference table", () => {
-        const shared = sectionPrefixTable().filter((s) => s.shared);
-        expect(shared.map((s) => s.name).sort()).toEqual([
-            "Clarinet",
-            "Cymbals",
-        ]);
+    it("gives every section its own prefix", () => {
+        const prefixes = sectionPrefixTable().map((s) => s.prefix);
+        expect(new Set(prefixes).size).toBe(prefixes.length);
     });
 });

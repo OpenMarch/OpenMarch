@@ -826,7 +826,6 @@
             "readError": "Could not read that file",
             "sections": "Sections and drill prefixes",
             "sectionsHelp": "Use these section names (or prefixes) in the section column. Drill numbers start with the section's prefix, for example F12 for Flute 12.",
-            "sharedPrefix": "Shared by more than one section. In drill number files, add a section column for these.",
             "summary": "{valid, plural, one {1 marcher} other {{valid} marchers}} ready, {invalid, plural, =0 {no errors} one {1 row with an error} other {{invalid} rows with errors}}",
             "title": "Import from CSV"
         },
