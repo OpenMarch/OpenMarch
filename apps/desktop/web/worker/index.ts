@@ -28,6 +28,10 @@ import { convertFileOnOpen } from "@om-electron/database/convertOnOpen";
 import * as schema from "@om-electron/database/migrations/schema";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { readPreviousDotsFile } from "@om-electron/main/services/previous-dots-import-service";
+import {
+    isReadOnlySql,
+    isView3dSqlReadMethod,
+} from "@om-electron/main/view3dSql";
 import { ipcHandlers, ipcListeners, ipcMain } from "./electron";
 import { MIGRATIONS_FOLDER } from "./fs";
 import {
@@ -314,6 +318,29 @@ function registerMainHandlers() {
     // without asking (see `openShowAt`).
     ipcMain.handle("load-file:takeRefusal", () => null);
     ipcMain.handle("conversion:getPending", () => null);
+    // The 3D View tab's reads, relayed by the editor tab (see
+    // `../renderer/view3d.ts`), with the checks electron/main/view3dWindow.ts
+    // makes.
+    ipcMain.handle(
+        "view3d:sql-read",
+        (_, sql: unknown, params: unknown, method: unknown) => {
+            if (!isReadOnlySql(sql))
+                throw new Error(
+                    "3D View: only SELECT or WITH statements are allowed",
+                );
+            if (!isView3dSqlReadMethod(method))
+                throw new Error(
+                    `3D View: unsupported SQL method ${String(method)}`,
+                );
+            if (!Array.isArray(params))
+                throw new Error("3D View: SQL params must be an array");
+            return DatabaseServices.handleReadOnlySqlProxy(
+                sql as string,
+                params,
+                method,
+            );
+        },
+    );
 }
 
 /** The new-show wizard writes into a draft, then names it. */

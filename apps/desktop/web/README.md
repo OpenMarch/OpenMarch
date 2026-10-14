@@ -32,8 +32,18 @@ runs the main process's database code in a Web Worker:
 | Saving            | Every write is on disk     | A copy in browser storage (`worker/storage.ts`); **Download** to keep  |
 | Settings          | electron-store             | `localStorage` (`renderer/handlers.ts`)                                |
 | File dialogs      | Native                     | File pickers and downloads (`renderer/handlers.ts`)                    |
-| Settings window   | A second `BrowserWindow`   | A second tab at `#settings`                                            |
+| Settings window   | A second `BrowserWindow`   | A pop-up window at `#settings`                                         |
+| 3D View window    | A second `BrowserWindow`   | A pop-up window at `?view=3d` that reads through the editor tab        |
 | Node modules      | `fs`, `path`, `crypto`     | Stand-ins in `worker/`                                                 |
+
+The 3D View window opens as a pop-up rather than a tab, so the editor stays
+visible: browsers stop animation frames in a hidden tab, and the editor's
+playback runs on them. The show is in the editor tab's worker, so the editor
+tab answers the window's reads and relays its clock, selection and requests
+over a `BroadcastChannel` (`renderer/view3d.ts`), as main does in Electron.
+The window closes when the editor closes the show, or about ten seconds after
+the editor tab closes. "Open the 3D View with the show" is hidden, since
+browsers block a window opened without a click.
 
 `vite.web.config.mts` points `electron` at `worker/electron.ts` for
 main-process code and at `renderer/electron.ts` for the preload.

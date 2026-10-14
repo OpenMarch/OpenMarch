@@ -13,9 +13,10 @@ import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
 import { webExampleShows } from "../../src/utilities/webBuild";
+import { SETTINGS_DEFAULT } from "../../electron/main/settings-window-bounds";
 
 const SETTINGS_KEY = storageKey("settings");
-/** Tells this build's other tabs (e.g. the settings tab) about a change. */
+/** Tells this build's other pages (e.g. the settings window) about a change. */
 const settingsBroadcast =
     typeof BroadcastChannel === "function"
         ? new BroadcastChannel(SETTINGS_KEY)
@@ -287,8 +288,8 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         window.open(url, "_blank", "noopener,noreferrer");
     });
 
-    // Windows: the browser owns them. Settings open in their own tab, as
-    // they open in their own window in Electron.
+    // Windows: the browser owns them. Settings open in a pop-up window of
+    // their own, centered on the editor, as they open in Electron.
     for (const channel of ["window:minimize", "window:maximize", "menu:open"])
         listenInPage(channel, () => {});
     listenInPage("window:close", () => window.close());
@@ -296,7 +297,18 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     handleInPage("settings:open", () => {
         const url = new URL(window.location.href);
         url.hash = "settings";
-        window.open(url, "openmarch-settings");
+        const { width, height } = SETTINGS_DEFAULT;
+        const left = Math.round(
+            window.screenX + (window.outerWidth - width) / 2,
+        );
+        const top = Math.round(
+            window.screenY + (window.outerHeight - height) / 2,
+        );
+        window.open(
+            url,
+            "openmarch-settings",
+            `popup,width=${width},height=${height},left=${left},top=${top}`,
+        );
     });
 
     // Electron-only features, answered as when they are unavailable.

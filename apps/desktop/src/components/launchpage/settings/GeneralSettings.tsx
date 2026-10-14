@@ -8,6 +8,7 @@ import {
     Switch,
 } from "@openmarch/ui";
 import { VIEW3D_AUTO_OPEN_SETTING } from "@/view3d/sync/protocol";
+import { isWebBuild } from "@/utilities/webBuild";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
 
@@ -120,22 +121,25 @@ export default function GeneralSettings() {
                 />
             </SettingRow>
 
-            <SettingRow
-                label={<T keyName="settings.general.openView3dWithShow" />}
-                htmlFor="view3d-auto-open"
-            >
-                <Switch
-                    id="view3d-auto-open"
-                    checked={view3dAutoOpen}
-                    data-testid="settings-view3d-auto-open"
-                    onCheckedChange={(checked) => {
-                        setView3dAutoOpen(checked);
-                        window.electron.send("settings:set", {
-                            [VIEW3D_AUTO_OPEN_SETTING]: checked,
-                        });
-                    }}
-                />
-            </SettingRow>
+            {/* A browser blocks a window opened without a click. */}
+            {!isWebBuild && (
+                <SettingRow
+                    label={<T keyName="settings.general.openView3dWithShow" />}
+                    htmlFor="view3d-auto-open"
+                >
+                    <Switch
+                        id="view3d-auto-open"
+                        checked={view3dAutoOpen}
+                        data-testid="settings-view3d-auto-open"
+                        onCheckedChange={(checked) => {
+                            setView3dAutoOpen(checked);
+                            window.electron.send("settings:set", {
+                                [VIEW3D_AUTO_OPEN_SETTING]: checked,
+                            });
+                        }}
+                    />
+                </SettingRow>
+            )}
         </SettingsPanel>
     );
 }

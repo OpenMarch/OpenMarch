@@ -4,8 +4,9 @@
  * before a reload, then load the app's own preload and renderer, in that
  * order, as Electron loads them.
  *
- * The settings tab (`#settings`, Electron's settings window) needs no show,
- * so it runs without a worker.
+ * The settings window (`#settings`, as in Electron) needs no show,
+ * so it runs without a worker. Nor does the 3D View window (`?view=3d`),
+ * which reads the show through the editor tab that opened it (./view3d.ts).
  */
 import {
     registerPageHandlers,
@@ -19,6 +20,7 @@ import { takeHandedOffShow } from "./handoff";
 import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
 import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
+import { installView3dApi, registerView3dHost } from "./view3d";
 import { WEB_CHANNELS, WEB_EVENTS, type WorkerStatus } from "../protocol";
 
 declare global {
@@ -143,6 +145,12 @@ async function reopenHandedOffShow() {
 async function start() {
     window.__openmarchPlatform = detectPlatform();
     suppressBrowserContextMenu();
+    if (new URLSearchParams(window.location.search).get("view") === "3d") {
+        // Like Electron's 3D View window: its own API and no preload.
+        installView3dApi();
+        await import("@/main");
+        return;
+    }
     const isSettingsTab = window.location.hash === "#settings";
     registerPageHandlers({ isSettingsTab });
 
@@ -160,6 +168,7 @@ async function start() {
             // Also with storage: one that failed hands its show off too.
             await reopenHandedOffShow();
             warnAboutStorage(status);
+            registerView3dHost();
         } catch (error) {
             document.body.textContent = `OpenMarch couldn't start in this browser: ${
                 error instanceof Error ? error.message : String(error)
