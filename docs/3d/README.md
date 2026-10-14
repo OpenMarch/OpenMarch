@@ -71,15 +71,15 @@ its use.
   [`AlexDumo/OpenMarch-timeline`](https://github.com/AlexDumo/OpenMarch-timeline),
   never on `OpenMarch/OpenMarch`. Always pass
   `--repo AlexDumo/OpenMarch-timeline` to `gh`.
-- **Coordination and integration branch:** `3d-async`, cut from `main` on
-  2026-10-03. Docs commits go straight to it through `coord.sh`. Code goes
-  through PRs into it.
-- **Code branches:** `3d/p<phase>-<short-name>`, based on `<remote>/3d-async`.
-- **Going upstream:** merge `OpenMarch/OpenMarch` `main` into `3d-async` after
-  each phase. At the MVP, open one PR from `3d-async` to upstream `main`, and
-  rewrite fork `(#n)` suffixes in commit titles. Before opening it, delete the
-  web preview (`apps/desktop/view3d-web/` and the `view3d-web:*` scripts); its
-  README has the full list.
+- **Coordination and integration branch:** the fork's `main`, shared with the
+  timeline project. Docs commits go straight to it through `coord.sh`. Code
+  goes through PRs into it.
+- **Code branches:** `3d/p<phase>-<short-name>`, based on `<remote>/main`.
+- **Going upstream:** merge `OpenMarch/OpenMarch` `main` into the fork's `main`
+  after each phase. At the MVP, open one PR from the fork's `main` to upstream
+  `main`, and rewrite fork `(#n)` suffixes in commit titles. Before opening it,
+  delete the web preview (`apps/desktop/view3d-web/` and the `view3d-web:*`
+  scripts); its README has the full list.
 
 ## Vocabulary
 
@@ -97,7 +97,7 @@ its use.
 ### 1. Pick up work
 
 1. Run the status board. Choose a package that is `open` and whose
-   `Depends on` packages are `done` (merged into `3d-async`).
+   `Depends on` packages are `done` (merged into `main`).
 2. Read the phase file in full, including **Handoff notes** and the last few
    **Progress log** entries.
 3. **Claim it** with `scripts/3d/coord.sh` ([WORKER.md](WORKER.md) step 3). Set
@@ -130,7 +130,7 @@ Log entry format:
 
 1. Tick exit-gate items **only** after running their checks, and paste the
    command and result into the log.
-2. Open the PR into `3d-async` and set the package to `in-review` with the PR
+2. Open the PR into `main` and set the package to `in-review` with the PR
    link.
 3. The lead reviews and merges, then sets the package to `done`. When every
    package and gate item is done, the lead sets the phase to `done`.

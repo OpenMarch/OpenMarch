@@ -29,7 +29,7 @@ else
         exit 1
     fi
 fi
-BRANCH="${VIEW3D_COORD_BRANCH:-3d-async}"
+BRANCH="${VIEW3D_COORD_BRANCH:-main}"
 name="${VIEW3D_WORKER_NAME:-3d-${package:-worker}}"
 mode="${VIEW3D_PERMISSION_MODE:-auto}"
 wait_s="${VIEW3D_RETRY_WAIT:-900}"

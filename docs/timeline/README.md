@@ -109,15 +109,15 @@ permission it needs logs a blocker instead of stalling.
 
 `scripts/timeline/coord.sh` edits `docs/timeline/` on the coordination branch
 from a separate checkout, runs the pre-commit hook, and rebases and retries if
-another worker pushed first. `WORKER.md` step 3 shows its use. When Phase 0
-merges, change its default branch (and `run-worker.sh`'s) to `main`.
+another worker pushed first. `WORKER.md` step 3 shows its use. Its default
+branch, and `run-worker.sh`'s, is the fork's `main`.
 
 ## Upstream
 
-- **Keep up with `main`:** merge `OpenMarch/OpenMarch` `main` into the fork's
-  `timeline-try-2` regularly (for example after each phase), so the eventual
+- **Keep up with upstream:** merge `OpenMarch/OpenMarch` `main` into the
+  fork's `main` regularly (for example after each phase), so the eventual
   upstream PR stays small to review.
-- **Going upstream:** open one PR from the fork's `timeline-try-2` into
+- **Going upstream:** open one PR from the fork's `main` into
   `OpenMarch/OpenMarch` `main` at a milestone. Everything is behind the dev
   flag until Phase 9, so a phase boundary is a safe point.
 - **PR numbers:** squash-merge commits on the fork end in the fork's PR number,
@@ -147,8 +147,9 @@ claims and progress as soon as they're pushed.
   [`AlexDumo/OpenMarch-timeline`](https://github.com/AlexDumo/OpenMarch-timeline).
   Every timeline branch and PR lives there, so the public repo's PR list stays
   clean. Timeline work reaches `OpenMarch/OpenMarch` only as a deliberate PR
-  from the fork's `timeline-try-2` (see "Upstream" below).
-- Coordination branch: `timeline-try-2` on the fork.
+  from the fork's `main` (see "Upstream" below).
+- Coordination branch: the fork's `main`, which is also the integration branch
+  that code PRs go into.
 - Before editing, pull and rebase. If a push is rejected, rebase and retry.
   Edits touch different lines, so conflicts should be rare and trivial.
 

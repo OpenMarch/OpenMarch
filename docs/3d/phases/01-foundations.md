@@ -73,7 +73,7 @@ Implement ADR D-4 and design §7: `src/view3d/sync/protocol.ts` (types and `show
 - [ ] Venue settings history tests pass.
 - [x] The 3D View window opens from the editor, shows the placeholder, and closes with the show.
 - [x] The window's show time follows play, pause and seek in the editor (manual check with a recording, or the P4.3 e2e test once it exists).
-- [ ] `pnpm --dir apps/desktop exec tsc --noEmit`, `pnpm lint:check`, `pnpm format:check` and `pnpm spellcheck` pass on `3d-async`.
+- [ ] `pnpm --dir apps/desktop exec tsc --noEmit`, `pnpm lint:check`, `pnpm format:check` and `pnpm spellcheck` pass on the fork's `main`.
 
 ## Handoff notes
 

@@ -379,8 +379,8 @@ behind their prop when their dot is there, which is the usual case.
 
 ## 7. Scope and order
 
-Four pull requests into `3d-async`, each with screenshots from a real
-browser:
+Four pull requests into the fork's `main`, each with screenshots from a
+real browser:
 
 1. **Brass and holds.** The hold pipeline (bake with replaced arm tracks,
    settings row), part ids and finish paint, and the seven brass models.

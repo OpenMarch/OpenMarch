@@ -28,12 +28,13 @@ deciding them. This focus was set by the project owner on 2026-10-01.
 
 Set by the project owner on 2026-09-30, until they lift it here:
 
-- **Don't run the full `test:history` suite or the Playwright e2e suite.** They
-  take the longest. Run focused tests instead, including focused history tests
-  (`pnpm --dir apps/desktop run test:history <file>`) for the files you change.
-  Say in the PR and log which suites you skipped.
-- **CI doesn't run on PRs into `timeline-try-2`**, so a reviewer re-runs your
-  checks by hand. List every command you ran, with its result.
+- **Don't run the full test suite yourself** (`pnpm test`, `pnpm check:full`,
+  the whole `test:history` suite or the Playwright e2e suite). The PR checks
+  run them on PRs into `main`. Run the type check and focused tests for the
+  files you change, including focused history tests
+  (`pnpm --dir apps/desktop run test:history <file>`), then push and read the
+  PR checks' results. Set by the project owner on 2026-10-13.
+- **List every command you ran, with its result**, in the PR and the log.
 
 - **Reviews and merges:** workers never merge their own PRs. The lead session
   has a reviewer sub-agent review each PR against the spec, ADR 0001, `ui.md`
@@ -49,13 +50,13 @@ Set by the project owner on 2026-09-30, until they lift it here:
    the git remote that points at the fork; the scripts find it. If it's
    missing, add it:
    `git remote add timeline https://github.com/AlexDumo/OpenMarch-timeline.git`.
-   The coordination branch is named in [README.md](README.md) and defaults to
-   `timeline-try-2` in `scripts/timeline/coord.sh`.
+   The coordination branch is the fork's `main`, which `scripts/timeline/coord.sh`
+   uses by default.
 2. Read [README.md](README.md) (the protocol), then, if you haven't in this
    session, [implementation-plan.md](implementation-plan.md).
 3. Read the **coordination branch's** copy of the phase file, not a possibly
    stale local one:
-   `git show <remote>/<coord-branch>:docs/timeline/phases/<file>.md`.
+   `git show <remote>/main:docs/timeline/phases/<file>.md`.
 4. Read that phase's **Handoff notes** and its last three **Progress log**
    entries. If the last entry for your package has a `Resume from:` line, you
    are resuming, and that line is where you start.
@@ -95,8 +96,7 @@ the file; if they got it first, go back to step 2.
 - Branch name: `timeline/p<phase>-<short-name>`, such as
   `timeline/p1-geometry`. Several packages in one phase may share a branch when
   one owner does them in sequence.
-- Base it on `<remote>/<coord-branch>` until Phase 0 merges, then on
-  `<remote>/main`.
+- Base it on `<remote>/main`.
 - If the branch already exists on the remote (you're resuming), check it out
   instead of creating it.
 - Work in a separate git work tree unless your session already runs in one
@@ -141,10 +141,10 @@ Throughout:
 1. Run every exit-gate check that your package covers, plus the checks in
    `docs/conventions/verification.md` for the changed area. If `tsc` or a test fails in a file you didn't touch, run `pnpm install` and rebuild the workspace packages before calling it unrelated: a stale install in a new work tree is the usual cause, and the base is kept clean.
 2. Squash or tidy `wip:` commits. Confirm
-   `git log <base>..HEAD --format=%B` has no AI attribution or co-author lines
+   `git log <remote>/main..HEAD --format=%B` has no AI attribution or co-author lines
    (root `AGENTS.md`).
 3. Push to the fork's remote, and open the PR on the fork:
-   `gh pr create --repo AlexDumo/OpenMarch-timeline --base timeline-try-2`.
+   `gh pr create --repo AlexDumo/OpenMarch-timeline --base main`.
    Always pass `--repo AlexDumo/OpenMarch-timeline` to `gh`; without it, `gh`
    can pick the public repo. The PR body names the work package IDs and the
    checks you ran, with results. Workers can share one scratchpad, so name
@@ -152,7 +152,7 @@ Throughout:
    body file back before passing it to `--body-file`.
 4. Through `coord.sh`: set `- Status: in-review` and `- PR: <url>`. Edit only your package's section: a regex over the whole file can hit the first `- PR:` line instead of yours. Before `coord.sh commit`, run `git diff` in the coordination checkout and confirm only your package's lines and your log entry changed. Tick only
    the exit-gate items you actually ran and whose outcome is already true on
-   the base branch. An item that only becomes true when your PR merges (such
+   `main`. An item that only becomes true when your PR merges (such
    as "the root copies are gone") waits for the merge; say so in the log, and append a final log entry.
 5. If you're blocked instead: set `- Status: blocked`, and log exactly what is
    needed and from whom.

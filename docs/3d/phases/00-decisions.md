@@ -2,8 +2,8 @@
 phase: 0
 title: Decisions and shared contracts
 status: in-progress
-owner: lead (3d-async)
-branch: 3d-async
+owner: lead (main)
+branch: main
 pr: none
 depends_on: []
 updated: 2026-10-04
@@ -64,7 +64,7 @@ Add `three`, `@react-three/fiber`, `@react-three/drei` and `@types/three` to `ap
 
 ## Handoff notes
 
-The coordination branch is `3d-async` on the fork. Phase 0 landed directly on it, as the bootstrap commit. From Phase 1 on, code goes through PRs.
+The coordination branch is the fork's `main`. Phase 0 landed directly on the coordination branch, as the bootstrap commit. From Phase 1 on, code goes through PRs.
 
 ## Progress log
 

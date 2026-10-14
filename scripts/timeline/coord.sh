@@ -7,8 +7,8 @@
 #   scripts/timeline/coord.sh commit "docs(timeline): claim P1.2"   # commit docs/timeline, rebase, push (retries)
 #   scripts/timeline/coord.sh path                  # print the checkout path without refreshing it
 #
-# Environment: TIMELINE_REMOTE (default: the remote pointing at TIMELINE_REPO, AlexDumo/OpenMarch-timeline), TIMELINE_COORD_BRANCH (default timeline-try-2; change the
-# default here to main once Phase 0 merges).
+# Environment: TIMELINE_REMOTE (default: the remote pointing at TIMELINE_REPO, AlexDumo/OpenMarch-timeline), TIMELINE_COORD_BRANCH (default main,
+# the fork's integration branch).
 set -euo pipefail
 
 # Timeline work lives on the fork AlexDumo/OpenMarch-timeline, not on OpenMarch/OpenMarch.
@@ -24,7 +24,7 @@ else
         exit 1
     fi
 fi
-BRANCH="${TIMELINE_COORD_BRANCH:-timeline-try-2}"
+BRANCH="${TIMELINE_COORD_BRANCH:-main}"
 
 toplevel="$(git rev-parse --show-toplevel)"
 common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"

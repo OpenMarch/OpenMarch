@@ -62,7 +62,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - [x] Every kit loads in the window from the show's settings, and changing the venue from the overlay persists after reopening the show.
 - [x] Every named camera works; pick-a-seat works in every kit with stands.
 - [x] Light and dark themes both look right (screenshots).
-- [ ] Type-check, lint, format and spellcheck pass on `3d-async`.
+- [ ] Type-check, lint, format and spellcheck pass on the fork's `main`.
 
 ## Handoff notes
 

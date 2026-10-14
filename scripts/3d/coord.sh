@@ -7,7 +7,8 @@
 #   scripts/3d/coord.sh commit "docs(3d): claim P1.2"   # commit docs/3d, rebase, push (retries)
 #   scripts/3d/coord.sh path                  # print the checkout path without refreshing it
 #
-# Environment: VIEW3D_REMOTE (default: the remote pointing at VIEW3D_REPO, AlexDumo/OpenMarch-timeline), VIEW3D_COORD_BRANCH (default 3d-async).
+# Environment: VIEW3D_REMOTE (default: the remote pointing at VIEW3D_REPO, AlexDumo/OpenMarch-timeline), VIEW3D_COORD_BRANCH (default main,
+# the fork's integration branch).
 set -euo pipefail
 
 # 3D View work lives on the fork AlexDumo/OpenMarch-timeline, not on OpenMarch/OpenMarch.
@@ -23,7 +24,7 @@ else
         exit 1
     fi
 fi
-BRANCH="${VIEW3D_COORD_BRANCH:-3d-async}"
+BRANCH="${VIEW3D_COORD_BRANCH:-main}"
 
 toplevel="$(git rev-parse --show-toplevel)"
 common_dir="$(git rev-parse --path-format=absolute --git-common-dir)"

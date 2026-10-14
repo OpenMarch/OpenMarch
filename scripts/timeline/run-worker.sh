@@ -29,7 +29,7 @@ else
         exit 1
     fi
 fi
-BRANCH="${TIMELINE_COORD_BRANCH:-timeline-try-2}"
+BRANCH="${TIMELINE_COORD_BRANCH:-main}"
 name="${TIMELINE_WORKER_NAME:-tl-${package:-worker}}"
 mode="${TIMELINE_PERMISSION_MODE:-auto}"
 wait_s="${TIMELINE_RETRY_WAIT:-900}"

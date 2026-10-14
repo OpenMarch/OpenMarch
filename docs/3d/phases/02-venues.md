@@ -84,7 +84,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - [ ] Every kit builds for a football field and, where it applies, an indoor grid, with tests passing.
 - [ ] No kit exceeds 300 draw calls (count meshes and instanced meshes in a test).
 - [ ] Screenshots of every kit from every named camera are attached to the PRs.
-- [ ] Type-check, lint, format and spellcheck pass on `3d-async`.
+- [ ] Type-check, lint, format and spellcheck pass on the fork's `main`.
 
 ## Handoff notes
 

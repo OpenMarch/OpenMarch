@@ -47,7 +47,7 @@ Confirm `docs/timeline/ui.md` (set its status to accepted), and answer U-Q1 to U
 - Parallel: yes
 - Depends on: P8.0, P5.9
 
-Bring the timeline components and stories from `origin/0.2` (`568056aa`, `apps/desktop/src/components/timeline/`) onto `timeline-try-2`, and render them in `TimelineContainer` behind the dev flag. Replace the page-boundary validation with page snapping (ui.md UI-2). Keep the stories and their tests passing.
+Bring the timeline components and stories from `origin/0.2` (`568056aa`, `apps/desktop/src/components/timeline/`) onto the fork's `main`, and render them in `TimelineContainer` behind the dev flag. Replace the page-boundary validation with page snapping (ui.md UI-2). Keep the stories and their tests passing.
 
 ### P8.8: View-model adapter
 
