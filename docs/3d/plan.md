@@ -110,6 +110,16 @@ P0 decisions ─┬─ P1 foundations ──┬─ P3 window UI and cameras ─�
 - [Phase 5: MVP validation](phases/05-validation.md): performance, the
   validation run, owner verdict.
 
+**Customization track** (owner, 2026-10-11; spec
+[props-spec.md](props-spec.md), ADR 0002 D-9 to D-22), separate from the
+numbered phases:
+
+- [C1: Library and import](phases/C1-library-import.md)
+- [C2: Items on the timeline](phases/C2-items-timeline.md)
+- [C3: Carry, Silk and Uniform cues](phases/C3-cue-channels.md)
+- [C4: Rendering items, silks and props](phases/C4-render-items.md)
+- [C5: Artwork and uniforms](phases/C5-artwork-uniforms.md)
+
 **Suggested waves for parallel workers:**
 
 1. P1.1, P1.2, P1.3, P2.2

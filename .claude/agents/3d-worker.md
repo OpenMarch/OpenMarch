@@ -1,6 +1,6 @@
 ---
 name: 3d-worker
-description: Works one 3D View work package (P<phase>.<n>) end to end in an isolated work tree, following docs/3d/WORKER.md. Use to run 3D View work packages in parallel.
+description: Works one 3D View work package (P<phase>.<n> or C<track>.<n>) end to end in an isolated work tree, following docs/3d/WORKER.md. Use to run 3D View work packages in parallel.
 isolation: worktree
 ---
 

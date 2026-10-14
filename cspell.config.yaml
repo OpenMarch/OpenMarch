@@ -27,6 +27,14 @@ words:
   - frameless
   - headlessly
   - llvmpipe
+  - libvips
+  - libuv
+  - sandboxed
+  - respawns
+  - dedup
+  - realpath
+  - basenames
+  - unrigged
   - rrggbb
   - toplevel
   - worktree

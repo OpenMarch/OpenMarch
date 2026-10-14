@@ -12,7 +12,9 @@ The MVP is the 3D View window, five venue kits plus a blank one, named
 cameras, block performers that follow playback, and the venue choice saved in
 the show. Everything is decided in [ADR 0002](../adr/0002-3d-view.md). The
 in-editor preview, imports, video export and analysis tools come after the
-MVP; don't build them yet.
+MVP; don't build them yet, except the imports and customization the
+customization track specifies ([props-spec.md](props-spec.md), phases `C1`
+to `C5`).
 
 | File                                     | Purpose                                                                                    |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------ |
@@ -40,7 +42,7 @@ There is no central table to keep in sync.
 
 ```sh
 grep -E '^(phase|title|status|owner):' docs/3d/phases/*.md
-grep -E '^### P[0-9]+\.[0-9]+|^- (Owner|Status):' docs/3d/phases/*.md
+grep -E '^### [PC][0-9]+\.[0-9]+|^- (Owner|Status):' docs/3d/phases/*.md
 ```
 
 ## Running agents
@@ -71,15 +73,17 @@ its use.
   [`AlexDumo/OpenMarch-timeline`](https://github.com/AlexDumo/OpenMarch-timeline),
   never on `OpenMarch/OpenMarch`. Always pass
   `--repo AlexDumo/OpenMarch-timeline` to `gh`.
-- **Coordination and integration branch:** the fork's `main`, shared with the
-  timeline project. Docs commits go straight to it through `coord.sh`. Code
+- **Coordination and integration branch:** `main`. `3d-async` (cut from
+  `main` on 2026-10-03) merged into `main` through PR #129 (`dc38f1a1`) and
+  was deleted. Docs commits go straight to `main` through `coord.sh`. Code
   goes through PRs into it.
-- **Code branches:** `3d/p<phase>-<short-name>`, based on `<remote>/main`.
+- **Code branches:** `3d/p<phase>-<short-name>`, or `3d/c<track>-<short-name>`
+  for the customization track, based on `<remote>/main`.
 - **Going upstream:** merge `OpenMarch/OpenMarch` `main` into the fork's `main`
-  after each phase. At the MVP, open one PR from the fork's `main` to upstream
-  `main`, and rewrite fork `(#n)` suffixes in commit titles. Before opening it,
-  delete the web preview (`apps/desktop/view3d-web/` and the `view3d-web:*`
-  scripts); its README has the full list.
+  after each phase. At the MVP, open one PR from the fork's `main` to upstream `main`, and
+  rewrite fork `(#n)` suffixes in commit titles. Before opening it, delete the
+  web preview (`apps/desktop/view3d-web/` and the `view3d-web:*` scripts); its
+  README has the full list.
 
 ## Vocabulary
 
@@ -87,7 +91,8 @@ its use.
   `done`.
 - **Work package status:** `open`, `claimed`, `in-progress`, `blocked`,
   `in-review`, `done`.
-- **Work package ID:** `P<phase>.<n>`, such as `P2.3`. Cite IDs in branch
+- **Work package ID:** `P<phase>.<n>`, such as `P2.3`, or `C<track>.<n>` for
+  the customization track, such as `C1.4`. Cite IDs in branch
   names, commits, PRs and log entries.
 - **Parallel:** `yes` means the package doesn't depend on unfinished packages
   in the same phase.
@@ -148,7 +153,7 @@ Log entry format:
 
 - **Edit only what you own:** your packages' Owner, Status and PR lines, your
   log entries, and the handoff notes of a phase you lead. To tell another phase
-  something, append a log entry in its file headed `Cross-phase note from P<n>`.
+  something, append a log entry in its file headed `Cross-phase note from P<n>` (or `C<n>`).
 - **Decisions don't hide in code.** Anything that changes ADR 0002, the
   schema, the file format, IPC or the shared contracts in
   `apps/desktop/src/view3d/core/types.ts` goes into the ADR and

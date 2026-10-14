@@ -220,6 +220,76 @@ a flat silk needs few cells, and `guard.test.ts` pins their own budgets.
   and bakes in 60 percent of the time, prep rows included. A copy of
   JackBrittAct1 bakes 1,639 rows, 123.6 MB, in 0.99 s.
 
+## Packaging
+
+### 2026-10-11 · 3d-worker (3d/c1-sharp) · C1.5 sharp, macOS arm64
+
+<!-- cspell:ignore DLOPEN dyld codesign -->
+
+- Result: `sharp` 0.35.5 (libvips 8.18.7) runs in main in a packaged arm64
+  `--dir` build and resizes a 2048² image to a 512² PNG. Three runs of the
+  self-test: exit 0, output 512 × 512 PNG; `import("sharp")` 31–38 ms,
+  2048² PNG encode 31–34 ms, resize 19.5–20 ms. `sharp` resolves inside
+  `app.asar`; the native addon and libvips load from `app.asar.unpacked`.
+  With `@img/sharp-libvips-darwin-arm64` moved out of the package, the
+  self-test exits 1 with `ERR_DLOPEN_FAILED`, so the check does fail when
+  the binaries are missing. A normal launch (no variable) still opens the
+  editor.
+- App size, arm64 `--dir` build, apparent bytes:
+
+  | Item                           | Baseline (`0cddaefc`) | With sharp 0.35.5 | Delta      |
+  | ------------------------------ | --------------------- | ----------------- | ---------- |
+  | `OpenMarch.app` total          | 969,247,809           | 971,945,790       | +2,697,981 |
+  | `app.asar`                     | 595,503,243           | 595,217,740       | −285,503   |
+  | `app.asar.unpacked`            | 103,286,359           | 106,238,307       | +2,951,948 |
+  | `…unpacked/node_modules/@img`  | 16,299,147            | 18,509,969        | +2,210,822 |
+  | `…unpacked/node_modules/sharp` | in asar (0.34.5)      | 741,126           | +741,126   |
+  | zip of `.app` (`ditto -c -k`)  | 294,595,573           | 295,475,580       | +880,007   |
+
+  The baseline already ships sharp 0.34.5 and its darwin-arm64 libvips
+  through `@openmarch/ui` → `astro`; the build now carries one copy,
+  0.35.5. The 10.3 MB of `@esbuild/darwin-arm64` the spike saw did not
+  appear in either build here.
+
+- `files` filter: electron-builder 26.8.1's pnpm collector already leaves
+  out `@img` packages for other platforms. With every platform's `@img`
+  package installed (`supportedArchitectures` in `pnpm-workspace.yaml`,
+  13 extra packages), a build without the filter still shipped only
+  `sharp-darwin-arm64` and `sharp-libvips-darwin-arm64`. The filter is a
+  second guard. The `.npmrc` `supportedArchitectures` lines have no effect
+  under pnpm 10.11; only the `pnpm-workspace.yaml` form installed the
+  other platforms. A `files` list under `mac`, `win` or `linux` replaces
+  the top-level list instead of adding to it (it packed `src/`, `e2e/` and
+  `.env.*` into the asar), so the filter sits in the top-level list and
+  uses `${platform}`, the build host's platform.
+- Signing: with no identity, electron-builder ad-hoc signs the unpacked
+  `libvips-cpp.8.18.7.dylib` and `sharp-darwin-arm64-0.35.5.node` with the
+  hardened runtime (`flags=0x10002(adhoc,runtime)`), so it does sign them.
+  That ad-hoc hardened build won't launch (dyld: Electron Framework
+  "different Team IDs"), so the runs above used a local
+  `codesign --force --deep --sign -` re-sign without the hardened runtime.
+  Developer ID signing, library validation and notarization are
+  **not tested**.
+- Not run: macOS x64, Windows and Linux packaged builds, and the Linux glib
+  check (AppImage and snap). Nothing here can run them.
+- Machine and commit: Apple M1 Pro, macOS 26.6.2, Electron 40.8.5,
+  electron-builder 26.8.1, pnpm 10.11.0. Branch `3d/c1-sharp` on
+  `0cddaefc`.
+- Fixture and command: from `apps/desktop`, after
+  `pnpm --filter "@openmarch/desktop^..." build`:
+
+  ```sh
+  pnpm run apply-styles && pnpm exec vite build
+  CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac --dir \
+    -c.mac.notarize=false --publish never
+  codesign --force --deep --sign - release/0.1.7/mac-arm64/OpenMarch.app  # local only
+  OPENMARCH_SHARP_SELF_TEST=/tmp/sharp.json \
+    release/0.1.7/mac-arm64/OpenMarch.app/Contents/MacOS/OpenMarch; echo $?
+  ```
+
+  On Windows and Linux, run the packaged executable the same way with the
+  variable set; a signed macOS build needs no re-sign.
+
 ## Verdicts
 
 ### 2026-10-09 · trevor (3d/architecture-props) · rifle, sabre and swing flag models

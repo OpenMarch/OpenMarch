@@ -1,7 +1,7 @@
 ---
 name: 3d-work
-description: Pick up, resume or finish a 3D View work package (P<phase>.<n>) from docs/3d. Use when asked to work on 3D View, continue 3D work, or run a 3D View work package.
-argument-hint: "[P<phase>.<n>]"
+description: Pick up, resume or finish a 3D View work package (P<phase>.<n>, or C<track>.<n> for the customization track) from docs/3d. Use when asked to work on 3D View, continue 3D work, or run a 3D View work package.
+argument-hint: "[P<phase>.<n> | C<track>.<n>]"
 ---
 
 Follow `docs/3d/WORKER.md` exactly, for work package `$ARGUMENTS`. If no ID
