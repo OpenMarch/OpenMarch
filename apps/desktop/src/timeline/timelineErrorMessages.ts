@@ -2,6 +2,8 @@ import tolgee from "@/global/singletons/Tolgee";
 import { TimelineCommitViolationError } from "@/db-functions/timelineChanges";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import { conToastError } from "@/utilities/utils";
+import { toast } from "sonner";
+import { toastBasicLock } from "./basicLockToast";
 
 /**
  * User-facing messages for the timeline's refusals (spec section 6, P8.6). One place maps every
@@ -230,6 +232,20 @@ export function toastTimelineError(
     fallback?: string,
     ...additional: unknown[]
 ): void {
+    if (error instanceof Error && error.name === "TimelineEditRefusedError") {
+        const { refusal } = error as Error & { refusal?: unknown };
+        // UI-19: a Basic lock offers the way out
+        if (refusal === "notSimple") {
+            toastBasicLock(timelineErrorMessage(error, { fallback }));
+            return;
+        }
+        // One toast per reason: a burst of refused nudges replaces it instead of stacking
+        console.error(error);
+        toast.error(timelineErrorMessage(error, { fallback }), {
+            id: `timeline-refused-${String(refusal)}`,
+        });
+        return;
+    }
     const cause =
         timelineErrorCode(error) === "E-DB" && error instanceof Error
             ? [error.cause]

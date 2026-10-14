@@ -109,8 +109,11 @@ export function editedMarcherEnds(
         return ends;
     }
     for (const { marcherId, transitionId } of result.slots) {
-        if (target.kind === "range") {
-            ends.set(marcherId, target.end);
+        if (target.kind === "range" || target.kind === "point") {
+            ends.set(
+                marcherId,
+                target.kind === "range" ? target.end : target.beat,
+            );
             continue;
         }
         const span = spansOf(marcherId).find(
@@ -118,8 +121,10 @@ export function editedMarcherEnds(
         );
         if (span) ends.set(marcherId, span.end);
     }
-    if (target.kind === "range")
-        for (const id of result.cleared ?? []) ends.set(id, target.end);
+    if (target.kind === "range" || target.kind === "point") {
+        const end = target.kind === "range" ? target.end : target.beat;
+        for (const id of result.cleared ?? []) ends.set(id, end);
+    }
     return ends;
 }
 

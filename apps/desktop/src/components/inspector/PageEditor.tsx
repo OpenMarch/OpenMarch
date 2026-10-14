@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { useSelectedPage } from "../../context/SelectedPageContext";
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button, Switch } from "@openmarch/ui";
 import { measureRangeString } from "../../global/classes/Page";
@@ -7,11 +6,14 @@ import { T } from "@tolgee/react";
 import { updatePagesMutationOptions } from "../../hooks/queries";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useSplitPage } from "./PageEditorUtils";
+import { useInspectorPage } from "./InspectorPageContext";
+import { Help } from "./TimelineTransitionEditor";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
     const queryClient = useQueryClient();
-    const { selectedPage } = useSelectedPage()!;
+    // While timeline playback runs, the page being played (the selected page waits for the stop)
+    const { page: selectedPage, playing } = useInspectorPage();
     const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
     );
@@ -70,7 +72,7 @@ function PageEditor() {
                             <T keyName="inspector.page.subset" />
                         </label>
                         <Switch
-                            disabled={isFirstPage}
+                            disabled={isFirstPage || playing}
                             onClick={(e) => {
                                 if (selectedPage) {
                                     updatePagesMutation.mutate({
@@ -100,10 +102,16 @@ function PageEditor() {
                         variant="secondary"
                         size="compact"
                         onClick={() => splitPage({ page: selectedPage })}
-                        disabled={selectedPage?.beats.length <= 1}
+                        disabled={selectedPage?.beats.length <= 1 || playing}
                     >
                         <T keyName="inspector.page.splitPage" />
                     </Button>
+                    {/* The page being played changes under the pointer: its edits wait */}
+                    {playing && (
+                        <Help testId="inspector-page-paused">
+                            <T keyName="inspector.page.paused" />
+                        </Help>
+                    )}
                 </form>
             </InspectorCollapsible>
         );

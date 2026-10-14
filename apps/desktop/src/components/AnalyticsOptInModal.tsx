@@ -1,7 +1,10 @@
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
-import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
+import {
+    applyAnalyticsConsent,
+    saveAnalyticsChoice,
+} from "@/utilities/analyticsConsent";
 import { useState, useEffect } from "react";
-import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
+import AnalyticsOptInDetails from "./AnalyticsOptInDetails";
 import { T } from "@tolgee/react";
 
 interface AnalyticsOptInModalProps {
@@ -41,15 +44,13 @@ export default function AnalyticsOptInModal({
     }, [onChoice]);
 
     const handleOptIn = () => {
-        applyAnalyticsConsent(false);
-        window.electron.send("settings:set", { optOutAnalytics: false });
+        saveAnalyticsChoice(false);
         onChoice(true);
         window.location.reload();
     };
 
     const handleOptOut = () => {
-        applyAnalyticsConsent(true);
-        window.electron.send("settings:set", { optOutAnalytics: true });
+        saveAnalyticsChoice(true);
         onChoice(false);
         window.location.reload();
     };
@@ -65,35 +66,7 @@ export default function AnalyticsOptInModal({
                     <T keyName="analyticsOptIn.title" />
                 </DialogTitle>
                 <div className="flex flex-col gap-16">
-                    <p className="text-text-subtitle text-sm">
-                        <T
-                            keyName="analyticsOptIn.description"
-                            params={{
-                                a: (content) => (
-                                    <a
-                                        href="https://openmarch.com/privacy"
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-accent underline"
-                                    >
-                                        {content}
-                                    </a>
-                                ),
-                            }}
-                        />
-                    </p>
-                    <p className="text-text-subtitle text-sm">
-                        <T keyName="analyticsOptIn.settings" />
-                    </p>
-
-                    <div className="flex flex-col gap-16 text-sm">
-                        <T keyName="analyticsOptIn.whenYouOptIn" />
-                        <AnalyticsMessage hasOptedOut={false} />
-                    </div>
-                    <div className="flex flex-col gap-16 text-sm">
-                        <T keyName="analyticsOptIn.whenYouOptOut" />
-                        <AnalyticsMessage hasOptedOut={true} />
-                    </div>
+                    <AnalyticsOptInDetails />
 
                     <div className="flex justify-end gap-12 pt-16">
                         <Button onClick={handleOptOut} variant="secondary">

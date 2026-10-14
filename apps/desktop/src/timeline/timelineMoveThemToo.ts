@@ -37,6 +37,8 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "./timelineStore";
+import { toastLockedMarchers, withoutLockedMarchers } from "./basicLocks";
+import { TimelineEditRefusedError } from "./timelineEditRefusals";
 
 /**
  * **Move them too** in timeline mode (`utilities/moveThemToo.ts`): after a coordinate edit that
@@ -74,6 +76,7 @@ export function editEndBeat(
     } | null = useTimelineSelectionStore.getState().isolation,
 ): number | null {
     if (target.kind === "range") return target.end;
+    if (target.kind === "point") return target.beat;
     if (target.kind === "home") return 0;
     return isolation?.timelineId === target.timelineId ? isolation.end : null;
 }
@@ -271,9 +274,11 @@ export async function toastLaterOwnMoves(
 const windowKey = (target: TimelineEditTarget) =>
     target.kind === "range"
         ? `range:${target.start}-${target.end}`
-        : target.kind === "home"
-          ? "home"
-          : `timeline:${target.timelineId}`;
+        : target.kind === "point"
+          ? `point:${target.beat}`
+          : target.kind === "home"
+            ? "home"
+            : `timeline:${target.timelineId}`;
 
 /**
  * A timeline coordinate edit (`moveMarchersInTarget`) with what it says after: the pass-through
@@ -286,7 +291,7 @@ const windowKey = (target: TimelineEditTarget) =>
 export async function moveMarchersAndOfferFollowUp({
     database = db,
     target,
-    moves,
+    moves: requested,
     clearOwn,
 }: {
     database?: DbConnection;
@@ -296,6 +301,14 @@ export async function moveMarchersAndOfferFollowUp({
 }): Promise<TimelineMoveResult> {
     let start: EditStart | null = null;
     let owned: Set<number> = new Set();
+    // UI-19: Basic leaves the marchers it can't edit on this page alone (V-203); with nobody left
+    // the edit is refused, and the refusal's toast offers Switch to Expert
+    const editable = withoutLockedMarchers(target, requested);
+    if (editable.moves.length === 0 && editable.locked.length > 0)
+        throw new TimelineEditRefusedError("notSimple", {
+            marcherIds: editable.locked,
+        });
+    const moves = editable.moves;
     const marcherIds = moves.map((m) => m.marcherId);
     const result = await moveMarchersInTarget({
         db: database,
@@ -308,6 +321,7 @@ export async function moveMarchersAndOfferFollowUp({
         },
     });
     const mark = editHistoryMark();
+    toastLockedMarchers(editable.locked.length, true);
     toastPassThrough(result);
     // The pass-through toast and its Keep as a stop win: Move them too would replace it (same id)
     if (result.passThrough) return result;

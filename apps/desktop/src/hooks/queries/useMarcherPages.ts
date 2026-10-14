@@ -14,6 +14,7 @@ import {
     type TimelineEditRequest,
     type TimelineNeighborPageRequest,
 } from "@/timeline/timelineCoordinateWrites";
+import { removePositionAtBeat } from "@/db-functions/timelinePointMoves";
 
 /**
  * Timeline mode's write for "set marchers to the previous or next page" (P7.6): one undoable edit
@@ -51,6 +52,28 @@ export const moveMarchersInTargetMutationOptions = () => {
             moveMarchersAndOfferFollowUp({ target, moves }),
         onError: (e, variables) => {
             toastTimelineError(e, `Error moving marchers`, variables);
+        },
+    });
+};
+
+/**
+ * Basic mode's **Remove this count's position** (UI-19): one undoable edit merging each marcher's
+ * two moves split at `beat` (`removePositionAtBeat`). Like the other timeline writes, the resolver
+ * store picks the change up from the change log, so there is nothing to invalidate.
+ */
+export const removePositionAtBeatMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            beat,
+            box,
+            marcherIds,
+        }: {
+            beat: number;
+            box: { start: number; end: number };
+            marcherIds: readonly number[];
+        }) => removePositionAtBeat({ db, beat, box, marcherIds }),
+        onError: (e, variables) => {
+            toastTimelineError(e, `Error removing the position`, variables);
         },
     });
 };

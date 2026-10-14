@@ -57,9 +57,14 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
                 pageToSelectRef.current = null;
             }
         }
-        if (!pageWasSet && selectedPage)
-            setSelectedPage(
-                pages.find((page) => page.id === selectedPage.id) || null,
+        // From the latest selection, not this render's: a child's effect may have selected a
+        // page in this same commit (the timeline page bridge selecting a page + just added), and
+        // refreshing the page this render saw would undo that
+        if (!pageWasSet)
+            setSelectedPage((current) =>
+                current
+                    ? pages.find((page) => page.id === current.id) || null
+                    : current,
             );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pages]);

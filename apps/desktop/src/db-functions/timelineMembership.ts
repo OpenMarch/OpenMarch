@@ -368,7 +368,7 @@ export const addMarchersToTimeline = async ({
 export interface RemoveAssignmentsResult {
     /** The deleted assignments' ids */
     assignmentIds: number[];
-    /** One-slot transitions left with nobody in them, deleted with their destination */
+    /** Transitions left with nobody in them, deleted with their destinations (one-slot ones, or any with `deleteEmptied`) */
     deletedTransitionIds: number[];
     /** Transitions whose slot count shrank, with the old and new counts */
     compacted: { transitionId: number; from: number; to: number }[];
@@ -394,16 +394,21 @@ export interface RemoveAssignmentsResult {
  *   transitions, a last slot that was already vacant, and transitions that share a marcher with an
  *   inheriting follow-the-leader transition (R-12 reads slot order) keep their vacancies.
  * - Otherwise the other slots are left vacant (D-13), as the inspector's remove did (P8.4).
+ * - With `deleteEmptied`, any transition left with nobody in it is deleted with its destinations,
+ *   whatever its slot count (Basic's writes on a converted page's shared transition), instead of
+ *   being compacted down to one vacant slot.
  */
 // eslint-disable-next-line max-lines-per-function
 export const removeAssignmentRowsInTransaction = async ({
     tx,
     removed,
     compact,
+    deleteEmptied = false,
 }: {
     tx: DbTransaction;
     removed: readonly DatabaseTimelineAssignment[];
     compact: boolean;
+    deleteEmptied?: boolean;
 }): Promise<RemoveAssignmentsResult> => {
     const result: RemoveAssignmentsResult = {
         assignmentIds: [],
@@ -481,7 +486,7 @@ export const removeAssignmentRowsInTransaction = async ({
             .from(a)
             .where(eq(a.transition_id, transitionId))
             .all();
-        if (tr.slot_count === 1 && remaining.length === 0) {
+        if ((tr.slot_count === 1 || deleteEmptied) && remaining.length === 0) {
             emptied.add(transitionId);
             continue;
         }

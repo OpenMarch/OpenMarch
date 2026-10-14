@@ -1,10 +1,17 @@
-import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
+import {
+    readPageGrid,
+    withTimelinePageRipple,
+} from "@/db-functions/timelineRipple";
 import {
     transactionWithHistory,
     createPagesInTransaction,
     updatePagesInTransaction,
     updateLastPageCounts,
+    type DbConnection,
+    type DbTransaction,
 } from "@/db-functions";
+import { splitMovesAtBeatInTransaction } from "@/db-functions/timelinePointMoves";
+import { isBasicMode } from "@/stores/EditorModeStore";
 import { db } from "@/global/database/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -20,20 +27,50 @@ import Page from "@/global/classes/Page";
 // Types
 export type SplitPageArgs = {
     page: Pick<Page, "beats" | "nextPageId">;
+    /**
+     * Basic (README "Basic's panel"): in timeline mode, also split each marcher's move at the new
+     * page's start, so no simple move crosses the new flag (`splitMovesAtBeatInTransaction`)
+     */
+    splitMoves?: boolean;
+};
+
+/**
+ * With `splitMoves` in timeline mode, splits the moves across `startBeatId` (the new page's start
+ * beat) on the page box holding it, before the page rows change.
+ */
+const splitMovesAtNewPage = async (tx: DbTransaction, startBeatId: number) => {
+    const grid = await readPageGrid(tx);
+    const beat = grid.beatIds.indexOf(startBeatId);
+    const box = grid.pages.find((p) => p.start < beat && beat < p.end);
+    if (beat < 0 || !box) return;
+    await splitMovesAtBeatInTransaction({
+        tx,
+        beat,
+        box: { start: box.start, end: box.end },
+    });
 };
 
 // Database operation function (private, prefixed with _)
-export const _splitPage = async ({ page }: SplitPageArgs) => {
+export const _splitPage = async ({
+    page,
+    splitMoves = false,
+    database = db,
+}: SplitPageArgs & { database?: DbConnection }) => {
     const splitResult = splitPage(page);
     if (!splitResult) {
         throw new Error("Failed to split page");
     }
 
     await transactionWithHistory(
-        db,
+        database,
         "splitPage",
         async (tx) =>
             await withTimelinePageRipple(tx, async () => {
+                if (splitMoves)
+                    await splitMovesAtNewPage(
+                        tx,
+                        splitResult.newPageArgs.start_beat,
+                    );
                 // Create the new page
                 await createPagesInTransaction({
                     newPages: [splitResult.newPageArgs],
@@ -92,5 +129,12 @@ const useSplitPageMutation = <TArgs>(
 
 // Public mutation hook
 export const useSplitPage = () => {
-    return useSplitPageMutation(_splitPage, "inspector.page.split.error");
+    return useSplitPageMutation(
+        (args: SplitPageArgs) =>
+            _splitPage({
+                ...args,
+                splitMoves: isBasicMode(),
+            }),
+        "inspector.page.split.error",
+    );
 };

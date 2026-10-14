@@ -10,3 +10,9 @@ export function applyAnalyticsConsent(optOut: boolean) {
     else posthog.opt_in_capturing();
     Sentry.init({ dsn: SENTRY_DSN, enabled: !optOut });
 }
+
+/** Applies the analytics choice here and saves it to the app settings. */
+export function saveAnalyticsChoice(optOut: boolean) {
+    applyAnalyticsConsent(optOut);
+    window.electron.send("settings:set", { optOutAnalytics: optOut });
+}

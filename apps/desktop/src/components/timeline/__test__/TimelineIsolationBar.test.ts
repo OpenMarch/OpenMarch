@@ -4,7 +4,11 @@ import {
     isolatedTimelineName,
     isWholePageWindow,
     passedSets,
+    editingWords,
+    stoppedNote,
+    stoppedSpot,
 } from "../TimelineIsolationBar";
+import { planCanvasEdit } from "@/timeline/timelineCoordinateWrites";
 
 /** Page 1 ends at beat 9, page 2 at 17, page 3 at 25 (flags), as `useTimingObjects` gives them */
 const page = (id: number, name: string, beats: number[]) => ({
@@ -76,5 +80,81 @@ describe("the field line's quiet case (UI-12 review)", () => {
             isWholePageWindow({ kind: "range", start: 25, end: 29 }, PAGES),
         ).toBe(false);
         expect(isWholePageWindow({ kind: "none" }, PAGES)).toBe(false);
+    });
+});
+
+describe("the field line after playing on stops (UI-17)", () => {
+    /** The store's page boxes for PAGES, as `useTimelinePageBoxes` sets them */
+    const BOXES = [
+        { start: 1, end: 9, name: "1" },
+        { start: 9, end: 17, name: "2" },
+        { start: 17, end: 25, name: "3" },
+    ];
+
+    it("names the page the playhead stopped on; a page's flag is that page's", () => {
+        expect(
+            stoppedSpot({ kind: "range", start: 9, end: 20 }, BOXES),
+        ).toEqual({ kind: "page", name: "3" });
+        expect(
+            stoppedSpot({ kind: "range", start: 9, end: 17 }, BOXES),
+        ).toEqual({ kind: "page", name: "2" });
+        // A window that starts on an earlier page is placed by where it ends (the playhead)
+        expect(
+            stoppedSpot({ kind: "range", start: 5, end: 13 }, BOXES),
+        ).toEqual({ kind: "page", name: "2" });
+        expect(stoppedSpot({ kind: "home" }, BOXES)).toEqual({ kind: "home" });
+        expect(stoppedSpot({ kind: "none" }, BOXES)).toBeNull();
+        // Before the boxes load
+        expect(
+            stoppedSpot({ kind: "range", start: 9, end: 17 }, []),
+        ).toBeNull();
+    });
+
+    it("tells past the last flag apart from a page", () => {
+        expect(
+            stoppedSpot({ kind: "range", start: 25, end: 33 }, BOXES),
+        ).toEqual({ kind: "after" });
+    });
+
+    it("never reads as a page being made (basic-past-flag study: 4/4 went to check)", () => {
+        expect(stoppedNote({ kind: "page", name: "3" })).toBe(
+            "Stopped on page 3",
+        );
+        expect(stoppedNote({ kind: "after" })).toBe(
+            "Stopped after the last page",
+        );
+    });
+});
+
+describe("the field line past the last flag in Basic (UI-19)", () => {
+    const BOXES = [
+        { start: 1, end: 9, name: "1" },
+        { start: 9, end: 17, name: "2" },
+    ];
+    const plan = (start: number, end: number, basic: boolean) =>
+        planCanvasEdit(
+            {
+                selection: { kind: "range", start, end },
+                isolation: null,
+                pageBoxes: BOXES,
+                startPinned: false,
+            },
+            basic,
+            false,
+        );
+
+    it("says how to edit there, since a drop is refused, with or without a stop note", () => {
+        expect(
+            editingWords(plan(17, 21, true), "After page 2, counts 1–4"),
+        ).toBe("Add a page with + to edit here");
+    });
+
+    it("names what a drop edits everywhere else", () => {
+        expect(editingWords(plan(9, 13, true), "count 4 of page 2")).toBe(
+            "Editing count 4 of page 2",
+        );
+        expect(editingWords(null, "After page 2, counts 1–4")).toBe(
+            "Editing After page 2, counts 1–4",
+        );
     });
 });

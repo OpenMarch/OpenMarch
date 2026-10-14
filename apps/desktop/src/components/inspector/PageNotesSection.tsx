@@ -6,6 +6,7 @@ import { updatePagesMutationOptions } from "../../hooks/queries";
 import { NotesRichTextEditor } from "../notes/NotesRichTextEditor";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useTimingObjects } from "@/hooks";
+import { useInspectorPage } from "./InspectorPageContext";
 
 export function PageNotesSection() {
     const { selectedPage } = useSelectedPage()!;
@@ -17,13 +18,18 @@ export function PageNotesSection() {
         updatePagesMutationOptions(queryClient),
     );
 
+    // Timeline mode: the page being played (its box holds the live beat)
+    const inspectorPage = useInspectorPage();
+    const playingPage = inspectorPage.playing ? inspectorPage.page : null;
+
     // During playback, selectedPage is the departure page — show the next page's notes instead
     const displayPage = useMemo(() => {
+        if (playingPage) return playingPage;
         if (!isPlaying || !selectedPage?.nextPageId) return selectedPage;
         return (
             pages.find((p) => p.id === selectedPage.nextPageId) ?? selectedPage
         );
-    }, [isPlaying, selectedPage, pages]);
+    }, [isPlaying, selectedPage, pages, playingPage]);
 
     const [notes, setNotes] = useState(displayPage?.notes || "");
     const editingPageIdRef = useRef<number | null>(null);

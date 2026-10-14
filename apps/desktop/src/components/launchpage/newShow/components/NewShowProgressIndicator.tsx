@@ -1,9 +1,9 @@
-import type { NewShowStepId } from "../../newShowTypes";
 import clsx from "clsx";
 
 interface NewShowProgressIndicatorProps {
     currentStepIndex: number;
-    steps: NewShowStepId[];
+    /** Only the count matters, so other step flows (the welcome flow) can use it too. */
+    steps: readonly unknown[];
     completedSteps: ReadonlySet<number>;
 }
 

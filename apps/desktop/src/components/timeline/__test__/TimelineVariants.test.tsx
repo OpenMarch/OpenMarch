@@ -1894,8 +1894,9 @@ describe("the transport's go-to box (UI-12)", () => {
 });
 
 describe("Fit (UI-12 review)", () => {
-    // The story show has 32 beats: at 360px, less the 40px home box, it fits at 10px a beat
-    let width = 360;
+    // The story show has 32 beats: at 392px, less the 40px home box and the 32px end inset for
+    // +, it fits at 10px a beat
+    let width = 392;
     let observers: (() => void)[] = [];
     beforeEach(() => {
         vi.spyOn(
@@ -1918,7 +1919,7 @@ describe("Fit (UI-12 review)", () => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         observers = [];
-        width = 360;
+        width = 392;
     });
 
     const Zoomed = ({
@@ -1974,7 +1975,7 @@ describe("Fit (UI-12 review)", () => {
 
     it("zooms in from a show that opened fitted, where there is no zoom to go back to", () => {
         // Fitted at 25px a beat, closer in than the starting zoom of 16
-        width = 840;
+        width = 872;
         const onZoom = vi.fn();
         render(
             <Zoomed
@@ -1999,7 +2000,7 @@ describe("Fit (UI-12 review)", () => {
                 onFittedChange={onFittedChange}
             />,
         );
-        width = 680;
+        width = 712;
         act(() => observers.forEach((observe) => observe()));
         expect(onZoom).toHaveBeenLastCalledWith(20);
         expect(onFittedChange).not.toHaveBeenCalled();

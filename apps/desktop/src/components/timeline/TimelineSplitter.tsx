@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent, ReactNode } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { setLayoutResizing } from "@/global/layoutResize";
 import { TimelinePaneStretchContext } from "./timelinePaneStretch";
 import {
@@ -16,12 +17,17 @@ import {
  * clamped to the workspace it sits in (its parent): taller than the tracks, the grid fills the
  * extra room; shorter, the tracks scroll. Drag, arrow keys, or double-click (back to fitted).
  *
+ * Basic has one row of page boxes and nothing to give more room, so its pane stays fitted and has
+ * no divider (the height Expert saved is kept for when you switch back).
+ *
  * A drag writes the pane's height straight to the DOM, once a frame, and commits it to the store
  * on release: React doesn't render on every pointer move, and the field canvas holds its size
  * until the drag ends (`setLayoutResizing`).
  */
 export function TimelineSplitter({ children }: { children: ReactNode }) {
-    const saved = useUiSettingsStore((s) => s.uiSettings.timelineHeight);
+    const basic = useIsBasicMode();
+    const savedHeight = useUiSettingsStore((s) => s.uiSettings.timelineHeight);
+    const saved = basic ? null : savedHeight;
     const setTimelineHeight = useUiSettingsStore((s) => s.setTimelineHeight);
     const paneRef = useRef<HTMLDivElement>(null);
     const [available, setAvailable] = useState(Infinity);
@@ -152,24 +158,28 @@ export function TimelineSplitter({ children }: { children: ReactNode }) {
             }
             data-testid="timeline-pane"
         >
-            <div
-                role="separator"
-                aria-orientation="horizontal"
-                aria-label="Resize timeline"
-                aria-valuemin={MIN_TIMELINE_HEIGHT}
-                aria-valuenow={shown}
-                tabIndex={0}
-                data-testid="timeline-splitter"
-                className="group -mt-6 flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center outline-none"
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-                onDoubleClick={() => setTimelineHeight(null)}
-                onKeyDown={onKeyDown}
-            >
-                <div className="bg-stroke group-hover:bg-accent group-focus-visible:bg-accent h-2 w-48 rounded-full transition-colors" />
-            </div>
+            {basic ? (
+                <div className="-mt-6 h-8 shrink-0" aria-hidden />
+            ) : (
+                <div
+                    role="separator"
+                    aria-orientation="horizontal"
+                    aria-label="Resize timeline"
+                    aria-valuemin={MIN_TIMELINE_HEIGHT}
+                    aria-valuenow={shown}
+                    tabIndex={0}
+                    data-testid="timeline-splitter"
+                    className="group -mt-6 flex h-8 shrink-0 cursor-row-resize touch-none items-center justify-center outline-none"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerUp}
+                    onDoubleClick={() => setTimelineHeight(null)}
+                    onKeyDown={onKeyDown}
+                >
+                    <div className="bg-stroke group-hover:bg-accent group-focus-visible:bg-accent h-2 w-48 rounded-full transition-colors" />
+                </div>
+            )}
             <div className="flex min-h-0 flex-1 flex-col">
                 <TimelinePaneStretchContext.Provider
                     value={dragging || height !== null}

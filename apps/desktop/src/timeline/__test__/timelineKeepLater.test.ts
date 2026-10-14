@@ -186,24 +186,28 @@ describe("followingPages", () => {
 });
 
 describe("pageChainWords", () => {
-    it("a linked chain names the count a click keeps and the page they stop following", () => {
+    it("a linked chain says who holds where a page left them, then that a click keeps them", () => {
         const [, , p4] = states([1, 2, 3]);
         expect(pageChainWords(p4!)).toMatchObject({
             kind: "follows",
-            label: "Keep 2 marchers on Page 4",
-            hint: "They won't follow earlier pages any more",
+            label: "2 marchers hold where earlier pages left them",
+            hint: "Changes to earlier pages carry onto Page 4. Click to keep them here instead",
+            menuHint:
+                "Changes to earlier pages carry onto Page 4. Right-click the page to keep them here instead",
             action: "keep",
             marcherIds: [1, 2],
         });
         const [, one] = states([1]);
         expect(pageChainWords(one!)).toMatchObject({
-            label: "Keep 1 marcher on Page 3",
-            hint: "It won't follow Page 2 any more",
+            label: "1 marcher holds where Page 2 left it",
+            hint: "Changes to Page 2 carry onto Page 3. Click to keep it here instead",
+            menuHint:
+                "Changes to Page 2 carry onto Page 3. Right-click the page to keep it here instead",
         });
         const [, two] = states([1, 3]);
         expect(pageChainWords(two!)).toMatchObject({
-            label: "Keep 2 marchers on Page 3",
-            hint: "They won't follow Page 2 any more",
+            label: "2 marchers hold where Page 2 left them",
+            hint: "Changes to Page 2 carry onto Page 3. Click to keep them here instead",
         });
     });
 
@@ -212,7 +216,9 @@ describe("pageChainWords", () => {
         expect(pageChainWords(p3!)).toMatchObject({
             kind: "kept",
             label: "1 marcher kept on Page 3",
-            hint: "Click to follow Page 2 again",
+            hint: "Changes to Page 2 stop here. Click to follow Page 2 again",
+            menuHint:
+                "Changes to Page 2 stop here. Right-click the page to follow Page 2 again",
             action: "follow",
             marcherIds: [2],
             keptCount: 1,
@@ -224,14 +230,19 @@ describe("pageChainWords", () => {
         expect(pageChainWords(p3!)).toMatchObject({
             kind: "mixed",
             label: "1 of the 3 selected is kept on Page 3",
-            hint: "Click to keep the other 2 too",
+            hint: "The other 2 follow earlier pages. Click to keep them here too",
+            menuHint:
+                "The other 2 follow earlier pages. Right-click the page to keep them here too",
             action: "keep",
             marcherIds: [1, 3],
             keptCount: 1,
         });
         const [, pair] = states([1, 2]);
         expect(pageChainWords(pair!)?.hint).toBe(
-            "Click to keep the other one too",
+            "The other one follows earlier pages. Click to keep it here too",
+        );
+        expect(pageChainWords(pair!)?.menuHint).toBe(
+            "The other one follows earlier pages. Right-click the page to keep it here too",
         );
     });
 
@@ -244,7 +255,7 @@ describe("pageChainWords", () => {
         const name = (id: number) => `OT${id}`;
         const [, , p4] = states([1, 2, 3]);
         expect(pageChainWords(p4!, undefined, name)?.label).toBe(
-            "Keep OT1 and OT2 on Page 4",
+            "OT1 and OT2 hold where earlier pages left them",
         );
         const [, kept] = states([2]);
         expect(pageChainWords(kept!, undefined, name)?.label).toBe(
@@ -263,7 +274,7 @@ describe("pageChainWords", () => {
         expect(pageChainWords(p4!, undefined, (id) => `OT${id}`)).toMatchObject(
             {
                 kind: "follows",
-                label: "Keep OT1 on Page 4",
+                label: "OT1 holds where Page 2 left it",
                 marcherIds: [1],
             },
         );
@@ -316,7 +327,7 @@ describe("pageChainWords", () => {
         expect(pageChainWords(p3!, undefined, (id) => `OT${id}`)).toMatchObject(
             {
                 label: "2 of the 8 selected are kept on Page 3 (OT1, OT8)",
-                hint: "Click to keep the other 6 too",
+                hint: "The other 6 follow earlier pages. Click to keep them here too",
             },
         );
     });

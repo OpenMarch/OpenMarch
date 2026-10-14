@@ -9,6 +9,7 @@ import {
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
 import { useActionHandler } from "../useActionHandler";
+import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useEditorReadiness } from "./useEditorReadiness";
 
 // eslint-disable-next-line max-lines-per-function
@@ -56,9 +57,10 @@ export function useNavigationActionHandlers() {
     useActionHandler("playPage", () => playTimelinePage(transport()), {
         enabled: canNavigate,
     });
-    // UI-17: C turns looping on over the page being edited, or off
+    // UI-17: C turns looping on over the page being edited, or off. Not in Basic (UI-19)
+    const basic = useIsBasicMode();
     useActionHandler("toggleLoop", () => toggleTimelineLoop(), {
-        enabled: ready,
+        enabled: ready && !basic,
     });
     useActionHandler("toggleMetronome", () => toggleMetronome());
 }

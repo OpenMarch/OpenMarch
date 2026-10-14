@@ -15,7 +15,9 @@ import {
 } from "./timelineIsolationPlan";
 import type { CoordinateRecord } from "@/utilities/CoordinateActions";
 import { pageEndBeat } from "./timelineCanvas";
+import { TimelineEditRefusedError } from "./timelineEditRefusals";
 import { moveMarchersAndOfferFollowUp } from "./timelineMoveThemToo";
+import { isBasicMode } from "@/stores/EditorModeStore";
 import {
     timelineResolverSettled,
     useTimelineResolverStore,
@@ -58,30 +60,11 @@ export class TimelineNotReadyError extends Error {
     }
 }
 
-/**
- * Why a canvas move can't run in timeline mode (UI-10). Each has a Tolgee key with the English
- * text as its default; `timelineErrorMessage` shows it.
- */
-export const CANVAS_EDIT_REFUSALS = {
-    /** Nothing is selected and the playhead isn't on beat 0 */
-    noTimeline: {
-        key: "timeline.edit.selectTimeline",
-        defaultMessage:
-            "Click the timeline to choose when marchers arrive, then move them.",
-    },
-} as const;
-
-export type CanvasEditRefusal = keyof typeof CANVAS_EDIT_REFUSALS;
-
-/** A canvas move refused by the selection (see `CANVAS_EDIT_REFUSALS`). */
-export class TimelineEditRefusedError extends Error {
-    readonly key: string;
-    constructor(readonly refusal: CanvasEditRefusal) {
-        super(CANVAS_EDIT_REFUSALS[refusal].defaultMessage);
-        this.key = CANVAS_EDIT_REFUSALS[refusal].key;
-        this.name = "TimelineEditRefusedError";
-    }
-}
+export {
+    CANVAS_EDIT_REFUSALS,
+    TimelineEditRefusedError,
+    type CanvasEditRefusal,
+} from "./timelineEditRefusals";
 
 /** What a canvas move edits, and the beat whose positions the canvas shows for it. */
 export type CanvasEditPlan =
@@ -104,10 +87,11 @@ export type CanvasEditPlan =
  * - nothing selected: refused.
  */
 export function planCanvasEdit(
-    state: Pick<
-        TimelineSelectionState,
-        "selection" | "isolation"
-    > = useTimelineSelectionStore.getState(),
+    state: Pick<TimelineSelectionState, "selection" | "isolation"> &
+        Partial<
+            Pick<TimelineSelectionState, "pageBoxes">
+        > = useTimelineSelectionStore.getState(),
+    basic: boolean = isBasicMode(),
 ): CanvasEditPlan {
     const { selection, isolation } = state;
     // Isolation always edits the isolated timeline's end (owner, 2026-10-04). Until its plan is
@@ -128,7 +112,29 @@ export function planCanvasEdit(
             beat: isolation.end,
         };
     }
-    if (selection.kind === "range")
+    if (selection.kind === "range") {
+        // UI-19: Basic edits where each marcher is at the playhead, inside its page box
+        // (docs/timeline/research/basic-mode, "How Basic writes")
+        if (basic) {
+            const box = basicPageBox(
+                { pageBoxes: state.pageBoxes ?? [] },
+                selection.end,
+            );
+            // Basic never falls back to the window: its moves would cross flags it can't show
+            if (!box)
+                return {
+                    ok: false,
+                    error:
+                        (state.pageBoxes ?? []).length === 0
+                            ? new TimelineNotReadyError()
+                            : new TimelineEditRefusedError("pastLastPage"),
+                };
+            return {
+                ok: true,
+                target: { kind: "point", beat: selection.end, box },
+                beat: selection.end,
+            };
+        }
         return {
             ok: true,
             target: {
@@ -138,9 +144,22 @@ export function planCanvasEdit(
             },
             beat: selection.end,
         };
+    }
     if (selection.kind === "home")
         return { ok: true, target: { kind: "home" }, beat: 0 };
     return { ok: false, error: new TimelineEditRefusedError("noTimeline") };
+}
+
+/**
+ * The page box Basic edits at playhead `beat`: the box holding it, or ending on it (a page's flag
+ * edits that page). `null` before the boxes load or past the last flag.
+ */
+export function basicPageBox(
+    state: Pick<TimelineSelectionState, "pageBoxes">,
+    beat: number,
+): { start: number; end: number } | null {
+    const box = state.pageBoxes.find((b) => b.start < beat && beat <= b.end);
+    return box ? { start: box.start, end: box.end } : null;
 }
 
 /**
@@ -254,6 +273,7 @@ export async function transformMarchersInSelection<R extends MarcherXY>({
     snapIsolatedPlayheadToEnd();
     const next = transform(timelineCoordinateRecords(plan.beat, marcherIds));
     const moves = toTimelineMoves(next);
+    // Basic's locked marchers are dropped there (UI-19)
     await moveMarchersAndOfferFollowUp({
         database: db,
         target: plan.target,
@@ -334,11 +354,17 @@ export function copyPagePositions({
  *
  * @throws Error for a page with no beats
  */
-export function neighborPageTarget(page: TimelineMovePage): TimelineEditTarget {
+export function neighborPageTarget(
+    page: TimelineMovePage,
+    basic: boolean = isBasicMode(),
+): TimelineEditTarget {
     if (page.previousPageId === null) return { kind: "home" };
     const first = page.beats[0];
     if (!first) throw new Error("This page has no beats, so it has no box.");
-    return { kind: "range", start: first.index, end: pageEndBeat(page) };
+    const box = { start: first.index, end: pageEndBeat(page) };
+    // UI-19: Basic writes on the page's flag, and keeps every move inside the box
+    if (basic) return { kind: "point", beat: box.end, box };
+    return { kind: "range", ...box };
 }
 
 /** The timeline move for each changed coordinate. Any `page_id` on them is ignored. */
@@ -395,6 +421,7 @@ export function canvasCoordinateWriter<A extends MarcherXY>({
         // end, so carry the drag over as an offset from where the plan has it there
         const moves = toTimelineMoves(atIsolatedEnd(changes));
         snapIsolatedPlayheadToEnd();
+        // Basic's locked marchers are dropped by the write (UI-19); a refusal snaps them back
         writeTimeline({ target: current.target, moves });
     };
 }

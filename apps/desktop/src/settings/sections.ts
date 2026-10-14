@@ -101,6 +101,9 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         Component: TimelineSettings,
         descriptionKey: "settings.timeline.description",
         searchKeys: [
+            "settings.general.editorMode",
+            "settings.general.editorMode.basic",
+            "settings.general.editorMode.expert",
             "settings.timeline.waveformStyle",
             "settings.timeline.waveformStyle.simplified",
             "settings.timeline.waveformStyle.precise",

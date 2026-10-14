@@ -50,6 +50,15 @@ const settings = loadSettings();
 // Test builds send no analytics, so don't ask.
 settings.set("optOutAnalytics", true);
 
+// Basic or Expert (UI-19): `?mode=basic|expert` chooses it and is remembered.
+// Without a choice the web build is Expert, so lab tests keep their behavior.
+const EDITOR_MODE_SETTING = "editorMode";
+const modeParam = new URLSearchParams(window.location.search).get("mode");
+if (modeParam === "basic" || modeParam === "expert") {
+    settings.set(EDITOR_MODE_SETTING, modeParam);
+    saveSettings();
+}
+
 function saveSettings() {
     try {
         localStorage.setItem(
@@ -93,7 +102,11 @@ export function registerHandlers({ onLeaveShow }: WebHostCallbacks) {
         "file:exists",
         (_, filePath: string) => filePath === SHOW_PATH,
     );
-    ipcMain.handle("settings:get", (_, key: string) => settings.get(key));
+    ipcMain.handle("settings:get", (_, key: string) =>
+        key === EDITOR_MODE_SETTING
+            ? (settings.get(key) ?? "expert")
+            : settings.get(key),
+    );
     ipcMain.on("settings:set", (_, values: Record<string, unknown>) => {
         for (const [key, value] of Object.entries(values))
             settings.set(key, value);

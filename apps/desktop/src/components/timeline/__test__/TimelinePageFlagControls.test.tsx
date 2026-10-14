@@ -126,6 +126,18 @@ describe("**+** at the paused playhead (UI-9)", () => {
         expect(onAddPageFlag).toHaveBeenCalledTimes(1);
     });
 
+    it("stays inside the timeline with the playhead on the show's last beat (a page to the show's end)", () => {
+        show({ positionBeat: BEATS.length, onAddPageFlag: vi.fn() });
+        const button = plus()!;
+        const surface = screen.getByTestId(
+            "timeline-pointer-surface",
+        ).parentElement!;
+        // The button is 16px wide
+        expect(parseFloat(button.style.left) + 16).toBeLessThanOrEqual(
+            parseFloat(surface.style.width),
+        );
+    });
+
     it("doesn't show while playing, or where the owner offers none (on a flag)", () => {
         show({ onAddPageFlag: vi.fn(), isPlaying: true });
         expect(plus()).toBeNull();

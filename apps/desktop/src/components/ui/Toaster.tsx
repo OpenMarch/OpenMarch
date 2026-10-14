@@ -7,10 +7,17 @@ import {
 } from "@phosphor-icons/react";
 import { Toaster as ToasterPrimitive } from "sonner";
 
+/**
+ * The CSS variable for the toasts' distance from the window's bottom, set on the document while
+ * the timeline shows in timeline mode (`TimelineContainer`); sonner's 32px without it.
+ */
+export const TOAST_BOTTOM_VAR = "--om-toast-bottom";
+
 export default function Toaster() {
     return (
         <ToasterPrimitive
             visibleToasts={6}
+            offset={{ bottom: `var(${TOAST_BOTTOM_VAR}, 32px)` }}
             toastOptions={{
                 unstyled: true,
                 classNames: {

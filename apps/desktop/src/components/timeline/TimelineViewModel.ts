@@ -289,6 +289,19 @@ export interface TimelineCommonProps
     readonly holdMarks?: LabeledHoldMarks;
     /** The chains on the page boxes (UI-18 keep later pages); none without a selection */
     readonly keepChains?: PageKeepChains;
+    /** UI-19 Basic: the selected marchers' mid-page positions, view beats */
+    readonly basicPoints?: readonly TimelineBasicPoint[];
+    /** UI-19 Basic: **Remove this count's position**, by its view beat */
+    readonly onRemoveBasicPoint?: (beat: number) => void;
+    /** UI-19 Basic: per page id, how many marchers on it use Expert moves (locked in Basic) */
+    readonly expertMarks?: ReadonlyMap<string | number, number>;
+}
+
+/** A mid-page position on a Basic page box (UI-19): its beat and its count in words */
+export interface TimelineBasicPoint {
+    readonly beat: number;
+    /** "count 4 of page 2" */
+    readonly label: string;
 }
 
 export interface TimelineRangeChange extends TimelineBeatRange {

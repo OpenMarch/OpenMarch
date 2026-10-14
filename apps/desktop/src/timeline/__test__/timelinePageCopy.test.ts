@@ -37,6 +37,7 @@ import {
     useTimelineResolverStore,
 } from "../timelineStore";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
 
 // P7.17: these tests convert the show themselves
 keepFixturesInPageMode("its tests convert the show themselves");
@@ -47,7 +48,10 @@ keepFixturesInPageMode("its tests convert the show themselves");
  * `useBatchEditActionHandlers` runs for the four actions.
  */
 
-afterEach(() => stopTimelineResolver());
+afterEach(() => {
+    stopTimelineResolver();
+    useEditorModeStore.setState({ mode: null, loaded: false });
+});
 
 const sortedPages = async (db: DbConnection): Promise<Page[]> => {
     const { pages } = await readShowTiming(db);
@@ -510,6 +514,44 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         const undo = await performUndo(db);
         expect(undo.success, undo.error?.message).toBe(true);
         expect(await timelineRows(db)).toEqual(before);
+    });
+
+    it("Basic: previous clears the marcher's mid-page points too, so it holds from the page before", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await convertPagesToTimeline(db);
+        await startTimelineResolver(db);
+        useEditorModeStore.setState({ mode: "basic", loaded: true });
+        const pages = await sortedPages(db);
+        const page = pages[3]!;
+        const previous = pages[2]!;
+        const box = { start: page.beats[0]!.index, end: pageEndBeat(page) };
+        const mid = box.start + 2;
+        expect(mid).toBeLessThan(box.end);
+        // A mid-page point: marcher 1's move on the page is split there, with a detour
+        const [x, y] = positionAt(1, mid);
+        await moveMarchersInTarget({
+            db,
+            target: { kind: "point", beat: mid, box },
+            moves: [{ marcherId: 1, x: x + 8, y: y + 8 }],
+        });
+        await timelineResolverSettled();
+        const held = positionAt(1, pageEndBeat(previous));
+        expect(positionAt(1, mid)).not.toEqual(held);
+
+        const { result, writeTimeline } = await runTimeline(db, {
+            page,
+            pages,
+            direction: "previous",
+            scope: "selected",
+            selected: [1],
+        });
+
+        expect(result).toBe(1);
+        expect(writeTimeline.mock.calls[0]![0].clearOwn).toBe(true);
+        for (let beat = box.start; beat <= box.end; beat++)
+            expect(positionAt(1, beat), `beat ${beat}`).toEqual(held);
     });
 
     it("a shape-backed transition switches to individual destinations", async ({

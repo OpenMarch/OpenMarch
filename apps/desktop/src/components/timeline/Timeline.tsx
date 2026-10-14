@@ -21,7 +21,11 @@ import {
 import { pageEndBeat } from "@/timeline/pageEndBeat";
 import { clamp } from "./TimelineGeometry";
 import { useLatestCallback } from "./useLatestCallback";
-import { CollapsedTimeline, ExpandedTimeline } from "./TimelineVariants";
+import {
+    BasicTimeline,
+    CollapsedTimeline,
+    ExpandedTimeline,
+} from "./TimelineVariants";
 import type { LabeledHoldMarks } from "./PageHoldMark";
 import type { PageKeepChains } from "./PageKeepChain";
 import type {
@@ -32,6 +36,7 @@ import type {
 } from "./TimelineRangeMenu";
 import type {
     TimelineActivitySpan,
+    TimelineBasicPoint,
     TimelineBeatRange,
     TimelineCreateTrackRequest,
     TimelineNavigation,
@@ -47,7 +52,8 @@ import type {
     TimelineWaveform,
 } from "./TimelineViewModel";
 
-export type TimelineMode = "expanded" | "collapsed";
+/** `basic` is Basic mode's page boxes with the music inside them (UI-19) */
+export type TimelineMode = "expanded" | "collapsed" | "basic";
 
 export interface TimelineLegInput {
     readonly id: string | number;
@@ -210,6 +216,12 @@ export interface TimelineProps {
     readonly keepChains?: PageKeepChains;
     /** The page box menu's **Keep selected marchers here** and **Let selected marchers follow again** */
     readonly keepHere?: TimelineKeepHereMenu;
+    /** UI-19 Basic: the selected marchers' mid-page positions, spec beats */
+    readonly basicPoints?: readonly TimelineBasicPoint[];
+    /** UI-19 Basic: **Remove this count's position**, by its spec beat */
+    readonly onRemoveBasicPoint?: (beat: number) => void;
+    /** UI-19 Basic: per page id, how many marchers on it use Expert moves */
+    readonly expertMarks?: ReadonlyMap<string | number, number>;
 }
 
 const TimelineWaveformContext = createContext<TimelineWaveform | null>(null);
@@ -710,6 +722,21 @@ export function Timeline(props: TimelineProps) {
                 : undefined,
         [axis, flagCommit, flagLimits],
     );
+    // UI-19 Basic: mid-page positions on the view axis, and back
+    const { basicPoints, onRemoveBasicPoint } = props;
+    const viewBasicPoints = useMemo(
+        () =>
+            basicPoints?.map((point) => ({
+                ...point,
+                beat: axis.toView(point.beat),
+            })),
+        [axis, basicPoints],
+    );
+    const removeBasicPoint = useLatestCallback(
+        onRemoveBasicPoint
+            ? (viewBeat: number) => onRemoveBasicPoint(axis.toSpec(viewBeat))
+            : undefined,
+    );
     const commonProps = {
         model,
         positionBeat,
@@ -749,9 +776,14 @@ export function Timeline(props: TimelineProps) {
         transportAccessories: props.transportAccessories,
         holdMarks: props.holdMarks,
         keepChains: props.keepChains,
+        basicPoints: viewBasicPoints,
+        onRemoveBasicPoint: removeBasicPoint,
+        expertMarks: props.expertMarks,
     };
 
-    return props.mode === "expanded" ? (
+    return props.mode === "basic" ? (
+        <BasicTimeline {...commonProps} />
+    ) : props.mode === "expanded" ? (
         <ExpandedTimeline {...commonProps} />
     ) : (
         <CollapsedTimeline {...commonProps} />

@@ -140,14 +140,15 @@ chain for never-moved marchers (section 4)._
 
 ## 4. Keep chains on the page boxes
 
-A small chain button on each later page box that the selected marchers follow into (TL only, B-40,
-V-185). It answers "is this page attached to the earlier one?" before you edit.
+A small chain button on the later page boxes that the selected marchers follow into or were kept on
+(TL only, B-40, V-185, V-222 to V-224). It answers "is this page attached to the earlier one?"
+before you edit.
 
-| State      | Look                                                      | Tooltip (label · hint)                                                                | Click                           |
-| ---------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------- |
-| **Linked** | A chain as a quiet outline                                | "Keep OT1 and OT8 on Page 3" · "They won't follow Page 2 any more"                    | Keeps those marchers there      |
-| **Kept**   | A broken chain on a filled accent chip                    | "OT1 and OT8 kept on Page 3" · "Click to follow Page 2 again"                         | Lets them follow again          |
-| **Mixed**  | A chain outlined in the accent, with a filled count badge | "2 of the 8 selected are kept on Page 3 (OT1, OT8)" · "Click to keep the other 6 too" | Keeps the rest (_lead default_) |
+| State      | Look                                                                          | Tooltip (label · hint)                                                                | Click                           |
+| ---------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------- |
+| **Linked** | A chain as a quiet outline                                                    | "Keep OT1 and OT8 on Page 3" · "They won't follow Page 2 any more"                    | Keeps those marchers there      |
+| **Kept**   | A broken chain on a filled accent chip                                        | "OT1 and OT8 kept on Page 3" · "Click to follow Page 2 again"                         | Lets them follow again          |
+| **Mixed**  | A broken chain outlined in the accent, with a filled count badge (16 px only) | "2 of the 8 selected are kept on Page 3 (OT1, OT8)" · "Click to keep the other 6 too" | Keeps the rest (_lead default_) |
 
 ![Linked chain on page 3 with its tooltip "Keep OT1 and OT8 on Page 3 (K)"](images/10-keep-chain-linked-tooltip.png)
 
@@ -162,11 +163,35 @@ _Kept: the filled accent chip on page 3; page 4 still shows a linked chain (as o
 _Mixed: all eight selected, two of them kept on page 3. The badge counts the kept ones; page 3 also
 shows the dashed hold mark (as of wp19)._
 
-- **When:** only with marchers selected (owner: nothing without a selection). On each page box the
-  selection follows into, or was kept on. Marchers that haven't moved yet get no linked chain (on
-  every box it was noise), but a kept one still shows the kept chip.
-- **Where:** a 20 px button, 22 px in from the flag before its box (centered in boxes narrower than
-  70 px), so the selected page's flag, the start flag and the playhead never cover it.
+_The screenshots above are from wp19, when the chain was a 20 px chip at the top of the box. Since
+2026-10-12 it sits at the bottom left, on the start of the hold bar, as below._
+
+![Before and after at the default zoom: chips over the page numbers, then small chains at the start of the hold bars](images/20-keep-chains-before-after.png)
+
+_Pages 6 and 13 kept, OT1 to OT4 kept on page 10, page 3 selected; Expert, Expert compact and Basic
+at the default zoom (top three: before, wp19 chips; bottom three: now). 2026-10-12._
+
+![Before and after zoomed to fit 24 short pages: chips on almost every box, then only the kept pages marked](images/21-keep-chains-fit-before-after.png)
+
+_The same, zoomed to fit the 24 pages. Narrow kept boxes show a dot (a ring for page 10's mix); in
+this capture page 13, too narrow for its number, still had the small chain centered, which now
+gives way to a dot as well (review, 2026-10-12: it sat under the flags' handles)._
+
+- **When:** only with marchers selected (owner: nothing without a selection). Kept and mixed
+  chains show on every box they apply to. A linked chain shows only on the selected page, on the
+  page **K** works on, and while its box is hovered (V-223: a link on every following page
+  drowned out the kept ones). Marchers that haven't moved yet get no linked chain (on every box it
+  was noise), but a kept one still shows the kept chip.
+- **Where:** at the bottom left of the box, on the start of the hold bar, 14 px in from the flag
+  before it (clear of the flag's grip, the playhead and the start flag's pennant; the playhead's
+  **+** moves past any chain it would cover, also from a beat before the flag zoomed out). 16 px
+  where the page number leaves room, 12 px where only that fits. It never covers the number, even
+  when the number slides left as the box runs off the right edge (owner, 2026-10-12: the chips
+  covered the numbers and each other). Where neither size fits, a kept chain becomes an 8 px accent
+  dot and a mixed one a ring; a linked one shows nothing. The dot keeps clear of the number too,
+  except in a box only just wide enough for a one-digit number (about 17 to 22 px), where the two
+  touch (V-222). Such a box's tooltip then shows the chain's words, ending "Right-click the page to
+  …", since a click on the box selects it (V-222).
 - **Clicks:** a press never selects, scrubs or drags the box. Right-click opens the page box menu
   (section 6). The chain that K would toggle adds " (K)" to its tooltip label.
 - **Names:** up to three ("OT1, OT2 and OT3"), then "OT1, OT2 and 4 others"; one marcher reads "It

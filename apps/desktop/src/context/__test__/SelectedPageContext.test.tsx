@@ -117,4 +117,40 @@ describe("SelectedPageContext", () => {
         rerender();
         expect(result.current?.selectedPage?.id).toBe(mockPages[0].id);
     });
+
+    // Refreshing the selection when the page list reloads (the provider's page list effect)
+    it("refresh: pages reloaded as new objects give the fresh object by id", async () => {
+        const { result, rerender } = renderHook(() => useSelectedPage(), {
+            wrapper: SelectedPageProvider,
+        });
+        void act(() => result.current?.setSelectedPage(mockPages[1]));
+        const reloaded = mockPages.map((p) => ({ ...p, notes: `${p.id}!` }));
+        timing.mockImplementation(withPages(reloaded) as never);
+        rerender();
+        expect(result.current?.selectedPage).toBe(reloaded[1]);
+    });
+
+    it("refresh: a deleted selected page leaves nothing selected", async () => {
+        const { result, rerender } = renderHook(() => useSelectedPage(), {
+            wrapper: SelectedPageProvider,
+        });
+        void act(() => result.current?.setSelectedPage(mockPages[2]));
+        timing.mockImplementation(
+            withPages(
+                mockPages.filter((p) => p.id !== mockPages[2].id),
+            ) as never,
+        );
+        rerender();
+        expect(result.current?.selectedPage).toBeNull();
+    });
+
+    it("refresh: an empty page list leaves nothing selected", async () => {
+        const { result, rerender } = renderHook(() => useSelectedPage(), {
+            wrapper: SelectedPageProvider,
+        });
+        void act(() => result.current?.setSelectedPage(mockPages[0]));
+        timing.mockImplementation(withPages([]) as never);
+        rerender();
+        expect(result.current?.selectedPage).toBeNull();
+    });
 });

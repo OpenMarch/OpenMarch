@@ -3,8 +3,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     CursorTextIcon,
     FlagIcon,
-    LinkSimpleHorizontalBreakIcon,
-    LinkSimpleHorizontalIcon,
+    LinkBreakIcon,
+    LinkSimpleIcon,
     PencilSimpleIcon,
     TrashIcon,
     UserPlusIcon,
@@ -343,7 +343,7 @@ export function useTimelineRangeMenu({
                                 }
                                 className={ITEM_CLASS}
                             >
-                                <LinkSimpleHorizontalBreakIcon size={14} />
+                                <LinkBreakIcon size={14} />
                                 {tolgee.t(
                                     "timeline.rangeMenu.keepHere",
                                     "Keep selected marchers here",
@@ -361,7 +361,7 @@ export function useTimelineRangeMenu({
                                 }
                                 className={ITEM_CLASS}
                             >
-                                <LinkSimpleHorizontalIcon size={14} />
+                                <LinkSimpleIcon size={14} />
                                 {tolgee.t(
                                     "timeline.rangeMenu.followAgain",
                                     "Let selected marchers follow again",

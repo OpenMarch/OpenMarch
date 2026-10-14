@@ -58,6 +58,7 @@ import {
     getPlayheadReadout,
     getVisiblePageCounts,
     getPageRange,
+    pageLabelFits,
     parseTimelineGoTo,
     getSelectionRange,
     getTrackRange,
@@ -99,12 +100,18 @@ import {
 import {
     HoldMarkTooltip,
     PageHoldMarkView,
+    type HoldWords,
     type LabeledHoldMark,
     type LabeledHoldMarks,
 } from "./PageHoldMark";
 import {
-    chainOffset,
+    chainFit,
+    KEEP_DOT_SIZE,
+    KEEP_SHORTCUT,
+    keepDotFit,
+    labelPaddingBeside,
     PageKeepChainButton,
+    PageKeepDot,
     type PageKeepChain,
     type PageKeepChains,
 } from "./PageKeepChain";
@@ -1102,7 +1109,8 @@ type RulerScrub = ReturnType<typeof useRulerScrub>;
  * A page box's name (UI-13), at its flag, sticking to the viewport's edge while the flag is
  * scrolled out of view, so a long page always shows its name. Set heavier than the counts and
  * measure numbers under it, so the box and the weight tell them apart. Hidden when the box is too
- * narrow to read it, when zoomed far out (UI-12).
+ * narrow to read it, when zoomed far out (UI-12). It slides no further left than its box's
+ * padding, which ends before a keep chain or dot (`labelPaddingBeside`).
  */
 const PageBoxLabel = memo(function PageBoxLabel({
     label,
@@ -1115,10 +1123,6 @@ const PageBoxLabel = memo(function PageBoxLabel({
         <span className="sticky right-8 font-semibold">{label}</span>
     ) : null;
 });
-
-/** Whether a page box this wide has room for its name (`PageBoxLabel`) */
-const pageLabelFits = (label: string, width: number) =>
-    width >= label.length * 7 + 10;
 
 /** The ruler's page boxes in show order, each with its range (UI-9: previous flag to its own) */
 const pageBoxesOf = (
@@ -1383,14 +1387,14 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
                         data-timeline-interactive="true"
                         data-testid="timeline-initial-page"
                         aria-label={`Page ${initialPage.label}`}
-                        title={`Home: page ${initialPage.label}'s set`}
+                        title={`Home: the start of the show (page ${initialPage.label}'s set)`}
                         aria-pressed={homeSelected}
                         {...scrub.handlers}
                         onClick={(event) => {
                             if (!scrub.consumeClick(event))
                                 onSelectPage(initialPage);
                         }}
-                        className="border-stroke text-text focus-visible:ring-accent absolute top-0 left-0 flex h-full items-center justify-center border-r text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+                        className="border-stroke text-text focus-visible:ring-accent absolute top-0 left-0 flex h-full items-center justify-center rounded-l-[5px] border-r text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
                         style={{ width: initialPageWidth }}
                     >
                         {/* UI-13: a house, so home's "0" isn't read as a count or a measure */}
@@ -1449,14 +1453,41 @@ const TimelinePageBox = memo(function TimelinePageBox({
         (range.endBeatIndex - range.startBeatIndex) * pixelsPerBeat;
     const boxLeft =
         initialPageWidth + beatToX(range.startBeatIndex, pixelsPerBeat);
+    const labelShown = pageLabelFits(page.label, boxWidth);
+    const labelChars = labelShown ? page.label.length : 0;
+    const fit = chain ? chainFit(boxWidth, labelChars) : null;
+    const dot =
+        chain && !fit && chain.kind !== "follows"
+            ? keepDotFit(boxWidth, labelChars)
+            : null;
+    // The sticky label stops before the chain or dot (`labelPaddingBeside`)
+    const labelPadding = fit
+        ? labelPaddingBeside(fit.offset, fit.size)
+        : dot?.clear
+          ? labelPaddingBeside(dot.offset, KEEP_DOT_SIZE)
+          : undefined;
+    // A chain with no room for its button: its words go on the box, mark or not, naming whom the
+    // box's menu changes, with (K) where K does the same, as the chain's button shows it
+    const menuK = !!chain && !fit && !!chain.menuWithK;
+    const words: HoldWords | undefined =
+        chain && !fit
+            ? { mark: hold?.mark, label: chain.menuLabel, hint: chain.menuHint }
+            : hold;
     const box = (
-        <HoldMarkTooltip hold={hold}>
+        <HoldMarkTooltip
+            hold={
+                words && menuK
+                    ? { ...words, label: `${words.label} (${KEEP_SHORTCUT})` }
+                    : words
+            }
+        >
             <button
                 type="button"
                 data-timeline-interactive="true"
                 {...timelineRangeTargetProps(range, undefined, page.id)}
                 aria-label={`Page ${page.label}`}
-                aria-describedby={hold ? holdDescriptionId : undefined}
+                aria-describedby={words ? holdDescriptionId : undefined}
+                aria-keyshortcuts={menuK ? KEEP_SHORTCUT : undefined}
                 aria-pressed={selected}
                 {...scrub.handlers}
                 onClick={(event) => {
@@ -1465,21 +1496,26 @@ const TimelinePageBox = memo(function TimelinePageBox({
                     if (!event.ctrlKey) onSelectPage(page, event.shiftKey);
                 }}
                 className="border-stroke text-text focus-visible:ring-accent absolute top-0 flex h-full items-center justify-end border-r px-8 text-[11px] outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
-                style={{ left: boxLeft, width: boxWidth }}
+                style={{
+                    left: boxLeft,
+                    width: boxWidth,
+                    paddingLeft: labelShown ? labelPadding : undefined,
+                }}
             >
-                <PageBoxLabel
-                    label={page.label}
-                    shown={pageLabelFits(page.label, boxWidth)}
-                />
+                <PageBoxLabel label={page.label} shown={labelShown} />
                 <PageHoldMarkView
-                    hold={hold}
+                    hold={words}
                     descriptionId={holdDescriptionId}
                 />
+                {chain && dot && (
+                    <PageKeepDot kind={chain.kind} left={dot.offset} />
+                )}
             </button>
         </HoldMarkTooltip>
     );
-    if (!chain) return box;
-    // A sibling, not inside the box: a button can't hold a button
+    if (!chain || !fit) return box;
+    // A sibling right after the box, not inside it: a button can't hold a button, and hovering
+    // the box shows a linked chain (`PageKeepChainButton`)
     return (
         <>
             {box}
@@ -1488,7 +1524,9 @@ const TimelinePageBox = memo(function TimelinePageBox({
                 pageId={page.id}
                 pageLabel={page.label}
                 range={range}
-                left={boxLeft + chainOffset(boxWidth)}
+                left={boxLeft + fit.offset}
+                size={fit.size}
+                always={selected || !!chain.withK}
             />
         </>
     );

@@ -21,6 +21,10 @@ import {
     type DatabasePage,
 } from "./page";
 import { moveTagAppearancesOffPagesInTransaction } from "./tagAppearancePageDelete";
+import {
+    splitMovesAtBeatInTransaction,
+    type SplitMovesResult,
+} from "./timelinePointMoves";
 
 /**
  * Page flags in timeline mode (docs/timeline/ui.md UI-9 **+** and Deleting a flag; P8.13).
@@ -32,7 +36,8 @@ import { moveTagAppearancesOffPagesInTransaction } from "./tagAppearancePageDele
  *
  * **+** and Delete flag write only page rows, and `last_page_counts` when the last page changes.
  * They never run `withTimelinePageRipple` (P7.4): no timeline, transition or assignment is created,
- * moved or deleted, so motion is unchanged. Timelines track flags only when a flag moves, so
+ * moved or deleted, so motion is unchanged. The exception is **+** in Basic (`splitMoves`), which
+ * also splits each marcher's move at the new flag, keeping motion unchanged. Timelines track flags only when a flag moves, so
  * moving one does run it (`movePageFlagInTransaction`). Each is one undoable edit.
  *
  * Beats here are ordinals (resolver beats), the same as timeline rows and `readPageGrid`: page 0
@@ -148,6 +153,8 @@ export interface AddedPageFlag {
     page: DatabasePage;
     startBeat: number;
     endBeat: number;
+    /** With `splitMoves` and a split: the marchers split at the new flag, and those left alone */
+    splitMoves?: SplitMovesResult;
 }
 
 /**
@@ -162,15 +169,21 @@ export interface AddedPageFlag {
  * - **Append:** a new page starts at the last flag and ends at `beat` (`last_page_counts`); a
  *   `subset` one takes the last page's number and the next letter.
  *
+ * With `splitMoves` (Basic, README "Basic's panel"), a split first splits each marcher's move
+ * across `beat` there (`splitMovesAtBeatInTransaction` on the split page's box), so no simple
+ * move crosses the new flag; motion is unchanged. Without it (Expert), only page rows are written.
+ *
  * Returns the new page and its range, which is the page timeline the UI selects.
  */
 export async function addPageFlagInTransaction({
     tx,
     beat,
+    splitMoves = false,
     subset = false,
 }: {
     tx: DbTransaction;
     beat: number;
+    splitMoves?: boolean;
     /** Make the new page a subset page (**Add subset page**) */
     subset?: boolean;
 }): Promise<AddedPageFlag> {
@@ -184,6 +197,14 @@ export async function addPageFlagInTransaction({
     if (plan.kind === "split") {
         const { page } = plan;
         const lastPageCounts = plan.last ? await lastPageCountsIn(tx) : 0;
+        // Before the page rows change, while the split page's box is still a page's
+        const split = splitMoves
+            ? await splitMovesAtBeatInTransaction({
+                  tx,
+                  beat,
+                  box: { start: page.start, end: page.end },
+              })
+            : undefined;
         // The split page moves off its start first: `pages.start_beat` is unique
         await tx
             .update(schema.pages)
@@ -204,7 +225,12 @@ export async function addPageFlagInTransaction({
                 tx,
                 lastPageCounts: page.start + lastPageCounts - beat,
             });
-        return { page: created!, startBeat: page.start, endBeat: beat };
+        return {
+            page: created!,
+            startBeat: page.start,
+            endBeat: beat,
+            ...(split ? { splitMoves: split } : {}),
+        };
     }
 
     const start = plan.lastPage.end;
@@ -220,16 +246,19 @@ export async function addPageFlagInTransaction({
 export async function addPageFlag({
     db,
     beat,
+    splitMoves = false,
     subset = false,
 }: {
     db: DbConnection;
     beat: number;
+    splitMoves?: boolean;
     subset?: boolean;
 }): Promise<AddedPageFlag> {
     return await transactionWithHistory(
         db,
         "addPageFlag",
-        async (tx) => await addPageFlagInTransaction({ tx, beat, subset }),
+        async (tx) =>
+            await addPageFlagInTransaction({ tx, beat, splitMoves, subset }),
     );
 }
 

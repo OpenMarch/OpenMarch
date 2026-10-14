@@ -18,6 +18,7 @@ import { TolgeeProvider } from "@tolgee/react";
 import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import tolgee from "@/global/singletons/Tolgee";
 import { installClickFocusMarker } from "@/utilities/clickFocus";
+import { initEditorModeStore } from "@/stores/EditorModeStore";
 
 installClickFocusMarker();
 
@@ -78,6 +79,9 @@ function mountEditor() {
         .catch((error) => {
             console.warn("Failed to load saved language:", error);
         });
+
+    // Basic or Expert (UI-19): read it and keep it in sync with the Settings window
+    initEditorModeStore();
 
     // Listen for language changes from other windows
     window.electron?.onSettingsChanged((change) => {

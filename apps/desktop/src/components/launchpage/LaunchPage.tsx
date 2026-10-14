@@ -12,7 +12,7 @@ import {
     TShirtIcon,
 } from "@phosphor-icons/react";
 import * as Tabs from "@radix-ui/react-tabs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { T } from "@tolgee/react";
 import { runAction } from "@/shortcuts/registry";
 import FilesContent from "./files/FilesContent";
@@ -21,8 +21,12 @@ import Toaster from "../ui/Toaster";
 import NewShowDialog from "./NewShowDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
+import WelcomeFlow from "../welcome/WelcomeFlow";
+import { shouldShowWelcomeFlow } from "../welcome/welcomeFlowSteps";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
 import {
     clearNewShowDialogSessionFlag,
+    NEW_SHOW_DIALOG_SESSION_KEY,
     OPEN_NEW_SHOW_DIALOG_EVENT,
     requestOpenNewShowDialog,
     shouldOpenNewShowDialogFromSession,
@@ -37,9 +41,40 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     const [newShowOpen, setNewShowOpen] = useState(false);
     const queryClient = useQueryClient();
 
+    // First launch (UI-19): the welcome flow comes before anything else. While
+    // the mode is loading or the flow is open, a request for the new-show
+    // wizard waits for it.
+    const editorModeLoaded = useEditorModeStore((state) => state.loaded);
+    const editorMode = useEditorModeStore((state) => state.mode);
+    const welcomeOpen = shouldShowWelcomeFlow({
+        loaded: editorModeLoaded,
+        mode: editorMode,
+    });
+    const welcomeBlocks = !editorModeLoaded || editorMode === null;
+    const welcomeBlocksRef = useRef(welcomeBlocks);
+    welcomeBlocksRef.current = welcomeBlocks;
+    const [newShowDeferred, setNewShowDeferred] = useState(false);
+
     const openNewShowDialog = useCallback(() => {
-        setNewShowOpen(true);
+        if (welcomeBlocksRef.current) setNewShowDeferred(true);
+        else setNewShowOpen(true);
     }, []);
+
+    useEffect(() => {
+        if (!welcomeBlocks && newShowDeferred) {
+            setNewShowDeferred(false);
+            setNewShowOpen(true);
+        }
+    }, [welcomeBlocks, newShowDeferred]);
+
+    const handleWelcomeFinish = useCallback(
+        ({ willReload }: { willReload: boolean }) => {
+            // The window reloads after an analytics answer; carry the request over.
+            if (willReload && newShowDeferred)
+                sessionStorage.setItem(NEW_SHOW_DIALOG_SESSION_KEY, "1");
+        },
+        [newShowDeferred],
+    );
 
     useEffect(() => {
         const tryOpenFromPending = async () => {
@@ -100,6 +135,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 <LearnContent />
             </Tabs.Root>
 
+            <WelcomeFlow open={welcomeOpen} onFinish={handleWelcomeFinish} />
             <NewShowDialog
                 open={newShowOpen}
                 onOpenChange={setNewShowOpen}

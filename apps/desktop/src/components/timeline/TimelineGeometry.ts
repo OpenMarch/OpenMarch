@@ -105,6 +105,17 @@ export const beatToX = (
 ) => (beat - startBeat) * pixelsPerBeat;
 
 /**
+ * How much of a page box's width its name takes, from the box's right edge (px): about 7px a
+ * character of the 11px mono label, the box's 8px right padding and 2px to spare. The box shows
+ * the name only when it is at least this wide (`pageLabelFits`), and a keep chain stays left of it.
+ */
+export const pageLabelRoom = (labelChars: number) => labelChars * 7 + 10;
+
+/** Whether a page box this wide has room for its name (`PageBoxLabel`) */
+export const pageLabelFits = (label: string, width: number) =>
+    width >= pageLabelRoom(label.length);
+
+/**
  * The headroom strip above the page boxes (UI-20), as Logic gives its playhead and cycle region
  * their own strip: the start flag's pennant, the playhead's head and the loop's bar and ends sit
  * and are grabbed here, clear of the page flags' grips in the page row

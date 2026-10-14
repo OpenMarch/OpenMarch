@@ -123,8 +123,9 @@ export async function setMarchersToNeighborPage({
     }
     const count = copy.marcherIds.length;
     if (count === 0) return null;
-    // Previous clears own moves even where they already go nowhere, so every marcher is sent
-    const clearOwn = direction === "previous" && target.kind === "range";
+    // Previous clears own moves even where they already go nowhere, so every marcher is sent.
+    // Basic's point target on the page's flag clears them too (its mid-page points with them)
+    const clearOwn = direction === "previous" && target.kind !== "home";
     const moves = clearOwn ? copy.targets : copy.moves;
     if (moves.length > 0) {
         try {

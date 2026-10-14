@@ -15,6 +15,16 @@ export type LabeledHoldMark = {
     readonly hint: string;
 };
 
+/**
+ * A page box's words, with its mark if it has one: a box too narrow for its keep chain takes the
+ * chain's words whether or not it has a mark
+ */
+export type HoldWords = {
+    readonly mark?: PageHoldMark;
+    readonly label: string;
+    readonly hint: string;
+};
+
 /** A page box's mark with its words, by page id. */
 export type LabeledHoldMarks = ReadonlyMap<string | number, LabeledHoldMark>;
 
@@ -36,7 +46,7 @@ export function PageHoldMarkView({
     hold,
     descriptionId,
 }: {
-    hold: LabeledHoldMark | undefined;
+    hold: HoldWords | undefined;
     /** The id of the words, for the box's `aria-describedby` */
     descriptionId: string;
 }) {
@@ -47,50 +57,52 @@ export function PageHoldMarkView({
             <span id={descriptionId} className="sr-only">
                 {label}. {hint}
             </span>
-            <span
-                aria-hidden="true"
-                data-testid="page-hold-mark"
-                data-hold-mark={mark.kind}
-                className="pointer-events-none absolute inset-0"
-            >
-                {mark.kind === "moves" ? (
-                    // A diamond wider than tall, so it stays under the box's label
-                    <span
-                        className="bg-text-subtitle absolute right-[2px] bottom-[1px] h-[7px] w-[10px]"
-                        style={{ clipPath: DIAMOND }}
-                    />
-                ) : (
-                    <span
-                        className={
-                            mark.kind === "holds"
-                                ? "bg-text-subtitle absolute inset-x-0 bottom-[3px] h-[3px]"
-                                : "absolute inset-x-0 bottom-[3px] h-[3px]"
-                        }
-                        style={
-                            mark.kind === "mixed"
-                                ? {
-                                      backgroundImage:
-                                          "repeating-linear-gradient(to right, var(--color-text-subtitle) 0 4px, transparent 4px 7px)",
-                                  }
-                                : undefined
-                        }
-                    />
-                )}
-            </span>
+            {mark && (
+                <span
+                    aria-hidden="true"
+                    data-testid="page-hold-mark"
+                    data-hold-mark={mark.kind}
+                    className="pointer-events-none absolute inset-0"
+                >
+                    {mark.kind === "moves" ? (
+                        // A diamond wider than tall, so it stays under the box's label
+                        <span
+                            className="bg-text-subtitle absolute right-[2px] bottom-[1px] h-[7px] w-[10px]"
+                            style={{ clipPath: DIAMOND }}
+                        />
+                    ) : (
+                        <span
+                            className={
+                                mark.kind === "holds"
+                                    ? "bg-text-subtitle absolute inset-x-0 bottom-[3px] h-[3px]"
+                                    : "absolute inset-x-0 bottom-[3px] h-[3px]"
+                            }
+                            style={
+                                mark.kind === "mixed"
+                                    ? {
+                                          backgroundImage:
+                                              "repeating-linear-gradient(to right, var(--color-text-subtitle) 0 4px, transparent 4px 7px)",
+                                      }
+                                    : undefined
+                            }
+                        />
+                    )}
+                </span>
+            )}
         </>
     );
 }
 
 /**
  * A page box's tooltip for its mark (`ShortcutTooltip`, above the box): the mark's words and what they
- * mean on the field. No tooltip without a mark (nothing selected). The box keeps its
- * `aria-describedby` for screen readers.
+ * mean on the field, or a narrow box's keep chain words. No tooltip without words (nothing
+ * selected). The box keeps its `aria-describedby` for screen readers.
  */
 export function HoldMarkTooltip({
     hold,
     children,
 }: {
-    hold: LabeledHoldMark | undefined;
+    hold: HoldWords | undefined;
     children: ReactElement;
 }) {
     return (
