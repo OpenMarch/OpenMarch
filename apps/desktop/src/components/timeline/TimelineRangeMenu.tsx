@@ -158,6 +158,14 @@ export interface TimelineAddMarchersMenu<T = TimelineBeatRange> {
      * (UI-18 keep later pages), above the deletes. Without it, the menu has no such entries.
      */
     readonly keepHere?: TimelineKeepHereMenu;
+    /**
+     * **Change to subset** or **Change to normal page** on a page box (UI-9), whichever the page
+     * isn't now. Without it, the menu has no such entry.
+     */
+    readonly subset?: {
+        readonly isSubset: (pageId: string | number) => boolean;
+        readonly onSet: (pageId: string | number, subset: boolean) => void;
+    };
 }
 
 /** The page box menu's keep entries (UI-18 keep later pages), by page id. */
@@ -268,7 +276,8 @@ export function useTimelineRangeMenu({
         const canDelete =
             (menu?.onDeleteFlag !== undefined ||
                 menu?.onDeleteWithMoves !== undefined ||
-                menu?.keepHere !== undefined) &&
+                menu?.keepHere !== undefined ||
+                menu?.subset !== undefined) &&
             target.pageId !== undefined;
         if (!menu?.onAdd && !canDelete && !movesOf(target)) return;
         event.preventDefault();
@@ -358,6 +367,33 @@ export function useTimelineRangeMenu({
                                     "Let selected marchers follow again",
                                 )}
                                 <MenuShortcut keys={keepState.followShortcut} />
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                        </>
+                    )}
+                    {menu?.subset && open.target.pageId !== undefined && (
+                        <>
+                            <DropdownMenu.Item
+                                data-testid="timeline-range-menu-subset"
+                                onSelect={() =>
+                                    menu.subset?.onSet(
+                                        open.target.pageId!,
+                                        !menu.subset.isSubset(
+                                            open.target.pageId!,
+                                        ),
+                                    )
+                                }
+                                className={ITEM_CLASS}
+                            >
+                                {menu.subset.isSubset(open.target.pageId)
+                                    ? tolgee.t(
+                                          "timeline.rangeMenu.toNormalPage",
+                                          "Change to normal page",
+                                      )
+                                    : tolgee.t(
+                                          "timeline.rangeMenu.toSubset",
+                                          "Change to subset",
+                                      )}
                             </DropdownMenu.Item>
                             <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                         </>

@@ -11,6 +11,7 @@ import {
     type MouseEvent,
 } from "react";
 import { TimelineLoopBar } from "./TimelineLoopBar";
+import { AddPageFlagMenu } from "./AddPageFlagMenu";
 import { TimelinePaneStretchContext } from "./timelinePaneStretch";
 import { flushSync } from "react-dom";
 import { PlusIcon } from "@phosphor-icons/react";
@@ -953,27 +954,35 @@ const TimelineSurface = memo(function TimelineSurface({
                             hitHeight={audioTop}
                         />
                         {props.onAddPageFlag && !props.isPlaying && (
-                            <button
-                                ref={addPageFlagRef}
-                                type="button"
-                                data-testid="timeline-add-page-flag"
-                                data-timeline-interactive="true"
-                                aria-label="Add a page flag here"
-                                title="Add a page flag here"
-                                onPointerDown={(event) =>
-                                    event.stopPropagation()
-                                }
-                                onClick={props.onAddPageFlag}
-                                className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute z-[60] flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
-                                style={{
-                                    left:
-                                        beatToX(positionBeat, pixelsPerBeat) +
-                                        8,
-                                    top: TIMELINE_PAGE_ROW_TOP + 6,
-                                }}
+                            <AddPageFlagMenu
+                                onAddPage={props.onAddPageFlag}
+                                onAddSubsetPage={props.onAddSubsetPage}
+                                names={props.addPageNames}
                             >
-                                <PlusIcon size={10} weight="bold" />
-                            </button>
+                                <button
+                                    ref={addPageFlagRef}
+                                    type="button"
+                                    data-testid="timeline-add-page-flag"
+                                    data-timeline-interactive="true"
+                                    aria-label="Add a page flag here"
+                                    title="Add a page flag here"
+                                    onPointerDown={(event) =>
+                                        event.stopPropagation()
+                                    }
+                                    onClick={props.onAddPageFlag}
+                                    className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute z-[60] flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
+                                    style={{
+                                        left:
+                                            beatToX(
+                                                positionBeat,
+                                                pixelsPerBeat,
+                                            ) + 8,
+                                        top: TIMELINE_PAGE_ROW_TOP + 6,
+                                    }}
+                                >
+                                    <PlusIcon size={10} weight="bold" />
+                                </button>
+                            </AddPageFlagMenu>
                         )}
                         <TimelineRangePreview
                             preview={pointer.rangePreview}

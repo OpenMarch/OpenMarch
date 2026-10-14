@@ -10,6 +10,7 @@ import {
     type ReactNode,
     useContext,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import {
@@ -174,6 +175,15 @@ export interface TimelineProps {
      * show (on a flag, at home, past the beats).
      */
     readonly onAddPageFlag?: () => void;
+    /** **Add subset page** in **+**'s right-click menu: the same page, as a subset (UI-9) */
+    readonly onAddSubsetPage?: () => void;
+    /** The names **+**'s menu shows, muted, after **Add page** and **Add subset page** */
+    readonly addPageNames?: { readonly page: string; readonly subset: string };
+    /**
+     * The page box menu's **Change to subset** / **Change to normal page** (UI-9): sets page
+     * `pageId` to a subset page, or back to a numbered one. Without it, the menu has no such entry.
+     */
+    readonly onSetPageSubset?: (pageId: number, subset: boolean) => void;
     /** The page box menu's **Delete page** (UI-9 Deleting a flag), by page id */
     readonly onDeletePageFlag?: (pageId: number) => void;
     /** The page box menu's **Delete page and its moves**, by page id */
@@ -524,6 +534,7 @@ export function Timeline(props: TimelineProps) {
         addSelectedMarchers,
         onDeletePageFlag,
         onDeletePageWithMoves,
+        onSetPageSubset,
         onOpenRange,
         keepHere,
     } = props;
@@ -562,6 +573,28 @@ export function Timeline(props: TimelineProps) {
             ? (pageId: string | number) => onDeletePageWithMoves(Number(pageId))
             : undefined,
     );
+    const setSubset = useLatestCallback(
+        onSetPageSubset
+            ? (pageId: string | number, subset: boolean) =>
+                  onSetPageSubset(Number(pageId), subset)
+            : undefined,
+    );
+    const pagesRef = useRef(props.pages);
+    pagesRef.current = props.pages;
+    // Read when the menu opens, so the toggle shows the page's subset state now
+    const subsetMenu = useMemo(
+        () =>
+            setSubset
+                ? {
+                      isSubset: (pageId: string | number) =>
+                          pagesRef.current.find(
+                              (p) => String(p.id) === String(pageId),
+                          )?.isSubset ?? false,
+                      onSet: setSubset,
+                  }
+                : undefined,
+        [setSubset],
+    );
     const addMarchers = useLatestCallback(
         addSelectedMarchers?.onAdd
             ? (target: TimelineMenuTarget) =>
@@ -572,6 +605,7 @@ export function Timeline(props: TimelineProps) {
         addSelectedMarchers ||
         onDeletePageFlag ||
         onDeletePageWithMoves ||
+        onSetPageSubset ||
         keepHere
     );
     const disabledReason = addSelectedMarchers?.disabledReason;
@@ -587,6 +621,7 @@ export function Timeline(props: TimelineProps) {
                           ? { onDeleteWithMoves: deleteWithMoves }
                           : {}),
                       ...(keepHere ? { keepHere } : {}),
+                      ...(subsetMenu ? { subset: subsetMenu } : {}),
                       onAdd: addMarchers,
                   }
                 : undefined,
@@ -597,6 +632,7 @@ export function Timeline(props: TimelineProps) {
             disabledReason,
             hasMarchersMenu,
             keepHere,
+            subsetMenu,
         ],
     );
     // A clip's track id to its stored timeline (`linkId`), for the move commands (UI-14)
@@ -697,6 +733,8 @@ export function Timeline(props: TimelineProps) {
         addSelectedMarchers: addMarchersMenu,
         moveCommands: trackMoveCommands,
         onAddPageFlag: useLatestCallback(props.onAddPageFlag),
+        onAddSubsetPage: useLatestCallback(props.onAddSubsetPage),
+        addPageNames: props.addPageNames,
         pageFlagMove,
         onOpenRange: openRange,
         onTimelineRangeCommit: commitRange,

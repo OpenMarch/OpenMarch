@@ -76,6 +76,8 @@ const show = ({
     onAddPageFlag,
     onDeletePageFlag,
     onDeletePageWithMoves,
+    onAddSubsetPage,
+    onSetPageSubset,
     withAdd = true,
 }: {
     positionBeat?: number;
@@ -83,6 +85,8 @@ const show = ({
     onAddPageFlag?: () => void;
     onDeletePageFlag?: (pageId: number) => void;
     onDeletePageWithMoves?: (pageId: number) => void;
+    onAddSubsetPage?: () => void;
+    onSetPageSubset?: (pageId: number, subset: boolean) => void;
     withAdd?: boolean;
 }) =>
     render(
@@ -100,6 +104,9 @@ const show = ({
             onAddPageFlag={onAddPageFlag}
             onDeletePageFlag={onDeletePageFlag}
             onDeletePageWithMoves={onDeletePageWithMoves}
+            onAddSubsetPage={onAddSubsetPage}
+            addPageNames={{ page: "3", subset: "2A" }}
+            onSetPageSubset={onSetPageSubset}
         />,
     );
 
@@ -288,5 +295,97 @@ describe("clips only for timelines off the page boxes (UI-10)", () => {
             ),
         ).toEqual([t(9, 13), t(5, 9), t(1, 17)]);
         expect(timelinesOffPages([t(1, 9)], [])).toEqual([t(1, 9)]);
+    });
+});
+
+describe("Add subset page on **+** (UI-9)", () => {
+    it("opens from a right-click on **+**, and adds the subset page", () => {
+        const onAddPageFlag = vi.fn();
+        const onAddSubsetPage = vi.fn();
+        show({ onAddPageFlag, onAddSubsetPage });
+        fireEvent.contextMenu(plus()!);
+        const item = screen.getByTestId("timeline-add-subset-page");
+        expect(item.textContent).toBe("Add subset page2A");
+        fireEvent.click(item);
+        expect(onAddSubsetPage).toHaveBeenCalledTimes(1);
+        expect(onAddPageFlag).not.toHaveBeenCalled();
+    });
+
+    it("Add page does what a click on **+** does, and each entry shows its name", () => {
+        const onAddPageFlag = vi.fn();
+        show({ onAddPageFlag, onAddSubsetPage: vi.fn() });
+        fireEvent.contextMenu(plus()!);
+        const names = screen.getAllByTestId("timeline-add-page-name");
+        expect(names.map((n) => n.textContent)).toEqual(["3", "2A"]);
+        const item = screen.getByTestId("timeline-add-page");
+        expect(item.textContent).toBe("Add page3");
+        fireEvent.click(item);
+        expect(onAddPageFlag).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves a plain click as a plain add, and the range menu closed", () => {
+        const onAddPageFlag = vi.fn();
+        show({ onAddPageFlag, onAddSubsetPage: vi.fn() });
+        fireEvent.contextMenu(plus()!);
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+        fireEvent.keyDown(document.activeElement ?? document.body, {
+            key: "Escape",
+        });
+        fireEvent.click(plus()!);
+        expect(onAddPageFlag).toHaveBeenCalledTimes(1);
+    });
+
+    it("has no menu without the command", () => {
+        show({ onAddPageFlag: vi.fn() });
+        fireEvent.contextMenu(plus()!);
+        expect(screen.queryByTestId("timeline-add-subset-page")).toBeNull();
+    });
+});
+
+describe("Change to subset / normal page on a page box (UI-9)", () => {
+    it("flips the right-clicked page, by page id", () => {
+        const onSetPageSubset = vi.fn();
+        show({ onSetPageSubset, withAdd: false });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
+        const item = screen.getByTestId("timeline-range-menu-subset");
+        expect(item.textContent).toBe("Change to subset");
+        fireEvent.click(item);
+        expect(onSetPageSubset).toHaveBeenCalledWith(3, true);
+    });
+
+    it("offers a subset page Change to normal page", () => {
+        const onSetPageSubset = vi.fn();
+        const subsetPages = PAGES.map((p) =>
+            p.id === 3 ? ({ ...p, name: "1A", isSubset: true } as Page) : p,
+        );
+        render(
+            <Timeline
+                mode="expanded"
+                beats={BEATS}
+                pages={subsetPages}
+                measures={[]}
+                timelines={[clip]}
+                showTransport={false}
+                playback={{ positionBeat: 5, isPlaying: false }}
+                selection={null}
+                onSelectionChange={vi.fn()}
+                onSetPageSubset={onSetPageSubset}
+            />,
+        );
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 1A" }));
+        const item = screen.getByTestId("timeline-range-menu-subset");
+        expect(item.textContent).toBe("Change to normal page");
+        fireEvent.click(item);
+        expect(onSetPageSubset).toHaveBeenCalledWith(3, false);
+    });
+
+    it("isn't offered on a clip, or without the command", () => {
+        show({ onSetPageSubset: vi.fn() });
+        fireEvent.contextMenu(screen.getByLabelText(/^A1 timeline/));
+        expect(screen.queryByTestId("timeline-range-menu-subset")).toBeNull();
+        cleanup();
+        show({});
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
+        expect(screen.queryByTestId("timeline-range-menu-subset")).toBeNull();
     });
 });

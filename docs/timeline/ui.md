@@ -189,12 +189,21 @@ from it. The spec still wins on the model; this file decides presentation.
     there), a **+** shows just after it. It adds a page whose flag is at the
     playhead in one edit. The page that was split keeps its flag, id and
     per-page data (notes, appearance); the new page comes before it, and
-    later pages renumber (no subset letter). Only page rows change, plus
+    later pages renumber, unless it is a subset page (below). Only page rows change, plus
     `last_page_counts` when the last page is split; no timeline is written,
     so motion is unchanged. The new page is selected. Pages store their
     start beat, so this inserts a row at the split page's old start and moves
     that page's `start_beat` to the playhead. Past the last flag, nothing is
     split: **+** appends a page ending at the playhead (_lead default_).
+  - **Subset pages (2026-10-13).** Right-clicking **+** opens a menu with
+    **Add page** (the same as clicking **+**) and **Add subset page**, each with the name the new page would get, muted. The subset one adds the same page as a
+    subset: it takes a letter ("3A") and no later page renumbers. Right-clicking
+    a page box offers **Change to subset**, or **Change to normal page** on a
+    subset page, matching the Subset switch in page mode's menu and the
+    inspector. It flips the page
+    and its name, and a later page's number may change as a subset page joins
+    or leaves the numbering. Home can't be a subset (it has no box). Each action
+    is one undo step.
   - **Selection.** With a stored timeline selected, marchers without a
     transition in it are dimmed, and a dimmed marcher can't be selected or
     interacted with at all: clicks and box selection pass over it, and
