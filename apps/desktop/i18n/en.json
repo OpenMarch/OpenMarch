@@ -72,7 +72,9 @@
         "navigation": {
             "firstPage": "First page",
             "lastPage": "Last page",
+            "nextBeat": "Next beat",
             "nextPage": "Next page",
+            "previousBeat": "Previous beat",
             "previousPage": "Previous page"
         },
         "playback": {

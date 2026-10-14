@@ -414,9 +414,9 @@ test("3D View follows the editor and saves the venue", async ({
     await expect(view3d.getByTestId("view3d-next-page")).toBeDisabled();
     await view3d.getByTestId("view3d-previous-page").click();
     await expectWindowPage(view3d, "2");
-    await view3d.keyboard.press("Shift+KeyQ");
+    await view3d.keyboard.press("Alt+KeyQ");
     await expectWindowPage(view3d, "0");
-    await view3d.keyboard.press("Shift+KeyE");
+    await view3d.keyboard.press("Alt+KeyE");
     await expectWindowPage(view3d, "3");
     await view3d.keyboard.press("KeyQ");
     await expectWindowPage(view3d, "2");

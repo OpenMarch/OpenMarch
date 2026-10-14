@@ -5,6 +5,11 @@ import { notifyActionHandlersChanged, registerActionHandler } from "./registry";
 interface HandlerOptions {
     /** When false the action is skipped by shortcuts and greyed out in the palette. Default true. */
     enabled?: boolean;
+    /**
+     * When true, a held key runs the action once rather than on each repeat, as the definition's
+     * `ignoreRepeat` does, but it can change with state (navigation while playing). Default false.
+     */
+    ignoreRepeat?: boolean;
 }
 
 export function useActionHandler(
@@ -23,8 +28,10 @@ export function useActionHandlerGroup(
     const enabled = options.enabled ?? true;
     const runRef = useRef(run);
     const enabledRef = useRef(enabled);
+    const ignoreRepeatRef = useRef(options.ignoreRepeat ?? false);
     useLayoutEffect(() => {
         runRef.current = run;
+        ignoreRepeatRef.current = options.ignoreRepeat ?? false;
     });
     useLayoutEffect(() => {
         if (enabledRef.current === enabled) return;
@@ -41,6 +48,7 @@ export function useActionHandlerGroup(
             registerActionHandler(id as ActionId, {
                 run: (args) => runRef.current(id as ActionId, args),
                 isEnabled: () => enabledRef.current,
+                ignoresRepeat: () => ignoreRepeatRef.current,
             }),
         );
         return () => unregister.forEach((off) => off());

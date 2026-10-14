@@ -294,6 +294,46 @@ describeDbTests("useTimelinePlayback", (it) => {
         expect(store().playheadBeat).toBe(0);
     });
 
+    it("Shift+click on Previous and Next steps the playhead a beat, inside the show", async ({
+        db,
+        wrapper,
+    }) => {
+        await seedShow(db);
+        const { result } = renderPlayback(wrapper);
+        await waitFor(() => expect(result.current.pages).toHaveLength(3));
+        act(() => {
+            store().setPageBoxes(PAGE_BOXES);
+        });
+        act(() => {
+            result.current.playback.onNavigate!("next-beat");
+        });
+        // Beats 0 and 1 are both the start of the show, so the first step goes to beat 2
+        expect(result.current.playback.positionBeat).toBe(2);
+        act(() => {
+            result.current.playback.onNavigate!("next-page");
+            result.current.playback.onNavigate!("next-beat");
+        });
+        expect(result.current.playback.positionBeat).toBe(10);
+        act(() => {
+            result.current.playback.onNavigate!("previous-beat");
+        });
+        expect(result.current.playback.positionBeat).toBe(9);
+        // Not past either end of the show (the playback driver keeps its end)
+        act(() => {
+            store().setShowEndBeat(17);
+        });
+        act(() => {
+            result.current.playback.onNavigate!("last-page");
+            result.current.playback.onNavigate!("next-beat");
+        });
+        expect(result.current.playback.positionBeat).toBe(17);
+        act(() => {
+            result.current.playback.onNavigate!("first-page");
+            result.current.playback.onNavigate!("previous-beat");
+        });
+        expect(result.current.playback.positionBeat).toBe(0);
+    });
+
     it("C turns the loop on over the window, and E/Q move it onto the page (UI-17)", async ({
         db,
         wrapper,

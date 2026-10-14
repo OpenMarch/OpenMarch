@@ -14,7 +14,7 @@ import {
     type ShortcutOverrides,
 } from "./keymap";
 import { NUDGE_ACTION_IDS, type ActionId } from "./definitions";
-import { isActionEnabled, runAction } from "./registry";
+import { actionIgnoresRepeat, isActionEnabled, runAction } from "./registry";
 
 const NUDGE_IDS: ReadonlySet<ActionId> = new Set(NUDGE_ACTION_IDS);
 
@@ -60,7 +60,11 @@ export default function ShortcutDispatcher({
             );
             if (!entry) return;
             event.preventDefault();
-            if (event.repeat && entry.ignoreRepeat) return;
+            if (
+                event.repeat &&
+                (entry.ignoreRepeat || actionIgnoresRepeat(entry.id))
+            )
+                return;
             runAction(entry.id);
         };
         window.addEventListener("keydown", onKeyDown);

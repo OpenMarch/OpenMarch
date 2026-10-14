@@ -312,11 +312,15 @@ const navigateToPage = ({
     direction,
     currentBeat,
     pages,
+    beatCount,
 }: {
     direction: TimelineNavigation;
     currentBeat: number;
     pages: TimelineCommonProps["model"]["pages"];
+    beatCount: number;
 }) => {
+    if (direction === "previous-beat") return Math.max(currentBeat - 1, 0);
+    if (direction === "next-beat") return Math.min(currentBeat + 1, beatCount);
     if (pages.length === 0) return 0;
     const timedPages = pages.filter((page) => !page.isInitial);
     const ordered = [...(timedPages.length > 0 ? timedPages : pages)].sort(
@@ -345,6 +349,7 @@ const transportNavigation = (props: TimelineCommonProps) =>
                       direction,
                       currentBeat: props.positionBeat,
                       pages: props.model.pages,
+                      beatCount: props.model.beatCount,
                   }),
               )
         : undefined);

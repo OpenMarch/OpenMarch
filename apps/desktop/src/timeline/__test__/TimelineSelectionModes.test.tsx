@@ -113,6 +113,18 @@ describeDbTests("page navigation and the selection", (it) => {
         await waitFor(() =>
             expect(probed().selectedPage?.id).toBe(pages[0]!.id),
         );
+
+        // Shift+E and Shift+Q step the playhead a beat (beats 0 and 1 are both the start of the
+        // show), and stop at the start
+        await trigger("nextBeat");
+        await waitFor(() => expect(timelineSelection().playheadBeat).toBe(2));
+        await trigger("nextBeat");
+        await waitFor(() => expect(timelineSelection().playheadBeat).toBe(3));
+        await trigger("previousBeat");
+        await waitFor(() => expect(timelineSelection().playheadBeat).toBe(2));
+        await trigger("previousBeat");
+        await trigger("previousBeat");
+        await waitFor(() => expect(timelineSelection().playheadBeat).toBe(0));
     });
 
     it("sets the selection from the harness: a page's box resolves to its converted timeline, home to none", async ({

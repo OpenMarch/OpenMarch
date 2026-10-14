@@ -1,4 +1,4 @@
-import type { TimelineNavigation } from "@/components/timeline/TimelineViewModel";
+import type { TimelinePageNavigation } from "@/components/timeline/TimelineViewModel";
 import type {
     TimelineEditSelection,
     TimelinePlaybackRun,
@@ -60,7 +60,7 @@ export function selectionOfPage(
 export function navigationTarget<P extends FlagPage>(
     pages: readonly P[],
     playheadBeat: number,
-    direction: TimelineNavigation,
+    direction: TimelinePageNavigation,
 ): PageFlag<P> | null {
     const flags = pageFlags(pages);
     if (flags.length === 0) return null;

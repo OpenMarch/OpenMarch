@@ -8,8 +8,7 @@ import {
 } from "@/stores/TimelineSelectionStore";
 import { beatAtTime, beatIndexAtTime } from "@/timeline/timeMap";
 import {
-    jumpTimelinePages,
-    navigateTimelinePages,
+    navigateTimeline,
     loopBounds,
     selectedPageBox,
     seekTimeline,
@@ -26,15 +25,12 @@ interface PlaybackState {
     readonly pages: readonly Page[];
     readonly isPlaying: boolean;
     readonly setIsPlaying: (isPlaying: boolean) => void;
-    readonly liveIndex: number | null;
-    readonly playheadBeat: number;
 }
 
 /** The playback commands, reading the latest state, so they keep their identity across beats */
-const playbackCommands = (
-    latest: { readonly current: PlaybackState },
-    liveBeat: () => number | null,
-): Pick<TimelinePlayback, "onSeek" | "onNavigate" | "onPlayingChange"> => ({
+const playbackCommands = (latest: {
+    readonly current: PlaybackState;
+}): Pick<TimelinePlayback, "onSeek" | "onNavigate" | "onPlayingChange"> => ({
     // UI-12: while playing, a click or page button jumps playback there, and a scrub suspends it
     // until it ends (`seekTimeline`), which says where a scrub's seek landed
     onSeek: (beatIndex, options) => {
@@ -45,16 +41,8 @@ const playbackCommands = (
         });
     },
     onNavigate: (direction) => {
-        const { beats, pages, isPlaying, liveIndex, playheadBeat } =
-            latest.current;
-        if (!isPlaying) navigateTimelinePages(pages, direction);
-        else
-            jumpTimelinePages(
-                beats,
-                pages,
-                Math.floor(liveBeat() ?? liveIndex ?? playheadBeat),
-                direction,
-            );
+        const { beats, pages, isPlaying } = latest.current;
+        navigateTimeline(beats, pages, isPlaying, direction);
     },
     onPlayingChange: (next) => {
         const { beats, isPlaying, setIsPlaying } = latest.current;
@@ -136,15 +124,10 @@ export function useTimelinePlayback({
         pages,
         isPlaying,
         setIsPlaying,
-        liveIndex,
-        playheadBeat,
     };
     const latest = useRef(state);
     latest.current = state;
-    const commands = useMemo(
-        () => playbackCommands(latest, liveBeat),
-        [liveBeat],
-    );
+    const commands = useMemo(() => playbackCommands(latest), []);
 
     return useMemo<TimelinePlayback>(
         () => ({

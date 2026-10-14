@@ -1615,7 +1615,7 @@ describe("a calmer timeline (UI-12)", () => {
         );
     });
 
-    it("Shift+click on Previous and Next goes to the first and last page", () => {
+    it("Alt+click on Previous and Next goes to the first and last page", () => {
         const onNavigate = vi.fn();
         render(
             <ExpandedTimeline
@@ -1626,6 +1626,29 @@ describe("a calmer timeline (UI-12)", () => {
         );
         fireEvent.click(screen.getByRole("button", { name: /^Next page/ }));
         fireEvent.click(screen.getByRole("button", { name: /^Next page/ }), {
+            altKey: true,
+        });
+        fireEvent.click(
+            screen.getByRole("button", { name: /^Previous page/ }),
+            { altKey: true, shiftKey: true },
+        );
+        expect(onNavigate.mock.calls).toEqual([
+            ["next-page"],
+            ["last-page"],
+            ["first-page"],
+        ]);
+    });
+
+    it("Shift+click on Previous and Next steps a beat", () => {
+        const onNavigate = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                onNavigate={onNavigate}
+            />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: /^Next page/ }), {
             shiftKey: true,
         });
         fireEvent.click(
@@ -1633,10 +1656,66 @@ describe("a calmer timeline (UI-12)", () => {
             { shiftKey: true },
         );
         expect(onNavigate.mock.calls).toEqual([
-            ["next-page"],
-            ["last-page"],
-            ["first-page"],
+            ["next-beat"],
+            ["previous-beat"],
         ]);
+    });
+
+    it("says what Previous and Next do while Shift or Alt is held", () => {
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                onNavigate={vi.fn()}
+            />,
+        );
+        const previous = screen.getByTestId("timeline-previous");
+        const next = screen.getByTestId("timeline-next");
+        fireEvent.keyDown(window, { key: "Shift", shiftKey: true });
+        expect(previous).toHaveAccessibleName("Previous beat");
+        expect(next).toHaveAccessibleName("Next beat");
+        // Alt wins over Shift, as it does for a click
+        fireEvent.keyDown(window, { key: "Alt", altKey: true, shiftKey: true });
+        expect(previous).toHaveAccessibleName("Start of the show");
+        expect(next).toHaveAccessibleName("End of the show");
+        fireEvent.keyUp(window, { key: "Alt", shiftKey: true });
+        expect(next).toHaveAccessibleName("Next beat");
+        fireEvent.keyUp(window, { key: "Shift" });
+        expect(next).toHaveAccessibleName("Next page");
+        // Losing focus lets go of a held modifier
+        fireEvent.keyDown(window, { key: "Alt", altKey: true });
+        fireEvent.blur(window);
+        expect(previous).toHaveAccessibleName("Previous page");
+    });
+
+    it("guides every option in the tooltip, marking the one the held modifier picks", async () => {
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                onNavigate={vi.fn()}
+            />,
+        );
+        const next = screen.getByTestId("timeline-next");
+        act(() => next.focus());
+        await screen.findByRole("tooltip");
+        const guide = () =>
+            document.querySelector(
+                '[data-testid="timeline-navigation-guide"]',
+            )!;
+        const rows = () =>
+            [...guide().children].map((row) => ({
+                text: row.textContent,
+                active: row.hasAttribute("data-active"),
+            }));
+        expect(rows()).toEqual([
+            { text: "Next pageE", active: true },
+            { text: "Next beatShift+E", active: false },
+            { text: "End of the showAlt+E", active: false },
+        ]);
+        fireEvent.keyDown(window, { key: "Alt", altKey: true });
+        expect(rows().map((row) => row.active)).toEqual([false, false, true]);
+        expect(next).toHaveAttribute("aria-keyshortcuts", "Alt+E");
     });
 
     it("keeps page navigation live while playing, where it jumps playback", () => {

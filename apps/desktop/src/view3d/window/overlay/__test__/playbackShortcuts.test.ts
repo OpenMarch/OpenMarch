@@ -15,14 +15,16 @@ describe("3D View playback shortcuts", () => {
             expect(ACTION_IDS).toContain(action);
             const [binding] = getActionDefinition(action).defaultBindings;
             const { modifiers, key } = parseBinding(binding);
-            expect(modifiers.filter((m) => m !== "Shift")).toEqual([]);
+            expect(
+                modifiers.filter((m) => m !== "Shift" && m !== "Alt"),
+            ).toEqual([]);
             expect(
                 playbackActionForKey({
                     code: codeForKey(key),
                     shiftKey: modifiers.includes("Shift"),
                     ctrlKey: false,
                     metaKey: false,
-                    altKey: false,
+                    altKey: modifiers.includes("Alt"),
                 }),
             ).toBe(action);
         },

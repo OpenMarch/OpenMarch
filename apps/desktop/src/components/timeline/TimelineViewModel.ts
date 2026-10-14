@@ -192,11 +192,18 @@ export type TimelineSeek = (
     options?: TimelineSeekOptions,
 ) => number | void;
 
-export type TimelineNavigation =
+/** Page navigation: Q and E, Shift for the start and end of the show */
+export type TimelinePageNavigation =
     | "first-page"
     | "previous-page"
     | "next-page"
     | "last-page";
+
+/** Q and E with Alt (or Alt+click Previous and Next) step a beat instead of a page */
+export type TimelineNavigation =
+    | TimelinePageNavigation
+    | "previous-beat"
+    | "next-beat";
 
 export interface TimelineInteractionProps {
     readonly positionBeat: BeatPosition;

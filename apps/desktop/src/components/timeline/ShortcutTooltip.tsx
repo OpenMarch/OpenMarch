@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { Fragment, useCallback, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipClassName } from "@openmarch/ui";
@@ -29,16 +29,27 @@ export function TransportTooltipProvider({
 }
 
 /** A keyboard shortcut ("Shift + Space", as `KeyboardShortcut.toString` writes it) as keycaps. */
-export function Keycaps({ shortcut }: { shortcut: string }) {
+export function Keycaps({
+    shortcut,
+    plus = false,
+}: {
+    shortcut: string;
+    /** Writes a "+" between the keycaps */
+    plus?: boolean;
+}) {
     return (
         <span className="inline-flex items-center gap-2">
-            {shortcut.split(/\s*\+\s*/).map((key) => (
-                <kbd
-                    key={key}
-                    className="rounded-4 border-stroke bg-fg-2 text-text-subtitle border px-4 font-mono text-[11px] leading-[16px]"
-                >
-                    {key}
-                </kbd>
+            {shortcut.split(/\s*\+\s*/).map((key, i) => (
+                <Fragment key={key}>
+                    {plus && i > 0 && (
+                        <span aria-hidden="true" className="text-[11px]">
+                            +
+                        </span>
+                    )}
+                    <kbd className="rounded-4 border-stroke bg-fg-2 text-text-subtitle border px-4 font-mono text-[11px] leading-[16px]">
+                        {key}
+                    </kbd>
+                </Fragment>
             ))}
         </span>
     );
@@ -47,7 +58,8 @@ export function Keycaps({ shortcut }: { shortcut: string }) {
 /**
  * Wraps one control (a button that forwards its ref) in a tooltip: `label`, then the shortcut's
  * keycaps, then an optional `hint` line. Needs a `TransportTooltipProvider` above it. Without a
- * `label` it never opens.
+ * `label` it never opens; with `hideLabel` it opens but doesn't write the label (the control's
+ * accessible name stays), for a `hint` that says everything.
  *
  * With `closeOnPress` (the page boxes and the inspector's hold line, UI-18) it never shows while a
  * pointer is down on the control, so a click, drag, scrub or right-click goes on undisturbed: a
@@ -57,13 +69,16 @@ export function ShortcutTooltip({
     label,
     shortcut,
     hint,
+    hideLabel = false,
     side = "top",
     closeOnPress = false,
     children,
 }: {
     label: string | undefined;
     shortcut?: string;
-    hint?: string;
+    /** A second line, or a richer guide (the transport's Previous and Next) */
+    hint?: ReactNode;
+    hideLabel?: boolean;
     side?: "top" | "bottom" | "left" | "right";
     closeOnPress?: boolean;
     children: ReactElement;
@@ -105,14 +120,18 @@ export function ShortcutTooltip({
                         sideOffset={4}
                         className={TooltipClassName}
                     >
-                        <span className="flex items-center gap-8 text-[12px]">
-                            {label}
-                            {shortcut && <Keycaps shortcut={shortcut} />}
-                        </span>
-                        {hint && (
+                        {!hideLabel && (
+                            <span className="flex items-center gap-8 text-[12px]">
+                                {label}
+                                {shortcut && <Keycaps shortcut={shortcut} />}
+                            </span>
+                        )}
+                        {typeof hint === "string" ? (
                             <span className="text-text-subtitle block text-[11px]">
                                 {hint}
                             </span>
+                        ) : (
+                            hint
                         )}
                     </Tooltip.Content>
                 </Tooltip.Portal>

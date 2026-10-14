@@ -7,6 +7,8 @@ import {
 export interface ActionHandler {
     run: (args: ActionArgs | undefined) => void;
     isEnabled: () => boolean;
+    /** True while a held key's repeats shouldn't run the action again */
+    ignoresRepeat?: () => boolean;
 }
 
 const handlers = new Map<ActionId, ActionHandler[]>();
@@ -42,6 +44,11 @@ export function hasActionHandler(id: ActionId): boolean {
 
 export function isActionEnabled(id: ActionId): boolean {
     return top(id)?.isEnabled() ?? false;
+}
+
+/** Whether the action's handler skips key repeats right now (`useActionHandler`'s `ignoreRepeat`) */
+export function actionIgnoresRepeat(id: ActionId): boolean {
+    return top(id)?.ignoresRepeat?.() ?? false;
 }
 
 export function runAction(id: ActionId): boolean {

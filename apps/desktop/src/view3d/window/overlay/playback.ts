@@ -28,14 +28,17 @@ export function transportState(
         firstPage: !playing && hasPrevious,
         nextPage: !playing && hasNext,
         lastPage: !playing && hasNext,
+        // The window doesn't know the beats; the editor ignores a step past either end
+        previousBeat: !playing && index >= 0,
+        nextBeat: !playing && index >= 0,
     };
 }
 
 /**
  * The playback action for a key press, using the editor's shortcuts: Space
- * plays or pauses, Q and E step a page, and Shift+Q and Shift+E go to the
- * first and last page. Matches on `code`, like the editor, so the keys stay
- * put on other layouts.
+ * plays or pauses, Q and E step a page, Shift+Q and Shift+E a beat, and
+ * Alt+Q and Alt+E (or Home and End) go to the first and last page. Matches on
+ * `code`, like the editor, so the keys stay put on other layouts.
  */
 export function playbackActionForKey(event: {
     code: string;
@@ -44,14 +47,24 @@ export function playbackActionForKey(event: {
     metaKey: boolean;
     altKey: boolean;
 }): View3dPlaybackAction | null {
-    if (event.ctrlKey || event.metaKey || event.altKey) return null;
+    if (event.ctrlKey || event.metaKey) return null;
+    if (event.altKey) {
+        if (event.shiftKey) return null;
+        if (event.code === "KeyQ") return "firstPage";
+        if (event.code === "KeyE") return "lastPage";
+        return null;
+    }
     switch (event.code) {
         case "Space":
             return event.shiftKey ? null : "playPause";
         case "KeyQ":
-            return event.shiftKey ? "firstPage" : "previousPage";
+            return event.shiftKey ? "previousBeat" : "previousPage";
         case "KeyE":
-            return event.shiftKey ? "lastPage" : "nextPage";
+            return event.shiftKey ? "nextBeat" : "nextPage";
+        case "Home":
+            return event.shiftKey ? null : "firstPage";
+        case "End":
+            return event.shiftKey ? null : "lastPage";
         default:
             return null;
     }

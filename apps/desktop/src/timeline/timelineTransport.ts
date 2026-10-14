@@ -13,8 +13,12 @@ import {
     previewBounds,
     type FlagPage,
 } from "./timelinePlayhead";
-import { timeAtBeat, type BeatTiming } from "./timeMap";
-import { restartLivePlaybackAt } from "@/components/timeline/audio/AudioPlayer";
+import { beatAtTime, timeAtBeat, type BeatTiming } from "./timeMap";
+import {
+    getLivePlaybackPosition,
+    playbackStartInfoRef,
+    restartLivePlaybackAt,
+} from "@/components/timeline/audio/AudioPlayer";
 
 /**
  * The transport (docs/timeline/ui.md UI-9; P8.11), shared by the timeline's transport buttons and
@@ -35,9 +39,10 @@ let scrub: {
 } | null = null;
 
 /**
- * Page navigation (UI-9 Page-relative tools): moves the playhead to the target flag and selects
- * that page's timeline, or home for the first page; a loop moves to that page (UI-17). Returns
- * false when there is nowhere to go. Callers don't navigate while playing.
+ * Navigation (UI-9 Page-relative tools): moves the playhead to the target flag and selects that
+ * page's timeline, or home for the first page; a loop moves to that page (UI-17). A beat step
+ * moves the playhead one beat, as a click there does. Returns false when there is nowhere to go.
+ * Callers don't navigate while playing (`navigateTimeline` jumps playback instead).
  */
 export function navigateTimelinePages(
     pages: readonly FlagPage[],
@@ -45,7 +50,12 @@ export function navigateTimelinePages(
 ): boolean {
     const state = useTimelineSelectionStore.getState();
     // From the beat the timeline shows: a held preview frame, or the playhead (UI-11)
-    const target = navigationTarget(pages, displayedBeat(state), direction);
+    const from = displayedBeat(state);
+    if (direction === "previous-beat" || direction === "next-beat") {
+        state.seek(beatStep(Math.round(from), direction));
+        return displayedBeat(useTimelineSelectionStore.getState()) !== from;
+    }
+    const target = navigationTarget(pages, from, direction);
     if (!target) return false;
     if (target.range) {
         state.selectRange(target.range.start, target.range.end);
@@ -54,6 +64,31 @@ export function navigateTimelinePages(
             state.setLoop({ start: target.range.start, end: target.range.end });
     } else state.selectHome();
     return true;
+}
+
+/**
+ * A beat on or back from `beat`. Beats 0 and 1 are both show time 0, written as 0
+ * (`normalizePlayheadBeat`), so a step on from the start goes to beat 2.
+ */
+const beatStep = (beat: number, direction: "previous-beat" | "next-beat") =>
+    direction === "next-beat" ? Math.max(beat, 1) + 1 : beat - 1;
+
+/**
+ * Previous and Next, from the transport buttons and the shortcuts alike (Q and E; Shift for a
+ * beat, Alt for the start and end). Paused, it moves the playhead (`navigateTimelinePages`); playing,
+ * playback jumps there from the beat playing now and goes on (`jumpTimelinePages`).
+ */
+export function navigateTimeline(
+    beats: readonly BeatTiming[],
+    pages: readonly FlagPage[],
+    isPlaying: boolean,
+    direction: TimelineNavigation,
+): boolean {
+    if (!isPlaying) return navigateTimelinePages(pages, direction);
+    const live = playbackStartInfoRef.current
+        ? beatAtTime(beats, getLivePlaybackPosition())
+        : displayedBeat(useTimelineSelectionStore.getState());
+    return jumpTimelinePages(beats, pages, Math.floor(live), direction);
 }
 
 /**
@@ -200,8 +235,8 @@ export function seekTimeline(
 }
 
 /**
- * Page navigation while playing (UI-12): playback jumps to the target flag, from the beat playing
- * now. Returns false when there is nowhere to go.
+ * Navigation while playing (UI-12): playback jumps to the target flag, or a beat on, from the
+ * beat playing now. Returns false when there is nowhere to go.
  */
 export function jumpTimelinePages(
     beats: readonly BeatTiming[],
@@ -209,6 +244,8 @@ export function jumpTimelinePages(
     liveBeat: number,
     direction: TimelineNavigation,
 ): boolean {
+    if (direction === "previous-beat" || direction === "next-beat")
+        return jumpTimelinePlayback(beats, beatStep(liveBeat, direction));
     const target = navigationTarget(pages, liveBeat, direction);
     return target ? jumpTimelinePlayback(beats, target.flag) : false;
 }

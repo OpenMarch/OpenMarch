@@ -253,7 +253,7 @@ const STATIC_ACTIONS = {
         labelKey: "actions.navigation.lastPage",
         category: "navigation",
         scope: "global",
-        defaultBindings: ["Shift+E"],
+        defaultBindings: ["Alt+E", "End", "Alt+Shift+E"],
     },
     previousPage: {
         labelKey: "actions.navigation.previousPage",
@@ -263,6 +263,20 @@ const STATIC_ACTIONS = {
     },
     firstPage: {
         labelKey: "actions.navigation.firstPage",
+        category: "navigation",
+        scope: "global",
+        defaultBindings: ["Alt+Q", "Home", "Alt+Shift+Q"],
+    },
+    // Shift with Q and E steps the playhead a beat instead of a page; Alt (with or without Shift, as
+    // the transport's buttons read it) goes to the start or end
+    nextBeat: {
+        labelKey: "actions.navigation.nextBeat",
+        category: "navigation",
+        scope: "global",
+        defaultBindings: ["Shift+E"],
+    },
+    previousBeat: {
+        labelKey: "actions.navigation.previousBeat",
         category: "navigation",
         scope: "global",
         defaultBindings: ["Shift+Q"],

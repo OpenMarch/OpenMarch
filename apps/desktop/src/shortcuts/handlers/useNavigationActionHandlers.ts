@@ -3,7 +3,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useTimingObjects } from "@/hooks";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import {
-    navigateTimelinePages,
+    navigateTimeline,
     playTimelinePage,
     toggleTimelineLoop,
     toggleTimelinePlayback,
@@ -21,14 +21,17 @@ export function useNavigationActionHandlers() {
     const toggleMetronome = useMetronomeStore()?.toggleMetronome ?? (() => {});
     const canNavigate = ready && !!pages && pages.length > 0;
 
-    /** UI-9: navigation moves the playhead to a flag and selects that page */
-    const navigate = (target: TimelineNavigation) => {
-        if (!isPlaying) navigateTimelinePages(pages, target);
-    };
+    /**
+     * UI-9: navigation moves the playhead to a flag and selects that page, or a beat on with Shift.
+     * Playing, it jumps playback there, as the transport's Previous and Next do.
+     */
+    const navigate = (target: TimelineNavigation) =>
+        navigateTimeline(beats, pages, isPlaying, target);
 
     const goNext = () => navigate("next-page");
     const goPrevious = () => navigate("previous-page");
-    const enabled = { enabled: canNavigate };
+    // Playing, each jump restarts the audio, so a held key jumps once rather than stuttering
+    const enabled = { enabled: canNavigate, ignoreRepeat: isPlaying };
     const transport = () => ({
         isPlaying,
         showEndBeat: beats.length,
@@ -41,6 +44,8 @@ export function useNavigationActionHandlers() {
     useActionHandler("timelinePreviousPage", goPrevious, enabled);
     useActionHandler("firstPage", () => navigate("first-page"), enabled);
     useActionHandler("lastPage", () => navigate("last-page"), enabled);
+    useActionHandler("previousBeat", () => navigate("previous-beat"), enabled);
+    useActionHandler("nextBeat", () => navigate("next-beat"), enabled);
     useActionHandler(
         "playPause",
         // UI-17 Play: loops a pinned window, or plays on; playing, it stops

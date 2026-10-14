@@ -87,6 +87,8 @@ export const VIEW3D_PLAYBACK_ACTIONS = [
     "nextPage",
     "firstPage",
     "lastPage",
+    "previousBeat",
+    "nextBeat",
 ] as const;
 export type View3dPlaybackAction = (typeof VIEW3D_PLAYBACK_ACTIONS)[number];
 

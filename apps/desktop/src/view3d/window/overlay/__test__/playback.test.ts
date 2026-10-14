@@ -24,6 +24,8 @@ describe("transportState", () => {
             firstPage: true,
             nextPage: true,
             lastPage: true,
+            previousBeat: true,
+            nextBeat: true,
         });
     });
 
@@ -44,17 +46,15 @@ describe("transportState", () => {
             firstPage: false,
             nextPage: false,
             lastPage: false,
+            previousBeat: false,
+            nextBeat: false,
         });
     });
 
     it("allows nothing without a selected page", () => {
-        expect(Object.values(transportState(pages, null, false))).toEqual([
-            false,
-            false,
-            false,
-            false,
-            false,
-        ]);
+        expect(Object.values(transportState(pages, null, false))).toEqual(
+            Array(7).fill(false),
+        );
         expect(Object.values(transportState([], 1, false))).not.toContain(true);
     });
 });
@@ -65,11 +65,19 @@ describe("playbackActionForKey", () => {
         expect(playbackActionForKey(key("KeyQ"))).toBe("previousPage");
         expect(playbackActionForKey(key("KeyE"))).toBe("nextPage");
         expect(playbackActionForKey(key("KeyQ", { shiftKey: true }))).toBe(
-            "firstPage",
+            "previousBeat",
         );
         expect(playbackActionForKey(key("KeyE", { shiftKey: true }))).toBe(
+            "nextBeat",
+        );
+        expect(playbackActionForKey(key("KeyQ", { altKey: true }))).toBe(
+            "firstPage",
+        );
+        expect(playbackActionForKey(key("KeyE", { altKey: true }))).toBe(
             "lastPage",
         );
+        expect(playbackActionForKey(key("Home"))).toBe("firstPage");
+        expect(playbackActionForKey(key("End"))).toBe("lastPage");
     });
 
     it("ignores other keys and modified presses", () => {

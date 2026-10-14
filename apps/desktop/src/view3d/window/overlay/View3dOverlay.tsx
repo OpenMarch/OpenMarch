@@ -10,10 +10,10 @@
  * In fullscreen, everything but the readout hides after 3 s without pointer
  * movement (not while the settings panel is open), and the readout grows.
  *
- * Keys: Space, Q, E, Shift+Q and Shift+E run the editor's playback actions,
- * F toggles fullscreen and C the crowd. Esc closes the settings panel, then
- * leaves fullscreen. The camera rig (P3.2) owns 1–9, and Esc for
- * pick-a-seat.
+ * Keys: Space, Q and E (Shift for a beat, Alt or Home/End for the ends) run
+ * the editor's playback actions, F toggles fullscreen and C the crowd. Esc
+ * closes the settings panel, then leaves fullscreen. The camera rig (P3.2)
+ * owns 1–9, and Esc for pick-a-seat.
  */
 import { useEffect, useRef, useState } from "react";
 import { useTranslate } from "@tolgee/react";

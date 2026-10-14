@@ -263,7 +263,7 @@ describe("resolveKeyEvent", () => {
             shiftKey: true,
         });
         expect(resolveKeyEvent(shiftE, compiled, canvas, always)?.id).toBe(
-            "lastPage",
+            "nextBeat",
         );
     });
 });
@@ -286,6 +286,34 @@ describe("page navigation shortcuts", () => {
     ])("%s resolves to %s on the canvas and the timeline", (code, key, id) => {
         expect(resolve(press(code, key), canvas)).toBe(id);
         expect(resolve(press(code, key), timeline)).toBe(id);
+    });
+
+    it("Shift steps a beat, and Alt or Home and End go to the start or end", () => {
+        const withMods = (code: string, key: string, mods: KeyboardEventInit) =>
+            new KeyboardEvent("keydown", { key, code, ...mods });
+        expect(resolve(withMods("KeyE", "E", { shiftKey: true }), canvas)).toBe(
+            "nextBeat",
+        );
+        expect(resolve(withMods("KeyQ", "Q", { shiftKey: true }), canvas)).toBe(
+            "previousBeat",
+        );
+        // macOS types "œ" and "´" with Option; the binding matches the key's position
+        expect(resolve(withMods("KeyQ", "œ", { altKey: true }), canvas)).toBe(
+            "firstPage",
+        );
+        expect(resolve(withMods("KeyE", "´", { altKey: true }), timeline)).toBe(
+            "lastPage",
+        );
+        expect(resolve(press("Home", "Home"), canvas)).toBe("firstPage");
+        expect(resolve(press("End", "End"), timeline)).toBe("lastPage");
+        // Alt wins over Shift, as on the transport's buttons
+        const altShift = { altKey: true, shiftKey: true };
+        expect(resolve(withMods("KeyQ", "Œ", altShift), canvas)).toBe(
+            "firstPage",
+        );
+        expect(resolve(withMods("KeyE", "E", altShift), timeline)).toBe(
+            "lastPage",
+        );
     });
 
     it("arrow keys step pages on the timeline", () => {
