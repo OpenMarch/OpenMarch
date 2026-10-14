@@ -16,16 +16,12 @@ import {
     DbConnection,
     DbTransaction,
     getLastBeat,
-    ModifiedMarcherPageArgs,
     realDatabaseBeatToDatabaseBeat,
     transactionWithHistory,
     updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
-import {
-    timelineModeInTransaction,
-    withTimelinePageRipple,
-} from "./timelineRipple";
+import { withTimelinePageRipple } from "./timelineRipple";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import {
@@ -190,66 +186,8 @@ export const updateLastPageCounts = async ({
     return response;
 };
 
-const _createMarcherPages = async ({
-    tx,
-    sortedNewPages,
-}: {
-    tx: DbTransaction;
-    sortedNewPages: RealDatabasePage[];
-}) => {
-    // Create the marcher pages
-    const allMarchers = await tx.query.marchers.findMany();
-    if (allMarchers.length > 0) {
-        for (const page of sortedNewPages) {
-            const newMarcherPages: ModifiedMarcherPageArgs[] = [];
-            const previousPage = await getAdjacentPage({
-                tx,
-                pageId: page.id,
-                direction: "previous",
-            });
-            if (previousPage) {
-                const previousPageMarcherPages =
-                    await tx.query.marcher_pages.findMany({
-                        where: eq(
-                            schema.marcher_pages.page_id,
-                            previousPage.id,
-                        ),
-                    });
-
-                // A new page holds where the previous one ends. Its pathway isn't copied: that
-                // curve is the previous page's move, and sharing it would replay it here.
-                for (const marcherPage of previousPageMarcherPages)
-                    newMarcherPages.push({
-                        marcher_id: marcherPage.marcher_id,
-                        page_id: page.id,
-                        x: marcherPage.x,
-                        y: marcherPage.y,
-                        notes: marcherPage.notes,
-                    });
-            } else {
-                for (const marcher of allMarchers) {
-                    newMarcherPages.push({
-                        marcher_id: marcher.id,
-                        page_id: page.id,
-                        x: 100,
-                        y: 100,
-                    });
-                }
-            }
-
-            if (newMarcherPages.length > 0) {
-                // Create the marcher pages
-                await tx
-                    .insert(schema.marcher_pages)
-                    .values(newMarcherPages)
-                    .returning();
-            }
-        }
-    }
-};
-
 /**
- * Creates one or many new pages in the database as well as the marcher pages for each page.
+ * Creates one or many new pages in the database.
  *
  * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
  *
@@ -264,45 +202,11 @@ export const createPagesInTransaction = async ({
     newPages: NewPageArgs[];
     tx: DbTransaction;
 }): Promise<DatabasePage[]> => {
-    // Reverse the order of the new pages so that they are created in the correct order
+    // Pages don't own positions: the timeline ripple (`withTimelinePageRipple`) handles motion.
     const createdPages = await tx
         .insert(schema.pages)
         .values(newPages.map(newPageArgsToRealNewPageArgs))
         .returning();
-    const pageBeatMap = new Map<number, typeof schema.beats.$inferSelect>();
-    for (const page of createdPages) {
-        const startBeat = await tx.query.beats.findFirst({
-            where: eq(schema.beats.id, page.start_beat),
-        });
-        // const startBeatResponse = getBeat({ db, beatId: page.start_beat });
-        if (!startBeat) {
-            console.error(
-                `Failed to get start beat ${page.start_beat.toString()}:`,
-            );
-            throw new Error(
-                "Failed to get start beat " + page.start_beat.toString(),
-            );
-        }
-        pageBeatMap.set(page.id, startBeat);
-    }
-    const sortedNewPages = createdPages.sort(
-        (a, b) =>
-            pageBeatMap.get(a.id)!.position - pageBeatMap.get(b.id)!.position,
-    );
-
-    // Timeline mode: pages don't own positions and marcher pages are frozen (P9.5), so a new page
-    // gets no marcher pages. The timeline ripple (`withTimelinePageRipple`) handles the motion.
-    if (!(await timelineModeInTransaction(tx))) {
-        const createdPageIds = createdPages.map((page) => page.id);
-        await tx
-            .delete(schema.marcher_pages)
-            .where(inArray(schema.marcher_pages.page_id, createdPageIds));
-
-        await _createMarcherPages({
-            tx,
-            sortedNewPages,
-        });
-    }
 
     return createdPages.map(realDatabasePageToDatabasePage);
 };
@@ -546,21 +450,10 @@ export const deletePagesInTransaction = async ({
     // Before the rows go: their tag appearances would cascade away with them
     await moveTagAppearancesOffPagesInTransaction({ tx, pageIds });
 
-    const deleteMarcherPages = () =>
-        tx
-            .delete(schema.marcher_pages)
-            .where(inArray(schema.marcher_pages.page_id, Array.from(pageIds)));
-    // Timeline mode: marcher pages are frozen (P9.5), and the freeze triggers only let a row go
-    // once its page is gone. So the pages go first; their rows follow through the foreign-key
-    // cascade, or the delete after it where foreign keys are off.
-    const timelineMode = await timelineModeInTransaction(tx);
-    if (!timelineMode) await deleteMarcherPages();
-
     const deletedPages = await tx
         .delete(schema.pages)
         .where(inArray(schema.pages.id, Array.from(pageIds)))
         .returning();
-    if (timelineMode) await deleteMarcherPages();
 
     const lastPageAfterDeletion = await getLastPage({ tx });
     assert(lastPageAfterDeletion != null, "Last page after deletion not found");
@@ -608,7 +501,6 @@ export const deletePagesInTransaction = async ({
 
 /**
  * Deletes the pages with the given ids from the database.
- * CAUTION - this will delete all of the marcherPages associated with the page.
  *
  * @param pageIds
  * @returns DatabaseResponse with the deleted pages

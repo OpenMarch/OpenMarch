@@ -1,10 +1,6 @@
 import { useMemo } from "react";
-import { useQueries, type UseQueryResult } from "@tanstack/react-query";
-import type { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
-import { marcherPagesByPageQueryOptions } from "@/hooks/queries/useMarcherPages";
 import {
     pageHoldMarks,
-    pageModeMarcherPageStates,
     timelineMarcherPageStates,
     type PageHoldMark,
 } from "./pageHoldMarks";
@@ -31,7 +27,7 @@ function marksById(
 }
 
 /**
- * The selection's marks in timeline mode (`pageHoldMarks`), from the resolver's spans and the
+ * The selection's marks (`pageHoldMarks`), from the resolver's spans and the
  * kept markers (a kept page holds). Computed once per selection, page list, kept markers and
  * resolver version (a committed edit, undo or redo), so playback and scrubbing never recompute it.
  *
@@ -63,42 +59,4 @@ export function useTimelineHoldMarks(
             ),
         );
     }, [resolver, version, kept, pages, marcherIds]);
-}
-
-/** Every page's marcher rows, by page index (undefined while one loads). */
-export const _combinePageMarcherPages = (
-    results: UseQueryResult<MarcherPagesByMarcher>[],
-): (MarcherPagesByMarcher | undefined)[] => results.map((r) => r.data);
-
-/**
- * The selection's marks in page mode (`pageHoldMarks`), from each page's marcher rows: a page
- * holds for a marcher whose position equals the previous page's. Reads nothing with an empty
- * selection; the rows follow the page queries, so an edit, undo or redo updates the marks.
- *
- * @param marcherIds the selected marchers; keep the array stable while the selection is
- */
-export function usePageModeHoldMarks(
-    pages: readonly { readonly id: number; readonly name: string }[],
-    marcherIds: readonly number[],
-    enabled = true,
-): PageHoldMarks {
-    const reading = enabled && marcherIds.length > 0;
-    const rows = useQueries({
-        queries: reading
-            ? pages.map((page) => marcherPagesByPageQueryOptions(page.id))
-            : [],
-        combine: _combinePageMarcherPages,
-    });
-    return useMemo(() => {
-        if (!reading || rows.length !== pages.length) return NO_HOLD_MARKS;
-        return marksById(
-            pages.map((p) => p.id),
-            pageHoldMarks(
-                marcherIds.map((id) =>
-                    pageModeMarcherPageStates(rows.map((page) => page?.[id])),
-                ),
-                pages.map((p) => p.name),
-            ),
-        );
-    }, [reading, rows, pages, marcherIds]);
 }

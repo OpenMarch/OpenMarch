@@ -2,10 +2,8 @@ import { afterEach, expect } from "vitest";
 import { and, eq, getTableName, inArray } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     startTimelineResolver,

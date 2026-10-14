@@ -1,12 +1,13 @@
 import { expect, type Page } from "@playwright/test";
 import type { Show } from "./fixtures.mjs";
+import { savedPositions } from "./positions.mjs";
 
 /** Steps a user takes in the app, shared between specs. */
 
 export type DrawnMarcher = {
     id: number;
     drillNumber: string;
-    /** Where the dot is drawn, in the units `marcher_pages` stores. */
+    /** Where the dot is drawn, in field units (as the timeline stores them). */
     x: number;
     y: number;
     /** The dot's position in the viewport, for mouse actions. */
@@ -59,9 +60,10 @@ export async function createMarchers(
 
     await page.locator("#sidebar-launcher-marchers").click();
     await page.getByRole("button", { name: "Add" }).click();
-    await page.getByRole("combobox").click();
+    const form = page.locator("#marcherForm");
+    await form.getByRole("combobox").click();
     await page.getByRole("option", { name: section, exact: true }).click();
-    await page
+    await form
         .getByRole("spinbutton", { name: "Quantity" })
         .fill(`${quantity}`);
     await page.getByRole("button", { name: "Create Marcher Button" }).click();
@@ -102,8 +104,9 @@ export async function createTempoGroup(
 }
 
 /**
- * Waits until every marcher is drawn where the show file says it is on the
- * selected page. Call it after any step that changes positions or the page.
+ * Waits until every marcher is drawn where the show file says it is at the
+ * end of the selected page (`savedPositions`). Call it after any step that
+ * changes positions or the page.
  */
 export async function expectCanvasMatchesShow(show: Show) {
     const round = (value: number) => Math.round(value * 100) / 100;
@@ -112,16 +115,9 @@ export async function expectCanvasMatchesShow(show: Show) {
             const pageId = await show.page.evaluate(
                 () => (window.canvas as any).currentPage.id as number,
             );
-            const saved = (
-                await show.query<{
-                    id: number;
-                    x: number;
-                    y: number;
-                }>(
-                    "SELECT marcher_id AS id, x, y FROM marcher_pages WHERE page_id = ? ORDER BY marcher_id",
-                    pageId,
-                )
-            ).map(({ id, x, y }) => ({ id, x: round(x), y: round(y) }));
+            const saved = (await savedPositions(show, pageId)).map(
+                ({ id, x, y }) => ({ id, x: round(x), y: round(y) }),
+            );
             const drawn = (await drawnMarchers(show.page))
                 .map(({ id, x, y }) => ({ id, x: round(x), y: round(y) }))
                 .sort((a, b) => a.id - b.id);
@@ -211,4 +207,19 @@ export async function waitForIdle(page: Page, quietMs = 250) {
         quietMs,
         { polling: 50 },
     );
+}
+
+/**
+ * Adds a page flag at the start of a measure: moves the playhead there with
+ * the timeline's Go to field, then presses the timeline's **+**. The new page
+ * runs from that beat to the next flag (or the show's last page counts).
+ */
+export async function addPageAt(page: Page, measure: number) {
+    await page.getByTestId("timeline-readout").click();
+    const goTo = page.getByRole("textbox", {
+        name: "Go to a page, measure or rehearsal mark",
+    });
+    await goTo.fill(`m${measure}`);
+    await goTo.press("Enter");
+    await page.getByTestId("timeline-add-page-flag").click();
 }

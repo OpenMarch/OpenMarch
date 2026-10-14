@@ -4,10 +4,8 @@ import type { XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
 import { getTestWithHistory } from "@/test/history";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     startTimelineResolver,

@@ -169,8 +169,7 @@ export default class LineListeners
             return {
                 ...canvasMarcher.coordinate,
                 ...canvasMarcher.getMarcherCoords(),
-                // In timeline mode `coordinate` can be a resolver position that never held a
-                // marcher_pages row, so it may have no marcher_id (P7.10)
+                // `coordinate` can be a resolver position with no marcher_id (P7.10)
                 marcher_id: canvasMarcher.marcherObj.id,
             } as MarcherPage;
         });

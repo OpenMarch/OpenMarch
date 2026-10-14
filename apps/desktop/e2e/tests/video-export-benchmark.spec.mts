@@ -50,27 +50,6 @@ const quote = (value: string | number | null) => {
     return `'${value.replaceAll("'", "''")}'`;
 };
 
-const benchmarkPathJson = (index: number) =>
-    JSON.stringify({
-        segments: [
-            {
-                type: "line",
-                data: {
-                    startPoint: { x: 80 + index * 12, y: 120 },
-                    endPoint: { x: 160 + index * 12, y: 720 },
-                },
-            },
-            {
-                type: "quadratic-curve",
-                data: {
-                    startPoint: { x: 160 + index * 12, y: 720 },
-                    controlPoint: { x: 900, y: 180 + index * 8 },
-                    endPoint: { x: 1720 - index * 12, y: 820 },
-                },
-            },
-        ],
-    });
-
 // eslint-disable-next-line max-lines-per-function
 const seedBenchmarkDatabase = async (databasePath: string) => {
     await fs.copyFile(blankDatabaseFile, databasePath);
@@ -82,14 +61,17 @@ const seedBenchmarkDatabase = async (databasePath: string) => {
     const db = new SQL.Database(await fs.readFile(databasePath));
     const statements: string[] = [
         "PRAGMA foreign_keys=OFF",
-        "DELETE FROM marcher_pages",
-        "DELETE FROM pathways",
+        "DELETE FROM timeline_assignments",
+        "DELETE FROM timeline_slot_destinations",
+        "DELETE FROM timeline_transitions",
+        "DELETE FROM timelines",
         "DELETE FROM marchers",
         "DELETE FROM measures",
         "DELETE FROM pages WHERE id <> 0",
         "DELETE FROM beats WHERE id <> 0",
         "DELETE FROM audio_files",
-        "UPDATE utility SET last_page_counts = 8, default_beat_duration = 8.333333333333334 WHERE id = 0",
+        // One beat per page, the last page included
+        "UPDATE utility SET last_page_counts = 1, default_beat_duration = 8.333333333333334 WHERE id = 0",
     ];
 
     const pageDuration =
@@ -112,12 +94,6 @@ const seedBenchmarkDatabase = async (databasePath: string) => {
         );
     }
 
-    for (let i = 0; i < 12; i++) {
-        statements.push(
-            `INSERT INTO pathways (id, path_data) VALUES (${i + 1}, ${quote(benchmarkPathJson(i))})`,
-        );
-    }
-
     const sections = [
         "Piccolo",
         "Clarinet",
@@ -126,36 +102,50 @@ const seedBenchmarkDatabase = async (databasePath: string) => {
         "Tuba",
         "Color Guard",
     ];
+    const position = (pageIndex: number, marcherIndex: number) => {
+        const row = Math.floor(marcherIndex / 12);
+        const col = marcherIndex % 12;
+        const wave = Math.sin((pageIndex + marcherIndex) / 5);
+        return {
+            x: (160 + col * 135 + pageIndex * 6 + wave * 24).toFixed(3),
+            y: (160 + row * 68 + Math.cos((pageIndex + col) / 4) * 28).toFixed(
+                3,
+            ),
+        };
+    };
+
+    // Page 0's positions are the marchers' homes
     for (let i = 0; i < BENCHMARK_SETTINGS.marchers; i++) {
         const section = sections[i % sections.length]!;
+        const { x, y } = position(0, i);
         statements.push(
-            `INSERT INTO marchers (id, name, section, drill_prefix, drill_order) VALUES (${i + 1}, ${quote(`${section} ${i + 1}`)}, ${quote(section)}, ${quote(section.charAt(0))}, ${i + 1})`,
+            `INSERT INTO marchers (id, name, section, drill_prefix, drill_order, home_x, home_y) VALUES (${i + 1}, ${quote(`${section} ${i + 1}`)}, ${quote(section)}, ${quote(section.charAt(0))}, ${i + 1}, ${x}, ${y})`,
         );
     }
 
-    let marcherPageId = 1;
-    for (
-        let pageIndex = 0;
-        pageIndex <= BENCHMARK_SETTINGS.pages;
-        pageIndex++
-    ) {
-        for (
-            let marcherIndex = 0;
-            marcherIndex < BENCHMARK_SETTINGS.marchers;
-            marcherIndex++
-        ) {
-            const row = Math.floor(marcherIndex / 12);
-            const col = marcherIndex % 12;
-            const wave = Math.sin((pageIndex + marcherIndex) / 5);
-            const x = 160 + col * 135 + pageIndex * 6 + wave * 24;
-            const y = 160 + row * 68 + Math.cos((pageIndex + col) / 4) * 28;
-            const pathwayId =
-                pageIndex > 0 ? ((marcherIndex + pageIndex) % 12) + 1 : null;
+    // Each later page is one move over its beat, as convert on open writes a
+    // page: a timeline with one transition and a destination per marcher.
+    // Every third page moves along an arc, so the export draws curved paths.
+    for (let page = 1; page <= BENCHMARK_SETTINGS.pages; page++) {
+        const range = `${page}, ${page + 1}`;
+        const style =
+            page % 3 === 0
+                ? `'arc', ${quote(JSON.stringify({ bulge: 0.3 }))}`
+                : "'direct', NULL";
+        statements.push(
+            `INSERT INTO timelines (id, start_beat, end_beat) VALUES (${page}, ${range})`,
+            `INSERT INTO timeline_transitions (id, timeline_id, path_style, path_params, slot_count, start_beat, end_beat) VALUES (${page}, ${page}, ${style}, ${BENCHMARK_SETTINGS.marchers}, ${range})`,
+        );
+        for (let i = 0; i < BENCHMARK_SETTINGS.marchers; i++) {
+            const { x, y } = position(page, i);
             statements.push(
-                `INSERT INTO marcher_pages (id, marcher_id, page_id, x, y, path_data_id, path_start_position, path_end_position, rotation_degrees) VALUES (${marcherPageId++}, ${marcherIndex + 1}, ${pageIndex}, ${x.toFixed(3)}, ${y.toFixed(3)}, ${quote(pathwayId)}, ${pathwayId ? 0 : "NULL"}, ${pathwayId ? 1 : "NULL"}, ${(pageIndex * 10) % 360})`,
+                `INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (${page}, ${i}, ${x}, ${y})`,
+                `INSERT INTO timeline_assignments (marcher_id, transition_id, slot_index, start_beat, end_beat) VALUES (${i + 1}, ${page}, ${i}, ${range})`,
             );
         }
     }
+    // Seeded rows are already in the tables the resolver builds from
+    statements.push("DELETE FROM timeline_change_log");
 
     db.exec(`${statements.join(";\n")};`);
     db.exec(await fs.readFile(audioSqlPath, "utf8"));

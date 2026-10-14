@@ -308,7 +308,6 @@
         "individualChartsTooltip": "Crie PDFs de gráficos detalhados personalizados para cada integrante.",
         "individualChartsTooltipDescription": "Se isso não estiver marcado, será criado um PDF de gráfico de perfuração de visão geral.",
         "marcher": "Marcher: {status}",
-        "marcherPagesNotLoaded": "Páginas de marchador não carregadas",
         "marchersNotLoaded": "Marchadores não carregados",
         "measuresHeader": "Medida",
         "mobile": "Celular",

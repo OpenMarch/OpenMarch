@@ -1,5 +1,5 @@
 /**
- * The convert-on-open worker thread (P9.8). Backs up and converts one file
+ * The convert-on-open worker thread (P9.8). Backs up, migrates and converts one file
  * with `convertFileOnOpen`, on its own `node:sqlite` connection, so the
  * main process's event loop keeps running (Windows marks a window "Not
  * Responding" after about 5 s, and a large show takes seconds).
@@ -46,40 +46,54 @@ export async function runConvertWorker(
     request: ConvertWorkerRequest,
     post: (message: ConvertWorkerMessage) => void,
 ): Promise<void> {
-    const { filePath, busyTimeoutMs, convertedAt, test = {} } = request;
+    const {
+        filePath,
+        migrationsFolder,
+        busyTimeoutMs,
+        convertedAt,
+        backupPath,
+        test = {},
+    } = request;
     const db = new DatabaseSync(filePath);
     let result: ConvertOnOpenResult;
     try {
         db.exec(
             `PRAGMA busy_timeout = ${Math.max(0, Math.floor(busyTimeoutMs))}`,
         );
-        result = await convertFileOnOpen(filePath, db, {
-            onProgress: (progress) => {
-                post({ type: "progress", progress });
-                if (progress.phase === "convert" && test.blockPerPageMs)
-                    blockFor(test.blockPerPageMs);
-            },
-            backup: (path) => {
-                const backup =
-                    test.backupFailure ?? backupBeforeConversion(path);
-                if (backup.ok) {
-                    post({
-                        type: "backup-done",
-                        backupPath: backup.backupPath,
-                    });
-                    if (test.crashAfterBackup)
+        result = await convertFileOnOpen(
+            filePath,
+            db,
+            migrationsFolder,
+            { backupPath },
+            {
+                onProgress: (progress) => {
+                    post({ type: "progress", progress });
+                    if (progress.phase === "convert" && test.blockPerPageMs)
+                        blockFor(test.blockPerPageMs);
+                },
+                backup: (path, target) => {
+                    const backup =
+                        test.backupFailure ??
+                        backupBeforeConversion(path, { target });
+                    if (backup.ok) {
+                        post({
+                            type: "backup-done",
+                            backupPath: backup.backupPath,
+                        });
+                        if (test.crashAfterBackup)
+                            process.exit(TEST_CRASH_EXIT_CODE);
+                    }
+                    return backup;
+                },
+                afterStep: (step) => {
+                    if (step === test.crashAfterStep)
                         process.exit(TEST_CRASH_EXIT_CODE);
-                }
-                return backup;
+                    if (step === test.failAfterStep)
+                        throw new Error(`disk vanished after ${step}`);
+                },
+                now: () => new Date(convertedAt),
             },
-            afterStep: (step) => {
-                if (step === test.crashAfterStep)
-                    process.exit(TEST_CRASH_EXIT_CODE);
-                if (step === test.failAfterStep)
-                    throw new Error(`disk vanished after ${step}`);
-            },
-            now: () => new Date(convertedAt),
-        });
+        );
     } finally {
         db.close();
     }

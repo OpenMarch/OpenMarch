@@ -7,8 +7,7 @@
 import type { FieldProperties } from "@openmarch/core";
 import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
 import type { Bake } from "@/view3d/vendor/om-pose/instanced-marchers.js";
-import type { MarcherTimeline } from "@/utilities/Keyframes";
-import { positionAtInto } from "@/view3d/positions";
+import type { ShowPositions } from "@/view3d/positions";
 import type { CountClock } from "@/view3d/core/marchers/countClock";
 import {
     REST_EPS,
@@ -48,32 +47,43 @@ const sameArray = (
     return true;
 };
 
-/** Each marcher's drill position at every count boundary (x, z interleaved). */
+/**
+ * Each marcher's drill position at every count boundary (x, z interleaved);
+ * null for a marcher without positions. Boundary by boundary, so the resolver
+ * is sampled once per boundary for every marcher.
+ */
 function sampleDrill(
-    timelines: readonly (MarcherTimeline | null)[],
+    ids: readonly number[],
+    positions: ShowPositions | null,
     clock: CountClock,
     fieldProperties: FieldProperties,
 ): (Float64Array | null)[] {
     const K = clock.counts;
     const point = { x: 0, z: 0 };
-    return timelines.map((timeline) => {
-        if (!timeline || K === 0) return null;
-        const p = new Float64Array((K + 1) * 2);
-        for (let k = 0; k <= K; k++) {
+    const sampled = ids.map((id) =>
+        positions?.has(id) && K > 0 ? new Float64Array((K + 1) * 2) : null,
+    );
+    if (!positions) return sampled;
+    for (let k = 0; k <= K; k++) {
+        for (let i = 0; i < ids.length; i++) {
+            const p = sampled[i];
+            if (!p) continue;
             if (
-                !positionAtInto(
-                    timeline,
+                !positions.positionInto(
+                    ids[i],
                     clock.boundariesMs[k],
                     fieldProperties,
                     point,
                 )
-            )
-                return null;
+            ) {
+                sampled[i] = null;
+                continue;
+            }
             p[k * 2] = point.x;
             p[k * 2 + 1] = point.z;
         }
-        return p;
-    });
+    }
+    return sampled;
 }
 
 /** 1 for each count on which any marcher travels. */
@@ -103,7 +113,7 @@ function bandMovingCounts(
  */
 export function planShow(
     ids: readonly number[],
-    timelines: readonly (MarcherTimeline | null)[],
+    positions: ShowPositions | null,
     heightClasses: readonly HeightClass[],
     clock: CountClock,
     fieldProperties: FieldProperties,
@@ -112,7 +122,7 @@ export function planShow(
     previous: ShowPlans | null = null,
 ): ShowPlans {
     const t0 = performance.now();
-    const sampled = sampleDrill(timelines, clock, fieldProperties);
+    const sampled = sampleDrill(ids, positions, clock, fieldProperties);
     const bandMoving = bandMovingCounts(sampled, clock.counts);
     // A drill edit usually moves a few marchers: reuse every plan whose
     // inputs are unchanged (same marcher, drill samples, class and band rests).

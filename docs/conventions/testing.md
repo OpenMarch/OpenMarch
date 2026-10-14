@@ -21,29 +21,17 @@ Use `test:focused` rather than `test` for a single file: the `test` script ends 
 Tests that use `getTestWithHistory` need `pnpm --dir apps/desktop run test:history
 <relative-test-file>` instead.
 
-`pnpm --dir apps/desktop run test:timeline` runs the desktop suite with timeline mode on in the
-fixtures (`VITEST_TIMELINE_MODE=true`, see `apps/desktop/src/test/timelineMode.ts`): data
-fixtures are converted to timeline rows and the workspace `timelineMode` flag is set. A file whose
-tests set up timeline mode themselves calls `keepFixturesInPageMode(reason)`; a test that asserts
-page-mode behavior that timeline mode drops uses `it.skipIf(skipInTimelineMode(reason))`.
-`test:timeline-history` sets both variables, and the ripple-affected history tests (page, beat,
-measures, marcher, utility) then also check the five timeline data tables through
-`timelineHistoryTables()`. `keepFixturesInPageMode` keeps module state, so it needs vitest's
-per-file isolation (the default) and throws under `--no-isolate`.
+Test databases are timeline files, like every file the app opens. The plain `db` fixture is a
+copy of `_blank.dots` (version 8, no page-era tables). A data fixture (`marchersAndPages`,
+`pages`, `marchers`, `beats`) loads its page show into a page-era file and converts it with the
+app's own convert on open (see `apps/desktop/src/test/timelineMode.ts`). A file whose tests need
+the page show unconverted (converter tests, or tests that convert it themselves) calls
+`keepFixturesInPageMode(reason)` and converts with `convertPagesToTimeline` from
+`@/test/convertPages`, which drops the page-era tables afterwards unless `keepPageTables` is set.
+`keepFixturesInPageMode` keeps module state, so it needs vitest's per-file isolation (the
+default) and throws under `--no-isolate`. History tests check the timeline data tables through
+`timelineHistoryTables()`.
 
-Write paths read the flag from the file, not from a parameter that defaults to page mode:
-`createMarchers` and `deleteMarchers` read it inside their edit (`timelineModeInTransaction`), and
-helpers that can't read the database (`buildMarcherAppearancesByPageId`, `useRenderMarcherShapes`,
-`canvasCoordinateWriter`, `setMarchersToNeighborPage`) require it. A timeline-native test picks the
-mode with `setTimelineModeFlag(db, on)`.
-
-To test a feature in whichever mode the fixture is in, render it with
+To test a feature end to end in the renderer, render it with
 `apps/desktop/src/test/featureHarness.tsx` (the app's providers, the timeline resolver host, page
-and marcher selection, and `positionOn`, which reads the resolver in timeline mode and
-`marcher_pages` otherwise). The coordinate actions, undo focus, the marcher inspector, the
-coordinate sheet and drill chart exports, and the marcher add and delete mutations have such
-tests, so `test:timeline` takes their timeline path.
-
-A passing `test:timeline` run does not cover tests that don't use the `base.tsx` fixtures (mocked
-databases, pure functions), or undo and redo checks unless `VITEST_ENABLE_HISTORY=true` is also
-set (`test:timeline-history`).
+and marcher selection, and `positionOn`, which reads the resolver).

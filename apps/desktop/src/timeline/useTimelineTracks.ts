@@ -155,8 +155,8 @@ export const readVersionedTimelineViewTables = (
 /**
  * The timeline's tracks for the open file (P8.8): the view-model adapter over the stored tables
  * and the resolver. It rebuilds whenever the resolver store's version changes, which every
- * committed timeline edit, undo, redo and cold build bumps. With `enabled` false (the timeline dev
- * flag off), or before the resolver is ready, it reads nothing and returns no tracks.
+ * committed timeline edit, undo, redo and cold build bumps. With `enabled` false, or before the
+ * resolver is ready, it reads nothing and returns no tracks.
  *
  * - Tracks are only built from rows and a resolver of the same version. While the next version's
  *   rows load, the last tracks stay, so nothing flickers and no mismatched pair is ever built.

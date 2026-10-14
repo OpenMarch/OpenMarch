@@ -1,12 +1,4 @@
 import {
-    RewindIcon,
-    SkipBackIcon,
-    PlayIcon,
-    PauseIcon,
-    SkipForwardIcon,
-    FastForwardIcon,
-    CornersOutIcon,
-    CornersInIcon,
     MetronomeIcon,
     SpeakerSimpleHighIcon,
     SpeakerSimpleLowIcon,
@@ -14,14 +6,9 @@ import {
     RowsIcon,
     RepeatIcon,
 } from "@phosphor-icons/react";
-import ActionButton from "@/shortcuts/ActionButton";
-import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
-import { AudioClock } from "./Clock";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
@@ -30,59 +17,6 @@ import { toggleTimelineLoop } from "@/timeline/timelineTransport";
 import { ShortcutTooltip } from "./ShortcutTooltip";
 import { TRANSPORT_SHORTCUTS } from "./TimelinePrimitives";
 import { START_INK } from "./startFlagInk";
-
-export default function TimelineControls() {
-    const { isFullscreen, toggleFullscreen } = useFullscreenStore();
-    const focussedComponent = useUiSettingsStore(
-        (s) => s.uiSettings.focussedComponent,
-    );
-    return (
-        <div
-            className={clsx(
-                "bg-fg-1 border-stroke rounded-6 flex flex-col gap-12 border px-16 py-12",
-                { "justify-center": isFullscreen },
-            )}
-        >
-            {!isFullscreen && (
-                <div className="flex items-center justify-between gap-6">
-                    <T keyName="timeline.label" />
-                    <AudioClock />
-                </div>
-            )}
-
-            <div
-                className={clsx("flex gap-12", {
-                    "flex-col": !isFullscreen,
-                })}
-            >
-                <PlaybackControls />
-                <div
-                    className={clsx("flex items-center gap-12", {
-                        "justify-between": !isFullscreen,
-                    })}
-                >
-                    <div className="flex items-center gap-12">
-                        <TimelineMuteButton />
-                        <TimelineMetronomeButton />
-                    </div>
-                    <button
-                        className="text-text enabled:hover:text-accent focus-visible:ring-accent duration-150 ease-out focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={toggleFullscreen}
-                        aria-label="Toggle timeline fullscreen"
-                        aria-pressed={isFullscreen}
-                        disabled={focussedComponent === "timeline"}
-                    >
-                        {isFullscreen ? (
-                            <CornersInIcon size={24} />
-                        ) : (
-                            <CornersOutIcon size={24} />
-                        )}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 export function TimelineMuteButton() {
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
@@ -338,80 +272,5 @@ export function TimelineCompactButton() {
         >
             <RowsIcon size={16} weight={compact ? "fill" : "regular"} />
         </button>
-    );
-}
-
-function PlaybackControls() {
-    const { selectedPage } = useSelectedPage()!;
-    const { isPlaying } = useIsPlaying()!;
-    const focussedComponent = useUiSettingsStore(
-        (s) => s.uiSettings.focussedComponent,
-    );
-    const { t } = useTolgee();
-
-    return (
-        <div
-            className={clsx("flex gap-12")}
-            aria-label={t("timeline.controls.label")}
-        >
-            <ActionButton
-                action="firstPage"
-                disabled={
-                    !selectedPage ||
-                    selectedPage.previousPageId === null ||
-                    isPlaying ||
-                    focussedComponent === "timeline"
-                }
-            >
-                <RewindIcon size={24} />
-            </ActionButton>
-
-            <ActionButton
-                action="previousPage"
-                disabled={
-                    !selectedPage ||
-                    selectedPage.previousPageId === null ||
-                    isPlaying ||
-                    focussedComponent === "timeline"
-                }
-            >
-                <SkipBackIcon size={24} />
-            </ActionButton>
-
-            <ActionButton
-                action="playPause"
-                className="focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-2"
-                disabled={
-                    !selectedPage ||
-                    (!isPlaying && selectedPage.nextPageId === null)
-                }
-            >
-                {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
-            </ActionButton>
-
-            <ActionButton
-                action="nextPage"
-                disabled={
-                    !selectedPage ||
-                    selectedPage.nextPageId === null ||
-                    isPlaying ||
-                    focussedComponent === "timeline"
-                }
-            >
-                <SkipForwardIcon size={24} />
-            </ActionButton>
-
-            <ActionButton
-                action="lastPage"
-                disabled={
-                    !selectedPage ||
-                    selectedPage.nextPageId === null ||
-                    isPlaying ||
-                    focussedComponent === "timeline"
-                }
-            >
-                <FastForwardIcon size={24} />
-            </ActionButton>
-        </div>
     );
 }

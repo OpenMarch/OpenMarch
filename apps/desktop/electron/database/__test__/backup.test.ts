@@ -19,7 +19,7 @@ import {
 } from "../backup";
 import { getOrm } from "../db";
 import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
-import { applyFileVersionDecision, readUserVersion } from "../fileVersion";
+import { readUserVersion } from "../fileVersion";
 
 const migrationsFolder = path.resolve(__dirname, "../migrations");
 
@@ -30,7 +30,8 @@ const sha256 = (p: string) =>
 async function createShowFile(filePath: string) {
     const db = new DatabaseSync(filePath);
     try {
-        applyFileVersionDecision(db, true);
+        // A page-era show, as the conversion backs up
+        db.exec("PRAGMA user_version = 7");
         const orm = getOrm(db);
         await new DrizzleMigrationService(orm, db).applyPendingMigrations(
             migrationsFolder,
@@ -120,7 +121,7 @@ describe("backupBeforeConversion", () => {
         if (!result.ok) return;
 
         expect(result.backupPath).toBe(
-            path.join(dir, `My Show (${BACKUP_NAME_SUFFIX}).dots`),
+            path.join(dir, `My Show.${BACKUP_NAME_SUFFIX}.dots`),
         );
         expect(result.userVersion).toBe(7);
 
@@ -146,8 +147,8 @@ describe("backupBeforeConversion", () => {
         expect(sha256(showPath)).toBe(hash);
         expect(fs.statSync(showPath).mtimeMs).toBe(mtime);
         expect(fs.readdirSync(dir).sort()).toEqual([
-            `My Show (${BACKUP_NAME_SUFFIX}).dots`,
             "My Show.dots",
+            `My Show.${BACKUP_NAME_SUFFIX}.dots`,
         ]);
     });
 
@@ -158,33 +159,63 @@ describe("backupBeforeConversion", () => {
         const third = backupBeforeConversion(showPath);
 
         expect(second.ok && path.basename(second.backupPath)).toBe(
-            `My Show (${BACKUP_NAME_SUFFIX} 2).dots`,
+            `My Show.${BACKUP_NAME_SUFFIX}-2.dots`,
         );
         expect(third.ok && path.basename(third.backupPath)).toBe(
-            `My Show (${BACKUP_NAME_SUFFIX} 3).dots`,
+            `My Show.${BACKUP_NAME_SUFFIX}-3.dots`,
         );
         expect(first.ok && sha256(first.backupPath)).toBe(firstHash);
     });
 
     it("skips a name taken by an unrelated file without touching it", () => {
-        const taken = path.join(dir, `My Show (${BACKUP_NAME_SUFFIX}).dots`);
+        const taken = path.join(dir, `My Show.${BACKUP_NAME_SUFFIX}.dots`);
         fs.writeFileSync(taken, "not a database");
 
         const result = backupBeforeConversion(showPath);
 
         expect(result.ok && path.basename(result.backupPath)).toBe(
-            `My Show (${BACKUP_NAME_SUFFIX} 2).dots`,
+            `My Show.${BACKUP_NAME_SUFFIX}-2.dots`,
         );
         expect(fs.readFileSync(taken, "utf8")).toBe("not a database");
     });
 
+    it("with a target, writes exactly there", () => {
+        const target = nextBackupPath(showPath);
+
+        const result = backupBeforeConversion(showPath, { target });
+
+        expect(result).toMatchObject({ ok: true, backupPath: target });
+        const copy = new DatabaseSync(target, { readOnly: true });
+        expect(readUserVersion(copy)).toBe(7);
+        copy.close();
+    });
+
+    it.each(["file", "dangling symlink"] as const)(
+        "with a target taken by a %s, leaves it alone and uses the next free name",
+        (kind) => {
+            const target = path.join(dir, `My Show.${BACKUP_NAME_SUFFIX}.dots`);
+            if (kind === "file") fs.writeFileSync(target, "not a database");
+            else fs.symlinkSync(path.join(dir, "nowhere"), target);
+
+            const result = backupBeforeConversion(showPath, { target });
+
+            const next = path.join(dir, `My Show.${BACKUP_NAME_SUFFIX}-2.dots`);
+            expect(result).toMatchObject({ ok: true, backupPath: next });
+            const copy = new DatabaseSync(next, { readOnly: true });
+            copy.close();
+            if (kind === "file")
+                expect(fs.readFileSync(target, "utf8")).toBe("not a database");
+            else expect(fs.lstatSync(target).isSymbolicLink()).toBe(true);
+        },
+    );
+
     it("nextBackupPath keeps the extension and picks the first free name", () => {
         const names = new Set([
-            "/x/a (before timeline conversion).dots",
-            "/x/a (before timeline conversion 2).dots",
+            "/x/a.pre-conversion.dots",
+            "/x/a.pre-conversion-2.dots",
         ]);
         expect(nextBackupPath("/x/a.dots", (p) => names.has(p))).toBe(
-            "/x/a (before timeline conversion 3).dots",
+            "/x/a.pre-conversion-3.dots",
         );
     });
 
@@ -245,23 +276,23 @@ describe("backupBeforeConversion", () => {
     });
 
     it("does not loop forever on a dangling symlink at the backup name", () => {
-        const taken = path.join(dir, `My Show (${BACKUP_NAME_SUFFIX}).dots`);
+        const taken = path.join(dir, `My Show.${BACKUP_NAME_SUFFIX}.dots`);
         fs.symlinkSync(path.join(dir, "does-not-exist"), taken);
 
         const result = backupBeforeConversion(showPath);
 
         expect(result.ok && path.basename(result.backupPath)).toBe(
-            `My Show (${BACKUP_NAME_SUFFIX} 2).dots`,
+            `My Show.${BACKUP_NAME_SUFFIX}-2.dots`,
         );
         expect(fs.lstatSync(taken).isSymbolicLink()).toBe(true);
         expect(fs.existsSync(path.join(dir, "does-not-exist"))).toBe(false);
     });
 
     it("nextBackupPath treats a dangling symlink as taken and gives up after 100 names", () => {
-        const taken = path.join(dir, `My Show (${BACKUP_NAME_SUFFIX}).dots`);
+        const taken = path.join(dir, `My Show.${BACKUP_NAME_SUFFIX}.dots`);
         fs.symlinkSync(path.join(dir, "nowhere"), taken);
         expect(path.basename(nextBackupPath(showPath))).toBe(
-            `My Show (${BACKUP_NAME_SUFFIX} 2).dots`,
+            `My Show.${BACKUP_NAME_SUFFIX}-2.dots`,
         );
         expect(() => nextBackupPath(showPath, () => true)).toThrow(RangeError);
     });
@@ -380,7 +411,7 @@ describe("backupBeforeConversion", () => {
         if (!result.ok) return;
         const name = path.basename(result.backupPath);
         expect(Buffer.byteLength(name)).toBeLessThanOrEqual(255);
-        expect(name.endsWith(` (${BACKUP_NAME_SUFFIX}).dots`)).toBe(true);
+        expect(name.endsWith(`.${BACKUP_NAME_SUFFIX}.dots`)).toBe(true);
         expect(tableCounts(result.backupPath)).toEqual(tableCounts(showPath));
     });
 

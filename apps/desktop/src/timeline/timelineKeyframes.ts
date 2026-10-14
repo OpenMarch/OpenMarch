@@ -430,7 +430,7 @@ export function interpolateKeyframes(
 const pick = (k: ExportKeyframe) => ({ x: k.x, y: k.y });
 
 /**
- * The keyframes in the page-mode `MarcherTimeline` shape (milliseconds, plain coordinates), for a
+ * The keyframes in the `MarcherTimeline` shape (milliseconds, plain coordinates), for a
  * consumer that already reads that format, such as an exporter. Keys are rounded to whole
  * milliseconds, so two keyframes less than 1 ms apart merge into one key (the later wins).
  * Straight chords only: there are

@@ -2,11 +2,10 @@
  * Which way a 3D View marcher faces, and which way its legs travel.
  *
  * The upper body always faces the front sideline (the audience). That is
- * `rotation_degrees` 0 and the only facing the app has today: nothing in the
- * editor sets or draws `marcher_pages.rotation_degrees`, so it is ignored here
- * until a facing tool defines it. The legs turn toward the travel direction
- * (om-pose's `pickDirection`), so a marcher crossing the field slides and one
- * moving upfield marches backward.
+ * the only facing the app has today: the timeline model has no facing, so
+ * every marcher faces front until a facing tool defines one. The legs turn
+ * toward the travel direction (om-pose's `pickDirection`), so a marcher
+ * crossing the field slides and one moving upfield marches backward.
  *
  * Slides face the 50. Within SLIDE_BAND of sideways, `pickDirection`'s
  * ahead-or-behind split gives way to the 50 yard line: a slide toward it is a

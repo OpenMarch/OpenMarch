@@ -27,10 +27,8 @@ import {
     type NeighborPageDirection,
 } from "@/utilities/setMarchersToNeighborPage";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "../timelineCanvas";
 import {
     neighborPageTarget,
@@ -431,14 +429,11 @@ describeDbTests(
             );
             const notify = { success: vi.fn(), error: vi.fn() };
             const result = await setMarchersToNeighborPage({
-                timelineMode: true,
                 direction,
                 scope: "selected",
                 selectedPage: page,
                 pages,
                 selectedMarcherIds: selected,
-                neighborMarcherPages: undefined,
-                writePages: vi.fn(),
                 writeTimeline,
                 notify,
                 t,

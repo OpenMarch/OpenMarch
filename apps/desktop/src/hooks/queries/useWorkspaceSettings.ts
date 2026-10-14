@@ -1,14 +1,5 @@
-import {
-    QueryClient,
-    useMutation,
-    useQuery,
-    useQueryClient,
-} from "@tanstack/react-query";
 import * as z from "zod";
-import {
-    isTimelineModeEnabled,
-    workspaceSettingsSchema,
-} from "@/settings/workspaceSettings";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { db } from "@/global/database/db";
 import {
     getWorkspaceSettingsParsed,
@@ -18,7 +9,6 @@ import {
 } from "@/db-functions/workspaceSettings";
 import { mutationOptions } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
-import { marcherAppearancesKeys } from "./marcherAppearancesKeys";
 
 export const workspaceSettingsKeys = {
     all: () => ["workspaceSettings"] as const,
@@ -60,29 +50,6 @@ export const workspaceSettingsQueryOptions = (enabled = true) => ({
 });
 
 /**
- * Whether the file's timeline dev flag (`timelineMode`) is on. False while the settings load.
- */
-export function useTimelineMode(enabled = true): boolean {
-    const { data } = useQuery({
-        ...workspaceSettingsQueryOptions(enabled),
-        select: isTimelineModeEnabled,
-    });
-    return data ?? false;
-}
-
-/**
- * The file's timeline flag, read when a write needs it rather than from a hook. The cached
- * settings are used when fresh; otherwise this waits for them to load, so a write started while
- * the settings are still loading never falls back to page mode by mistake (`useTimelineMode`
- * returns false until they load).
- */
-export async function readTimelineMode(qc: QueryClient): Promise<boolean> {
-    return isTimelineModeEnabled(
-        await qc.fetchQuery(workspaceSettingsQueryOptions()),
-    );
-}
-
-/**
  * Query options for fetching workspace settings as JSON
  */
 export const workspaceSettingsJSONQueryOptions = (enabled = true) => ({
@@ -109,10 +76,6 @@ export const updateWorkspaceSettingsMutationOptions = (queryClient: any) =>
             void queryClient.invalidateQueries({
                 queryKey: workspaceSettingsKeys.all(),
             });
-            // Canvas appearances depend on the timeline flag (P7.16)
-            void queryClient.invalidateQueries({
-                queryKey: marcherAppearancesKeys.all(),
-            });
         },
         onError: (error) => {
             conToastError("Failed to update workspace settings", error);
@@ -131,10 +94,6 @@ export const updateWorkspaceSettingsJSONMutationOptions = (queryClient: any) =>
             // Invalidate workspace settings queries to refetch the updated data
             void queryClient.invalidateQueries({
                 queryKey: workspaceSettingsKeys.all(),
-            });
-            // Canvas appearances depend on the timeline flag (P7.16)
-            void queryClient.invalidateQueries({
-                queryKey: marcherAppearancesKeys.all(),
             });
         },
         onError: (error) => {

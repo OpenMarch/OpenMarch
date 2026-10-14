@@ -46,9 +46,8 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 /**
  * Renders one coordinate sheet per marcher (or one per quarter-sheet chunk of 28 pages) to HTML.
  *
- * `positions` is where the marchers stand on each page: the `marcher_pages` rows in page mode, or
- * the resolver sampled at each page's end beat in timeline mode
- * (docs/timeline/phases/07-page-parity.md P7.7). Rows are sorted by page order either way.
+ * `positions` is where the marchers stand on each page: the resolver sampled at each page's end
+ * beat (docs/timeline/phases/07-page-parity.md P7.7). Rows are sorted by page order.
  *
  * @param marchers - already named and sorted for the export
  * @param t - translates the fallback section name and render errors

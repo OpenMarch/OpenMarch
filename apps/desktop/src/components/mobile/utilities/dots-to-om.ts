@@ -16,19 +16,15 @@ import { DB, schema } from "@/global/database/db";
 import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
 import { generatePageNames } from "@/global/classes/Page";
 import { getPagesInOrder } from "@/db-functions";
-import {
-    isTimelineModeEnabled,
-    workspaceSettingsSchema,
-} from "@/settings/workspaceSettings";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { withTimelineWriteLock } from "@/db-functions/history";
 import {
     readTimelinePageSnapshot,
     sampleTimelinePagePositions,
-    type TimelinePageSnapshot,
+    type TimelinePagePosition,
 } from "@/timeline/timelinePagePositions";
 import {
     buildPerformerAppearanceShowData,
-    databaseMarcherPagesToMarcherPages,
     fetchPerformerAppearanceExportData,
     marcherRowsToMarchers,
     parsePerformerAppearanceExportData,
@@ -44,12 +40,8 @@ type TimingRow = {
 };
 type PageRow = typeof schema.pages.$inferSelect;
 type MeasureRow = typeof schema.measures.$inferSelect;
-type MarcherPageRow = typeof schema.marcher_pages.$inferSelect;
-/** A marcher's position on a page: a `marcher_pages` row, or in timeline mode a resolver sample */
-type PagePositionRow = Pick<
-    MarcherPageRow,
-    "marcher_id" | "page_id" | "x" | "y"
-> & { rotation_degrees?: number | null };
+/** A marcher's position on a page: the resolver sampled at the page's end beat */
+type PagePositionRow = TimelinePagePosition;
 
 // -----------------------------------------------------------------------------
 // Helpers: field properties → PerformanceArea, coordinates
@@ -193,25 +185,13 @@ function buildCoordinates({
     pageId: string;
     xSteps: number;
     ySteps: number;
-    rotation_degrees?: number;
 }[] {
-    return positionRows.map((mp) => {
-        const coord: {
-            marcherId: string;
-            pageId: string;
-            xSteps: number;
-            ySteps: number;
-            rotation_degrees?: number;
-        } = {
-            marcherId: String(mp.marcher_id),
-            pageId: String(mp.page_id),
-            xSteps: (mp.x - centerXPixels) / pixelsPerStep,
-            ySteps: fieldHeightSteps - mp.y / pixelsPerStep,
-        };
-        if (mp.rotation_degrees != null && mp.rotation_degrees !== 0)
-            coord.rotation_degrees = mp.rotation_degrees;
-        return coord;
-    });
+    return positionRows.map((mp) => ({
+        marcherId: String(mp.marcher_id),
+        pageId: String(mp.page_id),
+        xSteps: (mp.x - centerXPixels) / pixelsPerStep,
+        ySteps: fieldHeightSteps - mp.y / pixelsPerStep,
+    }));
 }
 
 function buildMeasuresFromTiming({
@@ -306,53 +286,26 @@ async function readShowRows(db: DB) {
 }
 
 type DotsData = Awaited<ReturnType<typeof readShowRows>> & {
-    marcherPagesRows: MarcherPageRow[];
     positionRows: readonly PagePositionRow[];
 };
 
-async function readPageModeData(db: DB): Promise<DotsData> {
-    const rows = await readShowRows(db);
-    const marcherPagesRows = await db.query.marcher_pages.findMany();
-    return { ...rows, marcherPagesRows, positionRows: marcherPagesRows };
-}
-
 /**
- * In page mode, the positions are every `marcher_pages` row. In timeline mode those rows are
- * frozen page-era data (docs/timeline/phases/07-page-parity.md P7.12), so the positions come from
- * the resolver at each page's end beat instead. The per-page rotation and appearance fields have
- * no timeline home (P7.14), so they are left out.
+ * The positions come from the resolver at each page's end beat
+ * (docs/timeline/phases/07-page-parity.md P7.12). There is no per-page rotation or appearance
+ * override (P7.14).
  *
- * In timeline mode every read and the resolver build happen inside one `withTimelineWriteLock`,
- * so the pages, marchers and positions all come from the same committed state: a write started
- * before the export has committed, and none can start until the reads finish. Sampling runs
- * after the lock is released, on the private resolver.
+ * Every read and the resolver build happen inside one `withTimelineWriteLock`, so the pages,
+ * marchers and positions all come from the same committed state: a write started before the
+ * export has committed, and none can start until the reads finish. Sampling runs after the lock
+ * is released, on the private resolver.
  */
 async function fetchDotsData(db: DB): Promise<DotsData> {
-    if (!isTimelineModeEnabled(await readWorkspaceSettings(db)))
-        return readPageModeData(db);
-    const read = await withTimelineWriteLock(
-        async (): Promise<
-            | { kind: "page"; data: DotsData }
-            | {
-                  kind: "timeline";
-                  rows: Awaited<ReturnType<typeof readShowRows>>;
-                  snapshot: TimelinePageSnapshot;
-              }
-        > => {
-            const rows = await readShowRows(db);
-            // The flag can change while the lock is awaited; the rows read under it decide
-            if (!isTimelineModeEnabled(rows.workspaceSettings))
-                return { kind: "page", data: await readPageModeData(db) };
-            return {
-                kind: "timeline",
-                rows,
-                snapshot: await readTimelinePageSnapshot(db),
-            };
-        },
-    );
-    if (read.kind === "page") return read.data;
-    const positionRows = await sampleTimelinePagePositions(read.snapshot);
-    return { ...read.rows, marcherPagesRows: [], positionRows };
+    const { rows, snapshot } = await withTimelineWriteLock(async () => ({
+        rows: await readShowRows(db),
+        snapshot: await readTimelinePageSnapshot(db),
+    }));
+    const positionRows = await sampleTimelinePagePositions(snapshot);
+    return { ...rows, positionRows };
 }
 
 function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
@@ -362,7 +315,6 @@ function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
         marchersRows,
         pagesRows,
         measuresRows,
-        marcherPagesRows,
         positionRows,
         workspaceSettings,
     } = data;
@@ -432,7 +384,6 @@ function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
         tagAppearanceIdsByPageId,
         marcherIdsByTagId,
         marchers: marcherRowsToMarchers(marchersRows),
-        marcherPages: databaseMarcherPagesToMarcherPages(marcherPagesRows),
         pagesInOrder: data.pagesInOrder.map((p) => ({ id: p.id })),
     });
 
@@ -456,7 +407,7 @@ function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
  * Builds an OpenMarch schema object from the currently open .dots database.
  * Uses the persistent ORM connection from getOrmConnection().
  *
- * In timeline mode it reads under the timeline write lock (`withTimelineWriteLock`), so it must
+ * It reads under the timeline write lock (`withTimelineWriteLock`), so it must
  * never be called from inside a wrapped write (`transactionWithHistory`): that would wait for
  * the lock its own caller holds.
  *
@@ -482,7 +433,7 @@ export async function toOpenMarchSchema(db: DB): Promise<OpenMarchShowData> {
  * Converts the current .dots database to a compressed OpenMarch file.
  * Uses the persistent ORM connection from getOrmConnection().
  *
- * In timeline mode it reads under the timeline write lock (`withTimelineWriteLock`), so it must
+ * It reads under the timeline write lock (`withTimelineWriteLock`), so it must
  * never be called from inside a wrapped write (`transactionWithHistory`): that would wait for
  * the lock its own caller holds.
  *

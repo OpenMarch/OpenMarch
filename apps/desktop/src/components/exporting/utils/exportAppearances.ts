@@ -1,6 +1,5 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import {
     MarcherIdsByTagId,
@@ -29,18 +28,13 @@ function resolveTagAppearancesForPage(
 }
 
 /**
- * Each page's appearance stack per marcher: marcher page, then tag, section and field theme.
- *
- * With `timelineMode`, `marcherPagesMap` is ignored: the per-page appearance fields of
- * `marcher_pages` are dropped in timeline mode (P7.14), so appearance comes from the tags, the
- * section and the field theme only. Positions are not part of appearances; the video export
+ * Each page's appearance stack per marcher: tag, then section and field theme (there are no
+ * per-marcher-page overrides, P7.14). Positions are not part of appearances; the video export
  * samples them from the resolver (`ResolverFrameSampler`).
  */
 export function buildMarcherAppearancesByPageId({
     sortedPages,
     marchers,
-    marcherPagesMap,
-    timelineMode,
     sectionAppearances,
     marcherIdsByTagId,
     allTagAppearances,
@@ -49,10 +43,6 @@ export function buildMarcherAppearancesByPageId({
 }: {
     sortedPages: Page[];
     marchers: Marcher[];
-    /** Not read when `timelineMode` is true, so it may be omitted then */
-    marcherPagesMap?: MarcherPageMap;
-    /** The file's timeline flag. Required, so no caller falls back to page mode by omission. */
-    timelineMode: boolean;
     sectionAppearances: SectionAppearance[];
     marcherIdsByTagId: MarcherIdsByTagId;
     allTagAppearances: TagAppearance[];
@@ -62,9 +52,6 @@ export function buildMarcherAppearancesByPageId({
     const appearancesByPageId: MarcherAppearancesByPageId = new Map();
 
     for (const page of sortedPages) {
-        const marcherPages = timelineMode
-            ? {}
-            : (marcherPagesMap?.marcherPagesByPage[page.id] ?? {});
         const tagAppearances = resolveTagAppearancesForPage(
             page.id,
             allTagAppearances,
@@ -78,7 +65,6 @@ export function buildMarcherAppearancesByPageId({
                 sectionAppearances,
                 marcherIdsByTagId,
                 tagAppearances,
-                marcherPages,
                 fieldProperties,
             }),
         );

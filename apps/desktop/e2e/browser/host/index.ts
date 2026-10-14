@@ -74,6 +74,7 @@ function registerHandlers() {
     ipcMain.handle("recent-files:get", () => []);
     ipcMain.handle("newShow:getPending", () => false);
     ipcMain.handle("newShow:getDraftPath", () => null);
+    ipcMain.handle("conversion:getPending", () => null);
     ipcMain.handle("plugins:list", () => []);
     ipcMain.handle("auth:get-state", () => ({
         isAuthenticated: false,
@@ -131,3 +132,5 @@ export async function openShow(args: {
         },
     };
 }
+
+export { savedPositions } from "./positions";

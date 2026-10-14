@@ -76,7 +76,7 @@ const mouseOf = (options: unknown): MouseEvent | null => {
  * and, when interactive, a handle for each of `shapeHandles`. Dragging a handle redraws the shape
  * locally on every mouse move and writes nothing; releasing it calls `onCommit` once with the new
  * shape. A press shorter than the drag threshold, or a drag cancelled with Escape, puts the shape
- * back and commits nothing. Page mode never creates one; its shapes are `MarcherShape`s.
+ * back and commits nothing.
  *
  * Move handles are drawn above the others, so a shape whose handles land on one spot (a block
  * with no spacing, a freehand point at the middle of its bounds) can always be moved.

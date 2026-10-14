@@ -1,10 +1,7 @@
 import { afterEach, expect } from "vitest";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import {
-    keepFixturesInPageMode,
-    setTimelineModeFlag,
-} from "@/test/timelineMode";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
 import { createBeats, deleteBeats } from "@/db-functions/beat";
 import { createPages, deletePages, updatePages } from "@/db-functions/page";
 import {
@@ -12,7 +9,8 @@ import {
     deleteMarchers,
     updateMarchers,
 } from "@/db-functions/marcher";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
+import { addPageEraTables, writeMarcherPages } from "./pageEraShow";
 import { updateUtility } from "@/db-functions/utility";
 import {
     performRedo,
@@ -24,10 +22,8 @@ import { setTimelineRangeInTransaction } from "@/db-functions/timelineTransition
 import { shiftTimeline, createTrack } from "@/db-functions/timelineCommands";
 import { readPageGrid } from "@/db-functions/timelineRipple";
 import type { DbTransaction } from "@/db-functions/types";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "../pageEndBeat";
 import {
     startTimelineResolver,
@@ -40,7 +36,13 @@ import {
     timelineErrorMessage,
 } from "../timelineErrorMessages";
 
+// The tests build page shows on the blank file (adding the page-era tables) and convert them
+// themselves, keeping the page-era rows to compare with
 keepFixturesInPageMode("builds page shows and converts them itself");
+
+/** Converts as one edit, keeping the page-era tables the checks compare with */
+const convert = (db: DbConnection, options: { replace?: boolean } = {}) =>
+    convertPagesToTimeline(db, { ...options, keepPageTables: true });
 afterEach(() => stopTimelineResolver());
 
 type XY = [number, number];
@@ -68,6 +70,7 @@ const layout = (p: number, i: number): XY => [
 ];
 
 async function buildShow(db: DbConnection, spec: ShowSpec) {
+    await addPageEraTables(db);
     const durations = spec.pages.flat();
     if (durations.length > 0)
         await createBeats({
@@ -130,13 +133,13 @@ async function buildShow(db: DbConnection, spec: ShowSpec) {
     const ordered = [...pages].sort((a, b) => a.order - b.order);
     for (const [p, page] of ordered.entries()) {
         const src = spec.holdPages?.includes(p) ? p - 1 : p;
-        await updateMarcherPages({
+        await writeMarcherPages(
             db,
-            modifiedMarcherPages: all.map((marcher_id, i) => {
+            all.map((marcher_id, i) => {
                 const [x, y] = layout(src, i);
                 return { marcher_id, page_id: page.id, x, y };
             }),
-        });
+        );
     }
     if (spec.lastPageCounts !== undefined)
         await updateUtility({
@@ -145,18 +148,27 @@ async function buildShow(db: DbConnection, spec: ShowSpec) {
         });
     for (const [i, p] of spec.gaps ?? [])
         await db
-            .delete(schema.marcher_pages)
+            .delete(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, ordered[p]!.id),
-                    eq(schema.marcher_pages.marcher_id, all[i]!),
+                    eq(pageEra.marcher_pages.page_id, ordered[p]!.id),
+                    eq(pageEra.marcher_pages.marcher_id, all[i]!),
                 ),
             );
-    if (spec.deleteMarcherIndex !== undefined)
+    if (spec.deleteMarcherIndex !== undefined) {
+        await db
+            .delete(pageEra.marcher_pages)
+            .where(
+                eq(
+                    pageEra.marcher_pages.marcher_id,
+                    all[spec.deleteMarcherIndex]!,
+                ),
+            );
         await deleteMarchers({
             db,
             marcherIds: new Set([all[spec.deleteMarcherIndex]!]),
         });
+    }
 }
 
 const resolver = () => {
@@ -169,7 +181,7 @@ const resolver = () => {
 async function pageModeExpectations(db: DbConnection) {
     const { pages } = await readShowTiming(db);
     const ordered = [...pages].sort((a, b) => a.order - b.order);
-    const rows = await db.select().from(schema.marcher_pages).all();
+    const rows = await db.select().from(pageEra.marcher_pages).all();
     const keyframes = new Map<
         number,
         { beat: number; x: number; y: number }[]
@@ -314,8 +326,7 @@ async function expectStructure(
 }
 
 async function convertAndCheck(db: DbConnection) {
-    await setTimelineModeFlag(db, true);
-    const result = await convertPagesToTimeline(db);
+    const result = await convert(db);
     // Skipped pages, and pages where nobody moves (C-12), have no timeline
     const withoutTimeline = new Set(
         result.report.pages
@@ -476,8 +487,7 @@ describeDbTests("P9.10 adversarial", (it) => {
             pages: [Array(8).fill(Q), Array(8).fill(Q)],
             marchers: 3,
         });
-        await setTimelineModeFlag(db, true);
-        await convertPagesToTimeline(db);
+        await convert(db);
         const [l] = await db
             .select()
             .from(schema.timelines)
@@ -521,8 +531,7 @@ describeDbTests("P9.10 adversarial", (it) => {
             ],
             marchers: 4,
         });
-        await setTimelineModeFlag(db, true);
-        await convertPagesToTimeline(db);
+        await convert(db);
         const ids = (
             await db
                 .select()
@@ -649,8 +658,7 @@ describeDbTests("P9.10 adversarial", (it) => {
             pages: [Array(4).fill(Q), Array(6).fill(Q), Array(4).fill(Q)],
             marchers: 3,
         });
-        await setTimelineModeFlag(db, true);
-        await convertPagesToTimeline(db);
+        await convert(db);
         const snap = await db.select().from(schema.timelines).all();
         let r = await performUndo(db);
         expect(r.success, r.error?.message).toBe(true);
@@ -686,8 +694,7 @@ describeDbTests("P9.10 adversarial", (it) => {
             marchers: 4,
             lastPageCounts: 4,
         });
-        await setTimelineModeFlag(db, true);
-        await convertPagesToTimeline(db);
+        await convert(db);
         const gridMatches = async (
             label: string,
             withoutTimeline: ReadonlySet<number> = new Set(),
@@ -758,8 +765,7 @@ describeDbTests("P9.10 adversarial", (it) => {
             pages: [Array(8).fill(Q), Array(8).fill(Q), Array(4).fill(Q)],
             marchers: 4,
         });
-        await setTimelineModeFlag(db, true);
-        await convertPagesToTimeline(db);
+        await convert(db);
         // Rebuild the OLD layout by raw SQL: one timeline [0, N) owning every transition
         const tls = await db
             .select()
@@ -809,7 +815,7 @@ describeDbTests("P9.10 adversarial", (it) => {
         await timelineResolverSettled();
 
         // Replace repairs
-        await convertPagesToTimeline(db, { replace: true });
+        await convert(db, { replace: true });
         await expectStructure(db);
         await startTimelineResolver(db);
         await expectQuarterBeatEquality(db);

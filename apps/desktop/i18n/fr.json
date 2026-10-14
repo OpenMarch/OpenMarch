@@ -308,7 +308,6 @@
         "individualChartsTooltip": "Créer des PDF de graphiques de sondage personnalisés pour chaque marcheur individuel.",
         "individualChartsTooltipDescription": "Si cela n'est pas coché, un fichier PDF de graphique de sondage global sera créé.",
         "marcher": "Marcher : {status}",
-        "marcherPagesNotLoaded": "Pages de marche non chargées",
         "marchersNotLoaded": "Marcheurs non chargés",
         "measuresHeader": "Mesure",
         "mobile": "Mobil",

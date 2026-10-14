@@ -4,7 +4,7 @@ import { createResolver, type Resolver } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { performHistoryAction, performRedo, performUndo } from "../history";
 import { deletePageFlags } from "../pageFlags";
@@ -30,7 +30,6 @@ const TABLES = [
     schema.pages,
     schema.utility,
     schema.marchers,
-    schema.marcher_pages,
     schema.tag_appearances,
     schema.timelines,
     schema.timeline_shapes,
@@ -46,14 +45,6 @@ const snapshot = async (db: DbConnection) => {
     return out;
 };
 
-const setTimelineFlag = async (db: DbConnection) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: true }),
-    });
-};
-
 const clearHistory = async (db: DbConnection) => {
     await db.run(sql`DELETE FROM history_undo`);
     await db.run(sql`DELETE FROM history_redo`);
@@ -61,7 +52,6 @@ const clearHistory = async (db: DbConnection) => {
 
 /** A show made in timeline mode: no stored moves, so everyone holds at home on every page. */
 const madeInTimelineMode = async (db: DbConnection) => {
-    await setTimelineFlag(db);
     await convertPagesToTimeline(db);
     for (const table of [
         "timeline_slot_destinations",
@@ -350,7 +340,6 @@ describe("history", () => {
         testWithHistory(
             "a window move, Delete page and its moves on its end page, and a later edit undo one at a time",
             async ({ db, marchersAndPages: _, expectNumberOfChanges }) => {
-                await setTimelineFlag(db);
                 await convertPagesToTimeline(db);
                 const [a, b] = await marcherIds(db);
                 const state = await expectNumberOfChanges.getDatabaseState(db);

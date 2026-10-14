@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * An undo or redo that didn't apply tells the user why (P9.5): a step the page-era freeze refused
- * (and dropped from its stack) gets a warning that it was skipped; any other failure an error.
+ * An undo or redo that didn't apply tells the user with an error.
  */
 
 const toasts = vi.hoisted(() => ({
@@ -25,29 +24,14 @@ describe("toastHistoryActionFailure", () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
     });
 
-    it.each(["undo", "redo"] as const)(
-        "a %s the freeze refused says it was skipped",
-        (type) => {
-            toastHistoryActionFailure(type, { kind: "page-era-frozen" });
-            expect(toasts.warning).toHaveBeenCalledWith(
-                HISTORY_FAILURE_MESSAGES["page-era-frozen"][type]
-                    .defaultMessage,
-            );
-            expect(toasts.error).not.toHaveBeenCalled();
-        },
-    );
-
-    it.each(["undo", "redo"] as const)(
-        "any other failed %s shows an error",
-        (type) => {
-            toastHistoryActionFailure(type, {
-                kind: "error",
-                message: "no such column",
-            });
-            expect(toasts.error).toHaveBeenCalledWith(
-                HISTORY_FAILURE_MESSAGES.error[type].defaultMessage,
-            );
-            expect(toasts.warning).not.toHaveBeenCalled();
-        },
-    );
+    it.each(["undo", "redo"] as const)("a failed %s shows an error", (type) => {
+        toastHistoryActionFailure(type, {
+            kind: "error",
+            message: "no such column",
+        });
+        expect(toasts.error).toHaveBeenCalledWith(
+            HISTORY_FAILURE_MESSAGES.error[type].defaultMessage,
+        );
+        expect(toasts.warning).not.toHaveBeenCalled();
+    });
 });

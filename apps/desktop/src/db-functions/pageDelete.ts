@@ -11,7 +11,6 @@ import { transactionWithHistory } from "./history";
 import {
     pageNumberOffsetInTransaction,
     readPageGrid,
-    timelineModeInTransaction,
     withTimelinePageRipple,
     type GridPage,
     type PageGrid,
@@ -141,8 +140,8 @@ export function changedFlagPageIds(
 
 /**
  * Runs `remove` (a delete inside `withTimelinePageRipple`) and reports what it changed: the pages
- * left that are longer now, from the page grid before and after, and in timeline mode the pages
- * whose flag looks different, sampling every remaining flag before and after; `flagBefore` maps a
+ * left that are longer now, from the page grid before and after, and the pages whose flag looks
+ * different, sampling every remaining flag before and after; `flagBefore` maps a
  * page left after the delete to the beat its flag was at before. Pages are named as before.
  */
 async function deleteAndCompare(
@@ -150,10 +149,9 @@ async function deleteAndCompare(
     remove: () => Promise<DatabasePage[]>,
     flagBefore: (before: PageGrid) => (page: GridPage) => number | undefined,
 ): Promise<PageDeleteWithMovesResult> {
-    const timelineMode = await timelineModeInTransaction(tx);
     const namesBefore = await readPageNames(tx);
     const gridBefore = await readPageGrid(tx);
-    const before = timelineMode ? await readFlagLook(tx) : null;
+    const before = await readFlagLook(tx);
     const deleted = await withTimelinePageRipple(tx, remove);
     const deletedNames = deleted
         .map((p) => namesBefore.get(p.id))
@@ -182,7 +180,6 @@ async function deleteAndCompare(
             return page ? [{ ...page, counts: p.end - p.start }] : [];
         })
         .sort((a, b) => a.order - b.order);
-    if (!before) return { deleted, deletedNames, grownPages, changedPages: [] };
 
     const after = await readFlagLook(tx);
     const changedPages = changedFlagPageIds(

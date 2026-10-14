@@ -2,10 +2,8 @@ import { afterEach, describe, expect } from "vitest";
 import { eq, getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     startTimelineResolver,
@@ -24,15 +22,10 @@ import {
     type BeatRange,
 } from "../timelineMembership";
 import { TimelineWriteError } from "../timelineErrors";
-import {
-    keepFixturesInPageMode,
-    setTimelineModeFlag,
-} from "@/test/timelineMode";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
 
 // P7.17: these tests set up timeline mode themselves
-keepFixturesInPageMode(
-    "its tests convert the show and set the flag themselves",
-);
+keepFixturesInPageMode("its tests convert the show themselves");
 
 /**
  * Who is in a timeline (docs/timeline/phases/08-authoring-ui.md P8.14, ui.md UI-9), on a converted
@@ -68,10 +61,9 @@ const violations = async (db: DbConnection) =>
         sql`SELECT code, transition_id, detail FROM timeline_commit_violations`,
     );
 
-/** Converts the show, turns the flag on, starts the store, and returns the pages in order. */
+/** Converts the show, starts the store, and returns the pages in order. */
 const setUp = async (db: DbConnection): Promise<Page[]> => {
     await convertPagesToTimeline(db);
-    await setTimelineModeFlag(db, true);
     await startTimelineResolver(db);
     const { pages } = await readShowTiming(db);
     return [...pages].sort((a, b) => a.order - b.order);

@@ -1,4 +1,3 @@
-import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -8,18 +7,13 @@ import AudioFile, {
 } from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
-import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
-import WaveformTimingOverlay from "./WaveformTimingOverlay";
 import { calculateMasterVolume } from "./volume";
 import { useQuery } from "@tanstack/react-query";
-import {
-    useTimelineMode,
-    workspaceSettingsQueryOptions,
-} from "@/hooks/queries/useWorkspaceSettings";
+import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import {
     displayedBeat,
     useTimelineSelectionStore,
@@ -30,8 +24,6 @@ import {
     audioEnvelope,
     useAudioEnvelopeStore,
 } from "@/timeline/timelineWaveform";
-import { CircleNotchIcon } from "@phosphor-icons/react";
-import type Page from "@/global/classes/Page";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -39,7 +31,6 @@ export const darkProgressColor = "rgb(150, 126, 255)";
 const PLAYBACK_DELAY = 0.1; // Delay in seconds to start playback
 // Stopping fades the sources out over this many seconds, so a stop or restart doesn't click
 const STOP_FADE = 0.008;
-const WAVEFORM_HEIGHT = 60;
 
 // Helper function to adjust volume based on percentage
 function volumeAdjustment(volume: number): number {
@@ -60,23 +51,6 @@ export const playbackStartInfoRef = {
 
 // Global reference to store the AudioContext, used for getting timestamp
 export let audioContextRef: AudioContext | null = null;
-
-/** Departure time (end of page) used when paused — matches clock and Web Audio start. */
-export const getPausedPlaybackSeconds = (page: Page | null): number => {
-    if (!page) return 0;
-    return page.timestamp + page.duration;
-};
-
-export const seekWaveSurferToPausedPosition = (
-    ws: ReturnType<typeof WaveSurfer.create>,
-    page: Page | null,
-    duration: number,
-): void => {
-    if (duration <= 0) return;
-    const seconds = getPausedPlaybackSeconds(page);
-    const progress = Math.max(0, Math.min(1, seconds / duration));
-    ws.seekTo(progress);
-};
 
 // Function to get the current live playback position in seconds
 export const getLivePlaybackPosition = (): number => {
@@ -113,22 +87,15 @@ export const restartLivePlaybackAt = (seconds: number): void => {
  * The audio player handles playback via Web Audio API.
  * Metronome controls are managed by MetronomeModal.
  *
- * `headless` runs only the engine: the AudioContext, the music and metronome sources, the live
- * playback clock and the timeline's waveform envelope. It renders nothing, so it builds no
- * wavesurfer (no second decode of the song, no per-frame seeks) and no beat and measure markers.
- * Timeline mode uses it, since the timeline draws its own waveform lane and playhead.
+ * It runs only the engine: the AudioContext, the music and metronome sources, the live playback
+ * clock and the timeline's waveform envelope. It renders nothing, since the timeline draws its own
+ * waveform lane and playhead.
  */
 // eslint-disable-next-line max-lines-per-function
-export default function AudioPlayer({
-    headless = false,
-}: { headless?: boolean } = {}) {
+export default function AudioPlayer() {
     const { t } = useTolgee();
-    const { theme } = useTheme();
     const audioMuted = useUiSettingsStore((s) => s.uiSettings.audioMuted);
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
-    const timelinePixelsPerSecond = useUiSettingsStore(
-        (s) => s.uiSettings.timelinePixelsPerSecond,
-    );
     const selectedPageContext = useSelectedPage();
     const isPlayingContext = useIsPlaying();
     const selectedAudioFileContext = useSelectedAudioFile();
@@ -141,22 +108,17 @@ export default function AudioPlayer({
         !!selectedPageContext &&
         !!isPlayingContext &&
         !!selectedAudioFileContext;
-    const selectedPage = selectedPageContext?.selectedPage ?? null;
     const isPlaying = isPlayingContext?.isPlaying ?? false;
     const selectedAudioFile =
         selectedAudioFileContext?.selectedAudioFile ?? null;
     // Metronome state management
     const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
         useMetronomeStore();
-    const beatIdsOnPages = useMemo(() => {
-        return new Set(pages.map((page) => page.beats[0].id));
-    }, [pages]);
 
     // Audio playback state management
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
     const audioNode = useRef<AudioBufferSourceNode | null>(null);
     const audioGainNode = useRef<GainNode | null>(null);
-    const [audioDuration, setAudioDuration] = useState<number>(0);
     const [isAudioProcessing, setIsAudioProcessing] = useState<boolean>(false);
 
     // Metronome playback state management
@@ -166,23 +128,11 @@ export default function AudioPlayer({
     const metroNode = useRef<AudioBufferSourceNode | null>(null);
     const metroGainNode = useRef<GainNode | null>(null);
 
-    // Refs for WaveSurfer and timing markers
-    const waveformRef = useRef<HTMLDivElement>(null);
-    const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
-    const [waveformBuffer, setWaveformBuffer] = useState<ArrayBuffer | null>(
-        null,
-    );
-
     // AudioContext state management
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-    const [playbackTimestamp, setPlaybackTimestamp] = useState<number>(0);
-    // Timeline mode (UI-9, UI-11): play starts at the playback cursor (or the playhead when there
-    // is none), not the selected page. Every cursor or playhead write restarts playback from it,
-    // which is how a preview loops back to its start.
-    const timelineMode = useTimelineMode();
-    // In timeline mode, mute silences the music only, so the metronome can count through it
-    // (UI-12); page mode's mute still silences both
-    const metroMuted = audioMuted && !timelineMode;
+    // UI-9, UI-11: play starts at the playback cursor (or the playhead when there is none), not
+    // the selected page. Every cursor or playhead write restarts playback from it, which is how a
+    // preview loops back to its start.
     // Only read while playing (where playback starts, and each restart); paused, a scrub's seeks
     // don't re-render the player
     const playheadBeat = useTimelineSelectionStore((s) =>
@@ -191,25 +141,8 @@ export default function AudioPlayer({
     const playheadRevision = useTimelineSelectionStore((s) =>
         isPlaying ? s.playheadRevision : -1,
     );
-    const startSeconds = timelineMode
-        ? timeAtBeat(beats, playheadBeat)
-        : playbackTimestamp;
-    const restartKey = timelineMode ? playheadRevision : 0;
-    const selectedPageRef = useRef(selectedPage);
-    const audioDurationRef = useRef(audioDuration);
-    const isPlayingRef = useRef(isPlaying);
-
-    useEffect(() => {
-        selectedPageRef.current = selectedPage;
-    }, [selectedPage]);
-
-    useEffect(() => {
-        audioDurationRef.current = audioDuration;
-    }, [audioDuration]);
-
-    useEffect(() => {
-        isPlayingRef.current = isPlaying;
-    }, [isPlaying]);
+    const startSeconds = timeAtBeat(beats, playheadBeat);
+    const restartKey = playheadRevision;
 
     // Set up AudioContext on the first mount
     useEffect(() => {
@@ -268,16 +201,15 @@ export default function AudioPlayer({
         return largestMinimumDuration.current;
     }, [pages]);
 
-    // The timeline's waveform lane (UI-12) reads the offset audio's envelope; page mode has no
-    // lane, so it skips the work
+    // The timeline's waveform lane (UI-12) reads the offset audio's envelope
     useEffect(() => {
         const { setEnvelope } = useAudioEnvelopeStore.getState();
         setEnvelope(
-            timelineMode && audioBuffer && selectedAudioFile
+            audioBuffer && selectedAudioFile
                 ? audioEnvelope(audioBuffer)
                 : null,
         );
-    }, [timelineMode, audioBuffer, selectedAudioFile]);
+    }, [audioBuffer, selectedAudioFile]);
     useEffect(
         () => () => useAudioEnvelopeStore.getState().setEnvelope(null),
         [],
@@ -318,8 +250,7 @@ export default function AudioPlayer({
 
                         if (e.data.type === "audioProcessed") {
                             // Reconstruct the AudioBuffer from the worker's response
-                            const { audioBuffer: bufferData, waveformBuffer } =
-                                e.data;
+                            const { audioBuffer: bufferData } = e.data;
 
                             const newBuffer = audioContext.createBuffer(
                                 bufferData.numberOfChannels,
@@ -340,8 +271,6 @@ export default function AudioPlayer({
                             }
 
                             setAudioBuffer(newBuffer);
-                            setAudioDuration(newBuffer.duration);
-                            setWaveformBuffer(waveformBuffer);
                             setIsAudioProcessing(false);
 
                             // Clean up worker
@@ -381,8 +310,8 @@ export default function AudioPlayer({
                             },
                             offsetSeconds: audioOffsetSeconds,
                             minimumDuration: minimumAudioDuration,
-                            // Only the wavesurfer view reads the WAV copy
-                            encodeWaveform: !headless,
+                            // Nothing reads the WAV copy
+                            encodeWaveform: false,
                         },
                         transferList,
                     );
@@ -407,16 +336,8 @@ export default function AudioPlayer({
         selectedAudioFile,
         audioOffsetSeconds,
         minimumAudioDuration,
-        headless,
         t,
     ]);
-
-    // Sync audio and store playback position with the selected page
-    useEffect(() => {
-        if (!selectedPage || isPlaying) return;
-
-        setPlaybackTimestamp(getPausedPlaybackSeconds(selectedPage));
-    }, [selectedPage, isPlaying, setPlaybackTimestamp]);
 
     // Play/pause audio when isPlaying changes
     useEffect(() => {
@@ -485,8 +406,9 @@ export default function AudioPlayer({
 
             const metroSource = audioContext.createBufferSource();
             metroGainNode.current = audioContext.createGain();
-            // The volume scales both; mute reaches the metronome only in page mode (metroMuted)
-            const masterVolume = calculateMasterVolume(audioVolume, metroMuted);
+            // The volume scales both; mute silences the music only, so the metronome can count
+            // through it (UI-12)
+            const masterVolume = calculateMasterVolume(audioVolume, false);
             // Read metronome settings at playback start, live changes update gain below without restarting
             const { isMetronomeOn: metronomeOn, volume: metronomeVolume } =
                 useMetronomeStore.getState();
@@ -514,17 +436,11 @@ export default function AudioPlayer({
             metroNode.current = metroSource;
 
             // Store playback tracking info for live position
-            playbackStartInfoRef.current = timelineMode
-                ? {
-                      playStartTime: startAt,
-                      startTimestamp: startSeconds,
-                      pageDuration: 0,
-                  }
-                : {
-                      playStartTime: startAt,
-                      startTimestamp: selectedPage?.timestamp ?? 0,
-                      pageDuration: selectedPage?.duration ?? 0,
-                  };
+            playbackStartInfoRef.current = {
+                playStartTime: startAt,
+                startTimestamp: startSeconds,
+                pageDuration: 0,
+            };
         } else {
             // If not playing, stop any existing playback
             stopPlayback();
@@ -545,72 +461,20 @@ export default function AudioPlayer({
         metronomeBuffer,
         startSeconds,
         restartKey,
-        timelineMode,
         audioVolume,
         audioMuted,
-        metroMuted,
     ]);
-
-    // Initialize WaveSurfer and load waveform data
-    useEffect(() => {
-        if (headless || !waveformRef.current || !waveformBuffer) return;
-
-        // Clean up previous instance
-        if (waveSurfer) {
-            waveSurfer.destroy();
-            setWaveSurfer(null);
-        }
-
-        // Create WaveSurfer instance
-        const ws = WaveSurfer.create({
-            container: waveformRef.current,
-            height: WAVEFORM_HEIGHT,
-            barWidth: 2,
-            barGap: 1,
-            barRadius: 2,
-            waveColor: waveColor,
-            progressColor:
-                theme === "dark" ? darkProgressColor : lightProgressColor,
-            interact: false,
-            hideScrollbar: true,
-            autoScroll: false,
-        });
-
-        const seekToPausedPosition = () => {
-            if (isPlayingRef.current) return;
-            seekWaveSurferToPausedPosition(
-                ws,
-                selectedPageRef.current,
-                audioDurationRef.current,
-            );
-        };
-
-        ws.on("decode", seekToPausedPosition);
-
-        // Load the audio data for visualization
-        const blob = new Blob([waveformBuffer], { type: "audio/wav" });
-        void ws.loadBlob(blob);
-
-        setWaveSurfer(ws);
-
-        return () => {
-            ws.un("decode", seekToPausedPosition);
-            ws.destroy();
-            setWaveSurfer(null);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [waveformRef, waveformBuffer, theme, headless]);
 
     // Update metronome on/off state and volume
     useEffect(() => {
         if (metroGainNode.current) {
-            const masterVolume = calculateMasterVolume(audioVolume, metroMuted);
+            const masterVolume = calculateMasterVolume(audioVolume, false);
             metroGainNode.current.gain.value =
                 isMetronomeOn && masterVolume > 0
                     ? volumeAdjustment(volume) * masterVolume
                     : 0;
         }
-    }, [audioVolume, metroMuted, isMetronomeOn, volume]);
+    }, [audioVolume, isMetronomeOn, volume]);
 
     useEffect(() => {
         if (audioGainNode.current) {
@@ -621,67 +485,6 @@ export default function AudioPlayer({
         }
     }, [audioMuted, audioVolume]);
 
-    // Snap WaveSurfer to correct position when paused
-    useEffect(() => {
-        if (!waveSurfer || !audioBuffer || isPlaying) return;
-
-        seekWaveSurferToPausedPosition(waveSurfer, selectedPage, audioDuration);
-    }, [waveSurfer, audioBuffer, audioDuration, selectedPage, isPlaying]);
-
-    // Animate WaveSurfer progress bar when playing
-    useEffect(() => {
-        if (!waveSurfer || !audioBuffer || !isPlaying) return;
-
-        let isActive = true;
-        let rafId: number;
-
-        const update = () => {
-            if (!isActive) return;
-            const livePlayback = getLivePlaybackPosition();
-            const progress = Math.max(
-                0,
-                Math.min(1, livePlayback / audioDuration),
-            );
-            waveSurfer.seekTo(progress);
-            rafId = requestAnimationFrame(update);
-        };
-
-        update();
-
-        return () => {
-            isActive = false;
-            cancelAnimationFrame(rafId);
-        };
-    }, [waveSurfer, audioBuffer, audioDuration, isPlaying]);
-
-    const measuresDuration = useMemo(() => {
-        if (!measures.length) {
-            return 0;
-        }
-        const lastMeasure = measures[measures.length - 1];
-        return lastMeasure.timestamp + lastMeasure.duration;
-    }, [measures]);
-
-    const renderedDuration = Math.max(audioDuration, measuresDuration);
-
-    const audioWaveformWidth = useMemo(() => {
-        if (audioDuration <= 0) return 0;
-        return audioDuration * timelinePixelsPerSecond;
-    }, [audioDuration, timelinePixelsPerSecond]);
-
-    // Update WaveSurfer style if duration or zoom changes
-    useEffect(() => {
-        if (waveSurfer) {
-            waveSurfer.setOptions({
-                minPxPerSec: timelinePixelsPerSecond,
-                width: audioWaveformWidth,
-            });
-        }
-    }, [waveSurfer, audioWaveformWidth, timelinePixelsPerSecond]);
-
-    const waveformWidth =
-        renderedDuration > 0 ? renderedDuration * timelinePixelsPerSecond : 0;
-
     if (!contextsReady) {
         console.warn(
             "AudioPlayer is waiting for context providers to mount; rendering skipped.",
@@ -689,55 +492,5 @@ export default function AudioPlayer({
         return null;
     }
 
-    if (headless) return null;
-
-    return (
-        <div className="w-fit pl-[40px]">
-            <div
-                className="relative pt-12"
-                style={{
-                    width: waveformWidth || undefined,
-                    height: WAVEFORM_HEIGHT,
-                }}
-            >
-                {isAudioProcessing && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-start pl-4">
-                        <CircleNotchIcon
-                            size={16}
-                            className="text-text animate-spin"
-                        />
-                    </div>
-                )}
-                <div
-                    id="waveform"
-                    ref={waveformRef}
-                    className="-z-10 h-full"
-                    style={{
-                        width: audioWaveformWidth || undefined,
-                        height: WAVEFORM_HEIGHT,
-                    }}
-                ></div>
-                {waveformWidth > audioWaveformWidth && (
-                    <div
-                        className="bg-fg-1/40 dark:bg-bg-1/40 pointer-events-none absolute top-0 bottom-0"
-                        style={{
-                            left: audioWaveformWidth,
-                            width: waveformWidth - audioWaveformWidth,
-                        }}
-                    >
-                        <div className="border-stroke h-full border-l border-dashed opacity-60" />
-                    </div>
-                )}
-                <WaveformTimingOverlay
-                    beats={beats}
-                    measures={measures}
-                    beatIdsOnPages={beatIdsOnPages}
-                    duration={renderedDuration}
-                    pixelsPerSecond={timelinePixelsPerSecond}
-                    height={WAVEFORM_HEIGHT}
-                    width={waveformWidth}
-                />
-            </div>
-        </div>
-    );
+    return null;
 }

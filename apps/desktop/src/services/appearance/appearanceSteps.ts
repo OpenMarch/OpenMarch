@@ -116,9 +116,8 @@ const sameAppearance = (a: ResolvedForCompare, b: ResolvedForCompare) =>
  *
  * Each page's stack is the one the canvas used for that page before: the tag appearances in effect
  * on the page (by priority), then the section appearance, then the field theme
- * (`_combineMarcherAppearances`). The per-marcher-page overrides of `marcher_pages` are left out,
- * as everywhere in timeline mode (P7.14). A page whose appearance resolves the same as the one
- * before adds no step.
+ * (`_combineMarcherAppearances`). There are no per-marcher-page overrides (P7.14). A page whose
+ * appearance resolves the same as the one before adds no step.
  *
  * A page missing from `tagAppearanceIdsByPageId` (a page added since the map was read) keeps the
  * tag appearances of the page before it, as the map would: a new page starts no tag appearance.
@@ -158,7 +157,6 @@ export function buildAppearanceSteps({
             sectionAppearances,
             marcherIdsByTagId,
             tagAppearances: tagAppearances.filter((a) => ids.has(a.id)),
-            marcherPages: {},
             fieldProperties,
         });
         for (const marcher of marchers) {

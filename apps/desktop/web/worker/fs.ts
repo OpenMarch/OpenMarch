@@ -98,6 +98,7 @@ export const writeFileSync = unsupported("writeFileSync");
 export const mkdirSync = unsupported("mkdirSync");
 export const copyFileSync = unsupported("copyFileSync");
 export const renameSync = unsupported("renameSync");
+export const linkSync = unsupported("linkSync");
 export const readFile = unsupported("readFile");
 export const createReadStream = unsupported("createReadStream");
 export const createWriteStream = unsupported("createWriteStream");
@@ -117,6 +118,7 @@ const fs = {
     mkdirSync,
     copyFileSync,
     renameSync,
+    linkSync,
     readFile,
     createReadStream,
     createWriteStream,

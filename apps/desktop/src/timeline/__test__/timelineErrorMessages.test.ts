@@ -121,11 +121,9 @@ describe("timelineErrorMessage", () => {
         expect(
             timelineErrorMessage(legacy, { translate: (_key, text) => text }),
         ).toBe(TIMELINE_LEGACY_CONVERSION_MESSAGE.defaultMessage);
-        // Through Tolgee the ICU-quoted braces render as written
         const message = timelineErrorMessage(legacy);
         expect(message).toMatch(/earlier development build/);
         expect(message).toMatch(/backup/);
-        expect(message).toContain("convertPages({ replace: true })");
         expect(
             isLegacyConversionViolation(new TimelineWriteError("E-T1", "x")),
         ).toBe(false);

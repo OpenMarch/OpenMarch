@@ -2,10 +2,8 @@ import { afterEach, describe, expect } from "vitest";
 import { asc, eq, getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     startTimelineResolver,
@@ -42,7 +40,7 @@ import { keepFixturesInPageMode } from "@/test/timelineMode";
 
 // P7.17: these tests set up timeline mode themselves
 keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
+    "its tests convert the show or write timeline rows themselves",
 );
 
 /**
@@ -87,22 +85,13 @@ const resolver = () => {
     return r!;
 };
 
-const setTimelineFlag = async (db: DbConnection, on: boolean) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: on }),
-    });
-};
-
 const pagesInOrder = async (db: DbConnection): Promise<Page[]> => {
     const { pages } = await readShowTiming(db);
     return [...pages].sort((a, b) => a.order - b.order);
 };
 
-/** Converts the show with the flag on (or off), starts the store, and returns the pages. */
-const setUp = async (db: DbConnection, flag = true): Promise<Page[]> => {
-    await setTimelineFlag(db, flag);
+/** Converts the show, starts the store, and returns the pages. */
+const setUp = async (db: DbConnection): Promise<Page[]> => {
     await convertPagesToTimeline(db);
     await startTimelineResolver(db);
     return await pagesInOrder(db);
@@ -969,37 +958,5 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             expect((error as TimelineWriteError).code).toBe("E-ARGS");
             expect(await snapshot(db)).toEqual(before);
         });
-    });
-
-    it("with the flag off, page and beat edits leave the timeline rows alone", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await setUp(db, false);
-        const timelineBefore = await snapshot(db, TIMELINE_TABLES);
-        await createBeats({ db, newBeats: [BEAT], startingPosition: 12 });
-        await updatePages({ db, modifiedPages: [{ id: 4, start_beat: 27 }] });
-        await createPages({
-            db,
-            newPages: [{ start_beat: 5, is_subset: false }],
-        });
-        await deletePages({ db, pageIds: new Set([5]) });
-        expect(await snapshot(db, TIMELINE_TABLES)).toEqual(timelineBefore);
-        // Page mode still did its part
-        const pagesAfter = await pagesInOrder(db);
-        expect(pagesAfter.map((p) => p.id)).not.toContain(5);
-        const beatCount = await db
-            .select()
-            .from(schema.beats)
-            .all()
-            .then((b) => b.length);
-        expect(beatCount).toBe(98);
-        expect(
-            await db
-                .select()
-                .from(schema.pages)
-                .where(eq(schema.pages.id, 4))
-                .get(),
-        ).toMatchObject({ start_beat: 27 });
     });
 });

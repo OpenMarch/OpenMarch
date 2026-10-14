@@ -117,14 +117,13 @@ export const TIMELINE_UNKNOWN_ERROR_MESSAGE: TimelineErrorMessage = {
 /**
  * The commit-time E-T1 of a file converted by a development build from before P9.10, which wrote
  * one show-wide timeline holding a differently ranged transition per page. The commit check reads
- * the whole database, so every edit of such a file fails until it is converted again.
- *
- * The braces are quoted for ICU (Tolgee), so the message shows `convertPages({ replace: true })`.
+ * the whole database, so every edit of such a file fails until it is converted again from its
+ * backup.
  */
 export const TIMELINE_LEGACY_CONVERSION_MESSAGE: TimelineErrorMessage = {
     key: "timeline.errors.legacyConvertedTimeline",
     defaultMessage:
-        "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion), or run convertPages('{ replace: true }') from the developer console.",
+        "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion).",
 };
 
 /**

@@ -1,19 +1,8 @@
 import { act, cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, expect, vi } from "vitest";
-import { sql } from "drizzle-orm";
 import { DbConnection, describeDbTests } from "@/test/base";
 import {
-    createAllUndoTriggers,
-    dropAllUndoTriggers,
-} from "@/db-functions/history";
-import {
-    timelineFixtureMode,
-    withPageEraFreezeLifted,
-} from "@/test/timelineMode";
-import {
-    expectWrittenWhereTheModeWrites,
     harnessQueryClient,
-    marcherPageRows,
     positionsOn,
     probed,
     selectPageAndMarchers,
@@ -30,17 +19,12 @@ import { runActionWhenReady } from "@/test/runActionWhenReady";
 /**
  * The coordinate tools in the shortcut action handlers (`shortcuts/handlers`) (nudges, align, swap, set selected or all
  * marchers to the previous or next page) and undo's page and marcher focus, run from the handler itself on the
- * `base.tsx` fixtures (docs/timeline/phases/07-page-parity.md P7.18).
- *
- * The file's mode decides the path: the default run checks page mode (`marcher_pages` rows), and
- * `test:timeline` (a converted show with the flag on) checks timeline mode, where the tools read
- * the resolver and write slot destinations, and `marcher_pages` is never written. In timeline mode
- * every `marcher_pages` row is first moved away from the resolver's position, so a tool that read
- * its starting positions from those rows would fail. Each test also checks that the marchers on
- * the pages before and after, and unselected marchers on the page, don't move.
+ * `base.tsx` fixtures (docs/timeline/phases/07-page-parity.md P7.18). The tools read the resolver
+ * and write timeline rows. Each test also checks that the marchers on the pages before and after,
+ * and unselected marchers on the page, don't move.
  */
 
-// Page-mode mutations invalidate through the app's query client; use the harness's. The getter
+// Mutations invalidate through the app's query client; use the harness's. The getter
 // is read lazily, after this file's imports (the harness imports modules that import `@/App`).
 const app = vi.hoisted(() => ({ client: (): unknown => null }));
 vi.mock("@/App", () => ({
@@ -74,26 +58,8 @@ const trigger = (action: ActionId) => runActionWhenReady(action);
 
 const PAGE = 3;
 
-/** How far `makePageRowsStale` moves every `marcher_pages` row, in pixels */
-const STALE = { dx: -40, dy: -24 };
-
-/**
- * Timeline mode: moves every `marcher_pages` row away from where the resolver puts the marcher,
- * outside history (undo triggers dropped), as rows left over from before an edit can be. A tool
- * that read its starting positions from those rows instead of the resolver then gets a different
- * result. Page mode: nothing, as the rows are where the marchers are.
- */
-const makePageRowsStale = async (db: DbConnection) => {
-    if (!timelineFixtureMode()) return;
-    await dropAllUndoTriggers(db);
-    // The rows are frozen in timeline mode (P9.5); lift the freeze to make them stale
-    await withPageEraFreezeLifted(db, () =>
-        db.run(
-            sql`UPDATE marcher_pages SET x = x + ${STALE.dx}, y = y + ${STALE.dy}`,
-        ),
-    );
-    await createAllUndoTriggers(db);
-};
+/** More than one nudge step, in pixels */
+const NUDGE_BOUND = 40;
 
 type Positions = Map<string, [number, number]>;
 
@@ -127,10 +93,9 @@ const bystandersOf = (marchers: readonly { id: number }[]) =>
 type XY = [number, number];
 
 /**
- * Makes the rows stale (timeline mode), selects `ids` on `PAGE`, and reads the `measured`
- * marchers' positions on `PAGE` (and on page index `source`, when given). Then runs `action`,
- * waits for `check(after, before, sourcePositions)` to pass on the new positions on `PAGE`, and
- * checks that nothing else moved and that the edit was written where the mode writes.
+ * Selects `ids` on `PAGE`, and reads the `measured` marchers' positions on `PAGE` (and on page
+ * index `source`, when given). Then runs `action`, waits for `check(after, before,
+ * sourcePositions)` to pass on the new positions on `PAGE`, and checks that nothing else moved.
  */
 const runAction = async ({
     db,
@@ -151,7 +116,6 @@ const runAction = async ({
     source?: number;
     check: (after: XY[], before: XY[], sourcePositions: XY[]) => void;
 }) => {
-    await makePageRowsStale(db);
     const { page } = await setUp(PAGE, ids);
     const before = await positionsOn(db, page, measured);
     const sourcePositions =
@@ -161,7 +125,6 @@ const runAction = async ({
     const untouched = await untouchedPositions(db, ids, bystanders, {
         wholePage,
     });
-    const rowsBefore = await marcherPageRows(db);
 
     await trigger(action);
 
@@ -171,7 +134,6 @@ const runAction = async ({
     expect(
         await untouchedPositions(db, ids, bystanders, { wholePage }),
     ).toEqual(untouched);
-    await expectWrittenWhereTheModeWrites(db, rowsBefore);
 };
 
 const expectAt = (actual: readonly XY[], expected: readonly XY[]) => {
@@ -182,7 +144,7 @@ const expectAt = (actual: readonly XY[], expected: readonly XY[]) => {
     });
 };
 
-describeDbTests("registered coordinate actions in the file's mode", (it) => {
+describeDbTests("registered coordinate actions", (it) => {
     it("a nudge moves the selected marchers a step right of where they are", async ({
         db,
         marchersAndPages,
@@ -195,9 +157,9 @@ describeDbTests("registered coordinate actions in the file's mode", (it) => {
             action: "moveSelectedMarchersRight",
             check: (after, before) =>
                 after.forEach(([x, y], i) => {
-                    // Right of the marcher, by less than the stale rows are off
+                    // Right of the marcher, by about a step
                     expect(x).toBeGreaterThan(before[i]![0]);
-                    expect(x).toBeLessThan(before[i]![0] - STALE.dx);
+                    expect(x).toBeLessThan(before[i]![0] + NUDGE_BOUND);
                     expect(y).toBeCloseTo(before[i]![1], 6);
                 }),
         });
@@ -354,17 +316,14 @@ describeDbTests("registered coordinate actions in the file's mode", (it) => {
 
         await trigger("performUndo");
 
-        // Page mode is left out of the focus check: its rule never finds the page, because
-        // `rowIdFromSql` in history.ts parses the whole match (filed as P7.19)
-        if (timelineFixtureMode())
-            await waitFor(() => {
-                expect(probed().selectedPage?.id).toBe(page.id);
-                expect(
-                    probed()
-                        .selectedMarchers.map((m) => m.id)
-                        .sort(),
-                ).toEqual([...ids].sort());
-            });
+        await waitFor(() => {
+            expect(probed().selectedPage?.id).toBe(page.id);
+            expect(
+                probed()
+                    .selectedMarchers.map((m) => m.id)
+                    .sort(),
+            ).toEqual([...ids].sort());
+        });
         await waitFor(async () => {
             const after = await positionsOn(db, page, ids);
             after.forEach(([x, y], i) => {

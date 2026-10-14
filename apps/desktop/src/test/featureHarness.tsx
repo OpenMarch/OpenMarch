@@ -1,7 +1,6 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import { useEffect, type ReactNode } from "react";
-import { and, eq } from "drizzle-orm";
 import { TolgeeProvider } from "@tolgee/react";
 import {
     QueryClient,
@@ -9,7 +8,6 @@ import {
     useQuery,
 } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { schema } from "@/../electron/database/db";
 import type { DbConnection } from "@/db-functions/types";
 import tolgee from "@/global/singletons/Tolgee";
 import type Page from "@/global/classes/Page";
@@ -26,14 +24,12 @@ import {
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
-import { marcherPagesByPageQueryOptions } from "@/hooks/queries/useMarcherPages";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import TimelineResolverHost from "@/timeline/TimelineResolverHost";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { timelinePositionsSettled } from "@/timeline/timelineCoordinateWrites";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
-import { isTimelineModeEnabled } from "@/settings/workspaceSettings";
 import {
     selectedStoredTimeline,
     useTimelineSelectionStore,
@@ -43,15 +39,13 @@ import {
     pageFlags,
     selectionOfPage,
 } from "@/timeline/timelinePlayhead";
-import { timelineFixtureMode } from "./timelineMode";
 
 /**
  * Renders app features on a `base.tsx` fixture database with the app's providers and the timeline
- * resolver host, so a feature test takes whichever path the file's mode picks: page mode in the
- * default run, timeline mode under `test:timeline` (docs/timeline/phases/07-page-parity.md P7.18).
+ * resolver host (docs/timeline/phases/07-page-parity.md P7.18).
  *
- * Page-mode mutations invalidate through the app's query client (`@/App`), so a test file that
- * uses this mocks `@/App` to return `harnessQueryClient()`:
+ * Some mutations invalidate through the app's query client (`@/App`), so a test file that uses
+ * this mocks `@/App` to return `harnessQueryClient()`:
  *
  * ```ts
  * const app = vi.hoisted(() => ({ client: (): unknown => null }));
@@ -77,10 +71,8 @@ export interface FeatureProbe {
     selectedMarchers: Marcher[];
     setSelectedPage: (page: { id: number }) => void;
     setSelectedMarchers: (marchers: Marcher[]) => void;
-    /** Settings, field properties and the selected page's rows have loaded */
+    /** Settings and field properties have loaded */
     loaded: boolean;
-    /** The file's timeline flag, from the loaded workspace settings */
-    timelineMode: boolean;
 }
 
 const probe: { current: FeatureProbe | null } = { current: null };
@@ -92,9 +84,6 @@ function ProbeView() {
     const selectedMarchersContext = useSelectedMarchers()!;
     const settings = useQuery(workspaceSettingsQueryOptions());
     const fieldProperties = useQuery(fieldPropertiesQueryOptions());
-    const marcherPages = useQuery(
-        marcherPagesByPageQueryOptions(selectedPageContext.selectedPage?.id),
-    );
     // The page boxes the start flag follows (UI-10), as `TimelineModePanel` keeps them in the app
     useEffect(() => {
         useTimelineSelectionStore
@@ -112,11 +101,7 @@ function ProbeView() {
         selectedMarchers: selectedMarchersContext.selectedMarchers,
         setSelectedPage: selectedPageContext.setSelectedPage,
         setSelectedMarchers: selectedMarchersContext.setSelectedMarchers,
-        timelineMode: isTimelineModeEnabled(settings.data),
-        loaded:
-            settings.isSuccess &&
-            fieldProperties.isSuccess &&
-            marcherPages.isSuccess,
+        loaded: settings.isSuccess && fieldProperties.isSuccess,
     };
     return null;
 }
@@ -128,21 +113,16 @@ export const probed = (): FeatureProbe => {
 };
 
 /**
- * Sets the timeline-mode selection (ui.md UI-9), as clicking the timeline does: `"home"` selects
+ * Sets the timeline selection (ui.md UI-9), as clicking the timeline does: `"home"` selects
  * home and moves the playhead to beat 0; a page selects its box (previous flag to its own flag)
  * and moves the playhead to its flag, or home for the first page; a range selects it and moves the
  * playhead to its end. Waits for the selected page to follow the playhead (the TEMPORARY bridge
- * until P8.12) and, in timeline mode, for the stored timelines to load, so dimming and the
- * selected timeline are settled.
+ * until P8.12) and for the stored timelines to load, so dimming and the selected timeline are
+ * settled.
  */
 export const selectTimeline = async (
     target: "home" | Page | { readonly start: number; readonly end: number },
 ) => {
-    // Page mode has no timeline selection (and no bridge to wait for)
-    expect(
-        probed().timelineMode,
-        "selectTimeline needs a file in timeline mode",
-    ).toBe(true);
     const store = useTimelineSelectionStore.getState();
     act(() => {
         if (target === "home") store.selectHome();
@@ -163,11 +143,11 @@ export const selectTimeline = async (
         expect(probed().selectedPage?.id).toBe(
             pageAtPlayhead(probed().pages, playheadBeat)?.id,
         );
-        if (timelineFixtureMode()) expect(storedTimelines).not.toBeNull();
+        expect(storedTimelines).not.toBeNull();
     });
 };
 
-/** The timeline-mode selection, playhead and the stored timeline the selection resolves to */
+/** The timeline selection, playhead and the stored timeline the selection resolves to */
 export const timelineSelection = () => {
     const state = useTimelineSelectionStore.getState();
     return {
@@ -209,27 +189,23 @@ export const mountFeature = (children: ReactNode) => {
 };
 
 /**
- * Selects `page` and the marchers with `marcherIds`, and waits for their data to load. In timeline
- * mode it also selects the page's box (its page timeline, or home), as the editing context.
+ * Selects `page` and the marchers with `marcherIds`, and waits for their data to load. It also
+ * selects the page's box (its page timeline, or home), as the editing context.
  */
 export const selectPageAndMarchers = async (
     page: Page,
     marcherIds: readonly number[],
 ) => {
-    // Timeline mode edits the selected timeline, not the page (UI-9, P8.15): select the page's
-    // box as a click on it does (its page timeline, or home for the first page)
-    if (probed().timelineMode) {
-        const flag = pageFlags(probed().pages).find(
-            (f) => f.page.id === page.id,
-        );
-        const selection = flag ? selectionOfPage(flag) : null;
-        const store = useTimelineSelectionStore.getState();
-        act(() => {
-            if (selection?.kind === "home") store.selectHome();
-            else if (selection?.kind === "range")
-                store.selectRange(selection.start, selection.end);
-        });
-    }
+    // Editing changes the selected timeline, not the page (UI-9, P8.15): select the page's box
+    // as a click on it does (its page timeline, or home for the first page)
+    const flag = pageFlags(probed().pages).find((f) => f.page.id === page.id);
+    const selection = flag ? selectionOfPage(flag) : null;
+    const store = useTimelineSelectionStore.getState();
+    act(() => {
+        if (selection?.kind === "home") store.selectHome();
+        else if (selection?.kind === "range")
+            store.selectRange(selection.start, selection.end);
+    });
     act(() => probed().setSelectedPage(page));
     act(() =>
         probed().setSelectedMarchers(
@@ -245,16 +221,15 @@ export const selectPageAndMarchers = async (
         ).toEqual([...marcherIds].sort());
         expect(probed().loaded).toBe(true);
         // A selected range resolves to its stored timeline only once they've loaded
-        if (probed().timelineMode)
-            expect(
-                useTimelineSelectionStore.getState().storedTimelines,
-            ).not.toBeNull();
+        expect(
+            useTimelineSelectionStore.getState().storedTimelines,
+        ).not.toBeNull();
     });
 };
 
 /**
- * Mounts `children`, selects `pages[pageIndex]` and the given marchers, and in timeline mode waits
- * for the resolver.
+ * Mounts `children`, selects `pages[pageIndex]` and the given marchers, and waits for the
+ * resolver.
  */
 export const setUpFeature = async (
     children: ReactNode,
@@ -267,42 +242,22 @@ export const setUpFeature = async (
         expect(probed().marchers?.length).toBeGreaterThan(0);
     });
     await selectPageAndMarchers(probed().pages[pageIndex]!, marcherIds);
-    // `positionOn` and `expectWrittenWhereTheModeWrites` pick the mode from the test run; the
-    // app picks it from the file's flag. They must agree, or the checks read the wrong place.
-    expect(
-        probed().timelineMode,
-        "the file's timeline flag matches the test run's mode",
-    ).toBe(timelineFixtureMode());
-    if (timelineFixtureMode())
-        await waitFor(() =>
-            expect(useTimelineResolverStore.getState().status).toBe("ready"),
-        );
+    await waitFor(() =>
+        expect(useTimelineResolverStore.getState().status).toBe("ready"),
+    );
     return { qc, result, page: probed().pages[pageIndex]! };
 };
 
-/** Where the app draws a marcher on a page: the resolver in timeline mode, the row otherwise. */
+/** Where the app draws a marcher at the end of a page, from the resolver. */
 export const positionOn = async (
-    db: DbConnection,
+    _db: DbConnection,
     page: Page,
     marcherId: number,
 ): Promise<[number, number]> => {
-    if (timelineFixtureMode()) {
-        await timelinePositionsSettled();
-        const resolver = useTimelineResolverStore.getState().resolver!;
-        const [x, y] = resolver.positionAt(marcherId, pageEndBeat(page));
-        return [x, y];
-    }
-    const row = await db
-        .select()
-        .from(schema.marcher_pages)
-        .where(
-            and(
-                eq(schema.marcher_pages.marcher_id, marcherId),
-                eq(schema.marcher_pages.page_id, page.id),
-            ),
-        )
-        .get();
-    return [row!.x, row!.y];
+    await timelinePositionsSettled();
+    const resolver = useTimelineResolverStore.getState().resolver!;
+    const [x, y] = resolver.positionAt(marcherId, pageEndBeat(page));
+    return [x, y];
 };
 
 export const positionsOn = async (
@@ -310,25 +265,3 @@ export const positionsOn = async (
     page: Page,
     marcherIds: readonly number[],
 ) => Promise.all(marcherIds.map((id) => positionOn(db, page, id)));
-
-/** Every `marcher_pages` position */
-export const marcherPageRows = (db: DbConnection) =>
-    db
-        .select({
-            marcher_id: schema.marcher_pages.marcher_id,
-            page_id: schema.marcher_pages.page_id,
-            x: schema.marcher_pages.x,
-            y: schema.marcher_pages.y,
-        })
-        .from(schema.marcher_pages)
-        .all();
-
-/** Timeline mode never writes `marcher_pages`; page mode writes its positions there. */
-export const expectWrittenWhereTheModeWrites = async (
-    db: DbConnection,
-    rowsBefore: Awaited<ReturnType<typeof marcherPageRows>>,
-) => {
-    const rowsAfter = await marcherPageRows(db);
-    if (timelineFixtureMode()) expect(rowsAfter).toEqual(rowsBefore);
-    else expect(rowsAfter).not.toEqual(rowsBefore);
-};

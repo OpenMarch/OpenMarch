@@ -54,20 +54,17 @@ function useSamplesWhileActive(
 }
 
 /**
- * Draws the selected page's path visuals from the resolver in timeline mode
- * (docs/timeline/phases/07-page-parity.md P7.10): the move into the selected page and the move
- * out of it, as curves sampled between page end beats, with midsets and step-size warnings from
- * the same samples. Replaces the page-mode effect in `Canvas.tsx`, which draws straight lines
- * from `marcher_pages`.
+ * Draws the selected page's path visuals from the resolver (docs/timeline/phases/07-page-parity.md
+ * P7.10): the move into the selected page and the move out of it, as curves sampled between page
+ * end beats, with midsets and step-size warnings from the same samples.
  *
  * Cost: the samples are kept per resolver version and page pair, so toggles and visual changes
  * redraw without resampling, and so do Play and Stop; a side that can't show (its toggle off and
  * no forced warning) isn't sampled; nothing is sampled or drawn while playing, as with
  * `useTimelineStaticRender`, and stopping on the page that was drawn doesn't draw it again.
  *
- * Does nothing while `enabled` is false (the flag is off, or the resolver isn't ready yet, when
- * the page-mode paths stand in, as the marchers do). When it turns false, the curved paths are
- * removed so the page-mode effect's straight paths are the only ones left.
+ * Does nothing while `enabled` is false (the resolver isn't ready yet). When it turns false, the
+ * curved paths are removed.
  */
 // eslint-disable-next-line max-lines-per-function
 export function useTimelinePathRender({

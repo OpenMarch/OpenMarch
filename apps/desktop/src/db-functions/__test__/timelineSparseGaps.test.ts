@@ -4,7 +4,7 @@ import { createResolver, type Resolver } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { keepPassedFlagsAsStops } from "@/timeline/timelinePassThrough";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";

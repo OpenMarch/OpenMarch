@@ -23,6 +23,8 @@ import type {
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
 import type { HistoryResponse } from "@/db-functions";
+import type { PendingConversion } from "@om-electron/database/convertOnOpenGate";
+import type { ConvertProgress } from "@om-electron/database/convertOnOpenProtocol";
 // Types only, so this preload doesn't share a chunk with the sandboxed 3D
 // View preload.
 import type {
@@ -213,6 +215,56 @@ const APP_API = {
             callback(value);
         ipcRenderer.on("load-file-response", listener);
         return () => ipcRenderer.removeListener("load-file-response", listener);
+    },
+    /**
+     * The status of a refused open that closed the show that was open and reloaded the window
+     * to the launch page, or null. Taking it clears it.
+     */
+    takeLoadFileRefusal: () =>
+        ipcRenderer.invoke("load-file:takeRefusal") as Promise<number | null>,
+
+    // Converting a page-era show to timelines when it opens (ADR 0001 §6)
+    /** The page-era file waiting for the person to agree to convert it, or null. */
+    getPendingConversion: () =>
+        ipcRenderer.invoke(
+            "conversion:getPending",
+        ) as Promise<PendingConversion | null>,
+    /**
+     * Closes the show that is open, then backs up, converts and opens the pending file. Resolves
+     * the open's status (200 when it opened); the window reloads either way, and the main
+     * process explains failures.
+     */
+    confirmConversion: () =>
+        ipcRenderer.invoke("conversion:confirm") as Promise<number>,
+    /** Forgets the pending file without writing to it; the show that is open stays open. */
+    cancelConversion: () =>
+        ipcRenderer.invoke("conversion:cancel") as Promise<void>,
+    /**
+     * Calls `callback` when the main process asks about another file, or forgets the question
+     * (null) because another file opened or the show closed. Returns an unsubscribe.
+     */
+    onPendingConversion: (
+        callback: (pending: PendingConversion | null) => void,
+    ) => {
+        const listener = (
+            _event: Electron.IpcRendererEvent,
+            pending: PendingConversion | null,
+        ) => callback(pending);
+        ipcRenderer.on("conversion:pending", listener);
+        return () => {
+            ipcRenderer.removeListener("conversion:pending", listener);
+        };
+    },
+    /** Calls `callback` with the conversion's progress while it runs. Returns an unsubscribe. */
+    onConversionProgress: (callback: (progress: ConvertProgress) => void) => {
+        const listener = (
+            _event: Electron.IpcRendererEvent,
+            progress: ConvertProgress,
+        ) => callback(progress);
+        ipcRenderer.on("conversion:progress", listener);
+        return () => {
+            ipcRenderer.removeListener("conversion:progress", listener);
+        };
     },
 
     // SVG Generation

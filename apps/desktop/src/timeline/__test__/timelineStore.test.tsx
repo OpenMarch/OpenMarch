@@ -1,5 +1,4 @@
 import { afterEach, describe, expect } from "vitest";
-import { skipInTimelineMode } from "@/test/timelineMode";
 import { renderHook } from "@testing-library/react";
 import { eq, inArray, sql } from "drizzle-orm";
 import {
@@ -18,11 +17,6 @@ import {
 } from "@/db-functions/history";
 import { timelineChangeListenerCount } from "@/db-functions/timelineChanges";
 import { setTimelineTransitionDestinationInTransaction } from "@/db-functions/timelineTransitions";
-import {
-    getWorkspaceSettingsParsed,
-    updateWorkspaceSettingsParsed,
-} from "@/db-functions/workspaceSettings";
-import { isTimelineModeEnabled } from "@/settings/workspaceSettings";
 import { createTimelineHost } from "../timelineHost";
 import { readTimelineTables } from "../timelineRows";
 import {
@@ -663,31 +657,8 @@ describeDbTests("timeline resolver store", (it) => {
         );
     });
 
-    describe("dev flag (P5.1)", () => {
-        it.skipIf(
-            skipInTimelineMode(
-                "it asserts the flag is off by default; timeline test mode turns it on",
-            ),
-        )(
-            "is off by default and read from workspace_settings",
-            async ({ db }) => {
-                const settings = await getWorkspaceSettingsParsed({ db });
-                expect(settings.timelineMode).toBeUndefined();
-                expect(isTimelineModeEnabled(settings)).toBe(false);
-
-                await updateWorkspaceSettingsParsed({
-                    db,
-                    settings: { ...settings, timelineMode: true },
-                });
-                expect(
-                    isTimelineModeEnabled(
-                        await getWorkspaceSettingsParsed({ db }),
-                    ),
-                ).toBe(true);
-            },
-        );
-
-        it("with the flag off nothing subscribes; turning it on starts the store, and off stops it", async ({
+    describe("the resolver session (P5.1)", () => {
+        it("disabled, nothing subscribes; enabling starts the store, and disabling stops it", async ({
             db,
         }) => {
             await seedShow(db);

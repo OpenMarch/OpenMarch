@@ -1,7 +1,4 @@
-import {
-    timelineFixtureMode,
-    timelineHistoryTables,
-} from "@/test/timelineMode";
+import { timelineHistoryTables } from "@/test/timelineMode";
 import { assert, describe, expect } from "vitest";
 import {
     createPages,
@@ -21,7 +18,12 @@ import {
     getPagesInOrder,
     DatabasePageWithBeat,
 } from "../page";
-import { describeDbTests, schema, transaction } from "@/test/base";
+import {
+    DbConnection,
+    describeDbTests,
+    schema,
+    transaction,
+} from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import {
     inArray,
@@ -33,7 +35,6 @@ import {
     asc,
     isNotNull,
     sql,
-    count,
 } from "drizzle-orm";
 import {
     FIRST_BEAT_ID,
@@ -46,14 +47,76 @@ import { faker } from "@faker-js/faker";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import { getMeasures } from "../measures";
 import { DbTransaction } from "../types";
+import { createResolver, type XY } from "@openmarch/core";
+import { readShowTiming } from "@/timeline/showTiming";
+import { pageEndBeat } from "@/timeline/timelineCanvas";
+import { readTimelineTables } from "@/timeline/timelineRows";
+
+/** Every row of the timeline data tables. */
+const timelineRows = async (db: DbConnection) =>
+    await Promise.all(
+        timelineHistoryTables().map((table) => db.select().from(table).all()),
+    );
+
+/** Every marcher's position at each page's flag (0 for page 0), keyed by page id and marcher id. */
+const positionsAtFlags = async (db: DbConnection) => {
+    const resolver = createResolver((await readTimelineTables(db)).snapshot);
+    const { pages } = await readShowTiming(db);
+    return new Map<number, Map<number, XY>>(
+        pages.map((page) => {
+            const beat = page.id === FIRST_PAGE_ID ? 0 : pageEndBeat(page);
+            return [
+                page.id,
+                new Map(
+                    resolver
+                        .marcherIds()
+                        .map((id) => [id, resolver.positionAt(id, beat)]),
+                ),
+            ];
+        }),
+    );
+};
+
+/** New pages write no position rows: the timeline rows stay, and everyone holds at home. */
+const expectPagesAddedWithoutMoves = async (
+    db: DbConnection,
+    timelineBefore: Awaited<ReturnType<typeof timelineRows>>,
+) => {
+    expect(await timelineRows(db)).toEqual(timelineBefore);
+    const marchers = await db.select().from(schema.marchers).all();
+    const pages = await db.query.pages.findMany();
+    const positions = await positionsAtFlags(db);
+    expect([...positions.keys()].sort((a, b) => a - b)).toEqual(
+        pages.map((p) => p.id).sort((a, b) => a - b),
+    );
+    for (const [pageId, atFlag] of positions)
+        for (const m of marchers)
+            expect(
+                atFlag.get(m.id),
+                `marcher ${m.id} on page ${pageId}`,
+            ).toEqual([m.home_x, m.home_y]);
+};
 
 /**
- * How many pages have marcher pages after `createPages`, when `pageCount` pages exist: every page
- * in page mode; in timeline mode only page 0, which the fixture loaded before converting, since
- * new pages get no marcher pages there (P9.5).
+ * After deleting `deletedIds` from the converted `marchersAndPages` show (page ids in show
+ * order): the ripple leaves every marcher where it was at the flags of the pages before the first
+ * deleted one, and the timeline commits clean.
  */
-const pagesWithMarcherPages = (pageCount: number) =>
-    timelineFixtureMode() ? 1 : pageCount;
+const expectEarlierPagesKept = async (
+    db: DbConnection,
+    before: Awaited<ReturnType<typeof positionsAtFlags>>,
+    deletedIds: readonly number[],
+) => {
+    const firstDeleted = Math.min(Infinity, ...deletedIds);
+    const after = await positionsAtFlags(db);
+    const kept = [...before.keys()].filter((id) => id < firstDeleted);
+    expect(kept.length).toBeGreaterThan(0);
+    for (const pageId of kept)
+        expect(after.get(pageId), `page ${pageId}`).toEqual(before.get(pageId));
+    expect(await db.all(sql`SELECT * FROM timeline_commit_violations`)).toEqual(
+        [],
+    );
+};
 
 const subsetBooleanToInteger = (page: any) => {
     return { ...page, is_subset: page.is_subset ? 1 : 0 };
@@ -78,7 +141,6 @@ describeDbTests("pages", (it) => {
         schema.pages,
         schema.beats,
         schema.marchers,
-        schema.marcher_pages,
         schema.utility,
         ...timelineHistoryTables(),
     ]);
@@ -754,43 +816,11 @@ describeDbTests("pages", (it) => {
                         { newPagesArgs },
                         { db, beats, marchers, expectNumberOfChanges },
                     ) => {
-                        const beforeMarcherPages =
-                            await db.query.marcher_pages.findMany();
-                        expect(beforeMarcherPages).toHaveLength(
-                            // have marcher pages for the first page
-                            marchers.expectedMarchers.length,
-                        );
+                        const timelineBefore = await timelineRows(db);
 
                         await createPages({ newPages: newPagesArgs, db });
 
-                        const afterMarcherPages =
-                            await db.query.marcher_pages.findMany();
-                        const expectedNumberOfMarcherPages =
-                            marchers.expectedMarchers.length *
-                            pagesWithMarcherPages(newPagesArgs.length + 1);
-                        expect(afterMarcherPages).toHaveLength(
-                            expectedNumberOfMarcherPages,
-                        );
-
-                        const allPages = await db.query.pages.findMany();
-
-                        // Assert there is a marcherPage for every marcher and page combination
-                        // (page mode; timeline mode writes none, P9.5)
-                        if (!timelineFixtureMode())
-                            for (const marcher of marchers.expectedMarchers) {
-                                for (const page of allPages) {
-                                    const marcherPage = afterMarcherPages.find(
-                                        (marcherPage) =>
-                                            marcherPage.marcher_id ===
-                                                marcher.id &&
-                                            marcherPage.page_id === page.id,
-                                    );
-                                    expect(
-                                        marcherPage,
-                                        `marcherPage for marcher ${marcher.id} and page ${page.id} should be defined`,
-                                    ).toBeDefined();
-                                }
-                            }
+                        await expectPagesAddedWithoutMoves(db, timelineBefore);
                         await expectNumberOfChanges.test(db, 1);
                     },
                 );
@@ -887,52 +917,12 @@ describeDbTests("pages", (it) => {
                             db,
                         });
 
-                        // Verify existing marcher pages were created
-                        const beforeMarcherPages =
-                            await db.query.marcher_pages.findMany();
-                        const expectedExistingMarcherPages =
-                            marchers.expectedMarchers.length *
-                            pagesWithMarcherPages(existingPagesArgs.length + 1);
-                        expect(beforeMarcherPages).toHaveLength(
-                            expectedExistingMarcherPages,
-                        );
+                        const timelineBefore = await timelineRows(db);
 
                         // Create new pages
                         await createPages({ newPages: newPagesArgs, db });
 
-                        // Verify all marcher pages were created
-                        const afterMarcherPages =
-                            await db.query.marcher_pages.findMany();
-                        const expectedTotalMarcherPages =
-                            marchers.expectedMarchers.length *
-                            pagesWithMarcherPages(
-                                existingPagesArgs.length +
-                                    1 +
-                                    newPagesArgs.length,
-                            );
-                        expect(afterMarcherPages).toHaveLength(
-                            expectedTotalMarcherPages,
-                        );
-
-                        const allPages = await db.query.pages.findMany();
-
-                        // Assert there is a marcherPage for every marcher and page combination
-                        // (page mode; timeline mode writes none, P9.5)
-                        if (!timelineFixtureMode())
-                            for (const marcher of marchers.expectedMarchers) {
-                                for (const page of allPages) {
-                                    const marcherPage = afterMarcherPages.find(
-                                        (marcherPage) =>
-                                            marcherPage.marcher_id ===
-                                                marcher.id &&
-                                            marcherPage.page_id === page.id,
-                                    );
-                                    expect(
-                                        marcherPage,
-                                        `marcherPage for marcher ${marcher.id} and page ${page.id} should be defined`,
-                                    ).toBeDefined();
-                                }
-                            }
+                        await expectPagesAddedWithoutMoves(db, timelineBefore);
                         await expectNumberOfChanges.test(db, 2); // One for existing pages, one for new pages
                     },
                 );
@@ -1541,12 +1531,7 @@ describeDbTests("pages", (it) => {
                         expect(pagesBeforeDelete.length).toBe(
                             marchersAndPages.expectedPages.length,
                         );
-
-                        const marcherPagesBeforeDelete =
-                            await db.query.marcher_pages.findMany();
-                        expect(marcherPagesBeforeDelete.length).toBe(
-                            marchersAndPages.expectedMarcherPages.length,
-                        );
+                        const positionsBefore = await positionsAtFlags(db);
 
                         const deleteResult = await deletePages({
                             pageIds: new Set(existingPageIndexesToDelete),
@@ -1563,12 +1548,10 @@ describeDbTests("pages", (it) => {
                                 existingPageIndexesToDelete.length,
                         );
 
-                        const marcherPagesAfterDelete =
-                            await db.query.marcher_pages.findMany();
-                        expect(marcherPagesAfterDelete.length).toBe(
-                            marchersAndPages.expectedMarcherPages.length -
-                                existingPageIndexesToDelete.length *
-                                    marchersAndPages.expectedMarchers.length,
+                        await expectEarlierPagesKept(
+                            db,
+                            positionsBefore,
+                            existingPageIndexesToDelete,
                         );
                         await expectNumberOfChanges.test(
                             db,
@@ -1591,12 +1574,7 @@ describeDbTests("pages", (it) => {
                         expect(pagesBeforeDelete.length).toBe(
                             marchersAndPages.expectedPages.length,
                         );
-
-                        const marcherPagesBeforeDelete =
-                            await db.query.marcher_pages.findMany();
-                        expect(marcherPagesBeforeDelete.length).toBe(
-                            marchersAndPages.expectedMarcherPages.length,
-                        );
+                        const positionsBefore = await positionsAtFlags(db);
 
                         for (const pageId of existingPageIndexesToDelete)
                             await deletePages({
@@ -1611,12 +1589,10 @@ describeDbTests("pages", (it) => {
                                 existingPageIndexesToDelete.length,
                         );
 
-                        const marcherPagesAfterDelete =
-                            await db.query.marcher_pages.findMany();
-                        expect(marcherPagesAfterDelete.length).toBe(
-                            marchersAndPages.expectedMarcherPages.length -
-                                existingPageIndexesToDelete.length *
-                                    marchersAndPages.expectedMarchers.length,
+                        await expectEarlierPagesKept(
+                            db,
+                            positionsBefore,
+                            existingPageIndexesToDelete,
                         );
                         await expectNumberOfChanges.test(
                             db,
@@ -1857,67 +1833,6 @@ describeDbTests("pages", (it) => {
 
     describe("createLastPage", () => {
         describe("with existing pages", () => {
-            testWithHistory(
-                "creates a page when stale marcher pages exist for the reused page id",
-                async ({ db }) => {
-                    const newPageCounts = 8;
-                    const firstCreatedPage = await createLastPage({
-                        db,
-                        newPageCounts,
-                        createNewBeats: true,
-                    });
-                    const marcherCount = await db
-                        .select({ count: count() })
-                        .from(schema.marchers)
-                        .get();
-                    assert(marcherCount != null, "Marcher count not found");
-
-                    await db.run(sql.raw("PRAGMA foreign_keys = OFF"));
-                    await db
-                        .delete(schema.pages)
-                        .where(eq(schema.pages.id, firstCreatedPage.id));
-                    await db.run(sql.raw("PRAGMA foreign_keys = ON"));
-
-                    const staleMarcherPages = await db
-                        .select({ count: count() })
-                        .from(schema.marcher_pages)
-                        .where(
-                            eq(
-                                schema.marcher_pages.page_id,
-                                firstCreatedPage.id,
-                            ),
-                        )
-                        .get();
-                    expect(staleMarcherPages?.count).toBe(marcherCount.count);
-
-                    const secondCreatedPage = await createLastPage({
-                        db,
-                        newPageCounts,
-                        createNewBeats: true,
-                    });
-
-                    expect(secondCreatedPage.id).toBe(firstCreatedPage.id);
-                    const recreatedMarcherPages = await db
-                        .select({ count: count() })
-                        .from(schema.marcher_pages)
-                        .where(
-                            eq(
-                                schema.marcher_pages.page_id,
-                                secondCreatedPage.id,
-                            ),
-                        )
-                        .get();
-                    expect(recreatedMarcherPages?.count).toBe(
-                        marcherCount.count,
-                    );
-
-                    const foreignKeyFailures = await db.all(
-                        sql.raw("PRAGMA foreign_key_check"),
-                    );
-                    expect(foreignKeyFailures).toEqual([]);
-                },
-            );
-
             testWithHistory.for([
                 {
                     newPageCounts: 8,

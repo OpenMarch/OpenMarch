@@ -3,7 +3,6 @@ import { useTranslate } from "@tolgee/react";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "@/hooks";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     marcherHoldState,
@@ -425,7 +424,7 @@ function TimelineHoldLineContent({
 /**
  * The marcher inspector's line for the selected marchers (UI-18), under Step Size: whether they
  * move on the current page or hold there, with a link to the page they hold from
- * (defined-coordinates 08: readable, and visibly a link). Only in timeline mode.
+ * (defined-coordinates 08: readable, and visibly a link).
  */
 export default function TimelineHoldLine({
     marcherIds,
@@ -435,7 +434,5 @@ export default function TimelineHoldLine({
     /** The selected marchers' names, for the keep tooltips */
     nameOf?: MarcherNameOf;
 }) {
-    const timelineMode = useTimelineMode();
-    if (!timelineMode) return null;
     return <TimelineHoldLineContent marcherIds={marcherIds} nameOf={nameOf} />;
 }

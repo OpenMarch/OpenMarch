@@ -1,19 +1,17 @@
 import {
-    generateMarcherPages,
     generateMarchers,
     generateTimingObjects,
 } from "@/__mocks__/generators";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import { pageToDatabasePage } from "@/global/classes/Page";
 import { describe, expect, it } from "vitest";
 import {
     generateDrillChartExportSVGs,
     OPENMARCH_FIELD_IMAGE_PLACEHOLDER,
     replaceImageDataWithPlaceholder,
 } from "../svg-generator";
-import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
+import { pagePositionMapFromRows } from "../exportPagePositions";
+import { generatePagePositions } from "../../__test__/pagePositions";
 import { seedObj } from "@/test/base";
-import MarcherPage from "@/global/classes/MarcherPage";
 import type { MarcherAppearancesByPageId } from "../exportAppearances";
 
 describe("svgGenerator", () => {
@@ -24,17 +22,15 @@ describe("svgGenerator", () => {
                 numberOfBeats: 64,
                 seed,
             });
-            const marcherPages = generateMarcherPages({
+            const positions = generatePagePositions({
                 marchers,
-                pages: timingObjects.pages.map(pageToDatabasePage),
+                pages: timingObjects.pages,
                 fieldProperties:
                     FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
                 seed,
             });
 
-            const marcherPagesMap = marcherPageMapFromArray(
-                marcherPages as unknown as MarcherPage[],
-            );
+            const marcherPagesMap = pagePositionMapFromRows(positions);
 
             const output = await generateDrillChartExportSVGs({
                 marchers,
@@ -68,17 +64,15 @@ describe("svgGenerator", () => {
                 numberOfBeats: 16,
                 seed,
             });
-            const marcherPages = generateMarcherPages({
+            const positions = generatePagePositions({
                 marchers,
-                pages: timingObjects.pages.map(pageToDatabasePage),
+                pages: timingObjects.pages,
                 fieldProperties:
                     FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
                 seed,
             });
 
-            const marcherPagesMap = marcherPageMapFromArray(
-                marcherPages as unknown as MarcherPage[],
-            );
+            const marcherPagesMap = pagePositionMapFromRows(positions);
 
             const output = await generateDrillChartExportSVGs({
                 marchers,
@@ -118,15 +112,13 @@ describe("svgGenerator", () => {
             const [pageWithCoords, pageWithoutCoords] = timingObjects.pages;
             const fieldProperties =
                 FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
-            const marcherPages = generateMarcherPages({
+            const positions = generatePagePositions({
                 marchers,
-                pages: [pageToDatabasePage(pageWithCoords)],
+                pages: [pageWithCoords],
                 fieldProperties,
                 seed: 1,
             });
-            const marcherPagesMap = marcherPageMapFromArray(
-                marcherPages as unknown as MarcherPage[],
-            );
+            const marcherPagesMap = pagePositionMapFromRows(positions);
 
             const output = await generateDrillChartExportSVGs({
                 marchers,
@@ -158,15 +150,13 @@ describe("svgGenerator", () => {
             const page = timingObjects.pages[0];
             const fieldProperties =
                 FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
-            const marcherPages = generateMarcherPages({
+            const positions = generatePagePositions({
                 marchers,
-                pages: timingObjects.pages.map(pageToDatabasePage),
+                pages: timingObjects.pages,
                 fieldProperties,
                 seed: 3,
             });
-            const marcherPagesMap = marcherPageMapFromArray(
-                marcherPages as unknown as MarcherPage[],
-            );
+            const marcherPagesMap = pagePositionMapFromRows(positions);
             const tagFill = { r: 200, g: 50, b: 75, a: 1 };
             const marcherAppearancesByPageId: MarcherAppearancesByPageId =
                 new Map([

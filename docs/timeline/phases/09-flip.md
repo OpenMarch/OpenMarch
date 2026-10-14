@@ -58,8 +58,8 @@ A post-migration step in the main process runs the converter in one transaction,
 
 ### P9.4: Remove the dev flag
 
-- Owner: unassigned
-- Status: blocked
+- Owner: lead (timeline/remove-page-era)
+- Status: in-review
 - PR: none
 - Parallel: no
 - Depends on: P9.3, P9.8, P9.9, P9.10
@@ -637,3 +637,8 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   - Files converted by an earlier dev build (one show-wide timeline) now fail every edit at commit with E-T1. Re-convert them with `convertPages({ replace: true })`, or from the backup.
 - **Next:** review and merge by the lead.
 - **Blockers:** none.
+
+### 2026-10-12 · lead (timeline/remove-page-era) · P9.4, P10.1, P10.3
+
+- **Done:** the owner asked for one model with no release in between (ADR 0001 amendments of 2026-10-12). Convert on open is automatic: no environment variable, and the renderer's `ConvertShowDialog` asks first and names the backup, `<name>.pre-conversion.dots` next to the show. The worker backs up the untouched original, migrates, converts and drops the page-era tables (`0020_drop_page_era`) in one transaction. The `timelineMode` flag, the page-era freeze, and the page-era renderer code (old page timeline, page-mode branches, page shapes, pathways) are removed; `_blank.dots` is a version-8 file. Test fixtures convert their page shows the way the app does (`src/test/timelineMode.ts`); `test:timeline` is gone because every run is a timeline run.
+- **Not done:** the P9.4 packaged smoke run and the owner's manual pass on a copy of a real show.

@@ -18,6 +18,13 @@ import "./process";
 import * as DatabaseServices from "@om-electron/database/database.services";
 import { getOrm } from "@om-electron/database/db";
 import { DrizzleMigrationService } from "@om-electron/database/services/DrizzleMigrationService";
+import {
+    applyFileVersionDecision,
+    PAGE_MODEL_USER_VERSION,
+    readUserVersion,
+} from "@om-electron/database/fileVersion";
+import { initializeNewFileAsTimeline } from "@om-electron/database/convertOnOpenGate";
+import { convertFileOnOpen } from "@om-electron/database/convertOnOpen";
 import * as schema from "@om-electron/database/migrations/schema";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { readPreviousDotsFile } from "@om-electron/main/services/previous-dots-import-service";
@@ -68,9 +75,11 @@ function showPath(name: string): string {
 }
 
 /**
- * Opens the show at `path` the way `setActiveDb` in `electron/main/index.ts`
- * does: check the file, set up a new one, apply pending migrations. There is
- * no backup before migrating: the person's own copy is the file they opened.
+ * Opens the show at `path` the way `openShowDatabase` in
+ * `electron/main/openShow.ts` does: check the file, then set up a new one as
+ * a timeline file, convert a page-era file (version 7) to timelines, or
+ * migrate a timeline file. There is no backup and no question first: the
+ * person's own copy is the file they opened, and it is left as it was.
  */
 async function openShowAt(path: string, isNewFile: boolean): Promise<number> {
     const status = DatabaseServices.setDbPath(path, isNewFile);
@@ -80,27 +89,42 @@ async function openShowAt(path: string, isNewFile: boolean): Promise<number> {
     try {
         const orm = getOrm(db);
         const migrator = new DrizzleMigrationService(orm, db);
-        if (isNewFile)
-            db.prepare(
-                `PRAGMA user_version = ${DatabaseServices.DB_USER_VERSION}`,
-            ).run();
-        await migrator.applyPendingMigrations(MIGRATIONS_FOLDER);
-        if (isNewFile)
+        if (isNewFile) {
+            // A new, empty file starts at the timeline version (ADR 0001 §6).
+            applyFileVersionDecision(db, true);
+            await migrator.applyPendingMigrations(MIGRATIONS_FOLDER);
             await DrizzleMigrationService.initializeDatabase(orm, db);
+            initializeNewFileAsTimeline(db);
+            return 200;
+        }
+        if (readUserVersion(db) === PAGE_MODEL_USER_VERSION) {
+            const result = await convertFileOnOpen(
+                path,
+                db,
+                MIGRATIONS_FOLDER,
+                { backupPath: "" },
+                {
+                    backup: () => ({
+                        ok: true,
+                        backupPath: "",
+                        userVersion: 7,
+                    }),
+                },
+            );
+            if (result.status === "conversion-failed") throw result.error;
+        }
+        await migrator.applyPendingMigrations(MIGRATIONS_FOLDER);
         // Shows from before workspace settings have no row, and the app adds
         // one as it loads (initializeWorkspaceSettings), which would count as
         // a change the person must download. Adding it while opening, as a
         // migration would, keeps an untouched show unchanged.
-        else
-            await orm
-                .insert(schema.workspace_settings)
-                .values({
-                    id: 1,
-                    json_data: JSON.stringify(
-                        workspaceSettingsSchema.parse({}),
-                    ),
-                })
-                .onConflictDoNothing();
+        await orm
+            .insert(schema.workspace_settings)
+            .values({
+                id: 1,
+                json_data: JSON.stringify(workspaceSettingsSchema.parse({})),
+            })
+            .onConflictDoNothing();
         return 200;
     } catch (error) {
         console.error("Error opening show:", error);
@@ -286,6 +310,10 @@ function registerMainHandlers() {
             ?.replace(/\.dots$/, ""),
     );
     ipcMain.handle("file:exists", () => false);
+    // Opens are never refused after a reload, and page-era shows convert
+    // without asking (see `openShowAt`).
+    ipcMain.handle("load-file:takeRefusal", () => null);
+    ipcMain.handle("conversion:getPending", () => null);
 }
 
 /** The new-show wizard writes into a draft, then names it. */

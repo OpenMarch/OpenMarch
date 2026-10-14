@@ -308,7 +308,6 @@
         "individualChartsTooltip": "各個の マーチャー 用にカスタマイズされたドリル チャートの PDF を作成します。",
         "individualChartsTooltipDescription": "これが チェック され てい ない 場合 、1 つ の 概要 ドリル チャート PDF が 作成 され ます 。",
         "marcher": "行進: {status}",
-        "marcherPagesNotLoaded": "マーチャー ページ がロードされていません",
         "marchersNotLoaded": "マーチャー がロードされていません",
         "measuresHeader": "測定",
         "mobile": "モバイル",

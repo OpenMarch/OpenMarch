@@ -62,7 +62,7 @@ export function addSelectedMarchersBlocker(
  * show a refusal's friendly message (P8.6) as a toast. A clip move of the selected timeline moves
  * the selection with it (UI-9).
  *
- * Create Track isn't offered in timeline mode (P8.15): with one timeline per page it would give a
+ * Create Track isn't offered (P8.15): with one timeline per page it would give a
  * marcher a second transition in a page timeline. **Add selected marchers** replaces it (UI-9
  * Creating a timeline).
  */

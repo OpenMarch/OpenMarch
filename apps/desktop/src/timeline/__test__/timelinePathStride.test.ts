@@ -348,7 +348,7 @@ describe("line tool preview in timeline mode", () => {
             fieldProperties,
             uiSettings: defaultSettings,
         });
-        // Positions as the timeline static render leaves them: no marcher_pages row behind them
+        // Positions as the timeline static render leaves them
         const marchers = [1, 2, 3].map(
             (id) =>
                 new CanvasMarcher({

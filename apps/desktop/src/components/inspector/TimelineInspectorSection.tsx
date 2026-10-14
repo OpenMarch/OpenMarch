@@ -10,7 +10,6 @@ import {
 import type { Diagnostic, SpanKind, XY } from "@openmarch/core";
 import { db } from "@/global/database/db";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
 import {
     useTimelineSelectionStore,
@@ -561,12 +560,9 @@ function TimelineInspectorContent() {
  * The inspector's timeline section (P8.5): for the selected marchers, why each is where it is at
  * the paused playhead (UI-14; it read the selected page's end beat before), from the resolver's
  * `explain`, and the show's diagnostics. While the window is a move with a clip, its Move card
- * comes first (UI-14). Only in timeline mode; with the flag off it renders nothing and reads
- * nothing.
+ * comes first (UI-14).
  */
 export function TimelineInspectorSection() {
-    const timelineMode = useTimelineMode();
-    if (!timelineMode) return null;
     return <TimelineInspectorContent />;
 }
 

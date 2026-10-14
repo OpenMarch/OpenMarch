@@ -46,6 +46,7 @@ import tolgee from "./global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
+import ConvertShowDialog from "./components/ConvertShowDialog";
 import ShortcutsDialog from "./components/ShortcutsDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import { isWebBuild } from "./utilities/webBuild";
@@ -268,6 +269,7 @@ function App() {
                     )}
                     <AlertModal />
                     {isWebBuild && <WebWelcomeModal />}
+                    <ConvertShowDialog />
                     <ShortcutDispatcher />
                     <CommandPalette />
                     <ShortcutsDialog />

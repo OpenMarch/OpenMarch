@@ -1,23 +1,10 @@
 import { afterEach, describe, expect, it as plainIt } from "vitest";
 import { DbConnection, describeDbTests } from "@/test/base";
-import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import {
-    getAllMarcherPages,
-    updateMarcherPages,
-} from "@/db-functions/marcherPage";
 import { createMarchers, getMarchers } from "@/db-functions/marcher";
 import { deletePages } from "@/db-functions/page";
-import { schema } from "@/global/database/db";
-import { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
-import { updateWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
-import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 import type Page from "@/global/classes/Page";
-import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { acquireExportResolver } from "@/timeline/timelineExport";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
@@ -30,45 +17,18 @@ import {
     readTimelineExportPositions,
     ShowChangedDuringExportError,
 } from "../exportPagePositions";
-import { generateDrillChartExportSVGs } from "../svg-generator";
-import {
-    keepFixturesInPageMode,
-    withPageEraFreezeLifted,
-} from "@/test/timelineMode";
-
-// P7.17: these tests set up timeline mode themselves
-keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
-);
 
 /**
- * Page positions for the coordinate sheet and drill chart exports in timeline mode
- * (docs/timeline/phases/07-page-parity.md P7.7): the resolver at each page's end beat, never
- * `marcher_pages`.
+ * Page positions for the coordinate sheet and drill chart exports
+ * (docs/timeline/phases/07-page-parity.md P7.7): the resolver at each page's end beat.
  */
 
 afterEach(() => stopTimelineResolver());
-
-const setTimelineMode = (db: DbConnection, timelineMode: boolean) =>
-    updateWorkspaceSettingsParsed({
-        db,
-        settings: workspaceSettingsSchema.parse({ timelineMode }),
-    });
 
 const sortedPages = async (db: DbConnection): Promise<Page[]> => {
     const { pages } = await readShowTiming(db);
     return [...pages].sort((a, b) => a.order - b.order);
 };
-
-const messages = { notLoaded: "not loaded", showChanged: "show changed" };
-
-const pageModeMap = async (db: DbConnection) =>
-    marcherPageMapFromArray(
-        await getAllMarcherPages({
-            db,
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
 
 describe("pagePositionMapFromRows and positionsForMarcherInPageOrder", () => {
     plainIt(
@@ -136,57 +96,24 @@ describe("assertExportMatchesSnapshot", () => {
 });
 
 describeDbTests("readTimelineExportPositions", (it) => {
-    it("returns null in page mode, so the exports read marcher_pages", async ({
+    it("lists the snapshot's pages and marchers", async ({
         db,
         marchersAndPages: _,
     }) => {
-        expect(await readTimelineExportPositions(db)).toBeNull();
-        await convertPagesToTimeline(db);
-        expect(await readTimelineExportPositions(db)).toBeNull();
-    });
-
-    it("gives a freshly converted show the page-mode positions", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const pageMode = await pageModeMap(db);
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
-
         const read = await readTimelineExportPositions(db);
-
-        expect(read).not.toBeNull();
-        const timeline = read!.positions;
         const pages = await sortedPages(db);
         const marchers = await getMarchers({ db });
-        expect([...read!.pageIds].sort()).toEqual(
-            pages.map((p) => p.id).sort(),
-        );
-        expect([...read!.marcherIds].sort()).toEqual(
+        expect(pages.length).toBeGreaterThan(1);
+        expect([...read.pageIds].sort()).toEqual(pages.map((p) => p.id).sort());
+        expect([...read.marcherIds].sort()).toEqual(
             marchers.map((m) => m.id).sort(),
         );
-        expect(pages.length).toBeGreaterThan(1);
-        for (const page of pages) {
-            for (const marcher of marchers) {
-                const want = pageMode.marcherPagesByPage[page.id]![marcher.id]!;
-                const got = timeline.marcherPagesByPage[page.id]![marcher.id]!;
-                // The resolver returns the converted destinations exactly at page end beats
-                expect(got).toEqual({
-                    marcher_id: marcher.id,
-                    page_id: page.id,
-                    x: want.x,
-                    y: want.y,
-                });
-            }
-        }
     });
 
-    it("samples the resolver at each page's end beat and ignores marcher_pages", async ({
+    it("samples the resolver at each page's end beat", async ({
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const pages = await sortedPages(db);
         const page = pages[2]!;
         const before = await acquireExportResolver(db);
@@ -196,18 +123,8 @@ describeDbTests("readTimelineExportPositions", (it) => {
             page,
             moves: [{ marcherId: 1, x: x + 24, y }],
         });
-        // Frozen page-era rows that disagree with the timeline are ignored (written with the
-        // freeze lifted, as only a file from before the conversion could have them)
-        await withPageEraFreezeLifted(db, () =>
-            updateMarcherPages({
-                db,
-                modifiedMarcherPages: [
-                    { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
-                ],
-            }),
-        );
 
-        const { positions } = (await readTimelineExportPositions(db))!;
+        const { positions } = await readTimelineExportPositions(db);
 
         const resolver = await acquireExportResolver(db);
         for (const p of pages) {
@@ -225,100 +142,20 @@ describeDbTests("readTimelineExportPositions", (it) => {
             x + 24,
             9,
         );
-        expect(positions.marcherPagesByPage[page.id]![2]!.x).not.toBe(1);
-    });
-
-    it("draws the same drill chart coordinates as page mode for a converted show", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const fieldProperties =
-            FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
-        const pageMode = await pageModeMap(db);
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
-        const timeline = (await readTimelineExportPositions(db))!.positions;
-        const pages = await sortedPages(db);
-        // Two marchers keep the individual charts quick; each draws every page
-        const marchers = (await getMarchers({ db }))
-            .slice(0, 2)
-            .map(dbMarcherToMarcher);
-
-        const render = (marcherPagesMap: typeof timeline) =>
-            generateDrillChartExportSVGs({
-                fieldProperties,
-                marchers,
-                sortedPages: pages,
-                marcherPagesMap,
-                sectionAppearances: [],
-                individualCharts: true,
-            });
-        const fromTimeline = await render(timeline);
-        const fromPages = await render(pageMode);
-
-        expect(fromTimeline.coords).toEqual(fromPages.coords);
-        expect(fromTimeline.SVGs).toHaveLength(marchers.length);
-        expect(fromTimeline.SVGs[0]).toHaveLength(pages.length);
-    });
-
-    it("treats settings that fail to parse as page mode", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
-        expect(await readTimelineExportPositions(db)).not.toBeNull();
-
-        await db
-            .update(schema.workspace_settings)
-            .set({ json_data: "{not json" });
-        expect(await readTimelineExportPositions(db)).toBeNull();
-
-        await db
-            .update(schema.workspace_settings)
-            .set({ json_data: JSON.stringify({ timelineMode: "yes" }) });
-        expect(await readTimelineExportPositions(db)).toBeNull();
-    });
-
-    it("readExportPositions uses the marcher_pages map in page mode", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const pageMode = await pageModeMap(db);
-        const rendered = { pages: [], marchers: [] };
-        // Page mode doesn't compare the lists; the query's map is used as is
-        expect(
-            await readExportPositions({
-                db,
-                rendered,
-                pageModePositions: pageMode,
-                messages,
-            }),
-        ).toBe(pageMode);
-        await expect(
-            readExportPositions({
-                db,
-                rendered,
-                pageModePositions: undefined,
-                messages,
-            }),
-        ).rejects.toThrow("not loaded");
     });
 
     it("readExportPositions rejects lists from before the show changed", async ({
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const pages = await sortedPages(db);
         const marchers = await getMarchers({ db });
+        const showChangedMessage = "show changed";
 
         const positions = await readExportPositions({
             db,
             rendered: { pages, marchers },
-            pageModePositions: undefined,
-            messages,
+            showChangedMessage,
         });
         expect(Object.keys(positions.marcherPagesByPage)).toHaveLength(
             pages.length,
@@ -335,8 +172,7 @@ describeDbTests("readTimelineExportPositions", (it) => {
             readExportPositions({
                 db,
                 rendered: { pages, marchers },
-                pageModePositions: undefined,
-                messages,
+                showChangedMessage,
             }),
         ).rejects.toThrow(new ShowChangedDuringExportError("show changed"));
 
@@ -350,8 +186,7 @@ describeDbTests("readTimelineExportPositions", (it) => {
             readExportPositions({
                 db,
                 rendered: { pages, marchers: marchersNow },
-                pageModePositions: undefined,
-                messages,
+                showChangedMessage,
             }),
         ).rejects.toThrow(ShowChangedDuringExportError);
     });

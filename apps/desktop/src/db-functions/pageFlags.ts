@@ -7,7 +7,6 @@ import {
     planTimelineRipple,
     readPageGrid,
     readRippleRows,
-    timelineModeInTransaction,
     withTimelinePageRipple,
     type GridPage,
     type PageGrid,
@@ -117,11 +116,6 @@ const lastPageCountsIn = async (tx: DbTransaction): Promise<number> => {
     return utility.lastPageCounts;
 };
 
-const refuseOutsideTimelineMode = async (tx: DbTransaction, what: string) => {
-    if (!(await timelineModeInTransaction(tx)))
-        refuse(`${what} is only for timeline mode`);
-};
-
 /** A page added by **+**: the new page row and its page timeline's range `[startBeat, endBeat)`. */
 export interface AddedPageFlag {
     page: DatabasePage;
@@ -148,7 +142,6 @@ export async function addPageFlagInTransaction({
     tx: DbTransaction;
     beat: number;
 }): Promise<AddedPageFlag> {
-    await refuseOutsideTimelineMode(tx, "Adding a page flag");
     const grid = await readPageGrid(tx);
     const plan = planPageFlagInsertion(gridOf(grid), beat);
     if (!plan)
@@ -224,7 +217,6 @@ export async function deletePageFlagsInTransaction({
     tx: DbTransaction;
     pageIds: ReadonlySet<number>;
 }): Promise<DatabasePage[]> {
-    await refuseOutsideTimelineMode(tx, "Deleting a page flag");
     const ids = [...pageIds].filter((id) => id !== FIRST_PAGE_ID);
     if (ids.length === 0) return [];
     const initial = await readPageGrid(tx);
@@ -253,12 +245,7 @@ export async function deletePageFlagsInTransaction({
             pageIds: new Set([id]),
         });
         // The page goes before the next one takes its start: `pages.start_beat` is unique.
-        // Its marcher pages are frozen in timeline mode (P9.5) and may go only once it's gone; they
-        // follow through the cascade, or the delete after it where foreign keys are off.
         await tx.delete(schema.pages).where(eq(schema.pages.id, id));
-        await tx
-            .delete(schema.marcher_pages)
-            .where(inArray(schema.marcher_pages.page_id, [id]));
 
         if (next) {
             await tx
@@ -501,7 +488,6 @@ export async function pageFlagMoveLimitsInTransaction({
     tx: DbTransaction;
     pageId: number;
 }): Promise<PageFlagMoveLimits | null> {
-    if (!(await timelineModeInTransaction(tx))) return null;
     return planPageFlagMoveLimits(
         await readPageGrid(tx),
         await readRippleRows(tx),
@@ -549,7 +535,6 @@ export async function movePageFlagInTransaction({
     pageId: number;
     beat: number;
 }): Promise<MovedPageFlag> {
-    await refuseOutsideTimelineMode(tx, "Moving a page flag");
     if (pageId === FIRST_PAGE_ID) refuse("home's flag can't move");
     const grid = await readPageGrid(tx);
     const index = grid.pages.findIndex((p) => p.id === pageId);

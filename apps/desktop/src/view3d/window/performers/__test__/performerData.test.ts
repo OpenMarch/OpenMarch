@@ -7,7 +7,10 @@ import {
 } from "@openmarch/core";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import type { MarcherTimeline } from "@/utilities/Keyframes";
+import {
+    fakeShowPositions,
+    linearTrack,
+} from "@/view3d/__test__/fakePositions";
 import {
     RING_Y,
     buildPerformerSlots,
@@ -28,20 +31,6 @@ const rgba = (r: number, g: number, b: number, a = 1): RgbaColor => ({
     a,
 });
 
-/** A timeline that moves in a straight line between two sets. */
-const timeline = (
-    from: { x: number; y: number },
-    to: { x: number; y: number },
-    startMs = 0,
-    endMs = 1000,
-): MarcherTimeline => ({
-    pathMap: new Map([
-        [startMs, from],
-        [endMs, to],
-    ]),
-    sortedTimestamps: [startMs, endMs],
-});
-
 const appearance = (
     fields: Partial<AppearanceComponentOptional>,
 ): AppearanceComponentOptional =>
@@ -58,10 +47,12 @@ const appearance = (
 
 describe("buildPerformerSlots", () => {
     it("orders by marcher ID and keeps a slot for marchers without positions", () => {
-        const t2 = timeline({ x: 0, y: 0 }, { x: 10, y: 0 });
-        const slots = buildPerformerSlots([3, 1, 2], new Map([[2, t2]]));
+        const positions = fakeShowPositions(
+            new Map([[2, linearTrack({ x: 0, y: 0 }, { x: 10, y: 0 })]]),
+        );
+        const slots = buildPerformerSlots([3, 1, 2], positions);
         expect(slots.ids).toEqual([1, 2, 3]);
-        expect(slots.timelines).toEqual([null, t2, null]);
+        expect(slots.positions).toBe(positions);
         expect(slots.indexById.get(3)).toBe(2);
     });
 });
@@ -77,7 +68,7 @@ describe("resolvePerformerLook", () => {
     it("takes the first non-null fill in priority order, like CanvasMarcher", () => {
         const look = resolvePerformerLook(
             [
-                appearance({ fill_color: null }), // marcher page, no override
+                appearance({ fill_color: null }), // a tag without a fill
                 appearance({ fill_color: rgba(0, 0, 255) }), // tag
                 appearance({ fill_color: rgba(0, 255, 0) }), // section
                 appearance({ fill_color: theme.defaultMarcher.fill }),
@@ -103,7 +94,7 @@ describe("resolvePerformerLook", () => {
 
 describe("writePerformerLooks", () => {
     it("writes sRGB fills in [0, 1] and visibility per instance", () => {
-        const slots = buildPerformerSlots([5, 7], new Map());
+        const slots = buildPerformerSlots([5, 7], null);
         const rgb = new Float32Array(6);
         const visible = new Uint8Array(2);
         writePerformerLooks(
@@ -132,10 +123,12 @@ describe("performer matrices", () => {
     const to = { x: 600, y: 500 };
     const slots = buildPerformerSlots(
         [1, 2, 3],
-        new Map([
-            [1, timeline(from, to)],
-            [2, timeline(to, from)],
-        ]),
+        fakeShowPositions(
+            new Map([
+                [1, linearTrack(from, to)],
+                [2, linearTrack(to, from)],
+            ]),
+        ),
     );
     const visible = new Uint8Array([1, 1, 1]);
 
@@ -166,7 +159,7 @@ describe("performer matrices", () => {
         expect([...matrices.slice(32)]).toEqual(new Array(16).fill(0));
     });
 
-    it("follows the timeline between sets", () => {
+    it("follows the resolver between sets", () => {
         const { xz } = positionsAt(500);
         const a = pixelsToWorld(field, from);
         const b = pixelsToWorld(field, to);
@@ -190,7 +183,7 @@ describe("performer matrices", () => {
 });
 
 describe("writeRingMatrices", () => {
-    const slots = buildPerformerSlots([10, 20, 30], new Map());
+    const slots = buildPerformerSlots([10, 20, 30], null);
     const xz = new Float32Array([1, -2, 3, -4, 5, -6]);
 
     it("packs one ring per selected, placed marcher at its feet", () => {

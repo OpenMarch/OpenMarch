@@ -16,7 +16,6 @@ import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
-import { type MarcherTimeline } from "@/utilities/Keyframes";
 import type { ResolverFrameSampler } from "@/timeline/timelineExport";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
@@ -43,10 +42,8 @@ export interface VideoExportArgs {
     marchers: Marcher[];
     /** All pages of the show, sorted by order */
     sortedPages: Page[];
-    /** Full-show timelines for every marcher (keyframes for every page) */
-    marcherTimelines: Map<number, MarcherTimeline>;
-    /** Timeline mode: positions come from the resolver instead of `marcherTimelines` */
-    frameSampler?: ResolverFrameSampler | null;
+    /** Samples every marcher's position from the resolver at each frame */
+    frameSampler: ResolverFrameSampler;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
@@ -183,7 +180,6 @@ export async function exportVideo(
     const {
         fieldProperties,
         sortedPages,
-        marcherTimelines,
         width,
         height,
         fps,
@@ -225,7 +221,6 @@ export async function exportVideo(
             fieldProperties,
             sortedPages,
             marchers: args.marchers,
-            marcherTimelines,
             frameSampler: args.frameSampler,
             sectionAppearances: args.sectionAppearances,
             marcherAppearancesByPageId: args.marcherAppearancesByPageId,

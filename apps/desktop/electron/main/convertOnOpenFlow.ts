@@ -1,10 +1,11 @@
 /* eslint-disable no-console */
 /**
- * The open flow's convert-on-open step (P9.3): runs `runConvertOnOpen` and
- * turns its outcome into dialogs and a "continue" or "stop" answer. It imports
- * no Electron module, so tests drive it with fake dialogs;
- * `convertOnOpenDialogs.ts` holds the real ones. `openShow.ts` loads this
- * module with a dynamic `import()` only once the gate is on.
+ * The open flow's convert-on-open step: runs `runConvertOnOpen` and turns its
+ * outcome into dialogs and a "continue", "stop" or "ask" answer. It imports no
+ * Electron module, so tests drive it with fake dialogs;
+ * `convertOnOpenDialogs.ts` holds the real ones. Asking the person before a
+ * conversion is the renderer's (`ConvertShowDialog`): this step only reports
+ * that it must ask.
  */
 import { basename } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
@@ -13,29 +14,18 @@ import {
     type ConvertOnOpenHooks,
     type ConvertOnOpenResult,
     type ConvertProgress,
+    type ConvertRequest,
 } from "../database/convertOnOpen";
 
-/** What the step shows the person. `convertOnOpenDialogs.ts` implements it with native dialogs. */
+/** What the step shows the person. `convertOnOpenDialogs.ts` implements it. */
 export interface ConvertOnOpenDialogs {
     /**
-     * The file was converted, then saved by an older release. Resolves `open`
-     * to open it as it is, or `stop` to open nothing. Offering the backup, or
-     * saying none was found (`backupPath` undefined), is the dialog's job.
-     */
-    warnOlderRelease(
-        fileName: string,
-        backupPath: string | undefined,
-    ): Promise<"open" | "stop">;
-    /**
-     * Shows a "preparing your file" state while `work` runs, and passes `work`
-     * a function that reports its progress there.
+     * Runs `work` while the renderer shows the conversion's progress, and
+     * passes `work` a function that reports it there.
      */
     whilePreparing<T>(
-        fileName: string,
         work: (onProgress?: (progress: ConvertProgress) => void) => Promise<T>,
     ): Promise<T>;
-    /** The file was converted (doesn't wait for the person). */
-    converted(fileName: string, backupPath: string): void;
     backupFailed(fileName: string, message: string): Promise<void>;
     conversionFailed(
         fileName: string,
@@ -44,56 +34,57 @@ export interface ConvertOnOpenDialogs {
     ): Promise<void>;
 }
 
-/** What the open does next: open the file, or open nothing (the person was told why). */
-export type ConvertOnOpenNext = "continue" | "stop";
+/**
+ * What the open does next: open the file, open nothing (the person was told
+ * why), or open nothing until the person agrees to convert the file, whose
+ * backup would go to `backupPath`.
+ */
+export type ConvertOnOpenNext =
+    | { next: "continue" }
+    | { next: "stop" }
+    | { next: "ask"; backupPath: string };
 
 /**
- * Runs the convert-on-open step for the file at `filePath`, open on `db` with
- * migrations applied, and tells the person what happened.
+ * Runs the convert-on-open step for the file at `filePath`, open on `db`
+ * before its migrations, and tells the person what happened.
  */
 export async function convertOnOpenInMain(
     filePath: string,
     db: DatabaseSync,
     dialogs: ConvertOnOpenDialogs,
     {
-        env,
+        confirmed,
+        backupPath,
+        migrationsFolder,
         hooks,
         convert,
     }: {
-        env?: Record<string, string | undefined>;
+        /** The person agreed to convert this file. */
+        confirmed: boolean;
+        /** The backup path the person was shown when they agreed. */
+        backupPath?: string;
+        migrationsFolder: string;
         hooks?: ConvertOnOpenHooks;
-        /** Backs up and converts the file elsewhere (the worker, P9.8); see `runConvertOnOpen`. */
+        /** Backs up and converts the file elsewhere (the worker); see `runConvertOnOpen`. */
         convert?: (
             onProgress: (progress: ConvertProgress) => void,
+            request: ConvertRequest,
         ) => Promise<ConvertOnOpenResult>;
-    } = {},
+    },
 ): Promise<ConvertOnOpenNext> {
     const fileName = basename(filePath);
     const started = Date.now();
     const outcome = await runConvertOnOpen(
         filePath,
         db,
-        {
-            warnOlderRelease: (backupPath) =>
-                dialogs.warnOlderRelease(fileName, backupPath),
-            whilePreparing: (work) => dialogs.whilePreparing(fileName, work),
-        },
-        { env, hooks, convert },
+        { whilePreparing: (work) => dialogs.whilePreparing(work) },
+        { confirmed, backupPath, migrationsFolder, hooks, convert },
     );
     switch (outcome.kind) {
-        case "disabled":
-            return "continue";
         case "none":
-            if (outcome.reason === "dev-timeline-file")
-                console.log(
-                    `convert on open: ${filePath} has timeline rows but no conversion marker or backup (dev flag); opened as it is`,
-                );
-            return "continue";
-        case "older-release":
-            console.log(
-                `convert on open: ${filePath} was converted, then saved at version 7; ${outcome.choice}`,
-            );
-            return outcome.choice === "open" ? "continue" : "stop";
+            return { next: "continue" };
+        case "needs-confirmation":
+            return { next: "ask", backupPath: outcome.backupPath };
         case "conversion":
             break;
     }
@@ -104,19 +95,18 @@ export async function convertOnOpenInMain(
                 `convert on open: converted ${filePath} in ${Date.now() - started} ms; backup at ${outcome.backupPath}`,
                 JSON.stringify(outcome.report ?? null),
             );
-            dialogs.converted(fileName, outcome.backupPath);
-            return "continue";
+            return { next: "continue" };
         case "already-converted":
             console.log(
                 `convert on open: ${filePath} was converted meanwhile; opened as it is, and this open's backup was removed`,
             );
-            return "continue";
+            return { next: "continue" };
         case "backup-failed":
             console.error(
                 `convert on open: backup of ${filePath} failed (${outcome.backup.code}); not converted`,
             );
             await dialogs.backupFailed(fileName, outcome.backup.message);
-            return "stop";
+            return { next: "stop" };
         case "conversion-failed":
             console.error(
                 `convert on open: converting ${filePath} failed; rolled back`,
@@ -127,6 +117,6 @@ export async function convertOnOpenInMain(
                 outcome.error,
                 outcome.backupPath,
             );
-            return "stop";
+            return { next: "stop" };
     }
 }

@@ -1,5 +1,3 @@
-import type { ModifiedMarcherPageArgs } from "@/db-functions/marcherPage";
-import type { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import type Page from "@/global/classes/Page";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import {
@@ -13,40 +11,33 @@ import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 
 /**
  * "Set all or selected marchers to the previous or next page", the four batch-edit actions in
- * `useBatchEditActionHandlers`, as a plain function so both modes can be tested without React.
+ * `useBatchEditActionHandlers`, as a plain function so it can be tested without React
+ * (docs/timeline/phases/07-page-parity.md P7.6, reworked for sparse rows by defined-coordinates
+ * README, Recommendation 3). It waits for earlier timeline writes to reach the resolver, plans the
+ * moves with `copyPagePositions` (the resolver at the neighbor page's end beat), and writes them as
+ * one edit over the selected page's box with the range writer (`neighborPageTarget`,
+ * `moveMarchersInTarget`), so it works on a page the marchers only hold through:
  *
- * - **Page mode** (unchanged): copies the neighbor page's `marcher_pages` rows to the selected page.
- * - **Timeline mode** (docs/timeline/phases/07-page-parity.md P7.6, reworked for sparse rows by
- *   defined-coordinates README, Recommendation 3): waits for earlier timeline writes to reach the
- *   resolver, plans the moves with `copyPagePositions` (the resolver at the neighbor page's end
- *   beat), and writes them as one edit over the selected page's box with the range writer
- *   (`neighborPageTarget`, `moveMarchersInTarget`), so it works on a page the marchers only hold
- *   through:
- *   - **Next page** moves each marcher to its next-page position there.
- *   - **Previous page** clears each marcher's own move on the page, so the page follows earlier
- *     pages again (and later edits before it carry through). A marcher whose move there is shared
- *     with others, or longer than the page, is moved to its previous-page position instead.
+ * - **Next page** moves each marcher to its next-page position there.
+ * - **Previous page** clears each marcher's own move on the page, so the page follows earlier
+ *   pages again (and later edits before it carry through). A marcher whose move there is shared
+ *   with others, or longer than the page, is moved to its previous-page position instead.
  *
- *   `marcher_pages` is never read. The success message shows only once the edit is written; a
- *   refused edit writes nothing and the write's own error handler shows why.
+ * The success message shows only once the edit is written; a refused edit writes nothing and the
+ * write's own error handler shows why.
  */
 
 export type NeighborPageDirection = "previous" | "next";
 export type NeighborPageScope = "all" | "selected";
 
 export interface SetMarchersToNeighborPageArgs {
-    timelineMode: boolean;
     direction: NeighborPageDirection;
     scope: NeighborPageScope;
     selectedPage: Page;
     pages: Page[];
     selectedMarcherIds: readonly number[];
-    /** Page mode only: the neighbor page's rows by marcher id. Not read in timeline mode. */
-    neighborMarcherPages: MarcherPagesByMarcher | undefined;
-    /** Page mode's write (`updateMarcherPages`) */
-    writePages: (changes: ModifiedMarcherPageArgs[]) => void;
     /**
-     * Timeline mode's write (`moveMarchersInTarget`'s `mutateAsync`). It rejects when the edit is
+     * The write (`moveMarchersInTarget`'s `mutateAsync`). It rejects when the edit is
      * refused, after its own error handler has shown the reason.
      */
     writeTimeline: (request: TimelineNeighborPageRequest) => Promise<unknown>;
@@ -82,14 +73,11 @@ const MESSAGES = {
  */
 // eslint-disable-next-line max-lines-per-function
 export async function setMarchersToNeighborPage({
-    timelineMode,
     direction,
     scope,
     selectedPage,
     pages,
     selectedMarcherIds,
-    neighborMarcherPages,
-    writePages,
     writeTimeline,
     notify,
     t,
@@ -110,30 +98,6 @@ export async function setMarchersToNeighborPage({
         );
         return count;
     };
-
-    if (!timelineMode) {
-        if (!neighbor || !neighborMarcherPages) {
-            notify.error(t(messages.none));
-            return null;
-        }
-        const rows =
-            scope === "all"
-                ? Object.values(neighborMarcherPages)
-                : selectedMarcherIds
-                      .map((id) => neighborMarcherPages[id])
-                      .filter(Boolean);
-        if (scope === "selected" && rows.length === 0) return null;
-        writePages(
-            rows.map((marcherPage) => ({
-                marcher_id: marcherPage.marcher_id,
-                page_id: selectedPage.id,
-                x: marcherPage.x as number,
-                y: marcherPage.y as number,
-                notes: marcherPage.notes || undefined,
-            })),
-        );
-        return succeed(rows.length);
-    }
 
     if (!neighbor) {
         notify.error(t(messages.none));

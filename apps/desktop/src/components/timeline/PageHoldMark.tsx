@@ -25,8 +25,8 @@ const DIAMOND = "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)";
  * Where the selected marchers hold, drawn inside a page box (docs/timeline/ui.md UI-18; Eos's
  * "moved" and "tracked"): a page they move on gets a small key at its flag, and a page they hold
  * on a thin muted bar along its bottom, level with the key, so a run of held pages reads as one
- * line drawn back to the page they last moved on. Mixed is the same bar, dashed. Shared by the
- * timeline's page boxes and page mode's page strip; the box itself carries the words
+ * line drawn back to the page they last moved on. Mixed is the same bar, dashed. Drawn on the
+ * timeline's page boxes; the box itself carries the words
  * (`useLabeledHoldMarks`) as its tooltip (`HoldMarkTooltip`) and accessible description. Kept to
  * the bottom few pixels, clear of the label, the flag line and the playhead's handle, and it never
  * takes the pointer. A 3px bar in the subtitle color and a 10px-wide key (first-time users found them

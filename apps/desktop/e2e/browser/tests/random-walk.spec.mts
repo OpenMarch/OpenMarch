@@ -6,6 +6,8 @@ import {
     expectCanvasMatchesShow,
     waitForIdle,
 } from "../app.mjs";
+import { savedPositions } from "../positions.mjs";
+import { seedShowSql } from "../seed.mjs";
 
 /**
  * Seeded random editing sessions at a person's pace: each step starts once the
@@ -30,23 +32,31 @@ const settle = (page: Page) => (FAST ? Promise.resolve() : waitForIdle(page));
 
 // Six trumpets on three pages, spread out so all are in view.
 const MARCHERS = [1, 2, 3, 4, 5, 6];
+const PAGES = [0, 1, 2];
 test.use({
-    seedSql: [
-        `INSERT INTO beats (id, duration, position)
-         VALUES ${Array.from({ length: 48 }, (_, i) => `(${i + 1}, 0.5, ${i + 1})`).join(", ")}`,
-        `INSERT INTO pages (id, start_beat) VALUES (1, 16), (2, 32)`,
-        `INSERT INTO marchers (id, section, drill_prefix, drill_order)
-         VALUES ${MARCHERS.map((id) => `(${id}, 'Trumpet', 'T', ${id})`).join(", ")}`,
-        `INSERT INTO marcher_pages (marcher_id, page_id, x, y)
-         VALUES ${[0, 1, 2]
-             .flatMap((pageId) =>
-                 MARCHERS.map(
-                     (id) =>
-                         `(${id}, ${pageId}, ${450 + id * 70}, ${280 + pageId * 60 + (id % 2) * 40})`,
-                 ),
-             )
-             .join(", ")}`,
-    ],
+    // A random edit can be one the timeline refuses (it says why in a toast
+    // and logs it); the walk still checks the canvas and the undo history.
+    allowedPageErrors: [/TimelineWriteError: E-ARGS/],
+    seedSql: seedShowSql({
+        beats: 48,
+        pageStarts: [16, 32],
+        marchers: MARCHERS.map((id) => ({
+            id,
+            section: "Trumpet",
+            prefix: "T",
+            order: id,
+        })),
+        positions: PAGES.map((pageId) =>
+            MARCHERS.map(
+                (id) =>
+                    [
+                        id,
+                        450 + id * 70,
+                        280 + pageId * 60 + (id % 2) * 40,
+                    ] as const,
+            ),
+        ),
+    }),
 });
 
 /** mulberry32: a small, fast random number generator that takes a seed. */
@@ -121,10 +131,9 @@ function steps(show: Show, next: () => number): Step[] {
     ];
 }
 
+/** Every marcher's position at the end of every page. */
 const snapshot = (show: Show) =>
-    show.query(
-        "SELECT marcher_id, page_id, x, y FROM marcher_pages ORDER BY page_id, marcher_id",
-    );
+    Promise.all(PAGES.map((pageId) => savedPositions(show, pageId)));
 
 for (const seed of SEEDS) {
     test(`random edits, seed ${seed}`, async ({ show }, testInfo) => {

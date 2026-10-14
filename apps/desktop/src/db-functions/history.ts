@@ -16,8 +16,7 @@ import {
     emitTimelineChange,
     notifyTimelineBatch,
 } from "./timelineChanges";
-import { timelineHistoryFocus, timelineModeOn } from "./timelineHistoryFocus";
-import { isPageEraFrozenError } from "./pageEraFreezeMarker";
+import { timelineHistoryFocus } from "./timelineHistoryFocus";
 import {
     bumpTimelineDisplayVersion,
     historyStatementTable,
@@ -255,11 +254,6 @@ export type HistoryResponse = {
      * timeline rows).
      */
     timelineBatch?: ChangeBatch;
-    /**
-     * True when the page-era freeze (P9.5) refused the action's replay. The group can never be
-     * applied in timeline mode, so it was removed from its stack; nothing else changed.
-     */
-    skippedFrozenGroup?: boolean;
 };
 
 /**
@@ -711,33 +705,6 @@ async function executeHistoryActionUnlocked(
         }
 
         if (error) {
-            // The page-era freeze (P9.5) refused the replay: a group that writes frozen page-era
-            // rows can never be applied in timeline mode. Drop it from its stack (the rolled-back
-            // transaction left no counterpart on the other stack), so it doesn't stay on top.
-            if (isPageEraFrozenError(error)) {
-                await db.transaction(async (tx) => {
-                    await tx.run(
-                        sql.raw(
-                            `DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};`,
-                        ),
-                    );
-                    await refreshCurrentGroups(tx);
-                });
-                mainProcessLog(
-                    "warn",
-                    `Skipped ${type} group ${currentGroup}: it writes page-era rows, which are frozen in timeline mode`,
-                );
-                return {
-                    success: false,
-                    tableNames: new Set(),
-                    sqlStatements: [],
-                    skippedFrozenGroup: true,
-                    error: {
-                        message: messageWithCauses(error),
-                        stack: error.stack ?? "Failed to get stack",
-                    },
-                };
-            }
             throw error;
         }
 
@@ -951,114 +918,23 @@ export async function calculateHistorySize(db: DbConnection | DB) {
     return undoSize + redoSize;
 }
 
-/**
- * Retrieves the table name from an SQL statement.
- * Assumes the table name is surrounded by double quotes. E.g.`UPDATE "table_name"`
- *
- * @param sql The SQL statement to get the table name from
- * @returns The table name from the SQL statement
- */
-const tableNameFromSql = (sql: string): string => {
-    return sql.match(/"(.*?)"/)?.[0].replaceAll('"', "") || "";
-};
-
-/**
- * Get the action from an SQL statement used in the history table.
- * Only "UPDATE", "DELETE", or "INSERT" - "ERROR" if invalid
- *
- * @param sql The SQL statement to get the action from
- * @returns The action from the SQL statement.
- */
-const sqlActionFromSql = (
-    sql: string,
-): "UPDATE" | "DELETE" | "INSERT" | "ERROR" => {
-    const action = sql.split(" ")[0].toUpperCase();
-    if (action === "UPDATE" || action === "DELETE" || action === "INSERT")
-        return action;
-    return "ERROR";
-};
-
-/** The row id a history statement's `WHERE rowid=N` names, or -1 when it names none. */
-export const rowIdFromSql = (sql: string): number => {
-    return parseInt(sql.match(/WHERE rowid=(\d+)/)?.[1] ?? "-1");
-};
-
-/**
- * The page with the lowest start beat among the given marcher page rows, and the marchers changed
- * on it. One query per 500 rows rather than one per statement.
- */
-async function earliestChangedPage(
-    db: DB | DbConnection,
-    marcherPageIds: number[],
-): Promise<{
-    pageIdToGoTo: number | undefined;
-    marcherIdsToSelect: Set<number> | undefined;
-}> {
-    let earliest: { pageId: number; position: number } | undefined;
-    const marchersByPage = new Map<number, Set<number>>();
-    for (let i = 0; i < marcherPageIds.length; i += 500) {
-        const rows = await (db as DbConnection)
-            .select({
-                page_id: schema.marcher_pages.page_id,
-                marcher_id: schema.marcher_pages.marcher_id,
-                position: schema.beats.position,
-            })
-            .from(schema.marcher_pages)
-            .innerJoin(
-                schema.pages,
-                eq(schema.pages.id, schema.marcher_pages.page_id),
-            )
-            .innerJoin(
-                schema.beats,
-                eq(schema.beats.id, schema.pages.start_beat),
-            )
-            .where(
-                inArray(
-                    schema.marcher_pages.id,
-                    marcherPageIds.slice(i, i + 500),
-                ),
-            )
-            .all();
-        for (const row of rows) {
-            const marchers = marchersByPage.get(row.page_id) ?? new Set();
-            marchers.add(row.marcher_id);
-            marchersByPage.set(row.page_id, marchers);
-            if (earliest === undefined || row.position < earliest.position)
-                earliest = { pageId: row.page_id, position: row.position };
-        }
-    }
-    return {
-        pageIdToGoTo: earliest?.pageId,
-        marcherIdsToSelect: earliest
-            ? marchersByPage.get(earliest.pageId)
-            : undefined,
-    };
-}
-
 type PerformHistoryActionResponse = {
     pageIdToGoTo: number | undefined;
     marcherIdsToSelect: Set<number> | undefined;
     queriesToInvalidate: string[][] | undefined;
-    /**
-     * Set when the action didn't apply: `page-era-frozen` when the freeze (P9.5) refused it and
-     * the group was dropped from its stack; `error` for any other failure, which leaves both
-     * stacks as they were.
-     */
-    failure?: { kind: "page-era-frozen" } | { kind: "error"; message: string };
+    /** Set when the action didn't apply; both stacks are left as they were. */
+    failure?: { kind: "error"; message: string };
 };
 
 /**
  * Performs an undo or redo and works out what to show afterwards: the page to jump to and the
  * marchers to select.
  *
- * In page mode they come from the `marcher_pages` statements the action replayed. In timeline mode
- * (P7.13) those rows are frozen, so they come from the action's timeline change batch instead
- * (`timelineHistoryFocus`).
+ * They come from the action's timeline change batch (`timelineHistoryFocus`, P7.13).
  *
  * @param type The type of history action to perform, either "undo" or "redo"
  * @param db The database connection to use, or undefined to create a new connection
- * @param options.currentPageId the selected page; timeline mode stays on it when the action
- * changed it
+ * @param options.currentPageId the selected page; the focus stays on it when the action changed it
  * @returns Response from the history action
  */
 export async function performHistoryAction(
@@ -1072,19 +948,18 @@ export async function performHistoryAction(
     const { response, timelineFocus } = await withTransactionWithHistoryLock(
         async () => {
             const response = await executeHistoryActionUnlocked(db, type);
-            const timelineFocus =
-                response.success && (await timelineModeOn(db))
-                    ? await timelineHistoryFocus(
-                          db,
-                          response.timelineBatch ?? { changes: [] },
-                          {
-                              currentPageId: options.currentPageId,
-                              beatsChanged: response.tableNames.has(
-                                  getTableName(schema.beats),
-                              ),
-                          },
-                      )
-                    : undefined;
+            const timelineFocus = response.success
+                ? await timelineHistoryFocus(
+                      db,
+                      response.timelineBatch ?? { changes: [] },
+                      {
+                          currentPageId: options.currentPageId,
+                          beatsChanged: response.tableNames.has(
+                              getTableName(schema.beats),
+                          ),
+                      },
+                  )
+                : undefined;
             return { response, timelineFocus };
         },
     );
@@ -1094,39 +969,19 @@ export async function performHistoryAction(
             pageIdToGoTo: undefined,
             marcherIdsToSelect: undefined,
             queriesToInvalidate: undefined,
-            failure: response.skippedFrozenGroup
-                ? { kind: "page-era-frozen" }
-                : {
-                      kind: "error",
-                      message: response.error?.message ?? "unknown error",
-                  },
+            failure: {
+                kind: "error",
+                message: response.error?.message ?? "unknown error",
+            },
         };
 
     const queriesToInvalidate: string[][] = tableNamesToQueryKeys(
         response.tableNames,
     );
 
-    if (timelineFocus)
-        return {
-            pageIdToGoTo: timelineFocus.pageIdToGoTo,
-            marcherIdsToSelect: timelineFocus.marcherIdsToSelect,
-            queriesToInvalidate,
-        };
-
-    // Page mode: go to the earliest page the action changed, and select its changed marchers
-    const marcherPageIds = new Set<number>();
-    for (const sqlStatement of response.sqlStatements) {
-        if (
-            tableNameFromSql(sqlStatement) === "marcher_pages" &&
-            sqlActionFromSql(sqlStatement) !== "DELETE"
-        ) {
-            const marcherPageId = rowIdFromSql(sqlStatement);
-            if (marcherPageId >= 0) marcherPageIds.add(marcherPageId);
-        }
-    }
-    const { pageIdToGoTo, marcherIdsToSelect } = await earliestChangedPage(db, [
-        ...marcherPageIds,
-    ]);
-
-    return { pageIdToGoTo, marcherIdsToSelect, queriesToInvalidate };
+    return {
+        pageIdToGoTo: timelineFocus?.pageIdToGoTo,
+        marcherIdsToSelect: timelineFocus?.marcherIdsToSelect,
+        queriesToInvalidate,
+    };
 }

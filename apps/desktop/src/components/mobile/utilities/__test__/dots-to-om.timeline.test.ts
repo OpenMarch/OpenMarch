@@ -2,25 +2,18 @@ import { afterEach, describe, expect, it as plainIt, vi } from "vitest";
 import { FieldProperties } from "@openmarch/core";
 import type { OpenMarchShowData } from "@openmarch/schema";
 import { safeValidateOpenMarchData } from "@openmarch/schema";
-import { eq } from "drizzle-orm";
-import { DbConnection, describeDbTests, schema } from "@/test/base";
+import { DbConnection, describeDbTests } from "@/test/base";
 import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
 import type { DB } from "@/global/database/db";
 import { createMarchers } from "@/db-functions/marcher";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
 import { createLastPage, deletePages } from "@/db-functions/page";
 import { transactionWithHistory } from "@/db-functions/history";
 import {
     moveMarchersOnPage,
     moveMarchersOnPageInTransaction,
 } from "@/db-functions/timelineMoves";
-import { updateWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
 import type Page from "@/global/classes/Page";
-import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { acquireExportResolver } from "@/timeline/timelineExport";
 import { sampleTimelinePagePositions } from "@/timeline/timelinePagePositions";
@@ -29,28 +22,13 @@ import {
     stopTimelineResolver,
 } from "@/timeline/timelineStore";
 import { toOpenMarchSchema } from "../dots-to-om";
-import {
-    keepFixturesInPageMode,
-    withPageEraFreezeLifted,
-} from "@/test/timelineMode";
-
-// P7.17: these tests set up timeline mode themselves
-keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
-);
 
 /**
- * The mobile app payload in timeline mode (docs/timeline/phases/07-page-parity.md P7.12): page
- * positions come from the resolver at each page's end beat, never from `marcher_pages`.
+ * The mobile app payload's positions (docs/timeline/phases/07-page-parity.md P7.12): page
+ * positions come from the resolver at each page's end beat.
  */
 
 afterEach(() => stopTimelineResolver());
-
-const setTimelineMode = (db: DbConnection, timelineMode: boolean) =>
-    updateWorkspaceSettingsParsed({
-        db,
-        settings: workspaceSettingsSchema.parse({ timelineMode }),
-    });
 
 const exportShow = (db: DbConnection) => toOpenMarchSchema(db as unknown as DB);
 
@@ -142,30 +120,11 @@ describe("sampleTimelinePagePositions", () => {
     });
 });
 
-describeDbTests("dots-to-om in timeline mode", (it) => {
-    it("gives a freshly converted show the same page positions as page mode", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const pageMode = await exportShow(db);
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
-
-        const timeline = await exportShow(db);
-
-        expect(safeValidateOpenMarchData(timeline).success).toBe(true);
-        expectSameCoordinates(timeline.coordinates, pageMode.coordinates);
-        expect(timeline.pages).toEqual(pageMode.pages);
-        expect(timeline.performers).toEqual(pageMode.performers);
-        expect(timeline.tempoSections).toEqual(pageMode.tempoSections);
-    });
-
+describeDbTests("dots-to-om positions", (it) => {
     it("samples the resolver at each page's end beat", async ({
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const pages = await sortedPages(db);
         const resolver = await acquireExportResolver(db);
 
@@ -204,13 +163,8 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
         }
     });
 
-    it("exports a timeline edit and never reads marcher_pages", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
+    it("exports a timeline edit", async ({ db, marchersAndPages: _ }) => {
         const before = await exportShow(db);
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const pages = await sortedPages(db);
         const page = pages[2]!;
         const resolver = await acquireExportResolver(db);
@@ -220,16 +174,6 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
             page,
             moves: [{ marcherId: 1, x: x + 24, y }],
         });
-        // Frozen page-era rows that disagree with the timeline are ignored (written with the
-        // freeze lifted, as only a file from before the conversion could have them)
-        await withPageEraFreezeLifted(db, () =>
-            updateMarcherPages({
-                db,
-                modifiedMarcherPages: [
-                    { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
-                ],
-            }),
-        );
 
         const after = await exportShow(db);
 
@@ -249,41 +193,6 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
             old.get(untouched)!.ySteps,
             9,
         );
-
-        // Page mode still reads the page-era rows, which the timeline edit didn't touch
-        await setTimelineMode(db, false);
-        const pageMode = byKey((await exportShow(db)).coordinates);
-        expect(pageMode.get(moved)!.xSteps).toBe(old.get(moved)!.xSteps);
-        expect(pageMode.get(untouched)!.xSteps).not.toBe(
-            old.get(untouched)!.xSteps,
-        );
-    });
-
-    it("leaves out per-page appearance overrides, which timeline mode dropped", async ({
-        db,
-        marchersAndPages,
-    }) => {
-        const firstPageId = marchersAndPages.expectedPages[0].id;
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                { marcher_id: 1, page_id: firstPageId, shape_type: "x" },
-            ],
-        });
-        await convertPagesToTimeline(db);
-        const isOverride = (p: { marcherId: string; pageId: string }) =>
-            p.marcherId === "1" && p.pageId === String(firstPageId);
-
-        const pageMode = await exportShow(db);
-        await setTimelineMode(db, true);
-        const timeline = await exportShow(db);
-
-        expect(pageMode.performerAppearance.performers.some(isOverride)).toBe(
-            true,
-        );
-        expect(timeline.performerAppearance.performers.some(isOverride)).toBe(
-            false,
-        );
     });
 
     // A wrapped write joins the FIFO write lock when it is called, so the export's lock alone
@@ -292,8 +201,6 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         await startTimelineResolver(db);
         const pages = await sortedPages(db);
         const page = pages[1]!;
@@ -321,52 +228,10 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
         );
     });
 
-    it("reads no marcher_pages rows for a show with none", async ({
+    it("covers a page and a marcher created later", async ({
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
-        const expected = (await exportShow(db)).coordinates;
-        await withPageEraFreezeLifted(db, () =>
-            db.delete(schema.marcher_pages),
-        );
-
-        const { coordinates } = await exportShow(db);
-
-        expectSameCoordinates(coordinates, expected);
-    });
-
-    it("drops a page-era rotation in timeline mode only", async ({
-        db,
-        marchersAndPages,
-    }) => {
-        const pageId = marchersAndPages.expectedPages[1].id;
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                { marcher_id: 2, page_id: pageId, rotation_degrees: 45 },
-            ],
-        });
-        await convertPagesToTimeline(db);
-        const rotated = key({ marcherId: "2", pageId: String(pageId) });
-
-        const pageMode = byKey((await exportShow(db)).coordinates);
-        await setTimelineMode(db, true);
-        const timeline = await exportShow(db);
-
-        expect(pageMode.get(rotated)!.rotation_degrees).toBe(45);
-        expect(
-            timeline.coordinates.some((c) => c.rotation_degrees !== undefined),
-        ).toBe(false);
-    });
-
-    it("covers a page and a marcher created after conversion", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const [created] = await createMarchers({
             db,
             newMarchers: [
@@ -374,17 +239,6 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
             ],
         });
         await createLastPage({ db, newPageCounts: 4, createNewBeats: true });
-        // Neither has page-era rows to fall back on (P9.5: they get none), nor does anyone else
-        expect(
-            await db
-                .select()
-                .from(schema.marcher_pages)
-                .where(eq(schema.marcher_pages.marcher_id, created!.id))
-                .all(),
-        ).toEqual([]);
-        await withPageEraFreezeLifted(db, () =>
-            db.delete(schema.marcher_pages),
-        );
         const pages = await sortedPages(db);
         const newPage = pages[pages.length - 1]!;
         const resolver = await acquireExportResolver(db);
@@ -438,8 +292,6 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const pages = await sortedPages(db);
         const lastPage = pages[pages.length - 1]!;
         const before = await exportShow(db);
@@ -487,24 +339,5 @@ describeDbTests("dots-to-om in timeline mode", (it) => {
         expect(after.coordinates).toHaveLength(
             after.pages.length * after.performers.length,
         );
-    });
-
-    it("keeps page mode's output unchanged", async ({
-        db,
-        marchersAndPages,
-    }) => {
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                {
-                    marcher_id: 2,
-                    page_id: marchersAndPages.expectedPages[1].id,
-                    rotation_degrees: 30,
-                    shape_type: "x",
-                },
-            ],
-        });
-
-        expect(await exportShow(db)).toMatchSnapshot();
     });
 });

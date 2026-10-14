@@ -7,12 +7,8 @@ import {
     useState,
 } from "react";
 import Marcher from "@/global/classes/Marcher";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
-import { useSelectedPage } from "./SelectedPageContext";
-import { marcherAppearancesQueryOptions } from "@/hooks/queries/useMarcherAppearances";
-import { appearanceIsHidden } from "@/entity-components/appearance";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useMarcherAppearanceSteps } from "@/hooks/useMarcherAppearanceSteps";
 import {
     appearanceChangeBeats,
@@ -48,18 +44,9 @@ export function SelectedMarchersProvider({
 }) {
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
-    const selectedPageContext = useSelectedPage();
-    const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const queryClient = useQueryClient();
-    // Hidden marchers can't be selected. Page mode reads the selected page's appearances; timeline
-    // mode samples the appearance steps at the beat the paused canvas shows, as the canvas draws
-    // them (UI-9, `useTimelineAppearance`)
-    const timelineMode = useTimelineMode();
-    const { data: marcherAppearances } = useQuery({
-        ...marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
-        enabled: selectedPage !== null && !timelineMode,
-    });
-    const appearanceSteps = useMarcherAppearanceSteps(timelineMode);
+    // Hidden marchers can't be selected: the appearance steps sampled at the beat the paused
+    // canvas shows, as the canvas draws them (UI-9, `useTimelineAppearance`)
+    const appearanceSteps = useMarcherAppearanceSteps(true);
     const changeBeats = useMemo(
         () => (appearanceSteps ? appearanceChangeBeats(appearanceSteps) : []),
         [appearanceSteps],
@@ -68,30 +55,16 @@ export function SelectedMarchersProvider({
     const changeIndex = useTimelineSelectionStore((s) =>
         changeIndexAtBeat(changeBeats, displayedBeat(s)),
     );
-    const hiddenMarcherIds: Set<number> = useMemo(() => {
-        if (timelineMode)
-            return appearanceSteps
+    const hiddenMarcherIds: Set<number> = useMemo(
+        () =>
+            appearanceSteps
                 ? hiddenMarcherIdsAtBeat(
                       appearanceSteps,
                       changeIndex > 0 ? changeBeats[changeIndex - 1]! : 0,
                   )
-                : new Set();
-        if (marcherAppearances == null) return new Set();
-        const hiddenMarcherIds = new Set(
-            Object.entries(marcherAppearances)
-                .filter((marcherAppearance) =>
-                    appearanceIsHidden(marcherAppearance[1]),
-                )
-                .map((marcherAppearance) => parseInt(marcherAppearance[0])),
-        );
-        return hiddenMarcherIds;
-    }, [
-        timelineMode,
-        appearanceSteps,
-        changeBeats,
-        changeIndex,
-        marcherAppearances,
-    ]);
+                : new Set(),
+        [appearanceSteps, changeBeats, changeIndex],
+    );
 
     // Update the selected marcher if the marchers list changes. This refreshes the information of the selected marcher
     useEffect(() => {

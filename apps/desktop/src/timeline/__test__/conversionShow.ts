@@ -5,12 +5,17 @@ import { createBeats } from "@/db-functions/beat";
 import { createMeasures } from "@/db-functions/measures";
 import { createPages } from "@/db-functions/page";
 import { createMarchers, deleteMarchers } from "@/db-functions/marcher";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
-import { createShapePages } from "@/db-functions/shapePages";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
+import {
+    addPageEraTables,
+    writeMarcherPages,
+    writeShapePage,
+} from "./pageEraShow";
 
 /**
- * The conversion equality show (docs/timeline/phases/06-converter.md P6.6), built through the
- * app's own db-functions on a blank file, so it is generated rather than committed. It exercises
+ * The conversion equality show (docs/timeline/phases/06-converter.md P6.6), built on a blank file
+ * through the app's db-functions for beats, measures, pages and marchers, with the page-era rows
+ * written directly (`pageEraShow.ts`), so it is generated rather than committed. It exercises
  * every page feature the converter handles:
  *
  * - counts: pages of 8, 4, 16, 6, 3, 1, 12, 8 and a last page of `last_page_counts` (8) beats;
@@ -98,6 +103,8 @@ const coordinate = (x: number, y: number) => ({ x, y });
 export async function buildConversionShow(
     db: DbConnection,
 ): Promise<ConversionShow> {
+    await addPageEraTables(db);
+
     // Beats, measures and pages
     const beats = await createBeats({
         db,
@@ -120,7 +127,7 @@ export async function buildConversionShow(
             .map((b) => ({ start_beat: b.id })),
     });
 
-    // First marchers, then the pages (each copies the previous page's positions)
+    // First marchers, then the pages
     const first = await createMarchers({
         db,
         newMarchers: Array.from({ length: 12 }, (_, i) => ({
@@ -148,7 +155,7 @@ export async function buildConversionShow(
             .all()
     ).map((p) => p.id);
 
-    // Marchers added after the pages exist get a row on every page
+    // Marchers added after the pages exist (every marcher gets a row on every page below)
     const added = await createMarchers({
         db,
         newMarchers: [13, 14, 15].map((drill_order) => ({
@@ -160,13 +167,13 @@ export async function buildConversionShow(
     const all = [...first, ...added].map((m) => m.id).sort((a, b) => a - b);
 
     const place = async (p: number, at: (i: number) => [number, number]) =>
-        updateMarcherPages({
+        writeMarcherPages(
             db,
-            modifiedMarcherPages: all.map((marcher_id, i) => {
+            all.map((marcher_id, i) => {
                 const [x, y] = at(i);
                 return { marcher_id, page_id: pageIds[p]!, x, y };
             }),
-        });
+        );
     for (const p of [0, 1, 4, 6, 7, 8, 9]) await place(p, (i) => layout(p, i));
     // Page 2: everyone holds (the page copies page 1, set explicitly anyway)
     await place(2, (i) => layout(1, i));
@@ -176,16 +183,9 @@ export async function buildConversionShow(
     // Page 4: two marchers on the same point
     const coincident: [number, number] = [all[0]!, all[1]!];
     const [cx, cy] = layout(4, 0);
-    await updateMarcherPages({
-        db,
-        modifiedMarcherPages: [
-            {
-                marcher_id: all[1]!,
-                page_id: pageIds[4]!,
-                ...coordinate(cx, cy),
-            },
-        ],
-    });
+    await writeMarcherPages(db, [
+        { marcher_id: all[1]!, page_id: pageIds[4]!, ...coordinate(cx, cy) },
+    ]);
 
     // Page 3: a curved shape (quadratic arc) for 10 marchers and a straight one for the rest
     const arc = (t: number) => {
@@ -196,26 +196,21 @@ export async function buildConversionShow(
             u * u * 500 + 2 * u * t * 150 + t * t * 500,
         ] as const;
     };
-    await createShapePages({
-        db,
-        newItems: [
-            {
-                page_id: pageIds[3]!,
-                svg_path: "M 200 500 Q 600 150 1000 500",
-                marcher_coordinates: all.slice(0, 10).map((marcher_id, i) => {
-                    const [x, y] = arc(i / 9);
-                    return { marcher_id, ...coordinate(x, y) };
-                }),
-            },
-            {
-                page_id: pageIds[3]!,
-                svg_path: "M 300 700 L 700 700",
-                marcher_coordinates: all.slice(10).map((marcher_id, i) => ({
-                    marcher_id,
-                    ...coordinate(300 + 80 * i, 700),
-                })),
-            },
-        ],
+    await writeShapePage(db, {
+        page_id: pageIds[3]!,
+        svg_path: "M 200 500 Q 600 150 1000 500",
+        marcher_coordinates: all.slice(0, 10).map((marcher_id, i) => {
+            const [x, y] = arc(i / 9);
+            return { marcher_id, ...coordinate(x, y) };
+        }),
+    });
+    await writeShapePage(db, {
+        page_id: pageIds[3]!,
+        svg_path: "M 300 700 L 700 700",
+        marcher_coordinates: all.slice(10).map((marcher_id, i) => ({
+            marcher_id,
+            ...coordinate(300 + 80 * i, 700),
+        })),
     });
 
     // Page 7: one marcher moves along a curved pathway from its page-6 spot
@@ -223,50 +218,44 @@ export async function buildConversionShow(
     const [fx, fy] = layout(6, 4);
     const [tx, ty] = layout(7, 4);
     const [pathway] = await db
-        .insert(schema.pathways)
+        .insert(pageEra.pathways)
         .values({
             path_data: Path.fromSvgString(
                 `M ${fx} ${fy} Q ${(fx + tx) / 2 + 150} ${(fy + ty) / 2 - 220} ${tx} ${ty}`,
             ).toJson(),
         })
         .returning();
-    await updateMarcherPages({
-        db,
-        modifiedMarcherPages: [
-            {
-                marcher_id: pathwayMarcherId,
-                page_id: pageIds[7]!,
-                x: tx,
-                y: ty,
-                path_data_id: pathway!.id,
-            },
-        ],
-    });
+    await writeMarcherPages(db, [
+        {
+            marcher_id: pathwayMarcherId,
+            page_id: pageIds[7]!,
+            x: tx,
+            y: ty,
+            path_data_id: pathway!.id,
+        },
+    ]);
 
     // Page 7: a second marcher on a pathway, from its page-5 spot, with no page-6 row (below)
     const pathwayGapMarcherId = all[9]!;
     const [gx, gy] = layout(5, 9);
     const [hx, hy] = layout(7, 9);
     const [gapPathway] = await db
-        .insert(schema.pathways)
+        .insert(pageEra.pathways)
         .values({
             path_data: Path.fromSvgString(
                 `M ${gx} ${gy} Q ${(gx + hx) / 2 - 120} ${(gy + hy) / 2 + 160} ${hx} ${hy}`,
             ).toJson(),
         })
         .returning();
-    await updateMarcherPages({
-        db,
-        modifiedMarcherPages: [
-            {
-                marcher_id: pathwayGapMarcherId,
-                page_id: pageIds[7]!,
-                x: hx,
-                y: hy,
-                path_data_id: gapPathway!.id,
-            },
-        ],
-    });
+    await writeMarcherPages(db, [
+        {
+            marcher_id: pathwayGapMarcherId,
+            page_id: pageIds[7]!,
+            x: hx,
+            y: hy,
+            path_data_id: gapPathway!.id,
+        },
+    ]);
     // Non-default path positions: page mode starts the glide at the PREVIOUS row's
     // `path_start_position` and ends it at the pathway row's `path_end_position`, so the gap
     // page's interpolated point checks that mapping
@@ -275,27 +264,27 @@ export async function buildConversionShow(
         [7, { path_end_position: 0.8 }],
     ] as const)
         await db
-            .update(schema.marcher_pages)
+            .update(pageEra.marcher_pages)
             .set(set)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, pageIds[p]!),
-                    eq(schema.marcher_pages.marcher_id, pathwayGapMarcherId),
+                    eq(pageEra.marcher_pages.page_id, pageIds[p]!),
+                    eq(pageEra.marcher_pages.marcher_id, pathwayGapMarcherId),
                 ),
             );
 
     // Page 8: a midset (dropped; page mode ignores midsets too)
     const midsetRow = await db
-        .select({ id: schema.marcher_pages.id })
-        .from(schema.marcher_pages)
+        .select({ id: pageEra.marcher_pages.id })
+        .from(pageEra.marcher_pages)
         .where(
             and(
-                eq(schema.marcher_pages.page_id, pageIds[8]!),
-                eq(schema.marcher_pages.marcher_id, all[5]!),
+                eq(pageEra.marcher_pages.page_id, pageIds[8]!),
+                eq(pageEra.marcher_pages.marcher_id, all[5]!),
             ),
         )
         .get();
-    await db.insert(schema.midsets).values({
+    await db.insert(pageEra.midsets).values({
         mp_id: midsetRow!.id,
         x: 510,
         y: 230,
@@ -304,16 +293,22 @@ export async function buildConversionShow(
 
     // A marcher deleted mid-show: all of its rows go
     const deletedMarcherId = all[3]!;
+    await db
+        .delete(pageEra.marcher_pages)
+        .where(eq(pageEra.marcher_pages.marcher_id, deletedMarcherId));
+    await db
+        .delete(pageEra.shape_page_marchers)
+        .where(eq(pageEra.shape_page_marchers.marcher_id, deletedMarcherId));
     await deleteMarchers({ db, marcherIds: new Set([deletedMarcherId]) });
 
     // Damaged-file cases, written directly: page mode never creates them
     const gapMarcherId = all[6]!;
     await db
-        .delete(schema.marcher_pages)
+        .delete(pageEra.marcher_pages)
         .where(
             and(
-                eq(schema.marcher_pages.page_id, pageIds[5]!),
-                eq(schema.marcher_pages.marcher_id, gapMarcherId),
+                eq(pageEra.marcher_pages.page_id, pageIds[5]!),
+                eq(pageEra.marcher_pages.marcher_id, gapMarcherId),
             ),
         );
     const lateHomeMarcherId = all[7]!;
@@ -327,11 +322,11 @@ export async function buildConversionShow(
         [endGapMarcherId, 9],
     ] as const)
         await db
-            .delete(schema.marcher_pages)
+            .delete(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, pageIds[p]!),
-                    eq(schema.marcher_pages.marcher_id, marcherId),
+                    eq(pageEra.marcher_pages.page_id, pageIds[p]!),
+                    eq(pageEra.marcher_pages.marcher_id, marcherId),
                 ),
             );
 

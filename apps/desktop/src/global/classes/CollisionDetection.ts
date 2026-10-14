@@ -1,6 +1,4 @@
 import Marcher from "@/global/classes/Marcher";
-import { getByMarcherId } from "@/global/classes/MarcherPage";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import Page from "@/global/classes/Page";
 import { getCoordinatesAtTime, MarcherTimeline } from "@/utilities/Keyframes";
 
@@ -23,14 +21,16 @@ export interface CollisionData {
 const getPageHash = (
     page: Page,
     marchers: Marcher[],
-    marcherPages: MarcherPageMap,
+    marcherTimelines: Map<number, MarcherTimeline>,
 ) => {
-    // Sum all x values for marchers on this page
+    // Sum all x values for marchers at the end of this page
+    const pageEndMs = (page.timestamp + page.duration) * 1000;
     const xSum = marchers.reduce((sum, m) => {
-        const marcherPageData = getByMarcherId(marcherPages, m.id).find(
-            (mp) => mp.page_id === page.id,
-        );
-        return sum + (marcherPageData?.x || 0);
+        const timeline = marcherTimelines.get(m.id);
+        const coordinate = timeline
+            ? getCoordinatesAtTime(pageEndMs, timeline)
+            : null;
+        return sum + (coordinate?.x || 0);
     }, 0);
 
     // Fit the x sum into 20 bits using modulo to ensure it fits
@@ -232,14 +232,8 @@ const getPageCollisions = (
     marchers: Marcher[],
     marcherTimelines: Map<number, MarcherTimeline>,
     pages: Page[],
-    marcherPages: MarcherPageMap | undefined,
 ) => {
-    if (
-        !marchers.length ||
-        !pages.length ||
-        marcherTimelines.size === 0 ||
-        !marcherPages
-    ) {
+    if (!marchers.length || !pages.length || marcherTimelines.size === 0) {
         collisionCacheRef.clear();
         pageHashCacheRef.clear();
         velocityCacheRef.clear();
@@ -249,7 +243,7 @@ const getPageCollisions = (
     const collisionsMap = new Map<number, CollisionData[]>();
 
     for (const page of pages) {
-        const currentHash = getPageHash(page, marchers, marcherPages);
+        const currentHash = getPageHash(page, marchers, marcherTimelines);
         const cachedHash = pageHashCacheRef.get(page.id);
 
         // Check if we can use cached collision data
@@ -275,7 +269,11 @@ const getPageCollisions = (
             if (page.nextPageId) {
                 const n = pages.filter((p) => p.id === page.nextPageId);
                 const nextPage = n[0];
-                const nextHash = getPageHash(nextPage, marchers, marcherPages);
+                const nextHash = getPageHash(
+                    nextPage,
+                    marchers,
+                    marcherTimelines,
+                );
                 const nextCollisions = sweepNPruneCollision(
                     nextPage,
                     marcherTimelines,

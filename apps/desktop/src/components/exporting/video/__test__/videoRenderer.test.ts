@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { FieldProperties } from "@openmarch/core";
 import { exportVideo } from "../videoRenderer";
+import { ResolverFrameSampler } from "@/timeline/timelineExport";
 
 const minimalExportArgs = {
     fieldProperties: { width: 1600, height: 900 } as FieldProperties,
     marchers: [],
     sortedPages: [],
-    marcherTimelines: new Map(),
+    frameSampler: new ResolverFrameSampler(
+        { marcherIds: () => [], positionsAt: () => {} },
+        [],
+    ),
     gridLines: false,
     halfLines: false,
     audioData: new ArrayBuffer(0),

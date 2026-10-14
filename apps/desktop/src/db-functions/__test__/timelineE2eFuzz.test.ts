@@ -224,7 +224,6 @@ const makeRand = (seed: number) => {
 
 const DATA_TABLES = [
     schema.marchers,
-    schema.marcher_pages,
     schema.timelines,
     schema.timeline_shapes,
     schema.timeline_transitions,

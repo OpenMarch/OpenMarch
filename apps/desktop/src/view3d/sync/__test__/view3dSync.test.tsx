@@ -10,7 +10,12 @@ import {
     type View3dPayloads,
     type View3dPublishChannel,
 } from "../protocol";
-import { relayInvalidations, useView3dPublisher } from "../useView3dPublisher";
+import {
+    relayInvalidations,
+    relayTimelineChanges,
+    useView3dPublisher,
+} from "../useView3dPublisher";
+import { emitTimelineChange } from "@/db-functions/timelineChanges";
 import {
     applyInvalidate,
     startView3dSync,
@@ -28,6 +33,25 @@ const clock = (overrides: Partial<View3dClock> = {}): View3dClock => ({
     ...overrides,
 });
 
+describe("relayTimelineChanges", () => {
+    it("sends once per tick of committed timeline changes, until stopped", async () => {
+        const send = vi.fn();
+        const stop = relayTimelineChanges(send);
+
+        emitTimelineChange({ kind: "reset" });
+        emitTimelineChange({ kind: "reset" });
+        await flushMicrotasks();
+        expect(send).toHaveBeenCalledTimes(1);
+
+        emitTimelineChange({ kind: "reset" });
+        stop();
+        await flushMicrotasks();
+        emitTimelineChange({ kind: "reset" });
+        await flushMicrotasks();
+        expect(send).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe("relayInvalidations", () => {
     it("forwards invalidated keys once per tick, de-duplicated", async () => {
         const qc = new QueryClient();
@@ -35,12 +59,12 @@ describe("relayInvalidations", () => {
         const restore = relayInvalidations(qc, send);
 
         void qc.invalidateQueries({ queryKey: ["pages"] });
-        void qc.invalidateQueries({ queryKey: ["marcher_pages", 3] });
+        void qc.invalidateQueries({ queryKey: ["marchers", 3] });
         void qc.invalidateQueries({ queryKey: ["pages"] });
         await flushMicrotasks();
 
         expect(send).toHaveBeenCalledTimes(1);
-        expect(send).toHaveBeenCalledWith([["pages"], ["marcher_pages", 3]]);
+        expect(send).toHaveBeenCalledWith([["pages"], ["marchers", 3]]);
         restore();
     });
 

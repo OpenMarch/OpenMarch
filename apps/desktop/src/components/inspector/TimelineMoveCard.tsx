@@ -38,7 +38,6 @@ import {
     useSettledInspectorWindow,
     type InspectorTranslate,
 } from "./TimelineInspectorSection";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { BulgeEditor, Field, Help } from "./TimelineTransitionEditor";
 
 const MOVE_PATH_STYLES: readonly MovePathStyle[] = ["direct", "arc"];
@@ -462,15 +461,9 @@ export function TimelineMoveCard({
 
 /**
  * The Move card's place in the inspector: first, above the page and marcher editors, whenever the
- * window is a move (UI-14 review), isolated or not. Only in timeline mode.
+ * window is a move (UI-14 review), isolated or not.
  */
 export function TimelineMoveCardSlot() {
-    const timelineMode = useTimelineMode();
-    if (!timelineMode) return null;
-    return <MoveCardSlotContent />;
-}
-
-function MoveCardSlotContent() {
     const t = useInspectorTranslate();
     // The move the Timeline section is about, held with it while the playhead is scrubbed, so the
     // two never differ and the card doesn't go (saving a typed name) mid-scrub (code review)

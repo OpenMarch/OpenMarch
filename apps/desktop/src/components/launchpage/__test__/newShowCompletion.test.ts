@@ -19,11 +19,8 @@ import { allDatabasePagesQueryOptions } from "@/hooks/queries/usePages";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
 import { getUtility } from "@/db-functions/utility";
 import { getMarchers } from "@/db-functions/marcher";
-import { marcherPagesByPageId } from "@/db-functions/marcherPage";
-import { FIRST_PAGE_ID } from "@/db-functions/page";
 import { getSectionAppearances } from "@/db-functions/sectionAppearance";
 import { getMarcherTags, getTags } from "@/db-functions/tag";
-import { setTimelineModeFlag, timelineFixtureMode } from "@/test/timelineMode";
 import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
 
 describe("newShowCompletion helpers", () => {
@@ -554,27 +551,16 @@ describeDbTests("completeNewShow", (it) => {
                 marcher,
             ]),
         );
-        const firstPageMarcherPages = await marcherPagesByPageId({
-            db,
-            pageId: FIRST_PAGE_ID,
-        });
-        const firstPageByMarcherId = new Map(
-            firstPageMarcherPages.map((marcherPage) => [
-                marcherPage.marcher_id,
-                marcherPage,
-            ]),
-        );
 
         const t1 = marcherByDrillNumber.get("T1");
         const t2 = marcherByDrillNumber.get("T2");
         expect(t1).toBeDefined();
         expect(t2).toBeDefined();
-        // In a timeline-mode file the first-page coordinates are the homes, and the frozen
-        // marcher pages aren't written (P9.5)
-        const firstPagePosition = (marcher: (typeof marchers)[number]) =>
-            timelineFixtureMode()
-                ? { x: marcher.home_x, y: marcher.home_y }
-                : firstPageByMarcherId.get(marcher.id);
+        // The first-page coordinates are the homes (P9.3)
+        const firstPagePosition = (marcher: (typeof marchers)[number]) => ({
+            x: marcher.home_x,
+            y: marcher.home_y,
+        });
         expect(firstPagePosition(t1!)).toMatchObject({
             x: 321,
             y: 654,
@@ -674,12 +660,10 @@ describeDbTests("completeNewShow", (it) => {
         };
     };
 
-    it("in a new timeline-mode show (convert on open, P9.3), imported first-page coordinates are the homes", async ({
+    it("imported first-page coordinates are the homes (P9.3)", async ({
         task,
         db,
     }) => {
-        await setTimelineModeFlag(db, true);
-
         await completeNewShow(
             wizardStateToFormState(importedTrumpets(task.id)),
             queryClient,
@@ -691,67 +675,6 @@ describeDbTests("completeNewShow", (it) => {
         );
         expect(byDrill.get("T1")).toMatchObject({ home_x: 321, home_y: 654 });
         expect(byDrill.get("T2")).toMatchObject({ home_x: 987, home_y: 123 });
-        const settings = await getWorkspaceSettingsParsed({ db });
-        expect(settings.timelineMode).toBe(true);
-        // Marcher pages are frozen in timeline mode (P9.5): none were written
-        expect(
-            await marcherPagesByPageId({ db, pageId: FIRST_PAGE_ID }),
-        ).toEqual([]);
-    });
-
-    it("in page mode, imported coordinates don't touch the homes", async ({
-        task,
-        db,
-    }) => {
-        await setTimelineModeFlag(db, false);
-        const homesBefore = new Map(
-            (await getMarchers({ db })).map((m) => [
-                m.id,
-                [m.home_x, m.home_y],
-            ]),
-        );
-
-        await completeNewShow(
-            wizardStateToFormState(importedTrumpets(task.id)),
-            queryClient,
-        );
-
-        for (const m of await getMarchers({ db }))
-            if (!homesBefore.has(m.id))
-                expect([m.home_x, m.home_y]).not.toEqual([321, 654]);
-    });
-
-    // Defined coordinates (B-14, catalog gap 6): the import writes the first page through
-    // `updateMarcherPagesInTransaction`, so the later pages, copies made when the marchers were
-    // added, follow it
-    it("in page mode, imported first-page coordinates carry to every later page", async ({
-        task,
-        db,
-    }) => {
-        await setTimelineModeFlag(db, false);
-
-        await completeNewShow(
-            wizardStateToFormState(importedTrumpets(task.id)),
-            queryClient,
-        );
-
-        const pageIds = (await db.query.pages.findMany()).map((p) => p.id);
-        expect(pageIds.length).toBeGreaterThan(1);
-        const marchers = await getMarchers({ db });
-        const rows = await db.query.marcher_pages.findMany();
-        for (const [drill, x, y] of [
-            ["T1", 321, 654],
-            ["T2", 987, 123],
-        ] as const) {
-            const marcher = marchers.find(
-                (m) => `${m.drill_prefix}${m.drill_order}` === drill,
-            )!;
-            const own = rows.filter((r) => r.marcher_id === marcher.id);
-            expect(own.map((r) => r.page_id).sort()).toEqual(
-                [...pageIds].sort(),
-            );
-            for (const row of own) expect([row.x, row.y]).toEqual([x, y]);
-        }
     });
 
     it("finishes quietly when the main process stopped the open and already said why", async ({

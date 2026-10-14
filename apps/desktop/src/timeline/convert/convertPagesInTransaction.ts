@@ -1,12 +1,8 @@
 import { asc, count } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
 import type { DbConnection, DbTransaction } from "@/db-functions/types";
-// Light modules, not `@/db-functions/page`, `beat` or `Page`, so the main process can load the
-// converter (convert on open, P9.3).
-import {
-    realDatabaseBeatToDatabaseBeat,
-    realDatabasePageToDatabasePage,
-} from "@/db-functions/rowMappers";
+// Light modules only, so the convert-on-open worker can load the converter.
 import { updateMarcherHomesInTransaction } from "@/db-functions/marcherHome";
 import {
     createTimelinesInTransaction,
@@ -17,9 +13,7 @@ import { createTimelineTransitionsInTransaction } from "@/db-functions/timelineT
 import { insertTimelineAssignmentsBulkInTransaction } from "@/db-functions/timelineAssignments";
 import { refuse } from "@/db-functions/timelineErrors";
 import type Page from "@/global/classes/Page";
-import { fromDatabasePages } from "@/global/classes/Page.fromDatabase";
-import type Beat from "@/global/classes/Beat";
-import { calculateTimestamps, fromDatabaseBeat } from "@/global/classes/Beat";
+import { readShowTiming } from "../showTiming";
 import {
     planPageConversion,
     type PageConversionInput,
@@ -28,17 +22,14 @@ import {
 } from "./planPageConversion";
 
 /**
- * Converts the open file's page show into timeline rows (docs/timeline/phases/06-converter.md
- * P6.2, P6.4): reads the page model, plans with `planPageConversion`, and writes the plan through
- * the timeline db-functions inside the caller's transaction. The page-era tables are only read.
+ * Converts a page-era show into timeline rows (docs/timeline/phases/06-converter.md P6.2, P6.4):
+ * reads the page model (`pageEraSchema.ts`), plans with `planPageConversion`, and writes the plan
+ * through the timeline db-functions inside the caller's transaction. The page-era tables are only
+ * read; convert on open (`electron/database/convertOnOpen.ts`) drops them in the same transaction.
  *
- * This module doesn't load the history module or any renderer module, so the main process and
- * the convert-on-open worker (P9.8) can load it. `writePageConversion.ts` adds the undoable
- * `convertPagesToTimeline` on top and re-exports this module.
+ * This module doesn't load the history module or any renderer module, so the convert-on-open
+ * worker can load it.
  */
-
-/** `utility.last_page_counts` when the file has no utility row (the column's default). */
-const DEFAULT_LAST_PAGE_COUNTS = 8;
 
 export interface ConvertPagesOptions {
     /**
@@ -66,31 +57,6 @@ export interface PageConversionResult {
     readonly homeCount: number;
 }
 
-/** The show's beats (0-based `index`, cumulative `timestamp`) and pages, as the app builds them. */
-export async function readShowTiming(
-    tx: DbTransaction | DbConnection,
-): Promise<{ beats: Beat[]; pages: Page[] }> {
-    const beatRows = await tx
-        .select()
-        .from(schema.beats)
-        .orderBy(asc(schema.beats.position))
-        .all();
-    const beats = calculateTimestamps(
-        beatRows.map((b, i) =>
-            fromDatabaseBeat(realDatabaseBeatToDatabaseBeat(b), i),
-        ),
-    );
-    const pageRows = await tx.select().from(schema.pages).all();
-    const utility = await tx.select().from(schema.utility).get();
-    const pages = fromDatabasePages({
-        databasePages: pageRows.map(realDatabasePageToDatabasePage),
-        allMeasures: [],
-        allBeats: [...beats],
-        lastPageCounts: utility?.last_page_counts ?? DEFAULT_LAST_PAGE_COUNTS,
-    });
-    return { beats, pages };
-}
-
 /** Reads what the planner needs, inside `tx` so the read and the write see the same rows. */
 export async function readPageConversionInput(
     tx: DbTransaction | DbConnection,
@@ -102,49 +68,49 @@ export async function readPageConversionInput(
         .all();
     const marcherPages = await tx
         .select({
-            id: schema.marcher_pages.id,
-            marcher_id: schema.marcher_pages.marcher_id,
-            page_id: schema.marcher_pages.page_id,
-            x: schema.marcher_pages.x,
-            y: schema.marcher_pages.y,
-            path_data_id: schema.marcher_pages.path_data_id,
-            path_start_position: schema.marcher_pages.path_start_position,
-            path_end_position: schema.marcher_pages.path_end_position,
-            rotation_degrees: schema.marcher_pages.rotation_degrees,
-            notes: schema.marcher_pages.notes,
-            fill_color: schema.marcher_pages.fill_color,
-            outline_color: schema.marcher_pages.outline_color,
-            shape_type: schema.marcher_pages.shape_type,
-            visible: schema.marcher_pages.visible,
-            label_visible: schema.marcher_pages.label_visible,
-            equipment_name: schema.marcher_pages.equipment_name,
-            equipment_state: schema.marcher_pages.equipment_state,
+            id: pageEra.marcher_pages.id,
+            marcher_id: pageEra.marcher_pages.marcher_id,
+            page_id: pageEra.marcher_pages.page_id,
+            x: pageEra.marcher_pages.x,
+            y: pageEra.marcher_pages.y,
+            path_data_id: pageEra.marcher_pages.path_data_id,
+            path_start_position: pageEra.marcher_pages.path_start_position,
+            path_end_position: pageEra.marcher_pages.path_end_position,
+            rotation_degrees: pageEra.marcher_pages.rotation_degrees,
+            notes: pageEra.marcher_pages.notes,
+            fill_color: pageEra.marcher_pages.fill_color,
+            outline_color: pageEra.marcher_pages.outline_color,
+            shape_type: pageEra.marcher_pages.shape_type,
+            visible: pageEra.marcher_pages.visible,
+            label_visible: pageEra.marcher_pages.label_visible,
+            equipment_name: pageEra.marcher_pages.equipment_name,
+            equipment_state: pageEra.marcher_pages.equipment_state,
         })
-        .from(schema.marcher_pages)
+        .from(pageEra.marcher_pages)
         .all();
     const midsets = await tx
         .select({
-            id: schema.midsets.id,
-            mp_id: schema.midsets.mp_id,
-            progress_placement: schema.midsets.progress_placement,
+            id: pageEra.midsets.id,
+            mp_id: pageEra.midsets.mp_id,
+            progress_placement: pageEra.midsets.progress_placement,
         })
-        .from(schema.midsets)
+        .from(pageEra.midsets)
         .all();
     const shapePages = await tx
         .select({
-            id: schema.shape_pages.id,
-            shape_id: schema.shape_pages.shape_id,
-            page_id: schema.shape_pages.page_id,
-            svg_path: schema.shape_pages.svg_path,
+            id: pageEra.shape_pages.id,
+            shape_id: pageEra.shape_pages.shape_id,
+            page_id: pageEra.shape_pages.page_id,
+            svg_path: pageEra.shape_pages.svg_path,
         })
-        .from(schema.shape_pages)
+        .from(pageEra.shape_pages)
         .all();
     const pathways = await tx
         .select({
-            id: schema.pathways.id,
-            path_data: schema.pathways.path_data,
+            id: pageEra.pathways.id,
+            path_data: pageEra.pathways.path_data,
         })
-        .from(schema.pathways)
+        .from(pageEra.pathways)
         .all();
     return {
         pages: pages.map((p) => ({

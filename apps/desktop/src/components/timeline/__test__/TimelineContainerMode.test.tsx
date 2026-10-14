@@ -8,19 +8,14 @@ import {
 import { TolgeeProvider } from "@tolgee/react";
 import type { ComponentType, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, vi } from "vitest";
-import { describeDbTests, type DbConnection, schema } from "@/test/base";
+import { describeDbTests, schema } from "@/test/base";
 import { transactionWithHistory } from "@/db-functions/history";
-import {
-    getWorkspaceSettingsParsed,
-    updateWorkspaceSettingsParsed,
-} from "@/db-functions/workspaceSettings";
 import tolgee from "@/global/singletons/Tolgee";
 import { ThemeProvider } from "@/context/ThemeContext";
 import TimelineContainer from "../TimelineContainer";
 
 /**
- * The 0.2 timeline (P8.1) replaces the page timeline only for a file whose timeline dev flag is
- * on. With the flag off, the container renders the page timeline exactly as before.
+ * The container renders the 0.2 timeline (P8.1), with the audio player running headless.
  */
 
 afterEach(cleanup);
@@ -43,14 +38,6 @@ beforeEach(() => {
     }));
 });
 
-const setTimelineMode = async (db: DbConnection, on: boolean) => {
-    const settings = await getWorkspaceSettingsParsed({ db });
-    await updateWorkspaceSettingsParsed({
-        db,
-        settings: { ...settings, timelineMode: on },
-    });
-};
-
 const renderContainer = (wrapper: ComponentType<{ children: ReactNode }>) => {
     const Wrapper = wrapper;
     return render(
@@ -64,35 +51,9 @@ const renderContainer = (wrapper: ComponentType<{ children: ReactNode }>) => {
     );
 };
 
-describeDbTests("TimelineContainer and the timeline flag", (it) => {
-    describe("flag off", () => {
-        it("renders the page timeline and not the new timeline", async ({
-            wrapper,
-        }) => {
-            const { container } = renderContainer(wrapper);
-
-            await waitFor(
-                () =>
-                    expect(container.querySelector("#timeline")).not.toBeNull(),
-                { timeout: 5000 },
-            );
-            // Page mode keeps the legacy waveform
-            expect(container.querySelector("#waveform")).not.toBeNull();
-            expect(
-                screen.queryByTestId("timeline-mode-container"),
-            ).not.toBeInTheDocument();
-            expect(
-                screen.queryByTestId("timeline-viewport"),
-            ).not.toBeInTheDocument();
-        });
-    });
-
-    describe("flag on", () => {
-        it("renders the new timeline instead of the page timeline", async ({
-            db,
-            wrapper,
-        }) => {
-            await setTimelineMode(db, true);
+describeDbTests("TimelineContainer", (it) => {
+    describe("the timeline", () => {
+        it("renders the timeline", async ({ wrapper }) => {
             const { container } = renderContainer(wrapper);
 
             await waitFor(
@@ -132,7 +93,6 @@ describeDbTests("TimelineContainer and the timeline flag", (it) => {
                     { id: 2, start_beat: 9 },
                 ]);
             });
-            await setTimelineMode(db, true);
             renderContainer(wrapper);
 
             const page2 = await screen.findByRole(

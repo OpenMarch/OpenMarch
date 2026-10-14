@@ -12,13 +12,12 @@ import {
 } from "@/stores/TimelineSelectionStore";
 
 /**
- * Draws the static (not playing) canvas in timeline mode (docs/timeline/phases/05-rendering.md
- * P5.5): every marcher at the resolver's position at the paused playhead (`beat`, UI-9), or else
- * the selected page's end beat (`pageEndBeat`), in place of the marcher_pages render. Redraws when the resolver's answers
- * change. When the resolver isn't ready, marchers stay where they are.
+ * Draws the static (not playing) canvas (docs/timeline/phases/05-rendering.md P5.5): every
+ * marcher at the resolver's position at the paused playhead (`beat`, UI-9), or else the selected
+ * page's end beat (`pageEndBeat`). Redraws when the resolver's answers change. When the resolver
+ * isn't ready, marchers stay where they are.
  *
- * Does nothing while `enabled` is false (the flag is off) or while playing, when `useAnimation`
- * draws.
+ * Does nothing while `enabled` is false or while playing, when `useAnimation` draws.
  *
  * With `followPlayhead`, it draws at the beat the timeline shows (`displayedBeat`: the paused
  * playhead, or a held preview frame) and follows it through a store subscription, so a scrub

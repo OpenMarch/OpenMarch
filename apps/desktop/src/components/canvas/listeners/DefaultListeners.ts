@@ -4,7 +4,7 @@ import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
 import { rgbaToString } from "@openmarch/core";
-import { ModifiedMarcherPageArgs } from "@/db-functions";
+import type { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;

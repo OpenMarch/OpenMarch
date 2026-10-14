@@ -6,7 +6,8 @@
  *   playing;
  * - `selection` on change;
  * - `invalidate` for every query the editor invalidates (writes, undo, redo
- *   and rolled-back transactions all end in `invalidateQueries`).
+ *   and rolled-back transactions all end in `invalidateQueries`), and of
+ *   `VIEW3D_TIMELINE_QUERY_KEY` after every committed timeline change.
  *
  * It answers the window's `hello` and handles its venue-change and playback
  * requests (playback runs the editor's own actions). With no window open it does nothing, except that it opens the
@@ -24,18 +25,24 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     getLivePlaybackPosition,
-    getPausedPlaybackSeconds,
     playbackStartInfoRef,
 } from "@/components/timeline/audio/AudioPlayer";
+import { useTimingObjects } from "@/hooks/useTimingObjects";
+import {
+    displayedBeat,
+    useTimelineSelectionStore,
+} from "@/stores/TimelineSelectionStore";
+import { timeAtBeat, type BeatTiming } from "@/timeline/timeMap";
 import { updateVenueSettingsMutationOptions } from "@/hooks/queries/useVenueSettings";
 import { venueSettingsSchema } from "@/view3d/core/venueSettings";
-import type Page from "@/global/classes/Page";
 import { runAction } from "@/shortcuts/registry";
+import { subscribeTimelineChanges } from "@/db-functions/timelineChanges";
 import {
     VIEW3D_AUTO_OPEN_SETTING,
     VIEW3D_CLOCK_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
+    VIEW3D_TIMELINE_QUERY_KEY,
     isView3dPlaybackAction,
     wallNowMs,
     type View3dClock,
@@ -52,17 +59,19 @@ const PLAY_SETTLE_MS = 150;
 
 /**
  * The show time to anchor the clock at, in milliseconds: the live audio
- * position while playing, otherwise the selected page's end (where the 2D
- * canvas holds when paused).
+ * position while playing, otherwise the time at the timeline's displayed
+ * beat (the playhead, or the cursor while a scrub suspends playback), where
+ * the editor's clock and the 2D canvas hold when paused.
  */
 export function currentAnchorShowMs(
     isPlaying: boolean,
-    selectedPage: Pick<Page, "timestamp" | "duration"> | null,
+    beats: readonly BeatTiming[],
+    pausedBeat: number,
 ): number {
     if (isPlaying && playbackStartInfoRef.current) {
         return getLivePlaybackPosition() * 1000;
     }
-    return getPausedPlaybackSeconds(selectedPage as Page | null) * 1000;
+    return timeAtBeat(beats, pausedBeat) * 1000;
 }
 
 /**
@@ -115,6 +124,10 @@ export function useView3dPublisher() {
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
     const selectedPage = useSelectedPage()?.selectedPage ?? null;
     const selectedMarchers = useSelectedMarchers()?.selectedMarchers;
+    const { beats } = useTimingObjects();
+    const pausedBeat = useTimelineSelectionStore(displayedBeat);
+    // The playhead also moves while playing; only a paused one re-anchors the clock
+    const heldBeat = isPlaying ? null : pausedBeat;
     const { mutate: updateVenue } = useMutation(
         updateVenueSettingsMutationOptions(queryClient),
     );
@@ -130,15 +143,31 @@ export function useView3dPublisher() {
         .join(",");
 
     // The latest state, for callbacks that outlive a render.
-    const latest = useRef({ isPlaying, selectedPage, selectedMarcherIdsKey });
-    latest.current = { isPlaying, selectedPage, selectedMarcherIdsKey };
+    const latest = useRef({
+        isPlaying,
+        selectedPage,
+        selectedMarcherIdsKey,
+        beats,
+        pausedBeat,
+    });
+    latest.current = {
+        isPlaying,
+        selectedPage,
+        selectedMarcherIdsKey,
+        beats,
+        pausedBeat,
+    };
 
     const sendClock = useCallback(() => {
-        const { isPlaying: playing, selectedPage: page } = latest.current;
+        const {
+            isPlaying: playing,
+            beats: b,
+            pausedBeat: beat,
+        } = latest.current;
         const clock: View3dClock = {
             seq: ++seqRef.current,
             playing,
-            anchorShowMs: currentAnchorShowMs(playing, page),
+            anchorShowMs: currentAnchorShowMs(playing, b, beat),
             anchorWallMs: wallNowMs(),
             rate: 1,
         };
@@ -203,8 +232,8 @@ export function useView3dPublisher() {
         };
     }, []);
 
-    // Clock: on play, pause and page change (a seek selects a page), and a
-    // heartbeat while playing.
+    // Clock: on play, pause, a move of the paused playhead and a tempo change,
+    // and a heartbeat while playing.
     useEffect(() => {
         if (!windowOpen) return;
         sendClock();
@@ -215,7 +244,7 @@ export function useView3dPublisher() {
             clearTimeout(settle);
             clearInterval(heartbeat);
         };
-    }, [windowOpen, isPlaying, selectedPage, sendClock]);
+    }, [windowOpen, isPlaying, heldBeat, beats, sendClock]);
 
     useEffect(() => {
         if (windowOpen) sendSelection();
@@ -229,6 +258,38 @@ export function useView3dPublisher() {
             }),
         );
     }, [windowOpen, queryClient]);
+
+    useEffect(() => {
+        if (!windowOpen) return;
+        return relayTimelineChanges(() =>
+            window.electron.publishToView3d(VIEW3D_INVALIDATE_CHANNEL, {
+                queryKeys: [[...VIEW3D_TIMELINE_QUERY_KEY]],
+            }),
+        );
+    }, [windowOpen]);
+}
+
+/**
+ * Calls `send` once per microtask in which timeline changes were committed,
+ * so the window rebuilds its resolver (`VIEW3D_TIMELINE_QUERY_KEY`).
+ *
+ * @returns a function that stops relaying
+ */
+export function relayTimelineChanges(send: () => void): () => void {
+    let pending = false;
+    let stopped = false;
+    const unsubscribe = subscribeTimelineChanges(() => {
+        if (pending) return;
+        pending = true;
+        queueMicrotask(() => {
+            pending = false;
+            if (!stopped) send();
+        });
+    });
+    return () => {
+        stopped = true;
+        unsubscribe();
+    };
 }
 
 /** Mount point for `useView3dPublisher`; renders nothing. */

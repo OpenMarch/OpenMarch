@@ -1,7 +1,5 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTolgee } from "@tolgee/react";
-import { swapMarchersMutationOptions } from "@/hooks/queries";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import { useActionHandler } from "../useActionHandler";
@@ -11,22 +9,16 @@ import { useUpdateCoordinates } from "./useUpdateCoordinates";
 // eslint-disable-next-line max-lines-per-function
 export function useAlignmentActionHandlers() {
     const { t } = useTolgee();
-    const queryClient = useQueryClient();
     const {
-        selectedPage,
         fieldProperties,
         ready,
         getSelectedMarcherPages,
         selectedMarchers,
-        timelineMode,
     } = useEditorReadiness();
     // Read when an action runs, so a settings change (such as a timeline zoom save) doesn't
     // re-render the handlers
     const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
     const hasSelection = ready && selectedMarchers.length > 0;
-    const { mutate: swapMarchers } = useMutation(
-        swapMarchersMutationOptions(queryClient),
-    );
     const updateCoordinates = useUpdateCoordinates();
 
     useActionHandler(
@@ -150,25 +142,17 @@ export function useAlignmentActionHandlers() {
                 toast.error(t("actions.swap.mustSelectTwo"));
                 return;
             }
-            if (timelineMode) {
-                // Timeline mode: each marcher takes the other's position on this page
-                const pair = getSelectedMarcherPages();
-                if (pair.length !== 2) {
-                    // Refused by the selection: say why, as the other tools do
-                    updateCoordinates([]);
-                    return;
-                }
-                updateCoordinates([
-                    { ...pair[0], x: pair[1].x, y: pair[1].y },
-                    { ...pair[1], x: pair[0].x, y: pair[0].y },
-                ]);
+            // Each marcher takes the other's position where the selection edits
+            const pair = getSelectedMarcherPages();
+            if (pair.length !== 2) {
+                // Refused by the selection: say why, as the other tools do
+                updateCoordinates([]);
                 return;
             }
-            swapMarchers({
-                pageId: selectedPage!.id,
-                marcher1Id: selectedMarchers[0].id,
-                marcher2Id: selectedMarchers[1].id,
-            });
+            updateCoordinates([
+                { ...pair[0], x: pair[1].x, y: pair[1].y },
+                { ...pair[1], x: pair[0].x, y: pair[0].y },
+            ]);
         },
         { enabled: ready && selectedMarchers.length === 2 },
     );

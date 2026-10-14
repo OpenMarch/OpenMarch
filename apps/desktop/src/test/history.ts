@@ -46,7 +46,7 @@ const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
  * 3. Define the tables to check
  *    - This uses the `schema` object to define the tables to check.
  *    - Other tables in the database will not be checked.
- *    - E.g. `const tablesToCheck = [schema.pages, schema.beats, schema.marchers, schema.marcher_pages]`
+ *    - E.g. `const tablesToCheck = [schema.pages, schema.beats, schema.marchers, schema.timeline_assignments]`
  * 4. Use the `getTestWithHistory` function to get the test API that you will use.
  *    - This is used in place of `it` or `test` directly from vitest.
  *
@@ -57,7 +57,7 @@ const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
  *
  *
  * describeDbTests("my sick and nasty test", (baseTestApi) => {
- *     const tablesToCheck = [schema.pages, schema.beats, schema.marchers, schema.marcher_pages];
+ *     const tablesToCheck = [schema.pages, schema.beats, schema.marchers, schema.timeline_assignments];
  *     // Get the testWithHistory fixture
  *     const testWithHistory = getTestWithHistory(it, tablesToCheck);
  *

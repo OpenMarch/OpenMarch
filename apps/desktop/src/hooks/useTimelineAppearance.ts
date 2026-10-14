@@ -54,7 +54,7 @@ export function applyAppearanceStepsAt({
 }
 
 /**
- * Keeps every marcher's appearance on the canvas in step with the beat in timeline mode
+ * Keeps every marcher's appearance on the canvas in step with the beat
  * (docs/timeline/ui.md UI-9 No selected page). Appearance is per page, keyed by each page's flag
  * (`useMarcherAppearanceSteps`); the field shows the appearance of the last flag crossed, playing
  * or paused.
@@ -63,8 +63,8 @@ export function applyAppearanceStepsAt({
  *   it already computes for positions, so there is no extra animation loop.
  * - Paused: `useTimelinePausedAppearance` calls it with the beat the paused canvas shows.
  *
- * Each canvas marcher is re-styled only when its sampled stack changes (a reference check). Page
- * mode (`enabled` off) does nothing and keeps `Canvas.tsx`'s selected-page appearance sync.
+ * Each canvas marcher is re-styled only when its sampled stack changes (a reference check).
+ * `enabled` off does nothing.
  *
  * @param redrawKey anything whose change means the canvas marchers were re-created, such as the
  * marcher visuals; every marcher is re-styled then

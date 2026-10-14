@@ -1,10 +1,9 @@
 // @vitest-environment node
 /**
- * With convert on open off (the default), opening a file loads none of the
- * renderer modules the converter needs (P9.3): the main process imports
- * `convertOnOpenFlow` and the converter only once the gate is on. The second
- * test checks the spies do see those modules once the gate is on; since P9.8
- * the converter loads no renderer module either (it also runs in a worker).
+ * Opening a file, converting it included, loads none of the renderer modules
+ * (React, zustand, sonner, the renderer's database proxy): the main process
+ * and the convert-on-open worker share the converter, which must stay free of
+ * them.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as fs from "fs";
@@ -29,14 +28,6 @@ vi.mock("@/global/database/db", async (importOriginal) => {
     loaded.add("@/global/database/db");
     return importOriginal();
 });
-vi.mock("@om-electron/database/convertOnOpen", async (importOriginal) => {
-    loaded.add("convertOnOpen");
-    return importOriginal();
-});
-vi.mock("../convertOnOpenFlow", async (importOriginal) => {
-    loaded.add("convertOnOpenFlow");
-    return importOriginal();
-});
 
 describe("the main-process open path's imports", () => {
     let tempDir: string;
@@ -59,14 +50,12 @@ describe("the main-process open path's imports", () => {
     });
 
     const dialogs = () => ({
-        warnOlderRelease: async () => "stop" as const,
-        whilePreparing: <T>(_name: string, work: () => Promise<T>) => work(),
-        converted: () => {},
+        whilePreparing: <T>(work: () => Promise<T>) => work(),
         backupFailed: async () => {},
         conversionFailed: async () => {},
     });
 
-    it("gate off: opening a page-era file loads no renderer module", async () => {
+    it("asking, converting and creating a file load no renderer module", async () => {
         const { openShowFile } = await import("../openShow");
         const { createPageShow, migrationsFolder } =
             await import("@om-electron/database/__test__/convertOnOpenFixtures");
@@ -74,43 +63,27 @@ describe("the main-process open path's imports", () => {
         await createPageShow(showPath, { undoTriggers: false });
         expect([...loaded]).toEqual([]);
 
-        const result = await openShowFile(showPath, false, {
+        const asked = await openShowFile(showPath, false, {
             migrationsFolder,
-            env: {},
             dialogs,
         });
-        result.db?.close();
+        const converted = await openShowFile(
+            showPath,
+            false,
+            { migrationsFolder, dialogs },
+            { conversionConfirmed: true },
+        );
+        converted.db?.close();
         const newFile = await openShowFile(
             path.join(tempDir, "new.dots"),
             true,
-            { migrationsFolder, env: {}, dialogs },
+            { migrationsFolder, dialogs },
         );
         newFile.db?.close();
 
-        expect(result.status).toBe(200);
+        expect(asked.status).toBe(428);
+        expect(converted.status).toBe(200);
         expect(newFile.status).toBe(200);
         expect([...loaded]).toEqual([]);
-    });
-
-    it("gate on: the converter loads (the spies work), and still no renderer module (P9.8)", async () => {
-        const { openShowFile } = await import("../openShow");
-        const { createPageShow, migrationsFolder, GATE_ON } =
-            await import("@om-electron/database/__test__/convertOnOpenFixtures");
-        const showPath = path.join(tempDir, "show.dots");
-        await createPageShow(showPath, { undoTriggers: false });
-        expect([...loaded]).toEqual([]);
-
-        const result = await openShowFile(showPath, false, {
-            migrationsFolder,
-            env: GATE_ON,
-            dialogs,
-        });
-        result.db?.close();
-
-        expect(result.status).toBe(200);
-        expect([...loaded].sort()).toEqual([
-            "convertOnOpen",
-            "convertOnOpenFlow",
-        ]);
     });
 });

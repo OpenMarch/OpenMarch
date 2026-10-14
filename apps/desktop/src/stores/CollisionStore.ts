@@ -3,7 +3,6 @@ import getPageCollisions, {
     getCollisionsForSelectedPage,
 } from "@/global/classes/CollisionDetection";
 import Marcher from "@/global/classes/Marcher";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import Page from "@/global/classes/Page";
 import { MarcherTimeline } from "@/utilities/Keyframes";
 import { create } from "zustand";
@@ -15,7 +14,6 @@ type CollisionStoreInterface = {
         marchers: Marcher[],
         marcherTimelines: Map<number, MarcherTimeline>,
         pages: Page[],
-        marcherPages: MarcherPageMap | undefined,
     ) => void;
 
     setCurrentCollision: (selectedPage: Page | null) => void;
@@ -28,15 +26,9 @@ export const useCollisionStore = create<CollisionStoreInterface>((set) => ({
         marchers: Marcher[],
         marcherTimelines: Map<number, MarcherTimeline>,
         pages: Page[],
-        marcherPages: MarcherPageMap | undefined,
     ) =>
         set(() => ({
-            collisions: getPageCollisions(
-                marchers,
-                marcherTimelines,
-                pages,
-                marcherPages,
-            ),
+            collisions: getPageCollisions(marchers, marcherTimelines, pages),
         })),
     setCurrentCollision: (selectedPage: Page | null) =>
         set((state) => ({

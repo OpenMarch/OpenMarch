@@ -1,10 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { generatePageNames } from "@openmarch/core";
 import * as schema from "@om-electron/database/migrations/schema";
-import {
-    isTimelineModeEnabled,
-    workspaceSettingsSchema,
-} from "@/settings/workspaceSettings";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { DbTransaction } from "./types";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
 import { deleteTimelineTransitionsInTransaction } from "./timelineTransitions";
@@ -16,9 +13,9 @@ import { moveInSentence } from "@/timeline/timelineRangeWords";
  * Timeline rows hold beat ordinals: beat `n` is the `n`th row of `beats` ordered by position,
  * counting from 0 (ADR 0001). Pages are time labels over those beats. So any edit that inserts,
  * deletes or reorders beats, or moves, adds or removes a page, has to rewrite timeline rows in the
- * same edit, or the rows end up over the wrong music. `withTimelinePageRipple` does that: in
- * timeline mode it reads the page grid (beat ids in order, and each page's beat range) before the
- * page-mode edit runs, reads it again afterwards, and rewrites every timeline, transition and
+ * same edit, or the rows end up over the wrong music. `withTimelinePageRipple` does that: it
+ * reads the page grid (beat ids in order, and each page's beat range) before the page or beat
+ * edit runs, reads it again afterwards, and rewrites every timeline, transition and
  * assignment to match, inside the same transaction, so one undo restores everything.
  *
  * **How a row's beats move.** Every row edge is mapped from the old grid to the new one:
@@ -27,7 +24,7 @@ import { moveInSentence } from "@/timeline/timelineRangeWords";
  *   a row ending where page N ends ends where page N ends now; a row starting where page N
  *   starts starts where page N starts now. So a track ending on a page boundary grows with that
  *   page when beats are inserted at the boundary, as the page's own move does. That is what
- *   makes the converted show (one transition per page) behave as page mode does: inserting beats
+ *   makes the converted show (one transition per page) behave as the page model did: inserting beats
  *   inside a page, or right after it, lengthens its move; resizing a page moves the boundary it
  *   shares with the next page, so the move ending there and the move starting there both change
  *   (an R-E1 edit of each; their anchored assignments follow). The edge falls back to the beat
@@ -180,22 +177,6 @@ export async function pageNumberOffsetInTransaction(
         return parsed.success ? parsed.data.pageNumberOffset : 0;
     } catch {
         return 0;
-    }
-}
-
-/** Whether the file's timeline flag is on, read inside `tx` from `workspace_settings`. */
-export async function timelineModeInTransaction(
-    tx: DbTransaction,
-): Promise<boolean> {
-    const row = await tx
-        .select({ json: schema.workspace_settings.json_data })
-        .from(schema.workspace_settings)
-        .get();
-    if (!row) return false;
-    try {
-        return isTimelineModeEnabled(JSON.parse(row.json) as never);
-    } catch {
-        return false;
     }
 }
 
@@ -618,18 +599,16 @@ export async function rippleTimelineToPageGridInTransaction({
 const rippling = new WeakSet<object>();
 
 /**
- * Runs a page or beat edit and, in timeline mode, ripples the timeline rows to match in the same
- * transaction (see the module comment). With the flag off it only runs `edit`, so page mode is
- * unchanged. Call it inside `transactionWithHistory`, around everything the edit does to beats,
- * pages and `utility.last_page_counts`. Nested calls on the same transaction run their edit only;
- * the outermost one ripples once for all of it.
+ * Runs a page or beat edit and ripples the timeline rows to match in the same transaction (see
+ * the module comment). Call it inside `transactionWithHistory`, around everything the edit does
+ * to beats, pages and `utility.last_page_counts`. Nested calls on the same transaction run their
+ * edit only; the outermost one ripples once for all of it.
  */
 export async function withTimelinePageRipple<T>(
     tx: DbTransaction,
     edit: () => Promise<T>,
 ): Promise<T> {
-    if (rippling.has(tx) || !(await timelineModeInTransaction(tx)))
-        return await edit();
+    if (rippling.has(tx)) return await edit();
     rippling.add(tx);
     try {
         const before = await readPageGrid(tx);

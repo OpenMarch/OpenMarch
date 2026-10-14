@@ -465,12 +465,6 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Shift+Enter"],
     },
-    createMarcherShape: {
-        labelKey: "actions.shape.create",
-        category: "cursor",
-        scope: "canvas",
-        defaultBindings: ["Enter"],
-    },
     cancelAlignmentUpdates: {
         labelKey: "actions.alignment.cancelUpdates",
         category: "cursor",

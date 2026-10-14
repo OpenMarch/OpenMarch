@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it as plainIt } from "vitest";
 import { eq, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import {
     startTimelineResolver,
     stopTimelineResolver,

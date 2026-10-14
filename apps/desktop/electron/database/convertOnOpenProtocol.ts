@@ -11,16 +11,28 @@ import type { BackupResult } from "./backup";
 
 /** The writes of the conversion transaction, in order. */
 export const CONVERSION_STEPS = [
+    // The page-era migrations
+    "migrate",
     "drop-undo-triggers",
     "convert",
-    "flag",
+    "marker",
     "commit-check",
     "drain-change-log",
     "clear-history",
+    "timeline-migrations",
     "create-undo-triggers",
     "user-version",
 ] as const;
 export type ConversionStep = (typeof CONVERSION_STEPS)[number];
+
+/** What a conversion was agreed to: where the backup goes. */
+export interface ConvertRequest {
+    /**
+     * The backup's path, as the person was shown it. Never replaced if taken:
+     * the backup then goes to the next free name.
+     */
+    backupPath: string;
+}
 
 /** How far the backup and conversion have got. */
 export type ConvertProgress =
@@ -50,8 +62,10 @@ export interface ConvertWorkerTestHooks {
 }
 
 /** What the worker is started with (`workerData`). */
-export interface ConvertWorkerRequest {
+export interface ConvertWorkerRequest extends ConvertRequest {
     filePath: string;
+    /** The app's migrations folder: the conversion applies the file's pending migrations. */
+    migrationsFolder: string;
     /** How long the worker's connection waits for another connection's lock. */
     busyTimeoutMs: number;
     /**

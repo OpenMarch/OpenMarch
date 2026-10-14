@@ -1,11 +1,10 @@
 import { afterEach, describe, expect } from "vitest";
-import { asc, getTableName, sql } from "drizzle-orm";
+import { asc, eq, getTableName, sql } from "drizzle-orm";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     startTimelineResolver,
@@ -23,7 +22,7 @@ import { createMarchers } from "../marcher";
 
 // These tests set up timeline mode themselves
 keepFixturesInPageMode(
-    "its tests trim the show, convert it or write timeline rows, and set the flag, themselves",
+    "its tests trim the show, convert it or write timeline rows themselves",
 );
 
 /**
@@ -76,14 +75,6 @@ const violations = async (db: DbConnection) =>
         sql`SELECT code, transition_id, detail FROM timeline_commit_violations`,
     );
 
-const setTimelineFlag = async (db: DbConnection, on: boolean) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: on }),
-    });
-};
-
 const pagesInOrder = async (db: DbConnection): Promise<Page[]> =>
     [...(await readShowTiming(db)).pages].sort((a, b) => a.order - b.order);
 
@@ -135,7 +126,6 @@ const trimToPage1 = async (db: DbConnection) => {
  */
 const timelineShow = async (db: DbConnection) => {
     await trimToPage1(db);
-    await setTimelineFlag(db, true);
     await startTimelineResolver(db);
     const [m, other] = resolver().marcherIds();
     await moveMarchersInTarget({
@@ -280,7 +270,6 @@ describeDbTests("no automatic stays in timeline mode", (it) => {
         // from it. A hold over the new page [17, 25) at layer 1 used to freeze the marcher off
         // the track there.
         await trimToPage1(db);
-        await setTimelineFlag(db, true);
         await startTimelineResolver(db);
         const [m] = resolver().marcherIds();
         await createLastPage({ db, newPageCounts: 8 });
@@ -320,17 +309,32 @@ describeDbTests("no automatic stays in timeline mode", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        // Page mode: pages 2 to 4 copy page 1
+        // A page show whose pages 2 to 4 copy page 1, the way page mode's new pages did
         await trimToPage1(db);
         for (let i = 0; i < 3; i++)
             await createLastPage({ db, newPageCounts: 8 });
-        const pageRows = (await db.select().from(schema.marcher_pages).all())
+        const ordered = await pagesInOrder(db);
+        const page1Rows = await db
+            .select()
+            .from(pageEra.marcher_pages)
+            .where(eq(pageEra.marcher_pages.page_id, ordered[1]!.id))
+            .all();
+        for (const page of ordered.slice(2))
+            await db.insert(pageEra.marcher_pages).values(
+                page1Rows.map(({ id: _, ...row }) => ({
+                    ...row,
+                    page_id: page.id,
+                })),
+            );
+        const pageRows = (await db.select().from(pageEra.marcher_pages).all())
             .length;
         const marchers = (await db.select().from(schema.marchers).all()).length;
         expect(pageRows).toBe(5 * marchers);
 
-        await setTimelineFlag(db, true);
-        const { report, timelineIds } = await convertPagesToTimeline(db);
+        // Keeps the page-era tables to compare against them below
+        const { report, timelineIds } = await convertPagesToTimeline(db, {
+            keepPageTables: true,
+        });
         await startTimelineResolver(db);
         // Only page 1 has a move; the copies are not reported as losses
         const pages = await pagesInOrder(db);

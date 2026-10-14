@@ -10,15 +10,10 @@ import { eq } from "drizzle-orm";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
 import { describeDbTests, schema, type DbConnection } from "@/test/base";
-import {
-    keepFixturesInPageMode,
-    setTimelineModeFlag,
-} from "@/test/timelineMode";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { Timeline, type TimelineInput } from "../Timeline";
 import type { TimelineSelection } from "../TimelineViewModel";
@@ -281,7 +276,6 @@ describeDbTests("the right-click menu on a converted show", (it) => {
         marchersAndPages,
     }) => {
         await convertPagesToTimeline(db);
-        await setTimelineModeFlag(db, true);
         const { beats, pages } = await readShowTiming(db);
         const ordered = [...pages].sort((a, b) => a.order - b.order);
         // P9.10: one timeline per page move, the first starting at beat 1

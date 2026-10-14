@@ -43,5 +43,16 @@ export function createHash(algorithm: string) {
 
 export const randomUUID = () => globalThis.crypto.randomUUID();
 
-const nodeCrypto = { createHash, randomUUID };
+export function randomBytes(size: number) {
+    const bytes = globalThis.crypto.getRandomValues(new Uint8Array(size));
+    return {
+        toString(encoding: "hex") {
+            if (encoding !== "hex")
+                throw new Error(`randomBytes: ${encoding} isn't supported`);
+            return toHex(bytes);
+        },
+    };
+}
+
+const nodeCrypto = { createHash, randomUUID, randomBytes };
 export default nodeCrypto;

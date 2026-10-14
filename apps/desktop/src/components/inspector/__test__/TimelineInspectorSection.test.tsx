@@ -48,11 +48,10 @@ import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 
 /**
  * P8.5: the inspector's timeline section renders what `explain` says, for each span kind and for
- * follow-the-leader, shows the diagnostics, and is absent with the flag off.
+ * follow-the-leader, and shows the diagnostics.
  */
 
 const mocks = vi.hoisted(() => ({
-    timelineMode: true,
     inspections: [] as unknown[],
     diagnostics: [] as unknown[],
     unknown: [] as number[],
@@ -63,9 +62,6 @@ const mocks = vi.hoisted(() => ({
     pages: [] as unknown[],
 }));
 
-vi.mock("@/hooks/queries/useWorkspaceSettings", () => ({
-    useTimelineMode: () => mocks.timelineMode,
-}));
 vi.mock("@/context/SelectedMarchersContext", () => ({
     useSelectedMarchers: () => ({ selectedMarchers: mocks.selectedMarchers }),
 }));
@@ -101,7 +97,6 @@ beforeAll(async () => {
 });
 afterEach(cleanup);
 beforeEach(() => {
-    mocks.timelineMode = true;
     mocks.inspections = [];
     mocks.diagnostics = [];
     mocks.unknown = [];
@@ -289,14 +284,7 @@ const renderSection = () =>
     );
 
 describe("TimelineInspectorSection", () => {
-    it("is absent with the flag off", () => {
-        mocks.timelineMode = false;
-        mocks.diagnostics = createResolver(golden("G9")).diagnostics();
-        const { container } = renderSection();
-        expect(container.innerHTML).toBe("");
-    });
-
-    it("with the flag on, shows the selected marchers' inspections and the show's diagnostics", () => {
+    it("shows the selected marchers' inspections and the show's diagnostics", () => {
         mocks.selectedMarchers = [{ id: 2, drill_number: "T2" }];
         mocks.inspections = [inspect(golden("G9"), 2, 8)];
         mocks.diagnostics = createResolver(golden("G9")).diagnostics();

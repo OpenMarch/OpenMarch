@@ -16,6 +16,8 @@
 import { test } from "../fixtures.mjs";
 import { expect, type Page } from "playwright/test";
 import type { ElectronApplication } from "playwright";
+import { seedShowSql } from "../browser/seed.mjs";
+import { selectTimelinePage as selectPage } from "../utils/timeline.mjs";
 
 /** The largest difference allowed between the window's and the editor's show time. */
 const SYNC_TOLERANCE_MS = 50;
@@ -184,26 +186,6 @@ async function expectWindowPage(view3d: Page, pageName: string) {
     await expect(selected).toHaveAttribute("data-page-id", selectedId!);
 }
 
-/** Adds a page after the last one with the timeline's add button. */
-async function addPage(editor: Page, expectedName: string) {
-    await editor.locator("#pages").getByRole("button").click();
-    await expect(editor.locator("#app")).toContainText(`Page ${expectedName}`, {
-        timeout: 15_000,
-    });
-}
-
-/** Selects a page by clicking its name in the timeline. */
-async function selectPage(editor: Page, pageName: string) {
-    await editor
-        .locator("div")
-        .filter({ hasText: new RegExp(`^${pageName}$`) })
-        .first()
-        .click();
-    await expect(
-        editor.getByRole("button", { name: `Page ${pageName}` }),
-    ).toBeVisible();
-}
-
 /**
  * Records every request main sees, with the web contents that made it.
  * Installed before the window opens, so it covers the window's first load.
@@ -312,6 +294,15 @@ async function hasWebGl(view3d: Page): Promise<boolean> {
 }
 
 // eslint-disable-next-line max-lines-per-function
+// Music and pages 1-3 (eight counts each), built before the app opens.
+test.use({
+    seedSql: seedShowSql({
+        beats: 40,
+        measureStarts: Array.from({ length: 10 }, (_, i) => i * 4 + 1),
+        pageStarts: [1, 9, 17],
+    }),
+});
+
 test("3D View follows the editor and saves the venue", async ({
     electronApp,
 }, testInfo) => {
@@ -321,11 +312,27 @@ test("3D View follows the editor and saves the venue", async ({
     await recordRequests(app);
     await recordEditorClocks(app);
 
-    // A show with several pages.
-    await expect(editor.getByRole("button", { name: "Page 0" })).toBeVisible({
+    // Wide enough that the timeline's transport shows its clock, which a
+    // narrow window folds into its "More controls" menu.
+    await app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.setBounds({
+            x: 0,
+            y: 0,
+            width: 1600,
+            height: 1000,
+        });
+    });
+
+    // A show with several pages (seeded above).
+    await expect(editor.getByTestId("timeline-page-ruler")).toBeVisible({
         timeout: 20_000,
     });
-    for (const name of ["1", "2", "3"]) await addPage(editor, name);
+    for (const name of ["1", "2", "3"])
+        await expect(
+            editor
+                .getByTestId("timeline-page-ruler")
+                .getByRole("button", { name: `Page ${name}`, exact: true }),
+        ).toBeVisible();
 
     // Open the window from the editor.
     let view3d = await openView3d(app, editor, networkUrls);
@@ -348,12 +355,12 @@ test("3D View follows the editor and saves the venue", async ({
     await selectPage(editor, "1");
     await expectWindowPage(view3d, "1");
     await expectPausedInSync(editor, view3d);
-    await editor.getByLabel("First page").click();
+    await editor.getByTestId("timeline-initial-page").click();
     await expectWindowPage(view3d, "0");
     await expectPausedInSync(editor, view3d);
 
     // Play: the window's clock runs with the editor's.
-    await editor.getByTitle(/^Play \/ stop/).click();
+    await editor.getByTestId("timeline-play").click();
     await expect(view3d.getByTestId("view3d-sync-readout")).toHaveAttribute(
         "data-playing",
         "true",
@@ -392,7 +399,7 @@ test("3D View follows the editor and saves the venue", async ({
     );
 
     // Pause: the window holds where the editor holds.
-    await editor.getByTitle(/^Play \/ stop/).click();
+    await editor.getByTestId("timeline-play").click();
     await expectPausedInSync(editor, view3d);
 
     // Seek again after playing.

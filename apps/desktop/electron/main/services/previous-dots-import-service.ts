@@ -1,4 +1,13 @@
 import { getOrm, schema, type DB } from "@om-electron/database/db";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
+import {
+    PAGE_MODEL_USER_VERSION,
+    readUserVersion,
+} from "@om-electron/database/fileVersion";
+import {
+    countTimelineRows,
+    hasConversionMarker,
+} from "@om-electron/database/convertOnOpenGate";
 import { dialog } from "electron";
 import type { BrowserWindow } from "electron";
 import { DatabaseSync } from "node:sqlite";
@@ -82,7 +91,7 @@ const sourceMarcherColumns = {
 type SourceMarcher = PreviousDotsMarcherImport & { id: number };
 
 /**
- * Page mode: the source's last page `marcher_pages` rows, as before timeline mode existed.
+ * A page-era source (not converted yet): its last page's `marcher_pages` rows.
  *
  * @throws when the source has no pages
  */
@@ -104,33 +113,30 @@ async function readLastPageMarcherPages(
         .select({
             drill_prefix: schema.marchers.drill_prefix,
             drill_order: schema.marchers.drill_order,
-            x: schema.marcher_pages.x,
-            y: schema.marcher_pages.y,
+            x: pageEra.marcher_pages.x,
+            y: pageEra.marcher_pages.y,
         })
-        .from(schema.marcher_pages)
+        .from(pageEra.marcher_pages)
         .innerJoin(
             schema.marchers,
-            eq(schema.marcher_pages.marcher_id, schema.marchers.id),
+            eq(pageEra.marcher_pages.marcher_id, schema.marchers.id),
         )
-        .where(eq(schema.marcher_pages.page_id, lastPage.page_id))
+        .where(eq(pageEra.marcher_pages.page_id, lastPage.page_id))
         .all();
 }
 
 /**
- * Timeline mode: each marcher's position at the source's last page end beat, from the source's
- * resolver (docs/timeline/phases/07-page-parity.md P7.16), since its `marcher_pages` rows are
- * frozen page-era data. `null` when the source is in page mode or has no timeline tables.
+ * A timeline source: each marcher's position at the source's last page end beat, from the
+ * source's resolver (docs/timeline/phases/07-page-parity.md P7.16). `null` when it has none.
  */
 async function readTimelineCoordinates(
     orm: DB,
     marchers: readonly SourceMarcher[],
-    workspaceSettingsJson: string | undefined,
-): Promise<PreviousDotsCoordinateImport[] | null> {
+): Promise<PreviousDotsCoordinateImport[]> {
     const positions = await readSourceTimelinePositions({
         db: orm as unknown as DbConnection,
-        workspaceSettingsJson,
     });
-    if (!positions) return null;
+    if (!positions) throw new Error("No timing objects found in source file");
     const marchersById = new Map(marchers.map((m) => [m.id, m]));
     return positions.flatMap(({ marcher_id, x, y }) => {
         const marcher = marchersById.get(marcher_id);
@@ -183,12 +189,15 @@ export async function readPreviousDotsFile(
             // Older files may lack workspace_settings
         }
 
-        const coordinates =
-            (await readTimelineCoordinates(
-                orm,
-                marchers,
-                workspaceSettingsJson,
-            )) ?? (await readLastPageMarcherPages(orm));
+        // A show from an older version that was never converted still has its page-era tables;
+        // any other show is a timeline show.
+        const pageEraSource =
+            readUserVersion(db) === PAGE_MODEL_USER_VERSION &&
+            !hasConversionMarker(workspaceSettingsJson) &&
+            countTimelineRows(db) === 0;
+        const coordinates = pageEraSource
+            ? await readLastPageMarcherPages(orm)
+            : await readTimelineCoordinates(orm, marchers);
 
         const sectionAppearancesRaw = await orm
             .select({

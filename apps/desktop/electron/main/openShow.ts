@@ -1,31 +1,37 @@
 /**
  * The database part of opening a show file, shared by `setActiveDb` and the
  * new-show draft (`electron/main/index.ts`): set the path, check the version,
- * migrate, then either initialize a new file or run convert on open (P9.3).
- * It has no Electron dependency, so tests drive it directly.
+ * then either initialize a new file, or run convert on open and migrate an
+ * existing one. It has no Electron dependency, so tests drive it directly.
  *
- * With the convert-on-open gate off (the default), this does what
- * `setActiveDb` always did: the converter and its dialogs flow are loaded
- * with a dynamic `import()` only once the gate is on. The worker host is light
- * (`node:worker_threads`), and the worker loads the converter itself.
- *
- * The backup and the conversion run in a worker thread (P9.8) when
- * `deps.convertWorker` names the built worker, as the app does. The open's own
- * connection is closed while the worker has the file, and reopened after.
+ * A page-era file opens only once the person has agreed to convert it: until
+ * then the open writes nothing, leaves the show that is open (the active path,
+ * the renderer's SQL) alone, and returns `NEEDS_CONVERSION_STATUS`. The
+ * backup and the conversion run in a worker thread when `deps.convertWorker`
+ * names the built worker, as the app does. The open's own connection is closed
+ * while the worker has the file, and reopened after.
  */
+import * as fs from "fs";
 import * as path from "path";
-import type { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "node:sqlite";
 import * as DatabaseServices from "../database/database.services";
 import { getOrm } from "../database/db";
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
-import { applyFileVersionDecision } from "../database/fileVersion";
+import {
+    applyFileVersionDecision,
+    PAGE_MODEL_USER_VERSION,
+    readUserVersion,
+} from "../database/fileVersion";
 import {
     initializeNewFileAsTimeline,
-    isConvertOnOpenEnabled,
+    NEEDS_CONVERSION_STATUS,
     OPEN_STOPPED_STATUS,
 } from "../database/convertOnOpenGate";
 import type { ConvertOnOpenHooks } from "../database/convertOnOpen";
-import type { ConvertOnOpenDialogs } from "./convertOnOpenFlow";
+import type {
+    ConvertOnOpenDialogs,
+    ConvertOnOpenNext,
+} from "./convertOnOpenFlow";
 import { convertInWorker } from "./convertWorkerHost";
 import type { ConvertWorkerTestHooks } from "../database/convertOnOpenProtocol";
 
@@ -70,10 +76,12 @@ export const pendingOpenCount = () => pendingOpens.size;
 
 export interface OpenShowDeps {
     migrationsFolder: string;
-    env?: Record<string, string | undefined>;
-    /** Runs before pending migrations are applied to an existing file (the app backs it up). */
+    /**
+     * Runs before pending migrations are applied to an existing timeline file (the app backs it
+     * up). A conversion makes its own backup instead.
+     */
     beforeMigrations?: (filePath: string) => void;
-    /** The convert-on-open dialogs. Only called when the gate is on and an existing file opens. */
+    /** The convert-on-open dialogs. Only called when an existing file opens. */
     dialogs: () => ConvertOnOpenDialogs;
     /**
      * Runs the backup and conversion in a worker thread (P9.8). Without it they run on this
@@ -91,14 +99,30 @@ export interface OpenShowDeps {
     onConnect?: (db: DatabaseSync) => void;
 }
 
+export interface OpenShowOptions {
+    /** The person agreed to convert the file if it is a page-era file. */
+    conversionConfirmed?: boolean;
+    /**
+     * The backup path the person was shown when they agreed
+     * (`NEEDS_CONVERSION_STATUS`'s `backupPath`). The backup gets exactly this
+     * name, or fails if it was taken meanwhile.
+     */
+    conversionBackupPath?: string;
+}
+
 export interface OpenShowResult {
-    /** 200, an HTTP-style refusal from `setDbPath`, 500, or `OPEN_STOPPED_STATUS`. */
+    /**
+     * 200, an HTTP-style refusal from `setDbPath`, 500, `OPEN_STOPPED_STATUS`, or
+     * `NEEDS_CONVERSION_STATUS`.
+     */
     status: number;
+    /** With `NEEDS_CONVERSION_STATUS`: where the backup will go once the person agrees. */
+    backupPath?: string;
     /** The open connection, on success. The caller owns it. */
     db?: DatabaseSync;
     /**
      * The token of the renderer-SQL suspension this open started (existing
-     * files with the gate on), or undefined. The caller resumes it with
+     * files), or undefined. The caller resumes it with
      * `resumeSqlProxyAfterReload` once the window has reloaded, or right away
      * when nothing opens.
      */
@@ -113,20 +137,25 @@ export async function openShowDatabase(
     filePath: string,
     isNewFile: boolean,
     deps: OpenShowDeps,
+    options: OpenShowOptions = {},
 ): Promise<OpenShowResult> {
-    const gateOn = isConvertOnOpenEnabled(deps.env);
-    // With the gate on, an existing file may be converted: from here until the window has
-    // reloaded, the page showing the previous file must not reach this one.
-    const sqlSuspension =
-        gateOn && !isNewFile
-            ? DatabaseServices.suspendSqlProxy("a file is being opened")
-            : undefined;
+    if (!isNewFile && options.conversionConfirmed !== true) {
+        // Asking must not disturb the show that is open: decide before anything below closes it.
+        const backupPath = await conversionToAskAbout(filePath);
+        if (backupPath !== undefined)
+            return { status: NEEDS_CONVERSION_STATUS, backupPath };
+    }
+    // An existing file may be converted: from here until the window has reloaded, the page
+    // showing the previous file must not reach this one.
+    const sqlSuspension = !isNewFile
+        ? DatabaseServices.suspendSqlProxy("a file is being opened")
+        : undefined;
     try {
         return await openWithSuspension(
             filePath,
             isNewFile,
             deps,
-            gateOn,
+            options,
             sqlSuspension,
         );
     } catch (error) {
@@ -141,7 +170,7 @@ async function openWithSuspension(
     filePath: string,
     isNewFile: boolean,
     deps: OpenShowDeps,
-    gateOn: boolean,
+    options: OpenShowOptions,
     sqlSuspension: number | undefined,
 ): Promise<OpenShowResult> {
     const stopped = (status: number): OpenShowResult => ({
@@ -158,64 +187,108 @@ async function openWithSuspension(
     let isOpen = true;
     let keepOpen = false;
     try {
-        const orm = getOrm(db);
-        const migrator = new DrizzleMigrationService(orm, db);
-        if (!isNewFile && migrator.hasPendingMigrations(deps.migrationsFolder))
-            deps.beforeMigrations?.(filePath);
-        // Sets the version only on a new, empty file; an existing file keeps its
-        // version (ADR 0001 §6). setDbPath already refused newer files.
-        applyFileVersionDecision(db, isNewFile);
-        await migrator.applyPendingMigrations(deps.migrationsFolder);
-
         if (isNewFile) {
-            await DrizzleMigrationService.initializeDatabase(orm, db);
-            // With the gate on, a new file starts as a timeline file (no backup, no conversion).
-            if (gateOn) initializeNewFileAsTimeline(db);
-        } else if (gateOn) {
-            db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
-            const { convertOnOpenInMain } = await import("./convertOnOpenFlow");
-            const worker = deps.convertWorker;
-            const checkDb = db;
-            const next = await convertOnOpenInMain(
-                filePath,
-                checkDb,
-                deps.dialogs(),
-                {
-                    env: deps.env,
-                    hooks: deps.hooks,
-                    convert: worker
-                        ? async (onProgress) => {
-                              // The worker needs the file to itself: this connection holds no
-                              // transaction, but close it anyway so nothing of ours can lock it.
-                              checkDb.close();
-                              isOpen = false;
-                              return convertInWorker(filePath, {
-                                  workerPath: worker.workerPath,
-                                  busyTimeoutMs: CONVERSION_BUSY_TIMEOUT_MS,
-                                  onProgress,
-                                  test: worker.test,
-                              });
-                          }
-                        : undefined,
-                },
+            const orm = getOrm(db);
+            // A new, empty file starts at the timeline version (ADR 0001 §6).
+            applyFileVersionDecision(db, true);
+            await new DrizzleMigrationService(orm, db).applyPendingMigrations(
+                deps.migrationsFolder,
             );
-            if (!isOpen) {
-                // The worker has exited, so its connection is closed. Reopen ours, on this open's
-                // own file: the active path is global.
-                db = DatabaseServices.connectToPath(filePath);
-                isOpen = true;
-                deps.onConnect?.(db);
-                db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
-            }
-            if (next === "stop") {
-                DatabaseServices.setDbPath("", false);
-                return stopped(OPEN_STOPPED_STATUS);
-            }
+            await DrizzleMigrationService.initializeDatabase(orm, db);
+            initializeNewFileAsTimeline(db);
+            keepOpen = true;
+            return { status: 200, db, sqlSuspension };
         }
+
+        db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
+        const worker = deps.convertWorker;
+        const checkDb = db;
+        // Only a version-7 file can need converting, so the
+        // converter and its flow load only then, keeping them out of the startup bundle.
+        const step: ConvertOnOpenNext =
+            readUserVersion(db) !== PAGE_MODEL_USER_VERSION
+                ? { next: "continue" }
+                : await (
+                      await import("./convertOnOpenFlow")
+                  ).convertOnOpenInMain(filePath, checkDb, deps.dialogs(), {
+                      confirmed: options.conversionConfirmed === true,
+                      backupPath: options.conversionBackupPath,
+                      migrationsFolder: deps.migrationsFolder,
+                      hooks: deps.hooks,
+                      convert: worker
+                          ? async (onProgress, request) => {
+                                // The worker needs the file to itself: this connection holds no
+                                // transaction, but close it anyway so nothing of ours can lock it.
+                                checkDb.close();
+                                isOpen = false;
+                                return convertInWorker(filePath, {
+                                    ...request,
+                                    workerPath: worker.workerPath,
+                                    migrationsFolder: deps.migrationsFolder,
+                                    busyTimeoutMs: CONVERSION_BUSY_TIMEOUT_MS,
+                                    onProgress,
+                                    test: worker.test,
+                                });
+                            }
+                          : undefined,
+                  });
+        if (!isOpen) {
+            // The worker has exited, so its connection is closed. Reopen ours, on this open's
+            // own file: the active path is global.
+            db = DatabaseServices.connectToPath(filePath);
+            isOpen = true;
+            deps.onConnect?.(db);
+            db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
+        }
+        if (step.next === "stop") {
+            DatabaseServices.setDbPath("", false);
+            return stopped(OPEN_STOPPED_STATUS);
+        }
+        if (step.next === "ask") {
+            DatabaseServices.setDbPath("", false);
+            return {
+                status: NEEDS_CONVERSION_STATUS,
+                backupPath: step.backupPath,
+                sqlSuspension,
+            };
+        }
+
+        // A timeline file (or one just converted, which has nothing pending).
+        const migrator = new DrizzleMigrationService(getOrm(db), db);
+        if (migrator.hasPendingMigrations(deps.migrationsFolder))
+            deps.beforeMigrations?.(filePath);
+        await migrator.applyPendingMigrations(deps.migrationsFolder);
         keepOpen = true;
         return { status: 200, db, sqlSuspension };
     } finally {
         if (!keepOpen && isOpen) db.close();
+    }
+}
+
+/**
+ * Where the backup of `filePath` would go when it is a page-era file to ask about (version 7,
+ * never converted), or undefined. Reads only, on its own read-only connection, so the active
+ * file stays as it is. Undefined as well when the file can't be read and written: the open then
+ * refuses it the usual way.
+ */
+async function conversionToAskAbout(
+    filePath: string,
+): Promise<string | undefined> {
+    let db: DatabaseSync | undefined;
+    try {
+        fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
+        db = new DatabaseSync(filePath, { readOnly: true });
+        db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
+        if (readUserVersion(db) !== PAGE_MODEL_USER_VERSION) return undefined;
+        // Only a version-7 file loads the converter (kept out of the startup bundle).
+        const { checkConvertOnOpen } =
+            await import("../database/convertOnOpen");
+        const check = checkConvertOnOpen(db, filePath);
+        return check.action === "convert" ? check.backupPath : undefined;
+    } catch {
+        return undefined;
+    } finally {
+        db?.close();
     }
 }
 
@@ -224,8 +297,11 @@ export function openShowFile(
     filePath: string,
     isNewFile: boolean,
     deps: OpenShowDeps,
+    options?: OpenShowOptions,
 ): Promise<OpenShowResult> {
-    return withOpenLock(() => openShowDatabase(filePath, isNewFile, deps));
+    return withOpenLock(() =>
+        openShowDatabase(filePath, isNewFile, deps, options),
+    );
 }
 
 /** The part of `webContents` that tells when the reload has navigated. */

@@ -2,10 +2,8 @@ import { afterEach, describe, expect, vi } from "vitest";
 import { asc } from "drizzle-orm";
 import { toast } from "sonner";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import { keepFixturesInPageMode } from "@/test/timelineMode";
 import { createLastPage } from "@/db-functions/page";
 import { createMarchers } from "@/db-functions/marcher";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
 import {
     performRedo,
     performUndo,
@@ -22,10 +20,7 @@ import type Page from "@/global/classes/Page";
 import { deleteTimelineAndCompare } from "@/db-functions/timelineCommands";
 import { moveDeletedMessage } from "@/components/timeline/useTimelineCommands";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
 import { neighborPageTarget } from "../timelineCoordinateWrites";
 import { forgetEditRun } from "@/utilities/moveThemToo";
 import {
@@ -42,14 +37,11 @@ import {
 } from "../timelineStore";
 
 /**
- * **Move them too** in timeline mode (defined-coordinates 09, G4): an edit that splits the
+ * **Move them too** (defined-coordinates 09, G4): an edit that splits the
  * marchers it moved at a later page (some follow into it, some keep their own move there) offers
- * to shift the kept destinations by the same offset, as one separate undoable edit. The message and page mode are in
- * `utilities/__test__/moveThemToo.test.ts`.
+ * to shift the kept destinations by the same offset, as one separate undoable edit. The message is
+ * in `utilities/__test__/moveThemToo.test.ts`.
  */
-
-// The show is built in page mode, then converted, so the fixtures stay in page mode
-keepFixturesInPageMode("its tests build the show and convert it themselves");
 
 afterEach(() => {
     forgetEditRun();
@@ -65,9 +57,9 @@ const box = (page: Page) => {
 };
 
 /**
- * OT1–OT8 in a line (x = 100, 150, … 450), and pages 1–3 after home, built in page mode with
+ * OT1–OT8 in a line (x = 100, 150, … 450), and pages 1–3 after home, with
  * `ys[i]` as everyone's y on page i (home is page 0; pages past `ys` copy the last), then
- * converted, with the resolver running and the page boxes set.
+ * with the resolver running and the page boxes set.
  */
 const convertedShow = async (db: DbConnection, ys: readonly number[]) => {
     await createMarchers({
@@ -89,17 +81,20 @@ const convertedShow = async (db: DbConnection, ys: readonly number[]) => {
     ).map((m) => m.id);
     const { pages: unsorted } = await readShowTiming(db);
     const pages = [...unsorted].sort((a, b) => a.order - b.order);
-    for (const [p, y] of ys.entries())
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: marchers.map((id, i) => ({
-                marcher_id: id,
-                page_id: pages[p]!.id,
-                x: 100 + 50 * i,
-                y,
-            })),
-        });
-    await convertPagesToTimeline(db);
+    const line = (y: number) =>
+        marchers.map((marcherId, i) => ({ marcherId, x: 100 + 50 * i, y }));
+    await moveMarchersInTarget({
+        db,
+        target: { kind: "home" },
+        moves: line(ys[0]!),
+    });
+    for (let p = 1; p < ys.length; p++)
+        if (ys[p] !== ys[p - 1])
+            await moveMarchersInTarget({
+                db,
+                target: box(pages[p]!),
+                moves: line(ys[p]!),
+            });
     await startTimelineResolver(db);
     const boxes = pageFlags(pages).flatMap((f) =>
         f.range ? [{ ...f.range, name: f.page.name }] : [],

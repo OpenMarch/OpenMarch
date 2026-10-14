@@ -147,7 +147,7 @@ const addIndividualMarcherLines = ({
         })!,
     );
 
-    // Convert to SVG after adding pathways
+    // Convert to SVG after adding the path lines
     canvas.renderAll();
 
     return { objectsToRemove, readableCoords };
@@ -383,7 +383,7 @@ export const generateDrillChartExportSVGs = async (args: {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marchers: Marcher[];
-    /** Positions by page: `marcher_pages` rows in page mode, resolver samples in timeline mode (P7.7) */
+    /** Positions by page, sampled from the resolver at each page's end beat (P7.7) */
     marcherPagesMap: Pick<PagePositionMap, "marcherPagesByPage">;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;

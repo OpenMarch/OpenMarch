@@ -103,5 +103,8 @@ export async function completeNewShowWizard(
     ).toBeVisible();
     await dialog.getByRole("button", { name: "Create show" }).click();
 
-    await expect(page.getByText("Timeline")).toBeVisible({ timeout: 15000 });
+    // The editor opens with the timeline's page ruler
+    await expect(page.getByTestId("timeline-page-ruler")).toBeVisible({
+        timeout: 15000,
+    });
 }

@@ -17,7 +17,11 @@ import {
     handleSqlProxyWithDbBetterSqlite,
     handleSqlProxyWithDbSqlJs,
 } from "./sqlProxyTestUtil";
-import { applyTimelineModeToFile, timelineFixtureMode } from "./timelineMode";
+import {
+    convertFixtureFile,
+    pageEraBlankPath,
+    timelineFixtureMode,
+} from "./timelineMode";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { JSX } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -30,6 +34,7 @@ import { createRendererSqlProxyQueue } from "@/global/database/sqlProxyQueue";
 
 // Needs to be here for an import error
 import { schema as electronSchema } from "@/../electron/database/db";
+import type * as pageEraSchema from "@/../electron/database/migrations/pageEraSchema";
 export const schema = electronSchema;
 
 /**
@@ -90,6 +95,9 @@ const getTempDb = async (task: Readonly<{ id: string }>) => {
     return { db: db, dbPath: dbPath, orm: orm };
 };
 
+/** The SQL files each test's data fixtures loaded, by task id, in order. */
+const loadedSqlFiles = new Map<string, string[]>();
+
 /**
  * Utility function to load and apply SQL to a database file
  * @param testInfo - Test info object containing outputDir
@@ -107,27 +115,23 @@ const loadSqlIntoDatabase = async (
         throw new Error(`SQL file not found at ${sqlPath}`);
     }
 
-    // ✅ Load and apply SQL using sql.js
-    const sql = fs.readFileSync(sqlPath, "utf-8");
-
-    // Get the path to the temporary database file
+    // The page show goes into a page-era file, which replaces the blank timeline file. A test can
+    // use several data fixtures (`beats` and `marchers`); the previous one's file is already
+    // converted, so the page-era file gets every fixture's SQL so far, in order
+    const loaded = [...(loadedSqlFiles.get(task.id) ?? []), sqlPath];
+    loadedSqlFiles.set(task.id, loaded);
+    await fs.copyFile(await pageEraBlankPath(), getTempDotsPath(task));
     const { db, dbPath, orm } = await getTempDb(task);
 
     // drop all triggers
     await dropAllUndoTriggers(orm as unknown as any);
-    // In timeline test mode the blank file already has the flag on, and the page-era freeze
-    // (P9.5) would refuse the page show's rows. Load them in page mode; applyTimelineModeToFile
-    // below turns the flag back on after converting them.
-    if (timelineFixtureMode())
-        db.exec(
-            `UPDATE workspace_settings SET json_data = json_set(json_data, '$.timelineMode', json('false'))`,
-        );
-    await db.exec(sql);
+    for (const file of loaded) await db.exec(fs.readFileSync(file, "utf-8"));
     await createAllUndoTriggers(orm as unknown as any);
     const updatedDbBuffer = db.export();
     fs.writeFileSync(dbPath, updatedDbBuffer);
     db.close();
-    if (timelineFixtureMode()) await applyTimelineModeToFile(dbPath);
+    // Like opening an older show in the app: convert it to timelines (see ./timelineMode.ts)
+    if (timelineFixtureMode()) await convertFixtureFile(dbPath);
 };
 
 /********* FIXTURES *********/
@@ -162,8 +166,9 @@ type marchersAndPages = {
         typeof schema.pages.$inferSelect,
         "created_at" | "updated_at"
     >[];
+    /** The page show's positions, from before the fixture converted it to timelines */
     expectedMarcherPages: Omit<
-        typeof schema.marcher_pages.$inferSelect,
+        typeof pageEraSchema.marcher_pages.$inferSelect,
         "created_at" | "updated_at"
     >[];
 };
@@ -219,16 +224,12 @@ const baseFixture = baseTest.extend<BaseApi>({
 
                 fs.writeFileSync(tempDatabaseFile, updatedDbBuffer);
                 db.close();
-                // A blank file only gets the flag: a new timeline-mode file has no timeline rows
-                if (timelineFixtureMode())
-                    await applyTimelineModeToFile(tempDatabaseFile, {
-                        convert: false,
-                    });
                 await use();
             } catch (error) {
                 console.error("Error setting up database:", error);
                 throw error;
             } finally {
+                loadedSqlFiles.delete(task.id);
                 await fs.remove(tempDatabaseFile);
                 console.log(
                     "Cleaned up temporary database file:",

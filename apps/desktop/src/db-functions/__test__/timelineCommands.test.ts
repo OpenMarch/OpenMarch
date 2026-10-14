@@ -3,7 +3,7 @@ import { asc, eq, getTableName } from "drizzle-orm";
 import { createResolver, type Resolver } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import {
     startTimelineResolver,

@@ -17,10 +17,6 @@ import {
     ResolvedPerformerAppearance,
 } from "@/entity-components/appearance";
 import { _combineMarcherAppearances } from "@/hooks/queries/useMarcherAppearances";
-import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
-import MarcherPage, {
-    databaseMarcherPagesToMarcherPages,
-} from "@/global/classes/MarcherPage";
 import { schema } from "@/global/database/db";
 
 type PerformerAppearanceShowData = NonNullable<
@@ -96,19 +92,6 @@ const getTagAppearancesForPage = ({
     return tagAppearances.filter((ta) => idSet.has(ta.id));
 };
 
-export function buildMarcherPagesByPageId(
-    marcherPages: MarcherPage[],
-    pageId: number,
-): MarcherPagesByMarcher {
-    const byMarcher: MarcherPagesByMarcher = {};
-    for (const mp of marcherPages) {
-        if (mp.page_id === pageId) {
-            byMarcher[mp.marcher_id] = mp;
-        }
-    }
-    return byMarcher;
-}
-
 export function buildPerformerAppearanceShowData({
     fieldProperties,
     sectionAppearances,
@@ -116,7 +99,6 @@ export function buildPerformerAppearanceShowData({
     tagAppearanceIdsByPageId,
     marcherIdsByTagId,
     marchers,
-    marcherPages,
     pagesInOrder,
 }: {
     fieldProperties: FieldProperties;
@@ -125,7 +107,6 @@ export function buildPerformerAppearanceShowData({
     tagAppearanceIdsByPageId: TagAppearanceIdsByPageId;
     marcherIdsByTagId: MarcherIdsByTagId;
     marchers: Marcher[];
-    marcherPages: MarcherPage[];
     pagesInOrder: PageInOrder[];
 }): PerformerAppearanceShowData {
     const fieldTheme = fieldProperties.theme;
@@ -157,17 +138,12 @@ export function buildPerformerAppearanceShowData({
             tagAppearances,
             tagAppearanceIdsByPageId,
         });
-        const marcherPagesForPage = buildMarcherPagesByPageId(
-            marcherPages,
-            pageId,
-        );
 
         const appearancesByMarcherId = _combineMarcherAppearances({
             marchers,
             sectionAppearances,
             marcherIdsByTagId,
             tagAppearances: tagAppearancesForPage,
-            marcherPages: marcherPagesForPage,
             fieldProperties,
         });
 
@@ -282,7 +258,4 @@ export function marcherRowsToMarchers(
     );
 }
 
-export {
-    databaseMarcherPagesToMarcherPages,
-    _calculateMapAllTagAppearanceIdsByPageId,
-};
+export { _calculateMapAllTagAppearanceIdsByPageId };

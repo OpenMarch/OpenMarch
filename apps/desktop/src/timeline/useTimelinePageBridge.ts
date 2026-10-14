@@ -10,8 +10,8 @@ import { pageAtPlayhead, pageFlags } from "./timelinePlayhead";
  * page on the page containing or ending at the paused playhead (`pageAtPlayhead`), so features
  * that still read `useSelectedPage` (the inspector, paths, page notes) follow the playhead.
  *
- * It also runs the other way: when something else selects a page (undo's page jump, a page-mode
- * code path, a test's `setSelectedPage`), the playhead moves to that page's flag. The selection
+ * It also runs the other way: when something else selects a page (undo's page jump, a page
+ * selection, a test's `setSelectedPage`), the playhead moves to that page's flag. The selection
  * (home or a range) is never changed here; selecting a page doesn't select its timeline. Neither
  * direction runs while playing.
  *

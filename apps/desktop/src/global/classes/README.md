@@ -13,10 +13,7 @@ When creating new data structures, we will now use TypeScript `interfaces` combi
 
 ### Example
 
-The refactoring of `MarcherPage.ts` serves as a template for this new standard.
-
-- **[`MarcherPage.ts`](./MarcherPage.ts):** Defines the `MarcherPage` interface and exports pure functions for creating, updating, and querying `MarcherPage` objects.
-- **[`Page.ts`](./Page.ts):** Another example of this pattern, which was used as a model for the `MarcherPage` refactor.
+- **[`Page.ts`](./Page.ts):** Defines the `Page` interface and exports pure functions over `Page` objects.
 
 ## Refactoring Existing Classes
 

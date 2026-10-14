@@ -3,7 +3,7 @@ import { eq, getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import {
     startTimelineResolver,
     stopTimelineResolver,
@@ -26,9 +26,7 @@ import {
 import { readPageGrid } from "../timelineRipple";
 import { TimelineWriteError } from "../timelineErrors";
 
-keepFixturesInPageMode(
-    "its tests convert the show and set the flag themselves",
-);
+keepFixturesInPageMode("its tests convert the show themselves");
 afterEach(() => stopTimelineResolver());
 
 /** Adversarial tests for P8.13 (UI-9 + and Deleting a flag). Show: see pageFlags.test.ts. */
@@ -44,7 +42,6 @@ const TABLES = [
     schema.pages,
     schema.utility,
     schema.marchers,
-    schema.marcher_pages,
     schema.tags,
     schema.tag_appearances,
     ...TIMELINE_TABLES,
@@ -55,15 +52,7 @@ const snapshot = async (db: DbConnection, tables = TABLES) => {
         out[getTableName(t)] = await db.select().from(t).all();
     return out;
 };
-const setFlag = async (db: DbConnection, on: boolean) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: on }),
-    });
-};
 const setUp = async (db: DbConnection) => {
-    await setFlag(db, true);
     await convertPagesToTimeline(db);
     await startTimelineResolver(db);
 };
@@ -373,7 +362,7 @@ describeDbTests("page flags, adversarial (P8.13)", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        // Insert beat 1000 at position 5 in page mode, so beat ordinals ≥ 5 differ from ids
+        // Insert beat 1000 at position 5 before converting, so beat ordinals ≥ 5 differ from ids
         await db.run(
             sql`UPDATE beats SET position = position + 1000 WHERE position >= 5`,
         );
@@ -414,16 +403,7 @@ describeDbTests("page flags, adversarial (P8.13)", (it) => {
         expect(await snapshot(db)).toEqual(before);
     });
 
-    it("refuses in page mode, and plan matches the refusals", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await setFlag(db, false);
-        const before = await snapshot(db);
-        await refused(addPageFlag({ db, beat: 13 }));
-        await refused(addPageFlag({ db, beat: 60 }));
-        await refused(deletePageFlags({ db, pageIds: new Set([3]) }));
-        expect(await snapshot(db)).toEqual(before);
+    it("plans no flag in a show with no pages", () => {
         expect(
             planPageFlagInsertion({ beatCount: 97, pages: [] }, 5),
         ).toBeNull();

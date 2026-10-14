@@ -22,11 +22,10 @@ import {
 } from "./timelineStore";
 
 /**
- * The seam between the page-era coordinate tools and timeline writes in timeline mode
- * (docs/timeline/phases/07-page-parity.md P7.2, reworked for UI-9 by P8.15 and UI-10 by P8.17).
- * Canvas drag, nudges, snap, align, distribute, flip, swap, circle, the line tool and the
- * inspector's coordinate edits all compute new x/y for the selected marchers. In timeline mode
- * they edit against the **edit window** (docs/timeline/ui.md UI-10), not a page
+ * The seam between the coordinate tools and timeline writes (docs/timeline/phases/07-page-parity.md
+ * P7.2, reworked for UI-9 by P8.15 and UI-10 by P8.17). Canvas drag, nudges, snap, align,
+ * distribute, flip, swap, circle, the line tool and the inspector's coordinate edits all compute
+ * new x/y for the selected marchers. They edit against the **edit window** (docs/timeline/ui.md UI-10), not a page
  * (`planCanvasEdit`):
  *
  * - a window `[S, P)`: where the moved marchers arrive at the playhead P, leaving the start flag
@@ -41,10 +40,10 @@ import {
  * Nothing selected is refused with a hint (`TimelineEditRefusedError`). "Set marchers to the
  * previous or next page" (P7.6) plans with `copyPagePositions` and writes over the selected page's
  * box with the same range writer (`neighborPageTarget`), so it works on a page the marchers only
- * hold through. With the flag off, nothing here runs.
+ * hold through.
  */
 
-/** The x/y fields every page-era coordinate tool reads and writes. */
+/** The x/y fields every coordinate tool reads and writes. */
 export interface MarcherXY {
     marcher_id: number;
     x: number;
@@ -185,7 +184,7 @@ export function atIsolatedEnd<A extends MarcherXY>(changes: readonly A[]): A[] {
 /**
  * `coordinates` with each x/y replaced by the resolver's position at `beat` (a spec beat), the
  * position the canvas draws there. Other fields are kept, so `MarcherPage` objects can go straight
- * into the page-era helpers (`CoordinateActions`). Marchers the resolver doesn't know are dropped.
+ * into the coordinate helpers (`CoordinateActions`). Marchers the resolver doesn't know are dropped.
  *
  * @throws TimelineNotReadyError when no resolver is ready
  */
@@ -205,9 +204,8 @@ export function withTimelinePositions<T extends MarcherXY>(
 }
 
 /**
- * The marchers as coordinate records at the resolver's positions at `beat`, for the page-era
- * helpers (`CoordinateActions`). Built from the marcher ids alone, so it doesn't need (or trust)
- * `marcher_pages` rows. `pageId` only fills the records' `page_id`, which the timeline write path
+ * The marchers as coordinate records at the resolver's positions at `beat`, for the coordinate
+ * helpers (`CoordinateActions`). Built from the marcher ids alone. `pageId` only fills the records' `page_id`, which the timeline write path
  * ignores. Marchers the resolver doesn't know are dropped.
  *
  * @throws TimelineNotReadyError when no resolver is ready
@@ -232,8 +230,8 @@ export function timelineCoordinateRecords(
 }
 
 /**
- * Timeline mode's `useUpdateSelectedMarchers`: applies `transform` to the marchers' current
- * positions where the selection edits (`planCanvasEdit`; from the resolver, not `marcher_pages`)
+ * `useUpdateSelectedMarchers`'s write: applies `transform` to the marchers' current positions
+ * where the selection edits (`planCanvasEdit`; from the resolver)
  * and writes the result as one `moveMarchersInTarget` edit, saying what it passed through and
  * offering **Move them too** (`moveMarchersAndOfferFollowUp`).
  *
@@ -286,11 +284,10 @@ export interface PagePositionCopy {
 }
 
 /**
- * "Set all or selected marchers to the previous or next page" in timeline mode
+ * "Set all or selected marchers to the previous or next page"
  * (docs/timeline/phases/07-page-parity.md P7.6). Copies each marcher's position on `source` (the
  * resolver at its end beat, what the canvas draws there) to `page`, as moves over the page's box
- * (`neighborPageTarget`). `marcher_pages` is never read: its rows can be stale or missing in
- * timeline mode.
+ * (`neighborPageTarget`).
  *
  * `moves` leaves out marchers already at the source position on `page` (compared exactly, since
  * they are copied); `targets` has every marcher, for set to previous page, which also clears a
@@ -371,21 +368,16 @@ export interface TimelineEditRequest {
  * The function the canvas calls when a drag or rotate ends (`OpenMarchCanvas.
  * updateMarcherPagesFunction`).
  *
- * - Flag off: `writePages` itself, so page mode is unchanged.
- * - Flag on: a function that writes the moves where the selection edits, planned when the move
- *   ends (`plan`, `planCanvasEdit` by default, so it never uses a stale selection). The canvas
- *   marchers' `coordinate.page_id` is not used. When the selection refuses the move, `onRefused`
- *   gets the reason (the canvas shows it and snaps the marchers back).
+ * It writes the moves where the selection edits, planned when the move ends (`plan`,
+ * `planCanvasEdit` by default, so it never uses a stale selection). The canvas marchers'
+ * `coordinate.page_id` is not used. When the selection refuses the move, `onRefused` gets the
+ * reason (the canvas shows it and snaps the marchers back).
  */
 export function canvasCoordinateWriter<A extends MarcherXY>({
-    timelineMode,
-    writePages,
     writeTimeline,
     onRefused,
     plan = () => planCanvasEdit(),
 }: {
-    timelineMode: boolean;
-    writePages: (changes: A[]) => void;
     writeTimeline: (request: TimelineEditRequest) => void;
     onRefused: (
         error: TimelineEditRefusedError | TimelineNotReadyError,
@@ -393,7 +385,6 @@ export function canvasCoordinateWriter<A extends MarcherXY>({
     /** The edit plan at the time of the move */
     plan?: () => CanvasEditPlan;
 }): (changes: A[]) => void {
-    if (!timelineMode) return writePages;
     return (changes) => {
         const current = plan();
         if (!current.ok) {

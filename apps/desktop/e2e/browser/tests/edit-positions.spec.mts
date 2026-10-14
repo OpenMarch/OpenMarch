@@ -4,16 +4,18 @@ import {
     expectCanvasMatchesShow,
     selectedDrillNumbers,
 } from "../app.mjs";
+import { savedPositions, type Position } from "../positions.mjs";
+import { seedShowSql, type SeedPosition } from "../seed.mjs";
 
 // Four trumpets on two pages, spread out near the middle of the field so all
 // of them are in view.
-const PAGE_0 = [
+const PAGE_0: SeedPosition[] = [
     [1, 500, 300],
     [2, 600, 350],
     [3, 700, 280],
     [4, 800, 400],
 ];
-const PAGE_1 = [
+const PAGE_1: SeedPosition[] = [
     [1, 520, 450],
     [2, 640, 470],
     [3, 760, 430],
@@ -21,18 +23,17 @@ const PAGE_1 = [
 ];
 
 test.use({
-    seedSql: [
-        `INSERT INTO beats (id, duration, position)
-         VALUES ${Array.from({ length: 32 }, (_, i) => `(${i + 1}, 0.5, ${i + 1})`).join(", ")}`,
-        `INSERT INTO pages (id, start_beat) VALUES (1, 16)`,
-        `INSERT INTO marchers (id, section, drill_prefix, drill_order)
-         VALUES ${PAGE_0.map(([id]) => `(${id}, 'Trumpet', 'T', ${id})`).join(", ")}`,
-        `INSERT INTO marcher_pages (marcher_id, page_id, x, y)
-         VALUES ${[
-             ...PAGE_0.map(([id, x, y]) => `(${id}, 0, ${x}, ${y})`),
-             ...PAGE_1.map(([id, x, y]) => `(${id}, 1, ${x}, ${y})`),
-         ].join(", ")}`,
-    ],
+    seedSql: seedShowSql({
+        beats: 32,
+        pageStarts: [16],
+        marchers: PAGE_0.map(([id]) => ({
+            id,
+            section: "Trumpet",
+            prefix: "T",
+            order: id,
+        })),
+        positions: [PAGE_0, PAGE_1],
+    }),
 });
 
 // A shortcut pressed before the page's positions load is dropped, so wait for
@@ -46,13 +47,8 @@ async function goToPage1(show: Show) {
     await expectCanvasMatchesShow(show);
 }
 
-type Position = { id: number; x: number; y: number };
-const positions = (show: Show, pageId: number) =>
-    show.query<Position>(
-        "SELECT marcher_id AS id, x, y FROM marcher_pages WHERE page_id = ? ORDER BY marcher_id",
-        pageId,
-    );
-const asPositions = (rows: number[][]): Position[] =>
+const positions = savedPositions;
+const asPositions = (rows: readonly SeedPosition[]): Position[] =>
     rows.map(([id, x, y]) => ({ id, x, y }));
 
 test("select all, then align to one line", async ({ show }) => {

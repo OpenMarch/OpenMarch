@@ -3,13 +3,16 @@ import { SECTIONS } from "@/global/classes/Sections";
 import { DatabaseBeat } from "@/db-functions/beat";
 import { DatabaseMeasure } from "@/db-functions/measures";
 import { DatabasePage } from "@/db-functions/page";
-import { DatabaseMarcherPage } from "@/global/classes/MarcherPage";
+import type * as pageEra from "@/../electron/database/migrations/pageEraSchema";
 import { faker } from "@faker-js/faker";
 import { TimingObjects } from "@/hooks";
 import { FieldProperties } from "@openmarch/core";
 import { calculateTimestamps, fromDatabaseBeat } from "@/global/classes/Beat";
 import { fromDatabaseMeasures } from "@/global/classes/Measure";
 import { fromDatabasePages } from "@/global/classes/Page";
+
+/** A page-era `marcher_pages` row, for building page shows that tests convert */
+type DatabaseMarcherPage = typeof pageEra.marcher_pages.$inferSelect;
 
 export const generateMarchers = ({
     numberOfMarchers,

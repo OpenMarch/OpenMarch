@@ -1,17 +1,17 @@
 import type { Resolver } from "@openmarch/core";
 import type { DbConnection } from "@/db-functions/types";
 import type Page from "@/global/classes/Page";
-import { readShowTiming } from "./convert/writePageConversion";
+import { readShowTiming } from "./showTiming";
 import { pageEndBeat } from "./timelineCanvas";
 import { acquireExportResolver } from "./timelineExport";
 
 /**
  * "Marchers on page N" for the exports that still speak in pages (docs/timeline/phases/
  * 07-page-parity.md P7.12): each marcher's position at page N's end beat, sampled from the
- * resolver, never read from `marcher_pages`. Page mode never calls these.
+ * resolver.
  */
 
-/** One marcher's position on one page, in canvas pixels (the `marcher_pages` x/y units). */
+/** One marcher's position on one page, in canvas pixels. */
 export interface TimelinePagePosition {
     marcher_id: number;
     page_id: number;

@@ -2,10 +2,8 @@ import { afterEach, describe, expect, it as plainIt } from "vitest";
 import { eq } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { createTimelineHost } from "@/timeline/timelineHost";
 import { readTimelineTables } from "@/timeline/timelineRows";
@@ -29,7 +27,7 @@ import { keepFixturesInPageMode } from "@/test/timelineMode";
 
 // P7.17: these tests set up timeline mode themselves
 keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
+    "its tests convert the show or write timeline rows themselves",
 );
 
 /**
@@ -41,17 +39,8 @@ keepFixturesInPageMode(
 
 afterEach(() => stopTimelineResolver());
 
-const setTimelineFlag = async (db: DbConnection, on: boolean) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: on }),
-    });
-};
-
-/** Converts the show with the flag on (or off), starts the store, and returns the pages. */
-const setUp = async (db: DbConnection, flag = true): Promise<Page[]> => {
-    await setTimelineFlag(db, flag);
+/** Converts the show, starts the store, and returns the pages. */
+const setUp = async (db: DbConnection): Promise<Page[]> => {
     await convertPagesToTimeline(db);
     await startTimelineResolver(db);
     const { pages } = await readShowTiming(db);
@@ -410,25 +399,6 @@ describeDbTests("undo and redo in timeline mode", (it) => {
             db,
             [...after].sort((a, b) => a.order - b.order),
         );
-    });
-
-    it("with the flag off, the page-mode rule applies and timeline rows are ignored", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const pages = await setUp(db, false);
-        const [a] = await marcherIds(db);
-        await moveMarchersOnPage({
-            db,
-            page: pages[3]!,
-            moves: [{ marcherId: a!, x: 9, y: 9 }],
-        });
-        const undo = await performHistoryAction("undo", db, {
-            currentPageId: pages[0]!.id,
-        });
-        // Page mode looks only at marcher_pages statements; this action had none
-        expect(undo.pageIdToGoTo).toBeUndefined();
-        expect(undo.marcherIdsToSelect).toBeUndefined();
     });
 
     it("an empty undo stack changes nothing", async ({

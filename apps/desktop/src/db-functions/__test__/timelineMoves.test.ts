@@ -3,10 +3,8 @@ import { and, eq, getTableName } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
     startTimelineResolver,
@@ -42,7 +40,6 @@ afterEach(() => stopTimelineResolver());
 
 const TABLES = [
     schema.marchers,
-    schema.marcher_pages,
     schema.timelines,
     schema.timeline_shapes,
     schema.timeline_transitions,
@@ -317,7 +314,6 @@ describeDbTests("moving marchers on a page in timeline mode", (it) => {
         expect(after.timeline_slot_destinations).toEqual(
             before.timeline_slot_destinations,
         );
-        expect(after.marcher_pages).toEqual(before.marcher_pages);
         const homes = await db
             .select({
                 id: schema.marchers.id,

@@ -67,6 +67,12 @@ resolver, and which package owns motion.
   behaves exactly as it does today.
 - Keyframe data (timestamps plus coordinates) is an export format only, produced
   from the resolver and never read back as state (spec §11).
+- **Amendment (2026-10-12, project owner): one model, no release in between.**
+  The dev flag, the page-era code paths and the freeze are removed; timelines
+  are the only motion model the app has. The page-era tables are dropped by the
+  conversion itself (migration `0020_drop_page_era`, see §6) rather than after
+  a read-only release. Their definitions live only in
+  `electron/database/migrations/pageEraSchema.ts`, which the converter reads.
 
 ### 2. Storage: table names and schema (C-3, C-4, C-5)
 
@@ -387,6 +393,69 @@ migrations only when `user_version === 7`. So:
   the dev flag and opens without a warning. An older release that saves the
   workspace settings drops unknown keys, so the backup next to the file is kept
   as a second signal.
+
+**Amendment (2026-10-12, project owner): convert on open is automatic, after
+the person confirms.** There is no environment variable or flag.
+
+- Opening a version-7 file without the marker writes nothing and returns
+  `NEEDS_CONVERSION_STATUS` (428). The main process keeps it as the pending
+  conversion, and the renderer's `ConvertShowDialog` asks first. It names the
+  untouched copy that will be written next to the show,
+  `<name>.pre-conversion.dots` (`-2`, `-3`, … when taken), and says older
+  versions of OpenMarch can open it. Nothing is converted until the person
+  clicks Confirm; Cancel writes nothing.
+- On Confirm (`conversion:confirm`), the worker backs up the original before
+  any migration runs, so the backup is exactly the file an older release wrote.
+  It then applies the migrations before the timeline-only ones, and converts
+  in one transaction that also applies the timeline-only migrations (the first
+  is `0020_drop_page_era`, which drops the page-era tables) and sets
+  `user_version = 8`. The renderer shows progress (`conversion:progress`).
+- `DrizzleMigrationService` never applies a timeline-only migration to a
+  version-7 file; they run only inside the conversion transaction, or on
+  version-8 and new files.
+- A version-7 file with timeline rows but no marker (made with the retired dev
+  flag) is converted the same way, keeping its rows and skipping the page
+  conversion.
+- IPC added: `conversion:getPending`, `conversion:confirm`,
+  `conversion:cancel` (renderer → main) and `conversion:progress`
+  (main → renderer). The native "preparing" window and "converted" dialog are
+  gone; backup and conversion failures still use native dialogs.
+
+**Amendment (2026-10-12, review of fork PR #136; revised 2026-10-13, project
+owner): every version-7 file is converted from its page-era tables, and
+nothing is dropped without a backup.** This replaces the "warns and offers the
+backup, rather than converting again" rule, the warning parts of the
+conversion-marker rule and C-9, and the "keeping its rows" rule above. The
+owner decided not to handle files converted and then reset to version 7 by an
+older release ("we don't need to worry about old converted files"), so there
+is no "saved by an older version" warning.
+
+- Every version-7 file gets the same path: the renderer's `ConvertShowDialog`
+  asks, then the file is backed up and converted from its page-era tables,
+  replacing any timeline rows already there (a file made with the retired dev
+  flag, or converted by a build that kept the page-era tables, keeps its old
+  rows only in the backup). Neither the marker nor a backup next to the file
+  changes this.
+- A version-7 file whose page-era tables are gone (converted by this build,
+  then reset to 7 by an older release) has nothing to convert from. After the
+  person confirms, it is backed up and the conversion fails inside the
+  transaction with "It has no pages to convert from…"; it rolls back, the file
+  is unchanged, and the "Couldn't convert your file" dialog names the backup.
+  The open stops.
+- The conversion marker `timelineConvertedAt` is still written, by the
+  conversion transaction and for a new file. It no longer decides anything at
+  open; the worker host uses it to tell whether a worker that ended without a
+  result committed this open's conversion, and the previous-show import uses
+  it when picking which tables to read.
+- The backup gets the name the person was shown (`conversion:confirm` passes
+  the pending conversion's `backupPath` to the open); if that name was taken
+  meanwhile, it gets the next free name. A backup never replaces an existing
+  file.
+- The pending page-era migrations run inside the conversion transaction, with
+  foreign keys off for the whole transaction (as every migration runs, so a
+  table rebuild can't cascade) and a check before the commit that the
+  conversion added no foreign-key violation. A failed conversion leaves the
+  file byte for byte as it was.
 
 ### 7. Decisions still owed by the spec's authors
 

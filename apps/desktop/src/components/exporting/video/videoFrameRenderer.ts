@@ -4,10 +4,6 @@ import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import {
-    getCoordinatesAtTime,
-    type MarcherTimeline,
-} from "@/utilities/Keyframes";
 import type { ResolverFrameSampler } from "@/timeline/timelineExport";
 import { initializeCanvasForRendering } from "../utils/svg-generator";
 import {
@@ -90,12 +86,8 @@ export interface VideoRenderContext {
     canvasMarchersById: Record<number, CanvasMarcher>;
     fieldProperties: FieldProperties;
     sortedPages: Page[];
-    marcherTimelines: Map<number, MarcherTimeline>;
-    /**
-     * Timeline mode: positions come from the resolver at each frame's beat, and
-     * `marcherTimelines` is not used. Null in page mode.
-     */
-    frameSampler: ResolverFrameSampler | null;
+    /** Positions come from the resolver at each frame's beat */
+    frameSampler: ResolverFrameSampler;
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     lastAppliedPageId: number | null;
     staticFieldCache: {
@@ -109,9 +101,8 @@ export interface CreateVideoRenderContextArgs {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marchers: Marcher[];
-    marcherTimelines: Map<number, MarcherTimeline>;
-    /** Timeline mode only: samples the resolver instead of `marcherTimelines` */
-    frameSampler?: ResolverFrameSampler | null;
+    /** Samples the resolver for each frame's positions */
+    frameSampler: ResolverFrameSampler;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
@@ -137,8 +128,7 @@ export async function createVideoRenderContext(
         canvasMarchersById: initialized.canvasMarchersById,
         fieldProperties: args.fieldProperties,
         sortedPages: args.sortedPages,
-        marcherTimelines: args.marcherTimelines,
-        frameSampler: args.frameSampler ?? null,
+        frameSampler: args.frameSampler,
         marcherAppearancesByPageId: args.marcherAppearancesByPageId,
         lastAppliedPageId: null,
         staticFieldCache: null,
@@ -271,23 +261,12 @@ export function setMarcherPositionsAtTime(
     context: VideoRenderContext,
     timeMilliseconds: number,
 ) {
-    if (context.frameSampler) {
-        // Timeline mode: seconds to a beat, then the resolver, applied by marcher id
-        context.frameSampler.apply(
-            timeMilliseconds / 1000,
-            Object.values(context.canvasMarchersById),
-            (canvasMarcher, x, y) => canvasMarcher.setLiveCoordinates({ x, y }),
-        );
-        return;
-    }
-    for (const [marcherId, canvasMarcher] of Object.entries(
-        context.canvasMarchersById,
-    )) {
-        const timeline = context.marcherTimelines.get(Number(marcherId));
-        if (!timeline) continue;
-        const coords = getCoordinatesAtTime(timeMilliseconds, timeline);
-        if (coords) canvasMarcher.setLiveCoordinates(coords);
-    }
+    // Seconds to a beat, then the resolver, applied by marcher id
+    context.frameSampler.apply(
+        timeMilliseconds / 1000,
+        Object.values(context.canvasMarchersById),
+        (canvasMarcher, x, y) => canvasMarcher.setLiveCoordinates({ x, y }),
+    );
 }
 
 export interface RenderVideoFrameArgs {

@@ -12,14 +12,12 @@ import { subscribeHistoryChanges } from "@/db-functions/history";
  * silent (V-146). The surprise toast names them, "OT1 and OT8 have their own move on Page
  * 3, so they kept their spot", with **Move them too**, which shifts those later destinations by
  * the offset the edit moved each marcher, as its own undoable edit. Destinations stay absolute
- * (D-5); this only offers to repeat the edit there. The same in both modes: page mode's write
- * result says where each marcher stopped (`OwnMoveStop`), timeline mode reads it from the
+ * (D-5); this only offers to repeat the edit there. Where each marcher stopped is read from the
  * resolver (`timelineMoveThemToo.ts`).
  */
 
 /**
- * The one toast for an edit's surprises: a window passing a flag, page mode's carry-forward, and
- * **Move them too** all show through `editSurpriseToastId`, so a later one replaces the earlier
+ * The one toast for an edit's surprises: a window passing a flag and **Move them too** all show through `editSurpriseToastId`, so a later one replaces the earlier
  * instead of stacking.
  */
 let surpriseToasts = 0;

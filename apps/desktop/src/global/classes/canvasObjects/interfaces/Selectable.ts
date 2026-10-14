@@ -43,5 +43,4 @@ export const isSelectable = (object: any): object is ISelectable => {
 
 export enum SelectableClasses {
     MARCHER = "Marcher",
-    MARCHER_SHAPE = "MarcherShape",
 }

@@ -87,8 +87,8 @@ export const _combineAppearanceStepInputs = (
 
 /**
  * Every marcher's appearance steps for the whole show, keyed by flag beat
- * (`buildAppearanceSteps`), or `undefined` until its queries load or when `enabled` is off (page
- * mode). Rebuilt when the pages' flags, the marchers, tags, tag or section appearances, or the
+ * (`buildAppearanceSteps`), or `undefined` until its queries load or when `enabled` is off.
+ * Rebuilt when the pages' flags, the marchers, tags, tag or section appearances, or the
  * field theme change; a tempo edit moves no flag, so it rebuilds nothing.
  */
 export function useMarcherAppearanceSteps(

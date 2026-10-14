@@ -233,10 +233,9 @@ describe("useTimelinePathRender", () => {
 });
 
 describe("useTimelineStepSizes", () => {
-    const stepSizes = (timelineMode: boolean, page = PAGES[1]) =>
+    const stepSizes = (page = PAGES[1]) =>
         renderHook(() =>
             useTimelineStepSizes({
-                timelineMode,
                 marcherIds: [1],
                 page,
                 previousPage: page === PAGES[0] ? null : PAGES[0],
@@ -244,33 +243,24 @@ describe("useTimelineStepSizes", () => {
             }),
         ).result.current;
 
-    it("is inactive with the flag off, so page mode keeps its own", () => {
-        ready();
-        expect(stepSizes(false)).toEqual({
-            active: false,
-            stepSize: undefined,
-            minMax: undefined,
-        });
-    });
-
-    it("is inactive until the resolver is ready, so the page-mode values stand in", () => {
+    it("is inactive until the resolver is ready", () => {
         useTimelineResolverStore.setState({
             status: "loading",
             resolver: null,
             version: 0,
         });
-        expect(stepSizes(true).active).toBe(false);
+        expect(stepSizes().active).toBe(false);
         // A resolver left over from an earlier build doesn't count while the store isn't ready
         useTimelineResolverStore.setState({
             status: "error",
             resolver: resolver(),
         });
-        expect(stepSizes(true).active).toBe(false);
+        expect(stepSizes().active).toBe(false);
     });
 
     it("gives one marcher's step size from the resolver", () => {
         ready();
-        const result = stepSizes(true);
+        const result = stepSizes();
         expect(result.active).toBe(true);
         expect(result.stepSize?.marcher_id).toBe(1);
         expect(Number.isFinite(result.stepSize!.stepsPerFiveYards)).toBe(true);
@@ -279,7 +269,7 @@ describe("useTimelineStepSizes", () => {
 
     it("has nothing on the first page", () => {
         ready();
-        const result = stepSizes(true, PAGES[0]);
+        const result = stepSizes(PAGES[0]);
         expect(result.active).toBe(true);
         expect(result.stepSize).toBeUndefined();
     });

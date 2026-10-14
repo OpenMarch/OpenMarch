@@ -5,9 +5,8 @@ import { RgbaColor } from "@uiw/react-color";
 import { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 
 /**
- * A marcher's path in timeline mode (docs/timeline/phases/07-page-parity.md P7.10): a polyline
- * sampled from the resolver, so arcs and follow-the-leader moves draw as the curve the marcher
- * walks. Page mode keeps drawing straight `Pathway` lines and never creates one of these.
+ * A marcher's path (docs/timeline/phases/07-page-parity.md P7.10): a polyline sampled from the
+ * resolver, so arcs and follow-the-leader moves draw as the curve the marcher walks.
  */
 export default class TimelinePathway extends fabric.Polyline {
     /** The grid line offset the marcher dots, midpoints and endpoints use */

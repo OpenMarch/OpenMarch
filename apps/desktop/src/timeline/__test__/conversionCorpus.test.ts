@@ -15,7 +15,7 @@ import { setDbPath, connect } from "@/../electron/database/database.services";
 import { getOrm } from "@/../electron/database/db";
 import { DrizzleMigrationService } from "@/../electron/database/services/DrizzleMigrationService";
 import { applyFileVersionDecision } from "@/../electron/database/fileVersion";
-import { convertPagesToTimeline } from "../convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { describePageConversionReport } from "../convert/planPageConversion";
 import {
     startTimelineResolver,
@@ -36,8 +36,8 @@ import { compareConversion, lossReportCounts } from "./conversionEquality";
  * Each file is copied to a temporary directory first; the original is only ever read (its hash is
  * checked before and after). The copy is opened the way the app opens a file (`setActiveDb`:
  * version check, pending migrations, then the renderer's undo triggers and change-log reset),
- * converted with the dev command's edit (`convertPagesToTimeline`), and compared with page-mode
- * playback by `compareConversion`. The JSON report (default: `conversion-corpus-<random>.json` in
+ * converted as one edit with its page-era tables kept (`convertPagesToTimeline` from
+ * `@/test/convertPages`), and compared with page-mode playback by `compareConversion`. The JSON report (default: `conversion-corpus-<random>.json` in
  * the OS temporary directory) must be outside any git checkout, because real shows stay out of
  * the repository; it holds coordinates but not the source paths. Only aggregate numbers may be
  * logged in the repository.
@@ -126,8 +126,10 @@ describe.skipIf(CORPUS.length === 0)("conversion corpus (opt-in)", () => {
                     await createAllUndoTriggers(db);
                     await resetTimelineChangeLog(db);
                     const started = Date.now();
+                    // The page-era rows stay for the comparison
                     const { report } = await convertPagesToTimeline(db, {
                         replace: true,
+                        keepPageTables: true,
                     });
                     const convertMs = Date.now() - started;
                     await startTimelineResolver(db);

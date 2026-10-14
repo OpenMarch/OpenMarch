@@ -1,19 +1,13 @@
 import { afterEach, describe, expect, it as plainIt, vi } from "vitest";
-import { and, eq, getTableName } from "drizzle-orm";
+import { eq, getTableName } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import type { ModifiedMarcherPageArgs } from "@/db-functions/marcherPage";
-import {
-    marcherPagesByPageId,
-    updateMarcherPages,
-} from "@/db-functions/marcherPage";
+import type { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
 import type Page from "@/global/classes/Page";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "../timelineCanvas";
 import {
     canvasCoordinateWriter,
@@ -37,14 +31,12 @@ import {
 } from "../timelineStore";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
 
-// P7.17: these tests set up timeline mode themselves
-keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
-);
+// P7.17: these tests convert the show themselves
+keepFixturesInPageMode("its tests convert the show themselves");
 
 /**
- * The routed coordinate tools (docs/timeline/phases/07-page-parity.md P7.2), with the timeline
- * flag on and off, editing against the UI-9 selection (P8.15): canvas drag
+ * The routed coordinate tools (docs/timeline/phases/07-page-parity.md P7.2), editing against the
+ * UI-9 selection (P8.15): canvas drag
  * (`canvasCoordinateWriter`, as `Canvas.tsx` installs it) and the tools as
  * the shortcut action handlers (`shortcuts/handlers`) run them (read the
  * selected marchers, apply `CoordinateActions`, write).
@@ -68,18 +60,6 @@ const timelineRows = async (db: DbConnection) => {
         out[getTableName(table)] = await db.select().from(table).all();
     return out;
 };
-
-const marcherPage = (db: DbConnection, marcherId: number, pageId: number) =>
-    db
-        .select()
-        .from(schema.marcher_pages)
-        .where(
-            and(
-                eq(schema.marcher_pages.marcher_id, marcherId),
-                eq(schema.marcher_pages.page_id, pageId),
-            ),
-        )
-        .get();
 
 const sortedPages = async (db: DbConnection): Promise<Page[]> => {
     const { pages } = await readShowTiming(db);
@@ -194,34 +174,15 @@ describe("canvasCoordinateWriter", () => {
         beat: 9,
     };
 
-    plainIt("flag off: is the page-mode writer itself", () => {
-        const writePages = vi.fn();
-        const writeTimeline = vi.fn();
-        const write = canvasCoordinateWriter({
-            timelineMode: false,
-            writePages,
-            writeTimeline,
-            onRefused: vi.fn(),
-        });
-        expect(write).toBe(writePages);
-        write(changes);
-        expect(writePages).toHaveBeenCalledWith(changes);
-        expect(writeTimeline).not.toHaveBeenCalled();
-    });
-
     plainIt(
-        "flag on: writes the moves where the selection edits, ignoring page_id",
+        "writes the moves where the selection edits, ignoring page_id",
         () => {
-            const writePages = vi.fn();
             const writeTimeline = vi.fn();
             canvasCoordinateWriter({
-                timelineMode: true,
-                writePages,
                 writeTimeline,
                 onRefused: vi.fn(),
                 plan: () => timelinePlan,
             })(changes);
-            expect(writePages).not.toHaveBeenCalled();
             expect(writeTimeline).toHaveBeenCalledWith({
                 target: { kind: "timeline", timelineId: 4 },
                 moves: [{ marcherId: 1, x: 10, y: 20 }],
@@ -229,14 +190,12 @@ describe("canvasCoordinateWriter", () => {
         },
     );
 
-    plainIt("flag on: plans when the move ends, not when installed", () => {
+    plainIt("plans when the move ends, not when installed", () => {
         const store = useTimelineSelectionStore.getState();
         store.selectHome();
         const writeTimeline = vi.fn();
         const onRefused = vi.fn();
         const write = canvasCoordinateWriter({
-            timelineMode: true,
-            writePages: vi.fn(),
             writeTimeline,
             onRefused,
         });
@@ -249,13 +208,11 @@ describe("canvasCoordinateWriter", () => {
         expect(onRefused).not.toHaveBeenCalled();
     });
 
-    plainIt("flag on, refused by the selection: writes nothing", () => {
+    plainIt("refused by the selection: writes nothing", () => {
         const writeTimeline = vi.fn();
         const onRefused = vi.fn();
         const error = new TimelineEditRefusedError("noTimeline");
         canvasCoordinateWriter({
-            timelineMode: true,
-            writePages: vi.fn(),
             writeTimeline,
             onRefused,
             plan: () => ({ ok: false, error }),
@@ -272,37 +229,7 @@ describe("canvasCoordinateWriter", () => {
 });
 
 describeDbTests("routed coordinate tools on a converted show", (it) => {
-    it("canvas drag, flag off: writes marcher_pages and no timeline row", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await convertPagesToTimeline(db);
-        const pages = await sortedPages(db);
-        const page = pages[2]!;
-        const before = await timelineRows(db);
-
-        let pending: Promise<unknown> = Promise.resolve();
-        const write = canvasCoordinateWriter<ModifiedMarcherPageArgs>({
-            timelineMode: false,
-            writePages: (modifiedMarcherPages) => {
-                pending = updateMarcherPages({ db, modifiedMarcherPages });
-            },
-            writeTimeline: () => {
-                throw new Error("not in page mode");
-            },
-            onRefused: () => {},
-        });
-        write([{ marcher_id: 4, page_id: page.id, x: 111, y: 222 }]);
-        await pending;
-
-        expect(await marcherPage(db, 4, page.id)).toMatchObject({
-            x: 111,
-            y: 222,
-        });
-        expect(await timelineRows(db)).toEqual(before);
-    });
-
-    it("canvas drag, flag on: sets the ending in the selected timeline, leaves marcher_pages alone", async ({
+    it("canvas drag: sets the ending in the selected timeline", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -310,15 +237,12 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         await startTimelineResolver(db);
         const pages = await sortedPages(db);
         const page = pages[2]!;
-        const rowBefore = await marcherPage(db, 4, page.id);
         const plan = await pagePlan(db, page);
+        const stale = pages[5]!;
+        const staleBefore = positionAt(4, pageEndBeat(stale));
 
         let pending: Promise<unknown> = Promise.resolve();
         const write = canvasCoordinateWriter<ModifiedMarcherPageArgs>({
-            timelineMode: true,
-            writePages: () => {
-                throw new Error("not in timeline mode");
-            },
             writeTimeline: ({ target, moves }: TimelineEditRequest) => {
                 pending = moveMarchersInTarget({ db, target, moves });
             },
@@ -331,16 +255,10 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         write([{ marcher_id: 4, page_id: pages[5]!.id, x: 111, y: 222 }]);
         await pending;
 
-        expect(await marcherPage(db, 4, page.id)).toEqual(rowBefore);
         await timelineResolverSettled();
         expect(positionAt(4, pageEndBeat(page))).toEqual([111, 222]);
         // The stale page was not touched
-        const stale = pages[5]!;
-        const staleRow = await marcherPage(db, 4, stale.id);
-        expect(positionAt(4, pageEndBeat(stale))).toEqual([
-            staleRow!.x,
-            staleRow!.y,
-        ]);
+        expect(positionAt(4, pageEndBeat(stale))).toEqual(staleBefore);
     });
 
     it("canvas drag at home: sets the homes", async ({
@@ -354,10 +272,6 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
 
         let pending: Promise<unknown> = Promise.resolve();
         canvasCoordinateWriter<ModifiedMarcherPageArgs>({
-            timelineMode: true,
-            writePages: () => {
-                throw new Error("not in timeline mode");
-            },
             writeTimeline: ({ target, moves }) => {
                 pending = moveMarchersInTarget({ db, target, moves });
             },
@@ -375,35 +289,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         );
     });
 
-    it("align vertically, flag off: averages marcher_pages and writes them", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        await convertPagesToTimeline(db);
-        const page = (await sortedPages(db))[3]!;
-        const before = await timelineRows(db);
-        const selected = (
-            await marcherPagesByPageId({ db, pageId: page.id })
-        ).filter((mp) => [1, 2, 3].includes(mp.marcher_id));
-        const averageY = selected.reduce((s, mp) => s + mp.y, 0) / 3;
-
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: CoordinateActions.alignVertically({
-                marcherPages: selected,
-            }),
-        });
-
-        // Equal within the coordinate tolerance, not bit-exact (page-mode writes compare with it)
-        for (const id of [1, 2, 3])
-            expect((await marcherPage(db, id, page.id))!.y).toBeCloseTo(
-                averageY,
-                6,
-            );
-        expect(await timelineRows(db)).toEqual(before);
-    });
-
-    it("align vertically, flag on: starts from the resolver, not stale marcher_pages", async ({
+    it("align vertically: starts from the resolver", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -413,17 +299,13 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         const endBeat = pageEndBeat(page);
         const plan = await pagePlan(db, page);
         if (!plan.ok) throw new Error("planned");
-        // An earlier timeline move makes marcher_pages stale for marcher 1
+        // An earlier timeline move
         await moveMarchersInTarget({
             db,
             target: plan.target,
             moves: [{ marcherId: 1, x: 50, y: 900 }],
         });
         await timelineResolverSettled();
-        const marcherPagesBefore = await marcherPagesByPageId({
-            db,
-            pageId: page.id,
-        });
 
         // useAlignmentActionHandlers: getSelectedMarcherPages → alignVertically → updateCoordinates
         const selected = timelineCoordinateRecords(plan.beat, [1, 2, 3]);
@@ -442,20 +324,12 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
 
         await timelineResolverSettled();
         const averageY = selected.reduce((s, mp) => s + mp.y, 0) / 3;
-        expect(averageY).not.toBe(
-            marcherPagesBefore
-                .filter((mp) => [1, 2, 3].includes(mp.marcher_id))
-                .reduce((s, mp) => s + mp.y, 0) / 3,
-        );
         [1, 2, 3].forEach((id, i) =>
             expect(positionAt(id, endBeat)).toEqual([drawn[i]![0], averageY]),
         );
-        expect(await marcherPagesByPageId({ db, pageId: page.id })).toEqual(
-            marcherPagesBefore,
-        );
     });
 
-    it("nudge, flag on: moves a marcher that has no marcher_pages row on the page", async ({
+    it("nudge: moves the marchers from the resolver's positions", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -463,18 +337,9 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         await startTimelineResolver(db);
         const page = (await sortedPages(db))[3]!;
         const endBeat = pageEndBeat(page);
-        await db
-            .delete(schema.marcher_pages)
-            .where(
-                and(
-                    eq(schema.marcher_pages.marcher_id, 6),
-                    eq(schema.marcher_pages.page_id, page.id),
-                ),
-            );
-        expect(await marcherPage(db, 6, page.id)).toBeUndefined();
         const [x0, y0] = positionAt(6, endBeat);
 
-        // useUpdateSelectedMarchers' timeline branch, with a nudge as the transform
+        // useUpdateSelectedMarchers, with a nudge as the transform
         const result = await transformMarchersInSelection({
             db,
             plan: await pagePlan(db, page),
@@ -539,7 +404,7 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         ).toBe(true);
     });
 
-    it("swap, flag on: the two marchers exchange positions at the timeline's end", async ({
+    it("swap: the two marchers exchange positions at the timeline's end", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -551,9 +416,8 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         if (!plan.ok) throw new Error("planned");
         const a = positionAt(8, endBeat);
         const b = positionAt(9, endBeat);
-        const before = await marcherPagesByPageId({ db, pageId: page.id });
 
-        // useAlignmentActionHandlers's swapMarchers in timeline mode
+        // useAlignmentActionHandlers's swapMarchers
         const [p, q] = timelineCoordinateRecords(plan.beat, [8, 9]);
         await moveMarchersInTarget({
             db,
@@ -567,8 +431,5 @@ describeDbTests("routed coordinate tools on a converted show", (it) => {
         await timelineResolverSettled();
         expect(positionAt(8, endBeat)).toEqual(b);
         expect(positionAt(9, endBeat)).toEqual(a);
-        expect(await marcherPagesByPageId({ db, pageId: page.id })).toEqual(
-            before,
-        );
     });
 });

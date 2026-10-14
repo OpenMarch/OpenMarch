@@ -25,8 +25,8 @@ import * as path from "path";
 import { randomBytes } from "crypto";
 import { readUserVersion } from "./fileVersion";
 
-/** Text in the backup's name, before the extension. */
-export const BACKUP_NAME_SUFFIX = "before timeline conversion";
+/** Text in the backup's name, before the extension: `<name>.pre-conversion.dots`. */
+export const BACKUP_NAME_SUFFIX = "pre-conversion";
 
 /** Most numbered names tried before giving up. */
 const MAX_NAME_ATTEMPTS = 100;
@@ -85,6 +85,15 @@ export type BackupTestHooks = {
     beforeVerify?: () => void;
 };
 
+export type BackupOptions = BackupTestHooks & {
+    /**
+     * The path the backup should get: the name the person was shown before they
+     * agreed. When it is taken by then, the backup gets the next free
+     * `nextBackupPath` name instead. Without it, the first free name.
+     */
+    target?: string;
+};
+
 const byteLength = (s: string) => Buffer.byteLength(s, "utf8");
 
 /** Cuts `s` to at most `maxBytes` UTF-8 bytes without splitting a character. */
@@ -110,17 +119,17 @@ function entryExists(p: string): boolean {
     }
 }
 
-/** `<base> (before timeline conversion[ n])<ext>`, with `base` cut to fit 255 bytes. */
+/** `<base>.pre-conversion[-n]<ext>`, with `base` cut to fit 255 bytes. */
 function backupName(base: string, ext: string, n: number): string {
-    const label = n === 1 ? BACKUP_NAME_SUFFIX : `${BACKUP_NAME_SUFFIX} ${n}`;
-    const tail = ` (${label})${ext}`;
+    const label = n === 1 ? BACKUP_NAME_SUFFIX : `${BACKUP_NAME_SUFFIX}-${n}`;
+    const tail = `.${label}${ext}`;
     const room = MAX_NAME_BYTES - byteLength(tail);
     return `${truncateUtf8(base, Math.max(room, 0))}${tail}`;
 }
 
 /**
- * The name for a backup of `filePath`: `<name> (before timeline conversion).dots`,
- * or `<name> (before timeline conversion 2).dots` (3, ...) when that exists.
+ * The name for a backup of `filePath`: `<name>.pre-conversion.dots`,
+ * or `<name>.pre-conversion-2.dots` (3, ...) when that exists.
  * Existing includes dangling symlinks. Starts at number `startAt` (1 is the
  * unnumbered name). Only checks which names are free; it creates nothing.
  * Throws a `RangeError` after `MAX_NAME_ATTEMPTS` taken names.
@@ -142,7 +151,9 @@ export function nextBackupPath(
     );
 }
 
-const fail = (code: BackupErrorCode, message: string): BackupResult => ({
+type BackupFailure = Extract<BackupResult, { ok: false }>;
+
+const fail = (code: BackupErrorCode, message: string): BackupFailure => ({
     ok: false,
     code,
     message,
@@ -165,7 +176,7 @@ const sqliteCodeOf = (e: unknown): number | undefined => {
  * against anything that can hold a path, because a folder named "Full Band"
  * must not read as a full disk.
  */
-function classify(e: unknown, dir: string): BackupResult {
+function classify(e: unknown, dir: string): BackupFailure {
     const errno = errnoOf(e);
     const sqliteCode = sqliteCodeOf(e);
     const text = e instanceof Error ? e.message : String(e);
@@ -350,11 +361,58 @@ function snapshotInto(
 }
 
 /**
+ * Gives the verified copy at `tempPath` its final name: `target` when given and
+ * free, or else the first free `nextBackupPath` name for `absolute`. Never
+ * replaces a file.
+ */
+function publishBackup(
+    tempPath: string,
+    absolute: string,
+    target: string | undefined,
+): { ok: true; backupPath: string } | BackupFailure {
+    const dir = path.dirname(absolute);
+    if (target !== undefined) {
+        const exact = path.resolve(target);
+        try {
+            publishWithoutOverwrite(tempPath, exact);
+            return { ok: true, backupPath: exact };
+        } catch (e) {
+            if (errnoOf(e) !== "EEXIST") return classify(e, dir);
+            // Taken since the person was asked: use the next free name.
+        }
+    }
+    let startAt = 1;
+    for (let attempt = 0; attempt < MAX_NAME_ATTEMPTS; attempt++) {
+        let candidate: string;
+        try {
+            candidate = nextBackupPath(absolute, entryExists, startAt);
+        } catch (e) {
+            return fail(
+                "unknown",
+                `No free name for a backup was found in "${dir}". Your file was not changed. Remove old ".${BACKUP_NAME_SUFFIX}" backups, then try again. (${e instanceof Error ? e.message : String(e)})`,
+            );
+        }
+        try {
+            publishWithoutOverwrite(tempPath, candidate);
+            return { ok: true, backupPath: candidate };
+        } catch (e) {
+            if (errnoOf(e) !== "EEXIST") return classify(e, dir);
+            // Taken since we looked (or a dangling symlink): always move on.
+            startAt += 1;
+        }
+    }
+    return fail(
+        "unknown",
+        `No free name for a backup was found in "${dir}". Your file was not changed.`,
+    );
+}
+
+/**
  * Backs up the show file at `filePath` next to it, before it is converted.
  *
  * - Never writes to the original's main file.
  * - Never overwrites an existing file (a dangling symlink counts as taken): a
- *   taken name gets a number.
+ *   taken name (including `target`) gets the next free number.
  * - Verifies the copy before returning success, and removes it (and any
  *   temporary file) when anything fails.
  * - Never throws for an expected failure; it returns `{ ok: false, ... }`.
@@ -364,8 +422,9 @@ function snapshotInto(
  */
 export function backupBeforeConversion(
     filePath: string,
-    hooks?: BackupTestHooks,
+    options: BackupOptions = {},
 ): BackupResult {
+    const { target: requestedTarget, ...hooks } = options;
     const dir = path.dirname(path.resolve(filePath));
     const absolute = path.join(dir, path.basename(filePath));
 
@@ -411,34 +470,10 @@ export function backupBeforeConversion(
             );
         }
 
-        let startAt = 1;
-        for (let attempt = 0; attempt < MAX_NAME_ATTEMPTS; attempt++) {
-            let target: string;
-            try {
-                target = nextBackupPath(absolute, entryExists, startAt);
-            } catch (e) {
-                return fail(
-                    "unknown",
-                    `No free name for a backup was found in "${dir}". Your file was not changed. Remove old "${BACKUP_NAME_SUFFIX}" backups, then try again. (${e instanceof Error ? e.message : String(e)})`,
-                );
-            }
-            try {
-                publishWithoutOverwrite(tempPath, target);
-                return {
-                    ok: true,
-                    backupPath: target,
-                    userVersion: snapshot.facts.userVersion,
-                };
-            } catch (e) {
-                if (errnoOf(e) !== "EEXIST") return classify(e, dir);
-                // Taken since we looked (or a dangling symlink): always move on.
-                startAt += 1;
-            }
-        }
-        return fail(
-            "unknown",
-            `No free name for a backup was found in "${dir}". Your file was not changed.`,
-        );
+        const published = publishBackup(tempPath, absolute, requestedTarget);
+        return published.ok
+            ? { ...published, userVersion: snapshot.facts.userVersion }
+            : published;
     } catch (e) {
         return classify(e, dir);
     } finally {

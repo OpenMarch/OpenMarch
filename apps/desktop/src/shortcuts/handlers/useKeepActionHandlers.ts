@@ -4,10 +4,9 @@ import { toggleKeepOnPage } from "@/timeline/timelineKeepCommands";
 import { useActionHandler } from "../useActionHandler";
 import { useEditorReadiness } from "./useEditorReadiness";
 
-/** UI-18 keep later pages (timeline mode) */
+/** UI-18 keep later pages */
 export function useKeepActionHandlers() {
-    const { selectedPage, ready, selectedMarchers, timelineMode } =
-        useEditorReadiness();
+    const { selectedPage, ready, selectedMarchers } = useEditorReadiness();
     const { pages } = useTimingObjects()!;
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
 
@@ -21,6 +20,6 @@ export function useKeepActionHandlers() {
                 currentPageId: selectedPage!.id,
                 marcherIds: selectedMarchers.map((m) => m.id),
             }),
-        { enabled: ready && timelineMode && !isPlaying && !!pages },
+        { enabled: ready && !isPlaying && !!pages },
     );
 }

@@ -14,14 +14,14 @@ describe("MarcherLine", () => {
                 endPageId: 2,
             });
             const marcherPages: MarcherPage[] = [
-                { x: 0, y: 0, id: 0 } as MarcherPage,
-                { x: 0, y: 0, id: 1 } as MarcherPage,
-                { x: 0, y: 0, id: 2 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 0 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 1 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 2 } as MarcherPage,
             ];
             const expectedMarcherPages: MarcherPage[] = [
-                { x: 0, y: 0, id: 0 } as MarcherPage,
-                { x: 50, y: 50, id: 1 } as MarcherPage,
-                { x: 100, y: 100, id: 2 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 0 } as MarcherPage,
+                { x: 50, y: 50, marcher_id: 1 } as MarcherPage,
+                { x: 100, y: 100, marcher_id: 2 } as MarcherPage,
             ];
 
             const distributedMarcherPages =
@@ -36,8 +36,8 @@ describe("MarcherLine", () => {
                 expect(distributedMarcherPages[i].y).toBe(
                     expectedMarcherPages[i].y,
                 );
-                expect(distributedMarcherPages[i].id).toBe(
-                    expectedMarcherPages[i].id,
+                expect(distributedMarcherPages[i].marcher_id).toBe(
+                    expectedMarcherPages[i].marcher_id,
                 );
             }
         });
@@ -52,14 +52,14 @@ describe("MarcherLine", () => {
                 endPageId: 2,
             });
             const marcherPages: MarcherPage[] = [
-                { x: 0, y: 0, id: 0 } as MarcherPage,
-                { x: 0, y: 0, id: 1 } as MarcherPage,
-                { x: 0, y: 0, id: 2 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 0 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 1 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 2 } as MarcherPage,
             ];
             const expectedMarcherPages: MarcherPage[] = [
-                { x: 50, y: 0, id: 0 } as MarcherPage,
-                { x: 50, y: 50, id: 1 } as MarcherPage,
-                { x: 50, y: 100, id: 2 } as MarcherPage,
+                { x: 50, y: 0, marcher_id: 0 } as MarcherPage,
+                { x: 50, y: 50, marcher_id: 1 } as MarcherPage,
+                { x: 50, y: 100, marcher_id: 2 } as MarcherPage,
             ];
 
             const distributedMarcherPages =
@@ -73,8 +73,8 @@ describe("MarcherLine", () => {
                 expect(distributedMarcherPages[i].y).toBe(
                     expectedMarcherPages[i].y,
                 );
-                expect(distributedMarcherPages[i].id).toBe(
-                    expectedMarcherPages[i].id,
+                expect(distributedMarcherPages[i].marcher_id).toBe(
+                    expectedMarcherPages[i].marcher_id,
                 );
             }
         });
@@ -89,14 +89,14 @@ describe("MarcherLine", () => {
                 endPageId: 2,
             });
             const marcherPages: MarcherPage[] = [
-                { x: 0, y: 0, id: 0 } as MarcherPage,
-                { x: 0, y: 0, id: 1 } as MarcherPage,
-                { x: 0, y: 0, id: 2 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 0 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 1 } as MarcherPage,
+                { x: 0, y: 0, marcher_id: 2 } as MarcherPage,
             ];
             const expectedMarcherPages: MarcherPage[] = [
-                { x: 0, y: 50, id: 0 } as MarcherPage,
-                { x: 50, y: 50, id: 1 } as MarcherPage,
-                { x: 100, y: 50, id: 2 } as MarcherPage,
+                { x: 0, y: 50, marcher_id: 0 } as MarcherPage,
+                { x: 50, y: 50, marcher_id: 1 } as MarcherPage,
+                { x: 100, y: 50, marcher_id: 2 } as MarcherPage,
             ];
 
             const distributedMarcherPages =
@@ -110,8 +110,8 @@ describe("MarcherLine", () => {
                 expect(distributedMarcherPages[i].y).toBe(
                     expectedMarcherPages[i].y,
                 );
-                expect(distributedMarcherPages[i].id).toBe(
-                    expectedMarcherPages[i].id,
+                expect(distributedMarcherPages[i].marcher_id).toBe(
+                    expectedMarcherPages[i].marcher_id,
                 );
             }
         });

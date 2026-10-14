@@ -6,7 +6,7 @@ import { fabric } from "fabric";
 import DefaultListeners from "@/components/canvas/listeners/DefaultListeners";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 
-function MarcherRotationInput({ disabled }: { disabled: boolean }) {
+function MarcherRotationInput() {
     const [rotationAngle, setRotationAngle] = useState<number>(0);
     const [activeGroup, setActiveGroup] = useState<fabric.Group | null>(null);
     // Whether the group turned since the last save: tabbing through the field (a blur with no
@@ -95,7 +95,7 @@ function MarcherRotationInput({ disabled }: { disabled: boolean }) {
                 icon={ArrowClockwiseIcon}
                 onBlur={handleRotationDragEnd}
                 onDragEnd={handleRotationDragEnd}
-                disabled={!activeGroup || disabled}
+                disabled={!activeGroup}
             />
         </div>
     );

@@ -16,7 +16,6 @@ import { allMarchersQueryOptions } from "./useMarchers";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "../useTimingObjects";
-import { coordinateDataKeys } from "./useCoordinateData";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 
@@ -50,18 +49,6 @@ export const canRedoQueryOptions = (enabled = true) =>
 
 /** Messages for an undo or redo that didn't apply, as Tolgee keys with English defaults */
 export const HISTORY_FAILURE_MESSAGES = {
-    "page-era-frozen": {
-        undo: {
-            key: "actions.edit.undoSkippedFrozen",
-            defaultMessage:
-                "That step can't be undone in timeline mode, because it changes page positions from before the show was converted. It was skipped.",
-        },
-        redo: {
-            key: "actions.edit.redoSkippedFrozen",
-            defaultMessage:
-                "That step can't be redone in timeline mode, because it changes page positions from before the show was converted. It was skipped.",
-        },
-    },
     error: {
         undo: {
             key: "actions.edit.undoFailed",
@@ -79,8 +66,7 @@ type HistoryActionFailure = NonNullable<
 >;
 
 /**
- * Tells the user an undo or redo didn't apply: a step the page-era freeze refused (P9.5), which
- * was dropped from its stack, or any other failure, which left the stacks alone.
+ * Tells the user an undo or redo didn't apply. A failure leaves the stacks alone.
  */
 export const toastHistoryActionFailure = (
     type: "undo" | "redo",
@@ -89,11 +75,8 @@ export const toastHistoryActionFailure = (
     const { key, defaultMessage } =
         HISTORY_FAILURE_MESSAGES[failure.kind][type];
     const message = tolgee.t(key, defaultMessage);
-    if (failure.kind === "page-era-frozen") toast.warning(message);
-    else {
-        console.error(`${type} failed:`, failure.message);
-        toast.error(message);
-    }
+    console.error(`${type} failed:`, failure.message);
+    toast.error(message);
 };
 
 /** Where an undo or redo asked to go, kept until that page is in the page list. */
@@ -154,11 +137,7 @@ export const usePerformHistoryAction = () => {
                 await safelyInvalidateQueries(response.queriesToInvalidate, qc);
             }
 
-            // Greedily invalidate all coordinate data queries
-            // The better thing to do would be to check the pages that were modified
-            // (In timeline mode these queries don't run; the resolver store follows the action's
-            // change batch instead.)
-            void qc.invalidateQueries({ queryKey: coordinateDataKeys.all });
+            // Positions need nothing: the resolver store follows the action's change batch
 
             // Page 0 has id 0, so compare with undefined. The page and its marchers are applied by
             // the effect above, once the page is in the page list.

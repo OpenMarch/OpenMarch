@@ -23,7 +23,7 @@ import { pageFlags } from "../timelinePlayhead";
 
 /**
  * Page navigation and the selection on the `base.tsx` fixtures (ui.md UI-9 Page-relative tools;
- * P8.11). Under `test:timeline` (a converted show with the flag on), navigation moves the
+ * P8.11). On the converted fixture show, navigation moves the
  * playhead to a flag and selects that page's box, home for the first page, and the legacy selected
  * page follows the playhead. The default run checks that page mode still selects pages and never
  * touches the timeline selection.

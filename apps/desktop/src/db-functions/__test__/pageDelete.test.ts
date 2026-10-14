@@ -4,7 +4,7 @@ import { createResolver, type Resolver } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { performUndo } from "../history";
 import { createPages, deletePages, deletePageYank } from "../page";
@@ -38,7 +38,6 @@ const TABLES = [
     schema.pages,
     schema.utility,
     schema.marchers,
-    schema.marcher_pages,
     schema.tags,
     schema.tag_appearances,
     schema.timelines,
@@ -55,14 +54,6 @@ const snapshot = async (db: DbConnection) => {
     return out;
 };
 
-const setTimelineFlag = async (db: DbConnection) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: true }),
-    });
-};
-
 const clearHistory = async (db: DbConnection) => {
     await db.run(sql`DELETE FROM history_undo`);
     await db.run(sql`DELETE FROM history_redo`);
@@ -73,7 +64,6 @@ const clearHistory = async (db: DbConnection) => {
  * The converted rows are cleared, so only the test's own moves are stored.
  */
 const madeInTimelineMode = async (db: DbConnection) => {
-    await setTimelineFlag(db);
     await convertPagesToTimeline(db);
     for (const table of [
         "timeline_slot_destinations",
@@ -98,7 +88,6 @@ const convertedWithCopies = async (db: DbConnection) => {
             y = (SELECT p2.y FROM marcher_pages p2
                  WHERE p2.marcher_id = marcher_pages.marcher_id AND p2.page_id = 2)
         WHERE page_id IN (3, 4, 5, 6)`);
-    await setTimelineFlag(db);
     await convertPagesToTimeline(db);
     await clearHistory(db);
 };
@@ -390,25 +379,6 @@ describeDbTests("deleting a page in timeline mode", (it) => {
             );
         });
 
-        it("page mode: deletes as Delete page does, and reports no look", async ({
-            db,
-            marchersAndPages: _,
-        }) => {
-            const result = await deletePagesWithMoves({
-                db,
-                pageIds: new Set([2]),
-            });
-            expect(result.deleted.map((p) => p.id)).toEqual([2]);
-            expect(result.changedPages).toEqual([]);
-            // The counts still went somewhere
-            expect(result.grownPages.map((p) => [p.name, p.counts])).toEqual([
-                ["1", 16],
-            ]);
-            expect((await grid(db)).pages.map((p) => p.id)).toEqual([
-                0, 1, 3, 4, 5, 6,
-            ]);
-        });
-
         it("home is skipped: deleting only home writes nothing", async ({
             db,
             marchersAndPages: _,
@@ -432,7 +402,6 @@ describeDbTests("deleting a page in timeline mode", (it) => {
  */
 describeDbTests("deleting a page with its moves after a flag delete", (it) => {
     const converted = async (db: DbConnection) => {
-        await setTimelineFlag(db);
         await convertPagesToTimeline(db);
         await clearHistory(db);
     };
@@ -642,41 +611,30 @@ describeDbTests("tag appearances survive a page delete", (it) => {
 
     const deletes: [
         string,
-        boolean,
         (db: DbConnection, pageId: number) => Promise<unknown>,
     ][] = [
         [
             "Delete page (flag delete)",
-            true,
             (db, id) => deletePageFlags({ db, pageIds: new Set([id]) }),
         ],
         [
             "Delete page and its moves",
-            true,
             (db, id) => deletePagesWithMoves({ db, pageIds: new Set([id]) }),
         ],
         [
             "yank, timeline mode",
-            true,
             (db, id) => deletePageYankWithMoves({ db, pageId: id }),
         ],
         [
-            "page mode delete",
-            false,
+            "deletePages",
             (db, id) => deletePages({ db, pageIds: new Set([id]) }),
         ],
-        [
-            "page mode yank",
-            false,
-            (db, id) => deletePageYank({ db, pageId: id }),
-        ],
+        ["deletePageYank", (db, id) => deletePageYank({ db, pageId: id })],
     ];
 
-    for (const [name, timeline, remove] of deletes)
+    for (const [name, remove] of deletes)
         describe(name, () => {
-            const setUp = async (db: DbConnection) => {
-                if (timeline) await S4(db);
-            };
+            const setUp = S4;
 
             it("moves to the next page; one undo puts it back", async ({
                 db,
@@ -738,6 +696,7 @@ describeDbTests("tag appearances survive a page delete", (it) => {
         db,
         marchersAndPages: _,
     }) => {
+        await S4(db);
         await withTags(db, [
             { id: 1, tag_id: 1, start_page_id: 2 },
             { id: 2, tag_id: 1, start_page_id: 3 },
@@ -750,10 +709,7 @@ describeDbTests("tag appearances survive a page delete", (it) => {
         ]);
     });
 
-    it("several flags at once, in timeline mode", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
+    it("several flags at once", async ({ db, marchersAndPages: _ }) => {
         await S4(db);
         await withTags(db, [
             { id: 1, tag_id: 1, start_page_id: 2 },
@@ -774,7 +730,6 @@ describeDbTests("tag appearances survive a page delete", (it) => {
         testWithHistory(
             "each delete, its tag appearances included, is one undoable edit",
             async ({ db, marchersAndPages: _, expectNumberOfChanges }) => {
-                await setTimelineFlag(db);
                 await convertPagesToTimeline(db);
                 const [a] = await marcherIds(db);
                 await moveMarchersInTarget({
@@ -808,7 +763,6 @@ describeDbTests("tag appearances survive a page delete", (it) => {
         testWithHistory(
             "a flag delete, then delete page and its moves on the merged page, undo one at a time",
             async ({ db, marchersAndPages: _, expectNumberOfChanges }) => {
-                await setTimelineFlag(db);
                 await convertPagesToTimeline(db);
                 const state = await expectNumberOfChanges.getDatabaseState(db);
                 await deletePageFlags({ db, pageIds: new Set([2]) });

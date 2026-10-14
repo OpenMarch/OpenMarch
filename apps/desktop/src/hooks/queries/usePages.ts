@@ -13,25 +13,18 @@ import {
     createPages,
     getPages,
     realDatabasePageToDatabasePage,
-    deletePages,
-    deletePageYank,
     transactionWithHistory,
     updatePagesInTransaction,
     updateLastPageCounts,
-    createLastPage,
     NewPageArgs,
     ModifiedPageArgs,
     getPagesInOrder,
     DatabasePageWithBeat,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
-import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
-import { marcherPageKeys } from "./useMarcherPages";
-import { coordinateDataKeys } from "./useCoordinateData";
 import { beatKeys } from "./useBeats";
-import { invalidateTagQueries } from "./tags/queries";
 
 const { pages } = schema;
 
@@ -55,15 +48,8 @@ export const invalidatePageQueries = async (qc: QueryClient) => {
     await qc.invalidateQueries({
         queryKey: pageKeys.all(),
     });
-    const marcherPagePromise = qc.invalidateQueries({
-        queryKey: marcherPageKeys.all(),
-    });
-    const utilityPromise = qc.invalidateQueries({
+    await qc.invalidateQueries({
         queryKey: utilityKeys.all(),
-    });
-    await Promise.all([marcherPagePromise, utilityPromise]);
-    void qc.invalidateQueries({
-        queryKey: coordinateDataKeys.all,
     });
 };
 
@@ -202,61 +188,6 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
         onError: (e, variables) => {
             conToastError(
                 tolgee.t("pages.updateFailed", { error: e.message }),
-                e,
-                variables,
-            );
-        },
-    });
-};
-
-export const deletePagesMutationOptions = (qc: QueryClient) => {
-    return mutationOptions({
-        mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
-        onSuccess: async (_, variables) => {
-            toast.success(tolgee.t("pages.deletedSuccessfully"));
-            // Invalidate all page queries, and tags: a deleted page's tag appearances move
-            void invalidatePageQueries(qc);
-            invalidateTagQueries(qc);
-        },
-        onError: (e, variables) => {
-            conToastError(
-                tolgee.t("pages.deleteFailed", { error: e.message }),
-                e,
-                variables,
-            );
-        },
-    });
-};
-
-export const deletePageYankMutationOptions = (qc: QueryClient) => {
-    return mutationOptions({
-        mutationFn: (pageId: number) => deletePageYank({ db, pageId }),
-        onSuccess: async (_, variables) => {
-            toast.success(tolgee.t("pages.deletedSuccessfully"));
-            await invalidatePageQueries(qc);
-            invalidateTagQueries(qc);
-        },
-        onError: (e, variables) => {
-            conToastError(
-                tolgee.t("pages.deleteFailed", { error: e.message }),
-                e,
-                variables,
-            );
-        },
-    });
-};
-
-export const createLastPageMutationOptions = (qc: QueryClient) => {
-    return mutationOptions({
-        mutationFn: (newPageCounts: number) =>
-            createLastPage({ db, newPageCounts }),
-        onSuccess: (_, variables) => {
-            // Invalidate all page queries
-            void invalidatePageQueries(qc);
-        },
-        onError: (e, variables) => {
-            conToastError(
-                tolgee.t("pages.createLastPageFailed", { error: e.message }),
                 e,
                 variables,
             );

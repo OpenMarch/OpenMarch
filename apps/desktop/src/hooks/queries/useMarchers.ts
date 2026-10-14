@@ -19,8 +19,6 @@ import {
 } from "@/db-functions";
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
-import { marcherPageKeys } from "./useMarcherPages";
-import { coordinateDataKeys } from "./useCoordinateData";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
 
 const { marchers } = schema;
@@ -83,9 +81,7 @@ export const fetchMarchers = () => {
 };
 
 /**
- * In timeline mode the new marchers also get a home and a holding slot in each page move (P7.3).
- * `createMarchers` reads the file's flag inside its own edit, so this works before the workspace
- * settings query has loaded.
+ * The new marchers also get a home and a holding slot in each page move (P7.3).
  */
 export const createMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
@@ -97,14 +93,7 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
                 queryKey: [KEY_BASE],
             });
             void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
-            void qc.invalidateQueries({
                 queryKey: marcherWithVisualsKeys.all(),
-            });
-            // Invalidate coordinate data so animation picks up the new marcher
-            void qc.invalidateQueries({
-                queryKey: coordinateDataKeys.all,
             });
         },
         onError: (e, variables) => {
@@ -126,10 +115,6 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
         },
         onError: (e, variables) => {
             conToastError(`Error updating marchers`, e, variables);
@@ -138,9 +123,7 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
 };
 
 /**
- * In timeline mode the deleted marchers' slots are also compacted where that moves no one (P7.3).
- * `deleteMarchers` reads the file's flag inside its own edit, so this works before the workspace
- * settings query has loaded.
+ * The deleted marchers' slots are also compacted where that moves no one (P7.3).
  */
 export const deleteMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
@@ -150,13 +133,6 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             // Invalidate all marcher queries
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
-            });
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
-            // Invalidate coordinate data so animation removes the deleted marcher
-            void qc.invalidateQueries({
-                queryKey: coordinateDataKeys.all,
             });
         },
         onError: (e, variables) => {

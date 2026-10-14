@@ -58,7 +58,6 @@ describe("buildPerformerAppearanceShowData", () => {
             tagAppearanceIdsByPageId: emptyTagMap,
             marcherIdsByTagId: new Map(),
             marchers,
-            marcherPages: [],
             pagesInOrder: [{ id: 1 }],
         });
 
@@ -92,7 +91,6 @@ describe("buildPerformerAppearanceShowData", () => {
             tagAppearanceIdsByPageId: emptyTagMap,
             marcherIdsByTagId: new Map(),
             marchers,
-            marcherPages: [],
             pagesInOrder: [{ id: 1 }],
         });
 
@@ -140,7 +138,6 @@ describe("buildPerformerAppearanceShowData", () => {
             tagAppearanceIdsByPageId: emptyTagMap,
             marcherIdsByTagId: new Map(),
             marchers,
-            marcherPages: [],
             pagesInOrder: [{ id: 1 }],
         });
 
@@ -181,7 +178,6 @@ describe("buildPerformerAppearanceShowData", () => {
             tagAppearanceIdsByPageId,
             marcherIdsByTagId: new Map([[1, [1]]]),
             marchers: [marchers[0]],
-            marcherPages: [],
             pagesInOrder: [{ id: 1 }],
         });
 
@@ -194,43 +190,5 @@ describe("buildPerformerAppearanceShowData", () => {
                 fieldProperties.theme.defaultMarcher.fill,
             ),
         });
-    });
-
-    it("emits performer override when marcher page changes shape", () => {
-        const result = buildPerformerAppearanceShowData({
-            fieldProperties,
-            sectionAppearances: [],
-            tagAppearances: [],
-            tagAppearanceIdsByPageId: emptyTagMap,
-            marcherIdsByTagId: new Map(),
-            marchers: [marchers[0]],
-            marcherPages: [
-                {
-                    id: 1,
-                    marcher_id: 1,
-                    page_id: 1,
-                    x: 0,
-                    y: 0,
-                    notes: null,
-                    path_data_id: null,
-                    path_start_position: null,
-                    path_end_position: null,
-                    rotation_degrees: 0,
-                    created_at: "",
-                    updated_at: "",
-                    fill_color: null,
-                    outline_color: null,
-                    shape_type: "x",
-                    visible: true,
-                    label_visible: true,
-                    equipment_name: null,
-                    equipment_state: null,
-                },
-            ],
-            pagesInOrder: [{ id: 1 }],
-        });
-
-        expect(result.performers).toHaveLength(1);
-        expect(result.performers[0].shape).toBe("cross");
     });
 });

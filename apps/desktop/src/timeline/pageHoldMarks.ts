@@ -1,4 +1,3 @@
-import { sameCoordinate } from "@/db-functions/marcherPage";
 import type { CarrySpan } from "./timelineCarryForward";
 
 /**
@@ -6,8 +5,7 @@ import type { CarrySpan } from "./timelineCarryForward";
  * 08: a standing view on the page boxes instead of a carry-forward toast). For each page after the
  * first, the selection either moves there (every selected marcher has its own move on the page),
  * holds there (every one holds from an earlier page), or is mixed. Marchers partway through a move
- * at the page's flag count as neither. The same marks are drawn in timeline and page mode; only
- * how a marcher's state is read differs.
+ * at the page's flag count as neither.
  */
 
 /** One marcher's state on one page. */
@@ -112,41 +110,6 @@ export function timelineMarcherPageStates(
         // Held since the first flag at or after the hold's start (home's for none before it)
         const since = firstAbove(flags, at.start, true);
         if (since < flags.length) states[i] = { kind: "holds", since };
-    }
-    return states;
-}
-
-/**
- * One marcher's state on every page, in page mode, from its position on each page: it holds on a
- * page whose position equals the previous page's (within `COORDINATE_TOLERANCE`), since the page
- * it last moved on, and moves on any other. A page without a row is unknown, and breaks the run.
- *
- * @param positions the marcher's position on each page, in page order
- */
-export function pageModeMarcherPageStates(
-    positions: readonly (
-        | { readonly x: number; readonly y: number }
-        | undefined
-    )[],
-): MarcherPageState[] {
-    const states: MarcherPageState[] = positions.map(() => null);
-    let since = 0;
-    for (let i = 1; i < positions.length; i++) {
-        const previous = positions[i - 1];
-        const current = positions[i];
-        if (!previous || !current) {
-            since = i;
-            continue;
-        }
-        if (
-            sameCoordinate(previous.x, current.x) &&
-            sameCoordinate(previous.y, current.y)
-        )
-            states[i] = { kind: "holds", since };
-        else {
-            states[i] = MOVES;
-            since = i;
-        }
     }
     return states;
 }

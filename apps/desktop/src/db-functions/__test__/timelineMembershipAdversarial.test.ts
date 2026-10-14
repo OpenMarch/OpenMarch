@@ -4,10 +4,8 @@ import { createResolver, type XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import type Page from "@/global/classes/Page";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { loadTimelineFixture } from "@/timeline/fixtures/loadTimelineFixture";
@@ -24,10 +22,7 @@ import {
     type BeatRange,
 } from "../timelineMembership";
 import { TimelineWriteError } from "../timelineErrors";
-import {
-    keepFixturesInPageMode,
-    setTimelineModeFlag,
-} from "@/test/timelineMode";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
 
 keepFixturesInPageMode(
     "adversarial P8.14 tests set up timeline mode themselves",
@@ -103,10 +98,6 @@ const expectRefused = async (
     expect(await snapshot(db)).toEqual(before);
 };
 
-const flagOn = async (db: DbConnection) => {
-    await setTimelineModeFlag(db, true);
-};
-
 const homeOf = async (db: DbConnection, id: number): Promise<XY> => {
     const m = await db
         .select()
@@ -147,7 +138,6 @@ const layersOf = async (db: DbConnection, marcher: number) =>
 
 const setUpConverted = async (db: DbConnection): Promise<Page[]> => {
     await convertPagesToTimeline(db);
-    await flagOn(db);
     const { pages } = await readShowTiming(db);
     return [...pages].sort((a, b) => a.order - b.order);
 };
@@ -214,7 +204,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const [a, b, c] = marchersAndPages.expectedMarchers.map(
                 (m) => m.id,
             );
@@ -236,7 +225,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const a = marchersAndPages.expectedMarchers[0]!.id;
             const h = await homeOf(db, a);
             await move(db, a, { start: 0, end: 32 }, [h[0] + 96, h[1] - 64]);
@@ -273,7 +261,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages: _,
         }) => {
-            await flagOn(db);
             const g3 = GOLDEN_FIXTURES.find((g) => g.name === "G3")!.build();
             const loaded = await loadTimelineFixture(db, g3);
             const m = loaded.marchers.get(1)!;
@@ -323,7 +310,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const a = marchersAndPages.expectedMarchers[0]!.id;
             const h = await homeOf(db, a);
             await move(db, a, { start: 0, end: 4 }, [h[0] + 40, h[1]]);
@@ -423,7 +409,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const [a, b, c] = marchersAndPages.expectedMarchers.map(
                 (m) => m.id,
             );
@@ -454,7 +439,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const [a, b] = marchersAndPages.expectedMarchers.map((m) => m.id);
             const r1 = await addMarchersToTimeline({
                 db,
@@ -481,7 +465,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const [a, b] = marchersAndPages.expectedMarchers.map((m) => m.id);
             await addMarchersToTimeline({
                 db,
@@ -526,7 +509,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const a = marchersAndPages.expectedMarchers[0]!.id;
             const h = await homeOf(db, a);
             const p: XY = [h[0] + 40, h[1]];
@@ -578,7 +560,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const a = marchersAndPages.expectedMarchers[0]!.id;
             const h = await homeOf(db, a);
             await move(db, a, { start: 0, end: 16 }, [h[0] + 64, h[1]]);
@@ -647,7 +628,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const a = marchersAndPages.expectedMarchers[0]!.id;
             const h = await homeOf(db, a);
             await move(db, a, { start: 0, end: 32 }, [h[0] + 64, h[1] + 8]);
@@ -741,7 +721,6 @@ describeDbTests("P8.14 adversarial", (it) => {
         testWithHistory(
             "add (new timeline), add (existing), remove, inspector remove, create marcher, delete marcher",
             async ({ db, marchersAndPages, expectNumberOfChanges }) => {
-                await flagOn(db);
                 const [a, b, c] = marchersAndPages.expectedMarchers.map(
                     (m) => m.id,
                 );
@@ -799,7 +778,6 @@ describeDbTests("P8.14 adversarial", (it) => {
             db,
             marchersAndPages,
         }) => {
-            await flagOn(db);
             const [a, b] = marchersAndPages.expectedMarchers.map((m) => m.id);
             const ops: (() => Promise<unknown>)[] = [
                 () =>

@@ -59,8 +59,7 @@ export function evaluatePathWarning({
     allowForceShow: boolean;
     warningsEnabled?: boolean;
     /**
-     * The distance walked, when it isn't the straight line from start to end (a curved path in
-     * timeline mode). Page mode leaves it out.
+     * The distance walked, when it isn't the straight line from start to end (a curved path).
      */
     distance?: number;
 }): { show: boolean; isWarning: boolean } {

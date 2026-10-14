@@ -8,6 +8,7 @@ import {
     goToProjectStep,
     openNewShowWizard,
 } from "../utils/new-show-wizard.mjs";
+import { timelinePageBox } from "../utils/timeline.mjs";
 
 test("Wizard opens from launch page", async ({ electronAppEmpty }) => {
     const { page } = electronAppEmpty;
@@ -52,9 +53,7 @@ test("Default pages created", async ({ electronAppNewFile }) => {
 
     await completeNewShowWizard(page, { projectName });
 
-    await expect(
-        page.locator("#pages").getByText("5", { exact: true }),
-    ).toBeVisible();
+    await expect(timelinePageBox(page, "5")).toBeVisible();
 });
 
 test("Back navigation returns to project step", async ({

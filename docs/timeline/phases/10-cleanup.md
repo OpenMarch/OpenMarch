@@ -27,8 +27,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### P10.1: Drop page-era tables
 
-- Owner: unassigned
-- Status: open
+- Owner: lead (timeline/remove-page-era)
+- Status: in-review
 - PR: none
 - Parallel: no
 - Depends on: —
@@ -47,8 +47,8 @@ Optional: rename `timeline_shapes` to `shapes`, and remove other `timeline_` pre
 
 ### P10.3: Delete dead code
 
-- Owner: unassigned
-- Status: open
+- Owner: lead (timeline/remove-page-era)
+- Status: in-review
 - PR: none
 - Parallel: yes
 - Depends on: P10.1
@@ -75,3 +75,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ### 2026-10-01 · timeline-worker (timeline/p7-coordinate-sheets) · Cross-phase note from P7.7
 
 - **Unowned dead code for cleanup:** `apps/desktop/electron/main/services/export-utility-process.ts` is unreachable. Nothing imports or forks it, and it is not a Vite or electron-builder entry. It still reads `marcher_pages` straight from the file. Delete it with the page-era tables. `src/components/exporting/CoordinateSheetTemplates.tsx` has no importers either.
+
+### 2026-10-12 · lead (timeline/remove-page-era) · P10.1, P10.3
+
+- **Done:** done together with P9.4 (see the 09-flip log). The drop is migration `0020_drop_page_era`, which only runs inside the conversion transaction (or on new and version-8 files), so the converter can still read the tables (`pageEraSchema.ts`). `export-utility-process.ts` and `CoordinateSheetTemplates.tsx` are deleted. P10.2 (renames) is not done.

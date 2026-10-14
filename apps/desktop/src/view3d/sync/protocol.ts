@@ -34,6 +34,14 @@ export const VIEW3D_PLAYBACK_REQUEST_CHANNEL = "view3d:playback-request";
  */
 export const VIEW3D_AUTO_OPEN_SETTING = "view3dAutoOpen";
 
+/**
+ * The window's resolver query (`view3dResolverQueryOptions`). Timeline edits
+ * don't invalidate queries in the editor (its resolver follows the change
+ * log), so the editor sends an invalidation of this key after every committed
+ * timeline change.
+ */
+export const VIEW3D_TIMELINE_QUERY_KEY = ["view3d_timeline"] as const;
+
 /** The channels the editor publishes and the window may listen to. */
 export const VIEW3D_PUBLISH_CHANNELS = [
     VIEW3D_CLOCK_CHANNEL,

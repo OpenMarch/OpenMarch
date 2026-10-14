@@ -25,7 +25,7 @@ export default class MarcherVisualGroup {
     previousEndPoint: Endpoint;
     nextEndPoint: Endpoint;
 
-    /** Timeline mode's curved paths (P7.10), created on first use; page mode never makes them */
+    /** The curved paths (P7.10), created on first use */
     private previousTimelinePathway?: TimelinePathway;
     private nextTimelinePathway?: TimelinePathway;
 

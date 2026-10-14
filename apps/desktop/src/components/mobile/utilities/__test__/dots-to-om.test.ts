@@ -1,4 +1,3 @@
-import { skipInTimelineMode } from "@/test/timelineMode";
 import { describeDbTests } from "@/test/base";
 import { expect } from "vitest";
 import type { DB } from "@/global/database/db";
@@ -14,7 +13,6 @@ import {
     createTagAppearances,
     createTags,
 } from "@/db-functions";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
 import { updateWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 
@@ -93,13 +91,14 @@ describeDbTests("dots-to-om", (it) => {
         }
     });
 
-    it("builds coordinates for every marcher_page", async ({
+    it("builds coordinates for every marcher on every page", async ({
         db,
-        marchersAndPages,
+        marchersAndPages: _,
     }) => {
         const result = await toOpenMarchSchema(db as unknown as DB);
-        const { expectedMarcherPages } = marchersAndPages;
-        expect(result.coordinates).toHaveLength(expectedMarcherPages.length);
+        expect(result.coordinates).toHaveLength(
+            result.pages.length * result.performers.length,
+        );
         for (const coord of result.coordinates) {
             expect(coord).toMatchObject({
                 marcherId: expect.any(String),
@@ -237,36 +236,4 @@ describeDbTests("dots-to-om", (it) => {
         expect(override).toBeDefined();
         expect(override!.shape).toBe("triangle");
     });
-
-    it.skipIf(
-        skipInTimelineMode(
-            "timeline mode drops marcher_pages appearance overrides from the export (P7.14 decision, P7.12)",
-        ),
-    )(
-        "exports performer override when marcher page appearance differs from baseline",
-        async ({ db, marchersAndPages }) => {
-            const firstPageId = marchersAndPages.expectedPages[0].id;
-            const marcherId = 1;
-
-            await updateMarcherPages({
-                db,
-                modifiedMarcherPages: [
-                    {
-                        marcher_id: marcherId,
-                        page_id: firstPageId,
-                        shape_type: "x",
-                    },
-                ],
-            });
-
-            const result = await toOpenMarchSchema(db as unknown as DB);
-            const override = result.performerAppearance.performers.find(
-                (p) =>
-                    p.marcherId === String(marcherId) &&
-                    p.pageId === String(firstPageId),
-            );
-            expect(override).toBeDefined();
-            expect(override!.shape).toBe("cross");
-        },
-    );
 });

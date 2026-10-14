@@ -308,7 +308,6 @@
         "individualChartsTooltip": "Crear PDFs de gráficos perforados personalizados para cada individuo que marcha.",
         "individualChartsTooltipDescription": "Si esto no está marcado, se creará un PDF de gráfico de perforación general.",
         "marcher": "Marcher: {estado}",
-        "marcherPagesNotLoaded": "Páginas de marcha no cargadas",
         "marchersNotLoaded": "Marchantes no cargados",
         "measuresHeader": "Medida",
         "mobile": "Móvil",

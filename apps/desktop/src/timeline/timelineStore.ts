@@ -40,8 +40,8 @@ import {
  * While started, it cold-builds the resolver from the tables, applies each committed batch from
  * `subscribeTimelineChanges` (mirror first, then `resolver.notify`), and cold-builds again on
  * `reset` or when applying a batch fails. After each cold build and batch it warms the caches in
- * idle time, outward from the beat last drawn (P5.6, `timelineWarm.ts`). It runs only while the
- * file's timeline dev flag is on; see `TimelineResolverHost`.
+ * idle time, outward from the beat last drawn (P5.6, `timelineWarm.ts`). It runs while a file is
+ * open; see `TimelineResolverHost`.
  */
 
 export type TimelineResolverStatus = "off" | "loading" | "ready" | "error";

@@ -5,6 +5,8 @@ import { join } from "path";
 import * as fs from "fs";
 import { getOrm } from "../electron/database/db";
 import { DrizzleMigrationService } from "../electron/database/services/DrizzleMigrationService";
+import { NEW_FILE_USER_VERSION } from "../electron/database/fileVersion";
+import { initializeNewFileAsTimeline } from "../electron/database/convertOnOpenGate";
 
 const DATABASE_PATH = join(
     __dirname,
@@ -26,8 +28,8 @@ async function createDatabase() {
         // Create the database file
         const db = new DatabaseSync(DATABASE_PATH);
 
-        // Set user version to 7 (indicates Drizzle migration system)
-        db.prepare("PRAGMA user_version = 7").run();
+        // A new file is a timeline file (8), so every migration applies
+        db.prepare(`PRAGMA user_version = ${NEW_FILE_USER_VERSION}`).run();
 
         const drizzleDb = getOrm(db);
         const migrator = new DrizzleMigrationService(drizzleDb, db);
@@ -36,6 +38,7 @@ async function createDatabase() {
             join(__dirname, "../electron", "database", "migrations"),
         );
         await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
+        initializeNewFileAsTimeline(db, () => new Date(0));
 
         db.close();
     } catch (error) {

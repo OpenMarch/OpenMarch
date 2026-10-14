@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
-import type { MarcherTimeline } from "@/utilities/Keyframes";
+import { fakeShowPositions, type Track } from "@/view3d/__test__/fakePositions";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { buildCountClock } from "@/view3d/core/marchers/countClock";
 import { eventRows } from "@/view3d/core/marchers/planner";
@@ -27,26 +27,25 @@ const clock = buildCountClock(
 );
 
 /** A marcher holding at (x, y) px, moving dy px over counts 4-12. */
-function timeline(x: number, y: number, dy: number): MarcherTimeline {
-    return {
-        sortedTimestamps: [0, 2000, 6000, 8000],
-        pathMap: new Map([
-            [0, { x, y }],
-            [2000, { x, y }],
-            [6000, { x, y: y + dy }],
-            [8000, { x, y: y + dy }],
-        ]),
+function track(x: number, y: number, dy: number): Track {
+    return (ms) => {
+        const t = Math.min(Math.max((ms - 2000) / 4000, 0), 1);
+        return { x, y: y + t * dy };
     };
 }
+
+/** The show's positions with marchers 1, 2 and 3 on these tracks. */
+const show = (tracks: Track[]) =>
+    fakeShowPositions(new Map(tracks.map((t, i) => [i + 1, t])));
 
 describe("planning the show", () => {
     const ids = [1, 2, 3];
     const lines = [
-        timeline(800, 500, 90),
-        timeline(830, 500, 90),
-        timeline(860, 500, 0),
+        track(800, 500, 90),
+        track(830, 500, 90),
+        track(860, 500, 0),
     ];
-    const first = planShow(ids, lines, [1, 1, 1], clock, fp, manifest, 0);
+    const first = planShow(ids, show(lines), [1, 1, 1], clock, fp, manifest, 0);
 
     it("plans every marcher the first time", () => {
         expect(first.replanned).toBe(3);
@@ -60,10 +59,10 @@ describe("planning the show", () => {
     });
 
     it("reuses the plans of marchers whose drill didn't change", () => {
-        const edited = [lines[0], timeline(830, 500, 120), lines[2]];
+        const edited = [lines[0], track(830, 500, 120), lines[2]];
         const next = planShow(
             ids,
-            edited,
+            show(edited),
             [1, 1, 1],
             clock,
             fp,
@@ -79,10 +78,10 @@ describe("planning the show", () => {
 
     it("plans everyone again when the band's rests change", () => {
         // marcher 1 and 2 stop moving: nobody moves, so marcher 3 stands at attention
-        const still = [timeline(800, 500, 0), timeline(830, 500, 0), lines[2]];
+        const still = [track(800, 500, 0), track(830, 500, 0), lines[2]];
         const next = planShow(
             ids,
-            still,
+            show(still),
             [1, 1, 1],
             clock,
             fp,
@@ -103,7 +102,7 @@ describe("planning the show", () => {
         );
         const next = planShow(
             ids,
-            lines,
+            show(lines),
             [1, 1, 1],
             faster,
             fp,

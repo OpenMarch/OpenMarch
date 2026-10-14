@@ -7,45 +7,21 @@ import {
     waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { and, eq } from "drizzle-orm";
-import { describeDbTests, schema } from "@/test/base";
-import { timelineFixtureMode } from "@/test/timelineMode";
-import {
-    harnessQueryClient,
-    probed,
-    selectPageAndMarchers,
-    mountFeature,
-} from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
-import { stopTimelineResolver } from "@/timeline/timelineStore";
 import { ExpandedTimeline } from "../TimelineVariants";
 import { timelineStoryModel } from "../TimelineStoryFixtures";
 import type { LabeledHoldMarks } from "../PageHoldMark";
-import PageTimeline from "../PageTimeline";
 
 /**
  * The selection's hold marks on the page boxes (docs/timeline/ui.md UI-18): drawn only with a
  * selection, a key where it moves and a bar where it holds, with the words on the page box.
  */
 
-// Page-mode queries invalidate through the app's query client; use the harness's
-const app = vi.hoisted(() => ({ client: (): unknown => null }));
-vi.mock("@/App", () => ({
-    get queryClient() {
-        return app.client();
-    },
-}));
-app.client = harnessQueryClient;
-
 beforeAll(async () => {
     await tolgee.run();
 });
 
-afterEach(() => {
-    cleanup();
-    stopTimelineResolver();
-});
+afterEach(cleanup);
 
 const commonProps = {
     model: timelineStoryModel,
@@ -263,123 +239,5 @@ describe("the hold mark's tooltip on the timeline's page boxes", () => {
         fireEvent.contextMenu(box);
         await pastTheDelay();
         expect(tooltip()).not.toBeInTheDocument();
-    });
-});
-
-describeDbTests("page mode's page strip", (it) => {
-    it("owner scenario: marks appear for the selection only, page 2 moves and pages 3–4 hold from it", async ({
-        db,
-        marchersAndPages,
-    }) => {
-        const { result, qc } = mountFeature(<PageTimeline />);
-        await waitFor(() => {
-            expect(probed().pages.length).toBeGreaterThan(4);
-            expect(probed().marchers?.length).toBeGreaterThan(0);
-        });
-        const marks = () =>
-            [
-                ...result.container.querySelectorAll(
-                    '[data-testid="page-hold-mark"]',
-                ),
-            ].map((el) => el.getAttribute("data-hold-mark"));
-        // Timeline mode reads the resolver on the timeline's own boxes; this strip shows none
-        if (timelineFixtureMode()) {
-            await selectPageAndMarchers(probed().pages[1]!, [
-                marchersAndPages.expectedMarchers[0]!.id,
-            ]);
-            expect(marks()).toEqual([]);
-            return;
-        }
-        const pages = probed().pages;
-        const id = marchersAndPages.expectedMarchers[0]!.id;
-        const other = marchersAndPages.expectedMarchers[1]!.id;
-        expect(marks(), "no marks with an empty selection").toEqual([]);
-
-        // Page 2 is edited and pages 3–4 are copies of it (the carry-forward's result)
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [1, 2, 3].map((i) => ({
-                marcher_id: id,
-                page_id: pages[i]!.id,
-                x: 321,
-                y: 123,
-            })),
-            carryForward: false,
-        });
-        await act(() => qc.invalidateQueries());
-        expect(marks(), "still none without a selection").toEqual([]);
-
-        await selectPageAndMarchers(pages[1]!, [id]);
-        const boxOf = (index: number) =>
-            result.container.querySelector(
-                `[timeline-page-id="${pages[index]!.id}"] > div`,
-            )!;
-        await waitFor(() =>
-            expect(
-                boxOf(1).querySelector('[data-testid="page-hold-mark"]'),
-            ).toHaveAttribute("data-hold-mark", "moves"),
-        );
-        expect(boxOf(1)).not.toHaveAttribute("title");
-        expect(boxOf(1)).toHaveAccessibleDescription(
-            "Selected marchers move on this page. They have their own move here",
-        );
-        // Its tooltip, on hover
-        fireEvent.pointerMove(boxOf(1));
-        expect(
-            await screen.findByRole("tooltip", {}, { timeout: 2000 }),
-        ).toHaveTextContent(
-            "Selected marchers move on this pageThey have their own move here",
-        );
-        // A press closes it, and the click still selects the page
-        fireEvent.pointerDown(boxOf(2));
-        fireEvent.pointerMove(boxOf(2));
-        await waitFor(() =>
-            expect(screen.queryByRole("tooltip")).not.toBeInTheDocument(),
-        );
-        fireEvent.click(boxOf(2));
-        await waitFor(() =>
-            expect(probed().selectedPage?.id).toBe(pages[2]!.id),
-        );
-        await act(() => new Promise((resolve) => setTimeout(resolve, 700)));
-        expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-        await selectPageAndMarchers(pages[1]!, [id]);
-        for (const index of [2, 3]) {
-            expect(
-                boxOf(index).querySelector('[data-testid="page-hold-mark"]'),
-            ).toHaveAttribute("data-hold-mark", "holds");
-            expect(boxOf(index)).toHaveAccessibleDescription(
-                `Selected marchers hold from Page ${pages[1]!.name}. They stand where Page ${pages[1]!.name} left them`,
-            );
-        }
-
-        // A partial selection: the other marcher moves on every page of the fixture
-        const [row3, row4] = await Promise.all(
-            [2, 3].map((i) =>
-                db
-                    .select()
-                    .from(schema.marcher_pages)
-                    .where(
-                        and(
-                            eq(schema.marcher_pages.marcher_id, other),
-                            eq(schema.marcher_pages.page_id, pages[i]!.id),
-                        ),
-                    )
-                    .get(),
-            ),
-        );
-        expect(row3!.x === row4!.x && row3!.y === row4!.y).toBe(false);
-        await selectPageAndMarchers(pages[1]!, [id, other]);
-        await waitFor(() =>
-            expect(
-                boxOf(3).querySelector('[data-testid="page-hold-mark"]'),
-            ).toHaveAttribute("data-hold-mark", "mixed"),
-        );
-        expect(boxOf(3)).toHaveAccessibleDescription(
-            `Some selected marchers hold from Page ${pages[1]!.name}. Some have their own move here`,
-        );
-
-        // Clearing the selection clears the marks
-        await act(async () => probed().setSelectedMarchers([]));
-        await waitFor(() => expect(marks()).toEqual([]));
     });
 });

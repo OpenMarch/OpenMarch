@@ -76,10 +76,19 @@ test("creates marchers", async ({ show }) => {
   it makes the app's writes fail with "database is locked".
 - Don't rely on the window size or on a particular marcher being in view; the
   two targets lay out slightly differently.
-- `expectCanvasMatchesShow(show)` waits until every marcher is drawn where the
-  file says it is. Call it after any step that moves marchers or changes page.
-- `test.use({ seedSql: [...] })` starts from an existing show
-  (see `tests/existing-show.spec.mts`).
+- `savedPositions(show, pageId)` (`positions.mts`) says where the file puts
+  each marcher at the end of a page, the way the app reads it: the app's
+  `readTimelineTables` and the resolver at the page's end beat. It runs in the
+  host bundle, so it needs `pnpm run build:browser` for both targets.
+- `expectCanvasMatchesShow(show)` waits until every marcher is drawn where
+  `savedPositions` puts it. Call it after any step that moves marchers or
+  changes page.
+- `test.use({ seedSql: seedShowSql({...}) })` (`seed.mts`) starts from an
+  existing show with music, pages and positions: page 0's are the marchers'
+  homes, and each later page is one timeline move (see
+  `tests/existing-show.spec.mts`). Plain SQL works too.
+- `addPageAt(page, measure)` adds a page flag at a measure with the timeline's
+  Go to field and **+**.
 - A test fails if the page logs an error or throws. Allow a known message with
   `test.use({ allowedPageErrors: [/.../] })`.
 - `await waitForIdle(page)` waits until the app's writes have finished. Use it

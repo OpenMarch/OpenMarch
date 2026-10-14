@@ -11,9 +11,8 @@ import {
     appearanceIsHidden,
     type AppearanceComponentOptional,
 } from "@/entity-components/appearance";
-import type { MarcherTimeline } from "@/utilities/Keyframes";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
-import { positionAtInto } from "@/view3d/positions";
+import type { ShowPositions } from "@/view3d/positions";
 
 /** Cylinder radius in meters (0.6 m across, ADR 0002 D-7). */
 export const PERFORMER_RADIUS = 0.3;
@@ -34,29 +33,25 @@ export const FALLBACK_ACCENT = "rgb(150, 126, 255)";
 export interface PerformerSlots {
     /** Marcher ID per instance. */
     ids: number[];
-    /** Timeline per instance; null when the marcher has no positions yet. */
-    timelines: (MarcherTimeline | null)[];
+    /** Every marcher's positions; null until they have loaded. */
+    positions: ShowPositions | null;
     /** Instance index by marcher ID. */
     indexById: Map<number, number>;
 }
 
 /**
- * Orders the performers by marcher ID and pairs each with its timeline. The
+ * Orders the performers by marcher ID, with the show's positions. The
  * instance count is the marcher count, so a marcher without positions keeps
  * its slot and is hidden.
  */
 export function buildPerformerSlots(
     marcherIds: readonly number[],
-    timelines: ReadonlyMap<number, MarcherTimeline>,
+    positions: ShowPositions | null,
 ): PerformerSlots {
     const ids = [...marcherIds].sort((a, b) => a - b);
     const indexById = new Map<number, number>();
     ids.forEach((id, i) => indexById.set(id, i));
-    return {
-        ids,
-        timelines: ids.map((id) => timelines.get(id) ?? null),
-        indexById,
-    };
+    return { ids, positions, indexById };
 }
 
 /** A performer's look, resolved like the 2D canvas's `CanvasMarcher`. */
@@ -66,8 +61,8 @@ export interface PerformerLook {
 }
 
 /**
- * Resolves one marcher's appearance cascade (marcher page, tags, section,
- * field theme; highest priority first) the way `CanvasMarcher.setAppearance`
+ * Resolves one marcher's appearance cascade (tags, section, field theme;
+ * highest priority first) the way `CanvasMarcher.setAppearance`
  * does: the first non-null fill wins, and visibility follows
  * `appearanceIsHidden`.
  */
@@ -133,12 +128,12 @@ export function writePerformerPositions(
     placed: Uint8Array,
 ): void {
     const point = scratchPoint;
+    const positions = slots.positions;
     for (let i = 0; i < slots.ids.length; i++) {
-        const timeline = slots.timelines[i];
         if (
-            timeline &&
+            positions &&
             visible[i] &&
-            positionAtInto(timeline, ms, fieldProperties, point)
+            positions.positionInto(slots.ids[i], ms, fieldProperties, point)
         ) {
             xz[i * 2] = point.x;
             xz[i * 2 + 1] = point.z;

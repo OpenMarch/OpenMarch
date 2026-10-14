@@ -3,10 +3,8 @@ import { asc } from "drizzle-orm";
 import { toast } from "sonner";
 import type { XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import { keepFixturesInPageMode } from "@/test/timelineMode";
 import { createLastPage } from "@/db-functions/page";
 import { createMarchers } from "@/db-functions/marcher";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
 import { performUndo } from "@/db-functions/history";
 import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
 import { readKeptAssignmentIds } from "@/db-functions/timelineKeptMarkers";
@@ -15,10 +13,7 @@ import type Page from "@/global/classes/Page";
 import { keepHereMenu } from "@/components/timeline/PageKeepChain";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { forgetEditRun } from "@/utilities/moveThemToo";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
 import { neighborPageTarget } from "../timelineCoordinateWrites";
 import { moveMarchersAndOfferFollowUp } from "../timelineMoveThemToo";
 import { pageFlags } from "../timelinePlayhead";
@@ -49,8 +44,6 @@ import {
  * step. A page's first move stays silent, and the pass-through and Move them too toasts win.
  */
 
-keepFixturesInPageMode("its tests build the show and convert it themselves");
-
 afterEach(() => {
     forgetEditRun();
     stopTimelineResolver();
@@ -66,7 +59,7 @@ const box = (page: Page) => {
 
 /**
  * The study's starter show: OT1–OT8 in a line at home (x = 100, 150, … 450; y = 300), pages 1–3
- * after it, nobody moving yet; converted, with the resolver running and the page boxes set. Pages
+ * after it, nobody moving yet, with the resolver running and the page boxes set. Pages
  * are numbered from 0 here, so page 1 is the study's page 2.
  */
 const starterShow = async (db: DbConnection) => {
@@ -89,16 +82,15 @@ const starterShow = async (db: DbConnection) => {
     ).map((m) => m.id);
     const { pages: unsorted } = await readShowTiming(db);
     const pages = [...unsorted].sort((a, b) => a.order - b.order);
-    await updateMarcherPages({
+    await moveMarchersInTarget({
         db,
-        modifiedMarcherPages: marchers.map((id, i) => ({
-            marcher_id: id,
-            page_id: pages[0]!.id,
+        target: { kind: "home" },
+        moves: marchers.map((marcherId, i) => ({
+            marcherId,
             x: 100 + 50 * i,
             y: 300,
         })),
     });
-    await convertPagesToTimeline(db);
     await startTimelineResolver(db);
     const boxes = pageFlags(pages).flatMap((f) =>
         f.range ? [{ ...f.range, name: f.page.name }] : [],

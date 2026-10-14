@@ -5,7 +5,6 @@ import {
 } from "@/components/exporting/utils/svg-generator";
 import { buildMarcherAppearancesByPageId } from "@/components/exporting/utils/exportAppearances";
 import {
-    allMarcherPagesQueryOptions,
     allMarchersQueryOptions,
     allSectionAppearancesQueryOptions,
     allTagAppearancesQueryOptions,
@@ -18,7 +17,6 @@ import type Page from "@/global/classes/Page";
 import type Marcher from "@/global/classes/Marcher";
 import type { FieldProperties } from "@openmarch/core";
 import { useTimingObjects } from "@/hooks";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { useQuery } from "@tanstack/react-query";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { timelinePreviewPositions } from "./svgPreviewPositions";
@@ -30,19 +28,9 @@ const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
  */
 const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
-    // Timeline mode drops the per-page appearance fields of marcher_pages (P7.14)
-    const timelineMode = useTimelineMode();
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { pages = [] } = useTimingObjects() ?? {};
-    // Only page mode reads them: timeline mode samples the resolver for the preview, and the
-    // appearances ignore them. Off, every page or flag edit no longer reads all of them again.
-    const { data: marcherPages } = useQuery({
-        ...allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-        enabled: !timelineMode,
-    });
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
@@ -62,7 +50,6 @@ const SvgPreviewHandler: React.FC = () => {
             !fieldProperties ||
             !marchers?.length ||
             !sectionAppearances ||
-            (!timelineMode && !marcherPages) ||
             !marcherIdsByTagId ||
             !allTagAppearances ||
             !tagAppearanceIdsByPageId ||
@@ -74,8 +61,6 @@ const SvgPreviewHandler: React.FC = () => {
         return buildMarcherAppearancesByPageId({
             sortedPages: pages,
             marchers,
-            marcherPagesMap: marcherPages,
-            timelineMode,
             sectionAppearances,
             marcherIdsByTagId,
             allTagAppearances,
@@ -83,11 +68,9 @@ const SvgPreviewHandler: React.FC = () => {
             fieldProperties,
         });
     }, [
-        timelineMode,
         fieldProperties,
         marchers,
         sectionAppearances,
-        marcherPages,
         marcherIdsByTagId,
         allTagAppearances,
         tagAppearanceIdsByPageId,
@@ -95,8 +78,6 @@ const SvgPreviewHandler: React.FC = () => {
     ]);
 
     const fieldPropertiesRef = useRef(fieldProperties);
-    const marcherPagesRef = useRef<PagePositionMap | undefined>(marcherPages);
-    const timelineModeRef = useRef(timelineMode);
     const marchersRef = useRef(Array.isArray(marchers) ? marchers : []);
     const pagesRef = useRef(pages);
     const marcherAppearancesByPageIdRef = useRef(marcherAppearancesByPageId);
@@ -104,14 +85,6 @@ const SvgPreviewHandler: React.FC = () => {
     useEffect(() => {
         fieldPropertiesRef.current = fieldProperties;
     }, [fieldProperties]);
-
-    useEffect(() => {
-        marcherPagesRef.current = marcherPages;
-    }, [marcherPages]);
-
-    useEffect(() => {
-        timelineModeRef.current = timelineMode;
-    }, [timelineMode]);
 
     useEffect(() => {
         marchersRef.current = Array.isArray(marchers) ? marchers : [];
@@ -196,18 +169,12 @@ const SvgPreviewHandler: React.FC = () => {
                 return SVG_GENERATION_ERROR;
             }
 
-            // Timeline mode: marcher_pages is frozen page-era data, so sample the live
-            // resolver, only when it is ready and without the write lock (P7.7)
-            let currentMarcherPages: PagePositionMap | undefined;
-            if (timelineModeRef.current) {
-                currentMarcherPages = await timelinePreviewPositions(
-                    useTimelineResolverStore.getState(),
-                    firstPage,
-                );
-                if (!currentMarcherPages) return SVG_GENERATION_ERROR;
-            } else {
-                currentMarcherPages = marcherPagesRef.current;
-            }
+            // Sample the live resolver, only when it is ready and without the write lock (P7.7)
+            const currentMarcherPages = await timelinePreviewPositions(
+                useTimelineResolverStore.getState(),
+                firstPage,
+            );
+            if (!currentMarcherPages) return SVG_GENERATION_ERROR;
 
             const svg = await generateSvgPreview(
                 currentFieldProps,

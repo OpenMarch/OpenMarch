@@ -80,9 +80,8 @@ updateData.mutate(newData);
 ```
 hooks/
 ├── queries/                    # React Query hooks
-│   ├── useAllPathways.ts         # Pathways table queries & mutations
-│   ├── useMarcherPages.ts     # Marcher pages queries & mutations
-│   ├── useMidsets.ts          # Midsets table queries & mutations
+│   ├── usePages.ts            # Pages table queries & mutations
+│   ├── useMarchers.ts         # Marchers table queries & mutations
 │   └── index.ts               # Export all hooks
 ├── useAnimation.ts            # Existing custom hooks
 └── README.md                  # This file
@@ -113,36 +112,16 @@ hooks/
 ### Basic Query
 
 ```typescript
-import { useMarcherPagesByPage } from '@/hooks/queries';
+import { useQuery } from "@tanstack/react-query";
+import { allMarchersQueryOptions } from "@/hooks/queries";
 
-function Field({ pageId }: { pageId: number }) {
-    const { data: marcherPages, isLoading, error } = useMarcherPagesByPage(pageId);
+function MarcherList() {
+    const { data: marchers, isLoading, error } = useQuery(allMarchersQueryOptions());
 
     if (isLoading) return <div>Loading...</div>;
     if (error) return <div>Error: {error.message}</div>;
 
-    return <div>{/* Render marcher pages */}</div>;
-}
-```
-
-### Mutation with Optimistic Updates
-
-```typescript
-import { useUpdateMarcherPages } from "@/hooks/queries";
-
-function MarcherEditor() {
-  const updateMarcherPages = useUpdateMarcherPages();
-
-  const handleUpdate = (marcherId: number, x: number, y: number) => {
-    updateMarcherPages.mutate([
-      {
-        marcher_id: marcherId,
-        page_id: pageId,
-        x,
-        y,
-      },
-    ]);
-  };
+    return <div>{/* Render marchers */}</div>;
 }
 ```
 

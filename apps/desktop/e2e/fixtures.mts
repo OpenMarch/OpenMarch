@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs-extra";
 import initSqlJs from "sql.js";
+import { DatabaseSync } from "node:sqlite";
 import { expectedAudioFiles } from "./mock-databases/audio-files.mjs";
 
 // Resolve __filename and __dirname for ES Modules
@@ -123,6 +124,11 @@ ENV ELECTRON_DISABLE_AUDIO=1
 ENV ELECTRON_IPC_BUFFER_SIZE=65536 */
 
 type MyFixtures = {
+    /**
+     * SQL run on the show file before the app opens it, for tests that start
+     * from an existing show (see `e2e/browser/seed.mts` for `seedShowSql`).
+     */
+    seedSql: string[];
     setupDb: { databasePath: string };
     electronApp: { app: ElectronApplication; databasePath: string; page: Page };
     electronAppEmpty: { app: ElectronApplication; page: Page };
@@ -134,8 +140,9 @@ type MyFixtures = {
     audioFiles: { expectedAudioFiles: string[] };
 };
 export const test = base.extend<MyFixtures>({
+    seedSql: [[], { option: true }],
     setupDb: [
-        async ({}, use, testInfo) => {
+        async ({ seedSql }, use, testInfo) => {
             // Ensure the temporary directory exists
             await fs.ensureDir(testInfo.outputDir);
 
@@ -143,6 +150,15 @@ export const test = base.extend<MyFixtures>({
             const tempDatabaseFile = getTempDotsPath(testInfo);
             try {
                 await fs.copyFile(blankDatabaseFile, tempDatabaseFile);
+                if (seedSql.length > 0) {
+                    const writer = new DatabaseSync(tempDatabaseFile);
+                    try {
+                        writer.exec("PRAGMA foreign_keys = ON");
+                        for (const statement of seedSql) writer.exec(statement);
+                    } finally {
+                        writer.close();
+                    }
+                }
                 await use({ databasePath: tempDatabaseFile });
             } catch (error) {
                 console.error("Error setting up database:", error);

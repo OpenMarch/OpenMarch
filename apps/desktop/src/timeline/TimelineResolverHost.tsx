@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
 import type { DbConnection } from "@/db-functions/types";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { startTimelineResolver, stopTimelineResolver } from "./timelineStore";
 import { useTimelineSelectionHost } from "./useTimelineSelectionHost";
 import { useTimelinePageBridge } from "./useTimelinePageBridge";
@@ -16,7 +15,7 @@ import {
 
 declare global {
     interface Window {
-        /** Timeline dev tools; present only while the file's timeline dev flag is on */
+        /** Timeline dev tools; present only in development builds */
         openmarchTimeline?: TimelineDevApi;
     }
 }
@@ -61,25 +60,22 @@ export function useTimelineDevApi(
 }
 
 /**
- * Runs the timeline resolver for the open file while its timeline dev flag (`timelineMode` in
- * `workspace_settings`) is on, and, in development builds only, installs the dev console API.
- * With the flag off, nothing subscribes, nothing is built and the console API is absent.
+ * Runs the timeline resolver for the open file and, in development builds only, installs the dev
+ * console API.
  */
 export default function TimelineResolverHost() {
-    const enabled = useTimelineMode();
-    useTimelineResolverSession(db, enabled);
+    useTimelineResolverSession(db, true);
     // The stored timelines the UI-9 selection resolves to (P8.11)
-    useTimelineSelectionHost(db, enabled);
+    useTimelineSelectionHost(db, true);
     // TEMPORARY (P8.12): the legacy selected page follows the playhead
-    useTimelinePageBridge(enabled);
+    useTimelinePageBridge(true);
     // UI-9: marchers outside the selected timeline can't stay selected
-    useDeselectDimmedMarchers(enabled);
+    useDeselectDimmedMarchers(true);
     // UI-9 Play: loop a selected range, stop at the end, leave the playhead where a pause lands
-    useTimelinePlaybackDriver(enabled);
+    useTimelinePlaybackDriver(true);
     // UI-18 keep later pages: the kept spots the chains and the inspector line read
-    useKeptAssignmentsHost(db, enabled);
-    // The console API can write fixtures into the file. The flag lives in the file itself, so it
-    // alone mustn't expose a write path in a release build: development builds only.
-    useTimelineDevApi(db, enabled && import.meta.env.DEV);
+    useKeptAssignmentsHost(db, true);
+    // The console API can write fixtures into the file: development builds only
+    useTimelineDevApi(db, import.meta.env.DEV);
     return null;
 }

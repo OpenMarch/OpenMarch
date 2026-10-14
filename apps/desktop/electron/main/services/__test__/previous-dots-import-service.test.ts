@@ -8,30 +8,23 @@ import {
     schema,
 } from "@/test/base";
 import { eq } from "drizzle-orm";
-import { updateMarcherPages } from "@/db-functions/marcherPage";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
 import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
-import { updateWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
 import { fromDatabasePages } from "@/global/classes/Page";
-import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { acquireExportResolver } from "@/timeline/timelineExport";
 import {
-    isSourceInTimelineMode,
     lastPageEndBeat,
     SourceTimelineReadError,
 } from "@/timeline/sourceTimelinePositions";
-import {
-    keepFixturesInPageMode,
-    withPageEraFreezeLifted,
-} from "@/test/timelineMode";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
 
-// P7.17: these tests set up timeline mode themselves
+// The fixture stays an unconverted page-era file (an older show); tests convert it when they
+// need a timeline source
 keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
+    "its tests read a page-era source, or convert it into a timeline source",
 );
 
 vi.mock("electron", () => ({ dialog: {}, ipcMain: {} }));
@@ -40,17 +33,10 @@ const { readPreviousDotsFile } =
     await import("../previous-dots-import-service");
 
 /**
- * "Import from a previous show" starts the new show from the source's last page. A timeline-mode
- * source's `marcher_pages` rows are frozen page-era data, so its positions come from the source's
- * resolver at the last page's end beat (docs/timeline/phases/07-page-parity.md P7.16). A page-mode
- * source is read as before.
+ * "Import from a previous show" starts the new show from the source's last page. A timeline source's
+ * positions come from its resolver at the last page's end beat (docs/timeline/phases/07-page-parity.md
+ * P7.16). A page-era source that was never converted is read from its last page's `marcher_pages`.
  */
-
-const setTimelineMode = (db: DbConnection, timelineMode: boolean) =>
-    updateWorkspaceSettingsParsed({
-        db,
-        settings: workspaceSettingsSchema.parse({ timelineMode }),
-    });
 
 const lastPage = async (db: DbConnection) => {
     const { pages } = await readShowTiming(db);
@@ -85,8 +71,8 @@ const lastPageRows = async (db: DbConnection) => {
     const page = await lastPage(db);
     return db
         .select()
-        .from(schema.marcher_pages)
-        .where(eq(schema.marcher_pages.page_id, page.id))
+        .from(pageEra.marcher_pages)
+        .where(eq(pageEra.marcher_pages.page_id, page.id))
         .all();
 };
 
@@ -152,7 +138,7 @@ const dropTriggers = (raw: DatabaseSync) => {
 };
 
 describeDbTests("readPreviousDotsFile", (it) => {
-    it("page mode reads the last page's marcher_pages rows, as before", async ({
+    it("a page-era source, never converted, reads the last page's marcher_pages rows", async ({
         db,
         marchersAndPages: _,
         task,
@@ -174,38 +160,12 @@ describeDbTests("readPreviousDotsFile", (it) => {
         }
     });
 
-    it("a converted show with the flag off still reads marcher_pages", async ({
+    it("a timeline source samples the resolver at the last page's end beat", async ({
         db,
         marchersAndPages: _,
         task,
     }) => {
         await convertPagesToTimeline(db);
-        await setTimelineMode(db, false);
-        const page = await lastPage(db);
-        await updateMarcherPages({
-            db,
-            modifiedMarcherPages: [
-                { marcher_id: 1, page_id: page.id, x: 11, y: 22 },
-            ],
-        });
-
-        const { coordinates } = await readPreviousDotsFile(
-            getTempDotsPath(task),
-        );
-
-        expect((await byMarcherId(db, coordinates)).get(1)).toMatchObject({
-            x: 11,
-            y: 22,
-        });
-    });
-
-    it("timeline mode samples the resolver at the last page's end beat, never marcher_pages", async ({
-        db,
-        marchersAndPages: _,
-        task,
-    }) => {
-        await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const page = await lastPage(db);
         const before = await acquireExportResolver(db);
         const [x, y] = before.positionAt(1, pageEndBeat(page));
@@ -214,16 +174,6 @@ describeDbTests("readPreviousDotsFile", (it) => {
             page,
             moves: [{ marcherId: 1, x: x + 24, y: y - 12 }],
         });
-        // A frozen page-era row that disagrees with the timeline is ignored (written with the
-        // freeze lifted, as only a file from before the conversion could have it)
-        await withPageEraFreezeLifted(db, () =>
-            updateMarcherPages({
-                db,
-                modifiedMarcherPages: [
-                    { marcher_id: 2, page_id: page.id, x: 1, y: 1 },
-                ],
-            }),
-        );
         const resolver = await acquireExportResolver(db);
 
         const { coordinates } = await readPreviousDotsFile(
@@ -239,7 +189,6 @@ describeDbTests("readPreviousDotsFile", (it) => {
         }
         expect(imported.get(1)!.x).toBeCloseTo(x + 24, 9);
         expect(imported.get(1)!.y).toBeCloseTo(y - 12, 9);
-        expect(imported.get(2)).not.toMatchObject({ x: 1, y: 1 });
     });
 });
 
@@ -291,13 +240,12 @@ describeDbTests("readPreviousDotsFile on unusual sources", (it) => {
             expect(Object.keys(marcher).sort()).toEqual(MARCHER_KEYS);
     });
 
-    it("says the timeline couldn't be read, closes the file, and never falls back to marcher_pages", async ({
+    it("says the timeline couldn't be read, and closes the file", async ({
         db,
         marchersAndPages: _,
         task,
     }) => {
         await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         await withSourceCopy(task, async (copy) => {
             editFile(copy, (raw) => {
                 dropTriggers(raw);
@@ -329,7 +277,6 @@ describeDbTests("readPreviousDotsFile on unusual sources", (it) => {
         task,
     }) => {
         await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         const page = await lastPage(db);
         const endBeat = pageEndBeat(page);
         const assignments = await db
@@ -366,13 +313,12 @@ describeDbTests("readPreviousDotsFile on unusual sources", (it) => {
         expect(imported.y).toBeCloseTo(held[1], 9);
     });
 
-    it("a timeline-mode source with no pages fails as page mode does", async ({
+    it("a timeline source with no pages fails as a page-era one does", async ({
         db,
         marchersAndPages: _,
         task,
     }) => {
         await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         await withSourceCopy(task, async (copy) => {
             editFile(copy, (raw) => {
                 dropTriggers(raw);
@@ -392,25 +338,11 @@ describeDbTests("readPreviousDotsFile on unusual sources", (it) => {
         task,
     }) => {
         await convertPagesToTimeline(db);
-        await setTimelineMode(db, true);
         await withSourceCopy(task, async (copy) => {
             const before = fs.readFileSync(copy);
             await readPreviousDotsFile(copy);
             expect(fs.readFileSync(copy).equals(before)).toBe(true);
         });
-    });
-});
-
-describe("isSourceInTimelineMode", () => {
-    plainIt("is on only when the settings parse and turn the flag on", () => {
-        expect(isSourceInTimelineMode(undefined)).toBe(false);
-        expect(isSourceInTimelineMode("not json")).toBe(false);
-        expect(isSourceInTimelineMode("{}")).toBe(false);
-        expect(isSourceInTimelineMode('{"timelineMode":false}')).toBe(false);
-        expect(isSourceInTimelineMode('{"timelineMode":true}')).toBe(true);
-        expect(
-            isSourceInTimelineMode('{"timelineMode":true,"defaultTempo":-1}'),
-        ).toBe(false);
     });
 });
 

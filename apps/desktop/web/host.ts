@@ -121,6 +121,8 @@ export function registerHandlers({ onLeaveShow }: WebHostCallbacks) {
     ipcMain.handle("recent-files:get", () => []);
     ipcMain.handle("newShow:getPending", () => false);
     ipcMain.handle("newShow:getDraftPath", () => null);
+    ipcMain.handle("conversion:getPending", () => null);
+    ipcMain.handle("load-file:takeRefusal", () => null);
     ipcMain.handle("plugins:list", () => []);
     ipcMain.handle("auth:get-state", () => ({
         isAuthenticated: false,
@@ -203,10 +205,10 @@ export type OpenResult =
 
 /**
  * Opens `bytes` as the show, or a new show when `bytes` is null, the way
- * `openShowDatabase` in `electron/main/openShow.ts` does with convert on open
- * turned on: check the version, migrate, then either set up the new file as a
- * timeline file or convert a page-era file to timelines. There is no backup
- * step, since the show only lives in this page.
+ * `openShowDatabase` in `electron/main/openShow.ts` does: check the version,
+ * then either set up a new file as a timeline file, convert a page-era file
+ * to timelines, or migrate a timeline file. There is no backup step and no
+ * question first, since the show only lives in this page.
  */
 export async function openShow(bytes: Uint8Array | null): Promise<OpenResult> {
     const isNewFile = bytes === null;
@@ -231,22 +233,32 @@ export async function openShow(bytes: Uint8Array | null): Promise<OpenResult> {
     const db = DatabaseServices.connect();
     try {
         const orm = getOrm(db);
-        const migrator = new DrizzleMigrationService(orm, db);
-        applyFileVersionDecision(db, isNewFile);
-        await migrator.applyPendingMigrations(MIGRATIONS_FOLDER);
-
         if (isNewFile) {
+            applyFileVersionDecision(db, true);
+            await new DrizzleMigrationService(orm, db).applyPendingMigrations(
+                MIGRATIONS_FOLDER,
+            );
             await DrizzleMigrationService.initializeDatabase(orm, db);
             initializeNewFileAsTimeline(db);
             return { ok: true, converted: false };
         }
 
-        if (checkConvertOnOpen(db, SHOW_PATH).action !== "convert")
+        const check = checkConvertOnOpen(db, SHOW_PATH);
+        if (check.action === "none") {
+            await new DrizzleMigrationService(orm, db).applyPendingMigrations(
+                MIGRATIONS_FOLDER,
+            );
             return { ok: true, converted: false };
+        }
+        // A page-era demo converts without asking: it only lives in this page.
         const result = await withMainProcessBridge(db, () =>
-            convertFileOnOpen(SHOW_PATH, db, {
-                backup: () => ({ ok: true, backupPath: "" }) as never,
-            }),
+            convertFileOnOpen(
+                SHOW_PATH,
+                db,
+                MIGRATIONS_FOLDER,
+                { backupPath: check.backupPath },
+                { backup: () => ({ ok: true, backupPath: "" }) as never },
+            ),
         );
         if (result.status === "conversion-failed") {
             console.error(result.error);

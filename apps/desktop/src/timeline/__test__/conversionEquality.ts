@@ -1,19 +1,16 @@
 import { asc } from "drizzle-orm";
+import { Path } from "@openmarch/core";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
 import { schema, type DbConnection } from "@/test/base";
-import {
-    combineMarcherTimelines,
-    getMarcherTimelines,
-} from "@/hooks/queries/useCoordinateData";
-import { pathwayMapFromArray } from "@/hooks/queries/usePathways";
-import type { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import type Page from "@/global/classes/Page";
 import type Beat from "@/global/classes/Beat";
 import {
     getCoordinatesAtTime,
+    type CoordinateDefinition,
     type MarcherTimeline,
 } from "@/utilities/Keyframes";
 import type { PageConversionReport } from "../convert/planPageConversion";
-import { readShowTiming } from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "../timelineCanvas";
 import { timeAtBeat } from "../timeMap";
 import { useTimelineResolverStore } from "../timelineStore";
@@ -23,9 +20,10 @@ import { useTimelineResolverStore } from "../timelineStore";
  * resolver positions with page-mode playback, on the same database, after
  * `convertPagesToTimeline` and `startTimelineResolver`.
  *
- * The page-mode side is the app's own playback code, not a copy of it: `getMarcherTimelines` and
- * `combineMarcherTimelines` build the keyframes (one per page, at the page's end) and
- * `getCoordinatesAtTime` interpolates them, as `useAnimation` does.
+ * The page-mode side is a small reference built from the page-era rows, as page-mode playback
+ * built it (the app no longer has that code): one keyframe per marcher per page with a row, at the
+ * page's end, carrying the row's pathway and path positions, interpolated by the app's
+ * `getCoordinatesAtTime`. The show must be converted with its page-era tables kept.
  *
  * Per C-7 a timeline move follows beats, while page mode moves linearly in milliseconds. So the
  * authoritative comparison is at the same beat position: the page-mode keyframes are built a
@@ -49,7 +47,7 @@ import { useTimelineResolverStore } from "../timelineStore";
  * the same beat: the converter's interpolated destinations, along a pathway too, and holds.
  */
 
-/** Distances are in canvas pixels, like `marcher_pages.x` and `y`. */
+/** Distances are in canvas pixels, like the page-era `marcher_pages.x` and `y`. */
 export interface ErrorStats {
     samples: number;
     max: number;
@@ -155,28 +153,44 @@ export function pageHasUnevenTempo(
     );
 }
 
-type Row = typeof schema.marcher_pages.$inferSelect;
+export type PageEraRow = typeof pageEra.marcher_pages.$inferSelect;
+type Row = PageEraRow;
 
-/** Page-mode keyframes for every marcher, with each page's keyframe at `at(page)`. */
-function pageModeKeyframes(
+/**
+ * Page-mode keyframes for every marcher, with each page's keyframe at `at(page)`: the row's
+ * position, its pathway, and its path positions (0 and 1 when unset), as page-mode playback had
+ * them.
+ */
+export function pageModeKeyframes(
     pages: readonly Page[],
     rowsByPage: Map<number, Row[]>,
-    pathwaysById: ReturnType<typeof pathwayMapFromArray>,
+    pathwaysById: ReadonlyMap<number, Path>,
     at: (page: Page) => number,
 ): Map<number, MarcherTimeline> {
-    return combineMarcherTimelines(
-        pages.map((page) =>
-            getMarcherTimelines(
-                at(page),
-                Object.fromEntries(
-                    (rowsByPage.get(page.id) ?? []).map((mp) => [
-                        mp.marcher_id,
-                        mp,
-                    ]),
-                ) as unknown as MarcherPagesByMarcher,
-                pathwaysById,
-            ),
-        ),
+    const pathMaps = new Map<number, Map<number, CoordinateDefinition>>();
+    for (const page of pages)
+        for (const row of rowsByPage.get(page.id) ?? []) {
+            let pathMap = pathMaps.get(row.marcher_id);
+            if (!pathMap) pathMaps.set(row.marcher_id, (pathMap = new Map()));
+            pathMap.set(at(page), {
+                x: row.x,
+                y: row.y,
+                path:
+                    row.path_data_id !== null
+                        ? pathwaysById.get(row.path_data_id)
+                        : undefined,
+                previousPathPosition: row.path_start_position || 0,
+                nextPathPosition: row.path_end_position || 1,
+            });
+        }
+    return new Map(
+        [...pathMaps].map(([marcherId, pathMap]) => [
+            marcherId,
+            {
+                pathMap,
+                sortedTimestamps: [...pathMap.keys()].sort((a, b) => a - b),
+            },
+        ]),
     );
 }
 
@@ -229,7 +243,7 @@ export async function compareConversion(
             .orderBy(asc(schema.marchers.id))
             .all()
     ).map((m) => m.id);
-    const rows = await db.select().from(schema.marcher_pages).all();
+    const rows = await db.select().from(pageEra.marcher_pages).all();
     const rowsByPage = new Map<number, Row[]>();
     for (const row of rows) {
         const list = rowsByPage.get(row.page_id);
@@ -246,8 +260,11 @@ export async function compareConversion(
         }
         return undefined;
     };
-    const pathwaysById = pathwayMapFromArray(
-        await db.select().from(schema.pathways).all(),
+    const pathwaysById = new Map(
+        (await db.select().from(pageEra.pathways).all()).map((pathway) => [
+            pathway.id,
+            Path.fromJson(pathway.path_data, undefined, undefined, pathway.id),
+        ]),
     );
 
     // The app's keyframes, in milliseconds, and the same keyframes on a beat axis (C-7)

@@ -222,6 +222,20 @@
         "title": "Command palette",
         "unavailable": "Not available right now"
     },
+    "convertShow": {
+        "backupFolder": "In {folder}",
+        "backupIntro": "Before converting, OpenMarch saves an untouched copy of it next to your show:",
+        "backupUse": "Your show is converted when you click Confirm. If you need to, you can open the copy in older versions of OpenMarch.",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "convertingTitle": "Converting “{fileName}”…",
+        "description": "“{fileName}” was made with an older version of OpenMarch. To open it, this version converts it to timelines. After that, older versions of OpenMarch can't open it.",
+        "progress": {
+            "backingUp": "Saving the copy…",
+            "converting": "Converting page {done} of {total}…"
+        },
+        "title": "Convert this show to timelines?"
+    },
     "coordinateRoundingSettings": {
         "custom": "Custom",
         "disableOffset": "Disable Offset",
@@ -324,7 +338,6 @@
         "individualChartsTooltip": "Create customized drill chart PDFs for each individual marcher.",
         "individualChartsTooltipDescription": "If this is not checked, one overview drill chart PDF will be created.",
         "marcher": "Marcher: {status}",
-        "marcherPagesNotLoaded": "Marcher pages not loaded",
         "marcherPositionsMissing": "This marcher has no position on some pages, so its chart was skipped.",
         "marchersNotLoaded": "Marchers not loaded",
         "marchersWithoutPositions": "No positions found for {drillNumbers}.",
@@ -1539,7 +1552,7 @@
             "destinationShapeUnsuitable": "That destination doesn't fit the transition. A follow-the-leader transition can't end on a block, and a block needs at least as many places as the transition has slots.",
             "followLeaderBlock": "A follow-the-leader transition can't end on a block. Choose a line, curve, circle or box instead.",
             "followLeaderNeedsShape": "A follow-the-leader transition needs a shape to follow.",
-            "legacyConvertedTimeline": "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion), or run convertPages('{ replace: true }') from the developer console.",
+            "legacyConvertedTimeline": "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion).",
             "notReady": "The timeline is still loading. Try again in a moment.",
             "numberOutOfRange": "A number is out of range. Beats, layers, slot counts and positions must be whole or finite numbers within the allowed limits.",
             "pathParamsInvalid": "That path setting isn't valid. An arc's bulge can be at most half the distance between its ends, and waypoints must be points on the field.",

@@ -1,5 +1,6 @@
 import { test, expect } from "../fixtures.mjs";
 import { createMarchers, expectCanvasMatchesShow } from "../app.mjs";
+import { savedPositions } from "../positions.mjs";
 
 test("creates marchers in a section", async ({ show }) => {
     await createMarchers(show.page, { quantity: 8, section: "Baritone" });
@@ -14,12 +15,10 @@ test("creates marchers in a section", async ({ show }) => {
             drill_order: i + 1,
         })),
     );
-    // Each marcher gets a position on the only page.
-    expect(
-        await show.query(
-            "SELECT marcher_id FROM marcher_pages WHERE page_id = 0",
-        ),
-    ).toHaveLength(8);
+    // Each marcher gets a home, its spot on the only page, and no two share one.
+    const homes = await savedPositions(show, 0);
+    expect(homes).toHaveLength(8);
+    expect(new Set(homes.map(({ x, y }) => `${x},${y}`)).size).toBe(8);
     await expectCanvasMatchesShow(show);
 });
 

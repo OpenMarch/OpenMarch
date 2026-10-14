@@ -1,11 +1,9 @@
 import { afterEach, expect } from "vitest";
 import { and, asc, eq } from "drizzle-orm";
 import { describeDbTests, schema } from "@/test/base";
-import { keepFixturesInPageMode } from "@/test/timelineMode";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import {
     startTimelineResolver,
     stopTimelineResolver,
@@ -16,8 +14,7 @@ import { pageEndBeat } from "../timelineCanvas";
 import { compareConversion, lossReportCounts } from "./conversionEquality";
 import { buildConversionShow } from "./conversionShow";
 
-// The show is built in page mode and converted by the test itself
-keepFixturesInPageMode("the test builds a page show and converts it itself");
+// The test builds a page show on the blank file (adding the page-era tables) and converts it
 
 afterEach(() => stopTimelineResolver());
 
@@ -29,9 +26,12 @@ afterEach(() => stopTimelineResolver());
  * bucket. Damaged-file gaps glide like page mode (P6.7) and must match at the same beat too.
  */
 describeDbTests("conversion equality", (it) => {
-    it("plays the generated show back like page mode", async ({ db }) => {
+    it("plays the generated show back like the page show", async ({ db }) => {
         const show = await buildConversionShow(db);
-        const { report } = await convertPagesToTimeline(db);
+        // The page-era rows stay for the comparison
+        const { report } = await convertPagesToTimeline(db, {
+            keepPageTables: true,
+        });
         await startTimelineResolver(db);
         expect(useTimelineResolverStore.getState().resolver).not.toBeNull();
         const equality = await compareConversion(db, { interiorSamples: 5 });
@@ -90,11 +90,14 @@ describeDbTests("conversion equality", (it) => {
         const page1 = pages[1]!;
         const lateRow = await db
             .select()
-            .from(schema.marcher_pages)
+            .from(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, page1.id),
-                    eq(schema.marcher_pages.marcher_id, show.lateHomeMarcherId),
+                    eq(pageEra.marcher_pages.page_id, page1.id),
+                    eq(
+                        pageEra.marcher_pages.marcher_id,
+                        show.lateHomeMarcherId,
+                    ),
                 ),
             )
             .get();

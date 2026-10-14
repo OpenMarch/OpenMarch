@@ -1,5 +1,3 @@
-export * from "./pathways";
-export * from "./marcherPage";
 export * from "./types";
 export * from "./history";
 export * from "./page";
@@ -8,9 +6,6 @@ export * from "./beat";
 export * from "./measures";
 export * from "./utility";
 export * from "./sectionAppearance";
-export * from "./shapes";
-export * from "./shapePages";
-export * from "./shapePageMarchers";
 export * from "./tag";
 export * from "./timelineErrors";
 export * from "./timelines";

@@ -9,10 +9,8 @@ import {
 import { deleteTimelinesInTransaction } from "@/db-functions/timelines";
 import type Page from "@/global/classes/Page";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import type { CarrySpan } from "../timelineCarryForward";
 import { neighborPageTarget } from "../timelineCoordinateWrites";
 import { marcherHoldState, type NamedFlag } from "../timelineHoldState";
@@ -21,7 +19,6 @@ import {
     pageHoldMarkHint,
     pageHoldMarkLabel,
     pageHoldMarks,
-    pageModeMarcherPageStates,
     timelineMarcherPageStates,
     type MarcherPageState,
     type PageHoldMark,
@@ -36,7 +33,7 @@ import { useTimelineHoldMarks } from "../usePageHoldMarks";
 /**
  * Where the selected marchers hold, on the page boxes (docs/timeline/ui.md UI-18,
  * defined-coordinates 08): each page after the first moves, holds or is mixed for the selection,
- * read from resolver spans in timeline mode and from rows in page mode.
+ * read from resolver spans.
  */
 
 const hold = (start: number, end: number): CarrySpan => ({
@@ -56,7 +53,7 @@ const NAMES = ["1", "2", "3", "4", "5"];
 const MOVES = { kind: "moves" } as const;
 const holdsSince = (since: number) => ({ kind: "holds", since }) as const;
 
-describe("one marcher's states, timeline mode", () => {
+describe("one marcher's states", () => {
     it("owner scenario: moved on page 2, it moves there and holds from page 2 on pages 3–4", () => {
         const spans = [hold(-Infinity, 1), own(1, 8), hold(8, Infinity)];
         expect(timelineMarcherPageStates(spans, FLAGS.slice(0, 4))).toEqual([
@@ -141,38 +138,6 @@ describe("one marcher's states, timeline mode", () => {
                 );
             });
         }
-    });
-});
-
-describe("one marcher's states, page mode", () => {
-    const at = (x: number, y = 0) => ({ x, y });
-
-    it("owner scenario: page 2 edited and pages 3–4 copied from it hold from page 2", () => {
-        expect(
-            pageModeMarcherPageStates([at(0), at(10), at(10), at(10)]),
-        ).toEqual([null, MOVES, holdsSince(1), holdsSince(1)]);
-    });
-
-    it("compares within 1e-6, and a later move starts a new run", () => {
-        expect(
-            pageModeMarcherPageStates([
-                at(0),
-                at(0 + 5e-7, 5e-7),
-                at(4),
-                at(4),
-                at(4 + 2e-6),
-            ]),
-        ).toEqual([null, holdsSince(0), MOVES, holdsSince(2), MOVES]);
-    });
-
-    it("a page without a row is unknown and breaks the run", () => {
-        expect(
-            pageModeMarcherPageStates([at(0), undefined, at(0), at(0)]),
-        ).toEqual([null, null, null, holdsSince(2)]);
-    });
-
-    it("the first page has no state", () => {
-        expect(pageModeMarcherPageStates([at(3)])).toEqual([null]);
     });
 });
 

@@ -39,7 +39,15 @@ import {
     startAutomaticUpdates,
 } from "./update";
 import { repairDatabase } from "../database/repair";
-import { OPEN_STOPPED_STATUS } from "../database/convertOnOpenGate";
+import {
+    NEEDS_CONVERSION_STATUS,
+    OPEN_STOPPED_STATUS,
+} from "../database/convertOnOpenGate";
+import {
+    createConversionQuestion,
+    PENDING_CONVERSION_CHANNEL,
+    pendingConversionFor,
+} from "./conversionQuestion";
 import { electronConvertOnOpenDialogs } from "./convertOnOpenDialogs";
 import {
     conversionWorkersStopped,
@@ -53,6 +61,7 @@ import {
     resumeSqlProxyAfterReload,
     withOpenLock,
     type OpenShowDeps,
+    type OpenShowOptions,
 } from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
@@ -354,15 +363,51 @@ async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
 
 /**
  * Lets the renderer explain a refused file (for example one from a newer release). Skips an open
- * that a main-process dialog already explained (convert on open), so no second dialog shows.
+ * that a main-process dialog already explained (convert on open), and a page-era file waiting for
+ * the person to agree to convert it (the renderer asks), so no second dialog shows.
  */
+/**
+ * A refused open that closed the show that was open. The window reloads to the launch page,
+ * which takes this with `load-file:takeRefusal` and explains it there.
+ */
+let refusalAfterReload: number | null = null;
+
 function sendLoadFileResponse(resCode: number) {
-    if (resCode === OPEN_STOPPED_STATUS) return;
+    if (resCode === OPEN_STOPPED_STATUS || resCode === NEEDS_CONVERSION_STATUS)
+        return;
+    // The reloaded launch page explains it (`load-file:takeRefusal`).
+    if (resCode === refusalAfterReload) return;
     win?.webContents.send("load-file-response", resCode);
 }
 
+/**
+ * The page-era file waiting for the person to agree to convert it. Asked when an open returns
+ * `NEEDS_CONVERSION_STATUS`; the renderer's `ConvertShowDialog` reads it when the window loads
+ * and hears of each change, shows it over the show that is open (or the launch page), and
+ * answers with `conversion:confirm` or `conversion:cancel`. Any other open, a new show or a
+ * close forgets it.
+ */
+const conversionQuestion = createConversionQuestion((pending) => {
+    if (win && !win.isDestroyed())
+        win.webContents.send(PENDING_CONVERSION_CHANNEL, pending);
+});
+
+/** Closes the show that is open, then converts and opens the pending file: the person agreed. */
+async function confirmPendingConversion(): Promise<number> {
+    const pending = conversionQuestion.take();
+    if (!pending) return -1;
+    const resCode = await setActiveDb(pending.filePath, false, {
+        conversionConfirmed: true,
+        conversionBackupPath: pending.backupPath,
+    });
+    if (resCode === 200) addRecentFile(pending.filePath);
+    sendLoadFileResponse(resCode);
+    return resCode;
+}
+
 async function openRecentFile(filePath: string) {
-    store.set("databasePath", filePath);
+    // setActiveDb saves the path once the file opens; a page-era file only asks first, and the
+    // show that is open stays the one to reopen.
     addRecentFile(filePath);
 
     const resCode = await setActiveDb(filePath);
@@ -420,8 +465,13 @@ function initDatabaseIpcHandlers() {
             const newPath = await repairDatabase(dbPath);
             const resCode = await setActiveDb(newPath);
             if (resCode === 200) return newPath;
-            // A main-process dialog already explained why it didn't open.
-            if (resCode === OPEN_STOPPED_STATUS) return null;
+            // A main-process dialog already explained why it didn't open, or the renderer asks
+            // the person before converting the repaired copy.
+            if (
+                resCode === OPEN_STOPPED_STATUS ||
+                resCode === NEEDS_CONVERSION_STATUS
+            )
+                return null;
             throw new Error(
                 `The repaired file was saved at ${newPath} but couldn't be opened (status ${resCode}).`,
             );
@@ -431,6 +481,17 @@ function initDatabaseIpcHandlers() {
         }
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle("conversion:getPending", () => conversionQuestion.current());
+    ipcMain.handle("load-file:takeRefusal", () => {
+        const resCode = refusalAfterReload;
+        refusalAfterReload = null;
+        return resCode;
+    });
+    ipcMain.handle("conversion:confirm", async () =>
+        confirmPendingConversion(),
+    );
+    // The show that is open (if any) was never touched, so the person is back where they were.
+    ipcMain.handle("conversion:cancel", () => conversionQuestion.forget());
 }
 
 function initRecentFilesIpcHandlers() {
@@ -842,11 +903,15 @@ async function openDatabaseAtPathWithoutReload(
         if (result.sqlSuspension !== undefined)
             DatabaseServices.resumeSqlProxy(result.sqlSuspension);
         if (result.status !== 200) {
-            return result.status === OPEN_STOPPED_STATUS ? result.status : -1;
+            return result.status === OPEN_STOPPED_STATUS ||
+                result.status === NEEDS_CONVERSION_STATUS
+                ? result.status
+                : -1;
         }
 
         store.set("databasePath", filePath);
         win?.setTitle("OpenMarch - " + filePath);
+        conversionQuestion.forget();
         return 200;
     } catch (error) {
         captureException(error);
@@ -1068,6 +1133,23 @@ export async function discardNewShowDraft(): Promise<number> {
     return 200;
 }
 
+/**
+ * Deletes the new-show draft after another show opened in its place. The DB connection already
+ * points at `openedPath`, so unlike `discardNewShowDraft` this leaves it alone.
+ */
+async function forgetReplacedNewShowDraft(openedPath: string): Promise<void> {
+    if (!currentNewShowDraftPath) return;
+    const draftPath = resolve(currentNewShowDraftPath);
+    if (draftPath === resolve(openedPath)) return;
+    currentNewShowDraftPath = null;
+    try {
+        if (fs.existsSync(draftPath)) await unlinkFileWithRetry(draftPath);
+    } catch (error) {
+        // An orphan draft is harmless; the drafts folder only holds throwaway files.
+        console.error("Error deleting replaced new show draft:", error);
+    }
+}
+
 /** Runs a renderer action chosen in the app menu (docs/adr/0003-menu-actions-ipc.md) */
 export function sendMenuAction(action: string) {
     win?.webContents.send(MENU_ACTION_CHANNEL, action);
@@ -1198,7 +1280,7 @@ export async function loadDatabaseFile() {
         .then(async (path) => {
             if (path.canceled) return -1;
 
-            store.set("databasePath", path.filePaths[0]); // Save the path for next time
+            // setActiveDb saves the path once the file opens; a page-era file only asks first.
             // Add to recent files
             addRecentFile(path.filePaths[0]);
 
@@ -1265,6 +1347,8 @@ async function closeCurrentFileNow(isAppQuitting: boolean) {
     if (!win) return -1;
 
     closeView3dWindow();
+    // A question about converting another file is stale once the person closes the show.
+    conversionQuestion.forget();
 
     if (currentNewShowDraftPath) {
         await discardNewShowDraft();
@@ -1453,26 +1537,66 @@ const reloadEvents = () => (win && !win.isDestroyed() ? win.webContents : null);
  *
  * @param path path to the database file
  * @param isNewFile True if this is a new file, false if it is an existing file
- * @returns 200, a refusal code, or `OPEN_STOPPED_STATUS` when a main-process
- *   dialog already explained why nothing opened
+ * @returns 200, a refusal code, `OPEN_STOPPED_STATUS` when a main-process
+ *   dialog already explained why nothing opened, or `NEEDS_CONVERSION_STATUS`
+ *   when the renderer must first ask to convert a page-era file
  */
-function setActiveDb(path: string, isNewFile = false): Promise<number> {
+function setActiveDb(
+    path: string,
+    isNewFile = false,
+    options: OpenShowOptions = {},
+): Promise<number> {
     // Get the current path from the store if the path is "."
     // I.e. last opened file
     if (path === ".") path = store.get("databasePath") as string;
     return openOnce(path, () =>
-        withOpenLock(() => setActiveDbNow(path, isNewFile)),
+        withOpenLock(() => setActiveDbNow(path, isNewFile, options)),
     );
 }
 
-async function setActiveDbNow(path: string, isNewFile: boolean) {
+async function setActiveDbNow(
+    path: string,
+    isNewFile: boolean,
+    options: OpenShowOptions,
+) {
+    // This open supersedes any question about converting another file (Confirm already took
+    // its file); a page-era file asks again below.
+    conversionQuestion.forget();
+    refusalAfterReload = null;
+    const hadShowOpen = DatabaseServices.getDbPath() !== "";
     try {
-        // The 3D View shows one show; close it when the editor switches shows.
-        closeView3dWindow();
+        // The 3D View shows one show; a confirmed conversion is about to replace it.
+        if (options.conversionConfirmed) closeView3dWindow();
 
-        const result = await openShowDatabase(path, isNewFile, openShowDeps());
+        const result = await openShowDatabase(
+            path,
+            isNewFile,
+            openShowDeps(),
+            options,
+        );
         result.db?.close();
         const token = result.sqlSuspension;
+
+        if (result.status === NEEDS_CONVERSION_STATUS && result.backupPath) {
+            if (token !== undefined) DatabaseServices.resumeSqlProxy(token);
+            // A page-era file: nothing was written, and the show that is open stays open and
+            // saved as the one to reopen. The renderer asks the person over it whether to
+            // convert the file; only Confirm closes it.
+            conversionQuestion.ask(
+                pendingConversionFor(path, result.backupPath),
+            );
+            if (!DatabaseServices.getDbPath()) {
+                // No show is open (at launch, or an open that got as far as closing it): ask
+                // over the launch page.
+                store.delete("databasePath");
+                win?.setTitle("OpenMarch");
+                if (token !== undefined) win?.webContents.reload();
+            }
+            return result.status;
+        }
+
+        // Any other answer may close the show that is open; the 3D View shows one show.
+        closeView3dWindow();
 
         if (result.status !== 200) {
             if (token !== undefined) DatabaseServices.resumeSqlProxy(token);
@@ -1487,17 +1611,28 @@ async function setActiveDbNow(path: string, isNewFile: boolean) {
             }
             store.delete("databasePath");
             if (result.status === OPEN_STOPPED_STATUS) {
-                // Convert on open (P9.3, behind OPENMARCH_CONVERT_ON_OPEN until P9.4): a dialog
-                // already told the person why the file didn't open. Open nothing.
+                // Convert on open: a dialog already told the person why the file didn't open.
+                // Open nothing.
                 win?.setTitle("OpenMarch");
                 win?.webContents.reload();
             } else {
                 console.error(
                     `Error loading database file [code=${result.status}] [path=${path}]`,
                 );
+                if (hadShowOpen && !DatabaseServices.getDbPath()) {
+                    // The refusal closed the show that was open: go to the launch page, which
+                    // explains why the file didn't open.
+                    refusalAfterReload = result.status;
+                    win?.setTitle("OpenMarch");
+                    win?.webContents.reload();
+                }
             }
             return result.status;
         }
+
+        // Another show replaced a new-show draft: delete the draft now, so the reload's
+        // navigation doesn't discard it and close the show that just opened.
+        await forgetReplacedNewShowDraft(path);
 
         win?.setTitle("OpenMarch - " + path);
         store.set("databasePath", path); // Save current db path

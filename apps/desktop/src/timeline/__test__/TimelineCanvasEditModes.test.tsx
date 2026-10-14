@@ -24,7 +24,7 @@ import { runActionWhenReady } from "@/test/runActionWhenReady";
  * UI-10 Editing through the app's registered tools (P8.15, P8.17), on a converted show in timeline
  * mode: a nudge edits the window from the start flag to the playhead. On a flag that is the page
  * timeline; between flags the move arrives at the playhead in a new timeline, with no refusal. At
- * beat 0 it edits homes. Runs under `test:timeline`; the default run has no timeline selection.
+ * beat 0 it edits homes. Runs on the converted fixture show.
  */
 
 const app = vi.hoisted(() => ({ client: (): unknown => null }));

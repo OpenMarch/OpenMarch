@@ -6,10 +6,7 @@ import Marcher from "@/global/classes/Marcher";
 import { describe, expect, it, afterEach, beforeAll } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import {
-    DatabaseMarcherPage,
-    databaseMarcherPagesToMarcherPages,
-} from "@/global/classes/MarcherPage";
+import type { PagePosition } from "../utils/exportPagePositions";
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
     <TolgeeProvider
@@ -30,10 +27,24 @@ describe("StaticMarcherCoordinateSheet", () => {
 
     const mockPages = globalMocks.mockPages;
 
-    // Convert DatabaseMarcherPage[] to MarcherPage[] for the component
-    const mockMarcherPages = databaseMarcherPagesToMarcherPages(
-        globalMocks.mockMarcherPages as DatabaseMarcherPage[],
-    );
+    // Three marchers on three pages
+    const xy: [number, number][] = [
+        [50, 50],
+        [0, 0],
+        [-200, -500],
+        [0, 0],
+        [284, 963.1],
+        [-200, 105.015],
+        [50, 50],
+        [0, 0],
+        [-200, -500],
+    ];
+    const mockMarcherPages: PagePosition[] = xy.map(([x, y], i) => ({
+        marcher_id: (i % 3) + 1,
+        page_id: Math.floor(i / 3) + 1,
+        x,
+        y,
+    }));
 
     afterEach(() => {
         cleanup();

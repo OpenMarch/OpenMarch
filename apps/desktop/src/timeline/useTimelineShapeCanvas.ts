@@ -30,7 +30,7 @@ const colorsOf = (theme: FieldTheme): TimelineShapeOverlayColors => ({
  * the new geometry, or the old one when the edit was refused. A release that starts no edit (the
  * shape didn't change, or another edit was pending) puts the shape back at once.
  *
- * Does nothing while `enabled` is false (page mode, or the resolver isn't ready) and nothing while
+ * Does nothing while `enabled` is false (the resolver isn't ready) and nothing while
  * playing; it removes what it drew then.
  *
  * @param theme the field theme; the overlay redraws in its colors when it changes

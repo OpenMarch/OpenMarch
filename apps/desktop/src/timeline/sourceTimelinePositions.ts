@@ -2,18 +2,13 @@ import { createResolver } from "@openmarch/core";
 import { asc, sql } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection } from "@/db-functions/types";
-import {
-    isTimelineModeEnabled,
-    workspaceSettingsSchema,
-} from "@/settings/workspaceSettings";
 import { readTimelineTables } from "./timelineRows";
 
 /**
  * Where marchers end up in another `.dots` file, read from its timeline (docs/timeline/phases/
  * 07-page-parity.md P7.16). The new-show wizard's "import from a previous show" starts the new
- * show from the source's last page. In a timeline-mode source the `marcher_pages` rows are frozen
- * page-era data, so the positions come from the source's resolver at the last page's end beat
- * (each marcher's home when it has no assignment there) instead.
+ * show from the source's last page. In a timeline source the positions come from the source's
+ * resolver at the last page's end beat (each marcher's home when it has no assignment there).
  *
  * This runs in the main process on a read-only connection to the source file, which is never
  * migrated, so it checks that the timeline tables exist before reading them.
@@ -33,7 +28,7 @@ const DEFAULT_LAST_PAGE_COUNTS = 8;
 /** Mirrors `FIRST_PAGE_ID` in `src/db-functions/page.ts`: the first page, which holds only beat 0. */
 const FIRST_PAGE_ID = 0;
 
-/** The source file is in timeline mode, but its timeline couldn't be read or resolved. */
+/** The source file is a timeline file, but its timeline couldn't be read or resolved. */
 export class SourceTimelineReadError extends Error {
     constructor(cause: unknown) {
         super("Couldn't read the timeline of this file", { cause });
@@ -41,29 +36,11 @@ export class SourceTimelineReadError extends Error {
     }
 }
 
-/** One marcher's position in the source file, in canvas pixels (the `marcher_pages` x/y units). */
+/** One marcher's position in the source file, in canvas pixels. */
 export interface SourceMarcherPosition {
     marcher_id: number;
     x: number;
     y: number;
-}
-
-/**
- * Whether the source file is in timeline mode: its `workspace_settings` parse and turn the flag
- * on. A missing row or settings that fail to parse mean page mode, as in `readTimelineFlag`.
- */
-export function isSourceInTimelineMode(
-    workspaceSettingsJson: string | null | undefined,
-): boolean {
-    if (!workspaceSettingsJson) return false;
-    try {
-        const parsed = workspaceSettingsSchema.safeParse(
-            JSON.parse(workspaceSettingsJson),
-        );
-        return parsed.success && isTimelineModeEnabled(parsed.data);
-    } catch {
-        return false;
-    }
 }
 
 /** Whether the file has every table the resolver's cold build reads. */
@@ -106,18 +83,15 @@ export function lastPageEndBeat({
 
 /**
  * Every marcher's position at the source's last page end beat, sampled from a resolver
- * cold-built from the source's timeline tables, in marcher id order. `null` when the source is in
- * page mode or has no timeline tables: the caller then reads the last page's `marcher_pages` rows
- * as before. Also `null` when the source has no pages.
+ * cold-built from the source's timeline tables, in marcher id order. `null` when the source has
+ * no timeline tables or no pages. The caller decides whether the source is a timeline file (an
+ * unconverted page-era file is read from its page-era tables instead).
  */
 export async function readSourceTimelinePositions({
     db,
-    workspaceSettingsJson,
 }: {
     db: DbConnection;
-    workspaceSettingsJson: string | null | undefined;
 }): Promise<SourceMarcherPosition[] | null> {
-    if (!isSourceInTimelineMode(workspaceSettingsJson)) return null;
     if (!(await hasTimelineTables(db))) return null;
 
     const beats = await db
@@ -163,7 +137,7 @@ export async function readSourceTimelinePositions({
             y: buffer[2 * i + 1]!,
         }));
     } catch (error) {
-        // Never fall back to the frozen page-era rows: they are stale in a timeline-mode file
+        // Never fall back to other rows: the timeline is the file's motion
         throw new SourceTimelineReadError(error);
     }
 }

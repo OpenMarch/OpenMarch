@@ -129,11 +129,11 @@ describe("opening files by format version", () => {
         expect(sha256(filePath)).toBe(hashBefore);
     });
 
-    it("creates a new file at 7", async () => {
+    it("creates a new file at 8", async () => {
         const filePath = path.join(tempDir, "new.dots");
 
         expect(await openLikeSetActiveDb(filePath, true)).toBe(200);
-        expect(userVersionOf(filePath)).toBe(7);
+        expect(userVersionOf(filePath)).toBe(8);
     });
 
     describe("migration service", () => {
@@ -148,11 +148,20 @@ describe("opening files by format version", () => {
                         db,
                     );
                     await migrator.applyPendingMigrations(migrationsFolder);
+                    // A page-era file (7) stops before the timeline-only migrations, which
+                    // run in its conversion; a timeline file (8) gets all of them.
+                    const all = fs
+                        .readdirSync(migrationsFolder)
+                        .filter((f) => f.endsWith(".sql")).length;
                     expect(migrator.getAppliedMigrations().length).toBe(
-                        fs
-                            .readdirSync(migrationsFolder)
-                            .filter((f) => f.endsWith(".sql")).length,
+                        v === 7 ? all - 1 : all,
                     );
+                    const marcherPages = db
+                        .prepare(
+                            "SELECT 1 FROM sqlite_master WHERE name = 'marcher_pages'",
+                        )
+                        .get();
+                    expect(!!marcherPages).toBe(v === 7);
                     expect(readUserVersion(db)).toBe(v);
                 } finally {
                     db.close();

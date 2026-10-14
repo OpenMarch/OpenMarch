@@ -10,6 +10,7 @@ import { DatabaseSync } from "node:sqlite";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
+import { nextBackupPath } from "@om-electron/database/backup";
 import {
     afterAll,
     afterEach,
@@ -26,6 +27,7 @@ import {
 } from "@om-electron/database/convertOnOpenProtocol";
 import {
     backupsIn,
+    migrationsFolder,
     createLargePageShow,
     createPageShow,
     stateOf,
@@ -115,7 +117,10 @@ describe("the conversion worker", () => {
         extra: Partial<ConvertInWorkerOptions> = {},
     ): ConvertInWorkerOptions => ({
         workerPath: worker.workerPath,
+        migrationsFolder,
         busyTimeoutMs: 5000,
+        // The name the person would be shown now, as the open flow passes it.
+        backupPath: nextBackupPath(showPath),
         ...extra,
     });
 
@@ -174,7 +179,7 @@ describe("the conversion worker", () => {
             expect(fs.existsSync(result.backupPath)).toBe(true);
         expect(stateOf(showPath)).toMatchObject({
             userVersion: 8,
-            timelineMode: true,
+            pageEraTables: [],
         });
     });
 

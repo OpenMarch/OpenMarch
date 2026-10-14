@@ -14,15 +14,10 @@ import { registerActionHandler } from "@/shortcuts/registry";
 import AlignmentEditor from "../AlignmentEditor";
 
 /**
- * P7.11: the line tool's Create Shape makes a page shape, so timeline mode disables it and says
- * why, while Apply coordinates stays available. Page mode is unchanged.
+ * The line tool's alignment: Apply coordinates moves the marchers onto the line. There is no
+ * page shape to create from it (P7.11).
  */
 
-const mocks = vi.hoisted(() => ({ timelineMode: false }));
-
-vi.mock("@/hooks/queries/useWorkspaceSettings", () => ({
-    useTimelineMode: () => mocks.timelineMode,
-}));
 vi.mock("@/stores/AlignmentEventStore", () => ({
     useAlignmentEventStore: () => ({
         alignmentEvent: "line",
@@ -43,10 +38,12 @@ beforeAll(async () => {
 // The buttons run their actions, whose handlers the editor mounts
 const offs: (() => void)[] = [];
 beforeEach(() => {
-    for (const id of ["createMarcherShape", "applyQuickShape"] as const)
-        offs.push(
-            registerActionHandler(id, { run: vi.fn(), isEnabled: () => true }),
-        );
+    offs.push(
+        registerActionHandler("applyQuickShape", {
+            run: vi.fn(),
+            isEnabled: () => true,
+        }),
+    );
 });
 afterEach(() => {
     cleanup();
@@ -60,40 +57,15 @@ const show = () =>
         </TolgeeProvider>,
     );
 
-const buttonsNamed = (name: RegExp) =>
-    screen
-        .getAllByRole("button", { name })
-        .filter((b) => b.tagName === "BUTTON");
-
 describe("AlignmentEditor", () => {
-    it("in page mode, Create Shape is available and nothing is explained", async () => {
-        mocks.timelineMode = false;
+    it("offers Apply coordinates and no Create Shape", async () => {
         show();
-        const create = await screen.findAllByRole("button", {
-            name: /create shape/i,
+        const apply = await screen.findAllByRole("button", {
+            name: /apply coordinates/i,
         });
-        expect(create.every((b) => !b.hasAttribute("disabled"))).toBe(true);
-        expect(screen.queryByTestId("alignment-create-shape-timeline")).toBe(
+        expect(apply.some((b) => !b.hasAttribute("disabled"))).toBe(true);
+        expect(screen.queryByRole("button", { name: /create shape/i })).toBe(
             null,
         );
-    });
-
-    it("in timeline mode, Create Shape is disabled with the reason, and Apply coordinates isn't", async () => {
-        mocks.timelineMode = true;
-        show();
-        await screen.findAllByRole("button", { name: /create shape/i });
-        expect(
-            buttonsNamed(/create shape/i).every((b) =>
-                b.hasAttribute("disabled"),
-            ),
-        ).toBe(true);
-        expect(
-            screen.getByTestId("alignment-create-shape-timeline").textContent,
-        ).toContain("timeline mode doesn't use");
-        expect(
-            buttonsNamed(/apply coordinates/i).some(
-                (b) => !b.hasAttribute("disabled"),
-            ),
-        ).toBe(true);
     });
 });

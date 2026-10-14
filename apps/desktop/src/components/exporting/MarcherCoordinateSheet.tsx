@@ -1,7 +1,4 @@
-import {
-    marcherPagesByMarcherQueryOptions,
-    fieldPropertiesQueryOptions,
-} from "@/hooks/queries";
+import { fieldPropertiesQueryOptions } from "@/hooks/queries";
 import React, { useEffect, useState } from "react";
 import Marcher from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
@@ -9,7 +6,6 @@ import type { PagePosition } from "./utils/exportPagePositions";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
-import { useTimingObjects } from "@/hooks";
 import Beat from "@/global/classes/Beat";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
@@ -32,26 +28,19 @@ const QuarterSheetColumnWidths = {
 };
 
 interface MarcherCoordinateSheetProps {
-    marcher?: Marcher;
     includeMeasures?: boolean;
     roundingDenominator?: number;
-    example?: boolean;
     terse?: boolean;
     useXY?: boolean;
 }
 
+/** A coordinate sheet for an example marcher on three example pages, to preview the options. */
 export default function MarcherCoordinateSheetPreview({
-    marcher,
     includeMeasures = true,
     roundingDenominator = 4,
-    example = false,
     terse = false,
     useXY = false,
 }: MarcherCoordinateSheetProps) {
-    const { pages } = useTimingObjects()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByMarcherQueryOptions(marcher?.id || -1),
-    );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
@@ -68,15 +57,7 @@ export default function MarcherCoordinateSheetPreview({
             );
             return;
         }
-        if (!marcherPagesLoaded) {
-            console.error(
-                "Marcher pages not loaded in MarcherCoordinateSheet.tsx",
-            );
-            return;
-        }
-        const pixelsPerStep = fieldProperties
-            ? fieldProperties.pixelsPerStep
-            : 0;
+        const pixelsPerStep = fieldProperties.pixelsPerStep;
         const measures = Array.from({ length: 12 }, (_, i) => {
             return {
                 id: i + 1,
@@ -98,131 +79,100 @@ export default function MarcherCoordinateSheetPreview({
                 timestamp: i * 4,
             } satisfies Measure;
         });
-        if (example && fieldProperties) {
-            setMarcherToUse({
+        setMarcherToUse({
+            id: 1,
+            name: t("exportCoordinates.exampleMarcherName"),
+            section: t("exportCoordinates.exampleMarcherSection"),
+            drill_prefix: "B",
+            drill_order: 1,
+            drill_number: "B1",
+            year: null,
+            notes: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            home_x: 0,
+            home_y: 0,
+        });
+        const pages = [
+            {
                 id: 1,
-                name: t("exportCoordinates.exampleMarcherName"),
-                section: t("exportCoordinates.exampleMarcherSection"),
-                drill_prefix: "B",
-                drill_order: 1,
-                drill_number: "B1",
-                year: null,
+                name: "1",
+                counts: 16,
+                order: 1,
+                nextPageId: 2,
+                previousPageId: null,
+                isSubset: false,
+                duration: 16,
+                beats: [],
+                measureBeatToStartOn: 1,
+                measureBeatToEndOn: 5,
                 notes: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                home_x: 0,
-                home_y: 0,
-            });
-            const pages = [
-                {
-                    id: 1,
-                    name: "1",
-                    counts: 16,
-                    order: 1,
-                    nextPageId: 2,
-                    previousPageId: null,
-                    isSubset: false,
-                    duration: 16,
-                    beats: [],
-                    measureBeatToStartOn: 1,
-                    measureBeatToEndOn: 5,
-                    notes: null,
-                    timestamp: 0,
-                    measures: [
-                        measures[0],
-                        measures[1],
-                        measures[2],
-                        measures[3],
-                    ],
-                } satisfies Page,
-                {
-                    id: 2,
-                    name: "2",
-                    counts: 15,
-                    order: 2,
-                    nextPageId: 3,
-                    previousPageId: 1,
-                    isSubset: false,
-                    duration: 16,
-                    beats: [],
-                    measureBeatToStartOn: 1,
-                    measureBeatToEndOn: 3,
-                    notes: null,
-                    timestamp: 16,
-                    measures: [
-                        measures[4],
-                        measures[5],
-                        measures[6],
-                        measures[7],
-                    ],
-                } satisfies Page,
-                {
-                    id: 3,
-                    name: "2A",
-                    counts: 13,
-                    order: 3,
-                    nextPageId: null,
-                    previousPageId: 2,
-                    isSubset: false,
-                    duration: 16,
-                    beats: [],
-                    measureBeatToStartOn: 4,
-                    measureBeatToEndOn: 5,
-                    notes: null,
-                    timestamp: 32,
-                    measures: [
-                        measures[7],
-                        measures[8],
-                        measures[9],
-                        measures[10],
-                    ],
-                } satisfies Page,
-            ];
-            setPagesToUse(pages);
-            setMarcherPagesToUse([
-                {
-                    marcher_id: 1,
-                    page_id: 1,
-                    x: fieldProperties.centerFrontPoint.xPixels,
-                    y: fieldProperties.centerFrontPoint.yPixels,
-                },
-                {
-                    marcher_id: 1,
-                    page_id: 2,
-                    x:
-                        fieldProperties.centerFrontPoint.xPixels +
-                        2.1 * pixelsPerStep,
-                    y:
-                        fieldProperties.centerFrontPoint.yPixels +
-                        2 * pixelsPerStep,
-                },
-                {
-                    marcher_id: 1,
-                    page_id: 3,
-                    x:
-                        fieldProperties.centerFrontPoint.xPixels -
-                        5.21 * pixelsPerStep,
-                    y:
-                        fieldProperties.centerFrontPoint.yPixels +
-                        (fieldProperties.yCheckpoints[0].stepsFromCenterFront *
-                            pixelsPerStep -
-                            2.32 * pixelsPerStep),
-                },
-            ]);
-        } else {
-            setMarcherToUse(marcher);
-            setPagesToUse(pages);
-            setMarcherPagesToUse(Object.values(marcherPages));
-        }
-    }, [
-        marcher,
-        marcherPages,
-        pages,
-        example,
-        fieldProperties,
-        t,
-        marcherPagesLoaded,
-    ]);
+                timestamp: 0,
+                measures: [measures[0], measures[1], measures[2], measures[3]],
+            } satisfies Page,
+            {
+                id: 2,
+                name: "2",
+                counts: 15,
+                order: 2,
+                nextPageId: 3,
+                previousPageId: 1,
+                isSubset: false,
+                duration: 16,
+                beats: [],
+                measureBeatToStartOn: 1,
+                measureBeatToEndOn: 3,
+                notes: null,
+                timestamp: 16,
+                measures: [measures[4], measures[5], measures[6], measures[7]],
+            } satisfies Page,
+            {
+                id: 3,
+                name: "2A",
+                counts: 13,
+                order: 3,
+                nextPageId: null,
+                previousPageId: 2,
+                isSubset: false,
+                duration: 16,
+                beats: [],
+                measureBeatToStartOn: 4,
+                measureBeatToEndOn: 5,
+                notes: null,
+                timestamp: 32,
+                measures: [measures[7], measures[8], measures[9], measures[10]],
+            } satisfies Page,
+        ];
+        setPagesToUse(pages);
+        setMarcherPagesToUse([
+            {
+                marcher_id: 1,
+                page_id: 1,
+                x: fieldProperties.centerFrontPoint.xPixels,
+                y: fieldProperties.centerFrontPoint.yPixels,
+            },
+            {
+                marcher_id: 1,
+                page_id: 2,
+                x:
+                    fieldProperties.centerFrontPoint.xPixels +
+                    2.1 * pixelsPerStep,
+                y: fieldProperties.centerFrontPoint.yPixels + 2 * pixelsPerStep,
+            },
+            {
+                marcher_id: 1,
+                page_id: 3,
+                x:
+                    fieldProperties.centerFrontPoint.xPixels -
+                    5.21 * pixelsPerStep,
+                y:
+                    fieldProperties.centerFrontPoint.yPixels +
+                    (fieldProperties.yCheckpoints[0].stepsFromCenterFront *
+                        pixelsPerStep -
+                        2.32 * pixelsPerStep),
+            },
+        ]);
+    }, [fieldProperties, t]);
     return (
         <StaticMarcherCoordinateSheet
             marcher={marcherToUse!}
@@ -240,7 +190,7 @@ export default function MarcherCoordinateSheetPreview({
 interface StaticCoordinateSheetProps {
     marcher: Marcher;
     pages: Page[];
-    /** The marcher's position on each page, in page order (`marcher_pages` rows or resolver samples) */
+    /** The marcher's position on each page, in page order (resolver samples) */
     marcherPages: PagePosition[];
     fieldProperties: FieldProperties;
     includeMeasures?: boolean;
@@ -606,7 +556,7 @@ export function StaticMarcherCoordinateSheet({
 interface StaticQuarterMarcherSheetProps {
     marcher: Marcher;
     pages: Page[];
-    /** The marcher's position on each page, in page order (`marcher_pages` rows or resolver samples) */
+    /** The marcher's position on each page, in page order (resolver samples) */
     marcherPages: PagePosition[];
     fieldProperties: FieldProperties;
     roundingDenominator?: number;

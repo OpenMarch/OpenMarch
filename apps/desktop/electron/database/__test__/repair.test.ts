@@ -88,7 +88,7 @@ describe("DatabaseSync Repair", () => {
     };
 
     describe("initializeAndMigrateDatabase", () => {
-        it("should successfully initialize database with user_version 7", async () => {
+        it("should successfully initialize database with user_version 8 (a new file's)", async () => {
             const dbPath = path.join(tempDir, "test.db");
             const db = new DatabaseSync(dbPath);
 
@@ -99,7 +99,7 @@ describe("DatabaseSync Repair", () => {
                     user_version: number;
                 }
             ).user_version;
-            expect(userVersion).toBe(7);
+            expect(userVersion).toBe(8);
 
             db.close();
             fs.unlinkSync(dbPath);
@@ -1050,10 +1050,10 @@ describe("DatabaseSync Repair", () => {
             }
         });
 
-        it("copies a timeline-mode file's frozen page-era rows, and the freeze holds afterwards (P9.5)", async () => {
-            const originalDbPath = path.join(tempDir, "frozen.dots");
-            const originalDb =
-                await createNewDatabaseWithMigrations(originalDbPath);
+        it("repairs a page-era file as one: its page-era rows are copied and it stays at 7, to be converted on open", async () => {
+            const originalDbPath = path.join(tempDir, "page-era.dots");
+            const originalDb = new DatabaseSync(originalDbPath);
+            await initializeAndMigrateDatabase(originalDb, 7);
             originalDb.exec(`
                 INSERT INTO marchers (id, section, drill_prefix, drill_order) VALUES (1, 'Brass', 'B', 1);
                 INSERT INTO pathways (id, path_data) VALUES (1, '{}');
@@ -1061,87 +1061,149 @@ describe("DatabaseSync Repair", () => {
                 INSERT INTO shapes (id, name) VALUES (1, 'line');
                 INSERT INTO shape_pages (id, shape_id, page_id, svg_path) VALUES (1, 1, 0, 'M 0 0 L 1 0');
                 INSERT INTO shape_page_marchers (id, shape_page_id, marcher_id, position_order) VALUES (1, 1, 1, 1);
-                UPDATE workspace_settings SET json_data = json_set(json_data, '$.timelineMode', json('true'));
             `);
-            const frozen = [
-                "marcher_pages",
+            const pageEra = [
                 "pathways",
                 "shapes",
                 "shape_pages",
                 "shape_page_marchers",
             ];
-            const readFrozen = (db: DatabaseSync) =>
+            const read = (db: DatabaseSync, tables: string[]) =>
                 Object.fromEntries(
-                    frozen.map((table) => [
+                    tables.map((table) => [
                         table,
                         db
                             .prepare(`SELECT * FROM "${table}" ORDER BY id`)
                             .all(),
                     ]),
                 );
-            const expected = readFrozen(originalDb);
-            expect(() =>
-                originalDb.exec("UPDATE marcher_pages SET x = 0"),
-            ).toThrow(/read-only in timeline mode/);
+            const expected = read(originalDb, pageEra);
+            const validMarcherPage = originalDb
+                .prepare("SELECT * FROM marcher_pages WHERE id = 1")
+                .all();
             originalDb.close();
 
             const fixedPath = await repairDatabase(originalDbPath);
 
             const fixedDb = new DatabaseSync(fixedPath);
             try {
-                expect(readFrozen(fixedDb)).toEqual(expected);
-                expect(() =>
-                    fixedDb.exec("UPDATE marcher_pages SET x = 0"),
-                ).toThrow(/read-only in timeline mode/);
+                expect(read(fixedDb, pageEra)).toEqual(expected);
+                expect(
+                    fixedDb.prepare("SELECT * FROM marcher_pages").all(),
+                ).toEqual(validMarcherPage);
+                expect(
+                    (
+                        fixedDb.prepare("PRAGMA user_version").get() as {
+                            user_version: number;
+                        }
+                    ).user_version,
+                ).toBe(7);
             } finally {
                 fixedDb.close();
             }
         });
 
-        it("puts the freeze back even when detaching the original fails (P9.5)", async () => {
-            const originalDbPath = path.join(tempDir, "detach-original.dots");
+        const readUserVersionOf = (db: DatabaseSync) =>
+            (
+                db.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
+        const tableNamesOf = (db: DatabaseSync) =>
+            (
+                db
+                    .prepare(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'",
+                    )
+                    .all() as Array<{ name: string }>
+            ).map((t) => t.name);
+
+        // A damaged file's version can read 0, and files from 0.0.9 or earlier are at 1 to 6 (the
+        // pre-Drizzle migrations). Both keep their positions in the page-era tables, so the
+        // repaired copy must be a page-era file that is converted, after confirming, on open.
+        it.each([
+            { version: 0, label: "a damaged header (0)" },
+            { version: 3, label: "a pre-Drizzle release (1 to 6)" },
+            { version: 7, label: "the page model (7)" },
+        ])(
+            "repairs a file with page-era tables at $label as a page-era file at 7, keeping its positions",
+            async ({ version }) => {
+                const originalDbPath = path.join(
+                    tempDir,
+                    `page-era-${version}.dots`,
+                );
+                const originalDb = new DatabaseSync(originalDbPath);
+                await initializeAndMigrateDatabase(originalDb, 7);
+                originalDb.exec(`
+                    INSERT INTO marchers (id, section, drill_prefix, drill_order) VALUES (1, 'Brass', 'B', 1);
+                    INSERT INTO marcher_pages (id, marcher_id, page_id, x, y) VALUES (1, 1, 0, 4, 2);
+                `);
+                originalDb.exec(`PRAGMA user_version = ${version}`);
+                const expected = originalDb
+                    .prepare("SELECT * FROM marcher_pages ORDER BY id")
+                    .all();
+                originalDb.close();
+
+                const fixedPath = await repairDatabase(originalDbPath);
+
+                const fixedDb = new DatabaseSync(fixedPath, { readOnly: true });
+                try {
+                    expect(readUserVersionOf(fixedDb)).toBe(7);
+                    expect(
+                        fixedDb
+                            .prepare("SELECT * FROM marcher_pages ORDER BY id")
+                            .all(),
+                    ).toEqual(expected);
+                } finally {
+                    fixedDb.close();
+                }
+            },
+        );
+
+        it("repairs a timeline file (8) as a timeline file without page-era tables", async () => {
+            const originalDbPath = path.join(tempDir, "timeline-8.dots");
             const originalDb =
                 await createNewDatabaseWithMigrations(originalDbPath);
-            const newDb = await createNewDatabaseWithMigrations(
-                path.join(tempDir, "detach-new.dots"),
-            );
-            const freezeTriggers = () =>
-                (
-                    newDb
-                        .prepare(
-                            "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name LIKE 'page_era_frozen_%' ORDER BY name",
-                        )
-                        .all() as { name: string }[]
-                ).map((r) => r.name);
-            const before = freezeTriggers();
-            expect(before).toHaveLength(18);
-            // A connection whose DETACH throws
-            const failingDetach = new Proxy(newDb, {
-                get(target, prop) {
-                    if (prop === "prepare")
-                        return (statement: string) => {
-                            if (statement.startsWith("DETACH"))
-                                throw new Error("detach failed");
-                            return target.prepare(statement);
-                        };
-                    const value = Reflect.get(target, prop) as unknown;
-                    return typeof value === "function"
-                        ? (value as (...a: unknown[]) => unknown).bind(target)
-                        : value;
-                },
-            });
+            originalDb.exec(`
+                INSERT INTO marchers (id, section, drill_prefix, drill_order) VALUES (1, 'Brass', 'B', 1);
+            `);
+            expect(readUserVersionOf(originalDb)).toBe(8);
+            originalDb.close();
+
+            const fixedPath = await repairDatabase(originalDbPath);
+
+            const fixedDb = new DatabaseSync(fixedPath, { readOnly: true });
             try {
-                expect(() =>
-                    copyDataFromOriginalDatabase(
-                        originalDb,
-                        failingDetach,
-                        originalDbPath,
-                    ),
-                ).toThrow("detach failed");
-                expect(freezeTriggers()).toEqual(before);
+                expect(readUserVersionOf(fixedDb)).toBe(8);
+                expect(tableNamesOf(fixedDb)).not.toContain("marcher_pages");
+                expect(
+                    fixedDb.prepare("SELECT id FROM marchers").all(),
+                ).toEqual([{ id: 1 }]);
             } finally {
-                originalDb.close();
-                newDb.close();
+                fixedDb.close();
+            }
+        });
+
+        it("repairs a version-0 file without page-era tables as a timeline file (8)", async () => {
+            const originalDbPath = path.join(tempDir, "no-page-era.dots");
+            const originalDb = new DatabaseSync(originalDbPath);
+            originalDb.exec(`
+                CREATE TABLE field_properties (id INTEGER PRIMARY KEY CHECK (id = 1), json_data TEXT NOT NULL);
+                INSERT INTO field_properties (id, json_data) VALUES (1, '{}');
+                CREATE TABLE utility (id INTEGER PRIMARY KEY CHECK (id = 0), last_page_counts INTEGER);
+                INSERT INTO utility (id, last_page_counts) VALUES (0, 8);
+                CREATE TABLE workspace_settings (id INTEGER PRIMARY KEY CHECK (id = 1), json_data TEXT NOT NULL);
+                INSERT INTO workspace_settings (id, json_data) VALUES (1, '{}');
+            `);
+            originalDb.close();
+
+            const fixedPath = await repairDatabase(originalDbPath);
+
+            const fixedDb = new DatabaseSync(fixedPath, { readOnly: true });
+            try {
+                expect(readUserVersionOf(fixedDb)).toBe(8);
+            } finally {
+                fixedDb.close();
             }
         });
 
@@ -1223,7 +1285,7 @@ describe("DatabaseSync Repair", () => {
                     user_version: number;
                 }
             ).user_version;
-            expect(userVersion).toBe(7);
+            expect(userVersion).toBe(8);
 
             // Verify migrations were applied
             const orm = getOrm(fixedDb);
@@ -1338,7 +1400,7 @@ describe("DatabaseSync Repair", () => {
                     user_version: number;
                 }
             ).user_version;
-            expect(userVersion).toBe(7);
+            expect(userVersion).toBe(8);
 
             fixedDb.close();
             fs.unlinkSync(fixedPath);
@@ -1457,7 +1519,7 @@ describe("DatabaseSync Repair", () => {
                     user_version: number;
                 }
             ).user_version;
-            expect(userVersion).toBe(7);
+            expect(userVersion).toBe(8);
 
             // Verify migrations were applied
             const orm = getOrm(fixedDb);
@@ -1501,7 +1563,7 @@ describe("DatabaseSync Repair", () => {
                     user_version: number;
                 }
             ).user_version;
-            expect(userVersion).toBe(7); // Should be a valid database, not "old content"
+            expect(userVersion).toBe(8); // Should be a valid database, not "old content"
 
             fixedDb.close();
             fs.unlinkSync(fixedPath);

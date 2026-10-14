@@ -15,7 +15,11 @@ import * as path from "path";
 import { DatabaseSync } from "node:sqlite";
 import { backupBeforeConversion } from "../backup";
 import { convertFileOnOpen } from "../convertOnOpen";
-import { createLargePageShow, stateOf } from "./convertOnOpenFixtures";
+import {
+    createLargePageShow,
+    migrationsFolder,
+    stateOf,
+} from "./convertOnOpenFixtures";
 
 const [marchers, pages] = (process.env.OPENMARCH_PERF_SIZE ?? "400x100")
     .split("x")
@@ -50,14 +54,22 @@ describe.runIf(process.env.OPENMARCH_PERF === "1")(
             t = performance.now();
             let last = t;
             try {
-                result = await convertFileOnOpen(showPath, db, {
-                    backup: () => backup,
-                    afterStep: (step) => {
-                        const now = performance.now();
-                        steps.push(`${step} ${(now - last).toFixed(0)}`);
-                        last = now;
+                result = await convertFileOnOpen(
+                    showPath,
+                    db,
+                    migrationsFolder,
+                    {
+                        backupPath: backup.ok ? backup.backupPath : "",
                     },
-                });
+                    {
+                        backup: () => backup,
+                        afterStep: (step) => {
+                            const now = performance.now();
+                            steps.push(`${step} ${(now - last).toFixed(0)}`);
+                            last = now;
+                        },
+                    },
+                );
             } finally {
                 db.close();
             }

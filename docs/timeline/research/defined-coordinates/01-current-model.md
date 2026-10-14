@@ -56,7 +56,7 @@ It happens in both modes, for different reasons.
 - **Page-era tables are temporary.** They freeze after Phase 9 and are dropped in Phase 10
   (ADR 0001 §1).
 
-## Timeline mode (per-file `timelineMode`; convert-on-open only with `OPENMARCH_CONVERT_ON_OPEN=1`)
+## Timeline mode (per-file `timelineMode`; convert-on-open only with `OPENMARCH_CONVERT_ON_OPEN=1`, both retired 2026-10-12)
 
 - **The model is already sparse.**
   - Pages are flags (C-12).

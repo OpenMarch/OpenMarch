@@ -4,7 +4,7 @@ import { pageEndBeat } from "../pageEndBeat";
 /**
  * Plans the conversion of a page show into timeline rows (docs/timeline/phases/06-converter.md
  * P6.2, P6.3). Pure: page-model rows in, the timeline rows to write and a per-page loss report
- * out. `writePageConversion.ts` reads the rows and writes the plan.
+ * out. `convertPagesInTransaction.ts` reads the rows and writes the plan.
  *
  * Page semantics (P6.1, the same mapping as `pageEndBeat`): beats are 0-based indexes into
  * `beats` ordered by position (ADR 0001 §2). Page 0 holds only the zero-length beat 0, and its

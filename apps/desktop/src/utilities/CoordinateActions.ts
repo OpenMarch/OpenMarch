@@ -4,9 +4,10 @@
  */
 
 import { FieldProperties } from "@openmarch/core";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, {
+    type ModifiedMarcherPageArgs,
+} from "@/global/classes/MarcherPage";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import { ModifiedMarcherPageArgs } from "@/db-functions";
 
 /**
  * Any type that contains an x and y coordinate, primarily used for MarcherPages
@@ -18,8 +19,7 @@ export type CoordinateLike = {
 };
 
 /**
- * The fields of a MarcherPage these helpers read. A full `MarcherPage` satisfies it; timeline mode
- * builds these from the resolver's positions instead (P7.2).
+ * The fields of a MarcherPage these helpers read, built from the resolver's positions (P7.2).
  */
 export type CoordinateRecord = Pick<
     MarcherPage,
@@ -55,7 +55,7 @@ const EPSILON = 10e2; // round to 3 decimal places to prevent floating point err
  * Creates an array of rounded coordinates of the marcherPages with the given marcher_id and page_id
  * to the nearest multiple of the denominator.
  *
- * After you call this, you will need to call updateMarcherPages(changes) to apply the changes.
+ * After you call this, you will need to write the changes (`useUpdateCoordinates`) to apply them.
  *
  * Example: if the denominator is 10, the coordinates will be rounded to the nearest .1.
  * If the denominator is 4, the coordinates will be rounded to the nearest .25.
@@ -256,7 +256,7 @@ export function alignHorizontally({
  * @param marcherPages - The marcherPages to evenly distribute horizontally.
  * @param sortingThreshold - In steps. If the X difference between two marcher's is less than this threshold, they will be sorted by Y coordinate. By default, this is .1 steps.
  * @returns - The changes to be made to the marcherPages to evenly distribute them horizontally.
- *           Pass these changes to updateMarcherPages(changes) to apply the changes.
+ *           Write these changes (`useUpdateCoordinates`) to apply them.
  */
 export function evenlyDistributeHorizontally({
     marcherPages,
@@ -323,7 +323,7 @@ export function evenlyDistributeHorizontally({
  * @param marcherPages - The marcherPages to evenly distribute vertically.
  * @param sortingThreshold - In steps. If the Y difference between two marcher's is less than this threshold, they will be sorted by X coordinate. By default, this is .1 steps.
  * @returns - The changes to be made to the marcherPages to evenly distribute them vertically.
- *           Pass these changes to updateMarcherPages(changes) to apply the changes.
+ *           Write these changes (`useUpdateCoordinates`) to apply them.
  */
 export function evenlyDistributeVertically({
     marcherPages,

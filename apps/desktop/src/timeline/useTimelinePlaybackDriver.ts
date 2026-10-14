@@ -25,7 +25,7 @@ import { consumeSuspendRequest } from "./timelineTransport";
  * - A scrub's suspension (`suspendTimelinePlayback`, UI-12 review) pauses without writing P or the
  *   cursor: the scrub moves the cursor, and resumes playback when it ends.
  *
- * Nothing follows playback in page mode (`enabled` false); `useAnimation` keeps its page rules.
+ * Nothing follows playback while `enabled` is false.
  */
 export function useTimelinePlaybackDriver(enabled: boolean): void {
     const { beats } = useTimingObjects();

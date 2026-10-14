@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { T } from "@tolgee/react";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { FILE_TOO_NEW_STATUS } from "@om-electron/database/fileVersion";
-import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
+import {
+    NEEDS_CONVERSION_STATUS,
+    OPEN_STOPPED_STATUS,
+} from "@om-electron/database/convertOnOpenGate";
 
 const FILE_ERROR_GUIDE_URLS = {
     forbidden:
@@ -44,72 +47,78 @@ export function useLoadFileErrorHandler() {
     const { setTitle, setContent, setOpen } = useAlertModalStore();
 
     useEffect(() => {
-        const unsubscribe = window.electron.onLoadFileResponse(
-            (resCode: number) => {
-                // OPEN_STOPPED_STATUS: the main process already showed a dialog (convert on open).
-                if (resCode !== 200 && resCode !== OPEN_STOPPED_STATUS) {
-                    switch (resCode) {
-                        case 403:
-                            setTitle("fileAccessDialogError.forbidden.title");
-                            setContent(
-                                <>
-                                    <T keyName="fileAccessDialogError.forbidden.description" />
-                                    <ReferToGuide
-                                        guideUrl={
-                                            FILE_ERROR_GUIDE_URLS.forbidden
-                                        }
-                                    />
-                                </>,
-                            );
-                            break;
-                        case 404:
-                            setTitle("fileAccessDialogError.notFound.title");
-                            setContent(
-                                <>
-                                    <T keyName="fileAccessDialogError.notFound.description" />
-                                    <ReferToGuide
-                                        guideUrl={
-                                            FILE_ERROR_GUIDE_URLS.notFound
-                                        }
-                                    />
-                                </>,
-                            );
-                            break;
-                        case FILE_TOO_NEW_STATUS:
-                            setTitle("fileAccessDialogError.tooNew.title");
-                            setContent(
-                                <T keyName="fileAccessDialogError.tooNew.description" />,
-                            );
-                            break;
-                        case 500:
-                            setTitle("fileAccessDialogError.server.title");
-                            setContent(
-                                <>
-                                    <T keyName="fileAccessDialogError.server.description" />
-                                    <ReferToGuide
-                                        guideUrl={FILE_ERROR_GUIDE_URLS.server}
-                                    />
-                                </>,
-                            );
-                            break;
-                        default:
-                            setTitle("fileAccessDialogError.default.title");
-                            setContent(
-                                <>
-                                    <T keyName="fileAccessDialogError.default.description" />
-                                    <ReferToGuide
-                                        guideUrl={FILE_ERROR_GUIDE_URLS.default}
-                                    />
-                                </>,
-                            );
-                    }
-
-                    setOpen(true);
+        const explain = (resCode: number) => {
+            // OPEN_STOPPED_STATUS: the main process already showed a dialog (convert on open);
+            // NEEDS_CONVERSION_STATUS: ConvertShowDialog asks the person.
+            if (
+                resCode !== 200 &&
+                resCode !== OPEN_STOPPED_STATUS &&
+                resCode !== NEEDS_CONVERSION_STATUS
+            ) {
+                switch (resCode) {
+                    case 403:
+                        setTitle("fileAccessDialogError.forbidden.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.forbidden.description" />
+                                <ReferToGuide
+                                    guideUrl={FILE_ERROR_GUIDE_URLS.forbidden}
+                                />
+                            </>,
+                        );
+                        break;
+                    case 404:
+                        setTitle("fileAccessDialogError.notFound.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.notFound.description" />
+                                <ReferToGuide
+                                    guideUrl={FILE_ERROR_GUIDE_URLS.notFound}
+                                />
+                            </>,
+                        );
+                        break;
+                    case FILE_TOO_NEW_STATUS:
+                        setTitle("fileAccessDialogError.tooNew.title");
+                        setContent(
+                            <T keyName="fileAccessDialogError.tooNew.description" />,
+                        );
+                        break;
+                    case 500:
+                        setTitle("fileAccessDialogError.server.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.server.description" />
+                                <ReferToGuide
+                                    guideUrl={FILE_ERROR_GUIDE_URLS.server}
+                                />
+                            </>,
+                        );
+                        break;
+                    default:
+                        setTitle("fileAccessDialogError.default.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.default.description" />
+                                <ReferToGuide
+                                    guideUrl={FILE_ERROR_GUIDE_URLS.default}
+                                />
+                            </>,
+                        );
                 }
-            },
-        );
+
+                setOpen(true);
+            }
+        };
+        const unsubscribe = window.electron.onLoadFileResponse(explain);
+        // A refused open that closed the show reloads to the launch page, which explains it.
+        let unmounted = false;
+        void window.electron.takeLoadFileRefusal?.().then((resCode) => {
+            if (!unmounted && resCode !== null) explain(resCode);
+        });
 
         return () => {
+            unmounted = true;
             unsubscribe();
         };
     }, [setContent, setOpen, setTitle]);

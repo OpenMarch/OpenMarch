@@ -17,9 +17,8 @@ import { timeAtBeat, type BeatTiming } from "./timeMap";
 import { restartLivePlaybackAt } from "@/components/timeline/audio/AudioPlayer";
 
 /**
- * The timeline-mode transport (docs/timeline/ui.md UI-9; P8.11), shared by the timeline's
- * transport buttons and the registered actions (shortcuts, menus). These drive
- * `useTimelineSelectionStore`; page mode keeps its own page-based transport.
+ * The transport (docs/timeline/ui.md UI-9; P8.11), shared by the timeline's transport buttons and
+ * the registered actions (shortcuts, menus). These drive `useTimelineSelectionStore`.
  */
 
 /** Set by `suspendTimelinePlayback`, so the pause that follows leaves the cursor and playhead alone. */

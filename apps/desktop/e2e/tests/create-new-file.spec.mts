@@ -2,6 +2,7 @@ import { test } from "../fixtures.mjs";
 import { expect } from "@playwright/test";
 import { createMarchers } from "../utils/marchers.mjs";
 import { completeNewShowWizard } from "../utils/new-show-wizard.mjs";
+import { addPageFlagAt, timelinePageNames } from "../utils/timeline.mjs";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -29,7 +30,10 @@ test("Create new file from launch page", async ({ electronAppNewFile }) => {
     await completeNewShowWizard(page, { projectName });
 
     await expect(page.locator("canvas").nth(1)).toBeVisible();
-    await expect(page.getByRole("button", { name: "Page 0" })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Page 0", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByTestId("timeline-initial-page")).toBeVisible();
     expect(fs.existsSync(newFilePath)).toBe(true);
 });
 
@@ -41,10 +45,14 @@ test("Create new file and verify database is functional", async ({
 
     await completeNewShowWizard(page, { projectName });
 
-    await expect(page.locator("#pages")).toContainText("0");
+    await expect.poll(async () => (await timelinePageNames(page))[0]).toBe("0");
+    const pagesBefore = await timelinePageNames(page);
 
-    await page.locator("#pages").getByRole("button").click();
-    await expect(page.locator("#pages")).toContainText("1");
+    // A page flag inside the first page's counts splits it: one more page
+    await addPageFlagAt(page, 2);
+    await expect
+        .poll(() => timelinePageNames(page))
+        .toHaveLength(pagesBefore.length + 1);
 
     await createMarchers(page, 25, "Piccolo");
 

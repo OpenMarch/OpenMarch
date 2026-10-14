@@ -11,11 +11,8 @@ import {
 import { toast } from "sonner";
 import type { ReactNode } from "react";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import {
-    keepFixturesInPageMode,
-    setTimelineModeFlag,
-} from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { keepFixturesInPageMode } from "@/test/timelineMode";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { deletePages } from "@/db-functions/page";
 import { readPageGrid } from "@/db-functions/timelineRipple";
 import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
@@ -24,10 +21,6 @@ import {
     tagAppearanceByPageIdMapQueryOptions,
     tagAppearancesByStartPageIdQueryOptions,
 } from "../tags/queries";
-import {
-    deletePageYankMutationOptions,
-    deletePagesMutationOptions,
-} from "../usePages";
 import {
     deletePageFlagsMutationOptions,
     deletePageYankWithMovesMutationOptions,
@@ -48,7 +41,7 @@ import { usePerformHistoryAction } from "../useHistory";
  * The show is `marchersAndPages`: page 0 plus pages 1 to 6 (ids 1 to 6), 8 counts each.
  */
 
-keepFixturesInPageMode("its tests pick the file's mode themselves");
+keepFixturesInPageMode("its tests convert the show themselves");
 
 // Modules these import invalidate through the app's query client; give them the test's
 const app = vi.hoisted(() => ({ client: null as unknown }));
@@ -71,8 +64,7 @@ const newClient = () => {
     return { qc, wrapper };
 };
 
-const toTimelineMode = async (db: DbConnection) => {
-    await setTimelineModeFlag(db, true);
+const convertShow = async (db: DbConnection) => {
     await convertPagesToTimeline(db);
 };
 
@@ -86,32 +78,12 @@ const tagOnPage2 = async (db: DbConnection) => {
 
 type DeletePath = {
     name: string;
-    timeline: boolean;
     useDelete: (qc: QueryClient) => () => Promise<unknown>;
 };
 
 const paths: DeletePath[] = [
     {
-        name: "page mode Delete (deletePages)",
-        timeline: false,
-        useDelete: (qc) => {
-            const { mutateAsync } = useMutation(deletePagesMutationOptions(qc));
-            return () => mutateAsync(new Set([2]));
-        },
-    },
-    {
-        name: "page mode Yank",
-        timeline: false,
-        useDelete: (qc) => {
-            const { mutateAsync } = useMutation(
-                deletePageYankMutationOptions(qc),
-            );
-            return () => mutateAsync(2);
-        },
-    },
-    {
-        name: "timeline Delete page (the flag delete)",
-        timeline: true,
+        name: "Delete page (the flag delete)",
         useDelete: (qc) => {
             const { mutateAsync } = useMutation(
                 deletePageFlagsMutationOptions(qc),
@@ -120,8 +92,7 @@ const paths: DeletePath[] = [
         },
     },
     {
-        name: "timeline Delete page and its moves",
-        timeline: true,
+        name: "Delete page and its moves",
         useDelete: (qc) => {
             const { mutateAsync } = useMutation(
                 deletePagesWithMovesMutationOptions(qc),
@@ -130,8 +101,7 @@ const paths: DeletePath[] = [
         },
     },
     {
-        name: "timeline Yank with its moves",
-        timeline: true,
+        name: "Yank with its moves",
         useDelete: (qc) => {
             const { mutateAsync } = useMutation(
                 deletePageYankWithMovesMutationOptions(qc),
@@ -149,7 +119,7 @@ describeDbTests(
                 db,
                 marchersAndPages: _,
             }) => {
-                if (path.timeline) await toTimelineMode(db);
+                await convertShow(db);
                 await tagOnPage2(db);
                 vi.spyOn(toast, "success").mockImplementation(() => 0);
                 const { wrapper } = newClient();
@@ -198,6 +168,7 @@ describeDbTests(
             db,
             marchersAndPages: _,
         }) => {
+            await convertShow(db);
             await tagOnPage2(db);
             const { wrapper } = newClient();
             const { result } = renderHook(
@@ -219,9 +190,9 @@ describeDbTests(
 );
 
 describeDbTests("gap 8: the delete toast's Undo after a later edit", (it) => {
-    /** Marchers A and B move on page 2 in a show made in timeline mode */
+    /** Marchers A and B move on page 2 */
     const S4 = async (db: DbConnection) => {
-        await toTimelineMode(db);
+        await convertShow(db);
         for (const table of [
             "timeline_slot_destinations",
             "timeline_assignments",

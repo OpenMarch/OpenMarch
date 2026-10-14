@@ -6,23 +6,23 @@
  * newer release instead of rewriting its version and migrating it.
  *
  * - 7: page model. 7 is left over from the pre-Drizzle migration system; every
- *   Drizzle-era file is at 7.
- * - 8: timeline model (Phase 9 converts files to it). This release accepts it so
- *   that it can read files written once Phase 9 ships.
+ *   Drizzle-era file before timelines is at 7. The app converts it to 8 when it
+ *   opens it, once the person confirms (`convertOnOpen.ts`).
+ * - 8: timeline model. New files start here.
  */
 import type { DatabaseSync } from "node:sqlite";
 
 /** Version of a page-model file. */
 export const PAGE_MODEL_USER_VERSION = 7;
-/** Version of a timeline-model file (written by Phase 9's conversion). */
+/** Version of a timeline-model file (new files, and files the conversion wrote). */
 export const TIMELINE_MODEL_USER_VERSION = 8;
 
 /** Oldest version this build opens. Older files must go through 0.0.10 first. */
 export const MIN_SUPPORTED_USER_VERSION = PAGE_MODEL_USER_VERSION;
 /** Newest version this build opens. Anything higher was written by a newer release. */
 export const MAX_SUPPORTED_USER_VERSION = TIMELINE_MODEL_USER_VERSION;
-/** Version written into a brand-new file. Phase 9 changes this to 8. */
-export const NEW_FILE_USER_VERSION = PAGE_MODEL_USER_VERSION;
+/** Version written into a brand-new file: a new show is a timeline show. */
+export const NEW_FILE_USER_VERSION = TIMELINE_MODEL_USER_VERSION;
 
 /**
  * Status code that `setDbPath` returns for a file from a newer release.

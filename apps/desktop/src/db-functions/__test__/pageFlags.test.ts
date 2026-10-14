@@ -3,7 +3,7 @@ import { eq, getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import {
     startTimelineResolver,
     stopTimelineResolver,
@@ -20,10 +20,8 @@ import {
 import { readPageGrid } from "../timelineRipple";
 import { TimelineWriteError } from "../timelineErrors";
 
-// These tests set the flag and convert the show themselves
-keepFixturesInPageMode(
-    "its tests convert the show and set the flag themselves",
-);
+// These tests convert the show themselves
+keepFixturesInPageMode("its tests convert the show themselves");
 
 /**
  * Page flags in timeline mode (docs/timeline/ui.md UI-9 **+** and Deleting a flag, P8.13), on a
@@ -47,7 +45,6 @@ const TABLES = [
     schema.pages,
     schema.utility,
     schema.marchers,
-    schema.marcher_pages,
     ...TIMELINE_TABLES,
 ];
 
@@ -58,16 +55,7 @@ const snapshot = async (db: DbConnection, tables = TABLES) => {
     return out;
 };
 
-const setTimelineFlag = async (db: DbConnection, on: boolean) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: on }),
-    });
-};
-
-const setUp = async (db: DbConnection, flag = true) => {
-    await setTimelineFlag(db, flag);
+const setUp = async (db: DbConnection) => {
     await convertPagesToTimeline(db);
     await startTimelineResolver(db);
 };
@@ -280,7 +268,7 @@ describeDbTests("page flags in timeline mode (UI-9)", (it) => {
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("refuses on a flag, at home, past the show's beats, at a fractional beat, and in page mode, writing nothing", async ({
+        it("refuses on a flag, at home, past the show's beats, and at a fractional beat, writing nothing", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -288,10 +276,6 @@ describeDbTests("page flags in timeline mode (UI-9)", (it) => {
             const before = await snapshot(db);
             for (const beat of [0, 1, 9, 17, 49, 98, 12.5])
                 await expectRefused(addPageFlag({ db, beat }));
-            expect(await snapshot(db)).toEqual(before);
-
-            await setTimelineFlag(db, false);
-            await expectRefused(addPageFlag({ db, beat: 13 }));
             expect(await snapshot(db)).toEqual(before);
         });
     });
@@ -325,13 +309,6 @@ describeDbTests("page flags in timeline mode (UI-9)", (it) => {
                 where: eq(schema.pages.id, 4),
             });
             expect(four!.notes).toBe("page four");
-            expect(
-                await db
-                    .select()
-                    .from(schema.marcher_pages)
-                    .where(eq(schema.marcher_pages.page_id, 3))
-                    .all(),
-            ).toEqual([]);
             expect(await snapshot(db, TIMELINE_TABLES)).toEqual(timelineBefore);
             expect(await positions(db)).toEqual(motionBefore);
             await roundTrip(db, before, await snapshot(db));
@@ -412,7 +389,7 @@ describeDbTests("page flags in timeline mode (UI-9)", (it) => {
             expect(await grid(db)).toEqual(ORIGINAL);
         });
 
-        it("refuses an unknown page and page mode, writing nothing; home alone is a no-op", async ({
+        it("refuses an unknown page, writing nothing; home alone is a no-op", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -424,10 +401,6 @@ describeDbTests("page flags in timeline mode (UI-9)", (it) => {
             expect(
                 await deletePageFlags({ db, pageIds: new Set([0]) }),
             ).toEqual([]);
-            expect(await snapshot(db)).toEqual(before);
-
-            await setTimelineFlag(db, false);
-            await expectRefused(deletePageFlags({ db, pageIds: new Set([3]) }));
             expect(await snapshot(db)).toEqual(before);
         });
     });

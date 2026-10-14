@@ -1,29 +1,19 @@
 import { createCircle } from "@openmarch/core";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useCreateMarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useUpdateSelectedMarchersOnSelectedPage } from "@/hooks/queries";
-import { PAGE_SHAPES_TIMELINE_MESSAGE } from "@/db-functions/shapePages";
-import { TimelineWriteError } from "@/db-functions/timelineErrors";
-import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
-import { useSelectionStore } from "@/stores/SelectionStore";
 import { useActionHandler } from "../useActionHandler";
 import { useEditorReadiness } from "./useEditorReadiness";
 import { useUpdateCoordinates } from "./useUpdateCoordinates";
 
 // eslint-disable-next-line max-lines-per-function
 export function useCursorActionHandlers() {
-    const { selectedPage, ready, selectedMarchers, timelineMode } =
-        useEditorReadiness();
+    const { ready, selectedMarchers } = useEditorReadiness();
     const selectedMarchersContext = useSelectedMarchers();
     const setSelectedMarchers =
         selectedMarchersContext?.setSelectedMarchers ?? (() => {});
     const updateCoordinates = useUpdateCoordinates();
-    const { mutate: createMarcherShape } = useCreateMarcherShape();
-    const selectionStore = useSelectionStore();
-    const setSelectedShapePageIds =
-        selectionStore?.setSelectedShapePageIds ?? (() => {});
     const alignmentEventStore = useAlignmentEventStore();
     const resetAlignmentEvent =
         alignmentEventStore?.resetAlignmentEvent ?? (() => {});
@@ -45,9 +35,8 @@ export function useCursorActionHandlers() {
             setSelectedMarchers(alignmentEventMarchers);
             resetAlignmentEvent();
         } else {
-            // Deselect all shapes and marchers
+            // Deselect all marchers
             setSelectedMarchers([]);
-            setSelectedShapePageIds([]);
         }
     });
 
@@ -63,39 +52,6 @@ export function useCursorActionHandlers() {
                     notes: marcherPage.notes || undefined,
                 })),
             );
-            resetAlignmentEvent();
-        },
-        { enabled: ready && alignmentEventNewMarcherPages.length > 0 },
-    );
-
-    useActionHandler(
-        "createMarcherShape",
-        () => {
-            if (timelineMode) {
-                // Page shapes write shape pages and marcher_pages (P7.11). The line's
-                // positions can still be applied, so the alignment stays open.
-                toastTimelineError(
-                    new TimelineWriteError(
-                        "E-ARGS",
-                        PAGE_SHAPES_TIMELINE_MESSAGE,
-                    ),
-                );
-                return;
-            }
-            const firstMarcherPage = alignmentEventNewMarcherPages[0];
-            const lastMarcherPage =
-                alignmentEventNewMarcherPages[
-                    alignmentEventNewMarcherPages.length - 1
-                ];
-            const marcherIds = alignmentEventNewMarcherPages.map(
-                (marcherPage) => marcherPage.marcher_id,
-            );
-            createMarcherShape({
-                marcherIds,
-                start: firstMarcherPage,
-                end: lastMarcherPage,
-                pageId: selectedPage!.id,
-            });
             resetAlignmentEvent();
         },
         { enabled: ready && alignmentEventNewMarcherPages.length > 0 },

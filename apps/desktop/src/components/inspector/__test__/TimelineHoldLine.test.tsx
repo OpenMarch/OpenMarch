@@ -41,14 +41,10 @@ const PAGES = [
 ];
 
 const mocks = vi.hoisted(() => ({
-    timelineMode: true,
     selectedPage: null as unknown,
     pages: [] as unknown[],
 }));
 
-vi.mock("@/hooks/queries/useWorkspaceSettings", () => ({
-    useTimelineMode: () => mocks.timelineMode,
-}));
 vi.mock("@/context/SelectedPageContext", () => ({
     useSelectedPage: () => ({ selectedPage: mocks.selectedPage }),
 }));
@@ -128,7 +124,6 @@ beforeAll(async () => {
 });
 afterEach(cleanup);
 beforeEach(() => {
-    mocks.timelineMode = true;
     mocks.pages = PAGES;
     mocks.selectedPage = PAGES[2];
     useTimelineResolverStore.setState({ resolver, version: 1 });
@@ -397,17 +392,13 @@ describe("TimelineHoldLine", () => {
         });
     });
 
-    it("renders nothing on the first page, with nothing selected, or out of timeline mode", () => {
+    it("renders nothing on the first page, or with nothing selected", () => {
         mocks.selectedPage = PAGES[0];
         show([1]);
         expect(line()).toBeNull();
         cleanup();
         mocks.selectedPage = PAGES[2];
         show([]);
-        expect(line()).toBeNull();
-        cleanup();
-        mocks.timelineMode = false;
-        show([1]);
         expect(line()).toBeNull();
     });
 });

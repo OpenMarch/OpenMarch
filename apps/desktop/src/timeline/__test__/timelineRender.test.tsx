@@ -1,14 +1,9 @@
 import type { ComponentType, ReactNode } from "react";
-import { skipInTimelineMode } from "@/test/timelineMode";
 import { afterEach, describe, expect, vi } from "vitest";
 import { sql } from "drizzle-orm";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { transactionWithHistory } from "@/db-functions/history";
-import {
-    getWorkspaceSettingsParsed,
-    updateWorkspaceSettingsParsed,
-} from "@/db-functions/workspaceSettings";
 import { getBeats } from "@/db-functions/beat";
 import { getPages } from "@/db-functions/page";
 import { getUtility } from "@/db-functions/utility";
@@ -24,7 +19,6 @@ import { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { defaultSettings } from "@/stores/UiSettingsStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import { useTimingObjects } from "@/hooks";
-import { useTimelineMode } from "@/hooks/queries/useWorkspaceSettings";
 import { pageEndBeat, playbackBeat } from "../timelineCanvas";
 import {
     startTimelineResolver,
@@ -37,9 +31,8 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 
 /**
- * Timeline-mode rendering (docs/timeline/phases/05-rendering.md P5.4 and P5.5) against a real
- * database: the static render at a page's end beat, and the playback path in `useAnimation` with
- * the dev flag on and off.
+ * Rendering (docs/timeline/phases/05-rendering.md P5.4 and P5.5) against a real database: the
+ * static render at a page's end beat, and the playback path in `useAnimation`.
  */
 
 const MARCHER_IDS = [1, 2];
@@ -136,14 +129,6 @@ const seedShow = (db: DbConnection) =>
             ),
         );
     });
-
-const setTimelineMode = async (db: DbConnection, on: boolean) => {
-    const settings = await getWorkspaceSettingsParsed({ db });
-    await updateWorkspaceSettingsParsed({
-        db,
-        settings: { ...settings, timelineMode: on },
-    });
-};
 
 /** Beats and pages as `useTimingObjects` builds them. */
 const readTiming = async (
@@ -242,7 +227,7 @@ describeDbTests("timeline rendering", (it) => {
                         fromResolver,
                         `page ${page.id} marcher ${id} vs resolver`,
                     );
-                    // A page-end position is that page's destination, as marcher_pages would hold
+                    // A page-end position is that page's destination
                     expectAt(
                         coords[id]!,
                         expectedAtPage[page.id]!(id),
@@ -380,43 +365,13 @@ describeDbTests("timeline rendering", (it) => {
 
             rerender({ enabled: false, isPlaying: false });
             await startTimelineResolver(db);
-            expectAt(coordsById(canvas)[1]!, [-1, -1], "flag off");
+            expectAt(coordsById(canvas)[1]!, [-1, -1], "disabled");
 
             rerender({ enabled: true, isPlaying: true });
             expectAt(coordsById(canvas)[1]!, [-1, -1], "playing");
 
             rerender({ enabled: true, isPlaying: false });
             expectAt(coordsById(canvas)[1]!, [10, 20], "static");
-        });
-
-        it("drops a page-era shape lock, since timeline mode has none (P7.11)", async ({
-            db,
-        }) => {
-            await seedShow(db);
-            await startTimelineResolver(db);
-            const { pages } = await readTiming(db);
-            const canvas = await createCanvasWithMarchers(db);
-            const marcher = canvas
-                .getCanvasMarchers()
-                .find((m) => m.marcherObj.id === 1)!;
-            // As an earlier marcher_pages render of a page shape leaves it
-            marcher.setMarcherCoords({
-                ...marcher.coordinate,
-                page_id: pages[1]!.id,
-                isLocked: true,
-                lockedReason: "Marcher is part of a shape\n",
-            });
-            expect(marcher.locked).toBe(true);
-            renderHook(() =>
-                useTimelineStaticRender({
-                    canvas,
-                    selectedPage: pages[1]!,
-                    isPlaying: false,
-                    enabled: true,
-                }),
-            );
-            expect(marcher.locked).toBe(false);
-            expect(marcher.lockedReason).toBe("");
         });
     });
 
@@ -428,26 +383,26 @@ describeDbTests("timeline rendering", (it) => {
             renderHook(
                 () => ({
                     animation: useAnimation({ canvas }),
-                    timelineMode: useTimelineMode(),
                     timing: useTimingObjects()!,
                 }),
                 { wrapper },
             );
 
-        it("with the flag on, draws the resolver's positions at the playback beat", async ({
+        it("draws the resolver's positions at the playback beat", async ({
             db,
             wrapper,
         }) => {
             await seedShow(db);
-            await setTimelineMode(db, true);
             await startTimelineResolver(db);
             const resolver = useTimelineResolverStore.getState().resolver!;
             const canvas = await createCanvasWithMarchers(db);
             const { result } = renderAnimation(canvas, wrapper);
-            await waitFor(() => {
-                expect(result.current.timelineMode).toBe(true);
-                expect(result.current.timing.beats).toHaveLength(17);
-            });
+            await waitFor(
+                () => {
+                    expect(result.current.timing.beats).toHaveLength(17);
+                },
+                { timeout: 5000 },
+            );
             const { beats } = result.current.timing;
 
             // 0 ms is beat 1; 1.25 s is halfway through page 1; 4 s is page 1's end, beat 9
@@ -497,7 +452,6 @@ describeDbTests("timeline rendering", (it) => {
                 renderHook(
                     () => ({
                         animation: useAnimation({ canvas }),
-                        timelineMode: useTimelineMode(),
                         timing: useTimingObjects()!,
                         selection: useSelectedPage()!,
                         playing: useIsPlaying()!,
@@ -554,108 +508,41 @@ describeDbTests("timeline rendering", (it) => {
                 expect(setCoords).toHaveBeenCalledTimes(1);
             };
 
-            it("page mode keeps its frame state until playback stops", async ({
+            it("keeps its frame state until playback stops", async ({
                 db,
                 wrapper,
             }) => {
                 await seedShow(db);
-                await setTimelineMode(db, false);
-                const { pages } = await readTiming(db);
-                await transactionWithHistory(db, "seedMarcherPages", (tx) =>
-                    tx.insert(schema.marcher_pages).values(
-                        pages.flatMap((page, i) =>
-                            MARCHER_IDS.map((marcher_id) => ({
-                                marcher_id,
-                                page_id: page.id,
-                                x: 10 * i + marcher_id,
-                                y: 10 * i,
-                            })),
-                        ),
-                    ),
-                );
-                const canvas = await createCanvasWithMarchers(db);
-                const { result } = renderPlayback(canvas, wrapper);
-                await waitFor(() => {
-                    expect(result.current.timelineMode).toBe(false);
-                    expect(result.current.timing.pages).toHaveLength(3);
-                });
-                act(() => {
-                    result.current.selection.setSelectedPage(
-                        result.current.timing.pages[1]!,
-                    );
-                });
-                // The page path has keyframes once the marcher_pages around the page load
-                await waitFor(() =>
-                    expect(
-                        result.current.animation.setMarcherPositionsAtTime(0),
-                    ).toBe(true),
-                );
-                playAcrossPages(canvas, result);
-            });
-
-            it("timeline mode keeps its frame state until playback stops", async ({
-                db,
-                wrapper,
-            }) => {
-                await seedShow(db);
-                await setTimelineMode(db, true);
                 await startTimelineResolver(db);
                 const canvas = await createCanvasWithMarchers(db);
                 const { result } = renderPlayback(canvas, wrapper);
-                await waitFor(() => {
-                    expect(result.current.timelineMode).toBe(true);
-                    expect(result.current.timing.pages).toHaveLength(3);
-                });
+                await waitFor(
+                    () => {
+                        expect(result.current.timing.pages).toHaveLength(3);
+                    },
+                    { timeout: 5000 },
+                );
                 playAcrossPages(canvas, result);
             });
         });
 
-        it("with the flag on, leaves marchers in place while the resolver isn't ready", async ({
+        it("leaves marchers in place while the resolver isn't ready", async ({
             db,
             wrapper,
         }) => {
             await seedShow(db);
-            await setTimelineMode(db, true);
             const canvas = await createCanvasWithMarchers(db);
             const { result } = renderAnimation(canvas, wrapper);
-            await waitFor(() => {
-                expect(result.current.timelineMode).toBe(true);
-                expect(result.current.timing.beats).toHaveLength(17);
-            });
+            await waitFor(
+                () => {
+                    expect(result.current.timing.beats).toHaveLength(17);
+                },
+                { timeout: 5000 },
+            );
             expect(
                 result.current.animation.setMarcherPositionsAtTime(1250),
             ).toBe(true);
             expectAt(coordsById(canvas)[1]!, [-1, -1], "not ready");
         });
-
-        it.skipIf(
-            skipInTimelineMode(
-                "it asserts the flag-off path; timeline test mode turns the flag on",
-            ),
-        )(
-            "with the flag off, uses the page path and ignores the resolver",
-            async ({ db, wrapper }) => {
-                await seedShow(db);
-                await startTimelineResolver(db);
-                const canvas = await createCanvasWithMarchers(db);
-                const { result } = renderAnimation(canvas, wrapper);
-                await waitFor(() =>
-                    expect(result.current.timing.beats).toHaveLength(17),
-                );
-                expect(result.current.timelineMode).toBe(false);
-
-                // The page path finds no marcher_pages timelines for these marchers, reports it
-                // (false stops playback) and moves nothing, even though a resolver is ready
-                expect(
-                    result.current.animation.setMarcherPositionsAtTime(1250),
-                ).toBe(false);
-                for (const id of MARCHER_IDS)
-                    expectAt(
-                        coordsById(canvas)[id]!,
-                        [-1, -1],
-                        `marcher ${id}`,
-                    );
-            },
-        );
     });
 });

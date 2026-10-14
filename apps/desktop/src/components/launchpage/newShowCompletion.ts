@@ -41,7 +41,6 @@ import { createAllUndoTriggers } from "@/db-functions/history";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
-import { marcherPageKeys } from "@/hooks/queries/useMarcherPages";
 import { sectionAppearanceKeys } from "@/hooks/queries/useSectionAppearances";
 import { tagKeys } from "@/hooks/queries/tags/queries";
 import {
@@ -49,9 +48,7 @@ import {
     deleteMarchers,
     getMarchers,
 } from "@/db-functions/marcher";
-import { updateMarcherPagesInTransaction } from "@/db-functions/marcherPage";
 import { updateMarcherHomesInTransaction } from "@/db-functions/marcherHome";
-import { timelineModeInTransaction } from "@/db-functions/timelineRipple";
 import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
 import { createSectionAppearances } from "@/db-functions/sectionAppearance";
 import {
@@ -263,9 +260,6 @@ async function applyPerformersSettings(
     await queryClient.invalidateQueries({
         queryKey: allMarchersQueryOptions().queryKey,
     });
-    await queryClient.invalidateQueries({
-        queryKey: marcherPageKeys.all(),
-    });
 }
 
 function drillNumberKey(marcher: {
@@ -289,46 +283,30 @@ async function applyPreviousDotsCoordinates(
         ]),
     );
     const marchers = await getMarchers({ db });
-    const updates = marchers.flatMap((marcher) => {
+    const modifiedHomes = marchers.flatMap((marcher) => {
         const coordinate = coordinateByDrillNumber.get(drillNumberKey(marcher));
         if (!coordinate) return [];
         return [
             {
-                marcher_id: marcher.id,
-                page_id: FIRST_PAGE_ID,
-                x: coordinate.x,
-                y: coordinate.y,
+                marcherId: marcher.id,
+                home: [coordinate.x, coordinate.y] as [number, number],
             },
         ];
     });
 
-    if (updates.length === 0) return;
+    if (modifiedHomes.length === 0) return;
 
+    // The first-page positions are the marchers' homes (P9.3)
     await transactionWithHistory(
         db,
         "applyPreviousDotsCoordinates",
         async (tx) => {
-            // A new show made with convert on open on starts in timeline mode (P9.3): the
-            // first-page positions are the marchers' homes, as the converter seeds them, and
-            // marcher pages are frozen (P9.5)
-            if (await timelineModeInTransaction(tx))
-                await updateMarcherHomesInTransaction({
-                    tx,
-                    modifiedHomes: updates.map((u) => ({
-                        marcherId: u.marcher_id,
-                        home: [u.x, u.y],
-                    })),
-                });
-            else
-                await updateMarcherPagesInTransaction({
-                    tx,
-                    modifiedMarcherPages: updates,
-                });
+            await updateMarcherHomesInTransaction({ tx, modifiedHomes });
         },
     );
 
     await queryClient.invalidateQueries({
-        queryKey: marcherPageKeys.all(),
+        queryKey: allMarchersQueryOptions().queryKey,
     });
 }
 

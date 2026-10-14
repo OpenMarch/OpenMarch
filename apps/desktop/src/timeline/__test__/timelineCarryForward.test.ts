@@ -13,10 +13,8 @@ import {
     type PageBox,
 } from "@/stores/TimelineSelectionStore";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import {
     editCarryForward,
     marcherCarry,

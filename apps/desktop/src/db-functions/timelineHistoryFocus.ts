@@ -2,19 +2,11 @@ import type { ChangeBatch, RowImage } from "@openmarch/core";
 import { inArray } from "drizzle-orm";
 import { DB, schema } from "../global/database/db";
 import { DbConnection, DbTransaction } from "./types";
-import {
-    type GridPage,
-    readPageGrid,
-    timelineModeInTransaction,
-} from "./timelineRipple";
+import { type GridPage, readPageGrid } from "./timelineRipple";
 
 /**
- * Where to look after an undo or redo in timeline mode (docs/timeline/phases/07-page-parity.md
- * P7.13).
- *
- * In page mode the app jumps to the page whose `marcher_pages` rows the action changed and selects
- * those marchers. In timeline mode those rows are frozen page-era data, so the same answer comes
- * from the action's committed change batch instead:
+ * Where to look after an undo or redo (docs/timeline/phases/07-page-parity.md P7.13): the page
+ * an action changed and the marchers it changed there, from the action's committed change batch:
  *
  * - **Page of a change:** a marcher's home is where it stands on the first page. A marcher the
  *   action added or removed belongs to the current page instead (the first page when there is
@@ -300,7 +292,3 @@ export async function timelineHistoryFocus(
         marcherIdsByPageId,
     };
 }
-
-/** Whether the file's timeline flag is on (read from `workspace_settings`). */
-export const timelineModeOn = (db: DbConnection | DB | DbTransaction) =>
-    timelineModeInTransaction(db as DbTransaction);

@@ -18,7 +18,7 @@ import {
 
 /**
  * What the exports need from the timeline (docs/timeline/phases/07-page-parity.md P7.8, P7.9):
- * a resolver, the show's beats, and a frame sampler over them. Page mode never calls these.
+ * a resolver, the show's beats, and a frame sampler over them.
  */
 
 /**

@@ -30,7 +30,7 @@ import { pageFlags } from "../timelinePlayhead";
  * with no stored timeline yet (a dragged range, or a new page's box after **+**) dims nobody, the
  * marcher selection survives selecting it, and a canvas move there stores the timeline with just
  * the moved marchers, as one edit. Nobody is dimmed afterwards either. Runs under
- * `test:timeline`; the default run has no timeline selection.
+ * on the converted fixture show.
  */
 
 const app = vi.hoisted(() => ({ client: (): unknown => null }));

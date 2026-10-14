@@ -3,7 +3,7 @@ import { getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import { convertPagesToTimeline } from "@/timeline/convert/writePageConversion";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import {
     startTimelineResolver,
     stopTimelineResolver,
@@ -16,10 +16,8 @@ import { readPageGrid } from "../timelineRipple";
 import { TimelineWriteError } from "../timelineErrors";
 import { moveMarchersInRangeInTransaction } from "../timelineMoves";
 
-// These tests set the flag and convert the show themselves
-keepFixturesInPageMode(
-    "its tests convert the show and set the flag themselves",
-);
+// These tests convert the show themselves
+keepFixturesInPageMode("its tests convert the show themselves");
 
 /**
  * Moving a page flag (docs/timeline/research/move-page-flag), on a converted `marchersAndPages`
@@ -42,7 +40,6 @@ const TABLES = [
     schema.pages,
     schema.utility,
     schema.marchers,
-    schema.marcher_pages,
     ...TIMELINE_TABLES,
 ];
 
@@ -53,16 +50,7 @@ const snapshot = async (db: DbConnection, tables = TABLES) => {
     return out;
 };
 
-const setTimelineFlag = async (db: DbConnection, on: boolean) => {
-    await db.delete(schema.workspace_settings);
-    await db.insert(schema.workspace_settings).values({
-        id: 1,
-        json_data: JSON.stringify({ timelineMode: on }),
-    });
-};
-
 const setUp = async (db: DbConnection) => {
-    await setTimelineFlag(db, true);
     await convertPagesToTimeline(db);
     await startTimelineResolver(db);
 };
@@ -253,7 +241,7 @@ describeDbTests("moving a page flag (roll edit)", (it) => {
             expect(await snapshot(db)).toEqual(before);
         });
 
-        it("refuses home, unknown pages, passing a neighbor, the show's end and page mode, writing nothing", async ({
+        it("refuses home, unknown pages, passing a neighbor and the show's end, writing nothing", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -268,10 +256,6 @@ describeDbTests("moving a page flag (roll edit)", (it) => {
             await expectRefused(movePageFlag({ db, pageId: 2, beat: 18.5 }));
             // Past the show's 96 counts
             await expectRefused(movePageFlag({ db, pageId: 6, beat: 98 }));
-            expect(await snapshot(db)).toEqual(before);
-
-            await setTimelineFlag(db, false);
-            await expectRefused(movePageFlag({ db, pageId: 2, beat: 20 }));
             expect(await snapshot(db)).toEqual(before);
         });
     });

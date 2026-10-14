@@ -15,10 +15,8 @@ import {
     probed,
 } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { pageFlags } from "@/timeline/timelinePlayhead";
 import { moveMarchersInTarget } from "@/db-functions/timelineMoves";

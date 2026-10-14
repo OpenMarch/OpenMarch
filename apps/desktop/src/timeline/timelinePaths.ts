@@ -5,21 +5,20 @@ import { pageEndBeat } from "./timelineCanvas";
 import { sampleMarcherPath } from "./timelineKeyframes";
 
 /**
- * Path visuals and step sizes in timeline mode (docs/timeline/phases/07-page-parity.md P7.10).
+ * Path visuals and step sizes (docs/timeline/phases/07-page-parity.md P7.10).
  *
- * Page mode draws a straight line between two pages' `marcher_pages` rows. In timeline mode the
- * move between two pages is whatever the resolver says, so the path is sampled from it between
+ * The move between two pages is whatever the resolver says, so the path is sampled from it between
  * the two pages' end beats (`pageEndBeat`, D-16): an arc or a follow-the-leader move draws as the
- * curve the marcher really walks. Nothing here reads `marcher_pages`.
+ * curve the marcher really walks.
  *
  * - **Endpoints** are the positions at the page end beats, which is where the canvas draws the
  *   marchers on those pages.
  * - **The midpoint** is the position halfway through the move in counts (the midset), so it lies
- *   on the drawn path. For a straight move at a constant pace it is the page-mode midpoint.
+ *   on the drawn path. For a straight move at a constant pace it is the chord's midpoint.
  * - **Step size** is the stride of the marcher's fastest moving stretch within the page: the
  *   largest length per count over the non-hold spans clipped to the page (lead decision on PR
  *   #33). Holds, moves that end mid-page and breakaway holds don't dilute it. For a straight move
- *   over the whole page it is page mode's step size.
+ *   over the whole page it is the chord's length per count.
  */
 
 /**
@@ -161,8 +160,7 @@ export function stepSizeOfPath(
 
 /**
  * The step size of a marcher's move into `page` from `previousPage`, from the resolver (see the
- * module comment). Undefined where page mode has none (no previous page) or the resolver doesn't
- * know the marcher.
+ * module comment). Undefined with no previous page or when the resolver doesn't know the marcher.
  */
 export function timelineStepSize({
     resolver,
@@ -183,7 +181,7 @@ export function timelineStepSize({
 
 /**
  * The smallest and largest step sizes among `marcherIds` for the move into `page`, from the
- * resolver; the timeline counterpart of `StepSize.getMinAndMaxStepSizesForMarchers`.
+ * resolver.
  */
 export function timelineMinMaxStepSizes({
     resolver,

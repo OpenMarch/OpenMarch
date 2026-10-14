@@ -2,15 +2,11 @@
 import ReactDOMServer from "react-dom/server";
 import { beforeAll, describe, expect, it } from "vitest";
 import {
-    generateMarcherPages,
     generateMarchers,
     generateTimingObjects,
 } from "@/__mocks__/generators";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type Marcher from "@/global/classes/Marcher";
-import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
-import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
-import { pageToDatabasePage } from "@/global/classes/Page";
 import tolgee from "@/global/singletons/Tolgee";
 import {
     StaticMarcherCoordinateSheet,
@@ -20,12 +16,16 @@ import {
     buildCoordinateSheets,
     type CoordinateSheetOptions,
 } from "../coordinateSheets";
-import { pagePositionMapFromRows } from "../exportPagePositions";
+import {
+    pagePositionMapFromRows,
+    type PagePosition,
+} from "../exportPagePositions";
+import { generatePagePositions } from "../../__test__/pagePositions";
 
 /**
- * docs/timeline/phases/07-page-parity.md P7.7. The page-mode guard compares
- * `buildCoordinateSheets` with the sheet rendering that `ExportCoordinatesModal` did inline
- * before P7.7 (copied below as `legacySheets`), so page-mode exports are unchanged.
+ * docs/timeline/phases/07-page-parity.md P7.7. The guard compares `buildCoordinateSheets` with
+ * the sheet rendering that `ExportCoordinatesModal` did inline before P7.7 (copied below as
+ * `legacySheets`), so the sheets render as they always did.
  */
 
 const fieldProperties =
@@ -38,23 +38,23 @@ const show = (seed: number) => {
     ) as (Marcher & { name: string })[];
     // Enough pages that one marcher needs two quarter sheets (28 rows each)
     const { pages } = generateTimingObjects({ numberOfBeats: 600, seed });
-    const marcherPages = generateMarcherPages({
+    const positions = generatePagePositions({
         marchers,
-        pages: pages.map(pageToDatabasePage),
+        pages,
         fieldProperties,
         seed,
-    }) as unknown as MarcherPage[];
-    return { marchers, pages, marcherPages };
+    });
+    return { marchers, pages, positions };
 };
 
 /** The pre-P7.7 inline rendering from `ExportCoordinatesModal`'s sheet export. */
 function legacySheets({
     marchers,
     pages,
-    marcherPages,
+    positions,
     options,
 }: ReturnType<typeof show> & { options: CoordinateSheetOptions }) {
-    const map = marcherPageMapFromArray(marcherPages);
+    const map = pagePositionMapFromRows(positions);
     const { quarterPages, terse, includeMeasures, useXY, roundingDenominator } =
         options;
     const pageOrderById: Record<number, number> = {};
@@ -70,7 +70,7 @@ function legacySheets({
                         (pageOrderById[Number(pageIdB)] ?? 0),
                 )
                 .map(([, mp]) => mp);
-            const chunks: MarcherPage[][] = [];
+            const chunks: PagePosition[][] = [];
             for (let i = 0; i < rows.length; i += 28)
                 chunks.push(rows.slice(i, i + 28));
             return chunks.map((rowChunk, chunkIdx) => ({
@@ -98,7 +98,9 @@ function legacySheets({
         });
     }
     return marchers.map((marcher) => {
-        const rows = getByMarcherId(map, marcher.id).sort((a, b) => {
+        const rows = Object.values(
+            map.marcherPagesByMarcher[marcher.id] ?? {},
+        ).sort((a, b) => {
             const pageA = pages.find((p) => p.id === a.page_id);
             const pageB = pages.find((p) => p.id === b.page_id);
             return (pageA?.order ?? 0) - (pageB?.order ?? 0);
@@ -145,7 +147,7 @@ describe("buildCoordinateSheets", () => {
         await tolgee.run();
     });
 
-    describe("page mode is unchanged", () => {
+    describe("renders as before P7.7", () => {
         it.each(optionSets)(
             "matches the pre-P7.7 rendering (quarterPages: $quarterPages)",
             (options) => {
@@ -155,7 +157,7 @@ describe("buildCoordinateSheets", () => {
                 const actual = buildCoordinateSheets({
                     marchers: data.marchers,
                     pages: data.pages,
-                    positions: marcherPageMapFromArray(data.marcherPages),
+                    positions: pagePositionMapFromRows(data.positions),
                     fieldProperties,
                     options,
                     t,
@@ -175,7 +177,7 @@ describe("buildCoordinateSheets", () => {
             const sheets = buildCoordinateSheets({
                 marchers: data.marchers,
                 pages: data.pages,
-                positions: marcherPageMapFromArray(data.marcherPages),
+                positions: pagePositionMapFromRows(data.positions),
                 fieldProperties,
                 options: { ...optionSets[1]!, quarterPages: true },
                 t,
@@ -186,48 +188,12 @@ describe("buildCoordinateSheets", () => {
         });
     });
 
-    describe("timeline mode", () => {
-        it.each(optionSets)(
-            "renders sampled positions exactly as page rows with the same x and y (quarterPages: $quarterPages)",
-            (options) => {
-                const data = show(11);
-                // Resolver samples carry only marcher, page, x and y, in page-major order
-                const samples = [...data.pages]
-                    .sort((a, b) => a.order - b.order)
-                    .flatMap((page) =>
-                        data.marchers.map((marcher) => {
-                            const row = data.marcherPages.find(
-                                (mp) =>
-                                    mp.marcher_id === marcher.id &&
-                                    mp.page_id === page.id,
-                            )!;
-                            return {
-                                marcher_id: marcher.id,
-                                page_id: page.id,
-                                x: row.x,
-                                y: row.y,
-                            };
-                        }),
-                    );
-
-                const fromSamples = buildCoordinateSheets({
-                    marchers: data.marchers,
-                    pages: data.pages,
-                    positions: pagePositionMapFromRows(samples),
-                    fieldProperties,
-                    options,
-                    t,
-                });
-
-                expect(fromSamples).toEqual(legacySheets({ ...data, options }));
-            },
-        );
-
-        it("shows the sampled position, not a page row", () => {
+    describe("positions", () => {
+        it("shows the sampled position", () => {
             const data = show(5);
             const marcher = data.marchers[0]!;
             const page = [...data.pages].sort((a, b) => a.order - b.order)[1]!;
-            const samples = data.marcherPages.map((mp) => ({
+            const samples = data.positions.map((mp) => ({
                 marcher_id: mp.marcher_id,
                 page_id: mp.page_id,
                 x: mp.x,

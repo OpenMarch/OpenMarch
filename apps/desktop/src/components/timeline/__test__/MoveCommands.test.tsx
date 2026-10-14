@@ -4,10 +4,8 @@ import { eq } from "drizzle-orm";
 import { Toaster } from "sonner";
 import { describeDbTests, schema, type DbConnection } from "@/test/base";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "@/timeline/convert/writePageConversion";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { moveMarchersInTarget } from "@/db-functions/timelineMoves";

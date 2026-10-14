@@ -1,6 +1,8 @@
 /**
- * Shared fixtures for the convert-on-open tests (P9.3): real `.dots` files
- * built through the migrations, and readers for what the tests compare.
+ * Shared fixtures for the convert-on-open tests: real `.dots` files built
+ * through the migrations, and readers for what the tests compare. A page-era
+ * file is what an older release wrote: version 7, the migrations before the
+ * timeline-only ones, and the page-era tables.
  */
 import { DatabaseSync } from "node:sqlite";
 import { createHash } from "crypto";
@@ -8,12 +10,18 @@ import * as fs from "fs";
 import * as path from "path";
 import { getOrm } from "../db";
 import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
-import { applyFileVersionDecision, readUserVersion } from "../fileVersion";
+import {
+    applyFileVersionDecision,
+    PAGE_MODEL_USER_VERSION,
+    readUserVersion,
+} from "../fileVersion";
 import { BACKUP_NAME_SUFFIX } from "../backup";
-import { CONVERT_ON_OPEN_ENV } from "../convertOnOpenGate";
+import {
+    conversionMarkerOf,
+    initializeNewFileAsTimeline,
+} from "../convertOnOpenGate";
 
 export const migrationsFolder = path.resolve(__dirname, "../migrations");
-export const GATE_ON = { [CONVERT_ON_OPEN_ENV]: "1" };
 
 const showSql = fs.readFileSync(
     path.resolve(
@@ -45,17 +53,38 @@ const count = (db: DatabaseSync, table: string) =>
         ).n,
     );
 
+/** The page-era tables the file has. */
+const PAGE_ERA_TABLES = [
+    "marcher_pages",
+    "midsets",
+    "pathways",
+    "shapes",
+    "shape_pages",
+    "shape_page_marchers",
+];
+const pageEraTablesIn = (db: DatabaseSync) =>
+    (
+        db
+            .prepare(
+                `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (${PAGE_ERA_TABLES.map(() => "?").join(", ")}) ORDER BY name`,
+            )
+            .all(...PAGE_ERA_TABLES) as { name: string }[]
+    ).map((t) => t.name);
+
 export interface FileState {
     userVersion: number;
     timelines: number;
     transitions: number;
     assignments: number;
-    timelineMode: unknown;
+    /** The conversion marker, or undefined */
+    marker: string | undefined;
     settingsJson: string | undefined;
     history: unknown[];
     historyStats: unknown;
     changeLog: number;
-    marcherPages: number;
+    /** `marcher_pages` rows, or null when the table is gone */
+    marcherPages: number | null;
+    pageEraTables: string[];
     homes: unknown[];
     triggers: string[];
 }
@@ -65,21 +94,13 @@ export function stateOf(filePath: string): FileState {
         const settings = db
             .prepare("SELECT json_data FROM workspace_settings")
             .get() as { json_data: string } | undefined;
-        let timelineMode: unknown;
-        try {
-            timelineMode = settings
-                ? (JSON.parse(settings.json_data) as Record<string, unknown>)
-                      .timelineMode
-                : undefined;
-        } catch {
-            timelineMode = undefined;
-        }
+        const pageEraTables = pageEraTablesIn(db);
         return {
             userVersion: readUserVersion(db),
             timelines: count(db, "timelines"),
             transitions: count(db, "timeline_transitions"),
             assignments: count(db, "timeline_assignments"),
-            timelineMode,
+            marker: conversionMarkerOf(settings?.json_data),
             settingsJson: settings?.json_data,
             history: db
                 .prepare(
@@ -88,7 +109,10 @@ export function stateOf(filePath: string): FileState {
                 .all(),
             historyStats: db.prepare("SELECT * FROM history_stats").get(),
             changeLog: count(db, "timeline_change_log"),
-            marcherPages: count(db, "marcher_pages"),
+            marcherPages: pageEraTables.includes("marcher_pages")
+                ? count(db, "marcher_pages")
+                : null,
+            pageEraTables,
             homes: db
                 .prepare("SELECT id, home_x, home_y FROM marchers ORDER BY id")
                 .all(),
@@ -103,11 +127,11 @@ export function stateOf(filePath: string): FileState {
     });
 }
 
-/** A migrated, initialized show file at version 7, as the app creates one. */
+/** A blank page-era show at version 7, as an older release created one. */
 export async function createBlankShow(filePath: string) {
     const db = new DatabaseSync(filePath);
     try {
-        applyFileVersionDecision(db, true);
+        db.exec(`PRAGMA user_version = ${PAGE_MODEL_USER_VERSION}`);
         const orm = getOrm(db);
         await new DrizzleMigrationService(orm, db).applyPendingMigrations(
             migrationsFolder,
@@ -118,8 +142,27 @@ export async function createBlankShow(filePath: string) {
     }
 }
 
+/** A new show at version 8, as this release creates one. */
+export async function createNewTimelineShow(
+    filePath: string,
+    now: () => Date = () => new Date(),
+) {
+    const db = new DatabaseSync(filePath);
+    try {
+        applyFileVersionDecision(db, true);
+        const orm = getOrm(db);
+        await new DrizzleMigrationService(orm, db).applyPendingMigrations(
+            migrationsFolder,
+        );
+        await DrizzleMigrationService.initializeDatabase(orm, db);
+        initializeNewFileAsTimeline(db, now);
+    } finally {
+        db.close();
+    }
+}
+
 /**
- * A version-7 show with 76 marchers on 6 pages, undo triggers (as the
+ * A page-era show with 76 marchers on 6 pages, undo triggers (as the
  * renderer creates them on open), and some undo and redo history. With
  * `undoTriggers: false` it skips the triggers, and so loads no renderer module.
  */
@@ -152,7 +195,7 @@ export async function createPageShow(
 }
 
 /**
- * A version-7 show with `marchers` marchers on pages 0 to `pages` (8 beats a
+ * A page-era show with `marchers` marchers on pages 0 to `pages` (8 beats a
  * page), every marcher on every page, and the undo triggers. For the
  * performance checks (P9.8): 400 by 100 is the size the phase file names.
  */
@@ -206,5 +249,5 @@ export async function createLargePageShow(
 export const backupsIn = (dir: string) =>
     fs
         .readdirSync(dir)
-        .filter((f) => f.includes(BACKUP_NAME_SUFFIX))
+        .filter((f) => f.includes(`.${BACKUP_NAME_SUFFIX}`))
         .sort();

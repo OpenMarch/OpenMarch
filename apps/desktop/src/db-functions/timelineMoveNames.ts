@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
-import { readShowTiming } from "@/timeline/convert/convertPagesInTransaction";
+import { readShowTiming } from "@/timeline/showTiming";
 import { pageFlags } from "@/timeline/timelinePlayhead";
 import { autoMoveNumber, moveLabels } from "@/timeline/timelineViewModel";
 import type { NamedMove, NamedPageBox } from "@/timeline/timelineRangeWords";

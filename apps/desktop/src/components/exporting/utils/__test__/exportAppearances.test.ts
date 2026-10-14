@@ -14,10 +14,6 @@ import {
     getPlaybackPageForTimeMs,
     type MarcherAppearancesByPageId,
 } from "../exportAppearances";
-import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
-import { generateMarcherPages } from "@/__mocks__/generators";
-import { pageToDatabasePage } from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
 
 function createTestPage({
     id,
@@ -163,22 +159,10 @@ describe("buildMarcherAppearancesByPageId", () => {
             seed: 2,
         });
         const page = timingObjects.pages[0];
-        const marcherPages = generateMarcherPages({
-            marchers,
-            pages: timingObjects.pages.map(pageToDatabasePage),
-            fieldProperties,
-            seed: 2,
-        });
-        const marcherPagesMap = marcherPageMapFromArray(
-            marcherPages as unknown as MarcherPage[],
-        );
-
         const tagFill = { r: 12, g: 34, b: 56, a: 1 };
         const appearancesByPageId = buildMarcherAppearancesByPageId({
             sortedPages: timingObjects.pages,
             marchers,
-            marcherPagesMap,
-            timelineMode: false,
             sectionAppearances: [],
             marcherIdsByTagId: new Map([[1, [marchers[0].id]]]),
             allTagAppearances: [
@@ -203,8 +187,8 @@ describe("buildMarcherAppearancesByPageId", () => {
         const firstMarcherAppearances = appearancesByPageId.get(page.id)?.[
             marchers[0].id
         ];
-        expect(firstMarcherAppearances?.[1]?.fill_color).toEqual(tagFill);
-        expect(firstMarcherAppearances?.[1]?.shape_type).toBe("triangle");
+        expect(firstMarcherAppearances?.[0]?.fill_color).toEqual(tagFill);
+        expect(firstMarcherAppearances?.[0]?.shape_type).toBe("triangle");
 
         const untaggedMarcherAppearances = appearancesByPageId.get(page.id)?.[
             marchers[1].id
@@ -216,7 +200,7 @@ describe("buildMarcherAppearancesByPageId", () => {
         ).toBe(false);
     });
 
-    it("ignores marcher page rows in timeline mode (per-page appearance is dropped)", () => {
+    it("gives an untagged marcher only the field default", () => {
         const fieldProperties =
             FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
         const marchers = generateMarchers({ numberOfMarchers: 2, seed: 3 });
@@ -224,15 +208,8 @@ describe("buildMarcherAppearancesByPageId", () => {
             numberOfBeats: 16,
             seed: 3,
         });
-        const marcherPagesMap = marcherPageMapFromArray(
-            generateMarcherPages({
-                marchers,
-                pages: timingObjects.pages.map(pageToDatabasePage),
-                fieldProperties,
-                seed: 3,
-            }) as unknown as MarcherPage[],
-        );
-        const args = {
+        const pageId = timingObjects.pages[0].id;
+        const appearances = buildMarcherAppearancesByPageId({
             sortedPages: timingObjects.pages,
             marchers,
             sectionAppearances: [],
@@ -240,26 +217,8 @@ describe("buildMarcherAppearancesByPageId", () => {
             allTagAppearances: [],
             tagAppearanceIdsByPageId: new Map(),
             fieldProperties,
-        };
-        const pageId = timingObjects.pages[0].id;
-        const pageMode = buildMarcherAppearancesByPageId({
-            ...args,
-            marcherPagesMap,
-            timelineMode: false,
-        }).get(pageId)![marchers[0].id];
-        const timelineMode = buildMarcherAppearancesByPageId({
-            ...args,
-            marcherPagesMap,
-            timelineMode: true,
-        }).get(pageId)![marchers[0].id];
-        const withoutMap = buildMarcherAppearancesByPageId({
-            ...args,
-            timelineMode: true,
         }).get(pageId)![marchers[0].id];
 
-        // Page mode puts the marcher page row first; timeline mode leaves only the field default
-        expect(pageMode).toHaveLength(2);
-        expect(timelineMode).toHaveLength(1);
-        expect(timelineMode).toEqual(withoutMap);
+        expect(appearances).toHaveLength(1);
     });
 });

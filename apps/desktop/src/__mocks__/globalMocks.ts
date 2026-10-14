@@ -1,14 +1,9 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import {
-    DatabaseMarcherPage,
-    databaseMarcherPagesToMarcherPages,
-} from "@/global/classes/MarcherPage";
+import type MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
-import { DatabaseShape, DatabaseShapePage } from "@/db-functions";
 
 export const mockMarchers: Marcher[] = [
     {
@@ -120,140 +115,71 @@ export const mockPages: Page[] = [
     } satisfies Page,
 ] as const;
 
-export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
+export const mockMarcherPages: MarcherPage[] = [
     {
-        id: 1,
         marcher_id: 1,
         page_id: 1,
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 2,
         marcher_id: 2,
         page_id: 1,
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 3,
         marcher_id: 3,
         page_id: 1,
         x: -200,
         y: -500,
         notes: null,
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 4,
         marcher_id: 1,
         page_id: 2,
         x: 0,
         y: 0,
         notes: "This is the first marcherPage",
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 5,
         marcher_id: 2,
         page_id: 2,
         x: 284,
         y: 963.1,
         notes: "This is the second marcherPage",
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 6,
         marcher_id: 3,
         page_id: 2,
         x: -200,
         y: 105.015,
         notes: null,
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 1,
         marcher_id: 1,
         page_id: 3,
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 2,
         marcher_id: 2,
         page_id: 3,
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
     {
-        id: 3,
         marcher_id: 3,
         page_id: 3,
         x: -200,
         y: -500,
         notes: null,
-        created_at: "some_time",
-        updated_at: "other_time",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        rotation_degrees: 0,
     },
 ] as const;
-
-export const mockMarcherPageMap = marcherPageMapFromArray(
-    databaseMarcherPagesToMarcherPages(
-        mockMarcherPages as DatabaseMarcherPage[],
-    ),
-);
 
 export const mockMarcherLines: MarcherLine[] = [
     new MarcherLine({
@@ -285,60 +211,6 @@ export const mockMarcherLines: MarcherLine[] = [
         y2: 1000,
         notes: "This is the last marcherLine",
     }),
-] as const;
-
-export const mockShapes: DatabaseShape[] = [
-    {
-        id: 1,
-        name: "Shape 1",
-        updated_at: "some_time",
-        created_at: "other_time",
-        notes: "These are notes",
-    },
-    {
-        id: 2,
-        name: "Shape 2",
-        updated_at: "some_time",
-        created_at: "other_time",
-        notes: null,
-    },
-    {
-        id: 3,
-        name: "Shape 3",
-        updated_at: "some_time",
-        created_at: "other_time",
-        notes: "",
-    },
-] as const;
-
-export const mockShapePages: DatabaseShapePage[] = [
-    {
-        id: 1,
-        shape_id: 1,
-        page_id: 1,
-        svg_path: "M 0 0 L 100 100",
-        created_at: "some_time",
-        updated_at: "other_time",
-        notes: "These are notes",
-    },
-    {
-        id: 2,
-        shape_id: 2,
-        page_id: 1,
-        svg_path: "M 200 0 L 0 0",
-        created_at: "some_time",
-        updated_at: "other_time",
-        notes: null,
-    },
-    {
-        id: 3,
-        shape_id: 3,
-        page_id: 1,
-        svg_path: "M 5 10 L -50 1000",
-        created_at: "some_time",
-        updated_at: "other_time",
-        notes: "",
-    },
 ] as const;
 
 /**

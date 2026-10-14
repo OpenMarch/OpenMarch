@@ -4,17 +4,10 @@ import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { performRedo, performUndo } from "@/db-functions/history";
 import { createMarchers } from "@/db-functions/marcher";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
-import {
-    combineMarcherTimelines,
-    getMarcherTimelines,
-} from "@/hooks/queries/useCoordinateData";
-import type { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
+import * as pageEra from "@om-electron/database/migrations/pageEraSchema";
 import { getCoordinatesAtTime } from "@/utilities/Keyframes";
-import {
-    convertPagesToTimeline,
-    readShowTiming,
-} from "../convert/writePageConversion";
-import { createTimelineDevApi } from "../fixtures/timelineFixtures";
+import { readShowTiming } from "@/timeline/showTiming";
+import { convertPagesToTimeline } from "@/test/convertPages";
 import { pageEndBeat } from "../timelineCanvas";
 import { timeAtBeat } from "../timeMap";
 import {
@@ -24,11 +17,31 @@ import {
     useTimelineResolverStore,
 } from "../timelineStore";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
+import { pageModeKeyframes, type PageEraRow } from "./conversionEquality";
+import { addPageEraTables, writeMarcherPages } from "./pageEraShow";
 
-// P7.17: these tests set up timeline mode themselves
-keepFixturesInPageMode(
-    "its tests convert the show or write timeline rows, and set the flag, themselves",
-);
+// The tests convert the page show themselves, and keep its page-era rows to compare with
+keepFixturesInPageMode("its tests convert the show themselves");
+
+/** Converts as one edit, keeping the page-era tables the tests compare with */
+const convert = (db: DbConnection, options: { replace?: boolean } = {}) =>
+    convertPagesToTimeline(db, { ...options, keepPageTables: true });
+
+/** Page-mode keyframes in milliseconds (each page's at its end), with no pathways */
+const msKeyframes = (
+    pages: Parameters<typeof pageModeKeyframes>[0],
+    rows: PageEraRow[],
+) => {
+    const byPage = new Map<number, PageEraRow[]>();
+    for (const row of rows)
+        byPage.set(row.page_id, [...(byPage.get(row.page_id) ?? []), row]);
+    return pageModeKeyframes(
+        pages,
+        byPage,
+        new Map(),
+        (page) => (page.timestamp + page.duration) * 1000,
+    );
+};
 
 /**
  * The page → timeline converter on a real database (docs/timeline/phases/06-converter.md P6.5),
@@ -80,7 +93,7 @@ const expectPageEndsExact = async (
     skip: (marcherId: number, pageId: number) => boolean = () => false,
 ) => {
     const { pages } = await readShowTiming(db);
-    const rows = await db.select().from(schema.marcher_pages).all();
+    const rows = await db.select().from(pageEra.marcher_pages).all();
     const r = resolver();
     let checked = 0;
     for (const page of pages) {
@@ -109,7 +122,7 @@ describeDbTests("page → timeline converter", (it) => {
         db,
         marchersAndPages,
     }) => {
-        const result = await convertPagesToTimeline(db);
+        const result = await convert(db);
         const { pages } = await readShowTiming(db);
         const marcherCount = marchersAndPages.expectedMarchers.length;
         expect(pages.length).toBe(7);
@@ -172,9 +185,9 @@ describeDbTests("page → timeline converter", (it) => {
         // Homes are page 0's coordinates
         const page0 = await db
             .select()
-            .from(schema.marcher_pages)
-            .where(eq(schema.marcher_pages.page_id, 0))
-            .orderBy(schema.marcher_pages.marcher_id)
+            .from(pageEra.marcher_pages)
+            .where(eq(pageEra.marcher_pages.page_id, 0))
+            .orderBy(pageEra.marcher_pages.marcher_id)
             .all();
         expect(await homes(db)).toEqual(
             page0.map((mp) => ({ id: mp.marcher_id, x: mp.x, y: mp.y })),
@@ -189,24 +202,12 @@ describeDbTests("page → timeline converter", (it) => {
         db,
         marchersAndPages,
     }) => {
-        await convertPagesToTimeline(db);
+        await convert(db);
         await startTimelineResolver(db);
         const r = resolver();
         const { beats, pages } = await readShowTiming(db);
-        const rows = await db.select().from(schema.marcher_pages).all();
-        const keyframes = combineMarcherTimelines(
-            pages.map((page) =>
-                getMarcherTimelines(
-                    (page.timestamp + page.duration) * 1000,
-                    Object.fromEntries(
-                        rows
-                            .filter((mp) => mp.page_id === page.id)
-                            .map((mp) => [mp.marcher_id, mp]),
-                    ) as unknown as MarcherPagesByMarcher,
-                    {},
-                ),
-            ),
-        );
+        const rows = await db.select().from(pageEra.marcher_pages).all();
+        const keyframes = msKeyframes(pages, rows);
         const showEnd = pageEndBeat(pages[pages.length - 1]!);
         let checked = 0;
         for (const { id } of marchersAndPages.expectedMarchers) {
@@ -232,7 +233,7 @@ describeDbTests("page → timeline converter", (it) => {
     }) => {
         const before = await homes(db);
         await startTimelineResolver(db);
-        await convertPagesToTimeline(db);
+        await convert(db);
         await timelineResolverSettled();
         // The running store follows the edit through the change log, whose JSON images carry
         // REAL columns at full precision, so it is exact without a cold build.
@@ -260,9 +261,9 @@ describeDbTests("page → timeline converter", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        await convertPagesToTimeline(db);
+        await convert(db);
         const counts = await timelineCounts(db);
-        const error = await convertPagesToTimeline(db).catch((e) => e);
+        const error = await convert(db).catch((e) => e);
         expect(error).toBeInstanceOf(TimelineWriteError);
         expect((error as TimelineWriteError).code).toBe("E-ARGS");
         expect(await timelineCounts(db)).toEqual(counts);
@@ -272,7 +273,7 @@ describeDbTests("page → timeline converter", (it) => {
             kind: "line",
             geometry: JSON.stringify({ a: [0, 0], b: [1, 0] }),
         });
-        await convertPagesToTimeline(db, { replace: true });
+        await convert(db, { replace: true });
         expect(await timelineCounts(db)).toEqual(counts);
         await startTimelineResolver(db);
         expect(await expectPageEndsExact(db)).toBeGreaterThan(0);
@@ -289,40 +290,40 @@ describeDbTests("page → timeline converter", (it) => {
         marchersAndPages: _,
     }) => {
         const [pathway] = await db
-            .insert(schema.pathways)
+            .insert(pageEra.pathways)
             .values({ path_data: "M 0 0 Q 50 50 100 0" })
             .returning();
         await db
-            .update(schema.marcher_pages)
+            .update(pageEra.marcher_pages)
             .set({ path_data_id: pathway!.id })
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, 2),
-                    eq(schema.marcher_pages.marcher_id, 3),
+                    eq(pageEra.marcher_pages.page_id, 2),
+                    eq(pageEra.marcher_pages.marcher_id, 3),
                 ),
             );
         const page3Row = await db
             .select()
-            .from(schema.marcher_pages)
+            .from(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, 3),
-                    eq(schema.marcher_pages.marcher_id, 5),
+                    eq(pageEra.marcher_pages.page_id, 3),
+                    eq(pageEra.marcher_pages.marcher_id, 5),
                 ),
             )
             .get();
-        await db.insert(schema.midsets).values({
+        await db.insert(pageEra.midsets).values({
             mp_id: page3Row!.id,
             x: 1,
             y: 2,
             progress_placement: 0.5,
         });
         const [curved, straight] = await db
-            .insert(schema.shapes)
+            .insert(pageEra.shapes)
             .values([{ name: "curve" }, { name: "line" }])
             .returning();
         const shapePages = await db
-            .insert(schema.shape_pages)
+            .insert(pageEra.shape_pages)
             .values([
                 {
                     shape_id: curved!.id,
@@ -339,7 +340,7 @@ describeDbTests("page → timeline converter", (it) => {
 
         // Dropped in timeline mode: rotation, notes and per-page appearance overrides
         await db
-            .update(schema.marcher_pages)
+            .update(pageEra.marcher_pages)
             .set({
                 rotation_degrees: 45,
                 notes: "kneel",
@@ -347,24 +348,21 @@ describeDbTests("page → timeline converter", (it) => {
             })
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, 5),
-                    eq(schema.marcher_pages.marcher_id, 4),
+                    eq(pageEra.marcher_pages.page_id, 5),
+                    eq(pageEra.marcher_pages.marcher_id, 4),
                 ),
             );
         await db
-            .update(schema.marcher_pages)
+            .update(pageEra.marcher_pages)
             .set({ visible: 0 })
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, 5),
-                    eq(schema.marcher_pages.marcher_id, 6),
+                    eq(pageEra.marcher_pages.page_id, 5),
+                    eq(pageEra.marcher_pages.marcher_id, 6),
                 ),
             );
 
-        const { report } = await createTimelineDevApi(
-            db,
-            () => {},
-        ).convertPages();
+        const { report } = await convert(db);
         const byPage = new Map(report.pages.map((p) => [p.pageId, p]));
         expect(byPage.get(2)!.pathways).toEqual([
             { marcherId: 3, pathwayId: pathway!.id },
@@ -398,14 +396,14 @@ describeDbTests("page → timeline converter", (it) => {
         marchersAndPages: _,
     }) => {
         await db
-            .delete(schema.marcher_pages)
+            .delete(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, 3),
-                    eq(schema.marcher_pages.marcher_id, 2),
+                    eq(pageEra.marcher_pages.page_id, 3),
+                    eq(pageEra.marcher_pages.marcher_id, 2),
                 ),
             );
-        const { report, assignmentCount } = await convertPagesToTimeline(db);
+        const { report, assignmentCount } = await convert(db);
         const page3Report = report.pages.find((p) => p.pageId === 3)!;
         expect(page3Report.missingMarchers).toEqual([2]);
         expect(page3Report.interpolated).toEqual([
@@ -415,7 +413,7 @@ describeDbTests("page → timeline converter", (it) => {
 
         await startTimelineResolver(db);
         const { beats, pages } = await readShowTiming(db);
-        const rows = await db.select().from(schema.marcher_pages).all();
+        const rows = await db.select().from(pageEra.marcher_pages).all();
         const rowOf = (pageId: number) =>
             rows.find((mp) => mp.page_id === pageId && mp.marcher_id === 2)!;
         const page2 = pages.find((p) => p.id === 2)!;
@@ -431,24 +429,9 @@ describeDbTests("page → timeline converter", (it) => {
             from.y + progress * (to.y - from.y),
         ]);
         // Inside pages 3 and 4 too (uniform tempo, so beats and milliseconds agree)
-        const timeline = combineMarcherTimelines(
-            pages
-                .filter((page) => page.id !== 3)
-                .map((page) =>
-                    getMarcherTimelines(
-                        (page.timestamp + page.duration) * 1000,
-                        Object.fromEntries(
-                            rows
-                                .filter(
-                                    (mp) =>
-                                        mp.page_id === page.id &&
-                                        mp.marcher_id === 2,
-                                )
-                                .map((mp) => [mp.marcher_id, mp]),
-                        ) as unknown as MarcherPagesByMarcher,
-                        {},
-                    ),
-                ),
+        const timeline = msKeyframes(
+            pages,
+            rows.filter((mp) => mp.marcher_id === 2),
         ).get(2)!;
         let checked = 0;
         for (let b = page3.beats[0]!.index; b < pageEndBeat(page4); b += 0.25) {
@@ -473,14 +456,14 @@ describeDbTests("page → timeline converter", (it) => {
         const last = pages[pages.length - 1]!;
         const before = pages[pages.length - 2]!;
         await db
-            .delete(schema.marcher_pages)
+            .delete(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, last.id),
-                    eq(schema.marcher_pages.marcher_id, 2),
+                    eq(pageEra.marcher_pages.page_id, last.id),
+                    eq(pageEra.marcher_pages.marcher_id, 2),
                 ),
             );
-        const { report, assignmentCount } = await convertPagesToTimeline(db);
+        const { report, assignmentCount } = await convert(db);
         const lastReport = report.pages.find((p) => p.pageId === last.id)!;
         expect(lastReport.missingMarchers).toEqual([2]);
         expect(lastReport.interpolated).toEqual([]);
@@ -489,11 +472,11 @@ describeDbTests("page → timeline converter", (it) => {
         await startTimelineResolver(db);
         const beforeRow = await db
             .select()
-            .from(schema.marcher_pages)
+            .from(pageEra.marcher_pages)
             .where(
                 and(
-                    eq(schema.marcher_pages.page_id, before.id),
-                    eq(schema.marcher_pages.marcher_id, 2),
+                    eq(pageEra.marcher_pages.page_id, before.id),
+                    eq(pageEra.marcher_pages.marcher_id, 2),
                 ),
             )
             .get();
@@ -507,7 +490,8 @@ describeDbTests("page → timeline converter", (it) => {
     it("a show with only page 0 converts to homes and no timeline", async ({
         db,
     }) => {
-        await createMarchers({
+        await addPageEraTables(db);
+        const marchers = await createMarchers({
             db,
             newMarchers: [1, 2, 3].map((i) => ({
                 section: "Other",
@@ -515,9 +499,18 @@ describeDbTests("page → timeline converter", (it) => {
                 drill_order: i,
             })),
         });
-        const page0 = await db.select().from(schema.marcher_pages).all();
+        await writeMarcherPages(
+            db,
+            marchers.map((m, i) => ({
+                marcher_id: m.id,
+                page_id: 0,
+                x: 100 + 40 * i,
+                y: 300 - 12.5 * i,
+            })),
+        );
+        const page0 = await db.select().from(pageEra.marcher_pages).all();
         expect(page0.length).toBe(3);
-        const result = await convertPagesToTimeline(db);
+        const result = await convert(db);
         expect(result.transitionIds.size).toBe(0);
         expect(result.timelineIds.size).toBe(0);
         expect(await timelineCounts(db)).toEqual([0, 0, 0, 0, 0]);
@@ -529,7 +522,7 @@ describeDbTests("page → timeline converter", (it) => {
         await startTimelineResolver(db);
         expect(await expectPageEndsExact(db)).toBe(6);
         // No timeline rows were written, so a second run isn't refused, and writes the same homes
-        await convertPagesToTimeline(db);
+        await convert(db);
         expect(await timelineCounts(db)).toEqual([0, 0, 0, 0, 0]);
     });
 });

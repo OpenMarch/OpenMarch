@@ -6,20 +6,26 @@ import * as path from "path";
 import { app } from "electron";
 import { getOrm } from "./db";
 import { DrizzleMigrationService } from "./services/DrizzleMigrationService";
-import { liftPageEraFreezeTriggers } from "./migrations/triggers";
 import {
-    applyFileVersionDecision,
     fileTooNewMessage,
     isSupportedUserVersion,
     MAX_SUPPORTED_USER_VERSION,
+    NEW_FILE_USER_VERSION,
+    PAGE_MODEL_USER_VERSION,
     readUserVersion,
+    TIMELINE_MODEL_USER_VERSION,
 } from "./fileVersion";
 
+/**
+ * Sets up the repaired file at `version`: 7 for a file whose motion is still in page-era tables
+ * (see `shouldRepairAsPageEra`), so it has those tables to copy into and is converted when it
+ * opens, and 8 otherwise.
+ */
 export const initializeAndMigrateDatabase = async (
     newDb: DatabaseSync,
+    version: number = NEW_FILE_USER_VERSION,
 ): Promise<void> => {
-    // A new, empty file: set its version (7, the Drizzle-era page model).
-    applyFileVersionDecision(newDb, true);
+    newDb.exec(`PRAGMA user_version = ${version}`);
 
     const drizzleDb = getOrm(newDb);
     const migrator = new DrizzleMigrationService(drizzleDb, newDb);
@@ -96,23 +102,14 @@ export const copyDataFromOriginalDatabase = (
         )
         .all() as Array<{ name: string }>;
 
-    // The workspace settings are copied first, so a timeline-mode file's flag is on before its
-    // frozen page-era rows are copied. The freeze (P9.5) is lifted for the copy and put back
-    // whatever happens, even if detaching fails.
-    let restoreFreeze: (() => void) | undefined;
-    try {
-        restoreFreeze = liftPageEraFreezeTriggers(newDb);
-        copyTablesFromAttachedOriginal(
-            originalDb,
-            newDb,
-            originalDbPath,
-            tables,
-            excludedTables,
-            singleRowTables,
-        );
-    } finally {
-        restoreFreeze?.();
-    }
+    copyTablesFromAttachedOriginal(
+        originalDb,
+        newDb,
+        originalDbPath,
+        tables,
+        excludedTables,
+        singleRowTables,
+    );
 };
 
 /** Attaches the original file to `newDb`, copies its tables, and always detaches it. */
@@ -263,6 +260,7 @@ export const copyFieldPropertiesFromOriginalDatabase = (
     updateStmt.run(...values);
 };
 
+/** Removes `marcher_pages` rows whose marcher or page is gone. Page-era files only. */
 export const removeOrphanMarcherPages = (db: DatabaseSync): void => {
     db.prepare(
         `DELETE FROM marcher_pages WHERE marcher_id NOT IN (SELECT id FROM marchers)`,
@@ -270,6 +268,39 @@ export const removeOrphanMarcherPages = (db: DatabaseSync): void => {
     db.prepare(
         `DELETE FROM marcher_pages WHERE page_id NOT IN (SELECT id FROM pages)`,
     ).run();
+};
+
+/** Tables only a page-era file has: `0020_drop_page_era` drops them when a file is converted. */
+const PAGE_ERA_TABLES = [
+    "marcher_pages",
+    "pathways",
+    "midsets",
+    "shapes",
+    "shape_pages",
+    "shape_page_marchers",
+];
+
+/**
+ * True when the file being repaired must be repaired as a page-era file (7), so its positions are
+ * copied into page-era tables and converted, after the person confirms, when it opens.
+ *
+ * A timeline file (8) never is. A page-model file (7) always is. Any other version, such as 0 from
+ * a damaged header or 1 to 6 from 0.0.9 or earlier, is judged by what the file holds: page-era
+ * tables mean its motion is still in the page model.
+ */
+export const shouldRepairAsPageEra = (
+    sourceVersion: number,
+    sourceDb: DatabaseSync,
+): boolean => {
+    if (sourceVersion === TIMELINE_MODEL_USER_VERSION) return false;
+    if (sourceVersion === PAGE_MODEL_USER_VERSION) return true;
+    const placeholders = PAGE_ERA_TABLES.map(() => "?").join(", ");
+    const found = sourceDb
+        .prepare(
+            `SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name IN (${placeholders})`,
+        )
+        .get(...PAGE_ERA_TABLES) as { n: number };
+    return found.n > 0;
 };
 
 export const repairDatabase = async (originalDbPath: string) => {
@@ -313,9 +344,16 @@ export const repairDatabase = async (originalDbPath: string) => {
         // Create the new database at the temp path in the app data directory.
         newDb = new DatabaseSync(tempDbPath);
 
+        // A page-era file is repaired as one, so its positions are copied and then converted
+        // when it opens; anything else becomes a timeline file.
+        const pageEra = shouldRepairAsPageEra(sourceVersion, originalDb);
+
         try {
             // Initialize and run migrations on the new database
-            await initializeAndMigrateDatabase(newDb);
+            await initializeAndMigrateDatabase(
+                newDb,
+                pageEra ? PAGE_MODEL_USER_VERSION : NEW_FILE_USER_VERSION,
+            );
 
             // Turn off foreign keys for data copying
             newDb.prepare("PRAGMA foreign_keys = OFF").run();
@@ -331,10 +369,10 @@ export const repairDatabase = async (originalDbPath: string) => {
             newDb.prepare("PRAGMA foreign_keys = ON").run();
 
             // Remove orphaned marcher_pages entries
-            removeOrphanMarcherPages(newDb);
+            if (pageEra) removeOrphanMarcherPages(newDb);
 
-            // Keep a supported version higher than a new file's (8, the
-            // timeline model), so repair never lowers a file's version.
+            // Keep a supported version higher than the repaired file's, so repair never lowers
+            // a file's version.
             if (
                 isSupportedUserVersion(sourceVersion) &&
                 sourceVersion > readUserVersion(newDb)

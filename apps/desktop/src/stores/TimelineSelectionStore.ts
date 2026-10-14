@@ -27,7 +27,7 @@ import { create } from "zustand";
  *
  * `storedTimelines` is a read model of every stored timeline and who is in it, kept current by
  * `useTimelineSelectionHost` (mounted by `TimelineResolverHost`) after each timeline write, undo
- * and redo. It is `null` until first loaded and outside timeline mode. `pageBoxes` is kept by
+ * and redo. It is `null` until first loaded. `pageBoxes` is kept by
  * `TimelineModePanel`.
  *
  * **Isolation** (docs/timeline/research/ownership/09-isolation.md, _prototype_): double-clicking a
@@ -44,8 +44,6 @@ import { create } from "zustand";
  * a preview that stops clears the cursor, so the canvas is back at P. Every write of the window
  * (navigation, seeking, a range) clears the cursor, so the canvas is back at P before anything
  * edits there.
- *
- * Page mode doesn't read this store.
  */
 
 /** Home, a range or nothing (UI-9, "What the selection holds"; UI-10 edit window). */

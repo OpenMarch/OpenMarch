@@ -7,7 +7,7 @@ import { sampleTimelinePagePositions } from "@/timeline/timelinePagePositions";
 import type { TimelineResolverState } from "@/timeline/timelineStore";
 
 /**
- * Timeline mode's positions for the launch-page preview made when the app closes
+ * The positions for the launch-page preview made when the app closes
  * (docs/timeline/phases/07-page-parity.md P7.7): the page's positions from the live store
  * resolver at its end beat. A preview may use the store's resolver; exports build a private one.
  *
