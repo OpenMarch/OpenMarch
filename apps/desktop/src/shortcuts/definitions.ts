@@ -289,7 +289,7 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Space"],
     },
-    // UI-17: Shift+Space plays the page's move once, back to its set (timeline mode)
+    // Shift+Space plays on from the playhead (timeline mode); Space plays from the start flag
     playPage: {
         labelKey: "actions.playback.playPage",
         category: "playback",

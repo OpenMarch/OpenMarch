@@ -259,6 +259,29 @@ describe("timeline views", () => {
         expect(onSelectionChange).toHaveBeenCalledTimes(1);
     });
 
+    it("has one Play button, and Shift+click on it plays from the playhead", () => {
+        const onPlayingChange = vi.fn();
+        const onPlayFromPlayhead = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                onPlayingChange={onPlayingChange}
+                onPlayFromPlayhead={onPlayFromPlayhead}
+            />,
+        );
+        const play = screen.getByRole("button", {
+            name: "Play from the start flag",
+        });
+        expect(screen.getAllByTestId("timeline-play")).toHaveLength(1);
+        fireEvent.click(play, { shiftKey: true });
+        expect(onPlayFromPlayhead).toHaveBeenCalledTimes(1);
+        expect(onPlayingChange).not.toHaveBeenCalled();
+        fireEvent.click(play);
+        expect(onPlayingChange).toHaveBeenCalledWith(true);
+        expect(onPlayFromPlayhead).toHaveBeenCalledTimes(1);
+    });
+
     it("forwards transport playback, and zooms with Fit and Ctrl+scroll in both densities (UI-12)", async () => {
         const onPlayingChange = vi.fn();
         const onPixelsPerBeatChange = vi.fn();
@@ -271,7 +294,9 @@ describe("timeline views", () => {
             />,
         );
 
-        fireEvent.click(screen.getByRole("button", { name: "Play" }));
+        fireEvent.click(
+            screen.getByRole("button", { name: "Play from the start flag" }),
+        );
         expect(onPlayingChange).toHaveBeenCalledWith(true);
         rerender(
             <ExpandedTimeline
@@ -1735,6 +1760,39 @@ describe("a calmer timeline (UI-12)", () => {
         fireEvent.keyDown(window, { key: "Alt", altKey: true });
         expect(rows().map((row) => row.active)).toEqual([false, false, true]);
         expect(next).toHaveAttribute("aria-keyshortcuts", "Alt+E");
+    });
+
+    it("guides Play and Shift+Play in its tooltip, and swaps its name while Shift is held", async () => {
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                onPlayingChange={vi.fn()}
+                onPlayFromPlayhead={vi.fn()}
+            />,
+        );
+        const play = screen.getByTestId("timeline-play");
+        act(() => play.focus());
+        await screen.findByRole("tooltip");
+        const rows = () =>
+            [
+                ...document.querySelector(
+                    '[data-testid="timeline-play-guide"]',
+                )!.children,
+            ].map((row) => ({
+                text: row.textContent,
+                active: row.hasAttribute("data-active"),
+            }));
+        expect(rows()).toEqual([
+            { text: "Play from the start flagSpace", active: true },
+            { text: "Play from the playheadShift+Space", active: false },
+        ]);
+        fireEvent.keyDown(window, { key: "Shift", shiftKey: true });
+        expect(play).toHaveAccessibleName("Play from the playhead");
+        expect(play).toHaveAttribute("aria-keyshortcuts", "Shift+Space");
+        expect(rows().map((row) => row.active)).toEqual([false, true]);
+        fireEvent.keyUp(window, { key: "Shift" });
+        expect(play).toHaveAccessibleName("Play from the start flag");
     });
 
     it("keeps page navigation live while playing, where it jumps playback", () => {

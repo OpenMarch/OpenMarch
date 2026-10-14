@@ -10,7 +10,7 @@ import { beatAtTime, beatIndexAtTime } from "@/timeline/timeMap";
 import {
     navigateTimeline,
     loopBounds,
-    selectedPageBox,
+    playTimelinePage,
     seekTimeline,
     toggleTimelinePlayback,
 } from "@/timeline/timelineTransport";
@@ -30,7 +30,10 @@ interface PlaybackState {
 /** The playback commands, reading the latest state, so they keep their identity across beats */
 const playbackCommands = (latest: {
     readonly current: PlaybackState;
-}): Pick<TimelinePlayback, "onSeek" | "onNavigate" | "onPlayingChange"> => ({
+}): Pick<
+    TimelinePlayback,
+    "onSeek" | "onNavigate" | "onPlayingChange" | "onPlayFromPlayhead"
+> => ({
     // UI-12: while playing, a click or page button jumps playback there, and a scrub suspends it
     // until it ends (`seekTimeline`), which says where a scrub's seek landed
     onSeek: (beatIndex, options) => {
@@ -48,6 +51,15 @@ const playbackCommands = (latest: {
         const { beats, isPlaying, setIsPlaying } = latest.current;
         if (next === isPlaying) return;
         toggleTimelinePlayback({
+            isPlaying,
+            showEndBeat: beats.length,
+            setIsPlaying,
+        });
+    },
+    // Shift+click on Play, as Shift+Space
+    onPlayFromPlayhead: () => {
+        const { beats, isPlaying, setIsPlaying } = latest.current;
+        playTimelinePage({
             isPlaying,
             showEndBeat: beats.length,
             setIsPlaying,
@@ -85,10 +97,6 @@ export function useTimelinePlayback({
     const playheadBeat = useTimelineSelectionStore(displayedBeat);
     // UI-17: with looping on (or a move isolated), Play loops
     const playLoops = useTimelineSelectionStore((s) => loopBounds(s) !== null);
-    // UI-17: what an unpinned Play does next, for the Play button's words
-    const playNext = useTimelineSelectionStore((s) =>
-        selectedPageBox(s) ? ("page" as const) : undefined,
-    );
     // Shift+Space's once-through, which stops back on the page's set
     const playingOnce = useTimelineSelectionStore(
         (s) => s.playback?.kind === "preview" && s.playback.once === true,
@@ -136,7 +144,6 @@ export function useTimelinePlayback({
                 isPlaying && liveIndex != null ? liveIndex : playheadBeat,
             isPlaying,
             playLoops,
-            playNext,
             playingOnce,
             ...commands,
         }),
@@ -147,7 +154,6 @@ export function useTimelinePlayback({
             liveIndex,
             playheadBeat,
             playLoops,
-            playNext,
             playingOnce,
         ],
     );

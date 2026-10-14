@@ -22,7 +22,7 @@ export const PLAYBACK_MENU_ACTIONS: readonly MenuAction[] = [
     { action: "playPause", label: "Play / Stop", accelerator: "Space" },
     {
         action: "playPage",
-        label: "Play Page Once",
+        label: "Play from Playhead",
         accelerator: "Shift+Space",
     },
     { action: "toggleLoop", label: "Loop On / Off", accelerator: "C" },

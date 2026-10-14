@@ -91,7 +91,7 @@ export type TimelinePlaybackRun =
           readonly kind: "preview";
           readonly from: number;
           readonly to: number;
-          /** Plays once and stops instead of looping (UI-17: Shift+Space plays the page once) */
+          /** Plays once and stops instead of looping (UI-17: Shift+Space plays the loop once) */
           readonly once?: boolean;
       }
     | { readonly kind: "on" };

@@ -184,7 +184,53 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         expect(store().playback).toBeNull();
     });
 
-    it("Shift+Space plays the selected page's move once and stops back on its set (UI-17)", async ({
+    it("Shift+Space plays on from the playhead, or the loop once back to its set (UI-17)", async ({
+        db,
+        wrapper,
+    }) => {
+        const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().setPageBoxes([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]);
+            store().selectRange(9, 13);
+        });
+        const shiftSpace = () =>
+            act(() => {
+                playTimelinePage({
+                    isPlaying: result.current.playing.isPlaying,
+                    showEndBeat: result.current.beats.length,
+                    setIsPlaying: result.current.playing.setIsPlaying,
+                });
+            });
+        shiftSpace();
+        audio.startInfo.current = {};
+        expect(store().playback).toEqual({ kind: "on" });
+        expect(store().cursorBeat).toBe(13);
+        shiftSpace();
+        // With a loop, it plays the loop once and goes back to the playhead when it ends
+        act(() => {
+            store().selectRange(9, 17);
+            store().setLoop({ start: 9, end: 17 });
+        });
+        shiftSpace();
+        audio.startInfo.current = {};
+        expect(store().playback).toEqual({
+            kind: "preview",
+            from: 9,
+            to: 17,
+            once: true,
+        });
+        expect(store().cursorBeat).toBe(9);
+        audio.seconds = 8.05;
+        frame();
+        expect(result.current.playing.isPlaying).toBe(false);
+        expect(store().cursorBeat).toBeNull();
+        expect(store().playheadBeat).toBe(17);
+    });
+
+    it("Space plays from the start flag, and a stop in its first beat leaves the page", async ({
         db,
         wrapper,
     }) => {
@@ -196,47 +242,22 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
             ]);
             store().selectRange(9, 17);
         });
-        const once = () =>
-            act(() => {
-                playTimelinePage({
-                    isPlaying: result.current.playing.isPlaying,
-                    showEndBeat: result.current.beats.length,
-                    setIsPlaying: result.current.playing.setIsPlaying,
-                });
-            });
-        once();
-        audio.startInfo.current = {};
-        expect(store().playback).toEqual({
-            kind: "preview",
-            from: 9,
-            to: 17,
-            once: true,
-        });
+        space(result);
         expect(store().cursorBeat).toBe(9);
-        // The move reaches the page's flag: playback stops on the page's set, P unchanged
-        audio.seconds = 8.05;
+        // Beat 9.4: on the flag, which is page 1's end flag
+        audio.seconds = 4.2;
         frame();
-        expect(result.current.playing.isPlaying).toBe(false);
-        expect(store().cursorBeat).toBeNull();
+        space(result);
         expect(store().playheadBeat).toBe(17);
-        // Space plays on from the playhead as ever
-        act(() => {
-            store().selectRange(1, 9);
-        });
+        expect(store().startBeat).toBe(9);
+        expect(store().cursorBeat).toBeNull();
+        // A beat or more in, stopping moves P there as ever
         space(result);
-        expect(store().playback).toEqual({ kind: "on" });
-        space(result);
-        // Stopping the once-through part-way also goes back to the page's set
-        act(() => {
-            store().selectRange(9, 17);
-        });
-        once();
-        audio.startInfo.current = {};
-        audio.seconds = 5.6;
+        audio.seconds = 4.6; // beat 10.2
         frame();
-        once();
-        expect(store().cursorBeat).toBeNull();
-        expect(store().playheadBeat).toBe(17);
+        space(result);
+        expect(store().playheadBeat).toBe(10);
+        expect(store().startBeat).toBe(9);
     });
 
     it("plays on and stops at the end of the show, leaving the playhead there", async ({
@@ -469,7 +490,7 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         expect(store().startPinned).toBe(false);
         space(result);
         expect(store().playback).toEqual({ kind: "on" });
-        expect(store().cursorBeat).toBe(13);
+        expect(store().cursorBeat).toBe(9);
         // No frame: the audio never started, so there is no beat to stop on
         space(result);
         expect(store().cursorBeat).toBeNull();

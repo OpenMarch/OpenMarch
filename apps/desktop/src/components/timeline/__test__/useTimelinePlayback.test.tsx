@@ -567,9 +567,9 @@ describeDbTests("useTimelinePlayback", (it) => {
         });
         expect(store().startPinned).toBe(false);
         expect(result.current.playback.playLoops).toBe(false);
-        // A page is selected: Play's tooltip names Shift+Space and C (UI-17)
-        expect(result.current.playback.playNext).toBe("page");
-        // Space: plays on from P. The driver, not this hook, moves P when it stops
+        // Shift+click on Play plays from the playhead, as Shift+Space
+        expect(result.current.playback.onPlayFromPlayhead).toBeDefined();
+        // Space: plays on from the start flag. The driver, not this hook, moves P when it stops
         act(() => {
             result.current.playback.onPlayingChange!(true);
         });
@@ -577,7 +577,8 @@ describeDbTests("useTimelinePlayback", (it) => {
         expect(result.current.playback.playLoops).toBe(false);
         expect(store().playback).toEqual({ kind: "on" });
         expect(store().playheadBeat).toBe(9);
-        expect(store().cursorBeat).toBe(9);
+        // The start flag on beat 1, which cues as 0 (beat 0 has no length)
+        expect(store().cursorBeat).toBe(0);
         // While playing, the cursor follows the audio clock and is never -1
         expect(result.current.playback.positionBeat).toBeGreaterThanOrEqual(0);
 

@@ -18,10 +18,11 @@ import { consumeSuspendRequest } from "./timelineTransport";
  *
  * - A **preview** (Play with the start flag pinned, UI-17) loops from the start flag to P. However
  *   it stops, the cursor goes back on P, the arrival being edited.
- * - **Playing on** (P) stops at the end of the show; an isolated timeline loops over its range
- *   instead. Pausing it moves P to the last whole beat played (`seek`): an unpinned start flag
- *   follows P, as it does when a scrub ends (UI-12 review), so the window doesn't silently span
- *   pages; a pinned one stays.
+ * - **Playing on** (Play: from the start flag; Shift+Space: from P) stops at the end of the show;
+ *   an isolated timeline loops over its range instead. Pausing it moves P to the last whole beat
+ *   played (`seek`): an unpinned start flag follows P, as it does when a scrub ends (UI-12
+ *   review), so the window doesn't silently span pages; a pinned one stays. Stopped within its
+ *   first beat from the start flag, nothing moves.
  * - A scrub's suspension (`suspendTimelinePlayback`, UI-12 review) pauses without writing P or the
  *   cursor: the scrub moves the cursor, and resumes playback when it ends.
  *
@@ -33,6 +34,8 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
     const isPlaying = isPlayingContext?.isPlaying ?? false;
     const setIsPlaying = isPlayingContext?.setIsPlaying;
     const lastLiveBeat = useRef<number | null>(null);
+    // Where playing on started (the cue), so a stop within Play's first beat changes nothing
+    const startedAt = useRef<number | null>(null);
 
     // The furthest the playhead can go
     useEffect(() => {
@@ -48,6 +51,7 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
             lastLiveBeat.current = null;
             // Started outside the transport: it plays on from where the audio starts
             const store = useTimelineSelectionStore.getState();
+            startedAt.current = store.cursorBeat ?? store.playheadBeat;
             if (store.playback === null) store.setPlayback({ kind: "on" });
             return;
         }
@@ -60,12 +64,20 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
         store.setPlayback(null);
         if (suspended) return;
         // A preview returns to P however it stopped (UI-17). Paused before the audio started,
-        // nothing played, so there is nowhere else to stop
-        if (run.kind === "preview" || live === null) {
+        // nothing played, so there is nowhere else to stop. Nor when Play from the start flag
+        // stops within its first beat: the flag is the page before's end flag, and stopping on it
+        // would move the window back a page
+        const stopAt =
+            live === null ? null : Math.min(Math.floor(live), beats.length);
+        if (
+            run.kind === "preview" ||
+            stopAt === null ||
+            (stopAt === startedAt.current && stopAt === store.startBeat)
+        ) {
             store.clearCursor();
             return;
         }
-        store.seek(Math.min(Math.floor(live), beats.length));
+        store.seek(stopAt);
     }, [enabled, isPlaying, beats.length]);
 
     useEffect(() => {

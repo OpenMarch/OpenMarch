@@ -48,11 +48,11 @@ export function useNavigationActionHandlers() {
     useActionHandler("nextBeat", () => navigate("next-beat"), enabled);
     useActionHandler(
         "playPause",
-        // UI-17 Play: loops a pinned window, or plays on; playing, it stops
+        // UI-17 Play: loops the loop, or plays on from the start flag; playing, it stops
         () => toggleTimelinePlayback(transport()),
         enabled,
     );
-    // UI-17: Shift+Space plays the page's move once, back to its set
+    // Shift+Space plays on from the playhead (or the loop once)
     useActionHandler("playPage", () => playTimelinePage(transport()), {
         enabled: canNavigate,
     });

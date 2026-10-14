@@ -138,7 +138,6 @@ export interface TimelineSelectionInteraction {
 
 // The same elements every render, so the memoized transport buttons don't re-render for them
 const SKIP_BACK_ICON = <SkipBackIcon size={16} />;
-const PLAY_ICON = <PlayIcon size={18} weight="fill" />;
 const STOP_ICON = <StopIcon size={16} weight="fill" />;
 const SKIP_FORWARD_ICON = <SkipForwardIcon size={16} />;
 // Previous and Next while Shift (the start or end of the show) or Alt (a beat) is held
@@ -148,16 +147,11 @@ const BEAT_BACK_ICON = <CaretLeftIcon size={16} weight="bold" />;
 const BEAT_FORWARD_ICON = <CaretRightIcon size={16} weight="bold" />;
 const FIT_ICON = <ArrowsOutLineHorizontalIcon size={16} />;
 const HOUSE_ICON = <HouseIcon size={14} aria-hidden="true" />;
-/**
- * Play's icon while the start flag is pinned (UI-17, project owner's pick): a bar in the start
- * flag's color, echoing the flag's line on the ruler, then Play ("loop from the mark")
- */
-const PLAY_FROM_FLAG_ICON = (
+const PLAY_ICON = <PlayIcon size={16} weight="fill" />;
+/** Play while Shift is held: a bar, the playhead's line, then Play ("play from the playhead") */
+const PLAY_FROM_PLAYHEAD_ICON = (
     <span className="flex items-center gap-2">
-        <span
-            aria-hidden
-            className={clsx("rounded-2 h-14 w-[2.5px]", START_INK.bg)}
-        />
+        <span aria-hidden className="rounded-2 bg-text h-14 w-[2.5px]" />
         <PlayIcon size={14} weight="fill" />
     </span>
 );
@@ -297,6 +291,34 @@ function useHeldNavigationMode(enabled: boolean): TransportNavigationMode {
     return mode;
 }
 
+/**
+ * Whether Shift is held now, as Play would read it (`useHeldNavigationMode`'s rules: only a change
+ * re-renders, losing focus lets go, a pointer event re-reads it)
+ */
+function useHeldShift(enabled: boolean): boolean {
+    const [held, setHeld] = useState(false);
+    useEffect(() => {
+        if (!enabled) return;
+        const read = (event: KeyboardEvent | PointerEvent) =>
+            setHeld(event.shiftKey && !event.ctrlKey && !event.metaKey);
+        const onBlur = () => setHeld(false);
+        window.addEventListener("keydown", read, true);
+        window.addEventListener("keyup", read, true);
+        window.addEventListener("pointermove", read, true);
+        window.addEventListener("pointerdown", read, true);
+        window.addEventListener("blur", onBlur);
+        return () => {
+            window.removeEventListener("keydown", read, true);
+            window.removeEventListener("keyup", read, true);
+            window.removeEventListener("pointermove", read, true);
+            window.removeEventListener("pointerdown", read, true);
+            window.removeEventListener("blur", onBlur);
+            setHeld(false);
+        };
+    }, [enabled]);
+    return held;
+}
+
 const NAVIGATION_TARGETS = {
     page: ["previous-page", "next-page"],
     edge: ["first-page", "last-page"],
@@ -306,8 +328,8 @@ const NAVIGATION_TARGETS = {
     readonly [TimelineNavigation, TimelineNavigation]
 >;
 
-interface NavigationGuideRow {
-    readonly mode: TransportNavigationMode;
+interface TransportGuideRow<Mode extends string = string> {
+    readonly mode: Mode;
     readonly icon: ReactNode;
     readonly label: string;
     /** The shortcut as keycaps */
@@ -315,7 +337,9 @@ interface NavigationGuideRow {
 }
 
 /** What Previous (or Next) does with each modifier, in the order the tooltip lists them */
-const navigationGuide = (back: boolean): readonly NavigationGuideRow[] => {
+const navigationGuide = (
+    back: boolean,
+): readonly TransportGuideRow<TransportNavigationMode>[] => {
     const alt = isMac() ? "Option" : "Alt";
     return [
         {
@@ -347,19 +371,21 @@ const navigationGuide = (back: boolean): readonly NavigationGuideRow[] => {
 };
 
 /**
- * The tooltip's guide to Previous and Next: each icon, what it does, its shortcut and its click,
- * with the row the held modifier picks in the accent color.
+ * The tooltip's guide to Previous, Play or Next: each icon, what it does, its shortcut and its
+ * click, with the row the held modifier picks in the accent color.
  */
-function NavigationGuide({
+function TransportGuide({
     rows,
     mode,
+    testId,
 }: {
-    rows: readonly NavigationGuideRow[];
-    mode: TransportNavigationMode;
+    rows: readonly TransportGuideRow[];
+    mode: string;
+    testId: string;
 }) {
     return (
         <span
-            data-testid="timeline-navigation-guide"
+            data-testid={testId}
             className="grid w-max grid-cols-[auto_auto_auto] items-center gap-x-8 gap-y-4"
         >
             {rows.map((row) => (
@@ -385,7 +411,7 @@ function NavigationGuide({
 /**
  * Previous and Next. Q and E step a page; Shift (Shift+click, Shift+Q/E) steps a beat and Alt
  * (Alt+click, Alt+Q/E, also Home and End) goes to the start or end of the show. Holding either modifier swaps the icon
- * and label to say so, and the tooltip is a guide to all three (`NavigationGuide`). Kept apart
+ * and label to say so, and the tooltip is a guide to all three (`TransportGuide`). Kept apart
  * from the transport so only these two re-render for it.
  */
 const TransportNavigationButton = memo(function TransportNavigationButton({
@@ -411,10 +437,102 @@ const TransportNavigationButton = memo(function TransportNavigationButton({
             label={row.label}
             keyShortcut={row.shortcut}
             hideLabel
-            hint={<NavigationGuide rows={guide} mode={mode} />}
+            hint={
+                <TransportGuide
+                    rows={guide}
+                    mode={mode}
+                    testId="timeline-navigation-guide"
+                />
+            }
             testId={`timeline-${direction}`}
             navigation
             onClick={onNavigate ? onClick : undefined}
+        >
+            {row.icon}
+        </TransportButton>
+    );
+});
+
+/** What Play (Space) and Shift+Play (Shift+Space) do, in the order the tooltip lists them */
+const playGuide = (
+    loops: boolean,
+): readonly TransportGuideRow<"play" | "shift">[] => [
+    {
+        mode: "play",
+        icon: PLAY_ICON,
+        label: loops ? "Play the loop" : "Play from the start flag",
+        shortcut: TRANSPORT_SHORTCUTS.play,
+    },
+    {
+        mode: "shift",
+        icon: PLAY_FROM_PLAYHEAD_ICON,
+        label: loops ? "Play the loop once" : "Play from the playhead",
+        shortcut: TRANSPORT_SHORTCUTS.playPage,
+    },
+];
+
+/**
+ * Play, or Stop while playing. Shift+click is Shift+Space: plays from the playhead, or the loop
+ * once. Holding Shift swaps the icon and label to say so, and the tooltip is a guide to both, as
+ * Previous and Next do. Kept apart from the transport so only this re-renders for Shift.
+ */
+const TransportPlayButton = memo(function TransportPlayButton({
+    isPlaying,
+    onPlayingChange,
+    playLoops,
+    playingOnce,
+    onPlayFromPlayhead,
+}: {
+    isPlaying: boolean;
+    onPlayingChange?: (isPlaying: boolean) => void;
+    playLoops: boolean;
+    playingOnce: boolean;
+    onPlayFromPlayhead?: () => void;
+}) {
+    const shift = useHeldShift(onPlayingChange != null && !isPlaying);
+    const togglePlaying = useCallback(
+        (event: ReactMouseEvent) =>
+            event.shiftKey && onPlayFromPlayhead
+                ? onPlayFromPlayhead()
+                : onPlayingChange?.(!isPlaying),
+        [isPlaying, onPlayingChange, onPlayFromPlayhead],
+    );
+    const onClick = onPlayingChange ? togglePlaying : undefined;
+    if (isPlaying)
+        return (
+            <TransportButton
+                label="Stop"
+                shortcut={TRANSPORT_SHORTCUTS.play}
+                hint={
+                    playLoops || playingOnce
+                        ? "Goes back to where you were editing"
+                        : "Stops where it is"
+                }
+                testId="timeline-play"
+                pressed
+                onClick={onClick}
+            >
+                {STOP_ICON}
+            </TransportButton>
+        );
+    const guide = playGuide(playLoops);
+    const mode = shift && onPlayFromPlayhead ? "shift" : "play";
+    const row = guide.find((r) => r.mode === mode)!;
+    return (
+        <TransportButton
+            label={row.label}
+            keyShortcut={row.shortcut}
+            hideLabel
+            hint={
+                <TransportGuide
+                    rows={onPlayFromPlayhead ? guide : guide.slice(0, 1)}
+                    mode={mode}
+                    testId="timeline-play-guide"
+                />
+            }
+            testId="timeline-play"
+            pressed={false}
+            onClick={onClick}
         >
             {row.icon}
         </TransportButton>
@@ -436,7 +554,7 @@ const TRANSPORT_TIGHT_PX = 500;
  * or Next steps a beat and Alt+click goes to the start or end of the show, as Shift+Q/E and
  * Alt+Q/E do (`TransportNavigationButton`). While playing, navigation jumps playback there.
  *
- * With looping on, Play loops the loop and shows its bar in its icon (UI-17).
+ * With looping on, Play loops the loop (UI-17).
  */
 export const TimelineTransport = memo(function TimelineTransport({
     model,
@@ -445,8 +563,8 @@ export const TimelineTransport = memo(function TimelineTransport({
     isPlaying,
     onPlayingChange,
     playLoops = false,
-    playNext,
     playingOnce = false,
+    onPlayFromPlayhead,
     onNavigate,
     onFit,
     fitted = false,
@@ -464,10 +582,10 @@ export const TimelineTransport = memo(function TimelineTransport({
     onPlayingChange?: (isPlaying: boolean) => void;
     /** Looping is on, so Play loops and shows the loop's bar (UI-17) */
     playLoops?: boolean;
-    /** With no pin, a page is selected (UI-17): Play's tooltip names Shift+Space and C */
-    playNext?: "page";
     /** Shift+Space's once-through is playing (UI-17) */
     playingOnce?: boolean;
+    /** Shift+click on Play (Shift+Space): plays on from the playhead, or the loop once */
+    onPlayFromPlayhead?: () => void;
     onNavigate?: (direction: TimelineNavigation) => void;
     /** Fit the show in view, or back to the zoom from before fitting */
     onFit?: () => void;
@@ -549,10 +667,6 @@ export const TimelineTransport = memo(function TimelineTransport({
         }
         setGoTo(null);
     };
-    const togglePlaying = useCallback(
-        () => onPlayingChange?.(!isPlaying),
-        [isPlaying, onPlayingChange],
-    );
     const readout =
         goTo !== null ? (
             <input
@@ -626,36 +740,13 @@ export const TimelineTransport = memo(function TimelineTransport({
                         direction="previous"
                         onNavigate={onNavigate}
                     />
-                    <TransportButton
-                        label={
-                            isPlaying
-                                ? "Stop"
-                                : playLoops
-                                  ? "Play the loop"
-                                  : "Play"
-                        }
-                        shortcut={TRANSPORT_SHORTCUTS.play}
-                        hint={
-                            isPlaying
-                                ? playLoops || playingOnce
-                                    ? "Goes back to where you were editing"
-                                    : "Stops where it is"
-                                : playLoops
-                                  ? "Loops the yellow bar, wherever the playhead is. C or Loop turns looping off"
-                                  : playNext === "page"
-                                    ? "Plays on from here. Shift+Space plays this page's move once; C loops it"
-                                    : "Plays on from here. C loops the page you're on"
-                        }
-                        testId="timeline-play"
-                        pressed={isPlaying}
-                        onClick={onPlayingChange ? togglePlaying : undefined}
-                    >
-                        {isPlaying
-                            ? STOP_ICON
-                            : playLoops
-                              ? PLAY_FROM_FLAG_ICON
-                              : PLAY_ICON}
-                    </TransportButton>
+                    <TransportPlayButton
+                        isPlaying={isPlaying}
+                        onPlayingChange={onPlayingChange}
+                        playLoops={playLoops}
+                        playingOnce={playingOnce}
+                        onPlayFromPlayhead={onPlayFromPlayhead}
+                    />
                     <TransportNavigationButton
                         direction="next"
                         onNavigate={onNavigate}
