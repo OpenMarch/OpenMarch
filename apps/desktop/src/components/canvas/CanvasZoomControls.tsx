@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import clsx from "clsx";
 import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
+import { Slider } from "@openmarch/ui";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import {
     FullscreenButton,
@@ -15,6 +16,7 @@ export default function CanvasZoomControls({
     canvas,
 }: CanvasZoomControlsProps) {
     const [currentZoom, setCurrentZoom] = useState(100); // Represents percentage
+    const [fabricZoom, setFabricZoom] = useState(1); // Raw canvas zoom, for the slider
 
     // Min and Max zoom levels for Fabric.js (consistent with OpenMarchCanvas._applyZoom)
     const FABRIC_MIN_ZOOM = 0.2;
@@ -28,6 +30,7 @@ export default function CanvasZoomControls({
             const base = canvas.getBaseZoom?.() ?? 1.0;
             const ratio = canvas.getZoom() / (base || 1);
             setCurrentZoom(Math.round(ratio * 100));
+            setFabricZoom(canvas.getZoom());
         };
 
         updateZoom();
@@ -77,6 +80,21 @@ export default function CanvasZoomControls({
         canvas.zoomToPoint(center, newFabricZoom);
         canvas.requestRenderAll();
         // setCurrentZoom(Math.round(newFabricZoom * 100)); // updateZoom interval will handle this
+    };
+
+    // The slider is logarithmic, so equal travel is an equal zoom factor, as with the buttons
+    const handleSliderChange = ([position]: number[]) => {
+        if (!canvas) return;
+        const newFabricZoom = Math.min(
+            Math.max(Math.exp(position), FABRIC_MIN_ZOOM),
+            FABRIC_MAX_ZOOM,
+        );
+        canvas.zoomToPoint(
+            { x: (canvas.width || 0) / 2, y: (canvas.height || 0) / 2 },
+            newFabricZoom,
+        );
+        canvas.requestRenderAll();
+        setFabricZoom(newFabricZoom);
     };
 
     const handleResetZoomAndCenter = () => {
@@ -143,15 +161,29 @@ export default function CanvasZoomControls({
     return (
         <div
             className={clsx(
-                "group border-stroke bg-bg-1 pointer-events-auto absolute right-6 bottom-6 z-10 flex items-stretch justify-between overflow-hidden rounded-lg border shadow-lg",
-                "min-w-200",
+                "group border-stroke bg-bg-1 pointer-events-auto absolute right-6 bottom-6 z-10 flex min-w-200 flex-col overflow-hidden rounded-lg border shadow-lg",
             )}
         >
-            {/* The field's view controls (UI-12): fullscreen and perspective */}
-            <PerspectiveButton />
-            <FullscreenButton />
-            {/* Hamburger Icon (placeholder for future menu) */}
-            {/* <button
+            <div className="border-stroke flex items-center border-b px-12 py-2">
+                <Slider
+                    aria-label="Zoom"
+                    data-testid="canvas-zoom-slider"
+                    className="h-12 w-full"
+                    thumbClassName="size-10"
+                    min={Math.log(FABRIC_MIN_ZOOM)}
+                    max={Math.log(FABRIC_MAX_ZOOM)}
+                    step={0.01}
+                    value={[Math.log(fabricZoom)]}
+                    onValueChange={handleSliderChange}
+                    disabled={!canvas}
+                />
+            </div>
+            <div className="flex items-stretch justify-between">
+                {/* The field's view controls (UI-12): fullscreen and perspective */}
+                <PerspectiveButton />
+                <FullscreenButton />
+                {/* Hamburger Icon (placeholder for future menu) */}
+                {/* <button
                 className="text-text hover:bg-fg-2 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
                 title="Zoom and navigation"
                 disabled={!canvas}
@@ -160,35 +192,36 @@ export default function CanvasZoomControls({
                 <NavigationTooltip />
             </button> */}
 
-            {/* Zoom Out Button */}
-            <button
-                onClick={handleZoomOut}
-                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canvas || currentZoom <= getMinZoom()}
-                title="Zoom Out"
-            >
-                <MinusIcon size={18} weight="bold" />
-            </button>
+                {/* Zoom Out Button */}
+                <button
+                    onClick={handleZoomOut}
+                    className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canvas || currentZoom <= getMinZoom()}
+                    title="Zoom Out"
+                >
+                    <MinusIcon size={18} weight="bold" />
+                </button>
 
-            {/* Zoom Percentage Display and Reset Button */}
-            <button
-                onClick={handleResetZoomAndCenter}
-                className="border-stroke bg-fg-2 text-text flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canvas}
-                title="Reset Zoom and Center"
-            >
-                {currentZoom}%
-            </button>
+                {/* Zoom Percentage Display and Reset Button */}
+                <button
+                    onClick={handleResetZoomAndCenter}
+                    className="border-stroke bg-fg-2 text-text flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canvas}
+                    title="Reset Zoom and Center"
+                >
+                    {currentZoom}%
+                </button>
 
-            {/* Zoom In Button */}
-            <button
-                onClick={handleZoomIn}
-                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canvas || currentZoom >= getMaxZoom()}
-                title="Zoom In"
-            >
-                <PlusIcon size={18} weight="bold" />
-            </button>
+                {/* Zoom In Button */}
+                <button
+                    onClick={handleZoomIn}
+                    className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canvas || currentZoom >= getMaxZoom()}
+                    title="Zoom In"
+                >
+                    <PlusIcon size={18} weight="bold" />
+                </button>
+            </div>
         </div>
     );
 }

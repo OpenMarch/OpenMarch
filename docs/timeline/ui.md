@@ -457,6 +457,10 @@ from it. The spec still wins on the model; this file decides presentation.
     popover with the slider and a reset; its button shows the angle whenever it isn't 0°, and it is
     disabled, not hidden, outside fullscreen, where the field isn't tilted. Page mode keeps its old
     layout until Phase 10.
+  - **The zoom widget has a slider** above the buttons (issue #168), over the same range as − and +
+    (20%–2500% of the canvas zoom). It is logarithmic, so equal travel is an equal zoom factor, and
+    it zooms about the canvas centre like the buttons. It follows every other zoom input and the
+    reset, and works in page and timeline mode.
   - **While playing,** a click on the timeline, and the page buttons, jump playback there and play
     on, as in a DAW; the playhead stays put. A preview jumped outside its window plays on;
     isolation keeps the jump inside the isolated range. A drag (a scrub) suspends playback instead

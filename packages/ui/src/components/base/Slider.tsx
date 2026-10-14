@@ -6,8 +6,9 @@ import { twMerge } from "tailwind-merge";
 export function Slider({
     "aria-label": ariaLabel,
     className,
+    thumbClassName,
     ...props
-}: SliderProps) {
+}: SliderProps & { thumbClassName?: string }) {
     return (
         <RadixSlider.Root
             {...props}
@@ -20,7 +21,10 @@ export function Slider({
                 <RadixSlider.Range className="bg-accent/75 absolute h-full rounded-full" />
             </RadixSlider.Track>
             <RadixSlider.Thumb
-                className="bg-accent block size-16 cursor-pointer rounded-full duration-150 hover:scale-110 focus:outline-none"
+                className={twMerge(
+                    "bg-accent block size-16 cursor-pointer rounded-full duration-150 hover:scale-110 focus:outline-none",
+                    thumbClassName,
+                )}
                 aria-label={ariaLabel || "Slider"}
             />
         </RadixSlider.Root>
