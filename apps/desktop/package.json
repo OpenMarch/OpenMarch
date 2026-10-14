@@ -108,6 +108,7 @@
         "mediabunny": "^1.46.0",
         "meshoptimizer": "1.1.1",
         "nan": "^2.22.2",
+        "pdfjs-dist": "6.3.289",
         "pdfkit": "^0.17.1",
         "posthog-js": "^1.256.2",
         "react": "^19.0.0",

@@ -404,6 +404,9 @@ importers:
       nan:
         specifier: ^2.22.2
         version: 2.26.2
+      pdfjs-dist:
+        specifier: 6.3.289
+        version: 6.3.289
       pdfkit:
         specifier: ^0.17.1
         version: 0.17.2
@@ -10947,6 +10950,10 @@ packages:
     peerDependencies:
       graphql: ^16.8.1
 
+  pdfjs-dist@6.3.289:
+    resolution: {integrity: sha512-ZHjSVpDa3D6izMq8/04lvkhkATUmL9px6ChPaXc1k6nU2Mrhlg1/7F0bdUqCwUjw3NsPTfPZsMDUU6ZIcRaeQw==}
+    engines: {node: '>=22.13.0 || >=24'}
+
   pdfkit@0.17.2:
     resolution: {integrity: sha512-UnwF5fXy08f0dnp4jchFYAROKMNTaPqb/xgR8GtCzIcqoTnbOqtp3bwKvO4688oHI6vzEEs8Q6vqqEnC5IUELw==}
 
@@ -13594,6 +13601,9 @@ packages:
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
+
+ignoredOptionalDependencies:
+  - '@napi-rs/canvas'
 
 snapshots:
 
@@ -26557,6 +26567,8 @@ snapshots:
       - supports-color
       - typescript
       - utf-8-validate
+
+  pdfjs-dist@6.3.289: {}
 
   pdfkit@0.17.2:
     dependencies:
