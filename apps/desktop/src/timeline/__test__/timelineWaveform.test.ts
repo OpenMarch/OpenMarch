@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { audioEnvelope, peaksByBeat } from "../timelineWaveform";
+import {
+    audioEnvelope,
+    peaksByBeat,
+    waveformBarLevel,
+} from "../timelineWaveform";
 
 /** A one-channel buffer of `seconds` at `sampleRate`, loud (0.5) only in `[from, to)` seconds */
 const burst = (
@@ -98,12 +102,12 @@ describe("the timeline waveform (UI-12)", () => {
     });
 });
 
-describe("the waveform's scale (UI-12)", () => {
-    it("draws loudness in decibels, so a quiet passage stays visible next to a loud one", () => {
-        // One beat a second: beat 0 at full level, beat 1 at a tenth of it (-20 dB)
+describe("the waveform's scale", () => {
+    it("draws loudness linearly against the loudest moment, as the old WaveSurfer waveform did", () => {
+        // One beat a second: beat 0 at full level, beat 1 at a tenth of it
         const data = new Float32Array(2000);
-        for (let i = 0; i < 1000; i++) data[i] = i % 2 ? 1 : -1;
-        for (let i = 1000; i < 2000; i++) data[i] = i % 2 ? 0.1 : -0.1;
+        for (let i = 0; i < 1000; i++) data[i] = i % 2 ? 0.8 : -0.8;
+        for (let i = 1000; i < 2000; i++) data[i] = i % 2 ? 0.08 : -0.08;
         const envelope = audioEnvelope(
             {
                 numberOfChannels: 1,
@@ -116,7 +120,32 @@ describe("the waveform's scale (UI-12)", () => {
         const beats = [0, 1].map((t) => ({ timestamp: t, duration: 1 }));
         const [loud, quiet] = peaksByBeat(envelope, beats, 0, 1);
         expect(loud![0]).toBeCloseTo(1);
-        // (-20 + 42) / 42, where a linear scale would give 0.1
-        expect(quiet![0]).toBeCloseTo(22 / 42);
+        expect(quiet![0]).toBeCloseTo(0.1);
+    });
+});
+
+describe("the waveform's bars", () => {
+    const peaks = [[0.1, 0.2, 0.3, 0.4], [0.9, 0, 0, 0], []];
+
+    it("takes the loudest peak a bar covers, across a beat boundary", () => {
+        expect(waveformBarLevel(peaks, 0.5, 0.75)).toBeCloseTo(0.3);
+        expect(waveformBarLevel(peaks, 0.6, 1.1)).toBeCloseTo(0.9);
+        expect(waveformBarLevel(peaks, 1.25, 1.9)).toBe(0);
+    });
+
+    it("takes the peak under a bar narrower than a slice", () => {
+        expect(waveformBarLevel(peaks, 0.26, 0.27)).toBeCloseTo(0.2);
+    });
+
+    it("stops at a bar edge that float math puts just past a beat line", () => {
+        // 0.7 + 0.3 is 0.9999999999999999 and 0.1 * 3 is 0.30000000000000004
+        expect(waveformBarLevel(peaks, 0.75, 0.1 * 3 + 0.7)).toBeCloseTo(0.4);
+        expect(waveformBarLevel(peaks, 0, 0.1 * 3 + 0.7)).toBeCloseTo(0.4);
+        expect(waveformBarLevel(peaks, 0.5, 1 + 1e-12)).toBeCloseTo(0.4);
+    });
+
+    it("is silent past the audio and past the show", () => {
+        expect(waveformBarLevel(peaks, 2, 2.5)).toBe(0);
+        expect(waveformBarLevel(peaks, 5, 6)).toBe(0);
     });
 });

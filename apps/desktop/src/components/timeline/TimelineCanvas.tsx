@@ -16,6 +16,11 @@ import {
     type TimelineSpan,
 } from "./TimelineGeometry";
 import type { TimelineMarker, TimelineWaveform } from "./TimelineViewModel";
+import {
+    WAVEFORM_BAR_GAP,
+    WAVEFORM_BAR_WIDTH,
+    waveformBarLevel,
+} from "@/timeline/timelineWaveform";
 
 /*
  * The timeline's canvases are layers as wide as the show, but each draws only a window of it: what
@@ -385,9 +390,10 @@ interface TimelineWaveformCanvasProps extends TimelineCanvasLayerProps {
 }
 
 /**
- * The waveform as filled bars, a slice of a beat each, centered on a baseline that runs only as
- * far as the audio does. Drawn in one tone; the timeline lays the played tone over the rest and
- * clips it at the playhead, so playing never redraws the canvas.
+ * The waveform as rounded bars at a fixed pixel pitch (the old WaveSurfer look), each the loudest
+ * audio it covers, centered on a baseline that runs only as far as the audio does. Drawn in one
+ * tone; the timeline lays the played tone over the rest and clips it at the playhead, so playing
+ * never redraws the canvas.
  */
 export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
     waveform,
@@ -417,50 +423,41 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
                           "rgba(208, 208, 208, 0.6)",
                       );
             const centerY = height / 2;
-            const firstBeat = Math.max(
-                0,
-                Math.floor(span.left / pixelsPerBeat),
-            );
-            const lastBeat = Math.min(
-                waveform.peaksByBeat.length,
-                Math.ceil(width / pixelsPerBeat),
-                Math.ceil(spanEnd / pixelsPerBeat),
+            const audioEndX = Math.min(
+                width,
+                Math.max(0, beatToX(audioEnd, pixelsPerBeat)),
             );
 
             context.globalAlpha = 0.25;
-            context.fillRect(
-                0,
-                Math.round(centerY),
-                Math.max(0, beatToX(audioEnd, pixelsPerBeat)),
-                1,
-            );
+            context.fillRect(0, Math.round(centerY), audioEndX, 1);
             context.globalAlpha = 1;
-            for (let beat = firstBeat; beat < lastBeat; beat++) {
-                const peaks = waveform.peaksByBeat[beat];
-                if (!peaks || peaks.length === 0) continue;
-                const beatX = beatToX(beat, pixelsPerBeat);
-                const sampleWidth = pixelsPerBeat / peaks.length;
-                // A gap between bars only once they're wide enough; narrower, they read as one shape
-                const barWidth =
-                    sampleWidth >= 3
-                        ? sampleWidth - 1
-                        : Math.max(1, sampleWidth);
-                for (let index = 0; index < peaks.length; index++) {
-                    const x = beatX + index * sampleWidth;
-                    if (x + barWidth < 0 || x > width) continue;
-                    if (x + barWidth < span.left || x > spanEnd) continue;
-                    const magnitude = Math.max(
-                        0.5,
-                        clamp(Math.abs(peaks[index]!), 0, 1) * (height / 2 - 1),
-                    );
-                    context.fillRect(
-                        x,
-                        centerY - magnitude,
-                        barWidth,
-                        magnitude * 2,
-                    );
-                }
+            const pitch = WAVEFORM_BAR_WIDTH + WAVEFORM_BAR_GAP;
+            const firstBar = Math.max(0, Math.floor(span.left / pitch));
+            const lastBar = Math.ceil(Math.min(spanEnd, audioEndX) / pitch);
+            const radius = WAVEFORM_BAR_WIDTH / 2;
+            context.beginPath();
+            for (let bar = firstBar; bar < lastBar; bar++) {
+                const x = bar * pitch;
+                const level = waveformBarLevel(
+                    waveform.peaksByBeat,
+                    x / pixelsPerBeat,
+                    (x + pitch) / pixelsPerBeat,
+                );
+                if (level <= 0) continue;
+                // Any sound at all keeps a sliver, so a quiet entrance never reads as silence
+                const magnitude = Math.max(
+                    0.5,
+                    clamp(level, 0, 1) * (height / 2 - 1),
+                );
+                context.roundRect(
+                    x,
+                    centerY - magnitude,
+                    WAVEFORM_BAR_WIDTH,
+                    magnitude * 2,
+                    radius,
+                );
             }
+            context.fill();
         },
         [audioEnd, height, pixelsPerBeat, tone, waveform, width],
     );

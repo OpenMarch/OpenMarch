@@ -14,8 +14,12 @@ export interface AudioEnvelope {
 /** How many envelope values a second of audio gets: fine enough for 64px-a-beat zoom */
 export const AUDIO_ENVELOPE_RATE = 200;
 
-/** How many bars the waveform draws per beat */
-export const WAVEFORM_PEAKS_PER_BEAT = 8;
+/** How many peaks a beat gets: finer than the bars at the deepest zoom, so bars never step */
+export const WAVEFORM_PEAKS_PER_BEAT = 32;
+
+/** Each bar's width and the gap after it, in pixels, at any zoom: the old WaveSurfer look */
+export const WAVEFORM_BAR_WIDTH = 2;
+export const WAVEFORM_BAR_GAP = 1;
 
 export const useAudioEnvelopeStore = create<{
     readonly envelope: AudioEnvelope | null;
@@ -57,15 +61,12 @@ export function audioEnvelope(
     return { peaks, rate: buffer.sampleRate / window };
 }
 
-/** The quietest level the waveform draws, in dB below the show's loudest moment */
-export const WAVEFORM_FLOOR_DB = 42;
-
 /**
  * The waveform's peaks for each beat on the timeline's view axis (`offset` hidden beats first,
  * see `createTimelineBeatAxis`): `perBeat` values a beat, each the loudest moment in its slice of
- * the beat's time, in decibels below the loudest moment the show's beats cover, mapped from
- * `-WAVEFORM_FLOOR_DB` .. 0 dB onto 0 .. 1 (UI-12: a quiet ballad stays visible next to a loud
- * closer, and applause after the last beat doesn't set the scale). Beats past the audio get none.
+ * the beat's time, as a fraction of the loudest moment the show's beats cover (applause after the
+ * last beat doesn't set the scale). A linear scale, as the old WaveSurfer waveform drew: quiet
+ * passages stay low and calm instead of filling the lane. Beats past the audio get none.
  */
 export function peaksByBeat(
     envelope: AudioEnvelope,
@@ -97,19 +98,30 @@ export function peaksByBeat(
     for (const beat of raw)
         for (const peak of beat) loudest = Math.max(loudest, peak);
     if (loudest <= 0) return raw.map((beat) => beat.map(() => 0));
-    return raw.map((beat) =>
-        beat.map((peak) =>
-            peak <= 0
-                ? 0
-                : Math.min(
-                      1,
-                      Math.max(
-                          0,
-                          (20 * Math.log10(peak / loudest) +
-                              WAVEFORM_FLOOR_DB) /
-                              WAVEFORM_FLOOR_DB,
-                      ),
-                  ),
-        ),
-    );
+    return raw.map((beat) => beat.map((peak) => Math.min(1, peak / loudest)));
+}
+
+/**
+ * One waveform bar's height, 0 .. 1: the loudest peak in the beats `from` .. `to` (fractional,
+ * on the view axis). Bars sit at a fixed pixel pitch, so each takes whatever peaks it covers.
+ */
+export function waveformBarLevel(
+    peaks: readonly (readonly number[])[],
+    from: number,
+    to: number,
+): number {
+    let level = 0;
+    // Bar edges are float math on beats; nudge `to` back so an edge on a slice line stays exclusive
+    to -= 1e-9;
+    const last = Math.min(peaks.length, Math.ceil(to));
+    for (let beat = Math.max(0, Math.floor(from)); beat < last; beat++) {
+        const slices = peaks[beat]!;
+        const n = slices.length;
+        if (n === 0) continue;
+        const first = Math.max(0, Math.floor((from - beat) * n));
+        const end = Math.min(n, Math.ceil((to - beat) * n));
+        for (let i = first; i < end; i++)
+            if (slices[i]! > level) level = slices[i]!;
+    }
+    return level;
 }
