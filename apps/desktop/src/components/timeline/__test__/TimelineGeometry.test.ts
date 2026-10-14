@@ -10,6 +10,7 @@ import {
     getPlayheadReadout,
     getVisiblePageCounts,
     getWindowCountLabel,
+    isPastLastFlag,
     getSelectionRange,
     getTimelineRows,
     isPageSnapDisabled,
@@ -408,6 +409,42 @@ describe("getWindowCountLabel (UI-13)", () => {
                 endBeatIndex: 16,
             }),
         ).toBe("12 counts");
+    });
+});
+
+describe("counts past the last flag", () => {
+    const lastFlag = 12;
+    const model = {
+        pages: [
+            { ...timelineStoryModel.pages[0], isInitial: true, atBeat: 0 },
+            {
+                ...timelineStoryModel.pages[0],
+                isInitial: false,
+                atBeat: 4,
+                endBeat: lastFlag,
+            },
+        ],
+    };
+
+    it("counts from the last flag to the window's end", () => {
+        expect(
+            getWindowCountLabel(model, {
+                startBeatIndex: lastFlag,
+                endBeatIndex: lastFlag + 5,
+            }),
+        ).toBe("5 counts");
+        expect(
+            getWindowCountLabel(model, {
+                startBeatIndex: lastFlag + 2,
+                endBeatIndex: lastFlag + 3,
+            }),
+        ).toBe("3 counts");
+    });
+
+    it("shows the badge from a page line only past the last flag", () => {
+        expect(isPastLastFlag(model, lastFlag + 1)).toBe(true);
+        expect(isPastLastFlag(model, lastFlag)).toBe(false);
+        expect(isPastLastFlag(model, 3)).toBe(false);
     });
 });
 

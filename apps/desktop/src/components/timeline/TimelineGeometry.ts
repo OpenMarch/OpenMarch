@@ -433,6 +433,12 @@ export const getPlayheadLabel = (
         : readout.page;
 };
 
+/** Whether no page flag lies at or after the beat, so the counts since the last flag matter */
+export const isPastLastFlag = (
+    model: Pick<TimelineViewModel, "pages">,
+    positionBeat: BeatPosition,
+) => getPageCountAt(model, positionBeat).after === true;
+
 /**
  * The window's count badge (UI-13), in the field line's words: "counts 3–6" inside one page box,
  * counted to that page's flag, or "12 counts" when it passes a flag.
@@ -443,6 +449,8 @@ export const getWindowCountLabel = (
 ) => {
     const length = range.endBeatIndex - range.startBeatIndex;
     const at = getPageCountAt(model, range.endBeatIndex);
+    // Past the last flag the count is from that flag, however the window starts
+    if (at.after) return at.count === 1 ? "1 count" : `${at.count} counts`;
     if (
         length > 0 &&
         !at.home &&

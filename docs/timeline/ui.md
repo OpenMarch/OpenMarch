@@ -550,6 +550,9 @@ from it. The spec still wins on the model; this file decides presentation.
   - **The window badge** shows only while a handle is dragged or when the window starts off a page
     line; from a page line its length is the playhead's count, which the readout shows. It uses the
     field line's words: "counts 3–6" inside one page box, or "12 counts" when it passes a flag.
+    Past the last page flag it always shows (#163), counting from that flag to the window's end
+    ("5 counts"), so a new page's length can be read off; with a flag after the window's end the
+    rule above holds.
   - Deferred (UX review): counts along the selected page box in shows with measures, a count
     under the pointer while hovering, and thinning to downbeats in odd meters.
 

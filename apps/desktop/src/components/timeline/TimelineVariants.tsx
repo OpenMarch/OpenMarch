@@ -18,6 +18,7 @@ import {
     clamp,
     getPageSnapBeats,
     getWindowCountLabel,
+    isPastLastFlag,
     getSelectionRange,
     getTimelineRows,
     getTrackRange,
@@ -483,9 +484,12 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
         ? displayedRange.startBeatIndex > 0
         : displayedRange.endBeatIndex >= model.beatCount;
     // UI-13: the window's count shows while a handle is dragged, or when the window starts off a
-    // page line; from a page line, it is the playhead's count, which the transport already shows
+    // page line; from a page line, it is the playhead's count, which the transport already shows.
+    // Past the last flag it shows anyway: the designer reads off how long the next page would be
     const showWindowCount =
-        dragging || !snapBeats.includes(displayedRange.startBeatIndex);
+        dragging ||
+        !snapBeats.includes(displayedRange.startBeatIndex) ||
+        isPastLastFlag(model, displayedRange.endBeatIndex);
     const showCreateTrack = createTrackTarget != null && !dragging;
     return (
         <div
