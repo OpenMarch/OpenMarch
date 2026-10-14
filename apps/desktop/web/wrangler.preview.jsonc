@@ -1,0 +1,15 @@
+// The fork's preview of the web editor: one static-asset Worker on
+// workers.dev, with the example shows on the start page (WEB_CHANNEL=preview).
+// Cloudflare Workers Builds deploys `main` and uploads a preview version, with
+// its own URL, for every other branch and pull request (see web/README.md):
+//
+//   wrangler deploy -c web/wrangler.preview.jsonc           # main
+//   wrangler versions upload -c web/wrangler.preview.jsonc  # other branches
+{
+    "$schema": "../../../node_modules/wrangler/config-schema.json",
+    "name": "openmarch-editor-preview",
+    "compatibility_date": "2026-05-01",
+    "assets": { "directory": "../dist-web" },
+    "workers_dev": true,
+    "preview_urls": true,
+}

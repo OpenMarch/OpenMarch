@@ -4,6 +4,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { version } from "./package.json";
+import { DEMOS } from "./web/demos";
 
 /**
  * Builds the web editor (editor.openmarch.com): the app in a browser tab,
@@ -14,10 +15,13 @@ import { version } from "./package.json";
  *
  * Environment:
  * `WEB_CHANNEL` ("stable" or "nightly"; "dev" if unset) names the release
- * channel; the nightly build says so next to the version.
+ * channel; the nightly build says so next to the version. The fork's
+ * "preview" channel also offers the example shows in `web/public/demos/` on
+ * the start page.
  */
 
 const channel = process.env.WEB_CHANNEL ?? "dev";
+const examples = channel === "preview" ? DEMOS : [];
 
 const web = (file: string) => path.join(__dirname, "web", file);
 const outDir = path.join(__dirname, "dist-web");
@@ -42,6 +46,19 @@ const writeHeaders = (): Plugin => ({
                 "",
             ].join("\n"),
         );
+    },
+});
+
+/** Copies the example shows into the preview build; other builds leave them out. */
+const copyExamples = (): Plugin => ({
+    name: "openmarch-web-examples",
+    apply: "build",
+    closeBundle() {
+        for (const example of examples) {
+            const target = path.join(outDir, example.file);
+            fs.mkdirSync(path.dirname(target), { recursive: true });
+            fs.copyFileSync(web(path.join("public", example.file)), target);
+        }
     },
 });
 
@@ -117,6 +134,7 @@ export default defineConfig({
         react(),
         webEntry(),
         writeHeaders(),
+        copyExamples(),
     ],
     worker: {
         format: "es",
@@ -130,6 +148,9 @@ export default defineConfig({
         "import.meta.env.VITE_PUBLIC_WEB_BUILD": JSON.stringify("true"),
         "import.meta.env.VITE_PUBLIC_WEB_CHANNEL": JSON.stringify(channel),
         "import.meta.env.VITE_PUBLIC_APP_VERSION": JSON.stringify(version),
+        "import.meta.env.VITE_PUBLIC_WEB_EXAMPLES": JSON.stringify(
+            JSON.stringify(examples),
+        ),
         // No analytics on the web (PostHog stays uninitialized; Sentry is
         // stubbed in renderer/sentry.ts).
         "import.meta.env.VITE_PUBLIC_POSTHOG_KEY": JSON.stringify(""),

@@ -1,5 +1,6 @@
 import { T } from "@tolgee/react";
 import MarcherLogo from "@/components/MarcherLogo";
+import ExampleShows from "./ExampleShows";
 
 export default function WelcomeContent() {
     return (
@@ -11,6 +12,7 @@ export default function WelcomeContent() {
             <p className="text-body text-text-subtitle text-center leading-[190%]">
                 <T keyName="welcome.description" />
             </p>
+            <ExampleShows />
         </div>
     );
 }

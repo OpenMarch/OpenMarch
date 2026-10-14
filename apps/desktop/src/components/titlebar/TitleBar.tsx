@@ -200,7 +200,9 @@ function EditorTitleBar({
                             <>
                                 <p className="text-body leading-none opacity-50">
                                     {currentVersion}
-                                    {webChannel === "nightly" && " nightly"}
+                                    {(webChannel === "nightly" ||
+                                        webChannel === "preview") &&
+                                        ` ${webChannel}`}
                                 </p>
                                 {isWebBuild && (
                                     <button

@@ -15,6 +15,8 @@ interface ImportMetaEnv {
     readonly VITE_PUBLIC_WEB_BUILD?: string;
     /** The web build's release channel: "stable", "nightly" or "dev". */
     readonly VITE_PUBLIC_WEB_CHANNEL?: string;
+    /** JSON list of the example shows a preview web build offers. */
+    readonly VITE_PUBLIC_WEB_EXAMPLES?: string;
     /** The app's version, in the web build's worker. */
     readonly VITE_PUBLIC_APP_VERSION?: string;
 }

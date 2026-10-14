@@ -122,3 +122,31 @@ with the build variables `WEB_CHANNEL` (`nightly` or `stable`) and
 
 `WEB_CHANNEL` (`stable`, `nightly`, or `dev` by default) names a build's
 channel.
+
+### The fork's preview build
+
+This fork also deploys a preview of the editor, with a few changes:
+
+- `WEB_CHANNEL=preview` adds an "Or open an example show" list to the start
+  page, with the shows in `web/public/demos/` (listed in `web/demos.ts`),
+  so a tester doesn't need a `.dots` file of their own. Other channels leave
+  the shows out of the build.
+- It is one Worker, `openmarch-editor-preview`, on `workers.dev`
+  (`web/wrangler.preview.jsonc`), with preview URLs on.
+
+Set it up in the Cloudflare dashboard under **Workers & Pages → Create →
+Import a repository**, pointing at this fork, with the repo root as the root
+directory, `main` as the production branch, builds for non-production
+branches turned on, and:
+
+```bash
+# build
+pnpm turbo run build --filter="@openmarch/desktop^..." && pnpm --filter @openmarch/desktop run web:build
+# deploy (main)
+pnpm --filter @openmarch/desktop exec wrangler deploy -c web/wrangler.preview.jsonc
+# non-production branch deploy (every other branch and pull request)
+pnpm --filter @openmarch/desktop exec wrangler versions upload -c web/wrangler.preview.jsonc
+```
+
+with the build variables `WEB_CHANNEL=preview` and `NODE_VERSION=24`. The
+Worker's name in the dashboard must match `openmarch-editor-preview`.
