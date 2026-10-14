@@ -17,6 +17,7 @@ import { flushSync } from "react-dom";
 import { PlusIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { TimelineGridCanvas, TimelineWaveformCanvas } from "./TimelineCanvas";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
     beatToX,
     clamp,
@@ -388,6 +389,9 @@ const TimelineWaveformLane = memo(function TimelineWaveformLane({
     scrubLine?: TimelineLiveValue<number | null>;
 }) {
     const playedRef = useRef<HTMLDivElement>(null);
+    const waveformStyle = useUiSettingsStore(
+        (state) => state.uiSettings.timelineWaveformStyle,
+    );
     useLayoutEffect(() => {
         const played = playedRef.current;
         if (!played) return;
@@ -428,6 +432,7 @@ const TimelineWaveformLane = memo(function TimelineWaveformLane({
                 pixelsPerBeat={pixelsPerBeat}
                 viewportRef={viewportRef}
                 layerLeft={layerLeft}
+                waveformStyle={waveformStyle}
                 tone="rest"
             />
             <div
@@ -441,6 +446,7 @@ const TimelineWaveformLane = memo(function TimelineWaveformLane({
                     pixelsPerBeat={pixelsPerBeat}
                     viewportRef={viewportRef}
                     layerLeft={layerLeft}
+                    waveformStyle={waveformStyle}
                     tone="played"
                 />
             </div>

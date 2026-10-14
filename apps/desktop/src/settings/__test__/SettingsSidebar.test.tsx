@@ -35,6 +35,7 @@ describe("SettingsSidebar", () => {
             "General",
             "Appearance",
             "Mouse & Trackpad",
+            "Timeline",
             "Keyboard shortcuts",
             "Plugins",
             "Privacy",

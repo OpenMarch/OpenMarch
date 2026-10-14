@@ -7,6 +7,7 @@ import {
     PaletteIcon,
     PuzzlePieceIcon,
     ShieldCheckIcon,
+    WaveformIcon,
     WrenchIcon,
     type Icon,
 } from "@phosphor-icons/react";
@@ -15,6 +16,7 @@ import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import GeneralSettings from "@/components/launchpage/settings/GeneralSettings";
 import AppearanceSettings from "@/components/launchpage/settings/AppearanceSettings";
 import MouseSettings from "@/components/launchpage/settings/MouseSettings";
+import TimelineSettings from "@/components/launchpage/settings/TimelineSettings";
 import ShortcutSettings from "@/components/launchpage/settings/ShortcutSettings";
 import PluginsContents from "@/components/launchpage/settings/plugins/Plugins";
 import PrivacySettings from "@/components/launchpage/settings/PrivacySettings";
@@ -26,6 +28,7 @@ export type SettingsSectionId =
     | "general"
     | "appearance"
     | "mouse"
+    | "timeline"
     | "shortcuts"
     | "plugins"
     | "privacy"
@@ -89,6 +92,19 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.mouse.trackpadMode",
             "settings.mouse.trackpadPanSensitivity",
             "settings.mouse.panSensitivity",
+        ],
+    },
+    {
+        id: "timeline",
+        labelKey: "settings.timeline",
+        Icon: WaveformIcon,
+        Component: TimelineSettings,
+        descriptionKey: "settings.timeline.description",
+        searchKeys: [
+            "settings.timeline.waveformStyle",
+            "settings.timeline.waveformStyle.simplified",
+            "settings.timeline.waveformStyle.precise",
+            "settings.timeline.waveformStyle.hidden",
         ],
     },
     {

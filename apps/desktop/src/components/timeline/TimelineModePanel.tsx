@@ -127,11 +127,15 @@ export default function TimelineModePanel() {
             );
     }, [pages]);
     const compact = useUiSettingsStore((s) => s.uiSettings.timelineCompact);
-    // UI-12: the waveform lane, from the audio player's envelope, per beat on the view axis
+    // UI-12: the waveform lane, from the audio player's envelope, per beat on the view axis. Hidden
+    // in settings, the lane goes away as it does with no audio.
     const envelope = useAudioEnvelopeStore((s) => s.envelope);
+    const waveformHidden = useUiSettingsStore(
+        (s) => s.uiSettings.timelineWaveformStyle === "hidden",
+    );
     const waveform = useMemo(
         () =>
-            envelope
+            envelope && !waveformHidden
                 ? {
                       peaksByBeat: peaksByBeat(
                           envelope,
@@ -140,7 +144,7 @@ export default function TimelineModePanel() {
                       ),
                   }
                 : null,
-        [envelope, beats],
+        [envelope, beats, waveformHidden],
     );
     const zoomFitted = useUiSettingsStore(
         (s) => s.uiSettings.timelineZoomFitted,

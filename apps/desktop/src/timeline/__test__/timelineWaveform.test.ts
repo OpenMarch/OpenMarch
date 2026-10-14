@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
     audioEnvelope,
+    forEachWaveformBar,
+    parseWaveformStyle,
     peaksByBeat,
+    WAVEFORM_PEAKS_PER_BEAT,
+    WAVEFORM_PRECISE_BARS_PER_BEAT,
     waveformBarLevel,
+    waveformLevelDb,
+    type WaveformStyle,
 } from "../timelineWaveform";
 
 /** A one-channel buffer of `seconds` at `sampleRate`, loud (0.5) only in `[from, to)` seconds */
@@ -147,5 +153,88 @@ describe("the waveform's bars", () => {
     it("is silent past the audio and past the show", () => {
         expect(waveformBarLevel(peaks, 2, 2.5)).toBe(0);
         expect(waveformBarLevel(peaks, 5, 6)).toBe(0);
+    });
+});
+
+describe("the precise waveform style", () => {
+    it("draws loudness in decibels, so a quiet passage stays visible next to a loud one", () => {
+        expect(waveformLevelDb(1)).toBeCloseTo(1);
+        // A tenth of the loudest moment is -20 dB: (-20 + 42) / 42, where linear gives 0.1
+        expect(waveformLevelDb(0.1)).toBeCloseTo(22 / 42);
+        expect(waveformLevelDb(0.001)).toBe(0);
+        expect(waveformLevelDb(0)).toBe(0);
+    });
+
+    it("gives each of a beat's bars the loudest of the peaks in its slice", () => {
+        const perBar = WAVEFORM_PEAKS_PER_BEAT / WAVEFORM_PRECISE_BARS_PER_BEAT;
+        const beat = Array.from({ length: WAVEFORM_PEAKS_PER_BEAT }, (_, i) =>
+            i === perBar ? 0.7 : 0.1,
+        );
+        const bar = (index: number) =>
+            waveformBarLevel(
+                [beat],
+                index / WAVEFORM_PRECISE_BARS_PER_BEAT,
+                (index + 1) / WAVEFORM_PRECISE_BARS_PER_BEAT,
+            );
+        expect(bar(0)).toBeCloseTo(0.1);
+        expect(bar(1)).toBeCloseTo(0.7);
+        expect(bar(2)).toBeCloseTo(0.1);
+    });
+});
+
+describe("the waveform style setting", () => {
+    it("keeps a known style and falls back to simplified otherwise", () => {
+        expect(parseWaveformStyle("precise")).toBe("precise");
+        expect(parseWaveformStyle("simplified")).toBe("simplified");
+        expect(parseWaveformStyle("hidden")).toBe("hidden");
+        expect(parseWaveformStyle(undefined)).toBe("simplified");
+        expect(parseWaveformStyle("fancy")).toBe("simplified");
+    });
+});
+
+describe("the waveform's bar layout", () => {
+    // Two beats: a full-level beat, then a beat at a tenth of it
+    const peaks = [
+        Array<number>(WAVEFORM_PEAKS_PER_BEAT).fill(1),
+        Array<number>(WAVEFORM_PEAKS_PER_BEAT).fill(0.1),
+    ];
+    const layout = (style: WaveformStyle, from = 0, to = 64) => {
+        const bars: [number, number, number][] = [];
+        forEachWaveformBar(peaks, style, 32, from, to, (x, width, level) =>
+            bars.push([x, width, level]),
+        );
+        return bars;
+    };
+
+    it("puts simplified bars every 3px, 2px wide, on a linear scale", () => {
+        const bars = layout("simplified");
+        expect(bars.slice(0, 2).map(([x, width]) => [x, width])).toEqual([
+            [0, 2],
+            [3, 2],
+        ]);
+        expect(bars[0]![2]).toBeCloseTo(1);
+        expect(bars.find(([x]) => x >= 33)![2]).toBeCloseTo(0.1);
+    });
+
+    it("puts precise bars on each beat's slices, on the decibel scale", () => {
+        const bars = layout("precise");
+        expect(bars).toHaveLength(2 * WAVEFORM_PRECISE_BARS_PER_BEAT);
+        // 32px a beat: 4px slices, each a 3px bar and a 1px gap
+        expect(bars.slice(0, 2).map(([x, width]) => [x, width])).toEqual([
+            [0, 3],
+            [4, 3],
+        ]);
+        expect(bars[WAVEFORM_PRECISE_BARS_PER_BEAT]![0]).toBe(32);
+        expect(bars[WAVEFORM_PRECISE_BARS_PER_BEAT]![2]).toBeCloseTo(22 / 42);
+    });
+
+    it("lays out only the bars in the span asked for, and none past the audio", () => {
+        expect(layout("simplified", 30, 36).map(([x]) => x)).toEqual([30, 33]);
+        expect(layout("simplified", 66, 96)).toEqual([]);
+        expect(layout("precise", 64, 96)).toEqual([]);
+    });
+
+    it("lays out no bars when the waveform is hidden", () => {
+        expect(layout("hidden")).toEqual([]);
     });
 });

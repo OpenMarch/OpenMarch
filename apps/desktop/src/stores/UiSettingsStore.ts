@@ -1,6 +1,10 @@
 import { create } from "zustand";
 import { parseTimelineHeight } from "@/components/timeline/timelineSplit";
 import { syncFromStorage } from "@/stores/syncFromStorage";
+import {
+    parseWaveformStyle,
+    type WaveformStyle,
+} from "@/timeline/timelineWaveform";
 
 export type FocusableComponents = "canvas" | "timeline";
 export interface UiSettings {
@@ -31,6 +35,8 @@ export interface UiSettings {
     timelineHeight: number | null;
     /** Whether the timeline was fitted to the show, so the next show opens fitted (UI-12) */
     timelineZoomFitted: boolean;
+    /** How the timeline draws the waveform: simplified rounded bars or precise per-beat detail */
+    timelineWaveformStyle: WaveformStyle;
     /** The current audio volume percentage for timeline playback */
     audioVolume: number;
     /** Whether all app audio is muted */
@@ -79,6 +85,7 @@ export const defaultSettings: UiSettings = {
     timelineCompact: false,
     timelineHeight: null,
     timelineZoomFitted: false,
+    timelineWaveformStyle: "simplified",
     audioVolume: 100,
     audioMuted: false,
     focussedComponent: "canvas",
@@ -120,6 +127,7 @@ const parseSettings = (raw: string): UiSettings => {
         ...defaultSettings,
         ...parsed,
         timelineHeight: parseTimelineHeight(parsed.timelineHeight),
+        timelineWaveformStyle: parseWaveformStyle(parsed.timelineWaveformStyle),
         mouseSettings: mergedMouseSettings,
         coordinateRounding: parsed.coordinateRounding
             ? {

@@ -10,16 +10,16 @@ import {
 import {
     beatToX,
     canvasWindowCovers,
-    clamp,
     getBeatsInSpan,
     getCanvasWindow,
     type TimelineSpan,
 } from "./TimelineGeometry";
 import type { TimelineMarker, TimelineWaveform } from "./TimelineViewModel";
 import {
-    WAVEFORM_BAR_GAP,
-    WAVEFORM_BAR_WIDTH,
-    waveformBarLevel,
+    forEachWaveformBar,
+    waveformBarHalfHeight,
+    waveformBarRadius,
+    type WaveformStyle,
 } from "@/timeline/timelineWaveform";
 
 /*
@@ -385,15 +385,19 @@ export const TimelineGridCanvas = memo(function TimelineGridCanvas({
 
 interface TimelineWaveformCanvasProps extends TimelineCanvasLayerProps {
     waveform: TimelineWaveform;
+    /** Rounded bars at a fixed pitch, or square bars locked to each beat on a dB scale */
+    waveformStyle: WaveformStyle;
     /** Which color the bars are drawn in: the played part is the accent (UI-12) */
     tone: "played" | "rest";
 }
 
 /**
- * The waveform as rounded bars at a fixed pixel pitch (the old WaveSurfer look), each the loudest
- * audio it covers, centered on a baseline that runs only as far as the audio does. Drawn in one
- * tone; the timeline lays the played tone over the rest and clips it at the playhead, so playing
- * never redraws the canvas.
+ * The waveform, centered on a baseline that runs only as far as the audio does. Simplified, it is
+ * rounded bars at a fixed pixel pitch (the old WaveSurfer look) on a linear scale; precise, it is
+ * square bars locked to each beat on a decibel scale (UI-12). Each bar is the loudest audio it
+ * covers, and any sound at all keeps a sliver, so a quiet entrance never reads as silence. Drawn
+ * in one tone; the timeline lays the played tone over the rest and clips it at the playhead, so
+ * playing never redraws the canvas.
  */
 export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
     waveform,
@@ -402,6 +406,7 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
     pixelsPerBeat,
     viewportRef,
     layerLeft,
+    waveformStyle,
     tone,
 }: TimelineWaveformCanvasProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -431,35 +436,28 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
             context.globalAlpha = 0.25;
             context.fillRect(0, Math.round(centerY), audioEndX, 1);
             context.globalAlpha = 1;
-            const pitch = WAVEFORM_BAR_WIDTH + WAVEFORM_BAR_GAP;
-            const firstBar = Math.max(0, Math.floor(span.left / pitch));
-            const lastBar = Math.ceil(Math.min(spanEnd, audioEndX) / pitch);
-            const radius = WAVEFORM_BAR_WIDTH / 2;
+            const radius = waveformBarRadius(waveformStyle);
             context.beginPath();
-            for (let bar = firstBar; bar < lastBar; bar++) {
-                const x = bar * pitch;
-                const level = waveformBarLevel(
-                    waveform.peaksByBeat,
-                    x / pixelsPerBeat,
-                    (x + pitch) / pixelsPerBeat,
-                );
-                if (level <= 0) continue;
-                // Any sound at all keeps a sliver, so a quiet entrance never reads as silence
-                const magnitude = Math.max(
-                    0.5,
-                    clamp(level, 0, 1) * (height / 2 - 1),
-                );
-                context.roundRect(
-                    x,
-                    centerY - magnitude,
-                    WAVEFORM_BAR_WIDTH,
-                    magnitude * 2,
-                    radius,
-                );
-            }
+            forEachWaveformBar(
+                waveform.peaksByBeat,
+                waveformStyle,
+                pixelsPerBeat,
+                span.left,
+                Math.min(spanEnd, audioEndX),
+                (x, barWidth, level) => {
+                    const magnitude = waveformBarHalfHeight(level, height);
+                    context.roundRect(
+                        x,
+                        centerY - magnitude,
+                        barWidth,
+                        magnitude * 2,
+                        radius,
+                    );
+                },
+            );
             context.fill();
         },
-        [audioEnd, height, pixelsPerBeat, tone, waveform, width],
+        [audioEnd, height, pixelsPerBeat, tone, waveform, waveformStyle, width],
     );
 
     useViewportCanvas({
