@@ -175,10 +175,16 @@ export type TimelineSelection =
  * a drag suspends playback, which resumes once from where the gesture ends; a press that ends
  * without a drag jumps playback there. The start flag moves once, when the gesture ends.
  */
-export type TimelineSeekGesture = "press" | "drag" | "end";
+export type TimelineSeekGesture = "press" | "drag" | "end" | "cancel";
 
 export interface TimelineSeekOptions {
     readonly gesture?: TimelineSeekGesture;
+    /**
+     * The gesture drags this line by itself (UI-21): the start flag, or the playhead by its line or
+     * head. Paused, a line dragged past the other swaps with it. `cancel` ends a start flag drag
+     * where it began.
+     */
+    readonly line?: "start" | "playhead";
 }
 
 /**

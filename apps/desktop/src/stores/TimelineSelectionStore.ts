@@ -151,6 +151,8 @@ export interface TimelineSelectionState {
     readonly loop: TimelineLoop | null;
     /** A gesture is moving the playhead: an unpinned S waits for it to end (UI-12 review) */
     readonly scrubbing: boolean;
+    /** The start flag or the playhead being dragged by its line (UI-21), from where it began */
+    readonly lineDrag: TimelineLineDrag | null;
 
     /**
      * Isolates the stored timeline `timelineId`: the window becomes its range with the playhead at
@@ -194,6 +196,24 @@ export interface TimelineSelectionState {
     readonly beginScrub: () => void;
     /** The gesture ended: an unpinned S follows the playhead, once. */
     readonly endScrub: () => void;
+    /**
+     * A drag of the start flag or the playhead by its line began (UI-21), paused and not isolated.
+     * Until it ends, `dragLine` puts the dragged line at a beat.
+     */
+    readonly beginLineDrag: (line: TimelineLine) => void;
+    /**
+     * The dragged line is at `beat`. The left line is the start flag and the right one the
+     * playhead (`lineDragPositions`), so a line dragged past the other swaps with it.
+     */
+    readonly dragLine: (beat: number) => void;
+    /**
+     * The line drag ended where it is. A playhead that never crossed the start flag ends as a scrub
+     * does: an unpinned S follows it, once. Released on the other line, the dragged line pushes it
+     * a beat on: P a beat later, or S a beat earlier.
+     */
+    readonly endLineDrag: () => void;
+    /** The line drag was cancelled (Escape): S and P go back to where it began. */
+    readonly cancelLineDrag: () => void;
     /**
      * A stored timeline moved from `from` by `delta` beats (a clip move): a selection of exactly
      * `from` moves with it, and so does the loaded stored timeline at `from` until the host
@@ -252,6 +272,35 @@ export function normalizePlayheadBeat(
 ): number {
     const whole = Math.max(0, Math.round(beat));
     return zeroLengthFirstBeat && whole <= 1 ? 0 : whole;
+}
+
+/** A line on the timeline that can be dragged by itself (UI-21) */
+export type TimelineLine = "start" | "playhead";
+
+/** A line drag (UI-21): the dragged line, and S, its pin and P from when it began */
+export type TimelineLineDrag = {
+    readonly line: TimelineLine;
+    readonly startBeat: number;
+    readonly startPinned: boolean;
+    readonly playheadBeat: number;
+};
+
+/**
+ * Where S and P are with `drag`'s line at `beat` (UI-21, project owner 2026-10-14): the line not
+ * dragged stays, the left one is the start flag and the right one the playhead, as Logic's
+ * locators. `swapped` when the dragged line has passed the other and become it. On the same beat
+ * both are there, as after Stop.
+ */
+export function lineDragPositions(
+    drag: TimelineLineDrag,
+    beat: number,
+): { startBeat: number; playheadBeat: number; swapped: boolean } {
+    const other = drag.line === "start" ? drag.playheadBeat : drag.startBeat;
+    return {
+        startBeat: Math.min(beat, other),
+        playheadBeat: Math.max(beat, other),
+        swapped: drag.line === "start" ? beat > other : beat < other,
+    };
 }
 
 /**
@@ -466,6 +515,61 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 playheadBeat,
                 s.pageBoxes,
             );
+        // UI-21 follow-up (owner 2026-10-14): while a line drag holds the two lines on one beat,
+        // the window is empty there, so neither the page before nor the page box shows selected.
+        // Home stays home
+        const lineDragWindow = (
+            s: TimelineSelectionState,
+            startBeat: number,
+            startPinned: boolean,
+            playheadBeat: number,
+        ): WindowFields => {
+            const fields = windowFields(
+                startBeat,
+                startPinned,
+                playheadBeat,
+                s.pageBoxes,
+            );
+            return startBeat === playheadBeat &&
+                fields.selection.kind === "range"
+                ? {
+                      ...fields,
+                      selection: {
+                          kind: "range",
+                          start: playheadBeat,
+                          end: playheadBeat,
+                      },
+                  }
+                : fields;
+        };
+        // Released on the same beat (owner 2026-10-14), the dragged line stays and shoves the
+        // other a beat on: a start flag pushes the playhead a beat later, a playhead pushes the
+        // start flag a beat earlier. At the show's end there is no later beat, so the start flag
+        // goes back instead
+        const landLineDrag = (
+            s: TimelineSelectionState,
+            drag: TimelineLineDrag,
+        ): Partial<TimelineSelectionState> | null => {
+            const beat = s.playheadBeat;
+            if (s.startBeat !== beat || normalizePlayheadBeat(beat) === 0)
+                return null;
+            const later = clamp(s, beat + 1);
+            const [startBeat, playheadBeat] =
+                drag.line === "start" && later > beat
+                    ? [beat, later]
+                    : [beat - 1, beat];
+            return {
+                ...windowFields(
+                    startBeat,
+                    startBeat !== followingStart(playheadBeat, s.pageBoxes),
+                    playheadBeat,
+                    s.pageBoxes,
+                ),
+                ...(playheadBeat !== beat
+                    ? { playheadRevision: s.playheadRevision + 1 }
+                    : {}),
+            };
+        };
         // Reloads (page boxes, stored timelines, a clip move) rewrite the window without the user
         // seeking; while playing, they keep the cursor and the revision, so the audio isn't
         // restarted (UI-11)
@@ -515,6 +619,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
             loop: null,
             playback: null,
             scrubbing: false,
+            lineDrag: null,
             isolate: (timelineId, restore) =>
                 set((s) => {
                     if (s.isolation?.timelineId === timelineId) return {};
@@ -537,6 +642,8 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     return {
                         ...isolatedWindow(s, isolation, timeline.end),
                         isolation,
+                        // Isolated, there is no line drag (UI-21)
+                        lineDrag: null,
                         playheadRevision: s.playheadRevision + 1,
                     };
                 }),
@@ -638,6 +745,92 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                             s.playheadBeat,
                             s.pageBoxes,
                         ),
+                    };
+                }),
+            beginLineDrag: (line) =>
+                set((s) =>
+                    s.isolation !== null ||
+                    s.playback !== null ||
+                    s.selection.kind === "none"
+                        ? {}
+                        : {
+                              lineDrag: {
+                                  line,
+                                  startBeat: s.startBeat,
+                                  startPinned: s.startPinned,
+                                  playheadBeat: s.playheadBeat,
+                              },
+                          },
+                ),
+            dragLine: (beat) =>
+                set((s) => {
+                    const drag = s.lineDrag;
+                    if (!drag || !Number.isFinite(beat)) return {};
+                    const at = lineDragPositions(drag, clamp(s, beat));
+                    // A playhead that hasn't crossed keeps S and its pin, as a scrub does; a
+                    // start flag, or a playhead turned start flag, is pinned where it lands
+                    // unless that is where it would follow to
+                    const pinned =
+                        drag.line === "playhead" && !at.swapped
+                            ? drag.startPinned
+                            : at.startBeat !==
+                              followingStart(at.playheadBeat, s.pageBoxes);
+                    if (
+                        at.startBeat === s.startBeat &&
+                        at.playheadBeat === s.playheadBeat &&
+                        pinned === s.startPinned
+                    )
+                        return {};
+                    return {
+                        ...lineDragWindow(
+                            s,
+                            at.startBeat,
+                            pinned,
+                            at.playheadBeat,
+                        ),
+                        ...(at.playheadBeat !== s.playheadBeat
+                            ? { playheadRevision: s.playheadRevision + 1 }
+                            : {}),
+                    };
+                }),
+            endLineDrag: () =>
+                set((s) => {
+                    const drag = s.lineDrag;
+                    if (!drag) return {};
+                    const landed = landLineDrag(s, drag);
+                    if (landed) return { lineDrag: null, ...landed };
+                    // Not swapped: S is still where it was
+                    const follows =
+                        drag.line === "playhead" &&
+                        !drag.startPinned &&
+                        s.startBeat === drag.startBeat;
+                    return follows
+                        ? {
+                              lineDrag: null,
+                              ...windowFields(
+                                  followingStart(s.playheadBeat, s.pageBoxes),
+                                  false,
+                                  s.playheadBeat,
+                                  s.pageBoxes,
+                              ),
+                          }
+                        : { lineDrag: null };
+                }),
+            cancelLineDrag: () =>
+                set((s) => {
+                    const drag = s.lineDrag;
+                    if (!drag) return {};
+                    return {
+                        lineDrag: null,
+                        ...windowFields(
+                            drag.startBeat,
+                            drag.startPinned,
+                            drag.playheadBeat,
+                            s.pageBoxes,
+                        ),
+                        ...(drag.playheadBeat !== s.playheadBeat
+                            ? { playheadRevision: s.playheadRevision + 1 }
+                            : {}),
                     };
                 }),
             followTimelineRange: (from, to) =>
@@ -877,7 +1070,23 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 }),
             clearCursor: () =>
                 set((s) => (s.cursorBeat === null ? {} : { cursorBeat: null })),
-            setPlayback: (playback) => set({ playback }),
+            // Playing ends a line drag where it is (UI-21): its release seeks while playing,
+            // which no longer reaches the store's line drag. Lines on one beat don't push there
+            setPlayback: (playback) =>
+                set((s) =>
+                    playback === null
+                        ? { playback }
+                        : {
+                              playback,
+                              lineDrag: null,
+                              // Two lines on one beat get UI-10's window back
+                              selection: editWindow(
+                                  s.startBeat,
+                                  s.playheadBeat,
+                                  s.pageBoxes,
+                              ),
+                          },
+                ),
             setLoop: (loop) =>
                 set((s) =>
                     loop === s.loop ||
@@ -904,6 +1113,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     playback: null,
                     loop: null,
                     scrubbing: false,
+                    lineDrag: null,
                 })),
         };
     },

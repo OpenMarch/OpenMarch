@@ -467,8 +467,8 @@ describe("renaming on the clip (UI-14)", () => {
     });
 });
 
-describe("short clips under the flags and the playhead (UI-14)", () => {
-    it("the start flag and the playhead take the pointer only above the clip rows", () => {
+describe("the flags and the playhead over the clip rows (UI-21)", () => {
+    it("the start flag and the playhead take the pointer their whole height, over the clips too", () => {
         render(
             <Timeline
                 mode="expanded"
@@ -488,14 +488,15 @@ describe("short clips under the flags and the playhead (UI-14)", () => {
                 moveCommands={commands()}
             />,
         );
-        const clipTop = parseFloat(clipButton().style.top);
+        // They are stacked above a move's end handles too (`useClipEdgeResize`), so they win there
+        const shown = clipButton();
+        const clipBottom =
+            parseFloat(shown.style.top) + parseFloat(shown.style.height);
         for (const handle of [
             screen.getByRole("button", { name: /^Start flag/ }),
             screen.getByTestId("timeline-playhead"),
         ])
-            expect(parseFloat(handle.style.height)).toBeLessThanOrEqual(
-                clipTop,
-            );
+            expect(parseFloat(handle.style.height)).toBeGreaterThan(clipBottom);
     });
 });
 
@@ -663,8 +664,8 @@ describe("a move clip's words (UI-14 round-2 review)", () => {
     });
 });
 
-describe("the flags over the waveform row (UI-14 round-2 review)", () => {
-    it("take the pointer only in the ruler and measure rows, so a Ctrl+drag on the waveform draws", () => {
+describe("the flags over the waveform row (UI-21)", () => {
+    it("take the pointer over the waveform too, as at their top", () => {
         render(
             <TimelineWaveformProvider
                 waveform={{ peaksByBeat: BEATS.map(() => [0.4, 0.6]) }}
@@ -688,12 +689,12 @@ describe("the flags over the waveform row (UI-14 round-2 review)", () => {
                 />
             </TimelineWaveformProvider>,
         );
-        // The headroom strip (14px, UI-20), the ruler (28px), the measure row (20px) and a 2px
-        // gap; the waveform row starts there
+        // The waveform row starts at 64px: the headroom strip (14px, UI-20), the ruler (28px), the
+        // measure row (20px) and a 2px gap
         for (const handle of [
             screen.getByRole("button", { name: /^Start flag/ }),
             screen.getByTestId("timeline-playhead"),
         ])
-            expect(parseFloat(handle.style.height)).toBe(64);
+            expect(parseFloat(handle.style.height)).toBeGreaterThan(64);
     });
 });

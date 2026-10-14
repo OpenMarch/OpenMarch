@@ -4,6 +4,7 @@ import {
     editWindow,
     followingStart,
     isMarcherDimmed,
+    lineDragPositions,
     normalizePlayheadBeat,
     resolveStoredTimeline,
     selectedStoredTimeline,
@@ -555,6 +556,227 @@ describe("the start flag during a gesture (UI-12 review)", () => {
         store().beginScrub();
         store().reset();
         expect(store().scrubbing).toBe(false);
+    });
+});
+
+describe("dragging the start flag or the playhead by its line (UI-21)", () => {
+    beforeEach(() => {
+        store().reset();
+        store().setPageBoxes(BOXES);
+    });
+
+    it("keeps the left line the start flag and the right one the playhead", () => {
+        const drag = {
+            line: "start" as const,
+            startBeat: 5,
+            startPinned: true,
+            playheadBeat: 12,
+        };
+        expect(lineDragPositions(drag, 8)).toEqual({
+            startBeat: 8,
+            playheadBeat: 12,
+            swapped: false,
+        });
+        expect(lineDragPositions(drag, 20)).toEqual({
+            startBeat: 12,
+            playheadBeat: 20,
+            swapped: true,
+        });
+        const playhead = { ...drag, line: "playhead" as const };
+        expect(lineDragPositions(playhead, 9)).toEqual({
+            startBeat: 5,
+            playheadBeat: 9,
+            swapped: false,
+        });
+        expect(lineDragPositions(playhead, 2)).toEqual({
+            startBeat: 2,
+            playheadBeat: 5,
+            swapped: true,
+        });
+    });
+
+    it("a start flag dragged past the playhead becomes the playhead, and the playhead the start flag", () => {
+        store().selectRange(5, 12);
+        store().beginLineDrag("start");
+        store().dragLine(8);
+        expect(store().selection).toEqual({ kind: "range", start: 8, end: 12 });
+        const revision = store().playheadRevision;
+        store().dragLine(20);
+        expect(store().startBeat).toBe(12);
+        expect(store().startPinned).toBe(true);
+        expect(store().playheadBeat).toBe(20);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 12,
+            end: 20,
+        });
+        expect(store().playheadRevision).toBe(revision + 1);
+        // Back across, live: they trade back
+        store().dragLine(7);
+        expect(store().selection).toEqual({ kind: "range", start: 7, end: 12 });
+        store().dragLine(20);
+        store().endLineDrag();
+        expect(store().lineDrag).toBeNull();
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 12,
+            end: 20,
+        });
+    });
+
+    it("a playhead dragged behind the start flag becomes the start flag, and the start flag the playhead", () => {
+        store().selectRange(5, 12);
+        store().beginLineDrag("playhead");
+        store().dragLine(3);
+        expect(store().startBeat).toBe(3);
+        expect(store().startPinned).toBe(true);
+        expect(store().playheadBeat).toBe(5);
+        store().endLineDrag();
+        expect(store().selection).toEqual({ kind: "range", start: 3, end: 5 });
+    });
+
+    it("a playhead that never crosses ends as a scrub: an unpinned start flag follows it", () => {
+        store().selectRange(9, 17);
+        store().beginLineDrag("playhead");
+        store().dragLine(23);
+        expect(store().startBeat).toBe(9);
+        store().endLineDrag();
+        expect(store().startBeat).toBe(17);
+        expect(store().startPinned).toBe(false);
+    });
+
+    it("a playhead swapped with an unpinned start flag stays swapped", () => {
+        store().selectRange(9, 17);
+        store().beginLineDrag("playhead");
+        store().dragLine(4);
+        store().endLineDrag();
+        expect(store().selection).toEqual({ kind: "range", start: 4, end: 9 });
+        expect(store().startPinned).toBe(true);
+    });
+
+    it("on one page flag, neither page shows selected until release (owner 2026-10-14)", () => {
+        store().selectRange(9, 17);
+        store().beginLineDrag("start");
+        store().dragLine(17);
+        expect(store().startBeat).toBe(17);
+        expect(store().playheadBeat).toBe(17);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 17,
+            end: 17,
+        });
+    });
+
+    it("in the middle of a page, neither part shows selected", () => {
+        store().selectRange(9, 13);
+        store().beginLineDrag("playhead");
+        store().dragLine(9);
+        expect(store().selection).toEqual({ kind: "range", start: 9, end: 9 });
+        // Moving off again shows the window
+        store().dragLine(11);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 9,
+            end: 11,
+        });
+    });
+
+    it("a start flag released on the playhead pushes the playhead a beat later", () => {
+        store().selectRange(9, 13);
+        store().beginLineDrag("start");
+        store().dragLine(13);
+        const revision = store().playheadRevision;
+        store().endLineDrag();
+        expect(store().lineDrag).toBeNull();
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 13,
+            end: 14,
+        });
+        expect(store().startPinned).toBe(true);
+        expect(store().playheadRevision).toBe(revision + 1);
+    });
+
+    it("a start flag released on the playhead at the show's end pushes nothing past it", () => {
+        store().setShowEndBeat(25);
+        store().selectRange(17, 25);
+        store().beginLineDrag("start");
+        store().dragLine(25);
+        store().endLineDrag();
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 24,
+            end: 25,
+        });
+    });
+
+    it("a playhead released on the start flag pushes the start flag a beat earlier", () => {
+        store().selectRange(9, 17);
+        store().beginLineDrag("playhead");
+        store().dragLine(9);
+        const revision = store().playheadRevision;
+        store().endLineDrag();
+        expect(store().selection).toEqual({ kind: "range", start: 8, end: 9 });
+        expect(store().startPinned).toBe(true);
+        expect(store().playheadRevision).toBe(revision);
+    });
+
+    it("a start flag pinned mid-page and a playhead released on it", () => {
+        store().selectRange(12, 17);
+        store().beginLineDrag("playhead");
+        store().dragLine(12);
+        store().endLineDrag();
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 11,
+            end: 12,
+        });
+    });
+
+    it("both lines released home stay home", () => {
+        store().selectRange(1, 9);
+        store().beginLineDrag("playhead");
+        store().dragLine(0);
+        expect(store().selection).toEqual({ kind: "home" });
+        store().endLineDrag();
+        expect(store().selection).toEqual({ kind: "home" });
+    });
+
+    it("cancelling puts both lines back", () => {
+        store().selectRange(5, 12);
+        store().beginLineDrag("start");
+        store().dragLine(20);
+        store().cancelLineDrag();
+        expect(store().startBeat).toBe(5);
+        expect(store().playheadBeat).toBe(12);
+        expect(store().lineDrag).toBeNull();
+    });
+
+    it("does nothing in isolation", () => {
+        store().setStoredTimelines([timeline(1, 5, 17, [1])]);
+        store().isolate(1);
+        store().beginLineDrag("start");
+        expect(store().lineDrag).toBeNull();
+        store().dragLine(20);
+        expect(store().playheadBeat).toBe(17);
+    });
+
+    it("playing or isolating ends a line drag where it is", () => {
+        store().selectRange(5, 12);
+        store().beginLineDrag("start");
+        store().dragLine(20);
+        store().setPlayback({ kind: "preview", from: 12, to: 20 });
+        expect(store().lineDrag).toBeNull();
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 12,
+            end: 20,
+        });
+        store().setPlayback(null);
+        store().setStoredTimelines([timeline(1, 5, 17, [1])]);
+        store().beginLineDrag("playhead");
+        store().isolate(1);
+        expect(store().lineDrag).toBeNull();
     });
 });
 

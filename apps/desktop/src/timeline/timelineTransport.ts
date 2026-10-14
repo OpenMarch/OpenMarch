@@ -5,6 +5,7 @@ import type {
 import {
     displayedBeat,
     useTimelineSelectionStore,
+    type TimelineLine,
     type TimelinePlaybackRun,
 } from "@/stores/TimelineSelectionStore";
 import {
@@ -174,6 +175,38 @@ export function consumeSuspendRequest(): boolean {
 }
 
 /**
+ * A paused drag of the start flag or the playhead by its line (UI-21): the store's line drag, in
+ * which a line dragged past the other swaps with it. Returns the beat the playhead shows, or
+ * `undefined` when this isn't a line drag after all, so the seek goes on as a plain one: a press
+ * on the playhead that ends without a drag is a click, and moves only the playhead.
+ */
+function dragTimelineLine(
+    line: TimelineLine,
+    beat: number,
+    gesture: TimelineSeekGesture | undefined,
+): number | null | undefined {
+    const state = useTimelineSelectionStore.getState();
+    const dragging = state.lineDrag !== null;
+    if (!dragging && line === "playhead" && gesture !== "drag")
+        return undefined;
+    if (gesture === "cancel") {
+        if (line === "start") state.cancelLineDrag();
+        else state.endLineDrag();
+        return null;
+    }
+    if (!dragging) state.beginLineDrag(line);
+    // Isolated, there is no line drag: the playhead scrubs and the start flag stays
+    if (useTimelineSelectionStore.getState().lineDrag === null)
+        return line === "playhead" ? undefined : null;
+    state.dragLine(beat);
+    if (gesture === undefined || gesture === "end") {
+        state.endLineDrag();
+        return null;
+    }
+    return displayedBeat(useTimelineSelectionStore.getState());
+}
+
+/**
  * A seek from the timeline (UI-12 and its review). `gesture` is where it sits in a scrub
  * (`TimelineSeekGesture`); without one it is a single action.
  *
@@ -196,14 +229,21 @@ export function seekTimeline(
     {
         isPlaying,
         setIsPlaying,
+        line,
     }: {
         isPlaying: boolean;
         setIsPlaying: (isPlaying: boolean) => void;
+        /** The line the gesture drags by itself (`TimelineSeekOptions.line`) */
+        line?: TimelineLine;
     },
 ): number | null {
     if (!Number.isFinite(beat)) return null;
     const state = useTimelineSelectionStore.getState();
-    if (gesture === undefined || gesture === "end") {
+    if (line !== undefined && !isPlaying) {
+        const shown = dragTimelineLine(line, beat, gesture);
+        if (shown !== undefined) return shown;
+    } else if (line === "start") return null;
+    if (gesture === undefined || gesture === "end" || gesture === "cancel") {
         const ended = scrub;
         scrub = null;
         if (ended?.suspended)

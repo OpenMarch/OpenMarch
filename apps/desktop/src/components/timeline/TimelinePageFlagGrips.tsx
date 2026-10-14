@@ -491,8 +491,10 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
                             if (event.detail === 0) onSelectPage(page);
                         }}
                         // `!`: the shared `button { cursor: pointer }` sits outside any CSS layer, so it beats any
-                        // cursor utility on a button without it
-                        className="group focus-visible:ring-accent pointer-events-auto absolute z-[56] -translate-x-1/2 cursor-ew-resize! touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
+                        // cursor utility on a button without it. Under the start flag (z-40) and the
+                        // playhead (z-50): where a line is on a flag, the line wins (UI-21, project
+                        // owner 2026-10-14), so move the line off to drag the flag
+                        className="group focus-visible:ring-accent pointer-events-auto absolute z-[35] -translate-x-1/2 cursor-ew-resize! touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
                         style={{
                             width: gripWidth(
                                 range,

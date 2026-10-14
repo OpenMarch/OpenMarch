@@ -98,3 +98,65 @@ describe("scrubbing while paused", () => {
         ).toBe(17);
     });
 });
+
+describe("dragging a line by itself while paused (UI-21)", () => {
+    const playhead = { ...paused, line: "playhead" as const };
+    const startFlag = { ...paused, line: "start" as const };
+
+    it("a playhead dragged by its line behind the start flag swaps with it", () => {
+        store().selectRange(5, 12);
+        // The line holds on the old start flag, not under the pointer
+        expect(seekTimeline(BEATS, 8, "drag", playhead)).toBe(8);
+        expect(seekTimeline(BEATS, 3, "drag", playhead)).toBe(5);
+        seekTimeline(BEATS, 3, "end", playhead);
+        expect(store().selection).toEqual({ kind: "range", start: 3, end: 5 });
+        expect(store().lineDrag).toBeNull();
+    });
+
+    it("a click on the playhead only moves it", () => {
+        store().selectRange(5, 12);
+        seekTimeline(BEATS, 3, "end", playhead);
+        expect(store().startBeat).toBe(5);
+        expect(store().playheadBeat).toBe(3);
+    });
+
+    it("a scrub started away from the playhead passes the start flag", () => {
+        store().selectRange(5, 12);
+        seekTimeline(BEATS, 14, "press", paused);
+        seekTimeline(BEATS, 3, "drag", paused);
+        seekTimeline(BEATS, 3, "end", paused);
+        expect(store().playheadBeat).toBe(3);
+        expect(store().startBeat).toBe(5);
+    });
+
+    it("a start flag dragged past the playhead swaps with it; a cancel puts both back", () => {
+        store().selectRange(5, 12);
+        seekTimeline(BEATS, 15, "drag", startFlag);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 12,
+            end: 15,
+        });
+        seekTimeline(BEATS, 5, "cancel", startFlag);
+        expect(store().selection).toEqual({ kind: "range", start: 5, end: 12 });
+        // An arrow step is a whole drag: one end. Onto the playhead, it pushes the playhead on
+        seekTimeline(BEATS, 12, "end", startFlag);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 12,
+            end: 13,
+        });
+        seekTimeline(BEATS, 13, "end", startFlag);
+        expect(store().selection).toEqual({
+            kind: "range",
+            start: 13,
+            end: 14,
+        });
+    });
+
+    it("while playing, a start flag drag does nothing", () => {
+        store().selectRange(5, 12);
+        seekTimeline(BEATS, 15, "drag", { ...startFlag, isPlaying: true });
+        expect(store().selection).toEqual({ kind: "range", start: 5, end: 12 });
+    });
+});
