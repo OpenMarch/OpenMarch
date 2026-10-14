@@ -749,9 +749,9 @@ from it. The spec still wins on the model; this file decides presentation.
   - **The grip** is the page line through the whole page-box row (owner, 2026-10-08: the
     lower-half grip was hard to find, and "just the line at the top in the page boxes"; below the
     row the line isn't a grip), 12px wide (narrower on a narrow box), with a bar on hover and a
-    horizontal-drag (`ew-resize`) cursor. On a flag it takes the place of the playhead's head and the start
-    pennant; those are dragged from the measure row, and clicking a page box puts the playhead on
-    its flag. A press that doesn't move selects the box on that side; a plain drag elsewhere on a
+    horizontal-drag (`ew-resize`) cursor. The playhead's head and the start pennant are dragged from
+    the headroom strip above the row (UI-20; the measure row before), and clicking a page box puts
+    the playhead on its flag. A press that doesn't move selects the box on that side; a plain drag elsewhere on a
     box still scrubs (UI-12). Home's flag has no grip. While playing or isolated, there are no
     grips.
   - **Limits.** Every page keeps one count, so flags never pass or push each other, and the last
@@ -796,7 +796,7 @@ from it. The spec still wins on the model; this file decides presentation.
     outside it, playback plays on from there and the stop stays (UI-11, UI-12).
   - **The loop is its own region** (project owner, 2026-10-09, after trying the follow model by
     hand: moving the playhead to look at another count shouldn't change what loops), drawn as a
-    yellow bar along the ruler's top edge, as Logic draws its cycle region. It is apart from the
+    yellow bar along the ruler's top edge (in the headroom strip since UI-20), as Logic draws its cycle region. It is apart from the
     start flag and the edit window, which go back to UI-12's editing roles (owner, 2026-10-09, after trying
     both by hand: with the flag tied to the loop's start, a scrub to another page stretched the edit
     window from the loop's start, V-180). While looping is on,
@@ -812,8 +812,8 @@ from it. The spec still wins on the model; this file decides presentation.
     Logic's cycle bar does; it also sets the edit window, as UI-12 had it. An isolated move always
     loops its own range, and shows it: the bar over its range (read-only) and the Loop button lit,
     saying "Loop is always on for an isolated move" (owner, 2026-10-09).
-  - **The loop's ends drag**: each end of the bar is a handle above the page flag's grip, so it
-    never moves a page. Dragging snaps to page lines and downbeats (Alt turns snapping off); a
+  - **The loop's ends drag**: each end of the bar is a handle in the headroom strip above the
+    page boxes (UI-20), so it never moves a page. Dragging snaps to page lines and downbeats (Alt turns snapping off); a
     focused end steps with the arrow keys. At rest the bar's rounded ends are the handles; a knob
     shows on hover. (It replaced a tab on the window's end that the owner found awkward.)
   - **C used to pin the start flag**, first at the playhead (a blind A/B test with four simulated
@@ -975,6 +975,29 @@ from it. The spec still wins on the model; this file decides presentation.
   - Deferred: a stored "lock here" for every later page (an Eos-style block), look-preserving
     ripple delete, live return links, hold marks and chains without a selection, and
     "Hold" on coordinate sheets. Marchers are never "pinned": the start flag owns that word.
+
+- **UI-20: a headroom strip for the flags' tops (hands-on feedback, 2026-10-13).** The owner found
+  the yellow start flag hard to click: it was only grabbed above the audio row, and on a page flag
+  the flag's grip took the whole page row, so a thin band was left. As Logic gives its playhead and
+  cycle region a strip of their own, a 14px strip now sits above the page boxes.
+  - **What sits in it.** The start flag's pennant, the playhead's head and the loop's bar and ends.
+    The page boxes and their flags' grips keep the page row under it, so a grip and a flag's top
+    never share pixels.
+  - **The pennant wins the strip.** It is grabbed above the loop's ends and the playhead's head, so
+    the start flag can always be dragged by its top, on a page flag, on the loop's start or on the
+    playhead (after **Stop**). It is 12px, a 14px target as before. Each loop end's 12px handle
+    reaches outward, away from the loop, so a pennant on the loop's start leaves it room on the left
+    (_lead default_). The playhead is still grabbed anywhere down to the waveform, outside the grips.
+  - **Thicker lines.** The start flag's stem and the playhead's line are 2px (1px before), and run
+    from the strip's top; the playhead's head is larger. Their 12px hit areas are unchanged.
+  - **One top edge** (owner, 2026-10-13, after the first pass). The pennant (now filled), the loop
+    bar and the playhead's head all start on the strip's top edge, flush with the lines' tops. The
+    bar has square ends as wide as the 2px lines at each end, so bar, stem and playhead meet. Page lines stay 1px (_lead default_): they are the grid,
+    not something to grab.
+  - **The window's tint** starts at the page boxes' top, so the strip stays clear.
+  - **Layout.** The page row's top and height are named in `TimelineGeometry.ts`
+    (`TIMELINE_HEADROOM_HEIGHT`, `TIMELINE_PAGE_ROW_*`), and `getTimelineRows` lays out the rows
+    under it, so the strip's height is one number.
 
 ## Mapping the spec onto the view model
 

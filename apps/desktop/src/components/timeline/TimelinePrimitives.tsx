@@ -52,6 +52,10 @@ import {
     isPageSnapDisabled,
     snapBoundary,
     snapRangeOffset,
+    TIMELINE_HEADROOM_HEIGHT,
+    TIMELINE_PAGE_ROW_BOTTOM,
+    TIMELINE_PAGE_ROW_HEIGHT,
+    TIMELINE_PAGE_ROW_TOP,
 } from "./TimelineGeometry";
 import {
     KEEP_MENU_EVENTS,
@@ -848,7 +852,7 @@ export const TimelineRuler = memo(function TimelineRuler({
     keepChains,
     scrubLine,
     pageFlagMove,
-    height = 28,
+    height = TIMELINE_PAGE_ROW_BOTTOM,
     flagSnapPlayhead,
 }: {
     pages: readonly TimelinePageMarker[];
@@ -1063,8 +1067,10 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
             <div
                 data-testid="timeline-page-ruler"
                 // Clipped without being a scroll container, so labels can stick to the viewport
-                className="border-stroke bg-fg-2 rounded-6 absolute top-0 h-28 overflow-clip border font-mono"
+                className="border-stroke bg-fg-2 rounded-6 absolute overflow-clip border font-mono"
                 style={{
+                    top: TIMELINE_PAGE_ROW_TOP,
+                    height: TIMELINE_PAGE_ROW_HEIGHT,
                     left: -initialPageWidth,
                     width: beatCount * pixelsPerBeat + initialPageWidth,
                 }}
@@ -1214,7 +1220,8 @@ const TimelineRulerNumbers = memo(function TimelineRulerNumbers({
         // Each number starts just right of its bar line, so the line doesn't cross it
         <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-[31px] h-16 font-mono"
+            className="pointer-events-none absolute inset-x-0 h-16 font-mono"
+            style={{ top: TIMELINE_PAGE_ROW_BOTTOM + 3 }}
         >
             {visibleMeasures.map((measure) => (
                 <span
@@ -1262,12 +1269,16 @@ export const TimelinePageLines = memo(function TimelinePageLines({
                 .map((page) => (
                     <span
                         key={page.id}
-                        className="bg-text absolute top-28 w-px opacity-[0.24]"
+                        className="bg-text absolute w-px opacity-[0.24]"
                         style={{
+                            top: TIMELINE_PAGE_ROW_BOTTOM,
                             left: Math.round(
                                 beatToX(page.atBeat, pixelsPerBeat),
                             ),
-                            height: Math.max(0, height - 28),
+                            height: Math.max(
+                                0,
+                                height - TIMELINE_PAGE_ROW_BOTTOM,
+                            ),
                         }}
                     />
                 ))}
@@ -1956,7 +1967,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
     startFlagBeatIndex,
     startPinned = false,
     onUnpin,
-    pinTop = 30,
+    pinTop = TIMELINE_PAGE_ROW_BOTTOM + 2,
     pinSize = 18,
     beatCount,
     pixelsPerBeat,
@@ -2259,13 +2270,13 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                     className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize! disabled:cursor-default!"
                     style={{ left: x, height: hitHeight }}
                 >
+                    {/* UI-20: 2px, from the headroom strip down */}
                     <span
                         className={clsx(
-                            "pointer-events-none absolute top-px left-1/2",
+                            "pointer-events-none absolute top-0 left-1/2 w-[2px] -translate-x-1/2",
                             START_INK.bg,
-                            "w-px",
                         )}
-                        style={{ height: Math.max(0, height - 1) }}
+                        style={{ height }}
                     />
                 </button>
                 {startPinned && (
@@ -2294,9 +2305,11 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                         />
                     </button>
                 )}
-                {/* The pennant is its own handle above the playhead's (z-50): after Stop the flag
-                    is drawn on the playhead, and this is the part of it that can be grabbed. Its
-                    left edge is drawn on the stem's pixels, so the two read as one shape */}
+                {/* The pennant is its own handle in the headroom strip (UI-20), above the
+                    playhead's (z-50) and the loop's ends (z-58): after Stop the flag is drawn on
+                    the playhead, and on a page flag the grip takes the page row, so this is the
+                    part of it that can always be grabbed. Its left edge is drawn on the stem's
+                    pixels, so the two read as one shape */}
                 <button
                     type="button"
                     tabIndex={-1}
@@ -2306,27 +2319,22 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                     title={flagTitle(kind, beatIndex)}
                     {...flagHandlers(kind, beatIndex)}
                     onKeyDown={undefined}
-                    className="pointer-events-auto absolute top-0 z-[55] h-14 w-14 touch-none border-0 bg-transparent p-0 outline-hidden enabled:cursor-ew-resize! disabled:cursor-default!"
-                    style={{ left: x }}
+                    className="pointer-events-auto absolute top-0 z-[59] w-14 touch-none border-0 bg-transparent p-0 outline-hidden enabled:cursor-ew-resize! disabled:cursor-default!"
+                    style={{ left: x - 1, height: TIMELINE_HEADROOM_HEIGHT }}
                 >
                     <svg
-                        width="10"
-                        height="10"
-                        viewBox="0 0 10 10"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
                         aria-hidden="true"
                         className={clsx(
-                            "absolute top-px left-0",
+                            "absolute top-0 left-0",
                             START_INK.text,
                         )}
                     >
-                        {/* A hollow right triangle whose top lines up with the page boxes' (1px down,
-                            inside the ruler's border): a 1px outline whose left side is the 1px stem,
-                            a fill, not a stroke, so no edge spills past it */}
-                        <path
-                            d="M0 0 L10 0 L0 10 Z M1 1 L1 7.59 L7.59 1 Z"
-                            fill="currentColor"
-                            fillRule="evenodd"
-                        />
+                        {/* A filled right triangle on the strip's top edge, flush with the loop
+                            bar's top; its left side is the 2px stem */}
+                        <path d="M0 0 L12 0 L0 12 Z" fill="currentColor" />
                     </svg>
                 </button>
             </>
@@ -2355,15 +2363,14 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
             <span
                 ref={tintRef}
                 aria-hidden="true"
-                className={clsx(
-                    // 1px down, inside the ruler's border, like the flag and the page boxes
-                    "absolute top-px z-30 origin-left",
-                    "bg-accent/8",
-                )}
+                // From the page boxes' top (1px down, inside the ruler's border): the headroom
+                // strip above stays clear for the flags' tops (UI-20)
+                className="bg-accent/8 absolute z-30 origin-left"
                 style={{
                     left: startX,
                     width: endX - startX,
-                    height: height - 1,
+                    top: TIMELINE_PAGE_ROW_TOP + 1,
+                    height: Math.max(0, height - TIMELINE_PAGE_ROW_TOP - 1),
                 }}
             />
             <div className="pointer-events-none absolute inset-0">
@@ -2671,20 +2678,20 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 height: Math.min(hitHeight, height),
             }}
         >
-            {/* The line runs from the page boxes' top (1px down, inside the ruler's border), and
-                the head is a fill centered on the line's pixel, so its tip runs into the line */}
+            {/* UI-20: a 2px line from the headroom strip down, and a head in the strip, centered on
+                the line, so its tip runs into the line */}
             <span
-                className="bg-accent pointer-events-none absolute top-px left-1/2 w-px"
-                style={{ height: Math.max(0, height - 1) }}
+                className="bg-accent pointer-events-none absolute top-0 left-1/2 w-[2px] -translate-x-1/2"
+                style={{ height }}
             />
             <svg
-                width="9"
-                height="6"
-                viewBox="0 0 9 6"
+                width="12"
+                height="11"
+                viewBox="0 0 12 11"
                 aria-hidden="true"
-                className="text-accent absolute top-px left-[calc(50%-4px)]"
+                className="text-accent pointer-events-none absolute top-0 left-[calc(50%-6px)]"
             >
-                <path d="M0 0 L9 0 L4.5 6 Z" fill="currentColor" />
+                <path d="M0 0 H12 V6 L6 11 L0 6 Z" fill="currentColor" />
             </svg>
         </button>
     );
@@ -3006,12 +3013,13 @@ export const TimelineRangePreview = memo(function TimelineRangePreview({
         <div
             data-testid="timeline-range-preview"
             aria-hidden="true"
-            className="bg-accent/15 border-accent pointer-events-none absolute top-28 z-30 border-x"
+            className="bg-accent/15 border-accent pointer-events-none absolute z-30 border-x"
             style={{
                 left: range.startBeatIndex * pixelsPerBeat,
                 width:
                     (range.endBeatIndex - range.startBeatIndex) * pixelsPerBeat,
-                height: Math.max(0, height - 28),
+                top: TIMELINE_PAGE_ROW_BOTTOM,
+                height: Math.max(0, height - TIMELINE_PAGE_ROW_BOTTOM),
             }}
         />
     );

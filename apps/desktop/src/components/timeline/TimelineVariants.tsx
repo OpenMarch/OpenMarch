@@ -19,9 +19,12 @@ import {
     getPageSnapBeats,
     getWindowCountLabel,
     getSelectionRange,
+    getTimelineRows,
     getTrackRange,
     sameRange,
     packTimelineTracks,
+    TIMELINE_PAGE_ROW_BOTTOM,
+    TIMELINE_PAGE_ROW_TOP,
 } from "./TimelineGeometry";
 import {
     TIMELINE_MAX_PX_PER_BEAT,
@@ -495,7 +498,7 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
                         : displayedRange.endBeatIndex) *
                         pixelsPerBeat +
                     (countRendersToLeft ? -6 : 6),
-                top: expanded ? 31 : 29,
+                top: TIMELINE_PAGE_ROW_BOTTOM + (expanded ? 3 : 1),
                 alignItems: countRendersToLeft ? "flex-end" : "flex-start",
                 transform: countRendersToLeft ? "translateX(-100%)" : undefined,
             }}
@@ -566,22 +569,18 @@ const TimelineSurface = memo(function TimelineSurface({
         ? TIMELINE_INITIAL_PAGE_WIDTH
         : 0;
     const surfaceWidth = width + initialPageWidth;
-    // UI-12: the ruler (28px) and the measure row; then the waveform, when audio is loaded, so it
-    // stays put as clips come and go; then the clip rows, one always kept (with no chrome), so the
-    // first off-page clip doesn't move the ruler right after the drag that made it
-    const railHeight = expanded ? 20 : 17;
     const showWaveform = model.waveform.peaksByBeat.some(
         (peaks) => peaks.length > 0,
     );
-    const waveformHeight = expanded ? 32 : 12;
-    const audioTop = 28 + railHeight + 2;
-    const trackTop = showWaveform ? audioTop + waveformHeight + 4 : audioTop;
-    const rowPitch = expanded ? 22 : 12;
-    const trackHeight = expanded ? 14 : 6;
-    // Compact bars sit in a hit area as tall as their row, so rows never share a click
-    const clipHitHeight = expanded ? trackHeight : rowPitch;
-    const trackBandHeight = Math.max(rows.length, 1) * rowPitch;
-    const timelineHeight = trackTop + trackBandHeight + (expanded ? 2 : 0);
+    const {
+        audioTop,
+        waveformHeight,
+        trackTop,
+        rowPitch,
+        trackHeight,
+        clipHitHeight,
+        timelineHeight,
+    } = getTimelineRows({ expanded, showWaveform, rowCount: rows.length });
     const selectionRange = getSelectionRange(selection);
     // A dragged start flag's range: only the window's count reads it (`TimelineSelectionActions`)
     const [selectionInteraction] = useState(() =>
@@ -761,8 +760,8 @@ const TimelineSurface = memo(function TimelineSurface({
                         viewportRef={viewportRef}
                         layerLeft={initialPageWidth}
                         measures={model.measures}
-                        lineTop={28}
-                        topTickY={34}
+                        lineTop={TIMELINE_PAGE_ROW_BOTTOM}
+                        topTickY={TIMELINE_PAGE_ROW_BOTTOM + 6}
                         // UI-12: one row of beat ticks, in the measure row
                         bottomTickY={null}
                     />
@@ -852,7 +851,7 @@ const TimelineSurface = memo(function TimelineSurface({
                     <TimelineRehearsalMarkers
                         model={model}
                         pixelsPerBeat={pixelsPerBeat}
-                        top={expanded ? 30 : 29}
+                        top={TIMELINE_PAGE_ROW_BOTTOM + (expanded ? 2 : 1)}
                         compact={!expanded}
                         onSeek={props.onSeek}
                     />
@@ -883,9 +882,10 @@ const TimelineSurface = memo(function TimelineSurface({
                             title="Add a page flag here"
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={props.onAddPageFlag}
-                            className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute top-6 z-[60] flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
+                            className="bg-accent text-text-invert focus-visible:ring-accent pointer-events-auto absolute z-[60] flex size-16 items-center justify-center rounded-full outline-hidden focus-visible:ring-2"
                             style={{
                                 left: beatToX(positionBeat, pixelsPerBeat) + 8,
+                                top: TIMELINE_PAGE_ROW_TOP + 6,
                             }}
                         >
                             <PlusIcon size={10} weight="bold" />
@@ -918,7 +918,9 @@ const TimelineSurface = memo(function TimelineSurface({
                                 selection.startPinned === true
                             }
                             onUnpin={props.onUnpinStart}
-                            pinTop={expanded ? 29 : 28}
+                            pinTop={
+                                TIMELINE_PAGE_ROW_BOTTOM + (expanded ? 1 : 0)
+                            }
                             pinSize={expanded ? 18 : 14}
                             beatCount={model.beatCount}
                             pixelsPerBeat={pixelsPerBeat}

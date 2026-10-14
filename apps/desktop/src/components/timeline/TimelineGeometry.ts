@@ -104,6 +104,70 @@ export const beatToX = (
     startBeat = 0,
 ) => (beat - startBeat) * pixelsPerBeat;
 
+/**
+ * The headroom strip above the page boxes (UI-20), as Logic gives its playhead and cycle region
+ * their own strip: the start flag's pennant, the playhead's head and the loop's bar and ends sit
+ * and are grabbed here, clear of the page flags' grips in the page row
+ */
+export const TIMELINE_HEADROOM_HEIGHT = 14;
+/** The page-box row's height, in pixels */
+export const TIMELINE_PAGE_ROW_HEIGHT = 28;
+/** The page-box row's top, in pixels from the timeline's top: under the headroom strip */
+export const TIMELINE_PAGE_ROW_TOP = TIMELINE_HEADROOM_HEIGHT;
+/** The page-box row's bottom: the measure row, the waveform and the clip rows sit below it */
+export const TIMELINE_PAGE_ROW_BOTTOM =
+    TIMELINE_PAGE_ROW_TOP + TIMELINE_PAGE_ROW_HEIGHT;
+
+/** The timeline's rows, top to bottom, in pixels (`getTimelineRows`) */
+export interface TimelineRows {
+    /** The waveform's top, and where the flags and the playhead stop taking the pointer */
+    readonly audioTop: number;
+    readonly waveformHeight: number;
+    /** The first clip row's top */
+    readonly trackTop: number;
+    /** From one clip row's top to the next */
+    readonly rowPitch: number;
+    /** A clip bar's height */
+    readonly trackHeight: number;
+    /** A clip's hit area, at least its bar */
+    readonly clipHitHeight: number;
+    readonly timelineHeight: number;
+}
+
+/**
+ * The timeline's rows (UI-12): the headroom strip (UI-20), the page boxes and the measure row; then the waveform, when audio
+ * is loaded, so it stays put as clips come and go; then the clip rows, one always kept (with no
+ * chrome), so the first off-page clip doesn't move the ruler right after the drag that made it
+ */
+export const getTimelineRows = ({
+    expanded,
+    showWaveform,
+    rowCount,
+}: {
+    expanded: boolean;
+    showWaveform: boolean;
+    rowCount: number;
+}): TimelineRows => {
+    // The measure row, under the page boxes
+    const railHeight = expanded ? 20 : 17;
+    const waveformHeight = expanded ? 32 : 12;
+    const audioTop = TIMELINE_PAGE_ROW_BOTTOM + railHeight + 2;
+    const trackTop = showWaveform ? audioTop + waveformHeight + 4 : audioTop;
+    const rowPitch = expanded ? 22 : 12;
+    const trackHeight = expanded ? 14 : 6;
+    return {
+        audioTop,
+        waveformHeight,
+        trackTop,
+        rowPitch,
+        trackHeight,
+        // Compact bars sit in a hit area as tall as their row, so rows never share a click
+        clipHitHeight: expanded ? trackHeight : rowPitch,
+        timelineHeight:
+            trackTop + Math.max(rowCount, 1) * rowPitch + (expanded ? 2 : 0),
+    };
+};
+
 /** A horizontal span of a layer, in CSS pixels from the layer's left edge */
 export interface TimelineSpan {
     readonly left: number;

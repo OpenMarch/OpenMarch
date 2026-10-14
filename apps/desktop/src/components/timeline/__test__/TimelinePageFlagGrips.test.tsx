@@ -155,7 +155,8 @@ describe("page flag grips", () => {
 
     it("the grip is the page line through the page-box row only (owner)", async () => {
         const { commit } = show();
-        expect(grip(2).style.top).toBe("0px");
+        // Under the 14px headroom strip, which the flags' tops have to themselves (UI-20)
+        expect(grip(2).style.top).toBe("14px");
         expect(grip(2).style.height).toBe("28px");
         expect(screen.queryAllByTestId("timeline-page-flag-grip-rows")).toEqual(
             [],

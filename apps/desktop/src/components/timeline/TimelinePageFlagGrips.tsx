@@ -7,7 +7,14 @@ import {
     useEffect,
     useRef,
 } from "react";
-import { beatToX, clamp, isPageSnapDisabled } from "./TimelineGeometry";
+import {
+    beatToX,
+    clamp,
+    isPageSnapDisabled,
+    TIMELINE_PAGE_ROW_BOTTOM,
+    TIMELINE_PAGE_ROW_HEIGHT,
+    TIMELINE_PAGE_ROW_TOP,
+} from "./TimelineGeometry";
 import type {
     BeatPosition,
     TimelineBeatRange,
@@ -75,12 +82,13 @@ export const FLAG_DRAG_PX = 4;
 /** The grip's widest, in pixels; narrow boxes get a narrower one (`gripWidth`) */
 const GRIP_WIDTH = 12;
 /**
- * The grip is the page line through the whole 28px page-box row (owner, 2026-10-08: "just the line
- * at the top in the page boxes"), above the playhead's head and the start pennant there; those are
- * grabbed in the measure row, and a page box's click puts the playhead on its flag
+ * The grip is the page line through the whole page-box row (owner, 2026-10-08: "just the line
+ * at the top in the page boxes"). The playhead's head, the start pennant and the loop's ends are
+ * grabbed in the headroom strip above it (UI-20), and a page box's click puts the playhead on its
+ * flag
  */
-const GRIP_TOP = 0;
-const GRIP_HEIGHT = 28;
+const GRIP_TOP = TIMELINE_PAGE_ROW_TOP;
+const GRIP_HEIGHT = TIMELINE_PAGE_ROW_HEIGHT;
 
 /** A flag being dragged: where it would land, and why it stopped there, if it did */
 export interface TimelinePageFlagPreview {
@@ -528,11 +536,12 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
                 <div
                     role="status"
                     data-testid="timeline-page-flag-readout"
-                    className="bg-bg-1 border-stroke rounded-6 text-text pointer-events-none absolute top-30 z-[60] flex flex-col gap-2 border px-6 py-4 font-mono text-[11px] leading-tight whitespace-nowrap shadow-sm"
+                    className="bg-bg-1 border-stroke rounded-6 text-text pointer-events-none absolute z-[60] flex flex-col gap-2 border px-6 py-4 font-mono text-[11px] leading-tight whitespace-nowrap shadow-sm"
                     style={{
                         left:
                             Math.round(beatToX(preview.beat, pixelsPerBeat)) +
                             8,
+                        top: TIMELINE_PAGE_ROW_BOTTOM + 2,
                     }}
                 >
                     {readout.pages.map((line) => (

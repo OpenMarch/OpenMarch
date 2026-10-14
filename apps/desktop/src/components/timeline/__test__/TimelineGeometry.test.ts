@@ -11,11 +11,15 @@ import {
     getVisiblePageCounts,
     getWindowCountLabel,
     getSelectionRange,
+    getTimelineRows,
     isPageSnapDisabled,
     packTimelineTracks,
     sameRange,
     snapBoundary,
     snapRangeOffset,
+    TIMELINE_HEADROOM_HEIGHT,
+    TIMELINE_PAGE_ROW_BOTTOM,
+    TIMELINE_PAGE_ROW_TOP,
     TIMELINE_PAGE_SNAP_PX,
     validateTimelineViewModel,
 } from "../TimelineGeometry";
@@ -26,6 +30,44 @@ import {
 import { getDraggedRange } from "../TimelinePrimitives";
 
 describe("timeline geometry", () => {
+    it("stacks the headroom strip, the page row and the rows below it (UI-20)", () => {
+        expect(TIMELINE_HEADROOM_HEIGHT).toBeGreaterThan(0);
+        expect(TIMELINE_PAGE_ROW_TOP).toBe(TIMELINE_HEADROOM_HEIGHT);
+        expect(TIMELINE_PAGE_ROW_BOTTOM).toBe(TIMELINE_PAGE_ROW_TOP + 28);
+        // Strip 14, page row 28, measure row 20 and a 2px gap; then the waveform and one row
+        expect(
+            getTimelineRows({
+                expanded: true,
+                showWaveform: true,
+                rowCount: 0,
+            }),
+        ).toEqual({
+            audioTop: 64,
+            waveformHeight: 32,
+            trackTop: 100,
+            rowPitch: 22,
+            trackHeight: 14,
+            clipHitHeight: 14,
+            timelineHeight: 124,
+        });
+        // Compact: a 17px measure row, no waveform, and clips hit as tall as their row
+        expect(
+            getTimelineRows({
+                expanded: false,
+                showWaveform: false,
+                rowCount: 3,
+            }),
+        ).toEqual({
+            audioTop: 61,
+            waveformHeight: 12,
+            trackTop: 61,
+            rowPitch: 12,
+            trackHeight: 6,
+            clipHitHeight: 12,
+            timelineHeight: 97,
+        });
+    });
+
     it("packs touching tracks together and separates overlaps", () => {
         const rows = packTimelineTracks(timelineStoryTracks);
 

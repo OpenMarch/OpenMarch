@@ -688,11 +688,12 @@ describe("the flags over the waveform row (UI-14 round-2 review)", () => {
                 />
             </TimelineWaveformProvider>,
         );
-        // The ruler (28px), the measure row (20px) and a 2px gap; the waveform row starts there
+        // The headroom strip (14px, UI-20), the ruler (28px), the measure row (20px) and a 2px
+        // gap; the waveform row starts there
         for (const handle of [
             screen.getByRole("button", { name: /^Start flag/ }),
             screen.getByTestId("timeline-playhead"),
         ])
-            expect(parseFloat(handle.style.height)).toBe(50);
+            expect(parseFloat(handle.style.height)).toBe(64);
     });
 });

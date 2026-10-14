@@ -8,17 +8,22 @@ import {
 } from "react";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
-import { beatToX } from "./TimelineGeometry";
+import { beatToX, TIMELINE_HEADROOM_HEIGHT } from "./TimelineGeometry";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /** Snaps a dragged loop end to the nearest snap beat within this many pixels */
 const SNAP_PX = 8;
+/** An end's handle is this wide, and reaches this far inside the loop; the rest is outside it */
+const HANDLE_WIDTH = 12;
+const HANDLE_INSET = 2;
 
 /**
  * The loop (UI-17): its own region, drawn as a bar along the ruler's top edge in the start flag's
  * color, as Logic draws its cycle region. Each end is a handle: drag it to move that end, snapping
- * to page lines and downbeats (Alt turns snapping off), or focus it and use the arrow keys. The
- * handles sit above the page flag's grip in the ruler's top strip, so they never move a page.
+ * to page lines and downbeats (Alt turns snapping off), or focus it and use the arrow keys. The bar
+ * and its handles sit in the headroom strip above the page boxes (UI-20), so they never take a page
+ * flag's grip. Each handle reaches outward, away from the loop, so a start flag's pennant on the
+ * loop's start (it points right, and is grabbed above the handles) leaves the handle room.
  * Moving the playhead never changes the loop; the owner of `loop` moves it on page navigation.
  */
 export const TimelineLoopBar = memo(function TimelineLoopBar({
@@ -165,16 +170,30 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                     event.stopPropagation();
                     onChange(moved(edge, beat + delta, loop));
                 }}
-                className="group focus-visible:ring-accent pointer-events-auto absolute top-0 z-[58] h-12 w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize!"
-                style={{ left: edge === "start" ? startX : endX }}
+                className="group focus-visible:ring-accent pointer-events-auto absolute top-0 z-[58] touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize!"
+                style={{
+                    left:
+                        edge === "start"
+                            ? startX + HANDLE_INSET - HANDLE_WIDTH
+                            : endX - HANDLE_INSET,
+                    width: HANDLE_WIDTH,
+                    height: TIMELINE_HEADROOM_HEIGHT,
+                }}
             >
-                {/* At rest the bar's rounded end is the handle; hovered or focused, a knob shows */}
+                {/* At rest the bar's rounded end is the handle; hovered or focused, a knob shows,
+                    centered on the end */}
                 <span
                     aria-hidden="true"
                     className={clsx(
-                        "absolute top-0 left-1/2 size-8 -translate-x-1/2 rounded-full opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100",
+                        "absolute top-0 size-8 -translate-x-1/2 rounded-full opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100",
                         START_INK.bg,
                     )}
+                    style={{
+                        left:
+                            edge === "start"
+                                ? HANDLE_WIDTH - HANDLE_INSET
+                                : HANDLE_INSET,
+                    }}
                 />
             </button>
         );
@@ -185,14 +204,16 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
             data-testid="timeline-loop-region"
             className="pointer-events-none absolute inset-0"
         >
+            {/* Square ends on the strip's top edge, as wide as the 2px lines at each end, so the
+                bar, the start flag's stem and the playhead's line meet flush (UI-20) */}
             <span
                 data-testid="timeline-loop-bar"
                 aria-hidden="true"
-                className={clsx(
-                    "absolute top-px z-40 h-4 rounded-full",
-                    START_INK.bg,
-                )}
-                style={{ left: startX, width: Math.max(endX - startX, 4) }}
+                className={clsx("absolute top-0 z-40 h-4", START_INK.bg)}
+                style={{
+                    left: startX - 1,
+                    width: Math.max(endX - startX, 2) + 2,
+                }}
             />
             {handle("start")}
             {handle("end")}
