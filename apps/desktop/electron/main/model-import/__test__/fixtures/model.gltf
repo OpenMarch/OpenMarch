@@ -1,0 +1,83 @@
+{
+    "asset": { "generator": "OpenMarch fixture generator", "version": "2.0" },
+    "accessors": [
+        {
+            "type": "VEC3",
+            "componentType": 5126,
+            "count": 24,
+            "max": [
+                0.6000000238418579, 0.6000000238418579, 0.02500000037252903
+            ],
+            "min": [-0.6000000238418579, 0, -0.02500000037252903],
+            "bufferView": 0,
+            "byteOffset": 0
+        },
+        {
+            "type": "VEC3",
+            "componentType": 5126,
+            "count": 24,
+            "bufferView": 0,
+            "byteOffset": 12
+        },
+        {
+            "type": "VEC2",
+            "componentType": 5126,
+            "count": 24,
+            "bufferView": 0,
+            "byteOffset": 24
+        },
+        {
+            "type": "SCALAR",
+            "componentType": 5125,
+            "count": 36,
+            "bufferView": 1,
+            "byteOffset": 0
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteOffset": 0,
+            "byteLength": 768,
+            "byteStride": 32,
+            "target": 34962
+        },
+        { "buffer": 0, "byteOffset": 768, "byteLength": 144, "target": 34963 }
+    ],
+    "samplers": [{ "wrapS": 10497, "wrapT": 10497 }],
+    "textures": [{ "source": 0, "sampler": 0 }],
+    "images": [{ "name": "Logo", "mimeType": "image/png", "uri": "logo.png" }],
+    "buffers": [{ "uri": "model.bin", "byteLength": 912 }],
+    "materials": [
+        {
+            "name": "Sign",
+            "pbrMetallicRoughness": { "baseColorTexture": { "index": 0 } }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Sign",
+            "primitives": [
+                {
+                    "attributes": {
+                        "POSITION": 0,
+                        "NORMAL": 1,
+                        "TEXCOORD_0": 2
+                    },
+                    "mode": 4,
+                    "material": 0,
+                    "indices": 3
+                }
+            ]
+        }
+    ],
+    "nodes": [{ "name": "Sign", "mesh": 0 }],
+    "scenes": [
+        {
+            "name": "Scene",
+            "extras": { "openmarch": { "kind": "prop" } },
+            "nodes": [0]
+        }
+    ],
+    "scene": 0
+}
