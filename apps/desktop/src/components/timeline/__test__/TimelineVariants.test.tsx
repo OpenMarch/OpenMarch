@@ -42,9 +42,10 @@ describe("timeline views", () => {
 
         expect(screen.getByLabelText(/M1 timeline/)).toBeInTheDocument();
         expect(screen.getByLabelText(/SH timeline/)).toBeInTheDocument();
+        // The grid under the tracks, and the pinned header's own (ticks and the lines through it)
         expect(
             container.querySelectorAll('[data-testid="timeline-grid-canvas"]'),
-        ).toHaveLength(1);
+        ).toHaveLength(2);
         expect(
             container.querySelectorAll(
                 '[data-testid="timeline-waveform-canvas"]',
@@ -783,6 +784,23 @@ describe("timeline views", () => {
         expect(onSeek).toHaveBeenCalledWith(24);
     });
 
+    it("pins the ruler and the playhead over the tracks, which scroll alone", () => {
+        render(<ExpandedTimeline {...commonProps} showTransport={false} />);
+        const pinned = screen.getByTestId("timeline-pinned");
+        const tracks = screen.getByTestId("timeline-tracks");
+        expect(pinned).toHaveClass("sticky", "top-0");
+        expect(pinned).toContainElement(
+            screen.getByTestId("timeline-page-ruler"),
+        );
+        expect(pinned).toContainElement(
+            screen.getByTestId("timeline-playhead"),
+        );
+        expect(tracks).toContainElement(screen.getByLabelText(/SH timeline/));
+        expect(pinned).not.toContainElement(
+            screen.getByLabelText(/SH timeline/),
+        );
+    });
+
     it("does not create one DOM node per beat for a long show", () => {
         const { container } = render(
             <ExpandedTimeline
@@ -795,9 +813,10 @@ describe("timeline views", () => {
 
         expect(
             container.querySelectorAll('[data-testid="timeline-grid-canvas"]'),
-        ).toHaveLength(1);
-        // The grid, and the waveform in its rest and played tones (UI-12)
-        expect(container.querySelectorAll("canvas")).toHaveLength(3);
+        ).toHaveLength(2);
+        // The grid and the pinned header's grid, and the waveform in its rest and played tones
+        // (UI-12)
+        expect(container.querySelectorAll("canvas")).toHaveLength(4);
         expect(container.querySelectorAll("*").length).toBeLessThan(500);
     });
 

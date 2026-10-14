@@ -237,6 +237,26 @@ export function clipResizeTagText(
  * its two handles, the drag tag, and `swallowClick`, which the clip's `onClick` asks so the click
  * that ends a resize doesn't also select the clip.
  */
+/** The resize tag's height and its gap above the clip, in px */
+const RESIZE_TAG_ROOM_PX = 22;
+
+/**
+ * Whether the resize tag fits above the clip, between it and the timeline's pinned ruler. On a
+ * top row, or a row scrolled up under the ruler, the ruler would cover it, so it goes beside the
+ * dragged edge instead (below could fall off the bottom of the pane).
+ */
+const tagFitsAbove = (handle: Element) => {
+    const header = handle
+        .closest('[data-testid="timeline-pointer-surface"]')
+        ?.querySelector('[data-testid="timeline-pinned-header"]');
+    if (!header) return true;
+    return (
+        handle.getBoundingClientRect().top -
+            header.getBoundingClientRect().bottom >=
+        RESIZE_TAG_ROOM_PX
+    );
+};
+
 export function useClipEdgeResize({
     trackId,
     label,
@@ -275,6 +295,7 @@ export function useClipEdgeResize({
     resetClick: () => void;
 } {
     const [preview, setPreview] = useState<ClipResizePreview | null>(null);
+    const [tagBeside, setTagBeside] = useState(false);
     const dragRef = useRef<{
         pointerId: number;
         edge: Edge;
@@ -359,6 +380,7 @@ export function useClipEdgeResize({
                 limitsRead: Promise.resolve() as Promise<unknown>,
             };
             dragRef.current = drag;
+            setTagBeside(!tagFitsAbove(event.currentTarget));
             event.currentTarget.setPointerCapture?.(event.pointerId);
             // The limits come from the database; until they arrive only the show and the one
             // count minimum hold, and the edge settles inside them once they do
@@ -467,9 +489,20 @@ export function useClipEdgeResize({
                 data-testid="timeline-clip-resize-tag"
                 role="status"
                 className={clsx(
-                    "rounded-4 bg-fg-2 border-stroke pointer-events-none absolute bottom-full z-[60] mb-1 border px-4 py-[1px] text-[11px] whitespace-nowrap shadow-sm",
+                    "rounded-4 bg-fg-2 border-stroke pointer-events-none absolute z-[60] border px-4 py-[1px] text-[11px] whitespace-nowrap shadow-sm",
                     preview.blockedBy ? "text-red" : "text-text",
-                    preview.edge === "start" ? "left-0" : "right-0",
+                    tagBeside
+                        ? clsx(
+                              // Level with the clip's top, so none of it reaches up under the ruler
+                              "top-0",
+                              preview.edge === "start"
+                                  ? "right-full mr-1"
+                                  : "left-full ml-1",
+                          )
+                        : clsx(
+                              "bottom-full mb-1",
+                              preview.edge === "start" ? "left-0" : "right-0",
+                          ),
                 )}
             >
                 {clipResizeTagText(range, preview, snapBeats, label)}

@@ -16,6 +16,11 @@ import {
     WarningIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
+import { flushSync } from "react-dom";
+import {
+    isLayoutResizing,
+    subscribeLayoutResizing,
+} from "@/global/layoutResize";
 import { START_INK } from "./startFlagInk";
 import {
     Keycaps,
@@ -718,21 +723,24 @@ export const TimelineShell = ({
     children,
     viewportRef,
     className,
+    pinnedHeight = 0,
 }: {
     transport?: ReactNode;
     children: ReactNode;
     viewportRef: RefObject<HTMLDivElement | null>;
     className?: string;
+    /** How tall the rows pinned at the viewport's top are, so a focused clip scrolls out from under them */
+    pinnedHeight?: number;
 }) => (
     <div
         className={clsx(
-            "border-stroke bg-fg-1 text-text rounded-6 flex min-w-0 flex-col overflow-visible border font-sans",
+            "border-stroke bg-fg-1 text-text rounded-6 flex h-full min-h-0 min-w-0 flex-col overflow-visible border font-sans",
             className,
         )}
     >
         {transport}
         {/* Its own stacking context: nothing on the timeline (+, the playhead) paints over a menu */}
-        <section className="isolate min-w-0 px-6 pt-4">
+        <section className="isolate flex min-h-0 min-w-0 flex-1 flex-col px-6 pt-4">
             <div
                 ref={viewportRef}
                 data-testid="timeline-viewport"
@@ -740,7 +748,12 @@ export const TimelineShell = ({
                 tabIndex={-1}
                 aria-label="Timeline"
                 // The scrollbar's track is always there, so zooming never changes the height
-                className="focus-visible:ring-accent rounded-4 min-w-0 overflow-x-scroll overflow-y-hidden outline-hidden focus-visible:ring-2"
+                className="focus-visible:ring-accent rounded-4 min-h-0 min-w-0 flex-1 overflow-x-scroll overflow-y-auto outline-hidden focus-visible:ring-2"
+                style={
+                    pinnedHeight > 0
+                        ? { scrollPaddingTop: pinnedHeight }
+                        : undefined
+                }
             >
                 {children}
             </div>
@@ -3237,4 +3250,62 @@ export const useElementWidth = (ref: RefObject<HTMLElement | null>) => {
         return () => observer.disconnect();
     }, [ref]);
     return width;
+};
+
+/** How much taller than its viewport the surface grows while a splitter drag holds its height */
+const LAYOUT_RESIZE_HEADROOM = 160;
+
+/**
+ * The element's inner height, kept current (0 where nothing measures, as in jsdom).
+ *
+ * While a splitter drag resizes the pane (`isLayoutResizing`) the height doesn't follow every
+ * frame: it holds when the element shrinks and grows with headroom when the element outgrows it,
+ * so whatever sizes itself from it renders a few times per drag instead of once a frame. The
+ * extra is clipped (no vertical scrollbar appears for it), and the drag's end measures exactly.
+ */
+export const useElementHeight = (ref: RefObject<HTMLElement | null>) => {
+    const [height, setHeight] = useState(0);
+    useEffect(() => {
+        const element = ref.current;
+        if (!element) return;
+        let current = element.clientHeight;
+        let clipped = false;
+        const set = (next: number) => {
+            if (next === current) return;
+            current = next;
+            setHeight(next);
+        };
+        const update = () => {
+            const measured = element.clientHeight;
+            if (!isLayoutResizing()) set(measured);
+            else if (measured > current) set(measured + LAYOUT_RESIZE_HEADROOM);
+        };
+        setHeight(current);
+        const unsubscribe = subscribeLayoutResizing((resizing) => {
+            if (resizing) {
+                // Only where it doesn't scroll already: a scrollbar that's there stays
+                clipped = element.scrollHeight <= element.clientHeight;
+                if (clipped) element.style.overflowY = "hidden";
+                return;
+            }
+            if (clipped) element.style.overflowY = "";
+            clipped = false;
+            update();
+            // And once the release's render has laid out: the pane's new height and whether it
+            // still stretches arrive in it
+            requestAnimationFrame(update);
+        });
+        if (typeof ResizeObserver === "undefined") return unsubscribe;
+        // Committed before the frame paints: a render left for later shows a frame of the old
+        // height, and when the pane shrinks the stale, taller content flashes a scrollbar that
+        // narrows the viewport and redraws every canvas twice
+        const observer = new ResizeObserver(() => flushSync(update));
+        observer.observe(element);
+        return () => {
+            observer.disconnect();
+            unsubscribe();
+            if (clipped) element.style.overflowY = "";
+        };
+    }, [ref]);
+    return height;
 };

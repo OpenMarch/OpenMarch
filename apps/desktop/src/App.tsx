@@ -18,6 +18,7 @@ import {
     FileActionHandlers,
 } from "@/shortcuts/ActionHandlers";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
+import { TimelineSplitter } from "@/components/timeline/TimelineSplitter";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "@/components/titlebar/TitleBar";
@@ -335,7 +336,14 @@ function App() {
                                                             canvas={appCanvas}
                                                         />
                                                     </div>
-                                                    <TimelineContainer />
+                                                    {focussedComponent ===
+                                                    "timeline" ? (
+                                                        <TimelineContainer />
+                                                    ) : (
+                                                        <TimelineSplitter>
+                                                            <TimelineContainer />
+                                                        </TimelineSplitter>
+                                                    )}
                                                 </div>
                                                 {!isFullscreen && (
                                                     <div

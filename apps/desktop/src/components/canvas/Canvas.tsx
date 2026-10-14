@@ -622,7 +622,10 @@ export default function Canvas({
                         height: "100%",
                         width: "100%",
                         display: "flex",
-                        alignItems: "center",
+                        // From the top: while a splitter drag holds the canvas's size (the field
+                        // canvas refits on release), a centered canvas would slide by half the
+                        // drag and jump back on release
+                        alignItems: "flex-start",
                         justifyContent: "center",
                     }}
                 >

@@ -18,7 +18,10 @@ export default function TimelineContainer() {
     if (focussedComponent !== "timeline") {
         return (
             // UI-12: perspective and fullscreen live on the field's zoom widget
-            <div className="flex gap-8" data-testid="timeline-mode-container">
+            <div
+                className="flex min-h-0 flex-1 gap-8"
+                data-testid="timeline-mode-container"
+            >
                 <TimelineModePanel />
                 <AudioPlayer />
             </div>
