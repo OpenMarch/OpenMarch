@@ -19,9 +19,32 @@ export const timelinePageBox = (page: Page, name: string) =>
         .getByTestId("timeline-page-ruler")
         .getByRole("button", { name: `Page ${name}`, exact: true });
 
+/**
+ * Where to click a page box so the click lands on the box itself: the
+ * timeline's **+** sits just right of the playhead and covers the box's
+ * middle whenever the playhead stopped there (after playback, say).
+ */
+async function clearPointInPageBox(page: Page, name: string) {
+    const box = await timelinePageBox(page, name).boundingBox();
+    if (!box) return undefined;
+    const plus = page.getByTestId("timeline-add-page-flag");
+    const plusBox = (await plus.isVisible()) ? await plus.boundingBox() : null;
+    const y = box.height / 2;
+    if (!plusBox) return { x: box.width / 2, y };
+    // The playhead line is 8px left of the +; keep clear of both.
+    const blockedFrom = plusBox.x - 16 - box.x;
+    const blockedTo = plusBox.x + plusBox.width + 4 - box.x;
+    const x = [0.5, 0.25, 0.75, 0.15, 0.85]
+        .map((fraction) => box.width * fraction)
+        .find((candidate) => candidate < blockedFrom || candidate > blockedTo);
+    return { x: x ?? box.width / 2, y };
+}
+
 /** Selects a page by clicking its box on the ruler, and waits for the Inspector to show it. */
 export async function selectTimelinePage(page: Page, name: string) {
-    await timelinePageBox(page, name).click();
+    await timelinePageBox(page, name).click({
+        position: await clearPointInPageBox(page, name),
+    });
     await expect(
         page.getByRole("heading", { name: `Page ${name}`, exact: true }),
     ).toBeVisible();

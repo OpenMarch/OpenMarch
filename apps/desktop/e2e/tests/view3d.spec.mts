@@ -501,7 +501,7 @@ test("3D View follows the editor and saves the venue", async ({
     // The reopened window picks up the editor's selection.
     const selectedName = (
         await editor
-            .getByRole("button", { name: /^Page \d/ })
+            .getByRole("heading", { name: /^Page / })
             .first()
             .textContent()
     )
