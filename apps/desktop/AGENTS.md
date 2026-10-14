@@ -12,6 +12,11 @@ adds what is specific to the Electron + React app.
 - New desktop e2e files must be `apps/desktop/e2e/tests/*.spec.mts`; Playwright support files in that suite use `.mts`/`.mjs`.
 - Browser scenario tests (`apps/desktop/e2e/browser/tests/*.spec.mts`) run the renderer in headless Chromium against the real database handlers, with no Electron build or display: `pnpm run build:browser`, then `pnpm run e2e:browser`. Prefer them for user workflows inside an open show; keep Electron e2e for what only Electron does. The same scenarios run in Electron with `pnpm run e2e:scenarios:electron`. See `e2e/browser/README.md`.
 
+## Field Freeze (Fabric)
+
+- The Fabric field is being replaced by a three.js field ([ADR 0005](../../docs/adr/0005-three-field-renderer.md), plan in [docs/field](../../docs/field/README.md)). Until fork ticket #209 merges, field drawing and field interaction on Fabric are frozen: `src/components/canvas/`, `src/global/classes/canvasObjects/`, and the Fabric parts of `src/timeline/` and `MarcherRotationInput.tsx`.
+- Fix only real breakage there, and add a parity scenario that pins each fix. Build new field behavior on the new field, not on Fabric. Box v1 (fork PR #181) is held and rebuilt in #204.
+
 ## Web Editor
 
 - `web/` and `vite.web.config.mts` build the app for the browser (editor.openmarch.com): the main process's database code runs in a worker. Read `web/README.md` before changing the preload, IPC channels, `database.services.ts`, or anything that opens or saves files.
