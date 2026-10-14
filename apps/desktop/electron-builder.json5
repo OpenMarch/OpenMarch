@@ -1,3 +1,4 @@
+// cspell:ignore linuxmusl
 /**
  * @see https://www.electron.build/configuration/configuration
  */
@@ -5,7 +6,13 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
-    asarUnpack: ["**/*.node"],
+    // sharp loads libvips at runtime, which can't be read from inside the
+    // asar (ADR 0002 D-14).
+    asarUnpack: [
+        "**/*.node",
+        "**/node_modules/sharp/**/*",
+        "**/node_modules/@img/**/*",
+    ],
     npmRebuild: false,
     nodeGypRebuild: false,
     directories: {
@@ -17,6 +24,12 @@
         "node_modules",
         "electron/database/migrations",
         "!**/node_modules/canvas/**",
+        // Ship only the sharp binaries for this build's platform and
+        // architecture: no linuxmusl, wasm32 or other-arch @img packages.
+        // `${platform}` is the build host's `process.platform`, which matches
+        // the release workflow's native builds. Don't move this into
+        // `mac`/`win`/`linux`: a platform `files` replaces this whole list.
+        "!**/node_modules/@img/sharp-!(${platform}-${arch}|libvips-${platform}-${arch}){,/**/*}",
     ],
     artifactName: "${productName}-${platform}-${arch}.${ext}",
 

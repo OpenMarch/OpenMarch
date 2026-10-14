@@ -110,6 +110,7 @@
         "react-markdown": "^10.1.0",
         "react-toastify": "^10.0.6",
         "sanitize-html": "^2.17.0",
+        "sharp": "0.35.5",
         "sonner": "^1.7.4",
         "svg-to-pdfkit": "^0.1.8",
         "tailwind-merge": "^2.6.0",
