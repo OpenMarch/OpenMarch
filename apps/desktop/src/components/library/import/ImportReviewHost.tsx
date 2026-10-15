@@ -10,7 +10,7 @@
  * mounting the two components there and deleting this file and
  * `ImportToLibraryButton`.
  */
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { T } from "@tolgee/react";
 import { useStore } from "zustand";
@@ -25,6 +25,7 @@ export default function ImportReviewHost({
 }) {
     const phase = useStore(store, (s) => s.phase);
     const hasSession = useStore(store, (s) => s.session !== null);
+    const top = useTitleBarBottom();
 
     useEffect(() => {
         const key = (e: KeyboardEvent) => {
@@ -44,7 +45,8 @@ export default function ImportReviewHost({
 
     return createPortal(
         <div
-            className="bg-bg-1 text-text fixed inset-0 z-50 flex gap-8 p-8 font-sans"
+            className="bg-bg-1 text-text fixed inset-x-0 bottom-0 z-50 flex gap-8 p-8 font-sans"
+            style={{ top }}
             data-testid="import-review-host"
             role="dialog"
             aria-modal="true"
@@ -63,4 +65,23 @@ export default function ImportReviewHost({
         </div>,
         document.body,
     );
+}
+
+/**
+ * Where the editor's title bar ends, so the review starts below it: the
+ * window buttons and the drag region stay clear. The title bar sizes to its
+ * content, so it's measured, and again when the window resizes.
+ */
+function useTitleBarBottom(): number {
+    const [bottom, setBottom] = useState(0);
+    useLayoutEffect(() => {
+        const bar = document.querySelector(".main-app-titlebar");
+        if (!bar) return;
+        const measure = () => setBottom(bar.getBoundingClientRect().bottom);
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(bar);
+        return () => observer.disconnect();
+    }, []);
+    return bottom;
 }

@@ -227,37 +227,52 @@ function DetailsFields({ store }: { store: ImportReviewStore }) {
                 </button>
                 {open && (
                     <div className="flex flex-col gap-8 pl-20">
-                        <Input
-                            compact
-                            value={meta.author}
-                            maxLength={200}
-                            aria-label={t("library.import.details.author")}
-                            placeholder={t("library.import.details.author")}
-                            onChange={(e) =>
-                                state.setMeta({ author: e.target.value })
-                            }
-                        />
-                        <Input
-                            compact
-                            value={meta.license}
-                            aria-label={t("library.import.details.license")}
-                            placeholder={t(
-                                "library.import.details.licensePlaceholder",
-                            )}
-                            onChange={(e) =>
-                                state.setMeta({ license: e.target.value })
-                            }
-                        />
-                        <Input
-                            compact
-                            value={meta.sourceUrl}
-                            maxLength={2048}
-                            aria-label={t("library.import.details.source")}
-                            placeholder={t("library.import.details.source")}
-                            onChange={(e) =>
-                                state.setMeta({ sourceUrl: e.target.value })
-                            }
-                        />
+                        <div className="flex flex-col gap-4">
+                            <Label>
+                                <T keyName="library.import.details.author" />
+                            </Label>
+                            <Input
+                                compact
+                                value={meta.author}
+                                maxLength={200}
+                                aria-label={t("library.import.details.author")}
+                                placeholder={t("library.import.details.author")}
+                                onChange={(e) =>
+                                    state.setMeta({ author: e.target.value })
+                                }
+                            />
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <Label>
+                                <T keyName="library.import.details.license" />
+                            </Label>
+                            <Input
+                                compact
+                                value={meta.license}
+                                aria-label={t("library.import.details.license")}
+                                placeholder={t(
+                                    "library.import.details.licensePlaceholder",
+                                )}
+                                onChange={(e) =>
+                                    state.setMeta({ license: e.target.value })
+                                }
+                            />
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            <Label>
+                                <T keyName="library.import.details.source" />
+                            </Label>
+                            <Input
+                                compact
+                                value={meta.sourceUrl}
+                                maxLength={2048}
+                                aria-label={t("library.import.details.source")}
+                                placeholder={t("library.import.details.source")}
+                                onChange={(e) =>
+                                    state.setMeta({ sourceUrl: e.target.value })
+                                }
+                            />
+                        </div>
                         <p className="text-sub text-text-subtitle">
                             <T keyName="library.import.details.emptyIsUnknown" />
                         </p>
