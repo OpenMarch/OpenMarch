@@ -22,7 +22,7 @@ Three new cue channels (Carry, Silk, Uniform) in storage and compile, their Visu
 ## Read first
 
 - [../props-spec.md](../props-spec.md): the design spec, sections on cue channels, silks, uniforms and Visuals mode surfaces. Ticket numbers on each package are the ones it cites.
-- [ADR 0002](../../adr/0002-3d-view.md) D-10 and D-11; [ADR 0004 amendment draft](../../adr/0004-amendment-draft.md)
+- [ADR 0002](../../adr/0002-3d-view.md) D-10 and D-11; [ADR 0004](../../adr/0004-performer-cues.md) amendment of 2026-10-11
 - ADR 0004 and `docs/3d/performer-behavior.md` sections 2, 3, 6, 7 and 10 (cue branches)
 - `CONTEXT.md`: **Visuals mode**, **Item**, **Silk**, **Cut**, **Uniform**
 

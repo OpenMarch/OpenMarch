@@ -5,7 +5,7 @@
 - Status: approved by the owner on 2026-10-11, with the ADR amendments
 - Date: 2026-10-11
 - Decisions: [ADR 0002](../adr/0002-3d-view.md) amendment of 2026-10-11
-  (D-9 to D-22) and the [ADR 0004 amendment draft](../adr/0004-amendment-draft.md)
+  (D-9 to D-22) and the [ADR 0004](../adr/0004-performer-cues.md) amendment of 2026-10-11
 - Work: the customization track (C1 to C5) in [phases/](phases/)
 
 This spec compiles the 25 resolved tickets of the 3D customization map and the
