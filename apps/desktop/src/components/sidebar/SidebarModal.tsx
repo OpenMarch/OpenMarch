@@ -48,11 +48,16 @@ export function SidebarModalLauncher({
     contents,
     newContentId,
     className,
+    ariaLabel,
+    testId,
 }: {
     buttonLabel: string | ReactNode;
     contents: ReactNode;
     newContentId: string;
     className?: string;
+    /** For icon-only labels. */
+    ariaLabel?: string;
+    testId?: string;
 }) {
     const { toggleOpen, setContent, isOpen, contentId } =
         useSidebarModalStore();
@@ -74,6 +79,8 @@ export function SidebarModalLauncher({
                 ),
             )}
             id={"sidebar-launcher-" + newContentId}
+            aria-label={ariaLabel}
+            data-testid={testId}
         >
             {buttonLabel}
         </button>

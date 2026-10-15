@@ -134,6 +134,9 @@
         "whenYouOptIn": "When you opt-in",
         "whenYouOptOut": "When you opt-out"
     },
+    "assets": {
+        "title": "Assets"
+    },
     "audio": {
         "beats": {
             "create": {
@@ -1068,6 +1071,331 @@
             "title": "Settings"
         },
         "title": "Launch Page"
+    },
+    "library": {
+        "browser": {
+            "title": "Library",
+            "search": "Search by name",
+            "empty": "Your Library is empty.",
+            "emptyHint": "Use Import… to add models and artwork.",
+            "noMatches": "Nothing in the Library matches “{query}”.",
+            "loadFailed": "Couldn't load the Library ({code}).",
+            "groups": {
+                "silks": "Silks",
+                "floors": "Floors",
+                "props": "Props",
+                "equipment": "Equipment",
+                "uniforms": "Uniforms",
+                "other": "Other"
+            }
+        },
+        "templates": {
+            "menu": "Artwork templates",
+            "menuHint": "Full size, one file per click",
+            "groups": {
+                "silk": "Silk Cuts",
+                "floor": "Base floors",
+                "floorProp": "Floor props",
+                "prop": "Prop panels",
+                "uniform": "Uniform panels"
+            },
+            "withSag": "{name}, {sag} sag",
+            "saggingBottom": "{name}, sagging bottom",
+            "propFace": {
+                "top": "Top, {name}",
+                "front": "Front, {name}",
+                "back": "Back, {name}"
+            },
+            "uniformPart": {
+                "top": "Top",
+                "bottoms": "Bottoms",
+                "overlay": "Overlay (cape)"
+            },
+            "uniformSide": {
+                "front": "{part}, front",
+                "back": "{part}, back"
+            },
+            "download": "Download {name} as {format}",
+            "saved": "Saved {filename}",
+            "saveFailed": "Couldn't save the template"
+        },
+        "import": {
+            "entry": "Import…",
+            "library": "Library",
+            "title": "Import",
+            "back": "Back to the Library",
+            "picking": "Choose files in the dialog…",
+            "fileCount": "{count, plural, one {# file} other {# files}}",
+            "fromPicker": "From the {kind} picker",
+            "fromSlot": "For a {surface} slot",
+            "pageN": "Page {n}",
+            "pageOf": "page {index} of {count}",
+            "showPage": "Show {label}",
+            "cancel": "Cancel",
+            "close": "Done",
+            "importMore": "Import more…",
+            "tryAgain": "Try again",
+            "chooseAgain": "Choose files again",
+            "cancelKeeps": "Pages already added stay in your Library if you cancel.",
+            "cancelled": "Cancelled. Anything already added stays in your Library.",
+            "clean": "Ready to add. Nothing needs your choice.",
+            "starterKit": "The OpenMarch Blender starter kit exports models that import cleanly.",
+            "groups": {
+                "cantImport": "Can't import",
+                "needsChoice": "Needs your choice",
+                "fixed": "Fixed for you",
+                "notes": "Notes"
+            },
+            "kind": {
+                "title": "What is it?",
+                "hint": "Required. Size range and triangle caps are checked after.",
+                "from": {
+                    "picker": "Set by the picker",
+                    "stamp": "From the starter kit stamp"
+                }
+            },
+            "kinds": {
+                "prop": "Prop",
+                "equipment": "Equipment",
+                "garment": "Garment",
+                "floorProp": "Floor prop",
+                "baseFloor": "Base floor"
+            },
+            "surfaces": {
+                "silk": "Silk",
+                "baseFloor": "Base floor",
+                "floorProp": "Floor prop",
+                "propSlot": "Prop",
+                "uniformPart": "Uniform"
+            },
+            "stages": {
+                "reading": "Reading the file…",
+                "validating": "Checking the file…",
+                "decoding": "Decoding…",
+                "checking": "Checking sizes and caps…",
+                "converting": "Converting…",
+                "writing": "Writing…",
+                "rendering-pdf": "Rendering PDF pages…",
+                "saving": "Adding to your Library…"
+            },
+            "refused": {
+                "unsupported": "Not a format OpenMarch imports. Use GLB or glTF for models, and PNG, JPG, SVG or PDF for artwork.",
+                "tooLarge": {
+                    "model": "Over the 200 MB limit for a model with its files.",
+                    "artwork": "Over the 300 MB limit for an artwork file."
+                }
+            },
+            "match": {
+                "kitTitle": "New version of {name}",
+                "filenameTitle": "Already in your Library as {name}",
+                "detail": "Shows that use it get “update available”; nothing changes until they accept.",
+                "builtInDetail": "{name} is built in, so this becomes your own copy.",
+                "newVersionOf": "New version of {name}",
+                "update": "Update {name}",
+                "copyOf": "Your copy of {name}",
+                "addNew": "Add as new"
+            },
+            "choices": {
+                "suggested": "suggested",
+                "units": {
+                    "title": "Units",
+                    "detail": "It measures {largest} at its largest as exported, outside the size range for its kind.",
+                    "none": "As exported",
+                    "cm": "Centimeters ({factor})",
+                    "in": "Inches ({factor})",
+                    "ft": "Feet ({factor})"
+                },
+                "rotate": {
+                    "title": "Rotate to Y-up",
+                    "detail": "Exported Z-up; it would lie on its side."
+                },
+                "simplify": {
+                    "title": "Simplify to {cap} triangles",
+                    "detail": "{triangles} triangles, over the {kind} cap of {cap}."
+                },
+                "before": "Before {triangles}",
+                "after": "After {triangles}",
+                "grip": {
+                    "title": "Set the grip",
+                    "detail": "No OM_grip_R in the file: a point a quarter of the way along its longest side is pre-set. Click the model to move it.",
+                    "misnamed": "Found {names}, which doesn’t match OM_grip_R. Pre-set to its longest side; click the model to move it.",
+                    "manual": "Set by your click on the model.",
+                    "pick": "Click a point on the model",
+                    "picking": "Clicking… (Esc to stop)"
+                },
+                "surface": {
+                    "title": "Artwork surface",
+                    "detail": "The file marks no surface for artwork. Pick the one artwork prints on, or none; hover one to see it on the model.",
+                    "none": "None",
+                    "unnamed": "Material {index}",
+                    "size": "About {width} × {height}",
+                    "noUVs": "no UVs, so artwork can’t map onto it"
+                }
+            },
+            "rows": {
+                "unreadable": "The file can’t be read",
+                "missingResource": "A file it needs is missing",
+                "externalUri": "It loads a file from the internet",
+                "resourceOutsideFolder": "It points at a file outside its folder",
+                "validatorErrors": "{count, plural, one {# glTF error} other {# glTF errors}}",
+                "requiredExtension": "Needs an extension OpenMarch can’t load",
+                "noGeometry": "There’s no geometry in it",
+                "overTriangleCap": "{triangles} triangles: over the limit of {limit}",
+                "overTriangleCapDetail": "More than 4× the {kind} cap of {cap}. Reduce it before exporting.",
+                "rigNotAllowed": "A {kind} can’t have a rig",
+                "garmentNotRigged": "A Garment needs the v4 rig",
+                "garmentJointsNotV4": "The rig isn’t the v4 skeleton",
+                "missingJoints": "Missing {names}",
+                "unexpectedJoints": "Extra {names}",
+                "garmentRestPoseMismatch": "The rig’s rest pose doesn’t match v4",
+                "garmentQuantized": "Skinned meshes are quantized",
+                "garmentTransformsNotApplied": "Transforms aren’t applied",
+                "garmentNoPartPaint": "No _PART paint: it would render as skin",
+                "garmentNoMedianFit": "No fit for the median body",
+                "garmentUnknownFit": "A fit names an unknown body type",
+                "texturesDownsized": "{count, plural, one {# texture} other {# textures}} downsized to {cap} px",
+                "dracoDecoded": "Draco compression decoded",
+                "meshOptimizerDecoded": "Mesh optimizer compression decoded",
+                "instancesExpanded": "Instances expanded",
+                "extensionsStripped": "Unused extensions removed",
+                "extrasStripped": "Unused extras removed",
+                "contentStripped": "Content OpenMarch doesn’t use removed",
+                "contentStrippedDetail": "Animations {animations} · cameras {cameras} · morph targets {morphTargets} · extra scenes {scenes}",
+                "influencesRenormalized": "Bone weights renormalized on {vertices} vertices",
+                "validatorWarnings": "{count, plural, one {# glTF warning} other {# glTF warnings}}",
+                "sizeOutOfRange": "{size} at its largest",
+                "sizeOutOfRangeDetail": "Outside the usual {min} to {max} for its kind. Check the units.",
+                "noStretchZones": "No stretch zones",
+                "noStretchZonesDetail": "It keeps its modeled size, or takes a uniform scale.",
+                "customPropertiesOff": "Looks like custom properties were off",
+                "customPropertiesOffDetail": "Re-export with the OpenMarch preset to keep grips and slots.",
+                "stillOverTriangleCap": "Still {triangles} triangles, over the cap of {cap}",
+                "slotWithoutUVs": "Artwork slot {slot} has no UVs",
+                "slotDropped": "Artwork slot {slot} was dropped",
+                "invalidOpenMarchData": "OpenMarch data on {where} was ignored",
+                "unknownStampKind": "The stamp names an unknown kind: {value}",
+                "missingFits": "Missing fits",
+                "duplicateFits": "More than one mesh has the same fit",
+                "wgiEquipmentUnderMinimum": "WGI: equipment under 24 in",
+                "wgiFloorOverMaximum": "WGI: floor over 78 × 106 ft"
+            },
+            "size": {
+                "title": "How big is it?",
+                "members": "{selected} of {count} {count, plural, one {page} other {pages}}",
+                "fromFile": "From file: {size}",
+                "width": "Width",
+                "height": "Height",
+                "locked": "Aspect locked: artwork is never stretched",
+                "needed": "Choose a size: this file doesn’t say how big it prints.",
+                "printsOn": "Prints on",
+                "fitted": "Fitted to your image’s shape; the standard {surface} is {size}."
+            },
+            "details": {
+                "name": "Name",
+                "namesFromFiles": "Each file keeps its own name.",
+                "tags": "Tags, comma separated",
+                "toggle": "Author, license and source",
+                "unknown": "Unknown",
+                "author": "Author",
+                "license": "License",
+                "licensePlaceholder": "License, such as CC-BY-4.0",
+                "source": "Source URL",
+                "emptyIsUnknown": "Empty means Unknown, never free to share.",
+                "rights": "Only import artwork and models you have the rights to use."
+            },
+            "add": {
+                "one": "Add to Library",
+                "many": "Add {count} to Library",
+                "newVersion": "Add new version",
+                "cantImport": "Can't import"
+            },
+            "done": {
+                "added": "{count, plural, one {Added # item to your Library} other {Added # items to your Library}}",
+                "newVersion": "Added a new version of {name}",
+                "notImported": "Not imported"
+            },
+            "stage": {
+                "label": "Import preview · 3D View unchanged",
+                "loading": "Loading the preview…",
+                "empty": "Nothing to preview",
+                "needsKind": "Choose what it is to see the preview.",
+                "rejected": "Can't import, so there’s no preview.",
+                "previewFailed": "Couldn’t load the preview.",
+                "noArtwork": "No page to preview.",
+                "triangles": "{triangles} triangles",
+                "trianglesCap": "{triangles} triangles · cap {cap}",
+                "tall": "{height} tall",
+                "before": "Before",
+                "after": "After",
+                "vector": "vector",
+                "views": "Views",
+                "view": {
+                    "front": "Front",
+                    "side": "Side",
+                    "top": "Top"
+                },
+                "pickGrip": "Click a point on the model to set the grip · Esc to stop",
+                "surface": "Artwork surface: {name}"
+            },
+            "errors": {
+                "mixed-selection": {
+                    "title": "Import models and artwork separately",
+                    "body": "Pick one model, or any number of artwork files, at a time."
+                },
+                "session-expired": {
+                    "title": "This import timed out",
+                    "body": "Imports close after 30 minutes without use. Choose the files again."
+                },
+                "unknown-file": {
+                    "title": "That file isn’t in this import",
+                    "body": "Choose the files again."
+                },
+                "too-large": {
+                    "title": "Too many files",
+                    "body": "Pick at most 50 files at a time."
+                },
+                "unreadable": {
+                    "title": "The file couldn’t be read",
+                    "body": "It may have moved, or another app may have it open."
+                },
+                "busy": {
+                    "title": "Another import step is still running",
+                    "body": "Wait for it to finish, then try again."
+                },
+                "timeout": {
+                    "title": "The importer took too long",
+                    "body": "Large or complex files can time out. Try again, or simplify the file before exporting."
+                },
+                "worker-crashed": {
+                    "title": "The importer stopped while reading the file",
+                    "body": "Your file wasn’t changed. Try again; if it happens again, the file may be damaged."
+                },
+                "pdf-unavailable": {
+                    "title": "PDF pages couldn’t be rendered",
+                    "body": "Try again. If it keeps happening, export the artwork as PNG or SVG."
+                },
+                "write-failed": {
+                    "title": "Couldn’t save to your Library",
+                    "body": "Check there’s free disk space, then try again."
+                },
+                "read-only": {
+                    "title": "That item can’t be changed",
+                    "body": "Built-in items are read-only. Add it as new instead."
+                },
+                "corrupt": {
+                    "title": "Your Library has a damaged entry",
+                    "body": "Try again. The rest of your Library is unaffected."
+                },
+                "cancelled": {
+                    "title": "Cancelled",
+                    "body": "Nothing more was imported."
+                },
+                "other": {
+                    "title": "Something went wrong",
+                    "body": "Try again."
+                }
+            }
+        }
     },
     "marchers": {
         "addMarcher": "Add",

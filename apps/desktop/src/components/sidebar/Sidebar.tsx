@@ -5,6 +5,7 @@ import MetronomeModal from "@/components/music/MetronomeModal";
 import WorkspaceSettingsModal from "@/components/sidebar/WorkspaceSettingsModal";
 import AppearanceModal from "@/components/marcher/appearance/AppearanceModal";
 import MobileExportModal from "../mobile/MobileExportModal";
+import AssetsModal from "@/components/assets/AssetsModal";
 import { isWebBuild } from "@/utilities/webBuild";
 
 export default function Sidebar() {
@@ -19,6 +20,8 @@ export default function Sidebar() {
                 <FieldModal />
                 <MetronomeModal />
                 <AppearanceModal />
+                {/* The Library lives in main; the web build has no Library IPC. */}
+                {!isWebBuild && <AssetsModal />}
             </div>
             <div className="flex flex-col gap-16">
                 {/* Uploading to the mobile app needs sign-in, which needs Electron. */}
