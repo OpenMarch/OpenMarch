@@ -23,6 +23,9 @@
         "dist",
         "node_modules",
         "electron/database/migrations",
+        // The Blender Starter kit, zipped on demand by Help ‣ Get the
+        // Blender starter kit… (package C1.13).
+        "starter-kit",
         "!**/node_modules/canvas/**",
         // Ship only the sharp binaries for this build's platform and
         // architecture: no linuxmusl, wasm32 or other-arch @img packages.

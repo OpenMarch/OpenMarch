@@ -107,7 +107,7 @@ describe("artwork surface helpers (Q67)", () => {
         expect(slotSizeFor({ sizeM: null })).toBeNull();
     });
 
-    it("asks only when the kind is known, nothing is marked and it isn't a Garment", () => {
+    it("asks only when the kind is known, nothing is marked, it isn't a Garment and a surface has UVs", () => {
         const report = surfaceReport();
         expect(asksArtworkSurface(report)).toBe(true);
         expect(asksArtworkSurface({ ...report, kind: null })).toBe(false);
@@ -125,6 +125,16 @@ describe("artwork surface helpers (Q67)", () => {
             }),
         ).toBe(false);
         expect(asksArtworkSurface(modelReport())).toBe(false);
+        // nothing with UVs: artwork can't map, so there's nothing to ask
+        expect(
+            asksArtworkSurface({
+                ...report,
+                materials: report.materials.map((m) => ({
+                    ...m,
+                    hasUVs: false,
+                })),
+            }),
+        ).toBe(false);
     });
 });
 

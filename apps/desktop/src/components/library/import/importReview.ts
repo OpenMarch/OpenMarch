@@ -252,15 +252,16 @@ export const PICKED_SLOT_ID = "artwork";
 
 /**
  * Whether the review asks which surface takes artwork (Q67): the kind is
- * known, the file marks no slot, and it isn't a Garment (their panels are
- * Uniform artwork).
+ * known, the file marks no slot, it isn't a Garment (their panels are
+ * Uniform artwork), and some drawn surface has UVs. Without UVs artwork
+ * can't map, so None would be the only real answer.
  */
 export function asksArtworkSurface(report: ModelImportReport): boolean {
     return (
         report.status !== "rejected" &&
         report.kind !== null &&
         report.kind !== "garment" &&
-        report.materials.some((m) => m.sizeM !== null) &&
+        report.materials.some((m) => m.sizeM !== null && m.hasUVs) &&
         report.materials.every((m) => m.fileSlot === null)
     );
 }

@@ -202,6 +202,15 @@ template.push(
                 ...HELP_MENU_ACTIONS.map(rendererActionItem),
                 { type: "separator" },
                 {
+                    label: "Get the Blender starter kit…",
+                    click: async () => {
+                        const { saveStarterKit } =
+                            await import("./starter-kit/save");
+                        await saveStarterKit();
+                    },
+                },
+                { type: "separator" },
+                {
                     label: "Website",
                     click: async () => {
                         await shell.openExternal("https://openmarch.com");

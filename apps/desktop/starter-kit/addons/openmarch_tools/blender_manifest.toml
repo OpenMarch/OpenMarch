@@ -1,0 +1,17 @@
+schema_version = "1.0.0"
+
+id = "openmarch_tools"
+version = "1.0.0"
+name = "OpenMarch Tools"
+tagline = "Mark grips, artwork slots and stretch zones for OpenMarch"
+maintainer = "OpenMarch contributors"
+type = "add-on"
+website = "https://openmarch.com"
+tags = ["Import-Export"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+[permissions]
+files = "Export GLB files for OpenMarch"

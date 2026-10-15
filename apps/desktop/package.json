@@ -48,7 +48,8 @@
         "web:build": "pnpm run apply-styles && rimraf dist-web && vite build -c vite.web.config.mts",
         "web:preview": "vite preview -c vite.web.config.mts",
         "check:gate": "tsc --noEmit && pnpm run test && pnpm run build:browser && pnpm run e2e:browser",
-        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts"
+        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts",
+        "kit:build": "node scripts/starter-kit/build.mjs"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

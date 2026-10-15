@@ -256,6 +256,8 @@ ignorePaths:
   - docs/timeline/ref/**
   - node_modules/**
   - docs/3d/ref/**
+  # Verbatim license texts (CC0 1.0, GPL-3.0) in the Blender Starter kit
+  - apps/desktop/starter-kit/**/LICENSE
   - "**/view3d/vendor/**"
   - "**/view3d/assets/om-pose/**"
   - "**/view3d/assets/instruments/*.json"

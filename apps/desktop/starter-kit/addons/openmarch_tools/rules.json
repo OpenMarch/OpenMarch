@@ -1,0 +1,33 @@
+{
+    "about": "The OpenMarch importer's numbers that the pre-flight checks mirror. A test in the app keeps them equal to apps/desktop/electron/main/model-import/rules.ts and view3d/core/sizes/checks.ts.",
+    "kinds": ["prop", "equipment", "garment", "floorProp", "baseFloor"],
+    "triangleCaps": {
+        "equipment": 2000,
+        "garment": 3000,
+        "prop": 20000,
+        "floorProp": 5000,
+        "baseFloor": 5000
+    },
+    "triangleRejectFactor": 4,
+    "textureCaps": {
+        "equipment": 1024,
+        "garment": 1024,
+        "prop": 1024,
+        "floorProp": 2048,
+        "baseFloor": 2048
+    },
+    "plausibleSize": {
+        "equipment": { "minM": 0.3, "maxM": 3 },
+        "garment": { "minM": 0.1, "maxM": 2.5 },
+        "prop": { "minM": 0.1, "maxM": 20 },
+        "floorProp": { "minM": 0.3, "maxM": 40 },
+        "baseFloor": { "minM": 3, "maxM": 40 }
+    },
+    "unitConversions": [
+        { "unit": "cm", "factor": 0.01 },
+        { "unit": "in", "factor": 0.0254 },
+        { "unit": "ft", "factor": 0.3048 }
+    ],
+    "zUpFactor": 1.25,
+    "flatRatio": 0.05
+}

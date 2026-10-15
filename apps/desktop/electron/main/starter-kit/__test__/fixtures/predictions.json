@@ -1,0 +1,37 @@
+{
+    "equipment-centimeters": {
+        "cant": [],
+        "choice": ["unitConversion"],
+        "kind": "equipment"
+    },
+    "equipment-dense": {
+        "cant": [],
+        "choice": ["simplify"],
+        "kind": "equipment"
+    },
+    "equipment-lying": {
+        "cant": [],
+        "choice": ["rotateToYUp"],
+        "kind": "equipment"
+    },
+    "equipment-no-grip": {
+        "cant": [],
+        "choice": ["missingGrip"],
+        "kind": "equipment"
+    },
+    "floor-standing": {
+        "cant": [],
+        "choice": ["rotateToYUp"],
+        "kind": "floorProp"
+    },
+    "no-kind": {
+        "cant": [],
+        "choice": ["kind"],
+        "kind": null
+    },
+    "prop-rigged": {
+        "cant": ["rigNotAllowed"],
+        "choice": [],
+        "kind": "prop"
+    }
+}
