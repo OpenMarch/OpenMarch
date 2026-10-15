@@ -306,6 +306,11 @@ export interface ModelImportReport {
         generator: string | null;
         /** glTF `asset.copyright`, to pre-fill the license fields. */
         copyright: string | null;
+        /**
+         * The Starter kit's export license from `extras.openmarch.license`, to
+         * pre-fill the license field. Not kept in the sidecar.
+         */
+        license: string | null;
     };
 }
 

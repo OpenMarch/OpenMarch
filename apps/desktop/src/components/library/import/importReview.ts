@@ -847,13 +847,14 @@ export function createImportReview(
                         : {};
                 if (first) {
                     const match = inspection.matches[0];
-                    const copyright = inspection.report.metadata.copyright;
+                    const { copyright, license } = inspection.report.metadata;
                     patch.meta = {
                         ...get().meta,
                         ...(match?.reason === "kit-item-id" && !match.builtIn
                             ? { name: match.name }
                             : {}),
                         ...(copyright ? { author: copyright } : {}),
+                        ...(license ? { license } : {}),
                     };
                 }
                 set(patch);

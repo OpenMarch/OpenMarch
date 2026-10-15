@@ -135,17 +135,19 @@ describe("Starter kit examples import cleanly", async () => {
         expect(sidecar.bounds.size[2]).toBeCloseTo(8 * FT, 4);
     });
 
-    it("stamps the export license beside the kit stamp", async () => {
+    it("stamps the export license beside the kit stamp, and the importer reads it", async () => {
         for (const name of [
             "equipment-flag-pole",
             "prop-flat",
             "floor-prop-panel",
         ]) {
-            // The importer doesn't read `license` yet; it rides in the file.
             expect(await sceneStamp(example(name))).toMatchObject({
                 license: "CC0-1.0",
                 kitVersion,
             });
+            // and the importer reads it, to pre-fill the review's license
+            const r = await importModelFile(example(name));
+            expect(r.report.metadata.license).toBe("CC0-1.0");
         }
     });
 });

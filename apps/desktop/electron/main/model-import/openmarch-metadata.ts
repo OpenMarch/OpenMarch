@@ -21,6 +21,7 @@
  */
 import type { RawGltf } from "./container";
 import type { NoteRow, StretchZones } from "./types";
+import { LicenseIdSchema } from "../library/types";
 
 const OM_NAME = /^OM_[A-Za-z0-9_]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -43,6 +44,8 @@ export interface OpenMarchMetadata {
         kitVersion: string | number | null;
     };
     stretch: StretchZones | null;
+    /** The Starter kit's export license (an SPDX id or `LicenseRef-*`), to pre-fill the review. */
+    license: string | null;
     slots: RawSlot[];
     /** Declared fits by raw node index (from the node or its mesh). */
     fitsByNode: Map<number, string>;
@@ -69,7 +72,7 @@ function openmarchOf(entry: unknown): Obj | null {
 export function readOpenMarchMetadata(json: RawGltf): OpenMarchMetadata {
     const notes: NoteRow[] = [];
     const { omNodes, misnamed } = readOmNodes(list(json.nodes));
-    const { stamp, stretch } = readModelLevel(json, notes);
+    const { stamp, stretch, license } = readModelLevel(json, notes);
     const slots = readSlots(json, notes);
     const fitsByNode = readFits(json, notes);
     const { openmarch, foreign } = scanExtras(json);
@@ -78,6 +81,7 @@ export function readOpenMarchMetadata(json: RawGltf): OpenMarchMetadata {
         misnamed,
         stamp,
         stretch,
+        license,
         slots,
         fitsByNode,
         hasOpenMarchData: omNodes.length > 0 || openmarch,
@@ -123,7 +127,7 @@ function modelLevelSources(json: RawGltf): { where: string; om: Obj }[] {
 function readModelLevel(
     json: RawGltf,
     notes: NoteRow[],
-): Pick<OpenMarchMetadata, "stamp" | "stretch"> {
+): Pick<OpenMarchMetadata, "stamp" | "stretch" | "license"> {
     const sources = modelLevelSources(json);
     // The first source to set a key wins; a different value elsewhere is noted.
     const first = (key: string) => {
@@ -188,6 +192,12 @@ function readModelLevel(
             "stretch",
             parseStretch,
             "stretch must be {x, y, z} of [a, b] with a < b, or null",
+        ),
+        license: read(
+            "license",
+            (v) =>
+                LicenseIdSchema.safeParse(v).success ? (v as string) : null,
+            "license is not an SPDX id or LicenseRef-*",
         ),
     };
 }

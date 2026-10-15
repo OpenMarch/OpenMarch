@@ -242,7 +242,7 @@ function emptyReport(): ModelImportReport {
         source: null,
         output: null,
         materials: [],
-        metadata: { generator: null, copyright: null },
+        metadata: { generator: null, copyright: null, license: null },
     };
 }
 
@@ -283,6 +283,7 @@ async function openFile(
     report.metadata = {
         generator: stringOrNull(json.asset?.generator),
         copyright: stringOrNull(json.asset?.copyright),
+        license: null,
     };
 
     stage("validating");
@@ -345,6 +346,7 @@ async function decode(
     }
     const root = doc.getRoot();
     const meta = readOpenMarchMetadata(json);
+    report.metadata.license = meta.license;
     report.notes.push(...meta.notes);
     const raw = {
         nodes: root.listNodes(),

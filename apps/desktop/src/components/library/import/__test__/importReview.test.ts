@@ -271,6 +271,25 @@ describe("createImportReview: a model", () => {
         expect(store.getState().meta.name).toBe("drum major mace");
     });
 
+    it("pre-fills the author and the Starter kit's license from the file", async () => {
+        const lib = modelFake(
+            modelReport({
+                metadata: {
+                    generator: null,
+                    copyright: "Ana Ruiz",
+                    license: "CC-BY-4.0",
+                },
+            }),
+            [],
+        );
+        const store = createImportReview(lib.client, urls);
+        await store.getState().pick("model");
+        expect(store.getState().meta).toMatchObject({
+            author: "Ana Ruiz",
+            license: "CC-BY-4.0",
+        });
+    });
+
     it("keeps only the newest inspect when choices change quickly", async () => {
         const lib = modelFake();
         const store = createImportReview(lib.client, urls);
