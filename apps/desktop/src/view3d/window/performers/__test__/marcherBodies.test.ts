@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { BufferGeometry, SkinnedMesh } from "three";
 import type * as THREE from "three";
+import { MeshStandardMaterial } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
     bassOptions,
@@ -15,8 +16,10 @@ import type { LoadedBody } from "../marchers/marcherAssets";
 import { defaultPerformerBody } from "@/view3d/core/marchers/looks";
 import {
     MarcherBodies,
+    GLOVE_LINE,
     NO_HOLD,
     bakeForBodies,
+    bareHands,
     clipForBake,
     clipsToLoad,
     rowKey,
@@ -89,10 +92,10 @@ describe("rows per hold", () => {
     it("names rows by clip and hold, bare for no hold", () => {
         expect(rowKey("8to5", NO_HOLD)).toBe("8to5");
         expect(rowKey("8to5-h105", "brass:up")).toBe("8to5-h105@brass:up");
-        expect(slotHoldId(sectionUniform("Trumpet", null, "carry"))).toBe(
+        expect(slotHoldId(sectionUniform("Trumpet", "carry"))).toBe(
             "brass:carry",
         );
-        expect(slotHoldId(sectionUniform("Drum Major", null))).toBe(NO_HOLD);
+        expect(slotHoldId(sectionUniform("Drum Major"))).toBe(NO_HOLD);
     });
 
     it("bakes one row set per hold", async () => {
@@ -147,14 +150,14 @@ describe("horns as their own meshes", () => {
                     ...defaultPerformerBody(1),
                     bodyType: "neutral-average" as const,
                 },
-                uniform: sectionUniform("Trumpet", null),
+                uniform: sectionUniform("Trumpet"),
             },
             {
                 body: {
                     ...defaultPerformerBody(2),
                     bodyType: "neutral-average" as const,
                 },
-                uniform: sectionUniform("Drum Major", null),
+                uniform: sectionUniform("Drum Major"),
             },
         ];
         return { bake, set: new MarcherBodies(bodies, bake, looks, quality) };
@@ -283,7 +286,7 @@ describe("horns as their own meshes", () => {
                         ...defaultPerformerBody(2),
                         bodyType: "neutral-average" as const,
                     },
-                    uniform: sectionUniform("Drum Major", null),
+                    uniform: sectionUniform("Drum Major"),
                 },
             ],
             "high",
@@ -307,7 +310,7 @@ describe("bass drum sizes", () => {
                 ...defaultPerformerBody(i + 1),
                 bodyType: "neutral-average" as const,
             },
-            uniform: sectionUniform("Bass Drum", null, "up", sizes[i]),
+            uniform: sectionUniform("Bass Drum", "up", sizes[i]),
         }));
         const set = new MarcherBodies(bodies, bake, looks, "high");
         const horns = set.group.children.filter(
@@ -390,12 +393,76 @@ describe("stepping off on the right foot", () => {
     });
 });
 
+describe("bare hands", () => {
+    /** Runs a material's shader patch on a stand-in fragment shader. */
+    function compiledFragment(m: THREE.Material): string {
+        const shader = {
+            uniforms: {},
+            vertexShader: "#include <begin_vertex>",
+            fragmentShader: `vec3 uniformColor() {\n  ${GLOVE_LINE}\n}`,
+        };
+        m.onBeforeCompile(
+            shader as unknown as THREE.WebGLProgramParametersWithUniforms,
+            undefined as unknown as THREE.WebGLRenderer,
+        );
+        return shader.fragmentShader;
+    }
+
+    it("gives the hands the instance's skin tone and its own program", async () => {
+        const bodies = await loadedBodies();
+        const clip = await clip8to5();
+        const bake = bakeForBodies(bodies, { "8to5": clip }, [NO_HOLD]);
+        const look = (id: number, section: string) => ({
+            body: {
+                ...defaultPerformerBody(id),
+                bodyType: "neutral-average" as const,
+            },
+            uniform: sectionUniform(section),
+        });
+        const set = new MarcherBodies(
+            bodies,
+            bake,
+            [look(1, "Dancer"), look(2, "Drum Major")],
+            "high",
+        );
+        const materials = set.group.children
+            .filter((o) => o.name.startsWith("view3d-marchers-"))
+            .map((o) => (o as THREE.InstancedMesh).material as THREE.Material);
+        expect(materials.length).toBe(2);
+        const bare = (m: THREE.Material) =>
+            m.customProgramCacheKey().includes("bare-hands");
+        // only the guard look (Dancer) goes without gloves
+        const guard = materials.find(bare)!;
+        const band = materials.find((m) => !bare(m))!;
+        expect(guard).toBeDefined();
+        expect(band).toBeDefined();
+        expect(guard).not.toBe(band);
+        expect(compiledFragment(guard)).toContain(
+            "if (part == 5) return vSkinTone;",
+        );
+        expect(compiledFragment(band)).toContain(GLOVE_LINE);
+        set.dispose();
+    });
+
+    it("leaves gloved looks alone", () => {
+        const m = new MeshStandardMaterial();
+        m.onBeforeCompile = (shader) => {
+            shader.fragmentShader += "\n// base";
+        };
+        bareHands(m);
+        const out = compiledFragment(m);
+        expect(out).toContain("vSkinTone");
+        expect(out).toContain("// base");
+        expect(m.customProgramCacheKey()).toContain("bare-hands");
+    });
+});
+
 describe("part-filtered index", () => {
     it("draws only the parts a look wears", async () => {
         const geo = await body();
         expect(geo.index!.count / 3).toBe(1796);
         const triangles = (section: string) =>
-            visibleIndex(geo, sectionUniform(section, null))!.count / 3;
+            visibleIndex(geo, sectionUniform(section))!.count / 3;
         // no aussie hat (64), no cape (116), no placeholder instruments (360)
         expect(triangles("Trumpet")).toBe(1256);
         // no instrument at all (360)
@@ -407,7 +474,7 @@ describe("part-filtered index", () => {
     it("keeps whole triangles of visible parts only", async () => {
         const geo = await body();
         const part = geo.getAttribute("_part");
-        const index = visibleIndex(geo, sectionUniform("Mellophone", null))!;
+        const index = visibleIndex(geo, sectionUniform("Mellophone"))!;
         const parts = new Set<number>();
         for (let i = 0; i < index.count; i++)
             parts.add(Math.round(part.getX(index.getX(i))));

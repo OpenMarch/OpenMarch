@@ -79,6 +79,34 @@ function contactAlpha(size = 64): THREE.DataTexture {
     return t;
 }
 
+/** The uniform shader's glove line (om-pose `uniform-shader.js`). */
+export const GLOVE_LINE = "if (part == 5) return uGloves;";
+/** The per-instance skin tone, as `instancedSkinning` declares it. */
+const BARE_HAND_LINE = "if (part == 5) return vSkinTone;";
+
+/**
+ * Patches a material from `instancedSkinning` so its hands (the gloves part)
+ * show each instance's skin tone instead of the glove color: a look without
+ * gloves. Call it after `instancedSkinning`, which declares `vSkinTone`.
+ */
+export function bareHands(material: THREE.Material): THREE.Material {
+    const base = material.onBeforeCompile;
+    const key = material.customProgramCacheKey();
+    material.onBeforeCompile = (shader, renderer) => {
+        base.call(material, shader, renderer);
+        if (!shader.fragmentShader.includes(GLOVE_LINE))
+            console.warn(
+                "bareHands: uniform shader's glove line not found; the hands keep the glove color",
+            );
+        shader.fragmentShader = shader.fragmentShader.replace(
+            GLOVE_LINE,
+            BARE_HAND_LINE,
+        );
+    };
+    material.customProgramCacheKey = () => key + "|bare-hands";
+    return material;
+}
+
 /**
  * The source's triangles that a look shows: parts the look doesn't wear
  * (other instruments, the aussie hat, the cape, the shako on guard) are
@@ -329,6 +357,7 @@ export class MarcherBodies {
                     }),
                     bake,
                 );
+                if (!g.look.options.gloves) bareHands(material);
                 materialByLook.set(u, material);
                 this.materials.push(material);
             }

@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import {
+    BAND_DEFAULT,
     BODY_TYPES,
+    DEFAULT_PRIMARY,
+    GUARD_DEFAULT,
     bassOptions,
+    fillToNumber,
     HEIGHT_CLASSES,
     SKIN_TONES,
     classSuffix,
@@ -103,26 +107,25 @@ describe("performer bodies", () => {
 describe("section uniforms", () => {
     it("leaves the shako off the guard sections only", () => {
         for (const g of ["Color Guard", "Rifle", "Flag", "Dancer", "Twirler"])
-            expect(sectionUniform(g, null).options.hat).toBe(false);
+            expect(sectionUniform(g).options.hat).toBe(false);
         for (const b of ["Trumpet", "Snare", "Flute", "Drum Major", "Unknown"])
-            expect(sectionUniform(b, null).options.hat).toBe(true);
+            expect(sectionUniform(b).options.hat).toBe(true);
     });
 
     it("puts the section's carry, gold lacquer and the hold in the look", () => {
-        const u = sectionUniform("Trumpet", null);
+        const u = sectionUniform("Trumpet");
         expect(u.options.carry).toEqual({ model: "trumpet", family: "brass" });
         expect(u.options.finish).toBe("brass");
         expect(u.options.hold).toBe("up");
         expect(u.options.instrument).toBe("none");
-        expect(sectionUniform("Trumpet", null, "carry").options.hold).toBe(
-            "carry",
-        );
-        expect(sectionUniform("Drum Major", null).options.carry).toBeNull();
+        expect(sectionUniform("Trumpet", "carry").options.hold).toBe("carry");
+        expect(sectionUniform("Drum Major").options.carry).toBeNull();
     });
 
     it("gives every guard section the chosen equipment, and no one else", () => {
         const pick = (section: string, guard?: GuardModelId) =>
-            sectionUniform(section, null, "up", undefined, guard).options.carry;
+            sectionUniform(section, "up", undefined, undefined, guard).options
+                .carry;
         expect(pick("Color Guard")).toEqual({ model: "flag6", family: "flag" });
         expect(pick("Rifle")).toEqual({ model: "rifle", family: "rifle" });
         expect(pick("Color Guard", "sabre")).toEqual({
@@ -150,35 +153,94 @@ describe("section uniforms", () => {
     it("never shows the placeholder instruments, for any section", () => {
         for (const s of ["Trumpet", "Mellophone", "Baritone", "Flute"])
             for (const part of PART.instruments)
-                expect(partVisible(sectionUniform(s, null), part)).toBe(false);
+                expect(partVisible(sectionUniform(s), part)).toBe(false);
     });
 
     it("keys looks by carry, finish and hold", () => {
-        const a = uniformKey(sectionUniform("Trumpet", null, "up"));
-        const b = uniformKey(sectionUniform("Trumpet", null, "carry"));
+        const a = uniformKey(sectionUniform("Trumpet", "up"));
+        const b = uniformKey(sectionUniform("Trumpet", "carry"));
         expect(a).not.toBe(b);
     });
 
-    it("uses the section's fill color for the jacket and hat", () => {
-        const u = sectionUniform("Trumpet", { r: 200, g: 16, b: 46, a: 1 });
-        expect(u.colors.primary).toBe(0xc8102e);
-        expect(u.colors.hat).toBe(0xc8102e);
+    it("dresses band sections in Band default", () => {
+        for (const b of [
+            "Trumpet",
+            "Snare",
+            "Flute",
+            "Drum Major",
+            "Unknown",
+        ]) {
+            const u = sectionUniform(b);
+            expect(u.style).toBe("classic");
+            expect(u.colors).toEqual(BAND_DEFAULT.colors);
+            expect(u.colors.primary).toBe(0x2d4f9e);
+            expect(u.colors.hat).toBe(0x2d4f9e);
+            expect(u.options).toMatchObject(BAND_DEFAULT.options);
+        }
     });
 
-    it("shares one look between sections that only differ in name when the instrument matches", () => {
-        const fill = { r: 10, g: 20, b: 30, a: 1 };
-        expect(uniformKey(sectionUniform("Drum Major", fill))).toBe(
-            uniformKey(sectionUniform("Soloist", fill)),
+    it("dresses guard sections in Guard default: all black, plain, bare hands", () => {
+        for (const g of ["Color Guard", "Rifle", "Flag", "Dancer", "Twirler"]) {
+            const u = sectionUniform(g);
+            expect(u.colors).toEqual(GUARD_DEFAULT.colors);
+            const { gloves: _unused, ...worn } = u.colors;
+            for (const c of Object.values(worn))
+                expect(c).toBeLessThanOrEqual(0x111114);
+            expect(u.options).toMatchObject({
+                stripe: false,
+                collar: false,
+                cuffs: false,
+                gloves: false,
+                hat: false,
+            });
+        }
+    });
+
+    it("groups looks by band vs guard, never by section name or fill", () => {
+        // no carry: every band section shares one look, every guard section another
+        expect(uniformKey(sectionUniform("Drum Major"))).toBe(
+            uniformKey(sectionUniform("Soloist")),
         );
-        expect(uniformKey(sectionUniform("Drum Major", fill))).not.toBe(
-            uniformKey(sectionUniform("Trumpet", fill)),
+        expect(
+            uniformKey(sectionUniform("Drum Major", "up", undefined, 0xc8102e)),
+        ).toBe(
+            uniformKey(sectionUniform("Soloist", "up", undefined, 0x10ff10)),
         );
+        expect(
+            uniformKey(sectionUniform("Dancer", "up", undefined, 0xc8102e)),
+        ).toBe(uniformKey(sectionUniform("Dancer")));
+        expect(sectionUniform("Color Guard").colors).toEqual(
+            sectionUniform("Dancer").colors,
+        );
+        expect(uniformKey(sectionUniform("Dancer"))).not.toBe(
+            uniformKey(sectionUniform("Drum Major")),
+        );
+        expect(uniformKey(sectionUniform("Drum Major"))).not.toBe(
+            uniformKey(sectionUniform("Trumpet")),
+        );
+    });
+
+    it("keeps the 2D fill off the uniform; it only colors what the section carries", () => {
+        const red = sectionUniform("Snare", "up", undefined, 0xc8102e);
+        expect(red.colors).toEqual(sectionUniform("Snare").colors);
+        expect(red.options.carryColor).toBe(0xc8102e);
+        expect(sectionUniform("Snare").options.carryColor).toBe(
+            DEFAULT_PRIMARY,
+        );
+        expect(
+            sectionUniform("Drum Major", "up", undefined, 0xc8102e).options
+                .carryColor,
+        ).toBeNull();
+    });
+
+    it("turns a 2D fill into an sRGB number", () => {
+        expect(fillToNumber({ r: 200, g: 16, b: 46, a: 1 })).toBe(0xc8102e);
     });
 
     it("hides exactly the parts the shader would discard", () => {
         const visible = (section: string) =>
             Array.from({ length: 16 }, (_, p) => p).filter((p) =>
-                partVisible(sectionUniform(section, null), p),
+                partVisible(sectionUniform(section), p),
             );
         // body parts 0-6 always; shako 7-9; the placeholder instruments 13-15 never
         expect(visible("Trumpet")).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
@@ -213,8 +275,8 @@ describe("bass drum sizes", () => {
     });
 
     it("carries the size into the look so sizes get their own meshes", () => {
-        const a = sectionUniform("Bass Drum", null, "up", { bassInches: 18 });
-        const b = sectionUniform("Bass Drum", null, "up", { bassInches: 32 });
+        const a = sectionUniform("Bass Drum", "up", { bassInches: 18 });
+        const b = sectionUniform("Bass Drum", "up", { bassInches: 32 });
         expect(a.options.carry?.options?.bassInches).toBe(18);
         expect(uniformKey(a)).not.toBe(uniformKey(b));
     });

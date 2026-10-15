@@ -8,7 +8,10 @@
  *   marcher looks the same every time the show opens;
  * - height class 0.95, 1.00 or 1.05 by the same hash at high quality, and
  *   1.00 for everyone at low quality;
- * - one uniform per section, in the section's 2D fill color, carrying the
+ * - one of two built-in uniforms per section, Band default or Guard
+ *   default, chosen by `isGuard` (ADR 0002 D-7 and D-18). The section's 2D
+ *   fill color no longer touches the uniform; it only colors what the
+ *   section carries (drum shells, flag silks). Each look carries the
  *   section's instrument from `core/instruments` in the hold it plays.
  *
  * Pure: no three.js, React or database.
@@ -171,18 +174,33 @@ export interface UniformLook {
         visor: number;
     };
     options: {
+        /** The stripe down the pants' outer seam. */
+        stripe: boolean;
+        /** The high collar in the trim color. */
+        collar: boolean;
+        /** The cuffs in the trim color. */
+        cuffs: boolean;
+        /** Gloves; without them the hands are bare, in the performer's skin tone. */
+        gloves: boolean;
         hat: boolean;
         hatType: "shako";
         instrument: Instrument;
         /** What the section carries, or null. */
         carry: Carry | null;
+        /**
+         * sRGB: the section's 2D fill color, for what it carries (drum
+         * shells, flag silks). Not part of the uniform; null when the
+         * section carries nothing, so looks without a carry never split
+         * by fill.
+         */
+        carryColor: number | null;
         /** Gold lacquer ("brass") or silver lacquer. */
         finish: Finish;
         hold: HoldState;
     };
 }
 
-/** Used when a section has no fill color: om-pose's "Royal" blue. */
+/** Band default's jacket and shako: om-pose's "Royal" blue. */
 export const DEFAULT_PRIMARY = 0x2d4f9e;
 
 const WHITE = 0xf2f2ee;
@@ -193,50 +211,106 @@ const SHOE_BLACK = 0x0b0b0d;
 /** Lifted from om-pose's 0x1c1f2b, which renders as black legs. */
 const NAVY = 0x2b3150;
 
-const rgbToNumber = (c: RgbaColor) =>
-    ((Math.round(c.r) & 255) << 16) |
-    ((Math.round(c.g) & 255) << 8) |
-    (Math.round(c.b) & 255);
+/** A 2D fill color as an sRGB number. */
+export function fillToNumber(c: RgbaColor): number {
+    return (
+        ((Math.round(c.r) & 255) << 16) |
+        ((Math.round(c.g) & 255) << 8) |
+        (Math.round(c.b) & 255)
+    );
+}
 
 /**
- * A section's uniform: om-pose's classic style with the section's fill as
- * the jacket and hat, white and gold trim, navy pants. Guard sections go
- * without the shako. Brass carry their horn in gold lacquer, held as `hold`
- * says (docs/3d/instruments.md §5). `guard`, when set, is the equipment every
- * guard section carries instead of its own (the settings' guard equipment).
+ * Band default: om-pose's classic style, a navy jacket and shako, white and
+ * gold trim, a seam stripe, navy pants, white gloves (props-spec, Defaults).
+ */
+export const BAND_DEFAULT: Pick<UniformLook, "style" | "colors"> & {
+    options: Pick<
+        UniformLook["options"],
+        "stripe" | "collar" | "cuffs" | "gloves" | "hat"
+    >;
+} = {
+    style: "classic",
+    colors: {
+        primary: DEFAULT_PRIMARY,
+        secondary: WHITE,
+        accent: WHITE,
+        trim: GOLD,
+        pants: NAVY,
+        shoes: SHOE_BLACK,
+        gloves: WHITE,
+        hat: DEFAULT_PRIMARY,
+        plume: WHITE,
+        visor: BLACK,
+    },
+    options: {
+        stripe: true,
+        collar: true,
+        cuffs: true,
+        gloves: true,
+        hat: true,
+    },
+};
+
+/**
+ * Guard default: all black and plain. Black top and bottoms with no
+ * pattern, trim or seam stripe, black shoes, no hat, no gloves (bare
+ * hands), no cape (props-spec, Defaults).
+ */
+export const GUARD_DEFAULT: typeof BAND_DEFAULT = {
+    style: "classic",
+    colors: {
+        primary: BLACK,
+        secondary: BLACK,
+        accent: BLACK,
+        trim: BLACK,
+        pants: BLACK,
+        shoes: SHOE_BLACK,
+        // unused: the hands are bare
+        gloves: BLACK,
+        hat: BLACK,
+        plume: BLACK,
+        visor: BLACK,
+    },
+    options: {
+        stripe: false,
+        collar: false,
+        cuffs: false,
+        gloves: false,
+        hat: false,
+    },
+};
+
+/**
+ * A section's uniform: Band default, or Guard default for the guard
+ * sections. Nothing about it comes from the show. Brass carry their horn in
+ * gold lacquer, held as `hold` says (docs/3d/instruments.md §5);
+ * `carryColor` (sRGB, the section's 2D fill) colors drum shells and flag
+ * silks, and defaults to Band default's navy. `guard`, when set, is the
+ * equipment every guard section carries instead of its own (the settings'
+ * guard equipment).
  */
 export function sectionUniform(
     section: string,
-    fill: RgbaColor | null | undefined,
     hold: HoldState = "up",
     options?: ModelOptions,
+    carryColor: number = DEFAULT_PRIMARY,
     guard?: GuardModelId,
 ): UniformLook {
+    const base = isGuard(section) ? GUARD_DEFAULT : BAND_DEFAULT;
     const carry =
         guard && isGuard(section)
             ? guardCarry(guard)
             : withOptions(carryForSection(section), options);
-    const primary = fill ? rgbToNumber(fill) : DEFAULT_PRIMARY;
     return {
-        style: "classic",
-        colors: {
-            primary,
-            secondary: WHITE,
-            accent: WHITE,
-            trim: GOLD,
-            pants: NAVY,
-            shoes: SHOE_BLACK,
-            gloves: WHITE,
-            hat: primary,
-            plume: WHITE,
-            visor: BLACK,
-        },
+        style: base.style,
+        colors: { ...base.colors },
         options: {
-            // guard doesn't wear a shako
-            hat: !isGuard(section),
+            ...base.options,
             hatType: "shako",
             instrument: "none",
             carry,
+            carryColor: carry ? carryColor : null,
             finish: "brass",
             hold,
         },
