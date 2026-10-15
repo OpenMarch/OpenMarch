@@ -597,13 +597,42 @@ function flag6(s: SegmentCounts): Omit<InstrumentModel, "id"> {
     };
 }
 
+const INCH = 0.0254;
+
 /**
- * A swing flag: a 1 m pole held in one fist at its butt end, a bare tab
- * above the hand, and a 1.5 m by 0.7 m silk sleeved along the rest of it.
+ * The swing flag's sizes (docs/3d/props-spec.md, Catalog): the vendor swing
+ * cut, 44 in along the pole by 66 in fly, on a ½ in ultralight pole. The pole
+ * is the catalog's longest, 52 in: the 44 in header then leaves 8 in of bare
+ * pole below it. The hand grips 6 cm above the butt, so the silk starts 14 cm
+ * above the hand and clears the forearm in the flag holds (a 48 in pole would
+ * bring it down to the wrist).
+ */
+export const SWING_FLAG = {
+    header: 44 * INCH,
+    fly: 66 * INCH,
+    pole: 52 * INCH,
+    radius: 0.25 * INCH,
+    /** The butt's distance below the grip. */
+    butt: 0.06,
+} as const;
+
+/**
+ * A swing flag: a 52 in pole held in one fist at its butt end, a bare tab
+ * above the hand, and a 44 by 66 in silk sleeved along the rest of it.
  */
 function swingFlag(s: SegmentCounts): Omit<InstrumentModel, "id"> {
+    const { header, fly, pole, radius, butt } = SWING_FLAG;
     return {
-        pieces: flag(-0.06, 0.96, 0.0125, 1.5, 0.7, SWING_DRAPE, s, true),
+        pieces: flag(
+            -butt,
+            pole - butt,
+            radius,
+            fly,
+            header,
+            SWING_DRAPE,
+            s,
+            true,
+        ),
         leftGrip: [0, 0, -0.2],
         mouthpiece: [0, 0, 0],
     };

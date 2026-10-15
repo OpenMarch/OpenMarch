@@ -126,13 +126,13 @@ drum 2.
 
 ### Guard, Other, Pit
 
-| Model             | What it is                                                                                                   | Working dimensions                    | Hold            |
-| ----------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------- | --------------- |
-| 6 ft flag         | chrome pole, rubber end caps, tape, a silk in the section's color                                            | pole 1.83, silk 36 × 54 in            | flag            |
-| Swing flag        | held in one fist at the butt, a bare tab above the hand, the silk sleeved along the rest                     | pole 1.02 (tab 0.32), silk 1.5 × 0.7  | swingFlag       |
-| Double swing flag | two swing flags, one in each hand, mirrored                                                                  | as the swing flag                     | doubleSwingFlag |
-| Rifle             | white spinning rifle (an Ultra Spin): flat-sided stock, wrist dip, chrome bolt plate, black sling drawn taut | 0.91 long, butt 0.12 deep             | rifle           |
-| Sabre             | spinning sabre (a Zaber): broad curved chrome blade, rubber tip, chrome cup and D-bow, finger-grooved grip   | blade 0.8 (85 mm of curve), grip 0.12 | sabre           |
+| Model             | What it is                                                                                                   | Working dimensions                     | Hold            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------- | --------------- |
+| 6 ft flag         | chrome pole, rubber end caps, tape, a silk in the section's color                                            | pole 1.83, silk 36 × 54 in             | flag            |
+| Swing flag        | held in one fist at the butt, a bare tab above the hand, the silk sleeved along the rest                     | pole 52 in (tab 0.14), silk 44 × 66 in | swingFlag       |
+| Double swing flag | two swing flags, one in each hand, mirrored                                                                  | as the swing flag                      | doubleSwingFlag |
+| Rifle             | white spinning rifle (an Ultra Spin): flat-sided stock, wrist dip, chrome bolt plate, black sling drawn taut | 0.91 long, butt 0.12 deep              | rifle           |
+| Sabre             | spinning sabre (a Zaber): broad curved chrome blade, rubber tip, chrome cup and D-bow, finger-grooved grip   | blade 0.8 (85 mm of curve), grip 0.12  | sabre           |
 
 Today the Color Guard and Flag sections carry the 6 ft flag and the Rifle
 section the rifle. The swing flag, the double swing flag and the sabre are
