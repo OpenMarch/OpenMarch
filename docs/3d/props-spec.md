@@ -65,7 +65,10 @@ phases [26.24].
 - Artwork embeds the original as imported plus the display texture. The print
   master is rendered from the original at export time, never stored.
 - Save prunes Library items nothing references (cues, Item tables, uniforms,
-  other Library items), then blobs no Version points at. While a cue uses a
+  other Library items, undo and redo history), then blobs no Version points
+  at. The app autosaves, so prune runs when the show closes and before Save
+  Copy. History counts because it lives in the show file: undoing an old edit
+  after reopening must find the item it used. While a cue uses a
   Library item, the show's copy can't be deleted; deleting it offers "Replace with…" and lists
   the uses [26.10].
 - The item table loads at open; blobs are read lazily by hash for the current

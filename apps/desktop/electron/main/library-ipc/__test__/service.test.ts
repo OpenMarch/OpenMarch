@@ -757,7 +757,7 @@ describe("Library reads and writes", () => {
         return added.imported[0];
     }
 
-    it("read-parts serves glb, sidecar and display only, never originals", async () => {
+    it("read-parts serves a Version's parts, never its source", async () => {
         const page = await storedArtwork();
         const parts = value(
             await call<Record<string, Uint8Array>>(C.readParts, {
@@ -767,11 +767,20 @@ describe("Library reads and writes", () => {
             }),
         );
         expect(Object.keys(parts).sort()).toEqual(["display", "sidecar"]);
+        // The show embeds an Artwork's original (D-12)
+        const { original } = value(
+            await call<Record<string, Uint8Array>>(C.readParts, {
+                itemId: page.item.id,
+                versionHash: page.version.hash,
+                roles: ["original"],
+            }),
+        );
+        expect(sha256Hex(original)).toBe(page.version.parts.original);
         expect(
             await call(C.readParts, {
                 itemId: page.item.id,
                 versionHash: page.version.hash,
-                roles: ["original"],
+                roles: ["source"],
             }),
         ).toMatchObject({ ok: false, error: { code: "invalid-request" } });
     });

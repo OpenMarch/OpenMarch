@@ -464,8 +464,15 @@ export interface ImportProgress {
 
 // ------------------------------------------------------------------ Library reads and writes
 
-/** Never `original` or the source: rendering never reads originals (D-12). */
-export const READABLE_ROLES = ["glb", "sidecar", "display"] as const;
+/** The parts rendering reads: never an Artwork's `original` (D-12). */
+export const RENDER_ROLES = ["glb", "sidecar", "display"] as const;
+export type RenderRole = (typeof RENDER_ROLES)[number];
+
+/**
+ * The parts `library:read-parts` serves. `original` is read only to embed an Artwork in the
+ * show, which keeps it (D-12). A Version's `source` is never served.
+ */
+export const READABLE_ROLES = [...RENDER_ROLES, "original"] as const;
 export type ReadableRole = (typeof READABLE_ROLES)[number];
 
 export const LibraryListRequestSchema = z.strictObject({
@@ -476,7 +483,7 @@ export const LibraryItemRequestSchema = z.strictObject({ itemId: IdSchema });
 export const ReadPartsRequestSchema = z.strictObject({
     itemId: IdSchema,
     versionHash: VersionHashSchema,
-    roles: z.array(z.enum(READABLE_ROLES)).min(1).max(3),
+    roles: z.array(z.enum(READABLE_ROLES)).min(1).max(READABLE_ROLES.length),
 });
 export type ReadPartsRequest = z.infer<typeof ReadPartsRequestSchema>;
 

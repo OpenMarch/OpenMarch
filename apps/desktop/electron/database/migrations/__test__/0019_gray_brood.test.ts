@@ -89,7 +89,7 @@ describe(`Migration ${VENUE_MIGRATION.tag}`, () => {
     it("creates the venue table on a file from before it", async () => {
         await migrateAll();
         expect(tableNames()).toContain("view3d_venue");
-        expect(recordedMs().at(-1)).toBe(VENUE_MIGRATION.when);
+        expect(recordedMs()).toContain(VENUE_MIGRATION.when);
     });
 
     it("runs the timeline migrations on a file a 3d-async build opened, and keeps its venue", async () => {

@@ -240,9 +240,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### C1.11: Show embedding and `library_blobs`
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: trevor (3d/c1-show-embedding)
+- Status: in-review
+- PR: #148
 - Parallel: yes
 - Depends on: C1.3, C1.6
 
@@ -253,6 +253,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 **Tickets:** 06, 11, 16.
 
 **Done when:** a show opened on a machine with an empty Library renders from its embedded copies, and save leaves no orphan blobs.
+
+**Narrowed (owner, 2026-10-13):** nothing renders Library items or names them before C2 and C4, so C1.11 is done when a show's own file rebuilds every embedded Version with a matching hash (with an empty Library) and the prune plan leaves no orphan blobs in tests. Prune is built but not wired; see the handoff notes.
 
 **Checks:** schema and migration tests (page-mode and converted files); history tests showing both tables outside history; type-check, lint, format, spellcheck.
 
@@ -301,7 +303,17 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ## Handoff notes
 
-Nothing yet.
+- **Prune isn't wired yet (owner, 2026-10-13).** `pruneShowLibraryInTransaction`
+  is built and tested, but nothing calls it. Nothing names a Library item
+  before C2's Item tables and C3's cues, and embedding writes no undo row, so
+  the keep set would be empty and pruning on close would drop every import.
+  C2.1 hooks it to show close and before Save Copy, passing the Item tables'
+  references as `keep`; C3 adds the cue references.
+- **No UI yet for "update available" or "Add to my Library".**
+  `findLibraryUpdates` and `buildAddFromShowRequest` are built and tested;
+  their UI belongs in the Assets area's This show section (Q78–Q82).
+- **No built-ins exist yet**, so none are embedded. The embed path takes any
+  Version, so built-ins go through it when C5.8 adds them.
 
 ## Progress log
 
@@ -768,3 +780,20 @@ Nothing yet.
   the license field (the importer ignores it today). Shipping waits for
   C1.2.
 - **Resume from:** nothing pushed; local commits on `3d/c1-starter-kit`.
+
+### 2026-10-13 · 3d worker (3d/c1-show-embedding) · C1.11
+
+- **Done:** migration 0021 (`library_blobs`, `library_items`, both outside
+  undo history); embed with a hash check; the prune plan (keeps what the
+  show's tables, pins and undo or redo rows name); a lazy, byte-bounded blob
+  cache that never reads originals for rendering; update detection and
+  add-from-show requests that never write to the Library; `read-parts`
+  serves an Artwork's original. Rebased onto the Assets tab (#146): the
+  import review's `onImported` reaches `AssetsHost`, which embeds each
+  import in the open show even after the Assets panel closes.
+- **Checks:** type-check; desktop vitest (4999 passed, 27 skipped); history
+  and timeline-history runs of the showLibrary and migration tests (118
+  passed each); desktop lint (0 errors), format and spellcheck.
+- **Not done (owner, 2026-10-13):** prune wiring moves to C2.1; the update
+  and Add to my Library UI moves to the Assets This show section. See the
+  handoff notes.

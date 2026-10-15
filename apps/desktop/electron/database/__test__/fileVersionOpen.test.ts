@@ -16,7 +16,10 @@ import {
     setDbPath,
 } from "../database.services";
 import { getOrm } from "../db";
-import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
+import {
+    DrizzleMigrationService,
+    FIRST_TIMELINE_MIGRATION_TAG,
+} from "../services/DrizzleMigrationService";
 import {
     applyFileVersionDecision,
     FILE_TOO_NEW_STATUS,
@@ -150,11 +153,14 @@ describe("opening files by format version", () => {
                     await migrator.applyPendingMigrations(migrationsFolder);
                     // A page-era file (7) stops before the timeline-only migrations, which
                     // run in its conversion; a timeline file (8) gets all of them.
-                    const all = fs
+                    const sql = fs
                         .readdirSync(migrationsFolder)
-                        .filter((f) => f.endsWith(".sql")).length;
+                        .filter((f) => f.endsWith(".sql"));
+                    const pageEra = sql.filter(
+                        (f) => f < `${FIRST_TIMELINE_MIGRATION_TAG}.sql`,
+                    ).length;
                     expect(migrator.getAppliedMigrations().length).toBe(
-                        v === 7 ? all - 1 : all,
+                        v === 7 ? pageEra : sql.length,
                     );
                     const marcherPages = db
                         .prepare(

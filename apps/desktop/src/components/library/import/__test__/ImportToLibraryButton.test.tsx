@@ -16,6 +16,9 @@ import {
     session,
 } from "./fakeLibrary";
 
+vi.mock("@/hooks/queries/useShowLibrary", () => ({
+    useEmbedImportedVersions: () => ({ mutate: vi.fn() }),
+}));
 vi.mock("../ImportPreviewCanvas", () => ({
     default: () => <div data-testid="canvas-stand-in" />,
 }));

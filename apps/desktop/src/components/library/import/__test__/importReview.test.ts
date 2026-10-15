@@ -411,6 +411,41 @@ describe("createImportReview: a model", () => {
         );
     });
 
+    it("hands the saved Version to onImported, for the show to embed", async () => {
+        const lib = modelFake();
+        const item = { id: ITEM_ID, name: "Riser 8 × 4" };
+        lib.on("importCommit", () =>
+            ok({
+                type: "model",
+                report: choicesReport(),
+                saved: {
+                    outcome: "added-version",
+                    item,
+                    versionHash: "a".repeat(64),
+                },
+            }),
+        );
+        const onImported = vi.fn();
+        const store = createImportReview(lib.client, { ...urls, onImported });
+        await store.getState().pick("model");
+        await store.getState().commit();
+        expect(onImported).toHaveBeenCalledExactlyOnceWith([
+            { item, versionHash: "a".repeat(64) },
+        ]);
+    });
+
+    it("doesn't call onImported when nothing was saved", async () => {
+        const lib = modelFake();
+        lib.on("importCommit", () =>
+            ok({ type: "model", report: choicesReport(), saved: null }),
+        );
+        const onImported = vi.fn();
+        const store = createImportReview(lib.client, { ...urls, onImported });
+        await store.getState().pick("model");
+        await store.getState().commit();
+        expect(onImported).not.toHaveBeenCalled();
+    });
+
     it("adds as new without the item id when asked", async () => {
         const lib = modelFake();
         lib.on("importCommit", () =>
@@ -829,6 +864,43 @@ describe("createImportReview: artwork", () => {
         expect(onCommitStopped).toHaveBeenCalledOnce();
     });
 
+    it("hands every imported page's Version to onImported", async () => {
+        const lib = artworkFake();
+        const pageItem = (name: string) => ({ id: ITEM_ID, name });
+        lib.on("importCommit", () =>
+            ok({
+                type: "artwork",
+                reports: [
+                    {
+                        filename: "silks.pdf",
+                        format: "pdf",
+                        imported: [
+                            {
+                                page: 0,
+                                item: pageItem("silks (page 1)"),
+                                version: { hash: "b".repeat(64) },
+                            },
+                            {
+                                page: 1,
+                                item: pageItem("silks (page 2)"),
+                                version: { hash: "c".repeat(64) },
+                            },
+                        ],
+                        notImported: [],
+                    },
+                ],
+            }),
+        );
+        const onImported = vi.fn();
+        const store = createImportReview(lib.client, { ...urls, onImported });
+        await store.getState().pick("any");
+        await store.getState().commit();
+        expect(onImported).toHaveBeenCalledExactlyOnceWith([
+            { item: pageItem("silks (page 1)"), versionHash: "b".repeat(64) },
+            { item: pageItem("silks (page 2)"), versionHash: "c".repeat(64) },
+        ]);
+    });
+
     it("reports added and skipped pages when done", async () => {
         const lib = artworkFake();
         lib.on("importCommit", () =>
@@ -842,6 +914,7 @@ describe("createImportReview: artwork", () => {
                             {
                                 page: 0,
                                 item: { id: ITEM_ID, name: "silks (page 1)" },
+                                version: { hash: "b".repeat(64) },
                             },
                         ],
                         notImported: [

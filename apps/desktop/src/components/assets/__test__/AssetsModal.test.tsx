@@ -26,6 +26,11 @@ vi.mock("@/components/library/import/ImportPreviewCanvas", () => ({
     default: () => <div data-testid="canvas-stand-in" />,
 }));
 
+const embedImported = vi.fn();
+vi.mock("@/hooks/queries/useShowLibrary", () => ({
+    useEmbedImportedVersions: () => ({ mutate: embedImported }),
+}));
+
 // One fake for the file: the editor's default clients are created once.
 const lib = createFakeLibrary();
 const library = sampleLibrary(50);
@@ -73,7 +78,7 @@ describe("Assets sidebar tab", () => {
         expect(screen.queryByTestId("assets-panel")).toBeNull();
     });
 
-    it("lands on the Library with the new item ringed after a commit", async () => {
+    it("lands on the Library with the new item ringed and embeds it in the show after a commit", async () => {
         renderSidebar();
         await userEvent.click(screen.getByTestId("assets-tab"));
         lib.on("importPick", () =>
@@ -117,6 +122,13 @@ describe("Assets sidebar tab", () => {
             expect(screen.queryByTestId("import-review-host")).toBeNull(),
         );
         expect(await screen.findByTestId("assets-panel")).toBeVisible();
+        // The panel closed mid-review, yet the show still gets its copy.
+        expect(embedImported).toHaveBeenCalledExactlyOnceWith([
+            {
+                item: { id: added.summary.id, name: "Swing flag" },
+                versionHash: added.summary.versions[1],
+            },
+        ]);
         await waitFor(() =>
             expect(screen.getByTitle("Swing flag")).toHaveAttribute(
                 "data-highlighted",

@@ -4,7 +4,8 @@
  *
  * The review lives here rather than in the Import… button, so closing the
  * Assets panel (or Esc, which closes every sidebar panel) never ends an
- * import. `AssetsHost` renders the review and reopens the panel.
+ * import. `AssetsHost` renders the review, reopens the panel and embeds
+ * each import in the open show.
  */
 import { create } from "zustand";
 import {
@@ -12,6 +13,7 @@ import {
     type ImportReviewClient,
     type ImportReviewStore,
 } from "@/components/library/import/importReview";
+import type { ImportedVersion } from "@/view3d/library/showLibraryEmbed";
 
 export interface AssetsHighlight {
     itemIds: string[];
@@ -22,6 +24,14 @@ export interface AssetsHighlight {
 interface AssetsState {
     review: ImportReviewStore | null;
     highlight: AssetsHighlight | null;
+    /**
+     * Embeds saved Versions in the open show (ADR 0002 D-12). Set by
+     * `AssetsHost`, read at commit time so a review outlives the panel.
+     */
+    onImported: ((saved: ImportedVersion[]) => void) | null;
+    setOnImported(
+        onImported: ((saved: ImportedVersion[]) => void) | null,
+    ): void;
     /** Opens the file dialog and, once files are picked, the review. */
     startImport(client: ImportReviewClient): void;
     /** Clears the highlight if it's still the one with this `seq`. */
@@ -31,6 +41,11 @@ interface AssetsState {
 export const useAssetsStore = create<AssetsState>((set, get) => ({
     review: null,
     highlight: null,
+    onImported: null,
+
+    setOnImported(onImported) {
+        set({ onImported });
+    },
 
     startImport(client) {
         if (get().review) return;
@@ -38,6 +53,7 @@ export const useAssetsStore = create<AssetsState>((set, get) => ({
             onClose: () => {
                 if (get().review === review) set({ review: null });
             },
+            onImported: (saved) => get().onImported?.(saved),
             // Land on the Library with the new items highlighted. Pages the
             // pipeline skipped keep the summary open so its notes are read.
             onCommitted: (itemIds, done) => {

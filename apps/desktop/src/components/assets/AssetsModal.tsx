@@ -18,6 +18,7 @@ import {
     type LibraryBrowserApi,
 } from "@/components/library/browser/libraryItems";
 import type { ImportClient } from "@/view3d/library/importClient";
+import { useEmbedImportedVersions } from "@/hooks/queries/useShowLibrary";
 import { useAssetsStore } from "./assetsStore";
 
 export const ASSETS_CONTENT_ID = "assets";
@@ -90,11 +91,19 @@ export function AssetsPanelContents({
 
 /**
  * Always mounted with the editor: renders the running import review (it
- * outlives the panel) and opens the Assets tab after a commit.
+ * outlives the panel), opens the Assets tab after a commit and embeds a
+ * copy of each import in the open show.
  */
 export function AssetsHost() {
     const review = useAssetsStore((s) => s.review);
     const seq = useAssetsStore((s) => s.highlight?.seq ?? null);
+    const setOnImported = useAssetsStore((s) => s.setOnImported);
+    const { mutate: embedImported } = useEmbedImportedVersions();
+
+    useEffect(() => {
+        setOnImported(embedImported);
+        return () => setOnImported(null);
+    }, [setOnImported, embedImported]);
 
     useEffect(() => {
         if (seq !== null) showAssetsPanel();
