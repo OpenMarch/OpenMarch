@@ -45,6 +45,7 @@ import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
+import { ShareNoteExportLine } from "@/components/assets/ShowCredits";
 import tolgee from "@/global/singletons/Tolgee";
 import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
@@ -1994,6 +1995,7 @@ export default function ExportCoordinatesModal() {
                     <DialogTitle>
                         <T keyName="exportCoordinates.title" />
                     </DialogTitle>
+                    <ShareNoteExportLine />
                     <ExportModalContents
                         onMobileExportClick={handleMobileExportClick}
                     />

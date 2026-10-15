@@ -135,6 +135,20 @@
         "whenYouOptOut": "When you opt-out"
     },
     "assets": {
+        "credits": {
+            "license": {
+                "proprietary": "All rights reserved",
+                "unknown": "Unknown license"
+            },
+            "none": "Nothing in this show needs a credit.",
+            "shareNote": {
+                "badge": "Share note",
+                "detail": "Some items have an unknown license. You may not have the right to share them with this show.",
+                "export": "This show has items with an unknown license. You may not have the right to share them."
+            },
+            "title": "Credits",
+            "uncredited": "{count, plural, one {# more item is CC0 or built in and needs no credit.} other {# more items are CC0 or built in and need no credit.}}"
+        },
         "title": "Assets"
     },
     "audio": {

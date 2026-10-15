@@ -1,7 +1,8 @@
 /**
  * The Assets tab of the editor's left sidebar (owner decision Q76): the
- * Library browser, Import… and the Artwork templates menu, viewable at any
- * time. A successful import lands here with the new items highlighted.
+ * Library browser, Import…, the Artwork templates menu and the show's
+ * Credits, viewable at any time. A successful import lands here with the
+ * new items highlighted.
  */
 import { useEffect, useMemo } from "react";
 import { PackageIcon, XIcon } from "@phosphor-icons/react";
@@ -20,6 +21,7 @@ import {
 import type { ImportClient } from "@/view3d/library/importClient";
 import { useEmbedImportedVersions } from "@/hooks/queries/useShowLibrary";
 import { useAssetsStore } from "./assetsStore";
+import ShowCredits from "./ShowCredits";
 
 export const ASSETS_CONTENT_ID = "assets";
 
@@ -80,6 +82,7 @@ export function AssetsPanelContents({
                 <ImportToLibraryButton client={importClient} />
                 <ArtworkTemplatesMenu client={templatesClient} />
             </div>
+            <ShowCredits />
             <LibraryBrowser
                 api={libraryApi}
                 highlight={highlight}

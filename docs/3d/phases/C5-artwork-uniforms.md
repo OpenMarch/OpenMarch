@@ -142,9 +142,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### C5.7: Credits and the Share note
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: trevor (3d/c5-credits)
+- Status: in-review
+- PR: #152
 - Parallel: yes
 - Depends on: C1.11, C1.10
 
@@ -188,3 +188,24 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 Nothing yet.
 
 ## Progress log
+
+### 2026-10-13 · 3d worker (3d/c5-credits) · C5.7
+
+- **Done:** `showCredits` (`view3d/library/showCredits.ts`) builds Credits
+  from the show's embedded items: one line per Library item (newest
+  Version's metadata), "Name — Author — License — Source (modified)",
+  grouped by license (CC-BY first, Unknown last); CC0 and built-ins counted
+  on one line; the Share note for Unknown only. Credits sit in the Assets
+  panel (collapsed, with the Share note badge); the export dialog shows one
+  quiet line under its title when the Share note is on.
+- **Placement (flag for the owner):** there is no Show settings screen (the
+  Settings window is app-wide), so Credits went to the Assets panel, which
+  Q78 makes the show's asset home. Licenses other than CC0, CC-BY and
+  Unknown (such as All rights reserved or MIT) are listed in their own
+  groups, since only CC0 is known to need nothing.
+- **Not done:** the export credits page or end card (needs to know what an
+  export's range uses: C2/C3 references); the read-only license line on
+  "Add to my Library" (no UI for it yet); the Library side panel's show tab
+  (Visuals mode).
+- **Checks:** unit tests for the model, component tests for Credits and the
+  export line; type-check, lint, format and spellcheck.

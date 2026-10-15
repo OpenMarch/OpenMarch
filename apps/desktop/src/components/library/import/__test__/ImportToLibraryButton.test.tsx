@@ -18,6 +18,7 @@ import {
 
 vi.mock("@/hooks/queries/useShowLibrary", () => ({
     useEmbedImportedVersions: () => ({ mutate: vi.fn() }),
+    useShowLibrary: () => ({ data: [] }),
 }));
 vi.mock("../ImportPreviewCanvas", () => ({
     default: () => <div data-testid="canvas-stand-in" />,

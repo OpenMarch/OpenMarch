@@ -29,6 +29,7 @@ vi.mock("@/components/library/import/ImportPreviewCanvas", () => ({
 const embedImported = vi.fn();
 vi.mock("@/hooks/queries/useShowLibrary", () => ({
     useEmbedImportedVersions: () => ({ mutate: embedImported }),
+    useShowLibrary: () => ({ data: [] }),
 }));
 
 // One fake for the file: the editor's default clients are created once.
