@@ -705,6 +705,13 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
   for 2D; Assets gets This show and Library sections. Planned as follow-up
   PRs after the C1 stack, starting with C1.11; details in props-spec.md
   "Base floor". Needs an ADR 0002 amendment.
+- 2026-10-15, owner: ADR 0002 D-23 accepted with changes. The floor is named
+  by reference only (`floor: { itemId, versionHash }`) and there is no 2D
+  copy: 2D, exports and the 3D tarp read the floor, and
+  `field_properties.image` is legacy, read only by convert on open and then
+  cleared. Convert on open is quiet. The change bumps the file format, so
+  older builds refuse the file. Mobile sync and export must produce the field
+  image from the floor; that is part of the mobile sync work.
 
 ### 2026-10-13 · trevor (3d/c1-starter-kit) · C1.13
 

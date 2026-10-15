@@ -114,7 +114,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Goal:** prop slots and Floor props show their Artwork at real size.
 
-**Scope:** slot Artwork from the assignment table with fill or fit and pan; prop slot textures 1024, Floor props 2048 on the long edge; the Floor prop roll-out reveal from its leading edge, rolling back up when the Outline shrinks; Base floor Artwork (2048 on the long edge), which, when set, replaces ADR 0002 D-5's tarp image, with the field background image as the fallback.
+**Scope:** slot Artwork from the assignment table with fill or fit and pan; prop slot textures 1024, Floor props 2048 on the long edge; the Floor prop roll-out reveal from its leading edge, rolling back up when the Outline shrinks; Base floor Artwork (2048 on the long edge), which, when set, replaces ADR 0002 D-5's tarp image. The show's floor is the field image (ADR 0002 D-23).
 
 **Tickets:** 08, 18, 21, 26.18.
 

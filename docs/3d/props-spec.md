@@ -448,12 +448,12 @@ deletes the change. It joins undo history and repair like the cue tables.
 
 ### Base floor [03, 11, 18, 26.18]
 
-The Base floor is an import kind with Artwork (2048 on the long edge). When
-set, its Artwork replaces ADR 0002 D-5's tarp image; the field background
-image stays the fallback.
+The Base floor is an import kind with Artwork (2048 on the long edge). The
+show's floor is its field image (ADR 0002 D-23), so it is D-5's tarp image
+too.
 
-**Planned change (owner, 2026-10-12, Q78–Q82; needs an ADR 0002 amendment
-before building):**
+**Planned change (owner, 2026-10-12, Q78–Q82; ADR 0002 D-23, accepted
+2026-10-15):**
 
 - All assets are managed in one place, the Assets area. Contextual links
   ("Upload floor…", "Upload flag…", …) still start an import where the user
@@ -462,10 +462,19 @@ before building):**
 - One floor per show: the show's Base floor is the field image, used by the
   2D canvas, exports, mobile and the 3D tarp. Fill or fit and opacity stay in
   Field settings (Q79).
-- The floor is an embedded Version like any other. Setting it also writes
-  its image to `field_properties.image`, which stays as the 2D copy, so 2D,
-  exports, mobile sync and older app versions are untouched. Opening an
-  existing show converts its field image into the show's floor (Q80).
+- The floor is an embedded Version like any other, named by reference in
+  `field_properties.json_data` as `floor: { itemId, versionHash }`. The bytes
+  live once in the show's Library tables, outside history; setting or
+  clearing the floor undoes with the small JSON change. There is no 2D copy:
+  2D, exports and the 3D tarp read the floor, and `field_properties.image` is
+  legacy (D-23).
+- Opening an existing show quietly converts its field image into the show's
+  floor, outside undo history and without writing to the Library, then
+  clears `field_properties.image` (Q80). The change bumps the file format, so
+  older builds refuse the file.
+- Mobile sync and export must produce the field image from the floor,
+  flattened at sync or export time; that is part of the mobile sync work
+  (D-23).
 - Assets has two sections: **This show** (everything the show embeds,
   including its floor; travels with the file) and **Library** (this
   computer). Embedded items missing from the Library offer "Add to Library"
@@ -797,6 +806,7 @@ readout) [22].
   drop from a 56 × 36 to a 24 × 16 grid [02, 10].
 - What performers carry is unchanged [07].
 - A Base floor Artwork, once set, replaces the background-image tarp [26.18].
+  The show's floor is the field image (ADR 0002 D-23).
 - Props appear only in timeline-mode shows [24].
 
 ## 14. Out of scope
