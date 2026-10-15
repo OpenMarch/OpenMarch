@@ -797,3 +797,14 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - **Not done (owner, 2026-10-13):** prune wiring moves to C2.1; the update
   and Add to my Library UI moves to the Assets This show section. See the
   handoff notes.
+
+- 2026-10-13, 3d worker (3d/assets-this-show): the Assets panel's **This
+  show** section (Q81), built ahead of the floor-as-field-image change since
+  it adds no stored data: Assets gets This show and Library tabs; This show
+  lists the embedded items grouped like the Library, offers "Add to my
+  Library" for items the Library lacks (from the show's own bytes, through
+  `library:add-from-show`), and notes a newer Version or changed details in
+  the Library without applying them. Credits (C5.7) moved into it. Not built:
+  applying an update (no references to swap until C2), thumbnails for items
+  the Library lacks, and the floor-as-field-image change (ADR 0002 amendment
+  first).

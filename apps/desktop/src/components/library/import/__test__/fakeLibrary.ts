@@ -86,6 +86,7 @@ export function createFakeLibrary(): FakeLibrary {
         list: invoke("list"),
         readParts: invoke("readParts"),
         thumbnails: invoke("thumbnails"),
+        addFromShow: invoke("addFromShow"),
         onChanged: (cb: (c: LibraryChanged) => void) => {
             changeListeners.add(cb);
             return () => changeListeners.delete(cb);

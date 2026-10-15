@@ -21,7 +21,7 @@ import {
 
 export type LibraryBrowserApi = Pick<
     LibraryApi,
-    "list" | "readParts" | "thumbnails" | "onChanged"
+    "list" | "readParts" | "thumbnails" | "onChanged" | "addFromShow"
 >;
 
 export function editorLibraryApi(): LibraryBrowserApi {
@@ -84,19 +84,30 @@ export function sidecarDetail(
 ): string | null {
     if (!bytes || kind === "uniform") return null;
     try {
-        const json = JSON.parse(new TextDecoder().decode(bytes)) as {
-            kind?: unknown;
-            surface?: unknown;
-        };
-        const value = kind === "model" ? json.kind : json.surface;
-        const known: readonly string[] =
-            kind === "model" ? MODEL_KIND_VALUES : ARTWORK_SURFACES;
-        return typeof value === "string" && known.includes(value)
-            ? value
-            : null;
+        return sidecarJsonDetail(
+            kind,
+            JSON.parse(new TextDecoder().decode(bytes)),
+        );
     } catch {
         return null;
     }
+}
+
+/** `sidecarDetail` for a sidecar already parsed, as the show stores it. */
+export function sidecarJsonDetail(
+    kind: LibraryItemKind,
+    json: unknown,
+): string | null {
+    if (kind === "uniform" || typeof json !== "object" || json === null)
+        return null;
+    const { kind: modelKind, surface } = json as {
+        kind?: unknown;
+        surface?: unknown;
+    };
+    const value = kind === "model" ? modelKind : surface;
+    const known: readonly string[] =
+        kind === "model" ? MODEL_KIND_VALUES : ARTWORK_SURFACES;
+    return typeof value === "string" && known.includes(value) ? value : null;
 }
 
 /** Version hash → sidecar detail; immutable, so kept for the session. */

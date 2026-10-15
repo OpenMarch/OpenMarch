@@ -1,10 +1,10 @@
 /**
- * The Assets tab of the editor's left sidebar (owner decision Q76): the
- * Library browser, Import…, the Artwork templates menu and the show's
- * Credits, viewable at any time. A successful import lands here with the
- * new items highlighted.
+ * The Assets tab of the editor's left sidebar (owner decisions Q76, Q81):
+ * Import…, the Artwork templates menu, and two sections: This show (what the
+ * show embeds, and its Credits) and Library (this computer). A successful
+ * import lands on Library with the new items highlighted.
  */
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PackageIcon, XIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
@@ -21,7 +21,8 @@ import {
 import type { ImportClient } from "@/view3d/library/importClient";
 import { useEmbedImportedVersions } from "@/hooks/queries/useShowLibrary";
 import { useAssetsStore } from "./assetsStore";
-import ShowCredits from "./ShowCredits";
+import ShowAssets, { type ShowAssetsApi } from "./ShowAssets";
+import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 
 export const ASSETS_CONTENT_ID = "assets";
 
@@ -53,7 +54,7 @@ export function AssetsPanelContents({
     templatesClient,
 }: {
     /** Tests pass fakes; the editor's IPC by default. */
-    api?: LibraryBrowserApi;
+    api?: LibraryBrowserApi & ShowAssetsApi;
     importClient?: ImportReviewClient;
     templatesClient?: Pick<ImportClient, "saveTemplate">;
 }) {
@@ -61,6 +62,11 @@ export function AssetsPanelContents({
     const highlight = useAssetsStore((s) => s.highlight);
     const clearHighlight = useAssetsStore((s) => s.clearHighlight);
     const libraryApi = useMemo(() => api ?? editorLibraryApi(), [api]);
+    const [section, setSection] = useState<"show" | "library">("library");
+    // an import lands on the Library, where its items are highlighted
+    useEffect(() => {
+        if (highlight) setSection("library");
+    }, [highlight]);
 
     return (
         <div
@@ -82,12 +88,39 @@ export function AssetsPanelContents({
                 <ImportToLibraryButton client={importClient} />
                 <ArtworkTemplatesMenu client={templatesClient} />
             </div>
-            <ShowCredits />
-            <LibraryBrowser
-                api={libraryApi}
-                highlight={highlight}
-                onHighlightDone={clearHighlight}
-            />
+            <Tabs
+                value={section}
+                onValueChange={(v) => setSection(v as "show" | "library")}
+                className="flex min-h-0 flex-1 flex-col gap-12"
+            >
+                <TabsList>
+                    <TabItem value="show" data-testid="assets-section-show">
+                        <T keyName="assets.show.title" />
+                    </TabItem>
+                    <TabItem
+                        value="library"
+                        data-testid="assets-section-library"
+                    >
+                        <T keyName="library.browser.title" />
+                    </TabItem>
+                </TabsList>
+                <TabContent
+                    value="show"
+                    className="flex min-h-0 flex-1 flex-col"
+                >
+                    <ShowAssets api={libraryApi} />
+                </TabContent>
+                <TabContent
+                    value="library"
+                    className="flex min-h-0 flex-1 flex-col"
+                >
+                    <LibraryBrowser
+                        api={libraryApi}
+                        highlight={highlight}
+                        onHighlightDone={clearHighlight}
+                    />
+                </TabContent>
+            </Tabs>
         </div>
     );
 }
