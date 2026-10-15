@@ -1100,6 +1100,44 @@ from it. The spec still wins on the model; this file decides presentation.
     a dragged line reaches as a seek with `line: "start"` or `line: "playhead"`
     (`TimelineSeekOptions`), and `seekTimeline` passes a paused one to the store.
 
+- **UI-23: the view follows the playhead (project owner, 2026-10-14, after a design review of how
+  DAWs and video editors follow playback).** Before, the timeline never scrolled to the playhead.
+  It now follows always, with no setting (owner). DAWs offer Page (jump a view), a fixed playhead
+  (Premiere's Smooth Scroll, Resolve's Fixed, Logic's Catch) or nothing; the owner wanted context
+  on both sides without pinning the playhead, so the view moves by pages instead.
+  - **Page-aware glides.** While playing, the view moves only when the playhead crosses into a page
+    that isn't fully in view; it glides so that page's flag lands 8% in from the left, keeping the
+    end of the page before. A page already in view never moves the view.
+  - **A page wider than the view** has a backstop: when the playhead reaches 85% of the view, it
+    glides back to 25%.
+  - **The glide** is a critically damped spring of about a quarter second, so a new target mid-glide
+    keeps its speed and it never overshoots. A move further than the view's width cuts, and so does
+    every move with reduced motion.
+  - **Pausing.** Scrolling by hand (a wheel, a swipe, the scrollbar) or dragging (a scrub, a clip, a
+    flag) pauses following when it leaves the playhead out of view; a scroll that leaves the
+    playhead in view keeps following. It resumes when the playhead comes back into view, on Play,
+    on navigation while playing (Q, E, Home, End, a page selected: the jump lands the playhead), or
+    from the chip. A click doesn't pause it. Zooming while following keeps the playhead in place on
+    screen and doesn't pause it (Cubase's suspend-on-edit, Logic's Catch and REAPER's "don't
+    autoscroll while viewing other parts" are the models).
+  - **Under the pointer.** While the pointer is down nothing moves: a glide that is due waits for
+    the release, so a click lands on what was under it. Hovering never holds the view.
+  - **The playhead chip.** Whenever the playhead is out of view, playing or stopped, a "Playhead"
+    chip with a caret sits at that edge of the timeline; clicking it brings the view back and
+    resumes following.
+  - **Stopped.** Navigating (Q, E, the go-to box, ⏮ ⏭) to a playhead out of view moves the view the
+    least to show its page with an 8% margin, or puts the playhead at 25% when its page is wider
+    than the view; so does Play Page Once going back to its set. A page selected from outside the
+    timeline (the page list, the field) moves the view the least to show it, its start when it is
+    wider. A selection made with the pointer on the timeline never moves the view. Stopping leaves
+    the view where it is; a glide already under way finishes.
+  - **Loops.** A loop that fits the view is framed once when Play starts, and while it is in view
+    the view holds still, through its wraps too; a wider loop cuts back to its start on each wrap.
+  - **How.** The rules are pure functions in `timelineFollow.ts`; `useTimelineFollow` reads the
+    scroll from scroll events and the sizes from props, so a frame reads no layout, and writes the
+    scroll only while a glide runs. All the numbers are lead defaults to tune by feel (V-230 to
+    V-238).
+
 ## Mapping the spec onto the view model
 
 The reference `TimelineViewModel` becomes a derived view: an adapter builds it
