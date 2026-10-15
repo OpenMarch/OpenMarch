@@ -6,6 +6,7 @@ import {
     giveNewMarchersHomesInTransaction,
     removeDeletedMarchersFromTimelinesInTransaction,
 } from "./timelineMarchers";
+import { deleteEmptySetCuesInTransaction } from "./cues";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -196,6 +197,10 @@ const deleteMarchersInTransaction = async ({
                 `Marcher with id ${marcherId} not found. Ignoring deletion`,
             );
     }
+    // The marchers left their hand-picked sets through the cascade; a set left empty deletes
+    // its cue in the same edit (ADR 0004 D-2)
+    if (deletedMarchers.length > 0)
+        await deleteEmptySetCuesInTransaction({ tx });
     return deletedMarchers;
 };
 

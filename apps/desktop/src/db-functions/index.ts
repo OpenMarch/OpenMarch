@@ -14,3 +14,6 @@ export * from "./timelineTransitions";
 export * from "./timelineAssignments";
 export * from "./marcherHome";
 export * from "./timelineChanges";
+export * from "./cues";
+export * from "./phraseAssets";
+export * from "./pagePerformerSettings";

@@ -34,6 +34,11 @@ export const tablesWithHistory = [
     schema.timeline_slot_destinations,
     // App data beside them: which assignments are kept spots (ADR 0001 amendment 2026-10-09)
     schema.timeline_kept_assignments,
+    // Performer cues (ADR 0004 D-5)
+    schema.phrase_assets,
+    schema.cues,
+    schema.cue_marchers,
+    schema.page_performer_settings,
 ];
 
 /**
@@ -56,10 +61,20 @@ export async function createUndoTriggers(
  * @param db The database connection
  */
 export async function createAllUndoTriggers(db: DbConnection | DB) {
+    // Only the tables the file has: a page-era file gets the tables the timeline-only migrations
+    // add (the performer cues) when it converts, and the conversion creates their triggers. A
+    // table that isn't there can't be edited, so it needs no history.
+    const rows = await db.all<{ name: string } | [string]>(
+        sql`SELECT name FROM sqlite_schema WHERE type = 'table'`,
+    );
+    const existing = new Set(
+        rows.map((row) => (Array.isArray(row) ? row[0] : row.name)),
+    );
     // await db.transaction(async (tx) => {
     const promises: Promise<void>[] = [];
     for (const table of tablesWithHistory) {
-        promises.push(createUndoTriggers(db, getTableName(table)));
+        const name = getTableName(table);
+        if (existing.has(name)) promises.push(createUndoTriggers(db, name));
     }
     await Promise.all(promises);
     // });

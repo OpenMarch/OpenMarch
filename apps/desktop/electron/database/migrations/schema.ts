@@ -540,6 +540,192 @@ export const timeline_change_log = sqliteTable("timeline_change_log", {
     after: text(),
 });
 
+/* ======================= PERFORMER CUES ======================= */
+/*
+ * What performers do, count by count (ADR 0004, docs/3d/performer-behavior.md). Cues sit on beat
+ * ids, so beat edits never rewrite them; deleting a beat deletes its cues. No trigger reads or
+ * writes these tables. The compile step (`@openmarch/core` cues) reads them; storage keeps the
+ * columns consistent, and compile applies the behavior rules (fits, states-only channels,
+ * take-overs).
+ */
+
+/** The channels a cue can set (ADR 0004 D-1, and its 2026-10-11 amendment for the last three). */
+export const CUE_CHANNELS = [
+    "feet",
+    "horn_equipment",
+    "facing",
+    "body",
+    "carry",
+    "silk",
+    "uniform",
+] as const;
+
+/** Channels whose values name Library items (`library:<uuid>@<version hash>`; amendment 2026-10-11). */
+const LIBRARY_VALUE_CHANNELS_SQL = "'carry', 'silk', 'uniform'";
+
+/**
+ * A show-stored phrase asset (ADR 0004 D-3). Built-ins aren't stored; cues name them by id.
+ * `data_json` is the versioned phrase format (spec section 5); readers migrate older
+ * `format_version`s on load and never write back silently.
+ */
+export const phrase_assets = sqliteTable(
+    "phrase_assets",
+    {
+        id: integer().primaryKey(),
+        name: text().notNull(),
+        label: text().notNull(),
+        /** copied_builtin, posed or imported; v1 writes only copied_builtin */
+        source: text().notNull(),
+        /** JSON array of the channels the phrase plays on and takes over */
+        channels_json: text().notNull(),
+        format_version: integer().notNull(),
+        data_json: text().notNull(),
+        ...timestamps,
+    },
+    (_table) => [
+        check(
+            "phrase_assets_source_check",
+            sql`source IN ('copied_builtin', 'posed', 'imported')`,
+        ),
+        check(
+            "phrase_assets_channels_json_check",
+            sql`json_valid(channels_json) AND json_type(channels_json) = 'array'`,
+        ),
+        check(
+            "phrase_assets_format_version_check",
+            sql`typeof(format_version) = 'integer' AND format_version >= 1`,
+        ),
+        check(
+            "phrase_assets_data_json_check",
+            sql`json_valid(data_json) AND json_type(data_json) = 'object'`,
+        ),
+    ],
+);
+
+/**
+ * A cue: on one channel, for one target, on one beat (ADR 0004 D-1). Same-count,
+ * same-specificity ties go to the higher `id`. Hand-picked set members are in `cue_marchers`.
+ */
+export const cues = sqliteTable(
+    "cues",
+    {
+        id: integer().primaryKey(),
+        /** One of `CUE_CHANNELS` */
+        channel: text().notNull(),
+        /** state or phrase */
+        kind: text().notNull(),
+        /** band, section, tag or set */
+        target_kind: text().notNull(),
+        /** Set only for a section target */
+        target_section: text(),
+        /** Set only for a tag target. Deleting the tag deletes its cues. */
+        target_tag_id: integer().references(() => tags.id, {
+            onDelete: "cascade",
+        }),
+        /** The beat the cue sits on; its instant is the start of the beat (the count's click) */
+        beat_id: integer()
+            .notNull()
+            .references(() => beats.id, { onDelete: "cascade" }),
+        /**
+         * `builtin:<channel>.<family>.<value>`, `show:<phrase_assets.id>`,
+         * `library:<uuid>@<version hash>` (Carry, Silk, Uniform) or `none` (Carry)
+         */
+        value: text().notNull(),
+        /** Set only for a show phrase; a phrase asset in use can't be deleted */
+        phrase_asset_id: integer().references(() => phrase_assets.id, {
+            onDelete: "restrict",
+        }),
+        /** Phrases only: the length in counts, inclusive, at least 2 */
+        length: integer(),
+        /** States only: the transition length in counts, at least 1; null is the library default */
+        transition_length: integer(),
+        /** The value's settings as a JSON object */
+        settings_json: text().notNull().default("{}"),
+        /** `{ version: 1, span, order }`, or null for no ripple. Never on Feet. */
+        ripple_json: text(),
+        notes: text(),
+        ...timestamps,
+    },
+    (table) => [
+        check(
+            "cues_channel_check",
+            sql.raw(
+                `channel IN (${CUE_CHANNELS.map((c) => `'${c}'`).join(", ")})`,
+            ),
+        ),
+        check("cues_kind_check", sql`kind IN ('state', 'phrase')`),
+        check(
+            "cues_target_check",
+            sql`(target_kind IN ('band', 'set') AND target_section IS NULL AND target_tag_id IS NULL) OR (target_kind = 'section' AND target_section IS NOT NULL AND target_tag_id IS NULL) OR (target_kind = 'tag' AND target_tag_id IS NOT NULL AND target_section IS NULL)`,
+        ),
+        check(
+            "cues_length_check",
+            sql`(kind = 'phrase' AND typeof(length) = 'integer' AND length >= 2 AND transition_length IS NULL) OR (kind = 'state' AND length IS NULL AND (transition_length IS NULL OR (typeof(transition_length) = 'integer' AND transition_length >= 1)))`,
+        ),
+        check(
+            "cues_value_check",
+            sql.raw(
+                `(value GLOB 'builtin:?*' AND phrase_asset_id IS NULL) OR (kind = 'phrase' AND phrase_asset_id IS NOT NULL AND value = 'show:' || phrase_asset_id) OR (channel IN (${LIBRARY_VALUE_CHANNELS_SQL}) AND kind = 'state' AND value GLOB 'library:?*@?*' AND phrase_asset_id IS NULL) OR (channel = 'carry' AND kind = 'state' AND value = 'none' AND phrase_asset_id IS NULL)`,
+            ),
+        ),
+        check(
+            "cues_settings_json_check",
+            sql`json_valid(settings_json) AND json_type(settings_json) = 'object'`,
+        ),
+        check(
+            "cues_ripple_json_check",
+            sql`ripple_json IS NULL OR (channel <> 'feet' AND json_valid(ripple_json) AND json_type(ripple_json) = 'object' AND json_extract(ripple_json, '$.version') = 1 AND json_type(ripple_json, '$.span') = 'integer' AND json_extract(ripple_json, '$.span') >= 1 AND json_extract(ripple_json, '$.order') IN ('drill', 'left_right', 'right_left', 'down_form'))`,
+        ),
+        index("cues_beat_id_idx").on(table.beat_id),
+        index("cues_channel_beat_id_idx").on(table.channel, table.beat_id),
+    ],
+);
+
+/**
+ * The marchers of a hand-picked set cue (ADR 0004 D-2). The marcher deletion write path deletes
+ * a set cue left with no members, in the same transaction.
+ *
+ * Has a surrogate `id`, unique on (cue, marcher), rather than the ADR's two-column primary key:
+ * history replays by rowid, so undo has to restore the same rowid (as `marcher_tags` does).
+ */
+export const cue_marchers = sqliteTable(
+    "cue_marchers",
+    {
+        id: integer().primaryKey(),
+        cue_id: integer()
+            .notNull()
+            .references(() => cues.id, { onDelete: "cascade" }),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+    },
+    (table) => [
+        unique("cue_marchers_cue_marcher_unique").on(
+            table.cue_id,
+            table.marcher_id,
+        ),
+        index("cue_marchers_marcher_id_idx").on(table.marcher_id),
+    ],
+);
+
+/** Per-set performer settings (ADR 0004 D-4). No row means the show default. */
+export const page_performer_settings = sqliteTable(
+    "page_performer_settings",
+    {
+        page_id: integer()
+            .primaryKey()
+            .references(() => pages.id, { onDelete: "cascade" }),
+        /** What the set's dot marks: the landing foot or the body's center */
+        dot_mode: text().notNull(),
+    },
+    (_table) => [
+        check(
+            "page_performer_settings_dot_mode_check",
+            sql`dot_mode IN ('foot', 'body')`,
+        ),
+    ],
+);
+
 /* ======================= SHOW LIBRARY ======================== */
 /*
  * The show's copies of the Library items it uses (ADR 0002 D-12, props-spec.md section 2,

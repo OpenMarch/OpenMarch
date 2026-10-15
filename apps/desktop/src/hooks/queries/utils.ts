@@ -50,6 +50,9 @@ const singleTableNameToQueryKey = (tableName: string): string[][] => {
         case "timeline_slot_destinations":
         case "timeline_kept_assignments":
             return [];
+        // A cue's set members are read with the cue (`useCues.ts`)
+        case "cue_marchers":
+            return [["cues"]];
         default:
             return [[tableName]];
     }

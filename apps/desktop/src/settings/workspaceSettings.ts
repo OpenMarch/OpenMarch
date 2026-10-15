@@ -25,6 +25,17 @@ export const workspaceSettingsSchema = z.object({
      * conversion worker's host reads it to tell whether a conversion committed.
      */
     timelineConvertedAt: z.string().optional(),
+
+    /**
+     * Show-wide performer defaults the cues fall back to (ADR 0004 D-4). Absent fields mean left
+     * foot and foot on the dot (`performerDefaultsOf`). Not shown in the settings UI yet.
+     */
+    performerDefaults: z
+        .object({
+            stepOffFoot: z.enum(["left", "right"]).optional(),
+            dotMode: z.enum(["foot", "body"]).optional(),
+        })
+        .optional(),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
@@ -69,4 +80,19 @@ export function serializeWorkspaceSettings(
     settings: WorkspaceSettings,
 ): string {
     return JSON.stringify(settings);
+}
+
+export type PerformerDefaults = {
+    stepOffFoot: "left" | "right";
+    dotMode: "foot" | "body";
+};
+
+/** The show's performer defaults, filled in: left foot and foot on the dot when absent. */
+export function performerDefaultsOf(
+    settings: Pick<WorkspaceSettings, "performerDefaults"> | undefined,
+): PerformerDefaults {
+    return {
+        stepOffFoot: settings?.performerDefaults?.stepOffFoot ?? "left",
+        dotMode: settings?.performerDefaults?.dotMode ?? "foot",
+    };
 }

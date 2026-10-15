@@ -54,6 +54,8 @@ describe("history triggers without a renderer", () => {
             const names = triggerNames(db);
             expect(names).toContain("marchers_it");
             expect(names).toContain("timeline_assignments_dt");
+            // A page-era file has no cue tables until it converts
+            expect(names.some((n) => n.startsWith("cues_"))).toBe(false);
             expect(names.length % 3).toBe(0);
         } finally {
             db.close();

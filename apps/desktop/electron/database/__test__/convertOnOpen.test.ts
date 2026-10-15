@@ -288,7 +288,8 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
         expect(after.marcherPages).toBeNull();
         expect(after.pageEraTables).toEqual([]);
         // Not an undoable edit; no stale history or change-log rows; the undo triggers of the
-        // tables that are left are kept.
+        // tables that are left are kept, and the tables the timeline-only migrations add (the
+        // performer cues) get theirs.
         expect(after.history).toEqual([]);
         expect(after.historyStats).toMatchObject({
             cur_undo_group: 1,
@@ -304,8 +305,32 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
                     .all() as { name: string }[]
             ).map((t) => t.name),
         );
+        const tablesBefore = withDb(expectedBackup, (db) =>
+            (
+                db
+                    .prepare(
+                        "SELECT name FROM sqlite_master WHERE type = 'table'",
+                    )
+                    .all() as { name: string }[]
+            ).map((t) => t.name),
+        );
+        const onNewTables = withDb(showPath, (db) =>
+            (
+                db
+                    .prepare(
+                        "SELECT name, tbl_name FROM sqlite_master WHERE type = 'trigger'",
+                    )
+                    .all() as { name: string; tbl_name: string }[]
+            )
+                .filter((t) => !tablesBefore.includes(t.tbl_name))
+                .map((t) => t.name),
+        );
+        expect(onNewTables.length).toBeGreaterThan(0);
         expect(after.triggers).toEqual(
-            before.triggers.filter((t) => !onPageEraTables.includes(t)),
+            [
+                ...before.triggers.filter((t) => !onPageEraTables.includes(t)),
+                ...onNewTables,
+            ].sort(),
         );
         expect(outcome.report?.pages.length).toBeGreaterThan(0);
 
