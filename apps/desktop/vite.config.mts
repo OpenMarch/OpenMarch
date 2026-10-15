@@ -104,6 +104,36 @@ export default defineConfig(({ command }) => {
                     },
                 },
                 {
+                    // The import worker (C1.9): a utilityProcess main forks
+                    // for the model pipeline and template generation. Built
+                    // beside main as `import-worker.js`; main spawns it on
+                    // use, so a rebuild needs no restart.
+                    entry: {
+                        "import-worker": "electron/main/import-worker/index.ts",
+                    },
+                    onstart() {},
+                    vite: {
+                        resolve: {
+                            alias: electronAlias,
+                        },
+                        build: {
+                            sourcemap,
+                            minify: isBuild,
+                            outDir: "dist-electron/main",
+                            emptyOutDir: false,
+                            rollupOptions: {
+                                external: ["electron", "node"].concat(
+                                    Object.keys(
+                                        "dependencies" in pkg
+                                            ? pkg.dependencies
+                                            : {},
+                                    ),
+                                ),
+                            },
+                        },
+                    },
+                },
+                {
                     // The editor's preload, and the 3D View window's. The 3D
                     // View preload runs sandboxed, so it must import only
                     // `electron` and share no chunk with the editor's.

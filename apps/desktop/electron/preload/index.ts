@@ -33,6 +33,30 @@ import type {
     View3dPublishChannel,
     View3dVenueChangeRequest,
 } from "../../src/view3d/sync/protocol";
+// Types only, like the sync protocol above.
+import type {
+    AddFromShowRequest,
+    AddVersionResultDto,
+    BytesPayload,
+    ImportCommitRequest,
+    ImportCommitResult,
+    ImportInspectRequest,
+    ImportInspection,
+    ImportPickRequest,
+    ImportPreviewRequest,
+    ImportProgress,
+    ImportSession,
+    LibraryChanged,
+    LibraryItem,
+    LibraryItemKind,
+    LibraryItemSummary,
+    ReadPartsRequest,
+    Result,
+    SizePreset,
+    TemplateSaveRequest,
+    ThumbnailsRequest,
+    UpdateItemRequest,
+} from "../../src/view3d/library/protocol";
 
 const VIEW3D_PUBLISH_CHANNELS: readonly string[] = [
     "view3d:clock",
@@ -438,6 +462,105 @@ const APP_API = {
         return () => {
             ipcRenderer.removeListener("view3d:playback-request", listener);
         };
+    },
+
+    // Library and import (C1.9, ADR 0002 D-13). Main checks the sender and
+    // validates every payload; each invoke answers a `Result`.
+    library: {
+        importPick: (request: ImportPickRequest) =>
+            ipcRenderer.invoke("library:import-pick", request) as Promise<
+                Result<ImportSession | null>
+            >,
+        importInspect: (request: ImportInspectRequest) =>
+            ipcRenderer.invoke("library:import-inspect", request) as Promise<
+                Result<ImportInspection>
+            >,
+        importPreview: (request: ImportPreviewRequest) =>
+            ipcRenderer.invoke("library:import-preview", request) as Promise<
+                Result<BytesPayload>
+            >,
+        importCommit: (request: ImportCommitRequest) =>
+            ipcRenderer.invoke("library:import-commit", request) as Promise<
+                Result<ImportCommitResult>
+            >,
+        importCancel: (request: { sessionId: string; fileId?: string }) =>
+            ipcRenderer.invoke("library:import-cancel", request) as Promise<
+                Result<void>
+            >,
+        /** Frees the session's bytes in main. */
+        importClose: (request: { sessionId: string }) =>
+            ipcRenderer.send("library:import-close", request),
+        /** Returns an unsubscribe function. */
+        onImportProgress: (callback: (progress: ImportProgress) => void) => {
+            const listener = (
+                _event: IpcRendererEvent,
+                progress: ImportProgress,
+            ) => callback(progress);
+            ipcRenderer.on("library:import-progress", listener);
+            return () => {
+                ipcRenderer.removeListener("library:import-progress", listener);
+            };
+        },
+        list: (request: { kind?: LibraryItemKind } = {}) =>
+            ipcRenderer.invoke("library:list", request) as Promise<
+                Result<LibraryItemSummary[]>
+            >,
+        get: (request: { itemId: string }) =>
+            ipcRenderer.invoke("library:get", request) as Promise<
+                Result<LibraryItem | null>
+            >,
+        readParts: (request: ReadPartsRequest) =>
+            ipcRenderer.invoke("library:read-parts", request) as Promise<
+                Result<Record<string, Uint8Array>>
+            >,
+        thumbnails: (request: ThumbnailsRequest) =>
+            ipcRenderer.invoke("library:thumbnails", request) as Promise<
+                Result<(BytesPayload | null)[]>
+            >,
+        updateItem: (request: UpdateItemRequest) =>
+            ipcRenderer.invoke("library:update-item", request) as Promise<
+                Result<LibraryItem>
+            >,
+        deleteItem: (request: { itemId: string }) =>
+            ipcRenderer.invoke("library:delete-item", request) as Promise<
+                Result<void>
+            >,
+        addFromShow: (request: AddFromShowRequest) =>
+            ipcRenderer.invoke("library:add-from-show", request) as Promise<
+                Result<AddVersionResultDto>
+            >,
+        sizePresets: () =>
+            ipcRenderer.invoke("library:size-presets") as Promise<
+                Result<SizePreset[]>
+            >,
+        sizePresetSave: (request: {
+            id?: string;
+            name: string;
+            data: SizePreset["data"];
+        }) =>
+            ipcRenderer.invoke("library:size-preset-save", request) as Promise<
+                Result<SizePreset>
+            >,
+        sizePresetDelete: (request: { id: string }) =>
+            ipcRenderer.invoke(
+                "library:size-preset-delete",
+                request,
+            ) as Promise<Result<void>>,
+        templateSave: (request: TemplateSaveRequest) =>
+            ipcRenderer.invoke("library:template-save", request) as Promise<
+                Result<{ filename: string } | null>
+            >,
+        /** After every Library write. Returns an unsubscribe function. */
+        onChanged: (callback: (changed: LibraryChanged) => void) => {
+            const listener = (
+                _event: IpcRendererEvent,
+                changed: LibraryChanged,
+            ) => callback(changed);
+            ipcRenderer.on("library:changed", listener);
+            return () => {
+                ipcRenderer.removeListener("library:changed", listener);
+            };
+        },
     },
 
     // History

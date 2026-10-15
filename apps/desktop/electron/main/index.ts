@@ -68,7 +68,14 @@ import {
     SHARP_SELF_TEST_ENV,
     writeSharpSelfTest,
 } from "./services/sharp-self-test";
+import {
+    LIBRARY_IPC_SELF_TEST_ENV,
+    LIBRARY_IPC_SELF_TEST_FILES_ENV,
+    writeLibraryIpcSelfTest,
+} from "./services/library-ipc-self-test";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
+import { initLibraryIpc, watchEditorWindow } from "./library-ipc";
+import { isPdfRendererWindow } from "./artwork-import";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -215,6 +222,7 @@ async function createWindow(title?: string) {
         },
     });
     app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
+    watchEditorWindow(win);
 
     // Initialize auth IPC handlers before renderer navigation to avoid startup
     // races where the renderer invokes auth channels before handlers exist.
@@ -522,6 +530,18 @@ void app.whenReady().then(async () => {
         app.exit(await writeSharpSelfTest(sharpSelfTestOut));
         return;
     }
+    const libraryIpcSelfTestOut = process.env[LIBRARY_IPC_SELF_TEST_ENV];
+    if (libraryIpcSelfTestOut) {
+        // Packaging check only: run the import IPC on given files, open nothing.
+        app.exit(
+            await writeLibraryIpcSelfTest(
+                libraryIpcSelfTestOut,
+                join(__dirname, "import-worker.js"),
+                process.env[LIBRARY_IPC_SELF_TEST_FILES_ENV] ?? "",
+            ),
+        );
+        return;
+    }
 
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
@@ -551,6 +571,12 @@ void app.whenReady().then(async () => {
         getTheme: () => store.get("theme", "light") as string,
         getLanguage: () => store.get("language", "en") as string,
         getEditorWindow: () => win,
+    });
+    initLibraryIpc({
+        getEditorWindow: () => win,
+        getSetting: (key) => store.get(key),
+        setSetting: (key, value) => store.set(key, value),
+        workerPath: join(__dirname, "import-worker.js"),
     });
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
@@ -835,7 +861,10 @@ ipcMain.handle(
 // Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
-    const allWindows = BrowserWindow.getAllWindows();
+    // Hidden PDF renderer windows (C1.8) are never shown or focused.
+    const allWindows = BrowserWindow.getAllWindows().filter(
+        (w) => !isPdfRendererWindow(w),
+    );
     if (win && !win.isDestroyed()) {
         win.focus();
     } else if (allWindows.length) {
