@@ -9,6 +9,8 @@ export interface ActionHandler {
     isEnabled: () => boolean;
     /** True while a held key's repeats shouldn't run the action again */
     ignoresRepeat?: () => boolean;
+    /** Runs when the key that ran the action is let go, for actions that last while held */
+    release?: () => void;
 }
 
 const handlers = new Map<ActionId, ActionHandler[]>();
@@ -57,6 +59,17 @@ export function runAction(id: ActionId): boolean {
     runListeners.forEach((listener) => listener(id));
     handler.run(getActionDefinition(id).args);
     return true;
+}
+
+/**
+ * Runs the action and returns what to call when its key is let go, or null if it didn't run or
+ * doesn't care about release (`useActionHandler`'s `onRelease`).
+ */
+export function pressAction(id: ActionId): (() => void) | null {
+    const handler = top(id);
+    if (!runAction(id) || !handler?.release) return null;
+    const release = handler.release;
+    return () => release();
 }
 
 /** Call when a handler's `isEnabled()` result may have changed without a (un)registration. */

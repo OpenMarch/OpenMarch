@@ -60,6 +60,15 @@ export interface View3dClock {
     anchorWallMs: number;
     /** Show milliseconds per wall millisecond while playing. */
     rate: number;
+    /**
+     * The playback speed playing in the editor, a held speed key included,
+     * paused too. `rate` follows it once the audio does.
+     */
+    speed: number;
+    /** The playback speed chosen in the editor, without a held key */
+    chosenSpeed: number;
+    /** Play loops (looping is on, or a move is isolated), for Play's tooltip */
+    playLoops: boolean;
 }
 
 export interface View3dSelection {
@@ -83,19 +92,38 @@ export interface View3dVenueChangeRequest {
  */
 export const VIEW3D_PLAYBACK_ACTIONS = [
     "playPause",
+    "playPage",
     "previousPage",
     "nextPage",
     "firstPage",
     "lastPage",
     "previousBeat",
     "nextBeat",
+    "holdFasterPlayback",
+    "holdSlowerPlayback",
+    "nextPlaybackSpeed",
+    "previousPlaybackSpeed",
+    "resetPlaybackSpeed",
 ] as const;
 export type View3dPlaybackAction = (typeof VIEW3D_PLAYBACK_ACTIONS)[number];
 
 export interface View3dPlaybackRequest {
     /** Unchecked: the editor runs it only if it's a `View3dPlaybackAction`. */
     action: unknown;
+    /**
+     * True when the key that ran a held action (a playback speed key) is let
+     * go. The editor ends the hold.
+     */
+    release?: unknown;
+    /** With `VIEW3D_SET_SPEED` as the action: the speed to choose */
+    speed?: unknown;
 }
+
+/**
+ * The playback request that chooses a speed (the speed button's slider and
+ * chips), which no editor action does.
+ */
+export const VIEW3D_SET_SPEED = "setPlaybackSpeed";
 
 export function isView3dPlaybackAction(
     value: unknown,
@@ -157,7 +185,10 @@ export function isView3dClock(value: unknown): value is View3dClock {
         typeof value.playing === "boolean" &&
         isFiniteNumber(value.anchorShowMs) &&
         isFiniteNumber(value.anchorWallMs) &&
-        isFiniteNumber(value.rate)
+        isFiniteNumber(value.rate) &&
+        isFiniteNumber(value.speed) &&
+        isFiniteNumber(value.chosenSpeed) &&
+        typeof value.playLoops === "boolean"
     );
 }
 

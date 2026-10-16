@@ -28,7 +28,8 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
 - **Top right:** Fullscreen (`CornersOut` icon) and View settings (`GearSix`
   icon), which opens the settings panel under them.
 - **Bottom left: playback, then the readout.**
-  - Previous page, Play or Pause, Next page (UI-4).
+  - The editor's Previous, Play and Next, and its playback speed button
+    (UI-4).
   - The readout: set (page) name and count, from the selection and clock. A
     second line shows eye height and distance to the field center, in the
     field's measurement system (feet or meters).
@@ -83,16 +84,26 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
 - Performers move with the editor's playback. When paused, they hold the
   selected page's positions, like the 2D canvas.
 - The editor owns playback. The window's playback buttons and keys ask the
-  editor to run its own action (`view3d:playback-request`, ADR 0002 D-4), so
-  they behave exactly like the editor's timeline buttons, including being
-  disabled while playing or at the first or last page. The window follows the
-  clock and selection the editor then sends. This lets a designer present
-  from the 3D View, for example on a projector, without reaching for the
-  editor.
-- **Keys**, the editor's own: Space plays or pauses; Q and E go to the
-  previous and next page; Shift+Q and Shift+E go to the first and last page.
-  Space works even when a window button has focus, so a click never steals
-  it; it doesn't apply in text fields or an open menu.
+  editor to run its own action (`view3d:playback-request`, ADR 0002 D-4), and
+  the window follows the clock and selection the editor then sends. This lets
+  a designer present from the 3D View, for example on a projector, without
+  reaching for the editor.
+- The buttons are the editor's own components
+  (`components/timeline/TransportButtons.tsx`, `PlaybackSpeedButton.tsx`), so
+  their icons, tooltips and modifier clicks match the editor's exactly:
+  Shift+click and Alt+click on Previous and Next step a beat or go to the
+  start or end, Shift+click on Play plays from the playhead (or pauses while
+  playing), and the speed
+  button steps on a click and opens its slider on a right-click. Their
+  tooltips are in English, as the editor's are, rather than under `view3d.*`
+  (UI-6).
+- **Keys**, the editor's own: Space plays, or stops and goes back to where
+  Play was pressed; Shift+Space plays from the playhead, or pauses where it
+  is; Q and E go to the previous and next page, Shift+Q and Shift+E
+  a beat, and Alt+Q and Alt+E (or Home and End) the start and end; ] and [
+  held play at double and half speed. Space works even when a window button
+  has focus, so a click never steals it; it doesn't apply in text fields or
+  an open menu.
 - Selected marchers show an accent ring.
 - If the editor closes the show, the window closes.
 

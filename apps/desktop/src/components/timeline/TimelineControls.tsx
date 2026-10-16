@@ -15,8 +15,13 @@ import { Slider } from "@openmarch/ui";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { toggleTimelineLoop } from "@/timeline/timelineTransport";
 import { ShortcutTooltip } from "./ShortcutTooltip";
+import { PlaybackSpeedButton } from "./PlaybackSpeedButton";
 import { TRANSPORT_SHORTCUTS } from "./TimelinePrimitives";
 import { START_INK } from "./startFlagInk";
+import {
+    effectivePlaybackSpeed,
+    usePlaybackSpeedStore,
+} from "@/stores/PlaybackSpeedStore";
 
 export function TimelineMuteButton() {
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
@@ -141,6 +146,26 @@ export function TimelineLoopButton() {
                 <RepeatIcon size={16} weight={looping ? "bold" : "regular"} />
             </button>
         </ShortcutTooltip>
+    );
+}
+
+/** The playback speed button (`PlaybackSpeedButton`) on the playback speed store */
+export function TimelineSpeedButton() {
+    const speed = usePlaybackSpeedStore((s) => s.speed);
+    const playing = usePlaybackSpeedStore(effectivePlaybackSpeed);
+    const held = usePlaybackSpeedStore((s) => s.held.length > 0);
+    const setSpeed = usePlaybackSpeedStore((s) => s.setSpeed);
+    const stepSpeed = usePlaybackSpeedStore((s) => s.stepSpeed);
+    return (
+        <PlaybackSpeedButton
+            speed={speed}
+            playing={playing}
+            held={held}
+            onStep={stepSpeed}
+            onSetSpeed={setSpeed}
+            className="h-24"
+            testId="timeline-speed"
+        />
     );
 }
 

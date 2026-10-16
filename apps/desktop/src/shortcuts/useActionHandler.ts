@@ -11,6 +11,8 @@ interface HandlerOptions {
      * read at each repeat, for state kept outside React (an undo still running). Default false.
      */
     ignoreRepeat?: boolean | (() => boolean);
+    /** Runs when the key that ran the action is let go (or the window loses focus while held) */
+    onRelease?: () => void;
 }
 
 export function useActionHandler(
@@ -32,9 +34,12 @@ export function useActionHandlerGroup(
     const ignoreRepeatRef = useRef<boolean | (() => boolean)>(
         options.ignoreRepeat ?? false,
     );
+    const releaseRef = useRef(options.onRelease);
+    const hasRelease = options.onRelease !== undefined;
     useLayoutEffect(() => {
         runRef.current = run;
         ignoreRepeatRef.current = options.ignoreRepeat ?? false;
+        releaseRef.current = options.onRelease;
     });
     useLayoutEffect(() => {
         if (enabledRef.current === enabled) return;
@@ -55,8 +60,9 @@ export function useActionHandlerGroup(
                     const ignore = ignoreRepeatRef.current;
                     return typeof ignore === "function" ? ignore() : ignore;
                 },
+                release: hasRelease ? () => releaseRef.current?.() : undefined,
             }),
         );
         return () => unregister.forEach((off) => off());
-    }, [idsKey]);
+    }, [idsKey, hasRelease]);
 }

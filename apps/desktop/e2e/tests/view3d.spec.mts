@@ -409,10 +409,12 @@ test("3D View follows the editor and saves the venue", async ({
 
     // Playback from the window: its buttons and the editor's shortcuts run
     // the editor's own actions, and the window follows the result.
-    await view3d.getByTestId("view3d-next-page").click();
+    await view3d.getByTestId("view3d-next").click();
     await expectWindowPage(view3d, "3");
-    await expect(view3d.getByTestId("view3d-next-page")).toBeDisabled();
-    await view3d.getByTestId("view3d-previous-page").click();
+    // As in the editor, Next stays enabled at the last page and does nothing
+    await view3d.getByTestId("view3d-next").click();
+    await expectWindowPage(view3d, "3");
+    await view3d.getByTestId("view3d-previous").click();
     await expectWindowPage(view3d, "2");
     await view3d.keyboard.press("Alt+KeyQ");
     await expectWindowPage(view3d, "0");

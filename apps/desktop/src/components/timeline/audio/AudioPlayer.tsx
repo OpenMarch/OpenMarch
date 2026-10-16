@@ -23,12 +23,24 @@ import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
 import {
     audioEnvelope,
     useAudioEnvelopeStore,
+    type AudioEnvelope,
 } from "@/timeline/timelineWaveform";
+import timeStretchWorkletUrl from "@/timeline/timeStretch.worklet.ts?worker&url";
+import {
+    TIME_STRETCH_PROCESSOR,
+    type StretchMessage,
+} from "@/timeline/timeStretchMessages";
+import {
+    effectivePlaybackSpeed,
+    usePlaybackSpeedStore,
+} from "@/stores/PlaybackSpeedStore";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
 const PLAYBACK_DELAY = 0.1; // Delay in seconds to start playback
+// The live position leads the audio by this much wall time (the delay, plus a little)
+const LIVE_LEAD = PLAYBACK_DELAY + 0.01;
 // Stopping fades the sources out over this many seconds, so a stop or restart doesn't click
 const STOP_FADE = 0.008;
 
@@ -42,6 +54,8 @@ interface PlaybackStartInfo {
     playStartTime: number;
     startTimestamp: number;
     pageDuration: number;
+    /** Playback speed: show seconds per second */
+    rate: number;
 }
 
 // Global reference to store playback start info, used for calculating live playback position
@@ -58,16 +72,18 @@ export const getLivePlaybackPosition = (): number => {
         return 0;
     }
 
-    const { playStartTime, startTimestamp, pageDuration } =
+    const { playStartTime, startTimestamp, pageDuration, rate } =
         playbackStartInfoRef.current;
     return (
         startTimestamp +
         pageDuration +
-        (audioContextRef.currentTime - playStartTime) +
-        PLAYBACK_DELAY +
-        0.01
+        (audioContextRef.currentTime - playStartTime + LIVE_LEAD) * rate
     );
 };
+
+/** The speed playback is running at, 1 while stopped */
+export const getLivePlaybackRate = (): number =>
+    playbackStartInfoRef.current?.rate ?? 1;
 
 /**
  * Moves the live playback position to `seconds` now, without waiting for the audio to restart
@@ -76,15 +92,50 @@ export const getLivePlaybackPosition = (): number => {
  */
 export const restartLivePlaybackAt = (seconds: number): void => {
     if (!audioContextRef || !playbackStartInfoRef.current) return;
+    const { rate } = playbackStartInfoRef.current;
     playbackStartInfoRef.current = {
         playStartTime: audioContextRef.currentTime,
-        startTimestamp: seconds - PLAYBACK_DELAY - 0.01,
+        startTimestamp: seconds - LIVE_LEAD * rate,
         pageDuration: 0,
+        rate,
     };
 };
 
+/** The worklet that plays the music and metronome at any speed, and each one's gain */
+interface PlaybackEngine {
+    node: AudioWorkletNode;
+    musicGain: GainNode;
+    metronomeGain: GainNode;
+    send: (message: StretchMessage, transfer?: Transferable[]) => void;
+}
+
+// Ramps a gain to `value` at `at`, after holding what it had until then
+function rampGain(gain: GainNode, value: number, from: number, to: number) {
+    gain.gain.cancelScheduledValues(from);
+    gain.gain.setValueAtTime(gain.gain.value, from);
+    gain.gain.linearRampToValueAtTime(value, to);
+}
+
+// A volume or mute change while playing. Before the start lands it replaces the gain set for the
+// start, which would otherwise undo it then; the fade-out of a restart isn't cut short
+function setLiveGain(gain: GainNode, value: number, now: number) {
+    const at = Math.max(now, playbackStartInfoRef.current?.playStartTime ?? 0);
+    gain.gain.cancelScheduledValues(at);
+    gain.gain.setValueAtTime(value, at);
+}
+
+// The metronome's gain for the current settings
+function metronomeGainValue(audioVolume: number): number {
+    const masterVolume = calculateMasterVolume(audioVolume, false);
+    const { isMetronomeOn, volume } = useMetronomeStore.getState();
+    return isMetronomeOn && masterVolume > 0
+        ? volumeAdjustment(volume) * masterVolume
+        : 0;
+}
+
 /**
- * The audio player handles playback via Web Audio API.
+ * The audio player handles playback via Web Audio API, at the playback speed
+ * (`PlaybackSpeedStore`) through the time-stretch worklet, which keeps the music's pitch.
  * Metronome controls are managed by MetronomeModal.
  *
  * It runs only the engine: the AudioContext, the music and metronome sources, the live playback
@@ -115,21 +166,16 @@ export default function AudioPlayer() {
     const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
         useMetronomeStore();
 
-    // Audio playback state management
-    const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
-    const audioNode = useRef<AudioBufferSourceNode | null>(null);
-    const audioGainNode = useRef<GainNode | null>(null);
+    // The music and metronome are loaded into the engine; they play once both are
+    const [audioLoaded, setAudioLoaded] = useState<boolean>(false);
+    const [audioEnvelopeState, setAudioEnvelopeState] =
+        useState<AudioEnvelope | null>(null);
     const [isAudioProcessing, setIsAudioProcessing] = useState<boolean>(false);
-
-    // Metronome playback state management
-    const [metronomeBuffer, setMetronomeBuffer] = useState<AudioBuffer | null>(
-        null,
-    );
-    const metroNode = useRef<AudioBufferSourceNode | null>(null);
-    const metroGainNode = useRef<GainNode | null>(null);
+    const [metronomeLoaded, setMetronomeLoaded] = useState<boolean>(false);
 
     // AudioContext state management
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+    const [engine, setEngine] = useState<PlaybackEngine | null>(null);
     // UI-9, UI-11: play starts at the playback cursor (or the playhead when there is none), not
     // the selected page. Every cursor or playhead write restarts playback from it, which is how a
     // preview loops back to its start.
@@ -143,6 +189,7 @@ export default function AudioPlayer() {
     );
     const startSeconds = timeAtBeat(beats, playheadBeat);
     const restartKey = playheadRevision;
+    const playbackSpeed = usePlaybackSpeedStore(effectivePlaybackSpeed);
 
     // Set up AudioContext on the first mount
     useEffect(() => {
@@ -161,37 +208,85 @@ export default function AudioPlayer() {
         }
     }, [audioContext, setAudioContext, t]);
 
+    // Load the time-stretch worklet once the context exists
+    useEffect(() => {
+        if (!audioContext) return;
+        let cancelled = false;
+        let created: PlaybackEngine | null = null;
+        audioContext.audioWorklet
+            .addModule(timeStretchWorkletUrl)
+            .then(() => {
+                if (cancelled) return;
+                const node = new AudioWorkletNode(
+                    audioContext,
+                    TIME_STRETCH_PROCESSOR,
+                    {
+                        numberOfInputs: 0,
+                        numberOfOutputs: 2,
+                        outputChannelCount: [2, 1],
+                    },
+                );
+                const musicGain = audioContext.createGain();
+                const metronomeGain = audioContext.createGain();
+                musicGain.gain.value = 0;
+                metronomeGain.gain.value = 0;
+                node.connect(musicGain, 0).connect(audioContext.destination);
+                node.connect(metronomeGain, 1).connect(
+                    audioContext.destination,
+                );
+                created = {
+                    node,
+                    musicGain,
+                    metronomeGain,
+                    send: (message, transfer) =>
+                        node.port.postMessage(message, transfer ?? []),
+                };
+                setEngine(created);
+            })
+            .catch((error) => {
+                if (cancelled) return;
+                console.error("Audio worklet error", error);
+                toast.error(t("audio.context.error"));
+            });
+        return () => {
+            cancelled = true;
+            // Ends the processor, which would otherwise run on holding the show's music
+            created?.send({ type: "dispose" });
+            created?.node.disconnect();
+            created?.musicGain.disconnect();
+            created?.metronomeGain.disconnect();
+            setEngine(null);
+            setAudioLoaded(false);
+            setMetronomeLoaded(false);
+        };
+    }, [audioContext, t]);
+
     // Populate metronome audio track when beats or measures change
     useEffect(() => {
-        if (!audioContext || !beats.length) return;
+        if (!engine || !beats.length) return;
 
-        const float32Array = createMetronomeWav(
+        const track = createMetronomeWav(
             measures,
             beats,
             accentFirstBeat,
             firstBeatOnly,
             beatStyle,
         );
-        const newBuffer = audioContext.createBuffer(
-            1,
-            float32Array.length,
-            audioContext.sampleRate,
+        // Where each click starts, so the engine can play them unstretched at any speed
+        const firstBeats = new Set(
+            measures.map((m) => m.beats[0]?.index).filter((i) => i != null),
         );
-        // React Native typings expect `Float32Array<ArrayBuffer>` but our metronome util returns
-        // `Float32Array<ArrayBufferLike>`. Explicitly cast so TS understands we are providing the
-        // correct view.
-        void newBuffer.copyToChannel(float32Array as any, 0);
-
-        // Set the metronome buffer in state
-        setMetronomeBuffer(newBuffer);
-    }, [
-        audioContext,
-        beats,
-        measures,
-        firstBeatOnly,
-        beatStyle,
-        accentFirstBeat,
-    ]);
+        const onsets = Float64Array.from(
+            beats
+                .filter((b) => !firstBeatOnly || firstBeats.has(b.index))
+                .map((b) => b.timestamp),
+        ).sort();
+        engine.send({ type: "metronome", track, onsets }, [
+            track.buffer as ArrayBuffer,
+            onsets.buffer,
+        ]);
+        setMetronomeLoaded(true);
+    }, [engine, beats, measures, firstBeatOnly, beatStyle, accentFirstBeat]);
 
     const largestMinimumDuration = useRef(0);
     const minimumAudioDuration = useMemo(() => {
@@ -205,11 +300,9 @@ export default function AudioPlayer() {
     useEffect(() => {
         const { setEnvelope } = useAudioEnvelopeStore.getState();
         setEnvelope(
-            audioBuffer && selectedAudioFile
-                ? audioEnvelope(audioBuffer)
-                : null,
+            audioEnvelopeState && selectedAudioFile ? audioEnvelopeState : null,
         );
-    }, [audioBuffer, selectedAudioFile]);
+    }, [audioEnvelopeState, selectedAudioFile]);
     useEffect(
         () => () => useAudioEnvelopeStore.getState().setEnvelope(null),
         [],
@@ -217,7 +310,7 @@ export default function AudioPlayer() {
 
     // Populate audio data when selectedAudioFile changes
     useEffect(() => {
-        if (!audioContext || !selectedAudioFile) return;
+        if (!audioContext || !engine || !selectedAudioFile) return;
         let isCancelled = false;
         let worker: Worker | null = null;
 
@@ -249,28 +342,29 @@ export default function AudioPlayer() {
                         if (isCancelled) return;
 
                         if (e.data.type === "audioProcessed") {
-                            // Reconstruct the AudioBuffer from the worker's response
-                            const { audioBuffer: bufferData } = e.data;
+                            const { audioBuffer: bufferData } = e.data as {
+                                audioBuffer: {
+                                    numberOfChannels: number;
+                                    length: number;
+                                    sampleRate: number;
+                                    channelData: Float32Array[];
+                                };
+                            };
+                            const channels = bufferData.channelData;
 
-                            const newBuffer = audioContext.createBuffer(
-                                bufferData.numberOfChannels,
-                                bufferData.length,
-                                bufferData.sampleRate,
+                            // The envelope first: the channels then move to the engine
+                            setAudioEnvelopeState(
+                                audioEnvelope({
+                                    ...bufferData,
+                                    getChannelData: (channel) =>
+                                        channels[channel]!,
+                                }),
                             );
-
-                            // Copy channel data back into the AudioBuffer
-                            for (
-                                let i = 0;
-                                i < bufferData.numberOfChannels;
-                                i++
-                            ) {
-                                newBuffer.copyToChannel(
-                                    bufferData.channelData[i],
-                                    i,
-                                );
-                            }
-
-                            setAudioBuffer(newBuffer);
+                            engine.send(
+                                { type: "music", channels },
+                                channels.map((c) => c.buffer as ArrayBuffer),
+                            );
+                            setAudioLoaded(true);
                             setIsAudioProcessing(false);
 
                             // Clean up worker
@@ -333,6 +427,7 @@ export default function AudioPlayer() {
         };
     }, [
         audioContext,
+        engine,
         selectedAudioFile,
         audioOffsetSeconds,
         minimumAudioDuration,
@@ -343,103 +438,56 @@ export default function AudioPlayer() {
     useEffect(() => {
         if (
             !audioContext ||
-            !audioBuffer ||
-            !metronomeBuffer ||
+            !engine ||
+            !audioLoaded ||
+            !metronomeLoaded ||
             isAudioProcessing
         )
             return;
 
-        // Fades a source out and stops it, then disconnects it and its gain
-        const fadeOut = (
-            source: AudioBufferSourceNode,
-            gain: GainNode | null,
-        ) => {
-            const now = audioContext.currentTime;
-            if (gain) {
-                gain.gain.cancelScheduledValues(now);
-                gain.gain.setValueAtTime(gain.gain.value, now);
-                gain.gain.linearRampToValueAtTime(0, now + STOP_FADE);
-            }
-            try {
-                source.stop(now + STOP_FADE);
-            } catch (e) {
-                // Already stopped or not playing, ignore
-            }
-            setTimeout(
-                () => {
-                    source.disconnect();
-                    gain?.disconnect();
-                },
-                STOP_FADE * 1000 + 20,
-            );
-        };
-
-        // Helper to stop playback
+        // Fades both out, then stops the engine, so a stop or restart doesn't click
         const stopPlayback = () => {
-            if (audioNode.current) {
-                fadeOut(audioNode.current, audioGainNode.current);
-                audioNode.current = null;
-            } else audioGainNode.current?.disconnect();
-            audioGainNode.current = null;
-            if (metroNode.current) {
-                fadeOut(metroNode.current, metroGainNode.current);
-                metroNode.current = null;
-            }
+            const now = audioContext.currentTime;
+            rampGain(engine.musicGain, 0, now, now + STOP_FADE);
+            rampGain(engine.metronomeGain, 0, now, now + STOP_FADE);
+            engine.send({ type: "stop", at: now + STOP_FADE });
         };
 
-        // If started playback, create a new source node
         if (isPlaying) {
-            stopPlayback();
-
+            // A browser starts a context made before any click suspended. Starting a buffer
+            // source used to resume it; the worklet has none, so Play resumes it (Play always
+            // follows a click or key, so the browser allows it). The clock holds while suspended,
+            // so the start below still lands PLAYBACK_DELAY after the audio runs
+            if (audioContext.state === "suspended") void audioContext.resume();
             const startAt = audioContext.currentTime + PLAYBACK_DELAY;
-
-            const audioSource = audioContext.createBufferSource();
-            audioSource.buffer = audioBuffer;
-            audioGainNode.current = audioContext.createGain();
-            audioGainNode.current.gain.value = calculateMasterVolume(
-                audioVolume,
-                audioMuted,
+            const rate = effectivePlaybackSpeed(
+                usePlaybackSpeedStore.getState(),
             );
-            audioSource
-                .connect(audioGainNode.current)
-                .connect(audioContext.destination);
-
-            const metroSource = audioContext.createBufferSource();
-            metroGainNode.current = audioContext.createGain();
+            const { audioVolume: volume, audioMuted: muted } =
+                useUiSettingsStore.getState().uiSettings;
             // The volume scales both; mute silences the music only, so the metronome can count
-            // through it (UI-12)
-            const masterVolume = calculateMasterVolume(audioVolume, false);
-            // Read metronome settings at playback start, live changes update gain below without restarting
-            const { isMetronomeOn: metronomeOn, volume: metronomeVolume } =
-                useMetronomeStore.getState();
-            metroGainNode.current.gain.value =
-                metronomeOn && masterVolume > 0
-                    ? volumeAdjustment(metronomeVolume) * masterVolume
-                    : 0;
-            metroSource.buffer = metronomeBuffer;
-            metroSource
-                .connect(metroGainNode.current)
-                .connect(audioContext.destination);
-
-            audioSource.start(startAt, startSeconds);
-            metroSource.start(startAt, startSeconds);
-
-            // Only clear the ref if it still points at this source, a restart may have replaced it
-            audioSource.onended = () => {
-                if (audioNode.current === audioSource) audioNode.current = null;
-            };
-            metroSource.onended = () => {
-                if (metroNode.current === metroSource) metroNode.current = null;
-            };
-
-            audioNode.current = audioSource;
-            metroNode.current = metroSource;
+            // through it (UI-12). Live changes update the gains below without restarting
+            engine.musicGain.gain.setValueAtTime(
+                calculateMasterVolume(volume, muted),
+                startAt,
+            );
+            engine.metronomeGain.gain.setValueAtTime(
+                metronomeGainValue(volume),
+                startAt,
+            );
+            engine.send({
+                type: "play",
+                at: startAt,
+                from: startSeconds,
+                rate,
+            });
 
             // Store playback tracking info for live position
             playbackStartInfoRef.current = {
                 playStartTime: startAt,
                 startTimestamp: startSeconds,
                 pageDuration: 0,
+                rate,
             };
         } else {
             // If not playing, stop any existing playback
@@ -455,35 +503,61 @@ export default function AudioPlayer() {
         };
     }, [
         isPlaying,
-        audioBuffer,
+        engine,
+        audioLoaded,
         audioContext,
         isAudioProcessing,
-        metronomeBuffer,
+        metronomeLoaded,
         startSeconds,
         restartKey,
-        audioVolume,
-        audioMuted,
     ]);
+
+    // A speed change while playing keeps the show's position: the engine and the live clock
+    // both change speed from now
+    useEffect(() => {
+        const info = playbackStartInfoRef.current;
+        if (!audioContext || !engine || !info || info.rate === playbackSpeed)
+            return;
+        const now = audioContext.currentTime;
+        if (now < info.playStartTime) {
+            // Not started yet: it starts at the new speed
+            engine.send({
+                type: "rate",
+                at: info.playStartTime,
+                rate: playbackSpeed,
+            });
+            playbackStartInfoRef.current = { ...info, rate: playbackSpeed };
+            return;
+        }
+        // Where the audio is now, behind the live position by its lead
+        const audioSeconds = getLivePlaybackPosition() - LIVE_LEAD * info.rate;
+        engine.send({ type: "rate", at: now, rate: playbackSpeed });
+        playbackStartInfoRef.current = {
+            playStartTime: now,
+            startTimestamp: audioSeconds,
+            pageDuration: 0,
+            rate: playbackSpeed,
+        };
+    }, [audioContext, engine, playbackSpeed]);
 
     // Update metronome on/off state and volume
     useEffect(() => {
-        if (metroGainNode.current) {
-            const masterVolume = calculateMasterVolume(audioVolume, false);
-            metroGainNode.current.gain.value =
-                isMetronomeOn && masterVolume > 0
-                    ? volumeAdjustment(volume) * masterVolume
-                    : 0;
-        }
-    }, [audioVolume, isMetronomeOn, volume]);
+        if (audioContext && engine && playbackStartInfoRef.current)
+            setLiveGain(
+                engine.metronomeGain,
+                metronomeGainValue(audioVolume),
+                audioContext.currentTime,
+            );
+    }, [audioContext, engine, audioVolume, isMetronomeOn, volume]);
 
     useEffect(() => {
-        if (audioGainNode.current) {
-            audioGainNode.current.gain.value = calculateMasterVolume(
-                audioVolume,
-                audioMuted,
+        if (audioContext && engine && playbackStartInfoRef.current)
+            setLiveGain(
+                engine.musicGain,
+                calculateMasterVolume(audioVolume, audioMuted),
+                audioContext.currentTime,
             );
-        }
-    }, [audioMuted, audioVolume]);
+    }, [audioContext, engine, audioMuted, audioVolume]);
 
     if (!contextsReady) {
         console.warn(

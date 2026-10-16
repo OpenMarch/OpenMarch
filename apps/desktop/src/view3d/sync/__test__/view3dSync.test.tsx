@@ -13,8 +13,11 @@ import {
 import {
     relayInvalidations,
     relayTimelineChanges,
+    useView3dPlaybackRequests,
     useView3dPublisher,
 } from "../useView3dPublisher";
+import { registerActionHandler } from "@/shortcuts/registry";
+import { usePlaybackSpeedStore } from "@/stores/PlaybackSpeedStore";
 import { emitTimelineChange } from "@/db-functions/timelineChanges";
 import {
     applyInvalidate,
@@ -30,6 +33,9 @@ const clock = (overrides: Partial<View3dClock> = {}): View3dClock => ({
     anchorShowMs: 5000,
     anchorWallMs: 1000,
     rate: 1,
+    speed: 1,
+    chosenSpeed: 1,
+    playLoops: false,
     ...overrides,
 });
 
@@ -259,5 +265,70 @@ describe("useView3dPublisher", () => {
         expect(warn).toHaveBeenCalled();
         expect(qc.getMutationCache().getAll()).toHaveLength(0);
         warn.mockRestore();
+    });
+});
+
+describe("useView3dPlaybackRequests", () => {
+    type Request = { action: unknown; release?: unknown };
+    let onRequest: ((request: Request) => void) | undefined;
+    let onWindowState: ((open: boolean) => void) | undefined;
+    const originalElectron = window.electron;
+    const log: string[] = [];
+    let unregister: () => void;
+
+    beforeEach(() => {
+        log.length = 0;
+        window.electron = {
+            onView3dPlaybackRequest: (cb: (request: Request) => void) => {
+                onRequest = cb;
+                return () => (onRequest = undefined);
+            },
+            onView3dWindowState: (cb: (open: boolean) => void) => {
+                onWindowState = cb;
+                return () => (onWindowState = undefined);
+            },
+        } as unknown as Window["electron"];
+        unregister = registerActionHandler("holdFasterPlayback", {
+            run: () => log.push("press"),
+            isEnabled: () => true,
+            release: () => log.push("release"),
+        });
+    });
+
+    afterEach(() => {
+        unregister();
+        window.electron = originalElectron;
+    });
+
+    it("holds a speed key until the window lets go of it", () => {
+        renderHook(() => useView3dPlaybackRequests());
+        onRequest?.({ action: "holdFasterPlayback" });
+        expect(log).toEqual(["press"]);
+        onRequest?.({ action: "holdFasterPlayback", release: true });
+        expect(log).toEqual(["press", "release"]);
+        // A stray release does nothing
+        onRequest?.({ action: "holdFasterPlayback", release: true });
+        expect(log).toEqual(["press", "release"]);
+    });
+
+    it("chooses a speed the window asks for, within the limits", () => {
+        renderHook(() => useView3dPlaybackRequests());
+        onRequest?.({ action: "setPlaybackSpeed", speed: 0.75 });
+        expect(usePlaybackSpeedStore.getState().speed).toBe(0.75);
+        onRequest?.({ action: "setPlaybackSpeed", speed: 99 });
+        expect(usePlaybackSpeedStore.getState().speed).toBe(8);
+        onRequest?.({ action: "setPlaybackSpeed", speed: "2" });
+        expect(usePlaybackSpeedStore.getState().speed).toBe(8);
+        usePlaybackSpeedStore.getState().setSpeed(1);
+    });
+
+    it("lets go when the window closes with the key held", () => {
+        const { unmount } = renderHook(() => useView3dPlaybackRequests());
+        onRequest?.({ action: "holdFasterPlayback" });
+        onWindowState?.(false);
+        expect(log).toEqual(["press", "release"]);
+        onRequest?.({ action: "holdFasterPlayback" });
+        unmount();
+        expect(log).toEqual(["press", "release", "press", "release"]);
     });
 });

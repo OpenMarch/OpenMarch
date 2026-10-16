@@ -18,6 +18,7 @@ import {
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_PLAYBACK_REQUEST_CHANNEL,
     VIEW3D_PUBLISH_CHANNELS,
+    VIEW3D_SET_SPEED,
     VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL,
     VIEW3D_WINDOW_STATE_CHANNEL,
     type View3dPublishChannel,
@@ -47,7 +48,7 @@ type FromView3d =
     | { type: "hello" }
     | { type: "bye" }
     | { type: "venue"; settings: unknown }
-    | { type: "playback"; action: unknown }
+    | { type: "playback"; action: unknown; release?: unknown; speed?: unknown }
     | {
           type: "sql";
           id: number;
@@ -189,6 +190,8 @@ export function registerView3dHost() {
                 case "playback":
                     emit(VIEW3D_PLAYBACK_REQUEST_CHANNEL, {
                         action: message.action,
+                        release: message.release,
+                        speed: message.speed,
                     });
                     break;
                 case "sql":
@@ -375,7 +378,10 @@ export function installView3dApi() {
             };
         },
         requestVenueChange: (settings) => post({ type: "venue", settings }),
-        requestPlayback: (action) => post({ type: "playback", action }),
+        requestPlayback: (action, release = false) =>
+            post({ type: "playback", action, release }),
+        requestPlaybackSpeed: (speed) =>
+            post({ type: "playback", action: VIEW3D_SET_SPEED, speed }),
     };
     (window as unknown as { view3d: View3dApi }).view3d = api;
 }

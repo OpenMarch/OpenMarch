@@ -82,6 +82,12 @@
             "play": "Play",
             "playPage": "Play from playhead / pause",
             "playPause": "Play / stop",
+            "holdFaster": "Double speed while held",
+            "holdSlower": "Half speed while held",
+            "nextSpeed": "Next playback speed",
+            "previousSpeed": "Previous playback speed",
+            "resetSpeed": "Normal playback speed",
+            "speedKeywords": "speed rate slow fast tempo playback",
             "toggleMetronome": "Toggle metronome",
             "toggleLoop": "Loop on / off"
         },
@@ -2183,11 +2189,7 @@
             "graphicsUnavailable": "3D View needs WebGL, which isn't available on this computer."
         },
         "playback": {
-            "label": "Playback",
-            "play": "Play (Space)",
-            "pause": "Pause (Space)",
-            "previousPage": "Previous page (Q)",
-            "nextPage": "Next page (E)"
+            "label": "Playback"
         },
         "settings": {
             "title": "View settings",

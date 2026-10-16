@@ -11,6 +11,10 @@ const TRANSPORT_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "toggleLoop",
     "playPage",
     "toggleMetronome",
+    "holdFasterPlayback",
+    "holdSlowerPlayback",
+    "nextPlaybackSpeed",
+    "resetPlaybackSpeed",
 ]);
 
 export function useTimelineActionEffects() {

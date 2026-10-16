@@ -63,6 +63,8 @@ describe("library protocol", () => {
             "on",
             "requestVenueChange",
             "requestPlayback",
+            // ADR 0002 D-4 extension 2026-10-16 (#216)
+            "requestPlaybackSpeed",
         ]);
     });
 

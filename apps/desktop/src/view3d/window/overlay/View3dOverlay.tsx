@@ -10,8 +10,9 @@
  * In fullscreen, everything but the readout hides after 3 s without pointer
  * movement (not while the settings panel is open), and the readout grows.
  *
- * Keys: Space, Q and E (Shift for a beat, Alt or Home/End for the ends) run
- * the editor's playback actions, F toggles fullscreen and C the crowd. Esc
+ * Keys: Space (Shift+Space from the playhead), Q and E (Shift for a beat,
+ * Alt or Home/End for the ends), and
+ * ] and [ held for double or half speed, run the editor's playback actions, F toggles fullscreen and C the crowd. Esc
  * closes the settings panel, then leaves fullscreen. The camera rig (P3.2)
  * owns 1–9, and Esc for pick-a-seat.
  */
@@ -26,7 +27,8 @@ import clsx from "clsx";
 import { useCameraStore } from "../camera/cameraStore";
 import { CameraBar } from "./CameraBar";
 import { Panel, ToggleButton } from "./Panel";
-import { playbackActionForKey } from "./playback";
+import { HELD_PLAYBACK_ACTIONS, playbackActionForKey } from "./playback";
+import type { View3dPlaybackAction } from "@/view3d/sync/protocol";
 import { Readout } from "./Readout";
 import { SettingsPanel } from "./SettingsPanel";
 import { TransportBar } from "./TransportBar";
@@ -46,25 +48,51 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 
 /**
  * Space, Q and E (with or without Shift) ask the editor to play, pause or
- * step, with the editor's own shortcuts. This listens in the capture phase
- * and cancels the key, so Space never also presses the focused button.
+ * step, and ] and [ to change speed while held, with the editor's own
+ * shortcuts. This listens in the capture phase and cancels the key, so Space
+ * never also presses the focused button.
  */
 function usePlaybackShortcuts() {
     useEffect(() => {
+        // Held speed keys by physical key, let go on keyup or when the window
+        // loses focus
+        const held = new Map<string, View3dPlaybackAction>();
+        const letGo = (code: string) => {
+            const action = held.get(code);
+            if (!action) return;
+            held.delete(code);
+            window.view3d.requestPlayback(action, true);
+        };
+        const letGoAll = () => [...held.keys()].forEach(letGo);
         const onKeyDown = (event: KeyboardEvent) => {
             if (isTypingTarget(event.target)) return;
             const action = playbackActionForKey(event);
             if (!action) return;
             event.preventDefault();
-            // Holding Q or E steps through pages; holding Space doesn't flicker.
-            if (event.repeat && action === "playPause") return;
+            // Holding Q or E steps through pages; holding Space doesn't
+            // flicker, and a held speed key holds.
+            if (
+                event.repeat &&
+                (action === "playPause" ||
+                    action === "playPage" ||
+                    HELD_PLAYBACK_ACTIONS.has(action))
+            )
+                return;
+            if (HELD_PLAYBACK_ACTIONS.has(action)) held.set(event.code, action);
             window.view3d.requestPlayback(action);
         };
+        const onKeyUp = (event: KeyboardEvent) => letGo(event.code);
         window.addEventListener("keydown", onKeyDown, { capture: true });
-        return () =>
+        window.addEventListener("keyup", onKeyUp);
+        window.addEventListener("blur", letGoAll);
+        return () => {
             window.removeEventListener("keydown", onKeyDown, {
                 capture: true,
             });
+            window.removeEventListener("keyup", onKeyUp);
+            window.removeEventListener("blur", letGoAll);
+            letGoAll();
+        };
     }, []);
 }
 

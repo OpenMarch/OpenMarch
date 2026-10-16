@@ -36,6 +36,7 @@ import {
     TimelineCompactButton,
     TimelineLoopButton,
     TimelineSoundButton,
+    TimelineSpeedButton,
 } from "./TimelineControls";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
@@ -118,7 +119,13 @@ function useBasicTimelineExtras(pages: readonly Page[]) {
 // The transport's controls read their own state: the same elements every render, so the
 // memoized transport doesn't re-render for them
 const SOUND_BUTTON = <TimelineSoundButton />;
-const LOOP_BUTTON = <TimelineLoopButton />;
+const LOOP_BUTTONS = (
+    <>
+        <TimelineLoopButton />
+        <TimelineSpeedButton />
+    </>
+);
+const SPEED_BUTTON = <TimelineSpeedButton />;
 const COMPACT_BUTTON = <TimelineCompactButton />;
 
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
@@ -402,7 +409,7 @@ export default function TimelineModePanel() {
                     pages={pages}
                     measures={measures}
                     timelines={basic ? NO_CLIPS : offPage}
-                    transportAccessories={basic ? undefined : LOOP_BUTTON}
+                    transportAccessories={basic ? SPEED_BUTTON : LOOP_BUTTONS}
                     transportSecondary={SOUND_BUTTON}
                     transportViewControls={basic ? undefined : COMPACT_BUTTON}
                     holdMarks={holdMarks}

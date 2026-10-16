@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { playbackActionForKey, transportState } from "../playback";
-
-const pages = [
-    { id: 10, order: 2 },
-    { id: 7, order: 1 },
-    { id: 3, order: 3 },
-];
+import { playbackActionForKey } from "../playback";
 
 const key = (code: string, mods: Partial<Record<string, boolean>> = {}) => ({
     code,
@@ -16,46 +10,17 @@ const key = (code: string, mods: Partial<Record<string, boolean>> = {}) => ({
     ...mods,
 });
 
-describe("transportState", () => {
-    it("allows every step from a middle page while paused", () => {
-        expect(transportState(pages, 10, false)).toEqual({
-            playPause: true,
-            previousPage: true,
-            firstPage: true,
-            nextPage: true,
-            lastPage: true,
-            previousBeat: true,
-            nextBeat: true,
-        });
-    });
-
-    it("sorts by order, not by id or array position", () => {
-        const first = transportState(pages, 7, false);
-        expect(first.previousPage).toBe(false);
-        expect(first.nextPage).toBe(true);
-        const last = transportState(pages, 3, false);
-        expect(last.nextPage).toBe(false);
-        expect(last.playPause).toBe(false);
-        expect(last.previousPage).toBe(true);
-    });
-
-    it("allows only pause while playing", () => {
-        expect(transportState(pages, 3, true)).toEqual({
-            playPause: true,
-            previousPage: false,
-            firstPage: false,
-            nextPage: false,
-            lastPage: false,
-            previousBeat: false,
-            nextBeat: false,
-        });
-    });
-
-    it("allows nothing without a selected page", () => {
-        expect(Object.values(transportState(pages, null, false))).toEqual(
-            Array(7).fill(false),
+describe("speed keys", () => {
+    it("] and [ hold double and half speed; with Shift they're nothing", () => {
+        expect(playbackActionForKey(key("BracketRight"))).toBe(
+            "holdFasterPlayback",
         );
-        expect(Object.values(transportState([], 1, false))).not.toContain(true);
+        expect(playbackActionForKey(key("BracketLeft"))).toBe(
+            "holdSlowerPlayback",
+        );
+        expect(
+            playbackActionForKey(key("BracketRight", { shiftKey: true })),
+        ).toBeNull();
     });
 });
 
@@ -85,8 +50,11 @@ describe("playbackActionForKey", () => {
         expect(playbackActionForKey(key("KeyE", { ctrlKey: true }))).toBeNull();
         expect(playbackActionForKey(key("KeyQ", { metaKey: true }))).toBeNull();
         expect(playbackActionForKey(key("Space", { altKey: true }))).toBeNull();
-        expect(
-            playbackActionForKey(key("Space", { shiftKey: true })),
-        ).toBeNull();
+    });
+
+    it("Shift+Space plays from the playhead, as in the editor", () => {
+        expect(playbackActionForKey(key("Space", { shiftKey: true }))).toBe(
+            "playPage",
+        );
     });
 });

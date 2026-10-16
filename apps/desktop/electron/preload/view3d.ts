@@ -90,13 +90,22 @@ const VIEW3D_API = {
         } satisfies View3dVenueChangeRequest),
 
     /**
-     * Asks the editor to run a playback action (play/pause, previous, next,
-     * first or last page), as its own button would. The new clock and
-     * selection arrive on `view3d:clock` and `view3d:selection`.
+     * Asks the editor to run a playback action (play/pause, a page or beat
+     * step, a playback speed), as its own button or key would. With
+     * `release`, the key that ran a held action (a speed key) was let go. The
+     * new clock and selection arrive on `view3d:clock` and `view3d:selection`.
      */
-    requestPlayback: (action: View3dPlaybackAction) =>
+    requestPlayback: (action: View3dPlaybackAction, release = false) =>
         ipcRenderer.send("view3d:playback-request", {
             action,
+            release,
+        } satisfies View3dPlaybackRequest),
+
+    /** Asks the editor to choose this playback speed (`VIEW3D_SET_SPEED`). */
+    requestPlaybackSpeed: (speed: number) =>
+        ipcRenderer.send("view3d:playback-request", {
+            action: "setPlaybackSpeed",
+            speed,
         } satisfies View3dPlaybackRequest),
 };
 

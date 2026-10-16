@@ -49,6 +49,39 @@ describe("readShortcutContext", () => {
 });
 
 describe("ShortcutDispatcher", () => {
+    it("lets go of a held action when its key comes up, or the window loses focus", () => {
+        const run = vi.fn();
+        const release = vi.fn();
+        offs.push(
+            registerActionHandler("holdFasterPlayback", {
+                run,
+                release,
+                isEnabled: () => true,
+            }),
+        );
+        render(<ShortcutDispatcher />);
+        fireEvent.keyDown(window, { key: "]", code: "BracketRight" });
+        fireEvent.keyDown(window, {
+            key: "]",
+            code: "BracketRight",
+            repeat: true,
+        });
+        expect(run).toHaveBeenCalledTimes(1);
+        expect(release).not.toHaveBeenCalled();
+        // Another key coming up doesn't
+        fireEvent.keyUp(window, { key: "e", code: "KeyE" });
+        expect(release).not.toHaveBeenCalled();
+        fireEvent.keyUp(window, { key: "]", code: "BracketRight" });
+        expect(release).toHaveBeenCalledTimes(1);
+
+        fireEvent.keyDown(window, { key: "]", code: "BracketRight" });
+        fireEvent.blur(window);
+        expect(release).toHaveBeenCalledTimes(2);
+        // Released once only
+        fireEvent.keyUp(window, { key: "]", code: "BracketRight" });
+        expect(release).toHaveBeenCalledTimes(2);
+    });
+
     it("runs the matched canvas action and prevents default", () => {
         const run = handle("nextPage");
         render(<ShortcutDispatcher />);

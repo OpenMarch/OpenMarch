@@ -303,6 +303,45 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["C"],
     },
+    // Playback speed: held, ] plays at double the speed and [ at half, back on release (VLC and
+    // mpv use the brackets for speed). Hidden from the palette, which can't hold a key
+    holdFasterPlayback: {
+        labelKey: "actions.playback.holdFaster",
+        category: "playback",
+        scope: "canvas",
+        defaultBindings: ["BracketRight"],
+        ignoreRepeat: true,
+        hiddenFromPalette: true,
+    },
+    holdSlowerPlayback: {
+        labelKey: "actions.playback.holdSlower",
+        category: "playback",
+        scope: "canvas",
+        defaultBindings: ["BracketLeft"],
+        ignoreRepeat: true,
+        hiddenFromPalette: true,
+    },
+    nextPlaybackSpeed: {
+        labelKey: "actions.playback.nextSpeed",
+        keywordsKey: "actions.playback.speedKeywords",
+        category: "playback",
+        scope: "global",
+        defaultBindings: [],
+    },
+    previousPlaybackSpeed: {
+        labelKey: "actions.playback.previousSpeed",
+        keywordsKey: "actions.playback.speedKeywords",
+        category: "playback",
+        scope: "global",
+        defaultBindings: [],
+    },
+    resetPlaybackSpeed: {
+        labelKey: "actions.playback.resetSpeed",
+        keywordsKey: "actions.playback.speedKeywords",
+        category: "playback",
+        scope: "global",
+        defaultBindings: [],
+    },
     toggleMetronome: {
         labelKey: "actions.playback.toggleMetronome",
         category: "playback",
