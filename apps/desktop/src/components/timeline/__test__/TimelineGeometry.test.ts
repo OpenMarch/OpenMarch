@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     clientXToNearestBeat,
     filterMarkersByMinimumSpacing,
+    getLastFlagBeat,
     getPageCountAt,
     parseTimelineGoTo,
     getPageRange,
@@ -445,6 +446,24 @@ describe("counts past the last flag", () => {
         expect(isPastLastFlag(model, lastFlag + 1)).toBe(true);
         expect(isPastLastFlag(model, lastFlag)).toBe(false);
         expect(isPastLastFlag(model, 3)).toBe(false);
+    });
+
+    it("finds the last page's flag, where the bar is muted past", () => {
+        expect(getLastFlagBeat(model)).toBe(lastFlag);
+        expect(
+            getLastFlagBeat({
+                pages: [
+                    ...model.pages,
+                    // Out of order: the last page is the latest one, not the last listed
+                    { id: "early", label: "x", atBeat: 1, isInitial: false },
+                ],
+            }),
+        ).toBe(lastFlag);
+        expect(
+            getLastFlagBeat({
+                pages: [{ id: "p0", label: "0", atBeat: 0, isInitial: true }],
+            }),
+        ).toBeNull();
     });
 });
 

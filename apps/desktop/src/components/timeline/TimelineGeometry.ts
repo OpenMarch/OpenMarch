@@ -444,6 +444,20 @@ export const getPlayheadLabel = (
         : readout.page;
 };
 
+/**
+ * The last page's flag: where the show's pages run out, and the timeline past it is muted. Null
+ * when the show has no timed page, or the last one has no flag.
+ */
+export const getLastFlagBeat = (
+    model: Pick<TimelineViewModel, "pages">,
+): BeatPosition | null => {
+    let last: TimelinePageMarker | undefined;
+    for (const page of model.pages)
+        if (!page.isInitial && (!last || page.atBeat > last.atBeat))
+            last = page;
+    return last?.endBeat ?? null;
+};
+
 /** Whether no page flag lies at or after the beat, so the counts since the last flag matter */
 export const isPastLastFlag = (
     model: Pick<TimelineViewModel, "pages">,

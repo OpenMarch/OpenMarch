@@ -62,6 +62,7 @@ import {
     TIMELINE_PAGE_ROW_BOTTOM,
     TIMELINE_PAGE_ROW_HEIGHT,
     TIMELINE_PAGE_ROW_TOP,
+    getLastFlagBeat,
 } from "./TimelineGeometry";
 import {
     KEEP_MENU_EVENTS,
@@ -1204,6 +1205,38 @@ export const TimelinePageLines = memo(function TimelinePageLines({
                     />
                 ))}
         </div>
+    );
+});
+
+/**
+ * The page row past the last page's flag, shaded darker: the pages have run out there. The counts
+ * under it stay as they are, and it takes no presses.
+ */
+export const TimelinePastEndShade = memo(function TimelinePastEndShade({
+    pages,
+    pixelsPerBeat,
+    width,
+}: {
+    pages: readonly TimelinePageMarker[];
+    pixelsPerBeat: number;
+    width: number;
+}) {
+    const lastFlag = getLastFlagBeat({ pages });
+    if (lastFlag === null) return null;
+    const left = Math.round(beatToX(lastFlag, pixelsPerBeat)) + 1;
+    if (left >= width) return null;
+    return (
+        <div
+            aria-hidden="true"
+            data-testid="timeline-past-end-shade"
+            className="pointer-events-none absolute bg-black/[0.07] dark:bg-black/40"
+            style={{
+                top: TIMELINE_PAGE_ROW_TOP,
+                left,
+                width: width - left,
+                height: TIMELINE_PAGE_ROW_HEIGHT,
+            }}
+        />
     );
 });
 
