@@ -9,13 +9,8 @@
  * Every v4 body shares one skeleton, so one geometry serves all body types.
  */
 import * as THREE from "three";
-import {
-    instancedGeometry,
-    writeMarcher,
-    writeMatrix,
-    type Bake,
-    type MarcherClip,
-} from "@/view3d/vendor/om-pose/instanced-marchers.js";
+import { writeMatrix } from "@/view3d/render/instanced-marchers.js";
+import { composedGeometry, writeInstance } from "@/view3d/render/composer";
 import { instrumentModel, type Detail } from "@/view3d/core/instruments";
 import { hold as holdFor } from "@/view3d/core/instruments/holds";
 import {
@@ -51,18 +46,12 @@ interface HornGroup {
 export class HornSet {
     readonly meshes: THREE.InstancedMesh[] = [];
     private readonly groups: HornGroup[] = [];
-    /** The latest clip per slot, copied into whichever instance the slot lands on. */
-    private readonly clips = new Map<number, MarcherClip>();
-    private dirty = true;
-
     constructor(
         bodies: ReadonlyMap<BodyType, LoadedBody>,
-        bake: Bake,
         looks: readonly MarcherSlotLook[],
         quality: MarcherQuality,
         private readonly material: THREE.Material,
     ) {
-        void bake;
         const skeleton = bodies.values().next().value!.mesh.skeleton;
         const byLook = new Map<
             string,
@@ -98,7 +87,7 @@ export class HornSet {
                     look.options.carryColor ?? DEFAULT_PRIMARY,
                 );
                 const mesh = new THREE.InstancedMesh(
-                    instancedGeometry(THREE, source, slots.length),
+                    composedGeometry(source, slots.length),
                     material,
                     slots.length,
                 );
@@ -121,16 +110,10 @@ export class HornSet {
         return this.meshes.length;
     }
 
-    /** Sets what slot `slot` plays; it reaches the instance on the next frame. */
-    setClip(slot: number, clip: MarcherClip): void {
-        this.clips.set(slot, clip);
-        this.dirty = true;
-    }
-
     /**
      * Places every placed slot's instrument in its tier's mesh, packed, and
-     * copies its clip in when its instance changed. `camera` null draws
-     * everything at full detail.
+     * points each instance at its slot when the packing changed. `camera`
+     * null draws everything at full detail.
      */
     writeFrame(
         xz: Float32Array,
@@ -165,7 +148,6 @@ export class HornSet {
             g.tiers.forEach((t, k) => {
                 const list = lists[k];
                 const changed =
-                    this.dirty ||
                     list.length !== t.slots.length ||
                     list.some((s, i) => s !== t.slots[i]);
                 const matrices = t.mesh.instanceMatrix.array as Float32Array;
@@ -178,17 +160,13 @@ export class HornSet {
                         heading[slot],
                         scale[slot],
                     );
-                    if (changed) {
-                        const clip = this.clips.get(slot);
-                        if (clip) writeMarcher(t.mesh, i, clip);
-                    }
+                    if (changed) writeInstance(t.mesh, i, slot);
                 });
                 t.mesh.count = list.length;
                 t.mesh.instanceMatrix.needsUpdate = true;
                 t.slots = list;
             });
         }
-        this.dirty = false;
     }
 
     dispose(): void {

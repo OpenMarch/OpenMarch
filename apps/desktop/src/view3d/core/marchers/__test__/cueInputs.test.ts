@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compileCues, type CueInput } from "@openmarch/core";
 import { marcherCueInputs } from "../cueInputs";
+import { headingAt, type MarcherPlan } from "../planner";
 
 const DEG = Math.PI / 180;
 
@@ -162,6 +163,27 @@ describe("Facing cues", () => {
         expect(h.slice(0, 7)).toEqual(Array(7).fill(0)); // show clicks -1..5
         expect(Math.abs(h[7])).toBeCloseTo(Math.PI, 9); // show click 6
         expect(Math.abs(h[10])).toBeCloseTo(Math.PI, 9);
+    });
+
+    it("snap in fixed time: 0.2 s before the click, not over the count", () => {
+        // "back on 6" as a snap, at 120 bpm: 0.2 s is 0.4 of a count
+        const out = inputs(drill(holds(10)), [
+            on(1, 6, "builtin:facing.back", { transitionLength: 1 }),
+        ]);
+        expect(out.turnSpan[7]).toBeCloseTo(0.4, 9); // into show click 6
+        expect(out.turnSpan[6]).toBe(1);
+        const plan = {
+            events: [],
+            counts: 11,
+            headings: out.heading,
+            turnSpan: out.turnSpan,
+        } as MarcherPlan;
+        // plan boundary 7 is show click 6: still front at show count 5.5
+        expect(headingAt(plan, 6.5)).toBeCloseTo(0, 9);
+        expect(headingAt(plan, 6.6)).toBeCloseTo(0, 9);
+        // halfway through the 0.4 counts, halfway round
+        expect(Math.abs(headingAt(plan, 6.8))).toBeCloseTo(Math.PI / 2, 9);
+        expect(Math.abs(headingAt(plan, 7))).toBeCloseTo(Math.PI, 9);
     });
 
     it("ease through a longer transition, halfway at its middle", () => {

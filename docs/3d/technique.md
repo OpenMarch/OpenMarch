@@ -318,8 +318,8 @@ them.
   stands. Direction of travel faces the way each step goes and keeps the
   last direction on a hold.
 - **Turning** (2026-10-10): the whole performer turns over the Facing
-  transition, the short way round. A snap turns over the count before its
-  click for now.
+  transition, the short way round. A snap turns in fixed time, about 0.2 s
+  ending on its click, at any tempo (2026-10-11, the glossary's snap).
 - **Slides face the 50 with the front facing only** (2026-10-10). With any
   other facing the legs march forward when the travel is within 90 degrees
   of the facing, backward past it, and slide within the slide band of

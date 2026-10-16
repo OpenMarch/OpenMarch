@@ -17,7 +17,6 @@ module.exports = {
         "**/src/styles/**/*.css",
         ".eslintrc.cjs",
         "**/astro.d.ts",
-        "**/view3d/vendor/**/*.js",
     ],
     parser: "@typescript-eslint/parser",
     parserOptions: {

@@ -7,8 +7,8 @@ import { prepBase } from "./platformClip";
 import { plainRow } from "@/view3d/core/marchers/planner";
 import { useEffect, useMemo, useState } from "react";
 import type { AnimationClip } from "three";
-import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
-import type { Bake } from "@/view3d/vendor/om-pose/instanced-marchers.js";
+import type { Manifest } from "@/view3d/render/step-blend.js";
+import type { ChannelBake } from "@/view3d/render/channelBake";
 import {
     classSuffix,
     type BodyType,
@@ -23,11 +23,11 @@ import {
 import {
     MarcherBodies,
     bakeForBodies,
-    slotHoldId,
     type MarcherQuality,
     type MarcherSlotLook,
     type StepOffFoot,
 } from "./marcherBodies";
+import { hornRowSpec } from "./hornRows";
 
 export interface MarcherAssets {
     bodies: Map<BodyType, LoadedBody>;
@@ -81,10 +81,10 @@ export const clipName = (base: string, h: HeightClass) =>
     `${base}${classSuffix(h)}`;
 
 /**
- * Bakes `names` (clip names with their class suffix), once per hold the
- * looks play, and builds the meshes. Rebuilt when the assets, clip set,
- * looks or quality change; the previous set and its bake texture are
- * disposed.
+ * Bakes `names` (clip names with their class suffix) as Feet rows and
+ * `hornRows` (hold and transition rows, `hornRows.ts`) as Horn/Equipment
+ * rows, and builds the meshes. Rebuilt when the assets, rows, looks or
+ * quality change; the previous set and its bake texture are disposed.
  */
 export function useMarcherBodies(
     assets: MarcherAssets | null,
@@ -92,18 +92,16 @@ export function useMarcherBodies(
     looks: readonly MarcherSlotLook[] | null,
     quality: MarcherQuality,
     foot: StepOffFoot = "left",
-    /** The rows (`rowKey`) marchers play; only these are baked. All when omitted. */
+    /** The Feet rows marchers play; only these are baked. All when omitted. */
     rows?: readonly string[],
+    /** The Horn/Equipment rows marchers play. */
+    hornRows: readonly string[] = [],
 ): MarcherBodies | null {
     const namesKey = [...new Set(names)].sort().join(",");
     const rowsKey = rows ? [...new Set(rows)].sort().join("|") : null;
-    const holdsKey = [
-        ...new Set((looks ?? []).map((l) => slotHoldId(l.uniform))),
-    ]
-        .sort()
-        .join(",");
-    const bake = useMemo<Bake | null>(() => {
-        if (!assets || !namesKey || !holdsKey) return null;
+    const hornKey = [...new Set(hornRows)].sort().join("|");
+    const bake = useMemo<ChannelBake | null>(() => {
+        if (!assets || !namesKey) return null;
         const clips: Record<string, AnimationClip> = {};
         for (const n of namesKey.split(",")) {
             // a prep or right-foot row bakes from its base clip
@@ -112,24 +110,31 @@ export function useMarcherBodies(
             if (!clip) throw new Error(`3D View: clip ${n} isn't loaded`);
             clips[n] = clip;
         }
-        const holds = holdsKey.split(",");
+        const skeleton = assets.bodies.values().next().value?.mesh.skeleton;
+        const horn = skeleton
+            ? (hornKey ? hornKey.split("|") : [])
+                  .map((name) => hornRowSpec(name, skeleton))
+                  .filter((r) => r !== null)
+            : [];
         const t0 = performance.now();
         const baked = bakeForBodies(
             assets.bodies,
             clips,
-            holds,
             foot,
+            horn,
             rowsKey === null ? undefined : new Set(rowsKey.split("|")),
         );
+        const { feet, horn: hornCh } = baked.layout.channels;
         // eslint-disable-next-line no-console -- the bake size and time are the main cost to watch
         console.info(
-            `3D View: baked ${Object.keys(baked.rows).length} rows of ` +
-                `${Object.keys(clips).length} clips × ${holds.length} holds, ` +
+            `3D View: baked ${Object.keys(baked.rows).length} rows ` +
+                `(Feet ${feet.rows} texture rows, Horn ${hornCh.rows}), ` +
+                `${baked.layout.width} texels wide, ` +
                 `${(baked.bytes / 1e6).toFixed(1)} MB, in ` +
                 `${(performance.now() - t0).toFixed(0)} ms`,
         );
         return baked;
-    }, [assets, namesKey, holdsKey, foot, rowsKey]);
+    }, [assets, namesKey, foot, rowsKey, hornKey]);
     useEffect(() => () => bake?.texture.dispose(), [bake]);
 
     const bodies = useMemo(() => {

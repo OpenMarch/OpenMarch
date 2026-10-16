@@ -10,7 +10,6 @@ import {
     type BodyType,
 } from "@/view3d/core/marchers/looks";
 import type { LoadedBody } from "../marchers/marcherAssets";
-import { NO_HOLD, bakeForBodies } from "../marchers/marcherBodies";
 import { HORN_FAR_M, HORN_NEAR_M, HornSet } from "../marchers/hornSet";
 
 const root = path.resolve(__dirname, "../../../assets/om-pose");
@@ -38,22 +37,13 @@ async function setup() {
         scene: body.scene,
         mesh: mesh!,
     } as LoadedBody);
-    const clip = (await gltf("clips/clips-h100.glb")).animations.find(
-        (c) => c.name === "8to5",
-    )!;
-    const bake = bakeForBodies(bodies, { "8to5": clip }, ["brass:up", NO_HOLD]);
-    return { bodies, bake };
+    return { bodies };
 }
 const look = (id: number, type: BodyType, section: string) => ({
     body: { ...defaultPerformerBody(id), bodyType: type },
     uniform: sectionUniform(section),
 });
-const material = (bake: ReturnType<typeof bakeForBodies>) => {
-    const m = new THREE.MeshStandardMaterial();
-    m.userData.uniforms = { uCount: { value: 0 } };
-    void bake;
-    return m;
-};
+const material = () => new THREE.MeshStandardMaterial();
 
 /** Frame inputs: slot i at (x_i, 0), all placed, heading 0, scale 1. */
 function frame(xs: number[]) {
@@ -69,17 +59,16 @@ function frame(xs: number[]) {
 
 describe("HornSet", () => {
     it("groups instruments by look across body types, with a near and a far mesh at high quality", async () => {
-        const { bodies, bake } = await setup();
+        const { bodies } = await setup();
         const set = new HornSet(
             bodies,
-            bake,
             [
                 look(1, "neutral-average", "Trumpet"),
                 look(2, "neutral-slim", "Trumpet"),
                 look(3, "neutral-average", "Drum Major"),
             ],
             "high",
-            material(bake),
+            material(),
         );
         expect(set.meshes.length).toBe(2);
         const [near, far] = set.meshes;
@@ -91,16 +80,15 @@ describe("HornSet", () => {
     });
 
     it("draws near instruments at full detail and far ones at low detail", async () => {
-        const { bodies, bake } = await setup();
+        const { bodies } = await setup();
         const set = new HornSet(
             bodies,
-            bake,
             [
                 look(1, "neutral-average", "Trumpet"),
                 look(2, "neutral-slim", "Trumpet"),
             ],
             "high",
-            material(bake),
+            material(),
         );
         const f = frame([5, 100]);
         set.writeFrame(f.xz, f.heading, f.placed, f.scale, [0, 2, 0]);
@@ -113,38 +101,40 @@ describe("HornSet", () => {
         set.dispose();
     });
 
-    it("moves a slot's clip with it into its packed index", async () => {
-        const { bodies, bake } = await setup();
+    it("points each packed instance at its slot, so it skins from that slot's bones", async () => {
+        const { bodies } = await setup();
         const set = new HornSet(
             bodies,
-            bake,
             [
                 look(1, "neutral-average", "Trumpet"),
                 look(2, "neutral-slim", "Trumpet"),
             ],
             "high",
-            material(bake),
+            material(),
         );
-        const row = bake.rows["8to5@brass:up"];
-        set.setClip(1, { row, phase: -7, rate: 1, legYaw: 0 });
-        const f = frame([100, 5]); // slot 1 is near, slot 0 far
+        let f = frame([100, 5]); // slot 1 is near, slot 0 far
         set.writeFrame(f.xz, f.heading, f.placed, f.scale, [0, 2, 0]);
-        const [near] = set.meshes;
-        const aTime = near.geometry.getAttribute(
-            "aTime",
-        ) as THREE.InstancedBufferAttribute;
-        expect(aTime.getX(0)).toBe(-7);
+        const aSlot = (m: THREE.InstancedMesh) =>
+            (
+                m.geometry.getAttribute(
+                    "aSlot",
+                ) as THREE.InstancedBufferAttribute
+            ).getX(0);
+        const [near, far] = set.meshes;
+        expect([aSlot(near), aSlot(far)]).toEqual([1, 0]);
+        f = frame([5, 100]); // they swap
+        set.writeFrame(f.xz, f.heading, f.placed, f.scale, [0, 2, 0]);
+        expect([aSlot(near), aSlot(far)]).toEqual([0, 1]);
         set.dispose();
     });
 
     it("keeps an instrument in its mesh inside the hysteresis band", async () => {
-        const { bodies, bake } = await setup();
+        const { bodies } = await setup();
         const set = new HornSet(
             bodies,
-            bake,
             [look(1, "neutral-average", "Trumpet")],
             "high",
-            material(bake),
+            material(),
         );
         const between = (HORN_NEAR_M + HORN_FAR_M) / 2;
         let f = frame([5]);
@@ -162,13 +152,12 @@ describe("HornSet", () => {
     });
 
     it("has one low-detail mesh per look at low quality", async () => {
-        const { bodies, bake } = await setup();
+        const { bodies } = await setup();
         const set = new HornSet(
             bodies,
-            bake,
             [look(1, "neutral-average", "Trumpet")],
             "low",
-            material(bake),
+            material(),
         );
         expect(set.meshes.length).toBe(1);
         const f = frame([5]);
@@ -178,16 +167,15 @@ describe("HornSet", () => {
     });
 
     it("leaves unplaced slots out of both meshes", async () => {
-        const { bodies, bake } = await setup();
+        const { bodies } = await setup();
         const set = new HornSet(
             bodies,
-            bake,
             [
                 look(1, "neutral-average", "Trumpet"),
                 look(2, "neutral-slim", "Trumpet"),
             ],
             "high",
-            material(bake),
+            material(),
         );
         const f = frame([5, 6]);
         f.placed[1] = 0;

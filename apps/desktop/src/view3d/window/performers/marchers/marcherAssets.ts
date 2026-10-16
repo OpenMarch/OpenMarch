@@ -10,7 +10,7 @@
 import type { AnimationClip, Group, SkinnedMesh } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import manifestUrl from "@/view3d/assets/om-pose/manifest.json?url";
-import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
+import type { Manifest } from "@/view3d/render/step-blend.js";
 import {
     BODY_TYPES,
     classTag,

@@ -1,10 +1,13 @@
-// Types for the vendored uniform-shader.js (om-pose). Hand-written; keep in step with the .js.
+// Types for uniform-shader.js (om-pose). Hand-written; keep in step with the .js.
 import type { MeshStandardMaterial } from "three";
 
 type Three = typeof import("three");
 
 export const PALETTE_SLOTS: string[];
-export const STYLES: Record<string, { id: number; label: string; about: string }>;
+export const STYLES: Record<
+    string,
+    { id: number; label: string; about: string }
+>;
 export const DEFAULT_OPTIONS: Record<string, unknown>;
 export const INSTRUMENTS: string[];
 export const HAT_TYPES: string[];

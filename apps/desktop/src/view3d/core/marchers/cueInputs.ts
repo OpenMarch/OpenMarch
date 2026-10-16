@@ -27,10 +27,11 @@
  *   keeping the last direction on a hold (the next one before any travel).
  *
  * A Facing transition eases from the heading before it to its value over
- * its counts, the short way round. A snap turns over the count before its
- * click (the planner's headings are per count; a fixed-time snap is for the
- * layered renderer). A Feet segment taken over by another channel (kneel)
- * keeps the Feet settings but stands on holds.
+ * its counts, the short way round. A snap is keyed in fixed time
+ * ({@link SNAP_SECONDS} before its click, at the tempo of the count before
+ * it): `turnSpan` says what part of that count, at its end, the turn takes.
+ * A Feet segment taken over by another channel (kneel) keeps the Feet
+ * settings but stands on holds.
  *
  * Pure: no React, three.js or database.
  */
@@ -44,6 +45,7 @@ import {
     type Pace,
 } from "./planner";
 import { FRONT_HEADING } from "./facing";
+import { SNAP_SECONDS } from "./hornChannel";
 
 /** How many counts the window plays the plan ahead of the show (`STEP_AHEAD`). */
 export const CUE_LEAD = 1;
@@ -56,11 +58,19 @@ export interface MarcherCueInputs {
     feet: FeetSettings[];
     /** Heading per count boundary (K + 1), for `PlanInput.heading`. */
     heading: Float64Array;
+    /**
+     * Per count boundary (K + 1): the part of the count before it, at its
+     * end, that the turn into it takes. 1 turns over the whole count; a snap
+     * less. For `PlanInput.turnSpan`.
+     */
+    turnSpan: Float64Array;
 }
 
 export interface CueInputOptions {
     /** A Facing point's settings to world x, z. Defaults to meters, y toward the audience. */
     pointToWorld?: (x: number, y: number) => [x: number, z: number];
+    /** Seconds per show count k (the tempo). Defaults to 120 bpm. */
+    secondsPerCount?: (k: number) => number;
 }
 
 const PACES: readonly Pace[] = ["single", "half", "double"];
@@ -213,6 +223,18 @@ export function marcherCueInputs(
         }
     };
 
+    // a snap lands on its click in fixed time, at the end of the count before
+    const turnSpan = new Float64Array(K + 1).fill(1);
+    const secondsPerCount = options.secondsPerCount ?? (() => 0.5);
+    for (const seg of facing) {
+        if (seg.kind !== "transition" || !(seg.snap || seg.to <= seg.from))
+            continue;
+        const b = Math.round(seg.to) + CUE_LEAD;
+        if (b < 1 || b > K) continue;
+        const k = Math.max(Math.round(seg.to) - 1, 0);
+        turnSpan[b] = Math.min(SNAP_SECONDS / secondsPerCount(k), 1);
+    }
+
     const heading = new Float64Array(K + 1);
     for (let b = 0; b <= K; b++) {
         const c = Math.max(b - CUE_LEAD, 0);
@@ -232,5 +254,5 @@ export function marcherCueInputs(
         const u = smooth((c - seg.from) / (seg.to - seg.from));
         heading[b] = h0 + angleDelta(h0, h1) * u;
     }
-    return { feet, heading };
+    return { feet, heading, turnSpan };
 }

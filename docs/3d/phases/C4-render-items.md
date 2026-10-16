@@ -16,6 +16,8 @@ updated: 2026-10-11
 Follow the protocol in [../README.md](../README.md). Claim a work package before you start, and append to the progress log as you go.
 
 > Draft for the owner's approval (2026-10-11). One integrated-GPU run (C4.7) serves this effort and ADR 0004 section 8.5. ADR 0004 step 6 waits to merge until the per-look texture (C4.3) and the silk wave (C4.4) are built on it and measured together. C4.7 is the gate for step 6's merge (C4.8) and for C5.
+>
+> Changed by the owner 2026-10-16: step 6 (#120) merged ahead of C4.7, since it already measured faster than main on the M1 Pro and kept conflicting with main while held. C4.7 now gates C4.3, C4.4 and C5; if it shows step 6 too slow on integrated GPUs, step 6 is tuned or reverted then.
 
 ## Goal
 
@@ -144,13 +146,13 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - Parallel: no
 - Depends on: C4.2, C4.3, C4.4, C4.9
 
-**Goal:** the one integrated-GPU run that ADR 0004 step 6's merge and C5 both wait on.
+**Goal:** the one integrated-GPU run that C4.3, C4.4 and C5 wait on (step 6 merged ahead of it, 2026-10-16).
 
 **Scope:** with the `task/gpu-benchmark` harness, on an Intel Iris Xe (Windows) and a base M1, with step 6, C4.3 and C4.4 together: `hs` and `pro`; press box and a field-level camera; 24 Silk layers, Garments (the test Garment from C4.9; Garment import and rendering ship in C5, after this run) and the hidden-part skinning cost from C4.3; and ADR 0004 section 8.5's items (60 fps at 1080p with 300 performers in `pro`, the compose pass's own GPU time).
 
 **Tickets:** 15, 18, 26.23.
 
-**Done when:** the numbers are in `docs/3d/findings.md`; the owner confirms or changes ADR 0002 D-19's thresholds, the texture sizes and whether BC7 KTX2 is needed; and section 8.5's integrated-GPU line is answered, clearing step 6 to merge.
+**Done when:** the numbers are in `docs/3d/findings.md`; the owner confirms or changes ADR 0002 D-19's thresholds, the texture sizes and whether BC7 KTX2 is needed; and section 8.5's integrated-GPU line is answered, confirming step 6 (merged 2026-10-16) or calling for tuning.
 
 **Checks:** the harness's JSON output committed beside the findings.
 
@@ -175,12 +177,12 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 ### C4.8: ADR 0004 step 6 merged
 
 - Owner: human
-- Status: open
-- PR: none
+- Status: done 2026-10-16 (#120, merged ahead of C4.7 by the owner's decision)
+- PR: #120
 - Parallel: no
-- Depends on: C4.7
+- Depends on: C4.2
 
-**Goal:** a tracker. The lead merges step 6 into `main` once C4.7 clears it, then C4.3 and C4.4 merge after it.
+**Goal:** a tracker. Step 6 merged into `main` before C4.7 (owner, 2026-10-16). C4.3 and C4.4 branch off `main` and merge once C4.7 clears them.
 
 **Tickets:** 07, 26.23.
 

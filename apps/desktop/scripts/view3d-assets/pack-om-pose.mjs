@@ -7,7 +7,7 @@
 //
 // Run it from apps/desktop when the om-pose pin moves, then commit the result. Writes
 // src/view3d/assets/om-pose/{bodies/*.glb, clips/clips-h<class>.glb, manifest.json, SOURCE.json}.
-// See ADR 0002 D-7 and src/view3d/vendor/om-pose/README.md.
+// See ADR 0002 D-7 and src/view3d/render/README.md.
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";

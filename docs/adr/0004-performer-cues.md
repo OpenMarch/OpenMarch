@@ -2,8 +2,9 @@
 
 - Status: Accepted by the owner on 2026-10-15 for D-1 to D-6, and for D-7's
   Sync, Positions and Performers motion and facing (the planner, #119). D-7's
-  per-channel bake, GPU compose pass, prop bones and in-repo renderer are
-  pending the layered renderer (#120) and its integrated-GPU run.
+  per-channel bake, GPU compose pass, prop bones and in-repo renderer were
+  accepted on 2026-10-16 with the layered renderer (#120), merged ahead of the
+  integrated-GPU run (C4.7), which now confirms or tunes them.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
   channels, and item tables beside cues; 2026-10-15: timelines only, and

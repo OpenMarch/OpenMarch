@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { pixelsToWorld, type CueInput } from "@openmarch/core";
 import fs from "node:fs";
 import path from "node:path";
-import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
+import type { Manifest } from "@/view3d/render/step-blend.js";
 import { fakeShowPositions, type Track } from "@/view3d/__test__/fakePositions";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { buildCountClock } from "@/view3d/core/marchers/countClock";
@@ -14,9 +14,13 @@ import {
     STEP_AHEAD,
 } from "../marchers/marcherMotion";
 import { CUE_LEAD } from "@/view3d/core/marchers/cueInputs";
+import {
+    hornEventAt,
+    planHornChannel,
+} from "@/view3d/core/marchers/hornChannel";
 import { planMarcher } from "@/view3d/core/marchers/planner";
 import type { MarcherBodies } from "../marchers/marcherBodies";
-import type { MarcherClip } from "@/view3d/vendor/om-pose/instanced-marchers.js";
+import type { MarcherClip } from "@/view3d/render/instanced-marchers.js";
 
 const manifest = JSON.parse(
     fs.readFileSync(
@@ -240,6 +244,36 @@ describe("planning from the show's stored cues", () => {
         expect(Math.abs(first![12])).toBeCloseTo(Math.PI);
     });
 
+    it("plays a stored Horn/Equipment cue on carriers' Horn channel", () => {
+        const down: CueInput = {
+            id: 2,
+            channel: "horn_equipment",
+            kind: "state",
+            target: { kind: "band" },
+            // count 8
+            beatId: 58,
+            value: "builtin:horn.down",
+        };
+        const cues = compileWindowCues(
+            marchers,
+            beats,
+            "left",
+            { cues: [down] },
+            (id) => (id === 1 ? "winds" : "none"),
+        );
+        const plan = (id: number) =>
+            planHornChannel(cues.segments(id, "horn_equipment"), {
+                defaultState: "up",
+                secondsPerCount: () => 0.5,
+            });
+        const carrier = plan(1);
+        expect(carrier[0].state).toBe("up");
+        expect(carrier[hornEventAt(carrier, 12)].state).toBe("carry");
+        // a cue that doesn't fit what a marcher carries leaves the hold alone
+        const bare = plan(2);
+        expect(bare[hornEventAt(bare, 12)].state).toBe("up");
+    });
+
     it("reaches tag targets through the marchers' tags", () => {
         const [tagged, other] = headingsOf(
             [
@@ -317,7 +351,6 @@ describe("playing a crossfade", () => {
         }
         const bodies = {
             bake: { rows },
-            holdOf: () => "none",
             setClip(slot: number, clip: MarcherClip) {
                 writes.push({ slot, clip });
             },
@@ -376,16 +409,14 @@ describe("playing a slot's rows", () => {
     > = {};
     let r = 0;
     for (const e of plan.events) {
-        rows[`${e.clip}@brass:up`] = { row: r++, frames: 60, counts: 2 };
-        if (e.clip2)
-            rows[`${e.clip2}@brass:up`] = { row: r++, frames: 60, counts: 2 };
+        rows[e.clip] = { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] = { row: r++, frames: 60, counts: 2 };
     }
 
     function motion() {
         const writes: { slot: number; clip: MarcherClip }[] = [];
         const bodies = {
             bake: { rows },
-            holdOf: () => "brass:up",
             setClip(slot: number, clip: MarcherClip) {
                 writes.push({ slot, clip });
             },
@@ -399,13 +430,11 @@ describe("playing a slot's rows", () => {
         };
     }
 
-    it("looks rows up by the slot's hold", () => {
+    it("looks Feet rows up by clip, whatever the slot carries", () => {
         const { m, writes, xz, placed } = motion();
         m.update(0.5 - STEP_AHEAD, xz, placed);
         expect(writes.length).toBe(1);
-        expect(writes[0].clip.row).toBe(
-            rows[`${plan.events[0].clip}@brass:up`],
-        );
+        expect(writes[0].clip.row).toBe(rows[plan.events[0].clip]);
     });
 
     it("writes a loop once, not every frame", () => {
@@ -444,7 +473,6 @@ describe("landing each foot on its click", () => {
         const writes: { slot: number; clip: MarcherClip }[] = [];
         const bodies = {
             bake: { rows },
-            holdOf: () => "none",
             setClip(slot: number, clip: MarcherClip) {
                 writes.push({ slot, clip });
             },

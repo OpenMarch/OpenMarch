@@ -23,10 +23,10 @@ import {
     bareHands,
     clipForBake,
     clipsToLoad,
-    rowKey,
     slotHoldId,
     visibleIndex,
 } from "../marchers/marcherBodies";
+import { hornRowSpec } from "../marchers/hornRows";
 import { platformRig } from "../marchers/platformClip";
 
 async function body(): Promise<BufferGeometry> {
@@ -67,6 +67,9 @@ async function loadedBodies() {
     ]) as Map<BodyType, LoadedBody>;
 }
 
+const skeletonOf = (bodies: Map<BodyType, LoadedBody>) =>
+    bodies.values().next().value!.mesh.skeleton;
+
 async function allClips() {
     const b = fs.readFileSync(
         path.resolve(__dirname, "../../../assets/om-pose/clips/clips-h100.glb"),
@@ -89,51 +92,47 @@ async function clip8to5() {
     return gltf.animations.find((c) => c.name === "8to5")!;
 }
 
-describe("rows per hold", () => {
-    it("names rows by clip and hold, bare for no hold", () => {
-        expect(rowKey("8to5", NO_HOLD)).toBe("8to5");
-        expect(rowKey("8to5-h105", "brass:up")).toBe("8to5-h105@brass:up");
+describe("rows per channel", () => {
+    it("names each slot's hold, or none for a performer who carries nothing", () => {
         expect(slotHoldId(sectionUniform("Trumpet", "carry"))).toBe(
             "brass:carry",
         );
         expect(slotHoldId(sectionUniform("Drum Major"))).toBe(NO_HOLD);
     });
 
-    it("bakes one row set per hold", async () => {
+    it("bakes a clip once as a Feet row, and each hold once as a Horn row", async () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
-        const bake = bakeForBodies(bodies, { "8to5": clip }, [
-            NO_HOLD,
-            "brass:up",
-            "brass:carry",
+        const skeleton = skeletonOf(bodies);
+        const bake = bakeForBodies(bodies, { "8to5": clip }, "left", [
+            hornRowSpec("hold:brass:up", skeleton)!,
+            hornRowSpec("hold:brass:carry", skeleton)!,
         ]);
         expect(Object.keys(bake.rows).sort()).toEqual([
             "8to5",
-            "8to5@brass:carry",
-            "8to5@brass:up",
+            "hold:brass:carry",
+            "hold:brass:up",
         ]);
-        expect(bake.rows["8to5@brass:up"].frames).toBe(
-            bake.rows["8to5"].frames,
-        );
+        expect(bake.rows["8to5"].channel).toBe("feet");
+        expect(bake.rows["hold:brass:up"]).toMatchObject({
+            channel: "horn",
+            frames: 1,
+        });
     });
 });
 
 describe("baking only the rows marchers play", () => {
-    it("skips clip and hold pairs no marcher plays", async () => {
+    it("skips Feet clips no marcher plays", async () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
         const bake = bakeForBodies(
             bodies,
             { "8to5": clip, attention: clip },
-            [NO_HOLD, "brass:up"],
             "left",
-            new Set(["8to5@brass:up", "attention", "attention@brass:up"]),
+            [],
+            new Set(["attention"]),
         );
-        expect(Object.keys(bake.rows).sort()).toEqual([
-            "8to5@brass:up",
-            "attention",
-            "attention@brass:up",
-        ]);
+        expect(Object.keys(bake.rows)).toEqual(["attention"]);
     });
 });
 
@@ -141,9 +140,8 @@ describe("horns as their own meshes", () => {
     async function trumpetAndDrumMajor(quality: "high" | "low") {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
-        const bake = bakeForBodies(bodies, { "8to5": clip }, [
-            "brass:up",
-            NO_HOLD,
+        const bake = bakeForBodies(bodies, { "8to5": clip }, "left", [
+            hornRowSpec("hold:brass:up", skeletonOf(bodies))!,
         ]);
         const looks = [
             {
@@ -207,9 +205,9 @@ describe("horns as their own meshes", () => {
         set.dispose();
     });
 
-    it("writes the same clip into the body and the horn", async () => {
+    it("skins the body and the horn from the same slot's composed bones", async () => {
         const { set, bake } = await trumpetAndDrumMajor("high");
-        const row = bake.rows["8to5@brass:up"];
+        const row = bake.rows["8to5"];
         set.setClip(0, { row, phase: -3, rate: 1, legYaw: 0.1 });
         // the instruments pack their instances when a frame is written: the
         // trumpet at 5 m from the camera lands first in the full-detail mesh
@@ -220,38 +218,51 @@ describe("horns as their own meshes", () => {
             0,
             [0, 2, 0],
         );
-        const bodyMesh = set.group.children.find(
+        // one body mesh per look: the trumpet's and the drum major's
+        const bodyMeshes = set.group.children.filter(
             (o) => o.name === "view3d-marchers-neutral-average",
-        ) as THREE.InstancedMesh;
+        ) as THREE.InstancedMesh[];
         const horn = set.group.children.find((o) =>
             o.name.endsWith("-high"),
         ) as THREE.InstancedMesh;
-        const clipOf = (m: THREE.InstancedMesh) =>
-            Array.from(
-                (
-                    m.geometry.getAttribute("aClip") as THREE.BufferAttribute
-                ).array.slice(0, 3),
-            );
-        expect(clipOf(horn)).toEqual([row.row, row.frames, row.counts]);
-        expect(clipOf(horn)).toEqual(clipOf(bodyMesh));
+        const slotOf = (m: THREE.InstancedMesh, i: number) =>
+            (m.geometry.getAttribute("aSlot") as THREE.BufferAttribute).getX(i);
+        // the trumpet is slot 0 in its body and its horn; the drum major slot 1
+        expect(slotOf(horn, 0)).toBe(0);
+        expect(bodyMeshes.map((m) => slotOf(m, 0))).toEqual([0, 1]);
+        // the clip went into slot 0's Feet state
+        expect(Array.from(set.composer.state.subarray(0, 4))).toEqual([
+            row.row,
+            row.frames,
+            row.counts,
+            -3,
+        ]);
         set.dispose();
     });
 
-    it("drives the horn's clip clock with the bodies' each frame", async () => {
+    it("composes on the CPU without float render targets, once per new count", async () => {
         const { set } = await trumpetAndDrumMajor("high");
-        const horn = set.group.children.find((o) =>
-            o.name.startsWith("view3d-horn-"),
-        ) as THREE.InstancedMesh;
-        set.writeFrame(
-            new Float32Array(4),
-            new Float32Array(2),
-            Uint8Array.from([1, 1]),
-            7,
-        );
-        const u = (horn.material as THREE.Material).userData.uniforms as {
-            uCount: { value: number };
-        };
-        expect(u.uCount.value).toBe(7);
+        const gl = {
+            capabilities: { isWebGL2: true },
+            extensions: { has: () => false },
+        } as unknown as THREE.WebGLRenderer;
+        const frame = (count: number) =>
+            set.writeFrame(
+                new Float32Array(4),
+                new Float32Array(2),
+                Uint8Array.from([1, 1]),
+                count,
+            );
+        frame(7);
+        set.compose(gl);
+        expect(set.composer.mode).toBe("cpu");
+        const texture = set.composer.uniform.value!;
+        const v = texture.version;
+        set.compose(gl); // the same count, nothing new: no upload
+        expect(texture.version).toBe(v);
+        frame(7.5);
+        set.compose(gl);
+        expect(texture.version).toBe(v + 1);
         set.dispose();
     });
 
@@ -277,7 +288,7 @@ describe("horns as their own meshes", () => {
     it("gives a drum-major-only set no horn and one draw call", async () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
-        const bake = bakeForBodies(bodies, { "8to5": clip }, [NO_HOLD]);
+        const bake = bakeForBodies(bodies, { "8to5": clip });
         const set = new MarcherBodies(
             bodies,
             bake,
@@ -304,7 +315,7 @@ describe("bass drum sizes", () => {
     it("draws each bass drum at its marcher's size", async () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
-        const bake = bakeForBodies(bodies, { "8to5": clip }, ["bass:up"]);
+        const bake = bakeForBodies(bodies, { "8to5": clip });
         const sizes = bassOptions([1, 2], ["Bass Drum", "Bass Drum"]);
         const looks = [0, 1].map((i) => ({
             body: {
@@ -364,8 +375,8 @@ describe("stepping off on the right foot", () => {
             slideL8to5: all.get("slideL8to5")!,
             slideR8to5: all.get("slideR8to5")!,
         };
-        const left = bakeForBodies(bodies, clips, [NO_HOLD], "left");
-        const right = bakeForBodies(bodies, clips, [NO_HOLD], "right");
+        const left = bakeForBodies(bodies, clips, "left");
+        const right = bakeForBodies(bodies, clips, "right");
         expect(Object.keys(right.rows).sort()).toEqual(
             Object.keys(left.rows).sort(),
         );
@@ -398,13 +409,11 @@ describe("stepping off on the right foot", () => {
                 slideR8to5: slideR,
                 [mirrorRow("slideL8to5")]: slideL,
             },
-            [NO_HOLD],
             "left",
         );
         const whole = bakeForBodies(
             bodies,
             { slideL8to5: slideL, slideR8to5: slideR },
-            [NO_HOLD],
             "right",
         );
         const width = whole.texture.image.width * 4;
@@ -433,7 +442,6 @@ describe("stepping off on the right foot", () => {
             bakeForBodies(
                 bodies,
                 { slideL8to5: all.get("slideL8to5")! },
-                [NO_HOLD],
                 "right",
             ),
         ).toThrow(/slideR8to5/);
@@ -458,7 +466,7 @@ describe("bare hands", () => {
     it("gives the hands the instance's skin tone and its own program", async () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
-        const bake = bakeForBodies(bodies, { "8to5": clip }, [NO_HOLD]);
+        const bake = bakeForBodies(bodies, { "8to5": clip });
         const look = (id: number, section: string) => ({
             body: {
                 ...defaultPerformerBody(id),

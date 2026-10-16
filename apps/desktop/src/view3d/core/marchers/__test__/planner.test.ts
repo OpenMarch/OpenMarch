@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import type { Manifest } from "../../../vendor/om-pose/step-blend.js";
+import type { Manifest } from "../../../render/step-blend.js";
 import {
     bodyAt,
     crossfadeWeight,

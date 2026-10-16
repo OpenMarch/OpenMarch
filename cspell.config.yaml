@@ -265,6 +265,12 @@ words:
   - Zingali
   - Zustand
   - 日本語
+  - lerp
+  - lerped
+  - slerp
+  - slerped
+  - texel
+  - texels
 ignorePaths:
   # Timeline spec and reference suite: external documents, kept verbatim
   - docs/timeline/spec.md
@@ -273,7 +279,6 @@ ignorePaths:
   - docs/3d/ref/**
   # Verbatim license texts (CC0 1.0, GPL-3.0) in the Blender Starter kit
   - apps/desktop/starter-kit/**/LICENSE
-  - "**/view3d/vendor/**"
   - "**/view3d/assets/om-pose/**"
   - "**/view3d/assets/instruments/*.json"
   - "**/node_modules/**"

@@ -7,7 +7,7 @@ import {
     marcherHeading,
     travelDirection,
 } from "../facing";
-import { writeMatrix } from "../../../vendor/om-pose/instanced-marchers.js";
+import { writeMatrix } from "../../../render/instanced-marchers.js";
 
 const fp = FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES;
 const deg = (r: number) => (r * 180) / Math.PI;

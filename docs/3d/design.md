@@ -253,7 +253,7 @@ approved reference, converted to meters (1 ft = 0.3048 m).
   meters, built on `getCoordinatesAtTime` and `pixelsToWorld`.
 - Performers (ADR 0002 D-7, amended 2026-10-07): om-pose's animated
   marchers, drawn by its instanced renderer (vendored in
-  `src/view3d/vendor/om-pose/`) as one `InstancedMesh` per (body type,
+  `src/view3d/render/`) as one `InstancedMesh` per (body type,
   section uniform), skinned on the GPU from one texture of baked clips.
   - Looks (`core/marchers/looks.ts`): body type and skin tone by a hash of
     the marcher; height class 0.95/1.00/1.05 by the same hash at `high`,

@@ -11,6 +11,7 @@ import { hold } from "@/view3d/core/instruments/holds";
 import { poseArms } from "../marchers/armPose";
 import {
     MATTE_PARTS,
+    gripMatrix,
     instrumentGeometry,
     instrumentMaterial,
     matteShader,
@@ -22,7 +23,8 @@ import {
     PART_SILK,
     PART_WOOD,
 } from "@/view3d/core/instruments/mesh";
-import { NO_HOLD, bakeForBodies } from "../marchers/marcherBodies";
+import { bakeForBodies } from "../marchers/marcherBodies";
+import { Composer } from "@/view3d/render/composer";
 
 async function body() {
     const b = fs.readFileSync(
@@ -44,7 +46,7 @@ async function body() {
 }
 
 describe("instrumentGeometry", () => {
-    it("weights every vertex to the right hand and keeps the parts", async () => {
+    it("weights every vertex to the prop bone and keeps the parts", async () => {
         const mesh = await body();
         const h = hold("brass", "up");
         const g = instrumentGeometry(
@@ -53,13 +55,13 @@ describe("instrumentGeometry", () => {
             h,
             brassModel("trumpet"),
         );
-        const handR = mesh.skeleton.bones.findIndex(
-            (b) => b.name === "DEF-handR",
-        );
+        // the prop bone follows the skeleton's 23 bones in every bake row
+        const prop = mesh.skeleton.bones.length;
+        expect(prop).toBe(23);
         const si = g.getAttribute("skinIndex");
         const sw = g.getAttribute("skinWeight");
         for (let i = 0; i < si.count; i++) {
-            expect(si.getX(i)).toBe(handR);
+            expect(si.getX(i)).toBe(prop);
             expect(sw.getX(i)).toBe(1);
         }
         const parts = new Set<number>();
@@ -69,7 +71,7 @@ describe("instrumentGeometry", () => {
         expect([...parts].sort()).toEqual([16, 18, 22, 23]);
     });
 
-    it("lands on the hold's placement once skinned with the posed hand", async () => {
+    it("lands on the hold's placement once skinned with the prop bone: the posed hand times the grip", async () => {
         const mesh = await body();
         const h = hold("brass", "up");
         const pose = poseArms(mesh.skeleton, h);
@@ -82,10 +84,12 @@ describe("instrumentGeometry", () => {
         const handR = mesh.skeleton.bones.findIndex(
             (b) => b.name === "DEF-handR",
         );
-        // what the skinning does: bindInv * handWorld(posed) * boneInverse * bind, with bind = identity here
+        // the prop bone: the hand's skinning matrix, bindInv * handWorld(posed)
+        // * boneInverse * bind with bind = identity here, times the grip
         const skin = pose.handR
             .clone()
-            .multiply(mesh.skeleton.boneInverses[handR]);
+            .multiply(mesh.skeleton.boneInverses[handR])
+            .multiply(gripMatrix(mesh.skeleton, pose, h));
         const box = new THREE.Box3();
         const v = new THREE.Vector3();
         const pos = g.getAttribute("position");
@@ -100,7 +104,7 @@ describe("instrumentGeometry", () => {
 });
 
 describe("pieces on other bones", () => {
-    it("weights each piece to its own bone: the chest for a drum, each hand for its stick", async () => {
+    it("weights each piece to its own bone: the chest for a drum, the prop bone and the left hand for the sticks", async () => {
         const mesh = await body();
         const h = hold("snare", "up");
         const cube = (bone: "handR" | "handL" | "spine002"): Piece => ({
@@ -127,7 +131,8 @@ describe("pieces on other bones", () => {
             mesh.skeleton.bones.findIndex((b) => b.name === name);
         const si = g.getAttribute("skinIndex");
         expect(si.getX(0)).toBe(index("DEF-spine002"));
-        expect(si.getX(3)).toBe(index("DEF-handR"));
+        // a right-hand piece rides the prop bone, after the skeleton's bones
+        expect(si.getX(3)).toBe(mesh.skeleton.bones.length);
         expect(si.getX(6)).toBe(index("DEF-handL"));
     });
 
@@ -206,7 +211,7 @@ describe("instrument color and material", () => {
         );
     });
 
-    it("builds a smooth metallic material under the instanced skinning", async () => {
+    it("builds a smooth metallic material skinned from the composed bones", async () => {
         const mesh = await body();
         const bake = bakeForBodies(
             new Map([
@@ -216,16 +221,15 @@ describe("instrument color and material", () => {
                 ],
             ]) as never,
             {},
-            [NO_HOLD],
         );
-        const m = instrumentMaterial(bake);
+        const m = instrumentMaterial(new Composer(bake, 1));
         expect(m.metalness).toBeGreaterThan(0.9);
         expect(m.roughness).toBeLessThan(0.4);
         expect(m.vertexColors).toBe(true);
         expect(m.flatShading).toBe(false);
         // bells and tube ends are open surfaces: their insides must draw too
         expect(m.side).toBe(THREE.DoubleSide);
-        expect(m.customProgramCacheKey()).toContain("baked-instances");
+        expect(m.customProgramCacheKey()).toContain("composed-instances");
     });
 
     it("draws the rifle's stock, silks and rubber matte, the metal shiny", () => {

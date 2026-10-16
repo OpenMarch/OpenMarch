@@ -70,7 +70,7 @@ import {
     type ManifestClip,
     type Pick,
     type TurnedPair,
-} from "../../vendor/om-pose/step-blend.js";
+} from "../../render/step-blend.js";
 import { classSuffix, type HeightClass } from "./looks";
 import { isSlide, travelDirection, type SlideSense } from "./facing";
 
@@ -129,6 +129,12 @@ export interface PlanInput {
      * channel, `cueInputs.ts`). Between boundaries it turns the short way.
      */
     heading: number | Float64Array;
+    /**
+     * Per count boundary 0..K: the part of the count before it, at its end,
+     * that turning into its heading takes (a snap, `cueInputs.ts`). Omitted,
+     * every turn spans its whole count.
+     */
+    turnSpan?: Float64Array;
     /** Drill position at each count boundary 0..K: x, z interleaved (world meters). */
     positions: Float64Array;
     /** Tempo of each count 0..K-1. */
@@ -209,6 +215,8 @@ export interface MarcherPlan {
     counts: number;
     /** Heading at each count boundary (K + 1): `headingAt` turns between them. */
     headings: Float64Array;
+    /** `PlanInput.turnSpan`, or null when every turn spans its count. */
+    turnSpan?: Float64Array | null;
 }
 
 type State =
@@ -283,15 +291,29 @@ function angleDelta(a: number, b: number): number {
     return d;
 }
 
-/** The heading at count clock `c` from headings at each count boundary. */
-function headingFrom(headings: Float64Array, c: number): number {
+/**
+ * The heading at count clock `c` from headings at each count boundary. A
+ * turn spanning part of its count (a snap) holds, then eases into the
+ * boundary over that last part.
+ */
+function headingFrom(
+    headings: Float64Array,
+    c: number,
+    turnSpan?: Float64Array | null,
+): number {
     const last = headings.length - 1;
     if (last <= 0) return headings[0] ?? 0;
     if (!(c > 0)) return headings[0];
     if (c >= last) return headings[last];
     const k = Math.floor(c);
     const h0 = headings[k];
-    return h0 + angleDelta(h0, headings[k + 1]) * (c - k);
+    const span = turnSpan?.[k + 1] ?? 1;
+    let u = c - k;
+    if (span < 1) {
+        const x = Math.min(Math.max((u - (1 - span)) / span, 0), 1);
+        u = x * x * (3 - 2 * x);
+    }
+    return h0 + angleDelta(h0, headings[k + 1]) * u;
 }
 
 /** A heading this close to 0 is the front facing, where slides face the 50. */
@@ -379,7 +401,8 @@ function buildSteps(input: PlanInput, headings: Float64Array): Steps {
     }
     const n = rate.length;
     const heading = new Float64Array(n);
-    for (let i = 0; i < n; i++) heading[i] = headingFrom(headings, t[i + 1]);
+    for (let i = 0; i < n; i++)
+        heading[i] = headingFrom(headings, t[i + 1], input.turnSpan);
     return {
         n,
         t: Float64Array.from(t),
@@ -921,7 +944,12 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             obZ: cz[b],
         });
     }
-    return { events, counts: input.positions.length / 2, headings };
+    return {
+        events,
+        counts: input.positions.length / 2,
+        headings,
+        turnSpan: input.turnSpan ?? null,
+    };
 }
 
 /**
@@ -930,7 +958,7 @@ export function planMarcher(input: PlanInput): MarcherPlan {
  * between them.
  */
 export function headingAt(plan: MarcherPlan, c: number): number {
-    return headingFrom(plan.headings, c);
+    return headingFrom(plan.headings, c, plan.turnSpan);
 }
 
 /** Index of the event covering count clock `c`, starting the search at `hint`. */

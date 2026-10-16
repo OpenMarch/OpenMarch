@@ -18,10 +18,7 @@
  * audience. The renderer's heading is radians about +Y with 0 facing +Z
  * (`writeMatrix`), so facing front is heading 0, and the performer's left is +X.
  */
-import {
-    pickDirection,
-    type Direction,
-} from "../../vendor/om-pose/step-blend.js";
+import { pickDirection, type Direction } from "../../render/step-blend.js";
 
 /** Slides this close to sideways face the 50 (radians): about 10 degrees. */
 export const SLIDE_BAND = (10 * Math.PI) / 180;

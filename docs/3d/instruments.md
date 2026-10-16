@@ -16,7 +16,7 @@ schema addition in §6 needs an ADR amendment before it is built.
   mellophone, baritone; 120 triangles each) skinned to the right hand, and
   every clip holds one "horn up" arm pose. Every other section carries
   nothing. The bodies and clips are vendored as read-only
-  (`src/view3d/vendor/om-pose/README.md`).
+  (`src/view3d/render/README.md`).
 - The window bakes the clips itself (`bakeClips`) from the loaded clip files,
   and the library already builds rigid one-bone meshes that ride the baked
   skeleton (`blockGeometry`). Both are the hooks this design uses, so nothing

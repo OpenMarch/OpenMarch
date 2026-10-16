@@ -4,7 +4,7 @@ import path from "node:path";
 import { renderHook } from "@testing-library/react";
 import type { AnimationClip, SkinnedMesh } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
+import type { Manifest } from "@/view3d/render/step-blend.js";
 import {
     defaultPerformerBody,
     sectionUniform,
@@ -16,6 +16,7 @@ import {
     useMarcherBodies,
     type MarcherAssets,
 } from "../marchers/useMarcherBodies";
+import { holdRowName } from "../marchers/hornRows";
 
 const root = path.resolve(__dirname, "../../../assets/om-pose");
 
@@ -60,7 +61,7 @@ const looksIn = (hold: HoldState) => [
 ];
 
 describe("useMarcherBodies", () => {
-    it("rebuilds for a new hold and disposes the previous bake texture and bodies", async () => {
+    it("bakes again for new Horn rows and disposes the previous bake texture and bodies", async () => {
         const a = await assets();
         const { result, rerender } = renderHook(
             ({ hold }: { hold: HoldState }) =>
@@ -69,13 +70,17 @@ describe("useMarcherBodies", () => {
                     ["attention", "8to5"],
                     looksIn(hold),
                     "high",
+                    "left",
+                    undefined,
+                    [holdRowName(`brass:${hold}`)],
                 ),
             { initialProps: { hold: "up" } },
         );
         const first = result.current!;
         expect(Object.keys(first.bake.rows).sort()).toEqual([
-            "8to5@brass:up",
-            "attention@brass:up",
+            "8to5",
+            "attention",
+            "hold:brass:up",
         ]);
         const textureDispose = vi.spyOn(first.bake.texture, "dispose");
         const bodiesDispose = vi.spyOn(first, "dispose");
@@ -84,8 +89,9 @@ describe("useMarcherBodies", () => {
         const second = result.current!;
         expect(second).not.toBe(first);
         expect(Object.keys(second.bake.rows).sort()).toEqual([
-            "8to5@brass:carry",
-            "attention@brass:carry",
+            "8to5",
+            "attention",
+            "hold:brass:carry",
         ]);
         expect(textureDispose).toHaveBeenCalledTimes(1);
         expect(bodiesDispose).toHaveBeenCalledTimes(1);

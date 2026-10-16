@@ -1,4 +1,4 @@
-// Types for the vendored step-blend.js (om-pose). Hand-written; keep in step with the .js.
+// Types for step-blend.js (om-pose). Hand-written; keep in step with the .js.
 
 export interface ManifestClip {
     name: string;
