@@ -30,7 +30,6 @@ import {
 } from "./ShortcutTooltip";
 import {
     isPlainNudgeKey,
-    isTyping,
     overlayOpen,
     spaceStaysPlay,
 } from "./timelineHotkeys";
@@ -81,6 +80,7 @@ import {
     type TimelineMoveMenuActions,
 } from "./TimelineRangeMenu";
 import { MOVE_NAME_MAX_LENGTH } from "@/timeline/timelineViewModel";
+import { useActionHandler } from "@/shortcuts/useActionHandler";
 import {
     previewPagesForFlag,
     TimelinePageFlagGrips,
@@ -559,7 +559,7 @@ const TRANSPORT_TIGHT_PX = 500;
  * The transport (UI-12): the timeline panel's one header row, as animation tools do it (Figma's
  * Motion timeline, Rive, Blender). Previous, Play, Next (UI-17); the caller's pinned accessories
  * and secondary ones (Sound); the clock and the readout,
- * which is also the go-to box (click it or press G, then type a page, "m23" or a rehearsal mark);
+ * which is also the go-to box (click it or press G or Mod+G, then type a page, "m23" or a rehearsal mark);
  * then Fit and the caller's view controls (Compact). The play and page buttons, the accessories
  * and the readout never leave: on a narrow panel the rest folds into "⋯". Shift+click on Previous
  * or Next steps a beat and Alt+click goes to the start or end of the show, as Shift+Q/E and
@@ -630,27 +630,15 @@ export const TimelineTransport = memo(function TimelineTransport({
         setGoTo("");
         setGoToFailed(false);
     }, [canGoTo]);
-    // G opens the go-to box, unless a text field, popover, menu or dialog has the keys
-    useEffect(() => {
-        if (!canGoTo) return;
-        const onKeyDown = (event: KeyboardEvent) => {
-            if (
-                event.key.toLowerCase() !== "g" ||
-                event.ctrlKey ||
-                event.metaKey ||
-                event.altKey ||
-                event.shiftKey ||
-                event.repeat ||
-                isTyping(event.target) ||
-                overlayOpen()
-            )
-                return;
-            event.preventDefault();
-            openGoTo();
-        };
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, [canGoTo, openGoTo]);
+    // G or Mod+G (the timelineGoTo action) opens the go-to box. The dispatcher skips it in a text
+    // field or modal layer; an open popover or menu keeps its keys too (its typeahead takes G)
+    useActionHandler(
+        "timelineGoTo",
+        () => {
+            if (!overlayOpen()) openGoTo();
+        },
+        { enabled: canGoTo },
+    );
     const submitGoTo = (text: string) => {
         const target = parseTimelineGoTo(text, model);
         if (!target) {
@@ -706,7 +694,7 @@ export const TimelineTransport = memo(function TimelineTransport({
                 disabled={!canGoTo}
                 onClick={openGoTo}
                 aria-label={`${readoutText.spoken}. Go to a page, measure or rehearsal mark`}
-                title={`${readoutText.spoken}. Click or press G to go to a page, measure or rehearsal mark`}
+                title={`${readoutText.spoken}. Click or press G or ${mod}+G to go to a page, measure or rehearsal mark`}
                 className="text-text rounded-4 enabled:hover:bg-fg-2 flex h-22 min-w-0 items-baseline gap-8 overflow-hidden px-4 font-mono text-[11px] leading-[22px] whitespace-nowrap"
             >
                 {/* UI-13: a minimum width, so the transport doesn't shift as the count changes */}

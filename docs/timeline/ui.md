@@ -462,7 +462,7 @@ from it. The spec still wins on the model; this file decides presentation.
     count through it (page mode's mute still silences both).
     Shift+click on Previous or Next goes to the first or last page (Shift+Q/E stay). Tooltips name
     the shortcuts.
-  - **The readout is a go-to box.** Click it, or press G, and type a page ("7", "2A", "pg 7"), a
+  - **The readout is a go-to box.** Click it, or press G or Cmd/Ctrl+G, and type a page ("7", "2A", "pg 7"), a
     measure ("m23", or "m23.3" for its count 3) or a rehearsal mark ("C"); Enter goes there (a page
     selects its box), Esc cancels, and a miss is marked rather than guessed.
   - **Fullscreen and Perspective are on the field's zoom widget,** since they change the field's

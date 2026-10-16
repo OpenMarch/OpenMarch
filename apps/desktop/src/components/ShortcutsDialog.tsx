@@ -42,7 +42,6 @@ interface Row {
  */
 const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
     timeline: [
-        { label: "Go to a page, measure or rehearsal mark", keys: "G" },
         { label: "Fit the show, or back", keys: "Shift + Z" },
         { label: "Leave an isolated move", keys: "Esc" },
         { label: "Draw a range (drag)", keys: "Ctrl + Drag" },

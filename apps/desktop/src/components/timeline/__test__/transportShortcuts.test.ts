@@ -101,7 +101,10 @@ describe("the shortcuts list (UI-17 follow-up)", () => {
         const playback = groups[0]!.rows.map((row) => row.keys);
         expect(playback).toEqual(["Space", "Shift + Space", "C", "Ctrl + M"]);
         const timeline = groups.find((g) => g.title === "Timeline");
-        expect(timeline?.rows.map((row) => row.keys)).toContain("G");
+        expect(timeline?.rows).toContainEqual({
+            label: "actions.timeline.goTo",
+            keys: "G",
+        });
         // K keeps the selection on this page, or lets it follow again (UI-18)
         expect(timeline?.rows).toContainEqual({
             label: "actions.timeline.toggleKeepOnPage",

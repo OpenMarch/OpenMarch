@@ -102,6 +102,7 @@
             "swap": "Swap two marchers"
         },
         "timeline": {
+            "goTo": "Go to a page, measure or rehearsal mark",
             "nextPage": "Next page (timeline)",
             "playPause": "Play / pause audio",
             "previousPage": "Previous page (timeline)",

@@ -533,6 +533,15 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
 
+    // Opens the transport's go-to box: type a page, a measure ("m23") or a rehearsal mark
+    timelineGoTo: {
+        labelKey: "actions.timeline.goTo",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: ["G", "$mod+G", "Control+G"],
+        ignoreRepeat: true,
+    },
+
     // Timeline (audio editor)
     timelinePlayPause: {
         labelKey: "actions.timeline.playPause",

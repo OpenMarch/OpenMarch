@@ -18,6 +18,10 @@ import {
     snapSeekBeat,
 } from "../TimelinePrimitives";
 import { Timeline, TimelineWaveformProvider } from "../Timeline";
+import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
+import { getActionDefinition } from "@/shortcuts/definitions";
+import { findConflicts } from "@/shortcuts/keymap";
+import * as platform from "@/shortcuts/platform";
 import {
     createLongTimelineStoryModel,
     timelineStoryData,
@@ -1953,16 +1957,54 @@ describe("the transport's go-to box (UI-12)", () => {
         expect(screen.queryByTestId("timeline-go-to")).toBeNull();
     });
 
-    it("opens with G", () => {
+    // The timelineGoTo action: G, or Mod+G. The dispatcher builds its keymap for the platform
+    // it finds, so Command+G is tried as a Mac and Control+G off one.
+    const pressG = (modifiers: { ctrlKey?: boolean; metaKey?: boolean }) =>
+        act(() => {
+            window.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                    code: "KeyG",
+                    key: "g",
+                    bubbles: true,
+                    ...modifiers,
+                }),
+            );
+        });
+    const renderWithShortcuts = () =>
         render(
-            <ExpandedTimeline
-                {...commonProps}
-                showTransport
-                onSeek={vi.fn()}
-            />,
+            <>
+                <ShortcutDispatcher overrides={{}} />
+                <ExpandedTimeline
+                    {...commonProps}
+                    showTransport
+                    onSeek={vi.fn()}
+                />
+            </>,
         );
-        fireEvent.keyDown(window, { key: "g" });
+
+    it.each([
+        ["G", false, {}],
+        ["Control+G", false, { ctrlKey: true }],
+        ["Command+G on a Mac", true, { metaKey: true }],
+        ["Control+G on a Mac", true, { ctrlKey: true }],
+    ])("opens with %s", (_name, mac, modifiers) => {
+        vi.spyOn(platform, "isMacPlatform").mockReturnValue(mac);
+        renderWithShortcuts();
+        pressG(modifiers);
         expect(screen.getByTestId("timeline-go-to")).toBeInTheDocument();
+        vi.restoreAllMocks();
+    });
+
+    it("is a timeline action the command palette lists", () => {
+        const action = getActionDefinition("timelineGoTo");
+        expect(action.defaultBindings).toEqual(["G", "$mod+G", "Control+G"]);
+        expect(action.hiddenFromPalette).toBeFalsy();
+        for (const isMac of [false, true])
+            expect(
+                findConflicts({}, undefined, isMac).filter((c) =>
+                    c.actionIds.includes("timelineGoTo"),
+                ),
+            ).toEqual([]);
     });
 });
 
@@ -2162,22 +2204,27 @@ describe("a cancelled clip drag (UI-12 review)", () => {
 describe("G behind overlays (UI-12 review)", () => {
     it("leaves G to an open menu", () => {
         render(
-            <ExpandedTimeline
-                {...commonProps}
-                showTransport
-                onSeek={vi.fn()}
-            />,
+            <>
+                <ShortcutDispatcher overrides={{}} />
+                <ExpandedTimeline
+                    {...commonProps}
+                    showTransport
+                    onSeek={vi.fn()}
+                />
+            </>,
         );
+        const pressG = () =>
+            fireEvent.keyDown(window, { code: "KeyG", key: "g" });
         const menu = document.createElement("div");
         menu.setAttribute("role", "menu");
         document.body.appendChild(menu);
         try {
-            fireEvent.keyDown(window, { key: "g" });
+            pressG();
         } finally {
             menu.remove();
         }
         expect(screen.queryByTestId("timeline-go-to")).toBeNull();
-        fireEvent.keyDown(window, { key: "g" });
+        pressG();
         expect(screen.getByTestId("timeline-go-to")).toBeInTheDocument();
     });
 });
