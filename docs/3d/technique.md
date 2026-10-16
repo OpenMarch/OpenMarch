@@ -254,3 +254,76 @@ backward march, and so on).
 - The hand mesh can't curl its fingers, so holds place the wrist about a
   hand's length from the tube and let the fingertips reach over it.
 - The bass drum arms are one pose for every drum size.
+
+## Counting and facing
+
+Rules the owner set while designing show-authored cues (2026-10-10). The
+planner plays the Feet and Facing ones (next section); the rest wait for
+their channels.
+
+- **Counts are inclusive, the way staff count.** "A 3-count horn move ending
+  on 7" is 5, 6, 7: the motion starts on the moment of 5 and is in position
+  on 7. A change can be given as its start count or as its length.
+- **A state lands on its count.** "Horns up on 7" means in position on 7; the
+  motion comes before it.
+- **Moves count the same way.** A 3-count toss on 1 releases on 1 and catches
+  on 3, and the hold resumes on 4.
+- **Facing is the whole performer.** At rest the feet point where the facing
+  says. Moving, the upper body holds the facing and the legs do the most
+  logical thing: facing the backfield and moving back is a forward march;
+  facing the back right corner and moving to it is a forward march; a slide
+  is the upper body holding its facing while the legs travel elsewhere.
+- **Pace and technique** (2026-10-10). The dots say where a marcher goes,
+  not how: in half time, dots 8-to-5 apart per count are 4-to-5 strides. On a
+  hold the default is to stand; mark time is a technique chosen for the hold.
+  The heel lands exactly on the count, built into the clips, not a setting.
+- **Battery rest positions** (2026-10-10). Sticks in: both sticks together
+  just above the drum, parallel to the head, about 2 inches above it. Sticks
+  down: by the sides, pointing mostly down.
+- **Rifle drop spin** (2026-10-10): right in front of the body; the tip moves
+  counterclockwise from the performer's own view, one turn per count.
+- **Kneel** is on the right knee with the left foot flat; no sit or lie down
+  for now.
+- **Drum majors** hold their hands in front for now; conducting comes later.
+
+## Pace, holds and facing in the planner
+
+How the planner plays the Feet and Facing cues (2026-10-10). These are the
+engineering reading of the rules above, for the owner to confirm or
+correct; `core/marchers/planner.ts` and `core/marchers/cueInputs.ts` hold
+them.
+
+- **A Feet setting starts with the step that lands on its click**
+  (2026-10-10). A pace or technique cue on count 17 governs the step whose
+  heel lands on 17.
+- **Half time** (2026-10-10): one stride every two counts, covering two
+  counts of dots, played at half the clip rate. Strides pair from the
+  start of each run of moving (or holding) counts, so an 8-count move is
+  four strides landing on 2, 4, 6 and 8, the last on the set, and the close
+  takes a stride's two counts. An odd count left over is a one-count stride
+  of its own. The step-off still starts before the first count.
+- **Double time** (2026-10-10): two strides a count, landing on the click
+  and the "and", each covering half the count's dots; the close takes half
+  a count.
+- **A pace change inside a move** fades from one gait to the other over the
+  first stride of the new pace, keeping the loop's step (2026-10-10).
+- **Mark time on holds** (2026-10-10) plays on every hold count while the
+  Feet say so, whether or not the rest of the band moves; stand is the
+  default. High mark time plays mark time until it has its own clips.
+- **One foot per move** (2026-10-10): a move steps off on the foot the Feet
+  say on its step-off count. Changing the setting mid-move takes effect at
+  the next step-off from a halt.
+- **Facing angles** (2026-10-10): 0 degrees faces the audience, 90 side 2,
+  180 the backfield, 270 side 1. A point is faced from where the marcher
+  stands. Direction of travel faces the way each step goes and keeps the
+  last direction on a hold.
+- **Turning** (2026-10-10): the whole performer turns over the Facing
+  transition, the short way round. A snap turns over the count before its
+  click for now.
+- **Slides face the 50 with the front facing only** (2026-10-10). With any
+  other facing the legs march forward when the travel is within 90 degrees
+  of the facing, backward past it, and slide within the slide band of
+  sideways. The upper body facing the audience ("Slides") is the Facing
+  default.
+- **Kneel over the feet** stands on the spot until kneel has its clips
+  (2026-10-10).

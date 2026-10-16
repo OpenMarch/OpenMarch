@@ -4,6 +4,7 @@
  * cylinders until then.
  */
 import { prepBase } from "./platformClip";
+import { plainRow } from "@/view3d/core/marchers/planner";
 import { useEffect, useMemo, useState } from "react";
 import type { AnimationClip } from "three";
 import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
@@ -105,8 +106,9 @@ export function useMarcherBodies(
         if (!assets || !namesKey || !holdsKey) return null;
         const clips: Record<string, AnimationClip> = {};
         for (const n of namesKey.split(",")) {
-            // a prep row bakes from its base clip (`clipForBake` lifts it)
-            const clip = assets.clips.get(prepBase(n));
+            // a prep or right-foot row bakes from its base clip
+            // (`clipForBake` lifts or mirrors it)
+            const clip = assets.clips.get(prepBase(plainRow(n).row));
             if (!clip) throw new Error(`3D View: clip ${n} isn't loaded`);
             clips[n] = clip;
         }

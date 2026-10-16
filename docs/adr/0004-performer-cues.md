@@ -1,8 +1,9 @@
 # 0004: Performer cues in the show file
 
-- Status: Accepted by the owner on 2026-10-15 for D-1 to D-6. D-7 (ADR 0002
-  amendments) is pending the owner's review of the planner (#119) and the
-  layered renderer (#120).
+- Status: Accepted by the owner on 2026-10-15 for D-1 to D-6, and for D-7's
+  Sync, Positions and Performers motion and facing (the planner, #119). D-7's
+  per-channel bake, GPU compose pass, prop bones and in-repo renderer are
+  pending the layered renderer (#120) and its integrated-GPU run.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
   channels, and item tables beside cues; 2026-10-15: timelines only (see the
@@ -403,3 +404,11 @@ and a page-era file converts to a timeline when it opens.
   `VIEW3D_TIMELINE_QUERY_KEY` (`["view3d_timeline"]`, the window's resolver
   query) on `view3d:invalidate`, not a synthetic `["timeline"]` key. No new
   channel. The `selection` payload still carries `selectedPageId`.
+- **D-7 Performers (owner, 2026-10-15):** accepted with the planner (#119).
+  Feet and Facing cues drive motion and facing, with the planner rules in
+  `docs/3d/technique.md` "Pace, holds and facing in the planner" as the
+  defaults. The show's saved performer defaults (`performerDefaults`, ADR
+  0004 D-4) win over the window's step-off foot, horn and guard toggles,
+  which remain only as unsaved preview overrides. Wiring the stored cues and
+  defaults into the 3D window is a follow-up; until then the window compiles
+  no cues.

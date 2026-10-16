@@ -1,23 +1,31 @@
 /**
- * Drives the 3D View's marchers from the drill (ADR 0002 D-7): plans every
- * marcher's clips for the whole show once, then each frame switches clips
- * where a marcher's event changes and places its body. A crossfade rewrites
- * its blend weight and leg turn every frame; everything else is written once.
+ * Drives the 3D View's marchers from the drill (ADR 0002 D-7) and the
+ * compiled cues (performer-behavior.md section 8.2): plans every marcher's
+ * clips for the whole show once, then each frame switches clips where a
+ * marcher's event changes, places its body and turns it to its heading. A
+ * crossfade rewrites its blend weight and leg turn every frame; everything
+ * else is written once.
  */
-import type { FieldProperties } from "@openmarch/core";
+import {
+    compileCues,
+    type CompiledCues,
+    type FieldProperties,
+} from "@openmarch/core";
 import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
 import type { Bake } from "@/view3d/vendor/om-pose/instanced-marchers.js";
 import type { ShowPositions } from "@/view3d/positions";
 import type { CountClock } from "@/view3d/core/marchers/countClock";
 import {
-    REST_EPS,
     crossfadeWeight,
     planMarcher,
     eventRows,
+    headingAt,
 } from "@/view3d/core/marchers/planner";
 import type { MarcherPlan } from "@/view3d/core/marchers/planner";
 import { bodyAt, eventIndexAt } from "@/view3d/core/marchers/planner";
 import type { HeightClass } from "@/view3d/core/marchers/looks";
+import { marcherCueInputs } from "@/view3d/core/marchers/cueInputs";
+import type { Foot } from "@/view3d/core/marchers/planner";
 import { rowKey, type MarcherBodies } from "./marcherBodies";
 
 export interface ShowPlans {
@@ -31,10 +39,39 @@ export interface ShowPlans {
     inputs: {
         positions: (Float64Array | null)[];
         heightClasses: readonly HeightClass[];
-        bandMoving: Uint8Array;
         bpm: Float64Array;
         ids: readonly number[];
+        cues: CompiledCues | null;
     };
+}
+
+/**
+ * Compiles the show's cues for the 3D View. There are no stored cues yet,
+ * so this is the defaults alone, built from the marchers and the timed
+ * beats (in the count clock's order); `stepOffFoot` is the window's preview
+ * override of the show default, never saved.
+ */
+export function compileWindowCues(
+    marchers: readonly { id: number; section: string }[],
+    beats: readonly { id: number; timestamp: number; duration: number }[],
+    stepOffFoot: Foot,
+): CompiledCues {
+    return compileCues({
+        beats: beats
+            .filter((b) => b.duration > 0)
+            .sort((a, b) => a.timestamp - b.timestamp)
+            .map((b) => ({ id: b.id, duration: b.duration })),
+        marchers: marchers.map((m, i) => ({
+            id: m.id,
+            section: m.section,
+            tagIds: [],
+            drillOrder: i,
+            // Feet and Facing fit everyone; nothing here reads the others
+            carries: "none",
+        })),
+        cues: [],
+        showDefaults: { stepOffFoot },
+    });
 }
 
 const sameArray = (
@@ -86,30 +123,10 @@ function sampleDrill(
     return sampled;
 }
 
-/** 1 for each count on which any marcher travels. */
-function bandMovingCounts(
-    sampled: readonly (Float64Array | null)[],
-    K: number,
-): Uint8Array {
-    const bandMoving = new Uint8Array(K);
-    for (const p of sampled) {
-        if (!p) continue;
-        for (let k = 0; k < K; k++)
-            if (
-                !bandMoving[k] &&
-                Math.hypot(
-                    p[k * 2 + 2] - p[k * 2],
-                    p[k * 2 + 3] - p[k * 2 + 1],
-                ) > REST_EPS
-            )
-                bandMoving[k] = 1;
-    }
-    return bandMoving;
-}
-
 /**
  * Samples every marcher's drill at each count boundary and plans its clips.
- * A count is a band-moving count when any marcher travels on it.
+ * Each marcher is planned on its own: a hold stands still whatever the rest
+ * of the band does (performer-behavior.md section 3).
  */
 export function planShow(
     ids: readonly number[],
@@ -118,18 +135,18 @@ export function planShow(
     clock: CountClock,
     fieldProperties: FieldProperties,
     manifest: Manifest,
-    heading: number,
+    /** The compiled cues; null plays the defaults (front facing, stand). */
+    cues: CompiledCues | null,
     previous: ShowPlans | null = null,
 ): ShowPlans {
     const t0 = performance.now();
     const sampled = sampleDrill(ids, positions, clock, fieldProperties);
-    const bandMoving = bandMovingCounts(sampled, clock.counts);
     // A drill edit usually moves a few marchers: reuse every plan whose
-    // inputs are unchanged (same marcher, drill samples, class and band rests).
+    // inputs are unchanged (same marcher, drill samples, class and cues).
     const prev = previous?.inputs;
     const reuseAll =
         !!prev &&
-        sameArray(prev.bandMoving, bandMoving) &&
+        prev.cues === cues &&
         sameArray(prev.bpm, clock.bpm) &&
         clock.counts + 1 === (prev.positions.find((p) => p)?.length ?? 0) / 2;
     const prevIndex = new Map((prev?.ids ?? []).map((id, i) => [id, i]));
@@ -147,13 +164,16 @@ export function planShow(
         )
             return previous!.plans[j];
         replanned++;
+        const fromCues = cues
+            ? marcherCueInputs(cues, ids[i], positions)
+            : null;
         return planMarcher({
             manifest,
             heightClass: h,
-            heading,
+            heading: fromCues?.heading ?? 0,
+            feet: fromCues?.feet,
             positions,
             bpm: clock.bpm,
-            bandMoving,
         });
     });
     return {
@@ -163,9 +183,9 @@ export function planShow(
         inputs: {
             positions: sampled,
             heightClasses,
-            bandMoving,
             bpm: clock.bpm,
             ids,
+            cues,
         },
     };
 }
@@ -178,7 +198,7 @@ export function planShow(
  * its click. The step-off plays during the count before a move, the left
  * foot lands on count 1, the right on count 8, and the close finishes on
  * the hold's count 1, as the 2D dot arrives. During a move the body runs
- * half a step ahead of the 2D dot.
+ * half a step ahead of the 2D dot. `CUE_LEAD` in `cueInputs.ts` must match.
  */
 export const STEP_AHEAD = 1;
 
@@ -191,7 +211,6 @@ export class MarcherMotion {
         private readonly plans: readonly (MarcherPlan | null)[],
         private readonly manifest: Manifest,
         private readonly bodies: MarcherBodies,
-        private readonly heading: number,
     ) {
         this.cursor = new Int32Array(plans.length).fill(-1);
     }
@@ -229,10 +248,11 @@ export class MarcherMotion {
             row,
             row2,
             weight: row2 ? weight : 0,
-            // the shader plays clip time uCount + phase, and uCount is the
-            // show's count clock: plan time minus the event's phase start
-            phase: STEP_AHEAD - e.phaseStart,
-            rate: 1,
+            // the shader plays clip time uCount * rate + phase, and uCount is
+            // the show's count clock: the plan clock (uCount + STEP_AHEAD)
+            // minus the event's phase start, in steps
+            phase: (STEP_AHEAD - e.phaseStart) * e.rate,
+            rate: e.rate,
             legYaw,
         });
     }
@@ -240,9 +260,15 @@ export class MarcherMotion {
     /**
      * At show count clock `count`: switches clips where needed and replaces
      * each placed slot's position in `xz`, which the caller fills with the
-     * drill position `STEP_AHEAD` counts later, with its body position.
+     * drill position `STEP_AHEAD` counts later, with its body position, and
+     * its heading in `headings`: the whole performer turns (Facing).
      */
-    update(count: number, xz: Float32Array, placed: Uint8Array): void {
+    update(
+        count: number,
+        xz: Float32Array,
+        placed: Uint8Array,
+        headings?: Float32Array,
+    ): void {
         const out = this.out;
         const planCount = count + STEP_AHEAD;
         for (let i = 0; i < this.plans.length; i++) {
@@ -256,6 +282,7 @@ export class MarcherMotion {
                 this.apply(i, plan, index, planCount);
                 this.cursor[i] = index;
             }
+            if (headings) headings[i] = headingAt(plan, planCount);
             if (!placed[i]) continue;
             bodyAt(
                 this.manifest,
@@ -264,7 +291,6 @@ export class MarcherMotion {
                 planCount,
                 xz[i * 2],
                 xz[i * 2 + 1],
-                this.heading,
                 out,
             );
             xz[i * 2] = out.x;

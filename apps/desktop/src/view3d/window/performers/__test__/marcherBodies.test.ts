@@ -14,6 +14,7 @@ import {
 } from "@/view3d/core/marchers/looks";
 import type { LoadedBody } from "../marchers/marcherAssets";
 import { defaultPerformerBody } from "@/view3d/core/marchers/looks";
+import { mirrorRow } from "@/view3d/core/marchers/planner";
 import {
     MarcherBodies,
     GLOVE_LINE,
@@ -377,6 +378,52 @@ describe("stepping off on the right foot", () => {
         for (let i = row.row * width; i < (row.row + 1) * width; i++)
             if (Math.abs(a[i] - b[i]) > 1e-6) differs++;
         expect(differs).toBeGreaterThan(0);
+    });
+
+    it("loads the partner of a row a right-foot move plays", () => {
+        expect(
+            clipsToLoad(["8to5", mirrorRow("slideL8to5")], "left").sort(),
+        ).toEqual(["8to5", mirrorRow("slideL8to5"), "slideR8to5"].sort());
+    });
+
+    it("bakes a right-foot move's row as the right-foot bake of its clip", async () => {
+        const bodies = await loadedBodies();
+        const all = await allClips();
+        const slideL = all.get("slideL8to5")!;
+        const slideR = all.get("slideR8to5")!;
+        const perRow = bakeForBodies(
+            bodies,
+            {
+                slideL8to5: slideL,
+                slideR8to5: slideR,
+                [mirrorRow("slideL8to5")]: slideL,
+            },
+            [NO_HOLD],
+            "left",
+        );
+        const whole = bakeForBodies(
+            bodies,
+            { slideL8to5: slideL, slideR8to5: slideR },
+            [NO_HOLD],
+            "right",
+        );
+        const width = whole.texture.image.width * 4;
+        const rowData = (bake: typeof whole, name: string) => {
+            const r = bake.rows[name].row;
+            return Array.from(
+                (bake.texture.image.data as Float32Array).slice(
+                    r * width,
+                    (r + 1) * width,
+                ),
+            );
+        };
+        expect(rowData(perRow, mirrorRow("slideL8to5"))).toEqual(
+            rowData(whole, "slideL8to5"),
+        );
+        // and the plain row is left alone
+        expect(rowData(perRow, "slideL8to5")).not.toEqual(
+            rowData(whole, "slideL8to5"),
+        );
     });
 
     it("refuses a right-foot bake when a mirrored partner is missing", async () => {

@@ -17,12 +17,15 @@
  *   shadows and halves the crowd.
  * - `hornState`: which hold the brass plays. Always `up` for shows; the
  *   settings panel can switch it to check the other holds (`hornState.ts`).
+ *   A preview override, never saved; Horn cues replace it
+ *   (performer-behavior.md section 7.5).
  * - `guardEquipment`: what the guard sections carry: `section` for each
  *   section's own (flags carry the 6 ft flag, rifles the rifle), or one
- *   piece for every guard section, to see the other equipment. A window
- *   setting until sections store their equipment.
+ *   piece for every guard section, to see the other equipment. A preview
+ *   override, never saved, until sections store their equipment.
  * - `stepOffFoot`: which foot the band steps off on; `right` plays every
- *   clip mirrored. A window setting until the show stores it.
+ *   move's clips mirrored. A preview override of the show default the cues
+ *   compile with (`compileWindowCues`), never saved.
  * - `powerPrefs`: pause drawing when nothing moves, and cap the frame rate
  *   on battery (`drawPolicy.ts`); saved per computer. Set it with
  *   `setPowerPrefs`. `onBattery` is the window's own reading of the battery.

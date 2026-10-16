@@ -2,18 +2,28 @@
  * Which clip each 3D View marcher plays on each count, and where its body is
  * (ADR 0002 D-7; om-pose `docs/openmarch-3d.md`, "Driving clips from drill").
  *
- * The planner doesn't know about pages. For every count it looks at how far
- * the marcher's dot moves during that count and in which direction:
+ * The planner doesn't know about pages. It turns the counts into steps by
+ * the Feet pace (docs/3d/performer-behavior.md section 3, 8.2): one step a
+ * count in single time, one every two counts in half time, two a count in
+ * double time. The dots set the distance and the pace the stride, so 8-to-5
+ * dots in half time are 4-to-5 strides played at half the clip rate. For
+ * every step it looks at how far the marcher's dot moves and which way:
  *
- * - no travel: a rest count, `marktime` while any marcher moves on that
- *   count, `attention` while the whole band holds;
- * - travel: a step along that count's own vector. The family and leg turn
- *   come from `travelDirection`, the two sizes and weight from `pickBlend`.
- *   A curved path is a new vector every count. A run of slide counts faces
- *   the 50: forward when the run ends nearer the 50 than it started, backward
- *   when farther (`facing.ts`).
+ * - no travel: a rest, `attention` by default ("stand" on holds), or
+ *   `marktime` when the Feet's on-holds technique is mark time or high mark
+ *   time. There is no automatic mark time any more;
+ * - travel: a step along that step's own vector, relative to the heading
+ *   (the Facing channel turns the whole performer; the legs pick forward,
+ *   backward or a slide relative to it). The family and leg turn come from
+ *   `travelDirection`, the two sizes and weight from `pickBlend`. A curved
+ *   path is a new vector every step. With the front facing, a run of slide
+ *   steps faces the 50: forward when the run ends nearer the 50 than it
+ *   started, backward when farther (`facing.ts`).
  *
- * From the sequence of counts it builds clip events:
+ * Each move plays off the step-off foot set on its step-off count; a
+ * right-foot move plays mirrored rows (`mirrorRow`).
+ *
+ * From the sequence of steps it builds clip events:
  *
  * - rest to step: `stepoff_<move>` (turned via `turnedClips`), or from mark
  *   time `change_marktime__<move>` when that clip exists;
@@ -85,24 +95,58 @@ export const MAX_ANCHOR_SPAN = 16;
 /** A change in the foot-on-dot target bigger than this (meters) pins the boundaries around it. */
 export const TARGET_EPS = 0.01;
 
+/** How often the feet step: once a count, every two counts, twice a count. */
+export type Pace = "single" | "half" | "double";
+/** How the feet step while moving. Bent leg and high step play straight leg for now. */
+export type MovingTechnique = "straightLeg" | "bentLeg" | "highStep";
+/** What the feet do on a hold. High mark time plays mark time for now. */
+export type HoldTechnique = "stand" | "markTime" | "highMarkTime";
+/** The performer's own foot. */
+export type Foot = "left" | "right";
+
+/** The Feet channel's settings for one count (performer-behavior.md section 3). */
+export interface FeetSettings {
+    pace: Pace;
+    moving: MovingTechnique;
+    onHolds: HoldTechnique;
+    stepOffFoot: Foot;
+}
+
+/** The Feet defaults: single time, straight leg, stand on holds, left foot. */
+export const DEFAULT_FEET: Readonly<FeetSettings> = Object.freeze({
+    pace: "single",
+    moving: "straightLeg",
+    onHolds: "stand",
+    stepOffFoot: "left",
+});
+
 export interface PlanInput {
     manifest: Manifest;
     heightClass: HeightClass;
-    /** Heading of the upper body, radians about +Y (0 faces the audience). */
-    heading: number;
+    /**
+     * Where the whole performer faces, radians about +Y (0 faces the
+     * audience): one heading, or one per count boundary 0..K (the Facing
+     * channel, `cueInputs.ts`). Between boundaries it turns the short way.
+     */
+    heading: number | Float64Array;
     /** Drill position at each count boundary 0..K: x, z interleaved (world meters). */
     positions: Float64Array;
     /** Tempo of each count 0..K-1. */
     bpm: Float64Array;
-    /** 1 when any marcher travels during that count. */
-    bandMoving: Uint8Array;
     /**
-     * What the dot marks (docs/3d/technique.md): `foot` (the default) puts
-     * the landing foot's ankle on the dot at the end of each count of a
-     * move, the body half a step behind it with the weight 50-50; `body`
-     * keeps the body's center over the dot. Not offered in the UI yet.
+     * The Feet settings of each count 0..K-1: count k is the step that
+     * lands at the end of drill count k. Defaults to `DEFAULT_FEET`.
      */
-    dotMode?: DotMode;
+    feet?: readonly FeetSettings[];
+    /**
+     * What the dot marks (docs/3d/technique.md), for every count or per
+     * count 0..K-1 (a set's mode covers the counts of the move into it):
+     * `foot` (the default) puts the landing foot's ankle on the dot at the
+     * end of each count of a move, the body half a step behind it with the
+     * weight 50-50; `body` keeps the body's center over the dot. Not offered
+     * in the UI yet.
+     */
+    dotMode?: DotMode | readonly DotMode[];
 }
 
 /** What a marcher's dot marks: the landing foot's ankle, or the body's center. */
@@ -111,8 +155,17 @@ export type DotMode = "foot" | "body";
 export type EventKind = "rest" | "loop" | "transition" | "crossfade";
 
 export interface PlanEvent {
-    /** First count it covers; it lasts until the next event's count. */
+    /** First count it covers (count clock); it lasts until the next event's count. */
     count: number;
+    /**
+     * Steps per count: 1 in single time, 0.5 in half, 2 in double. The clip
+     * plays at this rate; a transition lasts `1 / rate` counts.
+     */
+    rate: number;
+    /** The heading the legs step relative to (radians), as `PlanInput.heading`. */
+    heading: number;
+    /** The foot this event's move stepped off on: `right` plays mirrored rows. */
+    foot: Foot;
     kind: EventKind;
     /** Clip names (with the height class suffix), as `bake.rows` keys. */
     clip: string;
@@ -125,7 +178,7 @@ export interface PlanEvent {
     /** Crossfades: the count clock values the fade runs between. Otherwise the event's own span. */
     fadeStart: number;
     fadeEnd: number;
-    /** The count clock value at which the clip is at its time 0. */
+    /** The count clock value at which the clip is at its time 0 (clip time is `(c - phaseStart) * rate`). */
     phaseStart: number;
     /**
      * Crossfades centered on a change of move: the loop time (0 or 1 count)
@@ -141,7 +194,7 @@ export interface PlanEvent {
      */
     baseX: number;
     baseZ: number;
-    /** The correction span this event lies in: counts a..b and the corrections there (raw offset minus target). */
+    /** The correction span this event lies in: count clock a..b and the corrections there (raw offset minus target). */
     a: number;
     b: number;
     oaX: number;
@@ -154,6 +207,8 @@ export interface MarcherPlan {
     events: PlanEvent[];
     /** Count boundaries (K + 1). */
     counts: number;
+    /** Heading at each count boundary (K + 1): `headingAt` turns between them. */
+    headings: Float64Array;
 }
 
 type State =
@@ -217,41 +272,156 @@ function snapPick(p: Pick): Pick {
     return p;
 }
 
+/** `a mod 2` in [0, 2). */
+const mod2 = (a: number) => ((a % 2) + 2) % 2;
+
+/** The signed angle from `a` to `b`, the short way round (radians). */
+function angleDelta(a: number, b: number): number {
+    let d = (b - a) % (2 * Math.PI);
+    if (d > Math.PI) d -= 2 * Math.PI;
+    else if (d < -Math.PI) d += 2 * Math.PI;
+    return d;
+}
+
+/** The heading at count clock `c` from headings at each count boundary. */
+function headingFrom(headings: Float64Array, c: number): number {
+    const last = headings.length - 1;
+    if (last <= 0) return headings[0] ?? 0;
+    if (!(c > 0)) return headings[0];
+    if (c >= last) return headings[last];
+    const k = Math.floor(c);
+    const h0 = headings[k];
+    return h0 + angleDelta(h0, headings[k + 1]) * (c - k);
+}
+
+/** A heading this close to 0 is the front facing, where slides face the 50. */
+const FRONT_EPS = 1e-6;
+const facesFront = (h: number) => Math.abs(angleDelta(0, h)) <= FRONT_EPS;
+
 /**
- * Which way each count's slide goes relative to the 50 (x = 0): decided per
- * run of consecutive slide counts in the same lateral direction, by whether
- * the run ends nearer the 50 than it started. One gait per run, so a slide
- * across the 50 doesn't flip halfway.
+ * The marcher's steps: the counts split or joined by pace. Step i runs
+ * over count clock t[i]..t[i+1] from pos[i] to pos[i+1].
  */
-function slideSenses(input: PlanInput): SlideSense[] {
-    const { positions, heading } = input;
+interface Steps {
+    n: number;
+    t: Float64Array;
+    /** x, z at each step boundary, interleaved. */
+    pos: Float64Array;
+    /** Steps per count. */
+    rate: Float64Array;
+    /** Steps per minute, for the clips' tempo. */
+    bpm: Float64Array;
+    /** The heading the legs step relative to: the heading at the step's landing. */
+    heading: Float64Array;
+    feet: FeetSettings[];
+    dot: DotMode[];
+}
+
+/**
+ * Splits or joins the counts by pace. In half time two counts of the same
+ * kind (moving, or holding) make one step, paired from the start of each
+ * run; an odd count left over is a step of its own. In double time each
+ * count is two steps, the dot halfway between them.
+ */
+function buildSteps(input: PlanInput, headings: Float64Array): Steps {
+    const { positions, bpm } = input;
     const K = positions.length / 2 - 1;
-    const out: SlideSense[] = new Array(K).fill(null);
+    const feetOf = (k: number) => input.feet?.[k] ?? DEFAULT_FEET;
+    const dotOf = (k: number): DotMode =>
+        (typeof input.dotMode === "string"
+            ? input.dotMode
+            : input.dotMode?.[k]) ?? "foot";
+    const moving = (k: number) =>
+        Math.hypot(
+            positions[(k + 1) * 2] - positions[k * 2],
+            positions[(k + 1) * 2 + 1] - positions[k * 2 + 1],
+        ) > REST_EPS;
+    const t: number[] = [0];
+    const pos: number[] = [positions[0], positions[1]];
+    const rate: number[] = [];
+    const spm: number[] = [];
+    const feet: FeetSettings[] = [];
+    const dot: DotMode[] = [];
+    /** A step of count k's settings ending at count clock `end`, on the drill there. */
+    const push = (k: number, end: number, r: number) => {
+        const i = Math.floor(end - 1e-9);
+        const u = end - i;
+        t.push(end);
+        pos.push(
+            positions[i * 2] + (positions[(i + 1) * 2] - positions[i * 2]) * u,
+            positions[i * 2 + 1] +
+                (positions[(i + 1) * 2 + 1] - positions[i * 2 + 1]) * u,
+        );
+        rate.push(r);
+        spm.push(bpm[k] * r);
+        feet.push(feetOf(k));
+        dot.push(dotOf(k));
+    };
     let k = 0;
     while (k < K) {
+        const pace = feetOf(k).pace;
+        if (
+            pace === "half" &&
+            k + 1 < K &&
+            feetOf(k + 1).pace === "half" &&
+            moving(k) === moving(k + 1)
+        ) {
+            push(k, k + 2, 0.5);
+            k += 2;
+        } else if (pace === "double") {
+            push(k, k + 0.5, 2);
+            push(k, k + 1, 2);
+            k += 1;
+        } else {
+            push(k, k + 1, 1);
+            k += 1;
+        }
+    }
+    const n = rate.length;
+    const heading = new Float64Array(n);
+    for (let i = 0; i < n; i++) heading[i] = headingFrom(headings, t[i + 1]);
+    return {
+        n,
+        t: Float64Array.from(t),
+        pos: Float64Array.from(pos),
+        rate: Float64Array.from(rate),
+        bpm: Float64Array.from(spm),
+        heading,
+        feet,
+        dot,
+    };
+}
+
+/**
+ * Which way each step's slide goes relative to the 50 (x = 0): decided per
+ * run of consecutive slide steps in the same lateral direction, by whether
+ * the run ends nearer the 50 than it started. One gait per run, so a slide
+ * across the 50 doesn't flip halfway. Only with the front facing
+ * (technique.md, "Slides"); any other facing leaves the legs to
+ * `pickDirection`.
+ */
+function slideSenses(steps: Steps): SlideSense[] {
+    const { pos: positions, heading, n: K } = steps;
+    const out: SlideSense[] = new Array(K).fill(null);
+    const slideAt = (k: number, side: number) => {
         const dx = positions[(k + 1) * 2] - positions[k * 2];
         const dz = positions[(k + 1) * 2 + 1] - positions[k * 2 + 1];
-        const side = Math.sign(dx);
-        if (
-            !(Math.hypot(dx, dz) > REST_EPS) ||
-            side === 0 ||
-            !isSlide(travelDirection(dx, dz, heading))
-        ) {
+        return (
+            Math.hypot(dx, dz) > REST_EPS &&
+            facesFront(heading[k]) &&
+            (side === 0 ? Math.sign(dx) !== 0 : Math.sign(dx) === side) &&
+            isSlide(travelDirection(dx, dz, heading[k]))
+        );
+    };
+    let k = 0;
+    while (k < K) {
+        if (!slideAt(k, 0)) {
             k++;
             continue;
         }
+        const side = Math.sign(positions[(k + 1) * 2] - positions[k * 2]);
         let end = k + 1;
-        while (end < K) {
-            const ex = positions[(end + 1) * 2] - positions[end * 2];
-            const ez = positions[(end + 1) * 2 + 1] - positions[end * 2 + 1];
-            if (
-                !(Math.hypot(ex, ez) > REST_EPS) ||
-                Math.sign(ex) !== side ||
-                !isSlide(travelDirection(ex, ez, heading))
-            )
-                break;
-            end++;
-        }
+        while (end < K && slideAt(end, side)) end++;
         const x0 = Math.abs(positions[k * 2]);
         const x1 = Math.abs(positions[end * 2]);
         const sense: SlideSense =
@@ -262,22 +432,25 @@ function slideSenses(input: PlanInput): SlideSense[] {
     return out;
 }
 
-/** The states of every count from the drill. */
-function countStates(input: PlanInput): State[] {
-    const { positions, bpm, bandMoving, manifest, heightClass, heading } =
-        input;
-    const K = positions.length / 2 - 1;
-    const senses = slideSenses(input);
+/** The states of every step from the drill and the Feet settings. */
+function stepStates(input: PlanInput, steps: Steps): State[] {
+    const { manifest, heightClass } = input;
+    const { pos: positions, bpm, heading, feet, n: K } = steps;
+    const senses = slideSenses(steps);
     const out: State[] = [];
     for (let k = 0; k < K; k++) {
         const dx = positions[(k + 1) * 2] - positions[k * 2];
         const dz = positions[(k + 1) * 2 + 1] - positions[k * 2 + 1];
         const d = Math.hypot(dx, dz);
         if (!(d > REST_EPS)) {
-            out.push({ type: bandMoving[k] ? "marktime" : "attention" });
+            // stand by default; high mark time plays mark time for now
+            out.push({
+                type: feet[k].onHolds === "stand" ? "attention" : "marktime",
+            });
             continue;
         }
-        const dir = travelDirection(dx, dz, heading, senses[k]);
+        // bent leg and high step play straight leg for now
+        const dir = travelDirection(dx, dz, heading[k], senses[k]);
         const family = dir.family as Family;
         const pick = snapPick(
             pickBlend(manifest, family, d, {
@@ -302,11 +475,13 @@ interface Draft {
     weight: number;
     legYaw: number | [number, number, number, number];
     phaseStart: number;
+    rate: number;
+    foot: Foot;
     root: TurnedPair | ClipPair | null;
     /** Crossfades: the fade window. */
     fadeStart?: number;
     fadeEnd?: number;
-    /** The second count of a two-count crossfade: no event of its own. */
+    /** The second step of a two-step crossfade: no event of its own. */
     continued?: boolean;
     /** See `PlanEvent.prep`. */
     prep?: number | null;
@@ -318,7 +493,7 @@ function soloPair(manifest: Manifest, name: string): ClipPair {
     return { a: name, b: null, weight: 0, clipA: c, clipB: c };
 }
 
-/** Root travel at u of a transition's count, in the marcher's frame. */
+/** Root travel at u of a transition's step, in the marcher's frame. */
 export function rootAt(
     manifest: Manifest,
     pair: TurnedPair | ClipPair,
@@ -327,29 +502,51 @@ export function rootAt(
     return turnRoot(manifest, pair as TurnedPair, u);
 }
 
+/** The headings at each count boundary from `PlanInput.heading`. */
+function headingsOf(input: PlanInput): Float64Array {
+    const K = input.positions.length / 2 - 1;
+    if (typeof input.heading !== "number") {
+        if (input.heading.length !== K + 1)
+            throw new Error(
+                `planner: ${input.heading.length} headings for ${K + 1} count boundaries`,
+            );
+        return input.heading;
+    }
+    return new Float64Array(K + 1).fill(input.heading);
+}
+
 /** Plans one marcher's clips and body placement for the whole show. */
 // eslint-disable-next-line max-lines-per-function
 export function planMarcher(input: PlanInput): MarcherPlan {
-    const { manifest, heightClass: h, heading, positions } = input;
+    const { manifest, heightClass: h } = input;
     const sfx = classSuffix(h);
     const names = clipNames(manifest);
     const has = (base: string) => names.has(base + sfx);
-    const states = countStates(input);
+    const headings = headingsOf(input);
+    const steps = buildSteps(input, headings);
+    const { t: T, pos: positions } = steps;
+    const states = stepStates(input, steps);
     const K = states.length;
-    const cos = Math.cos(heading);
-    const sin = Math.sin(heading);
 
-    // 1. Clip drafts per count, and the raw offset (body - drill) at each boundary.
+    // 1. Clip drafts per step, and the raw offset (body - drill) at each boundary.
     const drafts: Draft[] = [];
     const ox = new Float64Array(K + 1);
     const oz = new Float64Array(K + 1);
     let prev: State = { type: "attention" };
-    let parity = 0; // the running loop's time on this count: 0 or 1 (x 0.5 s)
+    let parity = 0; // the running loop's time on this step: 0 or 1 (in steps)
     let prevYaw = 0;
+    let prevRate = steps.rate[0] ?? 1;
+    let foot: Foot = "left"; // the current move's step-off foot
     for (let k = 0; k < K; k++) {
         const s = states[k];
-        // the loop's time on this count, before this count updates it
+        const rate = steps.rate[k];
+        const dur = 1 / rate;
+        // the loop's time on this step, before this step updates it
         const p = parity;
+        // a move (or mark time) from attention steps off on this step's foot
+        if (prev.type === "attention" && s.type !== "attention")
+            foot = steps.feet[k].stepOffFoot;
+        const moveFoot = foot;
         let draft: Draft;
         const loopOf = (st: State, yaw: Draft["legYaw"]): Draft =>
             st.type === "move"
@@ -359,7 +556,9 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                       clip2: st.pick.weight > 0 ? st.pick.b : null,
                       weight: st.pick.weight,
                       legYaw: yaw,
-                      phaseStart: k - p,
+                      phaseStart: T[k] - p * dur,
+                      rate,
+                      foot: moveFoot,
                       root: null,
                   }
                 : {
@@ -369,13 +568,15 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                       weight: 0,
                       legYaw: 0,
                       // attention is still; only mark time's phase matters
-                      phaseStart: st.type === "attention" ? 0 : k - p,
+                      phaseStart: st.type === "attention" ? 0 : T[k] - p * dur,
+                      rate,
+                      foot: st.type === "attention" ? "left" : moveFoot,
                       root: null,
                   };
         /**
          * A halt keeps the closing leg on its line: the residual turn that
          * squares the legs waits until the foot has closed, the last fifth
-         * of the count, instead of easing through the clip's swing window.
+         * of the step, instead of easing through the clip's swing window.
          */
         const lateTurn = (pair: TurnedPair): TurnedPair =>
             pair.kind === "stepoff"
@@ -399,7 +600,9 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                 clip2: turned.b && turned.weight > 0 ? turned.b : null,
                 weight: turned.b ? turned.weight : 0,
                 legYaw: "legYaw" in turned ? (turned as TurnedPair).legYaw : 0,
-                phaseStart: k,
+                phaseStart: T[k],
+                rate,
+                foot: moveFoot,
                 root: turned,
             };
         };
@@ -422,10 +625,10 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                 : restBase(st) + sfx;
         const yawOf = (st: State) => (st.type === "move" ? st.dir.legYaw : 0);
         /**
-         * A change of move at this count. Centered on the boundary when the
-         * previous count is a plain loop of the old move: that draft becomes
-         * the fade's first count and this one continues it. Otherwise the fade
-         * covers this count alone.
+         * A change of move at this step. Centered on the boundary when the
+         * previous step is a plain loop of the old move at the same pace:
+         * that draft becomes the fade's first step and this one continues
+         * it. Otherwise the fade covers this step alone.
          */
         const crossfade = (from: State, to: State): Draft => {
             const a = soloLoop(from);
@@ -435,19 +638,22 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                 k > 0 &&
                 last !== undefined &&
                 last.kind === "loop" &&
-                !last.continued;
+                !last.continued &&
+                last.rate === rate;
             const fade: Draft = {
                 kind: "crossfade",
                 clip: a,
                 clip2: b === a ? null : b,
                 weight: 0,
                 legYaw: [yawOf(from), yawOf(to), 0, 1],
-                phaseStart: centered ? last.phaseStart : k - p,
+                phaseStart: centered ? last.phaseStart : T[k] - p * dur,
+                rate,
+                foot: moveFoot,
                 root: null,
-                fadeStart: centered ? k - 0.5 : k,
-                fadeEnd: centered ? k + 0.5 : k + 1,
+                fadeStart: centered ? (T[k - 1] + T[k]) / 2 : T[k],
+                fadeEnd: centered ? (T[k] + T[k + 1]) / 2 : T[k + 1],
                 // the old move's last landing, at boundary k, is the prep step
-                prep: centered ? (((k - last.phaseStart) % 2) + 2) % 2 : null,
+                prep: centered ? mod2((T[k] - last.phaseStart) * rate) : null,
             };
             if (centered) {
                 drafts[k - 1] = fade;
@@ -461,13 +667,14 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                 draft = transition(
                     turnedClips(manifest, s.pick, s.dir, "stepoff"),
                 );
-                parity = 0; // stepoff covers this count; the loop starts at time 0 next count
+                parity = 0; // stepoff covers this step; the loop starts at time 0 next step
                 prevYaw = s.dir.legYaw;
             } else {
                 const sameMove =
                     prev.type === "move" &&
                     prev.family === s.family &&
-                    Math.abs(prev.d - s.d) <= SIZE_JUMP;
+                    Math.abs(prev.d - s.d) <= SIZE_JUMP &&
+                    prevRate === rate;
                 const yaw = s.dir.legYaw;
                 if (sameMove && Math.abs(yaw - prevYaw) <= SHARP_TURN) {
                     // the same move, drifting: ease the legs over half a loop
@@ -521,12 +728,14 @@ export function planMarcher(input: PlanInput): MarcherPlan {
         drafts.push(draft);
 
         // Raw offset: loops and rests keep it (they travel exactly the drill's
-        // vector, or nothing); a transition moves the body by its root travel
-        // while the drill moves by its own vector.
+        // vector, or nothing); a transition moves the body by its root travel,
+        // turned to the heading, while the drill moves by its own vector.
         let nx = ox[k];
         let nz = oz[k];
         if (draft.kind === "transition" && draft.root) {
             const [rx, rz] = rootAt(manifest, draft.root, 1);
+            const cos = Math.cos(steps.heading[k]);
+            const sin = Math.sin(steps.heading[k]);
             const dx = positions[(k + 1) * 2] - positions[k * 2];
             const dz = positions[(k + 1) * 2 + 1] - positions[k * 2 + 1];
             nx += rx * cos + rz * sin - dx;
@@ -535,29 +744,29 @@ export function planMarcher(input: PlanInput): MarcherPlan {
         ox[k + 1] = nx;
         oz[k + 1] = nz;
         prev = s;
+        prevRate = rate;
     }
 
     // 2. Targets: where the body should be against the drill at each
-    // boundary. Foot on the dot: half the count's step behind the dot after
-    // a moving count (the ankle on the dot, the weight between the feet), on
+    // boundary. Foot on the dot: half the step's stride behind the dot after
+    // a moving step (the ankle on the dot, the weight between the feet), on
     // the dot after a rest. Body center: on the dot.
-    const dotMode: DotMode = input.dotMode ?? "foot";
     const tx = new Float64Array(K + 1);
     const tz = new Float64Array(K + 1);
-    if (dotMode === "foot")
-        for (let k = 1; k <= K; k++) {
-            if (states[k - 1].type !== "move") continue;
-            tx[k] = -0.5 * (positions[k * 2] - positions[(k - 1) * 2]);
-            tz[k] = -0.5 * (positions[k * 2 + 1] - positions[(k - 1) * 2 + 1]);
-        }
+    for (let k = 1; k <= K; k++) {
+        if (states[k - 1].type !== "move" || steps.dot[k - 1] !== "foot")
+            continue;
+        tx[k] = -0.5 * (positions[k * 2] - positions[(k - 1) * 2]);
+        tz[k] = -0.5 * (positions[k * 2 + 1] - positions[(k - 1) * 2 + 1]);
+    }
 
     // 3. Anchors, where the correction pins the body to its target: the
-    // boundaries next to a rest count, the ends, and at least every
-    // MAX_ANCHOR_SPAN counts inside long runs (between two loop counts, never
-    // across a transition). Foot on the dot also pins both ends of a count
+    // boundaries next to a rest step, the ends, and at least every
+    // MAX_ANCHOR_SPAN steps inside long runs (between two loop steps, never
+    // across a transition). Foot on the dot also pins both ends of a step
     // whose target changes (a step-off, a close, a new direction or size), so
     // the half step behind swings to the new direction from count 8 to
-    // count 1. Body center pins every boundary.
+    // count 1. Body center pins both ends of each of its steps.
     const anchor = new Uint8Array(K + 1);
     anchor[0] = 1;
     anchor[K] = 1;
@@ -571,7 +780,7 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             anchor[b] = 1;
     }
     for (let b = 1; b <= K; b++) {
-        if (dotMode === "body") {
+        if (steps.dot[b - 1] === "body") {
             anchor[b - 1] = anchor[b] = 1;
             continue;
         }
@@ -602,8 +811,9 @@ export function planMarcher(input: PlanInput): MarcherPlan {
         }
     }
 
-    // 4. Events: one per transition count; consecutive loop or rest counts
-    // with the same clip state merge, within one anchor span.
+    // 4. Events: one per transition step; consecutive loop or rest steps
+    // with the same clip state merge, within one anchor span. Spans are
+    // written as count clock values.
     const events: PlanEvent[] = [];
     let a = 0;
     let b = 0;
@@ -619,19 +829,21 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             b = nextAnchor(b);
         }
         const d = drafts[k];
+        const heading = steps.heading[k];
         if (d.continued) {
-            // the second count of a centered fade: the same fade, but in its
+            // the second step of a centered fade: the same fade, but in its
             // own correction span when an anchor splits the fade (the body
             // swings to the new direction during count 1)
             const fade = events[events.length - 1];
-            if (fade && fade.a !== a)
+            if (fade && fade.a !== T[a])
                 events.push({
                     ...fade,
-                    count: k,
+                    count: T[k],
+                    heading,
                     baseX: ox[k],
                     baseZ: oz[k],
-                    a,
-                    b,
+                    a: T[a],
+                    b: T[b],
                     oaX: cx[a],
                     oaZ: cz[a],
                     obX: cx[b],
@@ -640,45 +852,55 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             continue;
         }
         const isTransition = d.kind === "transition";
-        const oneCount = isTransition || d.kind === "crossfade";
+        const oneStep = isTransition || d.kind === "crossfade";
         const lastEvent = events[events.length - 1];
-        // The correction is constant across this count (the offset doesn't
+        // The correction is constant across this step (the offset doesn't
         // change between its anchors): then a span change doesn't matter.
         const flat = (e: PlanEvent) => e.oaX === e.obX && e.oaZ === e.obZ;
         const sameSpan =
             lastEvent &&
-            (lastEvent.a === a ||
-                (lastEvent.b === a &&
+            (lastEvent.a === T[a] ||
+                (lastEvent.b === T[a] &&
                     flat(lastEvent) &&
                     cx[a] === lastEvent.obX &&
                     cz[a] === lastEvent.obZ &&
                     cx[b] === cx[a] &&
                     cz[b] === cz[a]));
+        const inPhase = (e: PlanEvent) => {
+            const off = mod2((e.phaseStart - d.phaseStart) * d.rate);
+            return Math.min(off, 2 - off) < 1e-9;
+        };
         const mergeable =
-            !oneCount &&
+            !oneStep &&
             lastEvent &&
             lastEvent.kind === d.kind &&
             sameSpan &&
             lastEvent.clip === d.clip &&
             lastEvent.clip2 === d.clip2 &&
+            lastEvent.rate === d.rate &&
+            lastEvent.foot === d.foot &&
+            Math.abs(lastEvent.heading - heading) < 1e-9 &&
             Math.abs(lastEvent.weight - d.weight) < 1e-6 &&
             typeof lastEvent.legYaw === "number" &&
             typeof d.legYaw === "number" &&
             Math.abs(lastEvent.legYaw - d.legYaw) < 1e-6 &&
-            Math.abs(lastEvent.phaseStart - d.phaseStart) % 2 === 0 &&
+            inPhase(lastEvent) &&
             Math.abs(lastEvent.baseX - ox[k]) < 1e-9 &&
             Math.abs(lastEvent.baseZ - oz[k]) < 1e-9;
         if (mergeable) {
-            if (lastEvent.a !== a) {
+            if (lastEvent.a !== T[a]) {
                 // extend the event's flat span
-                lastEvent.b = b;
+                lastEvent.b = T[b];
                 lastEvent.obX = cx[b];
                 lastEvent.obZ = cz[b];
             }
             continue;
         }
         events.push({
-            count: k,
+            count: T[k],
+            rate: d.rate,
+            heading,
+            foot: d.foot,
             kind: d.kind,
             clip: d.clip,
             clip2: d.clip2,
@@ -687,19 +909,28 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             phaseStart: d.phaseStart,
             root: d.root,
             prep: d.prep ?? null,
-            fadeStart: d.fadeStart ?? k,
-            fadeEnd: d.fadeEnd ?? k + 1,
+            fadeStart: d.fadeStart ?? T[k],
+            fadeEnd: d.fadeEnd ?? T[k + 1],
             baseX: isTransition ? positions[k * 2] + ox[k] : ox[k],
             baseZ: isTransition ? positions[k * 2 + 1] + oz[k] : oz[k],
-            a,
-            b,
+            a: T[a],
+            b: T[b],
             oaX: cx[a],
             oaZ: cz[a],
             obX: cx[b],
             obZ: cz[b],
         });
     }
-    return { events, counts: K + 1 };
+    return { events, counts: input.positions.length / 2, headings };
+}
+
+/**
+ * Where the whole performer faces at count clock `c` (radians about +Y):
+ * the plan's headings at the count boundaries, turning the short way
+ * between them.
+ */
+export function headingAt(plan: MarcherPlan, c: number): number {
+    return headingFrom(plan.headings, c);
 }
 
 /** Index of the event covering count clock `c`, starting the search at `hint`. */
@@ -733,7 +964,6 @@ export function bodyAt(
     c: number,
     drillX: number,
     drillZ: number,
-    heading: number,
     out: { x: number; z: number },
 ): void {
     const e = plan.events[index];
@@ -747,10 +977,10 @@ export function bodyAt(
     const cx = -(e.oaX + (e.obX - e.oaX) * t);
     const cz = -(e.oaZ + (e.obZ - e.oaZ) * t);
     if (e.kind === "transition" && e.root) {
-        const u = Math.min(Math.max(c - e.count, 0), 1);
+        const u = Math.min(Math.max((c - e.count) * e.rate, 0), 1);
         const [rx, rz] = rootAt(manifest, e.root, u);
-        const cos = Math.cos(heading);
-        const sin = Math.sin(heading);
+        const cos = Math.cos(e.heading);
+        const sin = Math.sin(e.heading);
         out.x = e.baseX + rx * cos + rz * sin + cx;
         out.z = e.baseZ - rx * sin + rz * cos + cz;
     } else {
@@ -764,9 +994,37 @@ export function prepName(clip: string, landing: number): string {
     return `${clip}~prep${landing}`;
 }
 
-/** The rows an event plays: its clips, as prep rows when it carries a prep step. */
+const MIRROR = "~mirror";
+
+/**
+ * The bake row of `clip` played off the right foot: baked from the clip's
+ * mirrored partner (`mirrorClip.ts`), so slides and turns keep their travel
+ * while the feet swap. It goes before any prep suffix.
+ */
+export function mirrorRow(clip: string): string {
+    return clip + MIRROR;
+}
+
+/** Whether a row plays mirrored, and the row without the mirror marker. */
+export function plainRow(row: string): { row: string; mirrored: boolean } {
+    const i = row.indexOf(MIRROR);
+    return i < 0
+        ? { row, mirrored: false }
+        : {
+              row: row.slice(0, i) + row.slice(i + MIRROR.length),
+              mirrored: true,
+          };
+}
+
+/**
+ * The rows an event plays: its clips, mirrored when its move stepped off
+ * on the right foot, and as prep rows when it carries a prep step.
+ */
 export function eventRows(e: PlanEvent): [string, string | null] {
-    const row = (c: string) => (e.prep === null ? c : prepName(c, e.prep));
+    const row = (c: string) => {
+        const footed = e.foot === "right" ? mirrorRow(c) : c;
+        return e.prep === null ? footed : prepName(footed, e.prep);
+    };
     return [row(e.clip), e.clip2 ? row(e.clip2) : null];
 }
 

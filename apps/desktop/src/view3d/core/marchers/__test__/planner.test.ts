@@ -6,9 +6,13 @@ import {
     bodyAt,
     crossfadeWeight,
     eventIndexAt,
+    eventRows,
+    headingAt,
     prepName,
     planMarcher,
     plannedClips,
+    type DotMode,
+    type FeetSettings,
     type MarcherPlan,
     type PlanInput,
 } from "../planner";
@@ -31,15 +35,21 @@ function input(
     counts: Count[],
     {
         bpm = 120,
-        bandMoving,
         h = 1,
         x0 = 0,
+        feet,
+        heading = 0,
+        dotMode,
     }: {
         bpm?: number;
-        bandMoving?: number[];
         h?: HeightClass;
         /** Start x: 0 is the 50 yard line. */
         x0?: number;
+        /** Feet settings for every count, or per count. */
+        feet?: Partial<FeetSettings> | ((k: number) => Partial<FeetSettings>);
+        /** Heading per count boundary, or one for all. */
+        heading?: number | number[];
+        dotMode?: DotMode | DotMode[];
     } = {},
 ): PlanInput {
     const positions = new Float64Array((counts.length + 1) * 2);
@@ -58,16 +68,34 @@ function input(
     return {
         manifest,
         heightClass: h,
-        heading: 0,
+        heading:
+            typeof heading === "number" ? heading : Float64Array.from(heading),
         positions,
         bpm: new Float64Array(counts.length).fill(bpm),
-        bandMoving: Uint8Array.from(
-            bandMoving ?? counts.map((c) => (c === "hold" ? 0 : 1)),
-        ),
+        feet:
+            feet === undefined
+                ? undefined
+                : counts.map((_, k) => ({
+                      ...FEET,
+                      ...(typeof feet === "function" ? feet(k) : feet),
+                  })),
+        dotMode,
     };
 }
 
+/** The Feet defaults (performer-behavior.md section 3). */
+const FEET: FeetSettings = {
+    pace: "single",
+    moving: "straightLeg",
+    onHolds: "stand",
+    stepOffFoot: "left",
+};
+
 const repeat = <T>(n: number, v: T): T[] => Array.from({ length: n }, () => v);
+
+/** Mark time on holds for counts before `end`, then stand. */
+const markTimeUntil = (end: number) => (k: number) =>
+    k < end ? { onHolds: "markTime" as const } : {};
 
 /** The clip playing on each count (the event covering it). */
 function clipPerCount(plan: MarcherPlan): string[] {
@@ -85,7 +113,7 @@ function body(plan: MarcherPlan, inp: PlanInput, c: number) {
     const dx = p[k * 2] + (p[(k + 1) * 2] - p[k * 2]) * u;
     const dz = p[k * 2 + 1] + (p[(k + 1) * 2 + 1] - p[k * 2 + 1]) * u;
     const out = { x: 0, z: 0 };
-    bodyAt(manifest, plan, eventIndexAt(plan, c), c, dx, dz, 0, out);
+    bodyAt(manifest, plan, eventIndexAt(plan, c), c, dx, dz, out);
     return { ...out, drillX: dx, drillZ: dz };
 }
 
@@ -538,7 +566,7 @@ describe("moves back to back", () => {
                     ...repeat<Count>(2, "hold"),
                     "hold",
                 ],
-                { bandMoving: [1, 1, 1, 1, 1, 1, 0] },
+                { feet: markTimeUntil(6) },
             ),
         );
         expect(clipPerCount(plan)[4]).toBe("change2_8to5__marktime");
@@ -553,7 +581,7 @@ describe("moves back to back", () => {
                     ...repeat<Count>(4, [0, 4.572 / 12]),
                     "hold",
                 ],
-                { bandMoving: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0] },
+                { feet: markTimeUntil(10) },
             ),
         );
         const into = plan.events[eventIndexAt(plan, 4.5)];
@@ -607,16 +635,40 @@ describe("a curved path", () => {
 });
 
 describe("rests", () => {
-    it("marks time while the band moves and stands at attention while it holds", () => {
-        // this marcher holds 8 counts while the band moves, then the band holds
+    // performer-behavior.md section 3: "Stand" on holds replaces the old
+    // automatic mark time while the band moves. These tests used to pass
+    // `bandMoving` and expect mark time; mark time is now a chosen technique.
+    it("stands on a hold by default, even while the band moves", () => {
+        const clips = clipPerCount(planMarcher(input(repeat(12, "hold"))));
+        expect(clips).toEqual(repeat(12, "attention"));
+    });
+
+    it("marks time on holds when the technique says so, and stands again after", () => {
         const counts: Count[] = repeat(12, "hold" as const);
-        const bandMoving = [...repeat(8, 1), ...repeat(4, 0)];
-        const clips = clipPerCount(planMarcher(input(counts, { bandMoving })));
+        const clips = clipPerCount(
+            planMarcher(input(counts, { feet: markTimeUntil(8) })),
+        );
         expect(clips[0]).toBe("stepoff_marktime");
         expect(clips.slice(1, 8)).toEqual(repeat(7, "marktime"));
         // 7 mark time counts: back at time 0.5 on count 8
         expect(clips[8]).toBe("halt2_marktime");
         expect(clips.slice(9)).toEqual(repeat(3, "attention"));
+    });
+
+    it("plays high mark time as mark time for now", () => {
+        const clips = clipPerCount(
+            planMarcher(
+                input(repeat(4, "hold" as const), {
+                    feet: { onHolds: "highMarkTime" },
+                }),
+            ),
+        );
+        expect(clips).toEqual([
+            "stepoff_marktime",
+            "marktime",
+            "marktime",
+            "marktime",
+        ]);
     });
 
     it("goes from mark time into a move with the change clip", () => {
@@ -625,8 +677,9 @@ describe("rests", () => {
             ...repeat<Count>(4, [0, STEP]),
             "hold",
         ];
-        const bandMoving = [...repeat(8, 1), 0];
-        const clips = clipPerCount(planMarcher(input(counts, { bandMoving })));
+        const clips = clipPerCount(
+            planMarcher(input(counts, { feet: markTimeUntil(8) })),
+        );
         expect(clips[0]).toBe("stepoff_marktime");
         expect(clips[4]).toMatch(/^change2?_marktime__8to5$/);
     });
@@ -818,5 +871,275 @@ describe("prep steps at the end of a move", () => {
         const clips = plannedClips([plan]);
         expect(clips.has(prepName(fade.clip, fade.prep!))).toBe(true);
         expect(clips.has(prepName(fade.clip2!, fade.prep!))).toBe(true);
+    });
+});
+
+/** The event covering each count's middle: [count, clip, rate]. */
+function steps(plan: MarcherPlan) {
+    return plan.events.map((e) => [e.count, e.clip, e.rate]);
+}
+
+describe("pace", () => {
+    // performer-behavior.md section 3: pace sets the stride and the step
+    // rate; the dots set the distance.
+    it("steps every other count in half time, a stride covering two counts of dots", () => {
+        // 16-to-5 dots in half time are 8-to-5 strides
+        const counts: Count[] = [
+            ...repeat(2, "hold" as const),
+            ...repeat<Count>(8, [0, 4.572 / 16]),
+            ...repeat(4, "hold" as const),
+        ];
+        const inp = input(counts, { feet: { pace: "half" } });
+        const plan = planMarcher(inp);
+        expect(steps(plan)).toEqual([
+            [0, "attention", 0.5],
+            [2, "stepoff_8to5", 0.5],
+            [4, "8to5", 0.5],
+            // four strides, an even number: the loop is at its time 1 on the close
+            [10, "halt2_8to5", 0.5],
+            [12, "attention", 0.5],
+        ]);
+        // the loop is at its time 0 on the click after the step-off
+        const loop = plan.events[2];
+        expect((((4 - loop.phaseStart) * loop.rate) % 2) + 0).toBeCloseTo(0, 9);
+        // and the body closes onto the dot
+        const end = body(plan, inp, 12);
+        expect(end.x).toBeCloseTo(end.drillX, 9);
+        expect(end.z).toBeCloseTo(end.drillZ, 9);
+    });
+
+    it("takes 4-to-5 strides on 8-to-5 dots in half time", () => {
+        const plan = planMarcher(
+            input([...repeat<Count>(8, [0, STEP]), "hold", "hold"], {
+                feet: { pace: "half" },
+            }),
+        );
+        expect(plan.events.find((e) => e.kind === "loop")!.clip).toBe("4to5");
+    });
+
+    it("steps twice a count in double time, a stride covering half a count of dots", () => {
+        // 8-to-5 dots in double time are 16-to-5 strides
+        const counts: Count[] = [
+            ...repeat(2, "hold" as const),
+            ...repeat<Count>(4, [0, STEP]),
+            ...repeat(2, "hold" as const),
+        ];
+        const inp = input(counts, { feet: { pace: "double" } });
+        const plan = planMarcher(inp);
+        expect(steps(plan)).toEqual([
+            [0, "attention", 2],
+            [2, "stepoff_16to5", 2],
+            [2.5, "16to5", 2],
+            // eight strides: the close is halt2_ and takes half a count
+            [6, "halt2_16to5", 2],
+            [6.5, "attention", 2],
+        ]);
+        const end = body(plan, inp, 7);
+        expect(end.z).toBeCloseTo(end.drillZ, 9);
+    });
+
+    it("keeps single time as one step a count", () => {
+        const plan = planMarcher(
+            input([...repeat<Count>(4, [0, STEP]), "hold"], {
+                feet: { pace: "single" },
+            }),
+        );
+        expect(plan.events.every((e) => e.rate === 1)).toBe(true);
+    });
+
+    it("changes pace inside a move with a fade, keeping the loop's time", () => {
+        // 4 counts single, then 4 counts half time on 16-to-5 dots: 8-to-5 strides
+        const plan = planMarcher(
+            input(
+                [
+                    ...repeat<Count>(4, [0, STEP]),
+                    ...repeat<Count>(4, [0, 4.572 / 16]),
+                    "hold",
+                    "hold",
+                ],
+                { feet: (k) => ({ pace: k < 4 ? "single" : "half" }) },
+            ),
+        );
+        const fade = plan.events[eventIndexAt(plan, 4.5)];
+        expect(fade.kind).toBe("crossfade");
+        expect(fade.rate).toBe(0.5);
+        // no jump in the clip's time at the change: the old loop's time on
+        // count 4's click is what the new event plays there
+        const before = plan.events[eventIndexAt(plan, 3.5)];
+        const t = (e: typeof fade, c: number) =>
+            ((((c - e.phaseStart) * e.rate) % 2) + 2) % 2;
+        expect(t(fade, 4)).toBeCloseTo(t(before, 4), 9);
+    });
+});
+
+describe("on holds", () => {
+    it("stands still at attention while others move: no automatic mark time", () => {
+        const plan = planMarcher(input(repeat(8, "hold" as const)));
+        expect(plan.events.map((e) => e.clip)).toEqual(["attention"]);
+    });
+});
+
+describe("step-off foot per move", () => {
+    // two moves: the first off the left foot, the second off the right
+    const counts: Count[] = [
+        ...repeat<Count>(4, [0, STEP]),
+        "hold",
+        "hold",
+        ...repeat<Count>(4, [0, STEP]),
+        "hold",
+        "hold",
+    ];
+    const plan = planMarcher(
+        input(counts, {
+            feet: (k) => ({ stepOffFoot: k < 6 ? "left" : "right" }),
+        }),
+    );
+
+    it("plays each move off the foot set at its step-off", () => {
+        const first = plan.events.filter((e) => e.count < 5);
+        const second = plan.events.filter((e) => e.count >= 6 && e.count < 11);
+        expect(first.every((e) => e.foot === "left")).toBe(true);
+        expect(second.every((e) => e.foot === "right")).toBe(true);
+    });
+
+    it("plays a right-foot move from mirrored rows", () => {
+        const loop = plan.events.find(
+            (e) => e.kind === "loop" && e.foot === "right",
+        )!;
+        const [row] = eventRows(loop);
+        expect(row).not.toBe(loop.clip);
+        expect(row.startsWith(loop.clip)).toBe(true);
+        const rows = plannedClips([plan]);
+        expect(rows.has("8to5")).toBe(true);
+        expect(rows.has(row)).toBe(true);
+    });
+
+    it("keeps the foot through a move when the setting changes mid-move", () => {
+        const mid = planMarcher(
+            input([...repeat<Count>(8, [0, STEP]), "hold"], {
+                feet: (k) => ({ stepOffFoot: k < 4 ? "left" : "right" }),
+            }),
+        );
+        expect(mid.events.every((e) => e.foot === "left")).toBe(true);
+    });
+});
+
+describe("dot mode per set", () => {
+    // 8 forward with the body on the dot, a hold, 8 forward with the foot on it
+    const counts: Count[] = [
+        ...repeat<Count>(8, [0, STEP]),
+        "hold",
+        ...repeat<Count>(8, [0, STEP]),
+        "hold",
+    ];
+    const inp = input(counts, {
+        dotMode: counts.map((_, k) => (k < 9 ? "body" : "foot")),
+    });
+    const plan = planMarcher(inp);
+
+    it("keeps the body on the dot through the body-center set", () => {
+        for (let k = 1; k <= 8; k++)
+            expect(
+                Math.hypot(offsetAt(plan, inp, k).x, offsetAt(plan, inp, k).z),
+            ).toBeLessThan(1e-6);
+    });
+
+    it("puts the ankle on the dot through the foot set: the body half a step behind", () => {
+        for (let k = 11; k <= 17; k++)
+            expect(Math.abs(offsetAt(plan, inp, k).z + STEP / 2)).toBeLessThan(
+                0.03,
+            );
+    });
+});
+
+describe("facing", () => {
+    const BACK = Math.PI;
+    const SIDE2 = Math.PI / 2;
+
+    it("turns the whole performer at rest", () => {
+        const plan = planMarcher(
+            input(repeat(4, "hold" as const), { heading: BACK }),
+        );
+        expect(plan.events.map((e) => e.clip)).toEqual(["attention"]);
+        expect(headingAt(plan, 2)).toBeCloseTo(BACK, 9);
+    });
+
+    it("marches forward when facing the backfield and moving back", () => {
+        const plan = planMarcher(
+            input([...repeat<Count>(4, [0, -STEP]), "hold"], { heading: BACK }),
+        );
+        expect(clipPerCount(plan)).toEqual([
+            "stepoff_8to5",
+            "8to5",
+            "8to5",
+            "8to5",
+            "halt2_8to5",
+        ]);
+    });
+
+    it("marches forward when facing side 2 and moving toward it", () => {
+        const plan = planMarcher(
+            input([...repeat<Count>(4, [STEP, 0]), "hold"], {
+                heading: SIDE2,
+                x0: -10,
+            }),
+        );
+        expect(clipPerCount(plan)[1]).toBe("8to5");
+    });
+
+    it("slides with the upper body held when the travel is across the facing", () => {
+        // facing the backfield, travel toward side 2: to the performer's right
+        const plan = planMarcher(
+            input([...repeat<Count>(4, [STEP, 0]), "hold"], {
+                heading: BACK,
+                x0: 10,
+            }),
+        );
+        // away from the 50, but the 50 rule is for the front facing only
+        expect(clipPerCount(plan)[1]).toBe("slideR8to5");
+    });
+
+    it("lands on the dot facing the backfield", () => {
+        const inp = input([...repeat<Count>(8, [0, -STEP]), "hold", "hold"], {
+            heading: BACK,
+        });
+        const plan = planMarcher(inp);
+        const end = body(plan, inp, 9.5);
+        expect(end.x).toBeCloseTo(end.drillX, 9);
+        expect(end.z).toBeCloseTo(end.drillZ, 9);
+        let worst = 0;
+        for (let c = 0; c <= 10; c += 0.05) {
+            const b = body(plan, inp, c);
+            worst = Math.max(worst, Math.hypot(b.x - b.drillX, b.z - b.drillZ));
+        }
+        expect(worst).toBeLessThan(0.3);
+    });
+
+    it("eases the turn between count boundaries, the short way round", () => {
+        const plan = planMarcher(
+            input(repeat(4, "hold" as const), {
+                heading: [0, 0, SIDE2, SIDE2, SIDE2],
+            }),
+        );
+        expect(headingAt(plan, 1)).toBeCloseTo(0, 9);
+        expect(headingAt(plan, 1.5)).toBeCloseTo(SIDE2 / 2, 9);
+        expect(headingAt(plan, 2)).toBeCloseTo(SIDE2, 9);
+        const wrap = planMarcher(
+            input(repeat(2, "hold" as const), {
+                heading: [(170 * Math.PI) / 180, (-170 * Math.PI) / 180, 0],
+            }),
+        );
+        // 170 to -170 degrees passes through 180, not through 0
+        expect(Math.abs(headingAt(wrap, 0.5))).toBeCloseTo(Math.PI, 9);
+    });
+
+    it("keeps the slide-to-the-50 rule with the front facing", () => {
+        const plan = planMarcher(
+            input([...repeat<Count>(4, [STEP, 0]), "hold"], {
+                heading: 0,
+                x0: 10,
+            }),
+        );
+        expect(clipPerCount(plan)[1]).toBe("back8to5");
     });
 });
