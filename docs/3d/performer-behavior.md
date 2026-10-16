@@ -130,7 +130,11 @@ For each marcher, channel and count:
    applies.
 7. A cue applies only to the performers it **fits**. A horn state skips the
    guard; a rifle state fits any guard performer (and puts a rifle in their
-   hands). A cue that fits none of its targets is flagged.
+   hands). A cue that fits none of its targets is flagged. Fit is checked at
+   the count where the cue reaches the performer: for a ripple, where it
+   lands for them, not the authored count (owner, 2026-10-15).
+8. Section names match ignoring case and outer spaces, in section targets
+   and in the section defaults (owner, 2026-10-15).
 
 ### 2.4 Ripples
 
@@ -149,6 +153,8 @@ or reordered in the target slot in automatically.
 - Positional orders (left to right, down the form) read positions at the
   cue's count. **Down the form** runs along the form's long axis, starting
   from the end nearest the first marcher in drill order (**owner to check**).
+- The order counts only the performers the cue fits; each is then checked
+  again where the ripple lands for them (rule 7).
 - Ties are settled where the cue was authored: a section cue and a rippled
   band cue on the same count go to the section cue for every section member,
   not only the first in the ripple.
@@ -158,10 +164,28 @@ or reordered in the target slot in automatically.
 
 - A cue lives on its beat. Inserting counts inside a page or dragging a page
   flag leaves it on the same music (its page:count label may change).
-- Deleting counts deletes their cues; undo restores them.
+- Deleting counts (beats or a measure) carries their cues forward, in the
+  same transaction and undo step as the deletion (owner, 2026-10-15; ADR
+  0004 amendment of that date):
+  - per channel and target, only the **last** cue on the deleted counts is
+    kept, the state in effect at the end of the deleted span; it moves to the
+    first count after the deletion and the earlier ones are dropped;
+  - if that count already has a cue on the same channel and target, the
+    existing cue wins and the moved one is dropped;
+  - a phrase moves its start and keeps its length; if it now overlaps the
+    next cue on that channel and target it is shortened to fit, and dropped
+    if that leaves it under 2 counts;
+  - deleting the end of the show (no count after) drops the cues;
+  - ripples move with their cue unchanged;
+  - no blocking popup: afterwards a notice with Undo says what moved, such
+    as "2 cues moved to count 17".
 - Deleting a marcher drops them from hand-picked sets; a set left empty
   deletes its cue in the same transaction.
-- Deleting a tag deletes the cues that target it.
+- Deleting a tag deletes the cues that target it. The tag delete
+  confirmation says how many cues will go.
+- After any of these deletes the cue queries and the 3D window refresh.
+- Pruning the show's Library keeps the phrase assets and Library Versions
+  that cues reference.
 - Copying or duplicating a page or a timeline move does not copy cues (v1).
   Cue copy and paste lives in the Visuals mode (section 7.4).
 - Drill edits never rewrite cues. Their effects (a kneel that now falls on a
@@ -213,6 +237,9 @@ Default: the audience (front).
 
 - Values: front, back, side 1, side 2, direction of travel, custom angle, and
   toward a fixed point on the field.
+- A point is in field coordinates, the same space as dot positions, not
+  world meters; it converts to world space where positions do (owner,
+  2026-10-15).
 - Moving, the upper body holds the facing and the legs do the most logical
   thing for the travel: facing the backfield and moving back is a forward
   march; a slide is the upper body holding while the legs travel elsewhere.
@@ -450,7 +477,8 @@ invalidate no query keys. So:
   after each delivered change batch or reset (ADR 0002 D-4 keeps its shape;
   no new channel). The window rebuilds its resolver on that key.
 - Cue tables have real query keys, so cue edits reach the window through the
-  existing invalidation.
+  existing invalidation. Deleting beats, measures, tags or marchers also
+  invalidates and relays `["cues"]` (owner, 2026-10-15).
 - The selection payload stops depending on `selectedPageId`, which timeline
   mode deprecates.
 

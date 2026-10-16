@@ -6,8 +6,8 @@
   pending the layered renderer (#120) and its integrated-GPU run.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
-  channels, and item tables beside cues; 2026-10-15: timelines only (see the
-  amendments at the end)
+  channels, and item tables beside cues; 2026-10-15: timelines only, and
+  cues when beats, tags or marchers go (see the amendments at the end)
 
 ## Context
 
@@ -60,7 +60,9 @@ A new table, `cues`:
 - `target_tag_id` integer, references `tags(id)` ON DELETE CASCADE, set only
   for `tag`.
 - `beat_id` integer not null, references `beats(id)` ON DELETE CASCADE.
-  Deleting counts deletes their cues; undo restores them.
+  Deleting counts deletes their cues; undo restores them. Amended
+  2026-10-15: the delete write path first carries the last cue forward to
+  the next beat (see that amendment).
 - `value` text: a built-in id (`builtin:...`) or `show:<phrase_assets.id>`.
 - `phrase_asset_id` integer, references `phrase_assets(id)` ON DELETE
   RESTRICT, set only for show phrases, so a phrase in use can't be deleted
@@ -412,3 +414,103 @@ and a page-era file converts to a timeline when it opens.
   which remain only as unsaved preview overrides. Wiring the stored cues and
   defaults into the 3D window is a follow-up; until then the window compiles
   no cues.
+
+## Amendment 2026-10-15: cues when beats, tags or marchers go
+
+- Status: approved by the owner on 2026-10-15.
+- Amends: D-1 (`beat_id`), D-2, D-3, D-6 and D-7 Sync; spec sections 2.3,
+  2.4, 2.5, 3 (Facing) and 8.1
+
+### Context
+
+D-1 keys a cue to its beat with ON DELETE CASCADE, so deleting counts or a
+measure silently deletes every cue on them. A cue says what performers do
+from its count on, so losing it changes the rest of the show, and nothing
+tells the designer. This amendment also records the owner's answers to the
+review questions on the compile module (#118) and the units of a "toward a
+point" facing.
+
+### Decision
+
+#### Deleting beats or measures
+
+Deleting beats (or a measure, which deletes its beats) carries their cues
+forward instead of dropping them. The rule runs inside the same transaction
+as the beat deletion, so one undo restores the beats and the cues together
+(as `withTimelinePageRipple` in `db-functions/timelineRipple.ts` does for
+pages):
+
+- **Keep the last one.** Per channel and target, of the cues on the
+  deleted beats only the **last** one is kept: the state in effect at the
+  end of the deleted span. It moves to the first surviving beat after the
+  deletion. The earlier ones are dropped.
+- **An existing cue wins.** If that next beat already has a cue on the same
+  channel and target, the existing cue stays and the moved one is dropped.
+- **Phrases** move their start to the next beat and keep their length. If a
+  moved phrase now overlaps the next cue on the same channel and target, it
+  is shortened to end where that cue starts; if that leaves it shorter than
+  the minimum length of 2, it is dropped. Phrases aren't otherwise dropped.
+- **The end of the show.** With no beat after the deletion, the cues on the
+  deleted beats are dropped.
+- **Ripples** move with their cue unchanged.
+- **No blocking popup.** Afterwards the editor shows a non-blocking notice
+  with Undo, such as "2 cues moved to count 17".
+
+`cues.beat_id` keeps ON DELETE CASCADE as the backstop: the write path moves
+or deletes the cues before the beats go, so the cascade finds nothing left.
+
+#### Deleting marchers and tags
+
+- **Marchers (D-2, unchanged):** deleting a marcher removes them from
+  hand-picked sets, and a set left empty deletes its cue in the same
+  transaction.
+- **Tags:** cues that target a deleted tag are deleted (the cascade on
+  `target_tag_id`). The tag delete confirmation gains a line saying so, such
+  as "3 cues target this tag and will be removed".
+
+#### Sync (D-7, ADR 0002 D-4)
+
+Deleting beats, measures, tags or marchers invalidates the `["cues"]` query
+(and the phrase asset and performer settings queries), and the editor
+relays those keys to the 3D window on `view3d:invalidate`, so the window and
+every cue query refresh after any of these deletes.
+
+#### Prune (D-3, ADR 0002 D-12)
+
+Pruning the show's embedded Library keeps every phrase asset and every
+Library item Version a cue references.
+
+#### Compile (D-6), the owner's answers on #118
+
+- **Fit at landing.** A cue's fit to a performer is checked at the count
+  where its ripple reaches that performer, not at the authored count. What
+  Carry gives can change inside a ripple's span.
+- **Ripple order** counts only the performers the cue fits (kept as built).
+- **Section names** match ignoring case (and outer spaces) both in section
+  cue targets and in the section defaults.
+
+#### Facing toward a point
+
+The `x` and `y` settings of `facing.point` are **field coordinates**, the
+same space as dot positions, not world meters. They are converted to world
+space where positions are, so a facing point and a dot at the same field
+coordinates are the same place in the 3D View.
+
+### Consequences
+
+- Deleting counts no longer loses the state in effect after them, and the
+  notice says what moved. Undo is still one step.
+- The beat and measure delete write paths read the cue tables, so they skip
+  the cue rule when a file lacks them (as D-5's cue cleanup does).
+- Matching section targets ignoring case is a compile behavior change: a
+  section cue now reaches members whose section differs only in case.
+
+### Verification
+
+- Unit tests for the beat deletion rule, one per bullet above, and that one
+  undo restores the beats and the cues.
+- Compile tests: fit checked at a ripple's landing count; section cue
+  targets matched ignoring case.
+- Prune tests: a phrase asset and a Library Version a cue references survive.
+- E2E or a recorded check: a stored cue drives the 3D window, and deleting
+  its beat moves it, with the notice.
