@@ -97,9 +97,10 @@ of page boxes sized by duration, with the music inside them.
   a short-lived Basic default (a page of `defaultNewPageCounts` from the last flag, offered on
   the flag too, lengthening the show where it was too short). Page mode's add page, which does
   lengthen the show, is unchanged. The timeline keeps 32px after the show's last beat so **+**
-  stays on screen with the playhead on the last count (both modes), and while the timeline shows
-  in timeline mode toasts sit just above it, so one (such as "There's no page here yet. Add a page
-  with +…") never covers **+**. A raised toast covers the field's zoom-in button while it shows.
+  stays on screen with the playhead on the last count (both modes). Toasts are compact and sit in
+  the window's bottom-right corner, 12px from the edges (they used to float above the timeline,
+  over the field). There they cover the inspector's bottom; the timeline stops at the inspector's
+  edge, so a toast (such as "There's no page here yet. Add a page with +…") never covers **+**.
 - Not in Basic: clips (moves off flags), the start flag and pinning, the loop bar, isolation,
   clip resize, the measure row.
 - Play, Space and Shift+Space use the timeline playback driver. Space plays on from the playhead;

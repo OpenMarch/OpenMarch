@@ -9,14 +9,16 @@ import { Toaster as ToasterPrimitive } from "sonner";
 
 /**
  * Compact toasts in the window's bottom-right corner: tight padding, 16px icon, 320px wide (sonner's
- * is 356px), 12px from the edges. Over the timeline's right end they cover little, and briefly;
- * floating above the timeline put them over the field.
+ * is 356px), 12px from the edges. There they cover the inspector's bottom, clear of the timeline (it stops
+ * at the inspector's edge) and its +; floating above the timeline put them over the field. Sonner swaps in its mobile offset and full
+ * width at 600px or narrower (a small window, the web editor), so that offset is 12px too.
  */
 export default function Toaster() {
     return (
         <ToasterPrimitive
             visibleToasts={6}
             offset={12}
+            mobileOffset={12}
             style={{ "--width": "320px" } as React.CSSProperties}
             toastOptions={{
                 unstyled: true,
@@ -26,6 +28,9 @@ export default function Toaster() {
                     // With two buttons (a `cancel` beside the action) the toast wraps: the text keeps
                     // the first line, and the buttons go on their own line underneath
                     toast: "px-12 py-8 flex items-center gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal [&:has([data-cancel])]:flex-wrap",
+                    // Centered on a one-line toast; with a description the icon stays by the title
+                    // (16 px in its 17.5 px line)
+                    icon: "[[data-sonner-toast]:has([data-description])_&]:self-start [[data-sonner-toast]:has([data-description])_&]:mt-[1px]",
                     // Beside the icon (16 px and the 8 px gap, with room to spare so rounding never wraps
                     // it; it grows into the rest), or the whole width without one. Sonner
                     // renders the cancel as `[data-cancel]`
