@@ -9,20 +9,26 @@ import {
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { beatAtTime, timeAtBeat } from "./timeMap";
 import { playbackStep } from "./timelinePlayhead";
-import { consumeSuspendRequest } from "./timelineTransport";
+import {
+    consumeEndRequest,
+    consumeSuspendRequest,
+    stopTimelinePlayback,
+} from "./timelineTransport";
 
 /**
  * Timeline mode's playback rules while playing (docs/timeline/ui.md UI-9 Play, UI-11; P8.11), once
  * per animation frame, independent of the canvas. Playing never writes the playhead P; it moves the
  * store's cursor instead (`cue`).
  *
- * - A **preview** (Play with the start flag pinned, UI-17) loops from the start flag to P. However
- *   it stops, the cursor goes back on P, the arrival being edited.
- * - **Playing on** (Play: from the start flag; Shift+Space: from P) stops at the end of the show;
- *   an isolated timeline loops over its range instead. Pausing it moves P to the last whole beat
- *   played (`seek`): an unpinned start flag follows P, as it does when a scrub ends (UI-12
- *   review), so the window doesn't silently span pages; a pinned one stays. Stopped within its
- *   first beat from the start flag, nothing moves.
+ * - **Stop** (Space, `stopTimelinePlayback`, UI-24) goes back to where Play was pressed: the
+ *   cursor clears, and the start flag and P, which playing never moved, are the edit window again.
+ *   Reaching the end of the show stops the same way.
+ * - **Pause** (Shift+Space, `pauseTimelinePlayback`, UI-24) stays where it is: P moves to the last
+ *   whole beat played (`seek`), and an unpinned start flag follows P, as it does when a scrub ends
+ *   (UI-12 review), so the window doesn't silently span pages; a pinned one stays. Paused within
+ *   its first beat from the start flag, nothing moves.
+ * - A pause asked for elsewhere keeps each run's own rule: a **preview** (the loop, UI-17) goes
+ *   back to P, and **playing on** pauses where it is.
  * - A scrub's suspension (`suspendTimelinePlayback`, UI-12 review) pauses without writing P or the
  *   cursor: the scrub moves the cursor, and resumes playback when it ends.
  *
@@ -60,17 +66,19 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
         const suspended = consumeSuspendRequest();
         const live = lastLiveBeat.current;
         lastLiveBeat.current = null;
+        const end = consumeEndRequest();
         if (run === null) return;
         store.setPlayback(null);
         if (suspended) return;
-        // A preview returns to P however it stopped (UI-17). Paused before the audio started,
-        // nothing played, so there is nowhere else to stop. Nor when Play from the start flag
-        // stops within its first beat: the flag is the page before's end flag, and stopping on it
-        // would move the window back a page
+        // Stop goes back (UI-24); so does a preview however it stopped, unless paused (UI-17).
+        // Paused before the audio started, nothing played, so there is nowhere else to stop. Nor
+        // when Play from the start flag pauses within its first beat: the flag is the page
+        // before's end flag, and stopping on it would move the window back a page
         const stopAt =
             live === null ? null : Math.min(Math.floor(live), beats.length);
         if (
-            run.kind === "preview" ||
+            end === "stop" ||
+            (run.kind === "preview" && end !== "pause") ||
             stopAt === null ||
             (stopAt === startedAt.current && stopAt === store.startBeat)
         ) {
@@ -95,9 +103,10 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
                     beats.length,
                     store.isolation,
                 );
+                // The end of the show stops, back to where Play was pressed (UI-24)
                 if (step === "stop") {
                     lastLiveBeat.current = beats.length;
-                    setIsPlaying(false);
+                    stopTimelinePlayback(setIsPlaying);
                     return;
                 }
                 if (step) {

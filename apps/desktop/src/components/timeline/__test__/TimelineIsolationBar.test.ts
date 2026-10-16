@@ -118,10 +118,10 @@ describe("the field line after playing on stops (UI-17)", () => {
 
     it("never reads as a page being made (basic-past-flag study: 4/4 went to check)", () => {
         expect(stoppedNote({ kind: "page", name: "3" })).toBe(
-            "Stopped on page 3",
+            "Paused on page 3",
         );
         expect(stoppedNote({ kind: "after" })).toBe(
-            "Stopped after the last page",
+            "Paused after the last page",
         );
     });
 });

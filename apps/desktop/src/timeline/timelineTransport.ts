@@ -30,6 +30,16 @@ import {
 let suspendRequested = false;
 
 /**
+ * How the pause that follows ends playback (UI-24): **Stop** (`stopTimelinePlayback`) goes back to
+ * where Play was pressed, and **Pause** (`pauseTimelinePlayback`) stays where it is. `null` for a
+ * pause asked for elsewhere, which keeps the run's own rule (`useTimelinePlaybackDriver`).
+ */
+let endRequest: TimelinePlaybackEnd | null = null;
+
+/** How playback ends (UI-24) */
+export type TimelinePlaybackEnd = "stop" | "pause";
+
+/**
  * The scrub in progress (UI-12 review): the last whole beat it sent, so a move within the same
  * beat sends nothing, and whether it is over playback, with the run it suspended once it moved.
  */
@@ -171,6 +181,39 @@ export function resumeTimelinePlayback(
 export function consumeSuspendRequest(): boolean {
     const requested = suspendRequested;
     suspendRequested = false;
+    return requested;
+}
+
+/**
+ * **Stop** (UI-24, Space while playing): playback ends and the timeline goes back to where Play
+ * was pressed. Playing never moves the start flag or the playhead (it moves the cursor), so going
+ * back is clearing the cursor; the playback driver does that once the pause lands. Does nothing
+ * when stopped.
+ */
+export function stopTimelinePlayback(
+    setIsPlaying: (isPlaying: boolean) => void,
+): void {
+    if (!useTimelineSelectionStore.getState().playback) return;
+    endRequest = "stop";
+    setIsPlaying(false);
+}
+
+/**
+ * **Pause** (UI-24, Shift+Space while playing): playback ends where it is, and the edit window
+ * moves there, so the next Play and Stop start from here. The playback driver does it.
+ */
+export function pauseTimelinePlayback(
+    setIsPlaying: (isPlaying: boolean) => void,
+): void {
+    if (!useTimelineSelectionStore.getState().playback) return;
+    endRequest = "pause";
+    setIsPlaying(false);
+}
+
+/** How the pause in progress was asked to end playback, if it was; clears the request. */
+export function consumeEndRequest(): TimelinePlaybackEnd | null {
+    const requested = endRequest;
+    endRequest = null;
     return requested;
 }
 
@@ -324,11 +367,10 @@ export function startTimelinePlayOn(
 
 /**
  * **Play / Stop** (UI-17, Space), the one play action. With looping on (or a move isolated) it
- * loops the loop's region wherever the playhead is, as Logic's cycle does, and stopping puts the
- * canvas back on the playhead, which looping never moved. Otherwise it plays on from the yellow
- * start flag, and stopping stays where it stopped, moving the playhead there (project owner,
- * 2026-10-13, lab test playback-start: version B won; Shift+Space plays on from the playhead,
- * `playTimelinePage`). The playback driver does both once the pause lands.
+ * loops the loop's region wherever the playhead is, as Logic's cycle does. Otherwise it plays on
+ * from the yellow start flag (project owner, 2026-10-13, lab test playback-start: version B won;
+ * Shift+Space plays on from the playhead, `playTimelinePage`). Playing, it stops and goes back to
+ * where Play was pressed (UI-24, `stopTimelinePlayback`); Shift+Space pauses where it is instead.
  */
 export function toggleTimelinePlayback({
     isPlaying,
@@ -340,7 +382,7 @@ export function toggleTimelinePlayback({
     setIsPlaying: (isPlaying: boolean) => void;
 }): void {
     if (isPlaying) {
-        setIsPlaying(false);
+        stopTimelinePlayback(setIsPlaying);
         return;
     }
     const state = useTimelineSelectionStore.getState();
@@ -357,7 +399,7 @@ export function toggleTimelinePlayback({
 /**
  * **Play from the playhead** (Shift+Space, or Shift+click on Play): plays on from the
  * playhead, or, with looping on, plays the loop's region once and goes back to the playhead when it
- * ends or is stopped. Playing, it stops.
+ * ends or is stopped. Playing, it pauses where it is (UI-24, `pauseTimelinePlayback`).
  */
 export function playTimelinePage({
     isPlaying,
@@ -369,7 +411,7 @@ export function playTimelinePage({
     setIsPlaying: (isPlaying: boolean) => void;
 }): void {
     if (isPlaying) {
-        setIsPlaying(false);
+        pauseTimelinePlayback(setIsPlaying);
         return;
     }
     const state = useTimelineSelectionStore.getState();

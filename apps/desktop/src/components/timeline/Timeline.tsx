@@ -106,6 +106,11 @@ export interface TimelinePlayback {
     readonly liveBeat?: () => number | null;
     readonly isPlaying: boolean;
     /**
+     * While playing, where Stop goes back to (UI-24): the resting playhead, which playing never
+     * moves. The timeline marks it so you can see where playback came from.
+     */
+    readonly returnBeat?: number;
+    /**
      * Seek to a whole beat index, already clamped to the show. `options.gesture` says where the
      * seek sits in a scrub (UI-12 review); without it, the seek is one explicit action. During a
      * scrub it may return the beat the playhead landed on (`TimelineSeek`, `seekTimeline`).
@@ -117,8 +122,6 @@ export interface TimelinePlayback {
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** Looping is on, so Play loops (UI-17): the button says so */
     readonly playLoops?: boolean;
-    /** Shift+Space's once-through of the loop is playing (UI-17) */
-    readonly playingOnce?: boolean;
     /** Shift+click on Play (Shift+Space): plays on from the playhead, or the loop once */
     readonly onPlayFromPlayhead?: () => void;
     /** Page navigation from the transport; without it, the transport seeks to page starts */
@@ -392,6 +395,10 @@ export function Timeline(props: TimelineProps) {
         0,
         model.beatCount,
     );
+    const returnBeat =
+        playback.isPlaying && playback.returnBeat !== undefined
+            ? clamp(axis.toView(playback.returnBeat), 0, model.beatCount)
+            : undefined;
     const liveBeat = playback.liveBeat;
     const beatCount = model.beatCount;
     const livePositionBeat = useMemo(
@@ -741,6 +748,7 @@ export function Timeline(props: TimelineProps) {
         model,
         positionBeat,
         livePositionBeat,
+        returnBeat,
         isPlaying: playback.isPlaying,
         pixelsPerBeat,
         selection,
@@ -749,7 +757,6 @@ export function Timeline(props: TimelineProps) {
         onSeek: seekToBeat,
         onPlayingChange: useLatestCallback(playback.onPlayingChange),
         playLoops: playback.playLoops,
-        playingOnce: playback.playingOnce,
         onPlayFromPlayhead: useLatestCallback(playback.onPlayFromPlayhead),
         onNavigate: useLatestCallback(playback.onNavigate),
         onPixelsPerBeatChange: useLatestCallback(setPixelsPerBeat),

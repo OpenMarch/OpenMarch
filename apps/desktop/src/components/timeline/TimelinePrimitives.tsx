@@ -8,6 +8,7 @@ import {
     CaretRightIcon,
     DotsThreeIcon,
     HouseIcon,
+    PauseIcon,
     PushPinIcon,
     StopIcon,
     PlayIcon,
@@ -146,6 +147,7 @@ export interface TimelineSelectionInteraction {
 // The same elements every render, so the memoized transport buttons don't re-render for them
 const SKIP_BACK_ICON = <SkipBackIcon size={16} />;
 const STOP_ICON = <StopIcon size={16} weight="fill" />;
+const PAUSE_ICON = <PauseIcon size={16} weight="fill" />;
 const SKIP_FORWARD_ICON = <SkipForwardIcon size={16} />;
 // Previous and Next while Shift (the start or end of the show) or Alt (a beat) is held
 const START_ICON = <ArrowLineLeftIcon size={16} />;
@@ -478,25 +480,40 @@ const playGuide = (
     },
 ];
 
+/** What Stop (Space) and Pause (Shift+Space) do while playing (UI-24) */
+const stopGuide: readonly TransportGuideRow<"play" | "shift">[] = [
+    {
+        mode: "play",
+        icon: STOP_ICON,
+        label: "Stop and go back",
+        shortcut: TRANSPORT_SHORTCUTS.play,
+    },
+    {
+        mode: "shift",
+        icon: PAUSE_ICON,
+        label: "Pause here",
+        shortcut: TRANSPORT_SHORTCUTS.playPage,
+    },
+];
+
 /**
  * Play, or Stop while playing. Shift+click is Shift+Space: plays from the playhead, or the loop
- * once. Holding Shift swaps the icon and label to say so, and the tooltip is a guide to both, as
+ * once; while playing, it pauses where it is (UI-24), where Stop goes back to where Play was
+ * pressed. Holding Shift swaps the icon and label to say so, and the tooltip is a guide to both, as
  * Previous and Next do. Kept apart from the transport so only this re-renders for Shift.
  */
 const TransportPlayButton = memo(function TransportPlayButton({
     isPlaying,
     onPlayingChange,
     playLoops,
-    playingOnce,
     onPlayFromPlayhead,
 }: {
     isPlaying: boolean;
     onPlayingChange?: (isPlaying: boolean) => void;
     playLoops: boolean;
-    playingOnce: boolean;
     onPlayFromPlayhead?: () => void;
 }) {
-    const shift = useHeldShift(onPlayingChange != null && !isPlaying);
+    const shift = useHeldShift(onPlayingChange != null);
     const togglePlaying = useCallback(
         (event: ReactMouseEvent) =>
             event.shiftKey && onPlayFromPlayhead
@@ -505,25 +522,8 @@ const TransportPlayButton = memo(function TransportPlayButton({
         [isPlaying, onPlayingChange, onPlayFromPlayhead],
     );
     const onClick = onPlayingChange ? togglePlaying : undefined;
-    if (isPlaying)
-        return (
-            <TransportButton
-                label="Stop"
-                shortcut={TRANSPORT_SHORTCUTS.play}
-                hint={
-                    playLoops || playingOnce
-                        ? "Goes back to where you were editing"
-                        : "Stops where it is"
-                }
-                testId="timeline-play"
-                pressed
-                onClick={onClick}
-            >
-                {STOP_ICON}
-            </TransportButton>
-        );
-    const guide = playGuide(playLoops);
     const mode = shift && onPlayFromPlayhead ? "shift" : "play";
+    const guide = isPlaying ? stopGuide : playGuide(playLoops);
     const row = guide.find((r) => r.mode === mode)!;
     return (
         <TransportButton
@@ -534,11 +534,15 @@ const TransportPlayButton = memo(function TransportPlayButton({
                 <TransportGuide
                     rows={onPlayFromPlayhead ? guide : guide.slice(0, 1)}
                     mode={mode}
-                    testId="timeline-play-guide"
+                    testId={
+                        isPlaying
+                            ? "timeline-stop-guide"
+                            : "timeline-play-guide"
+                    }
                 />
             }
             testId="timeline-play"
-            pressed={false}
+            pressed={isPlaying}
             onClick={onClick}
         >
             {row.icon}
@@ -570,7 +574,6 @@ export const TimelineTransport = memo(function TimelineTransport({
     isPlaying,
     onPlayingChange,
     playLoops = false,
-    playingOnce = false,
     onPlayFromPlayhead,
     onNavigate,
     onFit,
@@ -589,8 +592,6 @@ export const TimelineTransport = memo(function TimelineTransport({
     onPlayingChange?: (isPlaying: boolean) => void;
     /** Looping is on, so Play loops and shows the loop's bar (UI-17) */
     playLoops?: boolean;
-    /** Shift+Space's once-through is playing (UI-17) */
-    playingOnce?: boolean;
     /** Shift+click on Play (Shift+Space): plays on from the playhead, or the loop once */
     onPlayFromPlayhead?: () => void;
     onNavigate?: (direction: TimelineNavigation) => void;
@@ -751,7 +752,6 @@ export const TimelineTransport = memo(function TimelineTransport({
                         isPlaying={isPlaying}
                         onPlayingChange={onPlayingChange}
                         playLoops={playLoops}
-                        playingOnce={playingOnce}
                         onPlayFromPlayhead={onPlayFromPlayhead}
                     />
                     <TransportNavigationButton
@@ -3117,6 +3117,63 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
         </button>
     );
 });
+
+/**
+ * Where Stop goes back to, while playing (UI-24): the resting playhead, drawn as a flag (a pennant
+ * like the start flag's, in the playhead's color, on a dashed line), so you can see where playback
+ * came from, in Basic as in Expert.
+ * REAPER's edit cursor, which stays while the play cursor moves, is the model. It never takes the
+ * pointer: clicks there seek playback, as anywhere else.
+ */
+export const TimelineReturnMarker = memo(function TimelineReturnMarker({
+    beat,
+    pixelsPerBeat,
+    height,
+}: {
+    beat: BeatPosition;
+    pixelsPerBeat: number;
+    height: number;
+}) {
+    const left = Math.round(beatToX(beat, pixelsPerBeat));
+    return (
+        <span
+            aria-hidden="true"
+            data-testid="timeline-return-marker"
+            className="pointer-events-none absolute top-0 z-40 w-12 -translate-x-1/2"
+            style={{ left, height }}
+        >
+            <span
+                className="border-accent absolute top-0 left-1/2 -translate-x-1/2 border-l-2 border-dashed opacity-70"
+                style={{ height }}
+            />
+            {/* A pennant like the start flag's, mirrored to hang back from its stem, so it reads
+                as a marker rather than a second playhead head to grab */}
+            <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                className="text-accent absolute top-0 right-[calc(50%-1px)]"
+            >
+                <path d="M12 0 L0 0 L12 12 Z" fill="currentColor" />
+            </svg>
+        </span>
+    );
+});
+
+/**
+ * Whether the return marker shows (UI-24): always in Expert; in Basic only mid-page, since a return
+ * to a page's start or end is already marked by that page's box (owner, 2026-10-16).
+ */
+export function showsReturnMarker(
+    beat: BeatPosition,
+    pages: readonly TimelinePageMarker[],
+    beatCount: number,
+    basic: boolean,
+): boolean {
+    if (!basic) return true;
+    if (beat === 0 || beat >= beatCount) return false;
+    return !pages.some((page) => page.atBeat === beat || page.endBeat === beat);
+}
 
 /** How far, in pixels, a press on empty timeline space must move to select a range */
 export const TIMELINE_RANGE_DRAG_PX = 4;

@@ -66,7 +66,7 @@ describe("timeline stories", () => {
             screen.getByRole("button", { name: "Play from the start flag" }),
         );
         expect(
-            screen.getByRole("button", { name: "Stop" }),
+            screen.getByRole("button", { name: "Stop and go back" }),
         ).toBeInTheDocument();
     });
 });

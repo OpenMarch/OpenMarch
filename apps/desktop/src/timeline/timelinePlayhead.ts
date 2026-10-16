@@ -137,8 +137,8 @@ export function canPlayOn(beat: number, showEndBeat: number): boolean {
  * What playback does at a live beat (UI-11, UI-17):
  *
  * - A preview, the pinned window's loop, goes back to its start at its end.
- * - Playing on stops at the end of the show (`"stop"`; the playhead stays there). An isolated
- *   timeline loops instead.
+ * - Playing on stops at the end of the show (`"stop"`, which goes back to where Play was pressed,
+ *   UI-24). An isolated timeline loops instead.
  */
 export function playbackStep(
     run: TimelinePlaybackRun,

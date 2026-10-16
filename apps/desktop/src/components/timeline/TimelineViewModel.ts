@@ -219,6 +219,8 @@ export interface TimelineInteractionProps {
      * follows `positionBeat`, which changes once per beat.
      */
     readonly livePositionBeat?: () => number | null;
+    /** While playing, where Stop goes back to, in view beats (UI-24) */
+    readonly returnBeat?: BeatPosition;
     readonly isPlaying: boolean;
     readonly selection?: TimelineSelection;
     readonly selectedTarget?: TimelineTarget | null;
@@ -226,8 +228,6 @@ export interface TimelineInteractionProps {
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** Looping is on, so Play loops (UI-17) */
     readonly playLoops?: boolean;
-    /** Shift+Space's once-through is playing (UI-17) */
-    readonly playingOnce?: boolean;
     /** Shift+click on Play (Shift+Space): plays on from the playhead, or the loop once */
     readonly onPlayFromPlayhead?: () => void;
     readonly onNavigate?: (direction: TimelineNavigation) => void;

@@ -6,7 +6,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "@/hooks";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { toggleTimelinePlayback } from "../timelineTransport";
+import { playTimelinePage, toggleTimelinePlayback } from "../timelineTransport";
 import { useTimelinePageBridge } from "../useTimelinePageBridge";
 import { useTimelinePlaybackDriver } from "../useTimelinePlaybackDriver";
 
@@ -113,8 +113,9 @@ describeDbTests("timeline play, pause, play", (it) => {
             audio.startInfo.current = {};
             audio.seconds = liveSeconds;
             frame();
+            // Shift+Space pauses where it is (UI-24)
             act(() => {
-                toggleTimelinePlayback({
+                playTimelinePage({
                     isPlaying: true,
                     showEndBeat: result.current.timing.beats.length,
                     setIsPlaying: result.current.playing.setIsPlaying,
@@ -123,7 +124,7 @@ describeDbTests("timeline play, pause, play", (it) => {
         };
 
         // The page at [5, 9) is its own box, so the flag is not pinned and Space plays on.
-        // Stopping moves P and must not loop with the page bridge (UI-17)
+        // Pausing moves P and must not loop with the page bridge (UI-17)
         act(() => {
             store().setPageBoxes([
                 { start: 1, end: 5 },
@@ -135,10 +136,10 @@ describeDbTests("timeline play, pause, play", (it) => {
         });
         expect(store().startPinned).toBe(false);
         writes = 0;
-        playPause(3.1); // beat 7.2: Space stops in place, P moves to 7
+        playPause(3.1); // beat 7.2: Shift+Space pauses in place, P moves to 7
         expect(store().cursorBeat).toBeNull();
         expect(store().playheadBeat).toBe(7);
-        playPause(3.4); // beat 7.8: plays on from the new P and stops there
+        playPause(3.4); // beat 7.8: plays on from the new P and pauses there
         expect(store().cursorBeat).toBeNull();
         expect(store().playheadBeat).toBe(7);
         unsubscribe();

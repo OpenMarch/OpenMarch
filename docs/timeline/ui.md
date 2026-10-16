@@ -803,6 +803,7 @@ from it. The spec still wins on the model; this file decides presentation.
     Cycle on (C) makes Play loop the yellow region.
   - **Play (Space), looping off**, plays on from the playhead to the end of the show. Stopping stays
     there: the playhead moves to the last whole beat played, and an unpinned start flag follows.
+    (UI-24: that is now Pause, Shift+Space; Stop goes back to where Play was pressed.)
   - **Play (Space), looping on**, loops exactly the loop's region (no roll, V-24) until stopped,
     wherever the playhead is. Stopping puts the canvas back on the playhead, which looping never
     moved (project owner). An isolated move loops its range the same way.
@@ -811,7 +812,8 @@ from it. The spec still wins on the model; this file decides presentation.
     from the playhead (or the loop once), as Previous and Next swap theirs (owner, 2026-10-14). Its
     tooltip is a guide like theirs: Play with Space, then the barred Play with Shift + Space, the
     held one lit. While looping its name is "Play the loop". There is no Pause and no separate Stop
-    or second play button; Loop is its own button.
+    or second play button; Loop is its own button. (UI-24: while playing it is Stop with a guide to
+    Stop and Pause, and holding Shift makes it Pause.)
   - **A click, scrub or page jump while looping**: inside the loop it jumps and keeps looping;
     outside it, playback plays on from there and the stop stays (UI-11, UI-12).
   - **The loop is its own region** (project owner, 2026-10-09, after trying the follow model by
@@ -851,7 +853,8 @@ from it. The spec still wins on the model; this file decides presentation.
     (project owner, 2026-10-09, after trying round 3's choice by hand, V-176). Round 3 of the
     simulated-user tests had picked a hybrid (Space on a selected page plays its move once, Space
     straight after plays on); the owner found it asked two presses to play on from the playhead.
-  - **Playing on stops where it is**, and when that is another page the field line says so with a
+  - **Playing on stops where it is** (UI-24: pausing does; Stop goes back, so it reads "Paused on
+    page 4" now), and when that is another page the field line says so with a
     ring ("Stopped on page 4 · Editing Page 4…") for a few seconds (owner; the quiet line was missed
     by every tester who then edited the wrong set). Pages are compared, not the line's words, so
     stopping inside the page it started on stays quiet, and leaving that page drops the note. Past
@@ -1137,6 +1140,34 @@ from it. The spec still wins on the model; this file decides presentation.
     scroll from scroll events and the sizes from props, so a frame reads no layout, and writes the
     scroll only while a glide runs. All the numbers are lead defaults to tune by feel (V-230 to
     V-238).
+- **UI-24: Stop goes back, Pause stays (project owner, 2026-10-14).** It replaces the intent of
+  UI-22 (fork PR #185) without its start and end flags: the start flag and the playhead stay as they
+  are, and Play still plays from the start flag (Shift+Space from the playhead). What changes is how
+  playback ends.
+  - **Stop (Space, or the Stop button)** goes back to where Play was pressed: the start flag, the
+    playhead and so the edit window are as they were, so watching a move costs nothing. Playing
+    never moves either (it moves the cursor), so going back is clearing the cursor.
+  - **Pause (Shift+Space, or Shift+click on the Stop button)** stays where it is, as stopping did
+    before: the playhead moves to the last whole beat played and an unpinned start flag follows, so
+    the edit window moves there. The next Play and Stop start from here. A loop pauses the same way
+    (the loop stays); a pause within Play's first beat from the start flag still changes nothing
+    (V-192).
+  - **A click, scrub or page jump while playing** moves playback, not where Stop goes back to
+    (owner).
+  - **Reaching the end of the show** stops, back where Play was pressed, as the loop played once
+    always did (lead default, V-273).
+  - **Stop when nothing plays** does nothing (owner).
+  - **Where Stop goes back to is marked while playing** (owner, 2026-10-16: "hard to see in Expert,
+    not at all in Basic"). The resting playhead stays drawn as a flag, a pennant like the start flag's in the playhead's color, mirrored to hang back from a
+    dashed stem, while the live playhead moves (owner, 2026-10-16: a hollow playhead head on a dashed
+    line looked like something to grab); it goes when playback ends. It is the same in Basic
+    and Expert, and never takes the pointer. REAPER's edit cursor, which stays while the play
+    cursor moves, is the model (V-275). In Basic it shows only when the return is mid-page: on a page's
+    start or end, that page's box already marks it (owner, 2026-10-16).
+  - **The button.** While playing, Play is Stop ("Stop and go back"), and its tooltip is a guide to
+    Stop (Space) and Pause (Shift + Space); holding Shift swaps it to Pause ("Pause here"), as Shift
+    swaps Play to Play from the playhead. The field line's note for a stop on another page now reads
+    "Paused on page 4". The 3D window's Space stops.
 
 ## Mapping the spec onto the view model
 

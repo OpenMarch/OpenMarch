@@ -11,6 +11,7 @@ import type { TimelineSeekGesture } from "@/components/timeline/TimelineViewMode
 import {
     playTimelinePage,
     seekTimeline,
+    stopTimelinePlayback,
     toggleTimelinePlayback,
 } from "../timelineTransport";
 
@@ -121,6 +122,18 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         audio.startInfo.current = {};
     };
 
+    /** Shift+Space: play on from P, or pause where it is while playing (UI-24). */
+    const shiftSpace = (result: Parameters<typeof space>[0]) => {
+        act(() => {
+            playTimelinePage({
+                isPlaying: result.current.playing.isPlaying,
+                showEndBeat: result.current.beats.length,
+                setIsPlaying: result.current.playing.setIsPlaying,
+            });
+        });
+        audio.startInfo.current = {};
+    };
+
     it("plays through the window's end without looping (UI-10 Play)", async ({
         db,
         wrapper,
@@ -157,7 +170,7 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         expect(store().selection).toEqual({ kind: "range", start: 9, end: 13 });
     });
 
-    it("Space with no pin plays on, and stopping moves P to the last whole beat (UI-17)", async ({
+    it("Space plays on from the start flag, and Space again stops back where Play was pressed (UI-24)", async ({
         db,
         wrapper,
     }) => {
@@ -170,18 +183,114 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
             store().selectRange(1, 9);
         });
         expect(store().startPinned).toBe(false);
-        audio.seconds = 6.1; // beat 13.2
         space(result);
+        audio.seconds = 6.1; // beat 13.2
         frame();
         expect(store().playback).toEqual({ kind: "on" });
         expect(store().playheadBeat).toBe(9);
         space(result);
         expect(result.current.playing.isPlaying).toBe(false);
+        expect(store().cursorBeat).toBeNull();
+        expect(store().playheadBeat).toBe(9);
+        expect(store().startBeat).toBe(1);
+        expect(store().selection).toEqual({ kind: "range", start: 1, end: 9 });
+        expect(store().playback).toBeNull();
+    });
+
+    it("Shift+Space while playing pauses on the last whole beat, and moves the window there (UI-24)", async ({
+        db,
+        wrapper,
+    }) => {
+        const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().setPageBoxes([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]);
+            store().selectRange(1, 9);
+        });
+        space(result);
+        audio.seconds = 6.1; // beat 13.2
+        frame();
+        shiftSpace(result);
+        expect(result.current.playing.isPlaying).toBe(false);
         expect(store().playheadBeat).toBe(13);
         expect(store().cursorBeat).toBeNull();
         // An unpinned start flag follows P onto the page box that holds it
         expect(store().startBeat).toBe(9);
-        expect(store().playback).toBeNull();
+        // Play again from there, then Stop goes back to the paused spot
+        space(result);
+        audio.seconds = 7.1; // beat 15.2
+        frame();
+        space(result);
+        expect(store().playheadBeat).toBe(13);
+        expect(store().startBeat).toBe(9);
+    });
+
+    it("a click while playing jumps there, and Stop still goes back to where Play was pressed (UI-24)", async ({
+        db,
+        wrapper,
+    }) => {
+        const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().setPageBoxes([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]);
+            store().selectRange(1, 9);
+        });
+        space(result);
+        audio.seconds = 1;
+        frame();
+        act(() => {
+            seekTimeline(result.current.beats, 14, undefined, {
+                isPlaying: true,
+                setIsPlaying: result.current.playing.setIsPlaying,
+            });
+        });
+        frame();
+        space(result);
+        expect(store().playheadBeat).toBe(9);
+        expect(store().startBeat).toBe(1);
+    });
+
+    it("Stop does nothing when nothing is playing (UI-24)", async ({
+        db,
+        wrapper,
+    }) => {
+        const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().selectRange(1, 9);
+        });
+        act(() => {
+            stopTimelinePlayback(result.current.playing.setIsPlaying);
+        });
+        expect(result.current.playing.isPlaying).toBe(false);
+        expect(store().playheadBeat).toBe(9);
+        expect(store().selection).toEqual({ kind: "range", start: 1, end: 9 });
+    });
+
+    it("Shift+Space pauses a loop where it is; Space stops it back on P (UI-24)", async ({
+        db,
+        wrapper,
+    }) => {
+        const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().selectRange(1, 9);
+            store().setLoop({ start: 1, end: 9 });
+        });
+        space(result);
+        audio.seconds = 2.3; // beat 5.6
+        frame();
+        space(result);
+        expect(store().playheadBeat).toBe(9);
+        expect(store().cursorBeat).toBeNull();
+        space(result);
+        audio.seconds = 2.3;
+        frame();
+        shiftSpace(result);
+        expect(store().playheadBeat).toBe(5);
+        expect(store().loop).toEqual({ start: 1, end: 9 });
     });
 
     it("Shift+Space plays on from the playhead, or the loop once back to its set (UI-17)", async ({
@@ -230,7 +339,7 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         expect(store().playheadBeat).toBe(17);
     });
 
-    it("Space plays from the start flag, and a stop in its first beat leaves the page", async ({
+    it("Space plays from the start flag, and a pause in its first beat leaves the page", async ({
         db,
         wrapper,
     }) => {
@@ -247,24 +356,27 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         // Beat 9.4: on the flag, which is page 1's end flag
         audio.seconds = 4.2;
         frame();
-        space(result);
+        shiftSpace(result);
         expect(store().playheadBeat).toBe(17);
         expect(store().startBeat).toBe(9);
         expect(store().cursorBeat).toBeNull();
-        // A beat or more in, stopping moves P there as ever
+        // A beat or more in, pausing moves P there as ever
         space(result);
         audio.seconds = 4.6; // beat 10.2
         frame();
-        space(result);
+        shiftSpace(result);
         expect(store().playheadBeat).toBe(10);
         expect(store().startBeat).toBe(9);
     });
 
-    it("plays on and stops at the end of the show, leaving the playhead there", async ({
+    it("plays on and stops at the end of the show, back where Play was pressed (UI-24)", async ({
         db,
         wrapper,
     }) => {
         const { result } = await setUp(db, wrapper);
+        act(() => {
+            store().selectRange(1, 9);
+        });
         audio.seconds = 7.9;
         play(result);
         frame();
@@ -272,9 +384,9 @@ describeDbTests("useTimelinePlaybackDriver", (it) => {
         audio.seconds = 8; // the end of beat 16
         frame();
         expect(result.current.playing.isPlaying).toBe(false);
-        expect(store().playheadBeat).toBe(17);
-        // The start flag stayed at beat 0
-        expect(store().selection).toEqual({ kind: "range", start: 0, end: 17 });
+        expect(store().cursorBeat).toBeNull();
+        expect(store().playheadBeat).toBe(9);
+        expect(store().selection).toEqual({ kind: "range", start: 1, end: 9 });
     });
 
     it("pausing leaves the playhead on the last whole beat played", async ({

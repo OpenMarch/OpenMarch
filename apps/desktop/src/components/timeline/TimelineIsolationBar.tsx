@@ -179,16 +179,17 @@ export function stoppedSpot(
 }
 
 /**
- * The field line's note when playing on stops on another page (UI-17). It names where, because
- * "Stopped on a new page" read as "the app made a page" (basic-past-flag study: all four users went
- * to check). Never home: playing on only moves the playhead forward.
+ * The field line's note when playing on stops on another page (UI-17), which since UI-24 only a
+ * pause does: Stop goes back to where Play was pressed. It names where, because "Stopped on a new
+ * page" read as "the app made a page" (basic-past-flag study: all four users went to check). Never
+ * home: playing on only moves the playhead forward.
  */
 export function stoppedNote(
     spot: Exclude<StoppedSpot, { kind: "home" }>,
 ): string {
     return spot.kind === "page"
-        ? `Stopped on page ${spot.name}`
-        : "Stopped after the last page";
+        ? `Paused on page ${spot.name}`
+        : "Paused after the last page";
 }
 
 /**

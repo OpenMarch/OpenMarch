@@ -12,7 +12,11 @@ import {
     ExpandedTimeline,
     fitBackZoom,
 } from "../TimelineVariants";
-import { scrubLineBeat, snapSeekBeat } from "../TimelinePrimitives";
+import {
+    scrubLineBeat,
+    showsReturnMarker,
+    snapSeekBeat,
+} from "../TimelinePrimitives";
 import { Timeline, TimelineWaveformProvider } from "../Timeline";
 import {
     createLongTimelineStoryModel,
@@ -308,7 +312,7 @@ describe("timeline views", () => {
             />,
         );
         expect(
-            screen.getByRole("button", { name: "Stop" }),
+            screen.getByRole("button", { name: "Stop and go back" }),
         ).toBeInTheDocument();
         rerender(
             <ExpandedTimeline
@@ -1793,6 +1797,75 @@ describe("a calmer timeline (UI-12)", () => {
         expect(rows().map((row) => row.active)).toEqual([false, true]);
         fireEvent.keyUp(window, { key: "Shift" });
         expect(play).toHaveAccessibleName("Play from the start flag");
+    });
+
+    it("guides Stop and Pause while playing, and swaps to Pause while Shift is held (UI-24)", async () => {
+        const onPlayingChange = vi.fn();
+        const onPlayFromPlayhead = vi.fn();
+        render(
+            <ExpandedTimeline
+                {...commonProps}
+                isPlaying
+                showTransport
+                onPlayingChange={onPlayingChange}
+                onPlayFromPlayhead={onPlayFromPlayhead}
+            />,
+        );
+        const stop = screen.getByTestId("timeline-play");
+        act(() => stop.focus());
+        await screen.findByRole("tooltip");
+        const rows = () =>
+            [
+                ...document.querySelector(
+                    '[data-testid="timeline-stop-guide"]',
+                )!.children,
+            ].map((row) => ({
+                text: row.textContent,
+                active: row.hasAttribute("data-active"),
+            }));
+        expect(rows()).toEqual([
+            { text: "Stop and go backSpace", active: true },
+            { text: "Pause hereShift+Space", active: false },
+        ]);
+        fireEvent.keyDown(window, { key: "Shift", shiftKey: true });
+        expect(stop).toHaveAccessibleName("Pause here");
+        expect(rows().map((row) => row.active)).toEqual([false, true]);
+        fireEvent.click(stop, { shiftKey: true });
+        expect(onPlayFromPlayhead).toHaveBeenCalledOnce();
+        fireEvent.keyUp(window, { key: "Shift" });
+        expect(stop).toHaveAccessibleName("Stop and go back");
+        fireEvent.click(stop);
+        expect(onPlayingChange).toHaveBeenCalledWith(false);
+    });
+
+    it("marks where Stop goes back to while playing, and nothing while stopped (UI-24)", () => {
+        const { rerender } = render(
+            <ExpandedTimeline {...commonProps} showTransport returnBeat={4} />,
+        );
+        expect(screen.queryByTestId("timeline-return-marker")).toBeNull();
+        rerender(
+            <ExpandedTimeline
+                {...commonProps}
+                showTransport
+                isPlaying
+                returnBeat={4}
+            />,
+        );
+        const marker = screen.getByTestId("timeline-return-marker");
+        expect(marker.style.left).toBe(`${4 * commonProps.pixelsPerBeat}px`);
+    });
+
+    it("in Basic, marks the return only mid-page; Expert always (UI-24)", () => {
+        const pages = [
+            { id: 1, label: "1", atBeat: 0, isInitial: false, endBeat: 4 },
+            { id: 2, label: "2", atBeat: 4, isInitial: false, endBeat: 8 },
+        ];
+        expect(showsReturnMarker(4, pages, 16, true)).toBe(false);
+        expect(showsReturnMarker(8, pages, 16, true)).toBe(false);
+        expect(showsReturnMarker(0, pages, 16, true)).toBe(false);
+        expect(showsReturnMarker(16, pages, 16, true)).toBe(false);
+        expect(showsReturnMarker(6, pages, 16, true)).toBe(true);
+        expect(showsReturnMarker(4, pages, 16, false)).toBe(true);
     });
 
     it("keeps page navigation live while playing, where it jumps playback", () => {

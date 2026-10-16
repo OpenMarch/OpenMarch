@@ -80,7 +80,7 @@
         "playback": {
             "pause": "Pause",
             "play": "Play",
-            "playPage": "Play from playhead",
+            "playPage": "Play from playhead / pause",
             "playPause": "Play / stop",
             "toggleMetronome": "Toggle metronome",
             "toggleLoop": "Loop on / off"
