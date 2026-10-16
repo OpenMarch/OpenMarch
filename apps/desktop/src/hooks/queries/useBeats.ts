@@ -11,7 +11,7 @@ import {
     DatabaseBeat,
     createBeats,
     getBeats,
-    deleteBeats,
+    deleteBeatsCarryingCues,
     updateBeats,
     shiftBeats,
     flattenOrder,
@@ -19,6 +19,7 @@ import {
     NewBeatArgs,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { showCueCarryNotice } from "@/utilities/cueCarryNotice";
 
 /**
  * Arguments for shifting beats
@@ -105,12 +106,14 @@ export const updateBeatsMutationOptions = (qc: QueryClient) => {
 
 export const deleteBeatsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: (beatIds: Set<number>) => deleteBeats({ db, beatIds }),
-        onSuccess: () => {
+        mutationFn: (beatIds: Set<number>) =>
+            deleteBeatsCarryingCues({ db, beatIds }),
+        onSuccess: ({ cues }) => {
             // Invalidate all beat queries
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            showCueCarryNotice(cues, qc);
         },
         onError: (e, variables) => {
             conToastError(`Error deleting beats`, e, variables);

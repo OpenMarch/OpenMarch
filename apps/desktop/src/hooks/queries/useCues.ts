@@ -15,6 +15,8 @@ import {
     type NewCueArgs,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { phraseAssetKeys } from "./usePhraseAssets";
+import { pagePerformerSettingsKeys } from "./usePagePerformerSettings";
 
 /**
  * Matches the table name, so undo and redo (which invalidate by table name) refresh these
@@ -24,6 +26,21 @@ const KEY_BASE = "cues";
 
 export const cueKeys = {
     all: () => [KEY_BASE] as const,
+};
+
+/**
+ * Refreshes what deleting beats, measures, tags or marchers can change in the cue tables: the
+ * cues, the phrase assets and the per-set performer settings. The editor relays every
+ * invalidation to the 3D View (`useView3dPublisher`), so its cue compile refreshes too.
+ */
+export const invalidateCueQueries = async (qc: QueryClient) => {
+    await Promise.all(
+        [
+            cueKeys.all(),
+            phraseAssetKeys.all(),
+            pagePerformerSettingsKeys.all(),
+        ].map((queryKey) => qc.invalidateQueries({ queryKey })),
+    );
 };
 
 /** Every cue, in id order, with set members inlined (ADR 0004 D-1, D-2). */

@@ -4,11 +4,12 @@ import {
     DatabaseBeat,
     DbConnection,
     DbTransaction,
-    deleteBeatsInTransaction,
+    deleteBeatsCarryingCuesInTransaction,
     NewBeatArgs,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
+import type { CueCarryResult } from "./cues";
 
 /** How a measure is represented in the database */
 export interface DatabaseMeasure {
@@ -390,7 +391,7 @@ export const deleteMeasuresAndBeatsInTransaction = async ({
 }: {
     measureIds: Set<number>;
     tx: DbTransaction;
-}): Promise<void> => {
+}): Promise<CueCarryResult> => {
     const fetchedBeatIds: number[] = [];
 
     for (const measureId of measureIds) {
@@ -408,9 +409,10 @@ export const deleteMeasuresAndBeatsInTransaction = async ({
         tx,
     });
 
-    // delete beats
-    await deleteBeatsInTransaction({
+    // delete beats, carrying their cues forward
+    const { cues } = await deleteBeatsCarryingCuesInTransaction({
         beatIds: uniqueBeatIds,
         tx,
     });
+    return cues;
 };

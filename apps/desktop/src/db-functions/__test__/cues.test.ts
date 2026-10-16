@@ -13,7 +13,8 @@ import {
 } from "../cues";
 import { createPhraseAssets, deletePhraseAssets } from "../phraseAssets";
 import { deleteMarchers } from "../marcher";
-import { deleteBeats } from "../beat";
+import { deleteBeats, deleteBeatsCarryingCues } from "../beat";
+import { deleteMeasuresAndBeatsInTransaction } from "../measures";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { deleteTagsInTransaction } from "../tag";
 
@@ -515,7 +516,7 @@ describeDbTests("cues", (it) => {
         );
 
         testWithHistoryAndMarchers(
-            "deleting counts deletes their cues; undo restores them",
+            "deleting counts carries their cues to the next count; undo restores them",
             async ({ db, marchersAndPages, expectNumberOfChanges }) => {
                 const [m1] = marchersAndPages.expectedMarchers;
                 const [onSix, onSeven] = await createCues({
@@ -533,16 +534,21 @@ describeDbTests("cues", (it) => {
 
                 await deleteBeats({ db, beatIds: new Set([6]) });
 
-                expect((await getCues({ db })).map((c) => c.id)).toEqual([
-                    onSeven!.id,
+                const after = (await getCues({ db })).map((c) => [
+                    c.id,
+                    c.beatId,
                 ]);
-                expect(onSix).toBeDefined();
+                // A set cue and a band cue: different targets, so both stay on 7
+                expect(after).toEqual([
+                    [onSix!.id, 7],
+                    [onSeven!.id, 7],
+                ]);
                 await performUndo(db);
                 expect(await getCues({ db })).toEqual(before);
                 await performRedo(db);
-                expect((await getCues({ db })).map((c) => c.id)).toEqual([
-                    onSeven!.id,
-                ]);
+                expect(
+                    (await getCues({ db })).map((c) => [c.id, c.beatId]),
+                ).toEqual(after);
                 await expectNumberOfChanges.test(db, 2);
             },
         );
@@ -625,5 +631,296 @@ describeDbTests("cues", (it) => {
                 [],
             );
         });
+    });
+
+    describe("deleting beats carries their cues (ADR 0004 amendment of 2026-10-15)", () => {
+        const facing = (
+            beatId: number,
+            extra: Partial<NewCueArgs> = {},
+        ): NewCueArgs => ({
+            channel: "facing",
+            kind: "state",
+            target: { kind: "band" },
+            beatId,
+            value: "builtin:facing.back",
+            ...extra,
+        });
+        const bodyPhrase = (beatId: number, length: number): NewCueArgs => ({
+            channel: "body",
+            kind: "phrase",
+            target: { kind: "section", section: "Trumpet" },
+            beatId,
+            value: "builtin:body.choreo", // cspell:disable-line
+            length,
+        });
+        const placed = async (db: DbConnection) =>
+            (await getCues({ db })).map((c) => ({
+                id: c.id,
+                beatId: c.beatId,
+                length: c.length,
+            }));
+
+        testWithHistoryAndMarchers(
+            "keeps only the last cue per channel and target and moves it to the next beat",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [first, last, section5, section6] = await createCues({
+                    db,
+                    newCues: [
+                        facing(6),
+                        facing(7, { value: "builtin:facing.side1" }),
+                        facing(6, {
+                            target: { kind: "section", section: "Trumpet" },
+                        }),
+                        // The same section, ignoring case and outer spaces
+                        facing(7, {
+                            target: { kind: "section", section: " trumpet" },
+                        }),
+                    ],
+                });
+
+                const { cues } = await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([6, 7]),
+                });
+
+                expect(await placed(db)).toEqual([
+                    { id: last!.id, beatId: 8, length: null },
+                    { id: section6!.id, beatId: 8, length: null },
+                ]);
+                expect(cues.moved).toEqual([
+                    {
+                        cueId: last!.id,
+                        fromBeatId: 7,
+                        toBeatId: 8,
+                        toPosition: 6,
+                    },
+                    {
+                        cueId: section6!.id,
+                        fromBeatId: 7,
+                        toBeatId: 8,
+                        toPosition: 6,
+                    },
+                ]);
+                expect(cues.dropped).toEqual([first!.id, section5!.id]);
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "lets a cue already on the next beat win",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [moved, existing] = await createCues({
+                    db,
+                    newCues: [facing(6), facing(7)],
+                });
+
+                const { cues } = await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([6]),
+                });
+
+                expect(await placed(db)).toEqual([
+                    { id: existing!.id, beatId: 7, length: null },
+                ]);
+                expect(cues).toEqual({ moved: [], dropped: [moved!.id] });
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "moves a phrase's start and keeps its length",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [phrase] = await createCues({
+                    db,
+                    newCues: [bodyPhrase(6, 4)],
+                });
+
+                await deleteBeatsCarryingCues({ db, beatIds: new Set([6]) });
+
+                expect(await placed(db)).toEqual([
+                    { id: phrase!.id, beatId: 7, length: 4 },
+                ]);
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "shortens a moved phrase to end at the next cue on its channel and target",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [phrase, next, otherTarget] = await createCues({
+                    db,
+                    newCues: [
+                        bodyPhrase(6, 4),
+                        // Counts 7 to 10 would run into the state on 9
+                        {
+                            ...bodyPhrase(9, 2),
+                            kind: "state",
+                            value: "builtin:body.neutral",
+                            length: null,
+                        },
+                        // Another target doesn't shorten it
+                        { ...bodyPhrase(8, 2), target: { kind: "band" } },
+                    ],
+                });
+
+                const { cues } = await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([6]),
+                });
+
+                expect(await placed(db)).toEqual([
+                    { id: phrase!.id, beatId: 7, length: 2 },
+                    { id: next!.id, beatId: 9, length: null },
+                    { id: otherTarget!.id, beatId: 8, length: 2 },
+                ]);
+                expect(cues.moved).toEqual([
+                    {
+                        cueId: phrase!.id,
+                        fromBeatId: 6,
+                        toBeatId: 7,
+                        toPosition: 6,
+                        shortenedTo: 2,
+                    },
+                ]);
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "drops a moved phrase that can't fit 2 counts before the next cue",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [phrase, next] = await createCues({
+                    db,
+                    newCues: [bodyPhrase(6, 4), bodyPhrase(8, 2)],
+                });
+
+                const { cues } = await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([6]),
+                });
+
+                expect(await placed(db)).toEqual([
+                    { id: next!.id, beatId: 8, length: 2 },
+                ]);
+                expect(cues).toEqual({ moved: [], dropped: [phrase!.id] });
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "drops the cues when nothing comes after the deleted beats",
+            async ({ db, marchersAndPages }) => {
+                const last = marchersAndPages.expectedBeats.at(-1)!.id;
+                const [onLast] = await createCues({
+                    db,
+                    newCues: [facing(last)],
+                });
+
+                const { cues } = await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([last - 1, last]),
+                });
+
+                expect(await getCues({ db })).toEqual([]);
+                expect(cues).toEqual({ moved: [], dropped: [onLast!.id] });
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "moves a ripple with its cue unchanged",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [rippled] = await createCues({
+                    db,
+                    newCues: [
+                        facing(6, { ripple: { span: 8, order: "left_right" } }),
+                    ],
+                });
+
+                await deleteBeatsCarryingCues({ db, beatIds: new Set([6]) });
+
+                expect(await getCueById({ db, id: rippled!.id })).toMatchObject(
+                    {
+                        beatId: 7,
+                        ripple: { span: 8, order: "left_right" },
+                        value: "builtin:facing.back",
+                    },
+                );
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "carries each run of deleted beats to its own next beat",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                const [onSix, onEleven] = await createCues({
+                    db,
+                    newCues: [facing(6), facing(11)],
+                });
+
+                const { cues } = await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([6, 11]),
+                });
+
+                expect(await placed(db)).toEqual([
+                    { id: onSix!.id, beatId: 7, length: null },
+                    { id: onEleven!.id, beatId: 12, length: null },
+                ]);
+                expect(cues.moved.map((m) => m.toPosition)).toEqual([6, 10]);
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "is one undo step with the beat deletion",
+            async ({ db, marchersAndPages, expectNumberOfChanges }) => {
+                void marchersAndPages;
+                await createCues({
+                    db,
+                    newCues: [facing(6), facing(7), bodyPhrase(7, 4)],
+                });
+                const beforeCues = await getCues({ db });
+                const beforeBeats = await db.select().from(schema.beats).all();
+
+                await deleteBeatsCarryingCues({
+                    db,
+                    beatIds: new Set([6, 7]),
+                });
+                const afterCues = await getCues({ db });
+
+                await performUndo(db);
+                expect(await getCues({ db })).toEqual(beforeCues);
+                expect(await db.select().from(schema.beats).all()).toEqual(
+                    beforeBeats,
+                );
+                await performRedo(db);
+                expect(await getCues({ db })).toEqual(afterCues);
+                await expectNumberOfChanges.test(db, 2);
+            },
+        );
+
+        testWithHistoryAndMarchers(
+            "carries the cues of a deleted measure",
+            async ({ db, marchersAndPages }) => {
+                void marchersAndPages;
+                // Measure 2 is beats 5 to 8; measure 3 starts on 9
+                const [onSix] = await createCues({ db, newCues: [facing(6)] });
+
+                const cues = await transactionWithHistory(
+                    db,
+                    "deleteMeasuresAndBeats",
+                    (tx) =>
+                        deleteMeasuresAndBeatsInTransaction({
+                            tx,
+                            measureIds: new Set([2]),
+                        }),
+                );
+
+                expect(await placed(db)).toEqual([
+                    { id: onSix!.id, beatId: 9, length: null },
+                ]);
+                expect(cues.moved.map((m) => m.toBeatId)).toEqual([9]);
+            },
+        );
     });
 });

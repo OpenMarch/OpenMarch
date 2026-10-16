@@ -43,6 +43,7 @@ export type PerformerCarry =
 /** Who a cue applies to, broadest first. */
 export type CueTarget =
     | { kind: "band" }
+    /** Matched to the marcher's section ignoring case and outer spaces. */
     | { kind: "section"; section: string }
     | { kind: "tag"; tagId: number }
     | { kind: "set"; marcherIds: readonly number[] };

@@ -24,6 +24,7 @@ import {
 import { DEFAULT_STALE_TIME } from "./constants";
 import { beatKeys } from "./useBeats";
 import tolgee from "@/global/singletons/Tolgee";
+import { showCueCarryNotice } from "@/utilities/cueCarryNotice";
 
 const KEY_BASE = "measures";
 
@@ -198,13 +199,18 @@ export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 db,
                 "deleteMeasuresAndBeats",
                 async (tx) =>
-                    await withTimelinePageRipple(tx, async () => {
-                        await deleteMeasuresAndBeatsInTransaction({
-                            tx,
-                            measureIds,
-                        });
-                    }),
+                    await withTimelinePageRipple(
+                        tx,
+                        async () =>
+                            await deleteMeasuresAndBeatsInTransaction({
+                                tx,
+                                measureIds,
+                            }),
+                    ),
             );
+        },
+        onSuccess: (cues) => {
+            showCueCarryNotice(cues, qc);
         },
         onSettled: () => {
             // Invalidate all queries

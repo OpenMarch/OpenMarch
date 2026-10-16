@@ -7,12 +7,14 @@ import {
     embedLibraryVersionInTransaction,
     embedLibraryVersions,
     getShowLibraryItems,
+    libraryKeepsFromCues,
     libraryKeepsFromHistory,
     pruneShowLibraryInTransaction,
     readLibraryBlob,
     type EmbedLibraryVersion,
 } from "../showLibrary";
 import { hashParts, versionHashOf } from "@/view3d/library/showHash";
+import { createCuesInTransaction } from "../cues";
 import {
     createShowBlobCache,
     renderPartHash,
@@ -408,6 +410,36 @@ describeDbTests("showLibrary", (it) => {
             expect(await libraryKeepsFromHistory({ db })).toEqual([
                 { itemId: RIFLE },
             ]);
+        });
+
+        it("keeps the Versions cues name", async ({ db }) => {
+            const r = await rifle();
+            await embedLibraryVersion({ db, version: r });
+            await embedLibraryVersion({ db, version: await flag() });
+            // Outside history, so only the cue keeps the rifle
+            await db.transaction((tx) =>
+                createCuesInTransaction({
+                    tx,
+                    newCues: [
+                        {
+                            channel: "carry",
+                            kind: "state",
+                            target: { kind: "band" },
+                            beatId: 0,
+                            value: `library:${RIFLE}@${r.versionHash}`,
+                        },
+                    ],
+                }),
+            );
+
+            expect(await libraryKeepsFromCues({ db })).toEqual([
+                { itemId: RIFLE, versionHash: r.versionHash },
+            ]);
+            const plan = await pruneShowLibrary({ db, keep: [] });
+            expect(plan.items.map((i) => i.itemId)).toEqual([FLAG]);
+            expect(
+                (await getShowLibraryItems({ db })).map((i) => i.itemId),
+            ).toEqual([RIFLE]);
         });
 
         it("removes no blobs while a row can't be read", async ({ db }) => {

@@ -23,6 +23,7 @@ import { GUARD_EQUIPMENT } from "@/view3d/core/instruments/catalog";
 import type { GuardEquipment } from "../sceneStore";
 import { Segmented } from "./Panel";
 import { LightingControl, VenuePicker, useVenueRequest } from "./VenueControls";
+import { useShowPerformerDefaults } from "../performers/useStoredCues";
 
 /** End-zone lettering longer than this doesn't fit at a readable size. */
 export const END_ZONE_TEXT_MAX = 24;
@@ -421,13 +422,18 @@ function GuardEquipmentRow() {
 }
 
 /**
- * Which foot the band steps off on, always the performer's own: a window
- * setting until the show stores it.
+ * Which foot the band steps off on, always the performer's own: the show's
+ * saved default, or an unsaved preview of the other foot. Choosing the
+ * show's foot again drops the preview.
  */
 function StepOffFootRow() {
     const { t } = useTranslate();
-    const foot = useView3dSceneStore((s) => s.stepOffFoot);
-    const setFoot = useView3dSceneStore((s) => s.setStepOffFoot);
+    const override = useView3dSceneStore((s) => s.stepOffFoot);
+    const setOverride = useView3dSceneStore((s) => s.setStepOffFoot);
+    const showFoot = useShowPerformerDefaults().stepOffFoot;
+    const foot = override ?? showFoot;
+    const setFoot = (value: "left" | "right") =>
+        setOverride(value === showFoot ? null : value);
     return (
         <Row label={t("view3d.settings.stepOffFoot")} stacked>
             <Segmented

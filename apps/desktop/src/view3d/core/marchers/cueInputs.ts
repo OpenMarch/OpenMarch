@@ -18,9 +18,11 @@
  * - front 0, back pi, side 1 -pi/2, side 2 +pi/2;
  * - angle: `degrees` the same way round, 0 the audience, 90 side 2,
  *   180 the backfield, 270 side 1;
- * - point: toward field point (`x`, `y`) from where the marcher stands,
- *   `x` toward side 2 and `y` toward the audience (the compile's
- *   `positionAt` frame), in world meters unless `pointToWorld` says;
+ * - point: toward field point (`x`, `y`) from where the marcher stands.
+ *   The stored settings are field coordinates, the dots' space (ADR 0004
+ *   amendment of 2026-10-15); the window passes `pointToWorld` to convert
+ *   them as positions are. Without it they're read as world meters, `x`
+ *   toward side 2 and `y` toward the audience;
  * - direction of travel: where the step landing at that boundary went,
  *   keeping the last direction on a hold (the next one before any travel).
  *

@@ -293,9 +293,42 @@ export async function libraryKeepsFromHistory({
     return rows.map((r) => ({ itemId: r.item_id }));
 }
 
+/** A cue value naming a Library item: `library:<item id>@<version hash>` (ADR 0004). */
+const LIBRARY_CUE_VALUE = /^library:([^@]+)@(.+)$/;
+
+/**
+ * Library Versions the show's cues name (Carry, Silk and Uniform values). Save never prunes a
+ * Library item a cue names (ADR 0004 amendment of 2026-10-11, and of 2026-10-15). A page-era file
+ * that hasn't converted has no cue table, and keeps nothing for cues.
+ */
+export async function libraryKeepsFromCues({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<LibraryKeep[]> {
+    const hasCues = await db
+        .select({ n: sql<number>`count(*)` })
+        .from(sql`sqlite_schema`)
+        .where(sql`type = 'table' AND name = 'cues'`)
+        .get();
+    if (!hasCues?.n) return [];
+    const rows = await db
+        .selectDistinct({ value: schema.cues.value })
+        .from(schema.cues)
+        .where(sql`${schema.cues.value} LIKE 'library:%'`)
+        .all();
+    const keeps: LibraryKeep[] = [];
+    for (const { value } of rows) {
+        const match = LIBRARY_CUE_VALUE.exec(value);
+        if (match) keeps.push({ itemId: match[1]!, versionHash: match[2]! });
+    }
+    return keeps;
+}
+
 /**
  * Removes the Versions nothing keeps, then the blobs no remaining Version names (props-spec.md
- * section 2). `keep` is what the show's tables use (cues, Item tables); history is added here.
+ * section 2). `keep` is what the show's other tables use (Item tables); the Versions cues name
+ * and history are added here.
  */
 export async function pruneShowLibraryInTransaction({
     tx,
@@ -343,7 +376,11 @@ export async function pruneShowLibraryInTransaction({
     const plan = planLibraryPrune({
         items,
         blobHashes,
-        keep: [...keep, ...(await libraryKeepsFromHistory({ db: tx }))],
+        keep: [
+            ...keep,
+            ...(await libraryKeepsFromCues({ db: tx })),
+            ...(await libraryKeepsFromHistory({ db: tx })),
+        ],
     });
     if (unreadable.length > 0) plan.blobs = [];
 

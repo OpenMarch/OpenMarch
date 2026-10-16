@@ -733,3 +733,59 @@ describe("recompiling after a Carry edit", () => {
         );
     });
 });
+
+describe("owner answers on #118 (ADR 0004 amendment of 2026-10-15)", () => {
+    it("checks a rippled cue's fit where it lands for each performer", () => {
+        const out = compileCues(
+            show(
+                [
+                    // Flag work rippled over the guard: 4 for the first, 8 for the second.
+                    cue(140, "horn_equipment", 4, "builtin:flag.port", {
+                        ripple: { span: 5, order: "drill" },
+                    }),
+                    // The second trades the flag for a rifle on 6, before it lands.
+                    cue(141, "carry", 6, RIFLE_MODEL, {
+                        target: { kind: "set", marcherIds: [3] },
+                    }),
+                ],
+                [flag, flag2],
+            ),
+        );
+
+        expect(
+            out
+                .segments(2, "horn_equipment")
+                .some((s) => s.kind === "state" && s.cueId === 140),
+        ).toBe(true);
+        // On 8 the second holds a rifle: the flag work doesn't fit there.
+        expect(spans(out, 3, "horn_equipment")).toEqual([
+            [0, 6, "default", "builtin:flag.set"],
+            [6, 32, "default", "builtin:rifle.portArms"],
+        ]);
+        expect(out.notes).toEqual([
+            { kind: "carry_mismatch", cueIds: [140], marcherIds: [3] },
+        ]);
+        expect(out.flags).toEqual([]);
+    });
+
+    it("matches section targets ignoring case and outer spaces", () => {
+        const out = compileCues(
+            show([
+                cue(150, "facing", 4, "builtin:facing.back", {
+                    target: { kind: "section", section: " color guard " },
+                }),
+                cue(151, "facing", 8, "builtin:facing.side1", {
+                    target: { kind: "section", section: "TRUMPET" },
+                }),
+            ]),
+        );
+
+        expect(
+            out.segments(2, "facing").find((s) => s.kind === "state")?.cueId,
+        ).toBe(150);
+        expect(
+            out.segments(1, "facing").find((s) => s.kind === "state")?.cueId,
+        ).toBe(151);
+        expect(out.flags).toEqual([]);
+    });
+});

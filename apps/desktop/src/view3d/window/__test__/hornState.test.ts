@@ -18,11 +18,12 @@ describe("horn state", () => {
 });
 
 describe("step-off foot", () => {
-    it("starts on the left foot and changes on request", () => {
-        expect(useView3dSceneStore.getState().stepOffFoot).toBe("left");
+    it("starts on the show's foot and previews another on request", () => {
+        // null plays the show's saved foot
+        expect(useView3dSceneStore.getState().stepOffFoot).toBeNull();
         useView3dSceneStore.getState().setStepOffFoot("right");
         expect(useView3dSceneStore.getState().stepOffFoot).toBe("right");
-        useView3dSceneStore.getState().setStepOffFoot("left");
+        useView3dSceneStore.getState().setStepOffFoot(null);
     });
 });
 

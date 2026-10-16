@@ -8,6 +8,10 @@ import {
 import { schema } from "@/global/database/db";
 import { withTimelinePageRipple } from "./timelineRipple";
 import { realDatabaseBeatToDatabaseBeat } from "./rowMappers";
+import {
+    carryCuesPastDeletedBeatsInTransaction,
+    type CueCarryResult,
+} from "./cues";
 
 export const FIRST_BEAT_ID = 0;
 
@@ -474,20 +478,40 @@ export async function deleteBeats({
     db: DbConnection;
     beatIds: Set<number>;
 }): Promise<DatabaseBeat[]> {
+    return (await deleteBeatsCarryingCues({ db, beatIds })).beats;
+}
+
+/** What deleting beats did: the beats, and where their cues went. */
+export interface DeletedBeatsAndCues {
+    beats: DatabaseBeat[];
+    cues: CueCarryResult;
+}
+
+/**
+ * Deletes beats as one undoable edit, carrying their cues forward first
+ * (`carryCuesPastDeletedBeatsInTransaction`). The first beat is never deleted.
+ */
+export async function deleteBeatsCarryingCues({
+    db,
+    beatIds,
+}: {
+    db: DbConnection;
+    beatIds: Set<number>;
+}): Promise<DeletedBeatsAndCues> {
     // Filter out the first beat
     beatIds.delete(FIRST_BEAT_ID);
 
     if (beatIds.size === 0) {
         console.debug("No beats to delete (first beat filtered out)");
-        return [];
+        return { beats: [], cues: { moved: [], dropped: [] } };
     }
 
-    const transactionResult = await transactionWithHistory(
+    return await transactionWithHistory(
         db,
         "deleteBeats",
         async (tx) =>
             await withTimelinePageRipple(tx, async () => {
-                const response = await deleteBeatsInTransaction({
+                const response = await deleteBeatsCarryingCuesInTransaction({
                     tx,
                     beatIds,
                 });
@@ -495,8 +519,25 @@ export async function deleteBeats({
                 return response;
             }),
     );
-    return transactionResult;
 }
+
+/**
+ * Deletes beats the user chose to delete (a beat, a measure, a tempo group): their cues carry
+ * forward to the next beat first (ADR 0004 amendment of 2026-10-15), in the same transaction.
+ * Replacing every beat (an import) uses {@link deleteBeatsInTransaction}, whose cues go with
+ * their beats.
+ */
+export const deleteBeatsCarryingCuesInTransaction = async ({
+    tx,
+    beatIds,
+}: {
+    tx: DbTransaction;
+    beatIds: Set<number>;
+}): Promise<DeletedBeatsAndCues> => {
+    const cues = await carryCuesPastDeletedBeatsInTransaction({ tx, beatIds });
+    const beats = await deleteBeatsInTransaction({ tx, beatIds });
+    return { beats, cues };
+};
 
 /**
  * Deletes beats within a transaction and flattens positions.

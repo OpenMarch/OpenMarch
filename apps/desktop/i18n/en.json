@@ -289,6 +289,13 @@
         "sideToSide": "Side to Side",
         "sideToSideAbbreviation": "S. to S."
     },
+    "cues": {
+        "carryNotice": {
+            "movedLater": "{count, plural, one {# cue moved to a later count} other {# cues moved to later counts}}",
+            "movedTo": "{count, plural, one {# cue moved to count {at}} other {# cues moved to count {at}}}",
+            "removed": "{count, plural, one {# cue removed} other {# cues removed}}"
+        }
+    },
     "ensembles": {
         "attachDialog": {
             "attach": "Attach",
@@ -1880,6 +1887,7 @@
         "x": "X"
     },
     "tags": {
+        "deleteRemovesCues": "{count, plural, one {# cue targets this tag and will be removed} other {# cues target this tag and will be removed}}",
         "title": "Tags"
     },
     "tempoGroup": {
@@ -2204,7 +2212,7 @@
                 "left": "Performer's left",
                 "right": "Performer's right"
             },
-            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right.",
+            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right. Starts on the show's saved foot; the other one is a preview and isn't saved.",
             "keysSection": "Keyboard and mouse"
         },
         "keys": {

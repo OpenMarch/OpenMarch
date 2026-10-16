@@ -12,9 +12,10 @@ import { useMutation } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "../singletons/Tolgee";
 import { toast } from "sonner";
+import { showCueCarryNotice } from "@/utilities/cueCarryNotice";
 import { deleteMeasuresInTransaction } from "@/db-functions/measures";
 import {
-    deleteBeatsInTransaction,
+    deleteBeatsCarryingCuesInTransaction,
     deletePagesInTransaction,
     ensureSecondBeatHasPage,
     transactionWithHistory,
@@ -122,7 +123,7 @@ export const _cascadeDeleteMeasures = async (measures: Measure[]) => {
     );
     const measureIdsToDelete = new Set(measures.map((m) => m.id));
 
-    await transactionWithHistory(
+    return await transactionWithHistory(
         db,
         "cascadeDeleteMeasures",
         async (tx) =>
@@ -135,11 +136,12 @@ export const _cascadeDeleteMeasures = async (measures: Measure[]) => {
                     tx,
                     pageIds: pageIdsToDelete,
                 });
-                await deleteBeatsInTransaction({
+                const { cues } = await deleteBeatsCarryingCuesInTransaction({
                     tx,
                     beatIds: beatIdsToDelete,
                 });
                 await ensureSecondBeatHasPage({ tx });
+                return cues;
             }),
     );
 };
@@ -148,8 +150,9 @@ export const useCascadeDeleteMeasures = () => {
     return useMutation({
         mutationFn: (measuresToDelete: Measure[]) =>
             _cascadeDeleteMeasures(measuresToDelete),
-        onSuccess: async () => {
+        onSuccess: async (cues) => {
             toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
+            showCueCarryNotice(cues, queryClient);
             await queryClient.invalidateQueries({ queryKey: beatKeys.all() });
             void queryClient.invalidateQueries({ queryKey: pageKeys.all() });
             void queryClient.invalidateQueries({ queryKey: measureKeys.all() });

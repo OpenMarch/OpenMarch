@@ -407,6 +407,232 @@ export const deleteCuesInTransaction = async ({
     return deleted.map((row) => realDatabaseCueToDatabaseCue(row, members));
 };
 
+/** Whether the file has the cue tables. A page-era file gets them only when it converts. */
+const hasCueTables = async (tx: DbConnection | DbTransaction) => {
+    const found = await tx
+        .select({ n: sql<number>`count(*)` })
+        .from(sql`sqlite_schema`)
+        .where(sql`type = 'table' AND name = 'cues'`)
+        .get();
+    return !!found?.n;
+};
+
+/** A cue moved off deleted beats onto the next beat. */
+export interface CarriedCue {
+    cueId: number;
+    fromBeatId: number;
+    toBeatId: number;
+    /** The beat's position once the deletion is done: the count the editor shows. */
+    toPosition: number;
+    /** A phrase shortened to fit before the next cue: its new length. */
+    shortenedTo?: number;
+}
+
+/** What {@link carryCuesPastDeletedBeatsInTransaction} did to the cues on the deleted beats. */
+export interface CueCarryResult {
+    moved: CarriedCue[];
+    /** Cues deleted: an earlier cue on the deleted beats, beaten or with no beat to go to. */
+    dropped: number[];
+}
+
+/** The minimum phrase length (ADR 0004 D-1). */
+const MIN_PHRASE_LENGTH = 2;
+
+/** One key per channel and target; section names match as compile matches them. */
+const channelTargetKey = (
+    row: RealDatabaseCue,
+    members: ReadonlyMap<number, number[]>,
+): string => {
+    const target = targetOf(row, members);
+    switch (target.kind) {
+        case "section":
+            return `${row.channel}|section|${target.section.trim().toLowerCase()}`;
+        case "tag":
+            return `${row.channel}|tag|${target.tagId}`;
+        case "set":
+            return `${row.channel}|set|${[...target.marcherIds].sort((a, b) => a - b).join(",")}`;
+        default:
+            return `${row.channel}|band`;
+    }
+};
+
+/**
+ * Before deleting `beatIds`: each beat's order, each deleted beat's next surviving beat (null
+ * at the end of the show), and each surviving beat's position once they're gone.
+ */
+const beatsAfterDeletion = async (
+    tx: DbTransaction,
+    beatIds: ReadonlySet<number>,
+) => {
+    const beats = await tx
+        .select({ id: schema.beats.id })
+        .from(schema.beats)
+        .orderBy(asc(schema.beats.position), asc(schema.beats.id))
+        .all();
+    const order = new Map<number, number>();
+    const nextBeat = new Map<number, number | null>();
+    const positionAfter = new Map<number, number>();
+    let run: number[] = [];
+    beats.forEach(({ id }, i) => {
+        order.set(id, i);
+        if (beatIds.has(id)) {
+            run.push(id);
+            return;
+        }
+        for (const deleted of run) nextBeat.set(deleted, id);
+        run = [];
+        positionAfter.set(id, positionAfter.size);
+    });
+    for (const deleted of run) nextBeat.set(deleted, null);
+    return { order, nextBeat, positionAfter };
+};
+
+/**
+ * A moved phrase starting at `at`, against the positions of the cues on its channel and target:
+ * undefined when it fits, its new length when it must end at the next cue, or "drop" when that
+ * leaves it under the minimum. States always fit.
+ */
+const fitPhrase = (
+    row: RealDatabaseCue,
+    at: number,
+    cuePositions: readonly number[],
+): number | "drop" | undefined => {
+    if (row.kind !== "phrase" || row.length === null) return undefined;
+    const next = Math.min(...cuePositions.filter((p) => p > at));
+    if (at + row.length <= next) return undefined;
+    return next - at < MIN_PHRASE_LENGTH ? "drop" : next - at;
+};
+
+/**
+ * Carries the cues on beats about to be deleted forward (ADR 0004 amendment of 2026-10-15). Call
+ * it in the deletion's transaction, before the beats go, so one undo restores both:
+ *
+ * - per channel and target, of the cues on a run of deleted beats only the last (latest beat,
+ *   then newest) is kept; it moves to the first surviving beat after the run and the others are
+ *   deleted;
+ * - if that beat already has a cue on the same channel and target, that cue wins and the moved
+ *   one is deleted;
+ * - a phrase keeps its length unless it would now overlap the next cue on its channel and
+ *   target: then it ends there, and is deleted if that leaves it under 2 counts;
+ * - with no beat after the run (the end of the show), its cues are deleted;
+ * - ripples, settings and everything else move unchanged.
+ */
+export const carryCuesPastDeletedBeatsInTransaction = async ({
+    tx,
+    beatIds,
+}: {
+    tx: DbTransaction;
+    beatIds: ReadonlySet<number>;
+}): Promise<CueCarryResult> => {
+    if (beatIds.size === 0 || !(await hasCueTables(tx)))
+        return { moved: [], dropped: [] };
+    const onDeleted = await tx
+        .select({ id: schema.cues.id })
+        .from(schema.cues)
+        .where(inArray(schema.cues.beat_id, [...beatIds]))
+        .all();
+    if (onDeleted.length === 0) return { moved: [], dropped: [] };
+
+    const result = planCueCarry(
+        await tx.select().from(schema.cues).all(),
+        await membersByCue(tx),
+        beatIds,
+        await beatsAfterDeletion(tx, beatIds),
+    );
+    for (const carried of result.moved)
+        await tx
+            .update(schema.cues)
+            .set({
+                beat_id: carried.toBeatId,
+                ...(carried.shortenedTo !== undefined
+                    ? { length: carried.shortenedTo }
+                    : {}),
+            })
+            .where(eq(schema.cues.id, carried.cueId))
+            .run();
+    if (result.dropped.length > 0)
+        await tx
+            .delete(schema.cues)
+            .where(inArray(schema.cues.id, result.dropped))
+            .run();
+    return result;
+};
+
+/** Where every cue on the deleted beats goes; see `carryCuesPastDeletedBeatsInTransaction`. */
+function planCueCarry(
+    rows: readonly RealDatabaseCue[],
+    members: ReadonlyMap<number, number[]>,
+    beatIds: ReadonlySet<number>,
+    {
+        order,
+        nextBeat,
+        positionAfter,
+    }: Awaited<ReturnType<typeof beatsAfterDeletion>>,
+): CueCarryResult {
+    const result: CueCarryResult = { moved: [], dropped: [] };
+    const keyOf = (row: RealDatabaseCue) => channelTargetKey(row, members);
+
+    // The cues on deleted beats, grouped by where they go and their channel and target
+    const groups = new Map<string, RealDatabaseCue[]>();
+    for (const row of rows) {
+        if (!beatIds.has(row.beat_id)) continue;
+        const group = `${nextBeat.get(row.beat_id) ?? null}|${keyOf(row)}`;
+        const list = groups.get(group);
+        if (list) list.push(row);
+        else groups.set(group, [row]);
+    }
+
+    // Where each cue lands, by channel and target: the cues that stay, then the kept ones
+    const surviving = rows.filter((row) => !beatIds.has(row.beat_id));
+    const landed = new Map<string, number[]>();
+    const land = (key: string, position: number) => {
+        const list = landed.get(key);
+        if (list) list.push(position);
+        else landed.set(key, [position]);
+    };
+    for (const row of surviving)
+        land(keyOf(row), positionAfter.get(row.beat_id)!);
+
+    const kept: { row: RealDatabaseCue; to: number }[] = [];
+    for (const list of groups.values()) {
+        list.sort(
+            (a, b) =>
+                order.get(a.beat_id)! - order.get(b.beat_id)! || a.id - b.id,
+        );
+        const last = list.pop()!;
+        result.dropped.push(...list.map((row) => row.id));
+        const to = nextBeat.get(last.beat_id) ?? null;
+        const key = keyOf(last);
+        const taken = surviving.some(
+            (row) => row.beat_id === to && keyOf(row) === key,
+        );
+        if (to === null || taken) {
+            result.dropped.push(last.id);
+            continue;
+        }
+        kept.push({ row: last, to });
+        land(key, positionAfter.get(to)!);
+    }
+
+    for (const { row, to } of kept) {
+        const toPosition = positionAfter.get(to)!;
+        const fit = fitPhrase(row, toPosition, landed.get(keyOf(row)) ?? []);
+        if (fit === "drop") {
+            result.dropped.push(row.id);
+            continue;
+        }
+        result.moved.push({
+            cueId: row.id,
+            fromBeatId: row.beat_id,
+            toBeatId: to,
+            toPosition,
+            ...(fit !== undefined ? { shortenedTo: fit } : {}),
+        });
+    }
+    result.dropped.sort((a, b) => a - b);
+    return result;
+}
+
 /**
  * Deletes every hand-picked set cue left with no members (ADR 0004 D-2). The marcher deletion
  * write path calls it in the same transaction, after the members went with their marchers.
@@ -417,12 +643,7 @@ export const deleteEmptySetCuesInTransaction = async ({
     tx: DbTransaction;
 }): Promise<number[]> => {
     // A page-era file gets the cue tables when it converts; until then it has no set cues
-    const hasCues = await tx
-        .select({ n: sql<number>`count(*)` })
-        .from(sql`sqlite_schema`)
-        .where(sql`type = 'table' AND name = 'cues'`)
-        .get();
-    if (!hasCues?.n) return [];
+    if (!(await hasCueTables(tx))) return [];
     const deleted = await tx
         .delete(schema.cues)
         .where(

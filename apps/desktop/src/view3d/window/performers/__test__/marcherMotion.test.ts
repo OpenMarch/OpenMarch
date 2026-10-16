@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pixelsToWorld, type CueInput } from "@openmarch/core";
 import fs from "node:fs";
 import path from "node:path";
 import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
@@ -195,6 +196,90 @@ describe("planning from the window's cues", () => {
             first,
         );
         expect(next.replanned).toBe(2);
+    });
+});
+
+describe("planning from the show's stored cues", () => {
+    const ids = [1, 2];
+    const lines = show([track(800, 500, 90), track(830, 500, 90)]);
+    const beats = Array.from({ length: 16 }, (_, k) => ({
+        id: 50 + k,
+        timestamp: k * 0.5,
+        duration: 0.5,
+    }));
+    const marchers = ids.map((id) => ({ id, section: "Trumpet" }));
+    const facing = (
+        value: string,
+        extra: Partial<CueInput> = {},
+    ): CueInput => ({
+        id: 1,
+        channel: "facing",
+        kind: "state",
+        target: { kind: "band" },
+        // count 8
+        beatId: 58,
+        value,
+        transitionLength: 1,
+        ...extra,
+    });
+    const headingsOf = (cues: CueInput[], tagIds = new Map()) =>
+        planShow(
+            ids,
+            lines,
+            [1, 1],
+            clock,
+            fp,
+            manifest,
+            compileWindowCues(marchers, beats, "left", { cues, tagIds }),
+        ).plans.map((p) => p!.headings);
+
+    it("turns to a stored Facing cue from its count", () => {
+        const [first] = headingsOf([facing("builtin:facing.back")]);
+        // the plan runs a count ahead (CUE_LEAD): the back facing is drawn from boundary 9
+        expect(first![2]).toBeCloseTo(0);
+        expect(Math.abs(first![12])).toBeCloseTo(Math.PI);
+    });
+
+    it("reaches tag targets through the marchers' tags", () => {
+        const [tagged, other] = headingsOf(
+            [
+                facing("builtin:facing.back", {
+                    target: { kind: "tag", tagId: 7 },
+                }),
+            ],
+            new Map([[1, [7]]]),
+        );
+        expect(Math.abs(tagged![12])).toBeCloseTo(Math.PI);
+        expect(other![12]).toBeCloseTo(0);
+    });
+
+    it("reads a Facing point in field coordinates, like the dots", () => {
+        const point = { x: 2000, y: 545 };
+        const [first] = headingsOf([
+            facing("builtin:facing.point", { settings: point }),
+        ]);
+        const target = pixelsToWorld(fp, point);
+        const at = pixelsToWorld(fp, { x: 800, y: 590 });
+        expect(first![16]).toBeCloseTo(
+            Math.atan2(target.x - at.x, target.z - at.z),
+        );
+    });
+
+    it("plans again when the dot modes change", () => {
+        const cues = compileWindowCues(marchers, beats, "left");
+        const foot = planShow(ids, lines, [1, 1], clock, fp, manifest, cues);
+        const body = planShow(
+            ids,
+            lines,
+            [1, 1],
+            clock,
+            fp,
+            manifest,
+            cues,
+            foot,
+            new Array(16).fill("body"),
+        );
+        expect(body.replanned).toBe(2);
     });
 });
 

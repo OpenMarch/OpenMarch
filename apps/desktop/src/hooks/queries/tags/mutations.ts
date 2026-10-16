@@ -22,6 +22,7 @@ import { db } from "@/global/database/db";
 import { QueryClient, mutationOptions } from "@tanstack/react-query";
 import { tagKeys, invalidateTagQueries } from "./queries";
 import { conToastError } from "@/utilities/utils";
+import { invalidateCueQueries } from "../useCues";
 
 // ============================================================================
 // TAGS MUTATIONS
@@ -77,6 +78,8 @@ export const deleteTagsMutationOptions = (qc: QueryClient) => {
             }),
         onSuccess: async (_) => {
             invalidateTagQueries(qc);
+            // Cues targeting the tag went with it (ADR 0004 D-1)
+            void invalidateCueQueries(qc);
         },
         onError: (e, variables) => {
             conToastError("Error deleting tags", e, variables);

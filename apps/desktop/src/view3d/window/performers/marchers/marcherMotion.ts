@@ -8,8 +8,12 @@
  */
 import {
     compileCues,
+    type CompileInput,
     type CompiledCues,
+    type CueInput,
     type FieldProperties,
+    pixelsToWorld,
+    type ShowPhraseAsset,
 } from "@openmarch/core";
 import type { Manifest } from "@/view3d/vendor/om-pose/step-blend.js";
 import type { Bake } from "@/view3d/vendor/om-pose/instanced-marchers.js";
@@ -25,7 +29,7 @@ import type { MarcherPlan } from "@/view3d/core/marchers/planner";
 import { bodyAt, eventIndexAt } from "@/view3d/core/marchers/planner";
 import type { HeightClass } from "@/view3d/core/marchers/looks";
 import { marcherCueInputs } from "@/view3d/core/marchers/cueInputs";
-import type { Foot } from "@/view3d/core/marchers/planner";
+import type { DotMode, Foot } from "@/view3d/core/marchers/planner";
 import { rowKey, type MarcherBodies } from "./marcherBodies";
 
 export interface ShowPlans {
@@ -42,19 +46,31 @@ export interface ShowPlans {
         bpm: Float64Array;
         ids: readonly number[];
         cues: CompiledCues | null;
+        dotModes: readonly DotMode[] | null;
     };
 }
 
+/** The show's stored cues and what compile needs to place them (ADR 0004 D-1 to D-3). */
+export interface WindowStoredCues {
+    /** The stored cues (`getCues`); a deleted beat's cues are dropped by compile. */
+    cues?: readonly CueInput[];
+    /** Each marcher's tag ids, for tag targets. */
+    tagIds?: ReadonlyMap<number, readonly number[]>;
+    phraseAssets?: readonly ShowPhraseAsset[];
+    /** Where a marcher stands at a count's click, for positional ripple orders. */
+    positionAt?: CompileInput["positionAt"];
+}
+
 /**
- * Compiles the show's cues for the 3D View. There are no stored cues yet,
- * so this is the defaults alone, built from the marchers and the timed
- * beats (in the count clock's order); `stepOffFoot` is the window's preview
- * override of the show default, never saved.
+ * Compiles the show's cues for the 3D View from the marchers and the timed
+ * beats (in the count clock's order). `stepOffFoot` is the show's saved
+ * default, or the window's unsaved preview override of it.
  */
 export function compileWindowCues(
     marchers: readonly { id: number; section: string }[],
     beats: readonly { id: number; timestamp: number; duration: number }[],
     stepOffFoot: Foot,
+    stored: WindowStoredCues = {},
 ): CompiledCues {
     return compileCues({
         beats: beats
@@ -64,12 +80,14 @@ export function compileWindowCues(
         marchers: marchers.map((m, i) => ({
             id: m.id,
             section: m.section,
-            tagIds: [],
+            tagIds: [...(stored.tagIds?.get(m.id) ?? [])],
             drillOrder: i,
-            // Feet and Facing fit everyone; nothing here reads the others
+            // Feet and Facing fit everyone; the window plays no other channel yet
             carries: "none",
         })),
-        cues: [],
+        cues: stored.cues ?? [],
+        phraseAssets: stored.phraseAssets,
+        positionAt: stored.positionAt,
         showDefaults: { stepOffFoot },
     });
 }
@@ -138,6 +156,8 @@ export function planShow(
     /** The compiled cues; null plays the defaults (front facing, stand). */
     cues: CompiledCues | null,
     previous: ShowPlans | null = null,
+    /** What each count's dot marks (`dotModesPerCount`); null is foot on the dot. */
+    dotModes: readonly DotMode[] | null = null,
 ): ShowPlans {
     const t0 = performance.now();
     const sampled = sampleDrill(ids, positions, clock, fieldProperties);
@@ -147,6 +167,7 @@ export function planShow(
     const reuseAll =
         !!prev &&
         prev.cues === cues &&
+        prev.dotModes === dotModes &&
         sameArray(prev.bpm, clock.bpm) &&
         clock.counts + 1 === (prev.positions.find((p) => p)?.length ?? 0) / 2;
     const prevIndex = new Map((prev?.ids ?? []).map((id, i) => [id, i]));
@@ -165,13 +186,20 @@ export function planShow(
             return previous!.plans[j];
         replanned++;
         const fromCues = cues
-            ? marcherCueInputs(cues, ids[i], positions)
+            ? marcherCueInputs(cues, ids[i], positions, {
+                  // a Facing point is in field coordinates, like the dots
+                  pointToWorld: (x, y) => {
+                      const w = pixelsToWorld(fieldProperties, { x, y });
+                      return [w.x, w.z];
+                  },
+              })
             : null;
         return planMarcher({
             manifest,
             heightClass: h,
             heading: fromCues?.heading ?? 0,
             feet: fromCues?.feet,
+            dotMode: dotModes ?? undefined,
             positions,
             bpm: clock.bpm,
         });
@@ -186,6 +214,7 @@ export function planShow(
             bpm: clock.bpm,
             ids,
             cues,
+            dotModes,
         },
     };
 }

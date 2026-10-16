@@ -23,9 +23,10 @@
  *   section's own (flags carry the 6 ft flag, rifles the rifle), or one
  *   piece for every guard section, to see the other equipment. A preview
  *   override, never saved, until sections store their equipment.
- * - `stepOffFoot`: which foot the band steps off on; `right` plays every
- *   move's clips mirrored. A preview override of the show default the cues
- *   compile with (`compileWindowCues`), never saved.
+ * - `stepOffFoot`: an unsaved preview override of the show's saved step-off
+ *   foot (`performerDefaults`, ADR 0004 D-4 and D-7 as amended 2026-10-15);
+ *   null, the start, plays the show's. `right` plays every move's clips
+ *   mirrored. Feet cues still set their own foot.
  * - `powerPrefs`: pause drawing when nothing moves, and cap the frame rate
  *   on battery (`drawPolicy.ts`); saved per computer. Set it with
  *   `setPowerPrefs`. `onBattery` is the window's own reading of the battery.
@@ -79,8 +80,8 @@ export interface View3dSceneState {
     setHornState: (state: HoldState) => void;
     guardEquipment: GuardEquipment;
     setGuardEquipment: (equipment: GuardEquipment) => void;
-    stepOffFoot: StepOffFoot;
-    setStepOffFoot: (foot: StepOffFoot) => void;
+    stepOffFoot: StepOffFoot | null;
+    setStepOffFoot: (foot: StepOffFoot | null) => void;
     powerPrefs: PowerPrefs;
     setPowerPrefs: (prefs: PowerPrefs) => void;
     onBattery: boolean;
@@ -117,7 +118,7 @@ export const useView3dSceneStore = create<View3dSceneState>()((set) => ({
     setHornState: (hornState) => set({ hornState }),
     guardEquipment: "section",
     setGuardEquipment: (guardEquipment) => set({ guardEquipment }),
-    stepOffFoot: "left",
+    stepOffFoot: null,
     setStepOffFoot: (stepOffFoot) => set({ stepOffFoot }),
     powerPrefs: loadPowerPrefs(),
     setPowerPrefs: (powerPrefs) => {

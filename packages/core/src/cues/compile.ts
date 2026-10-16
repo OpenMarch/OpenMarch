@@ -490,7 +490,7 @@ function names(cue: CueInput, marcher: CueMarcher): boolean {
         case "band":
             return true;
         case "section":
-            return target.section === marcher.section;
+            return sectionKey(target.section) === sectionKey(marcher.section);
         case "tag":
             return marcher.tagIds.includes(target.tagId);
         case "set":
@@ -901,6 +901,13 @@ function newPass(input: CompileInput, recompile?: RecompileOptions): Pass {
     };
 }
 
+/**
+ * Where a placed cue reaches a marcher: its ripple's landing for them, or
+ * its count. A cue's fit is checked there (owner, 2026-10-15).
+ */
+const landing = (checked: CueChecks, p: PlacedCue, marcher: CueMarcher) =>
+    checked.ripples.get(p.cue.id)?.get(marcher.id) ?? p.count;
+
 /** One marcher's channel: reused from the previous compile, or resolved. */
 function resolve(
     pass: Pass,
@@ -925,7 +932,11 @@ function resolve(
                     p.cue.channel === channel &&
                     !checked.notAllowed.has(p.cue.id) &&
                     appliesTo(p.cue, marcher) &&
-                    fitsHolding(lookup, p.cue, holdsAt(looks, p.count)),
+                    fitsHolding(
+                        lookup,
+                        p.cue,
+                        holdsAt(looks, landing(checked, p, marcher)),
+                    ),
             ),
             checked.ripples,
             pass.input.beats.length,
@@ -1054,16 +1065,27 @@ function checkCues(
         )
             for (const m of input.marchers)
                 if (names(cue, m)) flags.add("fits_nobody", [cue.id], m.id);
+        // The ripple orders the performers the cue fits on its count; each
+        // is checked again where it lands for them.
+        const rippled = rippleCounts(
+            cue,
+            count,
+            fitting,
+            time,
+            counts,
+            input.positionAt,
+        );
         if (looksOf)
             for (const m of targeted) {
-                if (fitting.includes(m)) continue;
+                const at = rippled?.get(m.id) ?? count;
+                if (fitsAt(cue, m, at)) continue;
                 const looks = looksOf(m);
                 if (
                     carryMismatch(
                         lookup,
                         cue,
                         looks.carry.holds,
-                        holdsAt(looks, count),
+                        holdsAt(looks, at),
                     )
                 )
                     notes.add("carry_mismatch", [cue.id], m.id);
@@ -1073,16 +1095,7 @@ function checkCues(
                 flags.add("kind_not_allowed", [cue.id], m.id);
             notAllowed.add(cue.id);
         }
-        if (reused(cue.channel)) continue;
-        const rippled = rippleCounts(
-            cue,
-            count,
-            fitting,
-            time,
-            counts,
-            input.positionAt,
-        );
-        if (rippled) ripples.set(cue.id, rippled);
+        if (rippled && !reused(cue.channel)) ripples.set(cue.id, rippled);
     }
     return { ripples, notAllowed };
 }
