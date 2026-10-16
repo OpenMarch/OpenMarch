@@ -449,8 +449,9 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
 
         const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
 
+        // The first page sits alone on beat 0, so page 1 starts on beat 1
         for (let i = 1; i < PAGES_COUNT; i++) {
-            const beatPosition = i * COUNTS_PER_PAGE;
+            const beatPosition = (i - 1) * COUNTS_PER_PAGE + 1;
             const beatObj = sortedBeats.find(
                 (b) => b.position === beatPosition,
             );
