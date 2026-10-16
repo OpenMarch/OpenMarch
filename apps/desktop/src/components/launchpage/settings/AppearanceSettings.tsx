@@ -61,6 +61,25 @@ export default function AppearanceSettings() {
                     }
                 />
             </SettingRow>
+
+            <SettingRow
+                label={<T keyName="settings.general.performanceMode" />}
+                htmlFor="field-performance-mode"
+                description={
+                    <T keyName="settings.general.performanceMode.description" />
+                }
+            >
+                <Switch
+                    id="field-performance-mode"
+                    checked={uiSettings.fieldPerformanceMode}
+                    onCheckedChange={(checked) =>
+                        setUiSettings({
+                            ...uiSettings,
+                            fieldPerformanceMode: checked,
+                        })
+                    }
+                />
+            </SettingRow>
         </SettingsPanel>
     );
 }

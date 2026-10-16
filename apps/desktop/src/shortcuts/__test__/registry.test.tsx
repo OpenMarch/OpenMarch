@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
+    actionIgnoresRepeat,
     hasActionHandler,
     isActionEnabled,
     registerActionHandler,
@@ -100,5 +101,18 @@ describe("useActionHandler", () => {
         expect(listener).not.toHaveBeenCalled();
         unmount();
         off();
+    });
+
+    it("reads an ignoreRepeat function at each repeat", () => {
+        let busy = false;
+        const { unmount } = renderHook(() =>
+            useActionHandler("performUndo", () => {}, {
+                ignoreRepeat: () => busy,
+            }),
+        );
+        expect(actionIgnoresRepeat("performUndo")).toBe(false);
+        busy = true;
+        expect(actionIgnoresRepeat("performUndo")).toBe(true);
+        unmount();
     });
 });

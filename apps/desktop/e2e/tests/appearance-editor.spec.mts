@@ -110,15 +110,12 @@ test("Create tags on marchers", async ({ electronApp }) => {
     await page.getByRole("textbox", { name: "Rename tag" }).press("Enter");
     await expect(page.getByText("even cooler tag")).toBeVisible();
     await expect(page.getByText("cool tag")).not.toBeVisible();
-    await page
-        .locator("canvas")
-        .nth(1)
-        .click({
-            position: {
-                x: 0,
-                y: 0,
-            },
-        });
+    await page.getByTestId("fieldCanvas").click({
+        position: {
+            x: 0,
+            y: 0,
+        },
+    });
     await page.locator("body").press("ControlOrMeta+a");
     await expect(page.getByText("even cooler tag")).toBeVisible();
     await expect(page.getByText("cool tag")).not.toBeVisible();

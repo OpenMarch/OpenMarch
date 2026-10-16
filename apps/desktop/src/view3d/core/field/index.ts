@@ -29,7 +29,7 @@ import { planTurf } from "./turfPlan";
  * (ADR 0002 D-1), in meters with the field at z <= 0 (D-2).
  *
  * `buildFieldSurface` plans the field from `FieldProperties` with the same
- * semantics as `OpenMarchCanvas.createFieldGrid`, paints the plan into one
+ * semantics as the 2D field's plan (`fieldPlan.ts`), paints the plan into one
  * canvas texture and returns a plane covering `fieldFootprint` at
  * y = `FIELD_SURFACE_Y`. Styles: `turf` (stadium kits), `theme` (blank) and
  * `tarp` (gym). Tests call `setTexturePainting(false)` from the environment

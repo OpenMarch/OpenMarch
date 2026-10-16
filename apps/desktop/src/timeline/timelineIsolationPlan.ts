@@ -8,7 +8,7 @@ import type { Resolver, XY } from "@openmarch/core";
  * them partway: a stolen member stands where the move would take it, and dragging it edits the
  * move's destination for it. Where it really goes is drawn as context by the focus layer.
  *
- * `useTimelineFocusRender` publishes the plan; the static render and the coordinate tools read it.
+ * `useTimelineFocusScene` publishes the plan; the field and the coordinate tools read it.
  */
 export interface IsolationPlan {
     readonly timelineId: number;

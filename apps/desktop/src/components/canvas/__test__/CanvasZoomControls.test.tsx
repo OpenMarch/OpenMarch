@@ -1,7 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import CanvasZoomControls from "../CanvasZoomControls";
-import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
+import CanvasZoomControls, {
+    type ZoomControlsCanvas,
+} from "../CanvasZoomControls";
 
 vi.stubGlobal(
     "ResizeObserver",
@@ -34,7 +35,7 @@ describe("CanvasZoomControls slider", () => {
         const canvas = fakeCanvas(1);
         render(
             <CanvasZoomControls
-                canvas={canvas as unknown as OpenMarchCanvas}
+                canvas={canvas as unknown as ZoomControlsCanvas}
             />,
         );
         const thumb = screen.getByRole("slider");
@@ -54,7 +55,7 @@ describe("CanvasZoomControls slider", () => {
         const canvas = fakeCanvas(1);
         render(
             <CanvasZoomControls
-                canvas={canvas as unknown as OpenMarchCanvas}
+                canvas={canvas as unknown as ZoomControlsCanvas}
             />,
         );
         canvas.setZoomExternally(5);

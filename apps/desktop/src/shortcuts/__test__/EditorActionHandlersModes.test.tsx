@@ -1,6 +1,7 @@
 import { act, cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, expect, vi } from "vitest";
-import { DbConnection, describeDbTests } from "@/test/base";
+import { toast } from "sonner";
+import { DbConnection, describeDbTests, schema } from "@/test/base";
 import {
     harnessQueryClient,
     positionsOn,
@@ -9,7 +10,6 @@ import {
     setUpFeature,
 } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
-import { historyKeys } from "@/hooks/queries/useHistory";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
 import { EditorActionHandlers } from "@/shortcuts/ActionHandlers";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
@@ -41,6 +41,7 @@ beforeAll(async () => {
 afterEach(() => {
     cleanup();
     stopTimelineResolver();
+    vi.restoreAllMocks();
 });
 
 const setUp = (pageIndex: number, marcherIds: readonly number[]) =>
@@ -297,7 +298,7 @@ describeDbTests("registered coordinate actions", (it) => {
         const ids = marchersAndPages.expectedMarchers
             .slice(10, 12)
             .map((m) => m.id);
-        const { qc, page } = await setUp(PAGE, ids);
+        const { page } = await setUp(PAGE, ids);
         const before = await positionsOn(db, page, ids);
 
         await trigger("moveSelectedMarchersUp");
@@ -305,14 +306,11 @@ describeDbTests("registered coordinate actions", (it) => {
             expect(await positionsOn(db, page, ids)).not.toEqual(before);
         });
 
-        // Look somewhere else, then undo
+        // Look somewhere else, then undo. No wait for the canUndo query: the undo itself
+        // decides whether there is anything to undo (#223).
         const elsewhere = probed().pages[1]!;
         const otherId = marchersAndPages.expectedMarchers[20]!.id;
         await selectPageAndMarchers(elsewhere, [otherId]);
-        await act(() => qc.invalidateQueries({ queryKey: historyKeys.all() }));
-        await waitFor(() =>
-            expect(qc.getQueryData(historyKeys.canUndo())).toBe(true),
-        );
 
         await trigger("performUndo");
 
@@ -331,5 +329,26 @@ describeDbTests("registered coordinate actions", (it) => {
                 expect(y).toBeCloseTo(before[i]![1], 6);
             });
         });
+    });
+
+    it("undo with nothing to undo shows one warning and changes nothing (#223)", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        const warning = vi.spyOn(toast, "warning");
+        const ids = marchersAndPages.expectedMarchers
+            .slice(10, 12)
+            .map((m) => m.id);
+        const { page } = await setUp(PAGE, ids);
+        await db.delete(schema.history_undo).run();
+        const before = await positionsOn(db, page, ids);
+
+        await trigger("performUndo");
+
+        await waitFor(() =>
+            expect(warning).toHaveBeenCalledWith("No action to undo"),
+        );
+        expect(warning).toHaveBeenCalledOnce();
+        expect(await positionsOn(db, page, ids)).toEqual(before);
     });
 });

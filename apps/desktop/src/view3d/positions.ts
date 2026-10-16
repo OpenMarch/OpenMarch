@@ -19,14 +19,19 @@ import { useMemo } from "react";
 import type { FieldProperties, Resolver, WorldPoint } from "@openmarch/core";
 import { db } from "@/global/database/db";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
-import { beatAtTime, type BeatTiming } from "@/timeline/timeMap";
+import type { BeatTiming } from "@/timeline/timeMap";
+import { PositionBuffer, playbackBeat } from "@/timeline/positionBuffer";
 import { acquireExportResolver } from "@/timeline/timelineExport";
 import { VIEW3D_TIMELINE_QUERY_KEY } from "@/view3d/sync/protocol";
 
 /** As in `@openmarch/core` `world.ts`. */
 const METERS_PER_INCH = 0.0254;
 
-/** What {@link ShowPositions} needs from a resolver. */
+/**
+ * What {@link ShowPositions} needs from a resolver. `marcherIds()` must be
+ * ascending, as `@openmarch/core`'s resolver returns them (`PositionSource`):
+ * {@link PositionBuffer} finds marchers by binary search.
+ */
 export type PositionResolver = Pick<Resolver, "marcherIds" | "positionsAt">;
 
 /**
@@ -34,24 +39,32 @@ export type PositionResolver = Pick<Resolver, "marcherIds" | "positionsAt">;
  * beats. Reading positions at one time for many marchers samples the resolver
  * once: the last sampled time is kept, so read all marchers at one time before
  * moving to the next.
+ *
+ * Sampling is the shared {@link PositionBuffer} and `playbackBeat`, as the 2D
+ * fields sample it, so both views agree on where a marcher is at a time.
  */
 export class ShowPositions {
-    private readonly indexById = new Map<number, number>();
-    private readonly buffer: Float64Array;
+    private readonly known: ReadonlySet<number>;
+    private readonly sampled: PositionBuffer;
     private sampledMs = Number.NaN;
 
     constructor(
-        private readonly resolver: PositionResolver,
+        resolver: PositionResolver,
         private readonly beats: readonly BeatTiming[],
     ) {
-        const ids = resolver.marcherIds();
-        ids.forEach((id, i) => this.indexById.set(id, i));
-        this.buffer = new Float64Array(ids.length * 2);
+        this.known = new Set(resolver.marcherIds());
+        this.sampled = new PositionBuffer({
+            marcherIds: () => resolver.marcherIds(),
+            positionsAt: (beat, out) => {
+                resolver.positionsAt(beat, out);
+                return true;
+            },
+        });
     }
 
     /** Whether the resolver knows `marcherId`. */
     has(marcherId: number): boolean {
-        return this.indexById.has(marcherId);
+        return this.known.has(marcherId);
     }
 
     /**
@@ -70,25 +83,21 @@ export class ShowPositions {
         fieldProperties: FieldProperties,
         out: WorldPoint,
     ): boolean {
-        const i = this.indexById.get(marcherId);
-        if (i === undefined || Number.isNaN(ms)) return false;
+        if (!this.known.has(marcherId) || Number.isNaN(ms)) return false;
         if (ms !== this.sampledMs) {
-            this.resolver.positionsAt(
-                beatAtTime(this.beats, ms / 1000),
-                this.buffer,
-            );
+            this.sampled.fill(playbackBeat(this.beats, ms));
             this.sampledMs = ms;
         }
+        const i = this.sampled.indexOf(marcherId);
+        if (i < 0) return false;
+        const buffer = this.sampled.buffer;
         // As `pixelsToWorld`.
         const k =
             (fieldProperties.stepSizeInches * METERS_PER_INCH) /
             fieldProperties.pixelsPerStep;
-        out.x =
-            (this.buffer[i * 2] - fieldProperties.centerFrontPoint.xPixels) * k;
+        out.x = (buffer[i * 2] - fieldProperties.centerFrontPoint.xPixels) * k;
         out.z =
-            (this.buffer[i * 2 + 1] -
-                fieldProperties.centerFrontPoint.yPixels) *
-            k;
+            (buffer[i * 2 + 1] - fieldProperties.centerFrontPoint.yPixels) * k;
         return true;
     }
 

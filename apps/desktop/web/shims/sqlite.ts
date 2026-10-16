@@ -169,6 +169,23 @@ export class DatabaseSync {
         return this.db !== null;
     }
 
+    /**
+     * Like node:sqlite's: whether a transaction is open. sql.js doesn't export
+     * `sqlite3_get_autocommit`, so this asks SQLite: `BEGIN` fails only inside
+     * a transaction, and an empty one rolls back without a trace.
+     */
+    get isTransaction() {
+        const db = this.open();
+        try {
+            db.exec("BEGIN");
+        } catch (error) {
+            if (String(error).includes("within a transaction")) return true;
+            throw error;
+        }
+        db.exec("ROLLBACK");
+        return false;
+    }
+
     private open(): Database {
         if (!this.db) throw new Error("database is not open");
         return this.db;

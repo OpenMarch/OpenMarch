@@ -5,32 +5,24 @@ Three Fiber) field behind a renderer-independent editor. The decision is
 [ADR 0005](../adr/0005-three-field-renderer.md), and the spec is fork issue
 #189. Read both before you start.
 
-## Field freeze
+## Fabric is gone
 
-**Fabric field drawing and field interaction are frozen until #209 (the
-switch) merges.** That covers:
-
-- `apps/desktop/src/components/canvas/` (Canvas, listeners, hooks);
-- `apps/desktop/src/global/classes/canvasObjects/`;
-- the Fabric parts of `apps/desktop/src/timeline/` (`useTimelineKeptMarks.ts`,
-  `useTimelineShapeCanvas.ts`) and `MarcherRotationInput.tsx`.
-
-Rules while the freeze holds:
-
-- Fix only real breakage there. Each fix adds a parity scenario that pins the
-  fixed behavior, so the new field must match it.
-- Don't add field features or change field behavior on Fabric. Build them on
-  the new field instead.
-- Box v1 (fork PR #181) is held, and rebuilt on the new field in #204.
-- The timeline panel, inspector, data layer, 3D View, export content and
-  shortcuts aren't frozen.
+#209 made the three.js field the only field and deleted Fabric: its
+dependency, its code, its unit tests, the Fabric driver of the field test
+API and the dev switch (`openmarch:dev:field`, `?field=three`, the `FIELD`
+variable in the e2e setup). There's no rollback setting. Field work in
+progress on Fabric ports by [porting-fabric-features.md](porting-fabric-features.md)
+before it can land. To compare with Fabric, use the pinned pre-switch build
+(fork branch `field-renderer-pre-209`; links in
+[parity-checklist.md](parity-checklist.md)).
 
 ## Files
 
-| File                                             | Purpose                                                                                    |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| [implementation-plan.md](implementation-plan.md) | Ticket index and blocking order, architecture rules, interaction rules table, parity gate. |
-| [phases/](phases/)                               | One file per phase: scope, tickets, exit gate and handoff notes.                           |
+| File                                                     | Purpose                                                                                    |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [implementation-plan.md](implementation-plan.md)         | Ticket index and blocking order, architecture rules, interaction rules table, parity gate. |
+| [phases/](phases/)                                       | One file per phase: scope, tickets, exit gate and handoff notes.                           |
+| [porting-fabric-features.md](porting-fabric-features.md) | Porting a Fabric feature to the new field, and the inventory of in-flight Fabric work.     |
 
 ## Where status lives
 
@@ -47,12 +39,17 @@ gh api repos/AlexDumo/OpenMarch-timeline/issues/<n>/dependencies/blocked_by --jq
 
 ## Picking up a ticket
 
-1. Check every blocker is closed (merged).
+All conversion work lands on the fork's `field-renderer` branch, not `main`.
+`field-renderer` reaches `main` through one PR when the migration is done.
+
+1. Check every blocker is closed (merged into `field-renderer`).
 2. Read the ticket, #189 (body and comments), ADR 0005 and
    [implementation-plan.md](implementation-plan.md).
-3. Work in your own worktree off fork `main`, with a branch named
+3. Work in your own worktree off fork `field-renderer`, with a branch named
    `field/<n>-<short-name>`.
-4. Open a PR into fork `main` with `Closes #<n>`. Add any notes the next
+4. Open a PR into fork `field-renderer` with `Closes #<n>`. GitHub only
+   auto-closes issues on merges into `main`, so the ticket is closed by hand
+   after the merge. Add any notes the next
    ticket needs to its phase file's handoff notes.
 
 ## Performance numbers

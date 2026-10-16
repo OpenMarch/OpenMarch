@@ -14,6 +14,7 @@ import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
 import { webExampleShows } from "../../src/utilities/webBuild";
 import { SETTINGS_DEFAULT } from "../../electron/main/settings-window-bounds";
+import { GPU_CRASHED_CHANNEL } from "../../electron/main/gpu";
 
 const SETTINGS_KEY = storageKey("settings");
 /** Tells this build's other pages (e.g. the settings window) about a change. */
@@ -277,6 +278,8 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         isCI: false,
         isPlaywrightSession: false,
     }));
+    // The browser owns its GPU process: the field reads the GL renderer itself
+    handleInPage(GPU_CRASHED_CHANNEL, () => false);
     handleInPage("log:print", (level: string, ...rest: unknown[]) => {
         if (level === "error" || level === "warn")
             console[level]("[Renderer]", ...rest);

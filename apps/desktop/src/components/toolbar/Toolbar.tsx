@@ -11,6 +11,8 @@ import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import SelectTab from "./tabs/SelectTab";
+import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 
 export default function Topbar() {
     const { isFullscreen } = useFullscreenStore();
@@ -28,12 +30,23 @@ export default function Topbar() {
         }
     }, [isFullscreen]);
 
-    // Switch from collisions tab to alignment when page changes and no collisions exist
+    // Switch from collisions tab to alignment when page changes and no collisions exist. Not while
+    // playing or scrubbing, when the selected page follows the playhead (#226): the tab waits for
+    // the page it stops on.
+    const isPlaying = useIsPlaying()?.isPlaying ?? false;
+    const scrubbing = useTimelineSelectionStore((s) => s.scrubbing);
     useEffect(() => {
+        if (isPlaying || scrubbing) return;
         if (activeTab === "collisions" && currentCollisions.length === 0) {
             setActiveTab("alignment");
         }
-    }, [selectedPage, currentCollisions.length, activeTab]);
+    }, [
+        selectedPage,
+        currentCollisions.length,
+        activeTab,
+        isPlaying,
+        scrubbing,
+    ]);
 
     return (
         <div

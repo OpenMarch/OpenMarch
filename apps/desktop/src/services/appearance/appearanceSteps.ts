@@ -33,7 +33,7 @@ export interface MarcherAppearanceSteps {
     /** Ascending flag beats at which the appearance changes; the first is the first flag (home) */
     readonly beats: readonly number[];
     /**
-     * The appearance stack (`CanvasMarcher.setAppearance`, highest priority first) in effect from
+     * The appearance stack (`resolveMarcherLook`'s, highest priority first) in effect from
      * the same index's beat until the next one. Before the first beat, the first applies.
      */
     readonly stacks: readonly AppearanceComponentOptional[][];

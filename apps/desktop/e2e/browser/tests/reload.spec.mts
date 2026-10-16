@@ -5,11 +5,11 @@ import {
     createTempoGroup,
     drawnMarchers,
     expectCanvasMatchesShow,
+    waitForField,
 } from "../app.mjs";
 import { savedPosition } from "../positions.mjs";
 
-// Pre-existing on fork main 1be4fd9c in timeline mode: after **+** adds a page flag, the selected page (Inspector, canvas.currentPage, e/Shift+E) stays on the old page until reload.
-test.fixme("a show built in the app looks the same after a reload", async ({
+test("a show built in the app looks the same after a reload", async ({
     show,
 }) => {
     const { page } = show;
@@ -49,11 +49,14 @@ test.fixme("a show built in the app looks the same after a reload", async ({
     const before = await timeline();
     expect(before).toContain("Page 1");
     await page.reload();
-    await page.waitForFunction(() => !!window.canvas);
+    await waitForField(page);
 
     await expect.poll(timeline).toEqual(before);
+    // A reopened show starts at the show's start (page 0)
     await expectCanvasMatchesShow(show);
-    await page.keyboard.press("Shift+E");
+    // To page 1's end with End (last page). Not Shift+E: since #178 it steps one beat, which stops
+    // partway through page 1's move, where the saved end-of-page spots don't apply (#256)
+    await page.keyboard.press("End");
     await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
     await expectCanvasMatchesShow(show);
 });

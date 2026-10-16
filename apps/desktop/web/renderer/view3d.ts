@@ -54,7 +54,8 @@ type FromView3d =
           sql: string;
           params: unknown[];
           method: string;
-      };
+      }
+    | { type: "sql-batch"; id: number; queries: unknown[] };
 
 type Envelope<T> = T & { from: "editor" | "view3d"; editor: string };
 
@@ -191,11 +192,15 @@ export function registerView3dHost() {
                     });
                     break;
                 case "sql":
-                    invokeWorker(
-                        "view3d:sql-read",
-                        message.sql,
-                        message.params,
-                        message.method,
+                case "sql-batch":
+                    (message.type === "sql"
+                        ? invokeWorker(
+                              "view3d:sql-read",
+                              message.sql,
+                              message.params,
+                              message.method,
+                          )
+                        : invokeWorker("view3d:sql-read-batch", message.queries)
                     ).then(
                         (value) =>
                             post({
@@ -319,32 +324,46 @@ export function installView3dApi() {
     );
     window.addEventListener("pagehide", () => post({ type: "bye" }));
 
+    /** Sends a read to the editor tab, which runs it in the worker and answers with its id. */
+    const callEditor = (
+        message:
+            | Omit<Extract<FromView3d, { type: "sql" }>, "id">
+            | Omit<Extract<FromView3d, { type: "sql-batch" }>, "id">,
+    ): Promise<unknown> => {
+        if (!channel)
+            return Promise.reject(
+                new Error("This browser can't reach the editor tab"),
+            );
+        const callId = nextId++;
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+                pending.delete(callId);
+                reject(new Error("The editor tab didn't answer"));
+            }, SQL_TIMEOUT_MS);
+            pending.set(callId, {
+                resolve: (value) => {
+                    clearTimeout(timer);
+                    resolve(value);
+                },
+                reject: (error) => {
+                    clearTimeout(timer);
+                    reject(error);
+                },
+            });
+            post({ ...message, id: callId });
+        });
+    };
+
     const api: View3dApi = {
         isMacOS: false,
-        sqlRead: (sql, params, method) => {
-            if (!channel)
-                return Promise.reject(
-                    new Error("This browser can't reach the editor tab"),
-                );
-            const callId = nextId++;
-            return new Promise((resolve, reject) => {
-                const timer = setTimeout(() => {
-                    pending.delete(callId);
-                    reject(new Error("The editor tab didn't answer"));
-                }, SQL_TIMEOUT_MS);
-                pending.set(callId, {
-                    resolve: (value) => {
-                        clearTimeout(timer);
-                        resolve(value);
-                    },
-                    reject: (error) => {
-                        clearTimeout(timer);
-                        reject(error);
-                    },
-                });
-                post({ type: "sql", id: callId, sql, params, method });
-            });
-        },
+        sqlRead: (sql, params, method) =>
+            callEditor({ type: "sql", sql, params, method }) as ReturnType<
+                View3dApi["sqlRead"]
+            >,
+        sqlReadBatch: (queries) =>
+            callEditor({ type: "sql-batch", queries }) as ReturnType<
+                View3dApi["sqlReadBatch"]
+            >,
         hello: () => post({ type: "hello" }),
         on: (publishChannel, callback) => {
             const set = listeners.get(publishChannel) ?? new Set();

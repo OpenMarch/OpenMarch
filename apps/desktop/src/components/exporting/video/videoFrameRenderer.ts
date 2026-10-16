@@ -1,16 +1,9 @@
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
-import Page from "@/global/classes/Page";
-import { SectionAppearance } from "@/db-functions";
-import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import type { ResolverFrameSampler } from "@/timeline/timelineExport";
-import { initializeCanvasForRendering } from "../utils/svg-generator";
-import {
-    applyMarcherAppearancesForPage,
-    getPlaybackPageForTimeMs,
-    type MarcherAppearancesByPageId,
-} from "../utils/exportAppearances";
+import type { AppearanceStepsByMarcherId } from "@/services/appearance/appearanceSteps";
+import type { FieldView } from "@/field/three/fieldView";
+import type { OffscreenField } from "@/field/three/offscreenField";
 import {
     drawBranding,
     drawOverlay,
@@ -20,7 +13,6 @@ import {
     OverlayState,
 } from "./videoOverlay";
 import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
-
 export const FIELD_MARGIN_PX = 40;
 export const MIN_FIELD_SCALE = 0.5;
 export const MAX_FIELD_SCALE = 3;
@@ -60,213 +52,97 @@ export function clampFieldFraming(framing: FieldFraming): FieldFraming {
     };
 }
 
-/** Fabric viewport transform that fits the field into the frame. */
-export function computeFieldViewport(
+/**
+ * The view that fits the field into a frame `frameWidth` × `frameHeight` pixels, with
+ * `FIELD_MARGIN_PX` field units around it, then applies the user's framing.
+ */
+export function computeFieldView(
     fieldProperties: FieldProperties,
     frameWidth: number,
     frameHeight: number,
     framing: FieldFraming = DEFAULT_FIELD_FRAMING,
-): number[] {
+): FieldView {
     const baseScale = Math.min(
         frameWidth / (fieldProperties.width + FIELD_MARGIN_PX * 2),
         frameHeight / (fieldProperties.height + FIELD_MARGIN_PX * 2),
     );
-    const scale = baseScale * framing.scale;
-    const tx =
-        (frameWidth - fieldProperties.width * scale) / 2 +
-        framing.offsetX * frameWidth;
-    const ty =
-        (frameHeight - fieldProperties.height * scale) / 2 +
-        framing.offsetY * frameHeight;
-    return [scale, 0, 0, scale, tx, ty];
+    const zoom = baseScale * framing.scale;
+    return {
+        width: frameWidth,
+        height: frameHeight,
+        zoom,
+        panX:
+            (frameWidth - fieldProperties.width * zoom) / 2 +
+            framing.offsetX * frameWidth,
+        panY:
+            (frameHeight - fieldProperties.height * zoom) / 2 +
+            framing.offsetY * frameHeight,
+    };
 }
 
+/**
+ * The beat a frame shows. The last frame is held just short of the show's end, so it shows the
+ * last page's appearance and positions.
+ */
+export function frameBeat(
+    frameSampler: ResolverFrameSampler,
+    timeSeconds: number,
+    durationSeconds: number,
+): number {
+    const timeMs = Math.min(timeSeconds * 1000, durationSeconds * 1000 - 1);
+    return frameSampler.beatAt(timeMs / 1000);
+}
+
+/** The new field off screen (#207), and what each frame samples. */
 export interface VideoRenderContext {
-    canvas: OpenMarchCanvas;
-    canvasMarchersById: Record<number, CanvasMarcher>;
+    field: OffscreenField;
     fieldProperties: FieldProperties;
-    sortedPages: Page[];
     /** Positions come from the resolver at each frame's beat */
     frameSampler: ResolverFrameSampler;
-    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
-    lastAppliedPageId: number | null;
-    staticFieldCache: {
-        key: string;
-        canvas: HTMLCanvasElement;
-    } | null;
     dispose: () => void;
 }
 
 export interface CreateVideoRenderContextArgs {
     fieldProperties: FieldProperties;
-    sortedPages: Page[];
     marchers: Marcher[];
     /** Samples the resolver for each frame's positions */
     frameSampler: ResolverFrameSampler;
-    sectionAppearances?: SectionAppearance[];
-    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
-    backgroundImage?: HTMLImageElement;
-    gridLines: boolean;
-    halfLines: boolean;
+    /** Each marcher's appearance over the show, as the field draws it */
+    appearanceSteps: AppearanceStepsByMarcherId | undefined;
+    /** The decoded field image, or null when the show has none */
+    backgroundImage: ImageBitmap | null;
+    /** The first frame's size; a frame of another size resizes the field */
+    width: number;
+    height: number;
 }
 
+/**
+ * Starts the new field off screen for the export or its preview. Rejects with
+ * `NoWebGLError` when the machine has no WebGL. three.js loads here, on first
+ * use, not with the editor (`fieldChunk.test.ts`).
+ */
 export async function createVideoRenderContext(
     args: CreateVideoRenderContextArgs,
 ): Promise<VideoRenderContext> {
-    const initialized = await initializeCanvasForRendering({
+    const { createOffscreenField } =
+        await import("@/field/three/offscreenField");
+    const field = await createOffscreenField({
         fieldProperties: args.fieldProperties,
-        sortedPages: args.sortedPages,
-        marchers: args.marchers,
-        sectionAppearances: args.sectionAppearances,
-        backgroundImage: args.backgroundImage,
-        gridLines: args.gridLines,
-        halfLines: args.halfLines,
-        svgMargin: FIELD_MARGIN_PX,
+        source: args.frameSampler.source,
+        appearanceSteps: args.appearanceSteps,
+        labels: new Map(
+            args.marchers.map((marcher) => [marcher.id, marcher.drill_number]),
+        ),
+        image: args.backgroundImage,
+        width: args.width,
+        height: args.height,
     });
     return {
-        canvas: initialized.canvas,
-        canvasMarchersById: initialized.canvasMarchersById,
+        field,
         fieldProperties: args.fieldProperties,
-        sortedPages: args.sortedPages,
         frameSampler: args.frameSampler,
-        marcherAppearancesByPageId: args.marcherAppearancesByPageId,
-        lastAppliedPageId: null,
-        staticFieldCache: null,
-        dispose: () => initialized.canvas.dispose(),
+        dispose: () => field.dispose(),
     };
-}
-
-function fieldCacheKey({
-    width,
-    height,
-    fieldFraming,
-    videoTheme,
-}: {
-    width: number;
-    height: number;
-    fieldFraming: FieldFraming;
-    videoTheme: VideoTheme;
-}) {
-    return JSON.stringify({ width, height, fieldFraming, videoTheme });
-}
-
-function configureCanvasForFrame({
-    canvas,
-    fieldProperties,
-    width,
-    height,
-    fieldFraming,
-}: {
-    canvas: OpenMarchCanvas;
-    fieldProperties: FieldProperties;
-    width: number;
-    height: number;
-    fieldFraming: FieldFraming;
-}) {
-    canvas.enableRetinaScaling = false;
-    if (canvas.getWidth() !== width || canvas.getHeight() !== height)
-        canvas.setDimensions({ width, height });
-    canvas.viewportTransform = computeFieldViewport(
-        fieldProperties,
-        width,
-        height,
-        fieldFraming,
-    );
-}
-
-function hideMarchers(context: VideoRenderContext) {
-    const visibility = Object.values(context.canvasMarchersById).map(
-        (canvasMarcher) => ({
-            canvasMarcher,
-            marcherVisible: canvasMarcher.visible,
-            labelVisible: canvasMarcher.textLabel.visible,
-        }),
-    );
-    for (const { canvasMarcher } of visibility) {
-        canvasMarcher.visible = false;
-        canvasMarcher.textLabel.visible = false;
-    }
-    return visibility;
-}
-
-function restoreMarcherVisibility(visibility: ReturnType<typeof hideMarchers>) {
-    for (const { canvasMarcher, marcherVisible, labelVisible } of visibility) {
-        canvasMarcher.visible = marcherVisible;
-        canvasMarcher.textLabel.visible = labelVisible;
-    }
-}
-
-function getStaticFieldCanvas({
-    context,
-    width,
-    height,
-    fieldFraming,
-    videoTheme,
-}: {
-    context: VideoRenderContext;
-    width: number;
-    height: number;
-    fieldFraming: FieldFraming;
-    videoTheme: VideoTheme;
-}) {
-    const key = fieldCacheKey({ width, height, fieldFraming, videoTheme });
-    if (context.staticFieldCache?.key === key)
-        return context.staticFieldCache.canvas;
-
-    const { canvas, fieldProperties } = context;
-    const themeColors = getVideoThemeColors(videoTheme);
-
-    configureCanvasForFrame({
-        canvas,
-        fieldProperties,
-        width,
-        height,
-        fieldFraming,
-    });
-
-    canvas.backgroundColor = themeColors.bg1;
-    canvas.staticGridRef.visible = true;
-    const marcherVisibility = hideMarchers(context);
-    canvas.renderAll();
-
-    const staticCanvas = document.createElement("canvas");
-    staticCanvas.width = width;
-    staticCanvas.height = height;
-    const staticContext = staticCanvas.getContext("2d");
-    if (!staticContext) throw new Error("Could not create static field canvas");
-    staticContext.drawImage(canvas.getElement(), 0, 0, width, height);
-
-    restoreMarcherVisibility(marcherVisibility);
-    canvas.staticGridRef.visible = false;
-    context.staticFieldCache = { key, canvas: staticCanvas };
-    return staticCanvas;
-}
-
-function applyAppearancesAtTime(context: VideoRenderContext, timeMs: number) {
-    if (!context.marcherAppearancesByPageId) return;
-
-    const activePage = getPlaybackPageForTimeMs(context.sortedPages, timeMs);
-    if (activePage.id === context.lastAppliedPageId) return;
-
-    applyMarcherAppearancesForPage({
-        pageId: activePage.id,
-        marcherAppearancesByPageId: context.marcherAppearancesByPageId,
-        canvasMarchersById: context.canvasMarchersById,
-        fieldProperties: context.fieldProperties,
-    });
-    context.lastAppliedPageId = activePage.id;
-}
-
-export function setMarcherPositionsAtTime(
-    context: VideoRenderContext,
-    timeMilliseconds: number,
-) {
-    // Seconds to a beat, then the resolver, applied by marcher id
-    context.frameSampler.apply(
-        timeMilliseconds / 1000,
-        Object.values(context.canvasMarchersById),
-        (canvasMarcher, x, y) => canvasMarcher.setLiveCoordinates({ x, y }),
-    );
 }
 
 export interface RenderVideoFrameArgs {
@@ -276,6 +152,8 @@ export interface RenderVideoFrameArgs {
     durationSeconds: number;
     width: number;
     height: number;
+    /** Device pixels per unit of `ctx` the field is drawn at; 1 by default */
+    pixelRatio?: number;
     videoTheme: VideoTheme;
     fieldFraming?: FieldFraming;
     overlayState?: OverlayState;
@@ -284,7 +162,11 @@ export interface RenderVideoFrameArgs {
     brandingLogo: HTMLImageElement | null;
 }
 
-/** Render one video frame (field + optional overlay + branding) into a 2D context. */
+/**
+ * Render one video frame (field + optional overlay + branding) into a 2D context, `width` ×
+ * `height` in the context's units. The field is drawn at `pixelRatio` device pixels per unit
+ * (the preview's screen; 1 for the export, whose units are the video's pixels).
+ */
 export function renderVideoFrame(
     args: RenderVideoFrameArgs,
 ): OverlayRect | null {
@@ -295,6 +177,7 @@ export function renderVideoFrame(
         durationSeconds,
         width,
         height,
+        pixelRatio = 1,
         videoTheme,
         fieldFraming = DEFAULT_FIELD_FRAMING,
         overlayState,
@@ -303,36 +186,24 @@ export function renderVideoFrame(
         brandingLogo,
     } = args;
 
-    const { canvas, fieldProperties } = context;
+    const { field, fieldProperties } = context;
     const themeColors = getVideoThemeColors(videoTheme);
 
-    configureCanvasForFrame({
-        canvas,
-        fieldProperties,
-        width,
-        height,
-        fieldFraming,
-    });
-
-    const timeMs = Math.min(timeSeconds * 1000, durationSeconds * 1000 - 1);
-    applyAppearancesAtTime(context, timeMs);
-    setMarcherPositionsAtTime(context, timeMs);
-
-    const staticFieldCanvas = getStaticFieldCanvas({
-        context,
-        width,
-        height,
-        fieldFraming,
-        videoTheme,
-    });
+    const fieldWidth = Math.round(width * pixelRatio);
+    const fieldHeight = Math.round(height * pixelRatio);
+    field.setView(
+        computeFieldView(
+            fieldProperties,
+            fieldWidth,
+            fieldHeight,
+            fieldFraming,
+        ),
+    );
+    field.draw(frameBeat(context.frameSampler, timeSeconds, durationSeconds));
 
     ctx.fillStyle = themeColors.bg1;
     ctx.fillRect(0, 0, width, height);
-    ctx.drawImage(staticFieldCanvas, 0, 0, width, height);
-
-    canvas.backgroundColor = "rgba(0,0,0,0)";
-    canvas.renderAll();
-    ctx.drawImage(canvas.getElement(), 0, 0, width, height);
+    ctx.drawImage(field.canvas, 0, 0, width, height);
 
     let overlayRect: OverlayRect | null = null;
     if (overlayState && overlayOptions && overlayPlacement) {

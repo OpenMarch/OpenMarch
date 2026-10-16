@@ -2,25 +2,41 @@ import React, { useState, useEffect } from "react";
 import clsx from "clsx";
 import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import { Slider } from "@openmarch/ui";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import {
     FullscreenButton,
     PerspectiveButton,
 } from "@/components/timeline/PerspectiveSlider";
+import { MAX_ZOOM, MIN_ZOOM } from "@/field/editor/view";
+
+/**
+ * What the zoom controls call on the field: the field's view
+ * (`threeZoomControls`).
+ */
+export interface ZoomControlsCanvas {
+    width?: number;
+    height?: number;
+    fieldProperties?: { width: number; height: number };
+    getWidth(): number;
+    getHeight(): number;
+    getZoom(): number;
+    getBaseZoom?(): number;
+    zoomToPoint(point: { x: number; y: number }, zoom: number): unknown;
+    setZoom(zoom: number): unknown;
+    setViewportTransform(transform: number[]): unknown;
+    centerAtBaseZoom?(): void;
+    resetCSSTransform?(): void;
+    requestRenderAll(): unknown;
+}
 
 interface CanvasZoomControlsProps {
-    canvas: OpenMarchCanvas | undefined;
+    canvas: ZoomControlsCanvas | undefined;
 }
 
 export default function CanvasZoomControls({
     canvas,
 }: CanvasZoomControlsProps) {
     const [currentZoom, setCurrentZoom] = useState(100); // Represents percentage
-    const [fabricZoom, setFabricZoom] = useState(1); // Raw canvas zoom, for the slider
-
-    // Min and Max zoom levels for Fabric.js (consistent with OpenMarchCanvas._applyZoom)
-    const FABRIC_MIN_ZOOM = 0.2;
-    const FABRIC_MAX_ZOOM = 25;
+    const [rawZoom, setRawZoom] = useState(1); // Raw field zoom, for the slider
 
     useEffect(() => {
         if (!canvas) return;
@@ -30,7 +46,7 @@ export default function CanvasZoomControls({
             const base = canvas.getBaseZoom?.() ?? 1.0;
             const ratio = canvas.getZoom() / (base || 1);
             setCurrentZoom(Math.round(ratio * 100));
-            setFabricZoom(canvas.getZoom());
+            setRawZoom(canvas.getZoom());
         };
 
         updateZoom();
@@ -41,60 +57,52 @@ export default function CanvasZoomControls({
     const handleZoomIn = () => {
         if (!canvas) return;
 
-        const currentFabricZoom = canvas.getZoom();
-        if (currentFabricZoom >= FABRIC_MAX_ZOOM) {
-            console.log("Already at max Fabric zoom.");
+        const currentRawZoom = canvas.getZoom();
+        if (currentRawZoom >= MAX_ZOOM) {
             return;
         }
 
-        const newFabricZoom = Math.min(
-            currentFabricZoom * 1.2,
-            FABRIC_MAX_ZOOM,
-        );
+        const newRawZoom = Math.min(currentRawZoom * 1.2, MAX_ZOOM);
         const center = {
             x: (canvas.width || 0) / 2,
             y: (canvas.height || 0) / 2,
         };
-        canvas.zoomToPoint(center, newFabricZoom);
+        canvas.zoomToPoint(center, newRawZoom);
         canvas.requestRenderAll();
-        // setCurrentZoom(Math.round(newFabricZoom * 100)); // updateZoom interval will handle this
+        // setCurrentZoom(Math.round(newRawZoom * 100)); // updateZoom interval will handle this
     };
 
     const handleZoomOut = () => {
         if (!canvas) return;
 
-        const currentFabricZoom = canvas.getZoom();
-        if (currentFabricZoom <= FABRIC_MIN_ZOOM) {
-            console.log("Already at min Fabric zoom.");
+        const currentRawZoom = canvas.getZoom();
+        if (currentRawZoom <= MIN_ZOOM) {
             return;
         }
 
-        const newFabricZoom = Math.max(
-            currentFabricZoom / 1.2,
-            FABRIC_MIN_ZOOM,
-        );
+        const newRawZoom = Math.max(currentRawZoom / 1.2, MIN_ZOOM);
         const center = {
             x: (canvas.width || 0) / 2,
             y: (canvas.height || 0) / 2,
         };
-        canvas.zoomToPoint(center, newFabricZoom);
+        canvas.zoomToPoint(center, newRawZoom);
         canvas.requestRenderAll();
-        // setCurrentZoom(Math.round(newFabricZoom * 100)); // updateZoom interval will handle this
+        // setCurrentZoom(Math.round(newRawZoom * 100)); // updateZoom interval will handle this
     };
 
     // The slider is logarithmic, so equal travel is an equal zoom factor, as with the buttons
     const handleSliderChange = ([position]: number[]) => {
         if (!canvas) return;
-        const newFabricZoom = Math.min(
-            Math.max(Math.exp(position), FABRIC_MIN_ZOOM),
-            FABRIC_MAX_ZOOM,
+        const newRawZoom = Math.min(
+            Math.max(Math.exp(position), MIN_ZOOM),
+            MAX_ZOOM,
         );
         canvas.zoomToPoint(
             { x: (canvas.width || 0) / 2, y: (canvas.height || 0) / 2 },
-            newFabricZoom,
+            newRawZoom,
         );
         canvas.requestRenderAll();
-        setFabricZoom(newFabricZoom);
+        setRawZoom(newRawZoom);
     };
 
     const handleResetZoomAndCenter = () => {
@@ -147,8 +155,8 @@ export default function CanvasZoomControls({
     };
 
     // getMaxZoom and getMinZoom now refer to percentage values for the UI disable logic
-    const getMaxZoom = () => FABRIC_MAX_ZOOM * 100;
-    const getMinZoom = () => FABRIC_MIN_ZOOM * 100;
+    const getMaxZoom = () => MAX_ZOOM * 100;
+    const getMinZoom = () => MIN_ZOOM * 100;
 
     // Tooltip for the hamburger icon (placeholder)
     // const NavigationTooltip = () => (
@@ -170,10 +178,10 @@ export default function CanvasZoomControls({
                     data-testid="canvas-zoom-slider"
                     className="h-12 w-full"
                     thumbClassName="size-10"
-                    min={Math.log(FABRIC_MIN_ZOOM)}
-                    max={Math.log(FABRIC_MAX_ZOOM)}
+                    min={Math.log(MIN_ZOOM)}
+                    max={Math.log(MAX_ZOOM)}
                     step={0.01}
-                    value={[Math.log(fabricZoom)]}
+                    value={[Math.log(rawZoom)]}
                     onValueChange={handleSliderChange}
                     disabled={!canvas}
                 />

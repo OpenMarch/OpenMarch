@@ -65,7 +65,7 @@ describe("resolvePerformerLook", () => {
         });
     });
 
-    it("takes the first non-null fill in priority order, like CanvasMarcher", () => {
+    it("takes the first non-null fill in priority order, like the 2D field", () => {
         const look = resolvePerformerLook(
             [
                 appearance({ fill_color: null }), // a tag without a fill

@@ -922,6 +922,11 @@ type PerformHistoryActionResponse = {
     pageIdToGoTo: number | undefined;
     marcherIdsToSelect: Set<number> | undefined;
     queriesToInvalidate: string[][] | undefined;
+    /**
+     * True when the stack was empty, so nothing changed. Read in the action's own lock turn, so
+     * an edit or action queued before it counts.
+     */
+    nothingToDo?: boolean;
     /** Set when the action didn't apply; both stacks are left as they were. */
     failure?: { kind: "error"; message: string };
 };
@@ -983,5 +988,6 @@ export async function performHistoryAction(
         pageIdToGoTo: timelineFocus?.pageIdToGoTo,
         marcherIdsToSelect: timelineFocus?.marcherIdsToSelect,
         queriesToInvalidate,
+        nothingToDo: response.sqlStatements.length === 0,
     };
 }

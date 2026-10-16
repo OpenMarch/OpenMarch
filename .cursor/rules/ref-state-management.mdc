@@ -23,11 +23,13 @@ OpenMarch uses three state management approaches, each for a specific category: 
 
 All stores are in `src/stores/`:
 
-### CanvasStore
+### Field view store
 ```typescript
-// Canvas instance and viewport (zoom, pan)
-import { useCanvasStore } from "@/stores/CanvasStore";
-const { canvas, viewport, setCanvas, zoomToFit, resetViewport } = useCanvasStore();
+// The field's zoom and pan (src/field/three/fieldView.ts); the one view store
+// the field's layers and SVG overlay read. Move the view for an app action
+// through setView/resetView in src/field/three/fieldNavigation.ts.
+import { useFieldViewStore } from "@/field/three/fieldView";
+const zoom = useFieldViewStore((s) => s.zoom);
 ```
 
 ### SelectionStore

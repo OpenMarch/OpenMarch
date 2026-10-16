@@ -72,6 +72,31 @@ const expectStoreMatchesColdBuild = async (
 };
 
 describeDbTests("undo and redo in timeline mode", (it) => {
+    it("tells whether there was anything to undo or redo, counting an edit that hasn't settled yet (#223)", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const pages = await setUp(db);
+        const [a] = await marcherIds(db);
+        const empty = await performHistoryAction("redo", db);
+        expect(empty.nothingToDo).toBe(true);
+
+        // Undo pressed while the move is still being written: it waits its turn and undoes it
+        const move = moveMarchersOnPage({
+            db,
+            page: pages[2]!,
+            moves: [{ marcherId: a!, x: 10, y: 20 }],
+        });
+        const undo = await performHistoryAction("undo", db);
+        await move;
+        expect(undo.nothingToDo).toBe(false);
+        expect(undo.pageIdToGoTo).toBe(pages[2]!.id);
+
+        const redo = await performHistoryAction("redo", db);
+        expect(redo.nothingToDo).toBe(false);
+        expect((await performHistoryAction("redo", db)).nothingToDo).toBe(true);
+    });
+
     it("a move on page N: undo and redo go to page N and select the moved marchers", async ({
         db,
         marchersAndPages: _,

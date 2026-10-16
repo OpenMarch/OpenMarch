@@ -31,6 +31,8 @@ export default function PluginsContents() {
     }, []);
 
     useEffect(() => {
+        // A response after unmount (a closed settings window, a finished test) sets nothing
+        let active = true;
         async function fetchOfficialPlugins() {
             const response = await fetch(
                 "https://api.github.com/repos/OpenMarch/plugins/contents/official",
@@ -59,12 +61,17 @@ export default function PluginsContents() {
                     console.error("Error fetching or parsing plugin:", error);
                 }
             }
-            setOfficialPlugins(official);
+            if (active) setOfficialPlugins(official);
         }
         void fetchOfficialPlugins();
+        return () => {
+            active = false;
+        };
     }, []);
 
     useEffect(() => {
+        // A response after unmount (a closed settings window, a finished test) sets nothing
+        let active = true;
         async function fetchCommunityPlugins() {
             const response = await fetch(
                 "https://api.github.com/repos/OpenMarch/plugins/contents/community",
@@ -93,9 +100,12 @@ export default function PluginsContents() {
                     console.error("Error fetching or parsing plugin:", error);
                 }
             }
-            setCommunityPlugins(community);
+            if (active) setCommunityPlugins(community);
         }
         void fetchCommunityPlugins();
+        return () => {
+            active = false;
+        };
     }, []);
 
     return (

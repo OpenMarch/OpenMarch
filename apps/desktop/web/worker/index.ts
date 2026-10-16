@@ -341,6 +341,10 @@ function registerMainHandlers() {
             );
         },
     );
+    // One consistent snapshot of several reads (#224); the batch is checked like the reads above.
+    ipcMain.handle("view3d:sql-read-batch", (_, queries: unknown) =>
+        DatabaseServices.handleSqlReadBatch(queries),
+    );
 }
 
 /** The new-show wizard writes into a draft, then names it. */

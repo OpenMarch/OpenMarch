@@ -36,6 +36,7 @@ const PAGES = [0, 1, 2];
 test.use({
     // A random edit can be one the timeline refuses (it says why in a toast
     // and logs it); the walk still checks the canvas and the undo history.
+    // One pattern: Playwright reads a two-item array here as [value, options].
     allowedPageErrors: [/TimelineWriteError: E-ARGS/],
     seedSql: seedShowSql({
         beats: 48,

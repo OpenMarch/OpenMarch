@@ -7,8 +7,7 @@ import {
 } from "../app.mjs";
 import { savedPositions } from "../positions.mjs";
 
-// Pre-existing on fork main 1be4fd9c in timeline mode: after **+** adds a page flag, the selected page (Inspector, canvas.currentPage, e/Shift+E) stays on the old page until reload.
-test.fixme("adds a page that starts where the marchers already are", async ({
+test("adds a page that starts where the marchers already are", async ({
     show,
 }) => {
     const { page } = show;
@@ -42,8 +41,8 @@ test.fixme("adds a page that starts where the marchers already are", async ({
 
 test.describe("page shortcuts", () => {
     // The page-era app dropped a shortcut pressed in the first moments after a
-    // page was added. The fixme below tracked that; the first test works
-    // around it.
+    // page was added. "a shortcut works right after adding a page" pins that
+    // it works now; the first test works around it.
 
     const setUp = async (show: Show) => {
         const { page } = show;
@@ -64,7 +63,8 @@ test.describe("page shortcuts", () => {
         await expectCanvasMatchesShow(show);
     };
 
-    // Pre-existing on fork main 1be4fd9c in timeline mode: after **+** adds a page flag, the selected page (Inspector, canvas.currentPage, e/Shift+E) stays on the old page until reload.
+    // Still failing on the three.js field (#209 rechecked): it expects a "Page 0" heading, which
+    // timeline mode no longer shows. Fix the expectation before turning it back on.
     test.fixme("moves between pages with the keyboard", async ({ show }) => {
         const { page } = show;
         const heading = (name: string) => page.getByRole("heading", { name });
@@ -90,9 +90,7 @@ test.describe("page shortcuts", () => {
         await expectPage("Page 2");
     });
 
-    test.fixme("a shortcut works right after adding a page", async ({
-        show,
-    }) => {
+    test("a shortcut works right after adding a page", async ({ show }) => {
         await setUp(show);
 
         await show.page.keyboard.press("q");

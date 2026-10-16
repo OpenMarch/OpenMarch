@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
     generateDrillChartExportSVGs,
-    getFieldPropertiesImageElement,
+    getFieldImageForExport,
 } from "@/components/exporting/utils/svg-generator";
 import { buildMarcherAppearancesByPageId } from "@/components/exporting/utils/exportAppearances";
 import {
@@ -120,7 +120,7 @@ const SvgPreviewHandler: React.FC = () => {
                     );
                 }
 
-                const backgroundImage = await getFieldPropertiesImageElement();
+                const backgroundImage = await getFieldImageForExport();
                 const { SVGs } = await generateDrillChartExportSVGs({
                     fieldProperties: fieldProps,
                     sortedPages: [page],

@@ -57,6 +57,8 @@ describe("library protocol", () => {
         expect(keys).toEqual([
             "isMacOS",
             "sqlRead",
+            // ADR 0002 amendment 2026-10-15 (#224)
+            "sqlReadBatch",
             "hello",
             "on",
             "requestVenueChange",

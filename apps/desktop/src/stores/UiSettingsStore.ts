@@ -25,6 +25,8 @@ export interface UiSettings {
     gridLines: boolean;
     /** Boolean to view lines for every four steps on the field */
     halfLines: boolean;
+    /** Performance mode: the field always draws in its low-quality mode (ADR 0005 D-3) */
+    fieldPerformanceMode: boolean;
     /** The number of pixels per second in the timeline */
     timelinePixelsPerSecond: number;
     /** The timeline-mode timeline's zoom, in pixels per beat (UI-12: remembered) */
@@ -80,6 +82,7 @@ export const defaultSettings: UiSettings = {
     showCollisions: false,
     gridLines: true,
     halfLines: true,
+    fieldPerformanceMode: false,
     timelinePixelsPerSecond: 40,
     timelinePixelsPerBeat: 16,
     timelineCompact: false,

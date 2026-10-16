@@ -118,6 +118,8 @@
             "openSettings": "Settings…",
             "openView3d": "Open 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window",
+            "runFieldBenchmark": "Run field benchmark",
+            "runFieldBenchmarkKeywords": "performance fps speed test frame rate",
             "showShortcuts": "Keyboard shortcuts",
             "showNextPaths": "Show next page paths",
             "showPreviousPaths": "Show previous page paths",
@@ -417,6 +419,7 @@
         "videoFieldScale": "Scale",
         "videoFrameRate": "Frame rate",
         "videoNoAudio": "No audio file selected. The video will use a silent audio track.",
+        "videoNoWebGL": "Video export needs WebGL, which this computer doesn't have right now. Turn on hardware acceleration or update your graphics drivers, then reopen this window.",
         "videoOpenFile": "Click to open video",
         "videoOverlay": "On-screen info",
         "videoOverlayClock": "Elapsed time",
@@ -431,11 +434,32 @@
         "videoResolution": "Resolution"
     },
     "field": {
+        "benchmark": {
+            "copied": "Copied",
+            "copy": "Copy as Markdown",
+            "devBuild": "This is a development build. Only numbers from a production build count.",
+            "intro": "Plays, scrubs, zooms and pans the open show for a few seconds each and measures every frame. Keep this window in front and don't touch anything while it runs.",
+            "run": "Run",
+            "running": "Running: {kind}…",
+            "softwareGl": "Graphics run in software here, so these numbers are a lower bound.",
+            "title": "Field benchmark"
+        },
         "general": {
             "exportField": "Export Field",
             "exportField.tooltip": "Export this field to a file to use in other projects",
             "importField": "Import Field",
             "importField.tooltip": "Import a custom field"
+        },
+        "quality": {
+            "dismiss": "Got it",
+            "gpuCrashed": "The graphics processor stopped responding, so the field switched to a simpler view for the rest of this session. Restart OpenMarch to try the full view again. If it keeps happening, update your graphics drivers or turn on Performance mode in Settings, Appearance.",
+            "software.desktop": "Graphics run in software on this computer, so the field draws a simpler view to stay smooth. For the full view, update your graphics drivers and restart OpenMarch.",
+            "software.web": "Graphics run in software in this browser, so the field draws a simpler view to stay smooth. For the full view, turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\") and restart the browser.",
+            "title": "The field is in low-quality mode",
+            "unavailable.desktop": "OpenMarch couldn't start WebGL graphics on this computer. Update your graphics drivers and restart OpenMarch. Your show is safe.",
+            "unavailable.retry": "Try again",
+            "unavailable.title": "The field can't be drawn",
+            "unavailable.web": "This browser has WebGL graphics turned off or blocked. Turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\"), restart the browser, then reload this page. Your show is safe."
         },
         "title": "Field"
     },
@@ -1794,6 +1818,8 @@
         "general.editorMode.note": "Switching keeps your show as it is. Anything made in Expert that Basic can't edit stays, plays and is shown as locked in Basic.",
         "general.language": "Language",
         "general.openView3dWithShow": "Open 3D View when a show opens",
+        "general.performanceMode": "Performance mode",
+        "general.performanceMode.description": "Draw the field more simply so it stays smooth on slower computers. The field switches to this by itself when graphics run in software.",
         "general.showFullDatabasePath": "Show full file path",
         "general.showFullDatabasePath.description": "Show the full path of the open file in the title bar instead of just its name.",
         "mouse": "Mouse & Trackpad",

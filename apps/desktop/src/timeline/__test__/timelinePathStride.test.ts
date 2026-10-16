@@ -1,26 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
     createResolver,
-    rgbaToString,
     type Resolver,
     type SpanInfo,
     type TimelineSnapshot,
 } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { StepSize } from "@/global/classes/StepSize";
-import {
-    evaluatePathWarning,
-    STEP_SIZE_WARNING_COLOR,
-    STEP_SIZE_WARNING_STROKE_WIDTH,
-} from "@/global/classes/canvasObjects/stepSizeWarning";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import Pathway from "@/global/classes/canvasObjects/Pathway";
-import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
-import LineListeners from "@/components/canvas/listeners/LineListeners";
-import type Marcher from "@/global/classes/Marcher";
-import { defaultSettings } from "@/stores/UiSettingsStore";
+import { evaluatePathWarning } from "@/timeline/stepSizeWarning";
 import { GOLDEN_FIXTURES } from "../fixtures/goldenFixtures";
 import { P, rowBuilder, tr } from "../fixtures/fixtureTypes";
 import { pageEndBeat } from "../timelineCanvas";
@@ -60,19 +47,6 @@ const holdThenMove = (steps: number): Resolver => {
     };
     return createResolver(show);
 };
-
-const marcher = (id: number) =>
-    ({
-        id,
-        name: null,
-        section: "Brass",
-        year: null,
-        notes: null,
-        drill_prefix: "B",
-        drill_order: id,
-        drill_number: `B${id}`,
-        type: "marcher",
-    }) as unknown as Marcher;
 
 describe("step size: the stride of the fastest moving stretch", () => {
     it("isn't diluted by a hold: 8 steps in the last 4 counts of an 8-count page", () => {
@@ -275,112 +249,5 @@ describe("sampling budget", () => {
         const perMarcher = spy.mock.calls.length / count;
         // About 180 today (it was 426 with 7 probes per piece); a regression shows up here
         expect(perMarcher).toBeLessThan(250);
-    });
-});
-
-describe("warning styling on the curved path", () => {
-    const setup = () => {
-        const canvas = new OpenMarchCanvas({
-            canvasRef: null,
-            fieldProperties,
-            uiSettings: defaultSettings,
-        });
-        const visual = new MarcherVisualGroup({ marcher: marcher(1) });
-        for (const object of [
-            visual.getPreviousPathway(),
-            visual.getNextPathway(),
-            visual.getPreviousMidpoint(),
-            visual.getNextMidpoint(),
-            visual.getPreviousEndpoint(),
-            visual.getNextEndpoint(),
-        ])
-            canvas.add(object);
-        return { canvas, visual, marcherVisuals: { 1: visual } };
-    };
-
-    it("styles an over-threshold next path as a warning and forces it on with its toggle off", () => {
-        const { canvas, visual, marcherVisuals } = setup();
-        const resolver = holdThenMove(9);
-        canvas.renderTimelinePathVisuals({
-            marcherVisuals,
-            marcherIds: [1],
-            previousPaths: new Map(),
-            nextPaths: pathsIntoPage(resolver, [1], page(8), page(0)),
-            previousPathsEnabled: true,
-            nextPathsEnabled: false,
-            stepSizeWarningsEnabled: true,
-            fieldProperties,
-        });
-        const next = visual.getNextTimelinePathway();
-        expect(next.visible).toBe(true);
-        expect(next.stroke).toBe(rgbaToString(STEP_SIZE_WARNING_COLOR));
-        expect(next.strokeWidth).toBe(STEP_SIZE_WARNING_STROKE_WIDTH);
-        expect(next.strokeDashArray?.length).toBeGreaterThan(0);
-        // The bounds were computed with the warning stroke width
-        const xs = next.points!.map((p) => p.x);
-        expect(next.width).toBeCloseTo(Math.max(...xs) - Math.min(...xs), 9);
-        expect(next.left).toBeCloseTo(
-            Math.min(...xs) - STEP_SIZE_WARNING_STROKE_WIDTH / 2,
-            9,
-        );
-    });
-
-    it("keeps an under-threshold next path hidden with its toggle off", () => {
-        const { canvas, visual, marcherVisuals } = setup();
-        canvas.renderTimelinePathVisuals({
-            marcherVisuals,
-            marcherIds: [1],
-            previousPaths: new Map(),
-            nextPaths: pathsIntoPage(holdThenMove(4), [1], page(8), page(0)),
-            previousPathsEnabled: true,
-            nextPathsEnabled: false,
-            stepSizeWarningsEnabled: true,
-            fieldProperties,
-        });
-        expect(visual.getNextTimelinePathway().visible).toBe(false);
-    });
-});
-
-describe("line tool preview in timeline mode", () => {
-    it("keys the temporary paths by marcher even when positions came from the resolver", () => {
-        const canvas = new OpenMarchCanvas({
-            canvasRef: null,
-            fieldProperties,
-            uiSettings: defaultSettings,
-        });
-        // Positions as the timeline static render leaves them
-        const marchers = [1, 2, 3].map(
-            (id) =>
-                new CanvasMarcher({
-                    marcher: marcher(id),
-                    coordinate: { x: id * 20, y: 40 },
-                }),
-        );
-        for (const canvasMarcher of marchers) {
-            canvas.add(canvasMarcher);
-            canvasMarcher.setMarcherCoords({ x: canvasMarcher.left!, y: 40 });
-        }
-        canvas.eventMarchers = marchers;
-        const setNew = vi.fn();
-        canvas.setGlobalNewMarcherPages = setNew;
-        const listeners = new LineListeners({ canvas });
-        (listeners as unknown as { _activeLine: MarcherLine })._activeLine =
-            new MarcherLine({
-                x1: 0,
-                y1: 100,
-                x2: 200,
-                y2: 100,
-                color: "black",
-                startPageId: 1,
-                endPageId: 1,
-            });
-
-        listeners.drawNewMarcherPaths();
-        const newDots = setNew.mock.calls[0]![0] as { marcher_id: number }[];
-        expect(newDots.map((d) => d.marcher_id).sort()).toEqual([1, 2, 3]);
-        expect(canvas.getObjectsByType(Pathway)).toHaveLength(3);
-
-        listeners.clearPathwaysAndStaticMarchers();
-        expect(canvas.getObjectsByType(Pathway)).toHaveLength(0);
     });
 });

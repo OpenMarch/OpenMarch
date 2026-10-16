@@ -440,6 +440,15 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+Comma"],
     },
+    // Measures the field's frame rate on this machine (ADR 0005, #205); both fields register it
+    // until #209. Unbound
+    runFieldBenchmark: {
+        labelKey: "actions.ui.runFieldBenchmark",
+        keywordsKey: "actions.ui.runFieldBenchmarkKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
     // Opens the 3D View window, or focuses it (3D View UI-1). Unbound by default.
     openView3d: {
         labelKey: "actions.ui.openView3d",

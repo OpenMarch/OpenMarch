@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { isPlaywrightSession } from "@/utilities/playwrightSession";
 
 /**
  * The timeline-mode edit window and paused playhead (docs/timeline/ui.md UI-9, UI-10, C-12;
@@ -1131,3 +1132,23 @@ export const displayedBeat = (
 /** The stored timeline the selection resolves to (see `resolveStoredTimeline`). */
 export const useSelectedStoredTimeline = (): StoredTimelineMembership | null =>
     useTimelineSelectionStore(selectedStoredTimeline);
+
+declare global {
+    interface Window {
+        /** Scenario setup, in Playwright sessions only; see below. */
+        openmarchPreview?: {
+            hold(beat: number): void;
+        };
+    }
+}
+
+/**
+ * Scenario setup (fork #202): a paused preview holding a frame. A user gets
+ * one only mid-scrub over playback, with the button still down on the
+ * timeline, so a scenario can't also press the field with Playwright's one
+ * mouse. `hold` cues `beat` while paused, as that scrub does.
+ */
+if (typeof window !== "undefined" && isPlaywrightSession())
+    window.openmarchPreview = {
+        hold: (beat) => useTimelineSelectionStore.getState().cue(beat),
+    };

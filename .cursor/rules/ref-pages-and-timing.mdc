@@ -148,9 +148,9 @@ When creating a page, MarcherPages are auto-created for all existing marchers wi
 ## Integration Points
 
 - **MarcherPage**: Junction between marchers and pages. Every (marcher, page) pair has coordinates.
-- **Canvas**: `OpenMarchCanvas` renders marchers at their MarcherPage positions for the selected page.
+- **Field**: the field (`src/field/three/`) draws marchers where the timeline resolver puts them at the beat shown.
 - **Timeline**: `TimelineContainer` uses timing objects to display the visual timeline.
-- **Animation**: `useAnimation` interpolates marcher positions between pages during playback.
+- **Playback**: the field's `PlayheadDriver` (`src/field/three/ThreeField.tsx`) samples the resolver at the audio clock's beat each frame (`playbackBeat`, `src/timeline/positionBuffer.ts`).
 - **Audio**: Beat timestamps sync with audio file playback.
 
 ## Page 0 and transition times (critical)

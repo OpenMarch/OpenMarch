@@ -63,6 +63,7 @@ export default function OverlayPreview({
     durationSeconds,
     isLoading = false,
     loadingLabel,
+    redrawKey,
 }: {
     state: OverlayState;
     options: OverlayOptions;
@@ -76,6 +77,8 @@ export default function OverlayPreview({
     durationSeconds: number;
     isLoading?: boolean;
     loadingLabel?: string;
+    /** Redraws the frame when it changes, e.g. when the show's positions do */
+    redrawKey?: unknown;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rectRef = useRef<OverlayRect | null>(null);
@@ -104,20 +107,28 @@ export default function OverlayPreview({
         ctx.fillRect(0, 0, width, height);
 
         if (fieldRenderContext && !isLoading) {
-            rectRef.current = renderVideoFrame({
-                ctx,
-                context: fieldRenderContext,
-                timeSeconds: previewTimeSeconds,
-                durationSeconds,
-                width,
-                height,
-                videoTheme,
-                fieldFraming,
-                overlayState: state,
-                overlayOptions: options,
-                overlayPlacement: placement,
-                brandingLogo: logo,
-            });
+            try {
+                rectRef.current = renderVideoFrame({
+                    ctx,
+                    context: fieldRenderContext,
+                    timeSeconds: previewTimeSeconds,
+                    durationSeconds,
+                    width,
+                    height,
+                    // Drawn at the screen's pixels, so the preview is sharp
+                    pixelRatio: dpr,
+                    videoTheme,
+                    fieldFraming,
+                    overlayState: state,
+                    overlayOptions: options,
+                    overlayPlacement: placement,
+                    brandingLogo: logo,
+                });
+            } catch (error) {
+                // A lost context: the frame stays empty; the export says why
+                rectRef.current = null;
+                console.warn("The video preview couldn't draw", error);
+            }
         } else {
             rectRef.current = null;
             if (loadingLabel) {
@@ -166,7 +177,8 @@ export default function OverlayPreview({
         const observer = new ResizeObserver(draw);
         observer.observe(canvas);
         return () => observer.disconnect();
-    }, [draw]);
+        // A new `redrawKey` means new positions to draw
+    }, [draw, redrawKey]);
 
     const hitTest = useCallback((x: number, y: number): DragMode | null => {
         const rect = rectRef.current;

@@ -275,6 +275,11 @@ export class DatabaseSync {
         return this.connection !== null;
     }
 
+    /** Like node:sqlite's: whether a transaction is open (SQLite is out of autocommit mode). */
+    get isTransaction() {
+        return lib().capi.sqlite3_get_autocommit(this.open().db) === 0;
+    }
+
     private open(): Connection {
         if (!this.connection) throw new Error("database is not open");
         return this.connection;

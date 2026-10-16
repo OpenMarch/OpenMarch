@@ -207,10 +207,6 @@ export const TIMELINE_INSPECTOR_STRINGS = {
     "inspector.timeline.shapes.title": "Shapes",
     "inspector.timeline.shapes.help":
         "Shapes are formations in field coordinates, with no time. A transition moves its marchers into one. A new shape is drawn through the selected marchers where they stand at the selected page, or in the middle of the field when nobody is selected.",
-    "inspector.timeline.shapes.canvasHelp":
-        "The picked shape is drawn on the field. Drag a round handle to reshape it, or the square handle to move it. Each drag is saved as one change when you let go.",
-    "inspector.timeline.shapes.dragDropped":
-        "That drag wasn't saved, because another shape change was still being saved. Drag it again.",
     "inspector.timeline.shapes.newKind": "Kind of new shape",
     "inspector.timeline.shapes.create": "New shape",
     "inspector.timeline.shapes.none": "No shapes yet.",

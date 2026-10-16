@@ -1,13 +1,23 @@
-import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import { getCoordinatesAtTime, MarcherTimeline } from "@/utilities/Keyframes";
+import { pageEndBeat } from "@/timeline/pageEndBeat";
+import type { PositionSource } from "@/timeline/positionBuffer";
 
-const COLLISION_RADIUS = 10; // can probably be changed on the marcher level later on
-const COLLISION_CHECK_INTERVAL = 100; //check every 100ms
-const collisionCacheRef = new Map<number, CollisionData[]>();
-const pageHashCacheRef = new Map<number, number>();
-// Cache for velocity calculations to avoid recalculating
-const velocityCacheRef = new Map<number, number>();
+/**
+ * Collision detection over the resolver's positions (fork #226). Pure: the positions come from a
+ * `PositionSource`, so tests pass a stand-in and the app the open file's resolver
+ * (`useCollisionDetection`).
+ */
+
+/** Two marchers this close, in field units, collide. */
+export const COLLISION_RADIUS = 10; // can probably be changed on the marcher level later on
+
+/**
+ * The most a marcher may move between two samples, in field units, so a pair passing through
+ * each other is still caught.
+ */
+const MAX_SAMPLE_TRAVEL = COLLISION_RADIUS / 2;
+/** Samples per beat at most, however fast the fastest marcher moves */
+const MAX_SAMPLES_PER_BEAT = 32;
 
 export interface CollisionData {
     marcher1Id: number;
@@ -18,285 +28,149 @@ export interface CollisionData {
     distance: number;
 }
 
-const getPageHash = (
-    page: Page,
-    marchers: Marcher[],
-    marcherTimelines: Map<number, MarcherTimeline>,
-) => {
-    // Sum all x values for marchers at the end of this page
-    const pageEndMs = (page.timestamp + page.duration) * 1000;
-    const xSum = marchers.reduce((sum, m) => {
-        const timeline = marcherTimelines.get(m.id);
-        const coordinate = timeline
-            ? getCoordinatesAtTime(pageEndMs, timeline)
-            : null;
-        return sum + (coordinate?.x || 0);
-    }, 0);
+/**
+ * The beats whose collisions the selected page reports: from where its positions sit (its end
+ * beat) through the move to the next page, as the Collisions tab ("on the next page") always did.
+ * The last page has no move after it: only its own positions.
+ */
+export function collisionWindow(
+    selectedPage: Pick<Page, "beats" | "nextPageId">,
+    pages: readonly Pick<Page, "id" | "beats">[],
+): { fromBeat: number; toBeat: number } {
+    const fromBeat = pageEndBeat(selectedPage);
+    const next =
+        selectedPage.nextPageId == null
+            ? undefined
+            : pages.find((p) => p.id === selectedPage.nextPageId);
+    return { fromBeat, toBeat: next ? pageEndBeat(next) : fromBeat };
+}
 
-    // Fit the x sum into 20 bits using modulo to ensure it fits
-    const xSumBits = Math.abs(Math.floor(xSum)) & 0xfffff; // 20 bits
+/**
+ * Every pair of marchers that comes within `COLLISION_RADIUS` of each other between two beats
+ * (both included), once per pair, where they first do: x and y are the point between them and
+ * `distance` how far apart they are there.
+ *
+ * Samples each beat finely enough that the marcher moving most in it travels at most half the
+ * radius between samples (at most 32 samples a beat), then sweeps the marchers sorted by x
+ * (sweep and prune), so a sample costs about n log n for n marchers.
+ *
+ * @param drillNumbers labels the pairs; a marcher without one is labeled by its id
+ */
+export function detectCollisions(
+    source: PositionSource,
+    fromBeat: number,
+    toBeat: number,
+    drillNumbers: ReadonlyMap<number, string>,
+): CollisionData[] {
+    const ids = source.marcherIds();
+    const n = ids.length;
+    if (n < 2 || !(toBeat >= fromBeat)) return [];
 
-    // 32-bit hash structure: [12 bits timestamp][20 bits xSum]
-    const timestampBits = (Math.floor(page.timestamp) & 0xfff) << 20; // 12 bits shifted left by 20
-    const xSumFits = xSumBits & 0xfffff; // Ensure it fits in 20 bits
+    let here = new Float64Array(2 * n);
+    let next = new Float64Array(2 * n);
+    const sample = new Float64Array(2 * n);
+    if (!source.positionsAt(fromBeat, here)) return [];
 
-    const finalHash = timestampBits | xSumFits;
-    // Convert to unsigned 32-bit integer
-    return finalHash >>> 0;
-};
-
-const calculateMaxVelocity = (
-    page: Page,
-    marcherTimelines: Map<number, MarcherTimeline>,
-): number => {
-    const pageStartTime = page.timestamp * 1000;
-    const pageEndTime = (page.timestamp + page.duration) * 1000;
-    const pageDurationMs = pageEndTime - pageStartTime;
-    if (pageDurationMs <= 0) return 0;
-
-    let maxVelocity = 0;
-    for (const [_, timeline] of marcherTimelines.entries()) {
-        if (!timeline) continue;
-
-        try {
-            const startPos = getCoordinatesAtTime(pageStartTime, timeline);
-            const endPos = getCoordinatesAtTime(pageEndTime, timeline);
-
-            if (!startPos || !endPos) {
-                console.warn(
-                    `Marcher ${timeline.pathMap.get(pageStartTime)?.x} has no position at ${pageStartTime} or ${pageEndTime}`,
-                );
-                continue;
-            }
-
-            // Calculate distance traveled
-            const distance = Math.sqrt(
-                Math.pow(endPos.x - startPos.x, 2) +
-                    Math.pow(endPos.y - startPos.y, 2),
-            );
-
-            // Calculate velocity (distance per ms)
-            const velocity = distance / pageDurationMs;
-            maxVelocity = Math.max(maxVelocity, velocity);
-        } catch (e) {
-            // Skip if marcher doesn't have valid positions
-            continue;
+    const sweep = new Sweep(ids, drillNumbers);
+    sweep.check(here);
+    for (let beat = fromBeat; beat < toBeat; beat++) {
+        const end = Math.min(beat + 1, toBeat);
+        if (!source.positionsAt(end, next)) break;
+        const samples = Math.min(
+            MAX_SAMPLES_PER_BEAT,
+            Math.max(1, Math.ceil(maxTravel(here, next) / MAX_SAMPLE_TRAVEL)),
+        );
+        for (let k = 1; k < samples; k++) {
+            if (source.positionsAt(beat + ((end - beat) * k) / samples, sample))
+                sweep.check(sample);
         }
+        sweep.check(next);
+        [here, next] = [next, here];
     }
-    return maxVelocity;
-};
+    return sweep.collisions;
+}
 
-const getMarcherLabels = (
-    id1: number,
-    id2: number,
-    drillNumberByMarcherId: Record<number, string>,
-) => {
-    const vis1 = drillNumberByMarcherId[id1];
-    const vis2 = drillNumberByMarcherId[id2];
-    if (!vis1 || !vis2) return `${id1},${id2}`;
-
-    return `${vis1}, ${vis2}`;
-};
-
-const sweepNPruneCollision = (
-    page: Page,
-    marcherTimelines: Map<number, MarcherTimeline>,
-    marchers: Marcher[],
-) => {
-    const collisionPairs = new Set<string>();
-    const collisions: CollisionData[] = [];
-    const pageStartTime = page.timestamp * 1000; //convert to ms for more precision
-    const pageEndTime = (page.timestamp + page.duration) * 1000;
-
-    // Get cached velocity or calculate it
-    let maxVelocity = velocityCacheRef.get(page.id);
-    if (maxVelocity === undefined) {
-        maxVelocity = calculateMaxVelocity(page, marcherTimelines);
-        velocityCacheRef.set(page.id, maxVelocity);
+/**
+ * How far the marcher that moves most travels between two position buffers, in a straight line.
+ * Assumes a marcher moves along about that line within a beat: a path that curves or doubles back
+ * inside one beat travels further than this, so it is sampled more coarsely than the radius asks
+ * and a brief brush can be missed. So can anyone faster than 32 half-radii (160 field units) a
+ * beat, past `MAX_SAMPLES_PER_BEAT`, which bounds the cost of one marcher that jumps across the field.
+ */
+function maxTravel(a: Float64Array, b: Float64Array): number {
+    let max = 0;
+    for (let i = 0; i < a.length; i += 2) {
+        const d = Math.hypot(b[i]! - a[i]!, b[i + 1]! - a[i + 1]!);
+        if (d > max) max = d;
     }
+    return max;
+}
 
-    // Calculate dynamic interval based on max velocity and collision radius
-    // Rule: Check often enough that fastest marcher can't move more than COLLISION_RADIUS/4 between checks
-    const minCheckDistance = COLLISION_RADIUS / 2;
-    let dynamicInterval =
-        maxVelocity > 0
-            ? minCheckDistance / maxVelocity
-            : COLLISION_CHECK_INTERVAL;
+/**
+ * The pairs found so far, and the marchers' order by x, kept between samples: marchers barely
+ * move between two, so an insertion sort over the last order is close to linear.
+ */
+class Sweep {
+    readonly collisions: CollisionData[] = [];
+    private readonly order: Int32Array;
+    private readonly seen = new Set<string>();
+    private sorted = false;
 
-    // Clamp the interval to reasonable bounds (10ms to 500ms)
-    dynamicInterval = Math.max(50, Math.min(500, dynamicInterval));
-
-    const drillNumberByMarcherId = marchers.reduce(
-        (acc, marcher) => {
-            acc[marcher.id] = marcher.drill_number;
-            return acc;
-        },
-        {} as Record<number, string>,
-    );
-
-    // pre calculate positions
-    for (
-        let time = pageStartTime;
-        time < pageEndTime;
-        time += dynamicInterval
+    constructor(
+        private readonly ids: readonly number[],
+        private readonly drillNumbers: ReadonlyMap<number, string>,
     ) {
-        const marcherPositionsAtTime: Array<{
-            id: number;
-            x: number;
-            y: number;
-        }> = [];
-
-        for (const [marcherId, timeline] of marcherTimelines.entries()) {
-            if (!timeline) continue;
-
-            try {
-                const position = getCoordinatesAtTime(time, timeline);
-                if (!position) {
-                    console.warn(
-                        `Marcher ${marcherId} has no position at ${time}`,
-                    );
-                    continue;
-                }
-                marcherPositionsAtTime.push({
-                    id: marcherId,
-                    x: position.x,
-                    y: position.y,
-                });
-            } catch (e) {
-                // Skip if marcher doesn't have position at this time
-                console.warn(`Marcher ${marcherId} has no position at ${time}`);
-                continue;
-            }
-        }
-
-        // Precompute x-intervals (or just sort by x)
-        const pts = marcherPositionsAtTime.map((p) => ({
-            id: p.id,
-            x: p.x,
-            y: p.y,
-        }));
-        pts.sort((a, b) => a.x - b.x);
-
-        for (let i = 0; i < pts.length; i++) {
-            const a = pts[i];
-            // Compare only forward while x is within 2R
-            for (let j = i + 1; j < pts.length; j++) {
-                const b = pts[j];
-                const dx = b.x - a.x;
-                const collisionStr = [a.id, b.id].sort().join(",");
-                if (dx > 2 * COLLISION_RADIUS) break; // beyond possible overlap in x
-                if (collisionPairs.has(collisionStr)) continue; // we have seen this pair before we only want the first instance
-
-                // Exact check in 2D (squared distance, no sqrt)
-                const dy = b.y - a.y;
-                const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
-                if (distance <= COLLISION_RADIUS) {
-                    collisionPairs.add(collisionStr);
-                    const label = getMarcherLabels(
-                        a.id,
-                        b.id,
-                        drillNumberByMarcherId,
-                    );
-                    collisions.push({
-                        distance: distance,
-                        label,
-                        marcher1Id: a.id,
-                        marcher2Id: b.id,
-                        x: a.x,
-                        y: a.y,
-                    });
-                }
-            }
-        }
-    }
-    return collisions;
-};
-
-export const getCollisionsForSelectedPage = (
-    selectedPage: Page | null,
-    pageCollisions: Map<number, CollisionData[]>,
-) => {
-    if (!selectedPage) {
-        return [];
+        this.order = Int32Array.from(ids, (_, i) => i);
     }
 
-    // this looks stupid but empty array if nothing is returned
-    const collisions = selectedPage.nextPageId
-        ? pageCollisions.get(selectedPage.nextPageId)
-        : [];
-
-    return collisions ?? [];
-};
-
-const getPageCollisions = (
-    marchers: Marcher[],
-    marcherTimelines: Map<number, MarcherTimeline>,
-    pages: Page[],
-) => {
-    if (!marchers.length || !pages.length || marcherTimelines.size === 0) {
-        collisionCacheRef.clear();
-        pageHashCacheRef.clear();
-        velocityCacheRef.clear();
-        return new Map<number, CollisionData[]>();
-    }
-
-    const collisionsMap = new Map<number, CollisionData[]>();
-
-    for (const page of pages) {
-        const currentHash = getPageHash(page, marchers, marcherTimelines);
-        const cachedHash = pageHashCacheRef.get(page.id);
-
-        // Check if we can use cached collision data
-        if (cachedHash === currentHash && collisionCacheRef.has(page.id)) {
-            // Use cached collision data
-            const cachedCollisions = collisionCacheRef.get(page.id)!;
-            collisionsMap.set(page.id, cachedCollisions);
+    check(positions: Float64Array): void {
+        const order = this.order;
+        if (!this.sorted) {
+            order.sort((a, b) => positions[2 * a]! - positions[2 * b]!);
+            this.sorted = true;
         } else {
-            // Recalculate collisions for this page AND the next page
-            // Clear velocity cache when page data changes
-            velocityCacheRef.delete(page.id);
-            const collisions = sweepNPruneCollision(
-                page,
-                marcherTimelines,
-                marchers,
-            );
-            collisionsMap.set(page.id, collisions);
-
-            // Update cache
-            collisionCacheRef.set(page.id, collisions);
-            pageHashCacheRef.set(page.id, currentHash);
-
-            if (page.nextPageId) {
-                const n = pages.filter((p) => p.id === page.nextPageId);
-                const nextPage = n[0];
-                const nextHash = getPageHash(
-                    nextPage,
-                    marchers,
-                    marcherTimelines,
-                );
-                const nextCollisions = sweepNPruneCollision(
-                    nextPage,
-                    marcherTimelines,
-                    marchers,
-                );
-
-                collisionCacheRef.set(nextPage.id, nextCollisions);
-                pageHashCacheRef.set(nextPage.id, nextHash);
+            // Insertion sort by x, from the last sample's order
+            for (let i = 1; i < order.length; i++) {
+                const m = order[i]!;
+                const x = positions[2 * m]!;
+                let j = i - 1;
+                while (j >= 0 && positions[2 * order[j]!]! > x) {
+                    order[j + 1] = order[j]!;
+                    j--;
+                }
+                order[j + 1] = m;
+            }
+        }
+        for (let i = 0; i < order.length; i++) {
+            const a = order[i]!;
+            const ax = positions[2 * a]!;
+            const ay = positions[2 * a + 1]!;
+            for (let j = i + 1; j < order.length; j++) {
+                const b = order[j]!;
+                const dx = positions[2 * b]! - ax;
+                if (dx > COLLISION_RADIUS) break; // no one further along x is close enough
+                const distance = Math.hypot(dx, positions[2 * b + 1]! - ay);
+                if (distance <= COLLISION_RADIUS)
+                    this.add(a, b, distance, positions);
             }
         }
     }
 
-    // Clean up cache for pages that no longer exist in case user deletes page
-    const existingPageIds = new Set(pages.map((p) => p.id));
-    for (const cachedPageId of collisionCacheRef.keys()) {
-        if (!existingPageIds.has(cachedPageId)) {
-            collisionCacheRef.delete(cachedPageId);
-            pageHashCacheRef.delete(cachedPageId);
-            velocityCacheRef.delete(cachedPageId);
-        }
+    private add(a: number, b: number, distance: number, p: Float64Array) {
+        // Ids ascend with their index (`PositionSource.marcherIds`)
+        const [first, second] = a < b ? [a, b] : [b, a];
+        const key = `${first},${second}`;
+        if (this.seen.has(key)) return; // only where the pair first collides
+        this.seen.add(key);
+        const id1 = this.ids[first]!;
+        const id2 = this.ids[second]!;
+        this.collisions.push({
+            marcher1Id: id1,
+            marcher2Id: id2,
+            label: `${this.drillNumbers.get(id1) ?? id1}, ${this.drillNumbers.get(id2) ?? id2}`,
+            x: (p[2 * a]! + p[2 * b]!) / 2,
+            y: (p[2 * a + 1]! + p[2 * b + 1]!) / 2,
+            distance,
+        });
     }
-
-    return collisionsMap;
-};
-
-export default getPageCollisions;
+}

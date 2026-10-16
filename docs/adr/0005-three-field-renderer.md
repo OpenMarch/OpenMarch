@@ -1,6 +1,8 @@
 # 0005: A three.js field behind a renderer-independent editor
 
 - Status: accepted
+- Implemented: fork #209 (2026-10-15) made the new field the only field and
+  deleted Fabric, on the `field-renderer` branch.
 - Date: 2026-10-14
 - Spec: fork issue #189. Work packages: [docs/field](../field/README.md),
   tickets #190 to #209.
@@ -136,11 +138,36 @@ The drawing techniques proven in the prototype are the starting point:
 - No Canvas2D fallback ships. One is built only if real users need it, and it
   must then cache marcher and label sprites as Fabric does.
 
+How #205 built it:
+
+- **GPU switch.** The main process appends `ignore-gpu-blocklist` at startup,
+  for the whole app (the Fabric field and the 3D View draw on the same GPU
+  process). Windows 7 still turns hardware acceleration off. The owner
+  confirmed the app-wide switch on 2026-10-15, including its effect on the
+  Fabric field and the 3D View's compositing on drivers Chromium blocks.
+- **IPC contract.** Two channels, both carrying no data from the renderer:
+  `gpu:crashed` (`invoke`, answers whether the GPU process ended with
+  anything but a clean exit this session) and `gpu:process-gone` (main to
+  every window, no payload, sent on such an exit). The preload exposes them
+  as `gpuCrashed()` and `onGpuCrashed(callback)`. The renderer gains no new
+  capability: it learns one boolean. The web build answers `false`, since the
+  browser owns its GPU process. Names live in `electron/main/gpu.ts`.
+- **What "low quality" means** is one table, `QUALITY_SETTINGS` in
+  `src/field/fieldQuality.ts`, so later layers read the same switch.
+- **Without WebGL** the field shows an explanation in its place instead of
+  throwing into the app's error boundary, and the rest of the app keeps
+  working.
+
 ### D-4 One cut-over, and a field freeze until then
 
 - The new field is built beside Fabric and switched on in one cut-over PR
   (#209), after the parity gate (D-6) passes. Fabric and its speed
   workarounds are deleted in that PR. There is no rollback setting.
+- **Amended (owner decision, 2026-10-15, recorded on #209):** #209 lands on
+  `field-renderer` after the gate's automated half, before the owner's
+  hands-on checklist and real-hardware benchmark. Those now gate #214
+  (`field-renderer` into `main`) instead. Fabric comparisons use the pinned
+  pre-switch build (`field-renderer-pre-209`).
 - Until #209 merges, **Fabric field drawing and field interaction are
   frozen**. Only fixes for real breakage are allowed, and each fix adds a
   parity scenario that pins the fixed behavior.
@@ -205,6 +232,11 @@ Before the switch:
   helpers stop reading Fabric and read the field test API.
 - The 2D field and the 3D View share field geometry and marcher position
   code, so a field change is made once.
+- `window.canvas`, the Fabric canvas that plugins could reach, is gone with
+  Fabric (#209). The plugin example in
+  `apps/website/src/content/blog/2025-06-12-plugins-update/index.mdx` used
+  it. The owner accepted the break (2026-10-15): no replacement, and the plugin
+  system itself is to be removed (#255).
 
 ## Verification
 

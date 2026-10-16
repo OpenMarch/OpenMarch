@@ -82,7 +82,6 @@ export default function FieldStep({
                 <FieldPreview
                     fieldProperties={currentTemplate}
                     className="h-[200px]"
-                    disableBackground
                 />
             </div>
             <div className="flex flex-col gap-8">

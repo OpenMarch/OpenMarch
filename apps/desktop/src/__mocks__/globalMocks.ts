@@ -2,7 +2,6 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
-import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 export const mockMarchers: Marcher[] = [
@@ -179,38 +178,6 @@ export const mockMarcherPages: MarcherPage[] = [
         y: -500,
         notes: null,
     },
-] as const;
-
-export const mockMarcherLines: MarcherLine[] = [
-    new MarcherLine({
-        id: 1,
-        startPageId: 1,
-        endPageId: 2,
-        x1: 0,
-        y1: 0,
-        x2: 100,
-        y2: 100,
-        notes: "This is the first marcherLine",
-    }),
-    new MarcherLine({
-        id: 2,
-        startPageId: 2,
-        endPageId: 2,
-        x1: 200,
-        y1: 0,
-        x2: 0,
-        y2: 0,
-    }),
-    new MarcherLine({
-        id: 1,
-        startPageId: 2,
-        endPageId: 4,
-        x1: 5,
-        y1: 10,
-        x2: -50,
-        y2: 1000,
-        notes: "This is the last marcherLine",
-    }),
 ] as const;
 
 /**

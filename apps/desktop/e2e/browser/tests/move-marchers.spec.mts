@@ -94,10 +94,7 @@ test("undo and redo a move", async ({ show }) => {
     await expectCanvasMatchesShow(show);
 });
 
-// Pre-existing on fork main 1be4fd9c in timeline mode: after **+** adds a page flag, the selected page (Inspector, canvas.currentPage, e/Shift+E) stays on the old page until reload.
-test.fixme("a move on one page leaves the other pages alone", async ({
-    show,
-}) => {
+test("a move on one page leaves the other pages alone", async ({ show }) => {
     const { page } = show;
     await createTempoGroup(page, {
         tempo: 120,

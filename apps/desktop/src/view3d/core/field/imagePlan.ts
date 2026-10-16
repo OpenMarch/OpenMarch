@@ -2,8 +2,8 @@ import { pixelsToWorld } from "@openmarch/core";
 import type { ImageSize, PlanContext, PlanImage } from "./plan";
 
 /**
- * Places the field background image like
- * `OpenMarchCanvas.refreshBackgroundImageValues`: "fit" shows the whole
+ * Places the field background image like the 2D field (`planFieldImage`):
+ * "fit" shows the whole
  * image inside the field's canvas rectangle, "fill" covers the rectangle and
  * crops the overflow (the painter clips to the surface). Anything other than
  * "fill" is treated as "fit", as in 2D.

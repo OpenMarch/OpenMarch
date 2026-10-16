@@ -44,6 +44,21 @@ pnpm run e2e:scenarios:electron   # needs a display (Xvfb on a headless machine)
 Each launch gets its own `--user-data-dir`, so these run in parallel too. Run
 them before merging a change to the harness, the preload or the main process.
 
+## WebGL in Electron
+
+The field draws with WebGL (ADR 0005). For Electron the fixture passes
+Chromium's software GL switches, since a machine with no GPU (Xvfb in a
+container) otherwise has no WebGL. Run Electron scenarios with one worker per
+display: several windows on one display drop gestures now and then (#236).
+
+## Render comparisons
+
+`e2e/browser/render/` captures the field itself, and compares the captures
+with an earlier run's (another checkout) in side-by-side and diff images to
+review.
+It's its own Playwright project (`render`), not part of the scenarios; see
+`render/README.md`.
+
 ## What belongs in the Electron suite instead
 
 A channel the host doesn't register rejects with Electron's own "No handler
@@ -51,7 +66,9 @@ registered" error, so a test that wanders into these fails loudly:
 
 - opening, saving, closing and creating files, and the launch page
 - native dialogs and menus
-- PDF and video export, audio import
+- PDF export (the host's drill chart handlers only save each chart's SVG
+  pages for `render/export-compare.spec.mts`; no PDF is made, so a scenario
+  about the PDF itself belongs in Electron), audio import
 - sign-in, plugins, updates
 
 Those stay in `e2e/tests/`, which runs the packaged app.
@@ -74,12 +91,25 @@ test("creates marchers", async ({ show }) => {
 - `await show.query(sql, ...params)` reads the show file, to assert on what was
   saved. Don't open the file yourself: under Electron a second process reading
   it makes the app's writes fail with "database is locked".
+- Each `show.query` is its own read, so the app can commit an edit between two
+  of them. When several reads must agree, run them in
+  `show.readSnapshot(async (query) => ...)`: it copies one committed state of
+  the file and reads that.
 - Don't rely on the window size or on a particular marcher being in view; the
   two targets lay out slightly differently.
 - `savedPositions(show, pageId)` (`positions.mts`) says where the file puts
   each marcher at the end of a page, the way the app reads it: the app's
-  `readTimelineTables` and the resolver at the page's end beat. It runs in the
-  host bundle, so it needs `pnpm run build:browser` for both targets.
+  `readTimelineTables` and the resolver at the page's end beat, on one
+  snapshot. It runs in the host bundle, so it needs `pnpm run build:browser`
+  for both targets.
+- Read the field only through the field test API, `window.fieldTest`
+  (`src/field/fieldTestApi.ts`): the drawn marchers, the selection, the view,
+  the selection handles, the gesture in progress and the field image. The helpers
+  (`drawnMarchers`, `readField`, `selectedDrillNumbers`) wrap it. Never reach
+  into the renderer (three.js objects, shaders): scenarios check what the
+  user sees and what gets saved (#189). The one exception is simulating
+  a lost WebGL context (`weak-machines.spec.mts`), which needs the canvas's
+  `WEBGL_lose_context` extension.
 - `expectCanvasMatchesShow(show)` waits until every marcher is drawn where
   `savedPositions` puts it. Call it after any step that moves marchers or
   changes page.
@@ -87,10 +117,23 @@ test("creates marchers", async ({ show }) => {
   existing show with music, pages and positions: page 0's are the marchers'
   homes, and each later page is one timeline move (see
   `tests/existing-show.spec.mts`). Plain SQL works too.
+- `test.use({ uiSettings: {...} })` starts the app with those UI settings
+  (`src/stores/UiSettingsStore.ts`, merged over the defaults), for example
+  `{ mouseSettings: { trackpadMode: false } }` for mouse mode.
 - `addPageAt(page, measure)` adds a page flag at a measure with the timeline's
   Go to field and **+**.
 - A test fails if the page logs an error or throws. Allow a known message with
   `test.use({ allowedPageErrors: [/.../] })`.
+- The field explains its low-quality mode once, in a toast, on machines
+  with software GL (all of ours). The fixture marks it as already explained;
+  `test.use({ fieldQualityNotice: true })` lets it show.
+- `test.use({ initScript: "..." })` runs a script in the page before the app
+  on every load, e.g. to take WebGL away. Browser target only.
+- The video export saves to `show.videoExportPath`, as if picked in its
+  save dialog (the host restates the export's three IPC handlers; Electron
+  reads `PLAYWRIGHT_VIDEO_EXPORT_PATH`). It draws through WebGL off screen
+  (#207). `tests/video-export.spec.mts` reads frames
+  from the file with ffmpeg.
 - `await waitForIdle(page)` waits until the app's writes have finished. Use it
   before a step that must not overlap the previous one.
 - Put steps a user takes (fill a form, drag a dot) in `app.mts` so specs read

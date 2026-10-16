@@ -113,7 +113,7 @@ const { data: appearances } = useQuery(
 The resolution logic in `useMarcherAppearances.ts`:
 1. Fetches section appearances, tag appearances for the page, marcher-tag assignments, and marcher pages
 2. For each marcher: builds an array starting with section appearance, then tag appearances (sorted by priority), then marcher page overrides
-3. `CanvasMarcher.setAppearance()` merges these layers to determine final visual
+3. `resolveMarcherLook()` (`src/entity-components/appearance.ts`) merges these layers to determine final visual
 
 ## AppearanceComponentOptional Type
 
@@ -150,7 +150,7 @@ createTagAppearancesInTransaction({
 
 ## Integration Points
 
-- **Canvas**: `CanvasMarcher` receives resolved appearances and applies them (color, visibility, shape).
+- **Field**: `src/field/three/marcherLooks.ts` resolves each marcher's look at the beat shown, and `MarchersLayer`/`LabelsLayer` draw it (color, visibility, shape).
 - **Selection**: `SelectedMarchersContext` filters out hidden marchers based on appearance `visible` field.
 - **Inspector**: `MarcherEditor` shows per-marcher-page appearance overrides.
 - **Undo/redo**: All appearance tables (`section_appearances`, `tags`, `tag_appearances`, `marcher_tags`) are tracked by history triggers.

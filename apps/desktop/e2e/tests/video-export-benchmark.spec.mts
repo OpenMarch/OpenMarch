@@ -225,7 +225,7 @@ base("video export benchmark", async ({}, testInfo) => {
             console.log("[MAIN STDERR]", data.toString().trim()),
         );
         const page = await app.firstWindow();
-        await expect(page.locator("canvas").nth(1)).toBeVisible();
+        await expect(page.getByTestId("fieldCanvas")).toBeVisible();
 
         await page.getByRole("tab", { name: "File" }).click();
         await page.getByRole("button", { name: "Export" }).click();

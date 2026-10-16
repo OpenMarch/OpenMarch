@@ -29,7 +29,7 @@ test("Create new file from launch page", async ({ electronAppNewFile }) => {
 
     await completeNewShowWizard(page, { projectName });
 
-    await expect(page.locator("canvas").nth(1)).toBeVisible();
+    await expect(page.getByTestId("fieldCanvas")).toBeVisible();
     await expect(
         page.getByRole("heading", { name: "Page 0", exact: true }),
     ).toBeVisible();

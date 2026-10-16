@@ -1,4 +1,4 @@
-import Canvas from "@/components/canvas/Canvas";
+import { threeZoomControls } from "@/field/three/fieldNavigation";
 import Toolbar from "@/components/toolbar/Toolbar";
 import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
@@ -10,7 +10,7 @@ import { View3dPublisher } from "@/view3d/sync/useView3dPublisher";
 import { AssetsHost } from "@/components/assets/AssetsModal";
 import TimelineResolverHost from "@/timeline/TimelineResolverHost";
 import LaunchPage from "@/components/launchpage/LaunchPage";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import CommandPalette from "@/shortcuts/palette/CommandPalette";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
@@ -25,7 +25,6 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "@/components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
@@ -34,7 +33,6 @@ import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { useEditorModeStore } from "./stores/EditorModeStore";
-import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
 import {
     QueryCache,
@@ -59,6 +57,9 @@ import { version as currentVersion } from "../package.json";
 import { shouldShowUpdateNotification } from "./utilities/updateNotification";
 import { isAnalyticsChoiceMade } from "./components/welcome/welcomeFlowSteps";
 
+// The field's own chunk, so the launch page doesn't load three.js
+const ThreeField = lazy(() => import("@/field/three/ThreeField"));
+
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
@@ -77,9 +78,6 @@ export const queryClient = new QueryClient({
 function App() {
     useLoadFileErrorHandler();
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
-    const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
-        undefined,
-    );
     const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(
         null,
     );
@@ -210,14 +208,6 @@ function App() {
     }, []);
 
     useEffect(() => {
-        if (appCanvas && isCodegen) {
-            void window.electron.codegen.clearMouseActions();
-            const cleanup = attachCodegenListeners(appCanvas);
-            return cleanup;
-        }
-    }, [appCanvas, isCodegen]);
-
-    useEffect(() => {
         if (databaseIsReady)
             createAllUndoTriggers(db).catch((error) => {
                 console.error("Error creating undo triggers:", error);
@@ -340,13 +330,13 @@ function App() {
                                                                 <SidebarModal />
                                                             </>
                                                         )}
-                                                        <Canvas
-                                                            onCanvasReady={
-                                                                setAppCanvas
-                                                            }
-                                                        />
+                                                        <Suspense>
+                                                            <ThreeField />
+                                                        </Suspense>
                                                         <CanvasZoomControls
-                                                            canvas={appCanvas}
+                                                            canvas={
+                                                                threeZoomControls
+                                                            }
                                                         />
                                                     </div>
                                                     {focussedComponent ===

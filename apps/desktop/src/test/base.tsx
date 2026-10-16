@@ -31,6 +31,12 @@ import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { createRendererSqlProxyQueue } from "@/global/database/sqlProxyQueue";
+import { createSqlReadBatch } from "@/global/database/sqlReadBatch";
+import {
+    handleSqlReadBatchWithDb,
+    type SqlBatchQuery,
+    type SqlReadBatchResult,
+} from "@/../electron/database/sqlProxy";
 
 // Needs to be here for an import error
 import { schema as electronSchema } from "@/../electron/database/db";
@@ -290,6 +296,7 @@ function setUpGlobalMocks<T>(
         params: any[],
         method: "all" | "run" | "get" | "values",
     ) => Promise<{ rows: any[] }>,
+    readBatch?: (db: T, queries: SqlBatchQuery[]) => SqlReadBatchResult,
 ) {
     const queuedSqlProxy = createRendererSqlProxyQueue(
         async (
@@ -298,6 +305,12 @@ function setUpGlobalMocks<T>(
             method: "all" | "run" | "get" | "values",
         ) => dbFunction(db, sql, params, method),
     );
+    // As main's `sql:read-batch` does, on the test's connection
+    const sqlReadBatch = async (queries: SqlBatchQuery[]) => {
+        if (!readBatch)
+            throw new Error("This test database has no batch reads");
+        return readBatch(db, queries);
+    };
 
     // Check if window.electron already exists, if so update it, otherwise create it
     if (window.electron) {
@@ -306,6 +319,7 @@ function setUpGlobalMocks<T>(
             params: any[],
             method: "all" | "run" | "get" | "values",
         ) => queuedSqlProxy(sql, params, method);
+        window.electron.sqlReadBatch = sqlReadBatch;
     } else {
         Object.defineProperty(window, "electron", {
             value: {
@@ -314,6 +328,7 @@ function setUpGlobalMocks<T>(
                     params: any[],
                     method: "all" | "run" | "get" | "values",
                 ) => queuedSqlProxy(sql, params, method),
+                sqlReadBatch,
                 log: (
                     level: "log" | "info" | "warn" | "error",
                     message: string,
@@ -393,11 +408,18 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
 
         const db = new DatabaseSync(tempDatabaseFile);
 
-        setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
+        setUpGlobalMocks(
+            db,
+            handleSqlProxyWithDbBetterSqlite,
+            handleSqlReadBatchWithDb,
+        );
         await use(
             sqliteProxyDrizzle(
                 async (sql, params, method) =>
                     handleSqlProxyWithDbBetterSqlite(db, sql, params, method),
+                createSqlReadBatch(async (queries) =>
+                    handleSqlReadBatchWithDb(db, queries),
+                ),
                 {
                     schema,
                     casing: "snake_case",

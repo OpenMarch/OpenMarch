@@ -35,7 +35,7 @@ test("Minimal completion lands in editor", async ({ electronAppNewFile }) => {
 
     await completeNewShowWizard(page, { projectName });
 
-    await expect(page.locator("canvas").nth(1)).toBeVisible();
+    await expect(page.getByTestId("fieldCanvas")).toBeVisible();
 });
 
 test("File written to playwright path", async ({ electronAppNewFile }) => {

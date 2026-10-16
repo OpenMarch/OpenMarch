@@ -1,4 +1,8 @@
-import { createResolver, type Resolver } from "@openmarch/core";
+import {
+    createResolver,
+    FieldProperties,
+    type Resolver,
+} from "@openmarch/core";
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 import * as schema from "@om-electron/database/migrations/schema";
 import { readTimelineTables } from "@/timeline/timelineRows";
@@ -62,4 +66,25 @@ export async function savedPositions(
             const [x, y] = resolver.positionAt(id, endBeat);
             return { id, x, y };
         });
+}
+
+/** The grid coordinate rounding measures on: steps in field units, and center front. */
+export type FieldGrid = {
+    pixelsPerStep: number;
+    centerFront: { x: number; y: number };
+};
+
+/** The show's field grid, read through the app's `FieldProperties`. */
+export async function fieldGrid(query: ShowQuery): Promise<FieldGrid> {
+    const [row] = await query<{ json_data: string }>(
+        "SELECT json_data FROM field_properties WHERE id = 1",
+    );
+    const field = new FieldProperties(JSON.parse(row.json_data));
+    return {
+        pixelsPerStep: field.pixelsPerStep,
+        centerFront: {
+            x: field.centerFrontPoint.xPixels,
+            y: field.centerFrontPoint.yPixels,
+        },
+    };
 }

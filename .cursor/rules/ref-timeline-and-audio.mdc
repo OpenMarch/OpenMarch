@@ -7,7 +7,7 @@ alwaysApply: false
 
 ## Overview
 
-The timeline system handles audio playback, beat/measure visualization, and canvas animation. The `TimelineContainer` at the bottom of the workspace shows pages, audio waveforms, and timing markers. During playback, `useAnimation` interpolates marcher positions between pages and drives the canvas.
+The timeline system handles audio playback and beat/measure visualization. The `TimelineContainer` at the bottom of the workspace shows pages, audio waveforms, and timing markers. During playback, the field samples the timeline resolver at the audio clock's beat each frame.
 
 ## Key Files
 
@@ -38,33 +38,25 @@ The timeline system handles audio playback, beat/measure visualization, and canv
 | `src/global/classes/AudioFile.ts` | Audio file domain class |
 | `src/global/classes/TimeSignature.ts` | Time signature handling |
 | `src/global/classes/BeatUnit.ts` | Beat unit calculations |
-| `src/hooks/useAnimation.ts` | Canvas animation during playback |
 | `src/hooks/useTimingObjects.ts` | Combined timing data |
 | **Stores & Context** | |
 | `src/stores/MetronomeStore.ts` | Metronome state |
 | `src/context/IsPlayingContext.tsx` | Playback state |
 | `src/context/SelectedAudioFileContext.tsx` | Current audio file |
 
-## Animation System
+## Playback on the Field
 
-`useAnimation` is the core playback hook:
+The field's `PlayheadDriver` (`src/field/three/ThreeField.tsx`) runs while playing:
 
 ```typescript
-// src/hooks/useAnimation.ts
-// Called in Canvas.tsx, drives playback:
-// 1. When isPlaying becomes true, starts requestAnimationFrame loop
-// 2. Each frame: calculates current time position from audio
-// 3. Determines which page (and position within page) we're at
-// 4. Interpolates marcher positions between current and next page
-// 5. Calls canvas.setMarcherCoords() with interpolated positions
-// 6. When playback stops, snaps marchers to nearest page position
+// Each frame, in a React Three Fiber frame hook (no React state per frame):
+// 1. Reads the live audio position (`getLivePlaybackPosition`, AudioPlayer.tsx)
+// 2. Converts it to a beat (`playbackBeat`, src/timeline/positionBuffer.ts)
+// 3. Fills the marchers' positions from the timeline resolver at that beat
+//    (`FieldMarchers`, src/field/three/fieldMarchers.ts)
+// 4. Restyles marchers whose appearance changes at that beat
+// The 3D View samples the same resolver through the same PositionBuffer.
 ```
-
-Key concepts:
-- Interpolation is linear between MarcherPage positions
-- Beat timestamps determine page boundaries
-- Pathways (if defined) override linear interpolation with curved paths
-- Animation respects the current audio playback position
 
 ## Audio File System
 
@@ -134,7 +126,7 @@ The metronome plays clicks synced to beat timestamps during playback.
 
 ## Integration Points
 
-- **Canvas**: `useAnimation` drives canvas marcher positions during playback
+- **Field**: the field's `PlayheadDriver` draws marchers at the playback beat
 - **Timing**: `useTimingObjects` provides the unified timeline data
 - **Context**: `IsPlayingContext` tracks play/pause state, `SelectedAudioFileContext` tracks current audio
 - **UiSettings**: `pixelsPerSecond` in `UiSettingsStore` controls timeline zoom level

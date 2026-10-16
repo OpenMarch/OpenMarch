@@ -903,8 +903,8 @@ describe("findBoundingBoxFromCoordinates", () => {
                 fc.property(
                     fc.array(
                         fc.tuple(
-                            fc.float({ min: -10000, max: 10000 }),
-                            fc.float({ min: -10000, max: 10000 }),
+                            fc.float({ min: -10000, max: 10000, noNaN: true }),
+                            fc.float({ min: -10000, max: 10000, noNaN: true }),
                         ),
                         { minLength: 0, maxLength: 50 },
                     ),

@@ -12,9 +12,11 @@
  * a test that needs real Electron fails loudly instead of passing on a fake.
  */
 import fs from "node:fs";
+import path from "node:path";
 import * as DatabaseServices from "@om-electron/database/database.services";
 import { getOrm } from "@om-electron/database/db";
 import { DrizzleMigrationService } from "@om-electron/database/services/DrizzleMigrationService";
+import { GPU_CRASHED_CHANNEL } from "@om-electron/main/gpu";
 import { ipcHandlers, ipcListeners, ipcMain } from "./electron";
 
 export type ShowHost = {
@@ -28,6 +30,19 @@ export type ShowHost = {
 
 let handlersRegistered = false;
 const settings = new Map<string, unknown>();
+/** Where the open show's video export is written: the save dialog's answer. */
+let videoExportPath: string | null = null;
+let videoSessionCount = 0;
+const videoSessions = new Map<
+    string,
+    { file: fs.promises.FileHandle; path: string }
+>();
+
+/** Chunk bytes as they arrive over the exposed function: a typed array, or its plain-object form. */
+const chunkBytes = (data: unknown): Uint8Array =>
+    data instanceof Uint8Array
+        ? data
+        : Uint8Array.from(Object.values(data as Record<string, number>));
 
 function registerHandlers() {
     if (handlersRegistered) return;
@@ -75,7 +90,10 @@ function registerHandlers() {
     ipcMain.handle("newShow:getPending", () => false);
     ipcMain.handle("newShow:getDraftPath", () => null);
     ipcMain.handle("conversion:getPending", () => null);
+    ipcMain.handle("load-file:takeRefusal", () => null);
     ipcMain.handle("plugins:list", () => []);
+    // A headless browser has no GPU process of the app's to crash
+    ipcMain.handle(GPU_CRASHED_CHANNEL, () => false);
     ipcMain.handle("auth:get-state", () => ({
         isAuthenticated: false,
         isLoading: false,
@@ -83,6 +101,79 @@ function registerHandlers() {
         error: null,
     }));
     ipcMain.handle("auth:get-access-token", () => ({ token: null }));
+    registerVideoExportHandlers();
+    registerDrillChartExportHandlers();
+}
+
+/**
+ * The drill chart export's two calls, writing each chart's SVG pages (the
+ * PDF's input) beside the video export's file, in `exported-drill-charts/`:
+ * `<drill number or MAIN>-<page index>.svg`. No PDF is made.
+ */
+function registerDrillChartExportHandlers() {
+    ipcMain.handle("export:createExportDirectory", async () => {
+        if (!videoExportPath) throw new Error("No test output folder");
+        const exportDir = path.join(
+            path.dirname(videoExportPath),
+            "exported-drill-charts",
+        );
+        await fs.promises.mkdir(exportDir, { recursive: true });
+        return { exportName: "show", exportDir };
+    });
+    ipcMain.handle(
+        "export:generateDocForMarcher",
+        async (
+            _,
+            args: {
+                svgPages: string[];
+                drillNumber: string;
+                exportDir: string;
+            },
+        ) => {
+            for (const [i, svg] of args.svgPages.entries())
+                await fs.promises.writeFile(
+                    path.join(
+                        args.exportDir,
+                        `${args.drillNumber}-${String(i).padStart(2, "0")}.svg`,
+                    ),
+                    svg,
+                );
+            return { success: true };
+        },
+    );
+}
+
+/** Restated from `VideoExportService`, with the test's file for the save dialog's answer. */
+function registerVideoExportHandlers() {
+    ipcMain.handle("export:videoStart", async () => {
+        if (!videoExportPath) return null;
+        const sessionId = String(++videoSessionCount);
+        const file = await fs.promises.open(videoExportPath, "w");
+        videoSessions.set(sessionId, { file, path: videoExportPath });
+        return { sessionId, filePath: videoExportPath };
+    });
+    ipcMain.handle(
+        "export:videoChunk",
+        async (_, sessionId: string, data: unknown, position: number) => {
+            const session = videoSessions.get(sessionId);
+            if (!session)
+                throw new Error("Invalid or expired video export session");
+            const bytes = chunkBytes(data);
+            await session.file.write(bytes, 0, bytes.byteLength, position);
+        },
+    );
+    ipcMain.handle(
+        "export:videoEnd",
+        async (_, sessionId: string, success: boolean) => {
+            const session = videoSessions.get(sessionId);
+            if (!session)
+                throw new Error("Invalid or expired video export session");
+            videoSessions.delete(sessionId);
+            await session.file.close();
+            if (!success) await fs.promises.rm(session.path, { force: true });
+            return success ? session.path : null;
+        },
+    );
 }
 
 /**
@@ -97,8 +188,11 @@ export async function openShow(args: {
     migrationsFolder: string;
     /** Settings the app would read from its store, e.g. `{ optOutAnalytics: true }`. */
     settings?: Record<string, unknown>;
+    /** Where a video export is saved, as if picked in the save dialog. */
+    videoExportPath?: string;
 }): Promise<ShowHost> {
     registerHandlers();
+    videoExportPath = args.videoExportPath ?? null;
     settings.clear();
     for (const [key, value] of Object.entries(args.settings ?? {}))
         settings.set(key, value);
@@ -133,4 +227,4 @@ export async function openShow(args: {
     };
 }
 
-export { savedPositions } from "./positions";
+export { fieldGrid, savedPositions } from "./positions";

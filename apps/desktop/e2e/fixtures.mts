@@ -55,14 +55,31 @@ const PLAYWRIGHT_ENV = {
  * Each launch gets its own user-data folder, so its settings and
  * single-instance lock are private and tests can run in parallel.
  */
-const launchElectron = (
+/**
+ * Machines without a GPU draw WebGL in software, and the field explains its
+ * low-quality mode once in a toast over the app. Marks it explained
+ * (`QUALITY_NOTICE_STORAGE_KEY`) on every load, the first window's too.
+ */
+export async function markQualityNoticeSeen(app: ElectronApplication) {
+    const markExplained = () =>
+        localStorage.setItem(
+            "openmarch:field:qualityNoticeSeen",
+            '["software"]',
+        );
+    await app.context().addInitScript(markExplained);
+    const first = await app.firstWindow();
+    await first.waitForLoadState("domcontentloaded");
+    await first.evaluate(markExplained);
+}
+
+const launchElectron = async (
     testInfo: { outputDir: string },
     options: {
         args: string[];
         env?: typeof PLAYWRIGHT_ENV;
     },
-) =>
-    electron.launch({
+) => {
+    const app = await electron.launch({
         executablePath: electronExecutable,
         ...options,
         args: [
@@ -70,6 +87,9 @@ const launchElectron = (
             `--user-data-dir=${path.resolve(testInfo.outputDir, "user-data")}`,
         ],
     });
+    await markQualityNoticeSeen(app);
+    return app;
+};
 
 const getTempDotsPath = (testInfo: { outputDir: string }) => {
     return path.resolve(testInfo.outputDir, "temp.dots");

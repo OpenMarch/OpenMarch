@@ -12,7 +12,12 @@ import {
 import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
-import { isWindows7 } from "./gpu";
+import {
+    GPU_CRASHED_CHANNEL,
+    GPU_PROCESS_GONE_CHANNEL,
+    isGpuCrash,
+    isWindows7,
+} from "./gpu";
 import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
@@ -176,6 +181,20 @@ process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL
 
 // Disable GPU Acceleration for Windows 7
 if (isWindows7(process.platform, release())) app.disableHardwareAcceleration();
+
+// The field draws with WebGL (ADR 0005 D-3): use the GPU even where Chromium's
+// blocklist turns it off. If the GPU then crashes, the field drops to its
+// low-quality mode for the rest of the session.
+app.commandLine.appendSwitch("ignore-gpu-blocklist");
+let gpuCrashed = false;
+app.on("child-process-gone", (_event, details) => {
+    if (!isGpuCrash(details)) return;
+    console.warn("GPU process gone:", details.reason, details.exitCode);
+    gpuCrashed = true;
+    for (const window of BrowserWindow.getAllWindows())
+        window.webContents.send(GPU_PROCESS_GONE_CHANNEL);
+});
+ipcMain.handle(GPU_CRASHED_CHANNEL, () => gpuCrashed);
 
 // Set application name for Windows 10+ notifications
 if (process.platform === "win32") app.setAppUserModelId(app.getName());

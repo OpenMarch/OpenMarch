@@ -52,5 +52,13 @@ export default defineConfig<object, { target: Target }>({
             fullyParallel: true,
             use: { target: "electron" },
         },
+        {
+            // Render captures of the field, compared run to run
+            // (e2e/browser/render/README.md). Writes images; needs `build:browser`.
+            name: "render",
+            testDir: "./e2e/browser/render",
+            use: { target: "browser" },
+            timeout: 120_000,
+        },
     ],
 });

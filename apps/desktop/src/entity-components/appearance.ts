@@ -209,9 +209,51 @@ const shapeTypeToSchemaShape = (
     return "circle";
 };
 
+/** How a marcher is drawn on the field: its resolved appearance with the colors as values. */
+export type MarcherLook = {
+    visible: boolean;
+    labelVisible: boolean;
+    shape: ResolvedPerformerAppearance["shape"];
+    fill: RgbaColor;
+    outline: RgbaColor;
+    /** An X has no fill area: it's drawn in the outline color when that shows, else the fill */
+    crossColor: RgbaColor;
+};
+
 /**
- * Resolves a cascade of appearances into a fully defined OpenMarch performer appearance.
- * Mirrors {@link CanvasMarcher.setAppearance} merge rules.
+ * A marcher's look from its appearance stack (highest priority first): each value from the first
+ * appearance that sets it, else the field theme. The one resolver: `resolveAppearanceFromStack`, the drill-chart export and the
+ * three.js field all use it, so they draw the same look.
+ */
+export function resolveMarcherLook(
+    appearancesInput:
+        | AppearanceComponentOptional
+        | AppearanceComponentOptional[],
+    fieldTheme: FieldTheme,
+): MarcherLook {
+    const appearances = Array.isArray(appearancesInput)
+        ? appearancesInput
+        : [appearancesInput];
+    const visible = !appearanceIsHidden(appearances);
+    const outlineValue = getFirstAppearanceValue(appearances, "outline_color");
+    const fill =
+        getFirstAppearanceValue(appearances, "fill_color") ||
+        fieldTheme.defaultMarcher.fill;
+    const outline = outlineValue || fieldTheme.defaultMarcher.outline;
+    const shapeType = getFirstAppearanceValue(appearances, "shape_type");
+    return {
+        visible,
+        labelVisible: resolveLabelVisibleFromStack(appearances, visible),
+        shape: shapeTypeToSchemaShape(shapeType ?? "circle"),
+        fill,
+        outline,
+        crossColor: outlineValue && outlineValue.a > 0.1 ? outline : fill,
+    };
+}
+
+/**
+ * Resolves a cascade of appearances into a fully defined OpenMarch performer appearance
+ * ({@link resolveMarcherLook}, with the colors as schema strings).
  */
 export function resolveAppearanceFromStack(
     appearancesInput:
@@ -219,30 +261,13 @@ export function resolveAppearanceFromStack(
         | AppearanceComponentOptional[],
     fieldTheme: FieldTheme,
 ): ResolvedPerformerAppearance {
-    const appearances = Array.isArray(appearancesInput)
-        ? appearancesInput
-        : [appearancesInput];
-
-    const visible = !appearanceIsHidden(appearances);
-    const textVisible = resolveLabelVisibleFromStack(appearances, visible);
-
-    const fillColorValue = getFirstAppearanceValue(appearances, "fill_color");
-    const outlineColorValue = getFirstAppearanceValue(
-        appearances,
-        "outline_color",
-    );
-    const shapeType = getFirstAppearanceValue(appearances, "shape_type");
-
+    const look = resolveMarcherLook(appearancesInput, fieldTheme);
     return {
-        fillRgba: rgbaToSchemaString(
-            fillColorValue || fieldTheme.defaultMarcher.fill,
-        ),
-        strokeRgba: rgbaToSchemaString(
-            outlineColorValue || fieldTheme.defaultMarcher.outline,
-        ),
+        fillRgba: rgbaToSchemaString(look.fill),
+        strokeRgba: rgbaToSchemaString(look.outline),
         strokeWidth: 1,
-        visible,
-        textVisible,
-        shape: shapeTypeToSchemaShape(shapeType ?? "circle"),
+        visible: look.visible,
+        textVisible: look.labelVisible,
+        shape: look.shape,
     };
 }

@@ -45,7 +45,7 @@ export function SelectedMarchersProvider({
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
     // Hidden marchers can't be selected: the appearance steps sampled at the beat the paused
-    // canvas shows, as the canvas draws them (UI-9, `useTimelineAppearance`)
+    // field shows, as the field draws them (UI-9)
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const changeBeats = useMemo(
         () => (appearanceSteps ? appearanceChangeBeats(appearanceSteps) : []),

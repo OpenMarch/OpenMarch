@@ -238,7 +238,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
 // College
 /**
  * @returns The y checkpoints for a college football field.
- * 0 is the front sideline. To negative is the back sideline (that is how it is in Fabric.js).
+ * 0 is the front sideline. To negative is the back sideline.
  */
 function createCollegeFootballYCheckpoints(): Checkpoint[] {
     let curId = 0;
@@ -310,7 +310,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
 
 /**
  * @returns The y checkpoints for a pro football field.
- * 0 is the front sideline. To negative is the back sideline (that is how it is in Fabric.js).
+ * 0 is the front sideline. To negative is the back sideline.
  */
 function createProFootballYCheckpoints(): Checkpoint[] {
     let curId = 0;

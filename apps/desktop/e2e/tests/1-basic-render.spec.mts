@@ -41,7 +41,7 @@ test("Launch page sub-menus", async ({ electronAppEmpty }) => {
 
 const canvasIsVisible = async (page: Page) => {
     await expect(page.getByText("Timeline")).toBeVisible();
-    await expect(page.locator("canvas").nth(1)).toBeVisible();
+    await expect(page.getByTestId("fieldCanvas")).toBeVisible();
 };
 
 test("Canvas is visible", async ({ electronApp }) => {

@@ -6,7 +6,8 @@ import * as fs from "fs";
 import type AudioFile from "../../src/global/classes/AudioFile";
 import type { ModifiedAudioFileArgs } from "../../src/global/classes/AudioFile";
 import { getOrm } from "./db";
-import { handleSqlProxyWithDb } from "./sqlProxy";
+import { handleSqlProxyWithDb, handleSqlReadBatchWithDb } from "./sqlProxy";
+import { parseSqlReadBatch } from "../main/view3dSql";
 import {
     decideFileVersion,
     FILE_TOO_NEW_STATUS,
@@ -325,6 +326,19 @@ export async function handleReadOnlySqlProxy(
     return await result;
 }
 
+/**
+ * Runs a batch of reads as one consistent snapshot (`handleSqlReadBatchWithDb`, #224) on the
+ * shared connection, for the editor and the 3D View window alike. Returns `{ busy: true }` while
+ * a transaction is open; the renderer tries again.
+ */
+export function handleSqlReadBatch(queries: unknown) {
+    assertSqlProxyNotSuspended();
+    return handleSqlReadBatchWithDb(
+        getPersistentConnection(),
+        parseSqlReadBatch(queries),
+    );
+}
+
 /** Directly executes the SQL query without any parameters */
 export async function handleUnsafeSqlProxy(_: any, sql: string) {
     assertSqlProxyNotSuspended();
@@ -347,6 +361,9 @@ export function initHandlers() {
     // Generic SQL proxy handler for Drizzle ORM
     ipcMain.handle("sql:proxy", handleSqlProxy);
     ipcMain.handle("unsafeSql:proxy", handleUnsafeSqlProxy);
+    ipcMain.handle("sql:read-batch", (_, queries: unknown) =>
+        handleSqlReadBatch(queries),
+    );
 
     // File IO handlers located in electron/main/index.ts
 

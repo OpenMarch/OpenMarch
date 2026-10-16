@@ -221,37 +221,38 @@ export interface TimelineTables {
     destinations: SlotDestinationIndex;
 }
 
-/**
- * Reads the post-commit timeline state for a cold build (ADR 0001 §4). Call it where no timeline
- * write can commit between its reads, such as inside the write lock or a transaction.
- */
-export async function readTimelineTables(
-    db: DbConnection | DbTransaction,
-): Promise<TimelineTables> {
-    const marchers = await db
-        .select({
-            id: schema.marchers.id,
-            home_x: schema.marchers.home_x,
-            home_y: schema.marchers.home_y,
-        })
-        .from(schema.marchers)
-        .orderBy(asc(schema.marchers.id))
-        .all();
-    const shapes = await db.select().from(schema.timeline_shapes).all();
-    const transitions = await db
-        .select()
-        .from(schema.timeline_transitions)
-        .all();
-    const assignments = await db
-        .select()
-        .from(schema.timeline_assignments)
-        .orderBy(asc(schema.timeline_assignments.id))
-        .all();
-    const slotDestinations = await db
-        .select()
-        .from(schema.timeline_slot_destinations)
-        .all();
+/** The five reads of a cold build, in the order a snapshot assembles them. */
+function timelineTableQueries(db: DbConnection | DbTransaction) {
+    return [
+        db
+            .select({
+                id: schema.marchers.id,
+                home_x: schema.marchers.home_x,
+                home_y: schema.marchers.home_y,
+            })
+            .from(schema.marchers)
+            .orderBy(asc(schema.marchers.id)),
+        db.select().from(schema.timeline_shapes),
+        db.select().from(schema.timeline_transitions),
+        db
+            .select()
+            .from(schema.timeline_assignments)
+            .orderBy(asc(schema.timeline_assignments.id)),
+        db.select().from(schema.timeline_slot_destinations),
+    ] as const;
+}
 
+type TimelineTableQueries = ReturnType<typeof timelineTableQueries>;
+type RowsOf<Queries> = { -readonly [K in keyof Queries]: Awaited<Queries[K]> };
+type TimelineTableRows = RowsOf<TimelineTableQueries>;
+
+function assembleTimelineTables([
+    marchers,
+    shapes,
+    transitions,
+    assignments,
+    slotDestinations,
+]: TimelineTableRows): TimelineTables {
     const destinations: SlotDestinationIndex = new Map();
     for (const row of slotDestinations)
         addSlotDestination(destinations, slotDestinationFromRow(row));
@@ -269,4 +270,46 @@ export async function readTimelineTables(
             destinations,
         );
     return { snapshot, destinations };
+}
+
+/**
+ * Reads the post-commit timeline state for a cold build (ADR 0001 §4), one statement at a time.
+ * Call it where no timeline write can commit between its reads, such as inside the write lock or a
+ * transaction. Anywhere else (another window, an export), use {@link readTimelineTablesSnapshot}.
+ */
+export async function readTimelineTables(
+    db: DbConnection | DbTransaction,
+): Promise<TimelineTables> {
+    const [marchers, shapes, transitions, assignments, slotDestinations] =
+        timelineTableQueries(db);
+    return assembleTimelineTables([
+        await marchers,
+        await shapes,
+        await transitions,
+        await assignments,
+        await slotDestinations,
+    ]);
+}
+
+/** A connection whose `batch` runs its reads as one snapshot (the renderer's `db`). */
+type BatchDb = DbConnection & {
+    batch: (queries: TimelineTableQueries) => Promise<TimelineTableRows>;
+};
+
+/**
+ * Reads the timeline tables as one committed state, from anywhere (#224): the five reads go to
+ * main in one `db.batch`, which runs them in one synchronous call, and waits out any open
+ * transaction, so neither a write committing between two reads nor a write still in progress
+ * can tear the snapshot. Needs no lock, so the 3D View window (a separate renderer, outside the
+ * editor's write lock) and the exports read through it.
+ */
+export async function readTimelineTablesSnapshot(
+    db: DbConnection,
+): Promise<TimelineTables> {
+    if (typeof (db as Partial<BatchDb>).batch !== "function")
+        throw new Error(
+            "readTimelineTablesSnapshot needs a connection with batch reads",
+        );
+    const rows = await (db as BatchDb).batch(timelineTableQueries(db));
+    return assembleTimelineTables(rows);
 }

@@ -17,8 +17,8 @@ import { planImage } from "./imagePlan";
 
 /**
  * The `theme` style (blank kit): the 2D canvas's field, painted with the
- * `FieldTheme` colors. Mirrors `OpenMarchCanvas.createFieldGrid` element for
- * element, with the editor's default of grid and half lines on. Only the
+ * `FieldTheme` colors. Mirrors the 2D field's plan (`fieldPlan.ts`) element
+ * for element, with the editor's default of grid and half lines on. Only the
  * checkpoint labels outside the field's edges are left out, because the
  * surface covers the footprint.
  */
@@ -157,7 +157,7 @@ function planThemeNumbers(ctx: PlanContext): void {
     const labeled = ctx.fieldProperties.xCheckpoints.filter(
         (c): c is Checkpoint & { fieldLabel: string } => !!c.fieldLabel,
     );
-    // fabric's text box is the font size; the digits' cap height is ~0.7 of it.
+    // The text box is the font size; the digits' cap height is ~0.7 of it.
     const height = (home.outside - home.inside) * 0.7;
     for (const xc of labeled) {
         const x = checkpointWorld(ctx, xc);

@@ -43,3 +43,36 @@ export function isView3dSqlReadMethod(
 ): method is View3dSqlReadMethod {
     return (VIEW3D_SQL_READ_METHODS as readonly unknown[]).includes(method);
 }
+
+/** One statement of a read batch (`sqlReadBatch`), checked. */
+export interface SqlReadBatchQuery {
+    sql: string;
+    params: unknown[];
+    method: View3dSqlReadMethod;
+}
+
+/**
+ * Checks a read batch from a renderer: an array of read-only statements, with the checks a single
+ * `sqlRead` makes. Throws on anything else. Main also runs the batch with `PRAGMA query_only` on.
+ */
+export function parseSqlReadBatch(queries: unknown): SqlReadBatchQuery[] {
+    if (!Array.isArray(queries))
+        throw new Error("SQL read batch: expected an array of statements");
+    return queries.map((query: unknown) => {
+        const { sql, params, method } = (query ?? {}) as Record<
+            string,
+            unknown
+        >;
+        if (!isReadOnlySql(sql))
+            throw new Error(
+                "SQL read batch: only SELECT or WITH statements are allowed",
+            );
+        if (!isView3dSqlReadMethod(method))
+            throw new Error(
+                `SQL read batch: unsupported SQL method ${String(method)}`,
+            );
+        if (!Array.isArray(params))
+            throw new Error("SQL read batch: SQL params must be an array");
+        return { sql: sql as string, params, method };
+    });
+}

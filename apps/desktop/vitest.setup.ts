@@ -2,7 +2,11 @@ import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
 import { expect, vi } from "vitest";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { schema } from "./electron/database/db";
-import { createRendererSqlProxyQueue } from "./src/global/database/sqlProxyQueue";
+import {
+    createRendererSqlProxyQueue,
+    createSerialQueue,
+} from "./src/global/database/sqlProxyQueue";
+import { createSqlReadBatch } from "./src/global/database/sqlReadBatch";
 
 // jest-dom's matchers, on this app's own vitest. `@testing-library/jest-dom/vitest` extends
 // whichever `vitest` pnpm hoists to the repo root, and other workspace packages still use
@@ -17,6 +21,7 @@ vi.mock("electron", () => import("./src/__mocks__/electron"));
 
 // Mock the database module globally to prevent import-time database creation
 vi.mock("@/global/database/db", () => {
+    const serially = createSerialQueue();
     const queuedSqlProxy = createRendererSqlProxyQueue(
         async (
             sql: string,
@@ -31,7 +36,16 @@ vi.mock("@/global/database/db", () => {
                 "window.electron.sqlProxy not available - test setup issue",
             );
         },
+        serially,
     );
+    // `db.batch`, like the app's (`readTimelineTablesSnapshot`)
+    const sqlReadBatch = createSqlReadBatch(async (queries) => {
+        if (typeof window !== "undefined" && window.electron?.sqlReadBatch)
+            return await window.electron.sqlReadBatch(queries);
+        throw new Error(
+            "window.electron.sqlReadBatch not available - test setup issue",
+        );
+    }, serially);
 
     return {
         db: drizzleSqliteProxy(
@@ -40,6 +54,7 @@ vi.mock("@/global/database/db", () => {
                 params: any[],
                 method: "all" | "run" | "get" | "values",
             ) => queuedSqlProxy(sql, params, method),
+            sqlReadBatch,
             { schema, casing: "snake_case" },
         ),
         schema,

@@ -391,8 +391,7 @@ export interface TimelineEditRequest {
 }
 
 /**
- * The function the canvas calls when a drag or rotate ends (`OpenMarchCanvas.
- * updateMarcherPagesFunction`).
+ * The function the field calls when a drag or rotate ends (`fieldDrop.ts`).
  *
  * It writes the moves where the selection edits, planned when the move ends (`plan`,
  * `planCanvasEdit` by default, so it never uses a stale selection). The canvas marchers'

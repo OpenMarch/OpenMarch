@@ -13,6 +13,7 @@ import type {
     View3dPublishChannel,
     View3dVenueChangeRequest,
 } from "../../src/view3d/sync/protocol";
+import type { SqlBatchQuery, SqlReadBatchResult } from "../database/sqlProxy";
 
 const PUBLISH_CHANNELS: readonly View3dPublishChannel[] = [
     "view3d:clock",
@@ -39,6 +40,16 @@ const VIEW3D_API = {
         ipcRenderer.invoke("view3d:sql-read", sql, params, method) as Promise<{
             rows: any[] | any;
         }>,
+
+    /**
+     * Read-only statements as one consistent snapshot, checked like `sqlRead`. `busy` means the
+     * editor had a transaction open and nothing ran: try again.
+     */
+    sqlReadBatch: (queries: SqlBatchQuery[]) =>
+        ipcRenderer.invoke(
+            "view3d:sql-read-batch",
+            queries,
+        ) as Promise<SqlReadBatchResult>,
 
     /**
      * Tells the editor, through main, that the window is ready. The editor

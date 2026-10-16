@@ -85,7 +85,7 @@ The `FieldPropertiesSelector` component lets users pick a template, then customi
 
 ## Integration Points
 
-- **Canvas**: `OpenMarchCanvas.renderFieldGrid()` uses field properties for grid rendering
+- **Field**: `src/field/fieldPlan.ts` lays out the grid from field properties; `FieldLayer` draws it, and the drill chart export uses the same plan
 - **Coordinates**: `ReadableCoords` converts pixel positions to human-readable field coordinates using checkpoints
 - **Props**: `getPixelsPerFoot()` in `Prop.ts` derives from `pixelsPerStep`
 - **Exporting**: Coordinate sheets use field properties for position labels

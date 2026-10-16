@@ -11,16 +11,14 @@ type SqlProxyInvoke = (
 ) => Promise<SqlProxyResult>;
 
 /**
- * Ensures SQL proxy calls run in FIFO order with only one in-flight call.
- * The queue chain is kept alive even when a call rejects.
+ * Runs tasks in FIFO order with only one in flight. The chain is kept alive even when a task
+ * rejects.
  */
-export const createRendererSqlProxyQueue = (
-    execute: SqlProxyInvoke,
-): SqlProxyInvoke => {
+export const createSerialQueue = () => {
     let tail = Promise.resolve<void>(undefined);
 
-    return async (sql, params, method) => {
-        const run = tail.then(() => execute(sql, params, method));
+    return <T>(task: () => Promise<T>): Promise<T> => {
+        const run = tail.then(task);
 
         tail = run.then(
             () => undefined,
@@ -28,4 +26,16 @@ export const createRendererSqlProxyQueue = (
         );
         return run;
     };
+};
+
+/**
+ * Ensures SQL proxy calls run in FIFO order with only one in-flight call.
+ * The queue chain is kept alive even when a call rejects.
+ */
+export const createRendererSqlProxyQueue = (
+    execute: SqlProxyInvoke,
+    serially = createSerialQueue(),
+): SqlProxyInvoke => {
+    return async (sql, params, method) =>
+        serially(() => execute(sql, params, method));
 };

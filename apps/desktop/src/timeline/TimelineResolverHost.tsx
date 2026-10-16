@@ -10,6 +10,7 @@ import { useTimelinePlaybackDriver } from "./useTimelinePlaybackDriver";
 import { useKeptAssignmentsHost } from "./useKeepLaterPages";
 import { useBasicModeGuards } from "./useBasicModeGuards";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
+import { useCollisionDetection } from "@/hooks/useCollisionDetection";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { pageFlags } from "./timelinePlayhead";
 import { useBasicLocksHost } from "./basicLocks";
@@ -101,6 +102,8 @@ export default function TimelineResolverHost() {
     useBasicLocksHost(true);
     // UI-18 keep later pages: the kept spots the chains and the inspector line read
     useKeptAssignmentsHost(db, true);
+    // #226: the selected page's collisions, for both fields and the Collisions tab
+    useCollisionDetection();
     // The console API can write fixtures into the file: development builds only
     useTimelineDevApi(db, import.meta.env.DEV);
     return null;

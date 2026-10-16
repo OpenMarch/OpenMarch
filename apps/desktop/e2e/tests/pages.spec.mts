@@ -91,7 +91,8 @@ test.describe("with music", () => {
         ).toEqual([{ n: MUSIC.beats + 1 }]);
     });
 
-    // Pre-existing on fork main 1be4fd9c in timeline mode: after **+** adds a page flag, the selected page (Inspector, canvas.currentPage, e/Shift+E) stays on the old page until reload.
+    // Still failing (#209 rechecked on the three.js field): the timeline's add-page-flag button
+    // never appears in this Electron setup, so the test times out before it reaches the field.
     test.fixme("A new page is selected immediately", async ({
         electronApp,
     }) => {

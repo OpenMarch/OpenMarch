@@ -16,11 +16,63 @@ import type { DatabaseSync } from "node:sqlite";
  *
  * https://orm.drizzle.team/docs/connect-drizzle-proxy
  */
+export type SqlProxyMethod = "all" | "run" | "get" | "values";
+
+/** One statement of a batch, as Drizzle's `sqlite-proxy` batch callback passes it. */
+export interface SqlBatchQuery {
+    sql: string;
+    params: any[];
+    method: SqlProxyMethod;
+}
+
+/**
+ * A batch of reads: `busy` when the connection was inside a transaction, so nothing ran and the
+ * caller tries again.
+ */
+export type SqlReadBatchResult =
+    | { busy: true }
+    | { busy: false; results: { rows: any }[] };
+
 export async function handleSqlProxyWithDb(
     db: DatabaseSync,
     sql: string,
     params: any[],
-    method: "all" | "run" | "get" | "values",
+    method: SqlProxyMethod,
+) {
+    return runSqlProxyStatement(db, sql, params, method);
+}
+
+/**
+ * Runs reads as one consistent snapshot (#224): every statement runs synchronously in this call,
+ * with `PRAGMA query_only` on, so no other IPC call can commit a write between two of them. When
+ * the connection is inside a transaction (the editor's writes run one statement per IPC call, on
+ * this same connection), the reads would see its uncommitted rows, so nothing runs and the result
+ * is `busy`: try again once the transaction has ended.
+ */
+export function handleSqlReadBatchWithDb(
+    db: DatabaseSync,
+    queries: readonly SqlBatchQuery[],
+): SqlReadBatchResult {
+    if (db.isTransaction) return { busy: true };
+    db.exec("PRAGMA query_only = ON");
+    try {
+        return {
+            busy: false,
+            results: queries.map((query) =>
+                runSqlProxyStatement(db, query.sql, query.params, query.method),
+            ),
+        };
+    } finally {
+        db.exec("PRAGMA query_only = OFF");
+    }
+}
+
+/** {@link handleSqlProxyWithDb}, synchronously. */
+function runSqlProxyStatement(
+    db: DatabaseSync,
+    sql: string,
+    params: any[],
+    method: SqlProxyMethod,
 ) {
     try {
         // node:sqlite rejects `undefined` bind values while previous drivers

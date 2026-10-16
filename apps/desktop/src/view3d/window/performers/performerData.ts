@@ -54,7 +54,7 @@ export function buildPerformerSlots(
     return { ids, positions, indexById };
 }
 
-/** A performer's look, resolved like the 2D canvas's `CanvasMarcher`. */
+/** A performer's look, resolved like the 2D field's marchers. */
 export interface PerformerLook {
     fill: RgbaColor;
     visible: boolean;
@@ -62,8 +62,7 @@ export interface PerformerLook {
 
 /**
  * Resolves one marcher's appearance cascade (tags, section, field theme;
- * highest priority first) the way `CanvasMarcher.setAppearance`
- * does: the first non-null fill wins, and visibility follows
+ * highest priority first) the way the 2D field does: the first non-null fill wins, and visibility follows
  * `appearanceIsHidden`.
  */
 export function resolvePerformerLook(

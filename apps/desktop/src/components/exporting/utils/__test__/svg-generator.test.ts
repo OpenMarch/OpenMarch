@@ -7,7 +7,6 @@ import { describe, expect, it } from "vitest";
 import {
     generateDrillChartExportSVGs,
     OPENMARCH_FIELD_IMAGE_PLACEHOLDER,
-    replaceImageDataWithPlaceholder,
 } from "../svg-generator";
 import { pagePositionMapFromRows } from "../exportPagePositions";
 import { generatePagePositions } from "../../__test__/pagePositions";
@@ -206,28 +205,47 @@ describe("svgGenerator", () => {
     });
 });
 
-describe("replaceImageDataWithPlaceholder", () => {
-    const testString = `pre-svg-pages <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="440" height="320" viewBox="-40 -40 440 320" xml:space="preserve">
-<desc>Created with Fabric.js 5.5.2</desc>
-<defs>
-</defs>
-<g transform="matrix(1 0 0 1 180.25 121.55)"  >
-<g style=""   >
-		<g transform="matrix(1 0 0 1 0.25 -1.05)"  >
-<rect style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;"  x="-180" y="-120" rx="0" ry="0" width="360" height="240" />
-</g>
-		<g transform="matrix(0.23 0 0 0.23 -0.25 -1.55)"  >
-	<image style="stroke: none; stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;"  xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABgAAAAQACAIAAACoEw8PSv/j8yTeftbttDFOSNhVyc3eorTHCpkOoZjhmcmE1QyIiJEIbwaUAJqRjgNogEYBMhyICSOGOBGomBOZBZcEY4YYyGbioJWNH/Mfqdz/89tOL0HasPorHlYJQ5la1GzKYRqolOgevqQu2wcEYQ4OJS2nqe3o0aSGYkH0f47JXTHtHQB0ZM2tloHBnTBfGhCTnoOgWY/BcQap3H27Loak5aVLNbjHVSp5FJMCn03x+exWUw+nm9fnNNE3bHnWS6KGXNwneWhsjorIA0h45FQcHgPTkTA8tUxmr1amNblmihqTANrQSMRfduqcJIRBPpah1RAmEDORCkeDbPh8WRWWHcNa+l9NBNUptRBZ7dzNBcs8UTEtiAqD/Adx58g/vb+JFAAAAAElFTkSuQmCC" x="-768" y="-512" width="1536" height="1024"></image>
-</g>
-		<g transform="matrix(1 0 0 1 0.25 -1.55)"  >
-<line style="stroke: rgb(221,221,221); stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(0,0,0); fill-rule: nonzero; opacity: 1;"  x1="0" y1="-120" x2="0" y2="120" />
-</g>`;
+describe("generateDrillChartExportSVGs - field image", () => {
+    const image = {
+        href: "data:image/png;base64,AAAA",
+        width: 400,
+        height: 200,
+    };
+    const render = async (useImagePlaceholder?: boolean) => {
+        const marchers = generateMarchers({ numberOfMarchers: 2, seed: 4 });
+        const { pages } = generateTimingObjects({ numberOfBeats: 8, seed: 4 });
+        const fieldProperties =
+            FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+        const marcherPagesMap = pagePositionMapFromRows(
+            generatePagePositions({
+                marchers,
+                pages,
+                fieldProperties,
+                seed: 4,
+            }),
+        );
+        const output = await generateDrillChartExportSVGs({
+            marchers,
+            marcherPagesMap,
+            sortedPages: pages,
+            fieldProperties,
+            backgroundImage: image,
+            individualCharts: false,
+            useImagePlaceholder,
+        });
+        return output.SVGs[0]![0]!;
+    };
 
-    it("replaces the image with the placeholder", () => {
-        const result = replaceImageDataWithPlaceholder(testString);
+    it("writes the placeholder the PDF export fills in", async () => {
+        const svg = await render();
+        expect(svg).toContain(
+            `xlink:href="${OPENMARCH_FIELD_IMAGE_PLACEHOLDER}"`,
+        );
+        expect(svg).not.toContain(image.href);
+    });
 
-        expect(result).toContain(OPENMARCH_FIELD_IMAGE_PLACEHOLDER);
+    it("embeds the image itself for previews", async () => {
+        const svg = await render(false);
+        expect(svg).toContain(`xlink:href="${image.href}"`);
     });
 });

@@ -3,12 +3,8 @@ import { getBeats } from "@/db-functions/beat";
 import type { DbConnection } from "@/db-functions/types";
 import { calculateTimestamps, fromDatabaseBeat } from "@/global/classes/Beat";
 import { beatAtTime, type BeatTiming } from "./timeMap";
-import {
-    TimelinePositionBuffer,
-    type MarcherWithId,
-    type TimelinePositionSource,
-} from "./timelineCanvas";
-import { readTimelineTables } from "./timelineRows";
+import type { PositionSource } from "./positionBuffer";
+import { readTimelineTablesSnapshot } from "./timelineRows";
 import {
     buildKeyframes,
     keyframesToJson,
@@ -26,12 +22,13 @@ import {
  * builds its own. The store's resolver is updated in place by every committed batch, so an edit
  * during a long export would change later frames and stop matching the beats read at the start.
  * The private resolver is not subscribed to changes, so an export reads one moment. (The live
- * preview may use the store's resolver.)
+ * preview may use the store's resolver.) The tables are read as one snapshot, which needs no write
+ * lock, so the 3D View window (another renderer) builds its resolver this way too (#224).
  */
 export async function acquireExportResolver(
     db: DbConnection,
 ): Promise<Resolver> {
-    const { snapshot } = await readTimelineTables(db);
+    const { snapshot } = await readTimelineTablesSnapshot(db);
     return createResolver(snapshot);
 }
 
@@ -42,40 +39,30 @@ export async function readExportBeats(db: DbConnection): Promise<BeatTiming[]> {
 }
 
 /**
- * Samples every marcher's position at a show time for the video export: seconds become a beat
- * through `beatAtTime`, and the resolver fills one reused `Float64Array`. Positions are applied
- * by marcher id, so a canvas marcher the resolver doesn't know stays where it is.
+ * Where every marcher is at a show time, for the video export: seconds become a beat through
+ * `beatAtTime`, and `source` answers the resolver's positions at that beat. The export's
+ * off-screen field (`offscreenField.tsx`) samples `source` as the on-screen field samples the
+ * store's resolver.
  */
 export class ResolverFrameSampler {
-    private readonly buffer: TimelinePositionBuffer;
+    readonly source: PositionSource;
 
     constructor(
         resolver: Pick<Resolver, "marcherIds" | "positionsAt">,
         private readonly beats: readonly BeatTiming[],
     ) {
-        const source: TimelinePositionSource = {
+        this.source = {
             marcherIds: () => resolver.marcherIds(),
             positionsAt: (beat, out) => {
                 resolver.positionsAt(beat, out);
                 return true;
             },
         };
-        this.buffer = new TimelinePositionBuffer(source);
     }
 
-    /** The beat a show time maps to; what `apply` samples at. */
+    /** The beat a show time maps to. */
     beatAt(timeSeconds: number): number {
         return beatAtTime(this.beats, timeSeconds);
-    }
-
-    /** Calls `apply(marcher, x, y)` for each marcher the resolver knows, at `timeSeconds`. */
-    apply<M extends MarcherWithId>(
-        timeSeconds: number,
-        marchers: Iterable<M>,
-        apply: (marcher: M, x: number, y: number) => void,
-    ): void {
-        if (!this.buffer.fill(this.beatAt(timeSeconds))) return;
-        this.buffer.forEachMarcher(marchers, apply);
     }
 }
 

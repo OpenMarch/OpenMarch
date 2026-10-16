@@ -20,7 +20,7 @@
  * with sharp and pdfkit. With `IMPORT_REVIEW_SCREENSHOTS=<dir>` set, the run
  * also saves a screenshot of each main state there, in the dark theme.
  */
-import { test } from "../fixtures.mjs";
+import { markQualityNoticeSeen, test } from "../fixtures.mjs";
 import { expect, type Page } from "playwright/test";
 import { _electron as electron, type ElectronApplication } from "playwright";
 import { createRequire } from "node:module";
@@ -132,6 +132,7 @@ async function launch(databasePath: string, userData: string) {
     app.process().stderr?.on("data", (data) => {
         console.log("[MAIN STDERR]", data.toString().trim());
     });
+    await markQualityNoticeSeen(app);
     return app;
 }
 

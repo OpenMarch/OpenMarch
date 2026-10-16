@@ -52,8 +52,11 @@ import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { assert } from "@/utilities/utils";
 import {
     generateDrillChartExportSVGs,
-    getFieldPropertiesImageElement,
+    getFieldImageForExport,
 } from "./utils/svg-generator";
+import { useFieldImage } from "@/view3d/window/useFieldImage";
+import { useMarcherAppearanceSteps } from "@/hooks/useMarcherAppearanceSteps";
+import { NoWebGLError } from "@/field/fieldQuality";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useShallow } from "zustand/react/shallow";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
@@ -837,7 +840,7 @@ function DrillChartExport() {
             t("exportCoordinates.sectionAppearancesNotLoaded"),
         );
 
-        // Generate SVGs from the canvas
+        // Generate the drill chart SVGs from the show data
         let SVGs: string[][] = [];
         let coords: string[][] | null = null;
         try {
@@ -848,7 +851,7 @@ function DrillChartExport() {
                 rendered: { pages, marchers },
                 showChangedMessage: showChangedMessage(),
             });
-            const backgroundImage = await getFieldPropertiesImageElement();
+            const backgroundImage = await getFieldImageForExport();
             ({ SVGs, coords } = await generateDrillChartExportSVGs({
                 fieldProperties,
                 marchers,
@@ -1197,18 +1200,9 @@ function VideoExport() {
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
-    const { data: sectionAppearances } = useQuery(
-        allSectionAppearancesQueryOptions(),
-    );
-    const { data: marcherIdsByTagId } = useQuery(
-        marcherIdsForAllTagIdsQueryOptions(),
-    );
-    const { data: allTagAppearances } = useQuery(
-        allTagAppearancesQueryOptions(),
-    );
-    const { data: tagAppearanceIdsByPageId } = useQuery(
-        tagAppearanceByPageIdMapQueryOptions(),
-    );
+    // Each marcher's appearance over the show, as the field draws it (#207)
+    const appearanceSteps = useMarcherAppearanceSteps(true);
+    const fieldImage = useFieldImage();
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
@@ -1219,44 +1213,7 @@ function VideoExport() {
                 (file) => file.selected,
             ) ?? null,
     });
-    const uiSettings = useUiSettingsStore(
-        useShallow((s) => ({
-            gridLines: s.uiSettings.gridLines,
-            halfLines: s.uiSettings.halfLines,
-        })),
-    );
     const { theme } = useTheme();
-
-    const marcherAppearancesByPageId = useMemo(() => {
-        if (
-            !fieldProperties ||
-            !marchers?.length ||
-            !sectionAppearances ||
-            !marcherIdsByTagId ||
-            !allTagAppearances ||
-            !tagAppearanceIdsByPageId
-        ) {
-            return undefined;
-        }
-
-        return buildMarcherAppearancesByPageId({
-            sortedPages: pages,
-            marchers,
-            sectionAppearances,
-            marcherIdsByTagId,
-            allTagAppearances,
-            tagAppearanceIdsByPageId,
-            fieldProperties,
-        });
-    }, [
-        fieldProperties,
-        marchers,
-        sectionAppearances,
-        marcherIdsByTagId,
-        allTagAppearances,
-        tagAppearanceIdsByPageId,
-        pages,
-    ]);
 
     const [resolution, setResolution] = useState("1080p");
     const [frameRate, setFrameRate] = useState(60);
@@ -1273,9 +1230,11 @@ function VideoExport() {
     );
     const [fieldRenderContext, setFieldRenderContext] =
         useState<VideoRenderContext | null>(null);
-    const [backgroundImage, setBackgroundImage] = useState<
-        HTMLImageElement | undefined
-    >();
+    // Why the new field couldn't start off screen for the preview, if it couldn't
+    const [previewError, setPreviewError] = useState<
+        "noWebGL" | "failed" | null
+    >(null);
+    const noWebGL = previewError === "noWebGL";
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
@@ -1289,21 +1248,12 @@ function VideoExport() {
             storeResolver
                 ? new ResolverFrameSampler(storeResolver, beats)
                 : null,
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [storeResolver, resolverVersion, beats],
+        // The off-screen field reads the store's resolver at each frame, so an
+        // update in place needs no new preview (a new field costs a WebGL context)
+        [storeResolver, beats],
     );
 
     const durationSeconds = useMemo(() => showEndTime(beats), [beats]);
-
-    useEffect(() => {
-        let cancelled = false;
-        void getFieldPropertiesImageElement().then((image) => {
-            if (!cancelled) setBackgroundImage(image);
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     useEffect(() => {
         if (!isLoading) return;
@@ -1328,30 +1278,38 @@ function VideoExport() {
                 !fieldProperties ||
                 !marchers?.length ||
                 pages.length < 1 ||
-                !previewSampler
+                !previewSampler ||
+                !fieldImage.loaded ||
+                !appearanceSteps
             ) {
+                setPreviewError(null);
                 return;
             }
 
             try {
                 const ctx = await createVideoRenderContext({
                     fieldProperties,
-                    sortedPages: pages,
                     marchers,
                     frameSampler: previewSampler,
-                    sectionAppearances,
-                    marcherAppearancesByPageId,
-                    backgroundImage,
-                    gridLines: uiSettings.gridLines,
-                    halfLines: uiSettings.halfLines,
+                    appearanceSteps,
+                    backgroundImage: fieldImage.image,
+                    // The preview sizes it to its own canvas on the first frame
+                    width: 1,
+                    height: 1,
                 });
                 if (cancelled) {
                     ctx.dispose();
                     return;
                 }
+                setPreviewError(null);
                 setFieldRenderContext(ctx);
             } catch (error) {
-                console.error("Failed to initialize video preview:", error);
+                if (!cancelled)
+                    setPreviewError(
+                        error instanceof NoWebGLError ? "noWebGL" : "failed",
+                    );
+                if (!(error instanceof NoWebGLError))
+                    console.error("Failed to initialize video preview:", error);
             }
         }
 
@@ -1369,11 +1327,9 @@ function VideoExport() {
         marchers,
         pages,
         previewSampler,
-        sectionAppearances,
-        marcherAppearancesByPageId,
-        backgroundImage,
-        uiSettings.gridLines,
-        uiSettings.halfLines,
+        appearanceSteps,
+        fieldImage.loaded,
+        fieldImage.image,
     ]);
 
     const previewLoading =
@@ -1427,7 +1383,11 @@ function VideoExport() {
         fieldProperties &&
         pages.length > 1 &&
         marchers &&
-        marchers.length > 0
+        marchers.length > 0 &&
+        fieldImage.loaded &&
+        // The video would draw every marcher in the theme's default look
+        appearanceSteps &&
+        !noWebGL
     );
 
     // eslint-disable-next-line max-lines-per-function
@@ -1448,10 +1408,7 @@ function VideoExport() {
                 (r) => r.label === resolution,
             )!;
 
-            const [audioFile, backgroundImage] = await Promise.all([
-                AudioFile.getSelectedAudioFile(),
-                getFieldPropertiesImageElement(),
-            ]);
+            const audioFile = await AudioFile.getSelectedAudioFile();
             assert(audioFile.data, "Audio file has no data");
             // The store's resolver when ready, else one cold-built for this export (P7.8)
             const frameSampler = new ResolverFrameSampler(
@@ -1464,11 +1421,8 @@ function VideoExport() {
                 marchers,
                 sortedPages: pages,
                 frameSampler,
-                sectionAppearances,
-                marcherAppearancesByPageId,
-                backgroundImage,
-                gridLines: uiSettings.gridLines,
-                halfLines: uiSettings.halfLines,
+                appearanceSteps,
+                backgroundImage: fieldImage.image,
                 audioData: audioFile.data,
                 audioOffsetSeconds: workspaceSettings?.audioOffsetSeconds ?? 0,
                 width,
@@ -1531,10 +1485,8 @@ function VideoExport() {
         resolution,
         pages,
         marchers,
-        sectionAppearances,
-        marcherAppearancesByPageId,
-        uiSettings.gridLines,
-        uiSettings.halfLines,
+        appearanceSteps,
+        fieldImage.image,
         workspaceSettings?.audioOffsetSeconds,
         frameRate,
         videoTheme,
@@ -1650,7 +1602,12 @@ function VideoExport() {
                     previewTimeSeconds={0}
                     durationSeconds={Math.max(durationSeconds, 0.001)}
                     isLoading={previewLoading}
-                    loadingLabel={t("exportCoordinates.videoPreviewLoading")}
+                    redrawKey={resolverVersion}
+                    loadingLabel={t(
+                        previewError
+                            ? "exportCoordinates.exportNotAvailable"
+                            : "exportCoordinates.videoPreviewLoading",
+                    )}
                 />
                 <div className="flex flex-col gap-12">
                     <h6 className="text-sub text-text/80">
@@ -1823,7 +1780,11 @@ function VideoExport() {
                         <T keyName="exportCoordinates.exportNotAvailable" />
                     </h4>
                     <p className="text-body max-w-md text-center text-gray-600">
-                        <T keyName="exportCoordinates.exportNotAvailableDescription" />
+                        {noWebGL ? (
+                            <T keyName="exportCoordinates.videoNoWebGL" />
+                        ) : (
+                            <T keyName="exportCoordinates.exportNotAvailableDescription" />
+                        )}
                     </p>
                 </div>
             )}

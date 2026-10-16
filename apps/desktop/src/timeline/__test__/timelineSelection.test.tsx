@@ -1,20 +1,15 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, expect } from "vitest";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { transactionWithHistory, performUndo } from "@/db-functions/history";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import type Marcher from "@/global/classes/Marcher";
-import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { defaultSettings } from "@/stores/UiSettingsStore";
 import {
     selectedStoredTimeline,
     useTimelineSelectionStore,
     type StoredTimelineMembership,
 } from "@/stores/TimelineSelectionStore";
 import { shiftTimeline } from "@/db-functions/timelineCommands";
-import LassoListeners from "@/components/canvas/listeners/LassoListeners";
 import { startTimelineResolver, stopTimelineResolver } from "../timelineStore";
 import {
     readStoredTimelineMemberships,
@@ -22,10 +17,7 @@ import {
     useTimelineSelectionHost,
 } from "../useTimelineSelectionHost";
 import { readTimelineViewTables } from "../useTimelineTracks";
-import {
-    useDeselectDimmedMarchers,
-    useTimelineDimming,
-} from "../useTimelineDimming";
+import { useDeselectDimmedMarchers } from "../useTimelineDimming";
 
 /**
  * The UI-9 selection's read model and what it draws (P8.11): the stored timelines and who is in
@@ -286,70 +278,5 @@ describeDbTests("the stored timelines the selection resolves to", (it) => {
         } finally {
             stopTimelineResolver();
         }
-    });
-});
-
-describe("dimming on the canvas (UI-10: nobody is dimmed)", () => {
-    const setUpCanvas = () => {
-        const canvas = new OpenMarchCanvas({
-            canvasRef: null,
-            fieldProperties:
-                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES,
-            uiSettings: defaultSettings,
-        });
-        const marchers = [1, 2, 3].map(
-            (id) =>
-                new CanvasMarcher({
-                    marcher: marcher(id),
-                    coordinate: { x: id * 20, y: 40 },
-                }),
-        );
-        for (const m of marchers) canvas.add(m);
-        return { canvas, marchers };
-    };
-    const states = (marchers: CanvasMarcher[]) =>
-        marchers.map((m) => ({
-            dimmed: m.timelineDimmed,
-            opacity: m.opacity,
-            selectable: m.selectable,
-            evented: m.evented,
-        }));
-
-    it("UI-10: a stored timeline dims nobody, and the lasso selects anyone", () => {
-        const { canvas, marchers } = setUpCanvas();
-        store().setStoredTimelines([membership(1, 1, 9, [1])]);
-        renderHook(() => useTimelineDimming({ canvas, enabled: true }));
-        act(() => {
-            store().selectRange(1, 9);
-        });
-        const undimmed = {
-            dimmed: false,
-            opacity: 1,
-            selectable: true,
-            evented: true,
-        };
-        expect(states(marchers)).toEqual([undimmed, undimmed, undimmed]);
-
-        const lasso = new LassoListeners({ canvas });
-        lasso.initiateListeners();
-        const far = 1e6;
-        Object.assign(lasso, {
-            startPoint: { x: -far, y: -far },
-            currentPath: [
-                { x: -far, y: -far },
-                { x: far, y: -far },
-                { x: far, y: far },
-                { x: -far, y: far },
-            ],
-        });
-        (
-            lasso as unknown as { closeLassoAndSelect: () => void }
-        ).closeLassoAndSelect();
-        expect(
-            canvas
-                .getActiveObjects()
-                .map((o) => (o as CanvasMarcher).id)
-                .sort(),
-        ).toEqual([1, 2, 3]);
     });
 });

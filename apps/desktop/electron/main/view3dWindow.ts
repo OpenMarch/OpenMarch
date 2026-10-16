@@ -116,6 +116,13 @@ export function initView3dWindow(windowConfig: View3dWindowConfig) {
         }),
     );
     ipcMain.handle("view3d:sql-read", handleSqlRead);
+    ipcMain.handle("view3d:sql-read-batch", (event, queries: unknown) => {
+        if (!isView3dSender(event.sender))
+            throw new Error(
+                "view3d:sql-read-batch is only available to the 3D View",
+            );
+        return DatabaseServices.handleSqlReadBatch(queries);
+    });
 
     // Editor → window: clock, selection and invalidate, relayed as they are.
     for (const channel of VIEW3D_PUBLISH_CHANNELS) {

@@ -137,7 +137,7 @@ function insetText(t: ResolvedTemplate, m: number): string {
 }
 
 /**
- * The pole sleeve guide on silk templates (Q43): fabric this far from the
+ * The pole sleeve guide on silk templates (Q43): the silk this far from the
  * pole edge wraps around the pole, so art there is hidden.
  */
 export const SLEEVE_GUIDE = lengthOf(3, "in");

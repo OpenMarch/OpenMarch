@@ -15,7 +15,7 @@ OpenMarch is an Electron + React desktop app for writing drill (marching band fo
 - **UI**: React 18, Tailwind CSS, Radix UI primitives
 - **State**: Zustand (UI state), React Context (tree state), TanStack React Query (server/DB state)
 - **Database**: SQLite via libsql, Drizzle ORM with SQLite proxy pattern
-- **Canvas**: Fabric.js for drill field rendering
+- **Field**: three.js through React Three Fiber, behind a renderer-free editor (`src/field/`, ADR 0005)
 - **Build**: Vite + vite-plugin-electron, pnpm workspaces
 - **Testing**: Vitest (unit), Playwright (e2e)
 - **Icons**: @phosphor-icons/react
@@ -57,7 +57,6 @@ apps/desktop/
 │   │   └── singletons/           # StateInitializer
 │   ├── global/
 │   │   ├── classes/              # Domain entities (Marcher, Page, Beat, etc.)
-│   │   │   ├── canvasObjects/    # Fabric.js wrappers (CanvasMarcher, etc.)
 │   │   │   └── fieldTemplates/   # Football, Indoor templates
 │   │   └── database/
 │   │       └── db.ts             # Renderer DB connection (proxy)
@@ -71,7 +70,6 @@ apps/desktop/
 │   │   │   ├── index.ts          # Barrel exports
 │   │   │   └── use[Entity].ts    # Query/mutation options
 │   │   ├── useTimingObjects.ts   # Multi-query: pages+beats+measures
-│   │   └── useAnimation.ts       # Canvas animation during playback
 │   ├── stores/                   # Zustand stores (UI state)
 │   ├── context/                  # React Context providers
 │   ├── utilities/                # Helper functions

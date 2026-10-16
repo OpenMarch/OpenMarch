@@ -15,8 +15,8 @@ import {
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import { SectionAppearance } from "@/db-functions";
 import type { ResolverFrameSampler } from "@/timeline/timelineExport";
+import type { AppearanceStepsByMarcherId } from "@/services/appearance/appearanceSteps";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
 import {
@@ -32,7 +32,6 @@ import {
     type FieldFraming,
     renderVideoFrame,
 } from "./videoFrameRenderer";
-import type { MarcherAppearancesByPageId } from "../utils/exportAppearances";
 
 const KEYFRAME_INTERVAL_SECONDS = 2;
 const AUDIO_SLICE_SECONDS = 1;
@@ -44,11 +43,10 @@ export interface VideoExportArgs {
     sortedPages: Page[];
     /** Samples every marcher's position from the resolver at each frame */
     frameSampler: ResolverFrameSampler;
-    sectionAppearances?: SectionAppearance[];
-    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
-    backgroundImage?: HTMLImageElement;
-    gridLines: boolean;
-    halfLines: boolean;
+    /** Each marcher's appearance over the show, as the field draws it */
+    appearanceSteps: AppearanceStepsByMarcherId | undefined;
+    /** The decoded field image, or null when the show has none */
+    backgroundImage: ImageBitmap | null;
     /** Raw bytes of the selected audio file */
     audioData: ArrayBuffer;
     /** Same offset that live playback applies (workspace setting) */
@@ -167,8 +165,10 @@ function channelsToAudioBuffer(
 /**
  * Render the show to a video file (animation + synced audio).
  *
- * Frames are rendered off-screen on an OpenMarchCanvas driven by the same
- * keyframe interpolation as live playback, captured with MediaBunny's
+ * Frames are rendered through the new field off screen (`offscreenField.tsx`), at
+ * full quality whatever the machine, from the same resolver as live playback.
+ * Each frame is drawn synchronously, copied onto a 2D canvas with the overlay
+ * and branding, and captured with MediaBunny's
  * CanvasSource, and streamed to disk through the main process. Audio is
  * appended in one-second slices interleaved with the video frames so both
  * tracks start at timestamp 0 and stay memory-bounded.
@@ -219,14 +219,12 @@ export async function exportVideo(
 
         renderContext = await createVideoRenderContext({
             fieldProperties,
-            sortedPages,
             marchers: args.marchers,
             frameSampler: args.frameSampler,
-            sectionAppearances: args.sectionAppearances,
-            marcherAppearancesByPageId: args.marcherAppearancesByPageId,
+            appearanceSteps: args.appearanceSteps,
             backgroundImage: args.backgroundImage,
-            gridLines: args.gridLines,
-            halfLines: args.halfLines,
+            width,
+            height,
         });
 
         const frameCanvas = document.createElement("canvas");

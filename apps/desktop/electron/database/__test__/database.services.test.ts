@@ -10,6 +10,7 @@ import {
     getSelectedAudioFile,
     handleSqlProxy,
     handleSqlProxyWithDb,
+    handleSqlReadBatch,
     insertAudioFile,
     resumeSqlProxy,
     setDbPath,
@@ -183,6 +184,92 @@ describe("Database Services", () => {
                         "run",
                     ),
                 ).resolves.toEqual({ rows: [] });
+            });
+        });
+
+        describe("read batch (#224)", () => {
+            const select = (sql: string) => ({
+                sql,
+                params: [],
+                method: "all" as const,
+            });
+
+            it("runs every read on the shared connection and answers in order", async () => {
+                await handleSqlProxy(
+                    null,
+                    "INSERT INTO test (name) VALUES (?)",
+                    ["a"],
+                    "run",
+                );
+                expect(
+                    handleSqlReadBatch([
+                        select("SELECT name FROM test"),
+                        select("SELECT COUNT(*) FROM test"),
+                    ]),
+                ).toEqual({
+                    busy: false,
+                    results: [{ rows: [["a"]] }, { rows: [[1]] }],
+                });
+            });
+
+            it("is busy and runs nothing while a transaction is open, then reads the committed state", async () => {
+                await handleSqlProxy(null, "BEGIN", [], "run");
+                await handleSqlProxy(
+                    null,
+                    "INSERT INTO test (name) VALUES (?)",
+                    ["uncommitted"],
+                    "run",
+                );
+                expect(
+                    handleSqlReadBatch([select("SELECT name FROM test")]),
+                ).toEqual({ busy: true });
+                await handleSqlProxy(null, "ROLLBACK", [], "run");
+                expect(
+                    handleSqlReadBatch([select("SELECT name FROM test")]),
+                ).toEqual({ busy: false, results: [{ rows: [] }] });
+            });
+
+            it("refuses anything but reads, and leaves the editor's proxy writable", async () => {
+                expect(() =>
+                    handleSqlReadBatch([
+                        select("SELECT 1"),
+                        select("DELETE FROM test"),
+                    ]),
+                ).toThrow(/only SELECT or WITH/);
+                expect(() =>
+                    handleSqlReadBatch([
+                        { ...select("SELECT 1"), method: "run" },
+                    ]),
+                ).toThrow(/unsupported SQL method run/);
+                expect(() => handleSqlReadBatch("SELECT 1")).toThrow(
+                    /expected an array/,
+                );
+                expect(() =>
+                    handleSqlReadBatch([
+                        select(
+                            "WITH x AS (SELECT 1) INSERT INTO test (name) VALUES ('b')",
+                        ),
+                    ]),
+                ).toThrow(/readonly|read-only|query_only/i);
+                await expect(
+                    handleSqlProxy(
+                        null,
+                        "INSERT INTO test (name) VALUES (?)",
+                        ["c"],
+                        "run",
+                    ),
+                ).resolves.toEqual({ rows: [] });
+            });
+
+            it("is refused while an open suspends the renderer's SQL (P9.8)", () => {
+                const token = suspendSqlProxy("a file is being opened");
+                try {
+                    expect(() =>
+                        handleSqlReadBatch([select("SELECT 1")]),
+                    ).toThrow(/not available: a file is being opened/);
+                } finally {
+                    resumeSqlProxy(token);
+                }
             });
         });
     });

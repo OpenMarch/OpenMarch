@@ -1,4 +1,6 @@
 words:
+  - LANCZOS
+  - autocontrast
   - blocklist
   - actioned
   - mattpocock
@@ -10,6 +12,11 @@ words:
   - lods
   - Sketchfab
   - gltf
+  - glsl
+  - MSAA
+  - Felzenszwalb
+  - Huttenlocher
+  - swiftshader
   - marktime
   - stepoff
   - prefs
@@ -28,6 +35,12 @@ words:
   - frameless
   - headlessly
   - llvmpipe
+  - softpipe
+  - jank
+  - janky
+  - webglcontextlost
+  - webglcontextrestored
+  - WEBGL
   - libvips
   - libuv
   - sandboxed
@@ -206,6 +219,8 @@ words:
   - toks
   - tolgee
   - Tolgee
+  - ffprobe
+  - PSNR
   - Tinykeys
   - tinykeys
   - Topbar

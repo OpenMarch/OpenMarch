@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-    computeFieldViewport,
+    computeFieldView,
     DEFAULT_FIELD_FRAMING,
     FIELD_MARGIN_PX,
 } from "../videoFrameRenderer";
@@ -11,7 +11,7 @@ const fieldProperties = {
     height: 900,
 } as FieldProperties;
 
-describe("computeFieldViewport", () => {
+describe("computeFieldView", () => {
     it("centers the field with auto-fit scale at default framing", () => {
         const frameWidth = 1920;
         const frameHeight = 1080;
@@ -20,20 +20,19 @@ describe("computeFieldViewport", () => {
             frameHeight / (fieldProperties.height + FIELD_MARGIN_PX * 2),
         );
 
-        const viewport = computeFieldViewport(
+        const viewport = computeFieldView(
             fieldProperties,
             frameWidth,
             frameHeight,
         );
 
-        expect(viewport).toEqual([
-            baseScale,
-            0,
-            0,
-            baseScale,
-            (frameWidth - fieldProperties.width * baseScale) / 2,
-            (frameHeight - fieldProperties.height * baseScale) / 2,
-        ]);
+        expect(viewport).toEqual({
+            width: frameWidth,
+            height: frameHeight,
+            zoom: baseScale,
+            panX: (frameWidth - fieldProperties.width * baseScale) / 2,
+            panY: (frameHeight - fieldProperties.height * baseScale) / 2,
+        });
     });
 
     it("applies a scale multiplier on top of auto-fit", () => {
@@ -45,7 +44,7 @@ describe("computeFieldViewport", () => {
         );
         const framing = { ...DEFAULT_FIELD_FRAMING, scale: 1.5 };
 
-        const viewport = computeFieldViewport(
+        const viewport = computeFieldView(
             fieldProperties,
             frameWidth,
             frameHeight,
@@ -53,12 +52,11 @@ describe("computeFieldViewport", () => {
         );
         const scale = baseScale * 1.5;
 
-        expect(viewport[0]).toBe(scale);
-        expect(viewport[3]).toBe(scale);
-        expect(viewport[4]).toBe(
+        expect(viewport.zoom).toBe(scale);
+        expect(viewport.panX).toBe(
             (frameWidth - fieldProperties.width * scale) / 2,
         );
-        expect(viewport[5]).toBe(
+        expect(viewport.panY).toBe(
             (frameHeight - fieldProperties.height * scale) / 2,
         );
     });
@@ -72,19 +70,19 @@ describe("computeFieldViewport", () => {
             offsetY: -0.05,
         };
 
-        const viewport = computeFieldViewport(
+        const viewport = computeFieldView(
             fieldProperties,
             frameWidth,
             frameHeight,
             framing,
         );
-        const defaultViewport = computeFieldViewport(
+        const defaultViewport = computeFieldView(
             fieldProperties,
             frameWidth,
             frameHeight,
         );
 
-        expect(viewport[4]).toBe(defaultViewport[4]! + frameWidth * 0.1);
-        expect(viewport[5]).toBe(defaultViewport[5]! + frameHeight * -0.05);
+        expect(viewport.panX).toBe(defaultViewport.panX + frameWidth * 0.1);
+        expect(viewport.panY).toBe(defaultViewport.panY + frameHeight * -0.05);
     });
 });
