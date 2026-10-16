@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
     formatLength,
-    pageAtSet,
     pageCountAt,
+    pausedPageCount,
     type ReadoutPage,
 } from "../readoutMath";
 
@@ -88,9 +88,14 @@ describe("pageCountAt", () => {
     });
 });
 
-describe("pageAtSet", () => {
-    it("is the selected page at its last count", () => {
-        expect(pageAtSet(pages, 101)).toEqual({
+describe("pausedPageCount", () => {
+    // Page "2" (id 101) runs from 0 s to 4 s, eight beats of 0.5 s; page "3"
+    // (id 102) from 4 s to 6 s
+    it("counts the beats before a paused time inside the selected page", () => {
+        expect(pausedPageCount(pages, 101, 0)?.count).toBe(0);
+        expect(pausedPageCount(pages, 101, 500)?.count).toBe(1);
+        expect(pausedPageCount(pages, 101, 2000)?.count).toBe(4);
+        expect(pausedPageCount(pages, 101, 4000)).toEqual({
             pageId: 101,
             pageName: "2",
             count: 8,
@@ -98,9 +103,32 @@ describe("pageAtSet", () => {
         });
     });
 
+    it("moves with each beat step", () => {
+        const counts = [1000, 1500, 2000].map(
+            (ms) => pausedPageCount(pages, 101, ms)?.count,
+        );
+        expect(counts).toEqual([2, 3, 4]);
+    });
+
+    it("keeps the selected page at a boundary it shares with the previous one", () => {
+        expect(pausedPageCount(pages, 102, 4000)).toMatchObject({
+            pageId: 102,
+            count: 0,
+        });
+        expect(pausedPageCount(pages, 101, 4000)).toMatchObject({
+            pageId: 101,
+            count: 8,
+        });
+    });
+
+    it("is the page's set when the time is outside the selected page", () => {
+        expect(pausedPageCount(pages, 102, 1000)?.count).toBe(4);
+        expect(pausedPageCount(pages, 101, 5000)?.count).toBe(8);
+    });
+
     it("is null for an unknown or missing page", () => {
-        expect(pageAtSet(pages, 999)).toBeNull();
-        expect(pageAtSet(pages, null)).toBeNull();
+        expect(pausedPageCount(pages, 999, 0)).toBeNull();
+        expect(pausedPageCount(pages, null, 0)).toBeNull();
     });
 });
 

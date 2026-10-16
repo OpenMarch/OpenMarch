@@ -18,8 +18,8 @@ import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
 import { useCameraStore } from "../camera/cameraStore";
 import {
     formatLength,
-    pageAtSet,
     pageCountAt,
+    pausedPageCount,
     type PageCount,
     type ReadoutPage,
 } from "./readoutMath";
@@ -44,7 +44,8 @@ const samePageCount = (a: PageCount | null, b: PageCount | null) =>
 
 /**
  * The page and count at the show time, re-rendering only when they change,
- * and writes the show time into `timeRef` every frame.
+ * and writes the show time into `timeRef` every frame. Paused, it is the
+ * selected page, counted at the held time.
  */
 function useLivePageCount(
     pages: readonly ReadoutPage[],
@@ -57,13 +58,21 @@ function useLivePageCount(
     useEffect(() => {
         let frame = 0;
         const update = () => {
-            const showMs = useView3dSyncStore.getState().showMs();
+            const sync = useView3dSyncStore.getState();
+            const showMs = sync.showMs();
             const el = timeRef.current;
             if (el) {
                 el.textContent = formatShowTime(showMs);
                 el.dataset.showMs = String(Math.round(showMs));
             }
-            const next = pageCountAt(pagesRef.current, showMs);
+            const next =
+                (!sync.clock?.playing &&
+                    pausedPageCount(
+                        pagesRef.current,
+                        sync.selection.selectedPageId,
+                        showMs,
+                    )) ||
+                pageCountAt(pagesRef.current, showMs);
             setLive((prev) => (samePageCount(prev, next) ? prev : next));
             frame = requestAnimationFrame(update);
         };
@@ -86,9 +95,7 @@ export function Readout({ large }: { large: boolean }) {
     const field = useQuery(fieldPropertiesQueryOptions());
     const system = field.data?.measurementSystem ?? "imperial";
 
-    const live = useLivePageCount(pages, timeRef);
-    // Paused, the editor shows the selected page's set.
-    const current = (!playing && pageAtSet(pages, selectedPageId)) || live;
+    const current = useLivePageCount(pages, timeRef);
 
     const length = (meters: number) => {
         const { value, unit } = formatLength(meters, system);

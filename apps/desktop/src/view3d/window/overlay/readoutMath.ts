@@ -51,17 +51,31 @@ export function pageCountAt(
     };
 }
 
-/** The selected page at its set, which is what the paused editor shows. */
-export function pageAtSet(
+/**
+ * The selected page and the count at a paused show time. A paused editor
+ * can hold its playhead on any beat (a beat step, a click on the timeline),
+ * so the count follows the time while it lies within the selected page.
+ * Outside the page it is the page's set, which is what the editor shows
+ * when only a page is selected.
+ */
+export function pausedPageCount(
     pages: readonly ReadoutPage[],
     pageId: number | null,
+    showMs: number,
 ): PageCount | null {
     const page = pages.find((p) => p.id === pageId);
     if (!page) return null;
+    const startMs = page.timestamp * 1000;
+    const endMs = (page.timestamp + page.duration) * 1000;
+    const inPage =
+        showMs >= startMs - EPSILON_MS && showMs <= endMs + EPSILON_MS;
+    const started = page.beats.filter(
+        (beat) => beat.timestamp * 1000 < showMs - EPSILON_MS,
+    ).length;
     return {
         pageId: page.id,
         pageName: page.name,
-        count: page.counts,
+        count: inPage ? Math.min(page.counts, started) : page.counts,
         total: page.counts,
     };
 }
