@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { XIcon, PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import { defaultSettings, useUiSettingsStore } from "@/stores/UiSettingsStore";
 import AudioPlayer from "./audio/AudioPlayer";
@@ -8,37 +7,6 @@ import { useFullscreenStore } from "@/stores/FullscreenStore";
 import TimelineModePanel from "./TimelineModePanel";
 import { T } from "@tolgee/react";
 import clsx from "clsx";
-import { TOAST_BOTTOM_VAR } from "@/components/ui/Toaster";
-
-/**
- * Keeps toasts 8px above `ref`'s top while it is mounted (`TOAST_BOTTOM_VAR`): in their usual
- * corner they would cover the timeline's right end, where **+** is at the show's end, and a toast
- * holds still while the pointer is over it.
- */
-function useToastsAbove(ref: React.RefObject<HTMLElement | null>) {
-    useEffect(() => {
-        const element = ref.current;
-        if (!element) return;
-        const root = document.documentElement;
-        const place = () =>
-            root.style.setProperty(
-                TOAST_BOTTOM_VAR,
-                `${Math.max(0, window.innerHeight - element.getBoundingClientRect().top) + 8}px`,
-            );
-        place();
-        const observer =
-            typeof ResizeObserver === "undefined"
-                ? null
-                : new ResizeObserver(place);
-        observer?.observe(element);
-        window.addEventListener("resize", place);
-        return () => {
-            observer?.disconnect();
-            window.removeEventListener("resize", place);
-            root.style.removeProperty(TOAST_BOTTOM_VAR);
-        };
-    }, [ref]);
-}
 
 export default function TimelineContainer() {
     const focussedComponent = useUiSettingsStore(
@@ -151,15 +119,12 @@ function TimelineZoomControls() {
 }
 
 /**
- * The timeline with the audio player beside it, and toasts kept above it (`useToastsAbove`).
+ * The timeline with the audio player beside it.
  * UI-12: perspective and fullscreen live on the field's zoom widget.
  */
 function TimelineModeContainer() {
-    const ref = useRef<HTMLDivElement>(null);
-    useToastsAbove(ref);
     return (
         <div
-            ref={ref}
             className="flex min-h-0 flex-1 gap-8"
             data-testid="timeline-mode-container"
         >

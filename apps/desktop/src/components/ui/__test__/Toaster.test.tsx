@@ -79,7 +79,7 @@ describe("Toaster", () => {
         // The text fills the first row beside the icon, so the buttons wrap below it
         expect(li.querySelector("[data-icon]")).not.toBeNull();
         expect(content.className).toContain(
-            "[[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-40px)]",
+            "[[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)]",
         );
         // Cancel comes first and pushes both buttons right
         expect(
