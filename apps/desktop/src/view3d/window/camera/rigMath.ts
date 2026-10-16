@@ -315,6 +315,24 @@ export function defaultCameraId(cameras: CameraSeat[]): string | null {
     return cameras[0]?.id ?? null;
 }
 
+/**
+ * The camera a venue opens on: the first in the show's own list, else the
+ * default from {@link defaultCameraId}. With an empty list it opens on the
+ * kit's default without listing it, so the view never starts nowhere.
+ */
+export function openingCamera(
+    cameras: CameraSeat[],
+    customized: boolean,
+    kitCameras: CameraSeat[],
+): { seat: CameraSeat; listed: boolean } | null {
+    if (customized && cameras.length > 0)
+        return { seat: cameras[0], listed: true };
+    const pool = cameras.length > 0 ? cameras : kitCameras;
+    const id = defaultCameraId(pool);
+    const seat = pool.find((c) => c.id === id);
+    return seat ? { seat, listed: pool === cameras } : null;
+}
+
 /** Horizontal distance from the eye to the focus, like the demo's "to the 50". */
 export function horizontalDistance(a: Vector3Tuple, b: Vector3Tuple): number {
     return Math.hypot(a[0] - b[0], a[2] - b[2]);

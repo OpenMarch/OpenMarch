@@ -152,3 +152,16 @@ export const SizePresetFileSchema = z.object({
     schemaVersion: z.literal(LIBRARY_SCHEMA_VERSION),
     presets: z.array(SizePresetSchema),
 });
+
+/**
+ * A 3D View camera profile (ADR 0002 D-12, amended 2026-10-16). Like size
+ * presets, the store keeps profiles and `data` is owned by the 3D View
+ * (`profileDataSchema` in `src/view3d/core/cameraList.ts`).
+ */
+export const CameraProfileEntrySchema = SizePresetSchema;
+export type CameraProfileEntry = SizePreset;
+
+export const CameraProfileFileSchema = z.object({
+    schemaVersion: z.literal(LIBRARY_SCHEMA_VERSION),
+    profiles: z.array(CameraProfileEntrySchema),
+});

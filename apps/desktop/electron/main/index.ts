@@ -79,7 +79,11 @@ import {
     writeLibraryIpcSelfTest,
 } from "./services/library-ipc-self-test";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
-import { initLibraryIpc, watchEditorWindow } from "./library-ipc";
+import {
+    getLibraryStore,
+    initLibraryIpc,
+    watchEditorWindow,
+} from "./library-ipc";
 import { isPdfRendererWindow } from "./artwork-import";
 import {
     initAuthBeforeReady,
@@ -590,6 +594,7 @@ void app.whenReady().then(async () => {
         getTheme: () => store.get("theme", "light") as string,
         getLanguage: () => store.get("language", "en") as string,
         getEditorWindow: () => win,
+        getLibraryStore,
     });
     initLibraryIpc({
         getEditorWindow: () => win,

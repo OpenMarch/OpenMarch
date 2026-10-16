@@ -450,6 +450,43 @@ describe("local Library store", () => {
         );
     });
 
+    it("saves, renames, adds by id and deletes camera profiles", async () => {
+        const data = { kit: "hs", cameras: [{ kind: "kit", id: "pressBox" }] };
+        const saved = await store.saveCameraProfile({ name: "Judges", data });
+        const renamed = await store.saveCameraProfile({
+            id: saved.id,
+            name: "Judges' views",
+            data,
+        });
+        expect(renamed.createdAt).toBe(saved.createdAt);
+        // A profile from another computer keeps its id.
+        const added = await store.saveCameraProfile({
+            id: SHOW_ITEM_ID,
+            name: "From a colleague",
+            data,
+        });
+        expect(added.id).toBe(SHOW_ITEM_ID);
+        const reopened = await open();
+        expect(await reopened.listCameraProfiles()).toEqual([renamed, added]);
+        expect(
+            JSON.parse(
+                await readFile(path.join(root, "camera-profiles.json"), "utf8"),
+            ).profiles,
+        ).toHaveLength(2);
+        await reopened.deleteCameraProfile(saved.id);
+        expect(await reopened.listCameraProfiles()).toEqual([added]);
+        await expectLibraryError(
+            reopened.deleteCameraProfile(saved.id),
+            "not-found",
+        );
+        await expectLibraryError(
+            Promise.resolve().then(() =>
+                reopened.saveCameraProfile({ id: "nope", name: "x", data }),
+            ),
+            "invalid-input",
+        );
+    });
+
     it("reports a corrupt size presets file as corrupt", async () => {
         await writeFile(path.join(root, "size-presets.json"), "not json");
         await expectLibraryError(store.listSizePresets(), "corrupt");

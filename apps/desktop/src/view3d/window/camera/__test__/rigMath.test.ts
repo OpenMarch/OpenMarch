@@ -3,6 +3,7 @@ import { PerspectiveCamera, Vector3, type Vector3Tuple } from "three";
 import type { CameraSeat } from "@/view3d/core/types";
 import { RigController } from "../rigController";
 import {
+    openingCamera,
     ARC_LIFT_MAX,
     arcLift,
     cameraIndexForKey,
@@ -352,5 +353,37 @@ describe("RigController fly-to", () => {
             [camera.position.x, camera.position.y, camera.position.z],
             [10, 5, 30],
         );
+    });
+});
+
+describe("openingCamera", () => {
+    const seat = (id: string): CameraSeat => ({
+        id,
+        labelKey: id,
+        kind: "seat",
+        position: [0, 1, 2],
+        target: [0, 0, 0],
+    });
+    const kit = [seat("frontRow"), seat("pressBox")];
+
+    it("opens the defaults on the press box", () => {
+        expect(openingCamera(kit, false, kit)).toEqual({
+            seat: kit[1],
+            listed: true,
+        });
+    });
+
+    it("opens a show's own list on its first camera", () => {
+        expect(openingCamera([kit[0]], true, kit)?.seat.id).toBe("frontRow");
+        expect(openingCamera([kit[0], kit[1]], true, kit)?.seat.id).toBe(
+            "frontRow",
+        );
+    });
+
+    it("falls back to the kit's default, unlisted, for an empty list", () => {
+        expect(openingCamera([], true, kit)).toEqual({
+            seat: kit[1],
+            listed: false,
+        });
     });
 });

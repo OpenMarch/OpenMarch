@@ -49,6 +49,16 @@ export interface LibraryIpcConfig {
 const LAST_FOLDER_SETTING = "libraryImportFolder";
 
 let service: LibraryIpcService | null = null;
+let getStore: (() => Promise<LibraryStore>) | null = null;
+
+/**
+ * The Library store, opened on first use. For main-process callers outside
+ * the `library:*` IPC: the 3D View's camera profile calls (ADR 0002 D-12).
+ */
+export function getLibraryStore(): Promise<LibraryStore> {
+    if (!getStore) return Promise.reject(new Error("Library not initialized"));
+    return getStore();
+}
 
 function senderOf(event: IpcMainInvokeEvent | IpcMainEvent): IpcSender {
     const contents = event.sender;
@@ -80,18 +90,19 @@ export function initLibraryIpc(config: LibraryIpcConfig): LibraryIpcService {
             }) as unknown as WorkerChild,
     });
 
+    getStore = () => {
+        storePromise ??= openLibraryStore({
+            root:
+                config.libraryRoot ??
+                path.join(app.getPath("userData"), "library"),
+        }).catch((error: unknown) => {
+            storePromise = null;
+            throw error;
+        });
+        return storePromise;
+    };
     const created = createLibraryIpcService({
-        getStore: () => {
-            storePromise ??= openLibraryStore({
-                root:
-                    config.libraryRoot ??
-                    path.join(app.getPath("userData"), "library"),
-            }).catch((error: unknown) => {
-                storePromise = null;
-                throw error;
-            });
-            return storePromise;
-        },
+        getStore,
         worker,
         showOpenDialog: async (spec) => {
             const editor = config.getEditorWindow();

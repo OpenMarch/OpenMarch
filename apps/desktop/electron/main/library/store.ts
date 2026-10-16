@@ -30,6 +30,7 @@ import {
     LicenseIdSchema,
     PartRoleSchema,
     SizePresetFileSchema,
+    CameraProfileFileSchema,
     VersionHashSchema,
     type DerivedFrom,
     type LibraryIndexEntry,
@@ -40,6 +41,7 @@ import {
     type LibraryVersion,
     type LicenseFields,
     type SizePreset,
+    type CameraProfileEntry,
 } from "./types";
 
 export type LibraryErrorCode =
@@ -156,6 +158,14 @@ export interface LibraryStore {
         data: SizePreset["data"];
     }): Promise<SizePreset>;
     deleteSizePreset(id: string): Promise<void>;
+    listCameraProfiles(): Promise<CameraProfileEntry[]>;
+    /** Saves a new profile without `id`; with one, replaces or adds that id. */
+    saveCameraProfile(input: {
+        id?: string;
+        name: string;
+        data: CameraProfileEntry["data"];
+    }): Promise<CameraProfileEntry>;
+    deleteCameraProfile(id: string): Promise<void>;
 }
 
 const ITEMS_DIR = "items";
@@ -163,6 +173,7 @@ const BLOBS_DIR = path.join("blobs", "sha256");
 const TMP_DIR = "tmp";
 const INDEX_FILE = "index.json";
 const SIZE_PRESETS_FILE = "size-presets.json";
+const CAMERA_PROFILES_FILE = "camera-profiles.json";
 
 export function blobRelativePath(hash: string): string {
     return path.join(BLOBS_DIR, hash.slice(0, 2), hash);
@@ -533,6 +544,74 @@ class LocalLibrary implements LibraryStore {
         });
     }
 
+    // Camera profiles
+
+    async listCameraProfiles(): Promise<CameraProfileEntry[]> {
+        let raw: string;
+        try {
+            raw = await readFile(
+                path.join(this.root, CAMERA_PROFILES_FILE),
+                "utf8",
+            );
+        } catch (error) {
+            if (isMissing(error)) return [];
+            throw error;
+        }
+        let json: unknown;
+        try {
+            json = JSON.parse(raw);
+        } catch (error) {
+            throw new LibraryError(
+                "corrupt",
+                `Camera profiles are unreadable: ${String(error)}`,
+            );
+        }
+        const parsed = CameraProfileFileSchema.safeParse(json);
+        if (!parsed.success) {
+            throw new LibraryError(
+                "corrupt",
+                `Camera profiles are unreadable: ${parsed.error.message}`,
+            );
+        }
+        return parsed.data.profiles;
+    }
+
+    saveCameraProfile(input: {
+        id?: string;
+        name: string;
+        data: CameraProfileEntry["data"];
+    }): Promise<CameraProfileEntry> {
+        if (input.id !== undefined) checkItemId(input.id);
+        const name = cleanName(input.name);
+        return this.exclusive(async () => {
+            const profiles = await this.listCameraProfiles();
+            const at = this.now().toISOString();
+            const existing = profiles.find((p) => p.id === input.id);
+            const profile: CameraProfileEntry = {
+                id: input.id ?? this.newUUID(),
+                name,
+                createdAt: existing?.createdAt ?? at,
+                updatedAt: at,
+                data: input.data,
+            };
+            await this.writeCameraProfiles([
+                ...profiles.filter((p) => p.id !== profile.id),
+                profile,
+            ]);
+            return profile;
+        });
+    }
+
+    deleteCameraProfile(id: string): Promise<void> {
+        return this.exclusive(async () => {
+            const profiles = await this.listCameraProfiles();
+            if (!profiles.some((p) => p.id === id)) {
+                throw new LibraryError("not-found", `No camera profile ${id}`);
+            }
+            await this.writeCameraProfiles(profiles.filter((p) => p.id !== id));
+        });
+    }
+
     // Internals
 
     /** Mutations run one at a time, so the index and manifests stay in step. */
@@ -620,6 +699,15 @@ class LocalLibrary implements LibraryStore {
         await this.writeJson(path.join(this.root, SIZE_PRESETS_FILE), {
             schemaVersion: LIBRARY_SCHEMA_VERSION,
             presets,
+        });
+    }
+
+    private async writeCameraProfiles(
+        profiles: CameraProfileEntry[],
+    ): Promise<void> {
+        await this.writeJson(path.join(this.root, CAMERA_PROFILES_FILE), {
+            schemaVersion: LIBRARY_SCHEMA_VERSION,
+            profiles,
         });
     }
 

@@ -5,14 +5,18 @@
  *
  * - `activeCameraId`: the kit camera the view is at or flying to, or null
  *   after the viewer orbits, pans, zooms or picks a seat. Highlight its chip.
- * - `selectCamera(id)`: fly to one of the current kit's cameras
- *   (`useView3dSceneStore().kit.cameras`, in bar order). Ids the kit doesn't
- *   have are ignored.
+ * - `selectCamera(id)`: fly to one of the listed cameras
+ *   (`useView3dSceneStore().cameras`, in menu order). Ids not listed are
+ *   ignored.
  * - `pickMode` and `setPickMode(on)`: pick-a-seat. While on, the canvas shows
  *   a crosshair and the next click on a stand moves there; the rig turns it
  *   off after one pick or on Esc. An Esc keydown that cancels pick mode is
  *   `preventDefault()`ed, so a fullscreen Esc handler can skip events with
  *   `defaultPrevented`.
+ * - `markActive(id)`: the view is already at camera `id` (it was just saved
+ *   there), so highlight it without flying.
+ * - `currentPose()`: the view right now (eye, look-at point, field of
+ *   view), for saving it as a camera. Null before the rig mounts.
  * - `readout`: eye height above the ground and horizontal distance from the
  *   eye to the kit's focus (the field center), in meters. Updated at most 10
  *   times a second, and only when a value changes by 5 cm or more.
@@ -21,6 +25,7 @@
  */
 import { create } from "zustand";
 import { useView3dSceneStore } from "../sceneStore";
+import type { ViewPose } from "@/view3d/core/cameraList";
 
 export interface CameraReadout {
     eyeHeightM: number;
@@ -39,6 +44,10 @@ export interface CameraState {
     pickMode: boolean;
     setPickMode: (on: boolean) => void;
     readout: CameraReadout;
+    markActive: (id: string) => void;
+    currentPose: () => ViewPose | null;
+    /** Rig only: sets where `currentPose` reads from. */
+    _setPoseSource: (source: (() => ViewPose) | null) => void;
     /** Rig only: the latest `selectCamera` call. */
     _request: CameraRequest | null;
     /** Rig only. */
@@ -52,11 +61,13 @@ export const READOUT_INTERVAL_MS = 100;
 /** Readout changes smaller than this (meters) aren't published. */
 export const READOUT_EPSILON_M = 0.05;
 
+let poseSource: (() => ViewPose) | null = null;
+
 export const useCameraStore = create<CameraState>()((set, get) => ({
     activeCameraId: null,
     selectCamera: (id) => {
-        const kit = useView3dSceneStore.getState().kit;
-        if (kit && !kit.cameras.some((c) => c.id === id)) return;
+        const { kit, cameras } = useView3dSceneStore.getState();
+        if (kit && !cameras.some((c) => c.id === id)) return;
         set({
             activeCameraId: id,
             pickMode: false,
@@ -66,6 +77,11 @@ export const useCameraStore = create<CameraState>()((set, get) => ({
     pickMode: false,
     setPickMode: (on) => set({ pickMode: on }),
     readout: { eyeHeightM: 0, distanceToFocusM: 0 },
+    markActive: (id) => set({ activeCameraId: id, pickMode: false }),
+    currentPose: () => poseSource?.() ?? null,
+    _setPoseSource: (source) => {
+        poseSource = source;
+    },
     _request: null,
     _setActive: (id) => set({ activeCameraId: id }),
     _setReadout: (readout) => set({ readout }),

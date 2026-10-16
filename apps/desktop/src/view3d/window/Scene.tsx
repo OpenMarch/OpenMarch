@@ -41,6 +41,8 @@ import {
 } from "three";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
 import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
+import { useShowCameras } from "@/hooks/queries/useShowCameras";
+import type { ShowVenueCameras } from "@/view3d/core/cameraList";
 import {
     buildCrowd,
     createEnvironment,
@@ -116,6 +118,7 @@ function useStable<T>(value: T, key: string): T {
 /** The 3D View canvas, filling its parent. */
 export default function Scene() {
     const venue = useVenueSettings();
+    const showCameras = useShowCameras();
     const field = useQuery(fieldPropertiesQueryOptions());
     const fieldImage = useFieldImage();
     const kitId = useView3dSceneStore((s) => s.kitId);
@@ -126,7 +129,9 @@ export default function Scene() {
         (s) => s.powerPrefs.saveOnBattery,
     );
 
-    const ready = venue.data && field.data && fieldImage.loaded;
+    // Cameras load first too, so a venue opens on the show's first camera.
+    const ready =
+        venue.data && showCameras.data && field.data && fieldImage.loaded;
     return (
         <div
             className="absolute inset-0"
@@ -159,6 +164,7 @@ export default function Scene() {
                 {ready && (
                     <SceneContents
                         settings={venue.data!}
+                        savedCameras={showCameras.data!.venues}
                         fieldProperties={field.data!}
                         image={fieldImage.image}
                     />
@@ -172,6 +178,7 @@ export default function Scene() {
 
 interface SceneContentsProps {
     settings: VenueSettings;
+    savedCameras: ShowVenueCameras;
     fieldProperties: FieldProperties;
     image: ImageBitmap | null;
 }
@@ -179,6 +186,7 @@ interface SceneContentsProps {
 // eslint-disable-next-line max-lines-per-function
 function SceneContents({
     settings,
+    savedCameras,
     fieldProperties: fieldPropertiesIn,
     image,
 }: SceneContentsProps) {
@@ -229,6 +237,12 @@ function SceneContents({
             setEnv(null);
         };
     }, [scene, quality]);
+
+    // The show's camera lists. Set before the kit, so a new kit opens on
+    // the show's first camera.
+    useEffect(() => {
+        useView3dSceneStore.getState()._setSavedCameras(savedCameras);
+    }, [savedCameras]);
 
     // Kit: rebuilt only for a new kit id, footprint, params or quality.
     useEffect(() => {

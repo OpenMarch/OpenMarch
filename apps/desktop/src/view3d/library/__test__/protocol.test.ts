@@ -62,6 +62,11 @@ describe("library protocol", () => {
             "hello",
             "on",
             "requestVenueChange",
+            // ADR 0002 D-5 and D-12 amendments 2026-10-16: camera lists
+            // without undo, and camera profiles (the window's only Library
+            // calls, checked in main)
+            "requestCamerasChange",
+            "cameraProfiles",
             "requestPlayback",
             // ADR 0002 D-4 extension 2026-10-16 (#216)
             "requestPlaybackSpeed",

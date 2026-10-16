@@ -2,11 +2,15 @@
  * The 3D View camera rig (P3.2, ui.md UI-1 and UI-3). Mounted inside the
  * scene's `<Canvas>`. It:
  *
- * - opens each venue on its default camera (`pressBox`, the gym's `geJudge`,
- *   else the kit's first) with a fly-in; a rebuild of the same venue (new
- *   params or quality) keeps the view;
- * - flies to a kit camera on `useCameraStore().selectCamera(id)` and on keys
- *   1–9, over 1.1 s with an upward arc, or jumps under reduced motion;
+ * - opens each venue on its default camera (the first in the show's own
+ *   list, else `pressBox`, the gym's `geJudge`, else the kit's first) with a
+ *   fly-in; a rebuild of the same venue (new params or quality) keeps the
+ *   view;
+ * - flies to a listed camera (`useView3dSceneStore().cameras`) on
+ *   `useCameraStore().selectCamera(id)` and on keys 1–9, over 1.1 s with an
+ *   upward arc, or jumps under reduced motion;
+ * - tells `useCameraStore().currentPose()` where the view is, for saving
+ *   cameras;
  * - orbits on drag (a flung drag coasts to a stop), grab-pans on
  *   right-drag or Shift+drag (the ground point under the pointer stays
  *   under it), and zooms toward the cursor on the wheel (eased) or a pinch;
@@ -25,6 +29,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
+    PerspectiveCamera,
     Raycaster,
     Vector2,
     Vector3,
@@ -40,9 +45,9 @@ import { requestDraw } from "../drawWake";
 import { pickAlong } from "../scenePick";
 import {
     cameraIndexForKey,
-    defaultCameraId,
     FLY_IN_OFFSET,
     horizontalDistance,
+    openingCamera,
     SEAT_FOV_DEG,
     SEATED_EYE,
     seatAim,
@@ -150,23 +155,24 @@ export default function CameraRig() {
     useEffect(() => {
         if (!kit || !kitId) return;
         const store = useCameraStore.getState();
+        const { cameras, camerasCustomized } = useView3dSceneStore.getState();
         if (shownKitIdRef.current === kitId) {
             // Same venue rebuilt: keep the view.
             if (
                 store.activeCameraId &&
-                !kit.cameras.some((c) => c.id === store.activeCameraId)
+                !cameras.some((c) => c.id === store.activeCameraId)
             )
                 store._setActive(null);
             return;
         }
         shownKitIdRef.current = kitId;
         store.setPickMode(false);
-        const id = defaultCameraId(kit.cameras);
-        const seat = kit.cameras.find((c) => c.id === id);
-        if (!seat) {
+        const opening = openingCamera(cameras, camerasCustomized, kit.cameras);
+        if (!opening) {
             store._setActive(null);
             return;
         }
+        const { seat } = opening;
         const start: Vector3Tuple = [
             seat.position[0] + FLY_IN_OFFSET[0],
             seat.position[1] + FLY_IN_OFFSET[1],
@@ -174,18 +180,52 @@ export default function CameraRig() {
         ];
         rig.jumpTo(start, kit.focus);
         flyToSeatRef.current(seat);
-        store._setActive(seat.id);
+        store._setActive(opening.listed ? seat.id : null);
     }, [kit, kitId, rig]);
+
+    // An edit to the list that removes the active camera leaves a free view.
+    useEffect(
+        () =>
+            useView3dSceneStore.subscribe((state, prev) => {
+                // A venue rebuild is handled with the new kit above.
+                if (state.cameras === prev.cameras || state.kit !== prev.kit)
+                    return;
+                const store = useCameraStore.getState();
+                if (
+                    store.activeCameraId &&
+                    !state.cameras.some((c) => c.id === store.activeCameraId)
+                )
+                    store._setActive(null);
+            }),
+        [],
+    );
+
+    // Where the view is, for saving it as a camera.
+    useEffect(() => {
+        const store = useCameraStore.getState();
+        store._setPoseSource(() => {
+            rig.sync();
+            const p = camera.position;
+            return {
+                position: [p.x, p.y, p.z],
+                target: rig.lookAt,
+                fovDeg:
+                    camera instanceof PerspectiveCamera
+                        ? camera.fov
+                        : SEAT_FOV_DEG,
+            };
+        });
+        return () => store._setPoseSource(null);
+    }, [camera, rig]);
 
     // selectCamera() from the overlay.
     useEffect(
         () =>
             useCameraStore.subscribe((state, prev) => {
                 if (!state._request || state._request === prev._request) return;
-                const current = useView3dSceneStore.getState().kit;
-                const seat = current?.cameras.find(
-                    (c) => c.id === state._request!.id,
-                );
+                const seat = useView3dSceneStore
+                    .getState()
+                    .cameras.find((c) => c.id === state._request!.id);
                 if (seat) flyToSeatRef.current(seat);
             }),
         [],
@@ -408,8 +448,8 @@ export default function CameraRig() {
                 return;
             }
             const index = cameraIndexForKey(e.key);
-            const current = useView3dSceneStore.getState().kit;
-            const seat = index === null ? undefined : current?.cameras[index];
+            const { cameras } = useView3dSceneStore.getState();
+            const seat = index === null ? undefined : cameras[index];
             if (!seat) return;
             e.preventDefault();
             store.selectCamera(seat.id);

@@ -23,6 +23,8 @@ import {
     type View3dPublishChannel,
 } from "@/view3d/sync/protocol";
 import { parseVenueSettings } from "@/view3d/core/venueSettings";
+import { showCamerasSchema } from "@/view3d/core/cameraList";
+import { localCameraProfiles } from "@/view3d/window/localCameraProfiles";
 
 const migrationSql = import.meta.glob<string>(
     "../electron/database/migrations/*.sql",
@@ -140,6 +142,8 @@ class WebHost {
             return () => set.delete(listener);
         },
         requestVenueChange: (settings) => this.writeVenue(settings),
+        requestCamerasChange: (cameras) => this.writeCameras(cameras),
+        cameraProfiles: localCameraProfiles,
         requestPlayback: (action) => this.runPlayback(action),
     };
 
@@ -180,6 +184,23 @@ class WebHost {
             });
         } catch (error) {
             console.error("Rejected venue settings", error);
+        }
+    }
+
+    private writeCameras(cameras: unknown) {
+        if (!this.db) return;
+        try {
+            const json = JSON.stringify(showCamerasSchema.parse(cameras));
+            this.db.run(
+                `INSERT INTO view3d_cameras (id, json_data) VALUES (1, ?)
+                 ON CONFLICT(id) DO UPDATE SET json_data = excluded.json_data`,
+                [json],
+            );
+            this.emit(VIEW3D_INVALIDATE_CHANNEL, {
+                queryKeys: [["view3d_cameras"]],
+            });
+        } catch (error) {
+            console.error("Rejected camera lists", error);
         }
     }
 

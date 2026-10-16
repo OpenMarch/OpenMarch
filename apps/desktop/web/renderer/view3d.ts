@@ -25,6 +25,7 @@ import {
 } from "../../src/view3d/sync/protocol";
 import type { View3dApi } from "../../electron/preload/view3d";
 import { storageKey } from "./channel";
+import { localCameraProfiles } from "../../src/view3d/window/localCameraProfiles";
 import {
     emit,
     handleInPage,
@@ -48,6 +49,7 @@ type FromView3d =
     | { type: "hello" }
     | { type: "bye" }
     | { type: "venue"; settings: unknown }
+    | { type: "cameras"; cameras: unknown }
     | { type: "playback"; action: unknown; release?: unknown; speed?: unknown }
     | {
           type: "sql";
@@ -185,6 +187,11 @@ export function registerView3dHost() {
                 case "venue":
                     emit(VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL, {
                         settings: message.settings,
+                    });
+                    break;
+                case "cameras":
+                    emit(VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL, {
+                        cameras: message.cameras,
                     });
                     break;
                 case "playback":
@@ -378,6 +385,9 @@ export function installView3dApi() {
             };
         },
         requestVenueChange: (settings) => post({ type: "venue", settings }),
+        requestCamerasChange: (cameras) => post({ type: "cameras", cameras }),
+        // No Library on the web: profiles stay in this browser.
+        cameraProfiles: localCameraProfiles,
         requestPlayback: (action, release = false) =>
             post({ type: "playback", action, release }),
         requestPlaybackSpeed: (speed) =>

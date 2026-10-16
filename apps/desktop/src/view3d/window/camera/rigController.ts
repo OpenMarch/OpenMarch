@@ -74,6 +74,11 @@ export class RigController {
         return this.active !== null;
     }
 
+    /** The point the camera looks at now, mid-flight included. */
+    get lookAt(): Vector3Tuple {
+        return [...(this.active ? this.active.currentTarget : this.target)];
+    }
+
     /** True while the camera moves on its own: a fly-to, an easing zoom, a coasting orbit. */
     get moving(): boolean {
         return (

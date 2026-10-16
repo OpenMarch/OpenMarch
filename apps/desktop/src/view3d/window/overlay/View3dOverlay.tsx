@@ -2,7 +2,8 @@
  * The 3D View window's overlay (ui.md UI-2, UI-4, UI-5, UI-6), floating over
  * the scene:
  *
- * - top left: the camera menu and Pick a seat;
+ * - top left: the camera menu and Pick a seat, with the Cameras panel
+ *   under them when open;
  * - top right: fullscreen and the settings button, with the settings panel
  *   under them when open;
  * - bottom left: playback controls, then the readout.
@@ -13,10 +14,10 @@
  * Keys: Space (Shift+Space from the playhead), Q and E (Shift for a beat,
  * Alt or Home/End for the ends), and
  * ] and [ held for double or half speed, run the editor's playback actions, F toggles fullscreen and C the crowd. Esc
- * closes the settings panel, then leaves fullscreen. The camera rig (P3.2)
+ * closes the settings panel, then the Cameras panel, then leaves fullscreen. The camera rig (P3.2)
  * owns 1–9, and Esc for pick-a-seat.
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslate } from "@tolgee/react";
 import {
     CornersInIcon,
@@ -26,6 +27,7 @@ import {
 import clsx from "clsx";
 import { useCameraStore } from "../camera/cameraStore";
 import { CameraBar } from "./CameraBar";
+import { CamerasPanel } from "./CamerasPanel";
 import { Panel, ToggleButton } from "./Panel";
 import { HELD_PLAYBACK_ACTIONS, playbackActionForKey } from "./playback";
 import type { View3dPlaybackAction } from "@/view3d/sync/protocol";
@@ -98,12 +100,15 @@ function usePlaybackShortcuts() {
 
 /**
  * F toggles fullscreen and C the crowd. Esc closes the settings panel, else
- * leaves fullscreen, unless the rig used it to cancel pick-a-seat.
+ * the Cameras panel, else leaves fullscreen, unless the rig used it to
+ * cancel pick-a-seat.
  */
 function useOverlayShortcuts(
     toggleFullscreen: () => void,
     settingsOpen: boolean,
     closeSettings: () => void,
+    camerasOpen: boolean,
+    closeCameras: () => void,
 ) {
     const { settings, request } = useVenueRequest();
     const latest = useRef({
@@ -112,6 +117,8 @@ function useOverlayShortcuts(
         toggleFullscreen,
         settingsOpen,
         closeSettings,
+        camerasOpen,
+        closeCameras,
     });
     latest.current = {
         settings,
@@ -119,6 +126,8 @@ function useOverlayShortcuts(
         toggleFullscreen,
         settingsOpen,
         closeSettings,
+        camerasOpen,
+        closeCameras,
     };
 
     useEffect(() => {
@@ -151,6 +160,9 @@ function useOverlayShortcuts(
                 if (current.settingsOpen) {
                     event.preventDefault();
                     current.closeSettings();
+                } else if (current.camerasOpen) {
+                    event.preventDefault();
+                    current.closeCameras();
                 } else if (document.fullscreenElement) {
                     void document.exitFullscreen();
                 }
@@ -164,11 +176,24 @@ function useOverlayShortcuts(
 export default function View3dOverlay() {
     const { t } = useTranslate();
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [camerasOpen, setCamerasOpen] = useState(false);
+    /** A just-saved camera whose name field should take focus. */
+    const [focusCameraId, setFocusCameraId] = useState<string | null>(null);
     const { isFullscreen, toggleFullscreen } = useFullscreen();
-    const hidden = usePointerIdle(isFullscreen && !settingsOpen);
+    const hidden = usePointerIdle(
+        isFullscreen && !settingsOpen && !camerasOpen,
+    );
     const closeSettings = () => setSettingsOpen(false);
+    const closeCameras = () => setCamerasOpen(false);
+    const clearFocusCamera = useCallback(() => setFocusCameraId(null), []);
     usePlaybackShortcuts();
-    useOverlayShortcuts(toggleFullscreen, settingsOpen, closeSettings);
+    useOverlayShortcuts(
+        toggleFullscreen,
+        settingsOpen,
+        closeSettings,
+        camerasOpen,
+        closeCameras,
+    );
 
     const fade = clsx(
         "motion-safe:transition-opacity motion-safe:duration-300",
@@ -197,7 +222,23 @@ export default function View3dOverlay() {
                     fade,
                 )}
             >
-                <CameraBar />
+                <div className="flex max-h-full min-h-0 flex-col items-start gap-8">
+                    <CameraBar
+                        onEdit={() => setCamerasOpen(true)}
+                        onSaved={(id) => {
+                            setCamerasOpen(true);
+                            setFocusCameraId(id);
+                        }}
+                    />
+                    {camerasOpen && (
+                        <CamerasPanel
+                            onClose={closeCameras}
+                            focusId={focusCameraId}
+                            onFocused={clearFocusCamera}
+                            className="min-h-0"
+                        />
+                    )}
+                </div>
                 <div className="flex max-h-full min-h-0 flex-col items-end gap-8">
                     <Panel>
                         <ToggleButton

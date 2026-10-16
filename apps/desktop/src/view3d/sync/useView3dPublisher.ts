@@ -9,7 +9,8 @@
  *   and rolled-back transactions all end in `invalidateQueries`), and of
  *   `VIEW3D_TIMELINE_QUERY_KEY` after every committed timeline change.
  *
- * It answers the window's `hello` and handles its venue-change and playback
+ * It answers the window's `hello` and handles its venue-change (venue
+ * settings with history, camera lists without) and playback
  * requests (playback runs the editor's own actions). With no window open it does nothing, except that it opens the
  * window when the show opens if the app setting
  * `VIEW3D_AUTO_OPEN_SETTING` is on.
@@ -41,6 +42,8 @@ import {
 } from "@/stores/PlaybackSpeedStore";
 import { updateVenueSettingsMutationOptions } from "@/hooks/queries/useVenueSettings";
 import { venueSettingsSchema } from "@/view3d/core/venueSettings";
+import { updateShowCamerasMutationOptions } from "@/hooks/queries/useShowCameras";
+import { showCamerasSchema } from "@/view3d/core/cameraList";
 import { pressAction } from "@/shortcuts/registry";
 import { subscribeTimelineChanges } from "@/db-functions/timelineChanges";
 import {
@@ -143,6 +146,10 @@ export function useView3dPublisher() {
     const { mutate: updateVenue } = useMutation(
         updateVenueSettingsMutationOptions(queryClient),
     );
+    // Without history: camera lists aren't undoable.
+    const { mutate: updateCameras } = useMutation(
+        updateShowCamerasMutationOptions(queryClient),
+    );
     const [windowOpen, setWindowOpen] = useState(false);
 
     // Starts above any earlier editor session's numbers, so a reloaded
@@ -217,6 +224,18 @@ export function useView3dPublisher() {
                 sendSelection();
             }),
             electron.onView3dVenueChangeRequest((request) => {
+                if (request?.cameras !== undefined) {
+                    const cameras = showCamerasSchema.safeParse(
+                        request.cameras,
+                    );
+                    if (cameras.success) updateCameras(cameras.data);
+                    else
+                        console.warn(
+                            "3D View: ignored an invalid camera change request",
+                            cameras.error,
+                        );
+                    return;
+                }
                 const parsed = venueSettingsSchema.safeParse(request?.settings);
                 if (!parsed.success) {
                     console.warn(
@@ -231,7 +250,7 @@ export function useView3dPublisher() {
             }),
         ];
         return () => cleanups.forEach((cleanup) => cleanup());
-    }, [sendClock, sendSelection, updateVenue]);
+    }, [sendClock, sendSelection, updateVenue, updateCameras]);
 
     // Opens the window with the show when the app setting asks for it, in
     // the background so the editor keeps focus. This runs after the effect

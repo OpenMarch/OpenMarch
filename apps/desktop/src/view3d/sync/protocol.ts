@@ -10,6 +10,8 @@
  * the editor share the pure helpers.
  */
 
+import type { ProfileData } from "../core/cameraList";
+
 /** Editor → window. Hard-coded channel names; main relays only these. */
 export const VIEW3D_CLOCK_CHANNEL = "view3d:clock";
 export const VIEW3D_SELECTION_CHANNEL = "view3d:selection";
@@ -18,7 +20,7 @@ export const VIEW3D_INVALIDATE_CHANNEL = "view3d:invalidate";
 export const VIEW3D_WINDOW_STATE_CHANNEL = "view3d:window-state";
 /** Window → main → editor: the window is ready for a fresh clock and selection. */
 export const VIEW3D_HELLO_CHANNEL = "view3d:hello";
-/** Window → main → editor: `{ settings }` for the editor to validate and write. */
+/** Window → main → editor: `{ settings }` or `{ cameras }` for the editor to validate and write. */
 export const VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL =
     "view3d:venue-change-request";
 /**
@@ -81,9 +83,29 @@ export interface View3dInvalidate {
     queryKeys: unknown[][];
 }
 
+/**
+ * The window asks the editor to store venue settings (with undo), or the
+ * show's camera lists (without undo). One of the two is set.
+ */
 export interface View3dVenueChangeRequest {
     /** Unchecked: the editor validates it against the venue schema. */
-    settings: unknown;
+    settings?: unknown;
+    /** Unchecked: the editor validates it against `showCamerasSchema`. */
+    cameras?: unknown;
+}
+
+/** Window → main, `invoke`: this computer's camera profiles (ADR 0002 D-12). */
+export const VIEW3D_CAMERA_PROFILE_CHANNELS = {
+    list: "view3d:camera-profiles",
+    save: "view3d:camera-profile-save",
+    remove: "view3d:camera-profile-delete",
+} as const;
+
+/** Saves a profile: a new one without `id`, else replaces that one. */
+export interface View3dCameraProfileSave {
+    id?: string;
+    name: string;
+    data: ProfileData;
 }
 
 /**

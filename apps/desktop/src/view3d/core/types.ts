@@ -37,7 +37,8 @@ export interface VenueParams {
 /** The performance surface in world meters (from `fieldFootprint`). */
 export type { FieldFootprint } from "@openmarch/core";
 
-export type CameraSeatKind = "seat" | "aerial" | "topDown" | "floor";
+/** `saved` is a view the show saved (`cameraList.ts`); kits never use it. */
+export type CameraSeatKind = "seat" | "aerial" | "topDown" | "floor" | "saved";
 
 /** A named place a person actually sits or stands. */
 export interface CameraSeat {

@@ -289,6 +289,23 @@ export const view3d_venue = sqliteTable(
     (_table) => [check("view3d_venue_id_check", sql`id = 1`)],
 );
 
+/**
+ * The show's 3D View cameras (ADR 0002 D-5, amended 2026-10-16). A single
+ * row with `id = 1` whose `json_data` is validated by `showCamerasSchema` in
+ * `src/view3d/core/cameraList.ts`: the show's own camera list for each venue
+ * it changed, and the camera profile each one came from. No row means every
+ * venue uses its default cameras. Not in the undo history: camera lists are
+ * view setup, not drill.
+ */
+export const view3d_cameras = sqliteTable(
+    "view3d_cameras",
+    {
+        id: integer().primaryKey(),
+        json_data: text().notNull(),
+    },
+    (_table) => [check("view3d_cameras_id_check", sql`id = 1`)],
+);
+
 /* ========================= TIMELINES ========================= */
 /*
  * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0001). Column names follow the
