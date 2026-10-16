@@ -1738,6 +1738,44 @@ describeDbTests("pages", (it) => {
             );
         });
 
+        describe("second page starts after the second beat", () => {
+            testWithHistory(
+                "deleting a later page does not move the second page",
+                async ({ db }) => {
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 40 }, () => ({
+                            duration: 0.5,
+                            include_in_measure: true,
+                        })),
+                    });
+                    const beats = await getBeats({ db });
+                    // Four counts before the second page starts
+                    await createPages({
+                        db,
+                        newPages: [5, 13, 21].map((position) => ({
+                            start_beat: beats[position].id,
+                            is_subset: false,
+                        })),
+                    });
+                    const pagesBeforeDelete = await getPagesInOrder({
+                        tx: db,
+                    });
+
+                    await deletePages({
+                        db,
+                        pageIds: new Set([pagesBeforeDelete[3].id]),
+                    });
+
+                    expect(
+                        (await getPagesInOrder({ tx: db })).map(
+                            (page) => page.beatObject.position,
+                        ),
+                    ).toEqual([0, 5, 13]);
+                },
+            );
+        });
+
         describe("delete page yank", () => {
             const createLastPages = async ({
                 db,
@@ -1806,6 +1844,40 @@ describeDbTests("pages", (it) => {
                     expect(
                         pagePositions(await getPagesInOrder({ tx: db })),
                     ).toEqual([0, 1, 17]);
+                },
+            );
+
+            testWithHistory(
+                "yanking a later page does not move a second page that starts after the second beat",
+                async ({ db }) => {
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 40 }, () => ({
+                            duration: 0.5,
+                            include_in_measure: true,
+                        })),
+                    });
+                    const beats = await getBeats({ db });
+                    // Four counts before the second page starts
+                    await createPages({
+                        db,
+                        newPages: [5, 13, 21].map((position) => ({
+                            start_beat: beats[position].id,
+                            is_subset: false,
+                        })),
+                    });
+                    const pagesBeforeDelete = await getPagesInOrder({
+                        tx: db,
+                    });
+
+                    await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[2].id,
+                    });
+
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 5, 13]);
                 },
             );
 

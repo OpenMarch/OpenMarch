@@ -2,7 +2,7 @@ import { eq, gt, asc, desc, inArray } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
-    ensureSecondBeatHasPage,
+    keepSecondBeatPageInTransaction,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -325,16 +325,19 @@ export async function createBeats({
     const transactionResult = await transactionWithHistory(
         db,
         "createBeats",
-        async (tx) => {
-            const createdBeats = await createBeatsInTransaction({
+        async (tx) =>
+            await keepSecondBeatPageInTransaction({
                 tx,
-                newBeats,
-                startingPosition,
-            });
-            await flattenOrderInTransaction({ tx });
-            await ensureSecondBeatHasPage({ tx });
-            return createdBeats;
-        },
+                operation: async () => {
+                    const createdBeats = await createBeatsInTransaction({
+                        tx,
+                        newBeats,
+                        startingPosition,
+                    });
+                    await flattenOrderInTransaction({ tx });
+                    return createdBeats;
+                },
+            }),
     );
     return transactionResult;
 }
@@ -488,14 +491,11 @@ export async function deleteBeats({
     const transactionResult = await transactionWithHistory(
         db,
         "deleteBeats",
-        async (tx) => {
-            const response = await deleteBeatsInTransaction({
+        async (tx) =>
+            await keepSecondBeatPageInTransaction({
                 tx,
-                beatIds,
-            });
-            await ensureSecondBeatHasPage({ tx });
-            return response;
-        },
+                operation: () => deleteBeatsInTransaction({ tx, beatIds }),
+            }),
     );
     return transactionResult;
 }

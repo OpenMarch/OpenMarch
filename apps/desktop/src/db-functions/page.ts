@@ -505,6 +505,7 @@ export const ensureSecondBeatHasPage = async ({
                 ne(timing_objects.page_id, FIRST_PAGE_ID),
             ),
         )
+        .orderBy(timing_objects.position)
         .get();
 
     // There is no next page, so no need to update the pages
@@ -517,6 +518,45 @@ export const ensureSecondBeatHasPage = async ({
             start_beat: timingObjectOnSecondBeat.beat_id,
         })
         .where(eq(schema.pages.id, nextPage.page_id!));
+};
+
+/**
+ * @returns true if a page other than the first page starts on the second beat of the show.
+ */
+const secondBeatHasPage = async ({
+    tx,
+}: {
+    tx: DbTransaction;
+}): Promise<boolean> => {
+    const timing_objects = schema.timing_objects;
+    const timingObjectOnSecondBeat = await tx
+        .select({ page_id: timing_objects.page_id })
+        .from(timing_objects)
+        .orderBy(timing_objects.position)
+        .limit(1)
+        .offset(1)
+        .get();
+    return timingObjectOnSecondBeat?.page_id != null;
+};
+
+/**
+ * Runs an operation that deletes or moves pages/beats, then runs {@link ensureSecondBeatHasPage}
+ * only if a page started on the second beat before the operation.
+ *
+ * Shows whose second page starts later (e.g. a count-in before it) are left alone. Otherwise,
+ * deleting any page would pull the second page back to the second beat and add those counts to it.
+ */
+export const keepSecondBeatPageInTransaction = async <T>({
+    tx,
+    operation,
+}: {
+    tx: DbTransaction;
+    operation: () => Promise<T>;
+}): Promise<T> => {
+    const hadPageOnSecondBeat = await secondBeatHasPage({ tx });
+    const result = await operation();
+    if (hadPageOnSecondBeat) await ensureSecondBeatHasPage({ tx });
+    return result;
 };
 
 export const deletePagesInTransaction = async ({
@@ -614,14 +654,11 @@ export async function deletePages({
     const response = await transactionWithHistory(
         db,
         "deletePages",
-        async (tx) => {
-            const response = await deletePagesInTransaction({
-                pageIds,
+        async (tx) =>
+            await keepSecondBeatPageInTransaction({
                 tx,
-            });
-            await ensureSecondBeatHasPage({ tx });
-            return response;
-        },
+                operation: () => deletePagesInTransaction({ pageIds, tx }),
+            }),
     );
     return response;
 }
@@ -651,34 +688,37 @@ export async function deletePageYank({
     const response = await transactionWithHistory(
         db,
         "deletePageYank",
-        async (tx) => {
-            const response = await deletePagesInTransaction({
-                pageIds: new Set([pageId]),
+        async (tx) =>
+            await keepSecondBeatPageInTransaction({
                 tx,
-            });
-
-            if (yankLength > 0) {
-                for (const page of laterPages) {
-                    const targetBeat = await tx.query.beats.findFirst({
-                        where: eq(
-                            schema.beats.position,
-                            page.beatObject.position - yankLength,
-                        ),
+                operation: async () => {
+                    const response = await deletePagesInTransaction({
+                        pageIds: new Set([pageId]),
+                        tx,
                     });
-                    assert(
-                        targetBeat != null,
-                        `Could not find target beat for yanked page ${page.id}`,
-                    );
-                    await tx
-                        .update(schema.pages)
-                        .set({ start_beat: targetBeat.id })
-                        .where(eq(schema.pages.id, page.id));
-                }
-            }
 
-            await ensureSecondBeatHasPage({ tx });
-            return response;
-        },
+                    if (yankLength > 0) {
+                        for (const page of laterPages) {
+                            const targetBeat = await tx.query.beats.findFirst({
+                                where: eq(
+                                    schema.beats.position,
+                                    page.beatObject.position - yankLength,
+                                ),
+                            });
+                            assert(
+                                targetBeat != null,
+                                `Could not find target beat for yanked page ${page.id}`,
+                            );
+                            await tx
+                                .update(schema.pages)
+                                .set({ start_beat: targetBeat.id })
+                                .where(eq(schema.pages.id, page.id));
+                        }
+                    }
+
+                    return response;
+                },
+            }),
     );
     return response;
 }
