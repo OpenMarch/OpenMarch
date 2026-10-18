@@ -23,6 +23,11 @@ export default class DefaultListeners implements CanvasListeners {
     private lassoPathString: string = "";
     private lassoStartPoint: { x: number; y: number } | null = null;
     private lassoCurrentPath: { x: number; y: number }[] = [];
+    /** Interaction state of every object before the lasso disabled it, restored when it ends */
+    private lassoSuspendedObjects = new Map<
+        fabric.Object,
+        { selectable?: boolean; evented?: boolean }
+    >();
     private readonly LASSO_STROKE_WIDTH = 2;
     private readonly LASSO_DASH_ARRAY = [5, 5];
     private readonly LASSO_MIN_CLOSE_DISTANCE = 50;
@@ -49,6 +54,8 @@ export default class DefaultListeners implements CanvasListeners {
     };
 
     cleanupListeners = () => {
+        // A mode change mid-lasso never sees the mouseup that would end it
+        if (this.isLassoDrawing) this.resetLassoState();
         this.canvas.off("object:modified", this.handleObjectModified as any);
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
@@ -507,6 +514,10 @@ export default class DefaultListeners implements CanvasListeners {
 
         // Disable object selection and movement
         this.canvas.forEachObject((obj) => {
+            this.lassoSuspendedObjects.set(obj, {
+                selectable: obj.selectable,
+                evented: obj.evented,
+            });
             obj.selectable = false;
             obj.evented = false;
         });
@@ -600,18 +611,6 @@ export default class DefaultListeners implements CanvasListeners {
         // Clean up the lasso visual
         this.resetLassoState();
 
-        // Re-enable selection temporarily to select the marchers
-        this.canvas.selection = true;
-        this.canvas.defaultCursor = "default";
-        this.canvas.hoverCursor = "move";
-
-        this.canvas.forEachObject((obj) => {
-            if (obj instanceof CanvasMarcher) {
-                obj.selectable = true;
-                obj.evented = true;
-            }
-        });
-
         // Shift-lasso adds to the marchers that were already selected
         const alreadySelected = this.canvas
             .getActiveObjects()
@@ -658,13 +657,12 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.defaultCursor = "default";
         this.canvas.hoverCursor = "move";
 
-        // Re-enable object selection and movement
-        this.canvas.forEachObject((obj) => {
-            if (obj instanceof CanvasMarcher) {
-                obj.selectable = true;
-                obj.evented = true;
-            }
-        });
+        // Restore each object's selection and movement as it was before the lasso
+        for (const [obj, state] of this.lassoSuspendedObjects) {
+            obj.selectable = state.selectable;
+            obj.evented = state.evented;
+        }
+        this.lassoSuspendedObjects.clear();
     }
 
     /**

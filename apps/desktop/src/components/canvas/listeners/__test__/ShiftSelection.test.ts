@@ -95,4 +95,51 @@ describe("Shift selection", () => {
             [a.marcherObj.id, b.marcherObj.id, c.marcherObj.id].sort(),
         );
     });
+
+    it("restores every object's interaction after a lasso that is not closed", () => {
+        const setup = setUp();
+        canvas = setup.canvas;
+        const shapeHandle = new fabric.Rect({
+            left: 260,
+            top: 100,
+            width: 10,
+            height: 10,
+            selectable: true,
+            evented: true,
+        });
+        const decoration = new fabric.Rect({
+            left: 10,
+            top: 130,
+            width: 10,
+            height: 10,
+            selectable: false,
+            evented: false,
+        });
+        canvas.add(shapeHandle, decoration);
+
+        fire(canvas, "mousedown", { x: 120, y: 120 });
+        fire(canvas, "mousemove", { x: 200, y: 140 });
+        fire(canvas, "mouseup", { x: 200, y: 140 });
+
+        expect(shapeHandle.evented).toBe(true);
+        expect(shapeHandle.selectable).toBe(true);
+        expect(decoration.evented).toBe(false);
+        expect(decoration.selectable).toBe(false);
+        expect(setup.marchers.every((m) => m.evented)).toBe(true);
+    });
+
+    it("ends a lasso that is interrupted by a mode change", () => {
+        const setup = setUp();
+        canvas = setup.canvas;
+
+        fire(canvas, "mousedown", { x: 120, y: 120 });
+        fire(canvas, "mousemove", { x: 200, y: 140 });
+        // e.g. pressing L for Create Line before releasing the mouse
+        canvas.setListeners(new DefaultListeners({ canvas }));
+
+        expect(canvas.defaultCursor).toBe("default");
+        expect(setup.marchers.every((m) => m.evented && m.selectable)).toBe(
+            true,
+        );
+    });
 });
