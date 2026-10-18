@@ -612,19 +612,32 @@ export default class DefaultListeners implements CanvasListeners {
             }
         });
 
-        // Select the marchers
-        if (marchersToSelect.length === 1) {
-            this.canvas.setActiveObject(marchersToSelect[0]);
-        } else if (marchersToSelect.length > 1) {
-            const activeSelection = new fabric.ActiveSelection(
-                marchersToSelect,
-                {
-                    canvas: this.canvas,
-                },
+        // Shift-lasso adds to the marchers that were already selected
+        const alreadySelected = this.canvas
+            .getActiveObjects()
+            .filter(
+                (obj): obj is CanvasMarcher => obj instanceof CanvasMarcher,
             );
-            this.canvas.setActiveObject(activeSelection);
+        const selection = [
+            ...alreadySelected,
+            ...marchersToSelect.filter(
+                (marcher) => !alreadySelected.includes(marcher),
+            ),
+        ];
+        if (selection.length === alreadySelected.length) {
+            this.canvas.requestRenderAll();
+            return;
+        }
+
+        // Ungroup the current selection first so the new one measures absolute positions
+        this.canvas.discardActiveObject();
+        if (selection.length === 1) {
+            this.canvas.setActiveObject(selection[0]);
         } else {
-            this.canvas.discardActiveObject();
+            const activeSelection = new fabric.ActiveSelection(selection, {
+                canvas: this.canvas,
+            });
+            this.canvas.setActiveObject(activeSelection);
         }
 
         this.canvas.requestRenderAll();

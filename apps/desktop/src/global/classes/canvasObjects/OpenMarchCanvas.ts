@@ -1073,6 +1073,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return super.setActiveObject(object, e);
     }
 
+    /**
+     * Fabric clears the selection whenever a mousedown misses a selectable object.
+     * Shift adds to the selection, so a Shift-click or Shift-drag lasso that misses keeps it.
+     * Overrides fabric's internal hook (v5.5.2).
+     */
+    _shouldClearSelection(e: MouseEvent, target?: fabric.Object): boolean {
+        if (e.shiftKey) return false;
+        return (fabric.Canvas.prototype as any)._shouldClearSelection.call(
+            this,
+            e,
+            target,
+        );
+    }
+
     resetCursorsToDefault = () => {
         this.setCursor("default");
         this.defaultCursor = "default";
