@@ -378,40 +378,46 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             </div>
 
             <hr className="border-stroke w-full border" />
-            {/* Set Marcher Positions Dropdowns */}
-            <div className="flex flex-col gap-8">
-                <Dropdown.Root>
-                    <Dropdown.Trigger
-                        className={clsx(
-                            getButtonClassName({
-                                variant: "secondary",
-                                size: "compact",
-                            }),
-                            "flex items-center justify-center gap-6",
-                        )}
-                    >
-                        <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
-                        <CaretDownIcon size={14} />
-                    </Dropdown.Trigger>
-                    <Dropdown.Portal>
-                        <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <ActionButton
-                                action="setSelectedMarchersToPreviousPage"
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                            </ActionButton>
-                            <ActionButton
-                                action="setSelectedMarchersToNextPage"
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toNextPagePositions" />
-                            </ActionButton>
-                        </Dropdown.Content>
-                    </Dropdown.Portal>
-                </Dropdown.Root>
-            </div>
+            <PlaceSelectedMarchersDropdown />
         </>
+    );
+}
+
+/** Moves the selected marchers to where they stand on the previous or next page */
+function PlaceSelectedMarchersDropdown() {
+    return (
+        <div className="flex flex-col gap-8">
+            <Dropdown.Root>
+                <Dropdown.Trigger
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex items-center justify-center gap-6",
+                    )}
+                >
+                    <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
+                    <CaretDownIcon size={14} />
+                </Dropdown.Trigger>
+                <Dropdown.Portal>
+                    <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
+                        <ActionButton
+                            action="setSelectedMarchersToPreviousPage"
+                            className="text-text px-6 py-4"
+                        >
+                            <T keyName="toolbar.alignment.toPreviousPagePositions" />
+                        </ActionButton>
+                        <ActionButton
+                            action="setSelectedMarchersToNextPage"
+                            className="text-text px-6 py-4"
+                        >
+                            <T keyName="toolbar.alignment.toNextPagePositions" />
+                        </ActionButton>
+                    </Dropdown.Content>
+                </Dropdown.Portal>
+            </Dropdown.Root>
+        </div>
     );
 }
 
@@ -962,6 +968,9 @@ function MarcherEditor() {
                                     </button>
                                 </form>
                             )}
+                            <div className="px-6">
+                                <PlaceSelectedMarchersDropdown />
+                            </div>
                             <form
                                 className="marcher-details-editor flex flex-col gap-24"
                                 ref={detailsFormRef}
