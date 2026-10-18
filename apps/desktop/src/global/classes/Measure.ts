@@ -15,7 +15,7 @@ import { deleteMeasuresInTransaction } from "@/db-functions/measures";
 import {
     deleteBeatsInTransaction,
     deletePagesInTransaction,
-    ensureSecondBeatHasPage,
+    keepSecondBeatPageInTransaction,
     transactionWithHistory,
 } from "@/db-functions";
 
@@ -122,19 +122,23 @@ export const _cascadeDeleteMeasures = async (measures: Measure[]) => {
     const measureIdsToDelete = new Set(measures.map((m) => m.id));
 
     await transactionWithHistory(db, "cascadeDeleteMeasures", async (tx) => {
-        await deleteMeasuresInTransaction({
+        await keepSecondBeatPageInTransaction({
             tx,
-            itemIds: measureIdsToDelete,
+            operation: async () => {
+                await deleteMeasuresInTransaction({
+                    tx,
+                    itemIds: measureIdsToDelete,
+                });
+                await deletePagesInTransaction({
+                    tx,
+                    pageIds: pageIdsToDelete,
+                });
+                await deleteBeatsInTransaction({
+                    tx,
+                    beatIds: beatIdsToDelete,
+                });
+            },
         });
-        await deletePagesInTransaction({
-            tx,
-            pageIds: pageIdsToDelete,
-        });
-        await deleteBeatsInTransaction({
-            tx,
-            beatIds: beatIdsToDelete,
-        });
-        await ensureSecondBeatHasPage({ tx });
     });
 };
 
