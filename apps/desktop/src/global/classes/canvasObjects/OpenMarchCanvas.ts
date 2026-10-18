@@ -25,6 +25,7 @@ import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import { gridYAnchorSteps } from "@/utilities/fieldGrid";
 import { RgbaColor } from "@uiw/react-color";
 import {
     evaluatePathWarning,
@@ -1637,29 +1638,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             fieldArray.push(this._backgroundImage);
         }
 
-        // Render the grid lines either from the first checkpoint, or the first visible checkpoint if i's not an integer amount of steps away from the front point
-        // This is to address when the front of the field isn't exactly with the grid
-        const sortedYCheckpoints = this.fieldProperties.yCheckpoints.sort(
-            (a: any, b: any) => b.stepsFromCenterFront - a.stepsFromCenterFront,
-        );
-        const firstVisibleYCheckpoint =
-            this.fieldProperties.yCheckpoints.reduce(
-                (prev: any, curr: any) => {
-                    if (
-                        curr.visible &&
-                        curr.stepsFromCenterFront > prev.stepsFromCenterFront
-                    )
-                        return curr;
-                    return prev;
-                },
-                sortedYCheckpoints[sortedYCheckpoints.length - 1],
-            );
-        let yCheckpointToStartGridFrom = sortedYCheckpoints[0];
-        if (
-            firstVisibleYCheckpoint.stepsFromCenterFront !== 0 &&
-            firstVisibleYCheckpoint.stepsFromCenterFront % 1 !== 0
-        )
-            yCheckpointToStartGridFrom = firstVisibleYCheckpoint;
+        // Render the grid lines from the same anchor that coordinate rounding snaps to
+        const gridYAnchor = gridYAnchorSteps(this.fieldProperties.yCheckpoints);
 
         // Grid lines
         if (gridLines) {
@@ -1689,10 +1669,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             // Y
 
             for (
-                let i =
-                    centerFrontPoint.yPixels +
-                    yCheckpointToStartGridFrom.stepsFromCenterFront *
-                        pixelsPerStep;
+                let i = centerFrontPoint.yPixels + gridYAnchor * pixelsPerStep;
                 i > 0;
                 i -= pixelsPerStep
             )
@@ -1749,8 +1726,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 for (
                     let i =
                         centerFrontPoint.yPixels +
-                        yCheckpointToStartGridFrom.stepsFromCenterFront *
-                            pixelsPerStep -
+                        gridYAnchor * pixelsPerStep -
                         pixelsPerStep * this.fieldProperties.halfLineYInterval;
                     i > 0;
                     i -= pixelsPerStep * this.fieldProperties.halfLineYInterval
