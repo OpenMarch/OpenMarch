@@ -190,6 +190,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         null;
     private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
     private boundHandleKeyUp: ((event: KeyboardEvent) => void) | null = null;
+    private boundHandleWindowBlur: (() => void) | null = null;
 
     // Window/observer handles for cleanup
     private _onWindowResize: (() => void) | null = null;
@@ -634,6 +635,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private handleAdvancedMouseDown(event: MouseEvent) {
         // Do not handle mouse buttons here; DefaultListeners owns mouse-button panning.
         // Only allow Alt-key forced panning (trackpad-like) to start a pan.
+        // Trust the event over the flag: Alt-Tab sends the Alt keyup to another
+        // window, which would otherwise leave forced panning stuck on.
+        if (!event.altKey) this.forceTrackpadPan = false;
         if (this.forceTrackpadPan) {
             event.preventDefault();
             this.isPanning = true;
@@ -689,6 +693,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             if (this.cssZoomWrapper && !this.isPanning) {
                 this.cssZoomWrapper.style.cursor = "default";
             }
+        }
+    }
+
+    /** Alt-Tab sends the Alt keyup to the other window, so forget Alt when focus leaves */
+    private handleWindowBlur() {
+        this.forceTrackpadPan = false;
+        if (this.cssZoomWrapper && !this.isPanning) {
+            this.cssZoomWrapper.style.cursor = "default";
         }
     }
 
@@ -873,6 +885,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.boundHandleAdvancedMouseUp = this.handleAdvancedMouseUp.bind(this);
         this.boundHandleKeyDown = this.handleKeyDown.bind(this);
         this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+        this.boundHandleWindowBlur = this.handleWindowBlur.bind(this);
 
         this.cssZoomWrapper.addEventListener(
             "wheel",
@@ -913,6 +926,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
         document.addEventListener("keydown", this.boundHandleKeyDown);
         document.addEventListener("keyup", this.boundHandleKeyUp);
+        window.addEventListener("blur", this.boundHandleWindowBlur);
     }
 
     private removeAdvancedEventListeners() {
@@ -966,6 +980,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
         if (this.boundHandleKeyDown) {
             document.removeEventListener("keydown", this.boundHandleKeyDown);
+        }
+        if (this.boundHandleWindowBlur) {
+            window.removeEventListener("blur", this.boundHandleWindowBlur);
         }
         if (this.boundHandleKeyUp) {
             document.removeEventListener("keyup", this.boundHandleKeyUp);
