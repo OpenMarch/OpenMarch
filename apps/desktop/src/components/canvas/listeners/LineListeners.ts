@@ -45,6 +45,11 @@ export default class LineListeners
     cleanupListeners = () => {
         this.clearLine();
         this.clearPathwaysAndStaticMarchers();
+        // Undo the constructor even when the line was cancelled before it was finished
+        this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+            canvasMarcher.makeSelectable();
+        });
+        this.canvas.staticGridRef.hoverCursor = "default";
         this.canvas.selection = true;
         this.canvas.resetCursorsToDefault();
 
