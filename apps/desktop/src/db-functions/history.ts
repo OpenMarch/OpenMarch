@@ -297,7 +297,10 @@ export async function incrementUndoGroup(db: DbConnection | DB) {
  * @returns the response from the undo action
  */
 export async function performUndo(db: DbConnection | DB) {
-    return await executeHistoryAction(db, "undo");
+    // Share the edit lock so undo never interleaves with an open edit transaction
+    return await withTransactionWithHistoryLock(() =>
+        executeHistoryAction(db, "undo"),
+    );
 }
 
 /**
@@ -311,7 +314,9 @@ export async function performUndo(db: DbConnection | DB) {
  * @returns the response from the redo action
  */
 export async function performRedo(db: DbConnection | DB) {
-    return await executeHistoryAction(db, "redo");
+    return await withTransactionWithHistoryLock(() =>
+        executeHistoryAction(db, "redo"),
+    );
 }
 
 /**
