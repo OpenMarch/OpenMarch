@@ -1156,6 +1156,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             visual.getCanvasMarcher().setMarcherCoords(marcherPage);
         });
 
+        // Selected marchers moved inside the active selection; refit its box around them
+        const activeObject = this.getActiveObject();
+        if (activeObject instanceof fabric.ActiveSelection)
+            activeObject.addWithUpdate();
+
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
         this.bringAllControlPointsTooFront();
