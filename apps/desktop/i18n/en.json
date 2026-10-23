@@ -204,7 +204,10 @@
             "restart": "Restart"
         },
         "tapTempo": {
-            "label": "Tap Tempo"
+            "beatsPerTap": "Beats per tap",
+            "label": "Tap Tempo",
+            "tap": "Tap",
+            "tapButton": "Tap to add {count} temporary beats at the current audio time"
         }
     },
     "auth": {
@@ -880,6 +883,8 @@
             "drillNumberTitle": "#",
             "editButton": "Edit",
             "fillColor": "Fill Color",
+            "moveDown": "Move down (lower priority)",
+            "moveUp": "Move up (higher priority)",
             "nameTitle": "Name",
             "noMarchers": "No marchers created yet. Why not create one?",
             "none": "None",
@@ -1278,6 +1283,8 @@
             "deleteFailed": "Failed to delete page",
             "firstPage": "First page",
             "label": "Page {pageName}",
+            "menuButton": "Page {pageName} options",
+            "resizeHandle": "Drag to change the counts of page {pageName}",
             "subset": "Subset"
         },
         "pages": "Pages",

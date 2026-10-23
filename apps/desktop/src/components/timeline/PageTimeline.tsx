@@ -1,13 +1,14 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { DotsThreeIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import Page, { updatePageCountRequest } from "@/global/classes/Page";
 import clsx from "clsx";
 import { durationToBeats } from "@/global/classes/Beat";
 import * as ContextMenu from "@radix-ui/react-context-menu";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Switch, TooltipClassName } from "@openmarch/ui";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { T, useTolgee } from "@tolgee/react";
@@ -25,6 +26,10 @@ import {
     useCreateLastPageOnTimeline,
 } from "./PageTimeline.utils";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+
+const PAGE_MENU_CLASS =
+    "bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex flex-col gap-8 border p-16 py-12 backdrop-blur-md";
 
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
@@ -35,6 +40,7 @@ export default function PageTimeline() {
     const { setSelectedShapePageIds } = useSelectionStore()!;
     const { isFullscreen } = useFullscreenStore();
     const { pages, beats } = useTimingObjects()!;
+    const isTouchMode = useIsTouchMode();
     const { mutate: updatePages } = useMutation(
         updatePagesMutationOptions(queryClient),
     );
@@ -74,9 +80,45 @@ export default function PageTimeline() {
         [uiSettings.timelinePixelsPerSecond],
     );
 
-    // Function to handle the start of resizing
-    const handlePageResizeStart = (e: MouseEvent, page: Page) => {
+    // Pixels a press may wander and still count as a tap
+    const TAP_SLOP_PX = 6;
+    // Removes the document listeners of the drag in progress
+    const resizeCleanup = useRef<(() => void) | null>(null);
+
+    /** Puts the dragged page (and the next one) back to their stored widths. */
+    const restorePageWidths = useCallback(
+        (page: Page) => {
+            const index = pages.findIndex((p) => p.id === page.id);
+            for (const p of [pages[index], pages[index + 1]]) {
+                if (!p) continue;
+                const element = document.querySelector(
+                    `[timeline-page-id="${p.id}"]`,
+                );
+                if (element instanceof HTMLElement) {
+                    element.style.width = `${getWidth(p)}px`;
+                    delete element.dataset.newDuration;
+                }
+            }
+        },
+        [pages, getWidth],
+    );
+
+    const resetResizeState = useCallback(() => {
+        resizingPage.current = null;
+        setIsResizing(false);
+        setCurrentDragCounts({});
+        startX.current = 0;
+        startWidth.current = 0;
+    }, []);
+
+    // Function to handle the start of resizing (mouse, pen or finger)
+    const handlePageResizeStart = (
+        e: React.PointerEvent<HTMLElement>,
+        page: Page,
+    ) => {
         if (isPlaying) return; // Don't allow resizing during playback
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        if (resizingPage.current) return; // one drag at a time
 
         e.preventDefault();
         e.stopPropagation(); // Prevent triggering page selection
@@ -91,9 +133,61 @@ export default function PageTimeline() {
             allBeats: beats,
         }).map((offset) => offset * uiSettings.timelinePixelsPerSecond);
 
-        // Add event listeners for mouse move and mouse up
-        document.addEventListener("mousemove", handlePageResizeMove);
-        document.addEventListener("mouseup", handlePageResizeEnd);
+        // Keep receiving this pointer's moves even when it leaves the handle
+        const handle = e.currentTarget;
+        const pointerId = e.pointerId;
+        try {
+            handle.setPointerCapture?.(pointerId);
+        } catch {
+            // The pointer may already be gone
+        }
+
+        const startClientX = e.clientX;
+        let moved = false;
+        const isOurs = (ev: PointerEvent) =>
+            ev.pointerId === undefined || ev.pointerId === pointerId;
+
+        const onMove = (ev: PointerEvent) => {
+            if (!isOurs(ev)) return;
+            if (Math.abs(ev.clientX - startClientX) > TAP_SLOP_PX) moved = true;
+            handlePageResizeMove(ev);
+        };
+        const onUp = (ev: PointerEvent) => {
+            if (!isOurs(ev)) return;
+            cleanup();
+            if (!moved && ev.pointerType !== "mouse") {
+                // A tap on the edge selects the page, as a tap on the page does
+                restorePageWidths(page);
+                resetResizeState();
+                setSelectedPage(page);
+                setSelectedShapePageIds([]);
+                return;
+            }
+            void handlePageResizeEnd();
+        };
+        const onCancel = (ev: PointerEvent) => {
+            if (!isOurs(ev)) return;
+            cleanup();
+            restorePageWidths(page);
+            resetResizeState();
+        };
+        const cleanup = () => {
+            document.removeEventListener("pointermove", onMove);
+            document.removeEventListener("pointerup", onUp);
+            document.removeEventListener("pointercancel", onCancel);
+            try {
+                if (handle.hasPointerCapture?.(pointerId))
+                    handle.releasePointerCapture(pointerId);
+            } catch {
+                // Already released
+            }
+            resizeCleanup.current = null;
+        };
+
+        document.addEventListener("pointermove", onMove);
+        document.addEventListener("pointerup", onUp);
+        document.addEventListener("pointercancel", onCancel);
+        resizeCleanup.current = cleanup;
     };
 
     // Function to handle resizing movement
@@ -116,11 +210,9 @@ export default function PageTimeline() {
             const newWidth = startWidth.current + closestOffset;
 
             // Calculate new duration based on the new width
-            // Subtract the buffer we added in getWidth to get the actual duration
-
             const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
 
-            // Calculate new counts for the tooltip display
+            // Calculate new counts for the counts label
             const newBeats = durationToBeats({
                 newDuration,
                 allBeats: beats,
@@ -128,13 +220,11 @@ export default function PageTimeline() {
             });
             const newCounts = newBeats.length;
 
-            // Update the current drag counts for tooltip display
+            // Update the current drag counts for the counts label
             setCurrentDragCounts((prev) => ({
                 ...prev,
                 [resizingPage.current!.id]: newCounts,
             }));
-
-            // We can use the deltaX to adjust the next page's width directly
 
             // Update the visual width immediately for smooth dragging
             const pageElement = document.querySelector(
@@ -152,18 +242,14 @@ export default function PageTimeline() {
                     `[timeline-page-id="${nextPage.id}"]`,
                 );
                 if (nextPageElement instanceof HTMLElement) {
-                    // Calculate the next page's new width
-                    // The next page's width should change in the opposite direction
+                    // The next page's width changes in the opposite direction
                     const nextPageBuffer =
                         nextPage.beats.length > 0
                             ? nextPage.beats[0].duration
                             : 0;
                     const nextPageOriginalWidth = getWidth(nextPage);
-                    const nextPageNewWidth =
+                    const finalNextPageWidth =
                         nextPageOriginalWidth - closestOffset;
-
-                    // Ensure the next page's width doesn't go below minimum
-                    const finalNextPageWidth = nextPageNewWidth;
 
                     // Update the next page's visual width
                     nextPageElement.style.width = `${finalNextPageWidth}px`;
@@ -203,14 +289,12 @@ export default function PageTimeline() {
             const nextPage =
                 nextPageIndex < pages.length ? pages[nextPageIndex] : null;
 
-            // Check if the next page was also resized
-            let updateArgs: ModifyPagesRequest;
             const newBeats = durationToBeats({
                 newDuration,
                 allBeats: beats,
                 startBeat: resizingPage.current.beats[0],
             });
-            updateArgs = updatePageCountRequest({
+            const updateArgs: ModifyPagesRequest = updatePageCountRequest({
                 pages,
                 beats,
                 pageToUpdate: resizingPage.current,
@@ -224,24 +308,13 @@ export default function PageTimeline() {
             delete pageElement.dataset.newDuration;
         }
 
-        resizingPage.current = null;
-        setIsResizing(false);
-        setCurrentDragCounts({});
-        startX.current = 0;
-        startWidth.current = 0;
-
-        // Remove event listeners
-        document.removeEventListener("mousemove", handlePageResizeMove);
-        document.removeEventListener("mouseup", handlePageResizeEnd);
-    }, [handlePageResizeMove, pages, beats, updatePages]);
+        resetResizeState();
+    }, [pages, beats, updatePages, resetResizeState]);
 
     // Clean up event listeners when component unmounts
     useEffect(() => {
-        return () => {
-            document.removeEventListener("mousemove", handlePageResizeMove);
-            document.removeEventListener("mouseup", handlePageResizeEnd);
-        };
-    }, [handlePageResizeEnd, handlePageResizeMove]);
+        return () => resizeCleanup.current?.();
+    }, []);
 
     function nextPageBeatDiff(nextPageId: number, currId: number): number {
         const currPageDrag = currentDragCounts[currId];
@@ -273,6 +346,92 @@ export default function PageTimeline() {
         },
         [deletePageYank, setSelectedPage],
     );
+    /** "counts | next page counts" for the page being resized (or as stored). */
+    const resizeCountsLabel = (page: Page) => (
+        <>
+            {(resizingPage.current?.id === page.id &&
+                currentDragCounts[page.id]) ||
+                page.counts}{" "}
+            {/* calculates the next page count based on the difference */}
+            {page.nextPageId &&
+                `| ${nextPageBeatDiff(page.nextPageId, page.id)}`}
+        </>
+    );
+
+    /** The page menu body, shared by the right-click menu and the "…" button. */
+    const renderPageMenu = (page: Page) => (
+        <>
+            <h5 className="text-h5">
+                {t("timeline.page.contextMenu.title", {
+                    pageName: page.name,
+                })}
+            </h5>
+
+            <div className="flex w-full items-center justify-between gap-8">
+                <label className="text-body text-text-subtitle">
+                    <T keyName="timeline.page.contextMenu.subsetToggle" />
+                </label>
+                <Switch
+                    onClick={() => {
+                        updatePages({
+                            modifiedPagesArgs: [
+                                {
+                                    id: page.id,
+                                    is_subset: !page.isSubset,
+                                },
+                            ],
+                        });
+                    }}
+                    checked={page?.isSubset || false}
+                />
+            </div>
+            <div className="border-stroke flex w-full flex-col items-start gap-8 border-t pt-8">
+                <div className="text-text flex items-center gap-6 text-xs">
+                    <TrashIcon size={16} />
+                    <T keyName="timeline.page.contextMenu.delete" />
+                </div>
+                <ToolTip.Root delayDuration={500}>
+                    <ToolTip.Trigger asChild>
+                        <button
+                            className="text-body text-text-subtitle hover:text-red touch:min-h-44 cursor-pointer text-left transition-colors"
+                            onClick={() => handleDeletePageYank(page)}
+                        >
+                            <T keyName="timeline.page.contextMenu.deleteYank" />
+                        </button>
+                    </ToolTip.Trigger>
+                    <ToolTip.Portal>
+                        <ToolTip.Content
+                            className={TooltipClassName}
+                            side="right"
+                        >
+                            {t("timeline.page.contextMenu.deleteYankTooltip")}
+                        </ToolTip.Content>
+                    </ToolTip.Portal>
+                </ToolTip.Root>
+                <ToolTip.Root delayDuration={500}>
+                    <ToolTip.Trigger asChild>
+                        <button
+                            className="text-body text-text-subtitle hover:text-red touch:min-h-44 cursor-pointer text-left transition-colors"
+                            onClick={() => handleDeletePage(page)}
+                        >
+                            <T keyName="timeline.page.contextMenu.deleteInPlace" />
+                        </button>
+                    </ToolTip.Trigger>
+                    <ToolTip.Portal>
+                        <ToolTip.Content
+                            className={TooltipClassName}
+                            side="right"
+                        >
+                            {t(
+                                "timeline.page.contextMenu.deleteInPlaceTooltip",
+                            )}
+                        </ToolTip.Content>
+                    </ToolTip.Portal>
+                </ToolTip.Root>
+            </div>
+        </>
+    );
+
     return (
         <div className="flex h-fit gap-0" id="pages">
             {/* ------------------------------------ FIRST PAGE ------------------------------------ */}
@@ -280,7 +439,7 @@ export default function PageTimeline() {
                 {pages.length > 0 && (
                     <li
                         className={clsx(
-                            "rounded-l-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 font-mono",
+                            "rounded-l-6 bg-fg-2 touch:min-h-44 flex h-full w-[40px] items-center justify-center border px-10 py-4 font-mono",
                             !isPlaying && "cursor-pointer",
                             pages[0].id === selectedPage?.id
                                 ? [
@@ -331,7 +490,7 @@ export default function PageTimeline() {
                                 >
                                     <div
                                         className={clsx(
-                                            "bg-fg-2 text-body text-text group-last:rounded-r-6 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
+                                            "bg-fg-2 text-body text-text group-last:rounded-r-6 touch:min-h-44 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
                                             !isPlaying && "cursor-pointer",
                                             page.id === selectedPage?.id
                                                 ? [
@@ -372,55 +531,105 @@ export default function PageTimeline() {
                                                 />
                                             )}
                                     </div>
+                                    {/* ------ page menu button (touch) ------ */}
+                                    {isTouchMode &&
+                                        page.id === selectedPage?.id &&
+                                        !isPlaying &&
+                                        !isFullscreen && (
+                                            <DropdownMenu.Root>
+                                                <DropdownMenu.Trigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        className="text-text hover:text-accent absolute top-0 left-0 z-20 flex h-full w-44 items-center justify-center"
+                                                        aria-label={t(
+                                                            "timeline.page.menuButton",
+                                                            {
+                                                                pageName:
+                                                                    page.name,
+                                                            },
+                                                        )}
+                                                        onClick={(e) =>
+                                                            e.stopPropagation()
+                                                        }
+                                                    >
+                                                        <DotsThreeIcon
+                                                            size={22}
+                                                            weight="bold"
+                                                        />
+                                                    </button>
+                                                </DropdownMenu.Trigger>
+                                                <DropdownMenu.Portal>
+                                                    <DropdownMenu.Content
+                                                        className={
+                                                            PAGE_MENU_CLASS
+                                                        }
+                                                        side="top"
+                                                        align="start"
+                                                    >
+                                                        {renderPageMenu(page)}
+                                                    </DropdownMenu.Content>
+                                                </DropdownMenu.Portal>
+                                            </DropdownMenu.Root>
+                                        )}
+                                    {/* ------ counts while resizing (touch) ------ */}
+                                    {isTouchMode &&
+                                        resizingPage.current?.id ===
+                                            page.id && (
+                                            <div
+                                                className="bg-accent text-text-invert rounded-4 text-sub pointer-events-none absolute top-1/2 left-4 z-30 -translate-y-1/2 px-6 font-mono whitespace-nowrap"
+                                                data-testid="page-resize-counts"
+                                            >
+                                                {resizeCountsLabel(page)}
+                                            </div>
+                                        )}
                                     {/* ------ page resize dragging ------ */}
                                     {!isFullscreen && (
                                         <ToolTip.Root
                                             key={`tooltip-${page.id}-${isResizing && resizingPage.current?.id === page.id ? "resizing" : "normal"}`}
                                             open={
-                                                isResizing &&
-                                                resizingPage.current?.id ===
-                                                    page.id
-                                                    ? true
-                                                    : undefined
+                                                isTouchMode
+                                                    ? false
+                                                    : isResizing &&
+                                                        resizingPage.current
+                                                            ?.id === page.id
+                                                      ? true
+                                                      : undefined
                                             }
                                             delayDuration={100}
                                         >
                                             <ToolTip.Trigger asChild>
                                                 <div
                                                     className={clsx(
-                                                        "absolute top-0 right-0 z-20 h-full w-16 cursor-ew-resize transition-colors",
+                                                        "touch:w-44 absolute top-0 right-0 z-20 flex h-full w-16 cursor-ew-resize touch-none items-center justify-end transition-colors select-none",
                                                         resizingPage.current
                                                             ?.id === page.id
                                                             ? "bg-accent/50"
                                                             : "hover:bg-accent/30 bg-transparent",
                                                     )}
                                                     hidden={isPlaying}
-                                                    onMouseDown={(e) =>
+                                                    data-testid="page-resize-handle"
+                                                    aria-label={t(
+                                                        "timeline.page.resizeHandle",
+                                                        {
+                                                            pageName: page.name,
+                                                        },
+                                                    )}
+                                                    onPointerDown={(e) =>
                                                         handlePageResizeStart(
-                                                            e.nativeEvent,
+                                                            e,
                                                             page,
                                                         )
                                                     }
                                                 >
-                                                    &nbsp;
+                                                    {/* grip: always visible for fingers */}
+                                                    <span className="bg-text-subtitle touch:block mr-4 hidden h-[60%] w-4 rounded-full" />
                                                 </div>
                                             </ToolTip.Trigger>
                                             <ToolTip.Portal>
                                                 <ToolTip.Content
                                                     className={TooltipClassName}
                                                 >
-                                                    {(resizingPage.current
-                                                        ?.id === page.id &&
-                                                        currentDragCounts[
-                                                            page.id
-                                                        ]) ||
-                                                        page.counts}{" "}
-                                                    {/* calculates the next page count based on the difference */}
-                                                    {page.nextPageId &&
-                                                        `| ${nextPageBeatDiff(
-                                                            page.nextPageId,
-                                                            page.id,
-                                                        )}`}
+                                                    {resizeCountsLabel(page)}
                                                 </ToolTip.Content>
                                             </ToolTip.Portal>
                                         </ToolTip.Root>
@@ -429,84 +638,10 @@ export default function PageTimeline() {
                             </ContextMenu.Trigger>
                             {/* ------ context menu ------ */}
                             <ContextMenu.Portal>
-                                <ContextMenu.Content className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex flex-col gap-8 border p-16 py-12 backdrop-blur-md">
-                                    <h5 className="text-h5">
-                                        {t("timeline.page.contextMenu.title", {
-                                            pageName: page.name,
-                                        })}
-                                    </h5>
-
-                                    <div className="flex w-full items-center justify-between gap-8">
-                                        <label className="text-body text-text-subtitle">
-                                            <T keyName="timeline.page.contextMenu.subsetToggle" />
-                                        </label>
-                                        <Switch
-                                            onClick={(e) => {
-                                                updatePages({
-                                                    modifiedPagesArgs: [
-                                                        {
-                                                            id: page.id,
-                                                            is_subset:
-                                                                !page.isSubset,
-                                                        },
-                                                    ],
-                                                });
-                                            }}
-                                            checked={page?.isSubset || false}
-                                        />
-                                    </div>
-                                    <div className="border-stroke flex w-full flex-col items-start gap-8 border-t pt-8">
-                                        <div className="text-text flex items-center gap-6 text-xs">
-                                            <TrashIcon size={16} />
-                                            <T keyName="timeline.page.contextMenu.delete" />
-                                        </div>
-                                        <ToolTip.Root delayDuration={500}>
-                                            <ToolTip.Trigger asChild>
-                                                <button
-                                                    className="text-body text-text-subtitle hover:text-red cursor-pointer text-left transition-colors"
-                                                    onClick={() =>
-                                                        handleDeletePageYank(
-                                                            page,
-                                                        )
-                                                    }
-                                                >
-                                                    <T keyName="timeline.page.contextMenu.deleteYank" />
-                                                </button>
-                                            </ToolTip.Trigger>
-                                            <ToolTip.Portal>
-                                                <ToolTip.Content
-                                                    className={TooltipClassName}
-                                                    side="right"
-                                                >
-                                                    {t(
-                                                        "timeline.page.contextMenu.deleteYankTooltip",
-                                                    )}
-                                                </ToolTip.Content>
-                                            </ToolTip.Portal>
-                                        </ToolTip.Root>
-                                        <ToolTip.Root delayDuration={500}>
-                                            <ToolTip.Trigger asChild>
-                                                <button
-                                                    className="text-body text-text-subtitle hover:text-red cursor-pointer text-left transition-colors"
-                                                    onClick={() =>
-                                                        handleDeletePage(page)
-                                                    }
-                                                >
-                                                    <T keyName="timeline.page.contextMenu.deleteInPlace" />
-                                                </button>
-                                            </ToolTip.Trigger>
-                                            <ToolTip.Portal>
-                                                <ToolTip.Content
-                                                    className={TooltipClassName}
-                                                    side="right"
-                                                >
-                                                    {t(
-                                                        "timeline.page.contextMenu.deleteInPlaceTooltip",
-                                                    )}
-                                                </ToolTip.Content>
-                                            </ToolTip.Portal>
-                                        </ToolTip.Root>
-                                    </div>
+                                <ContextMenu.Content
+                                    className={PAGE_MENU_CLASS}
+                                >
+                                    {renderPageMenu(page)}
                                 </ContextMenu.Content>
                             </ContextMenu.Portal>
                         </ContextMenu.Root>

@@ -10,6 +10,8 @@ import type Measure from "@/global/classes/Measure";
 import clsx from "clsx";
 import BeatOrMeasureContextMenu from "./BeatOrMeasureContextMenu";
 import { FIRST_BEAT_ID } from "@/db-functions";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { markerHitWidth } from "./markerHitWidth";
 
 interface WaveformTimingOverlayProps {
     beats: Beat[];
@@ -44,6 +46,7 @@ export default function WaveformTimingOverlay({
     width,
 }: WaveformTimingOverlayProps) {
     const overlayRef = useRef<HTMLDivElement>(null);
+    const isTouchMode = useIsTouchMode();
     const [visibleRange, setVisibleRange] = useState<VisibleRange>({
         start: 0,
         end: duration,
@@ -175,17 +178,30 @@ export default function WaveformTimingOverlay({
                                 beatIdsOnPages={beatIdsOnPages}
                                 measure={measure}
                             >
+                                {/* transparent hit strip around the thin line */}
                                 <div
-                                    className={clsx(
-                                        "hover:bg-accent pointer-events-auto absolute top-0 bottom-0 -translate-x-1/2 cursor-pointer rounded-full",
-                                        isRehearsalMark
-                                            ? "w-2 bg-[var(--color-accent)] hover:w-8"
-                                            : "w-1 bg-[rgb(180,180,180)] hover:w-4 dark:bg-[rgb(90,90,90)]",
-                                    )}
+                                    className="group pointer-events-auto absolute top-0 bottom-0 flex -translate-x-1/2 cursor-pointer justify-center"
                                     style={{
                                         left: x,
+                                        width: markerHitWidth({
+                                            // A measure may briefly have no beats while it is being deleted
+                                            gapPx:
+                                                (beat?.duration ?? 0) *
+                                                pxPerSecond,
+                                            isTouchMode,
+                                        }),
                                     }}
-                                />
+                                    data-testid="measure-marker"
+                                >
+                                    <div
+                                        className={clsx(
+                                            "group-hover:bg-accent h-full rounded-full",
+                                            isRehearsalMark
+                                                ? "w-2 bg-[var(--color-accent)] group-hover:w-8"
+                                                : "w-1 bg-[rgb(180,180,180)] group-hover:w-4 dark:bg-[rgb(90,90,90)]",
+                                        )}
+                                    />
+                                </div>
                             </BeatOrMeasureContextMenu>
                             <div
                                 className="absolute top-0 font-mono whitespace-nowrap"
@@ -216,15 +232,23 @@ export default function WaveformTimingOverlay({
                             measure={null}
                             key={`beat-${beat.id}`}
                         >
+                            {/* transparent hit strip around the thin line */}
                             <div
                                 key={`beat-${beat.id}`}
-                                className="hover:bg-accent pointer-events-auto absolute w-1 -translate-x-1/2 cursor-pointer rounded-full bg-[rgb(205,205,205)] hover:w-4 dark:bg-[rgb(60,60,60)]"
+                                className="group pointer-events-auto absolute flex -translate-x-1/2 cursor-pointer justify-center"
                                 style={{
                                     left: x,
                                     top: 0,
                                     height: beatMarkerHeight,
+                                    width: markerHitWidth({
+                                        gapPx: beat.duration * pxPerSecond,
+                                        isTouchMode,
+                                    }),
                                 }}
-                            />
+                                data-testid="beat-marker"
+                            >
+                                <div className="group-hover:bg-accent h-full w-1 rounded-full bg-[rgb(205,205,205)] group-hover:w-4 dark:bg-[rgb(60,60,60)]" />
+                            </div>
                         </BeatOrMeasureContextMenu>
                     );
                 })}

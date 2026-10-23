@@ -3,6 +3,34 @@ import type Measure from "@/global/classes/Measure";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { ModifiedBeatArgs, updateBeats } from "@/db-functions";
 import { db } from "@/global/database/db";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import { MARKER_HIT_WIDTH_TOUCH } from "./markerHitWidth";
+
+/**
+ * Lets a finger drag a beat marker: the marker claims the touch (so the
+ * timeline doesn't scroll instead) and, in touch mode, gets an invisible
+ * strip around its 2px line to grab. Wavesurfer renders regions in its own
+ * shadow root, so this is done with inline styles rather than classes.
+ */
+export function prepareMarkerForTouch(
+    element: HTMLElement | null | undefined,
+    isTouchMode: boolean,
+): void {
+    if (!element) return;
+    element.style.touchAction = "none";
+    if (!isTouchMode) return;
+    const hit = document.createElement("div");
+    hit.setAttribute("part", "marker-touch-hit");
+    Object.assign(hit.style, {
+        position: "absolute",
+        top: "0",
+        bottom: "0",
+        left: `${-MARKER_HIT_WIDTH_TOUCH / 2}px`,
+        width: `${MARKER_HIT_WIDTH_TOUCH}px`,
+        touchAction: "none",
+    });
+    element.appendChild(hit);
+}
 
 /**
  * Calculates the modified beats when a beat's duration is changed. The duration is calculated from the region's width.
@@ -142,6 +170,7 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
      * Measure markers remain non-draggable and non-resizable
      */
     createTimingMarkers = () => {
+        const isTouchMode = useInputModeStore.getState().mode === "touch";
         let curTimestamp = this.beats[0].duration;
         this.beats.forEach((beat, index) => {
             // Don't create markers for the first two beats
@@ -166,6 +195,8 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
 
             // Add event listener for when resizing ends
             newRegion.on("update-end", () => this.handleBeatResized(newRegion));
+            if (index > 1)
+                prepareMarkerForTouch(newRegion.element, isTouchMode);
 
             this.beatRegions.set(beat.id, newRegion);
             curTimestamp = end;
