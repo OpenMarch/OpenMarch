@@ -3,7 +3,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { TooltipClassName } from "@openmarch/ui";
 import { InfoIcon } from "@phosphor-icons/react";
 import { clsx } from "clsx";
-import { forwardRef, type ReactElement, type ReactNode } from "react";
+import { forwardRef, useState, type ReactElement, type ReactNode } from "react";
 import { useTolgee } from "@tolgee/react";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 
@@ -39,6 +39,7 @@ export default function InfoTip({
 }: InfoTipProps) {
     const isTouch = useIsTouchMode();
     const { t } = useTolgee();
+    const [open, setOpen] = useState(false);
     const trigger = children ?? (
         <InfoTipButton aria-label={label ?? t("infoTip.moreInfo")} />
     );
@@ -46,8 +47,19 @@ export default function InfoTip({
 
     if (isTouch) {
         return (
-            <Popover.Root>
-                <Popover.Trigger asChild>{trigger}</Popover.Trigger>
+            <Popover.Root open={open} onOpenChange={setOpen}>
+                <Popover.Trigger
+                    asChild
+                    // A trackpad on a tablet (touch layout, mouse pointer) can hover: show it as a tooltip would
+                    onPointerEnter={(e) => {
+                        if (e.pointerType === "mouse") setOpen(true);
+                    }}
+                    onPointerLeave={(e) => {
+                        if (e.pointerType === "mouse") setOpen(false);
+                    }}
+                >
+                    {trigger}
+                </Popover.Trigger>
                 <Popover.Portal>
                     <Popover.Content
                         className={className}

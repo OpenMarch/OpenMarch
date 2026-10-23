@@ -9,6 +9,7 @@ import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useCallback, useEffect, useRef, useState } from "react";
 import CommandPalette from "@/shortcuts/palette/CommandPalette";
+import LongPressGuard from "@/components/ui/LongPressGuard";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
 import {
@@ -311,6 +312,7 @@ function App() {
                     {isWebBuild && <WebSettingsSheet />}
                     <ShortcutDispatcher />
                     <CommandPalette />
+                    <LongPressGuard />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
                         <SelectedAudioFileProvider>

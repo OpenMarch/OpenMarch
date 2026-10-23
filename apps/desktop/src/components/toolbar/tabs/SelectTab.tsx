@@ -37,6 +37,9 @@ export default function ViewTab() {
     );
 }
 
+/** A toolbar section showing only an "nothing to select" note: no box. */
+const EMPTY_SECTION = "border-transparent bg-transparent px-4";
+
 const sectionsFromMarchers = (marchers: Pick<Marcher, "section">[]) => {
     const sectionStrings = new Set([
         ...marchers.map((marcher) => marcher.section),
@@ -156,7 +159,10 @@ function SectionSelector({ marchers }: { marchers: Marcher[] }) {
     );
 
     return (
-        <ToolbarSection aria-label="Select sections">
+        <ToolbarSection
+            aria-label="Select sections"
+            className={sections.length === 0 ? EMPTY_SECTION : undefined}
+        >
             <ChipSelector
                 items={sections}
                 getId={(section) => section.name}
@@ -166,9 +172,9 @@ function SectionSelector({ marchers }: { marchers: Marcher[] }) {
                 }
                 onSelect={handleSelectBySection}
                 emptyMessage={
-                    <div>
+                    <p className="text-sub text-text-subtitle italic">
                         <T keyName="toolbar.select.noSectionsToSelect" />
-                    </div>
+                    </p>
                 }
                 ariaLabel="Select sections"
                 recentCategory="section"
@@ -203,12 +209,15 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
         [marcherIdsForTags, marcherIdsForTagsLoaded, selectMarcherIds],
     );
 
+    const tagItems = tagsLoaded && marcherIdsForTagsLoaded ? (tags ?? []) : [];
     return (
-        <ToolbarSection aria-label="Select tags">
+        <ToolbarSection
+            aria-label="Select tags"
+            // With nothing to choose, the note is plain text, not a box that looks pressable
+            className={tagItems.length === 0 ? EMPTY_SECTION : undefined}
+        >
             <ChipSelector
-                items={
-                    tagsLoaded && marcherIdsForTagsLoaded ? (tags ?? []) : []
-                }
+                items={tagItems}
                 getId={(tag) => tag.id}
                 getLabel={(tag) =>
                     getTagName({ tag_id: tag.id, name: tag.name })
@@ -218,9 +227,9 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
                 }
                 onSelect={handleSelectByTag}
                 emptyMessage={
-                    <div>
+                    <p className="text-sub text-text-subtitle italic">
                         <T keyName="toolbar.select.noTagsToSelect" />
-                    </div>
+                    </p>
                 }
                 ariaLabel="Select tags"
                 recentCategory="tag"
@@ -248,7 +257,10 @@ function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
     );
 
     return (
-        <ToolbarSection aria-label="Select drill prefixes">
+        <ToolbarSection
+            aria-label="Select drill prefixes"
+            className={drillPrefixes.length === 0 ? EMPTY_SECTION : undefined}
+        >
             <ChipSelector
                 items={drillPrefixes}
                 getId={(drillPrefix) => drillPrefix}
@@ -256,9 +268,9 @@ function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
                 getSearchText={(drillPrefix) => drillPrefix}
                 onSelect={handleSelectByDrillPrefix}
                 emptyMessage={
-                    <div>
+                    <p className="text-sub text-text-subtitle italic">
                         <T keyName="toolbar.select.noDrillPrefixesToSelect" />
-                    </div>
+                    </p>
                 }
                 ariaLabel="Select drill prefixes"
                 recentCategory="drillPrefix"

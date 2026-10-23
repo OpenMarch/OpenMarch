@@ -250,6 +250,8 @@ export default function TouchModifierButtons({
                       }
             }
             data-testid="touch-modifier-buttons"
+            // The Shift/Alt buttons are held on purpose: keep the app's long-press hint off them
+            data-own-long-press
         >
             {helpOpen && (
                 <div

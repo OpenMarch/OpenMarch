@@ -1,6 +1,7 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { LongPressBubble, useLongPress } from "@openmarch/ui";
 import Keycaps from "@/components/ui/Keycaps";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import clsx from "clsx";
 import { useTolgee } from "@tolgee/react";
 import { twMerge } from "tailwind-merge";
@@ -84,7 +85,10 @@ export default function ActionButton({
     const hintLabel =
         tooltip ??
         (toggleKey ? t(toggleKey) : getActionLabel(action, translate));
-    const shortcutKeys = getActionShortcutKeys(action, { overrides });
+    const showHints = useShowShortcutHints();
+    const shortcutKeys = showHints
+        ? getActionShortcutKeys(action, { overrides })
+        : undefined;
     return (
         <>
             <button
@@ -92,6 +96,7 @@ export default function ActionButton({
                 aria-label={caption !== undefined ? title : undefined}
                 {...rest}
                 {...longPress}
+                data-own-long-press
                 ref={setAnchor}
                 disabled={disabled || !runnable}
                 title={title}
