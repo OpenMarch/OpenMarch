@@ -22,18 +22,18 @@ The renderer reaches Electron's main process only through `window.electron`,
 which the preload builds on `ipcRenderer`. The web build keeps both ends and
 runs the main process's database code in a Web Worker:
 
-| Piece             | In Electron                | Here                                                                   |
-| ----------------- | -------------------------- | ---------------------------------------------------------------------- |
-| Renderer, preload | `src/`, `electron/preload` | The same code, started by `renderer/index.ts` once the worker is ready |
-| IPC               | Electron                   | `postMessage` to the worker (`renderer/ipc.ts`, `protocol.ts`)         |
-| Database handlers | `database.services.ts`     | The same file, in the worker (`worker/index.ts`)                       |
-| SQLite            | `node:sqlite` on a file    | `worker/sqlite.ts`: the official SQLite WebAssembly build, in memory   |
-| Opening a show    | `setActiveDb`              | `worker/index.ts`: the same steps, without the backup                  |
-| Saving            | Every write is on disk     | A copy in browser storage (`worker/storage.ts`); **Download** to keep  |
-| Settings          | electron-store             | `localStorage` (`renderer/handlers.ts`)                                |
-| File dialogs      | Native                     | File pickers and downloads (`renderer/handlers.ts`)                    |
-| Settings window   | A second `BrowserWindow`   | A second tab at `#settings`                                            |
-| Node modules      | `fs`, `path`, `crypto`     | Stand-ins in `worker/`                                                 |
+| Piece             | In Electron                | Here                                                                     |
+| ----------------- | -------------------------- | ------------------------------------------------------------------------ |
+| Renderer, preload | `src/`, `electron/preload` | The same code, started by `renderer/index.ts` once the worker is ready   |
+| IPC               | Electron                   | `postMessage` to the worker (`renderer/ipc.ts`, `protocol.ts`)           |
+| Database handlers | `database.services.ts`     | The same file, in the worker (`worker/index.ts`)                         |
+| SQLite            | `node:sqlite` on a file    | `worker/sqlite.ts`: the official SQLite WebAssembly build, in memory     |
+| Opening a show    | `setActiveDb`              | `worker/index.ts`: the same steps, without the backup                    |
+| Saving            | Every write is on disk     | A copy in browser storage (`worker/storage.ts`); **Download** to keep    |
+| Settings          | electron-store             | `localStorage` (`renderer/handlers.ts`)                                  |
+| File dialogs      | Native                     | File pickers and downloads (`renderer/handlers.ts`)                      |
+| Settings window   | A second `BrowserWindow`   | A full-screen sheet over the app (`src/components/WebSettingsSheet.tsx`) |
+| Node modules      | `fs`, `path`, `crypto`     | Stand-ins in `worker/`                                                   |
 
 `vite.web.config.mts` points `electron` at `worker/electron.ts` for
 main-process code and at `renderer/electron.ts` for the preload.

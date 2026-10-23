@@ -12,6 +12,7 @@ import { WEB_CHANNELS } from "../protocol";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
+import { requestOpenSettings } from "../../src/utilities/settingsSheet";
 import {
     isAppleTouchDevice,
     pickerAccept,
@@ -49,6 +50,8 @@ function setSettings(values: Record<string, unknown>) {
         // See loadSettings.
     }
     settingsBroadcast?.postMessage(values);
+    // And this page, where the settings sheet changed them
+    emit("settings:changed", values);
 }
 
 settingsBroadcast?.addEventListener(
@@ -330,11 +333,12 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         listenInPage(channel, () => {});
     listenInPage("window:close", () => window.close());
     listenInPage("main-window:reload", () => reloadPage());
-    handleInPage("settings:open", () => {
-        const url = new URL(window.location.href);
-        url.hash = "settings";
-        window.open(url, "openmarch-settings");
-    });
+    // Settings open in a sheet over the app (components/WebSettingsSheet.tsx)
+    // rather than in their own tab, as Electron opens a window: a second tab
+    // is easy to lose, Safari may block opening it after the menu's await,
+    // and a home-screen app on an iPad has no tabs. The settings tab still
+    // works when visited at #settings.
+    handleInPage("settings:open", () => requestOpenSettings());
 
     // Electron-only features, answered as when they are unavailable.
     handleInPage("recent-files:get", () => []);
