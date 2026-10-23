@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from "react";
 import clsx from "clsx";
 import {
     ArrowFatUpIcon,
     DotsSixVerticalIcon,
     EraserIcon,
     MagnetIcon,
+    QuestionIcon,
 } from "@phosphor-icons/react";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import {
@@ -13,6 +20,7 @@ import {
 } from "@/stores/TouchModifierStore";
 
 export const TOUCH_MODIFIER_POSITION_KEY = "openmarch:touchModifierPosition";
+export const TOUCH_MODIFIER_HELP_SEEN_KEY = "openmarch:touchModifierHelpSeen";
 
 /** A press shorter than this is a tap (latch); longer is a hold */
 const TAP_MS = 250;
@@ -24,10 +32,12 @@ interface Position {
     bottom: number;
 }
 
-const DEFAULT_POSITION: Position = { left: 12, bottom: 72 };
+/** Clear of the zoom buttons, which sit in the bottom-right corner */
+const DEFAULT_BOTTOM = 76;
+const EDGE = 12;
 
-export const parseModifierPosition = (raw: string | null): Position => {
-    if (!raw) return DEFAULT_POSITION;
+export const parseModifierPosition = (raw: string | null): Position | null => {
+    if (!raw) return null;
     try {
         const parsed = JSON.parse(raw) as Partial<Position>;
         if (
@@ -41,16 +51,21 @@ export const parseModifierPosition = (raw: string | null): Position => {
     } catch {
         // Fall through to the default
     }
-    return DEFAULT_POSITION;
+    return null;
 };
 
-const loadPosition = (): Position => {
+const readStorage = (key: string): string | null => {
     try {
-        return parseModifierPosition(
-            localStorage.getItem(TOUCH_MODIFIER_POSITION_KEY),
-        );
+        return localStorage.getItem(key);
     } catch {
-        return DEFAULT_POSITION;
+        return null;
+    }
+};
+const writeStorage = (key: string, value: string) => {
+    try {
+        localStorage.setItem(key, value);
+    } catch {
+        // Storage may be unavailable; keep it for this session
     }
 };
 
@@ -58,7 +73,7 @@ const loadPosition = (): Position => {
  * Press-and-hold holds the modifier; a quick tap latches it on until tapped
  * again.
  */
-function useModifierPress(modifier: TouchModifier) {
+function useModifierPress(modifier: TouchModifier, onTap: () => void) {
     const setHeld = useTouchModifierStore((s) => s.setHeld);
     const toggleLatched = useTouchModifierStore((s) => s.toggleLatched);
     const downAt = useRef<number | null>(null);
@@ -80,7 +95,10 @@ function useModifierPress(modifier: TouchModifier) {
         const quick = performance.now() - downAt.current < TAP_MS;
         downAt.current = null;
         setHeld(modifier, false);
-        if (tap && quick) toggleLatched(modifier);
+        if (tap && quick) {
+            toggleLatched(modifier);
+            onTap();
+        }
     };
     return {
         onPointerDown,
@@ -100,9 +118,10 @@ function useModifierPress(modifier: TouchModifier) {
 
 /**
  * On-screen Shift and Alt for the field in touch mode, where there is often no
- * keyboard: Shift adds to the selection (and, as on a keyboard, moves without
- * snapping), Alt moves without snapping to steps. Drag the grip to move them;
- * the spot is remembered.
+ * keyboard, as one small pill: Shift adds to the selection (and, as on a
+ * keyboard, moves without snapping), Alt moves without snapping to steps.
+ * "?" explains them; the explanation also opens the first time either is
+ * tapped. Drag the grip to move the pill; the spot is remembered.
  *
  * While the line tool is active, a "Clear line" button stands in for the
  * right-click that clears the line with a mouse.
@@ -119,7 +138,10 @@ export default function TouchModifierButtons({
     const held = useTouchModifierStore((s) => s.held);
     const latched = useTouchModifierStore((s) => s.latched);
     const clear = useTouchModifierStore((s) => s.clear);
-    const [position, setPosition] = useState<Position>(loadPosition);
+    const [position, setPosition] = useState<Position | null>(() =>
+        parseModifierPosition(readStorage(TOUCH_MODIFIER_POSITION_KEY)),
+    );
+    const [helpOpen, setHelpOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
     const drag = useRef<{
         id: number;
@@ -127,8 +149,13 @@ export default function TouchModifierButtons({
         startY: number;
         from: Position;
     } | null>(null);
-    const shift = useModifierPress("shift");
-    const alt = useModifierPress("alt");
+    const showHelpOnce = useCallback(() => {
+        if (readStorage(TOUCH_MODIFIER_HELP_SEEN_KEY)) return;
+        writeStorage(TOUCH_MODIFIER_HELP_SEEN_KEY, "1");
+        setHelpOpen(true);
+    }, []);
+    const shift = useModifierPress("shift", showHelpOnce);
+    const alt = useModifierPress("alt", showHelpOnce);
 
     // Leaving touch mode (or the field) lets go of anything held or latched
     useEffect(() => {
@@ -148,6 +175,20 @@ export default function TouchModifierButtons({
         };
     }, []);
 
+    // No saved spot: bottom-right, above the zoom buttons, away from the field's corner
+    useLayoutEffect(() => {
+        if (!isTouchMode || position) return;
+        const root = rootRef.current;
+        const parent = root?.offsetParent as HTMLElement | null;
+        if (!root || !parent) return;
+        setPosition(
+            clamp({
+                left: parent.clientWidth - root.offsetWidth - EDGE,
+                bottom: DEFAULT_BOTTOM,
+            }),
+        );
+    }, [isTouchMode, position, clamp]);
+
     const onGripDown = (e: React.PointerEvent<HTMLDivElement>) => {
         e.preventDefault();
         e.stopPropagation();
@@ -160,7 +201,7 @@ export default function TouchModifierButtons({
             id: e.pointerId,
             startX: e.clientX,
             startY: e.clientY,
-            from: position,
+            from: position ?? { left: EDGE, bottom: DEFAULT_BOTTOM },
         };
     };
     const onGripMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -180,14 +221,7 @@ export default function TouchModifierButtons({
         e.stopPropagation();
         drag.current = null;
         setPosition((p) => {
-            try {
-                localStorage.setItem(
-                    TOUCH_MODIFIER_POSITION_KEY,
-                    JSON.stringify(p),
-                );
-            } catch {
-                // Storage may be unavailable; keep it for this session
-            }
+            if (p) writeStorage(TOUCH_MODIFIER_POSITION_KEY, JSON.stringify(p));
             return p;
         });
     };
@@ -196,81 +230,120 @@ export default function TouchModifierButtons({
 
     const shiftOn = held.shift || latched.shift;
     const altOn = held.alt || latched.alt;
-    const buttonClass = (on: boolean) =>
+    const segment = (on: boolean) =>
         clsx(
-            "border-stroke flex flex-col items-center justify-center rounded-full border font-medium shadow-lg select-none",
-            on
-                ? "bg-accent text-text-invert border-accent"
-                : "bg-bg-1 text-text",
+            "flex h-44 min-w-56 touch-none items-center justify-center gap-4 rounded-full px-10 text-sm font-medium select-none",
+            on ? "bg-accent text-text-invert" : "text-text",
         );
 
     return (
         <div
             ref={rootRef}
-            className="pointer-events-auto absolute z-20 flex items-end gap-6"
-            style={{ left: position.left, bottom: position.bottom }}
+            className="pointer-events-auto absolute z-20 flex flex-col items-end gap-6"
+            style={
+                position
+                    ? { left: position.left, bottom: position.bottom }
+                    : {
+                          right: EDGE,
+                          bottom: DEFAULT_BOTTOM,
+                          visibility: "hidden",
+                      }
+            }
             data-testid="touch-modifier-buttons"
         >
-            <div
-                role="button"
-                aria-label="Move the Shift and Alt buttons"
-                title="Drag to move"
-                tabIndex={-1}
-                className="text-text-subtitle bg-bg-1/80 border-stroke flex h-48 w-24 cursor-grab touch-none items-center justify-center rounded-full border"
-                onPointerDown={onGripDown}
-                onPointerMove={onGripMove}
-                onPointerUp={onGripUp}
-                onPointerCancel={onGripUp}
-            >
-                <DotsSixVerticalIcon size={18} />
-            </div>
-            <button
-                type="button"
-                aria-label={
-                    latched.shift
-                        ? "Shift, on. Tap to turn off"
-                        : "Shift: hold, or tap to keep on. Adds to the selection"
-                }
-                aria-pressed={shiftOn}
-                title="Shift: hold, or tap to keep on. Adds to the selection."
-                className={clsx(buttonClass(shiftOn), "h-56 w-56 touch-none")}
-                {...shift}
-            >
-                <ArrowFatUpIcon
-                    size={20}
-                    weight={shiftOn ? "fill" : "regular"}
-                />
-                <span className="text-[11px] leading-none">
-                    {latched.shift ? "Shift on" : "Shift"}
-                </span>
-            </button>
-            <button
-                type="button"
-                aria-label={
-                    latched.alt
-                        ? "Alt, no snapping, on. Tap to turn off"
-                        : "Alt: hold, or tap to keep on. Moves without snapping to steps"
-                }
-                aria-pressed={altOn}
-                title="Alt: hold, or tap to keep on. Moves without snapping to steps."
-                className={clsx(buttonClass(altOn), "h-48 w-48 touch-none")}
-                {...alt}
-            >
-                <MagnetIcon size={16} weight={altOn ? "fill" : "regular"} />
-                <span className="text-[10px] leading-none">
-                    {latched.alt ? "Alt on" : "Alt"}
-                </span>
-            </button>
-            {showClearLine && (
-                <button
-                    type="button"
-                    className="border-stroke bg-bg-1 text-text flex h-48 items-center gap-6 rounded-full border px-16 text-sm font-medium shadow-lg"
-                    onClick={onClearLine}
+            {helpOpen && (
+                <div
+                    role="note"
+                    className="border-stroke bg-bg-1 text-text w-[260px] rounded-lg border p-12 text-sm leading-snug shadow-lg"
+                    onClick={() => setHelpOpen(false)}
                 >
-                    <EraserIcon size={18} />
-                    Clear line
-                </button>
+                    <p>
+                        <b>Shift</b>: hold it, or tap to keep it on. While it is
+                        on, tapping a marcher adds it to the selection or takes
+                        it out, and drags don&apos;t snap to steps.
+                    </p>
+                    <p className="mt-6">
+                        <b>Alt</b>: drags don&apos;t snap to steps.
+                    </p>
+                    <p className="text-text-subtitle mt-6">
+                        Without them: long press a marcher to add it. Two-finger
+                        tap undoes, three-finger tap redoes. Tap to close.
+                    </p>
+                </div>
             )}
+            <div className="flex items-center gap-6">
+                {showClearLine && (
+                    <button
+                        type="button"
+                        className="border-stroke bg-bg-1 text-text flex h-44 items-center gap-6 rounded-full border px-14 text-sm font-medium shadow-lg"
+                        onClick={onClearLine}
+                    >
+                        <EraserIcon size={18} />
+                        Clear line
+                    </button>
+                )}
+                <div className="border-stroke bg-bg-1 flex items-center rounded-full border p-2 shadow-lg">
+                    <div
+                        role="button"
+                        aria-label="Move the Shift and Alt buttons"
+                        title="Drag to move"
+                        tabIndex={-1}
+                        className="text-text-subtitle flex h-44 w-44 cursor-grab touch-none items-center justify-center rounded-full"
+                        onPointerDown={onGripDown}
+                        onPointerMove={onGripMove}
+                        onPointerUp={onGripUp}
+                        onPointerCancel={onGripUp}
+                    >
+                        <DotsSixVerticalIcon size={20} />
+                    </div>
+                    <button
+                        type="button"
+                        aria-label={
+                            latched.shift
+                                ? "Shift, on. Tap to turn off"
+                                : "Shift: hold, or tap to keep on. Tapping marchers adds them to the selection"
+                        }
+                        aria-pressed={shiftOn}
+                        className={segment(shiftOn)}
+                        {...shift}
+                    >
+                        <ArrowFatUpIcon
+                            size={16}
+                            weight={shiftOn ? "fill" : "regular"}
+                        />
+                        {latched.shift ? "Shift on" : "Shift"}
+                    </button>
+                    <button
+                        type="button"
+                        aria-label={
+                            latched.alt
+                                ? "Alt, no snapping, on. Tap to turn off"
+                                : "Alt: hold, or tap to keep on. Drags don't snap to steps"
+                        }
+                        aria-pressed={altOn}
+                        className={segment(altOn)}
+                        {...alt}
+                    >
+                        <MagnetIcon
+                            size={16}
+                            weight={altOn ? "fill" : "regular"}
+                        />
+                        {latched.alt ? "Alt on" : "Alt"}
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="What Shift and Alt do"
+                        aria-expanded={helpOpen}
+                        className="text-text-subtitle flex h-44 w-40 items-center justify-center rounded-full"
+                        onClick={() => {
+                            writeStorage(TOUCH_MODIFIER_HELP_SEEN_KEY, "1");
+                            setHelpOpen((open) => !open);
+                        }}
+                    >
+                        <QuestionIcon size={18} />
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }
