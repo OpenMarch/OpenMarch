@@ -817,6 +817,7 @@
         "title": "Launch Page"
     },
     "layout": {
+        "closeSettings": "Close settings",
         "hideInspector": "Hide inspector",
         "showInspector": "Show inspector"
     },
