@@ -24,7 +24,7 @@ export function useHistoryActionHandlers() {
         emptyKey: string,
     ) => {
         if (!available) {
-            toast.warning(t(emptyKey));
+            toast.warning(t(emptyKey), { duration: 1500 });
             return;
         }
         if (isPerforming.current) return;

@@ -3,6 +3,7 @@ import { useTolgee } from "@tolgee/react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { bindingFromEvent, platformBinding } from "../bindings";
 import { getEffectiveBindings } from "../keymap";
@@ -100,6 +101,8 @@ export default function CommandPalette() {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const isTouch = useIsTouchMode();
+    // Shortcut keycaps only once a keyboard has been used (or with a mouse layout)
+    const showHints = useShowShortcutHints();
     const [activeIndex, setActiveIndex] = useState(0);
     const [sourcesVersion, setSourcesVersion] = useState(0);
     const pendingRun = useRef<(() => void) | null>(null);
@@ -355,11 +358,14 @@ export default function CommandPalette() {
                                                             {item.group}
                                                         </span>
                                                     )}
-                                                    {item.shortcut && (
-                                                        <Keycaps
-                                                            keys={item.shortcut}
-                                                        />
-                                                    )}
+                                                    {showHints &&
+                                                        item.shortcut && (
+                                                            <Keycaps
+                                                                keys={
+                                                                    item.shortcut
+                                                                }
+                                                            />
+                                                        )}
                                                 </div>
                                             ),
                                         )}

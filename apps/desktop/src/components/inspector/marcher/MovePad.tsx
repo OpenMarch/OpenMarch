@@ -1,10 +1,4 @@
-import {
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-    useSyncExternalStore,
-} from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useTolgee } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
@@ -17,7 +11,11 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries";
 import { useIsTouchMode } from "@/stores/InputModeStore";
-import type { ActionId } from "@/shortcuts/definitions";
+import {
+    getActionDefinition,
+    type ActionArgs,
+    type ActionId,
+} from "@/shortcuts/definitions";
 import {
     isActionEnabled,
     runAction,
@@ -28,14 +26,15 @@ export type MovePadStep = "quarter" | "one" | "four";
 type Direction = "Up" | "Down" | "Left" | "Right";
 
 /**
- * Each pad step is an existing nudge variant, so a tap does exactly what the
- * matching arrow-key nudge does (same snapping, same undo).
- * ¼ step = Shift+arrow (no snap), 1 step = arrow, 4 steps = Mod+arrow.
+ * Each pad step moves exactly that far from where the marchers are, without
+ * snapping to the grid (directors count relative steps). It runs the free nudge
+ * variants: ¼ step = Fine, 1 step = Free with an exact one-step distance,
+ * 4 steps = CoarseFree. Undo matches the arrow keys.
  */
-const STEP_VARIANT: Record<MovePadStep, "" | "Fine" | "Coarse"> = {
+const STEP_VARIANT: Record<MovePadStep, "Fine" | "Free" | "CoarseFree"> = {
     quarter: "Fine",
-    one: "",
-    four: "Coarse",
+    one: "Free",
+    four: "CoarseFree",
 };
 
 export const movePadActionId = (
@@ -44,59 +43,17 @@ export const movePadActionId = (
 ): ActionId =>
     `moveSelectedMarchers${direction}${STEP_VARIANT[step]}` as ActionId;
 
-export const HOLD_REPEAT_DELAY_MS = 400;
-export const HOLD_REPEAT_INTERVAL_MS = 120;
-
-/**
- * Runs `run` once on press, then again every `interval` ms once the press has
- * been held for `delay` ms. Stops on release, cancel, leave or unmount.
- */
-export function useHoldRepeat(
-    run: () => void,
-    {
-        delay = HOLD_REPEAT_DELAY_MS,
-        interval = HOLD_REPEAT_INTERVAL_MS,
-    }: { delay?: number; interval?: number } = {},
-) {
-    const runRef = useRef(run);
-    runRef.current = run;
-    const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const repeat = useRef<ReturnType<typeof setInterval> | null>(null);
-
-    const stop = useCallback(() => {
-        if (timeout.current) clearTimeout(timeout.current);
-        if (repeat.current) clearInterval(repeat.current);
-        timeout.current = null;
-        repeat.current = null;
-    }, []);
-
-    useEffect(() => stop, [stop]);
-
-    const start = useCallback(() => {
-        stop();
-        runRef.current();
-        timeout.current = setTimeout(() => {
-            repeat.current = setInterval(() => runRef.current(), interval);
-        }, delay);
-    }, [delay, interval, stop]);
-
-    return {
-        onPointerDown: (event: React.PointerEvent<HTMLElement>) => {
-            if (event.button !== 0) return;
-            start();
-        },
-        onPointerUp: stop,
-        onPointerCancel: stop,
-        onPointerLeave: stop,
-        onBlur: stop,
-        // A press already moved on pointerdown; only a keyboard "click" (Enter/Space, detail 0) moves here
-        onClick: (event: React.MouseEvent<HTMLElement>) => {
-            if (event.detail === 0) runRef.current();
-        },
-        // Keep a held finger from opening the browser's callout menu
-        onContextMenu: (event: React.MouseEvent<HTMLElement>) =>
-            event.preventDefault(),
-    };
+/** The action and the args a pad press runs. */
+export function movePadAction(
+    direction: Direction,
+    step: MovePadStep,
+): { id: ActionId; args: ActionArgs } {
+    const id = movePadActionId(direction, step);
+    const args = getActionDefinition(id).args ?? {};
+    // "Free" alone moves by the coordinate rounding (grid); the pad means exactly one step
+    return step === "one"
+        ? { id, args: { ...args, step: "one", snap: false } }
+        : { id, args: { ...args, snap: false } };
 }
 
 function PadButton({
@@ -116,11 +73,10 @@ function PadButton({
     className?: string;
     children: React.ReactNode;
 }) {
-    const action = movePadActionId(direction, step);
+    const { id: action, args } = movePadAction(direction, step);
     const runnable = useSyncExternalStore(subscribeToActionHandlers, () =>
         isActionEnabled(action),
     );
-    const handlers = useHoldRepeat(() => runAction(action));
     const off = disabled || !runnable;
     return (
         <button
@@ -129,7 +85,8 @@ function PadButton({
             title={label}
             data-action={action}
             disabled={off}
-            {...handlers}
+            // One tap, one move. A long press explains the button instead (the app's long-press guard)
+            onClick={() => runAction(action, args)}
             className={clsx(
                 "border-stroke bg-fg-2 rounded-6 text-text flex min-h-44 min-w-44 touch-none flex-col items-center justify-center gap-2 border px-4 py-4 select-none [-webkit-touch-callout:none]",
                 "active:bg-accent active:text-text-invert disabled:cursor-not-allowed disabled:opacity-50",

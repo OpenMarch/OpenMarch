@@ -142,6 +142,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                             className={buttonClassName}
                             {...props}
                             {...longPress}
+                            data-own-long-press
                         >
                             {children}
                         </Tooltip.Trigger>

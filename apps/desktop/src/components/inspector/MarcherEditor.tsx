@@ -652,6 +652,8 @@ function MarcherEditor() {
                             }}
                             className="mt-12 flex flex-col gap-16"
                         >
+                            {/* First in the section, as for one marcher, so it doesn't move around */}
+                            <MovePad disabled={editingDisabled} />
                             <p className="text-sub text-text/80 w-full px-6 font-mono">
                                 {selectedMarchers
                                     .map((marcher) => marcher.drill_number)
@@ -746,8 +748,6 @@ function MarcherEditor() {
                                         <T keyName="inspector.marcher.createLine" />
                                     </ActionButton>
                                 )}
-
-                            <MovePad disabled={editingDisabled} />
 
                             {/* Alignment, distribution, and transformation buttons */}
                             <AlignmentButtons

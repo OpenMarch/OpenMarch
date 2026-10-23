@@ -43,6 +43,7 @@ export default function Topbar() {
 
     return (
         <div
+            data-toolbar
             className={clsx("group", {
                 "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 flex w-full items-start gap-8 rounded-[18px] border p-8":
                     isFullscreen,
