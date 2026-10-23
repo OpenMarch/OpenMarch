@@ -76,7 +76,10 @@ export default function InspectorDock({
                         clsx("relative flex shrink-0", !open && "-ml-8"),
                     drawer &&
                         clsx(
-                            "absolute top-0 bottom-8 z-50 flex items-center",
+                            // Full height but only its tab and panel take
+                            // presses, so it never covers what's under it at
+                            // the screen's edge (e.g. the timeline zoom)
+                            "pointer-events-none absolute top-0 bottom-8 z-50 flex items-center *:pointer-events-auto",
                             open ? "right-8" : "right-0",
                         ),
                 )}

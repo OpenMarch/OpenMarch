@@ -109,7 +109,7 @@ export default function TimelineContainer() {
                 >
                     <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                         <div className="flex h-fit items-center">
-                            <div>
+                            <div className={STICKY_LABEL_CLASS}>
                                 <p className={LABEL_COLUMN_CLASS}>
                                     <span className="@max-[360px]:hidden">
                                         <T keyName="timeline.pages" />
@@ -124,7 +124,8 @@ export default function TimelineContainer() {
                                 <div
                                     className={clsx(
                                         LABEL_COLUMN_CLASS,
-                                        "touch:items-center flex gap-6",
+                                        STICKY_LABEL_CLASS,
+                                        "touch:items-center gap-6",
                                     )}
                                 >
                                     <p className="text-sub @max-[360px]:hidden">
@@ -180,6 +181,10 @@ export default function TimelineContainer() {
  * waveform start at the same x. In a narrow panel the words go and only
  * room for the edit button stays.
  */
+/** Labels stay put while the pages and waveform scroll under them. */
+const STICKY_LABEL_CLASS =
+    "bg-bg-1 bg-fg-1 sticky -left-8 z-40 -my-4 flex items-center self-stretch py-4";
+
 const LABEL_COLUMN_CLASS =
     "text-sub touch:w-[6.5rem] @max-[360px]:touch:w-[2.75rem] @max-[360px]:w-[1.5rem] w-[4rem] shrink-0";
 
