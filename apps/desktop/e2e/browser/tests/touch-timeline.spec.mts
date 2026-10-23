@@ -233,3 +233,31 @@ test("the page-deleted toast undoes the delete", async ({ show }) => {
     await page.waitForTimeout(300);
     await expect.poll(() => pageStarts(show)).toEqual(before);
 });
+
+test("the timeline + and − buttons zoom with a finger", async ({ show }) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    const zoomReset = page.getByTitle("Reset timeline zoom");
+    const pageWidth = async () =>
+        (await page.locator('[timeline-page-id="1"]').boundingBox())!.width;
+    const tapButton = async (name: string) => {
+        const b = (await page.getByRole("button", { name }).boundingBox())!;
+        await fingers.tap({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+    };
+    await expect(zoomReset).toHaveText("100%");
+    const before = await pageWidth();
+    // Toasts from setting up sit in the bottom-right corner, over the
+    // column's lower button, until they time out
+    await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, {
+        timeout: 15_000,
+    });
+
+    await tapButton("Zoom timeline in");
+    await expect(zoomReset).toHaveText("120%");
+    await expect.poll(pageWidth).toBeGreaterThan(before * 1.1);
+
+    await tapButton("Zoom timeline out");
+    await tapButton("Zoom timeline out");
+    await expect(zoomReset).toHaveText("77%");
+    await expect.poll(pageWidth).toBeLessThan(before);
+});
