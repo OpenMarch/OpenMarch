@@ -49,6 +49,16 @@ them, so swapping marchers moves to ⌘/Ctrl+Shift+S.
 There is no analytics or error reporting on the web: PostHog has no key,
 Sentry is stubbed, and the opt-in prompt never shows.
 
+### Tablets
+
+On iPads (Safari) and Android tablets (Chrome) the page doesn't zoom or
+bounce (`renderer/touchGestures.ts` and the global CSS), and "Add to Home
+Screen" opens it full screen with the app icon (`public/`, tags added by
+`vite.web.config.mts`). iOS greys out `.dots` files in a picker that names
+the extension, so there the picker accepts any file and the choice is
+checked afterwards, and saving offers the share sheet ("Save to Files")
+before falling back to a download (`renderer/filePicking.ts`).
+
 ### The show in the browser
 
 There is one show at a time. It lives in memory in the worker, and a copy
