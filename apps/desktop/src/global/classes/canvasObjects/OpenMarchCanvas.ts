@@ -8,7 +8,16 @@ import CanvasListeners from "../../../components/canvas/listeners/CanvasListener
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
-import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
+import {
+    ActiveObjectArgs,
+    clampCanvasZoom,
+} from "@/components/canvas/CanvasConstants";
+import { TouchGestureAdapter } from "@/components/canvas/touch/touchGestureAdapter";
+import {
+    TOUCH_HIT_RADIUS_PX,
+    pickNearestWithinRadius,
+} from "@/components/canvas/touch/touchHitTest";
+import { isShiftHeld } from "@/stores/TouchModifierStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
@@ -148,9 +157,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The UI settings for the canvas */
     private _uiSettings: UiSettings;
 
-    /** Track touch points for pinch-to-zoom */
-    private touchPoints: { [key: number]: { x: number; y: number } } = {};
-    private lastPinchDistance: number = 0;
+    /**
+     * A finger pressed empty field while something was selected. The selection
+     * is only cleared if the press turns out to be a tap (or a rubber band), so
+     * starting a pan or pinch never deselects.
+     */
+    touchDeferredClear = false;
+
+    /** Finger and pen gestures on the field */
+    private _touchGestures: TouchGestureAdapter | null = null;
 
     /** CSS transform values for the canvas container */
     private transformValues = {
@@ -164,9 +179,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** Track state for CSS-based panning */
     private isPanning = false;
 
-    /** Track pinch gesture for zooming */
-    private initialPinchDistance = 0;
-
     /** Reference to the canvas CSS wrapper element */
     private cssZoomWrapper: HTMLDivElement | null = null;
 
@@ -179,9 +191,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     // Bound event handlers for proper cleanup
     private boundHandleAdvancedWheel: ((event: WheelEvent) => void) | null =
         null;
-    private boundHandleTouchStart: ((event: TouchEvent) => void) | null = null;
-    private boundHandleTouchMove: ((event: TouchEvent) => void) | null = null;
-    private boundHandleTouchEnd: ((event: TouchEvent) => void) | null = null;
     private boundHandleAdvancedMouseDown: ((event: MouseEvent) => void) | null =
         null;
     private boundHandleAdvancedMouseMove: ((event: MouseEvent) => void) | null =
@@ -239,7 +248,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             fireRightClick: true, // Allow right click events
             stopContextMenu: false, // Allow right click context menu for panning
             enableRetinaScaling: true, // Better display on retina screens
-        });
+            // Pointer events give fingers and pens a button, coordinates and an id,
+            // and let the touch gestures (components/canvas/touch) tell them apart
+            enablePointerEvents: true,
+        } as fabric.ICanvasOptions);
 
         // CRITICAL: Completely disable Fabric's built-in mousewheel handler to avoid conflicts
         // @ts-ignore - Accessing private property to disable built-in handling
@@ -414,7 +426,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private handleTrackpadZoom(event: WheelEvent) {
         const currentZoom = this.getZoom();
         const zoomDelta = -event.deltaY * 0.005;
-        const newZoom = Math.max(0.2, Math.min(25, currentZoom + zoomDelta));
+        const newZoom = clampCanvasZoom(currentZoom + zoomDelta);
 
         if (Math.abs(newZoom - currentZoom) < 0.001) {
             return;
@@ -465,7 +477,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
         let newZoom = currentZoom * zoomMultiplier;
 
-        newZoom = Math.max(0.2, Math.min(25, newZoom));
+        newZoom = clampCanvasZoom(newZoom);
 
         if (Math.abs(newZoom - currentZoom) < 0.0001) {
             return;
@@ -554,81 +566,125 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    private handleTouchStart(event: TouchEvent) {
-        event.preventDefault();
-        for (let i = 0; i < event.touches.length; i++) {
-            const touch = event.touches[i];
-            this.touchPoints[touch.identifier] = {
-                x: touch.clientX,
-                y: touch.clientY,
-            };
-        }
-        if (event.touches.length === 2) {
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-            this.initialPinchDistance = Math.sqrt(
-                Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2),
-            );
-        }
+    /**
+     * Sets the view from a finger gesture (pan and pinch), keeping it inside the
+     * pan limits. The grid is cached while the view moves, as for wheel zoom.
+     */
+    public applyGestureViewport(vpt: number[]) {
+        if (!this.staticGridRef.objectCaching)
+            this.staticGridRef.objectCaching = true;
+        this.setViewportTransform(vpt);
+        this.checkCanvasBounds();
+        this.requestRenderAll();
+        clearTimeout(this._zoomTimeout);
+        this._zoomTimeout = setTimeout(() => {
+            if (this.staticGridRef.objectCaching) {
+                this.staticGridRef.objectCaching = false;
+                this.requestRenderAll();
+            }
+        }, 75);
     }
 
-    private handleTouchMove(event: TouchEvent) {
-        event.preventDefault();
-        if (event.touches.length === 1) {
-            const touch = event.touches[0];
-            const lastTouch = this.touchPoints[touch.identifier];
+    /******************* TOUCH-AWARE FABRIC OVERRIDES ******************/
 
-            if (lastTouch && this.viewportTransform) {
-                const deltaX = touch.clientX - lastTouch.x;
-                const deltaY = touch.clientY - lastTouch.y;
-                const pan = this.trackpadPanSensitivity ?? 1;
-                this.viewportTransform[4] += deltaX * pan;
-                this.viewportTransform[5] += deltaY * pan;
-                this.requestRenderAll();
-                this.checkCanvasBounds();
-                this.touchPoints[touch.identifier] = {
-                    x: touch.clientX,
-                    y: touch.clientY,
-                };
-            }
-        } else if (event.touches.length === 2) {
-            const touch1 = event.touches[0];
-            const touch2 = event.touches[1];
-            const currentDistance = Math.sqrt(
-                Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2),
-            );
-            if (this.initialPinchDistance > 0) {
-                const scaleDelta =
-                    (currentDistance - this.initialPinchDistance) * 0.01;
-                const centerX = (touch1.clientX + touch2.clientX) / 2;
-                const centerY = (touch1.clientY + touch2.clientY) / 2;
-                const rect = this.getSelectionElement().getBoundingClientRect();
-                const pointer = {
-                    x: centerX - rect.left,
-                    y: centerY - rect.top,
-                };
-                const currentZoom = this.getZoom();
-                const newZoom = Math.max(
-                    0.2,
-                    Math.min(25, currentZoom + scaleDelta),
-                );
-                this.zoomToPoint(pointer, newZoom);
-                this.requestRenderAll();
-                this.initialPinchDistance = currentDistance;
-            }
+    /**
+     * Fabric's target search, plus a wider reach for fingers: when a finger
+     * misses, the nearest marcher, control point or handle within
+     * TOUCH_HIT_RADIUS_PX screen pixels is pressed instead.
+     */
+    findTarget(e: Event, skipGroup: boolean): fabric.Object | undefined {
+        const target = super.findTarget(e as MouseEvent, skipGroup);
+        if ((e as PointerEvent).pointerType !== "touch") return target;
+        if (target && (target.selectable || target === this._activeObject))
+            return target;
+        const nearest = this.findNearestTouchTarget(e);
+        if (nearest) {
+            (this as any).targets = [];
+            return nearest;
         }
+        return target;
     }
 
-    private handleTouchEnd(event: TouchEvent) {
-        for (let i = 0; i < event.changedTouches.length; i++) {
-            const touch = event.changedTouches[i];
-            delete this.touchPoints[touch.identifier];
+    /** The selectable object nearest to a finger, within the touch radius */
+    findNearestTouchTarget(e: Event): fabric.Object | null {
+        const point = this.getPointer(e as MouseEvent);
+        const active = this.getActiveObject();
+        const candidates: {
+            item: fabric.Object;
+            rect: ReturnType<fabric.Object["getBoundingRect"]>;
+        }[] = [];
+        for (const obj of this.getObjects()) {
+            if (!obj.visible || !obj.evented || !obj.selectable || obj.group)
+                continue;
+            candidates.push({
+                item: obj,
+                rect: obj.getBoundingRect(true, true),
+            });
         }
-        if (event.touches.length < 2) {
-            this.initialPinchDistance = 0;
+        if (active && active.type === "activeSelection" && active.evented) {
+            candidates.push({
+                item: active,
+                rect: active.getBoundingRect(true, true),
+            });
         }
+        return pickNearestWithinRadius(
+            candidates,
+            point,
+            TOUCH_HIT_RADIUS_PX,
+            this.getZoom(),
+        );
+    }
+
+    /**
+     * Which pointer Fabric follows. Fabric takes the browser's primary pointer,
+     * but a finger holding the on-screen Shift button would make the finger on
+     * the field non-primary; for fingers, follow the one the touch gestures
+     * gave to Fabric instead.
+     */
+    _isMainEvent(e: Event): boolean {
+        const pointer = e as PointerEvent;
+        if (pointer.pointerType === "touch" && this._touchGestures)
+            return this._touchGestures.isFabricPointer(pointer.pointerId);
+        return Boolean(
+            (fabric.Canvas.prototype as any)._isMainEvent.call(this, e),
+        );
+    }
+
+    /** Fabric's add-to-selection key also follows the on-screen Shift button */
+    _isSelectionKeyPressed(e: Event): boolean {
+        return (
+            isShiftHeld(e as MouseEvent) ||
+            Boolean(
+                (fabric.Canvas.prototype as any)._isSelectionKeyPressed.call(
+                    this,
+                    e,
+                ),
+            )
+        );
+    }
+
+    /**
+     * Fabric clears the selection as soon as empty field is pressed. For a
+     * finger, wait: the press may become a pan or pinch. The touch gestures
+     * clear it on a tap or a rubber band instead (see touchDeferredClear).
+     */
+    _shouldClearSelection(e: Event, target?: fabric.Object): boolean {
+        const shouldClear = Boolean(
+            (fabric.Canvas.prototype as any)._shouldClearSelection.call(
+                this,
+                e,
+                target,
+            ),
+        );
+        if (
+            shouldClear &&
+            (e as PointerEvent).pointerType === "touch" &&
+            (!target || !target.selectable)
+        ) {
+            this.touchDeferredClear = true;
+            return false;
+        }
+        return shouldClear;
     }
 
     private handleAdvancedMouseDown(event: MouseEvent) {
@@ -863,9 +919,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.removeAdvancedEventListeners();
 
         this.boundHandleAdvancedWheel = this.handleAdvancedWheel.bind(this);
-        this.boundHandleTouchStart = this.handleTouchStart.bind(this);
-        this.boundHandleTouchMove = this.handleTouchMove.bind(this);
-        this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
         this.boundHandleAdvancedMouseDown =
             this.handleAdvancedMouseDown.bind(this);
         this.boundHandleAdvancedMouseMove =
@@ -880,21 +933,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             { passive: false },
         );
 
-        this.cssZoomWrapper.addEventListener(
-            "touchstart",
-            this.boundHandleTouchStart,
-            { passive: false },
+        // Fingers and pens: one finger edits, two navigate (see touchGestures.ts)
+        this._touchGestures = new TouchGestureAdapter(
+            this,
+            this.cssZoomWrapper,
         );
-        this.cssZoomWrapper.addEventListener(
-            "touchmove",
-            this.boundHandleTouchMove,
-            { passive: false },
-        );
-        this.cssZoomWrapper.addEventListener(
-            "touchend",
-            this.boundHandleTouchEnd,
-            { passive: false },
-        );
+        this._touchGestures.attach();
         this.cssZoomWrapper.addEventListener(
             "mousedown",
             this.boundHandleAdvancedMouseDown,
@@ -924,24 +968,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this.boundHandleAdvancedWheel,
             );
         }
-        if (this.boundHandleTouchStart) {
-            this.cssZoomWrapper.removeEventListener(
-                "touchstart",
-                this.boundHandleTouchStart,
-            );
-        }
-        if (this.boundHandleTouchMove) {
-            this.cssZoomWrapper.removeEventListener(
-                "touchmove",
-                this.boundHandleTouchMove,
-            );
-        }
-        if (this.boundHandleTouchEnd) {
-            this.cssZoomWrapper.removeEventListener(
-                "touchend",
-                this.boundHandleTouchEnd,
-            );
-        }
+        this._touchGestures?.detach();
+        this._touchGestures = null;
         if (this.boundHandleAdvancedMouseDown) {
             this.cssZoomWrapper.removeEventListener(
                 "mousedown",
@@ -1537,7 +1565,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         let newZoom = currentZoom * zoomFactor;
 
         // Apply professional zoom limits
-        newZoom = Math.max(0.2, Math.min(25, newZoom));
+        newZoom = clampCanvasZoom(newZoom);
 
         // Apply zoom immediately with crisp rendering
         this.zoomToPoint(

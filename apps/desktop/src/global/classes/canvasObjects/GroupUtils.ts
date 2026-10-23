@@ -1,4 +1,6 @@
 import { fabric } from "fabric";
+import { isSnapOff } from "@/components/canvas/touch/canvasModifiers";
+import { isShiftHeld } from "@/stores/TouchModifierStore";
 import CanvasMarcher from "./CanvasMarcher";
 
 /**
@@ -79,10 +81,9 @@ export const handleGroupRotating = (
     e: fabric.IEvent<Event>,
     group: fabric.Group,
 ) => {
-    const shiftKey = (e.e as MouseEvent).shiftKey;
     const angle = group.angle ?? 0;
 
-    if (!shiftKey) {
+    if (!isSnapOff(e.e as MouseEvent)) {
         const snappedAngle = Math.round(angle / 15) * 15;
         group.rotate(snappedAngle);
     }
@@ -115,7 +116,7 @@ export const handleGroupScaling = (
         // Get the corner being dragged from the transform
         const transform = (group.canvas as any)?._currentTransform;
         const corner = transform?.corner;
-        const shiftKey = (e.e as MouseEvent)?.shiftKey;
+        const shiftKey = isShiftHeld(e.e as MouseEvent);
 
         // Track the scaling corner on first frame
         if (corner && !(group as any).__scalingCorner) {
@@ -170,6 +171,13 @@ export const handleGroupScaling = (
     group.setCoords();
     group.canvas?.requestRenderAll();
 };
+
+/**
+ * Re-applies the group's counter transform to its marchers, e.g. after the
+ * group's own transform was put back.
+ */
+export const resetGroupChildTransforms = (group: fabric.Group) =>
+    rotationSideEffects(group);
 
 export const resetMarcherRotation = (group: fabric.Group) => {
     group._objects.forEach((o) => {

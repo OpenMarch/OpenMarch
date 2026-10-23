@@ -31,6 +31,7 @@ import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
+import TouchModifierButtons from "./touch/TouchModifierButtons";
 
 /**
  * The field/stage UI of OpenMarch
@@ -536,6 +537,16 @@ export default function Canvas({
         };
     }, [canvas, centerAndFitCanvas, isFullscreen]);
 
+    /** Touch stand-in for the right-click that clears the line being drawn */
+    const clearLine = useCallback(() => {
+        if (!canvas) return;
+        const listeners = canvas.listeners;
+        if (listeners instanceof LineListeners) {
+            listeners.clearLine();
+            canvas.requestRenderAll();
+        }
+    }, [canvas]);
+
     /* --------------------------Animation Functions-------------------------- */
 
     // This effect ensures that when the animation is playing, the shape paths
@@ -655,6 +666,12 @@ export default function Canvas({
                         className="text-text animate-spin"
                     />
                 </div>
+            )}
+            {canvas && !isFullscreen && (
+                <TouchModifierButtons
+                    showClearLine={alignmentEvent === "line"}
+                    onClearLine={clearLine}
+                />
             )}
         </div>
     );
