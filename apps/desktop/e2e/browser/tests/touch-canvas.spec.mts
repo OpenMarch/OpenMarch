@@ -154,21 +154,29 @@ test("a long press adds a marcher to the selection and a two-finger tap undoes",
     await expect
         .poll(() => selectedDrillNumbers(page))
         .toEqual([first.drillNumber]);
-    await fingers.tap(second.screen, 700);
+    // The first touch switches the layout to touch mode, which can move the
+    // field on screen: find the second marcher again
+    await waitForIdle(page);
+    const drawnNow = await drawnMarchers(page);
+    const secondNow = drawnNow.find(
+        (m) => m.drillNumber === second.drillNumber,
+    )!;
+    const firstNow = drawnNow.find((m) => m.drillNumber === first.drillNumber)!;
+    await fingers.tap(secondNow.screen, 700);
     await expect
         .poll(() => selectedDrillNumbers(page))
         .toEqual([first.drillNumber, second.drillNumber].sort());
     // A tap on empty field clears it
-    const empty = { x: first.screen.x, y: first.screen.y + 200 };
+    const empty = { x: firstNow.screen.x, y: firstNow.screen.y + 200 };
     await fingers.tap(empty);
     await expect.poll(() => selectedDrillNumbers(page)).toEqual([]);
 
     // Drag, then undo it with two fingers
     await waitForIdle(page);
     const before = await savedPositions(show);
-    await fingers.drag(first.screen, {
-        x: first.screen.x + 120,
-        y: first.screen.y + 60,
+    await fingers.drag(firstNow.screen, {
+        x: firstNow.screen.x + 120,
+        y: firstNow.screen.y + 60,
     });
     await expect.poll(() => savedPositions(show)).not.toEqual(before);
     await waitForIdle(page);
