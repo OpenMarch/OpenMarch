@@ -12,6 +12,12 @@ import { WEB_CHANNELS } from "../protocol";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
+import {
+    isAppleTouchDevice,
+    pickerAccept,
+    shareFile,
+    showFileProblem,
+} from "./filePicking";
 
 const SETTINGS_KEY = storageKey("settings");
 /** Tells this build's other tabs (e.g. the settings tab) about a change. */
@@ -65,22 +71,62 @@ export function reloadPage() {
 /** Whether the page is reloading itself, so leaving loses nothing. */
 export const isReloadingOnPurpose = () => reloading;
 
-/** Asks the person for one file, like the app's native open dialog. */
+const appleTouch = isAppleTouchDevice();
+
+/**
+ * Asks the person for one file, like the app's native open dialog. On iOS
+ * the picker can't filter by extension (see ./filePicking.ts), so callers
+ * check the file.
+ */
 export function pickFile(accept: string): Promise<File | null> {
     return new Promise((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = accept;
-        input.addEventListener("change", () =>
-            resolve(input.files?.[0] ?? null),
-        );
-        input.addEventListener("cancel", () => resolve(null));
+        input.accept = pickerAccept(accept, appleTouch);
+        // In the page, hidden: iOS Safari may not report the choice from a
+        // detached input.
+        input.style.display = "none";
+        document.body.append(input);
+        const done = (file: File | null) => {
+            input.remove();
+            resolve(file);
+        };
+        input.addEventListener("change", () => done(input.files?.[0] ?? null));
+        input.addEventListener("cancel", () => done(null));
         input.click();
     });
 }
 
-/** Saves `bytes` to the person's computer. */
-function download(bytes: Uint8Array, name: string) {
+/**
+ * Asks for a `.dots` file. Where the picker couldn't filter (iOS), a file
+ * that isn't a show is turned down with a message, as if none was picked.
+ */
+async function pickShowFile(): Promise<File | null> {
+    const file = await pickFile(".dots");
+    if (!file || !appleTouch) return file;
+    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const problem = showFileProblem(file.name, head);
+    if (problem) {
+        window.alert(problem);
+        return null;
+    }
+    return file;
+}
+
+/**
+ * Saves `bytes` to the person's device. False if they closed the iOS share
+ * sheet without saving.
+ */
+async function download(bytes: Uint8Array, name: string): Promise<boolean> {
+    if (appleTouch) {
+        const shared = await shareFile(
+            new File([bytes as BlobPart], name, {
+                type: "application/octet-stream",
+            }),
+        );
+        if (shared === "shared") return true;
+        if (shared === "cancelled") return false;
+    }
     const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], { type: "application/octet-stream" }),
     );
@@ -89,15 +135,19 @@ function download(bytes: Uint8Array, name: string) {
     link.download = name;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    return true;
 }
 
-/** Saves the open show as a `.dots` file. Returns 200, or 0 with nothing open. */
+/**
+ * Saves the open show as a `.dots` file. Returns 200, or 0 with nothing open
+ * or when the person closed the iOS share sheet.
+ */
 export async function downloadShow(): Promise<number> {
     const show = await invokeWorker<{ name: string; bytes: Uint8Array } | null>(
         WEB_CHANNELS.exportShow,
     );
     if (!show) return 0;
-    download(show.bytes, show.name);
+    if (!(await download(show.bytes, show.name))) return 0;
     markDownloaded();
     return 200;
 }
@@ -314,13 +364,13 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     handleInPage("database:load", async () => {
         if (!confirmDiscard()) return 0;
         if (!(await confirmReplaceKept("Opening a show"))) return 0;
-        const file = await pickFile(".dots");
+        const file = await pickShowFile();
         return file ? openShowFile(file) : 0;
     });
     handleInPage("database:save", () => downloadShow());
     handleInPage("closeCurrentFile", () => closeShow());
     handleInPage("newShow:choosePreviousDotsFile", async () => {
-        const file = await pickFile(".dots");
+        const file = await pickShowFile();
         if (!file) return null;
         return invokeWorker(
             WEB_CHANNELS.readPreviousDots,

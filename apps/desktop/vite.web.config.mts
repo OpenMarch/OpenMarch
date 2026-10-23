@@ -87,9 +87,41 @@ const webEntry = (): Plugin => ({
                     "script-src 'self'",
                     "script-src 'self' 'wasm-unsafe-eval'",
                 )
-                .replace(/<title>[^<]*<\/title>/, "<title>OpenMarch</title>"),
+                .replace(/<title>[^<]*<\/title>/, "<title>OpenMarch</title>")
+                .replace(
+                    /<meta\s+name="viewport"\s+content="[^"]*"\s*\/>/,
+                    `<meta name="viewport" content="${WEB_VIEWPORT}" />`,
+                )
+                .replace("</head>", `    ${HOME_SCREEN_TAGS}\n    </head>`),
     },
 });
+
+/**
+ * `maximum-scale=1` stops iOS Safari zooming the page into a text field
+ * whose font is under 16px (iOS ignores it for pinch-zoom, for
+ * accessibility; `web/renderer/touchGestures.ts` stops that instead) and
+ * stops Android Chrome's page pinch-zoom. `viewport-fit=cover` lets the app
+ * reach under the notch and home indicator in home-screen mode, where
+ * `env(safe-area-inset-*)` pads it back (src/styles/index.css).
+ */
+const WEB_VIEWPORT =
+    "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover";
+
+/**
+ * "Add to Home Screen" (iPadOS Safari, Android Chrome): opens full screen
+ * like an app, with the app icon. The files are in `web/public/`. Electron
+ * shares index.html, so these are added only here.
+ */
+const HOME_SCREEN_TAGS = [
+    '<link rel="manifest" href="/manifest.webmanifest" />',
+    '<link rel="apple-touch-icon" href="/apple-touch-icon.png" />',
+    '<meta name="mobile-web-app-capable" content="yes" />',
+    '<meta name="apple-mobile-web-app-capable" content="yes" />',
+    '<meta name="apple-mobile-web-app-title" content="OpenMarch" />',
+    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
+    '<meta name="theme-color" content="#ecebf0" media="(prefers-color-scheme: light)" />',
+    '<meta name="theme-color" content="#0f0e13" media="(prefers-color-scheme: dark)" />',
+].join("\n        ");
 
 export default defineConfig({
     resolve: {
@@ -138,6 +170,8 @@ export default defineConfig({
         // Loads its .wasm next to itself, which pre-bundling breaks.
         exclude: ["@sqlite.org/sqlite-wasm"],
     },
+    // Home-screen icons and manifest (see HOME_SCREEN_TAGS), and the favicon.
+    publicDir: web("public"),
     build: {
         outDir,
         emptyOutDir: true,

@@ -16,6 +16,7 @@ import {
     storageLost,
 } from "./handlers";
 import { takeHandedOffShow } from "./handoff";
+import { startTouchGestureGuard } from "./touchGestures";
 import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
 import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
@@ -143,6 +144,7 @@ async function reopenHandedOffShow() {
 async function start() {
     window.__openmarchPlatform = detectPlatform();
     suppressBrowserContextMenu();
+    startTouchGestureGuard();
     const isSettingsTab = window.location.hash === "#settings";
     registerPageHandlers({ isSettingsTab });
 
