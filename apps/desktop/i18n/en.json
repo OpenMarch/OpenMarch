@@ -624,6 +624,18 @@
             "loading": "Loading marcher",
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
+            "move": {
+                "back": "Back",
+                "fourSteps": "4 steps",
+                "front": "Front",
+                "oneStep": "1 step",
+                "quarterStep": "¼ step",
+                "stepSize": "Step size",
+                "title": "Move",
+                "towardBack": "Move toward the back sideline",
+                "towardFront": "Move toward the front sideline",
+                "towardSide": "Move toward {side}"
+            },
             "name": "Name",
             "noPageSelected": "No page selected.",
             "section": "Section",
