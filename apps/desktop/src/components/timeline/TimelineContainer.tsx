@@ -7,7 +7,7 @@ import {
     PlusIcon,
     MinusIcon,
 } from "@phosphor-icons/react";
-import { defaultSettings, useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import AudioPlayer from "./audio/AudioPlayer";
 import ActionButton from "@/shortcuts/ActionButton";
@@ -18,6 +18,13 @@ import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
 import { T } from "@tolgee/react";
 import clsx from "clsx";
+import { usePinchZoom } from "./usePinchZoom";
+import { TOUCH_TARGET_CLASS } from "./touchTargets";
+import {
+    TIMELINE_BASE_PX_PER_SEC,
+    TIMELINE_MAX_PX_PER_SEC,
+    TIMELINE_MIN_PX_PER_SEC,
+} from "./pinchZoom";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -26,6 +33,7 @@ export default function TimelineContainer() {
     const { uiSettings } = useUiSettingsStore();
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
+    usePinchZoom(timelineRef);
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -80,12 +88,12 @@ export default function TimelineContainer() {
             <div
                 ref={timelineRef}
                 id="timeline"
-                className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto overflow-y-hidden border p-8 transition-all duration-200"
+                className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden border p-8 transition-all duration-200"
             >
                 <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                     <div className="flex h-fit items-center">
                         <div>
-                            <p className="text-sub w-[4rem]">
+                            <p className="text-sub touch:w-[6.5rem] w-[4rem]">
                                 <T keyName="timeline.pages" />
                             </p>
                         </div>
@@ -94,21 +102,27 @@ export default function TimelineContainer() {
 
                     <div className={"flex items-center"}>
                         {!isFullscreen && (
-                            <div className="flex w-[4rem] gap-6">
+                            <div className="touch:w-[6.5rem] touch:items-center flex w-[4rem] gap-6">
                                 <p className="text-sub">
                                     <T keyName="timeline.audio" />
                                 </p>
                                 {uiSettings.focussedComponent !== "timeline" ? (
                                     <ActionButton
                                         action="focusTimeline"
-                                        className="w-fit"
+                                        className={clsx(
+                                            "w-fit",
+                                            TOUCH_TARGET_CLASS,
+                                        )}
                                     >
                                         <PencilSimpleIcon />
                                     </ActionButton>
                                 ) : (
                                     <ActionButton
                                         action="focusCanvas"
-                                        className="w-fit"
+                                        className={clsx(
+                                            "w-fit",
+                                            TOUCH_TARGET_CLASS,
+                                        )}
                                     >
                                         <XIcon />
                                     </ActionButton>
@@ -134,10 +148,6 @@ export default function TimelineContainer() {
         </div>
     );
 }
-
-const TIMELINE_MIN_PX_PER_SEC = 10;
-const TIMELINE_MAX_PX_PER_SEC = 200;
-const TIMELINE_BASE_PX_PER_SEC = defaultSettings.timelinePixelsPerSecond;
 
 function TimelineZoomControls() {
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
@@ -174,7 +184,7 @@ function TimelineZoomControls() {
         <div
             className={clsx(
                 { "right-290": !isFullscreen },
-                "border-stroke bg-modal fixed right-16 bottom-16 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg",
+                "border-stroke bg-modal touch:h-44 touch:w-160 fixed right-16 bottom-16 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg",
             )}
         >
             <button
@@ -183,7 +193,7 @@ function TimelineZoomControls() {
                 disabled={currentPixels <= TIMELINE_MIN_PX_PER_SEC}
                 title="Zoom out"
             >
-                <MinusIcon size={14} weight="bold" />
+                <MinusIcon size={14} weight="bold" className="touch:size-20" />
             </button>
             <button
                 onClick={handleReset}
@@ -199,7 +209,7 @@ function TimelineZoomControls() {
                 disabled={currentPixels >= TIMELINE_MAX_PX_PER_SEC}
                 title="Zoom in"
             >
-                <PlusIcon size={14} weight="bold" />
+                <PlusIcon size={14} weight="bold" className="touch:size-20" />
             </button>
         </div>
     );

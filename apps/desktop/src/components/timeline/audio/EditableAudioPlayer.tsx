@@ -10,7 +10,12 @@ import {
     useActionHandler,
     useActionHandlerGroup,
 } from "@/shortcuts/useActionHandler";
-import { TAP_BEATS_ACTION_IDS } from "@/shortcuts/definitions";
+import { TAP_BEATS_ACTION_IDS, type ActionId } from "@/shortcuts/definitions";
+import { runAction } from "@/shortcuts/registry";
+import ActionButton from "@/shortcuts/ActionButton";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { TOUCH_TARGET_CLASS } from "../touchTargets";
+import clsx from "clsx";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -26,6 +31,9 @@ import {
 } from "./AudioPlayer";
 import {
     BooksIcon,
+    CaretLeftIcon,
+    CaretRightIcon,
+    HandTapIcon,
     PauseIcon,
     PlayIcon,
     RewindIcon,
@@ -39,7 +47,7 @@ import {
 } from "./EditableAudioPlayerUtils";
 import { useTheme } from "@/context/ThemeContext";
 import Measure from "@/global/classes/Measure";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { normalizeVolume } from "./volume";
 
 /**
@@ -72,6 +80,14 @@ export default function EditableAudioPlayer() {
     const [temporaryBeats, setTemporaryBeats] = useState<Beat[]>([]);
     const [temporaryMeasures, setTemporaryMeasures] = useState<Measure[]>([]);
     const replaceAllBeatObjectsMutation = useReplaceAllBeatObjects();
+    const isTouchMode = useIsTouchMode();
+    const { t } = useTolgee();
+    // Beats added per press of the on-screen Tap button (keys 1-9 pick their own)
+    const [beatsPerTap, setBeatsPerTap] = useState(1);
+    const tapBeats = useCallback(
+        () => runAction(`timelineTapBeats${beatsPerTap}` as ActionId),
+        [beatsPerTap],
+    );
 
     const togglePlayPause = useCallback(() => {
         if (!waveSurfer) return;
@@ -297,14 +313,20 @@ export default function EditableAudioPlayer() {
                 <div className="flex items-center gap-6">
                     <button
                         onClick={() => waveSurfer?.seekTo(0)}
-                        className="hover:text-accent text-text transition-colors"
+                        className={clsx(
+                            "hover:text-accent text-text transition-colors",
+                            TOUCH_TARGET_CLASS,
+                        )}
                         disabled={!waveSurfer || !audioFileUrl}
                     >
                         <RewindIcon size={24} />
                     </button>
                     <button
                         onClick={togglePlayPause}
-                        className="hover:text-accent text-text transition-colors"
+                        className={clsx(
+                            "hover:text-accent text-text transition-colors",
+                            TOUCH_TARGET_CLASS,
+                        )}
                         disabled={!waveSurfer || !audioFileUrl}
                     >
                         {isAudioPlaying ? (
@@ -313,6 +335,22 @@ export default function EditableAudioPlayer() {
                             <PlayIcon size={24} />
                         )}
                     </button>
+                    {isTouchMode && (
+                        <>
+                            <ActionButton
+                                action="timelinePreviousPage"
+                                className={TOUCH_TARGET_CLASS}
+                            >
+                                <CaretLeftIcon size={24} />
+                            </ActionButton>
+                            <ActionButton
+                                action="timelineNextPage"
+                                className={TOUCH_TARGET_CLASS}
+                            >
+                                <CaretRightIcon size={24} />
+                            </ActionButton>
+                        </>
+                    )}
                 </div>
 
                 {beatsToDisplay === "real" ? (
@@ -334,7 +372,53 @@ export default function EditableAudioPlayer() {
                         </Button>
                     </div>
                 ) : (
-                    <div className="flex h-fit min-h-0 w-full min-w-0 gap-16">
+                    <div className="flex h-fit min-h-0 w-full min-w-0 items-center gap-16">
+                        <div className="flex items-center gap-6">
+                            <button
+                                type="button"
+                                className="bg-accent text-text-invert rounded-6 touch:min-h-56 touch:min-w-96 touch:text-h5 flex min-h-26 items-center justify-center gap-6 px-12 font-medium select-none active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50"
+                                aria-label={t("audio.tapTempo.tapButton", {
+                                    count: beatsPerTap,
+                                })}
+                                title={t("audio.tapTempo.tapButton", {
+                                    count: beatsPerTap,
+                                })}
+                                disabled={!waveSurfer}
+                                onPointerDown={(e) => {
+                                    // On press, not release, so the beat lands on the tap
+                                    if (
+                                        e.pointerType === "mouse" &&
+                                        e.button !== 0
+                                    )
+                                        return;
+                                    e.preventDefault();
+                                    tapBeats();
+                                }}
+                                onClick={(e) => {
+                                    // Keyboard activation (Enter/Space) has no pointer press
+                                    if (e.detail === 0) tapBeats();
+                                }}
+                            >
+                                <HandTapIcon size={20} />
+                                <T keyName="audio.tapTempo.tap" />
+                            </button>
+                            <label className="text-sub text-text-subtitle flex items-center gap-4 whitespace-nowrap">
+                                <T keyName="audio.tapTempo.beatsPerTap" />
+                                <select
+                                    className="bg-fg-2 border-stroke rounded-6 text-body text-text touch:h-44 touch:min-w-56 h-26 border px-4"
+                                    value={beatsPerTap}
+                                    onChange={(e) =>
+                                        setBeatsPerTap(Number(e.target.value))
+                                    }
+                                >
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                                        <option key={n} value={n}>
+                                            {n}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
                         <div
                             id="timeline-editor-button-container"
                             className="flex gap-4"
