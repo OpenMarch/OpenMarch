@@ -1,6 +1,7 @@
 import { clsx } from "clsx";
 import React from "react";
 import { twMerge } from "tailwind-merge";
+import { selectNumberOnTouchFocus } from "./touchSelect";
 
 export type UnitInputProps = Omit<
     React.InputHTMLAttributes<HTMLInputElement>,
@@ -26,6 +27,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
             containerClassName,
             compact,
             unit,
+            onFocus,
             type = "number",
             step = 1,
             ...props
@@ -70,6 +72,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
                 type={type}
                 step={step}
                 {...props}
+                onFocus={selectNumberOnTouchFocus(onFocus)}
             />
         </div>
     ),

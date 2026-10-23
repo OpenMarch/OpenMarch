@@ -7,6 +7,8 @@ import { T } from "@tolgee/react";
 import { updatePagesMutationOptions } from "../../hooks/queries";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useSplitPage } from "./PageEditorUtils";
+import { useCompactInspector } from "./useCompactInspector";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
@@ -17,6 +19,12 @@ function PageEditor() {
     );
     const splitPage = useSplitPage().mutate;
     const isFirstPage = selectedPage?.previousPageId === null;
+    // Where height is short, fold the page section while marchers are selected
+    // so their coordinates fit; it opens again when the selection clears
+    const compact = useCompactInspector();
+    const hasMarchersSelected =
+        (useSelectedMarchers()?.selectedMarchers.length ?? 0) > 0;
+    const folded = compact && hasMarchersSelected;
 
     const countsInputId = "page-counts";
     const subsetInputId = "page-subset";
@@ -35,7 +43,8 @@ function PageEditor() {
     if (selectedPage)
         return (
             <InspectorCollapsible
-                defaultOpen
+                key={folded ? "folded" : "open"}
+                defaultOpen={!folded}
                 translatableTitle={{
                     keyName: "inspector.page.title",
                     parameters: { pageNumber: selectedPage.name },

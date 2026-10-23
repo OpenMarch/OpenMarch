@@ -95,7 +95,7 @@ export const AlertDialogContent = ({
             className={twMerge(
                 clsx(
                     className,
-                    "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed top-1/2 left-1/2 z-[999] flex max-w-[27.5rem] min-w-[18.75rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-sm",
+                    "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed top-1/2 left-1/2 z-[999] flex max-h-[calc(100dvh-2rem)] max-w-[27.5rem] min-w-[18.75rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 overflow-y-auto border p-20 font-sans backdrop-blur-sm",
                 ),
             )}
         >

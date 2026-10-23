@@ -165,13 +165,13 @@ export default function TitleBar({
                     {showFilePath ? displayDbPath : null}
                 </p>
                 <div
-                    className={`titlebar-button flex items-center gap-12 ${isMacOS ? "pr-24" : ""}`}
+                    className={`titlebar-button flex items-center gap-12 ${isMacOS ? "pr-24" : ""} ${isWebBuild ? "pr-16" : ""}`}
                 >
                     {variant === "main" && (
                         <ActionButton
                             action="openCommandPalette"
                             aria-label={t("actions.ui.openCommandPalette")}
-                            className="titlebar-button hover:text-accent touch:size-44 flex cursor-pointer items-center justify-center"
+                            className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
                         >
                             <MagnifyingGlassIcon size={18} />
                         </ActionButton>
