@@ -7,7 +7,7 @@ import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CommandPalette from "@/shortcuts/palette/CommandPalette";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
@@ -54,49 +54,25 @@ import { useIsTouchMode } from "./stores/InputModeStore";
 import { useOnScreenKeyboard } from "./hooks/useOnScreenKeyboard";
 import { startAudioUnlock } from "./utilities/audioUnlock";
 import { audioContextRef } from "@/components/timeline/audio/AudioPlayer";
-import { inspectorLayout } from "./utilities/inspectorLayout";
-import { SidebarSimpleIcon } from "@phosphor-icons/react";
-import { useTranslate } from "@tolgee/react";
+import {
+    inspectorLayout,
+    type InspectorChoices,
+} from "./utilities/inspectorLayout";
+import InspectorDock from "@/components/layout/InspectorDock";
 
-/** The window's width, kept current. */
-function useWindowWidth() {
-    const [width, setWidth] = useState(() => window.innerWidth);
+/** The window's size, kept current. */
+function useWindowSize() {
+    const read = () => ({
+        width: window.innerWidth,
+        height: window.innerHeight,
+    });
+    const [size, setSize] = useState(read);
     useEffect(() => {
-        const onResize = () => setWidth(window.innerWidth);
+        const onResize = () => setSize(read());
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
     }, []);
-    return width;
-}
-
-/**
- * Shows and hides the Inspector on tablets and narrow windows (see
- * utilities/inspectorLayout.ts): a slim column at the right edge.
- */
-function InspectorToggle({
-    open,
-    onToggle,
-}: {
-    open: boolean;
-    onToggle: () => void;
-}) {
-    const { t } = useTranslate();
-    const label = open
-        ? t("layout.hideInspector", "Hide inspector")
-        : t("layout.showInspector", "Show inspector");
-    return (
-        <button
-            type="button"
-            onClick={onToggle}
-            aria-label={label}
-            aria-expanded={open}
-            aria-controls="inspector-panel"
-            title={label}
-            className="rounded-6 border-stroke bg-fg-1 text-text hover:text-accent focus-visible:outline-accent touch:size-44 flex size-32 shrink-0 items-center justify-center border"
-        >
-            <SidebarSimpleIcon size={20} mirrored />
-        </button>
-    );
+    return size;
 }
 
 export const queryClient = new QueryClient({
@@ -130,14 +106,26 @@ function App() {
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
     const isTouchMode = useIsTouchMode();
-    const windowWidth = useWindowWidth();
-    const [inspectorChoice, setInspectorChoice] = useState<boolean | null>(
-        null,
-    );
+    const windowSize = useWindowSize();
+    const [inspectorChoices, setInspectorChoices] = useState<InspectorChoices>({
+        side: null,
+        drawer: false,
+    });
     const inspector = inspectorLayout(
-        windowWidth,
+        windowSize.width,
+        windowSize.height,
         isTouchMode,
-        inspectorChoice,
+        inspectorChoices,
+    );
+    const drawerShown = inspector.presentation === "drawer";
+    const setInspectorOpen = useCallback(
+        (open: boolean) =>
+            setInspectorChoices((choices) =>
+                drawerShown
+                    ? { ...choices, drawer: open }
+                    : { ...choices, side: open },
+            ),
+        [drawerShown],
     );
 
     useOnScreenKeyboard();
@@ -347,7 +335,7 @@ function App() {
                                             <FocusNotice />
                                             <div
                                                 id="app"
-                                                className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                                className="relative flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                             >
                                                 <div
                                                     id="workspace"
@@ -383,38 +371,18 @@ function App() {
                                                     </div>
                                                     <TimelineContainer />
                                                 </div>
-                                                {!isFullscreen &&
-                                                    inspector.collapsible && (
-                                                        <div
-                                                            className={clsx(
-                                                                "flex shrink-0 flex-col",
-                                                                timelineFocussedClass,
-                                                            )}
-                                                        >
-                                                            <InspectorToggle
-                                                                open={
-                                                                    inspector.open
-                                                                }
-                                                                onToggle={() =>
-                                                                    setInspectorChoice(
-                                                                        !inspector.open,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-                                                    )}
-                                                {/* Hidden rather than unmounted, so edits in it survive */}
                                                 {!isFullscreen && (
-                                                    <div
-                                                        id="inspector-panel"
-                                                        className={clsx(
-                                                            timelineFocussedClass,
-                                                            !inspector.open &&
-                                                                "hidden",
-                                                        )}
+                                                    <InspectorDock
+                                                        layout={inspector}
+                                                        onOpenChange={
+                                                            setInspectorOpen
+                                                        }
+                                                        className={
+                                                            timelineFocussedClass
+                                                        }
                                                     >
                                                         <Inspector />
-                                                    </div>
+                                                    </InspectorDock>
                                                 )}
                                             </div>
                                             <Toaster />
