@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Touch mode: set by the app on <html data-input="touch"> (InputModeStore). Use for finger-sized targets. */
+@custom-variant touch (&:where([data-input="touch"], [data-input="touch"] *));
 
 @theme {
     --font-sans:
