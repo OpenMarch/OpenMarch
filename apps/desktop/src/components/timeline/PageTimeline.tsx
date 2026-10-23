@@ -28,6 +28,9 @@ import {
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 
+/** Narrower selected pages show no "…" button (use long-press instead). */
+const MENU_BUTTON_MIN_PAGE_WIDTH = 120;
+
 const PAGE_MENU_CLASS =
     "bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex flex-col gap-8 border p-16 py-12 backdrop-blur-md";
 
@@ -156,25 +159,42 @@ export default function PageTimeline() {
             if (!isOurs(ev)) return;
             cleanup();
             if (!moved && ev.pointerType !== "mouse") {
-                // A tap on the edge selects the page, as a tap on the page does
+                // A tap on the edge selects the page under the finger, as a tap
+                // on the page does. In touch mode the handle straddles the edge,
+                // so its right half lies over the next page.
                 restorePageWidths(page);
                 resetResizeState();
-                setSelectedPage(page);
+                const rect = handle.getBoundingClientRect();
+                const next =
+                    pages[pages.findIndex((p) => p.id === page.id) + 1];
+                const tapped =
+                    next && ev.clientX > rect.left + rect.width / 2
+                        ? next
+                        : page;
+                setSelectedPage(tapped);
                 setSelectedShapePageIds([]);
                 return;
             }
             void handlePageResizeEnd();
         };
-        const onCancel = (ev: PointerEvent) => {
-            if (!isOurs(ev)) return;
+        const cancel = () => {
             cleanup();
             restorePageWidths(page);
             resetResizeState();
+        };
+        const onCancel = (ev: PointerEvent) => {
+            if (isOurs(ev)) cancel();
+        };
+        // A second finger means a two-finger scroll or pinch, not an edit:
+        // drop the drag and put the pages back
+        const onOtherPointerDown = (ev: PointerEvent) => {
+            if (ev.pointerId !== pointerId) cancel();
         };
         const cleanup = () => {
             document.removeEventListener("pointermove", onMove);
             document.removeEventListener("pointerup", onUp);
             document.removeEventListener("pointercancel", onCancel);
+            window.removeEventListener("pointerdown", onOtherPointerDown, true);
             try {
                 if (handle.hasPointerCapture?.(pointerId))
                     handle.releasePointerCapture(pointerId);
@@ -187,6 +207,7 @@ export default function PageTimeline() {
         document.addEventListener("pointermove", onMove);
         document.addEventListener("pointerup", onUp);
         document.addEventListener("pointercancel", onCancel);
+        window.addEventListener("pointerdown", onOtherPointerDown, true);
         resizeCleanup.current = cleanup;
     };
 
@@ -367,7 +388,7 @@ export default function PageTimeline() {
                 })}
             </h5>
 
-            <div className="flex w-full items-center justify-between gap-8">
+            <div className="touch:min-h-44 flex w-full items-center justify-between gap-8">
                 <label className="text-body text-text-subtitle">
                     <T keyName="timeline.page.contextMenu.subsetToggle" />
                 </label>
@@ -385,51 +406,58 @@ export default function PageTimeline() {
                     checked={page?.isSubset || false}
                 />
             </div>
-            <div className="border-stroke flex w-full flex-col items-start gap-8 border-t pt-8">
+            {/* Deleting is set well apart from the Subset switch */}
+            <div className="border-stroke touch:mt-8 touch:pt-12 touch:gap-4 flex w-full flex-col items-start gap-8 border-t pt-8">
                 <div className="text-text flex items-center gap-6 text-xs">
                     <TrashIcon size={16} />
                     <T keyName="timeline.page.contextMenu.delete" />
                 </div>
-                <ToolTip.Root delayDuration={500}>
-                    <ToolTip.Trigger asChild>
-                        <button
-                            className="text-body text-text-subtitle hover:text-red touch:min-h-44 cursor-pointer text-left transition-colors"
-                            onClick={() => handleDeletePageYank(page)}
-                        >
-                            <T keyName="timeline.page.contextMenu.deleteYank" />
-                        </button>
-                    </ToolTip.Trigger>
-                    <ToolTip.Portal>
-                        <ToolTip.Content
-                            className={TooltipClassName}
-                            side="right"
-                        >
-                            {t("timeline.page.contextMenu.deleteYankTooltip")}
-                        </ToolTip.Content>
-                    </ToolTip.Portal>
-                </ToolTip.Root>
-                <ToolTip.Root delayDuration={500}>
-                    <ToolTip.Trigger asChild>
-                        <button
-                            className="text-body text-text-subtitle hover:text-red touch:min-h-44 cursor-pointer text-left transition-colors"
-                            onClick={() => handleDeletePage(page)}
-                        >
-                            <T keyName="timeline.page.contextMenu.deleteInPlace" />
-                        </button>
-                    </ToolTip.Trigger>
-                    <ToolTip.Portal>
-                        <ToolTip.Content
-                            className={TooltipClassName}
-                            side="right"
-                        >
-                            {t(
-                                "timeline.page.contextMenu.deleteInPlaceTooltip",
-                            )}
-                        </ToolTip.Content>
-                    </ToolTip.Portal>
-                </ToolTip.Root>
+                {renderDeleteRow(
+                    "timeline.page.contextMenu.deleteYank",
+                    "timeline.page.contextMenu.deleteYankTooltip",
+                    () => handleDeletePageYank(page),
+                )}
+                {renderDeleteRow(
+                    "timeline.page.contextMenu.deleteInPlace",
+                    "timeline.page.contextMenu.deleteInPlaceTooltip",
+                    () => handleDeletePage(page),
+                )}
             </div>
         </>
+    );
+
+    /**
+     * One way to delete the page. With a mouse the explanation is a tooltip;
+     * fingers can't hover, so touch mode shows it under the label in a
+     * full-width, 44px row.
+     */
+    const renderDeleteRow = (
+        labelKey: string,
+        descriptionKey: string,
+        onDelete: () => void,
+    ) => (
+        <ToolTip.Root delayDuration={500}>
+            <ToolTip.Trigger asChild>
+                <button
+                    className="text-body text-text-subtitle hover:text-red touch:min-h-44 touch:w-full touch:max-w-[260px] touch:flex touch:flex-col touch:justify-center touch:rounded-6 touch:border touch:border-stroke touch:px-8 touch:py-4 touch:text-text cursor-pointer text-left transition-colors"
+                    onClick={onDelete}
+                >
+                    <T keyName={labelKey} />
+                    {isTouchMode && (
+                        <span className="text-sub text-text-subtitle">
+                            {t(descriptionKey)}
+                        </span>
+                    )}
+                </button>
+            </ToolTip.Trigger>
+            {!isTouchMode && (
+                <ToolTip.Portal>
+                    <ToolTip.Content className={TooltipClassName} side="right">
+                        {t(descriptionKey)}
+                    </ToolTip.Content>
+                </ToolTip.Portal>
+            )}
+        </ToolTip.Root>
     );
 
     return (
@@ -469,6 +497,14 @@ export default function PageTimeline() {
                 {pages.map((page, index) => {
                     if (index === 0) return null;
                     const width = getWidth(page);
+                    // The "…" button only on a selected page wide enough that
+                    // most of it is still there to tap
+                    const showMenuButton =
+                        isTouchMode &&
+                        page.id === selectedPage?.id &&
+                        !isPlaying &&
+                        !isFullscreen &&
+                        width >= MENU_BUTTON_MIN_PAGE_WIDTH;
                     const selectedIndex = pages.findIndex(
                         (p) => p.id === selectedPage?.id,
                     );
@@ -484,13 +520,15 @@ export default function PageTimeline() {
                                 className="group"
                             >
                                 <div
-                                    className="relative h-full overflow-clip"
+                                    className="touch:overflow-visible relative h-full overflow-clip"
                                     timeline-page-id={page.id}
                                     style={{ width: `${width}px` }}
                                 >
                                     <div
                                         className={clsx(
-                                            "bg-fg-2 text-body text-text group-last:rounded-r-6 touch:min-h-44 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
+                                            "bg-fg-2 text-body text-text group-last:rounded-r-6 touch:min-h-44 touch:pr-28 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
+                                            // keep the name clear of the "…" button
+                                            showMenuButton && "touch:pr-72",
                                             !isPlaying && "cursor-pointer",
                                             page.id === selectedPage?.id
                                                 ? [
@@ -532,45 +570,39 @@ export default function PageTimeline() {
                                             )}
                                     </div>
                                     {/* ------ page menu button (touch) ------ */}
-                                    {isTouchMode &&
-                                        page.id === selectedPage?.id &&
-                                        !isPlaying &&
-                                        !isFullscreen && (
-                                            <DropdownMenu.Root>
-                                                <DropdownMenu.Trigger asChild>
-                                                    <button
-                                                        type="button"
-                                                        className="text-text hover:text-accent absolute top-0 left-0 z-20 flex h-full w-44 items-center justify-center"
-                                                        aria-label={t(
-                                                            "timeline.page.menuButton",
-                                                            {
-                                                                pageName:
-                                                                    page.name,
-                                                            },
-                                                        )}
-                                                        onClick={(e) =>
-                                                            e.stopPropagation()
-                                                        }
-                                                    >
-                                                        <DotsThreeIcon
-                                                            size={22}
-                                                            weight="bold"
-                                                        />
-                                                    </button>
-                                                </DropdownMenu.Trigger>
-                                                <DropdownMenu.Portal>
-                                                    <DropdownMenu.Content
-                                                        className={
-                                                            PAGE_MENU_CLASS
-                                                        }
-                                                        side="top"
-                                                        align="start"
-                                                    >
-                                                        {renderPageMenu(page)}
-                                                    </DropdownMenu.Content>
-                                                </DropdownMenu.Portal>
-                                            </DropdownMenu.Root>
-                                        )}
+                                    {showMenuButton && (
+                                        <DropdownMenu.Root>
+                                            <DropdownMenu.Trigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className="text-text hover:text-accent absolute top-0 right-22 z-20 flex h-full w-44 items-center justify-center"
+                                                    aria-label={t(
+                                                        "timeline.page.menuButton",
+                                                        {
+                                                            pageName: page.name,
+                                                        },
+                                                    )}
+                                                    onClick={(e) =>
+                                                        e.stopPropagation()
+                                                    }
+                                                >
+                                                    <DotsThreeIcon
+                                                        size={22}
+                                                        weight="bold"
+                                                    />
+                                                </button>
+                                            </DropdownMenu.Trigger>
+                                            <DropdownMenu.Portal>
+                                                <DropdownMenu.Content
+                                                    className={PAGE_MENU_CLASS}
+                                                    side="top"
+                                                    align="end"
+                                                >
+                                                    {renderPageMenu(page)}
+                                                </DropdownMenu.Content>
+                                            </DropdownMenu.Portal>
+                                        </DropdownMenu.Root>
+                                    )}
                                     {/* ------ counts while resizing (touch) ------ */}
                                     {isTouchMode &&
                                         resizingPage.current?.id ===
@@ -600,7 +632,7 @@ export default function PageTimeline() {
                                             <ToolTip.Trigger asChild>
                                                 <div
                                                     className={clsx(
-                                                        "touch:w-44 absolute top-0 right-0 z-20 flex h-full w-16 cursor-ew-resize touch-none items-center justify-end transition-colors select-none",
+                                                        "touch:w-44 touch:-right-22 touch:justify-center absolute top-0 right-0 z-30 flex h-full w-16 cursor-ew-resize touch-none items-center justify-end transition-colors select-none",
                                                         resizingPage.current
                                                             ?.id === page.id
                                                             ? "bg-accent/50"
@@ -622,7 +654,7 @@ export default function PageTimeline() {
                                                     }
                                                 >
                                                     {/* grip: always visible for fingers */}
-                                                    <span className="bg-text-subtitle touch:block mr-4 hidden h-[60%] w-4 rounded-full" />
+                                                    <span className="bg-text-subtitle touch:block hidden h-[60%] w-4 rounded-full" />
                                                 </div>
                                             </ToolTip.Trigger>
                                             <ToolTip.Portal>

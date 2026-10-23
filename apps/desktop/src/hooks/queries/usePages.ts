@@ -25,6 +25,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { toast } from "sonner";
+import { runAction } from "@/shortcuts/registry";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
 import { marcherPageKeys } from "./useMarcherPages";
@@ -206,11 +207,24 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
     });
 };
 
+/** An Undo button on the "page deleted" toast (same as the Undo action). */
+const deleteUndoAction = () => ({
+    action: {
+        label: tolgee.t("actions.edit.undo"),
+        onClick: () => {
+            runAction("performUndo");
+        },
+    },
+});
+
 export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
         onSuccess: async (_, variables) => {
-            toast.success(tolgee.t("pages.deletedSuccessfully"));
+            toast.success(
+                tolgee.t("pages.deletedSuccessfully"),
+                deleteUndoAction(),
+            );
             // Invalidate all page queries
             void invalidatePageQueries(qc);
         },
@@ -228,7 +242,10 @@ export const deletePageYankMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (pageId: number) => deletePageYank({ db, pageId }),
         onSuccess: async (_, variables) => {
-            toast.success(tolgee.t("pages.deletedSuccessfully"));
+            toast.success(
+                tolgee.t("pages.deletedSuccessfully"),
+                deleteUndoAction(),
+            );
             await invalidatePageQueries(qc);
         },
         onError: (e, variables) => {

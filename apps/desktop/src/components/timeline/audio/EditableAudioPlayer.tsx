@@ -1,4 +1,5 @@
 import WaveSurfer from "wavesurfer.js";
+import { keepWaveformFromScrolling } from "./keepWaveformFromScrolling";
 import {
     SyntheticEvent,
     useCallback,
@@ -162,6 +163,7 @@ export default function EditableAudioPlayer() {
                 timelineMarkersPlugin.createTimingMarkers();
             });
 
+            keepWaveformFromScrolling(ws);
             setWaveSurfer(ws);
         }
         return () => {
