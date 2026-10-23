@@ -38,6 +38,7 @@ import {
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
+import MovePad from "./marcher/MovePad";
 
 const DEFAULT_SORTING_THRESHOLD = 0.1;
 
@@ -746,6 +747,8 @@ function MarcherEditor() {
                                     </ActionButton>
                                 )}
 
+                            <MovePad disabled={editingDisabled} />
+
                             {/* Alignment, distribution, and transformation buttons */}
                             <AlignmentButtons
                                 editingDisabled={editingDisabled}
@@ -781,6 +784,7 @@ function MarcherEditor() {
                             }}
                             className="mt-12 flex flex-col gap-24"
                         >
+                            <MovePad disabled={editingDisabled} />
                             {!rCoords ? (
                                 <p className="text-body text-red">
                                     <T keyName="inspector.marcher.errorLoadingCoords" />
