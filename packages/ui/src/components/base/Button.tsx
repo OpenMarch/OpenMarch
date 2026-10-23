@@ -4,10 +4,11 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { TooltipClassName } from "..";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { LongPressBubble, useLongPress } from "./LongPress";
 
 const variants = cva(
     [
-        "text-body w-fit flex gap-4 justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-none",
+        "text-body w-fit flex gap-4 justify-center items-center rounded-full border border-stroke min-h-0 focus-visible:outline-none touch:select-none touch:[-webkit-touch-callout:none]",
         "enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out",
         "disabled:cursor-not-allowed disabled:opacity-50",
     ],
@@ -95,20 +96,52 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             ...props
         },
         ref,
-    ) => (
-        <>
-            {tooltipText !== undefined ? (
+    ) => {
+        // A finger can't hover, so a long press shows the tooltip text instead of clicking
+        const [hintOpen, setHintOpen] = React.useState(false);
+        const [anchor, setAnchor] = React.useState<HTMLButtonElement | null>(
+            null,
+        );
+        const setRefs = React.useCallback(
+            (el: HTMLButtonElement | null) => {
+                setAnchor(el);
+                if (typeof ref === "function") ref(el);
+                else if (ref) ref.current = el;
+            },
+            [ref],
+        );
+        const closeHint = React.useCallback(() => setHintOpen(false), []);
+        const longPress = useLongPress(() => setHintOpen(true), {
+            onPointerDown: props.onPointerDown,
+            onPointerMove: props.onPointerMove,
+            onPointerUp: props.onPointerUp,
+            onPointerCancel: props.onPointerCancel,
+            onClickCapture: props.onClickCapture,
+            onContextMenu: props.onContextMenu,
+        });
+        const buttonClassName = getButtonClassName({
+            variant,
+            size,
+            content,
+            className,
+        });
+
+        if (tooltipText === undefined) {
+            return (
+                <button ref={ref} className={buttonClassName} {...props}>
+                    {children}
+                </button>
+            );
+        }
+        return (
+            <>
                 <Tooltip.Provider>
                     <Tooltip.Root delayDuration={tooltipDelay}>
                         <Tooltip.Trigger
-                            ref={ref}
-                            className={getButtonClassName({
-                                variant,
-                                size,
-                                content,
-                                className,
-                            })}
+                            ref={setRefs}
+                            className={buttonClassName}
                             {...props}
+                            {...longPress}
                         >
                             {children}
                         </Tooltip.Trigger>
@@ -122,20 +155,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                         </Tooltip.Portal>
                     </Tooltip.Root>
                 </Tooltip.Provider>
-            ) : (
-                <button
-                    ref={ref}
-                    className={getButtonClassName({
-                        variant,
-                        size,
-                        content,
-                        className,
-                    })}
-                    {...props}
+                <LongPressBubble
+                    anchor={anchor}
+                    open={hintOpen}
+                    onClose={closeHint}
                 >
-                    {children}
-                </button>
-            )}
-        </>
-    ),
+                    {tooltipText}
+                </LongPressBubble>
+            </>
+        );
+    },
 );

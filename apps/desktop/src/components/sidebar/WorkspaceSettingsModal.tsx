@@ -17,6 +17,7 @@ import { XIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
 import { T, useTolgee } from "@tolgee/react";
+import { toast } from "sonner";
 
 const inputClassname = clsx("col-span-6 self-center");
 
@@ -109,8 +110,10 @@ function WorkspaceSettingsModalContents() {
 
     const handleSave = useCallback(() => {
         if (!localSettings) return;
-        updateSettings(localSettings);
-    }, [localSettings, updateSettings]);
+        updateSettings(localSettings, {
+            onSuccess: () => toast.success(t("workspaceSettings.saved")),
+        });
+    }, [localSettings, updateSettings, t]);
 
     const handleReset = useCallback(() => {
         setLocalSettings(defaultWorkspaceSettings);
@@ -223,20 +226,22 @@ function WorkspaceSettingsModalContents() {
         JSON.stringify(localSettings) !== JSON.stringify(settings);
 
     return (
-        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-            <header className="flex items-center justify-between gap-24">
+        <div className="animate-scale-in text-text flex h-full min-h-0 w-fit flex-col gap-16">
+            <header className="flex shrink-0 items-center justify-between gap-24">
                 <h4 className="text-h4 leading-none">
                     <T keyName="workspaceSettings.title" />
                 </h4>
                 <button
                     onClick={toggleOpen}
-                    className="hover:text-red duration-150 ease-out"
+                    aria-label={t("workspaceSettings.close")}
+                    className="hover:text-red touch:size-44 flex items-center justify-center duration-150 ease-out"
                 >
                     <XIcon size={24} />
                 </button>
             </header>
 
-            <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
+            {/* The fields scroll; the buttons below stay visible on a short screen */}
+            <div className="flex min-h-0 w-[30rem] max-w-full grow flex-col gap-16 overflow-y-auto">
                 <Form.Root
                     onSubmit={(e) => e.preventDefault()}
                     className="flex flex-col gap-12"
@@ -308,6 +313,18 @@ function WorkspaceSettingsModalContents() {
                                                 ...prev,
                                                 [key]: filtered,
                                             }));
+                                            // Take a valid value right away, so Save is ready
+                                            // without leaving the field first (a tap on a
+                                            // disabled Save would otherwise be lost)
+                                            const parsed = float
+                                                ? parseFloat(filtered)
+                                                : parseInt(filtered, 10);
+                                            if (
+                                                !isNaN(parsed) &&
+                                                (min === undefined ||
+                                                    parsed >= min)
+                                            )
+                                                handleFieldChange(key, parsed);
                                         }}
                                         onKeyDown={blurOnEnter}
                                         value={value}
@@ -318,42 +335,42 @@ function WorkspaceSettingsModalContents() {
                         },
                     )}
                 </Form.Root>
+            </div>
 
-                <div className="flex flex-col gap-8">
-                    <div className="flex space-x-2">
-                        <Button
-                            onClick={handleSave}
-                            disabled={isPending || !hasChanges}
-                            size="compact"
-                        >
-                            <T keyName="workspaceSettings.saveChanges" />
-                        </Button>
+            <div className="flex w-[30rem] max-w-full shrink-0 flex-col gap-8">
+                <div className="touch:gap-8 flex flex-wrap gap-2">
+                    <Button
+                        onClick={handleSave}
+                        disabled={isPending || !hasChanges}
+                        size="compact"
+                    >
+                        <T keyName="workspaceSettings.saveChanges" />
+                    </Button>
 
-                        <Button
-                            onClick={handleCancel}
-                            disabled={isPending || !hasChanges}
-                            variant="secondary"
-                            size="compact"
-                        >
-                            <T keyName="workspaceSettings.cancel" />
-                        </Button>
+                    <Button
+                        onClick={handleCancel}
+                        disabled={isPending || !hasChanges}
+                        variant="secondary"
+                        size="compact"
+                    >
+                        <T keyName="workspaceSettings.cancel" />
+                    </Button>
 
-                        <Button
-                            onClick={handleReset}
-                            disabled={isPending}
-                            variant="secondary"
-                            size="compact"
-                        >
-                            <T keyName="workspaceSettings.resetToDefaults" />
-                        </Button>
-                    </div>
-
-                    {hasChanges && (
-                        <div className="text-sm text-amber-600">
-                            <T keyName="workspaceSettings.unsavedChanges" />
-                        </div>
-                    )}
+                    <Button
+                        onClick={handleReset}
+                        disabled={isPending}
+                        variant="secondary"
+                        size="compact"
+                    >
+                        <T keyName="workspaceSettings.resetToDefaults" />
+                    </Button>
                 </div>
+
+                {hasChanges && (
+                    <div className="text-sm text-amber-600">
+                        <T keyName="workspaceSettings.unsavedChanges" />
+                    </div>
+                )}
             </div>
         </div>
     );

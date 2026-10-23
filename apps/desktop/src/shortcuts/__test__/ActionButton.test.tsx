@@ -18,6 +18,13 @@ import { useInputModeStore } from "@/stores/InputModeStore";
 const t = (key: string, params?: Record<string, string | number>) =>
     params ? `${key}:${JSON.stringify(params)}` : key;
 
+/** jsdom has no PointerEvent, so give a mouse event a pointerType. */
+const pointer = (type: string, el: Element, pointerType: string) => {
+    const event = new MouseEvent(type, { bubbles: true, button: 0 });
+    Object.defineProperty(event, "pointerType", { value: pointerType });
+    fireEvent(el, event);
+};
+
 const Providers = ({ children }: { children: React.ReactNode }) => (
     <TolgeeProvider tolgee={tolgee} fallback="Loading...">
         {children}
@@ -132,5 +139,45 @@ describe("ActionButton", () => {
             useInputModeStore.getState().setPreference("auto");
         });
         localStorage.clear();
+    });
+
+    it("a long press with a finger explains the button and doesn't run it", () => {
+        vi.useFakeTimers();
+        const run = vi.fn();
+        const off = registerActionHandler("flipHorizontal", {
+            run,
+            isEnabled: () => true,
+        });
+        render(<ActionButton action="flipHorizontal">Flip</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Flip" });
+
+        pointer("pointerdown", button, "touch");
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        pointer("pointerup", button, "touch");
+        fireEvent.click(button);
+        expect(run).not.toHaveBeenCalled();
+        expect(screen.getByTestId("long-press-bubble")).toHaveTextContent(
+            "Flip horizontally",
+        );
+
+        // A short tap still runs it
+        pointer("pointerdown", button, "touch");
+        pointer("pointerup", button, "touch");
+        fireEvent.click(button);
+        expect(run).toHaveBeenCalledTimes(1);
+
+        // A mouse never long-presses
+        pointer("pointerdown", button, "mouse");
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        fireEvent.click(button);
+        expect(run).toHaveBeenCalledTimes(2);
+        off();
+        vi.useRealTimers();
     });
 });

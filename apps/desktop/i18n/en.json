@@ -1367,6 +1367,8 @@
         "title": "Welcome to OpenMarch"
     },
     "workspaceSettings": {
+        "close": "Close",
+        "saved": "Workspace settings saved",
         "audioOffsetSeconds": "Audio Offset",
         "cancel": "Cancel",
         "defaultBeatsPerMeasure": "Default Beats Per Measure",

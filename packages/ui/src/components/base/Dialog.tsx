@@ -76,7 +76,7 @@ export const DialogContent = ({
                 <RadixDialog.Content
                     {...props}
                     className={clsx(
-                        "rounded-6 border-stroke bg-modal text-text shadow-modal backdrop-blur-32 flex h-fit max-h-[36rem] min-w-[18.75rem] flex-col gap-16 border p-20 font-sans",
+                        "rounded-6 border-stroke bg-modal text-text shadow-modal backdrop-blur-32 flex h-fit max-h-[min(36rem,calc(100dvh-2rem))] max-w-[calc(100vw-2rem)] min-w-[18.75rem] flex-col gap-16 overflow-y-auto border p-20 font-sans",
                         className,
                     )}
                 >
