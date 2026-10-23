@@ -1,11 +1,9 @@
 import * as Form from "@radix-ui/react-form";
-import * as Tooltip from "@radix-ui/react-tooltip";
-import { TooltipClassName } from "@openmarch/ui";
-import { InfoIcon } from "@phosphor-icons/react";
 import { twMerge } from "tailwind-merge";
 import { clsx } from "clsx";
 import { forwardRef } from "react";
 import { T } from "@tolgee/react";
+import InfoTip from "./InfoTip";
 
 interface FormFieldProps {
     label: string;
@@ -31,26 +29,7 @@ const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
                     <Form.Label className="text-body text-text/80 w-full">
                         {label}
                     </Form.Label>
-                    {tooltip && (
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={TooltipClassName}
-                                        side="right"
-                                    >
-                                        {tooltip}
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    )}
+                    {tooltip && <InfoTip content={tooltip} side="right" />}
                 </div>
                 <Form.Control asChild>{children}</Form.Control>
                 <Form.Message
@@ -83,26 +62,7 @@ const StaticFormField = forwardRef<HTMLDivElement, FormFieldProps>(
                     <label className="text-body text-text/80 w-full">
                         {label}
                     </label>
-                    {tooltip && (
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={TooltipClassName}
-                                        side="right"
-                                    >
-                                        {tooltip}
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
-                    )}
+                    {tooltip && <InfoTip content={tooltip} side="right" />}
                 </div>
                 {children}
             </div>

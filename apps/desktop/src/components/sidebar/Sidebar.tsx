@@ -11,7 +11,7 @@ export default function Sidebar() {
     return (
         <div
             id="sidebar"
-            className="bg-fg-1 border-stroke rounded-6 flex h-full w-fit flex-col justify-between border px-8 py-16"
+            className="bg-fg-1 border-stroke rounded-6 touch:w-[80px] touch:overflow-y-auto touch:items-stretch flex h-full w-fit flex-col justify-between border px-8 py-16"
         >
             <div className="flex flex-col gap-16">
                 <MarchersModal />

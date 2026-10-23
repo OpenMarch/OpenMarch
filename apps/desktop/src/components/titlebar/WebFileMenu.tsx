@@ -62,7 +62,7 @@ export default function WebFileMenu() {
                     type="button"
                     aria-label={t("web.fileMenu")}
                     title={t("web.fileMenu")}
-                    className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                    className="titlebar-button hover:text-accent touch:flex touch:size-44 touch:items-center touch:justify-center cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
                 >
                     <ListIcon size={18} />
                 </button>

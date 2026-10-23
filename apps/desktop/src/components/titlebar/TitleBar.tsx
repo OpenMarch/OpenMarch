@@ -1,4 +1,10 @@
-import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import {
+    MinusIcon,
+    SquareIcon,
+    ListIcon,
+    XIcon,
+    MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
 import BugReport from "./BugReport";
 import { SealWarningIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
@@ -13,7 +19,8 @@ import {
 } from "@openmarch/ui";
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
+import ActionButton from "@/shortcuts/ActionButton";
 import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
@@ -43,6 +50,7 @@ export default function TitleBar({
     /** "settings" is a minimal bar: no version, update check, file controls or file path. */
     variant?: "main" | "settings";
 }) {
+    const { t } = useTolgee();
     const showFilePath = variant === "main";
     // In a browser there are no traffic lights, native menu or window buttons.
     const isMacOS = window.electron.isMacOS && !isWebBuild;
@@ -114,7 +122,8 @@ export default function TitleBar({
                     {isWebBuild && variant === "main" && <WebFileMenu />}
                     {showWindowControls && (
                         <button
-                            className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            className="titlebar-button hover:text-accent touch:flex touch:size-44 touch:items-center touch:justify-center cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            aria-label={t("titlebar.menu")}
                             onClick={() => {
                                 window.electron.openMenu();
                             }}
@@ -156,13 +165,22 @@ export default function TitleBar({
                     {showFilePath ? displayDbPath : null}
                 </p>
                 <div
-                    className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
+                    className={`titlebar-button flex items-center gap-12 ${isMacOS ? "pr-24" : ""}`}
                 >
+                    {variant === "main" && (
+                        <ActionButton
+                            action="openCommandPalette"
+                            aria-label={t("actions.ui.openCommandPalette")}
+                            className="titlebar-button hover:text-accent touch:size-44 flex cursor-pointer items-center justify-center"
+                        >
+                            <MagnifyingGlassIcon size={18} />
+                        </ActionButton>
+                    )}
                     <BugReport />
                     {showWindowControls && (
                         <div className="titlebar-button flex">
                             <button
-                                className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
+                                className="hover:text-accent focus-visible:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
                                 onClick={() => {
                                     window.electron.minimizeWindow();
                                 }}
@@ -170,7 +188,7 @@ export default function TitleBar({
                                 <MinusIcon size={20} />
                             </button>
                             <button
-                                className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
+                                className="hover:text-accent focus-visible:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
                                 onClick={() => {
                                     window.electron.maximizeWindow();
                                 }}
@@ -178,7 +196,7 @@ export default function TitleBar({
                                 <SquareIcon size={20} />
                             </button>
                             <button
-                                className="hover:text-red focus-visible:text-red cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
+                                className="hover:text-red focus-visible:text-red touch:flex touch:min-h-44 touch:items-center cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
                                 onClick={() => {
                                     window.electron.closeWindow();
                                 }}

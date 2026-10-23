@@ -58,7 +58,7 @@ export const UnitInput = React.forwardRef<HTMLInputElement, UnitInputProps>(
             <input
                 className={twMerge(
                     clsx(
-                        `rounded-6 border-stroke bg-fg-2 box-border min-h-0 w-full items-center border whitespace-nowrap focus-visible:outline-none ${compact ? "h-[1.625rem] px-8 py-[4px]" : "h-[2.5rem] px-22"} text-body text-text placeholder-text-subtitle placeholder:text-body focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
+                        `rounded-6 border-stroke bg-fg-2 box-border min-h-0 w-full items-center border whitespace-nowrap focus-visible:outline-none ${compact ? "touch:h-44 h-[1.625rem] px-8 py-[4px]" : "touch:h-44 h-[2.5rem] px-22"} text-body text-text placeholder-text-subtitle placeholder:text-body focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
                         // Hide default number input spinners for better styling
                         type === "number" &&
                             "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",

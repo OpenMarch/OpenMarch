@@ -15,15 +15,9 @@ import {
 } from "@/hooks/queries";
 import { buildMarcherAppearancesByPageId } from "./utils/exportAppearances";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogTitle,
-    TooltipClassName,
-} from "@openmarch/ui";
-import { InfoIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
-import * as Tooltip from "@radix-ui/react-tooltip";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@openmarch/ui";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
+import InfoTip from "@/components/ui/InfoTip";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import {
     Button,
@@ -42,7 +36,6 @@ import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
-import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
@@ -541,20 +534,13 @@ function CoordinateSheetExport() {
                         <T keyName="exportCoordinates.organizeBySection" />
                     </Form.Label>
 
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <InfoIcon size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <Tooltip.Portal>
-                                <Tooltip.Content
-                                    className={clsx(TooltipClassName, "p-16")}
-                                >
-                                    <T keyName="exportCoordinates.organizeBySectionTooltip" />
-                                </Tooltip.Content>
-                            </Tooltip.Portal>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
+                    <InfoTip
+                        side="top"
+                        contentClassName="z-[100000] p-16"
+                        content={
+                            <T keyName="exportCoordinates.organizeBySectionTooltip" />
+                        }
+                    />
                 </Form.Field>
 
                 <Form.Field
@@ -1043,31 +1029,20 @@ function DrillChartExport() {
                         <Form.Label className="text-body">
                             <T keyName="exportCoordinates.individualCharts" />
                         </Form.Label>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={clsx(
-                                            TooltipClassName,
-                                            "z-[100000] p-16",
-                                        )}
-                                    >
-                                        <div>
-                                            <T keyName="exportCoordinates.individualChartsTooltip" />
-                                        </div>
-                                        <div>
-                                            <T keyName="exportCoordinates.individualChartsTooltipDescription" />
-                                        </div>
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
+                        <InfoTip
+                            side="top"
+                            contentClassName="z-[100000] p-16"
+                            content={
+                                <>
+                                    <div>
+                                        <T keyName="exportCoordinates.individualChartsTooltip" />
+                                    </div>
+                                    <div>
+                                        <T keyName="exportCoordinates.individualChartsTooltipDescription" />
+                                    </div>
+                                </>
+                            }
+                        />
                     </Form.Field>
 
                     <Form.Field
@@ -1085,31 +1060,20 @@ function DrillChartExport() {
                         <Form.Label className="text-body">
                             <T keyName="exportCoordinates.includeNotesAppendix" />
                         </Form.Label>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={clsx(
-                                            TooltipClassName,
-                                            "z-[100000] p-16",
-                                        )}
-                                    >
-                                        <div>
-                                            <T keyName="exportCoordinates.includeNotesAppendixTooltip" />
-                                        </div>
-                                        <div>
-                                            <T keyName="exportCoordinates.includeNotesAppendixTooltipDescription" />
-                                        </div>
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
+                        <InfoTip
+                            side="top"
+                            contentClassName="z-[100000] p-16"
+                            content={
+                                <>
+                                    <div>
+                                        <T keyName="exportCoordinates.includeNotesAppendixTooltip" />
+                                    </div>
+                                    <div>
+                                        <T keyName="exportCoordinates.includeNotesAppendixTooltipDescription" />
+                                    </div>
+                                </>
+                            }
+                        />
                     </Form.Field>
                 </div>
             </Form.Root>

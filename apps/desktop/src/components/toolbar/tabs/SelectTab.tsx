@@ -13,9 +13,18 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import ToolbarSection from "../ToolbarSection";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useCallback, useEffect, useState } from "react";
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
+} from "react";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
+import { ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
+import ActionButton from "@/shortcuts/ActionButton";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { getTagName, type DatabaseTag } from "@/db-functions/tag";
 import ChipSelector from "./ChipSelector";
@@ -39,8 +48,16 @@ const sectionsFromMarchers = (marchers: Pick<Marcher, "section">[]) => {
     return sections;
 };
 
+/**
+ * Whether choosing a group replaces the selection or adds to it. With a
+ * keyboard, Shift adds; in touch mode a Replace / Add switch does the same.
+ */
+export type SelectTapMode = "replace" | "add";
+const SelectTapModeContext = createContext<SelectTapMode>("replace");
+
 const useHandleSelect = ({ allMarchers }: { allMarchers: Marcher[] }) => {
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const tapMode = useContext(SelectTapModeContext);
 
     const selectMarcherIds = useCallback(
         (ids: number[], options?: { shiftKey?: boolean }) => {
@@ -48,8 +65,8 @@ const useHandleSelect = ({ allMarchers }: { allMarchers: Marcher[] }) => {
                 ids.includes(marcher.id),
             );
 
-            // if holding shift, add to selection
-            if (options?.shiftKey) {
+            // Shift (keyboard or on-screen) or the Add switch adds to the selection
+            if (options?.shiftKey || tapMode === "add") {
                 const currentlySelectedIds = new Set(
                     selectedMarchers.map((marcher) => marcher.id),
                 );
@@ -64,7 +81,7 @@ const useHandleSelect = ({ allMarchers }: { allMarchers: Marcher[] }) => {
                 setSelectedMarchers(newSelectedMarchers);
             }
         },
-        [allMarchers, selectedMarchers, setSelectedMarchers],
+        [allMarchers, selectedMarchers, setSelectedMarchers, tapMode],
     );
 
     return { selectMarcherIds };
@@ -86,7 +103,7 @@ function SelectByPopover({
     return (
         <ToolbarSection>
             <Popover.Root open={open} onOpenChange={setOpen}>
-                <Popover.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
+                <Popover.Trigger className="hover:text-accent touch:min-h-44 flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
                     <T keyName="toolbar.select.selectByText" />
                     <CaretDownIcon size={18} />
                     <span className="text-text-subtitle px-4">
@@ -100,7 +117,7 @@ function SelectByPopover({
                         {SelectByOptions.map((option) => (
                             <button
                                 key={option}
-                                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                                className="hover:text-accent touch:min-h-44 flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                                 onClick={() => {
                                     setSelectByOption(option);
                                     setOpen(false);
@@ -289,10 +306,42 @@ function FamilySelector({ marchers }: { marchers: Marcher[] }) {
 
 const SELECT_BY_STORAGE_KEY = "openmarch-select-tab-mode";
 
+function SelectTapModeSwitch({
+    value,
+    onChange,
+}: {
+    value: SelectTapMode;
+    onChange: (mode: SelectTapMode) => void;
+}) {
+    const { t } = useTranslate();
+    return (
+        <ToggleGroup
+            type="single"
+            value={value}
+            onValueChange={(mode) => {
+                if (mode) onChange(mode as SelectTapMode);
+            }}
+            aria-label={t("toolbar.select.tapMode.ariaLabel")}
+        >
+            <ToggleGroupItem value="replace" className="px-12">
+                <T keyName="toolbar.select.tapMode.replace" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="add" className="px-12">
+                <T keyName="toolbar.select.tapMode.add" />
+            </ToggleGroupItem>
+        </ToggleGroup>
+    );
+}
+
 function SelectTabContents() {
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
+    const isTouch = useIsTouchMode();
+    const [tapModeChoice, setTapModeChoice] =
+        useState<SelectTapMode>("replace");
+    // The switch only shows in touch mode; with a mouse, Shift adds
+    const tapMode: SelectTapMode = isTouch ? tapModeChoice : "replace";
     const [selectByOption, setSelectByOption] = useState<SelectByOption>(() => {
         const stored = localStorage.getItem(SELECT_BY_STORAGE_KEY);
         if (stored && SelectByOptions.includes(stored as SelectByOption)) {
@@ -327,11 +376,25 @@ function SelectTabContents() {
             break;
     }
     return (
-        <>
+        <SelectTapModeContext.Provider value={tapMode}>
             <SelectByPopover
                 selectByOptionState={[selectByOption, setSelectByOption]}
             />
+            {isTouch && (
+                <SelectTapModeSwitch
+                    value={tapModeChoice}
+                    onChange={setTapModeChoice}
+                />
+            )}
             {Selector}
-        </>
+            <ToolbarSection>
+                <ActionButton
+                    action="selectAllMarchers"
+                    className="flex items-center"
+                >
+                    <T keyName="actions.select.selectAll" />
+                </ActionButton>
+            </ToolbarSection>
+        </SelectTapModeContext.Provider>
     );
 }

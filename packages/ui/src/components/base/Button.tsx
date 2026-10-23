@@ -32,22 +32,24 @@ const variants = cva(
             {
                 size: "default",
                 content: "text",
-                className: ["px-24 py-[11px]"],
+                className: ["px-24 py-[11px] touch:min-h-44"],
             },
             {
                 size: "compact",
                 content: "text",
-                className: ["h-[1.625rem] px-8 py-[4px]"],
+                className: [
+                    "h-[1.625rem] px-8 py-[4px] touch:h-44 touch:px-12",
+                ],
             },
             {
                 size: "default",
                 content: "icon",
-                className: ["p-8"],
+                className: ["p-8 touch:min-h-44 touch:min-w-44"],
             },
             {
                 size: "compact",
                 content: "icon",
-                className: ["p-[4px] size-[1.625rem]"],
+                className: ["p-[4px] size-[1.625rem] touch:size-44"],
             },
         ],
         defaultVariants: {

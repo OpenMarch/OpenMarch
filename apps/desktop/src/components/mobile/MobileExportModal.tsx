@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
+import { TouchCaption } from "@/components/ui/InfoTip";
 import EnsembleList from "./EnsembleList";
 import MobileExportView from "./MobileExportView";
 import DetachButton from "./DetachButton";
@@ -135,6 +136,7 @@ export default function MobileExportModal({
                 className={twMerge(
                     clsx(
                         "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                        "touch:flex touch:min-h-44 touch:w-full touch:flex-col touch:items-center touch:justify-center touch:gap-2",
                         {
                             "text-accent":
                                 isOpen && contentId === "mobile-export",
@@ -145,6 +147,9 @@ export default function MobileExportModal({
                 id="sidebar-launcher-mobile-export"
             >
                 <span aria-hidden>{label}</span>
+                <TouchCaption className="max-w-full truncate">
+                    {t("sidebar.mobile")}
+                </TouchCaption>
             </button>
         </>
     );
