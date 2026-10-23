@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
+import { CANVAS_ZOOM_LIMITS } from "./CanvasConstants";
 
 interface CanvasZoomControlsProps {
     canvas: OpenMarchCanvas | undefined;
@@ -10,10 +11,11 @@ export default function CanvasZoomControls({
     canvas,
 }: CanvasZoomControlsProps) {
     const [currentZoom, setCurrentZoom] = useState(100); // Represents percentage
+    // The Fabric zoom itself, which the limits apply to (the percentage is relative to the fitted view)
+    const [fabricZoom, setFabricZoom] = useState(1);
 
-    // Min and Max zoom levels for Fabric.js (consistent with OpenMarchCanvas._applyZoom)
-    const FABRIC_MIN_ZOOM = 0.2;
-    const FABRIC_MAX_ZOOM = 25;
+    const FABRIC_MIN_ZOOM = CANVAS_ZOOM_LIMITS.min;
+    const FABRIC_MAX_ZOOM = CANVAS_ZOOM_LIMITS.max;
 
     useEffect(() => {
         if (!canvas) return;
@@ -21,8 +23,10 @@ export default function CanvasZoomControls({
         const updateZoom = () => {
             // Display relative to base zoom so base == 100%
             const base = canvas.getBaseZoom?.() ?? 1.0;
-            const ratio = canvas.getZoom() / (base || 1);
+            const zoom = canvas.getZoom();
+            const ratio = zoom / (base || 1);
             setCurrentZoom(Math.round(ratio * 100));
+            setFabricZoom(zoom);
         };
 
         updateZoom();
@@ -123,9 +127,9 @@ export default function CanvasZoomControls({
         canvas.requestRenderAll();
     };
 
-    // getMaxZoom and getMinZoom now refer to percentage values for the UI disable logic
-    const getMaxZoom = () => FABRIC_MAX_ZOOM * 100;
-    const getMinZoom = () => FABRIC_MIN_ZOOM * 100;
+    // Compared against the Fabric zoom, not the percentage shown
+    const atMaxZoom = fabricZoom >= FABRIC_MAX_ZOOM - 1e-6;
+    const atMinZoom = fabricZoom <= FABRIC_MIN_ZOOM + 1e-6;
 
     // Tooltip for the hamburger icon (placeholder)
     // const NavigationTooltip = () => (
@@ -136,7 +140,11 @@ export default function CanvasZoomControls({
     // );
 
     return (
-        <div className="group border-stroke bg-bg-1 absolute right-6 bottom-6 z-10 flex w-128 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
+        <div
+            role="group"
+            aria-label="Zoom"
+            className="group border-stroke bg-bg-1 touch:w-auto absolute right-6 bottom-6 z-10 flex w-128 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg"
+        >
             {/* Hamburger Icon (placeholder for future menu) */}
             {/* <button
                 className="text-text hover:bg-fg-2 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
@@ -150,9 +158,10 @@ export default function CanvasZoomControls({
             {/* Zoom Out Button */}
             <button
                 onClick={handleZoomOut}
-                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canvas || currentZoom <= getMinZoom()}
+                className="border-stroke text-text touch:min-h-48 touch:min-w-48 flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!canvas || atMinZoom}
                 title="Zoom Out"
+                aria-label="Zoom out"
             >
                 <MinusIcon size={18} weight="bold" />
             </button>
@@ -160,9 +169,10 @@ export default function CanvasZoomControls({
             {/* Zoom Percentage Display and Reset Button */}
             <button
                 onClick={handleResetZoomAndCenter}
-                className="border-stroke bg-fg-2 text-text flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-stroke bg-fg-2 text-text touch:min-h-48 touch:min-w-72 flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas}
                 title="Reset Zoom and Center"
+                aria-label={`Zoom ${currentZoom}%, reset zoom and center`}
             >
                 {currentZoom}%
             </button>
@@ -170,9 +180,10 @@ export default function CanvasZoomControls({
             {/* Zoom In Button */}
             <button
                 onClick={handleZoomIn}
-                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={!canvas || currentZoom >= getMaxZoom()}
+                className="border-stroke text-text touch:min-h-48 touch:min-w-48 flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!canvas || atMaxZoom}
                 title="Zoom In"
+                aria-label="Zoom in"
             >
                 <PlusIcon size={18} weight="bold" />
             </button>
