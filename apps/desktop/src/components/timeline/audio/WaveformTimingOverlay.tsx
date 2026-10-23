@@ -184,7 +184,10 @@ export default function WaveformTimingOverlay({
                                     style={{
                                         left: x,
                                         width: markerHitWidth({
-                                            gapPx: beat.duration * pxPerSecond,
+                                            // A measure may briefly have no beats while it is being deleted
+                                            gapPx:
+                                                (beat?.duration ?? 0) *
+                                                pxPerSecond,
                                             isTouchMode,
                                         }),
                                     }}

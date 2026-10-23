@@ -358,7 +358,7 @@ export default function EditableAudioPlayer() {
                         <Button
                             onClick={triggerTapNewTempo}
                             size={"compact"}
-                            className="w-fit min-w-0 whitespace-nowrap"
+                            className="touch:min-h-44 w-fit min-w-0 whitespace-nowrap"
                         >
                             <T keyName="audio.tapNewTempo.label" />
                         </Button>
@@ -366,7 +366,7 @@ export default function EditableAudioPlayer() {
                             onClick={() => setCanvasFocussed()}
                             size={"compact"}
                             variant="secondary"
-                            className="w-fit min-w-0 whitespace-nowrap"
+                            className="touch:min-h-44 w-fit min-w-0 whitespace-nowrap"
                         >
                             <T keyName="audio.tapNewTempo.exit" />
                         </Button>
@@ -424,7 +424,7 @@ export default function EditableAudioPlayer() {
                             className="flex gap-4"
                         >
                             <Button
-                                className="w-full whitespace-nowrap"
+                                className="touch:min-h-44 w-full whitespace-nowrap"
                                 size={"compact"}
                                 disabled={
                                     isAudioPlaying ||
@@ -435,7 +435,7 @@ export default function EditableAudioPlayer() {
                                 <T keyName="audio.saveNewBeats.label" />
                             </Button>
                             <Button
-                                className="w-full"
+                                className="touch:min-h-44 w-full"
                                 variant={"red"}
                                 onClick={() => {
                                     triggerTapNewTempo();
@@ -446,7 +446,7 @@ export default function EditableAudioPlayer() {
                                 <T keyName="audio.tapNewTempo.restart" />
                             </Button>
                             <Button
-                                className="w-full"
+                                className="touch:min-h-44 w-full"
                                 size="compact"
                                 variant="secondary"
                                 onClick={handleCancel}
@@ -465,7 +465,7 @@ export default function EditableAudioPlayer() {
                     <Button
                         size={"compact"}
                         variant="primary"
-                        className="w-fit min-w-fit whitespace-nowrap"
+                        className="touch:min-h-44 w-fit min-w-fit whitespace-nowrap"
                     >
                         <BooksIcon size={22} />
                         <T keyName="audio.seeDocs.label" />
