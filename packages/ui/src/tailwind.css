@@ -4,6 +4,18 @@
 /* Touch mode: set by the app on <html data-input="touch"> (InputModeStore). Use for finger-sized targets. */
 @custom-variant touch (&:where([data-input="touch"], [data-input="touch"] *));
 
+/*
+ * Touch mode: every menu row (Radix dropdown, context menu and select items, and
+ * other listbox options) is at least a finger tall. In the base layer, so a
+ * component's own classes still win.
+ */
+@layer base {
+    [data-input="touch"] :where([role^="menuitem"], [role="option"]) {
+        min-height: 44px;
+        align-content: center;
+    }
+}
+
 @theme {
     --font-sans:
         "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
