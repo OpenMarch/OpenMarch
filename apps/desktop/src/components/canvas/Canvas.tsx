@@ -32,6 +32,7 @@ import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import TouchModifierButtons from "./touch/TouchModifierButtons";
+import { startPenPalmGuard } from "./touch/penPalmGuard";
 
 /**
  * The field/stage UI of OpenMarch
@@ -100,6 +101,9 @@ export default function Canvas({
     const fullscreenEnterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const fullscreenExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { currentCollisions } = useCollisionStore();
+
+    // Palm rejection everywhere while a pen is down
+    useEffect(() => startPenPalmGuard(), []);
 
     // Custom hooks for the canvas
     useSelectionListeners({ canvas });

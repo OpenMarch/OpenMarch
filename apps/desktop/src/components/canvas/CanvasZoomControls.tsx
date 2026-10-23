@@ -21,8 +21,9 @@ export default function CanvasZoomControls({
         if (!canvas) return;
 
         const updateZoom = () => {
-            // Display relative to base zoom so base == 100%
-            const base = canvas.getBaseZoom?.() ?? 1.0;
+            // Display relative to the fitted zoom so it reads 100% after a fit,
+            // and doesn't change when only the canvas size changes
+            const base = canvas.getZoomReference?.() ?? 1.0;
             const zoom = canvas.getZoom();
             const ratio = zoom / (base || 1);
             setCurrentZoom(Math.round(ratio * 100));

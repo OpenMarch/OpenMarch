@@ -3,6 +3,9 @@ import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { resetGroupChildTransforms } from "@/global/classes/canvasObjects/GroupUtils";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
+import { toast } from "sonner";
+import { getRedoStackLength, getUndoStackLength } from "@/db-functions";
+import { db } from "@/global/database/db";
 import { runAction } from "@/shortcuts/registry";
 import { isShiftHeld } from "@/stores/TouchModifierStore";
 import { clampCanvasZoom } from "../CanvasConstants";
@@ -11,12 +14,17 @@ import {
     GestureInput,
     GestureState,
     NavigationGeometry,
+    PALM_CONTACT_PX,
     PointerInput,
     initialGestureState,
     navigationTransform,
     stepGesture,
 } from "./touchGestures";
-import { TOUCH_HIT_RADIUS_PX, pickNearestWithinRadius } from "./touchHitTest";
+import {
+    TOUCH_HIT_RADIUS_PX,
+    absoluteBounds,
+    pickNearestWithinRadius,
+} from "./touchHitTest";
 
 /** Listener methods the adapter uses when the canvas listeners have them */
 interface TouchAwareListeners {
@@ -62,6 +70,14 @@ export class TouchGestureAdapter {
     private lastTouchAt = -Infinity;
     /** The finger whose press Fabric is handling, if any */
     private fabricPointerId: number | null = null;
+    /** The first finger's pointerdown */
+    private downEvent: PointerEvent | null = null;
+    /** What an armed long press would act on */
+    private armTarget:
+        | { kind: "marcher"; marcher: CanvasMarcher }
+        | { kind: "empty" }
+        | null = null;
+    private armFrame: number | null = null;
 
     constructor(
         private readonly canvas: OpenMarchCanvas,
@@ -152,6 +168,9 @@ export class TouchGestureAdapter {
                 x: e.clientX,
                 y: e.clientY,
                 t: now,
+                large:
+                    e.pointerType === "touch" &&
+                    Math.max(e.width || 0, e.height || 0) > PALM_CONTACT_PX,
             },
             e,
         );
@@ -160,6 +179,13 @@ export class TouchGestureAdapter {
     private step(input: GestureInput, e?: PointerEvent) {
         const result = stepGesture(this.state, input);
         this.state = result.state;
+        this.afterStep(result, e);
+    }
+
+    private afterStep(
+        result: ReturnType<typeof stepGesture>,
+        e?: PointerEvent,
+    ) {
         for (const effect of result.effects) this.apply(effect, e);
         if (e && !result.passThrough) {
             e.stopPropagation();
@@ -175,7 +201,12 @@ export class TouchGestureAdapter {
         this.timer = setTimeout(
             () => {
                 this.timer = null;
-                this.step({ type: "timer", t: performance.now() });
+                // Moves the browser has queued are dispatched at the start of the
+                // next frame, before animation frame callbacks: check after them
+                this.armFrame = requestAnimationFrame(() => {
+                    this.armFrame = null;
+                    this.step({ type: "timer", t: performance.now() });
+                });
             },
             Math.max(0, at - performance.now()),
         );
@@ -184,6 +215,8 @@ export class TouchGestureAdapter {
     private clearTimer() {
         if (this.timer !== null) clearTimeout(this.timer);
         this.timer = null;
+        if (this.armFrame !== null) cancelAnimationFrame(this.armFrame);
+        this.armFrame = null;
     }
 
     private get listeners(): TouchAwareListeners | undefined {
@@ -197,6 +230,8 @@ export class TouchGestureAdapter {
             case "singleStart":
                 this.selectionSnapshot = canvas.getActiveObjects().slice();
                 this.fabricPointerId = effect.id;
+                this.downEvent = e ?? null;
+                this.armTarget = null;
                 canvas.touchDeferredClear = false;
                 break;
             case "singleDragged":
@@ -222,6 +257,13 @@ export class TouchGestureAdapter {
                     }, 0);
                 } else {
                     canvas.touchDeferredClear = false;
+                    if (effect.tap) {
+                        const shift = isShiftHeld(e);
+                        setTimeout(
+                            () => this.tapInsideSelection(effect.point, shift),
+                            0,
+                        );
+                    }
                 }
                 break;
             case "cancelSingle":
@@ -229,8 +271,14 @@ export class TouchGestureAdapter {
                 this.cancelFabricPress({ endPress: true });
                 this.restoreSelection(this.selectionSnapshot);
                 break;
-            case "longPress":
-                this.handleLongPress(effect.id, effect.point);
+            case "longPressArmed":
+                this.armLongPress(effect.id, effect.point);
+                break;
+            case "longPressMoved":
+                this.longPressMoved();
+                break;
+            case "longPressCommit":
+                this.commitLongPress();
                 break;
             case "navigationStart": {
                 const vpt = canvas.viewportTransform;
@@ -257,10 +305,10 @@ export class TouchGestureAdapter {
                 this.navigationStart = null;
                 break;
             case "undo":
-                runAction("performUndo");
+                void this.history("undo");
                 break;
             case "redo":
-                runAction("performRedo");
+                void this.history("redo");
                 break;
         }
     }
@@ -353,57 +401,133 @@ export class TouchGestureAdapter {
         canvas.requestRenderAll();
     }
 
-    private handleLongPress(id: number, client: { x: number; y: number }) {
+    /** Undo or redo, as the shortcut does, with a short note that it happened */
+    private async history(direction: "undo" | "redo") {
+        let available = true;
+        try {
+            available =
+                (direction === "undo"
+                    ? await getUndoStackLength(db)
+                    : await getRedoStackLength(db)) > 0;
+        } catch {
+            // Let the action report it
+        }
+        const ran = runAction(
+            direction === "undo" ? "performUndo" : "performRedo",
+        );
+        // With nothing to undo, the action shows its own message
+        if (ran && available)
+            toast(direction === "undo" ? "Undo" : "Redo", { duration: 1200 });
+    }
+
+    /** The marcher nearest to a finger (client px), within the touch radius */
+    private marcherAt(client: { x: number; y: number }): CanvasMarcher | null {
         const canvas = this.canvas;
-        const event = this.lastEvents.get(id);
-        if (!event) return;
-        const point = canvas.getPointer(event);
+        const rect = this.internals.upperCanvasEl.getBoundingClientRect();
+        const vpt = canvas.viewportTransform;
+        if (!vpt) return null;
+        const point = fabric.util.transformPoint(
+            new fabric.Point(client.x - rect.left, client.y - rect.top),
+            fabric.util.invertTransform(vpt),
+        );
         const marchers = canvas
             .getCanvasMarchers()
             .filter((m) => m.visible && m.evented && m.selectable);
-        const marcher = pickNearestWithinRadius(
-            marchers.map((m) => ({
-                item: m,
-                rect: m.getBoundingRect(true, true),
-            })),
+        return pickNearestWithinRadius(
+            marchers.map((m) => ({ item: m, rect: absoluteBounds(m) })),
             point,
             TOUCH_HIT_RADIUS_PX,
             canvas.getZoom(),
         );
+    }
 
+    /**
+     * A tap on a marcher that sits inside a multi-selection's box but isn't in
+     * it: Fabric took the tap for the whole selection. Select the marcher (or
+     * add it, with Shift) as a tap anywhere else would.
+     */
+    private tapInsideSelection(
+        client: { x: number; y: number },
+        shift: boolean,
+    ) {
+        const canvas = this.canvas;
+        const active = canvas.getActiveObject();
+        if (!active || active.type !== "activeSelection") return;
+        const marcher = this.marcherAt(client);
+        if (!marcher) return;
+        const selected = canvas.getActiveObjects();
+        if (selected.includes(marcher)) return;
+        const next = shift
+            ? ([
+                  ...selected.filter(Selectable.isSelectable),
+                  marcher,
+              ] as Selectable.ISelectable[])
+            : [marcher];
+        canvas.setActiveObjects(next);
+    }
+
+    /** The finger has been held still: say what letting go would do */
+    private armLongPress(id: number, client: { x: number; y: number }) {
+        const marcher = this.marcherAt(client);
         if (marcher) {
-            // Toggle the marcher in the selection the finger started with
-            this.cancelFabricPress({ endPress: true });
-            const before = this.selectionSnapshot.filter(
-                Selectable.isSelectable,
-            ) as Selectable.ISelectable[];
-            const next = before.includes(marcher)
-                ? before.filter((o) => o !== marcher)
-                : [...before, marcher];
-            canvas.setActiveObjects(next);
-            this.selectionSnapshot = canvas.getActiveObjects().slice();
-            this.fabricPointerId = null;
-            this.step({ type: "blockSingle" });
+            this.armTarget = { kind: "marcher", marcher };
             this.feedback(client);
             return;
         }
-
         const listeners = this.listeners;
-        const startLasso =
-            listeners?.touchLongPressLasso !== false
-                ? listeners?.startLasso?.bind(listeners)
-                : undefined;
         // Only from empty field: Fabric is drawing a rubber band, not moving something
         if (
-            startLasso &&
+            listeners?.touchLongPressLasso !== false &&
+            listeners?.startLasso &&
             this.internals._groupSelector &&
             !this.internals._currentTransform
         ) {
-            this.cancelFabricPress({ endPress: false });
-            this.restoreSelection(this.selectionSnapshot);
-            startLasso(event);
+            this.armTarget = { kind: "empty" };
             this.feedback(client);
         }
+    }
+
+    /** Moving after the hold: from empty field it draws the lasso; on a marcher it is just a drag */
+    private longPressMoved() {
+        const target = this.armTarget;
+        this.armTarget = null;
+        if (target?.kind !== "empty" || !this.downEvent) return;
+        const listeners = this.listeners;
+        if (!listeners?.startLasso) return;
+        this.cancelFabricPress({ endPress: false });
+        this.restoreSelection(this.selectionSnapshot);
+        listeners.startLasso(this.downEvent);
+    }
+
+    /** Let go after holding still: toggle the marcher in the selection the finger started with */
+    private commitLongPress() {
+        const canvas = this.canvas;
+        const target = this.armTarget;
+        this.armTarget = null;
+        this.fabricPointerId = null;
+        // Fabric doesn't see this release; drop its press and any wobble it made
+        this.cancelFabricPress({ endPress: true });
+        if (target?.kind !== "marcher") {
+            this.restoreSelection(this.selectionSnapshot);
+            return;
+        }
+        const marcher = target.marcher;
+        const before = this.selectionSnapshot.filter(
+            Selectable.isSelectable,
+        ) as Selectable.ISelectable[];
+        const removing = before.includes(marcher);
+        const next = removing
+            ? before.filter((o) => o !== marcher)
+            : [...before, marcher];
+        canvas.setActiveObjects(next);
+        this.selectionSnapshot = canvas.getActiveObjects().slice();
+        const name = marcher.marcherObj?.drill_number ?? "the marcher";
+        toast(
+            removing
+                ? `Removed ${name} from the selection`
+                : `Added ${name} to the selection. Long press it again to remove it.`,
+            { id: "touch-long-press", duration: 2500 },
+        );
     }
 
     /** A brief ring where the long press fired */

@@ -66,3 +66,27 @@ export function pickNearestWithinRadius<T>(
     }
     return best;
 }
+
+interface BoundsSource {
+    group?: { calcTransformMatrix(): number[] } | null;
+    getBoundingRect(absolute?: boolean, calculate?: boolean): HitRect;
+    getCenterPoint(): { x: number; y: number };
+    getScaledWidth(): number;
+    getScaledHeight(): number;
+}
+
+/**
+ * An object's bounds in canvas units. Fabric reports an object inside a group
+ * (e.g. a marcher in a multi-selection) relative to the group, so those are
+ * moved out by the group's transform.
+ */
+export function absoluteBounds(object: BoundsSource): HitRect {
+    if (!object.group) return object.getBoundingRect(true, true);
+    const m = object.group.calcTransformMatrix();
+    const c = object.getCenterPoint();
+    const x = m[0] * c.x + m[2] * c.y + m[4];
+    const y = m[1] * c.x + m[3] * c.y + m[5];
+    const width = object.getScaledWidth();
+    const height = object.getScaledHeight();
+    return { left: x - width / 2, top: y - height / 2, width, height };
+}

@@ -18,6 +18,10 @@ import {
     pickNearestWithinRadius,
 } from "@/components/canvas/touch/touchHitTest";
 import { isShiftHeld } from "@/stores/TouchModifierStore";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import { applyTouchHandleSizing } from "@/components/canvas/touch/touchSelectionHandles";
+import { DragStepReadout } from "@/components/canvas/touch/dragStepReadout";
+
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
@@ -41,6 +45,13 @@ import {
     STEP_SIZE_WARNING_STROKE_WIDTH,
     WARNING_PATHWAY_DASH,
 } from "./stepSizeWarning";
+
+/** Apple keyboards add to a selection with Command as well as Shift */
+const IS_APPLE =
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+
+const isTouchLayout = () => useInputModeStore.getState().mode === "touch";
 
 const NORMAL_PATHWAY_DASH: number[] = [];
 // Precomputed so the per-frame comparison below does not rebuild the warning stroke string
@@ -166,6 +177,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /** Finger and pen gestures on the field */
     private _touchGestures: TouchGestureAdapter | null = null;
+    /** Steps moved, shown while dragging marchers */
+    private _dragStepReadout: DragStepReadout | null = null;
 
     /** CSS transform values for the canvas container */
     private transformValues = {
@@ -320,6 +333,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this._activeGroup = group;
                 setGroupAttributes(this._activeGroup);
                 resetMarcherRotation(group);
+                applyTouchHandleSizing(group, this.getZoom(), isTouchLayout());
             }
         } else {
             this._activeGroup = null;
@@ -585,6 +599,57 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }, 75);
     }
 
+    /** Keeps finger-sized selection handles the right size on screen as the zoom changes */
+    setViewportTransform(vpt: number[]): fabric.Canvas {
+        const result = super.setViewportTransform(vpt);
+        const group = this._activeGroup;
+        if (group && group === this.getActiveObject() && isTouchLayout())
+            applyTouchHandleSizing(group, this.getZoom(), true);
+        return result;
+    }
+
+    /**
+     * Runs an update that moves marchers (new page, undo, end of playback) and
+     * rebuilds a multi-selection around them afterwards, so its box and handles
+     * follow the marchers instead of staying where they were. No selection
+     * events fire: what is selected doesn't change.
+     */
+    private withActiveSelectionRebuilt(update: () => void) {
+        const active = this.getActiveObject();
+        if (
+            !active ||
+            active.type !== "activeSelection" ||
+            (this as any)._currentTransform
+        ) {
+            update();
+            return;
+        }
+        const objects = (active as fabric.ActiveSelection).getObjects();
+        cleanupGroupHandlers(active as fabric.Group);
+        (this as any)._discardActiveObject();
+        update();
+        const onCanvas = new Set(this.getObjects());
+        const still = objects.filter((o) => onCanvas.has(o));
+        if (still.length < 2) {
+            if (still.length === 1) (this as any)._setActiveObject(still[0]);
+            this._activeGroup = null;
+            this.fire("group:selection", { group: null });
+            return;
+        }
+        const selection = new fabric.ActiveSelection(still, {
+            canvas: this,
+            ...ActiveObjectArgs,
+        });
+        selection.lockMovementX = this.uiSettings.lockX;
+        selection.lockMovementY = this.uiSettings.lockY;
+        (this as any)._setActiveObject(selection);
+        this._activeGroup = selection;
+        setGroupAttributes(selection);
+        resetMarcherRotation(selection);
+        applyTouchHandleSizing(selection, this.getZoom(), isTouchLayout());
+        this.fire("group:selection", { group: selection });
+    }
+
     /******************* TOUCH-AWARE FABRIC OVERRIDES ******************/
 
     /**
@@ -654,6 +719,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     _isSelectionKeyPressed(e: Event): boolean {
         return (
             isShiftHeld(e as MouseEvent) ||
+            (IS_APPLE && Boolean((e as MouseEvent).metaKey)) ||
             Boolean(
                 (fabric.Canvas.prototype as any)._isSelectionKeyPressed.call(
                     this,
@@ -939,6 +1005,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             this.cssZoomWrapper,
         );
         this._touchGestures.attach();
+        this._dragStepReadout = new DragStepReadout(this, this.cssZoomWrapper);
+        this._dragStepReadout.attach();
         this.cssZoomWrapper.addEventListener(
             "mousedown",
             this.boundHandleAdvancedMouseDown,
@@ -970,6 +1038,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
         this._touchGestures?.detach();
         this._touchGestures = null;
+        this._dragStepReadout?.detach();
+        this._dragStepReadout = null;
         if (this.boundHandleAdvancedMouseDown) {
             this.cssZoomWrapper.removeEventListener(
                 "mousedown",
@@ -1013,9 +1083,32 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const width = Math.max(0, Math.floor(targetRect.width));
         const height = Math.max(0, Math.floor(targetRect.height));
 
+        this.resizeKeepingCentre(width, height);
+        this.requestRenderAll();
+    }
+
+    /**
+     * Resizes the canvas element and keeps the field point at the middle of
+     * the view in the middle, at the same zoom (e.g. when a panel opens or a
+     * tablet turns).
+     */
+    private resizeKeepingCentre(width: number, height: number) {
+        const oldWidth = this.getWidth();
+        const oldHeight = this.getHeight();
         this.setWidth(width);
         this.setHeight(height);
-        this.requestRenderAll();
+        const vpt = this.viewportTransform;
+        if (
+            vpt &&
+            oldWidth > 0 &&
+            oldHeight > 0 &&
+            (oldWidth !== width || oldHeight !== height)
+        ) {
+            const next = vpt.slice();
+            next[4] += (width - oldWidth) / 2;
+            next[5] += (height - oldHeight) / 2;
+            this.setViewportTransform(next);
+        }
     }
 
     /**
@@ -1023,8 +1116,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Use this when you have the exact dimensions to use.
      */
     setCanvasSize(width: number, height: number) {
-        this.setWidth(Math.max(0, Math.floor(width)));
-        this.setHeight(Math.max(0, Math.floor(height)));
+        this.resizeKeepingCentre(
+            Math.max(0, Math.floor(width)),
+            Math.max(0, Math.floor(height)),
+        );
         this.requestRenderAll();
     }
 
@@ -1034,10 +1129,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      */
     public getBaseZoom(): number {
         const viewportHeight = this.getHeight();
+        const viewportWidth = this.getWidth();
         const fieldHeight = this.fieldProperties?.height ?? viewportHeight;
+        const fieldWidth = this.fieldProperties?.width ?? viewportWidth;
         if (fieldHeight <= 0 || viewportHeight <= 0) return 1.0;
         const fitVerticalZoom = viewportHeight / fieldHeight;
-        return Math.min(1.0, fitVerticalZoom);
+        // A narrow view (a tablet held upright) fits the field's width instead
+        const fitHorizontalZoom =
+            fieldWidth > 0 && viewportWidth > 0
+                ? viewportWidth / fieldWidth
+                : Infinity;
+        return Math.min(1.0, fitVerticalZoom, fitHorizontalZoom);
+    }
+
+    /** The zoom shown as 100%: the fitted zoom when the view was last centred */
+    private _zoomReference: number | null = null;
+
+    /**
+     * The zoom the zoom label calls 100%. It is fixed when the field is fitted
+     * (on load, or with the reset button), so resizing the canvas without
+     * changing the field's scale doesn't change the label.
+     */
+    public getZoomReference(): number {
+        return this._zoomReference ?? this.getBaseZoom();
     }
 
     /** Center the field in the viewport at base zoom. */
@@ -1048,6 +1162,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const fieldHeight = this.fieldProperties?.height ?? viewportHeight;
 
         const baseZoom = this.getBaseZoom();
+        this._zoomReference = baseZoom;
         const panX = (viewportWidth - fieldWidth * baseZoom) / 2;
         const panY = (viewportHeight - fieldHeight * baseZoom) / 2;
         this.setViewportTransform([baseZoom, 0, 0, baseZoom, panX, panY]);
@@ -1160,11 +1275,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
         // update coordinate for every canvas marcher
-        Object.values(marcherPages).forEach((marcherPage) => {
-            const visual = marcherVisuals[marcherPage.marcher_id];
-            if (!visual) return;
+        this.withActiveSelectionRebuilt(() => {
+            Object.values(marcherPages).forEach((marcherPage) => {
+                const visual = marcherVisuals[marcherPage.marcher_id];
+                if (!visual) return;
 
-            visual.getCanvasMarcher().setMarcherCoords(marcherPage);
+                visual.getCanvasMarcher().setMarcherCoords(marcherPage);
+            });
         });
 
         if (this._listeners && this._listeners.refreshMarchers)
@@ -1175,8 +1292,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
-        canvasMarchers.forEach((canvasMarcher) => {
-            canvasMarcher.setMarcherCoords(canvasMarcher.coordinate);
+        this.withActiveSelectionRebuilt(() => {
+            canvasMarchers.forEach((canvasMarcher) => {
+                canvasMarcher.setMarcherCoords(canvasMarcher.coordinate);
+            });
         });
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
