@@ -4,9 +4,12 @@ import { syncFromStorage } from "@/stores/syncFromStorage";
 /**
  * Whether the interface is laid out for fingers or for a mouse.
  *
- * - `"auto"` follows the last press: a finger or a pen switches to touch, a
- *   mouse or trackpad switches back. Before any press it starts from the
- *   device (a coarse primary pointer, e.g. a tablet, starts in touch).
+ * - `"auto"` follows the device: touch when its primary pointer is coarse
+ *   (a tablet, or a 2-in-1 with its keyboard detached), mouse otherwise. It
+ *   changes when the device does (the keyboard cover is attached), never on a
+ *   single press, so a touch laptop's layout doesn't jump under the pointer
+ *   each time the person reaches for the screen. How each press behaves
+ *   (gestures, hit radius) still follows that press's own pointer type.
  * - `"touch"` and `"mouse"` pin it.
  *
  * The result is written to `<html data-input="touch|pointer">`, which drives
@@ -25,16 +28,14 @@ export const parsePreference = (raw: string | null): InputModePreference =>
         ? (raw as InputModePreference)
         : "auto";
 
-/** The mode a preference and the last press resolve to. */
+/** The mode a preference and the device resolve to. */
 export function resolveInputMode(
     preference: InputModePreference,
-    lastPointer: PointerKind | null,
     coarseDevice: boolean,
 ): InputMode {
     if (preference === "touch") return "touch";
     if (preference === "mouse") return "pointer";
-    if (lastPointer === null) return coarseDevice ? "touch" : "pointer";
-    return lastPointer === "mouse" ? "pointer" : "touch";
+    return coarseDevice ? "touch" : "pointer";
 }
 
 interface InputModeState {
@@ -47,6 +48,8 @@ interface InputModeState {
     setPreference: (preference: InputModePreference) => void;
     /** Records a press; the tracker calls this. */
     notePointer: (kind: PointerKind) => void;
+    /** Records the device's primary pointer changing; the tracker calls this. */
+    setCoarseDevice: (coarse: boolean) => void;
 }
 
 const loadPreference = (): InputModePreference => {
@@ -69,25 +72,25 @@ export const useInputModeStore = create<InputModeState>((set, get) => {
         preference,
         lastPointer: null,
         coarseDevice,
-        mode: resolveInputMode(preference, null, coarseDevice),
+        mode: resolveInputMode(preference, coarseDevice),
         setPreference: (next) => {
             try {
                 localStorage.setItem(INPUT_MODE_STORAGE_KEY, next);
             } catch {
                 // Storage may be unavailable (private window); keep it in memory
             }
-            const { lastPointer, coarseDevice } = get();
             set({
                 preference: next,
-                mode: resolveInputMode(next, lastPointer, coarseDevice),
+                mode: resolveInputMode(next, get().coarseDevice),
             });
         },
         notePointer: (kind) => {
-            const { preference, coarseDevice, lastPointer } = get();
-            if (kind === lastPointer) return;
+            if (kind !== get().lastPointer) set({ lastPointer: kind });
+        },
+        setCoarseDevice: (coarse) => {
             set({
-                lastPointer: kind,
-                mode: resolveInputMode(preference, kind, coarseDevice),
+                coarseDevice: coarse,
+                mode: resolveInputMode(get().preference, coarse),
             });
         },
     };
@@ -102,11 +105,8 @@ const applyToDocument = (mode: InputMode) => {
 };
 
 /**
- * Starts following presses and keeps `<html data-input>` current. Call once
- * per window; returns the stop.
- *
- * A switch is applied after the press's click, not on pointerdown, so the
- * layout never grows or shrinks under the finger that is still tapping.
+ * Starts following presses and the device, and keeps `<html data-input>`
+ * current. Call once per window; returns the stop.
  */
 export function startInputModeTracking(): () => void {
     const store = useInputModeStore;
@@ -115,22 +115,21 @@ export function startInputModeTracking(): () => void {
         if (state.mode !== previous.mode) applyToDocument(state.mode);
     });
 
-    let pending: PointerKind | null = null;
     const onPointerDown = (event: PointerEvent) => {
         const kind = event.pointerType as PointerKind;
-        if (kind !== "mouse" && kind !== "pen" && kind !== "touch") return;
-        pending = kind;
-    };
-    const flush = () => {
-        if (pending === null) return;
-        const kind = pending;
-        pending = null;
-        // After the click that follows this release has been handled
-        setTimeout(() => store.getState().notePointer(kind), 0);
+        if (kind === "mouse" || kind === "pen" || kind === "touch")
+            store.getState().notePointer(kind);
     };
     window.addEventListener("pointerdown", onPointerDown, true);
-    window.addEventListener("pointerup", flush, true);
-    window.addEventListener("pointercancel", flush, true);
+
+    // A 2-in-1 whose keyboard is attached or detached changes its primary pointer
+    const coarseQuery =
+        typeof window.matchMedia === "function"
+            ? window.matchMedia("(pointer: coarse)")
+            : null;
+    const onDeviceChange = (event: MediaQueryListEvent) =>
+        store.getState().setCoarseDevice(event.matches);
+    coarseQuery?.addEventListener("change", onDeviceChange);
 
     const stopSync = syncFromStorage(
         INPUT_MODE_STORAGE_KEY,
@@ -142,7 +141,6 @@ export function startInputModeTracking(): () => void {
         unsubscribe();
         stopSync();
         window.removeEventListener("pointerdown", onPointerDown, true);
-        window.removeEventListener("pointerup", flush, true);
-        window.removeEventListener("pointercancel", flush, true);
+        coarseQuery?.removeEventListener("change", onDeviceChange);
     };
 }

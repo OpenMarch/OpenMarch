@@ -1145,7 +1145,7 @@
         "input.description": "Whether OpenMarch is laid out for fingers or for a mouse.",
         "input.interface": "Interface",
         "input.interface.auto": "Automatic",
-        "input.interface.description": "Automatic switches to larger controls when you touch the screen, and back when you use a mouse or trackpad.",
+        "input.interface.description": "Automatic uses larger controls on a tablet, and the usual controls on a computer with a mouse or trackpad. Choose Touch for larger controls on a touch-screen laptop.",
         "input.interface.mouse": "Mouse",
         "input.interface.touch": "Touch",
         "appearance": "Appearance",
