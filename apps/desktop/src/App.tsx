@@ -50,6 +50,54 @@ import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
 import { version as currentVersion } from "../package.json";
 import { shouldShowUpdateNotification } from "./utilities/updateNotification";
+import { useIsTouchMode } from "./stores/InputModeStore";
+import { useOnScreenKeyboard } from "./hooks/useOnScreenKeyboard";
+import { startAudioUnlock } from "./utilities/audioUnlock";
+import { audioContextRef } from "@/components/timeline/audio/AudioPlayer";
+import { inspectorLayout } from "./utilities/inspectorLayout";
+import { SidebarSimpleIcon } from "@phosphor-icons/react";
+import { useTranslate } from "@tolgee/react";
+
+/** The window's width, kept current. */
+function useWindowWidth() {
+    const [width, setWidth] = useState(() => window.innerWidth);
+    useEffect(() => {
+        const onResize = () => setWidth(window.innerWidth);
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+    return width;
+}
+
+/**
+ * Shows and hides the Inspector on tablets and narrow windows (see
+ * utilities/inspectorLayout.ts): a slim column at the right edge.
+ */
+function InspectorToggle({
+    open,
+    onToggle,
+}: {
+    open: boolean;
+    onToggle: () => void;
+}) {
+    const { t } = useTranslate();
+    const label = open
+        ? t("layout.hideInspector", "Hide inspector")
+        : t("layout.showInspector", "Show inspector");
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-label={label}
+            aria-expanded={open}
+            aria-controls="inspector-panel"
+            title={label}
+            className="rounded-6 border-stroke bg-fg-1 text-text hover:text-accent focus-visible:outline-accent touch:size-44 flex size-32 shrink-0 items-center justify-center border"
+        >
+            <SidebarSimpleIcon size={20} mirrored />
+        </button>
+    );
+}
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -81,6 +129,21 @@ function App() {
     } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
+    const isTouchMode = useIsTouchMode();
+    const windowWidth = useWindowWidth();
+    const [inspectorChoice, setInspectorChoice] = useState<boolean | null>(
+        null,
+    );
+    const inspector = inspectorLayout(
+        windowWidth,
+        isTouchMode,
+        inspectorChoice,
+    );
+
+    useOnScreenKeyboard();
+
+    // iPads and phones: audio may only start during a press.
+    useEffect(() => startAudioUnlock(() => [audioContextRef]), []);
 
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
@@ -242,7 +305,7 @@ function App() {
                 {process.env.NODE_ENV !== "production" && (
                     <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+                <main className="app-frame bg-bg-1 text-text outline-accent flex h-dvh min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
                     {analyticsConsent === null && !isCodegen && (
                         <AnalyticsOptInModal
                             onChoice={(choice) => setAnalyticsConsent(choice)}
@@ -320,11 +383,35 @@ function App() {
                                                     </div>
                                                     <TimelineContainer />
                                                 </div>
+                                                {!isFullscreen &&
+                                                    inspector.collapsible && (
+                                                        <div
+                                                            className={clsx(
+                                                                "flex shrink-0 flex-col",
+                                                                timelineFocussedClass,
+                                                            )}
+                                                        >
+                                                            <InspectorToggle
+                                                                open={
+                                                                    inspector.open
+                                                                }
+                                                                onToggle={() =>
+                                                                    setInspectorChoice(
+                                                                        !inspector.open,
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
+                                                {/* Hidden rather than unmounted, so edits in it survive */}
                                                 {!isFullscreen && (
                                                     <div
-                                                        className={
-                                                            timelineFocussedClass
-                                                        }
+                                                        id="inspector-panel"
+                                                        className={clsx(
+                                                            timelineFocussedClass,
+                                                            !inspector.open &&
+                                                                "hidden",
+                                                        )}
                                                     >
                                                         <Inspector />
                                                     </div>

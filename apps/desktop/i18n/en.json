@@ -785,6 +785,10 @@
         },
         "title": "Launch Page"
     },
+    "layout": {
+        "hideInspector": "Hide inspector",
+        "showInspector": "Show inspector"
+    },
     "marchers": {
         "addMarcher": "Add",
         "addMarchers": "Add Marchers",
