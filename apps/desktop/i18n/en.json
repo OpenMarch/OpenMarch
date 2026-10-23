@@ -1,4 +1,16 @@
 {
+    "sidebar": {
+        "appearance": "Appearance",
+        "field": "Field",
+        "marchers": "Marchers",
+        "metronome": "Metronome",
+        "mobile": "Mobile app",
+        "music": "Music",
+        "settings": "Settings"
+    },
+    "infoTip": {
+        "moreInfo": "More info"
+    },
     "actions": {
         "alignment": {
             "alignHorizontally": "Align horizontally",
@@ -599,6 +611,10 @@
             "drawLine": "Draw a line."
         },
         "marcher": {
+            "alignHorizontallyCaption": "Horizontal",
+            "alignVerticallyCaption": "Vertical",
+            "flipHorizontalCaption": "Flip ↔",
+            "flipVerticalCaption": "Flip ↕",
             "createLine": "Create Line",
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
@@ -992,6 +1008,9 @@
         "title": "Export to Mobile"
     },
     "music": {
+        "addAfterCaption": "Add after",
+        "deleteTempoGroup": "Delete tempo group",
+        "editTempoGroup": "Edit tempo group",
         "accent": "Accent first beat",
         "addNewTempoGroupAfter": "Add a new tempo group after this one",
         "addTempoGroup": "Add New Group",
@@ -1113,6 +1132,13 @@
         }
     },
     "settings": {
+        "input": "Touch & Input",
+        "input.description": "Whether OpenMarch is laid out for fingers or for a mouse.",
+        "input.interface": "Interface",
+        "input.interface.auto": "Automatic",
+        "input.interface.description": "Automatic switches to larger controls when you touch the screen, and back when you use a mouse or trackpad.",
+        "input.interface.mouse": "Mouse",
+        "input.interface.touch": "Touch",
         "appearance": "Appearance",
         "appearance.description": "How OpenMarch looks.",
         "database": "Database",
@@ -1256,6 +1282,8 @@
         }
     },
     "titlebar": {
+        "menu": "Menu",
+        "reload": "Reload",
         "bugReport": "Submit bug or feedback",
         "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
         "databasePathError": "Database Path Error",
@@ -1263,7 +1291,12 @@
         "databasePathError.dismiss": "Dismiss"
     },
     "toolbar": {
+        "hideToolbar": "Hide toolbar",
+        "showToolbar": "Show toolbar",
         "alignment": {
+            "lockXCaption": "Lock X",
+            "lockYCaption": "Lock Y",
+            "snapCaption": "Snap",
             "alignMarchersAriaLabel": "Align marchers",
             "lockMarchersAriaLabel": "Cursor movement and marcher snap",
             "placeAllMarchers": "Place all marchers",
@@ -1272,6 +1305,9 @@
             "toPreviousPagePositions": "...to previous page positions"
         },
         "select": {
+            "tapMode.add": "Add",
+            "tapMode.ariaLabel": "Choosing a group",
+            "tapMode.replace": "Replace",
             "noDrillPrefixesToSelect": "No drill prefixes to select found",
             "noResultsFound": "No results found",
             "noSectionsToSelect": "No sections to select found",

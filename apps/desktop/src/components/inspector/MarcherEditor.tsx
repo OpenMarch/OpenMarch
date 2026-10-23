@@ -24,7 +24,7 @@ import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import type { FieldProperties } from "@openmarch/core";
 import {
@@ -164,7 +164,12 @@ interface AlignmentButtonsProps {
     editingDisabled: boolean;
 }
 
+/** In touch mode the caption stacks under the icon and the button grows to fit. */
+const alignButtonClassName =
+    "flex flex-1 items-center justify-center touch:h-auto touch:min-h-44 touch:flex-col touch:gap-2 touch:py-4";
+
 function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
+    const { t } = useTolgee();
     const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
     const [verticalStepInterval, setVerticalStepInterval] = useState("");
     const { mutate: updateSelectedMarchers } =
@@ -253,26 +258,28 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             <div className="flex gap-8">
                 <ActionButton
                     action="alignVertically"
+                    caption={t("inspector.marcher.alignVerticallyCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <AlignCenterVerticalSimpleIcon size={16} weight="bold" />
                 </ActionButton>
                 <ActionButton
                     action="alignHorizontally"
+                    caption={t("inspector.marcher.alignHorizontallyCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <AlignCenterHorizontalSimpleIcon size={16} weight="bold" />
@@ -280,26 +287,28 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
 
                 <ActionButton
                     action="flipHorizontal"
+                    caption={t("inspector.marcher.flipHorizontalCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <FlipHorizontalIcon size={16} weight="bold" />
                 </ActionButton>
                 <ActionButton
                     action="flipVertical"
+                    caption={t("inspector.marcher.flipVerticalCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <FlipVerticalIcon size={16} weight="bold" />

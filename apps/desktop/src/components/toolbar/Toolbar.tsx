@@ -6,8 +6,9 @@ import ViewTab from "./tabs/ViewTab";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { useEffect, useState } from "react";
 import { clsx } from "clsx";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
+import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import SelectTab from "./tabs/SelectTab";
@@ -17,6 +18,10 @@ export default function Topbar() {
     const [activeTab, setActiveTab] = useState("alignment");
     const { selectedPage } = useSelectedPage()!;
     const { currentCollisions } = useCollisionStore();
+    const { t } = useTolgee();
+    // In fullscreen the toolbar hides until hovered; a tablet can't hover, so a button pins it open
+    const [shownInFullscreen, setShownInFullscreen] = useState(false);
+    const collapsed = isFullscreen && !shownInFullscreen;
 
     // Switch to "view" tab when entering fullscreen mode
     useEffect(() => {
@@ -25,6 +30,7 @@ export default function Topbar() {
         }
         if (!isFullscreen) {
             setActiveTab("alignment");
+            setShownInFullscreen(false);
         }
     }, [isFullscreen]);
 
@@ -38,7 +44,7 @@ export default function Topbar() {
     return (
         <div
             className={clsx("group", {
-                "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 w-full rounded-[18px] border p-8":
+                "border-stroke bg-modal backdrop-blur-32 shadow-modal absolute z-50 flex w-full items-start gap-8 rounded-[18px] border p-8":
                     isFullscreen,
             })}
         >
@@ -48,10 +54,11 @@ export default function Topbar() {
                 className={clsx(
                     "flex flex-col gap-0 overflow-hidden transition-[max-height,opacity] duration-250 ease-in-out",
                     {
+                        "min-w-0 flex-1": isFullscreen,
                         "pointer-events-none max-h-4 flex-row items-center gap-8 opacity-0":
-                            isFullscreen,
-                        "group-hover:pointer-events-auto group-hover:max-h-[80px] group-hover:opacity-100":
-                            isFullscreen,
+                            collapsed,
+                        "group-hover:pointer-events-auto group-hover:max-h-[80px] group-hover:opacity-100 group-has-focus-visible:pointer-events-auto group-has-focus-visible:max-h-[80px] group-has-focus-visible:opacity-100":
+                            collapsed,
                     },
                 )}
             >
@@ -112,6 +119,30 @@ export default function Topbar() {
                     <CollisionsTab />
                 </TabContent>
             </Tabs>
+            {isFullscreen && (
+                <button
+                    type="button"
+                    aria-expanded={shownInFullscreen}
+                    aria-label={t(
+                        shownInFullscreen
+                            ? "toolbar.hideToolbar"
+                            : "toolbar.showToolbar",
+                    )}
+                    title={t(
+                        shownInFullscreen
+                            ? "toolbar.hideToolbar"
+                            : "toolbar.showToolbar",
+                    )}
+                    onClick={() => setShownInFullscreen((shown) => !shown)}
+                    className="hover:text-accent text-text touch:size-44 flex size-24 shrink-0 items-center justify-center rounded-full outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                >
+                    {shownInFullscreen ? (
+                        <CaretUpIcon size={18} />
+                    ) : (
+                        <CaretDownIcon size={18} />
+                    )}
+                </button>
+            )}
         </div>
     );
 }

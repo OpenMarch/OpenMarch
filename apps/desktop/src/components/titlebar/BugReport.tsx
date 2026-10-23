@@ -14,12 +14,13 @@ export default function BugReport() {
     };
 
     return (
-        <div
-            className="hover:text-accent text-sub flex cursor-pointer items-center gap-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
+        <button
+            type="button"
+            className="hover:text-accent text-sub touch:min-h-44 flex cursor-pointer items-center gap-4 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-5"
             onClick={handleClick}
         >
             <BugBeetleIcon size={16} />
             <T keyName="titlebar.bugReport" />
-        </div>
+        </button>
     );
 }

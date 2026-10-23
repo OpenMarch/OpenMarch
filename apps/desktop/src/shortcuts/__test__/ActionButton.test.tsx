@@ -13,6 +13,7 @@ import ActionButton from "../ActionButton";
 import { getActionLabel, getActionTooltip } from "../labels";
 import { registerActionHandler } from "../registry";
 import { useActionHandler } from "../useActionHandler";
+import { useInputModeStore } from "@/stores/InputModeStore";
 
 const t = (key: string, params?: Record<string, string | number>) =>
     params ? `${key}:${JSON.stringify(params)}` : key;
@@ -102,5 +103,34 @@ describe("ActionButton", () => {
         );
         expect(screen.getByRole("button", { name: "Flip" })).toBeDisabled();
         off();
+    });
+
+    it("a caption names the button and shows only in touch mode", () => {
+        const { rerender } = render(
+            <ActionButton action="flipHorizontal" caption="Flip">
+                <svg />
+            </ActionButton>,
+            { wrapper: Providers },
+        );
+        const button = screen.getByRole("button", {
+            name: /^Flip horizontally/,
+        });
+        expect(button.querySelector("[data-touch-caption]")).toBeNull();
+
+        act(() => {
+            useInputModeStore.getState().setPreference("touch");
+        });
+        rerender(
+            <ActionButton action="flipHorizontal" caption="Flip">
+                <svg />
+            </ActionButton>,
+        );
+        expect(button.querySelector("[data-touch-caption]")).toHaveTextContent(
+            "Flip",
+        );
+        act(() => {
+            useInputModeStore.getState().setPreference("auto");
+        });
+        localStorage.clear();
     });
 });

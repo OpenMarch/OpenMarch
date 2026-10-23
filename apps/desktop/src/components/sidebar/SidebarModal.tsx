@@ -2,6 +2,7 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
 import { type ReactNode, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
+import { TouchCaption } from "@/components/ui/InfoTip";
 
 export default function SidebarModal() {
     const { isOpen, content, setOpen } = useSidebarModalStore();
@@ -36,7 +37,7 @@ export default function SidebarModal() {
             tabIndex={0}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className="rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 animate-scale-in absolute top-0 left-[50px] z-40 flex h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden"
+            className="rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 animate-scale-in touch:left-[88px] absolute top-0 left-[50px] z-40 flex h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden"
         >
             {content}
         </div>
@@ -45,11 +46,14 @@ export default function SidebarModal() {
 
 export function SidebarModalLauncher({
     buttonLabel,
+    name,
     contents,
     newContentId,
     className,
 }: {
     buttonLabel: string | ReactNode;
+    /** What the button opens, e.g. "Marchers": its accessible name, and its caption in touch mode. */
+    name?: string;
     contents: ReactNode;
     newContentId: string;
     className?: string;
@@ -66,9 +70,13 @@ export function SidebarModalLauncher({
                     if (!isOpen) toggleOpen(); // open if not already open
                 }
             }}
+            aria-label={name}
+            title={name}
             className={twMerge(
                 clsx(
                     "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
+                    name !== undefined &&
+                        "touch:flex touch:min-h-44 touch:w-full touch:flex-col touch:items-center touch:justify-center touch:gap-2",
                     { "text-accent": isOpen && contentId === newContentId },
                     className,
                 ),
@@ -76,6 +84,11 @@ export function SidebarModalLauncher({
             id={"sidebar-launcher-" + newContentId}
         >
             {buttonLabel}
+            {name !== undefined && (
+                <TouchCaption className="max-w-full truncate">
+                    {name}
+                </TouchCaption>
+            )}
         </button>
     );
 }

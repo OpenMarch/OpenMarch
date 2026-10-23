@@ -3,6 +3,7 @@ import {
     CursorClickIcon,
     DatabaseIcon,
     GearSixIcon,
+    HandPointingIcon,
     KeyboardIcon,
     PaletteIcon,
     PuzzlePieceIcon,
@@ -15,6 +16,7 @@ import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import GeneralSettings from "@/components/launchpage/settings/GeneralSettings";
 import AppearanceSettings from "@/components/launchpage/settings/AppearanceSettings";
 import MouseSettings from "@/components/launchpage/settings/MouseSettings";
+import InputSettings from "@/components/launchpage/settings/InputSettings";
 import ShortcutSettings from "@/components/launchpage/settings/ShortcutSettings";
 import PluginsContents from "@/components/launchpage/settings/plugins/Plugins";
 import PrivacySettings from "@/components/launchpage/settings/PrivacySettings";
@@ -25,6 +27,7 @@ import { isWebBuild } from "@/utilities/webBuild";
 export type SettingsSectionId =
     | "general"
     | "appearance"
+    | "input"
     | "mouse"
     | "shortcuts"
     | "plugins"
@@ -76,6 +79,18 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.general.appearance.light",
             "settings.general.appearance.dark",
             "settings.general.showFullDatabasePath",
+        ],
+    },
+    {
+        id: "input",
+        labelKey: "settings.input",
+        Icon: HandPointingIcon,
+        Component: InputSettings,
+        descriptionKey: "settings.input.description",
+        searchKeys: [
+            "settings.input.interface",
+            "settings.input.interface.touch",
+            "settings.input.interface.mouse",
         ],
     },
     {

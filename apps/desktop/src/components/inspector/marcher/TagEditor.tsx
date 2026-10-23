@@ -23,6 +23,7 @@ import { DatabaseTag, getTagName, NewMarcherTagArgs } from "@/db-functions";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { AppearanceModalContents } from "@/components/marcher/appearance/AppearanceModal";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { TouchCaption } from "@/components/ui/InfoTip";
 
 const buttonClassName = twMerge("flex items-center gap-4 w-full");
 
@@ -300,6 +301,7 @@ const NewTagButton = ({
                 >
                     <TagIcon size={16} />
                     <SparkleIcon size={16} />
+                    <TouchCaption>New tag</TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -393,6 +395,7 @@ const AddToTagButton = ({
                 >
                     <TagIcon size={16} />
                     <PlusIcon size={16} />
+                    <TouchCaption>Add to tag</TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -412,7 +415,7 @@ const AddToTagButton = ({
                         {allTags.map((tag) => (
                             <div
                                 key={tag.id}
-                                className="text-text hover:text-accent cursor-pointer"
+                                className="text-text hover:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     handleCreateTag(tag.id);
@@ -489,6 +492,7 @@ const DeleteFromTagButton = ({
                 >
                     <TagIcon size={16} />
                     <TrashIcon size={16} />
+                    <TouchCaption>Remove</TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -512,7 +516,7 @@ const DeleteFromTagButton = ({
                             .map((tag) => (
                                 <div
                                     key={tag.id}
-                                    className="text-text hover:text-accent cursor-pointer"
+                                    className="text-text hover:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleDeleteFromTag(tag.id);

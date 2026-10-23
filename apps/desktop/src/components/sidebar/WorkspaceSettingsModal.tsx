@@ -36,8 +36,10 @@ export default function WorkspaceSettingsModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
+    const { t } = useTolgee();
     return (
         <SidebarModalLauncher
+            name={t("sidebar.settings")}
             contents={<WorkspaceSettingsModalContents />}
             newContentId="workspace-settings"
             buttonLabel={label}
