@@ -12,6 +12,7 @@ import {
     EraserIcon,
     HandIcon,
     LassoIcon,
+    MagicWandIcon,
     MagnetIcon,
     PlusCircleIcon,
     QuestionIcon,
@@ -75,26 +76,45 @@ const writeStorage = (key: string, value: string) => {
     }
 };
 
+/** "Apple Pencil" on Apple devices, "a pen" elsewhere */
+const PEN =
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
+        ? "Apple Pencil"
+        : "a pen";
+
+/** What the default does, in plain words */
+export const AUTO_DRAG_SENTENCE = `Drag the field with one finger to move around. Use ${PEN}, or press and hold then drag, to select an area.`;
+
 export const DRAG_MODES: Record<
     FieldDragMode,
     { label: string; describe: string; Icon: typeof SelectionIcon }
 > = {
+    auto: {
+        label: "Auto",
+        describe: `finger moves the view, ${PEN === "a pen" ? "pen" : "Pencil"} selects`,
+        Icon: MagicWandIcon,
+    },
     box: {
         label: "Box",
-        describe: "draws a box that selects the marchers inside it",
+        describe: "finger and pen draw a box that selects",
         Icon: SelectionIcon,
     },
     lasso: {
         label: "Lasso",
-        describe: "draws a loop that selects the marchers inside it",
+        describe: "finger and pen draw a loop that selects",
         Icon: LassoIcon,
     },
-    pan: { label: "Pan", describe: "moves the view", Icon: HandIcon },
+    pan: {
+        label: "Pan",
+        describe: "finger and pen move the view",
+        Icon: HandIcon,
+    },
 };
 
 const EXPLAIN = {
     grip: "Drag to move these buttons.",
-    drag: "What dragging one finger or the pen from empty field does: Box selects, Lasso selects inside a loop, Pan moves the view. Two fingers always move the view.",
+    drag: `What a drag from empty field does. Auto: ${AUTO_DRAG_SENTENCE} Box, Lasso and Pan do the same for finger and pen. Two fingers always move the view.`,
     shift: "Add: hold it, or tap to keep it on. While it's on, tapping a marcher adds it to the selection or takes it out, and moves keep to one direction.",
     alt: "No snap: hold it, or tap to keep it on. Moving and turning don't snap to steps.",
     help: "What these buttons do.",
@@ -479,11 +499,11 @@ export default function TouchModifierButtons({
                     )}
                     onClick={() => setPopup(null)}
                 >
-                    <p>
-                        <b>Drag</b>: what dragging one finger or the pen from
-                        empty field does. <b>Box</b> and <b>Lasso</b> select,{" "}
-                        <b>Pan</b> moves the view. Two fingers always move the
-                        view.
+                    <p>{AUTO_DRAG_SENTENCE}</p>
+                    <p className="mt-6">
+                        <b>Drag</b> changes that: <b>Box</b>, <b>Lasso</b> or{" "}
+                        <b>Pan</b> for both finger and pen. Two fingers always
+                        move and zoom the view.
                     </p>
                     <p className="mt-6">
                         <b>Add</b>: hold it, or tap to keep it on. While it is
