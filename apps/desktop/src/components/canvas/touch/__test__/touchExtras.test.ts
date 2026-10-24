@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { initialPalmGuardState, palmGuardShouldBlock } from "../penPalmGuard";
 import { paddingForMinimumBox } from "../touchSelectionHandles";
-import { describeStepDelta } from "../dragStepReadout";
+import { describeRotation, describeStepDelta } from "../dragStepReadout";
+import { choosePillPosition, pillCandidates } from "../pillPlacement";
+import { nextFieldDragMode, parseFieldDragMode } from "../fieldDragMode";
 import { absoluteBounds } from "../touchHitTest";
 
 describe("palmGuardShouldBlock", () => {
@@ -158,5 +160,58 @@ describe("absoluteBounds", () => {
             width: 6,
             height: 4,
         });
+    });
+});
+
+describe("describeRotation", () => {
+    it("says the turn in whole degrees, the short way round", () => {
+        expect(describeRotation(0, 15)).toBe("15°");
+        expect(describeRotation(10, -20)).toBe("-30°");
+        expect(describeRotation(350, 10)).toBe("20°");
+        expect(describeRotation(10, 350)).toBe("-20°");
+        expect(describeRotation(0, 0.3)).toBe("0°");
+    });
+});
+
+describe("field drag mode", () => {
+    it("reads a stored mode, defaulting to the box", () => {
+        expect(parseFieldDragMode("lasso")).toBe("lasso");
+        expect(parseFieldDragMode("pan")).toBe("pan");
+        expect(parseFieldDragMode(null)).toBe("box");
+        expect(parseFieldDragMode("nonsense")).toBe("box");
+    });
+    it("cycles box, lasso, pan", () => {
+        expect(nextFieldDragMode("box")).toBe("lasso");
+        expect(nextFieldDragMode("lasso")).toBe("pan");
+        expect(nextFieldDragMode("pan")).toBe("box");
+    });
+});
+
+describe("choosePillPosition", () => {
+    const container = { width: 1000, height: 700 };
+    const pill = { width: 300, height: 48 };
+
+    it("prefers bottom-right, above the zoom buttons, when nothing is there", () => {
+        expect(choosePillPosition(container, pill, null, [])).toEqual(
+            pillCandidates(container, pill)[0],
+        );
+    });
+
+    it("moves away from marchers in the bottom-right", () => {
+        const first = pillCandidates(container, pill)[0];
+        const under = {
+            x: first.left + 100,
+            y: container.height - first.bottom - 20,
+        };
+        const chosen = choosePillPosition(container, pill, null, [under]);
+        expect(chosen).not.toEqual(first);
+    });
+
+    it("prefers a spot off the field drawing when the field leaves margin", () => {
+        // The field fills the top 600 px; only the bottom strip is free
+        const field = { left: 0, top: 0, width: 1000, height: 600 };
+        const chosen = choosePillPosition(container, pill, field, []);
+        const top = container.height - chosen.bottom - pill.height;
+        expect(top).toBeGreaterThanOrEqual(600);
     });
 });

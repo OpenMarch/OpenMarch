@@ -676,6 +676,7 @@ export default function Canvas({
             )}
             {canvas && !isFullscreen && (
                 <TouchModifierButtons
+                    canvas={canvas}
                     showClearLine={alignmentEvent === "line"}
                     onClearLine={clearLine}
                 />

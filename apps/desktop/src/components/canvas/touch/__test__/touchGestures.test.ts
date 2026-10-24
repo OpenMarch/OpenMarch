@@ -472,6 +472,48 @@ describe("pen and palm rejection", () => {
     });
 });
 
+describe("Move view drag mode (panSingle)", () => {
+    it("turns the single finger's press into navigation from where it went down", () => {
+        let { state } = run([
+            touch("down", 1, 100, 100, 0),
+            touch("move", 1, 112, 100, 50),
+        ]);
+        const pan = stepGesture(state, { type: "panSingle" });
+        expect(pan.passThrough).toBe(false);
+        expect(pan.effects).toEqual([
+            {
+                type: "navigationStart",
+                geometry: { mid: { x: 100, y: 100 }, distance: null },
+            },
+        ]);
+        state = pan.state;
+        const move = stepGesture(state, touch("move", 1, 150, 120, 80));
+        expect(move.passThrough).toBe(false);
+        expect(move.effects).toEqual([
+            {
+                type: "navigate",
+                geometry: { mid: { x: 150, y: 120 }, distance: null },
+            },
+        ]);
+        const up = stepGesture(move.state, touch("up", 1, 150, 120, 120));
+        expect(types(up.effects)).toEqual(["navigationEnd"]);
+        expect(up.state.mode).toBe("idle");
+    });
+
+    it("lets a second finger join and pinch", () => {
+        let { state } = run([touch("down", 1, 100, 100, 0)]);
+        state = stepGesture(state, { type: "panSingle" }).state;
+        const second = stepGesture(state, touch("down", 2, 200, 100, 100));
+        expect(types(second.effects)).toEqual(["navigationStart"]);
+    });
+
+    it("does nothing outside a single press", () => {
+        const r = stepGesture(initialGestureState(), { type: "panSingle" });
+        expect(r.effects).toEqual([]);
+        expect(r.state.mode).toBe("idle");
+    });
+});
+
 describe("navigationTransform", () => {
     const identity = (z: number) => z;
 
