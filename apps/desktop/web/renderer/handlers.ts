@@ -15,6 +15,7 @@ import { handOffShow } from "./handoff";
 import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import { requestOpenSettings } from "../../src/utilities/settingsSheet";
 import {
+    audioFileProblem,
     isAppleTouchDevice,
     pickerAccept,
     shareFile,
@@ -410,9 +411,16 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         },
     );
     handleInPage("audio:insert", async () => {
-        const file = await pickFile(
+        let file = await pickFile(
             "audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm,.flac",
         );
+        if (file && appleTouch) {
+            const problem = audioFileProblem(file.name, file.type);
+            if (problem) {
+                window.alert(problem);
+                file = null;
+            }
+        }
         if (!file)
             return {
                 success: false,

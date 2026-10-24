@@ -25,16 +25,40 @@ export function isAppleTouchDevice(nav: NavigatorLike = navigator): boolean {
 }
 
 /**
- * The `accept` to give the picker. On iOS only the MIME types are kept
- * (`audio/*` works there), and with none left it accepts anything.
+ * The `accept` to give the picker. On iOS the picker greys out files it can't
+ * match: custom extensions (".dots") always, and even MP3s for `audio/*` in
+ * iPadOS 17's Files picker. So only `image/*` (which opens the photo picker)
+ * is kept there; otherwise it accepts any file and the caller checks it.
  */
 export function pickerAccept(accept: string, appleTouch: boolean): string {
     if (!appleTouch) return accept;
     return accept
         .split(",")
         .map((part) => part.trim())
-        .filter((part) => part.includes("/"))
+        .filter((part) => part.startsWith("image/"))
         .join(",");
+}
+
+const AUDIO_EXTENSIONS = [
+    ".mp3",
+    ".wav",
+    ".ogg",
+    ".m4a",
+    ".aac",
+    ".webm",
+    ".flac",
+    ".aif",
+    ".aiff",
+];
+
+/**
+ * Checks a file picked as music when the picker couldn't filter (iOS).
+ * Returns the problem to tell the person, or null if it looks like audio.
+ */
+export function audioFileProblem(name: string, type: string): string | null {
+    if (type.startsWith("audio/")) return null;
+    if (AUDIO_EXTENSIONS.some((ext) => hasExtension(name, ext))) return null;
+    return `"${name}" isn't an audio file. Choose an MP3, WAV, M4A or similar.`;
 }
 
 /** Whether `name` ends in `extension` (e.g. ".dots"), ignoring case. */

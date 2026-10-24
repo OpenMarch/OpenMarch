@@ -5,6 +5,7 @@ import {
     isAppleTouchDevice,
     looksLikeSqlite,
     pickerAccept,
+    audioFileProblem,
     shareFile,
     showFileProblem,
 } from "../filePicking";
@@ -54,11 +55,26 @@ describe("pickerAccept", () => {
     it("accepts any file on iOS when only extensions are named", () => {
         expect(pickerAccept(".dots", true)).toBe("");
     });
-    it("keeps only MIME types on iOS", () => {
+    it("accepts any file on iOS except for images", () => {
+        // iPadOS 17's Files picker greys out MP3s for audio/*
         expect(
             pickerAccept("audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm,.flac", true),
-        ).toBe("audio/*");
-        expect(pickerAccept(" .csv , text/csv", true)).toBe("text/csv");
+        ).toBe("");
+        expect(pickerAccept(" .csv , text/csv", true)).toBe("");
+        expect(pickerAccept("image/*", true)).toBe("image/*");
+    });
+});
+
+describe("audioFileProblem", () => {
+    it("accepts audio by type or extension", () => {
+        expect(audioFileProblem("song.mp3", "")).toBeNull();
+        expect(audioFileProblem("song.bin", "audio/mpeg")).toBeNull();
+        expect(audioFileProblem("Show Music.M4A", "")).toBeNull();
+    });
+    it("turns down anything else with a message", () => {
+        expect(audioFileProblem("notes.pdf", "application/pdf")).toMatch(
+            /isn't an audio file/,
+        );
     });
 });
 
