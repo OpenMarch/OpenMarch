@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import CanvasMarcher from "./CanvasMarcher";
+import CanvasMarcher, { DEFAULT_DOT_RADIUS } from "./CanvasMarcher";
 import Endpoint from "./Endpoint";
 import Pathway, { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 import Midpoint from "./Midpoint";
@@ -21,6 +21,7 @@ import { isShiftHeld } from "@/stores/TouchModifierStore";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { applyTouchHandleSizing } from "@/components/canvas/touch/touchSelectionHandles";
 import { DragStepReadout } from "@/components/canvas/touch/dragStepReadout";
+import { useFieldDragModeStore } from "@/components/canvas/touch/fieldDragMode";
 
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
@@ -52,6 +53,29 @@ const IS_APPLE =
     /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 
 const isTouchLayout = () => useInputModeStore.getState().mode === "touch";
+
+/**
+ * A press on a marcher's dot wins over a multi-selection's scale and rotate
+ * handles that happen to sit on it: it moves the selection, or adds and
+ * removes with Shift, instead of scaling.
+ */
+const baseFindTargetCorner = (fabric.ActiveSelection.prototype as any)
+    ._findTargetCorner;
+(fabric.ActiveSelection.prototype as any)._findTargetCorner = function (
+    this: fabric.ActiveSelection,
+    pointer: unknown,
+    forTouch: boolean,
+) {
+    if ((this.canvas as any)?.pressOnMarcherDot) {
+        // Also forget a corner found while hovering, which Fabric checks too
+        (this as any).__corner = 0;
+        return false;
+    }
+    return baseFindTargetCorner.call(this, pointer, forTouch);
+};
+
+/** How far past a dot's edge (screen px) a press still counts as on the dot */
+const DOT_SLACK_PX = { touch: 10, pen: 3, mouse: 2 } as const;
 
 const NORMAL_PATHWAY_DASH: number[] = [];
 // Precomputed so the per-frame comparison below does not rebuild the warning stroke string
@@ -314,6 +338,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         this.requestRenderAll();
 
+        this.on("mouse:up", () => {
+            this.pressOnMarcherDot = false;
+        });
         this.on("selection:created", this.handleSelection);
         this.on("selection:updated", this.handleSelection);
         this.on("selection:cleared", this.handleSelection);
@@ -322,6 +349,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /******************* GROUP SELECTION HANDLING *******************/
 
     handleSelection(event: fabric.IEvent<MouseEvent>) {
+        // A real selection change replaces anything waiting to be reselected
+        this._pendingSelectionIds = [];
         // Cleanup handlers from the previous group to prevent memory leaks
         if (this._activeGroup) {
             cleanupGroupHandlers(this._activeGroup);
@@ -609,34 +638,75 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     /**
-     * Runs an update that moves marchers (new page, undo, end of playback) and
-     * rebuilds a multi-selection around them afterwards, so its box and handles
-     * follow the marchers instead of staying where they were. No selection
-     * events fire: what is selected doesn't change.
+     * Runs an update that moves or replaces marchers (new page, undo, end of
+     * playback, rebuilt visuals) and selects the same marchers afterwards, so a
+     * multi-selection's box and handles follow them instead of staying where
+     * they were, and a selection isn't lost when the objects are replaced. No
+     * selection events fire unless some of the selected marchers are gone.
      */
-    private withActiveSelectionRebuilt(update: () => void) {
-        const active = this.getActiveObject();
+    /**
+     * Selected marchers that disappeared during an update (their visuals were
+     * being rebuilt) and are selected again when they come back.
+     */
+    private _pendingSelectionIds: string[] = [];
+
+    keepSelectionAcross(update: () => void) {
+        const objects = this.getActiveObjects();
+        const pending = this._pendingSelectionIds;
         if (
-            !active ||
-            active.type !== "activeSelection" ||
+            (objects.length === 0 && pending.length === 0) ||
             (this as any)._currentTransform
         ) {
             update();
             return;
         }
-        const objects = (active as fabric.ActiveSelection).getObjects();
-        cleanupGroupHandlers(active as fabric.Group);
+        const wanted = [
+            ...objects
+                .filter(Selectable.isSelectable)
+                .map((o) => Selectable.getClassId(o as Selectable.ISelectable)),
+            ...pending,
+        ].filter((id, index, all) => all.indexOf(id) === index);
+        const active = this.getActiveObject();
+        if (active && active.type === "activeSelection")
+            cleanupGroupHandlers(active as fabric.Group);
         (this as any)._discardActiveObject();
         update();
-        const onCanvas = new Set(this.getObjects());
-        const still = objects.filter((o) => onCanvas.has(o));
-        if (still.length < 2) {
-            if (still.length === 1) (this as any)._setActiveObject(still[0]);
-            this._activeGroup = null;
+        // The marchers may be new objects now (e.g. the visuals were rebuilt
+        // after undo): find them again by what they are
+        const byClassId = new Map(
+            this.getAllSelectableObjects().map((o) => [
+                Selectable.getClassId(o),
+                o as fabric.Object,
+            ]),
+        );
+        const found: fabric.Object[] = [];
+        const missing: string[] = [];
+        for (const id of wanted) {
+            const object = byClassId.get(id);
+            if (object) found.push(object);
+            else missing.push(id);
+        }
+        // Silently: what is selected hasn't changed for the rest of the app
+        this._pendingSelectionIds = missing;
+        this.selectSilently(found);
+    }
+
+    /** Makes these the active objects without firing selection events */
+    private selectSilently(objects: fabric.Object[]) {
+        this._activeGroup = null;
+        if (objects.length === 0) {
             this.fire("group:selection", { group: null });
             return;
         }
-        const selection = new fabric.ActiveSelection(still, {
+        if (objects.length === 1) {
+            const only = objects[0];
+            only.lockMovementX = this.uiSettings.lockX || (only as any).locked;
+            only.lockMovementY = this.uiSettings.lockY || (only as any).locked;
+            (this as any)._setActiveObject(only);
+            this.fire("group:selection", { group: null });
+            return;
+        }
+        const selection = new fabric.ActiveSelection(objects, {
             canvas: this,
             ...ActiveObjectArgs,
         });
@@ -658,6 +728,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * TOUCH_HIT_RADIUS_PX screen pixels is pressed instead.
      */
     findTarget(e: Event, skipGroup: boolean): fabric.Object | undefined {
+        if (e.type === "pointerdown" || e.type === "mousedown")
+            this.pressOnMarcherDot = this.isOnMarcherDot(e);
         const target = super.findTarget(e as MouseEvent, skipGroup);
         if ((e as PointerEvent).pointerType !== "touch") return target;
         if (target && (target.selectable || target === this._activeObject))
@@ -668,6 +740,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             return nearest;
         }
         return target;
+    }
+
+    /** The current press started on a marcher's dot (see the handle rule above) */
+    pressOnMarcherDot = false;
+
+    /** Whether the pointer is on a selectable marcher's dot */
+    private isOnMarcherDot(e: Event): boolean {
+        const type = (e as PointerEvent).pointerType;
+        const slack =
+            type === "touch"
+                ? DOT_SLACK_PX.touch
+                : type === "pen"
+                  ? DOT_SLACK_PX.pen
+                  : DOT_SLACK_PX.mouse;
+        const zoom = this.getZoom();
+        if (!(zoom > 0)) return false;
+        const point = this.getPointer(e as MouseEvent);
+        const radius = (DEFAULT_DOT_RADIUS * zoom + slack) / zoom;
+        return this.getCanvasMarchers().some((marcher) => {
+            if (!marcher.visible || !marcher.selectable) return false;
+            const dot = marcher.getAbsoluteCoords();
+            return Math.hypot(dot.x - point.x, dot.y - point.y) <= radius;
+        });
     }
 
     /** The selectable object nearest to a finger, within the touch radius */
@@ -742,11 +837,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 target,
             ),
         );
-        if (
-            shouldClear &&
-            (e as PointerEvent).pointerType === "touch" &&
-            (!target || !target.selectable)
-        ) {
+        const pointerType = (e as PointerEvent).pointerType;
+        const deferFor =
+            pointerType === "touch" ||
+            // A pen drag from empty field may become a pan or a lasso
+            (pointerType === "pen" &&
+                isTouchLayout() &&
+                useFieldDragModeStore.getState().mode !== "box");
+        if (shouldClear && deferFor && (!target || !target.selectable)) {
             this.touchDeferredClear = true;
             return false;
         }
@@ -1275,7 +1373,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
         // update coordinate for every canvas marcher
-        this.withActiveSelectionRebuilt(() => {
+        this.keepSelectionAcross(() => {
             Object.values(marcherPages).forEach((marcherPage) => {
                 const visual = marcherVisuals[marcherPage.marcher_id];
                 if (!visual) return;
@@ -1292,7 +1390,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     refreshMarchers = () => {
         const canvasMarchers = this.getCanvasMarchers();
-        this.withActiveSelectionRebuilt(() => {
+        this.keepSelectionAcross(() => {
             canvasMarchers.forEach((canvasMarcher) => {
                 canvasMarcher.setMarcherCoords(canvasMarcher.coordinate);
             });

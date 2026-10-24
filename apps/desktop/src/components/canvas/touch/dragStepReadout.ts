@@ -37,10 +37,19 @@ export function describeStepDelta(
     return `${side} · ${frontBack}`;
 }
 
+/** Degrees turned, between -180 and 180, rounded to a whole degree */
+export function describeRotation(fromAngle: number, toAngle: number): string {
+    let delta = (toAngle - fromAngle) % 360;
+    if (delta > 180) delta -= 360;
+    if (delta <= -180) delta += 360;
+    const rounded = Math.round(delta);
+    return `${rounded === 0 ? 0 : rounded}°`;
+}
+
 type MovingEvent = fabric.IEvent<MouseEvent> & {
     transform?: {
         action?: string;
-        original?: { left?: number; top?: number };
+        original?: { left?: number; top?: number; angle?: number };
     };
 };
 
@@ -63,6 +72,7 @@ export class DragStepReadout {
 
     attach() {
         this.canvas.on("object:moving", this.onMoving as any);
+        this.canvas.on("object:rotating", this.onRotating as any);
         this.canvas.on("mouse:up", this.hide);
         this.canvas.on("object:modified", this.hide);
         this.canvas.on("selection:cleared", this.hide);
@@ -70,6 +80,7 @@ export class DragStepReadout {
 
     detach() {
         this.canvas.off("object:moving", this.onMoving as any);
+        this.canvas.off("object:rotating", this.onRotating as any);
         this.canvas.off("mouse:up", this.hide);
         this.canvas.off("object:modified", this.hide);
         this.canvas.off("selection:cleared", this.hide);
@@ -100,6 +111,33 @@ export class DragStepReadout {
             dy,
             this.canvas.fieldProperties.sideDescriptions,
         );
+        this.show(text, e);
+    };
+
+    /** While a selection turns: how many degrees, so 15° steps are easy to hit */
+    private onRotating = (event: MovingEvent) => {
+        const e = event.e as PointerEvent | undefined;
+        const original = event.transform?.original;
+        if (
+            !e ||
+            !Number.isFinite(e.clientX) ||
+            event.transform?.action !== "rotate" ||
+            !original
+        ) {
+            this.hide();
+            return;
+        }
+        const target = event.target;
+        // After the other rotating listeners, which snap the angle to 15° steps
+        queueMicrotask(() =>
+            this.show(
+                describeRotation(original.angle ?? 0, target?.angle ?? 0),
+                e,
+            ),
+        );
+    };
+
+    private show(text: string, e: PointerEvent) {
         const el = this.ensureElement();
         el.textContent = text;
         const rect = this.wrapper.getBoundingClientRect();
@@ -112,7 +150,7 @@ export class DragStepReadout {
         const top = Math.max(8, e.clientY - rect.top - above - el.offsetHeight);
         el.style.transform = `translate(${left}px, ${top}px)`;
         el.style.visibility = "visible";
-    };
+    }
 
     private ensureElement() {
         if (this.element) return this.element;

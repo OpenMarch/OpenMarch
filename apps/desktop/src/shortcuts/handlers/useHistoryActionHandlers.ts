@@ -8,6 +8,8 @@ import {
     usePerformHistoryAction,
 } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
+import { getRedoStackLength, getUndoStackLength } from "@/db-functions";
+import { db } from "@/global/database/db";
 import { useActionHandler } from "../useActionHandler";
 
 export function useHistoryActionHandlers() {
@@ -18,14 +20,22 @@ export function useHistoryActionHandlers() {
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
     const isPerforming = useRef(false);
 
-    const perform = (
+    const perform = async (
         direction: "undo" | "redo",
         available: boolean | undefined,
         emptyKey: string,
     ) => {
         if (!available) {
-            toast.warning(t(emptyKey), { duration: 1500 });
-            return;
+            // The cached answer can lag just after a change: ask the database
+            const length = await (
+                direction === "undo"
+                    ? getUndoStackLength(db)
+                    : getRedoStackLength(db)
+            ).catch(() => 0);
+            if (length === 0) {
+                toast.warning(t(emptyKey), { duration: 1500 });
+                return;
+            }
         }
         if (isPerforming.current) return;
         isPerforming.current = true;
@@ -36,12 +46,12 @@ export function useHistoryActionHandlers() {
 
     useActionHandler(
         "performUndo",
-        () => perform("undo", canUndo, "actions.edit.noUndoAvailable"),
+        () => void perform("undo", canUndo, "actions.edit.noUndoAvailable"),
         { enabled: databaseReady },
     );
     useActionHandler(
         "performRedo",
-        () => perform("redo", canRedo, "actions.edit.noRedoAvailable"),
+        () => void perform("redo", canRedo, "actions.edit.noRedoAvailable"),
         { enabled: databaseReady },
     );
 }

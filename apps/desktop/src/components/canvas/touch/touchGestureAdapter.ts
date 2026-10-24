@@ -8,6 +8,8 @@ import { getRedoStackLength, getUndoStackLength } from "@/db-functions";
 import { db } from "@/global/database/db";
 import { runAction } from "@/shortcuts/registry";
 import { isShiftHeld } from "@/stores/TouchModifierStore";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import { useFieldDragModeStore } from "./fieldDragMode";
 import { clampCanvasZoom } from "../CanvasConstants";
 import {
     GestureEffect,
@@ -40,7 +42,9 @@ type FabricInternals = {
     _currentTransform: {
         target: fabric.Object;
         original: Record<string, unknown>;
+        action?: string;
     } | null;
+    _collectObjects: (e: Event) => fabric.Object[];
     _groupSelector: unknown;
     _onMouseUp: EventListener;
     _onMouseMove: EventListener;
@@ -50,6 +54,22 @@ type FabricInternals = {
 };
 
 const LISTENER_OPTIONS = { passive: false } as const;
+
+/**
+ * A finger must move this far (px) before a marcher it pressed starts to
+ * move, so a trembling tap doesn't nudge it. It then moves by the whole
+ * distance, staying under the finger.
+ */
+export const TOUCH_DRAG_START_PX = 12;
+
+/** A pen drag from empty field turns into lasso or panning after this (px) */
+const PEN_DRAG_START_PX = 4;
+
+/** The field drag mode, which only applies in touch mode */
+const fieldDragMode = () =>
+    useInputModeStore.getState().mode === "touch"
+        ? useFieldDragModeStore.getState().mode
+        : "box";
 
 /**
  * Puts the field's touch gestures (`touchGestures.ts`) on a canvas: listens to
@@ -78,6 +98,15 @@ export class TouchGestureAdapter {
         | { kind: "empty" }
         | null = null;
     private armFrame: number | null = null;
+    /** Keep the event being handled away from Fabric, whatever the rules said */
+    private blockCurrent = false;
+    /** A pen press from empty field, in the lasso or "Move view" drag mode */
+    private penPress: {
+        id: number;
+        down: PointerEvent;
+        converted: "lasso" | "pan" | null;
+        navigation: { vpt: number[]; geometry: NavigationGeometry } | null;
+    } | null = null;
 
     constructor(
         private readonly canvas: OpenMarchCanvas,
@@ -159,6 +188,10 @@ export class TouchGestureAdapter {
         if (type === "up" || type === "cancel")
             this.lastEvents.delete(e.pointerId);
         else this.lastEvents.set(e.pointerId, e);
+        if (e.pointerType === "pen" && this.handlePenDrag(type, e)) {
+            // The pen is panning the view: Fabric doesn't see it, the rules still do
+            e.stopPropagation();
+        }
 
         this.step(
             {
@@ -179,19 +212,131 @@ export class TouchGestureAdapter {
     private step(input: GestureInput, e?: PointerEvent) {
         const result = stepGesture(this.state, input);
         this.state = result.state;
-        this.afterStep(result, e);
+        this.afterStep(result, input, e);
     }
 
     private afterStep(
         result: ReturnType<typeof stepGesture>,
+        input: GestureInput,
         e?: PointerEvent,
     ) {
+        this.blockCurrent = false;
         for (const effect of result.effects) this.apply(effect, e);
-        if (e && !result.passThrough) {
+        let block = !result.passThrough || this.blockCurrent;
+        // Tremor: hold a finger's first few px back from a marcher it is moving
+        if (
+            !block &&
+            input.type === "move" &&
+            input.kind === "touch" &&
+            this.state.mode === "single"
+        ) {
+            const pointer = this.state.pointers[0];
+            const transform = this.internals._currentTransform;
+            if (
+                transform?.action === "drag" &&
+                pointer &&
+                pointer.maxMove < TOUCH_DRAG_START_PX
+            )
+                block = true;
+        }
+        if (e && block) {
             e.stopPropagation();
             if (e.cancelable) e.preventDefault();
         }
         this.scheduleTimer();
+    }
+
+    /**
+     * A pen drag from empty field in the lasso or "Move view" drag mode.
+     * Returns true when the pen's event must not reach Fabric (panning).
+     */
+    private handlePenDrag(
+        type: PointerInput["type"],
+        e: PointerEvent,
+    ): boolean {
+        if (type === "down") {
+            this.penPress = {
+                id: e.pointerId,
+                down: e,
+                converted: null,
+                navigation: null,
+            };
+            return false;
+        }
+        const press = this.penPress;
+        if (!press || press.id !== e.pointerId) return false;
+        if (type === "up" || type === "cancel") {
+            this.penPress = null;
+            if (
+                !press.converted &&
+                type === "up" &&
+                this.canvas.touchDeferredClear
+            ) {
+                // A pen tap on empty field clears the selection (after Fabric's release)
+                setTimeout(() => {
+                    if (!this.canvas.touchDeferredClear) return;
+                    this.canvas.touchDeferredClear = false;
+                    this.canvas.discardActiveObject();
+                    this.canvas.requestRenderAll();
+                }, 0);
+            }
+            return press.converted === "pan";
+        }
+        if (press.converted === "pan" && press.navigation) {
+            this.canvas.applyGestureViewport(
+                navigationTransform(
+                    press.navigation.vpt,
+                    press.navigation.geometry,
+                    this.toCanvasElement({
+                        mid: { x: e.clientX, y: e.clientY },
+                        distance: null,
+                    }),
+                    clampCanvasZoom,
+                ),
+            );
+            return true;
+        }
+        if (press.converted) return false;
+        const moved = Math.hypot(
+            e.clientX - press.down.clientX,
+            e.clientY - press.down.clientY,
+        );
+        if (moved < PEN_DRAG_START_PX) return false;
+        const mode = fieldDragMode();
+        const emptyPress =
+            this.internals._groupSelector && !this.internals._currentTransform;
+        if (mode === "box" || !emptyPress) {
+            // Decided: the rest of the press is Fabric's as usual
+            this.penPress = null;
+            return false;
+        }
+        if (mode === "lasso") {
+            const listeners = this.listeners;
+            if (
+                listeners?.touchLongPressLasso === false ||
+                !listeners?.startLasso
+            ) {
+                this.penPress = null;
+                return false;
+            }
+            this.cancelFabricPress({ endPress: false });
+            listeners.startLasso(press.down);
+            press.converted = "lasso";
+            return false;
+        }
+        // pan
+        this.cancelFabricPress({ endPress: true });
+        const vpt = this.canvas.viewportTransform;
+        if (!vpt) return true;
+        press.converted = "pan";
+        press.navigation = {
+            vpt: vpt.slice(),
+            geometry: this.toCanvasElement({
+                mid: { x: press.down.clientX, y: press.down.clientY },
+                distance: null,
+            }),
+        };
+        return this.handlePenDrag("move", e);
     }
 
     private scheduleTimer() {
@@ -235,18 +380,22 @@ export class TouchGestureAdapter {
                 canvas.touchDeferredClear = false;
                 break;
             case "singleDragged":
-                // A rubber band from empty field replaces the selection, as with a mouse
-                if (
-                    canvas.touchDeferredClear &&
-                    this.internals._groupSelector &&
-                    !isShiftHeld(e)
-                ) {
-                    canvas.touchDeferredClear = false;
-                    canvas.discardActiveObject(e);
-                    canvas.requestRenderAll();
-                }
+                this.dragFromEmptyField();
                 break;
             case "singleEnd":
+                if (
+                    !effect.tap &&
+                    canvas.touchDeferredClear &&
+                    this.internals._groupSelector &&
+                    e
+                ) {
+                    // A rubber band: it replaces the selection only if it caught
+                    // something; an empty one or a flick keeps the selection
+                    canvas.touchDeferredClear = false;
+                    const caught = this.internals._collectObjects(e);
+                    if (caught.length > 0 && !isShiftHeld(e))
+                        canvas.discardActiveObject(e);
+                }
                 if (effect.tap && canvas.touchDeferredClear) {
                     // After Fabric has handled this release
                     setTimeout(() => {
@@ -399,6 +548,38 @@ export class TouchGestureAdapter {
             wanted.every((o) => current.includes(o));
         if (!same) canvas.setActiveObjects(wanted);
         canvas.requestRenderAll();
+    }
+
+    /**
+     * The first finger left the tap slop. From empty field, the drag mode
+     * decides: the rubber band stays (box), or it becomes the lasso or a pan.
+     */
+    private dragFromEmptyField() {
+        const mode = fieldDragMode();
+        if (mode === "box") return;
+        if (!this.internals._groupSelector || this.internals._currentTransform)
+            return;
+        if (mode === "lasso") {
+            const listeners = this.listeners;
+            if (
+                listeners?.touchLongPressLasso === false ||
+                !listeners?.startLasso ||
+                !this.downEvent
+            )
+                return;
+            this.cancelFabricPress({ endPress: false });
+            this.restoreSelection(this.selectionSnapshot);
+            listeners.startLasso(this.downEvent);
+            return;
+        }
+        // Move view
+        this.cancelFabricPress({ endPress: true });
+        this.restoreSelection(this.selectionSnapshot);
+        this.fabricPointerId = null;
+        this.blockCurrent = true;
+        const result = stepGesture(this.state, { type: "panSingle" });
+        this.state = result.state;
+        for (const effect of result.effects) this.apply(effect);
     }
 
     /** Undo or redo, as the shortcut does, with a short note that it happened */

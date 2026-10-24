@@ -6,6 +6,7 @@ import {
     drawnMarchers,
     expectCanvasMatchesShow,
     selectedDrillNumbers,
+    clickMarcher,
     waitForIdle,
 } from "../app.mjs";
 
@@ -26,6 +27,27 @@ async function touchScreen(page: Page) {
         )
         .catch(() => {});
     await page.waitForTimeout(400);
+    // New marchers line up along the field's top-left edge, where panels can
+    // cover them: put them in the middle of the view, at the same zoom
+    await page.evaluate(() => {
+        const canvas = window.canvas as any;
+        const marchers = canvas.getCanvasMarchers();
+        if (marchers.length === 0) return;
+        const xs = marchers.map((m: any) => m.getCenterPoint().x);
+        const ys = marchers.map((m: any) => m.getCenterPoint().y);
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+        const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        const zoom = canvas.getZoom();
+        canvas.setViewportTransform([
+            zoom,
+            0,
+            0,
+            zoom,
+            canvas.getWidth() / 2 - cx * zoom,
+            canvas.getHeight() / 2 - cy * zoom,
+        ]);
+        canvas.requestRenderAll();
+    });
     type Point = { x: number; y: number };
     const send = (
         type: "touchStart" | "touchMove" | "touchEnd",
@@ -103,6 +125,97 @@ async function touchScreen(page: Page) {
     };
 }
 
+/** Whether a finger at this point lands on the field itself, not a panel or button over it */
+const onField = (page: Page, p: { x: number; y: number }) =>
+    page.evaluate(
+        ({ x, y }) =>
+            document.elementFromPoint(x, y) ===
+            (window.canvas as any).upperCanvasEl,
+        p,
+    );
+
+/**
+ * Like drawnMarchers, but also right for marchers inside a multi-selection,
+ * whose positions Fabric keeps relative to the selection.
+ */
+const drawnOnScreen = async (page: Page) => {
+    const drawn = await drawnMarchers(page);
+    const screens = await page.evaluate(() => {
+        const canvas = window.canvas as any;
+        const rect = canvas.upperCanvasEl.getBoundingClientRect();
+        const vpt = canvas.viewportTransform;
+        const cssScale = rect.width / canvas.width;
+        return canvas.getCanvasMarchers().map((marcher: any) => {
+            let p = marcher.getCenterPoint();
+            if (marcher.group) {
+                const m = marcher.group.calcTransformMatrix();
+                p = {
+                    x: m[0] * p.x + m[2] * p.y + m[4],
+                    y: m[1] * p.x + m[3] * p.y + m[5],
+                };
+            }
+            const screen = {
+                x: rect.x + (p.x * vpt[0] + vpt[4]) * cssScale,
+                y: rect.y + (p.y * vpt[3] + vpt[5]) * cssScale,
+            };
+            return {
+                id: marcher.marcherObj.id,
+                screen,
+                onScreen:
+                    screen.x > rect.left &&
+                    screen.x < rect.right &&
+                    screen.y > rect.top &&
+                    screen.y < rect.bottom,
+            };
+        });
+    });
+    return drawn.map((d) => {
+        const s = screens.find((x: { id: number }) => x.id === d.id);
+        return s ? { ...d, screen: s.screen, onScreen: s.onScreen } : d;
+    });
+};
+
+/**
+ * Marchers a finger can reach: drawn inside the canvas and not covered by a
+ * panel (which marchers those are depends on the window and the layout).
+ */
+async function touchableMarchers(page: Page) {
+    const all = await drawnOnScreen(page);
+    const out = [];
+    for (const m of all)
+        if (m.onScreen && (await onField(page, m.screen))) out.push(m);
+    return out;
+}
+
+/** Two points 100 px apart on empty field, clear of marchers and anything over the canvas */
+async function emptyFieldPair(page: Page) {
+    const rect = await page.evaluate(() => {
+        const r = (window.canvas as any).upperCanvasEl.getBoundingClientRect();
+        return { left: r.left, top: r.top, width: r.width, height: r.height };
+    });
+    const marchers = await drawnMarchers(page);
+    const clear = (p: { x: number; y: number }) =>
+        marchers.every(
+            (m) => Math.hypot(m.screen.x - p.x, m.screen.y - p.y) > 60,
+        );
+    for (const fy of [0.85, 0.7, 0.55, 0.4, 0.25])
+        for (const fx of [0.3, 0.45, 0.15, 0.6]) {
+            const a = {
+                x: rect.left + rect.width * fx,
+                y: rect.top + rect.height * fy,
+            };
+            const b = { x: a.x + 100, y: a.y };
+            if (
+                clear(a) &&
+                clear(b) &&
+                (await onField(page, a)) &&
+                (await onField(page, b))
+            )
+                return [a, b] as const;
+        }
+    throw new Error("No empty field to tap on");
+}
+
 const viewport = (page: Page) =>
     page.evaluate(() => [...(window.canvas as any).viewportTransform]);
 
@@ -116,7 +229,7 @@ test("one finger drags a marcher without moving the view", async ({ show }) => {
     await createMarchers(page, { quantity: 4, section: "Baritone" });
     await expectCanvasMatchesShow(show);
     const fingers = await touchScreen(page);
-    const marcher = (await drawnMarchers(page)).find((m) => m.onScreen);
+    const [marcher] = await touchableMarchers(page);
     if (!marcher) throw new Error("No marcher is visible on the canvas");
     const before = (await savedPositions(show)).find(
         (p) => p.marcher_id === marcher.id,
@@ -156,7 +269,7 @@ test("two fingers zoom the view and move no marcher", async ({ show }) => {
     const zoomBefore = (await viewport(page))[0];
 
     // Start the pinch on a marcher, so the first finger would drag it
-    const marcher = (await drawnMarchers(page)).find((m) => m.onScreen)!;
+    const [marcher] = await touchableMarchers(page);
     await fingers.pinch(
         { x: marcher.screen.x + 50, y: marcher.screen.y },
         100,
@@ -178,9 +291,7 @@ test("a long press adds a marcher to the selection and a two-finger tap undoes",
     await createMarchers(page, { quantity: 4, section: "Baritone" });
     await expectCanvasMatchesShow(show);
     const fingers = await touchScreen(page);
-    const [first, second] = (await drawnMarchers(page)).filter(
-        (m) => m.onScreen,
-    );
+    const [first, second] = await touchableMarchers(page);
 
     // A tap selects one marcher; a long press on another adds it
     await fingers.tap(first.screen);
@@ -200,7 +311,7 @@ test("a long press adds a marcher to the selection and a two-finger tap undoes",
         .poll(() => selectedDrillNumbers(page))
         .toEqual([first.drillNumber, second.drillNumber].sort());
     // A tap on empty field clears it
-    const empty = { x: firstNow.screen.x, y: firstNow.screen.y + 200 };
+    const [empty, empty2] = await emptyFieldPair(page);
     await fingers.tap(empty);
     await expect.poll(() => selectedDrillNumbers(page)).toEqual([]);
 
@@ -213,7 +324,7 @@ test("a long press adds a marcher to the selection and a two-finger tap undoes",
     });
     await expect.poll(() => savedPositions(show)).not.toEqual(before);
     await waitForIdle(page);
-    await fingers.twoFingerTap(empty, { x: empty.x + 100, y: empty.y });
+    await fingers.twoFingerTap(empty, empty2);
     await expect.poll(() => savedPositions(show)).toEqual(before);
     await expectCanvasMatchesShow(show);
 });
@@ -225,7 +336,7 @@ test("a slow, careful drag of a selected marcher moves it and keeps it selected"
     await createMarchers(page, { quantity: 4, section: "Baritone" });
     await expectCanvasMatchesShow(show);
     const fingers = await touchScreen(page);
-    let marcher = (await drawnMarchers(page)).find((m) => m.onScreen)!;
+    let [marcher] = await touchableMarchers(page);
     await fingers.tap(marcher.screen);
     await expect
         .poll(() => selectedDrillNumbers(page))
@@ -263,13 +374,14 @@ test("a multi-selection's box follows its marchers after undo, and a tap inside 
     await createMarchers(page, { quantity: 4, section: "Baritone" });
     await expectCanvasMatchesShow(show);
     const fingers = await touchScreen(page);
-    const visible = () =>
-        drawnMarchers(page).then((all) => all.filter((m) => m.onScreen));
+    const visible = () => touchableMarchers(page);
     const [a] = await visible();
     await fingers.tap(a.screen);
     await waitForIdle(page);
-    const [, b, c] = await visible();
-    const third = (await drawnMarchers(page)).find(
+    const [b, c] = (await visible()).filter(
+        (m) => m.drillNumber !== a.drillNumber,
+    );
+    const third = (await drawnOnScreen(page)).find(
         (m) => m.drillNumber === c.drillNumber,
     )!;
     // Long press adds b and c
@@ -279,18 +391,22 @@ test("a multi-selection's box follows its marchers after undo, and a tap inside 
         .poll(() => selectedDrillNumbers(page))
         .toEqual([a.drillNumber, b.drillNumber, c.drillNumber].sort());
 
-    // Drag the group, then undo with two fingers
+    // Drag the group by one of its marchers a finger can reach, then undo with two fingers
     await waitForIdle(page);
-    const aNow = (await drawnMarchers(page)).find(
-        (m) => m.drillNumber === a.drillNumber,
-    )!;
-    await fingers.drag(aNow.screen, {
-        x: aNow.screen.x + 100,
-        y: aNow.screen.y + 80,
+    const grip = (await touchableMarchers(page)).find((m) =>
+        [a.drillNumber, b.drillNumber, c.drillNumber].includes(m.drillNumber),
+    );
+    if (!grip) throw new Error("No selected marcher is reachable");
+    const beforeDrag = await savedPositions(show);
+    await fingers.drag(grip.screen, {
+        x: grip.screen.x + 100,
+        y: grip.screen.y + 80,
     });
+    await expect.poll(() => savedPositions(show)).not.toEqual(beforeDrag);
     await waitForIdle(page);
-    const empty = { x: aNow.screen.x, y: aNow.screen.y + 260 };
-    await fingers.twoFingerTap(empty, { x: empty.x + 100, y: empty.y });
+    const [empty, empty2] = await emptyFieldPair(page);
+    await fingers.twoFingerTap(empty, empty2);
+    await expect.poll(() => savedPositions(show)).toEqual(beforeDrag);
     await waitForIdle(page);
     await expectCanvasMatchesShow(show);
 
@@ -324,11 +440,11 @@ test("a multi-selection's box follows its marchers after undo, and a tap inside 
         .toBeLessThan(15);
 
     // A tap on a marcher inside the box that isn't selected selects just it
-    const outsider = (await drawnMarchers(page)).find(
+    const outsider = (await touchableMarchers(page)).find(
         (m) =>
             ![a.drillNumber, b.drillNumber, c.drillNumber].includes(
                 m.drillNumber,
-            ) && m.onScreen,
+            ),
     );
     if (outsider) {
         await fingers.tap(outsider.screen);
@@ -336,4 +452,116 @@ test("a multi-selection's box follows its marchers after undo, and a tap inside 
             .poll(() => selectedDrillNumbers(page))
             .toEqual([outsider.drillNumber]);
     }
+});
+
+test("a finger's small wobble on a marcher doesn't move it; a real drag moves it the whole way", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [marcher] = await touchableMarchers(page);
+    await fingers.tap(marcher.screen);
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([marcher.drillNumber]);
+    await waitForIdle(page);
+    const before = await savedPositions(show);
+    const [at] = (await touchableMarchers(page)).filter(
+        (m) => m.drillNumber === marcher.drillNumber,
+    );
+
+    // 11 px of drift, slowly (past the old 10 px tap slop)
+    await fingers.drag(at.screen, { x: at.screen.x + 11, y: at.screen.y }, 10);
+    await waitForIdle(page);
+    expect(await savedPositions(show)).toEqual(before);
+    await expectCanvasMatchesShow(show);
+
+    // A real drag: the marcher ends up the full distance away, under the finger
+    const scale = await canvasScale(page);
+    await fingers.drag(at.screen, { x: at.screen.x + 80, y: at.screen.y });
+    const mine = (rows: { marcher_id: number; x: number }[]) =>
+        rows.find((r) => r.marcher_id === marcher.id)!;
+    await expect
+        .poll(async () =>
+            Math.abs(
+                mine(await savedPositions(show)).x -
+                    (mine(before).x + 80 / scale),
+            ),
+        )
+        .toBeLessThan(1.5);
+});
+
+test("an empty selection box keeps the selection; a tap clears it", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [marcher] = await touchableMarchers(page);
+    await fingers.tap(marcher.screen);
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([marcher.drillNumber]);
+    await waitForIdle(page);
+    const [from, to] = await emptyFieldPair(page);
+    await fingers.drag(from, { x: to.x, y: to.y - 20 });
+    await page.waitForTimeout(300);
+    expect(await selectedDrillNumbers(page)).toEqual([marcher.drillNumber]);
+    await fingers.tap(from);
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual([]);
+});
+
+test("in the Pan drag mode, one finger on empty field moves the view and selects nothing", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [marcher] = await touchableMarchers(page);
+    await fingers.tap(marcher.screen);
+    await waitForIdle(page);
+    // Box -> Lasso -> Pan
+    const modeButton = page.getByTestId("field-drag-mode");
+    await expect(modeButton).toBeVisible();
+    for (const label of ["Lasso", "Pan"]) {
+        const box = (await modeButton.boundingBox())!;
+        await fingers.tap({
+            x: box.x + box.width / 2,
+            y: box.y + box.height / 2,
+        });
+        await expect(modeButton).toContainText(label);
+    }
+    const positions = await savedPositions(show);
+    const viewBefore = await viewport(page);
+    const [from] = await emptyFieldPair(page);
+    await fingers.drag(from, { x: from.x + 120, y: from.y - 60 });
+    await waitForIdle(page);
+    const viewAfter = await viewport(page);
+    expect(viewAfter[4] - viewBefore[4]).toBeCloseTo(120, -1);
+    expect(viewAfter[5] - viewBefore[5]).toBeCloseTo(-60, -1);
+    expect(await savedPositions(show)).toEqual(positions);
+    expect(await selectedDrillNumbers(page)).toEqual([marcher.drillNumber]);
+});
+
+test("mouse: Shift-click on a selected marcher under a handle takes it out instead of scaling", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    // Neighbours in one row: the selection's side handles sit on their dots
+    await clickMarcher(page, "B1");
+    await clickMarcher(page, "B2", { add: true });
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B1", "B2"]);
+    const b1 = (await drawnOnScreen(page)).find((m) => m.drillNumber === "B1")!;
+    // Hover first, as a real pointer does on its way to the dot
+    await page.mouse.move(b1.screen.x, b1.screen.y);
+    await page.keyboard.down("Shift");
+    await page.mouse.click(b1.screen.x, b1.screen.y);
+    await page.keyboard.up("Shift");
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B2"]);
 });

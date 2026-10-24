@@ -54,7 +54,12 @@ export type GestureInput =
     | PointerInput<"move">
     | PointerInput<"up">
     | PointerInput<"cancel">
-    | { type: "timer"; t: number };
+    | { type: "timer"; t: number }
+    /**
+     * The adapter turned the single finger's press into panning the view (the
+     * "Move view" field drag mode); the rest of it navigates
+     */
+    | { type: "panSingle" };
 
 /**
  * A baseline for navigation: the view at `start` is kept, and the current
@@ -454,6 +459,29 @@ export function stepGesture(
             );
         }
         return result(state, [], true);
+    }
+    if (input.type === "panSingle") {
+        if (state.mode !== "single" || state.pointers.length !== 1)
+            return result(state, [], true);
+        const pointer = state.pointers[0];
+        // Baseline at the press, so the view catches up with the whole drag
+        return result(
+            {
+                ...state,
+                mode: "gesture",
+                longPressAt: null,
+                longPressArmed: false,
+                tap: null,
+                twoFingerOnly: false,
+            },
+            [
+                {
+                    type: "navigationStart",
+                    geometry: { mid: { ...pointer.start }, distance: null },
+                },
+            ],
+            false,
+        );
     }
     if (input.kind === "pen") return handlePen(state, input);
 

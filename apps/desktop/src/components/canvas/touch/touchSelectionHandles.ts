@@ -4,8 +4,10 @@ import { fabric } from "fabric";
 export const TOUCH_MIN_BOX_PX = 48;
 /** Hit size (screen px) of a handle for a finger */
 export const TOUCH_HANDLE_HIT_PX = 40;
-/** How far (screen px) the rotate handle sits above the box for a finger */
-export const TOUCH_ROTATE_OFFSET_PX = 64;
+/** How far (screen px) the rotate handle sits above the box for a finger: clear of labels, and less touchy */
+export const TOUCH_ROTATE_OFFSET_PX = 96;
+/** Handles sit at least this far (screen px) outside the marchers for a finger */
+export const TOUCH_HANDLE_CLEARANCE_PX = 20;
 
 /**
  * Padding (screen px) that grows a selection box to at least `minPx` on its
@@ -60,9 +62,12 @@ export function applyTouchHandleSizing(
     }
     g.controls = getTouchControls();
     g.touchCornerSize = TOUCH_HANDLE_HIT_PX;
-    g.padding = paddingForMinimumBox(
-        (g.width ?? 0) * Math.abs(g.scaleX ?? 1) * zoom,
-        (g.height ?? 0) * Math.abs(g.scaleY ?? 1) * zoom,
+    g.padding = Math.max(
+        TOUCH_HANDLE_CLEARANCE_PX,
+        paddingForMinimumBox(
+            (g.width ?? 0) * Math.abs(g.scaleX ?? 1) * zoom,
+            (g.height ?? 0) * Math.abs(g.scaleY ?? 1) * zoom,
+        ),
     );
     g.setCoords();
 }
