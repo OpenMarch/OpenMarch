@@ -1,3 +1,4 @@
+// cspell:words menuitemradio
 import type { CDPSession, Page } from "@playwright/test";
 import { test, expect, type Show } from "../fixtures.mjs";
 import {
@@ -564,7 +565,7 @@ test("mouse: Shift-click on a selected marcher under a handle takes it out inste
     const { page } = show;
     await createMarchers(page, { quantity: 4, section: "Baritone" });
     await expectCanvasMatchesShow(show);
-    // Neighbours in one row: the selection's side handles sit on their dots
+    // Neighbors in one row: the selection's side handles sit on their dots
     await clickMarcher(page, "B1");
     await clickMarcher(page, "B2", { add: true });
     await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B1", "B2"]);
