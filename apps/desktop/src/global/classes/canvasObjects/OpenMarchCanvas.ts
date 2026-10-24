@@ -13,10 +13,6 @@ import {
     clampCanvasZoom,
 } from "@/components/canvas/CanvasConstants";
 import { TouchGestureAdapter } from "@/components/canvas/touch/touchGestureAdapter";
-import {
-    TOUCH_HIT_RADIUS_PX,
-    pickNearestWithinRadius,
-} from "@/components/canvas/touch/touchHitTest";
 import { isShiftHeld } from "@/stores/TouchModifierStore";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { applyTouchHandleSizing } from "@/components/canvas/touch/touchSelectionHandles";
@@ -75,7 +71,7 @@ const baseFindTargetCorner = (fabric.ActiveSelection.prototype as any)
 };
 
 /** How far past a dot's edge (screen px) a press still counts as on the dot */
-const DOT_SLACK_PX = { touch: 10, pen: 3, mouse: 2 } as const;
+const DOT_SLACK_PX = { touch: 8, pen: 3, mouse: 2 } as const;
 
 const NORMAL_PATHWAY_DASH: number[] = [];
 // Precomputed so the per-frame comparison below does not rebuild the warning stroke string
@@ -377,6 +373,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
         this.fire("group:selection", { group: this._activeGroup });
+        this.applySelectionVisibility();
     }
 
     get activeGroup() {
@@ -689,6 +686,48 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Silently: what is selected hasn't changed for the rest of the app
         this._pendingSelectionIds = missing;
         this.selectSilently(found);
+        this.applySelectionVisibility();
+    }
+
+    /** The selection's box and handles are hidden (e.g. while playing) */
+    private _selectionHidden = false;
+
+    /**
+     * Hides the selection's box and handles while marchers move on their own
+     * (playback), and shows them again, around where the marchers are, after.
+     */
+    setSelectionHidden(hidden: boolean) {
+        if (this._selectionHidden === hidden) return;
+        this._selectionHidden = hidden;
+        if (!hidden) {
+            // Rebuild the box around the marchers' positions now
+            this.keepSelectionAcross(() => {});
+        }
+        this.applySelectionVisibility();
+        this.requestRenderAll();
+    }
+
+    private applySelectionVisibility() {
+        const active = this.getActiveObject() as
+            | (fabric.Object & {
+                  __shownBorders?: boolean;
+                  __shownControls?: boolean;
+              })
+            | null;
+        if (!active) return;
+        if (this._selectionHidden) {
+            if (active.__shownBorders === undefined) {
+                active.__shownBorders = active.hasBorders;
+                active.__shownControls = active.hasControls;
+            }
+            active.hasBorders = false;
+            active.hasControls = false;
+        } else if (active.__shownBorders !== undefined) {
+            active.hasBorders = active.__shownBorders;
+            active.hasControls = active.__shownControls;
+            delete active.__shownBorders;
+            delete active.__shownControls;
+        }
     }
 
     /** Makes these the active objects without firing selection events */
@@ -723,21 +762,42 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /******************* TOUCH-AWARE FABRIC OVERRIDES ******************/
 
     /**
-     * Fabric's target search, plus a wider reach for fingers: when a finger
-     * misses, the nearest marcher, control point or handle within
-     * TOUCH_HIT_RADIUS_PX screen pixels is pressed instead.
+     * Fabric's target search, plus: a finger or pen on a marcher's dot always
+     * gets that marcher, even where Fabric's own hit area is smaller than the
+     * finger allowance. Taps near a marcher are handled by the touch gestures.
      */
     findTarget(e: Event, skipGroup: boolean): fabric.Object | undefined {
-        if (e.type === "pointerdown" || e.type === "mousedown")
-            this.pressOnMarcherDot = this.isOnMarcherDot(e);
+        const isPress = e.type === "pointerdown" || e.type === "mousedown";
+        const dotMarcher = isPress || skipGroup ? this.marcherDotAt(e) : null;
+        if (isPress) this.pressOnMarcherDot = dotMarcher !== null;
+        const found = this.touchAwareTarget(e, skipGroup, dotMarcher);
+        if (isPress && !skipGroup)
+            this.lastPressHitSomething = Boolean(
+                found && (found.selectable || found === this._activeObject),
+            );
+        return found;
+    }
+
+    /** Whether the last press landed on something selectable (not empty field) */
+    lastPressHitSomething = false;
+
+    private touchAwareTarget(
+        e: Event,
+        skipGroup: boolean,
+        dotMarcher: CanvasMarcher | null,
+    ): fabric.Object | undefined {
         const target = super.findTarget(e as MouseEvent, skipGroup);
-        if ((e as PointerEvent).pointerType !== "touch") return target;
+        const type = (e as PointerEvent).pointerType;
+        if (type !== "touch" && type !== "pen") return target;
         if (target && (target.selectable || target === this._activeObject))
             return target;
-        const nearest = this.findNearestTouchTarget(e);
-        if (nearest) {
+        // A finger on a dot whose own hit area (a few px) it just misses. Only
+        // a press on the dot: a press merely near a marcher is a press on empty
+        // field (a tap there still picks the nearest marcher; see the touch
+        // gestures). Never the selection itself, which would add it to itself.
+        if (dotMarcher) {
             (this as any).targets = [];
-            return nearest;
+            return dotMarcher;
         }
         return target;
     }
@@ -745,8 +805,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /** The current press started on a marcher's dot (see the handle rule above) */
     pressOnMarcherDot = false;
 
-    /** Whether the pointer is on a selectable marcher's dot */
-    private isOnMarcherDot(e: Event): boolean {
+    /** The selectable marcher whose dot the pointer is on, if any */
+    private marcherDotAt(e: Event): CanvasMarcher | null {
         const type = (e as PointerEvent).pointerType;
         const slack =
             type === "touch"
@@ -755,44 +815,22 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                   ? DOT_SLACK_PX.pen
                   : DOT_SLACK_PX.mouse;
         const zoom = this.getZoom();
-        if (!(zoom > 0)) return false;
+        if (!(zoom > 0)) return null;
         const point = this.getPointer(e as MouseEvent);
         const radius = (DEFAULT_DOT_RADIUS * zoom + slack) / zoom;
-        return this.getCanvasMarchers().some((marcher) => {
-            if (!marcher.visible || !marcher.selectable) return false;
-            const dot = marcher.getAbsoluteCoords();
-            return Math.hypot(dot.x - point.x, dot.y - point.y) <= radius;
-        });
-    }
-
-    /** The selectable object nearest to a finger, within the touch radius */
-    findNearestTouchTarget(e: Event): fabric.Object | null {
-        const point = this.getPointer(e as MouseEvent);
-        const active = this.getActiveObject();
-        const candidates: {
-            item: fabric.Object;
-            rect: ReturnType<fabric.Object["getBoundingRect"]>;
-        }[] = [];
-        for (const obj of this.getObjects()) {
-            if (!obj.visible || !obj.evented || !obj.selectable || obj.group)
+        let best: CanvasMarcher | null = null;
+        let bestDistance = Infinity;
+        for (const marcher of this.getCanvasMarchers()) {
+            if (!marcher.visible || !marcher.selectable || !marcher.evented)
                 continue;
-            candidates.push({
-                item: obj,
-                rect: obj.getBoundingRect(true, true),
-            });
+            const dot = marcher.getAbsoluteCoords();
+            const d = Math.hypot(dot.x - point.x, dot.y - point.y);
+            if (d <= radius && d < bestDistance) {
+                best = marcher;
+                bestDistance = d;
+            }
         }
-        if (active && active.type === "activeSelection" && active.evented) {
-            candidates.push({
-                item: active,
-                rect: active.getBoundingRect(true, true),
-            });
-        }
-        return pickNearestWithinRadius(
-            candidates,
-            point,
-            TOUCH_HIT_RADIUS_PX,
-            this.getZoom(),
-        );
+        return best;
     }
 
     /**
@@ -842,8 +880,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             pointerType === "touch" ||
             // A pen drag from empty field may become a pan or a lasso
             (pointerType === "pen" &&
-                isTouchLayout() &&
                 useFieldDragModeStore.getState().mode !== "box");
+        // Command-click on empty field keeps the selection on Apple platforms
+        if (
+            shouldClear &&
+            IS_APPLE &&
+            (e as MouseEvent).metaKey &&
+            (!target || !target.selectable)
+        )
+            return false;
         if (shouldClear && deferFor && (!target || !target.selectable)) {
             this.touchDeferredClear = true;
             return false;
@@ -1191,22 +1236,41 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * tablet turns).
      */
     private resizeKeepingCentre(width: number, height: number) {
-        const oldWidth = this.getWidth();
-        const oldHeight = this.getHeight();
         this.setWidth(width);
         this.setHeight(height);
+        // Measured from the last real size: a layout pass can collapse the
+        // canvas to 0 for a moment (e.g. while a tablet turns)
+        if (width <= 0 || height <= 0) return;
+        const last = this._lastRealSize;
+        this._lastRealSize = { width, height };
         const vpt = this.viewportTransform;
-        if (
-            vpt &&
-            oldWidth > 0 &&
-            oldHeight > 0 &&
-            (oldWidth !== width || oldHeight !== height)
-        ) {
-            const next = vpt.slice();
-            next[4] += (width - oldWidth) / 2;
-            next[5] += (height - oldHeight) / 2;
-            this.setViewportTransform(next);
-        }
+        if (!vpt || !last || (last.width === width && last.height === height))
+            return;
+        const next = vpt.slice();
+        next[4] += (width - last.width) / 2;
+        next[5] += (height - last.height) / 2;
+        this.setViewportTransform(next);
+        // Nothing of the show left in view (e.g. the field ended up off to one
+        // side after turning): fit the field again
+        if (!this.anyMarcherInView()) this.centerAtBaseZoom();
+    }
+
+    /** The last canvas size that wasn't 0 */
+    private _lastRealSize: { width: number; height: number } | null = null;
+
+    /** Whether any marcher is inside the visible canvas (true with none) */
+    private anyMarcherInView(): boolean {
+        const marchers = this.getCanvasMarchers();
+        const vpt = this.viewportTransform;
+        if (marchers.length === 0 || !vpt) return true;
+        const width = this.getWidth();
+        const height = this.getHeight();
+        return marchers.some((marcher) => {
+            const p = marcher.getAbsoluteCoords();
+            const x = p.x * vpt[0] + vpt[4];
+            const y = p.y * vpt[3] + vpt[5];
+            return x >= 0 && x <= width && y >= 0 && y <= height;
+        });
     }
 
     /**

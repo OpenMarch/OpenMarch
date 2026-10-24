@@ -192,9 +192,11 @@ describe("choosePillPosition", () => {
     const pill = { width: 300, height: 48 };
 
     it("prefers bottom-right, above the zoom buttons, when nothing is there", () => {
-        expect(choosePillPosition(container, pill, null, [])).toEqual(
-            pillCandidates(container, pill)[0],
-        );
+        const first = pillCandidates(container, pill)[0];
+        expect(choosePillPosition(container, pill, null, [])).toEqual({
+            left: first.left,
+            bottom: first.bottom,
+        });
     });
 
     it("moves away from marchers in the bottom-right", () => {
@@ -204,7 +206,25 @@ describe("choosePillPosition", () => {
             y: container.height - first.bottom - 20,
         };
         const chosen = choosePillPosition(container, pill, null, [under]);
-        expect(chosen).not.toEqual(first);
+        expect(chosen).not.toEqual({ left: first.left, bottom: first.bottom });
+    });
+
+    it("stays at the bottom even when the field fills it, if no marchers are there", () => {
+        // The field covers the whole bottom; the top is free of field but far from thumbs
+        const field = { left: 0, top: 200, width: 1000, height: 500 };
+        const chosen = choosePillPosition(container, pill, field, []);
+        expect(chosen.bottom).toBeLessThan(container.height / 2);
+    });
+
+    it("goes to the top only when every bottom spot covers marchers", () => {
+        const marchers = pillCandidates(container, pill)
+            .filter((c) => c.bottom < container.height / 2)
+            .map((c) => ({
+                x: c.left + 20,
+                y: container.height - c.bottom - 20,
+            }));
+        const chosen = choosePillPosition(container, pill, null, marchers);
+        expect(chosen.bottom).toBeGreaterThan(container.height / 2);
     });
 
     it("prefers a spot off the field drawing when the field leaves margin", () => {

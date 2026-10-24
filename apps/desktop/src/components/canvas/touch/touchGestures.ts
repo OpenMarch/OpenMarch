@@ -85,6 +85,12 @@ export type GestureEffect =
     | { type: "longPressArmed"; id: number; point: GesturePoint }
     /** The finger moved after the long press was armed; the press carries on */
     | { type: "longPressMoved"; id: number }
+    /**
+     * The long press was armed by mistake: a move (or the release) that came in
+     * late had happened before the hold was long enough. The press is an
+     * ordinary drag (or tap).
+     */
+    | { type: "longPressCancelled"; id: number }
     /** The finger lifted from an armed long press without moving: carry it out (Fabric doesn't see this release) */
     | { type: "longPressCommit"; id: number; point: GesturePoint }
     /** Start (or restart) navigation from this geometry */
@@ -123,6 +129,8 @@ export interface GestureState {
     longPressAt: number | null;
     /** The long press is armed and the finger hasn't moved since */
     longPressArmed: boolean;
+    /** When the armed long press became due (event time), or null */
+    longPressDueAt: number | null;
     tap: TapCandidate | null;
     /** In a gesture, one finger alone does nothing (fingers right after the pen) */
     twoFingerOnly: boolean;
@@ -159,6 +167,7 @@ export const initialGestureState = (): GestureState => ({
     pointers: [],
     longPressAt: null,
     longPressArmed: false,
+    longPressDueAt: null,
     tap: null,
     twoFingerOnly: false,
     ignored: [],
@@ -202,6 +211,7 @@ const idle = (state: GestureState, pointers: TrackedPointer[] = []) => ({
     pointers,
     longPressAt: null,
     longPressArmed: false,
+    longPressDueAt: null,
     tap: null,
     twoFingerOnly: false,
 });
@@ -343,7 +353,14 @@ function handleTouchMove(
             next.longPressAt = null;
             if (state.longPressArmed) {
                 next.longPressArmed = false;
-                effects.push({ type: "longPressMoved", id: input.id });
+                // Moves can be handled late: what counts is when it happened
+                const early =
+                    state.longPressDueAt !== null &&
+                    input.t < state.longPressDueAt;
+                effects.push({
+                    type: early ? "longPressCancelled" : "longPressMoved",
+                    id: input.id,
+                });
             }
         }
         if (
@@ -392,8 +409,15 @@ function handleTouchEnd(
             return result(idle(state, pointers), effects, true);
         }
         if (state.longPressArmed) {
-            effects.push({ type: "longPressCommit", id: input.id, point });
-            return result(idle(state, pointers), effects, false);
+            if (
+                state.longPressDueAt === null ||
+                input.t >= state.longPressDueAt
+            ) {
+                effects.push({ type: "longPressCommit", id: input.id, point });
+                return result(idle(state, pointers), effects, false);
+            }
+            // Lifted before the hold was long enough, but handled late
+            effects.push({ type: "longPressCancelled", id: input.id });
         }
         effects.push({
             type: "singleEnd",
@@ -446,6 +470,7 @@ export function stepGesture(
                     ...state,
                     longPressAt: null,
                     longPressArmed: true,
+                    longPressDueAt: state.longPressAt,
                     tap: null,
                 },
                 [
