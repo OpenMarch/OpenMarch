@@ -92,8 +92,12 @@ function maybeShowTouchLayoutHint() {
     });
 }
 
-/** The field drag mode (set on the pill in the touch layout; Box until changed) */
-const fieldDragMode = () => useFieldDragModeStore.getState().mode;
+/** The field drag mode (set on the pill in the touch layout, Box until changed; Box in the pointer layout) */
+const fieldDragMode = () =>
+    // The pointer layout shows no pill to say what the mode is: always Box there
+    useInputModeStore.getState().mode === "touch"
+        ? useFieldDragModeStore.getState().mode
+        : "box";
 
 /**
  * Puts the field's touch gestures (`touchGestures.ts`) on a canvas: listens to
@@ -422,6 +426,10 @@ export class TouchGestureAdapter {
                     if (caught.length > 0 && !isShiftHeld(e))
                         canvas.discardActiveObject(e);
                 }
+                if (!effect.tap && this.panWholeFlick(effect.point)) {
+                    canvas.touchDeferredClear = false;
+                    break;
+                }
                 if (effect.tap) {
                     canvas.touchDeferredClear = false;
                     const onNothing = !canvas.lastPressHitSomething;
@@ -609,6 +617,45 @@ export class TouchGestureAdapter {
         const result = stepGesture(this.state, { type: "panSingle" });
         this.state = result.state;
         for (const effect of result.effects) this.apply(effect);
+        // Catch up with the finger at once
+        const pointer = this.state.pointers[0];
+        if (pointer)
+            this.apply({
+                type: "navigate",
+                geometry: { mid: { ...pointer.current }, distance: null },
+            });
+    }
+
+    /**
+     * A flick in the Pan drag mode so quick that it ended before turning into
+     * a pan (few or no moves arrived): move the view by the whole flick now,
+     * instead of letting Fabric finish a selection box.
+     */
+    private panWholeFlick(client: { x: number; y: number }): boolean {
+        if (fieldDragMode() !== "pan") return false;
+        if (!this.internals._groupSelector || this.internals._currentTransform)
+            return false;
+        const down = this.downEvent;
+        const vpt = this.canvas.viewportTransform;
+        if (!down || !vpt) return false;
+        this.cancelFabricPress({ endPress: true });
+        this.restoreSelection(this.selectionSnapshot);
+        this.fabricPointerId = null;
+        this.blockCurrent = true;
+        const start = this.toCanvasElement({
+            mid: { x: down.clientX, y: down.clientY },
+            distance: null,
+        });
+        this.canvas.applyGestureViewport(
+            navigationTransform(
+                vpt.slice(),
+                start,
+                this.toCanvasElement({ mid: client, distance: null }),
+                clampCanvasZoom,
+            ),
+        );
+        this.canvas.fire("view:settled", {});
+        return true;
     }
 
     /** Undo or redo, as the shortcut does, with a short note that it happened */

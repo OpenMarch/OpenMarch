@@ -147,6 +147,11 @@ export const GESTURE_TIMING = {
     longPressMs: 500,
     /** A long press is lost when the finger moves further than this (px) */
     longPressSlopPx: 8,
+    /**
+     * A first move after an armed long press that jumps further than this (px)
+     * at once means the moves were held back: the finger was moving all along
+     */
+    longPressLateJumpPx: 40,
     /** A single finger tap moves less than this (px) */
     tapSlopPx: 10,
     /** All fingers of a multi-finger tap go down within this */
@@ -353,10 +358,15 @@ function handleTouchMove(
             next.longPressAt = null;
             if (state.longPressArmed) {
                 next.longPressArmed = false;
-                // Moves can be handled late: what counts is when it happened
+                // Moves can be handled late: what counts is when it happened.
+                // And a busy page can hold back every move until after the
+                // hold was due, then deliver one big jump: a finger that has
+                // really held still starts a drag with small steps.
                 const early =
-                    state.longPressDueAt !== null &&
-                    input.t < state.longPressDueAt;
+                    (state.longPressDueAt !== null &&
+                        input.t < state.longPressDueAt) ||
+                    distance(old.current, current) >
+                        GESTURE_TIMING.longPressLateJumpPx;
                 effects.push({
                     type: early ? "longPressCancelled" : "longPressMoved",
                     id: input.id,
@@ -402,6 +412,10 @@ function handleTouchEnd(
     const effects: GestureEffect[] = [];
     const cancelled = input.type === "cancel";
     const point = { x: input.x, y: input.y };
+    // Where it lifted counts too: a quick flick may bring few moves, or none
+    const maxMove = cancelled
+        ? pointer.maxMove
+        : Math.max(pointer.maxMove, distance(pointer.start, point));
 
     if (state.mode === "single") {
         if (cancelled) {
@@ -422,7 +436,7 @@ function handleTouchEnd(
         effects.push({
             type: "singleEnd",
             id: input.id,
-            tap: pointer.maxMove < GESTURE_TIMING.tapSlopPx,
+            tap: maxMove < GESTURE_TIMING.tapSlopPx,
             point,
         });
         return result(idle(state, pointers), effects, true);
@@ -438,13 +452,21 @@ function handleTouchEnd(
         return result(next, effects, false);
     }
 
+    // The view follows the last finger all the way to where it lifted
+    if (!cancelled) {
+        const final = geometryOf({
+            ...state,
+            pointers: [{ ...pointer, current: point }],
+        });
+        if (final) effects.push({ type: "navigate", geometry: final });
+    }
     effects.push({ type: "navigationEnd" });
     const tap = state.tap;
     if (
         !cancelled &&
         tap &&
         input.t - tap.firstDownAt <= GESTURE_TIMING.multiTapMaxMs &&
-        pointer.maxMove < GESTURE_TIMING.multiTapSlopPx
+        maxMove < GESTURE_TIMING.multiTapSlopPx
     ) {
         if (tap.maxFingers === 2) effects.push({ type: "undo" });
         else if (tap.maxFingers === 3) effects.push({ type: "redo" });

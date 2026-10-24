@@ -71,7 +71,7 @@ const baseFindTargetCorner = (fabric.ActiveSelection.prototype as any)
 };
 
 /** How far past a dot's edge (screen px) a press still counts as on the dot */
-const DOT_SLACK_PX = { touch: 8, pen: 3, mouse: 2 } as const;
+const DOT_SLACK_PX = { touch: 8, pen: 5, mouse: 5 } as const;
 
 const NORMAL_PATHWAY_DASH: number[] = [];
 // Precomputed so the per-frame comparison below does not rebuild the warning stroke string
@@ -787,13 +787,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         dotMarcher: CanvasMarcher | null,
     ): fabric.Object | undefined {
         const target = super.findTarget(e as MouseEvent, skipGroup);
-        const type = (e as PointerEvent).pointerType;
-        if (type !== "touch" && type !== "pen") return target;
         if (target && (target.selectable || target === this._activeObject))
             return target;
-        // A finger on a dot whose own hit area (a few px) it just misses. Only
-        // a press on the dot: a press merely near a marcher is a press on empty
-        // field (a tap there still picks the nearest marcher; see the touch
+        // A press on a dot whose own hit area (a few px) it just misses: a few
+        // px of tolerance for a mouse or pen, a bit more for a finger. Only a
+        // press on the dot: a finger merely near a marcher presses empty field
+        // (a tap there still picks the nearest marcher; see the touch
         // gestures). Never the selection itself, which would add it to itself.
         if (dotMarcher) {
             (this as any).targets = [];
@@ -880,6 +879,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             pointerType === "touch" ||
             // A pen drag from empty field may become a pan or a lasso
             (pointerType === "pen" &&
+                isTouchLayout() &&
                 useFieldDragModeStore.getState().mode !== "box");
         // Command-click on empty field keeps the selection on Apple platforms
         if (
