@@ -15,7 +15,7 @@ type Point = { x: number; y: number };
 
 const touch = (cdp: CDPSession) => {
     const send = (
-        type: "touchStart" | "touchMove" | "touchEnd",
+        type: "touchStart" | "touchMove" | "touchEnd" | "touchCancel",
         points: Point[],
     ) =>
         cdp.send("Input.dispatchTouchEvent", {
@@ -27,6 +27,13 @@ const touch = (cdp: CDPSession) => {
             })),
         });
     return {
+        /** Presses and holds; returns the lift (`cancel` lifts without a tap) */
+        hold: async (p: Point) => {
+            await send("touchStart", [p]);
+            return {
+                cancel: () => send("touchCancel", []),
+            };
+        },
         tap: async (p: Point) => {
             await send("touchStart", [p]);
             await send("touchEnd", []);
@@ -300,9 +307,92 @@ test("the labelled New page button adds a page and says so", async ({
     // Inside the timeline's view, not cut off by the zoom column
     const timeline = (await page.locator("#timeline").boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual(timeline.x + timeline.width);
+    // In its own slot: it covers no page box, even with the pages scrolled
+    // as far as they go
+    const overlapsAPage = async () => {
+        const b = (await add.boundingBox())!;
+        for (const p of await page.locator("[timeline-page-id]").all()) {
+            const r = (await p.boundingBox())!;
+            if (r.x < b.x + b.width && b.x < r.x + r.width) return true;
+        }
+        return false;
+    };
+    await page.locator("#timeline").evaluate((el) => {
+        el.style.scrollBehavior = "auto";
+        el.scrollLeft = 0;
+    });
+    expect(await overlapsAPage()).toBe(false);
+    // Scrolled, pages pass under its column and it stays on top, tappable
+    await page.locator("#timeline").evaluate((el) => {
+        el.style.scrollBehavior = "auto";
+        el.scrollLeft = 120;
+    });
+    const atButton = await page.evaluate(
+        ([x, y]) =>
+            document
+                .elementFromPoint(x, y)
+                ?.closest("[data-testid='add-page']") !== null,
+        [box.x + box.width / 2, box.y + box.height / 2],
+    );
+    expect(atButton).toBe(true);
     await fingers.tap({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
     await expect.poll(() => pageStarts(show)).toHaveLength(before.length + 1);
     await expect(
         page.locator("[data-sonner-toast]").filter({ hasText: "Page 3 added" }),
     ).toBeVisible();
+});
+
+test("a long press inside the page menu doesn't open a second menu", async ({
+    show,
+}) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    const center = async (name: string | RegExp) => {
+        const b = (await page.getByRole("button", { name }).boundingBox())!;
+        return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+    };
+    await fingers.tap(await center("Page 2 options"));
+    await expect(page.getByRole("menu")).toHaveCount(1);
+    // Hold on "In Place" past the long-press time, then lift without a tap
+    const press = await fingers.hold(await center(/^In Place/));
+    await page.waitForTimeout(1000);
+    // CSS, not getByRole: a second (modal) menu hides the first from the
+    // accessibility tree, so a role count would still read 1
+    await expect(page.locator('[role="menu"]')).toHaveCount(1);
+    await press.cancel();
+    expect(await pageStarts(show)).toHaveLength(3);
+});
+
+test("the zoom buttons zoom around the middle of the view", async ({
+    show,
+}) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, {
+        timeout: 15_000,
+    });
+    const tapButton = async (name: string) => {
+        const b = (await page.getByRole("button", { name }).boundingBox())!;
+        await fingers.tap({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+    };
+    const zoomReset = page.getByTitle("Reset timeline zoom");
+    for (const label of ["125%", "156%", "195%"]) {
+        await tapButton("Zoom timeline in");
+        await expect(zoomReset).toHaveText(label);
+    }
+    // Scroll to the middle, then zoom out: the middle stays the middle
+    const timeline = page.locator("#timeline");
+    await timeline.evaluate((el) => {
+        el.style.scrollBehavior = "auto";
+        el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+    });
+    const view = (await timeline.boundingBox())!;
+    const middle = view.x + view.width / 2;
+    const page2 = page.locator('[timeline-page-id="2"]');
+    const before = (await page2.boundingBox())!.x;
+    await tapButton("Zoom timeline out");
+    await expect(zoomReset).toHaveText("156%");
+    await expect
+        .poll(async () => (await page2.boundingBox())!.x)
+        .toBeCloseTo(middle + (before - middle) / 1.25, -1);
 });

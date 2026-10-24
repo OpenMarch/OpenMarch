@@ -20,7 +20,8 @@ import { T } from "@tolgee/react";
 import clsx from "clsx";
 import { usePinchZoom } from "./usePinchZoom";
 import { scrollLeftForPage } from "./pageScroll";
-import { useInputModeStore } from "@/stores/InputModeStore";
+import { useInputModeStore, useIsTouchMode } from "@/stores/InputModeStore";
+import NewPageButton from "./NewPageButton";
 import { TOUCH_TARGET_CLASS } from "./touchTargets";
 import {
     TIMELINE_BASE_PX_PER_SEC,
@@ -35,7 +36,8 @@ export default function TimelineContainer() {
     const { uiSettings } = useUiSettingsStore();
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
-    usePinchZoom(timelineRef);
+    const { zoomTo } = usePinchZoom(timelineRef);
+    const isTouchMode = useIsTouchMode();
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -110,11 +112,20 @@ export default function TimelineContainer() {
                     <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                         <div className="flex h-fit items-center">
                             <div className={STICKY_LABEL_CLASS}>
-                                <p className={LABEL_COLUMN_CLASS}>
-                                    <span className="@max-[360px]:hidden">
-                                        <T keyName="timeline.pages" />
-                                    </span>
-                                </p>
+                                {isTouchMode && !isFullscreen ? (
+                                    // Fingers get a labelled New page button in
+                                    // the label's place: it has its own slot, so
+                                    // it never covers a page
+                                    <div className={LABEL_COLUMN_CLASS}>
+                                        <NewPageButton />
+                                    </div>
+                                ) : (
+                                    <p className={LABEL_COLUMN_CLASS}>
+                                        <span className="@max-[360px]:hidden">
+                                            <T keyName="timeline.pages" />
+                                        </span>
+                                    </p>
+                                )}
                             </div>
                             <PageTimeline />
                         </div>
@@ -170,7 +181,7 @@ export default function TimelineContainer() {
                         </div>
                     </div>
                 </div>
-                <TimelineZoomControls />
+                <TimelineZoomControls zoomTo={zoomTo} />
             </div>
         </div>
     );
@@ -191,8 +202,12 @@ const LABEL_COLUMN_CLASS =
 /** One zoom button press; in and out are the same factor, so they undo each other. */
 const TIMELINE_ZOOM_STEP = 1.25;
 
-function TimelineZoomControls() {
-    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
+function TimelineZoomControls({
+    zoomTo: setPixelsPerSecond,
+}: {
+    zoomTo: (pixelsPerSecond: number) => void;
+}) {
+    const { uiSettings } = useUiSettingsStore();
     const currentPixels = uiSettings.timelinePixelsPerSecond;
     const zoomPercent = Math.round(
         (currentPixels / TIMELINE_BASE_PX_PER_SEC) * 100,

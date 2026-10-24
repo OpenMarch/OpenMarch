@@ -14,6 +14,9 @@ import { invalidatePageQueries, measureKeys } from "@/hooks/queries";
 import Page from "@/global/classes/Page";
 import Beat from "@/global/classes/Beat";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useTimingObjects } from "@/hooks";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import { toast } from "sonner";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -117,4 +120,29 @@ export const useCreateLastPageOnTimeline = () => {
             });
         },
     });
+};
+
+/**
+ * Adds a page at the end of the show. With fingers it also says so with a
+ * toast ("Page 4 added"): there is no hover feedback, and the new page may
+ * be off screen. Its name is the next whole page number.
+ */
+export const useAddPage = () => {
+    const { pages } = useTimingObjects()!;
+    const { t } = useTolgee();
+    const { mutate, isPending } = useCreateLastPageOnTimeline();
+    // Creating a page needs the workspace settings, which load asynchronously
+    const { data: workspaceSettings } = useQuery(
+        workspaceSettingsQueryOptions(),
+    );
+    const addPage = useCallback(() => {
+        const pageName = String(pages.filter((p) => !p.isSubset).length);
+        mutate(undefined, {
+            onSuccess: () => {
+                if (useInputModeStore.getState().mode === "touch")
+                    toast.success(t("timeline.page.added", { pageName }));
+            },
+        });
+    }, [mutate, pages, t]);
+    return { addPage, canAddPage: !!workspaceSettings && !isPending };
 };
