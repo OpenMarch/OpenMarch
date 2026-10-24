@@ -28,6 +28,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
 import { isWebBuild, webChannel } from "@/utilities/webBuild";
 import WebFileMenu from "./WebFileMenu";
+import WebSaveStatus from "../web/WebSaveStatus";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
@@ -181,6 +182,9 @@ export default function TitleBar({
                 <div
                     className={`titlebar-button touch:gap-4 flex items-center gap-12 ${isMacOS ? "pr-24" : ""} ${isWebBuild ? "touch:pr-8 pr-16" : ""}`}
                 >
+                    {isWebBuild && variant === "main" && showControls && (
+                        <WebSaveStatus />
+                    )}
                     {variant === "main" && (
                         <ActionButton
                             action="openCommandPalette"

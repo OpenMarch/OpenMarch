@@ -4,6 +4,8 @@
  * IPC copies them.
  */
 
+import type { ShowSummary } from "@/utilities/webLibrary";
+
 /** Page to worker. */
 export type ToWorker =
     | { type: "invoke"; id: number; channel: string; args: unknown[] }
@@ -38,11 +40,11 @@ export type WorkerStatus = {
  * stand-ins for Electron's file dialogs use them.
  */
 export const WEB_CHANNELS = {
-    /** (bytes: Uint8Array, name: string) => number (200, or an error code) */
+    /** (bytes: Uint8Array, name: string) => number (200, or an error code): adds a file to the library and opens it */
     openShow: "web:openShow",
-    /** () => void */
+    /** () => void: closes the open show (it stays in the library) */
     closeShow: "web:closeShow",
-    /** () => { name: string; bytes: Uint8Array } | null */
+    /** () => { name: string; bytes: Uint8Array } | null: the open show's latest bytes */
     exportShow: "web:exportShow",
     /** () => void: copy the show to browser storage now, e.g. as the page is hidden */
     flush: "web:flush",
@@ -50,21 +52,54 @@ export const WEB_CHANNELS = {
     readPreviousDots: "web:readPreviousDots",
     /** (data: ArrayBuffer, name: string) => LegacyDatabaseResponse */
     insertAudio: "web:insertAudio",
+
+    /** () => LibraryState */
+    library: "web:library",
+    /** (id: string) => number: makes a stored show the one to open (the page then reloads) */
+    openStored: "web:openStored",
+    /** (id: string, name: string) => void */
+    renameShow: "web:renameShow",
+    /** (id: string, copyName: string) => string: the copy's id */
+    duplicateShow: "web:duplicateShow",
+    /** (id: string) => void */
+    deleteShow: "web:deleteShow",
+    /** (id: string) => { name: string; bytes: Uint8Array }: a stored show's latest bytes, for a backup */
+    exportStored: "web:exportStored",
+    /** (id: string) => void: the show was just backed up */
+    recordBackup: "web:recordBackup",
     /**
-     * () => string | null: the name of a show kept from an earlier visit that
-     * couldn't be reopened (e.g. saved by a newer build), which creating or
-     * opening a show replaces.
+     * (id: string, versionId: string) => boolean: makes a version the show's
+     * current state, keeping the replaced state as a version. True if it was
+     * the open show (the page then reloads into it).
      */
-    keptShow: "web:keptShow",
+    restoreVersion: "web:restoreVersion",
 } as const;
+
+/** The library as the page sees it. */
+export type LibraryState = {
+    shows: ShowSummary[];
+    /** The show open in this tab, if it's stored in the library. */
+    openId: string | null;
+    /** A stored show that couldn't be opened when the page loaded. */
+    openFailed: string | null;
+};
+
+export type SaveStatus =
+    | { state: "saving" }
+    | { state: "saved"; at: number }
+    | { state: "error"; reason: "full" | "other"; message: string };
 
 /** Messages the worker sends the page unasked, like `webContents.send`. */
 export const WEB_EVENTS = {
-    /** The show has changes its last download doesn't. */
+    /** The show has changes its last download doesn't (memory-only tabs). */
     changed: "web:changed",
     /**
      * Browser storage failed (e.g. it's full), so the worker stopped keeping
      * the show there: the page treats it as kept in memory only.
      */
     storageLost: "web:storageLost",
+    /** (state: LibraryState): the library changed */
+    library: "web:library",
+    /** (status: SaveStatus): saving the open show started, finished or failed */
+    saveStatus: "web:saveStatus",
 } as const;
