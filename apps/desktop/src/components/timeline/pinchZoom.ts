@@ -5,6 +5,9 @@ export const TIMELINE_MIN_PX_PER_SEC = 10;
 export const TIMELINE_MAX_PX_PER_SEC = 200;
 export const TIMELINE_BASE_PX_PER_SEC = defaultSettings.timelinePixelsPerSecond;
 
+/** One zoom button press; in and out are the same factor, so they undo each other. */
+export const TIMELINE_ZOOM_STEP = 1.25;
+
 export const clampPixelsPerSecond = (pps: number) =>
     Math.min(Math.max(pps, TIMELINE_MIN_PX_PER_SEC), TIMELINE_MAX_PX_PER_SEC);
 

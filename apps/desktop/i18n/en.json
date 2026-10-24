@@ -1273,6 +1273,16 @@
     },
     "timeline": {
         "audio": "Audio",
+        "compact": {
+            "collapse": "Make the timeline compact",
+            "expand": "Show the full timeline",
+            "fullscreen": "Fullscreen",
+            "hideAudio": "Hide the music waveform",
+            "metronome": "Metronome",
+            "more": "More timeline controls",
+            "showAudio": "Show the music waveform",
+            "zoom": "Timeline zoom"
+        },
         "controls": {
             "label": "Playback Controls"
         },
