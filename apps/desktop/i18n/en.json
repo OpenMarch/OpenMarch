@@ -6,7 +6,7 @@
         "metronome": "Metronome",
         "mobile": "Mobile app",
         "music": "Music",
-        "settings": "Settings"
+        "settings": "Show settings"
     },
     "infoTip": {
         "moreInfo": "More info"
@@ -1385,7 +1385,7 @@
     },
     "workspaceSettings": {
         "close": "Close",
-        "saved": "Workspace settings saved",
+        "saved": "Show settings saved",
         "audioOffsetSeconds": "Audio Offset",
         "cancel": "Cancel",
         "defaultBeatsPerMeasure": "Default Beats Per Measure",
@@ -1397,7 +1397,7 @@
         "pageNumberOffset": "Page Number Offset",
         "resetToDefaults": "Reset to Defaults",
         "saveChanges": "Save Changes",
-        "title": "Workspace Settings",
+        "title": "Show settings",
         "units": {
             "beats": "beats",
             "bpm": "BPM",

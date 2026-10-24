@@ -65,7 +65,8 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         descriptionKey: "settings.general.description",
         searchKeys: [
             "settings.general.language",
-            "settings.general.automaticUpdates",
+            // Not in the web build, where there's nothing to update
+            ...(isWebBuild ? [] : ["settings.general.automaticUpdates"]),
         ],
     },
     {
