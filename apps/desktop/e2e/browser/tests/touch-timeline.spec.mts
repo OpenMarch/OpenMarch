@@ -73,6 +73,39 @@ const pageStarts = async (show: Show) =>
         )
     ).map((row) => row.start);
 
+/**
+ * New page sits after the scrolling pages strip, outside it: right of every page
+ * box anyone can see, and on top wherever the pages are scrolled.
+ */
+async function expectNewPageInItsOwnSlot(page: Page) {
+    const add = page.getByRole("button", { name: "New page", exact: true });
+    const timeline = page.locator("#timeline");
+    for (const scrollLeft of [0, 120, 100_000]) {
+        await timeline.evaluate((el, left) => {
+            el.style.scrollBehavior = "auto";
+            el.scrollLeft = left;
+        }, scrollLeft);
+        const b = (await add.boundingBox())!;
+        const view = (await timeline.boundingBox())!;
+        expect(b.x).toBeGreaterThanOrEqual(view.x + view.width - 1);
+        // Every page box's visible part ends before the button
+        for (const p of await page.locator("[timeline-page-id]").all()) {
+            const r = (await p.boundingBox())!;
+            const visibleRight = Math.min(r.x + r.width, view.x + view.width);
+            if (visibleRight > view.x)
+                expect(visibleRight).toBeLessThanOrEqual(b.x);
+        }
+        const onTop = await page.evaluate(
+            ([x, y]) =>
+                document
+                    .elementFromPoint(x, y)
+                    ?.closest("[data-testid='add-page']") !== null,
+            [b.x + b.width / 2, b.y + b.height / 2],
+        );
+        expect(onTop).toBe(true);
+    }
+}
+
 /** Taps the centre of a button found by its accessible name. */
 async function tapNamed(
     page: Page,
@@ -329,37 +362,7 @@ test("the labelled New page button adds a page and says so", async ({
     await expect(add).toHaveText("New page");
     const box = (await add.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(44);
-    // Inside the timeline's view, not cut off by the zoom column
-    const timeline = (await page.locator("#timeline").boundingBox())!;
-    expect(box.x + box.width).toBeLessThanOrEqual(timeline.x + timeline.width);
-    // In its own slot: it covers no page box, even with the pages scrolled
-    // as far as they go
-    const overlapsAPage = async () => {
-        const b = (await add.boundingBox())!;
-        for (const p of await page.locator("[timeline-page-id]").all()) {
-            const r = (await p.boundingBox())!;
-            if (r.x < b.x + b.width && b.x < r.x + r.width) return true;
-        }
-        return false;
-    };
-    await page.locator("#timeline").evaluate((el) => {
-        el.style.scrollBehavior = "auto";
-        el.scrollLeft = 0;
-    });
-    expect(await overlapsAPage()).toBe(false);
-    // Scrolled, pages pass under its column and it stays on top, tappable
-    await page.locator("#timeline").evaluate((el) => {
-        el.style.scrollBehavior = "auto";
-        el.scrollLeft = 120;
-    });
-    const atButton = await page.evaluate(
-        ([x, y]) =>
-            document
-                .elementFromPoint(x, y)
-                ?.closest("[data-testid='add-page']") !== null,
-        [box.x + box.width / 2, box.y + box.height / 2],
-    );
-    expect(atButton).toBe(true);
+    await expectNewPageInItsOwnSlot(page);
     await fingers.tap({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
     await expect.poll(() => pageStarts(show)).toHaveLength(before.length + 1);
     await expect(
@@ -474,6 +477,13 @@ test("expanding shows the full transport, and collapsing goes back", async ({
     ).toBeVisible();
     await expect(page.locator("#waveform")).toHaveCount(1);
     await expect(page.getByTitle("Reset timeline zoom")).toBeVisible();
+    // New page: its own slot at the end of the pages row, before the zoom
+    await expectNewPageInItsOwnSlot(page);
+    const add = (await page
+        .getByRole("button", { name: "New page", exact: true })
+        .boundingBox())!;
+    const zoom = (await page.getByTitle("Reset timeline zoom").boundingBox())!;
+    expect(add.x + add.width).toBeLessThanOrEqual(zoom.x);
     // Remembered for next time
     expect(
         await page.evaluate(() =>

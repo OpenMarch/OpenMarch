@@ -108,13 +108,16 @@ Other field behavior:
 - Page edges are pointer-event drags with a 44 px handle that straddles the edge; a
   second finger cancels the drag and restores both pages.
 - "…" chip on the selected page opens the page menu on a tap (never on a scroll).
-- **New page** button, labelled, in the timeline's label column.
+- **New page** button, labelled, at the end of the pages: its own slot after the
+  pages strip (outside the scrolling strip, before the zoom column or the compact row's
+  toggles), so it never covers a page box. Only the + in a very narrow timeline.
+  The mouse layout keeps the round + after the last page.
 - Pinch zooms the timeline; zoom buttons use magnifier icons and zoom around the
   view's centre; one-finger pans scroll (also over the waveform).
 - Tap tempo has on-screen Tap and beats-per-tap controls in the beat editor.
 - Compact timeline (touch only, the default): one ~62 px row with previous page,
   play/pause and next page, a "…" menu (first/last page, metronome, volume,
-  fullscreen, Edit timeline, timeline zoom), New page and the pages strip, then a
+  fullscreen, Edit timeline, timeline zoom), the pages strip, New page, then a
   waveform toggle and a chevron. The chevron expands to the full timeline
   (transport card, pages, audio, zoom column), which has a chevron back. Both
   choices are remembered; the audio row shows by itself in the beat editor.
