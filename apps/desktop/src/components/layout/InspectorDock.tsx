@@ -166,18 +166,22 @@ function InspectorTab({
             data-testid="inspector-tab"
             data-hint={hint || undefined}
             className={clsx(
-                "group touch:h-88 touch:w-40 flex h-64 w-20 shrink-0 items-center justify-end",
+                "group touch:min-h-88 touch:w-44 touch:h-auto touch:py-8 flex h-64 w-20 shrink-0 items-center justify-end",
                 className,
             )}
         >
             <span
                 className={clsx(
-                    "border-stroke bg-bg-1 bg-fg-1 text-text group-hover:text-accent group-focus-visible:outline-accent touch:h-72 touch:w-28 rounded-l-8 relative flex h-56 w-20 items-center justify-center border border-r-0 shadow-sm transition-colors",
+                    "border-stroke bg-bg-1 bg-fg-1 text-text group-hover:text-accent group-focus-visible:outline-accent touch:h-auto touch:w-32 touch:flex-col touch:gap-6 touch:py-12 rounded-l-8 relative flex h-56 w-20 items-center justify-center border border-r-0 shadow-sm transition-colors",
                     hint &&
                         "border-accent text-accent ring-accent/40 animate-pulse ring-4",
                 )}
             >
                 <Icon size={16} weight="bold" />
+                {/* In touch mode the tab says what it opens, written down the edge */}
+                <span className="text-sub touch:block hidden font-medium [writing-mode:vertical-rl]">
+                    {t("inspector.title", "Inspector")}
+                </span>
                 {hint && (
                     <span className="bg-accent absolute top-6 left-4 size-6 rounded-full" />
                 )}
