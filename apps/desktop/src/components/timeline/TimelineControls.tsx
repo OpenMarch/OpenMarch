@@ -11,6 +11,7 @@ import {
     SpeakerSimpleHighIcon,
     SpeakerSimpleLowIcon,
     SpeakerSimpleXIcon,
+    CaretDownIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "@/shortcuts/ActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -24,8 +25,11 @@ import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
 import { TOUCH_TARGET_CLASS } from "./touchTargets";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useTimelineLayoutStore } from "./timelineLayoutStore";
 
 export default function TimelineControls() {
+    const isTouchMode = useIsTouchMode();
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
     const { uiSettings } = useUiSettingsStore();
     return (
@@ -38,7 +42,10 @@ export default function TimelineControls() {
             {!isFullscreen && (
                 <div className="flex items-center justify-between gap-6">
                     <T keyName="timeline.label" />
-                    <AudioClock />
+                    <div className="flex items-center gap-6">
+                        <AudioClock />
+                        {isTouchMode && <CollapseTimelineButton />}
+                    </div>
                 </div>
             )}
 
@@ -76,6 +83,26 @@ export default function TimelineControls() {
                 </div>
             </div>
         </div>
+    );
+}
+
+/** Touch layout: back to the one-row compact timeline. */
+function CollapseTimelineButton() {
+    const { t } = useTolgee();
+    const setExpanded = useTimelineLayoutStore((s) => s.setExpanded);
+    return (
+        <button
+            type="button"
+            className={clsx(
+                "text-text enabled:hover:text-accent",
+                TOUCH_TARGET_CLASS,
+            )}
+            aria-label={t("timeline.compact.collapse")}
+            title={t("timeline.compact.collapse")}
+            onClick={() => setExpanded(false)}
+        >
+            <CaretDownIcon size={22} weight="bold" />
+        </button>
     );
 }
 
