@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { prepareAudioChannels, sliceAudioChannels } from "../videoExportAudio";
+import fc from "fast-check";
+import {
+    lazyAudioSlices,
+    prepareAudioChannels,
+    sliceAudioChannels,
+} from "../videoExportAudio";
 
 const SAMPLE_RATE = 1000; // 1 sample per millisecond keeps the math readable
 
@@ -100,5 +105,58 @@ describe("sliceAudioChannels", () => {
         expect(
             sliceAudioChannels([new Float32Array(0)], SAMPLE_RATE),
         ).toHaveLength(0);
+    });
+});
+
+describe("lazyAudioSlices", () => {
+    it("makes the same slices as prepareAudioChannels + sliceAudioChannels", () => {
+        fc.assert(
+            fc.property(
+                fc.integer({ min: 0, max: 3000 }),
+                fc.integer({ min: 0, max: 3000 }),
+                fc.integer({ min: -2500, max: 2500 }),
+                fc.integer({ min: 1, max: 900 }),
+                fc.integer({ min: 1, max: 2 }),
+                (length, durationMs, offsetMs, sliceMs, channels) => {
+                    // prepareAudioChannels throws for an offset past the end
+                    fc.pre(offsetMs <= durationMs);
+                    const data = Array.from({ length: channels }, (_, c) =>
+                        ramp(length).map((v) => v + c * 10000),
+                    );
+                    const expected = sliceAudioChannels(
+                        prepareAudioChannels(
+                            data,
+                            SAMPLE_RATE,
+                            offsetMs / 1000,
+                            durationMs / 1000,
+                        ),
+                        SAMPLE_RATE,
+                        sliceMs / 1000,
+                    );
+                    const lazy = lazyAudioSlices(
+                        data,
+                        SAMPLE_RATE,
+                        offsetMs / 1000,
+                        durationMs / 1000,
+                        sliceMs / 1000,
+                    );
+                    expect(lazy.count).toBe(expected.length);
+                    expected.forEach((slice, i) =>
+                        expect(lazy.slice(i)).toEqual(slice),
+                    );
+                },
+            ),
+            { numRuns: 200 },
+        );
+    });
+
+    it("is silent when the offset is past the end of the show", () => {
+        const lazy = lazyAudioSlices([ramp(100)], SAMPLE_RATE, 3, 2);
+        expect(lazy.count).toBe(2);
+        expect(lazy.slice(1)).toEqual([new Float32Array(1000)]);
+    });
+
+    it("has no slices for no channels", () => {
+        expect(lazyAudioSlices([], SAMPLE_RATE, 0, 2).count).toBe(0);
     });
 });
