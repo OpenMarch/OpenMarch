@@ -8,7 +8,7 @@ Each report describes one released version, so a new release needs a new report.
 
 | Version | Report date     | Supports | Partially Supports | Does Not Support | Not Applicable |
 | ------- | --------------- | -------- | ------------------ | ---------------- | -------------- |
-| 0.1.7   | 19 October 2026 | 16       | 22                 | 8                | 9              |
+| 0.1.7   | 24 October 2026 | 16       | 22                 | 8                | 9              |
 
 The counts cover the 55 Level A and AA criteria in WCAG 2.2. The obsolete 4.1.1
 is listed in the report but not counted.
