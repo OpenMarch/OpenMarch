@@ -84,7 +84,7 @@ const PEN =
         : "a pen";
 
 /** What the default does, in plain words */
-export const AUTO_DRAG_SENTENCE = `Drag the field with one finger to move around. Use ${PEN}, or press and hold then drag, to select an area.`;
+export const AUTO_DRAG_SENTENCE = `One finger moves the view. ${PEN === "a pen" ? "A pen" : "Pencil"}, or hold then drag, selects.`;
 
 export const DRAG_MODES: Record<
     FieldDragMode,
@@ -92,32 +92,32 @@ export const DRAG_MODES: Record<
 > = {
     auto: {
         label: "Auto",
-        describe: `finger moves the view, ${PEN === "a pen" ? "pen" : "Pencil"} selects`,
+        describe: `finger moves, ${PEN === "a pen" ? "pen" : "Pencil"} selects`,
         Icon: MagicWandIcon,
     },
     box: {
         label: "Box",
-        describe: "finger and pen draw a box that selects",
+        describe: "drag a box to select",
         Icon: SelectionIcon,
     },
     lasso: {
         label: "Lasso",
-        describe: "finger and pen draw a loop that selects",
+        describe: "draw around to select",
         Icon: LassoIcon,
     },
     pan: {
         label: "Pan",
-        describe: "finger and pen move the view",
+        describe: "drag moves the view",
         Icon: HandIcon,
     },
 };
 
 const EXPLAIN = {
-    grip: "Drag to move these buttons.",
-    drag: `What a drag from empty field does. Auto: ${AUTO_DRAG_SENTENCE} Box, Lasso and Pan do the same for finger and pen. Two fingers always move the view.`,
-    shift: "Add: hold it, or tap to keep it on. While it's on, tapping a marcher adds it to the selection or takes it out, and moves keep to one direction.",
-    alt: "No snap: hold it, or tap to keep it on. Moving and turning don't snap to steps.",
-    help: "What these buttons do.",
+    grip: "Drag to move.",
+    drag: "What dragging on empty field does.",
+    shift: "Tap marchers to add or remove them.",
+    alt: "Move and turn without snapping.",
+    help: "Gestures.",
 } as const;
 type Explained = keyof typeof EXPLAIN;
 
@@ -295,8 +295,8 @@ export default function TouchModifierButtons({
         if (!useTouchModifierStore.getState().latched[modifier]) return;
         toast(
             modifier === "shift"
-                ? "Add is on: tap marchers to add them or take them out."
-                : "No snap is on: moving and turning don't snap to steps.",
+                ? "Add on: tap marchers to add or remove."
+                : "No snap on.",
             { duration: 2500 },
         );
     }, []);
@@ -495,30 +495,28 @@ export default function TouchModifierButtons({
                     style={popupStyle}
                     className={clsx(
                         popupSide,
-                        "border-stroke bg-bg-1 text-text w-[280px] max-w-[calc(100vw-24px)] rounded-lg border p-12 text-sm leading-snug shadow-lg",
+                        "border-stroke bg-bg-1 text-text w-[240px] max-w-[calc(100vw-24px)] rounded-lg border p-12 text-sm leading-snug shadow-lg",
                     )}
                     onClick={() => setPopup(null)}
                 >
-                    <p>{AUTO_DRAG_SENTENCE}</p>
-                    <p className="mt-6">
-                        <b>Drag</b> changes that: <b>Box</b>, <b>Lasso</b> or{" "}
-                        <b>Pan</b> for both finger and pen. Two fingers always
-                        move and zoom the view.
-                    </p>
-                    <p className="mt-6">
-                        <b>Add</b>: hold it, or tap to keep it on. While it is
-                        on, tapping a marcher adds it to the selection or takes
-                        it out, and moves keep to one direction.
-                    </p>
-                    <p className="mt-6">
-                        <b>No snap</b>: moving and turning don&apos;t snap to
-                        steps.
-                    </p>
-                    <p className="text-text-subtitle mt-6">
-                        Long press a marcher to add it. Two-finger tap undoes,
-                        three-finger tap redoes. Long press any of these buttons
-                        to see what it does.
-                    </p>
+                    <ul className="flex flex-col gap-4">
+                        <li>
+                            <b>1 finger</b> moves · <b>2</b> zoom
+                        </li>
+                        <li>
+                            <b>{PEN === "a pen" ? "Pen" : "Pencil"}</b> or{" "}
+                            <b>hold + drag</b> selects
+                        </li>
+                        <li>
+                            <b>Hold a marcher</b> adds it
+                        </li>
+                        <li>
+                            <b>2-finger tap</b> undo · <b>3</b> redo
+                        </li>
+                        <li>
+                            <b>Add</b> taps to add · <b>No snap</b> moves freely
+                        </li>
+                    </ul>
                 </div>
             )}
             {popup === "mode" && (

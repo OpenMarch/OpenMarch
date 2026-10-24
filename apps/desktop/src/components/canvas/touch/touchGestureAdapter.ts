@@ -84,7 +84,7 @@ function maybeShowTouchLayoutHint() {
     } catch {
         return;
     }
-    toast("Using touch? The tablet layout has bigger controls.", {
+    toast("Tablet layout has bigger controls", {
         id: "touch-layout-hint",
         duration: 10000,
         action: {
@@ -833,12 +833,10 @@ export class TouchGestureAdapter {
         canvas.setActiveObjects(next);
         this.selectionSnapshot = canvas.getActiveObjects().slice();
         const name = marcher.marcherObj?.drill_number ?? "the marcher";
-        toast(
-            removing
-                ? `Removed ${name} from the selection`
-                : `Added ${name} to the selection. Long press it again to remove it.`,
-            { id: "touch-long-press", duration: 2500 },
-        );
+        toast(removing ? `Removed ${name}` : `Added ${name}`, {
+            id: "touch-long-press",
+            duration: 2500,
+        });
     }
 
     /** A brief ring where the long press fired */
