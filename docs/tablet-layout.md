@@ -151,6 +151,14 @@ Other field behavior:
 - Settings opens in-page as a sheet (`components/WebSettingsSheet.tsx`) instead of a
   second tab.
 - Focused fields scroll above the on-screen keyboard (`hooks/useOnScreenKeyboard.ts`).
+- **Export video** (☰ menu or File › Export video) renders in the page and
+  streams the file to browser storage; when it's done, **Save video** opens
+  the share sheet ("Save Video" to Photos). 720p/30 fps by default, a Cancel
+  button next to the progress, the screen kept awake, and a warning that
+  switching apps may stop it. Safari before 26 has no audio encoder, so the
+  sound comes from a bundled WebAssembly AAC encoder; if that can't load, the
+  dialog says the video will be silent before starting. Details in
+  `apps/desktop/web/README.md`.
 
 ### Desktop app (Windows tablets)
 
@@ -199,7 +207,9 @@ button in one, a panel in the other). When adding a control, check:
 
 ## Known limits
 
-- PDF and video export don't exist in the web editor (they need Electron).
+- PDF export doesn't exist in the web editor (it needs Electron's
+  `printToPDF`). Video export works there (see below), but hasn't been
+  checked on a real iPad.
 - Undo goes back one Move-pad press at a time.
 - Holding a nudge key or button drops presses while a save is running (existing
   nudge handler).

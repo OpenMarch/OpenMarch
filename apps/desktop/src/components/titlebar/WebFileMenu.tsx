@@ -80,6 +80,7 @@ export default function WebFileMenu() {
                 {item("launchNewFileDialogue")}
                 {item("launchLoadFileDialogue")}
                 {item("launchSaveFileDialogue", t("web.download"))}
+                {item("exportVideo")}
                 {item("closeFile")}
                 <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
                 {item("openSettings")}
