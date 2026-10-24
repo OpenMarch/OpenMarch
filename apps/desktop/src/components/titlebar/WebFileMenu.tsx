@@ -91,6 +91,7 @@ export default function WebFileMenu() {
                         <span>{t("web.versionsMenu")}</span>
                     </DropdownMenuItem>
                 )}
+                {item("exportVideo")}
                 {item("closeFile")}
                 <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
                 {item("openSettings")}

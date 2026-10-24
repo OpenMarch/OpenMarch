@@ -306,6 +306,7 @@
         "exportNotAvailableDescription": "Export requires field properties, at least one non-default page, and at least one marcher.",
         "exportPDFSuccess": "Successfully exported as PDF!",
         "exportSuccess": "{count, plural, one {Successfully exported coordinate sheets for {count} marcher!} other {Successfully exported coordinate sheets for {count} marchers!}}",
+        "exportVideoButton": "Export video",
         "fieldProperties": "Field Properties: {status}",
         "fieldPropertiesNotLoaded": "Field properties not loaded",
         "fieldPropertiesRequired": "Field properties are required for export",
@@ -385,7 +386,18 @@
         "videoOverlayTempo": "Tempo",
         "videoPreviewLoading": "Loading preview…",
         "videoRendering": "Rendering video... This may take several minutes.",
-        "videoResolution": "Resolution"
+        "videoResolution": "Resolution",
+        "videoWebChecking": "Checking what this browser can make…",
+        "videoWebInMemory": "This browser can't save the video as it's made, so it's kept in memory. A long show may not fit: choose 720p, or use another browser.",
+        "videoWebKeepOpen": "Keep OpenMarch open and the screen on until the video is done. Switching apps or locking the screen may stop it.",
+        "videoWebReady": "Your video is ready: {name}",
+        "videoWebReadySilent": "It has no sound, because this browser can't add music to videos.",
+        "videoWebSave": "Save video",
+        "videoWebSaveHintApple": "Choose “Save Video” to put it in Photos, or “Save to Files”.",
+        "videoWebSaveMissing": "This video is no longer available. Export it again.",
+        "videoWebSaved": "Video saved",
+        "videoWebSilent": "This browser can't add the music to videos, so the video will be silent.",
+        "videoWebUnsupported": "This browser can't make videos. Use Safari 16.4 or later, Chrome or Edge."
     },
     "field": {
         "general": {

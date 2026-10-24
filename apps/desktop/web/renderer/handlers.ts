@@ -21,6 +21,10 @@ import {
     shareFile,
     showFileProblem,
 } from "./filePicking";
+import {
+    browserVideoExportDeps,
+    createVideoExportHandlers,
+} from "./videoExport";
 
 const SETTINGS_KEY = storageKey("settings");
 /** Tells this build's other tabs (e.g. the settings tab) about a change. */
@@ -435,6 +439,31 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
             file.name,
         );
     });
+    // Video export: the renderer encodes, the file goes to browser storage
+    // and is saved from a tap (see ./videoExport.ts).
+    const video = createVideoExportHandlers(
+        browserVideoExportDeps({
+            appleTouch,
+            share: shareFile,
+            showName: () => invokeWorker<string>("get-current-filename"),
+        }),
+    );
+    handleInPage("export:videoStart", (extension: string) =>
+        video.start(extension),
+    );
+    handleInPage(
+        "export:videoChunk",
+        (sessionId: string, data: Uint8Array, position: number) =>
+            video.chunk(sessionId, data, position),
+    );
+    handleInPage("export:videoEnd", (sessionId: string, success: boolean) =>
+        video.end(sessionId, success),
+    );
+    // "Open the exported file" in Electron; here, save the finished video
+    handleInPage("open-export-directory", (path: string) =>
+        video.deliver(path),
+    );
+
     handleInPage("database:repair", () => {
         throw new Error("Repairing a file isn't available on the web yet");
     });

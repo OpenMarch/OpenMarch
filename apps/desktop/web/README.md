@@ -43,7 +43,7 @@ main-process code and at `renderer/electron.ts` for the preload.
 In the app's own code, `isWebBuild` (`src/utilities/webBuild.ts`) turns off
 what has no meaning in a browser: the window buttons and native menu in the
 title bar (replaced by `WebFileMenu`), the update check, and the new-show
-wizard's file location, export (and mobile upload), and the settings for
+wizard's file location, every export but video (and mobile upload), and the settings for
 plugins, privacy, developer tools and file repair. "Save a copy" backs up the file;
 ⌘/Ctrl+S and ⌘/Ctrl+O are bound, since there is no native menu to bind
 them, so swapping marchers moves to ⌘/Ctrl+Shift+S.
@@ -129,13 +129,43 @@ the show, so they take space (20 per show). Private Browsing detection is a
 best effort: a browser that hands out storage and drops it at the end of the
 session looks like a normal one.
 
+### Video export
+
+The export dialog offers only video on the web (File menu › Export
+video…, or the toolbar's Export video). The renderer draws and encodes the
+frames as in Electron (`src/components/exporting/video/`, mediabunny over
+WebCodecs); the page answers `export:videoStart`, `export:videoChunk` and
+`export:videoEnd` instead of the main process (`renderer/videoExport.ts`):
+
+- The chunks go to a file in the origin private file system, written by a
+  worker through a sync access handle (`renderer/videoFile.worker.ts`), so
+  the video is never held in memory. Without OPFS (some private windows)
+  they're kept in memory and the dialog warns that a long show may not fit.
+- Saving needs a fresh tap, since the share sheet won't open minutes after
+  the Export tap, so the dialog shows **Save video** when the video is done.
+  On iPads it opens the share sheet (Save Video to Photos, Save to Files,
+  AirDrop); elsewhere it downloads. The temporary file is removed once
+  saved, and leftovers (unsaved, older than an hour) on the next export.
+- Codecs (`encodingTarget.ts`): MP4 with H.264 and AAC, since that's what
+  an iPad saves to Photos. Safari encodes H.264 from 16.4 but has no
+  `AudioEncoder` before Safari 26, and Chrome on Linux has no AAC encoder,
+  so where AAC is missing the bundled WebAssembly build of FFmpeg's AAC
+  encoder (`@mediabunny/aac-encoder`, about 1 MB, loaded only then) makes
+  the sound. If WebAssembly is off (as in the iPhone and iPad high-security mode), Opus in WebM is
+  used where available, else the video is silent and the dialog says so
+  before starting.
+- Tablets: 720p and 30 fps by default, 1080p optional, no 4K; the audio is
+  sliced as it's encoded rather than copied whole; the screen is kept on
+  with the Screen Wake Lock API where available, and the dialog says that
+  switching apps or locking the screen may stop the export. Closing the
+  dialog cancels it.
+
 ## What doesn't work on the web
 
 These are hidden, or answer the way the app expects when they're
 unavailable:
 
-- PDF, video and mobile export (they use Electron's `printToPDF`, file
-  streams and sign-in)
+- PDF and mobile export (they use Electron's `printToPDF` and sign-in)
 - Sign-in, plugins, automatic updates, analytics
 - Recent files, repairing a file, and backups before migrating
 
