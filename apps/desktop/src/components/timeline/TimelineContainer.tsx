@@ -27,7 +27,13 @@ import {
     TIMELINE_BASE_PX_PER_SEC,
     TIMELINE_MAX_PX_PER_SEC,
     TIMELINE_MIN_PX_PER_SEC,
+    TIMELINE_ZOOM_STEP,
 } from "./pinchZoom";
+import {
+    CompactTransport,
+    CompactViewToggles,
+} from "./CompactTimelineControls";
+import { useTimelineLayoutStore } from "./timelineLayoutStore";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -38,6 +44,12 @@ export default function TimelineContainer() {
     const timelineRef = useRef<HTMLDivElement>(null);
     const { zoomTo } = usePinchZoom(timelineRef);
     const isTouchMode = useIsTouchMode();
+    const expanded = useTimelineLayoutStore((s) => s.expanded);
+    const showAudioPref = useTimelineLayoutStore((s) => s.showAudio);
+    const editingAudio = uiSettings.focussedComponent === "timeline";
+    // Touch only: one slim row unless expanded (the mouse layout is full)
+    const compact = isTouchMode && !expanded && !isFullscreen;
+    const showAudio = !compact || showAudioPref || editingAudio;
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -98,16 +110,28 @@ export default function TimelineContainer() {
 
     return (
         <div className="flex gap-8">
-            {uiSettings.focussedComponent !== "timeline" && (
+            {!compact && uiSettings.focussedComponent !== "timeline" && (
                 <TimelineControls />
             )}
             {isFullscreen && <PerspectiveSlider />}
             {/* The panel: the scrolling timeline, then its zoom buttons in their own column */}
-            <div className="rounded-6 border-stroke bg-fg-1 @container flex h-full w-full min-w-0 border">
+            <div
+                className={clsx(
+                    "rounded-6 border-stroke bg-fg-1 @container flex h-full w-full min-w-0 border",
+                    compact && "items-center gap-2 px-4",
+                )}
+                data-timeline-layout={compact ? "compact" : "full"}
+            >
+                {compact && !editingAudio && (
+                    <CompactTransport zoomTo={zoomTo} />
+                )}
                 <div
                     ref={timelineRef}
                     id="timeline"
-                    className="relative flex h-full w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden p-8 transition-all duration-200"
+                    className={clsx(
+                        "relative flex h-full w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden transition-all duration-200",
+                        compact ? "px-4 py-6" : "p-8",
+                    )}
                 >
                     <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                         <div className="flex h-fit items-center">
@@ -130,58 +154,66 @@ export default function TimelineContainer() {
                             <PageTimeline />
                         </div>
 
-                        <div className={"flex items-center"}>
-                            {!isFullscreen && (
-                                <div
-                                    className={clsx(
-                                        LABEL_COLUMN_CLASS,
-                                        STICKY_LABEL_CLASS,
-                                        "touch:items-center gap-6",
-                                    )}
-                                >
-                                    <p className="text-sub @max-[360px]:hidden">
-                                        <T keyName="timeline.audio" />
-                                    </p>
-                                    {uiSettings.focussedComponent !==
-                                    "timeline" ? (
-                                        <ActionButton
-                                            action="focusTimeline"
-                                            className={clsx(
-                                                "w-fit",
-                                                TOUCH_TARGET_CLASS,
-                                            )}
-                                        >
-                                            <PencilSimpleIcon />
-                                        </ActionButton>
-                                    ) : (
-                                        <ActionButton
-                                            action="focusCanvas"
-                                            className={clsx(
-                                                "w-fit",
-                                                TOUCH_TARGET_CLASS,
-                                            )}
-                                        >
-                                            <XIcon />
-                                        </ActionButton>
-                                    )}
-                                </div>
-                            )}
+                        {showAudio && (
+                            <div className={"flex items-center"}>
+                                {!isFullscreen && (
+                                    <div
+                                        className={clsx(
+                                            LABEL_COLUMN_CLASS,
+                                            STICKY_LABEL_CLASS,
+                                            "touch:items-center gap-6",
+                                        )}
+                                    >
+                                        <p className="text-sub @max-[360px]:hidden">
+                                            <T keyName="timeline.audio" />
+                                        </p>
+                                        {uiSettings.focussedComponent !==
+                                        "timeline" ? (
+                                            <ActionButton
+                                                action="focusTimeline"
+                                                className={clsx(
+                                                    "w-fit",
+                                                    TOUCH_TARGET_CLASS,
+                                                )}
+                                            >
+                                                <PencilSimpleIcon />
+                                            </ActionButton>
+                                        ) : (
+                                            <ActionButton
+                                                action="focusCanvas"
+                                                className={clsx(
+                                                    "w-fit",
+                                                    TOUCH_TARGET_CLASS,
+                                                )}
+                                            >
+                                                <XIcon />
+                                            </ActionButton>
+                                        )}
+                                    </div>
+                                )}
 
-                            {uiSettings.focussedComponent === "timeline" ? (
-                                <EditableAudioPlayer />
-                            ) : (
-                                <div
-                                    style={{
-                                        display: isFullscreen ? "none" : "flex",
-                                    }}
-                                >
-                                    <AudioPlayer />
-                                </div>
-                            )}
-                        </div>
+                                {uiSettings.focussedComponent === "timeline" ? (
+                                    <EditableAudioPlayer />
+                                ) : (
+                                    <div
+                                        style={{
+                                            display: isFullscreen
+                                                ? "none"
+                                                : "flex",
+                                        }}
+                                    >
+                                        <AudioPlayer />
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
-                <TimelineZoomControls zoomTo={zoomTo} />
+                {compact ? (
+                    <CompactViewToggles audioForced={editingAudio} />
+                ) : (
+                    <TimelineZoomControls zoomTo={zoomTo} />
+                )}
             </div>
         </div>
     );
@@ -198,9 +230,6 @@ const STICKY_LABEL_CLASS =
 
 const LABEL_COLUMN_CLASS =
     "text-sub touch:w-[6.5rem] @max-[360px]:touch:w-[2.75rem] @max-[360px]:w-[1.5rem] w-[4rem] shrink-0";
-
-/** One zoom button press; in and out are the same factor, so they undo each other. */
-const TIMELINE_ZOOM_STEP = 1.25;
 
 function TimelineZoomControls({
     zoomTo: setPixelsPerSecond,

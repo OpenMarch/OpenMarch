@@ -111,7 +111,12 @@ Other field behavior:
 - Pinch zooms the timeline; zoom buttons use magnifier icons and zoom around the
   view's centre; one-finger pans scroll (also over the waveform).
 - Tap tempo has on-screen Tap and beats-per-tap controls in the beat editor.
-- _Compact timeline: filled in below once it lands._
+- Compact timeline (touch only, the default): one ~62 px row with previous page,
+  play/pause and next page, a "…" menu (first/last page, metronome, volume,
+  fullscreen, Edit timeline, timeline zoom), New page and the pages strip, then a
+  waveform toggle and a chevron. The chevron expands to the full timeline
+  (transport card, pages, audio, zoom column), which has a chevron back. Both
+  choices are remembered; the audio row shows by itself in the beat editor.
 
 ### Everywhere
 

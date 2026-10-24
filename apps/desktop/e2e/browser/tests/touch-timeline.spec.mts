@@ -70,7 +70,23 @@ const pageStarts = async (show: Show) =>
         )
     ).map((row) => row.start);
 
-async function setUp(show: Show) {
+/** Taps the centre of a button found by its accessible name. */
+async function tapNamed(
+    page: Page,
+    fingers: ReturnType<typeof touch>,
+    name: string | RegExp,
+) {
+    const b = (await page
+        .getByRole("button", { name, exact: typeof name === "string" })
+        .boundingBox())!;
+    await fingers.tap({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+}
+
+/**
+ * A show with pages 0-2 in the touch layout. The timeline starts compact
+ * (one row); `expanded` taps the chevron for the full timeline.
+ */
+async function setUp(show: Show, { expanded = false } = {}) {
     const { page } = show;
     await createTempoGroup(page, {
         tempo: 120,
@@ -97,6 +113,12 @@ async function setUp(show: Show) {
         );
     });
     await expect(page.locator("html")).toHaveAttribute("data-input", "touch");
+    const layout = page.locator("[data-timeline-layout]");
+    await expect(layout).toHaveAttribute("data-timeline-layout", "compact");
+    if (expanded) {
+        await tapNamed(page, fingers, "Show the full timeline");
+        await expect(layout).toHaveAttribute("data-timeline-layout", "full");
+    }
     return fingers;
 }
 
@@ -125,7 +147,7 @@ test("a finger drags a page edge to change its counts", async ({ show }) => {
 
 test("a pinch zooms the timeline in", async ({ show }) => {
     const { page } = show;
-    const fingers = await setUp(show);
+    const fingers = await setUp(show, { expanded: true });
     const zoomReset = page.getByTitle("Reset timeline zoom");
     await expect(zoomReset).toHaveText("100%");
 
@@ -243,7 +265,7 @@ test("the page-deleted toast undoes the delete", async ({ show }) => {
 
 test("the timeline + and − buttons zoom with a finger", async ({ show }) => {
     const { page } = show;
-    const fingers = await setUp(show);
+    const fingers = await setUp(show, { expanded: true });
     const zoomReset = page.getByTitle("Reset timeline zoom");
     const pageWidth = async () =>
         (await page.locator('[timeline-page-id="1"]').boundingBox())!.width;
@@ -367,7 +389,7 @@ test("the zoom buttons zoom around the middle of the view", async ({
     show,
 }) => {
     const { page } = show;
-    const fingers = await setUp(show);
+    const fingers = await setUp(show, { expanded: true });
     await expect(page.locator("[data-sonner-toast]")).toHaveCount(0, {
         timeout: 15_000,
     });
@@ -395,4 +417,69 @@ test("the zoom buttons zoom around the middle of the view", async ({
     await expect
         .poll(async () => (await page2.boundingBox())!.x)
         .toBeCloseTo(middle + (before - middle) / 1.25, -1);
+});
+
+test("the compact timeline is one row with the transport and pages", async ({
+    show,
+}) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    const panel = page.locator("[data-timeline-layout]");
+    // One slim row: no waveform row and no transport card
+    expect((await panel.boundingBox())!.height).toBeLessThanOrEqual(72);
+    await expect(page.locator("#waveform")).toHaveCount(0);
+    await expect(page.getByLabel("Playback Controls")).toHaveCount(1);
+    await expect(page.getByRole("button", { name: /^First page/ })).toHaveCount(
+        0,
+    );
+    // Previous page, play and next page are in the row
+    await expect(page.getByRole("heading", { name: "Page 2" })).toBeVisible();
+    await tapNamed(page, fingers, /^Previous page/);
+    await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
+    // The waveform toggle shows the audio row, and hides it again
+    await tapNamed(page, fingers, "Show the music waveform");
+    await expect(page.locator("#waveform")).toHaveCount(1);
+    await tapNamed(page, fingers, "Hide the music waveform");
+    await expect(page.locator("#waveform")).toHaveCount(0);
+    // The rest of the transport and the zoom are in the "…" menu
+    await tapNamed(page, fingers, "More timeline controls");
+    const menu = page.locator('[role="menu"]');
+    await expect(menu).toContainText("Metronome");
+    await expect(menu).toContainText("Fullscreen");
+    await expect(menu).toContainText("Edit timeline");
+    await expect(menu.getByTitle("Reset timeline zoom")).toHaveText("100%");
+    await tapNamed(page, fingers, "Zoom timeline in");
+    await expect(menu.getByTitle("Reset timeline zoom")).toHaveText("125%");
+});
+
+test("expanding shows the full transport, and collapsing goes back", async ({
+    show,
+}) => {
+    const { page } = show;
+    const fingers = await setUp(show, { expanded: true });
+    const controls = page.getByLabel("Playback Controls");
+    for (const name of [
+        /^First page/,
+        /^Previous page/,
+        /^Play/,
+        /^Next page/,
+        /^Last page/,
+    ])
+        await expect(controls.getByRole("button", { name })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Make the timeline compact" }),
+    ).toBeVisible();
+    await expect(page.locator("#waveform")).toHaveCount(1);
+    await expect(page.getByTitle("Reset timeline zoom")).toBeVisible();
+    // Remembered for next time
+    expect(
+        await page.evaluate(() =>
+            localStorage.getItem("openmarch:timelineExpanded"),
+        ),
+    ).toBe("true");
+    await tapNamed(page, fingers, "Make the timeline compact");
+    await expect(page.locator("[data-timeline-layout]")).toHaveAttribute(
+        "data-timeline-layout",
+        "compact",
+    );
 });
