@@ -90,10 +90,63 @@ export const handleGroupRotating = (
     rotationSideEffects(group);
 };
 
+/**
+ * The distance a group of marchers has been dragged, snapped to whole steps
+ * of the coordinate rounding setting on each axis (e.g. 2 steps at a time),
+ * so the group keeps its shape. An axis with no rounding moves freely.
+ */
+export function snapGroupDelta(
+    dxPixels: number,
+    dyPixels: number,
+    rounding: { nearestXSteps?: number; nearestYSteps?: number } | undefined,
+    pixelsPerStep: number,
+): { dx: number; dy: number } {
+    const snap = (d: number, steps?: number) => {
+        if (!steps || !(pixelsPerStep > 0)) return d;
+        const unit = steps * pixelsPerStep;
+        return Math.round(d / unit) * unit;
+    };
+    return {
+        dx: snap(dxPixels, rounding?.nearestXSteps),
+        dy: snap(dyPixels, rounding?.nearestYSteps),
+    };
+}
+
 const handleGroupMoving = (e: fabric.IEvent<Event>, group: fabric.Group) => {
     if (!group || typeof group.getObjects !== "function") return;
     const objects = group.getObjects?.();
     if (!Array.isArray(objects)) return;
+    // Move the group in whole rounding steps, like a single marcher snaps
+    const canvas = group.canvas as
+        | (fabric.Canvas & {
+              uiSettings?: {
+                  coordinateRounding?: {
+                      nearestXSteps?: number;
+                      nearestYSteps?: number;
+                  };
+              };
+              fieldProperties?: { pixelsPerStep: number };
+          })
+        | undefined;
+    const original = (e as { transform?: { original?: fabric.Object } })
+        .transform?.original;
+    if (
+        groupContainsMarchers(group) &&
+        canvas?.uiSettings?.coordinateRounding &&
+        canvas.fieldProperties &&
+        original?.left !== undefined &&
+        original?.top !== undefined &&
+        !isSnapOff(e.e as MouseEvent)
+    ) {
+        const { dx, dy } = snapGroupDelta(
+            (group.left ?? 0) - original.left,
+            (group.top ?? 0) - original.top,
+            canvas.uiSettings.coordinateRounding,
+            canvas.fieldProperties.pixelsPerStep,
+        );
+        group.set({ left: original.left + dx, top: original.top + dy });
+        group.setCoords();
+    }
     for (const object of objects) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();

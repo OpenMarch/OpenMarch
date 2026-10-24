@@ -104,14 +104,23 @@ export class DragStepReadout {
         }
         const pixelsPerStep = this.canvas.fieldProperties.pixelsPerStep;
         if (!(pixelsPerStep > 0)) return;
-        const dx = ((target!.left ?? 0) - (original.left ?? 0)) / pixelsPerStep;
-        const dy = ((target!.top ?? 0) - (original.top ?? 0)) / pixelsPerStep;
-        const text = describeStepDelta(
-            dx,
-            dy,
-            this.canvas.fieldProperties.sideDescriptions,
-        );
-        this.show(text, e);
+        // After the target's own moving handler, which snaps it to the
+        // coordinate rounding (a marcher to the grid, a group by whole steps),
+        // so the readout says where the drop will really land
+        queueMicrotask(() => {
+            const dx =
+                ((target!.left ?? 0) - (original.left ?? 0)) / pixelsPerStep;
+            const dy =
+                ((target!.top ?? 0) - (original.top ?? 0)) / pixelsPerStep;
+            this.show(
+                describeStepDelta(
+                    dx,
+                    dy,
+                    this.canvas.fieldProperties.sideDescriptions,
+                ),
+                e,
+            );
+        });
     };
 
     /** While a selection turns: how many degrees, so 15° steps are easy to hit */

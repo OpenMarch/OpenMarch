@@ -74,8 +74,9 @@ Other field behavior:
   pointer types). In touch mode handles sit 20 px outside the dots, the box is at
   least 48 px, and the rotate handle is 96 px out. Flat selections (a row or a
   column) hide the scale handles for the flat axis.
+- **Rounding**: dragging a group moves it in whole steps of the coordinate rounding setting (e.g. 2 steps at a time), keeping its shape, the way a single marcher snaps to the grid; No snap moves freely. This also applies to the desktop layout.
 - **Readouts**: a live step readout while dragging marchers ("4 steps to S2 · 2 steps
-  toward the back") and an angle readout while rotating (snaps to 15°). Both also
+  toward the back", after rounding) and an angle readout while rotating (snaps to 15°). Both also
   show for the mouse.
 - **Selection box** follows its marchers after undo, redo and page changes, and is
   hidden during playback.

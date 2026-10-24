@@ -853,3 +853,94 @@ test("by default one finger on empty field moves the view; press and hold, then 
         .toBe(row.length);
     expect(await savedPositions(show)).toEqual(positions);
 });
+
+test("a group drag moves in whole coordinate-rounding steps, and the readout says so", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    await waitForIdle(page);
+    // Round to every 2 steps on both axes
+    // Round to every 2 steps on both axes, through the settings store (as
+    // if changed in another window)
+    await page.evaluate(() => {
+        const key = "openmarch:uiSettings";
+        const settings = JSON.parse(localStorage.getItem(key) ?? "{}");
+        settings.coordinateRounding = { nearestXSteps: 2, nearestYSteps: 2 };
+        const raw = JSON.stringify(settings);
+        localStorage.setItem(key, raw);
+        window.dispatchEvent(
+            new StorageEvent("storage", { key, newValue: raw }),
+        );
+    });
+    await expect
+        .poll(() =>
+            page.evaluate(
+                () =>
+                    (window.canvas as any).uiSettings?.coordinateRounding
+                        ?.nearestXSteps,
+            ),
+        )
+        .toBe(2);
+    const pps = await page.evaluate(
+        () => (window.canvas as any).fieldProperties.pixelsPerStep as number,
+    );
+    // Screen positions are read before selecting: inside a selection the
+    // helper's positions are relative to the selection
+    const [marcher] = (await drawnMarchers(page)).filter((m) => m.onScreen);
+    await page.keyboard.press("Control+a");
+    await expect
+        .poll(async () => (await selectedDrillNumbers(page)).length)
+        .toBe(4);
+    const before = await savedPositions(show);
+    const scale = await canvasScale(page);
+    // 3.3 steps right and 1.2 steps down: snaps to 4 and 2 steps
+    const to = {
+        x: marcher.screen.x + 3.3 * pps * scale,
+        y: marcher.screen.y + 1.2 * pps * scale,
+    };
+    await page.mouse.move(marcher.screen.x, marcher.screen.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 12 });
+    await expect(page.getByTestId("drag-step-readout")).toHaveText(
+        /4 steps to .* · 2 steps toward the front/,
+    );
+    await page.mouse.up();
+    await expect.poll(() => savedPositions(show)).not.toEqual(before);
+    const after = await savedPositions(show);
+    for (const [i, b] of before.entries()) {
+        expect(after[i].x - b.x).toBeCloseTo(4 * pps, 3);
+        expect(after[i].y - b.y).toBeCloseTo(2 * pps, 3);
+    }
+
+    // A single marcher snaps to the 2-step grid; the readout matches the drop
+    await page.keyboard.press("Escape");
+    await waitForIdle(page);
+    const [one] = (await drawnMarchers(page)).filter((m) => m.onScreen);
+    const oneBefore = (await savedPositions(show)).find(
+        (p) => p.marcher_id === one.id,
+    )!;
+    await page.mouse.move(one.screen.x, one.screen.y);
+    await page.mouse.down();
+    await page.mouse.move(
+        one.screen.x + 3.3 * pps * scale,
+        one.screen.y + 1.2 * pps * scale,
+        { steps: 12 },
+    );
+    const readout = await page.getByTestId("drag-step-readout").textContent();
+    await page.mouse.up();
+    await expect
+        .poll(async () =>
+            (await savedPositions(show)).find((p) => p.marcher_id === one.id),
+        )
+        .not.toEqual(oneBefore);
+    const oneAfter = (await savedPositions(show)).find(
+        (p) => p.marcher_id === one.id,
+    )!;
+    const steps = (n: number) => Math.round((n / pps) * 4) / 4;
+    const dx = steps(oneAfter.x - oneBefore.x);
+    const dy = steps(oneAfter.y - oneBefore.y);
+    expect(readout).toContain(`${dx} steps to`);
+    expect(readout).toContain(`${dy} steps toward the front`);
+});
