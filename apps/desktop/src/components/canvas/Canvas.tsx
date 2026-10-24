@@ -310,6 +310,7 @@ export default function Canvas({
                 canvas.renderOnAddRemove = true;
             }
         });
+        canvas.fire("marchers:rebuilt" as any, {});
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher appearances
@@ -555,6 +556,11 @@ export default function Canvas({
     }, [canvas]);
 
     /* --------------------------Animation Functions-------------------------- */
+
+    // While playing, the selection's box would stay behind as the marchers move
+    useEffect(() => {
+        canvas?.setSelectionHidden(isPlaying);
+    }, [canvas, isPlaying]);
 
     // This effect ensures that when the animation is playing, the shape paths
     // are removed from the canvas.

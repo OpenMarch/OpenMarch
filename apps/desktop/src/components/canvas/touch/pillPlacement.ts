@@ -1,7 +1,8 @@
 /**
- * Where the floating Shift/Alt pill goes when the user hasn't put it
- * somewhere: the candidate spot that covers the fewest marchers, then the
- * least of the field drawing. Positions are in the field container's pixels,
+ * Where the floating pill goes when the user hasn't put it somewhere: the
+ * candidate spot that covers the fewest marchers; at the bottom, within reach
+ * of the thumbs, unless every bottom spot covers marchers; then the one that
+ * covers the least of the field drawing. Positions are in the field container's pixels,
  * as `left` from its left edge and `bottom` from its bottom edge.
  */
 
@@ -15,6 +16,11 @@ export interface Rect {
 export interface PillPosition {
     left: number;
     bottom: number;
+}
+
+interface Candidate extends PillPosition {
+    /** At the top of the field area, away from the thumbs */
+    top: boolean;
 }
 
 /** Room left for the zoom buttons in the bottom-right corner */
@@ -33,18 +39,23 @@ const overlap = (a: Rect, b: Rect) => {
 export function pillCandidates(
     container: { width: number; height: number },
     pill: { width: number; height: number },
-): PillPosition[] {
+): Candidate[] {
     const right = container.width - pill.width - PILL_EDGE;
     const top = container.height - pill.height - PILL_EDGE;
     return [
-        { left: right, bottom: ZOOM_CONTROLS_CLEARANCE },
-        { left: PILL_EDGE, bottom: PILL_EDGE },
-        { left: (container.width - pill.width) / 2, bottom: PILL_EDGE },
-        { left: PILL_EDGE, bottom: top },
-        { left: right, bottom: top },
+        { left: right, bottom: ZOOM_CONTROLS_CLEARANCE, top: false },
+        { left: PILL_EDGE, bottom: PILL_EDGE, top: false },
+        {
+            left: (container.width - pill.width) / 2,
+            bottom: PILL_EDGE,
+            top: false,
+        },
+        { left: PILL_EDGE, bottom: top, top: true },
+        { left: right, bottom: top, top: true },
     ].map((p) => ({
         left: Math.max(0, p.left),
         bottom: Math.max(0, Math.min(p.bottom, top)),
+        top: p.top,
     }));
 }
 
@@ -54,6 +65,10 @@ export function pillCandidates(
  * @param field The field drawing, in container pixels (top-left origin)
  * @param marchers Marcher dots, in container pixels
  */
+// A spot at the top only wins when every bottom spot covers marchers: the pill
+// belongs within reach of the thumbs
+const TOP_PENALTY = 1e8;
+
 export function choosePillPosition(
     container: { width: number; height: number },
     pill: { width: number; height: number },
@@ -61,7 +76,7 @@ export function choosePillPosition(
     marchers: { x: number; y: number }[],
 ): PillPosition {
     const candidates = pillCandidates(container, pill);
-    let best = candidates[0];
+    let best: PillPosition = candidates[0];
     let bestScore = Infinity;
     for (const candidate of candidates) {
         const rect: Rect = {
@@ -85,9 +100,10 @@ export function choosePillPosition(
                 m.y <= padded.top + padded.height,
         ).length;
         const fieldArea = field ? overlap(rect, field) : 0;
-        const score = covered * 1e9 + fieldArea;
+        const score =
+            covered * 1e9 + (candidate.top ? TOP_PENALTY : 0) + fieldArea;
         if (score < bestScore) {
-            best = candidate;
+            best = { left: candidate.left, bottom: candidate.bottom };
             bestScore = score;
         }
     }

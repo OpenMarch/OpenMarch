@@ -65,11 +65,35 @@ export const TOUCH_DRAG_START_PX = 12;
 /** A pen drag from empty field turns into lasso or panning after this (px) */
 const PEN_DRAG_START_PX = 4;
 
-/** The field drag mode, which only applies in touch mode */
-const fieldDragMode = () =>
-    useInputModeStore.getState().mode === "touch"
-        ? useFieldDragModeStore.getState().mode
-        : "box";
+export const TOUCH_LAYOUT_HINT_KEY = "openmarch:touchLayoutHintShown";
+
+/**
+ * Once: a finger on the field while the app is laid out for a mouse (a touch
+ * screen laptop in Automatic) gets a pointer to the Touch layout.
+ */
+function maybeShowTouchLayoutHint() {
+    const { mode, preference } = useInputModeStore.getState();
+    if (mode !== "pointer" || preference !== "auto") return;
+    try {
+        if (localStorage.getItem(TOUCH_LAYOUT_HINT_KEY)) return;
+        localStorage.setItem(TOUCH_LAYOUT_HINT_KEY, "1");
+    } catch {
+        return;
+    }
+    toast("Using touch? The Touch layout has bigger controls.", {
+        id: "touch-layout-hint",
+        duration: 10000,
+        action: {
+            label: "Open Settings",
+            onClick: () => {
+                runAction("openSettings");
+            },
+        },
+    });
+}
+
+/** The field drag mode (set on the pill in the touch layout; Box until changed) */
+const fieldDragMode = () => useFieldDragModeStore.getState().mode;
 
 /**
  * Puts the field's touch gestures (`touchGestures.ts`) on a canvas: listens to
@@ -280,6 +304,7 @@ export class TouchGestureAdapter {
                     this.canvas.requestRenderAll();
                 }, 0);
             }
+            if (press.converted === "pan") this.canvas.fire("view:settled", {});
             return press.converted === "pan";
         }
         if (press.converted === "pan" && press.navigation) {
@@ -377,6 +402,7 @@ export class TouchGestureAdapter {
                 this.fabricPointerId = effect.id;
                 this.downEvent = e ?? null;
                 this.armTarget = null;
+                maybeShowTouchLayoutHint();
                 canvas.touchDeferredClear = false;
                 break;
             case "singleDragged":
@@ -396,23 +422,22 @@ export class TouchGestureAdapter {
                     if (caught.length > 0 && !isShiftHeld(e))
                         canvas.discardActiveObject(e);
                 }
-                if (effect.tap && canvas.touchDeferredClear) {
+                if (effect.tap) {
+                    canvas.touchDeferredClear = false;
+                    const onNothing = !canvas.lastPressHitSomething;
+                    const shift = isShiftHeld(e);
                     // After Fabric has handled this release
                     setTimeout(() => {
-                        if (!canvas.touchDeferredClear) return;
-                        canvas.touchDeferredClear = false;
-                        canvas.discardActiveObject();
-                        canvas.requestRenderAll();
+                        if (onNothing) {
+                            // Empty field, or merely near a marcher: pick the
+                            // nearest marcher within reach, or clear
+                            this.tapOnEmptyField(effect.point, shift);
+                        } else {
+                            this.tapInsideSelection(effect.point, shift);
+                        }
                     }, 0);
                 } else {
                     canvas.touchDeferredClear = false;
-                    if (effect.tap) {
-                        const shift = isShiftHeld(e);
-                        setTimeout(
-                            () => this.tapInsideSelection(effect.point, shift),
-                            0,
-                        );
-                    }
                 }
                 break;
             case "cancelSingle":
@@ -425,6 +450,9 @@ export class TouchGestureAdapter {
                 break;
             case "longPressMoved":
                 this.longPressMoved();
+                break;
+            case "longPressCancelled":
+                this.armTarget = null;
                 break;
             case "longPressCommit":
                 this.commitLongPress();
@@ -452,6 +480,7 @@ export class TouchGestureAdapter {
             }
             case "navigationEnd":
                 this.navigationStart = null;
+                canvas.fire("view:settled", {});
                 break;
             case "undo":
                 void this.history("undo");
@@ -598,7 +627,9 @@ export class TouchGestureAdapter {
         );
         // With nothing to undo, the action shows its own message
         if (ran && available)
-            toast(direction === "undo" ? "Undo" : "Redo", { duration: 1200 });
+            toast(direction === "undo" ? "Undone" : "Redone", {
+                duration: 1200,
+            });
     }
 
     /** The marcher nearest to a finger (client px), within the touch radius */
@@ -623,28 +654,50 @@ export class TouchGestureAdapter {
     }
 
     /**
+     * A tap that didn't land on anything: the nearest marcher within the
+     * finger's reach is selected (Shift: added or taken out); with none in
+     * reach, the selection is cleared.
+     */
+    private tapOnEmptyField(client: { x: number; y: number }, shift: boolean) {
+        const canvas = this.canvas;
+        const marcher = this.marcherAt(client);
+        if (!marcher) {
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+            return;
+        }
+        const selected = canvas
+            .getActiveObjects()
+            .filter(Selectable.isSelectable) as Selectable.ISelectable[];
+        if (!shift) {
+            canvas.setActiveObjects([marcher]);
+            return;
+        }
+        canvas.setActiveObjects(
+            selected.includes(marcher)
+                ? selected.filter((o) => o !== marcher)
+                : [...selected, marcher],
+        );
+    }
+
+    /**
      * A tap on a marcher that sits inside a multi-selection's box but isn't in
-     * it: Fabric took the tap for the whole selection. Select the marcher (or
-     * add it, with Shift) as a tap anywhere else would.
+     * it: Fabric took the tap for the whole selection. Select the marcher, as a
+     * tap anywhere else would.
      */
     private tapInsideSelection(
         client: { x: number; y: number },
         shift: boolean,
     ) {
+        // With Shift (or Add), Fabric already added or removed the marcher
+        if (shift) return;
         const canvas = this.canvas;
         const active = canvas.getActiveObject();
         if (!active || active.type !== "activeSelection") return;
         const marcher = this.marcherAt(client);
         if (!marcher) return;
-        const selected = canvas.getActiveObjects();
-        if (selected.includes(marcher)) return;
-        const next = shift
-            ? ([
-                  ...selected.filter(Selectable.isSelectable),
-                  marcher,
-              ] as Selectable.ISelectable[])
-            : [marcher];
-        canvas.setActiveObjects(next);
+        if (canvas.getActiveObjects().includes(marcher)) return;
+        canvas.setActiveObjects([marcher]);
     }
 
     /** The finger has been held still: say what letting go would do */
@@ -697,6 +750,12 @@ export class TouchGestureAdapter {
             Selectable.isSelectable,
         ) as Selectable.ISelectable[];
         const removing = before.includes(marcher);
+        if (removing && before.length === 1) {
+            // The only selected marcher: taking it out would empty the
+            // selection by surprise. The ring was enough.
+            this.restoreSelection(this.selectionSnapshot);
+            return;
+        }
         const next = removing
             ? before.filter((o) => o !== marcher)
             : [...before, marcher];

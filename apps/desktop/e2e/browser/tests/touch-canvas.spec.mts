@@ -216,6 +216,22 @@ async function emptyFieldPair(page: Page) {
     throw new Error("No empty field to tap on");
 }
 
+/** A finger tap on the middle of an element */
+async function tapElement(
+    fingers: { tap: (p: { x: number; y: number }) => Promise<void> },
+    locator: import("@playwright/test").Locator,
+) {
+    // The pill can still be settling into its spot: wait until it stays put
+    let box = (await locator.boundingBox())!;
+    for (let i = 0; i < 20; i++) {
+        await new Promise((r) => setTimeout(r, 150));
+        const again = (await locator.boundingBox())!;
+        if (again.x === box.x && again.y === box.y) break;
+        box = again;
+    }
+    await fingers.tap({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+}
+
 const viewport = (page: Page) =>
     page.evaluate(() => [...(window.canvas as any).viewportTransform]);
 
@@ -524,17 +540,12 @@ test("in the Pan drag mode, one finger on empty field moves the view and selects
     const [marcher] = await touchableMarchers(page);
     await fingers.tap(marcher.screen);
     await waitForIdle(page);
-    // Box -> Lasso -> Pan
+    // Drag: Box, opened, then Pan
     const modeButton = page.getByTestId("field-drag-mode");
     await expect(modeButton).toBeVisible();
-    for (const label of ["Lasso", "Pan"]) {
-        const box = (await modeButton.boundingBox())!;
-        await fingers.tap({
-            x: box.x + box.width / 2,
-            y: box.y + box.height / 2,
-        });
-        await expect(modeButton).toContainText(label);
-    }
+    await tapElement(fingers, modeButton);
+    await tapElement(fingers, page.getByRole("menuitemradio", { name: /Pan/ }));
+    await expect(modeButton).toContainText("Pan");
     const positions = await savedPositions(show);
     const viewBefore = await viewport(page);
     const [from] = await emptyFieldPair(page);
@@ -564,4 +575,132 @@ test("mouse: Shift-click on a selected marcher under a handle takes it out inste
     await page.mouse.click(b1.screen.x, b1.screen.y);
     await page.keyboard.up("Shift");
     await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B2"]);
+});
+
+test("with Add on, a tap on a selected marcher's label toggles it and nothing crashes", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [a, b, c] = await touchableMarchers(page);
+    await fingers.tap(a.screen);
+    // Latch Add. (On a busy test machine a tap can take long enough to count
+    // as a long press, which explains instead: tap again until it's on.)
+    const addOn = page.getByRole("button", { name: /^Add, on/ });
+    for (
+        let attempt = 0;
+        attempt < 3 && !(await addOn.isVisible());
+        attempt++
+    ) {
+        await tapElement(
+            fingers,
+            page.getByRole("button", { name: /^Add: hold/ }),
+        );
+        await addOn
+            .waitFor({ state: "visible", timeout: 2000 })
+            .catch(() => {});
+    }
+    await expect(addOn).toBeVisible();
+    // The help opens on first use; close it with "?"
+    const help = page.getByRole("note");
+    await page.waitForTimeout(300);
+    if (await help.isVisible()) {
+        await tapElement(
+            fingers,
+            page.getByRole("button", { name: "What these buttons do" }),
+        );
+        await expect(help).toBeHidden();
+    }
+    for (const m of [b, c]) {
+        const now = (await drawnOnScreen(page)).find(
+            (d) => d.drillNumber === m.drillNumber,
+        )!;
+        await fingers.tap(now.screen);
+    }
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([a.drillNumber, b.drillNumber, c.drillNumber].sort());
+    // 7 px above c's dot, on its label
+    const cNow = (await drawnOnScreen(page)).find(
+        (d) => d.drillNumber === c.drillNumber,
+    )!;
+    await fingers.tap({ x: cNow.screen.x, y: cNow.screen.y - 7 });
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([a.drillNumber, b.drillNumber].sort());
+    // (The fixture fails the test on any page error, e.g. a stack overflow)
+});
+
+test("a press near a marcher but not on its dot drags a box, not the marcher", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    await waitForIdle(page);
+    const before = await savedPositions(show);
+    const [m] = await touchableMarchers(page);
+    // 18 px below the dot: within a tap's reach, but not on the dot
+    const start = { x: m.screen.x, y: m.screen.y + 18 };
+    await fingers.drag(start, { x: start.x + 120, y: start.y + 60 });
+    await waitForIdle(page);
+    expect(await savedPositions(show)).toEqual(before);
+    // The same spot as a tap picks the marcher
+    await fingers.tap(start);
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([m.drillNumber]);
+});
+
+test("a long press on the only selected marcher keeps it selected", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [m] = await touchableMarchers(page);
+    await fingers.tap(m.screen);
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([m.drillNumber]);
+    await fingers.tap(m.screen, 700);
+    await page.waitForTimeout(300);
+    expect(await selectedDrillNumbers(page)).toEqual([m.drillNumber]);
+});
+
+test("the tap that closes the help doesn't touch the field", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [m, other] = await touchableMarchers(page);
+    await fingers.tap(m.screen);
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([m.drillNumber]);
+    // On a busy test machine a tap can take long enough to count as a long
+    // press (which explains instead): tap again until the help is open
+    const help = page.getByRole("note");
+    for (let attempt = 0; attempt < 3 && !(await help.isVisible()); attempt++) {
+        await tapElement(
+            fingers,
+            page.getByRole("button", { name: "What these buttons do" }),
+        );
+        await help.waitFor({ state: "visible", timeout: 3000 }).catch(() => {});
+    }
+    await expect(help).toBeVisible();
+    // On another marcher, and on empty field: neither changes the selection
+    const otherNow = (await drawnOnScreen(page)).find(
+        (d) => d.drillNumber === other.drillNumber,
+    )!;
+    await fingers.tap(otherNow.screen);
+    await expect(page.getByRole("note")).toBeHidden();
+    await page.waitForTimeout(300);
+    expect(await selectedDrillNumbers(page)).toEqual([m.drillNumber]);
 });

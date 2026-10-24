@@ -346,9 +346,27 @@ describe("long press", () => {
         let { state } = run([touch("down", 1, 100, 100, 0)]);
         state = stepGesture(state, { type: "timer", t: LP + 5 }).state;
         const late = stepGesture(state, touch("move", 1, 100, 130, LP - 100));
-        expect(types(late.effects)).toContain("longPressMoved");
+        // Not a long press at all: no lasso from empty field
+        expect(types(late.effects)).toContain("longPressCancelled");
+        expect(types(late.effects)).not.toContain("longPressMoved");
         const up = stepGesture(late.state, touch("up", 1, 100, 160, LP + 50));
         expect(types(up.effects)).toEqual(["singleEnd"]);
+    });
+
+    it("a release handled late but made before the hold was long enough is a tap", () => {
+        let { state } = run([touch("down", 1, 100, 100, 0)]);
+        state = stepGesture(state, { type: "timer", t: LP + 50 }).state;
+        const up = stepGesture(state, touch("up", 1, 100, 100, LP - 200));
+        expect(types(up.effects)).toEqual(["longPressCancelled", "singleEnd"]);
+        expect(up.effects[1]).toMatchObject({ tap: true });
+        expect(up.passThrough).toBe(true);
+    });
+
+    it("a move after a real hold still continues as a lasso or drag", () => {
+        let { state } = run([touch("down", 1, 100, 100, 0)]);
+        state = stepGesture(state, { type: "timer", t: LP }).state;
+        const move = stepGesture(state, touch("move", 1, 100, 130, LP + 100));
+        expect(types(move.effects)).toContain("longPressMoved");
     });
 
     it("is lost when a second finger arrives", () => {
