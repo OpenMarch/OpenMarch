@@ -699,18 +699,17 @@ export default function PageTimeline() {
                     );
                 })}
             </ul>
-            {/* New page right after the last page (with fingers it is the
-                labelled button in the label column instead: NewPageButton) */}
-            {!isFullscreen && !isTouchMode && (
+            {/* New page: a round + right after the last page (44 px for fingers) */}
+            {!isFullscreen && (
                 <button
-                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] shrink-0 cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="bg-accent text-sub text-text-invert touch:size-44 ml-8 flex size-[28px] shrink-0 cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => addPage()}
                     disabled={!canAddPage}
                     aria-label={t("timeline.page.add")}
                     title={t("timeline.page.add")}
                     data-testid="add-page"
                 >
-                    <PlusIcon size={20} />
+                    <PlusIcon size={20} className="touch:size-24" />
                 </button>
             )}
         </div>

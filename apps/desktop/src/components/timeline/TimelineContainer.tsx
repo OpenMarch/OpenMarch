@@ -21,7 +21,6 @@ import clsx from "clsx";
 import { usePinchZoom } from "./usePinchZoom";
 import { scrollLeftForPage } from "./pageScroll";
 import { useInputModeStore, useIsTouchMode } from "@/stores/InputModeStore";
-import NewPageButton from "./NewPageButton";
 import { TOUCH_TARGET_CLASS } from "./touchTargets";
 import {
     TIMELINE_BASE_PX_PER_SEC,
@@ -133,16 +132,7 @@ export default function TimelineContainer() {
                         compact ? "px-4 py-6" : "p-8",
                     )}
                 >
-                    <div
-                        className={clsx(
-                            "flex h-full min-h-0 w-fit flex-col gap-8",
-                            // Touch: rows at the top, so the pages row lines up
-                            // with the New page slot beside the scrolling strip
-                            isTouchMode && !isFullscreen
-                                ? "justify-start"
-                                : "justify-center",
-                        )}
-                    >
+                    <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                         <div className="flex h-fit items-center">
                             {/* No labels in the compact row: it needs the room */}
                             {!compact && (
@@ -212,20 +202,6 @@ export default function TimelineContainer() {
                         )}
                     </div>
                 </div>
-                {/* Touch: New page in its own slot after the pages, outside the
-                    scrolling strip, so it never covers a page box (with a mouse it
-                    is the round + after the last page) */}
-                {isTouchMode && !isFullscreen && (
-                    <div
-                        className={clsx(
-                            "flex shrink-0",
-                            compact ? "items-center" : "items-start pt-8 pr-8",
-                        )}
-                        data-testid="new-page-slot"
-                    >
-                        <NewPageButton />
-                    </div>
-                )}
                 {compact ? (
                     <CompactViewToggles audioForced={editingAudio} />
                 ) : (
