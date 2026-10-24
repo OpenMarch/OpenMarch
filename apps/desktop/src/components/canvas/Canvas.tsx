@@ -33,6 +33,7 @@ import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import TouchModifierButtons from "./touch/TouchModifierButtons";
 import { startPenPalmGuard } from "./touch/penPalmGuard";
+import { startBubbleDismissGuard } from "./touch/swallowPress";
 
 /**
  * The field/stage UI of OpenMarch
@@ -104,6 +105,8 @@ export default function Canvas({
 
     // Palm rejection everywhere while a pen is down
     useEffect(() => startPenPalmGuard(), []);
+    // A press that only closes a long-press explanation doesn't reach the field
+    useEffect(() => startBubbleDismissGuard(() => containerRef.current), []);
 
     // Custom hooks for the canvas
     useSelectionListeners({ canvas });

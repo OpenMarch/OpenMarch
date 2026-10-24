@@ -153,7 +153,10 @@ describe("two fingers", () => {
                 geometry: { mid: { x: 280, y: 110 }, distance: null },
             },
         ]);
-        expect(types(results[5].effects)).toEqual(["navigationEnd"]);
+        expect(types(results[5].effects)).toEqual([
+            "navigate",
+            "navigationEnd",
+        ]);
         expect(results[5].passThrough).toBe(false);
         expect(state.mode).toBe("idle");
         const all = results.flatMap((r) => r.effects);
@@ -182,7 +185,10 @@ describe("two fingers", () => {
         ]);
         expect(types(results[2].effects)).toEqual(["navigationStart"]);
         // A cancelled finger is not a tap
-        expect(types(results[3].effects)).toEqual(["navigationEnd"]);
+        expect(types(results[3].effects)).toEqual([
+            "navigate",
+            "navigationEnd",
+        ]);
         expect(state.mode).toBe("idle");
     });
 });
@@ -362,6 +368,14 @@ describe("long press", () => {
         expect(up.passThrough).toBe(true);
     });
 
+    it("one big jump after the hold (moves held back by a busy page) is a drag", () => {
+        let { state } = run([touch("down", 1, 100, 100, 0)]);
+        state = stepGesture(state, { type: "timer", t: LP }).state;
+        const jump = stepGesture(state, touch("move", 1, 195, 70, LP + 40));
+        expect(types(jump.effects)).toContain("longPressCancelled");
+        expect(types(jump.effects)).not.toContain("longPressMoved");
+    });
+
     it("a move after a real hold still continues as a lasso or drag", () => {
         let { state } = run([touch("down", 1, 100, 100, 0)]);
         state = stepGesture(state, { type: "timer", t: LP }).state;
@@ -514,7 +528,7 @@ describe("Move view drag mode (panSingle)", () => {
             },
         ]);
         const up = stepGesture(move.state, touch("up", 1, 150, 120, 120));
-        expect(types(up.effects)).toEqual(["navigationEnd"]);
+        expect(types(up.effects)).toEqual(["navigate", "navigationEnd"]);
         expect(up.state.mode).toBe("idle");
     });
 
@@ -529,6 +543,29 @@ describe("Move view drag mode (panSingle)", () => {
         const r = stepGesture(initialGestureState(), { type: "panSingle" });
         expect(r.effects).toEqual([]);
         expect(r.state.mode).toBe("idle");
+    });
+});
+
+describe("quick flicks", () => {
+    it("a flick with no moves at all is not a tap", () => {
+        const { effects } = run([
+            touch("down", 1, 100, 100, 0),
+            touch("up", 1, 180, 100, 150),
+        ]);
+        expect(effects[1]).toMatchObject({ type: "singleEnd", tap: false });
+    });
+
+    it("a pan follows the finger to where it lifted, even with few moves", () => {
+        let { state } = run([
+            touch("down", 1, 100, 100, 0),
+            touch("move", 1, 115, 100, 40),
+        ]);
+        state = stepGesture(state, { type: "panSingle" }).state;
+        const up = stepGesture(state, touch("up", 1, 190, 100, 180));
+        expect(up.effects[0]).toEqual({
+            type: "navigate",
+            geometry: { mid: { x: 190, y: 100 }, distance: null },
+        });
     });
 });
 

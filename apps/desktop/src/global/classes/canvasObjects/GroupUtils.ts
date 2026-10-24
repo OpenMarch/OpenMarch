@@ -233,8 +233,35 @@ export const cleanupGroupHandlers = (group: fabric.Group) => {
     delete groupAny.__originalScaleY;
 };
 
+/**
+ * Spread (canvas units) below which a selection counts as flat on an axis,
+ * e.g. a single row: scaling it on that axis has nothing to scale and only
+ * moves it.
+ */
+const FLAT_SPREAD = 1;
+
+/** Hides the side handles that would scale a flat selection on its flat axis */
+export const hideFlatAxisHandles = (group: fabric.Group) => {
+    const centres = group
+        .getObjects()
+        .filter((o) => o instanceof CanvasMarcher)
+        .map((o) => o.getCenterPoint());
+    if (centres.length < 2) return;
+    const spread = (values: number[]) =>
+        Math.max(...values) - Math.min(...values);
+    const flatX = spread(centres.map((c) => c.x)) < FLAT_SPREAD;
+    const flatY = spread(centres.map((c) => c.y)) < FLAT_SPREAD;
+    group.setControlsVisibility({
+        ml: !flatX,
+        mr: !flatX,
+        mt: !flatY,
+        mb: !flatY,
+    });
+};
+
 export const setGroupAttributes = (group: fabric.Group) => {
     const isLocked = anyObjectsAreLocked(group);
+    hideFlatAxisHandles(group);
     group.hasControls = !isLocked;
     group.hasBorders = true;
     group.hasRotatingPoint = !isLocked;

@@ -18,6 +18,7 @@ import {
     SelectionIcon,
 } from "@phosphor-icons/react";
 import { LongPressBubble, useLongPress } from "@openmarch/ui";
+import { toast } from "sonner";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import {
@@ -26,6 +27,7 @@ import {
 } from "@/stores/TouchModifierStore";
 import { FieldDragMode, useFieldDragModeStore } from "./fieldDragMode";
 import { choosePillPosition, PILL_EDGE, Rect } from "./pillPlacement";
+import { swallowPress } from "./swallowPress";
 
 export const TOUCH_MODIFIER_POSITION_KEY = "openmarch:touchModifierPosition";
 export const TOUCH_MODIFIER_HELP_SEEN_KEY = "openmarch:touchModifierHelpSeen";
@@ -222,37 +224,6 @@ function fieldLayout(
 }
 
 /**
- * Swallows the rest of a press (its release and click), e.g. the tap that
- * closes a pop-up, so it doesn't also act on the field under it.
- */
-function swallowPress(pointerId: number) {
-    const stop = (e: Event) => {
-        if (
-            (e as PointerEvent).pointerId !== undefined &&
-            (e as PointerEvent).pointerId !== pointerId &&
-            e.type !== "click"
-        )
-            return;
-        e.stopPropagation();
-        e.preventDefault();
-    };
-    const types = ["pointermove", "pointerup", "pointercancel", "click"];
-    for (const t of types) window.addEventListener(t, stop, true);
-    const done = () => {
-        for (const t of types) window.removeEventListener(t, stop, true);
-    };
-    // The click follows the release; give it a moment
-    const onUp = (e: PointerEvent) => {
-        if (e.pointerId !== pointerId) return;
-        window.removeEventListener("pointerup", onUp, true);
-        window.removeEventListener("pointercancel", onUp, true);
-        setTimeout(done, 350);
-    };
-    window.addEventListener("pointerup", onUp, true);
-    window.addEventListener("pointercancel", onUp, true);
-}
-
-/**
  * The floating pill over the field in touch mode, where there is often no
  * keyboard:
  * - "Drag: Box/Lasso/Pan": what a drag from empty field does,
@@ -295,16 +266,29 @@ export default function TouchModifierButtons({
         startY: number;
         from: Position;
     } | null>(null);
-    const showHelpOnce = useCallback(() => {
-        if (readStorage(TOUCH_MODIFIER_HELP_SEEN_KEY)) return;
-        writeStorage(TOUCH_MODIFIER_HELP_SEEN_KEY, "1");
-        setPopup("help");
+    // The first time each is turned on, one line says what it does (the help
+    // itself stays closed: it would cover the field the next tap is meant for)
+    const noteOnce = useCallback((modifier: TouchModifier) => {
+        const key = `${TOUCH_MODIFIER_HELP_SEEN_KEY}:${modifier}`;
+        if (readStorage(key)) return;
+        writeStorage(key, "1");
+        if (!useTouchModifierStore.getState().latched[modifier]) return;
+        toast(
+            modifier === "shift"
+                ? "Add is on: tap marchers to add them or take them out."
+                : "No snap is on: moving and turning don't snap to steps.",
+            { duration: 2500 },
+        );
     }, []);
-    const shift = useModifierPress("shift", showHelpOnce, () =>
-        setExplained("shift"),
+    const shift = useModifierPress(
+        "shift",
+        () => noteOnce("shift"),
+        () => setExplained("shift"),
     );
-    const alt = useModifierPress("alt", showHelpOnce, () =>
-        setExplained("alt"),
+    const alt = useModifierPress(
+        "alt",
+        () => noteOnce("alt"),
+        () => setExplained("alt"),
     );
     const modeLongPress = useLongPress(() => setExplained("drag"));
     const helpLongPress = useLongPress(() => setExplained("help"));
@@ -371,13 +355,14 @@ export default function TouchModifierButtons({
     // A pop-up closes on a press anywhere else (which does nothing more), or
     // Escape. Registered as the pop-up appears, so no press slips through.
     useLayoutEffect(() => {
-        if (!popup) return;
+        if (!popup && !explained) return;
         const onDown = (e: PointerEvent) => {
             if (rootRef.current?.contains(e.target as Node)) return;
             e.stopPropagation();
             e.preventDefault();
             swallowPress(e.pointerId);
             setPopup(null);
+            setExplained(null);
         };
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") setPopup(null);
@@ -388,7 +373,7 @@ export default function TouchModifierButtons({
             document.removeEventListener("pointerdown", onDown, true);
             document.removeEventListener("keydown", onKey);
         };
-    }, [popup]);
+    }, [popup, explained]);
 
     const onGripDown = (e: React.PointerEvent<HTMLDivElement>) => {
         gripLongPress.onPointerDown(e);

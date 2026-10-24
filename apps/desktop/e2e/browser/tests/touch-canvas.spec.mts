@@ -705,3 +705,76 @@ test("the tap that closes the help doesn't touch the field", async ({
     await page.waitForTimeout(300);
     expect(await selectedDrillNumbers(page)).toEqual([m.drillNumber]);
 });
+
+test("mouse: a one-row selection offers no handles that scale it up or down", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    await clickMarcher(page, "B1");
+    await clickMarcher(page, "B2", { add: true });
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B1", "B2"]);
+    const visible = await page.evaluate(() => {
+        const group = (window.canvas as any).getActiveObject();
+        return ["mt", "mb", "ml", "mr"].map((c) => group.isControlVisible(c));
+    });
+    expect(visible).toEqual([false, false, true, true]);
+});
+
+test("mouse: a click a few px off a dot still selects the marcher", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const dot = await page.evaluate(() => {
+        const canvas = window.canvas as any;
+        const marcher = canvas
+            .getCanvasMarchers()
+            .find((m: any) => m.marcherObj.drill_number === "B2");
+        const p = marcher.getAbsoluteCoords();
+        const rect = canvas.upperCanvasEl.getBoundingClientRect();
+        const vpt = canvas.viewportTransform;
+        const css = rect.width / canvas.width;
+        const r = 5 * vpt[0] * css; // the dot's radius on screen
+        return {
+            x: rect.x + (p.x * vpt[0] + vpt[4]) * css,
+            y: rect.y + (p.y * vpt[3] + vpt[5]) * css,
+            r,
+        };
+    });
+    // Below the dot, outside it by 3 px
+    await page.mouse.click(dot.x, dot.y + dot.r + 3);
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B2"]);
+});
+
+test("the tap that closes a long-press explanation doesn't touch the field", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    const [m, other] = await touchableMarchers(page);
+    await fingers.tap(m.screen);
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual([m.drillNumber]);
+    // Long press "Drag": it explains instead of opening the menu
+    const modeButton = page.getByTestId("field-drag-mode");
+    const box = (await modeButton.boundingBox())!;
+    await fingers.tap(
+        { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+        800,
+    );
+    const bubble = page.getByTestId("long-press-bubble");
+    await expect(bubble).toBeVisible();
+    const otherNow = (await drawnOnScreen(page)).find(
+        (d) => d.drillNumber === other.drillNumber,
+    )!;
+    await fingers.tap(otherNow.screen);
+    await expect(bubble).toBeHidden();
+    await page.waitForTimeout(300);
+    expect(await selectedDrillNumbers(page)).toEqual([m.drillNumber]);
+});
