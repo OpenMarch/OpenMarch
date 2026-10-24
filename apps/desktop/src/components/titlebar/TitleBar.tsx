@@ -21,6 +21,8 @@ import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T, useTolgee } from "@tolgee/react";
 import ActionButton from "@/shortcuts/ActionButton";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { setToolbarTabsSlot } from "./toolbarSlot";
 import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
@@ -51,7 +53,10 @@ export default function TitleBar({
     variant?: "main" | "settings";
 }) {
     const { t } = useTolgee();
-    const showFilePath = variant === "main";
+    const isTouch = useIsTouchMode();
+    // Touch mode in the editor: the toolbar's tabs take the middle of this row (one row of chrome)
+    const tabsInTitleBar = isTouch && variant === "main" && !!showControls;
+    const showFilePath = variant === "main" && !tabsInTitleBar;
     // In a browser there are no traffic lights, native menu or window buttons.
     const isMacOS = window.electron.isMacOS && !isWebBuild;
     const showWindowControls = !isMacOS && !isWebBuild;
@@ -118,7 +123,7 @@ export default function TitleBar({
                 // The traffic lights ignore page zoom, so the bar does too or they drift apart.
                 style={isMacOS ? { zoom: 1 / zoomFactor } : undefined}
             >
-                <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
+                <div className="titlebar-leading touch:gap-8 touch:px-12 touch:py-6 flex items-center gap-20 px-24 py-8">
                     {isWebBuild && variant === "main" && <WebFileMenu />}
                     {showWindowControls && (
                         <button
@@ -137,19 +142,20 @@ export default function TitleBar({
                             height={21}
                             className="text-accent"
                         />
-                        <p className="text-body min-w-0 leading-none">
+                        {/* Touch mode: the logo alone, to leave the row for the toolbar tabs */}
+                        <p className="text-body touch:hidden min-w-0 leading-none">
                             OpenMarch
                         </p>
                         {variant === "main" && (
                             <>
-                                <p className="text-body leading-none opacity-50">
+                                <p className="text-body touch:hidden leading-none opacity-50">
                                     {currentVersion}
                                     {webChannel === "nightly" && " nightly"}
                                 </p>
                                 {isWebBuild && (
                                     <button
                                         type="button"
-                                        className="bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
+                                        className="touch:hidden bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
                                         onClick={() => openWebWelcome(true)}
                                     >
                                         Web
@@ -161,11 +167,19 @@ export default function TitleBar({
                         )}
                     </div>
                 </div>
-                <p className="text-sub truncate text-center">
-                    {showFilePath ? displayDbPath : null}
-                </p>
+                {tabsInTitleBar ? (
+                    <div
+                        ref={setToolbarTabsSlot}
+                        className="titlebar-button flex min-w-0 items-center"
+                        data-testid="titlebar-toolbar-tabs"
+                    />
+                ) : (
+                    <p className="text-sub truncate text-center">
+                        {showFilePath ? displayDbPath : null}
+                    </p>
+                )}
                 <div
-                    className={`titlebar-button flex items-center gap-12 ${isMacOS ? "pr-24" : ""} ${isWebBuild ? "pr-16" : ""}`}
+                    className={`titlebar-button touch:gap-4 flex items-center gap-12 ${isMacOS ? "pr-24" : ""} ${isWebBuild ? "touch:pr-8 pr-16" : ""}`}
                 >
                     {variant === "main" && (
                         <ActionButton
