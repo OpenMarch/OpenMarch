@@ -20,7 +20,7 @@ import {
     GestureInput,
     GestureState,
     NavigationGeometry,
-    PALM_CONTACT_PX,
+    isPalmContact,
     PointerInput,
     initialGestureState,
     navigationTransform,
@@ -242,9 +242,7 @@ export class TouchGestureAdapter {
                 x: e.clientX,
                 y: e.clientY,
                 t: now,
-                large:
-                    e.pointerType === "touch" &&
-                    Math.max(e.width || 0, e.height || 0) > PALM_CONTACT_PX,
+                large: e.pointerType === "touch" && isPalmContact(e),
             },
             e,
         );

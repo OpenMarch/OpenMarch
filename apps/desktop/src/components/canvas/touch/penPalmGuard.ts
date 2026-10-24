@@ -1,4 +1,4 @@
-import { PALM_CONTACT_PX } from "./touchGestures";
+import { isPalmContact } from "./touchGestures";
 
 /**
  * Palm rejection for the whole window. A hand resting on the screen while a
@@ -7,8 +7,8 @@ import { PALM_CONTACT_PX } from "./touchGestures";
  * browser makes from them):
  * - finger presses that start while a pen is down,
  * - fingers already resting on the screen when the pen comes down (the rest
- *   of their press: a palm usually lands before the pen),
- * - palm-sized contacts, anywhere.
+ *   of their press: a palm usually lands before the pen).
+ * Contact size isn't used: see isPalmContact.
  * The field has its own, finer rules (touchGestures.ts).
  */
 
@@ -65,8 +65,7 @@ export function palmGuardShouldBlock(
     if (type.startsWith("pointer") && pointerType === "touch") {
         const id = pointerId ?? -1;
         if (type === "pointerdown") {
-            const large =
-                Math.max(event.width ?? 0, event.height ?? 0) > PALM_CONTACT_PX;
+            const large = isPalmContact(event);
             if (state.pensDown.size === 0 && !large) {
                 state.touchesDown.add(id);
                 return false;

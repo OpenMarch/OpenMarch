@@ -11,6 +11,9 @@ import {
     waitForIdle,
 } from "../app.mjs";
 
+/** Half a real fingertip's width as Safari on an iPad reports it (CSS px) */
+const FINGER_RADIUS = 24;
+
 /** Fingers on the page through Chromium's touch input (real pointer events) */
 async function touchScreen(page: Page) {
     const cdp: CDPSession = await page.context().newCDPSession(page);
@@ -56,7 +59,14 @@ async function touchScreen(page: Page) {
     ) =>
         cdp.send("Input.dispatchTouchEvent", {
             type,
-            touchPoints: points.map((p, id) => ({ x: p.x, y: p.y, id })),
+            // A real iPad reports a fingertip about 48 px wide
+            touchPoints: points.map((p, id) => ({
+                x: p.x,
+                y: p.y,
+                id,
+                radiusX: FINGER_RADIUS,
+                radiusY: FINGER_RADIUS,
+            })),
         });
     return {
         /** One finger down and up; `holdMs` keeps it down (a long press) */

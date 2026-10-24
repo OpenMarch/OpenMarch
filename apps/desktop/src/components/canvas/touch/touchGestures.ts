@@ -18,9 +18,8 @@
  *   a slow start to a drag, or moves the browser delivers late, can never be
  *   mistaken for a long press.
  * - A pen edits like a mouse. While a pen is down, fingers on the field are
- *   ignored. Shortly after the pen lifts, fingers can still navigate with two
- *   fingers, but one finger does nothing (palm rejection).
- * - A very large contact (the side of a hand) is ignored.
+ *   ignored. Shortly after the pen lifts, a finger can move the view but
+ *   never edits (palm rejection by timing; see isPalmContact).
  */
 
 export type GesturePointerKind = "touch" | "pen";
@@ -164,8 +163,13 @@ export const GESTURE_TIMING = {
     palmRejectMs: 1000,
 } as const;
 
-/** A contact wider or taller than this (CSS px) is a palm */
-export const PALM_CONTACT_PX = 35;
+/**
+ * Contact size is not used to spot palms: real iPads report a fingertip as
+ * 40–50 px wide in Safari (emulators report ~1 px), so any size threshold that
+ * catches palms also swallows fingers. Palms are rejected by timing instead:
+ * touches are ignored while a pen is down, and only navigate just after it.
+ */
+export const isPalmContact = (_e: { width?: number; height?: number }) => false;
 
 export const initialGestureState = (): GestureState => ({
     mode: "idle",
@@ -294,7 +298,6 @@ function handleTouchDown(
     if (state.mode === "idle") {
         if (penRecent(state, input.t)) {
             // Just after the pen: a finger may move the view but never edits
-            // (palm-sized contacts are ignored before they get here)
             const next = enterGesture(
                 { ...state, pointers, tap: null, twoFingerOnly: false },
                 effects,

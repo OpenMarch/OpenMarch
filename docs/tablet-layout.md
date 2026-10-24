@@ -49,7 +49,7 @@ example `h-26 touch:h-44`. One spacing unit is 1 px in this repo.
 | Two-finger tap / three-finger tap                  | Undo / Redo ("Undone" / "Redone" toast)                                                                                              |
 | Pen on empty field, drag                           | Selection box (default)                                                                                                              |
 | Pen elsewhere (Apple Pencil, Surface Pen)          | Precise, like a mouse                                                                                                                |
-| Palm while the pen is down                         | Ignored on the field and app-wide; large contacts are always ignored on the field                                                    |
+| Palm while the pen is down                         | Ignored on the field and app-wide (contact size isn't used: real iPads report fingertips 40–50 px wide)                              |
 | Finger within 1 s of a pen stroke                  | Moves the view only (never edits), so a resting palm can't move marchers                                                             |
 
 Field drag mode (a one-finger or pen drag that starts on empty field): the default,

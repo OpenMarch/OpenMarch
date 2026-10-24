@@ -81,24 +81,21 @@ describe("palmGuardShouldBlock", () => {
         );
     });
 
-    it("swallows a palm-sized contact even without a pen", () => {
+    it("lets a finger through whatever size the browser reports for it", () => {
+        // Safari on a real iPad reports a fingertip as 40-50 px wide
         const s = initialPalmGuardState();
-        const palm = {
-            ...ev("pointerdown", "touch", 3),
-            width: 84,
-            height: 60,
-        };
-        expect(palmGuardShouldBlock(s, palm, 0)).toBe(true);
-        expect(palmGuardShouldBlock(s, ev("pointerup", "touch", 3), 50)).toBe(
-            true,
-        );
-        expect(palmGuardShouldBlock(s, ev("click", "touch", 3), 60)).toBe(true);
         const finger = {
-            ...ev("pointerdown", "touch", 4),
-            width: 22,
-            height: 22,
+            ...ev("pointerdown", "touch", 3),
+            width: 48,
+            height: 48,
         };
-        expect(palmGuardShouldBlock(s, finger, 2000)).toBe(false);
+        expect(palmGuardShouldBlock(s, finger, 0)).toBe(false);
+        expect(palmGuardShouldBlock(s, ev("pointerup", "touch", 3), 50)).toBe(
+            false,
+        );
+        expect(palmGuardShouldBlock(s, ev("click", "touch", 3), 60)).toBe(
+            false,
+        );
     });
 
     it("never blocks the pen's own click", () => {

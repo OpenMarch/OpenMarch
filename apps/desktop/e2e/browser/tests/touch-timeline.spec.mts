@@ -24,6 +24,9 @@ const touch = (cdp: CDPSession) => {
                 x: Math.round(p.x),
                 y: Math.round(p.y),
                 id,
+                // A real iPad reports a fingertip about 48 px wide
+                radiusX: 24,
+                radiusY: 24,
             })),
         });
     return {
