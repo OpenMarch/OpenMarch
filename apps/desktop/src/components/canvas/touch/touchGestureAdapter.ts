@@ -73,7 +73,7 @@ export const TOUCH_LAYOUT_HINT_KEY = "openmarch:touchLayoutHintShown";
 
 /**
  * Once: a finger on the field while the app is laid out for a mouse (a touch
- * screen laptop in Automatic) gets a pointer to the Touch layout.
+ * screen laptop in Automatic) gets a pointer to the tablet layout.
  */
 function maybeShowTouchLayoutHint() {
     const { mode, preference } = useInputModeStore.getState();
@@ -84,7 +84,7 @@ function maybeShowTouchLayoutHint() {
     } catch {
         return;
     }
-    toast("Using touch? The Touch layout has bigger controls.", {
+    toast("Using touch? The tablet layout has bigger controls.", {
         id: "touch-layout-hint",
         duration: 10000,
         action: {
@@ -134,7 +134,7 @@ export class TouchGestureAdapter {
     /** What an armed long press would act on */
     private armTarget:
         | { kind: "marcher"; marcher: CanvasMarcher }
-        | { kind: "empty" }
+        | { kind: "empty"; near: CanvasMarcher | null }
         | null = null;
     private armFrame: number | null = null;
     /** This press held still on empty field, then moved: it selects (box) */
@@ -771,20 +771,21 @@ export class TouchGestureAdapter {
     /** The finger has been held still: say what letting go would do */
     private armLongPress(id: number, client: { x: number; y: number }) {
         const marcher = this.marcherAt(client);
-        if (marcher) {
-            this.armTarget = { kind: "marcher", marcher };
-            this.feedback(client);
-            return;
-        }
         const listeners = this.listeners;
-        // Only from empty field: Fabric is drawing a rubber band, not moving
-        // something (and not in the line tool)
+        // From empty field (Fabric is drawing a rubber band, not moving
+        // something), even right beside a marcher: dragging on draws a box,
+        // letting go toggles that marcher (not in the line tool)
         if (
             listeners?.touchLongPressLasso !== false &&
             this.internals._groupSelector &&
             !this.internals._currentTransform
         ) {
-            this.armTarget = { kind: "empty" };
+            this.armTarget = { kind: "empty", near: marcher };
+            this.feedback(client);
+            return;
+        }
+        if (marcher) {
+            this.armTarget = { kind: "marcher", marcher };
             this.feedback(client);
         }
     }
@@ -808,11 +809,16 @@ export class TouchGestureAdapter {
         this.fabricPointerId = null;
         // Fabric doesn't see this release; drop its press and any wobble it made
         this.cancelFabricPress({ endPress: true });
-        if (target?.kind !== "marcher") {
+        const marcher =
+            target?.kind === "marcher"
+                ? target.marcher
+                : target?.kind === "empty"
+                  ? target.near
+                  : null;
+        if (!marcher) {
             this.restoreSelection(this.selectionSnapshot);
             return;
         }
-        const marcher = target.marcher;
         const before = this.selectionSnapshot.filter(
             Selectable.isSelectable,
         ) as Selectable.ISelectable[];

@@ -37,20 +37,30 @@ example `h-26 touch:h-44`. One spacing unit is 1 px in this repo.
 
 ### Field (canvas)
 
-| Gesture                                            | Result                                                                                    |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Tap a marcher                                      | Select only it (a tap within ~22 screen px of a dot picks the nearest)                    |
-| Tap empty field                                    | Clear the selection (only a real tap, under ~10 px of movement)                           |
-| One finger on a marcher or the selection, drag     | Move it; nothing moves until ~12 px (tremor guard), then it catches up                    |
-| One finger on empty field, drag                    | _See "Field drag mode" below_                                                             |
-| Long press (~0.5 s, held still) on a marcher, lift | Add it to / remove it from the selection (toast says which)                               |
-| Two fingers                                        | Pan and zoom together; a second finger cancels whatever the first started (nothing saved) |
-| Two-finger tap / three-finger tap                  | Undo / Redo ("Undone" / "Redone" toast)                                                   |
-| Pen (Apple Pencil, Surface Pen)                    | Precise, like a mouse                                                                     |
-| Palm while the pen is down                         | Ignored on the field and app-wide; large contacts are always ignored on the field         |
+| Gesture                                            | Result                                                                                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Tap a marcher                                      | Select only it (a tap within ~22 screen px of a dot picks the nearest)                                                               |
+| Tap empty field                                    | Clear the selection (only a real tap, under ~10 px of movement)                                                                      |
+| One finger on a marcher dot or the selection, drag | Move it; nothing moves until ~12 px (tremor guard), then it catches up                                                               |
+| One finger on empty field, drag                    | Move the view (default; see "Field drag mode" below)                                                                                 |
+| One finger: press and hold on empty field, drag    | Selection box                                                                                                                        |
+| Long press (~0.5 s, held still), lift              | Add the marcher under or next to the finger to the selection, or remove it (toast says which); on the only selected marcher, nothing |
+| Two fingers                                        | Pan and zoom together; a second finger cancels whatever the first started (nothing saved)                                            |
+| Two-finger tap / three-finger tap                  | Undo / Redo ("Undone" / "Redone" toast)                                                                                              |
+| Pen on empty field, drag                           | Selection box (default)                                                                                                              |
+| Pen elsewhere (Apple Pencil, Surface Pen)          | Precise, like a mouse                                                                                                                |
+| Palm while the pen is down                         | Ignored on the field and app-wide; large contacts are always ignored on the field                                                    |
 
-Field drag mode (one finger or pen starting on empty field): _filled in below once the
-finger-pans default lands._
+Field drag mode (a one-finger or pen drag that starts on empty field): the default,
+**Auto**, needs no switching: a finger moves the view, a pen draws a selection box, and
+a finger selects by pressing and holding, then dragging. In the words the app uses:
+"Drag the field with one finger to move around. Use Apple Pencil, or press and hold
+then drag, to select an area." The pill's "Drag: Auto ▾" menu offers **Box**, **Lasso**
+and **Pan** as overrides that apply to finger and pen alike; the choice is kept in
+`localStorage` (`openmarch:fieldDragMode`, an old stored "box" is read as Auto once).
+Drags that start on a marcher dot or the selection always move it, and two fingers
+always pan and zoom. The desktop layout has no pill, so there the drag mode is always
+Auto (`components/canvas/touch/fieldDragMode.ts`).
 
 Other field behavior:
 

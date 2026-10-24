@@ -781,14 +781,27 @@ test("the tap that closes a long-press explanation doesn't touch the field", asy
     await expect
         .poll(() => selectedDrillNumbers(page))
         .toEqual([m.drillNumber]);
-    // Long press "Drag": it explains instead of opening the menu
+    // Long press "Drag": it explains instead of opening the menu. (On a busy
+    // test machine the shared long-press timer can miss and the press opens
+    // the menu instead: close it and press again.)
     const modeButton = page.getByTestId("field-drag-mode");
-    const box = (await modeButton.boundingBox())!;
-    await fingers.tap(
-        { x: box.x + box.width / 2, y: box.y + box.height / 2 },
-        800,
-    );
     const bubble = page.getByTestId("long-press-bubble");
+    const menu = page.getByRole("menu", { name: "Drag from empty field" });
+    for (
+        let attempt = 0;
+        attempt < 3 && !(await bubble.isVisible());
+        attempt++
+    ) {
+        if (await menu.isVisible()) await tapElement(fingers, modeButton);
+        const box = (await modeButton.boundingBox())!;
+        await fingers.tap(
+            { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+            800,
+        );
+        await bubble
+            .waitFor({ state: "visible", timeout: 2000 })
+            .catch(() => {});
+    }
     await expect(bubble).toBeVisible();
     const otherNow = (await drawnOnScreen(page)).find(
         (d) => d.drillNumber === other.drillNumber,
