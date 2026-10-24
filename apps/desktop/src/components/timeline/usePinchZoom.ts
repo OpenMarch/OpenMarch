@@ -1,6 +1,13 @@
-import { RefObject, useEffect, useLayoutEffect, useRef } from "react";
+import {
+    RefObject,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+} from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
+    clampPixelsPerSecond,
     PinchStart,
     pinchZoomStep,
     pointDistance,
@@ -135,4 +142,44 @@ export function usePinchZoom(scrollerRef: RefObject<HTMLElement | null>) {
             }
         });
     }, [scrollerRef]);
+
+    /**
+     * Zooms to `pixelsPerSecond` (the zoom buttons) keeping the time at the
+     * middle of the view in place, so zooming out at the end brings earlier
+     * pages into view instead of staying pinned to the end.
+     */
+    const zoomTo = useCallback(
+        (next: number) => {
+            const store = useUiSettingsStore.getState();
+            const current = store.uiSettings.timelinePixelsPerSecond;
+            const target = clampPixelsPerSecond(next);
+            if (target === current) return;
+            const scroller = scrollerRef.current;
+            if (scroller) {
+                const originX = measureOriginX(scroller);
+                const pointX = scroller.clientWidth / 2;
+                const anchorTime = timeAtPoint({
+                    scrollLeft: scroller.scrollLeft,
+                    pointX,
+                    originX,
+                    pixelsPerSecond: current,
+                });
+                pendingScrollLeft.current = pinchZoomStep({
+                    start: {
+                        distance: 1,
+                        pixelsPerSecond: target,
+                        anchorTime,
+                    },
+                    distance: 1,
+                    pointX,
+                    originX,
+                }).scrollLeft;
+                scroller.style.scrollBehavior = "auto";
+            }
+            store.setPixelsPerSecond(target);
+        },
+        [scrollerRef],
+    );
+
+    return { zoomTo };
 }

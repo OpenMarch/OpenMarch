@@ -19,15 +19,10 @@ import {
     ModifyPagesRequest,
     updatePagesMutationOptions,
 } from "@/hooks/queries";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import {
-    getAvailableOffsets,
-    useCreateLastPageOnTimeline,
-} from "./PageTimeline.utils";
-import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
-import { useInputModeStore, useIsTouchMode } from "@/stores/InputModeStore";
-import { toast } from "sonner";
+import { getAvailableOffsets, useAddPage } from "./PageTimeline.utils";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 
 /** Narrower selected pages show no "…" button (use long-press instead). */
 const MENU_BUTTON_MIN_PAGE_WIDTH = 120;
@@ -65,26 +60,10 @@ export default function PageTimeline() {
     const startWidth = useRef(0);
     const availableOffsets = useRef<number[]>([]);
 
-    const { mutate: createDefaultTempoGroupAndPage } =
-        useCreateLastPageOnTimeline();
-    // Creating a page needs the workspace settings, which load asynchronously
-    const { data: workspaceSettings } = useQuery(
-        workspaceSettingsQueryOptions(),
-    );
+    const { addPage, canAddPage } = useAddPage();
+    // The page whose "…" menu is open, if any
+    const [dropdownPageId, setDropdownPageId] = useState<number | null>(null);
     const { t } = useTolgee();
-
-    /** Adds a page at the end and says so (its number: the next whole page). */
-    const addPage = () => {
-        const pageName = String(pages.filter((p) => !p.isSubset).length);
-        createDefaultTempoGroupAndPage(undefined, {
-            // Fingers get no hover feedback, so say what happened. (With a
-            // mouse the toast would sit over the button at the bottom right.)
-            onSuccess: () => {
-                if (useInputModeStore.getState().mode === "touch")
-                    toast.success(t("timeline.page.added", { pageName }));
-            },
-        });
-    };
 
     // Calculate the width of a page based on its duration
     // Add a small buffer to ensure the page visually includes all its beats
@@ -448,7 +427,7 @@ export default function PageTimeline() {
             <button
                 className="text-body text-text hover:text-accent touch:min-h-44 flex w-full cursor-pointer items-center gap-6 text-left transition-colors"
                 onClick={() => addPage()}
-                disabled={!workspaceSettings}
+                disabled={!canAddPage}
             >
                 <PlusIcon size={16} />
                 {t("timeline.page.addAtEnd")}
@@ -490,6 +469,8 @@ export default function PageTimeline() {
                     onClick={onDelete}
                 >
                     <T keyName={labelKey} />
+                    {/* the space keeps read-out text (long-press tips) apart */}
+                    {isTouchMode && " "}
                     {isTouchMode && (
                         <span className="text-sub text-text-subtitle">
                             {t(descriptionKey)}
@@ -563,7 +544,15 @@ export default function PageTimeline() {
                             })}
                         >
                             <ContextMenu.Trigger
-                                disabled={isPlaying || isFullscreen}
+                                // Off while this page's "…" menu is open: the
+                                // menu is portalled, but React still bubbles
+                                // its presses here, and a long press in it
+                                // would open a second copy as a context menu
+                                disabled={
+                                    isPlaying ||
+                                    isFullscreen ||
+                                    dropdownPageId === page.id
+                                }
                                 className="group"
                             >
                                 <div
@@ -620,6 +609,11 @@ export default function PageTimeline() {
                                     {/* ------ page menu button (touch) ------ */}
                                     {showMenuButton && (
                                         <PageMenuButton
+                                            onOpenChange={(open) =>
+                                                setDropdownPageId(
+                                                    open ? page.id : null,
+                                                )
+                                            }
                                             label={t(
                                                 "timeline.page.menuButton",
                                                 { pageName: page.name },
@@ -705,30 +699,18 @@ export default function PageTimeline() {
                     );
                 })}
             </ul>
-            {/* New page. With a mouse: right after the last page, as before.
-                With fingers: at the end of the row, held at the timeline's
-                right edge, so it is always in view however far it scrolls */}
-            {isTouchMode ? (
-                <div className="min-w-8 flex-1" />
-            ) : (
-                <div className="w-8 shrink-0" />
-            )}
-            {!isFullscreen && (
+            {/* New page right after the last page (with fingers it is the
+                labelled button in the label column instead: NewPageButton) */}
+            {!isFullscreen && !isTouchMode && (
                 <button
-                    className={clsx(
-                        "bg-accent text-sub text-text-invert flex shrink-0 cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50",
-                        isTouchMode
-                            ? "shadow-modal sticky right-0 z-40 h-44 gap-4 pr-14 pl-10 font-medium whitespace-nowrap"
-                            : "size-[28px]",
-                    )}
+                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] shrink-0 cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => addPage()}
-                    disabled={!workspaceSettings}
+                    disabled={!canAddPage}
                     aria-label={t("timeline.page.add")}
                     title={t("timeline.page.add")}
                     data-testid="add-page"
                 >
                     <PlusIcon size={20} />
-                    {isTouchMode && t("timeline.page.add")}
                 </button>
             )}
         </div>
@@ -744,11 +726,29 @@ export default function PageTimeline() {
 function PageMenuButton({
     label,
     children,
+    onOpenChange,
 }: {
     label: string;
     children: React.ReactNode;
+    /** Told when the menu opens and closes */
+    onOpenChange?: (open: boolean) => void;
 }) {
-    const [open, setOpen] = useState(false);
+    const [open, setOpenState] = useState(false);
+    const setOpen = (next: boolean) => {
+        setOpenState(next);
+        onOpenChange?.(next);
+    };
+    // Unmounted while open (e.g. the page was deselected): report it closed
+    const onOpenChangeRef = useRef(onOpenChange);
+    onOpenChangeRef.current = onOpenChange;
+    const openRef = useRef(open);
+    openRef.current = open;
+    useEffect(
+        () => () => {
+            if (openRef.current) onOpenChangeRef.current?.(false);
+        },
+        [],
+    );
     const armed = useRef(false);
 
     const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
