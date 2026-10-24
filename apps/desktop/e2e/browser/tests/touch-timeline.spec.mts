@@ -74,36 +74,30 @@ const pageStarts = async (show: Show) =>
     ).map((row) => row.start);
 
 /**
- * New page sits after the scrolling pages strip, outside it: right of every page
- * box anyone can see, and on top wherever the pages are scrolled.
+ * New page is the round + right after the last page box, as with a mouse,
+ * finger-sized (44 px), and it scrolls with the pages.
  */
-async function expectNewPageInItsOwnSlot(page: Page) {
+async function expectPlusAfterLastPage(page: Page) {
     const add = page.getByRole("button", { name: "New page", exact: true });
     const timeline = page.locator("#timeline");
-    for (const scrollLeft of [0, 120, 100_000]) {
-        await timeline.evaluate((el, left) => {
-            el.style.scrollBehavior = "auto";
-            el.scrollLeft = left;
-        }, scrollLeft);
-        const b = (await add.boundingBox())!;
-        const view = (await timeline.boundingBox())!;
-        expect(b.x).toBeGreaterThanOrEqual(view.x + view.width - 1);
-        // Every page box's visible part ends before the button
-        for (const p of await page.locator("[timeline-page-id]").all()) {
-            const r = (await p.boundingBox())!;
-            const visibleRight = Math.min(r.x + r.width, view.x + view.width);
-            if (visibleRight > view.x)
-                expect(visibleRight).toBeLessThanOrEqual(b.x);
-        }
-        const onTop = await page.evaluate(
-            ([x, y]) =>
-                document
-                    .elementFromPoint(x, y)
-                    ?.closest("[data-testid='add-page']") !== null,
-            [b.x + b.width / 2, b.y + b.height / 2],
-        );
-        expect(onTop).toBe(true);
-    }
+    await timeline.evaluate((el) => {
+        el.style.scrollBehavior = "auto";
+        el.scrollLeft = el.scrollWidth;
+    });
+    const b = (await add.boundingBox())!;
+    expect(b.width).toBeGreaterThanOrEqual(44);
+    expect(b.height).toBeGreaterThanOrEqual(44);
+    const boxes = await page.locator("[timeline-page-id]").all();
+    const last = (await boxes[boxes.length - 1].boundingBox())!;
+    expect(b.x).toBeGreaterThanOrEqual(last.x + last.width - 1);
+    expect(b.x).toBeLessThanOrEqual(last.x + last.width + 24);
+    // It scrolls with the pages
+    const before = b.x;
+    await timeline.evaluate((el) => {
+        el.scrollLeft = el.scrollLeft - 60;
+    });
+    const after = (await add.boundingBox())!.x;
+    if (after !== before) expect(after).toBeGreaterThan(before);
 }
 
 /** Taps the centre of a button found by its accessible name. */
@@ -352,17 +346,13 @@ test("a two-finger pan that lands on the page's … button doesn't open its menu
     await expect(page.getByRole("menu")).toHaveCount(0);
 });
 
-test("the labelled New page button adds a page and says so", async ({
-    show,
-}) => {
+test("the + after the last page adds a page and says so", async ({ show }) => {
     const { page } = show;
     const fingers = await setUp(show);
     const before = await pageStarts(show);
     const add = page.getByRole("button", { name: "New page", exact: true });
-    await expect(add).toHaveText("New page");
+    await expectPlusAfterLastPage(page);
     const box = (await add.boundingBox())!;
-    expect(box.height).toBeGreaterThanOrEqual(44);
-    await expectNewPageInItsOwnSlot(page);
     await fingers.tap({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
     await expect.poll(() => pageStarts(show)).toHaveLength(before.length + 1);
     await expect(
@@ -477,13 +467,8 @@ test("expanding shows the full transport, and collapsing goes back", async ({
     ).toBeVisible();
     await expect(page.locator("#waveform")).toHaveCount(1);
     await expect(page.getByTitle("Reset timeline zoom")).toBeVisible();
-    // New page: its own slot at the end of the pages row, before the zoom
-    await expectNewPageInItsOwnSlot(page);
-    const add = (await page
-        .getByRole("button", { name: "New page", exact: true })
-        .boundingBox())!;
-    const zoom = (await page.getByTitle("Reset timeline zoom").boundingBox())!;
-    expect(add.x + add.width).toBeLessThanOrEqual(zoom.x);
+    // New page: the + after the last page in the full timeline too
+    await expectPlusAfterLastPage(page);
     // Remembered for next time
     expect(
         await page.evaluate(() =>
