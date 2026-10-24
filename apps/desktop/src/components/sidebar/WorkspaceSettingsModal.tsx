@@ -111,9 +111,12 @@ function WorkspaceSettingsModalContents() {
     const handleSave = useCallback(() => {
         if (!localSettings) return;
         updateSettings(localSettings, {
-            onSuccess: () => toast.success(t("workspaceSettings.saved")),
+            onSuccess: () => {
+                toast.success(t("workspaceSettings.saved"));
+                toggleOpen();
+            },
         });
-    }, [localSettings, updateSettings, t]);
+    }, [localSettings, updateSettings, t, toggleOpen]);
 
     const handleReset = useCallback(() => {
         setLocalSettings(defaultWorkspaceSettings);
@@ -146,7 +149,9 @@ function WorkspaceSettingsModalContents() {
                 measurementOffset: settings.measurementOffset.toString(),
             });
         }
-    }, [settings]);
+        // Cancel always works: drop any edits and close
+        toggleOpen();
+    }, [settings, toggleOpen]);
 
     if (isLoading) {
         return (
@@ -349,7 +354,7 @@ function WorkspaceSettingsModalContents() {
 
                     <Button
                         onClick={handleCancel}
-                        disabled={isPending || !hasChanges}
+                        disabled={isPending}
                         variant="secondary"
                         size="compact"
                     >

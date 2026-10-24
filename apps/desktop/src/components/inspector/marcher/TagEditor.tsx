@@ -306,7 +306,7 @@ const NewTagButton = ({
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    className="bg-bg-1 rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
                     sideOffset={8}
                     align="center"
                     onCloseAutoFocus={(e) => {
@@ -400,7 +400,7 @@ const AddToTagButton = ({
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    className="bg-bg-1 rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
                     sideOffset={8}
                     align="center"
                     onCloseAutoFocus={(e) => {
@@ -497,7 +497,7 @@ const DeleteFromTagButton = ({
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    className="bg-bg-1 rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
                     sideOffset={8}
                     align="center"
                     onCloseAutoFocus={(e) => {

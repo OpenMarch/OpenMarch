@@ -15,6 +15,14 @@
  * touch Inspector drawer is z-50) and above dialogs (z-501, alert z-999), even
  * when its content asks for less (e.g. z-10). Toasts stay above it.
  */
+/* Touch mode toasts (desktop Toaster): taps go through to what's underneath, except the toast's own buttons */
+.touch-toaster [data-sonner-toast] {
+    pointer-events: none;
+}
+.touch-toaster [data-sonner-toast] button {
+    pointer-events: auto;
+}
+
 [data-radix-popper-content-wrapper] {
     z-index: 1000 !important;
 }

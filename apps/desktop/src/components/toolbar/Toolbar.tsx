@@ -13,6 +13,14 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import SelectTab from "./tabs/SelectTab";
 
+/**
+ * Touch mode: each tab is one row that scrolls sideways, so the toolbar keeps
+ * its height whatever the tab shows (a wrapping second row made the field jump
+ * under the finger, e.g. Select by > Tag with no tags).
+ */
+const tabRowClassName =
+    "touch:[&>div]:flex-nowrap touch:[&>div]:overflow-x-auto touch:[&>div]:[scrollbar-width:none] touch:[&>div>*]:shrink-0";
+
 export default function Topbar() {
     const { isFullscreen } = useFullscreenStore();
     const [activeTab, setActiveTab] = useState("alignment");
@@ -96,27 +104,30 @@ export default function Topbar() {
                     )}
                 </TabsList>
 
-                <TabContent value="file">
+                <TabContent value="file" className={tabRowClassName}>
                     <FileTab />
                 </TabContent>
 
                 {!isFullscreen && (
                     <>
-                        <TabContent value="alignment">
+                        <TabContent
+                            value="alignment"
+                            className={tabRowClassName}
+                        >
                             <AlignmentTab />
                         </TabContent>
 
-                        <TabContent value="select">
+                        <TabContent value="select" className={tabRowClassName}>
                             <SelectTab />
                         </TabContent>
                     </>
                 )}
 
-                <TabContent value="view">
+                <TabContent value="view" className={tabRowClassName}>
                     <ViewTab />
                 </TabContent>
 
-                <TabContent value="collisions">
+                <TabContent value="collisions" className={tabRowClassName}>
                     <CollisionsTab />
                 </TabContent>
             </Tabs>

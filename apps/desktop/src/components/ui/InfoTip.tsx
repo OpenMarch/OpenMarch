@@ -3,6 +3,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { TooltipClassName } from "@openmarch/ui";
 import { InfoIcon } from "@phosphor-icons/react";
 import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 import { forwardRef, useState, type ReactElement, type ReactNode } from "react";
 import { useTolgee } from "@tolgee/react";
 import { useIsTouchMode } from "@/stores/InputModeStore";
@@ -135,9 +136,8 @@ export function TouchCaption({
         <span
             aria-hidden
             data-touch-caption
-            className={clsx(
-                "text-sub leading-none whitespace-nowrap",
-                className,
+            className={twMerge(
+                clsx("text-sub leading-none whitespace-nowrap", className),
             )}
         >
             {children}

@@ -37,7 +37,7 @@ export default function SidebarModal() {
             tabIndex={0}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className="rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 animate-scale-in touch:left-[88px] absolute top-0 left-[50px] z-40 flex h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden"
+            className="rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 animate-scale-in touch:left-[96px] absolute top-0 left-[50px] z-40 flex h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden"
         >
             {content}
         </div>
@@ -85,7 +85,7 @@ export function SidebarModalLauncher({
         >
             {buttonLabel}
             {name !== undefined && (
-                <TouchCaption className="max-w-full truncate">
+                <TouchCaption className="max-w-full text-center leading-tight whitespace-normal">
                     {name}
                 </TouchCaption>
             )}

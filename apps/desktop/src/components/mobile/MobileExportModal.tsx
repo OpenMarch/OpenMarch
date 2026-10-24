@@ -147,7 +147,7 @@ export default function MobileExportModal({
                 id="sidebar-launcher-mobile-export"
             >
                 <span aria-hidden>{label}</span>
-                <TouchCaption className="max-w-full truncate">
+                <TouchCaption className="max-w-full text-center leading-tight whitespace-normal">
                     {t("sidebar.mobile")}
                 </TouchCaption>
             </button>

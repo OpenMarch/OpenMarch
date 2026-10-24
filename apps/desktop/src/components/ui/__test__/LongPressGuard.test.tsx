@@ -102,4 +102,27 @@ describe("LongPressGuard", () => {
             "Lock X movement [Y]",
         );
     });
+
+    it("joins text with spaces and leaves menus alone", () => {
+        const onSelect = vi.fn();
+        render(
+            <>
+                <LongPressGuard />
+                <button>
+                    <span>In Place</span>
+                    <span>Delete this page</span>
+                </button>
+                <div role="menu">
+                    <button onClick={onSelect}>Subset</button>
+                </div>
+            </>,
+        );
+        longPress(screen.getByText("In Place").closest("button")!);
+        expect(screen.getByTestId("long-press-bubble").textContent).toBe(
+            "In Place Delete this page",
+        );
+        pointer("pointerdown", document.body);
+        longPress(screen.getByText("Subset"));
+        expect(onSelect).toHaveBeenCalledTimes(1);
+    });
 });

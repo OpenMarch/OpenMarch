@@ -16,6 +16,7 @@ import {
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 
 const itemClass =
     "rounded-4 text-body data-[highlighted]:bg-fg-2 flex cursor-pointer items-center justify-between gap-24 px-8 py-4 outline-hidden data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
@@ -36,6 +37,8 @@ const FILE_ACTIONS: ActionId[] = [
 export default function WebFileMenu() {
     const { t } = useTolgee();
     const overrides = useShortcutOverridesStore((s) => s.overrides);
+    // No ⌘O / Ctrl+, on a tablet until a keyboard has been used
+    const showHints = useShowShortcutHints();
     // Re-render when actions become available, e.g. Close once a show opens.
     useSyncExternalStore(subscribeToActionHandlers, () =>
         FILE_ACTIONS.map(isActionEnabled).join(),
@@ -49,9 +52,11 @@ export default function WebFileMenu() {
             onSelect={() => runAction(action)}
         >
             <span>{label}</span>
-            <span className="text-sub text-text-subtitle">
-                {getActionShortcutLabel(action, { overrides })}
-            </span>
+            {showHints && (
+                <span className="text-sub text-text-subtitle">
+                    {getActionShortcutLabel(action, { overrides })}
+                </span>
+            )}
         </DropdownMenuItem>
     );
 

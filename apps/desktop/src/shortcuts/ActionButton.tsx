@@ -1,4 +1,11 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    useSyncExternalStore,
+} from "react";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import { LongPressBubble, useLongPress } from "@openmarch/ui";
 import Keycaps from "@/components/ui/Keycaps";
 import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
@@ -19,6 +26,9 @@ import {
     runAction,
     subscribeToActionHandlers,
 } from "./registry";
+
+/** How long a trackpad pointer rests on the button before its hint shows (touch layout). */
+const HOVER_HINT_MS = 600;
 
 export type ActionButtonProps = Omit<
     React.ButtonHTMLAttributes<HTMLButtonElement>,
@@ -65,6 +75,13 @@ export default function ActionButton({
         });
     // A finger can't hover for the tooltip: a long press explains the button instead of running it
     const [hintOpen, setHintOpen] = useState(false);
+    const isTouch = useIsTouchMode();
+    const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const clearHoverTimer = () => {
+        if (hoverTimer.current !== null) clearTimeout(hoverTimer.current);
+        hoverTimer.current = null;
+    };
+    useEffect(() => clearHoverTimer, []);
     const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
     const closeHint = useCallback(() => setHintOpen(false), []);
     const longPress = useLongPress(() => setHintOpen(true), {
@@ -96,6 +113,22 @@ export default function ActionButton({
                 aria-label={caption !== undefined ? title : undefined}
                 {...rest}
                 {...longPress}
+                onPointerEnter={(e) => {
+                    rest.onPointerEnter?.(e);
+                    // A trackpad in the touch layout (iPad): Safari shows no title tooltips, so show the hint
+                    if (e.pointerType !== "mouse" || !isTouch) return;
+                    clearHoverTimer();
+                    hoverTimer.current = setTimeout(
+                        () => setHintOpen(true),
+                        HOVER_HINT_MS,
+                    );
+                }}
+                onPointerLeave={(e) => {
+                    rest.onPointerLeave?.(e);
+                    if (e.pointerType !== "mouse") return;
+                    clearHoverTimer();
+                    if (isTouch) setHintOpen(false);
+                }}
                 data-own-long-press
                 ref={setAnchor}
                 disabled={disabled || !runnable}

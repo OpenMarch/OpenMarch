@@ -4,10 +4,10 @@ import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 
 /** What the guard watches: things a tap activates. */
 const PRESSABLE =
-    'button, [role="button"], a[href], [role="tab"], [role="switch"], [role="radio"], [role="checkbox"], [role="menuitem"]';
+    'button, [role="button"], a[href], [role="tab"], [role="switch"], [role="radio"], [role="checkbox"]';
 /** Things with their own long press (or none worth explaining). */
 const OWN_LONG_PRESS =
-    '[data-own-long-press], canvas, input, textarea, select, [contenteditable="true"]';
+    '[data-own-long-press], canvas, input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"]';
 const SLOP_PX = 10;
 
 /** A trailing " [⌘K]"-style shortcut in a title. */
@@ -28,7 +28,14 @@ export function accessibleName(el: Element): string {
     }
     const title = el.getAttribute("title")?.trim();
     if (title) return title;
-    return (el.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+    // Text nodes joined with spaces: "In Place" + "Delete this page…" must not run together
+    const parts: string[] = [];
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const text = node.textContent?.trim();
+        if (text) parts.push(text);
+    }
+    return parts.join(" ").replace(/\s+/g, " ").slice(0, 120);
 }
 
 /** The pressable element a long press on `target` would explain, if any. */
