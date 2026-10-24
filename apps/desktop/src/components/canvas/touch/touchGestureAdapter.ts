@@ -9,7 +9,11 @@ import { db } from "@/global/database/db";
 import { runAction } from "@/shortcuts/registry";
 import { isShiftHeld } from "@/stores/TouchModifierStore";
 import { useInputModeStore } from "@/stores/InputModeStore";
-import { useFieldDragModeStore } from "./fieldDragMode";
+import {
+    FieldDragAction,
+    fieldDragAction,
+    useFieldDragModeStore,
+} from "./fieldDragMode";
 import { clampCanvasZoom } from "../CanvasConstants";
 import {
     GestureEffect,
@@ -69,7 +73,7 @@ export const TOUCH_LAYOUT_HINT_KEY = "openmarch:touchLayoutHintShown";
 
 /**
  * Once: a finger on the field while the app is laid out for a mouse (a touch
- * screen laptop in Automatic) gets a pointer to the Touch layout.
+ * screen laptop in Automatic) gets a pointer to the tablet layout.
  */
 function maybeShowTouchLayoutHint() {
     const { mode, preference } = useInputModeStore.getState();
@@ -80,7 +84,7 @@ function maybeShowTouchLayoutHint() {
     } catch {
         return;
     }
-    toast("Using touch? The Touch layout has bigger controls.", {
+    toast("Using touch? The tablet layout has bigger controls.", {
         id: "touch-layout-hint",
         duration: 10000,
         action: {
@@ -92,12 +96,19 @@ function maybeShowTouchLayoutHint() {
     });
 }
 
-/** The field drag mode (set on the pill in the touch layout, Box until changed; Box in the pointer layout) */
-const fieldDragMode = () =>
-    // The pointer layout shows no pill to say what the mode is: always Box there
-    useInputModeStore.getState().mode === "touch"
-        ? useFieldDragModeStore.getState().mode
-        : "box";
+/**
+ * What a drag from empty field does for this pointer. The mode is set on the
+ * pill in the touch layout (Auto until changed: a finger moves the view, a pen
+ * selects). The pointer layout shows no pill to say what an override is, so
+ * it always uses Auto.
+ */
+const fieldDragMode = (pointer: "touch" | "pen"): FieldDragAction =>
+    fieldDragAction(
+        useInputModeStore.getState().mode === "touch"
+            ? useFieldDragModeStore.getState().mode
+            : "auto",
+        pointer,
+    );
 
 /**
  * Puts the field's touch gestures (`touchGestures.ts`) on a canvas: listens to
@@ -123,9 +134,11 @@ export class TouchGestureAdapter {
     /** What an armed long press would act on */
     private armTarget:
         | { kind: "marcher"; marcher: CanvasMarcher }
-        | { kind: "empty" }
+        | { kind: "empty"; near: CanvasMarcher | null }
         | null = null;
     private armFrame: number | null = null;
+    /** This press held still on empty field, then moved: it selects (box) */
+    private holdSelects = false;
     /** Keep the event being handled away from Fabric, whatever the rules said */
     private blockCurrent = false;
     /** A pen press from empty field, in the lasso or "Move view" drag mode */
@@ -308,7 +321,10 @@ export class TouchGestureAdapter {
                     this.canvas.requestRenderAll();
                 }, 0);
             }
-            if (press.converted === "pan") this.canvas.fire("view:settled", {});
+            if (press.converted === "pan") {
+                this.canvas.settleGestureViewport();
+                this.canvas.fire("view:settled", {});
+            }
             return press.converted === "pan";
         }
         if (press.converted === "pan" && press.navigation) {
@@ -331,7 +347,7 @@ export class TouchGestureAdapter {
             e.clientY - press.down.clientY,
         );
         if (moved < PEN_DRAG_START_PX) return false;
-        const mode = fieldDragMode();
+        const mode = fieldDragMode("pen");
         const emptyPress =
             this.internals._groupSelector && !this.internals._currentTransform;
         if (mode === "box" || !emptyPress) {
@@ -406,6 +422,7 @@ export class TouchGestureAdapter {
                 this.fabricPointerId = effect.id;
                 this.downEvent = e ?? null;
                 this.armTarget = null;
+                this.holdSelects = false;
                 maybeShowTouchLayoutHint();
                 canvas.touchDeferredClear = false;
                 break;
@@ -488,6 +505,7 @@ export class TouchGestureAdapter {
             }
             case "navigationEnd":
                 this.navigationStart = null;
+                canvas.settleGestureViewport();
                 canvas.fire("view:settled", {});
                 break;
             case "undo":
@@ -592,7 +610,9 @@ export class TouchGestureAdapter {
      * decides: the rubber band stays (box), or it becomes the lasso or a pan.
      */
     private dragFromEmptyField() {
-        const mode = fieldDragMode();
+        // Press and hold, then drag: a selection box whatever the mode
+        if (this.holdSelects) return;
+        const mode = fieldDragMode("touch");
         if (mode === "box") return;
         if (!this.internals._groupSelector || this.internals._currentTransform)
             return;
@@ -632,7 +652,7 @@ export class TouchGestureAdapter {
      * instead of letting Fabric finish a selection box.
      */
     private panWholeFlick(client: { x: number; y: number }): boolean {
-        if (fieldDragMode() !== "pan") return false;
+        if (this.holdSelects || fieldDragMode("touch") !== "pan") return false;
         if (!this.internals._groupSelector || this.internals._currentTransform)
             return false;
         const down = this.downEvent;
@@ -654,6 +674,7 @@ export class TouchGestureAdapter {
                 clampCanvasZoom,
             ),
         );
+        this.canvas.settleGestureViewport();
         this.canvas.fire("view:settled", {});
         return true;
     }
@@ -750,34 +771,34 @@ export class TouchGestureAdapter {
     /** The finger has been held still: say what letting go would do */
     private armLongPress(id: number, client: { x: number; y: number }) {
         const marcher = this.marcherAt(client);
-        if (marcher) {
-            this.armTarget = { kind: "marcher", marcher };
-            this.feedback(client);
-            return;
-        }
         const listeners = this.listeners;
-        // Only from empty field: Fabric is drawing a rubber band, not moving something
+        // From empty field (Fabric is drawing a rubber band, not moving
+        // something), even right beside a marcher: dragging on draws a box,
+        // letting go toggles that marcher (not in the line tool)
         if (
             listeners?.touchLongPressLasso !== false &&
-            listeners?.startLasso &&
             this.internals._groupSelector &&
             !this.internals._currentTransform
         ) {
-            this.armTarget = { kind: "empty" };
+            this.armTarget = { kind: "empty", near: marcher };
+            this.feedback(client);
+            return;
+        }
+        if (marcher) {
+            this.armTarget = { kind: "marcher", marcher };
             this.feedback(client);
         }
     }
 
-    /** Moving after the hold: from empty field it draws the lasso; on a marcher it is just a drag */
+    /**
+     * Moving after the hold: from empty field it draws a selection box (the
+     * rubber band Fabric started), even where a finger drag would otherwise
+     * move the view; on a marcher it is just a drag.
+     */
     private longPressMoved() {
         const target = this.armTarget;
         this.armTarget = null;
-        if (target?.kind !== "empty" || !this.downEvent) return;
-        const listeners = this.listeners;
-        if (!listeners?.startLasso) return;
-        this.cancelFabricPress({ endPress: false });
-        this.restoreSelection(this.selectionSnapshot);
-        listeners.startLasso(this.downEvent);
+        if (target?.kind === "empty") this.holdSelects = true;
     }
 
     /** Let go after holding still: toggle the marcher in the selection the finger started with */
@@ -788,11 +809,16 @@ export class TouchGestureAdapter {
         this.fabricPointerId = null;
         // Fabric doesn't see this release; drop its press and any wobble it made
         this.cancelFabricPress({ endPress: true });
-        if (target?.kind !== "marcher") {
+        const marcher =
+            target?.kind === "marcher"
+                ? target.marcher
+                : target?.kind === "empty"
+                  ? target.near
+                  : null;
+        if (!marcher) {
             this.restoreSelection(this.selectionSnapshot);
             return;
         }
-        const marcher = target.marcher;
         const before = this.selectionSnapshot.filter(
             Selectable.isSelectable,
         ) as Selectable.ISelectable[];

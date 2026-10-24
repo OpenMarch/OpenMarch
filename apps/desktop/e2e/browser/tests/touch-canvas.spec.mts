@@ -65,6 +65,21 @@ async function touchScreen(page: Page) {
             if (holdMs > 0) await page.waitForTimeout(holdMs);
             await send("touchEnd", []);
         },
+        /** Press and hold still (a long press), then drag */
+        async holdDrag(from: Point, to: Point, holdMs = 700) {
+            await send("touchStart", [from]);
+            await page.waitForTimeout(holdMs);
+            const steps = 12;
+            for (let i = 1; i <= steps; i++) {
+                await send("touchMove", [
+                    {
+                        x: from.x + ((to.x - from.x) * i) / steps,
+                        y: from.y + ((to.y - from.y) * i) / steps,
+                    },
+                ]);
+            }
+            await send("touchEnd", []);
+        },
         /** A careful drag: creeps for `creepMs` (under the long-press slop), then slides */
         async slowDrag(from: Point, to: Point, creepMs = 800) {
             await send("touchStart", [from]);
@@ -634,7 +649,7 @@ test("with Add on, a tap on a selected marcher's label toggles it and nothing cr
     // (The fixture fails the test on any page error, e.g. a stack overflow)
 });
 
-test("a press near a marcher but not on its dot drags a box, not the marcher", async ({
+test("a press near a marcher but not on its dot moves the view, not the marcher", async ({
     show,
 }) => {
     const { page } = show;
@@ -646,11 +661,16 @@ test("a press near a marcher but not on its dot drags a box, not the marcher", a
     const [m] = await touchableMarchers(page);
     // 18 px below the dot: within a tap's reach, but not on the dot
     const start = { x: m.screen.x, y: m.screen.y + 18 };
+    const viewBefore = await viewport(page);
     await fingers.drag(start, { x: start.x + 120, y: start.y + 60 });
     await waitForIdle(page);
     expect(await savedPositions(show)).toEqual(before);
-    // The same spot as a tap picks the marcher
-    await fingers.tap(start);
+    expect((await viewport(page))[4]).not.toBe(viewBefore[4]);
+    // Near the same marcher, a tap picks it
+    const mNow = (await drawnOnScreen(page)).find(
+        (d) => d.drillNumber === m.drillNumber,
+    )!;
+    await fingers.tap({ x: mNow.screen.x, y: mNow.screen.y + 18 });
     await expect
         .poll(() => selectedDrillNumbers(page))
         .toEqual([m.drillNumber]);
@@ -761,14 +781,27 @@ test("the tap that closes a long-press explanation doesn't touch the field", asy
     await expect
         .poll(() => selectedDrillNumbers(page))
         .toEqual([m.drillNumber]);
-    // Long press "Drag": it explains instead of opening the menu
+    // Long press "Drag": it explains instead of opening the menu. (On a busy
+    // test machine the shared long-press timer can miss and the press opens
+    // the menu instead: close it and press again.)
     const modeButton = page.getByTestId("field-drag-mode");
-    const box = (await modeButton.boundingBox())!;
-    await fingers.tap(
-        { x: box.x + box.width / 2, y: box.y + box.height / 2 },
-        800,
-    );
     const bubble = page.getByTestId("long-press-bubble");
+    const menu = page.getByRole("menu", { name: "Drag from empty field" });
+    for (
+        let attempt = 0;
+        attempt < 3 && !(await bubble.isVisible());
+        attempt++
+    ) {
+        if (await menu.isVisible()) await tapElement(fingers, modeButton);
+        const box = (await modeButton.boundingBox())!;
+        await fingers.tap(
+            { x: box.x + box.width / 2, y: box.y + box.height / 2 },
+            800,
+        );
+        await bubble
+            .waitFor({ state: "visible", timeout: 2000 })
+            .catch(() => {});
+    }
     await expect(bubble).toBeVisible();
     const otherNow = (await drawnOnScreen(page)).find(
         (d) => d.drillNumber === other.drillNumber,
@@ -777,4 +810,36 @@ test("the tap that closes a long-press explanation doesn't touch the field", asy
     await expect(bubble).toBeHidden();
     await page.waitForTimeout(300);
     expect(await selectedDrillNumbers(page)).toEqual([m.drillNumber]);
+});
+
+test("by default one finger on empty field moves the view; press and hold, then drag, selects", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    const fingers = await touchScreen(page);
+    await expect(page.getByTestId("field-drag-mode")).toContainText("Auto");
+    await waitForIdle(page);
+    const positions = await savedPositions(show);
+
+    // A plain drag moves the view by the finger's distance and selects nothing
+    const [from] = await emptyFieldPair(page);
+    const viewBefore = await viewport(page);
+    await fingers.drag(from, { x: from.x + 90, y: from.y - 40 });
+    const viewAfter = await viewport(page);
+    expect(viewAfter[4] - viewBefore[4]).toBeCloseTo(90, -1);
+    expect(viewAfter[5] - viewBefore[5]).toBeCloseTo(-40, -1);
+    expect(await selectedDrillNumbers(page)).toEqual([]);
+
+    // Press and hold beside the row, then drag a box across it
+    const row = await touchableMarchers(page);
+    const left = Math.min(...row.map((m) => m.screen.x)) - 30;
+    const right = Math.max(...row.map((m) => m.screen.x)) + 30;
+    const y = row[0].screen.y;
+    await fingers.holdDrag({ x: left, y: y - 30 }, { x: right, y: y + 30 });
+    await expect
+        .poll(async () => (await selectedDrillNumbers(page)).length)
+        .toBe(row.length);
+    expect(await savedPositions(show)).toEqual(positions);
 });

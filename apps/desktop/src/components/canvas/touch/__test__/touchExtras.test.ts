@@ -3,7 +3,12 @@ import { initialPalmGuardState, palmGuardShouldBlock } from "../penPalmGuard";
 import { paddingForMinimumBox } from "../touchSelectionHandles";
 import { describeRotation, describeStepDelta } from "../dragStepReadout";
 import { choosePillPosition, pillCandidates } from "../pillPlacement";
-import { nextFieldDragMode, parseFieldDragMode } from "../fieldDragMode";
+import {
+    fieldDragAction,
+    migrateFieldDragMode,
+    nextFieldDragMode,
+    parseFieldDragMode,
+} from "../fieldDragMode";
 import { absoluteBounds } from "../touchHitTest";
 
 describe("palmGuardShouldBlock", () => {
@@ -174,16 +179,32 @@ describe("describeRotation", () => {
 });
 
 describe("field drag mode", () => {
-    it("reads a stored mode, defaulting to the box", () => {
+    it("reads a stored mode, defaulting to Auto", () => {
         expect(parseFieldDragMode("lasso")).toBe("lasso");
         expect(parseFieldDragMode("pan")).toBe("pan");
-        expect(parseFieldDragMode(null)).toBe("box");
-        expect(parseFieldDragMode("nonsense")).toBe("box");
+        expect(parseFieldDragMode(null)).toBe("auto");
+        expect(parseFieldDragMode("nonsense")).toBe("auto");
     });
-    it("cycles box, lasso, pan", () => {
+    it("reads the old default (Box) as Auto, once", () => {
+        expect(migrateFieldDragMode("box", false)).toBe("auto");
+        expect(migrateFieldDragMode("pan", false)).toBe("pan");
+        expect(migrateFieldDragMode(null, false)).toBe("auto");
+        // Chosen after the change: kept
+        expect(migrateFieldDragMode("box", true)).toBe("box");
+    });
+    it("cycles auto, box, lasso, pan", () => {
+        expect(nextFieldDragMode("auto")).toBe("box");
         expect(nextFieldDragMode("box")).toBe("lasso");
         expect(nextFieldDragMode("lasso")).toBe("pan");
-        expect(nextFieldDragMode("pan")).toBe("box");
+        expect(nextFieldDragMode("pan")).toBe("auto");
+    });
+    it("Auto: a finger moves the view, a pen selects; overrides apply to both", () => {
+        expect(fieldDragAction("auto", "touch")).toBe("pan");
+        expect(fieldDragAction("auto", "pen")).toBe("box");
+        for (const mode of ["box", "lasso", "pan"] as const) {
+            expect(fieldDragAction(mode, "touch")).toBe(mode);
+            expect(fieldDragAction(mode, "pen")).toBe(mode);
+        }
     });
 });
 

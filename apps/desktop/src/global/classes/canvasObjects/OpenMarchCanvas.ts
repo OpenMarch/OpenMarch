@@ -17,7 +17,10 @@ import { isShiftHeld } from "@/stores/TouchModifierStore";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { applyTouchHandleSizing } from "@/components/canvas/touch/touchSelectionHandles";
 import { DragStepReadout } from "@/components/canvas/touch/dragStepReadout";
-import { useFieldDragModeStore } from "@/components/canvas/touch/fieldDragMode";
+import {
+    fieldDragAction,
+    useFieldDragModeStore,
+} from "@/components/canvas/touch/fieldDragMode";
 
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
@@ -613,8 +616,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     public applyGestureViewport(vpt: number[]) {
         if (!this.staticGridRef.objectCaching)
             this.staticGridRef.objectCaching = true;
-        this.setViewportTransform(vpt);
+        // Cheap on every move, for slow tablets: Fabric's setViewportTransform
+        // recomputes every object's screen coordinates, which only hit-testing
+        // needs; settleGestureViewport does that once when the gesture ends.
+        // The selection's handles are drawn from its coordinates, so it keeps up.
+        this.viewportTransform = vpt;
         this.checkCanvasBounds();
+        this.calcViewportBoundaries();
+        this._activeObject?.setCoords();
         this.requestRenderAll();
         clearTimeout(this._zoomTimeout);
         this._zoomTimeout = setTimeout(() => {
@@ -623,6 +632,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this.requestRenderAll();
             }
         }, 75);
+    }
+
+    /** After a pan or zoom gesture: brings every object's screen coordinates up to date */
+    public settleGestureViewport() {
+        const vpt = this.viewportTransform;
+        if (vpt) this.setViewportTransform(vpt.slice());
     }
 
     /** Keeps finger-sized selection handles the right size on screen as the zoom changes */
@@ -880,7 +895,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             // A pen drag from empty field may become a pan or a lasso
             (pointerType === "pen" &&
                 isTouchLayout() &&
-                useFieldDragModeStore.getState().mode !== "box");
+                fieldDragAction(
+                    useFieldDragModeStore.getState().mode,
+                    "pen",
+                ) !== "box");
         // Command-click on empty field keeps the selection on Apple platforms
         if (
             shouldClear &&
