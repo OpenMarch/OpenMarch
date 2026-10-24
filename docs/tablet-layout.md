@@ -50,6 +50,7 @@ example `h-26 touch:h-44`. One spacing unit is 1 px in this repo.
 | Pen on empty field, drag                           | Selection box (default)                                                                                                              |
 | Pen elsewhere (Apple Pencil, Surface Pen)          | Precise, like a mouse                                                                                                                |
 | Palm while the pen is down                         | Ignored on the field and app-wide; large contacts are always ignored on the field                                                    |
+| Finger within 1 s of a pen stroke                  | Moves the view only (never edits), so a resting palm can't move marchers                                                             |
 
 Field drag mode (a one-finger or pen drag that starts on empty field): the default,
 **Auto**, needs no switching: a finger moves the view, a pen draws a selection box, and

@@ -434,23 +434,23 @@ describe("pen and palm rejection", () => {
         expect(results[4].effects).toEqual([]);
     });
 
-    it("lets only two fingers navigate shortly after the pen lifted", () => {
+    it("lets a finger move the view, never edit, shortly after the pen lifted", () => {
         const t0 = 100;
         const { results } = run([
             pen("down", 9, 100, 100, 0),
             pen("up", 9, 100, 100, t0),
             touch("down", 1, 300, 300, t0 + 50),
             touch("move", 1, 340, 300, t0 + 80),
-            touch("down", 2, 400, 300, t0 + 100),
-            touch("move", 2, 420, 300, t0 + 120),
         ]);
-        // One finger: nothing, and never to Fabric
+        // Never to Fabric, so it can't select or move marchers
         expect(results[2].passThrough).toBe(false);
-        expect(results[2].effects).toEqual([]);
-        expect(results[3].effects).toEqual([]);
-        // The second finger starts navigation
-        expect(types(results[4].effects)).toEqual(["navigationStart"]);
-        expect(types(results[5].effects)).toEqual(["navigate"]);
+        expect(results[3].passThrough).toBe(false);
+        expect(types(results[2].effects)).not.toContain("singleStart");
+        // It navigates
+        expect([
+            ...types(results[2].effects),
+            ...types(results[3].effects),
+        ]).toContain("navigate");
     });
 
     it("lets a finger edit again once the pen has been away a while", () => {

@@ -160,7 +160,7 @@ export const GESTURE_TIMING = {
     multiTapMaxMs: 600,
     /** Fingers in a multi-finger tap move less than this (px) */
     multiTapSlopPx: 12,
-    /** Fingers need two to navigate for this long after a pen was used */
+    /** For this long after a pen was used, fingers only navigate (never edit) */
     palmRejectMs: 1000,
 } as const;
 
@@ -293,9 +293,10 @@ function handleTouchDown(
 
     if (state.mode === "idle") {
         if (penRecent(state, input.t)) {
-            // Just after the pen: navigate only, and only with two fingers
+            // Just after the pen: a finger may move the view but never edits
+            // (palm-sized contacts are ignored before they get here)
             const next = enterGesture(
-                { ...state, pointers, tap: null, twoFingerOnly: true },
+                { ...state, pointers, tap: null, twoFingerOnly: false },
                 effects,
             );
             return result(next, effects, false);
