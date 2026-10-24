@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react";
 import {
     XIcon,
     PencilSimpleIcon,
-    PlusIcon,
-    MinusIcon,
+    MagnifyingGlassPlusIcon,
+    MagnifyingGlassMinusIcon,
 } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
@@ -188,6 +188,9 @@ const STICKY_LABEL_CLASS =
 const LABEL_COLUMN_CLASS =
     "text-sub touch:w-[6.5rem] @max-[360px]:touch:w-[2.75rem] @max-[360px]:w-[1.5rem] w-[4rem] shrink-0";
 
+/** One zoom button press; in and out are the same factor, so they undo each other. */
+const TIMELINE_ZOOM_STEP = 1.25;
+
 function TimelineZoomControls() {
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
     const currentPixels = uiSettings.timelinePixelsPerSecond;
@@ -198,7 +201,7 @@ function TimelineZoomControls() {
     const handleZoomOut = () => {
         if (currentPixels <= TIMELINE_MIN_PX_PER_SEC) return;
         const nextValue = Math.max(
-            currentPixels * 0.8,
+            currentPixels / TIMELINE_ZOOM_STEP,
             TIMELINE_MIN_PX_PER_SEC,
         );
         setPixelsPerSecond(nextValue);
@@ -207,7 +210,7 @@ function TimelineZoomControls() {
     const handleZoomIn = () => {
         if (currentPixels >= TIMELINE_MAX_PX_PER_SEC) return;
         const nextValue = Math.min(
-            currentPixels * 1.2,
+            currentPixels * TIMELINE_ZOOM_STEP,
             TIMELINE_MAX_PX_PER_SEC,
         );
         setPixelsPerSecond(nextValue);
@@ -233,7 +236,11 @@ function TimelineZoomControls() {
                 title="Zoom timeline in"
                 aria-label="Zoom timeline in"
             >
-                <PlusIcon size={14} weight="bold" className="touch:size-20" />
+                <MagnifyingGlassPlusIcon
+                    size={16}
+                    weight="bold"
+                    className="touch:size-22"
+                />
             </button>
             <button
                 onClick={handleReset}
@@ -250,7 +257,11 @@ function TimelineZoomControls() {
                 title="Zoom timeline out"
                 aria-label="Zoom timeline out"
             >
-                <MinusIcon size={14} weight="bold" className="touch:size-20" />
+                <MagnifyingGlassMinusIcon
+                    size={16}
+                    weight="bold"
+                    className="touch:size-22"
+                />
             </button>
         </div>
     );

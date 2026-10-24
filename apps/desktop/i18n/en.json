@@ -1282,6 +1282,9 @@
             "add": "Add Music"
         },
         "page": {
+            "add": "New page",
+            "addAtEnd": "New page at the end",
+            "added": "Page {pageName} added",
             "contextMenu": {
                 "delete": "Delete",
                 "deleteInPlace": "In Place",
@@ -1292,6 +1295,7 @@
                 "subsetToggle": "Subset",
                 "title": "Page {pageName}"
             },
+            "countsLabel": "Page {pageName}: {counts}",
             "deleted": "Page {pageName} deleted",
             "deleteFailed": "Failed to delete page",
             "firstPage": "First page",

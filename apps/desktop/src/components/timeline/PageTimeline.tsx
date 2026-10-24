@@ -26,7 +26,8 @@ import {
     useCreateLastPageOnTimeline,
 } from "./PageTimeline.utils";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
-import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useInputModeStore, useIsTouchMode } from "@/stores/InputModeStore";
+import { toast } from "sonner";
 
 /** Narrower selected pages show no "…" button (use long-press instead). */
 const MENU_BUTTON_MIN_PAGE_WIDTH = 120;
@@ -71,6 +72,19 @@ export default function PageTimeline() {
         workspaceSettingsQueryOptions(),
     );
     const { t } = useTolgee();
+
+    /** Adds a page at the end and says so (its number: the next whole page). */
+    const addPage = () => {
+        const pageName = String(pages.filter((p) => !p.isSubset).length);
+        createDefaultTempoGroupAndPage(undefined, {
+            // Fingers get no hover feedback, so say what happened. (With a
+            // mouse the toast would sit over the button at the bottom right.)
+            onSuccess: () => {
+                if (useInputModeStore.getState().mode === "touch")
+                    toast.success(t("timeline.page.added", { pageName }));
+            },
+        });
+    };
 
     // Calculate the width of a page based on its duration
     // Add a small buffer to ensure the page visually includes all its beats
@@ -158,7 +172,7 @@ export default function PageTimeline() {
         const onUp = (ev: PointerEvent) => {
             if (!isOurs(ev)) return;
             cleanup();
-            if (!moved && ev.pointerType !== "mouse") {
+            if (!moved) {
                 // A tap on the edge selects the page under the finger, as a tap
                 // on the page does. In touch mode the handle straddles the edge,
                 // so its right half lies over the next page.
@@ -379,6 +393,31 @@ export default function PageTimeline() {
         </>
     );
 
+    /**
+     * "Page 1: 12 · Page 2: 4" while dragging an edge with a finger: the
+     * edge is shared, so the next page gives up (or gets) the counts.
+     */
+    const resizeCountsNamedLabel = (page: Page) => {
+        const counts =
+            (resizingPage.current?.id === page.id &&
+                currentDragCounts[page.id]) ||
+            page.counts;
+        const next = pages.find((p) => p.id === page.nextPageId);
+        return (
+            <>
+                {t("timeline.page.countsLabel", {
+                    pageName: page.name,
+                    counts,
+                })}
+                {next &&
+                    ` · ${t("timeline.page.countsLabel", {
+                        pageName: next.name,
+                        counts: nextPageBeatDiff(next.id, page.id),
+                    })}`}
+            </>
+        );
+    };
+
     /** The page menu body, shared by the right-click menu and the "…" button. */
     const renderPageMenu = (page: Page) => (
         <>
@@ -406,6 +445,14 @@ export default function PageTimeline() {
                     checked={page?.isSubset || false}
                 />
             </div>
+            <button
+                className="text-body text-text hover:text-accent touch:min-h-44 flex w-full cursor-pointer items-center gap-6 text-left transition-colors"
+                onClick={() => addPage()}
+                disabled={!workspaceSettings}
+            >
+                <PlusIcon size={16} />
+                {t("timeline.page.addAtEnd")}
+            </button>
             {/* Deleting is set well apart from the Subset switch */}
             <div className="border-stroke touch:mt-8 touch:pt-12 touch:gap-4 flex w-full flex-col items-start gap-8 border-t pt-8">
                 <div className="text-text flex items-center gap-6 text-xs">
@@ -461,7 +508,7 @@ export default function PageTimeline() {
     );
 
     return (
-        <div className="flex h-fit gap-0" id="pages">
+        <div className="flex h-fit flex-1 gap-0" id="pages">
             {/* ------------------------------------ FIRST PAGE ------------------------------------ */}
             <ul className="rounded-6 border-stroke flex h-fit gap-0 overflow-clip border">
                 {pages.length > 0 && (
@@ -528,7 +575,8 @@ export default function PageTimeline() {
                                         className={clsx(
                                             "bg-fg-2 text-body text-text group-last:rounded-r-6 touch:min-h-44 touch:pr-28 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
                                             // keep the name clear of the "…" button
-                                            showMenuButton && "touch:pr-72",
+                                            showMenuButton &&
+                                                "touch:justify-start touch:pr-72",
                                             !isPlaying && "cursor-pointer",
                                             page.id === selectedPage?.id
                                                 ? [
@@ -571,47 +619,24 @@ export default function PageTimeline() {
                                     </div>
                                     {/* ------ page menu button (touch) ------ */}
                                     {showMenuButton && (
-                                        <DropdownMenu.Root>
-                                            <DropdownMenu.Trigger asChild>
-                                                <button
-                                                    type="button"
-                                                    className="text-text hover:text-accent absolute top-0 right-22 z-20 flex h-full w-44 items-center justify-center"
-                                                    aria-label={t(
-                                                        "timeline.page.menuButton",
-                                                        {
-                                                            pageName: page.name,
-                                                        },
-                                                    )}
-                                                    onClick={(e) =>
-                                                        e.stopPropagation()
-                                                    }
-                                                >
-                                                    <DotsThreeIcon
-                                                        size={22}
-                                                        weight="bold"
-                                                    />
-                                                </button>
-                                            </DropdownMenu.Trigger>
-                                            <DropdownMenu.Portal>
-                                                <DropdownMenu.Content
-                                                    className={PAGE_MENU_CLASS}
-                                                    side="top"
-                                                    align="end"
-                                                >
-                                                    {renderPageMenu(page)}
-                                                </DropdownMenu.Content>
-                                            </DropdownMenu.Portal>
-                                        </DropdownMenu.Root>
+                                        <PageMenuButton
+                                            label={t(
+                                                "timeline.page.menuButton",
+                                                { pageName: page.name },
+                                            )}
+                                        >
+                                            {renderPageMenu(page)}
+                                        </PageMenuButton>
                                     )}
                                     {/* ------ counts while resizing (touch) ------ */}
                                     {isTouchMode &&
                                         resizingPage.current?.id ===
                                             page.id && (
                                             <div
-                                                className="bg-accent text-text-invert rounded-4 text-sub pointer-events-none absolute top-1/2 left-4 z-30 -translate-y-1/2 px-6 font-mono whitespace-nowrap"
+                                                className="bg-accent text-text-invert rounded-4 text-sub pointer-events-none absolute top-1/2 left-4 z-40 -translate-y-1/2 px-6 font-mono whitespace-nowrap"
                                                 data-testid="page-resize-counts"
                                             >
-                                                {resizeCountsLabel(page)}
+                                                {resizeCountsNamedLabel(page)}
                                             </div>
                                         )}
                                     {/* ------ page resize dragging ------ */}
@@ -680,15 +705,106 @@ export default function PageTimeline() {
                     );
                 })}
             </ul>
+            {/* New page. With a mouse: right after the last page, as before.
+                With fingers: at the end of the row, held at the timeline's
+                right edge, so it is always in view however far it scrolls */}
+            {isTouchMode ? (
+                <div className="min-w-8 flex-1" />
+            ) : (
+                <div className="w-8 shrink-0" />
+            )}
             {!isFullscreen && (
                 <button
-                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => createDefaultTempoGroupAndPage()}
+                    className={clsx(
+                        "bg-accent text-sub text-text-invert flex shrink-0 cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50",
+                        isTouchMode
+                            ? "shadow-modal sticky right-0 z-40 h-44 gap-4 pr-14 pl-10 font-medium whitespace-nowrap"
+                            : "size-[28px]",
+                    )}
+                    onClick={() => addPage()}
                     disabled={!workspaceSettings}
+                    aria-label={t("timeline.page.add")}
+                    title={t("timeline.page.add")}
+                    data-testid="add-page"
                 >
                     <PlusIcon size={20} />
+                    {isTouchMode && t("timeline.page.add")}
                 </button>
             )}
         </div>
+    );
+}
+
+/**
+ * The selected page's "…" button. Radix opens a menu on pointerdown, so a
+ * two-finger scroll that lands on the button would open it. This one opens
+ * on click instead (press and release without moving), and not at all if
+ * another finger joined while it was down.
+ */
+function PageMenuButton({
+    label,
+    children,
+}: {
+    label: string;
+    children: React.ReactNode;
+}) {
+    const [open, setOpen] = useState(false);
+    const armed = useRef(false);
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+        // Keeps Radix from opening on press
+        e.preventDefault();
+        e.stopPropagation();
+        armed.current = true;
+        const pointerId = e.pointerId;
+        const onOtherDown = (ev: PointerEvent) => {
+            if (ev.pointerId !== pointerId) armed.current = false;
+        };
+        const onCancel = () => {
+            armed.current = false;
+        };
+        const stop = () => {
+            window.removeEventListener("pointerdown", onOtherDown, true);
+            window.removeEventListener("pointercancel", onCancel, true);
+            window.removeEventListener("pointerup", stopSoon, true);
+        };
+        // Leave the listeners up until the click that follows this release
+        const stopSoon = () => setTimeout(stop, 0);
+        window.addEventListener("pointerdown", onOtherDown, true);
+        window.addEventListener("pointercancel", onCancel, true);
+        window.addEventListener("pointerup", stopSoon, true);
+    };
+
+    return (
+        <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+            <DropdownMenu.Trigger asChild>
+                <button
+                    type="button"
+                    className="text-text hover:text-accent group absolute top-0 right-22 z-20 flex h-full w-44 items-center justify-center"
+                    aria-label={label}
+                    onPointerDown={handlePointerDown}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        // Keyboard activation (detail 0) has no press to check
+                        if (e.detail === 0 || armed.current) setOpen(true);
+                        armed.current = false;
+                    }}
+                >
+                    {/* a visible chip, so the target reads as a button */}
+                    <span className="border-stroke bg-fg-1 rounded-6 flex h-32 w-36 items-center justify-center border">
+                        <DotsThreeIcon size={22} weight="bold" />
+                    </span>
+                </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                    className={PAGE_MENU_CLASS}
+                    side="top"
+                    align="end"
+                >
+                    {children}
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
     );
 }

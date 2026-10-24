@@ -253,11 +253,56 @@ test("the timeline + and − buttons zoom with a finger", async ({ show }) => {
     });
 
     await tapButton("Zoom timeline in");
-    await expect(zoomReset).toHaveText("120%");
+    await expect(zoomReset).toHaveText("125%");
     await expect.poll(pageWidth).toBeGreaterThan(before * 1.1);
 
+    // In and out are the same step, so one undoes the other
     await tapButton("Zoom timeline out");
+    await expect(zoomReset).toHaveText("100%");
     await tapButton("Zoom timeline out");
-    await expect(zoomReset).toHaveText("77%");
+    await expect(zoomReset).toHaveText("80%");
     await expect.poll(pageWidth).toBeLessThan(before);
+});
+
+test("a two-finger pan that lands on the page's … button doesn't open its menu", async ({
+    show,
+}) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    const menu = (await page
+        .getByRole("button", { name: "Page 2 options" })
+        .boundingBox())!;
+    const onButton = {
+        x: menu.x + menu.width / 2,
+        y: menu.y + menu.height / 2,
+    };
+    await fingers.drag(
+        [onButton, { x: onButton.x - 60, y: onButton.y }],
+        [
+            { x: onButton.x - 160, y: onButton.y },
+            { x: onButton.x - 220, y: onButton.y },
+        ],
+    );
+    await page.waitForTimeout(400);
+    await expect(page.getByRole("menu")).toHaveCount(0);
+});
+
+test("the labelled New page button adds a page and says so", async ({
+    show,
+}) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    const before = await pageStarts(show);
+    const add = page.getByRole("button", { name: "New page", exact: true });
+    await expect(add).toHaveText("New page");
+    const box = (await add.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    // Inside the timeline's view, not cut off by the zoom column
+    const timeline = (await page.locator("#timeline").boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(timeline.x + timeline.width);
+    await fingers.tap({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    await expect.poll(() => pageStarts(show)).toHaveLength(before.length + 1);
+    await expect(
+        page.locator("[data-sonner-toast]").filter({ hasText: "Page 3 added" }),
+    ).toBeVisible();
 });
