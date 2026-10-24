@@ -133,30 +133,33 @@ export default function TimelineContainer() {
                         compact ? "px-4 py-6" : "p-8",
                     )}
                 >
-                    <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
+                    <div
+                        className={clsx(
+                            "flex h-full min-h-0 w-fit flex-col gap-8",
+                            // Touch: rows at the top, so the pages row lines up
+                            // with the New page slot beside the scrolling strip
+                            isTouchMode && !isFullscreen
+                                ? "justify-start"
+                                : "justify-center",
+                        )}
+                    >
                         <div className="flex h-fit items-center">
-                            <div className={STICKY_LABEL_CLASS}>
-                                {isTouchMode && !isFullscreen ? (
-                                    // Fingers get a labelled New page button in
-                                    // the label's place: it has its own slot, so
-                                    // it never covers a page
-                                    <div className={LABEL_COLUMN_CLASS}>
-                                        <NewPageButton />
-                                    </div>
-                                ) : (
+                            {/* No labels in the compact row: it needs the room */}
+                            {!compact && (
+                                <div className={STICKY_LABEL_CLASS}>
                                     <p className={LABEL_COLUMN_CLASS}>
                                         <span className="@max-[360px]:hidden">
                                             <T keyName="timeline.pages" />
                                         </span>
                                     </p>
-                                )}
-                            </div>
+                                </div>
+                            )}
                             <PageTimeline />
                         </div>
 
                         {showAudio && (
                             <div className={"flex items-center"}>
-                                {!isFullscreen && (
+                                {!isFullscreen && !compact && (
                                     <div
                                         className={clsx(
                                             LABEL_COLUMN_CLASS,
@@ -209,6 +212,20 @@ export default function TimelineContainer() {
                         )}
                     </div>
                 </div>
+                {/* Touch: New page in its own slot after the pages, outside the
+                    scrolling strip, so it never covers a page box (with a mouse it
+                    is the round + after the last page) */}
+                {isTouchMode && !isFullscreen && (
+                    <div
+                        className={clsx(
+                            "flex shrink-0",
+                            compact ? "items-center" : "items-start pt-8 pr-8",
+                        )}
+                        data-testid="new-page-slot"
+                    >
+                        <NewPageButton />
+                    </div>
+                )}
                 {compact ? (
                     <CompactViewToggles audioForced={editingAudio} />
                 ) : (
