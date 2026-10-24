@@ -150,6 +150,13 @@ Other field behavior:
 - Audio is unlocked on the first touch (`utilities/audioUnlock.ts`).
 - Settings opens in-page as a sheet (`components/WebSettingsSheet.tsx`) instead of a
   second tab.
+- Saving: shows live on the device, in a library in browser storage, saved as you work,
+  with 20 versions each; Back up shares the `.dots` file (Files, Google Drive, email) or
+  downloads it. The title bar shows "Saved on this iPad" and when the show was last
+  backed up; the start page lists the shows. Work is only on this iPad until it's backed
+  up, and clearing site data loses what wasn't. Safari suggests adding OpenMarch to the
+  Home Screen once. Details and limits: `apps/desktop/web/README.md` ("Shows in the
+  browser").
 - Focused fields scroll above the on-screen keyboard (`hooks/useOnScreenKeyboard.ts`).
 
 ### Desktop app (Windows tablets)

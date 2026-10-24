@@ -4,8 +4,10 @@ The desktop app in a browser tab, with no Electron, served at
 [editor.openmarch.com](https://editor.openmarch.com) (latest release) and
 [editor-nightly.openmarch.com](https://editor-nightly.openmarch.com) (latest
 `main`). There are no accounts
-and nothing is uploaded: a person opens a `.dots` file from their computer or
-creates a new show, edits it in the browser, and saves by downloading it.
+and nothing is uploaded: a person opens a `.dots` file or creates a new
+show, and the browser keeps it, saved as they work, alongside their other
+shows. Backing up shares or downloads the `.dots` file to keep a copy
+somewhere else.
 
 ```bash
 pnpm run web:dev       # local server with hot reload (port 7780)
@@ -22,18 +24,18 @@ The renderer reaches Electron's main process only through `window.electron`,
 which the preload builds on `ipcRenderer`. The web build keeps both ends and
 runs the main process's database code in a Web Worker:
 
-| Piece             | In Electron                | Here                                                                     |
-| ----------------- | -------------------------- | ------------------------------------------------------------------------ |
-| Renderer, preload | `src/`, `electron/preload` | The same code, started by `renderer/index.ts` once the worker is ready   |
-| IPC               | Electron                   | `postMessage` to the worker (`renderer/ipc.ts`, `protocol.ts`)           |
-| Database handlers | `database.services.ts`     | The same file, in the worker (`worker/index.ts`)                         |
-| SQLite            | `node:sqlite` on a file    | `worker/sqlite.ts`: the official SQLite WebAssembly build, in memory     |
-| Opening a show    | `setActiveDb`              | `worker/index.ts`: the same steps, without the backup                    |
-| Saving            | Every write is on disk     | A copy in browser storage (`worker/storage.ts`); **Download** to keep    |
-| Settings          | electron-store             | `localStorage` (`renderer/handlers.ts`)                                  |
-| File dialogs      | Native                     | File pickers and downloads (`renderer/handlers.ts`)                      |
-| Settings window   | A second `BrowserWindow`   | A full-screen sheet over the app (`src/components/WebSettingsSheet.tsx`) |
-| Node modules      | `fs`, `path`, `crypto`     | Stand-ins in `worker/`                                                   |
+| Piece             | In Electron                | Here                                                                                          |
+| ----------------- | -------------------------- | --------------------------------------------------------------------------------------------- |
+| Renderer, preload | `src/`, `electron/preload` | The same code, started by `renderer/index.ts` once the worker is ready                        |
+| IPC               | Electron                   | `postMessage` to the worker (`renderer/ipc.ts`, `protocol.ts`)                                |
+| Database handlers | `database.services.ts`     | The same file, in the worker (`worker/index.ts`)                                              |
+| SQLite            | `node:sqlite` on a file    | `worker/sqlite.ts`: the official SQLite WebAssembly build, in memory                          |
+| Opening a show    | `setActiveDb`              | `worker/index.ts`: the same steps, without the backup                                         |
+| Saving            | Every write is on disk     | A show library in browser storage (`worker/library.ts`); **Back up** to keep a copy elsewhere |
+| Settings          | electron-store             | `localStorage` (`renderer/handlers.ts`)                                                       |
+| File dialogs      | Native                     | File pickers and downloads (`renderer/handlers.ts`)                                           |
+| Settings window   | A second `BrowserWindow`   | A full-screen sheet over the app (`src/components/WebSettingsSheet.tsx`)                      |
+| Node modules      | `fs`, `path`, `crypto`     | Stand-ins in `worker/`                                                                        |
 
 `vite.web.config.mts` points `electron` at `worker/electron.ts` for
 main-process code and at `renderer/electron.ts` for the preload.
@@ -42,7 +44,7 @@ In the app's own code, `isWebBuild` (`src/utilities/webBuild.ts`) turns off
 what has no meaning in a browser: the window buttons and native menu in the
 title bar (replaced by `WebFileMenu`), the update check, and the new-show
 wizard's file location, export (and mobile upload), and the settings for
-plugins, privacy, developer tools and file repair. Saving downloads the file;
+plugins, privacy, developer tools and file repair. "Save a copy" backs up the file;
 ⌘/Ctrl+S and ⌘/Ctrl+O are bound, since there is no native menu to bind
 them, so swapping marchers moves to ⌘/Ctrl+Shift+S.
 
@@ -59,33 +61,73 @@ the extension, so there the picker accepts any file and the choice is
 checked afterwards, and saving offers the share sheet ("Save to Files")
 before falling back to a download (`renderer/filePicking.ts`).
 
-### The show in the browser
+### Shows in the browser
 
-There is one show at a time. It lives in memory in the worker, and a copy
-goes to the browser's origin private file system (OPFS) on the first change
-after a quiet spell and at most twice a second after that, so a reload or
-crash reopens it. That copy is a convenience, not the saved file: browsers
-may clear site storage (Safari after 7 days without a visit), so the page
-says once per browser session to download the show when finished. Closing
-the tab, closing the show or opening another asks first if there are changes
-since the last download.
+**The model, honestly:** work lives on this device, in this browser. It is
+saved as the person works, so closing the tab, a crash or a reload loses
+nothing, but it is only here. Backing up is the only copy anywhere else.
+If the browser's site data is cleared (by the person, by the browser when
+space runs low, or by Safari after a week without a visit to a website that
+isn't on the Home Screen), shows that weren't backed up are gone.
+
+- **Library.** The browser keeps any number of shows in its origin private
+  file system (OPFS), under `openmarch-<channel>/library/`
+  (`worker/library.ts`; the index format and rules are pure functions in
+  `src/utilities/webLibrary.ts`). The start page lists them with when each
+  was edited and backed up, and opens, renames, duplicates, backs up, shows
+  the versions of, or deletes (after asking) each one
+  (`src/components/web/WebShowLibrary.tsx`). Opening a `.dots` file or
+  creating a show adds it; nothing replaces another show.
+- **Autosave.** The open show lives in memory in the worker; a copy goes to
+  the library on the first change after a quiet spell and at most twice a
+  second after that, and when the page is hidden. Every write is crash-safe:
+  the show (and the index) is written to a new file, and the previous one is
+  removed only once the new one is whole; reading takes the newest whole
+  file. A full disk drops the show's oldest versions and tries again.
+- **Versions.** Each show keeps its last 20 versions: at most one per two
+  minutes of editing, one when it's opened (if it changed since the last),
+  and one before a restore. Restoring a version keeps the state it replaces
+  as a new version, so nothing is lost (`src/components/web/WebVersionsDialog.tsx`).
+- **Status.** The title bar says "Saved on this iPad" (or "in this
+  browser"), "Saving…", or what went wrong, and when the show was last
+  backed up; tap it for Back up and Versions (`src/components/web/WebSaveStatus.tsx`).
+- **Back up.** Shares the `.dots` file through the share sheet on iPads and
+  Android tablets (Files, Google Drive, email…) and downloads it elsewhere or
+  if sharing isn't possible, then records the time. A show opened from a
+  file counts as backed up by that file. A show with changes from three or
+  more days of editing since its last backup gets a gentle reminder with a
+  Back up button, at most once a day.
+- **Keeping storage.** The page asks the browser to keep its storage
+  (`navigator.storage.persist()`; Safari agrees for a Home Screen app). The
+  first time in Safari on an iPad it explains how to add OpenMarch to the
+  Home Screen instead of the usual welcome (`src/components/web/WebHomeScreenPrompt.tsx`).
+  A Home Screen app has its own storage, apart from Safari's: a show made in
+  Safari moves over by backing it up and opening the file in the app.
+- **Earlier builds** kept one show as `openmarch-<channel>/<n>-<name>`; it
+  becomes the library's first show, still open, and the old file is removed
+  once the library has it.
 
 Why in memory and not one of SQLite's OPFS VFSes: in benchmarks, updates
 that fire the undo triggers were about 75 times slower on `opfs-sahpool`,
 and the `opfs` VFS needs cross-origin isolation headers, which would block
 cross-origin scripts, images and embeds.
 
-Only one tab per channel holds the storage (a Web Lock). A second tab keeps
-its show in memory and says so, as does a private window without OPFS.
-Opening or creating a show reloads the page, so such a tab hands the show to
-its next page through IndexedDB (`renderer/handoff.ts`), and keeps its
-"changed since download" flag to itself rather than in the shared
-`localStorage` key. A tab whose storage fails while opening or creating a
-show (e.g. it's full) removes the old show's copy and becomes memory-only
-the same way. A stored show this build can't reopen is kept for a later
-build, and opening or creating a show asks before replacing it. Storage is
-also namespaced by channel, for
-builds that share an origin (such as local `web:dev` and `web:preview`).
+Only one tab per channel holds the library (a Web Lock). A second tab keeps
+its show in memory and says so, as does a browser without usable OPFS (such
+as some private windows): such a tab warns that its work is lost when it
+closes unless downloaded, and asks before closing with changes. Opening or
+creating a show reloads the page, so such a tab hands the show to its next
+page through IndexedDB (`renderer/handoff.ts`). A tab whose storage fails
+while adding a show (e.g. it's full) becomes memory-only the same way; the
+library keeps its other shows. A stored show this build can't open stays in
+the library and says so. Storage is namespaced by channel, for builds that
+share an origin (such as local `web:dev` and `web:preview`).
+
+**Limits.** No sync between devices or browsers, no cloud copy, and no
+recovery of shows lost with cleared site data. Versions are whole copies of
+the show, so they take space (20 per show). Private Browsing detection is a
+best effort: a browser that hands out storage and drops it at the end of the
+session looks like a normal one.
 
 ## What doesn't work on the web
 

@@ -16,11 +16,24 @@ import {
     storageLost,
 } from "./handlers";
 import { takeHandedOffShow } from "./handoff";
+import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
+import {
+    HOME_SCREEN_PROMPT_KEY,
+    isStandalone,
+    shouldOfferHomeScreen,
+} from "../../src/utilities/homeScreen";
+import { isAppleTouchDevice } from "./filePicking";
 import { startTouchGestureGuard } from "./touchGestures";
 import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
 import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
-import { WEB_CHANNELS, WEB_EVENTS, type WorkerStatus } from "../protocol";
+import {
+    WEB_CHANNELS,
+    WEB_EVENTS,
+    type LibraryState,
+    type SaveStatus,
+    type WorkerStatus,
+} from "../protocol";
 
 declare global {
     interface Window {
@@ -79,9 +92,50 @@ function showNotice(text: string) {
 }
 
 /**
- * The show is only backed up in the browser; the saved copy is the download.
- * Says so once per browser session, and asks before the tab closes with
- * changes that haven't been downloaded.
+ * Keeps the page's view of the library and the save status current (the
+ * show list and title bar read it), and asks the browser to keep the shows.
+ */
+function followLibrary(status: WorkerStatus) {
+    const store = useWebLibraryStore.getState();
+    store.set({
+        storage:
+            status.storage === "opfs"
+                ? { kind: "opfs" }
+                : {
+                      kind: "memory",
+                      problem: status.storageProblem ?? "unsupported",
+                  },
+    });
+    ipcRenderer.on(WEB_EVENTS.library, (_event, library: LibraryState) =>
+        useWebLibraryStore.getState().set({ library }),
+    );
+    ipcRenderer.on(WEB_EVENTS.saveStatus, (_event, saveStatus: SaveStatus) =>
+        useWebLibraryStore.getState().set({ saveStatus }),
+    );
+    if (status.storage !== "opfs") return;
+    void invokeWorker<LibraryState>(WEB_CHANNELS.library)
+        .then((library) => useWebLibraryStore.getState().set({ library }))
+        .catch((error) => console.error("Couldn't list the shows:", error));
+    // Ask the browser not to clear the shows when space runs low. Safari
+    // agrees for a Home Screen app.
+    void (async () => {
+        try {
+            const persisted =
+                (await navigator.storage?.persisted?.()) ||
+                (await navigator.storage?.persist?.()) ||
+                false;
+            useWebLibraryStore.getState().set({ persisted });
+        } catch {
+            useWebLibraryStore.getState().set({ persisted: false });
+        }
+    })();
+}
+
+/**
+ * Says once per browser session what the web editor is (or, the first time
+ * in Safari on an iPad, how to add it to the Home Screen), and warns when
+ * shows can't be kept. A memory-only tab asks before closing with changes
+ * that haven't been downloaded.
  */
 function warnAboutStorage(status: WorkerStatus) {
     window.addEventListener("beforeunload", (event) => {
@@ -91,15 +145,24 @@ function warnAboutStorage(status: WorkerStatus) {
     if (status.storage === "opfs") {
         const remindedKey = storageKey("reminded");
         try {
-            if (!sessionStorage.getItem(remindedKey)) {
+            const offerHomeScreen = shouldOfferHomeScreen({
+                appleTouch: isAppleTouchDevice(),
+                standalone: isStandalone(),
+                alreadyShown: !!localStorage.getItem(HOME_SCREEN_PROMPT_KEY),
+            });
+            if (offerHomeScreen) {
+                localStorage.setItem(HOME_SCREEN_PROMPT_KEY, "1");
+                sessionStorage.setItem(remindedKey, "1");
+                useWebLibraryStore
+                    .getState()
+                    .set({ homeScreenPromptOpen: true });
+            } else if (!sessionStorage.getItem(remindedKey)) {
                 sessionStorage.setItem(remindedKey, "1");
                 useWebWelcomeStore.getState().setOpen(true);
             }
         } catch {
             // Storage blocked: the browser keeps nothing anyway (see below).
         }
-        // Ask the browser not to clear the show when space runs low.
-        void navigator.storage?.persist?.().catch(() => {});
         // Copy the latest edits now, in case the tab is about to close.
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "hidden")
@@ -110,7 +173,7 @@ function warnAboutStorage(status: WorkerStatus) {
     showNotice(
         status.storageProblem === "other-tab"
             ? "OpenMarch is open in another tab. In this tab, your show is only kept until you close or reload it. Download it to keep your changes."
-            : "This browser can't keep your show between visits (for example, in a private window). Download it to keep your changes.",
+            : "This browser won't keep your shows (for example, in Private Browsing). Your work is lost when you close this tab unless you download it. Use a normal Safari tab, or add OpenMarch to your Home Screen.",
     );
 }
 
@@ -159,6 +222,7 @@ async function start() {
         try {
             const status = await startWorker();
             setStoredInBrowser(status.storage === "opfs");
+            followLibrary(status);
             // Also with storage: one that failed hands its show off too.
             await reopenHandedOffShow();
             warnAboutStorage(status);

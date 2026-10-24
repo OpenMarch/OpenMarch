@@ -12,6 +12,7 @@ import { WEB_CHANNELS } from "../protocol";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
+import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import { requestOpenSettings } from "../../src/utilities/settingsSheet";
 import {
     isAppleTouchDevice,
@@ -116,19 +117,24 @@ async function pickShowFile(): Promise<File | null> {
     return file;
 }
 
+/** Whether to save through the share sheet: iPads and Android tablets. */
+const shareFirst = appleTouch || /Android/i.test(navigator.userAgent);
+
 /**
- * Saves `bytes` to the person's device. False if they closed the iOS share
- * sheet without saving.
+ * Saves `bytes` to the person's device: the share sheet on a tablet (Files,
+ * Google Drive, email…), a download elsewhere or if sharing isn't possible.
  */
-async function download(bytes: Uint8Array, name: string): Promise<boolean> {
-    if (appleTouch) {
+async function saveToDevice(
+    bytes: Uint8Array,
+    name: string,
+): Promise<"shared" | "downloaded" | "cancelled"> {
+    if (shareFirst) {
         const shared = await shareFile(
             new File([bytes as BlobPart], name, {
                 type: "application/octet-stream",
             }),
         );
-        if (shared === "shared") return true;
-        if (shared === "cancelled") return false;
+        if (shared !== "unavailable") return shared;
     }
     const url = URL.createObjectURL(
         new Blob([bytes as BlobPart], { type: "application/octet-stream" }),
@@ -138,21 +144,36 @@ async function download(bytes: Uint8Array, name: string): Promise<boolean> {
     link.download = name;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    return true;
+    return "downloaded";
 }
 
+export type BackupResult = "shared" | "downloaded" | "cancelled" | "nothing";
+
 /**
- * Saves the open show as a `.dots` file. Returns 200, or 0 with nothing open
- * or when the person closed the iOS share sheet.
+ * Backs up a show: shares or downloads its `.dots` file and records when.
+ * `id` is a show in the library; without one, the open show.
  */
-export async function downloadShow(): Promise<number> {
-    const show = await invokeWorker<{ name: string; bytes: Uint8Array } | null>(
-        WEB_CHANNELS.exportShow,
-    );
-    if (!show) return 0;
-    if (!(await download(show.bytes, show.name))) return 0;
-    markDownloaded();
-    return 200;
+export async function backUpShow(id?: string | null): Promise<BackupResult> {
+    const target =
+        id ??
+        (storedInBrowser
+            ? useWebLibraryStore.getState().library?.openId
+            : null);
+    const show = target
+        ? await invokeWorker<{ name: string; bytes: Uint8Array }>(
+              WEB_CHANNELS.exportStored,
+              target,
+          )
+        : await invokeWorker<{ name: string; bytes: Uint8Array } | null>(
+              WEB_CHANNELS.exportShow,
+          );
+    if (!show) return "nothing";
+    const result = await saveToDevice(show.bytes, show.name);
+    if (result === "cancelled") return result;
+    if (!target || target === useWebLibraryStore.getState().library?.openId)
+        markDownloaded();
+    if (target) await invokeWorker(WEB_CHANNELS.recordBackup, target);
+    return result;
 }
 
 /** Opens `file` as the show and reloads into it, as `setActiveDb` does. */
@@ -180,31 +201,11 @@ export function setStoredInBrowser(stored: boolean) {
 }
 
 /**
- * Storage failed and the worker removed the stored show (see
- * `storeNewShow` in the worker): from now on the tab is memory-only, and
- * the shared flag describes a show that is gone.
+ * Storage failed (see `storeNewShow` in the worker): from now on the tab
+ * keeps its show in memory only.
  */
 export function storageLost() {
-    try {
-        localStorage.removeItem(UNSAVED_KEY);
-    } catch {
-        // See markChanged.
-    }
     storedInBrowser = false;
-}
-
-/**
- * Asks before creating or opening a show replaces one this browser kept
- * from an earlier visit but couldn't reopen.
- */
-async function confirmReplaceKept(action: string): Promise<boolean> {
-    const kept = await invokeWorker<string | null>(WEB_CHANNELS.keptShow);
-    return (
-        !kept ||
-        window.confirm(
-            `This browser still keeps "${kept}" from an earlier visit, but this version of OpenMarch couldn't reopen it. ${action} replaces it.\n\nContinue?`,
-        )
-    );
 }
 
 /**
@@ -232,46 +233,24 @@ async function keepAcrossReload(changed: boolean): Promise<boolean> {
 }
 
 /**
- * Whether the show changed since its last download, so its only copy of
- * those changes is in this browser. Kept across visits, like the show.
- */
-const UNSAVED_KEY = storageKey("changedSinceDownload");
-/**
- * In a memory-only tab the flag is the page's own: the shared key describes
- * the stored show, which belongs to the tab holding storage, and another tab
- * clearing it would drop that tab's warning.
+ * Whether a memory-only tab's show changed since its last download, so its
+ * only copy of those changes is this page. A stored show is saved as it
+ * changes, so closing or reloading loses nothing.
  */
 let changedInPage = false;
 export function markChanged() {
     changedInPage = true;
-    if (!storedInBrowser) return;
-    try {
-        localStorage.setItem(UNSAVED_KEY, "1");
-    } catch {
-        // Nothing to warn with; leaving still keeps the show in this browser.
-    }
 }
 function markDownloaded() {
     changedInPage = false;
-    if (!storedInBrowser) return;
-    try {
-        localStorage.removeItem(UNSAVED_KEY);
-    } catch {
-        // See markChanged.
-    }
 }
 export function changedSinceDownload() {
-    if (!storedInBrowser) return changedInPage;
-    try {
-        return localStorage.getItem(UNSAVED_KEY) === "1";
-    } catch {
-        return changedInPage;
-    }
+    return !storedInBrowser && changedInPage;
 }
 
 /**
- * Closing or replacing the show deletes the browser's copy, so asks first
- * when there are changes the person hasn't downloaded.
+ * In a memory-only tab, closing or replacing the show loses it, so asks
+ * first when there are changes the person hasn't downloaded.
  */
 function confirmDiscard(): boolean {
     return (
@@ -367,11 +346,33 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     // is just the show's name.
     handleInPage("database:load", async () => {
         if (!confirmDiscard()) return 0;
-        if (!(await confirmReplaceKept("Opening a show"))) return 0;
         const file = await pickShowFile();
         return file ? openShowFile(file) : 0;
     });
-    handleInPage("database:save", () => downloadShow());
+    // Saving is a backup: the show is already saved in the browser.
+    handleInPage("database:save", async () => {
+        const result = await backUpShow();
+        return result === "shared" || result === "downloaded" ? 200 : 0;
+    });
+    handleInPage("web:backUp", (id?: string) => backUpShow(id));
+    // Both reload into the show, as opening a file does.
+    handleInPage(WEB_CHANNELS.openStored, async (id: string) => {
+        const status = await invokeWorker<number>(WEB_CHANNELS.openStored, id);
+        if (status === 200) reloadPage();
+        return status;
+    });
+    handleInPage(
+        WEB_CHANNELS.restoreVersion,
+        async (id: string, versionId: string) => {
+            const wasOpen = await invokeWorker<boolean>(
+                WEB_CHANNELS.restoreVersion,
+                id,
+                versionId,
+            );
+            if (wasOpen) reloadPage();
+            return wasOpen;
+        },
+    );
     handleInPage("closeCurrentFile", () => closeShow());
     handleInPage("newShow:choosePreviousDotsFile", async () => {
         const file = await pickShowFile();
@@ -395,7 +396,6 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     handleInPage(
         "newShow:finalizeDraft",
         async (targetPath: string, projectName: string) => {
-            if (!(await confirmReplaceKept("Creating this show"))) return -1;
             const status = await invokeWorker<number>(
                 "newShow:finalizeDraft",
                 targetPath,

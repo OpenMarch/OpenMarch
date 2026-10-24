@@ -47,6 +47,8 @@ import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
+import WebHomeScreenPrompt from "./components/web/WebHomeScreenPrompt";
+import WebVersionsDialog from "./components/web/WebVersionsDialog";
 import { isWebBuild } from "./utilities/webBuild";
 import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
@@ -310,6 +312,8 @@ function App() {
                     <AlertModal />
                     {isWebBuild && <WebWelcomeModal />}
                     {isWebBuild && <WebSettingsSheet />}
+                    {isWebBuild && <WebHomeScreenPrompt />}
+                    {isWebBuild && <WebVersionsDialog />}
                     <ShortcutDispatcher />
                     <CommandPalette />
                     <LongPressGuard />

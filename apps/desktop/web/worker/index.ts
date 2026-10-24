@@ -10,9 +10,10 @@
  * Anything that needs the page (file pickers, downloads, settings) is handled
  * by the page in `../renderer/handlers.ts`.
  *
- * There is one open show at a time, in memory. A copy goes to browser
- * storage shortly after each change (see `./storage.ts`), so reloading the
- * page reopens it.
+ * There is one open show at a time, in memory. Browser storage keeps a
+ * library of shows (see `./library.ts`): the open one is copied there
+ * shortly after each change, so reloading the page reopens it, and opening
+ * or creating a show adds it without replacing the others.
  */
 import "./process";
 import * as DatabaseServices from "@om-electron/database/database.services";
@@ -32,11 +33,15 @@ import {
     renameDatabase,
     writeDatabase,
 } from "./sqlite";
-import { claimStorage, clearShow, readShow, writeShow } from "./storage";
+import { claimStorage } from "./storage";
+import { Library } from "./library";
+import { cleanName } from "@/utilities/webLibrary";
 import {
     WEB_CHANNELS,
     WEB_EVENTS,
     type FromWorker,
+    type LibraryState,
+    type SaveStatus,
     type ToWorker,
 } from "../protocol";
 
@@ -116,26 +121,75 @@ function removeOtherShows(keep?: string) {
     for (const path of listDatabases()) if (path !== keep) deleteDatabase(path);
 }
 
-/** A stored show that couldn't be reopened, kept until it is replaced. */
-let keptShow: string | null = null;
+/* ========================= The library ========================= */
+
+/** The shows kept in browser storage; null in a memory-only tab. */
+let library: Library | null = null;
+/** The library id of the open show, if it's stored there. */
+let openId: string | null = null;
+/** A stored show that couldn't be opened when the page loaded. */
+let openFailed: string | null = null;
+
+function libraryState(): LibraryState {
+    return {
+        shows: library?.list() ?? [],
+        openId,
+        openFailed,
+    };
+}
+
+/** Tells the page the library changed. */
+function reportLibrary() {
+    post({ type: "emit", channel: WEB_EVENTS.library, args: [libraryState()] });
+}
+
+let lastStatus: SaveStatus["state"] | null = null;
+function reportStatus(status: SaveStatus) {
+    if (status.state === "saving" && lastStatus === "saving") return;
+    lastStatus = status.state;
+    post({ type: "emit", channel: WEB_EVENTS.saveStatus, args: [status] });
+}
+
+function describeSaveError(error: unknown): SaveStatus {
+    const name = (error as DOMException)?.name ?? "";
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+        state: "error",
+        reason:
+            name === "QuotaExceededError" || /quota|space/i.test(message)
+                ? "full"
+                : "other",
+        message,
+    };
+}
 
 /** Reopens the show that was open before the page reloaded, if there is one. */
 async function restoreShow() {
-    const saved = await readShow();
-    if (!saved) return;
-    const path = showPath(saved.name);
+    const id = library?.current.openId;
+    if (!library || !id) return;
+    const entry = library.current.shows.find((show) => show.id === id);
+    const path = showPath(entry?.name ?? "Untitled");
     try {
-        writeDatabase(path, saved.bytes);
+        // A restore point from before this session's edits
+        await library
+            .keepVersion(id, "opened")
+            .catch((error) =>
+                console.warn("Couldn't keep a version on opening:", error),
+            );
+        writeDatabase(path, await library.readShow(id));
         const status = await openShowAt(path, false);
         if (status !== 200) throw new Error(`Status ${status}`);
+        openId = id;
         savedCopy = { path, changes: changeState(path)?.changes ?? 0 };
         markDownloaded();
     } catch (error) {
-        // Keep the stored copy for a later build to try.
+        // It stays in the library, for a later build to try.
         console.error("Couldn't reopen the last show:", error);
-        keptShow = saved.name;
+        openFailed = entry?.name ?? id;
+        openId = null;
         deleteDatabase(path);
         DatabaseServices.setDbPath("", false);
+        await library.setOpen(null).catch(() => {});
     }
 }
 
@@ -208,46 +262,59 @@ async function saveCopy(): Promise<void> {
         scheduleSave(TRANSACTION_RETRY_MS);
         return;
     }
+    if (!library || !openId) return;
     lastSaveAt = Date.now();
     const bytes = exportDatabase(path);
     const copy = { path, changes: state.changes };
     savedCopy = copy;
+    reportStatus({ state: "saving" });
     try {
-        await writeShow(path.slice(1).replace(/\.dots$/, ""), bytes);
+        await library.saveShow(openId, bytes);
     } catch (error) {
         // Not stored, so the next save tries again.
         if (savedCopy === copy) savedCopy = null;
+        reportStatus(describeSaveError(error));
         throw error;
     }
+    reportStatus({ state: "saved", at: Date.now() });
+    reportLibrary();
 }
 
 /**
- * Stores a show that just took the open one's place. If storage fails, the
- * old show's copy is removed and storage is no longer used, so a reload
- * can't bring the old show back; the page then hands the new one across
- * the reload as a memory-only tab does.
+ * Adds the show that was just opened or created to the library, as the one
+ * to reopen. If storage fails, storage is no longer used in this tab and the
+ * page hands the show across the reload as a memory-only tab does; the
+ * library keeps its other shows.
  */
-async function storeNewShow() {
+async function storeNewShow(name: string, backedUp: boolean) {
     // A different show, even under the same name and change count.
     savedCopy = null;
+    openId = null;
+    openFailed = null;
+    const path = DatabaseServices.getDbPath();
+    if (!storageEnabled || !library || !path) return;
     try {
-        await saveCopy();
-        keptShow = null;
+        const id = await library.addShow(name, exportDatabase(path), {
+            backedUp,
+        });
+        await library.setOpen(id);
+        openId = id;
+        savedCopy = { path, changes: changeState(path)?.changes ?? 0 };
+        reportStatus({ state: "saved", at: Date.now() });
+        reportLibrary();
     } catch (error) {
         console.error("Couldn't store the show; keeping it in memory:", error);
         storageEnabled = false;
         if (saveTimer) clearTimeout(saveTimer);
         saveTimer = null;
-        keptShow = null;
-        await clearShow().catch((clearError) =>
-            console.error("Couldn't remove the old show's copy:", clearError),
-        );
+        // So the reload doesn't reopen the previous show instead
+        await library.setOpen(null).catch(() => {});
         post({ type: "emit", channel: WEB_EVENTS.storageLost, args: [] });
     }
 }
 
 function scheduleSave(minimumWait = 0) {
-    if (!storageEnabled || saveTimer) return;
+    if (!storageEnabled || saveTimer || !openId) return;
     const wait = Math.max(
         minimumWait,
         lastSaveAt + SAVE_INTERVAL_MS - Date.now(),
@@ -311,7 +378,7 @@ function registerNewShowHandlers() {
             removeOtherShows(path);
             const status = DatabaseServices.setDbPath(path);
             if (status === 200) {
-                await storeNewShow();
+                await storeNewShow(projectName, false);
                 // Never downloaded: the page marks a new show as changed.
                 markDownloaded();
             }
@@ -328,6 +395,99 @@ function registerNewShowHandlers() {
         return 200;
     });
     ipcMain.handle("newShow:getDraftPath", () => draftPath);
+}
+
+/** Closes the show in memory; nothing is removed from the library. */
+function closeOpenShow() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = null;
+    DatabaseServices.closePersistentConnection();
+    DatabaseServices.setDbPath("", false);
+    removeOtherShows();
+    draftPath = null;
+    savedCopy = null;
+    downloadedChanges = null;
+    openId = null;
+    lastStatus = null;
+}
+
+function requireLibrary(): Library {
+    if (!library) throw new Error("This tab doesn't keep shows in the browser");
+    return library;
+}
+
+/** The library's channels: list, open, rename, copy, delete, back up, restore. */
+// eslint-disable-next-line max-lines-per-function
+function registerLibraryHandlers() {
+    ipcMain.handle(WEB_CHANNELS.library, () => libraryState());
+    ipcMain.handle(WEB_CHANNELS.openStored, async (_, id: string) => {
+        const lib = requireLibrary();
+        if (!lib.current.shows.some((show) => show.id === id)) return 404;
+        if (openId && openId !== id) {
+            await saveCopy().catch((error) =>
+                console.error(
+                    "Couldn't save the show before switching:",
+                    error,
+                ),
+            );
+            closeOpenShow();
+        }
+        await lib.setOpen(id);
+        return 200;
+    });
+    ipcMain.handle(
+        WEB_CHANNELS.renameShow,
+        async (_, id: string, name: string) => {
+            await requireLibrary().rename(id, name);
+            reportLibrary();
+        },
+    );
+    ipcMain.handle(
+        WEB_CHANNELS.duplicateShow,
+        async (_, id: string, copyName: string) => {
+            if (id === openId) await saveCopy();
+            const newId = await requireLibrary().duplicate(id, () => copyName);
+            reportLibrary();
+            return newId;
+        },
+    );
+    ipcMain.handle(WEB_CHANNELS.deleteShow, async (_, id: string) => {
+        if (id === openId) closeOpenShow();
+        await requireLibrary().remove(id);
+        reportLibrary();
+    });
+    ipcMain.handle(WEB_CHANNELS.exportStored, async (_, id: string) => {
+        const lib = requireLibrary();
+        const entry = lib.current.shows.find((show) => show.id === id);
+        if (!entry) throw new Error(`No show ${id}`);
+        const path = DatabaseServices.getDbPath();
+        const bytes =
+            id === openId && path
+                ? exportDatabase(path)
+                : await lib.readShow(id);
+        return { name: `${cleanName(entry.name)}.dots`, bytes };
+    });
+    ipcMain.handle(WEB_CHANNELS.recordBackup, async (_, id: string) => {
+        await requireLibrary().recordBackup(id);
+        if (id === openId) markDownloaded();
+        reportLibrary();
+    });
+    ipcMain.handle(
+        WEB_CHANNELS.restoreVersion,
+        async (_, id: string, versionId: string) => {
+            const lib = requireLibrary();
+            const wasOpen = id === openId;
+            if (wasOpen) {
+                // Store the latest edits first: they become a version too.
+                await saveCopy();
+                closeOpenShow();
+                await lib.setOpen(id);
+            }
+            await lib.restoreVersion(id, versionId);
+            reportLibrary();
+            return wasOpen;
+        },
+    );
 }
 
 /** The web build's own channels: one show, in from and out to the page. */
@@ -368,24 +528,24 @@ function registerWebHandlers() {
             draftPath = null;
             status = DatabaseServices.setDbPath(path);
             if (status === 200) {
-                await storeNewShow();
+                // The file the person opened is their backup.
+                await storeNewShow(name, true);
                 markDownloaded();
             }
             return status;
         },
     );
     ipcMain.handle(WEB_CHANNELS.closeShow, async () => {
-        DatabaseServices.closePersistentConnection();
-        DatabaseServices.setDbPath("", false);
-        removeOtherShows();
-        draftPath = null;
-        savedCopy = null;
-        downloadedChanges = null;
-        keptShow = null;
-        await clearShow();
+        // The show stays in the library, with its latest changes.
+        await saveCopy().catch((error) =>
+            console.error("Couldn't save the show before closing:", error),
+        );
+        closeOpenShow();
+        if (library) await library.setOpen(null);
+        reportLibrary();
     });
-    ipcMain.handle(WEB_CHANNELS.keptShow, () => keptShow);
     ipcMain.handle(WEB_CHANNELS.flush, () => saveCopy());
+    registerLibraryHandlers();
     ipcMain.handle(WEB_CHANNELS.exportShow, () => {
         const path = DatabaseServices.getDbPath();
         if (!path) return null;
@@ -463,7 +623,14 @@ async function start() {
     const storage = await claimStorage(
         import.meta.env.VITE_PUBLIC_WEB_CHANNEL || "dev",
     );
-    storageEnabled = storage.storage === "opfs";
+    if (storage.storage === "opfs") {
+        try {
+            library = await Library.open(storage.dir);
+            storageEnabled = true;
+        } catch (error) {
+            console.error("Couldn't open the show library:", error);
+        }
+    }
     registerHandlers();
     if (storageEnabled) await restoreShow();
     scope.addEventListener("message", (event: MessageEvent<ToWorker>) => {
@@ -473,10 +640,15 @@ async function start() {
     });
     post({
         type: "ready",
-        status:
-            storage.storage === "opfs"
-                ? { storage: "opfs" }
-                : { storage: "memory", storageProblem: storage.problem },
+        status: storageEnabled
+            ? { storage: "opfs" }
+            : {
+                  storage: "memory",
+                  storageProblem:
+                      storage.storage === "memory"
+                          ? storage.problem
+                          : "unsupported",
+              },
     });
 }
 

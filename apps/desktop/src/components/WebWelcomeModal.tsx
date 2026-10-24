@@ -24,18 +24,20 @@ export default function WebWelcomeModal() {
                         </p>
                     </DialogDescription>
                     <p>
-                        There are no accounts and nothing is uploaded: your show
-                        stays on this computer. Open an existing{" "}
-                        <code>.dots</code> file or start a new one to begin.
+                        There are no accounts and nothing is uploaded: your
+                        shows stay on this device, saved as you work. Open an
+                        existing <code>.dots</code> file or start a new one to
+                        begin.
                     </p>
                     <p>
                         <strong className="text-text">
-                            Download your show to save it ({save}).
+                            Back up your shows ({save}).
                         </strong>{" "}
-                        This browser keeps a backup between visits, but it can
-                        clear it, so the downloaded <code>.dots</code> file is
-                        your saved copy. To keep working later, open that file
-                        again.
+                        The browser keeps them between visits, but it can clear
+                        them (for example, when space runs low), and they are
+                        only on this device. Backing up saves a{" "}
+                        <code>.dots</code> file somewhere else, such as Files,
+                        Google Drive or email.
                     </p>
                     <div className="flex justify-end pt-16">
                         <Button onClick={() => setOpen(false)}>Got it</Button>

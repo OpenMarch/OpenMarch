@@ -1,42 +1,15 @@
 /**
- * Keeps a copy of the open show in the browser's origin private file system
- * (OPFS), so a reload, a crash or closing the tab doesn't lose work. The copy
- * is a convenience, not the saved file: browsers can clear site storage
- * (Safari after 7 days without a visit), so the person's real copy is the
- * `.dots` file they download.
+ * Claims this release channel's folder in the browser's origin private file
+ * system (OPFS), where the show library lives (see `./library.ts`).
  *
- * Each copy is written to a new file named `<sequence>-<show name>`, and
- * older ones are removed only after it is complete, so a write cut short
- * leaves the previous copy to restore.
- *
- * One tab per release channel holds a Web Lock on this storage. Another tab
- * keeps its show in memory only, rather than overwriting the first tab's.
+ * One tab per release channel holds a Web Lock on it. Another tab keeps its
+ * show in memory only, rather than writing over the first tab's library.
  */
+import { opfsDir, type Dir } from "./dir";
 
 export type StorageStatus =
-    | { storage: "opfs" }
+    | { storage: "opfs"; dir: Dir }
     | { storage: "memory"; problem: "other-tab" | "unsupported" };
-
-let folder: FileSystemDirectoryHandle | null = null;
-
-/** Only in workers, so missing from the DOM types the app is checked with. */
-type SyncAccessHandle = {
-    truncate(size: number): void;
-    write(buffer: Uint8Array, options: { at: number }): number;
-    flush(): void;
-    close(): void;
-};
-let sequence = 0;
-/** Writes and removals run one at a time, in order. */
-let queue: Promise<unknown> = Promise.resolve();
-
-const SQLITE_HEADER = "SQLite format 3\0";
-
-function enqueue<T>(task: () => Promise<T>): Promise<T> {
-    const result = queue.then(task, task);
-    queue = result.catch(() => {});
-    return result;
-}
 
 /** Holds `name` for the life of the worker; false if another tab has it. */
 function holdLock(name: string): Promise<boolean> {
@@ -54,7 +27,7 @@ function holdLock(name: string): Promise<boolean> {
 /**
  * Claims this release channel's storage.
  *
- * @param namespace keeps each release channel's show apart, for builds
+ * @param namespace keeps each release channel's shows apart, for builds
  * served from one origin (see `../renderer/channel.ts`).
  */
 export async function claimStorage(namespace: string): Promise<StorageStatus> {
@@ -67,99 +40,16 @@ export async function claimStorage(namespace: string): Promise<StorageStatus> {
         return { storage: "memory", problem: "other-tab" };
     try {
         const root = await navigator.storage.getDirectory();
-        folder = await root.getDirectoryHandle(`openmarch-${namespace}`, {
+        const folder = await root.getDirectoryHandle(`openmarch-${namespace}`, {
             create: true,
         });
-        return { storage: "opfs" };
+        const dir = opfsDir(folder);
+        // Private Browsing may hand out a folder that can't hold a file.
+        await dir.write(".probe", new Uint8Array([1]));
+        await dir.remove(".probe");
+        return { storage: "opfs", dir };
     } catch (error) {
         console.warn("Shows will be kept in memory only:", error);
         return { storage: "memory", problem: "unsupported" };
     }
-}
-
-type Entry = { file: string; sequence: number; name: string };
-
-async function entries(): Promise<Entry[]> {
-    if (!folder) return [];
-    const found: Entry[] = [];
-    for await (const file of (
-        folder as unknown as { keys(): AsyncIterable<string> }
-    ).keys()) {
-        const match = /^(\d+)-(.+)$/.exec(file);
-        if (match)
-            found.push({
-                file,
-                sequence: Number(match[1]),
-                name: decodeURIComponent(match[2]),
-            });
-    }
-    return found.sort((a, b) => b.sequence - a.sequence);
-}
-
-async function readFile(file: string): Promise<Uint8Array> {
-    const handle = await folder!.getFileHandle(file);
-    return new Uint8Array(await (await handle.getFile()).arrayBuffer());
-}
-
-const isDatabase = (bytes: Uint8Array) =>
-    new TextDecoder().decode(bytes.subarray(0, 16)) === SQLITE_HEADER;
-
-/** The newest complete copy of the show, if there is one. */
-export function readShow(): Promise<{
-    name: string;
-    bytes: Uint8Array;
-} | null> {
-    return enqueue(async () => {
-        for (const entry of await entries()) {
-            sequence = Math.max(sequence, entry.sequence);
-            const bytes = await readFile(entry.file);
-            if (isDatabase(bytes)) return { name: entry.name, bytes };
-        }
-        return null;
-    });
-}
-
-/** Replaces the stored copy with `bytes`. */
-export function writeShow(name: string, bytes: Uint8Array): Promise<void> {
-    return enqueue(async () => {
-        if (!folder) return;
-        const file = `${++sequence}-${encodeURIComponent(name)}`;
-        const handle = await folder.getFileHandle(file, { create: true });
-        // Sync access handles work in a worker in every current browser,
-        // where createWritable doesn't (Safari).
-        const access = await (
-            handle as unknown as {
-                createSyncAccessHandle(): Promise<SyncAccessHandle>;
-            }
-        ).createSyncAccessHandle();
-        try {
-            let written: number;
-            try {
-                access.truncate(0);
-                written = access.write(bytes, { at: 0 });
-                if (written === bytes.byteLength) access.flush();
-            } finally {
-                access.close();
-            }
-            if (written !== bytes.byteLength)
-                throw new Error(
-                    `Only ${written} of ${bytes.byteLength} bytes were stored`,
-                );
-        } catch (error) {
-            // Cut short (e.g. out of space): keep the previous copy.
-            await folder.removeEntry(file).catch(() => {});
-            throw error;
-        }
-        for (const entry of await entries())
-            if (entry.file !== file) await folder.removeEntry(entry.file);
-    });
-}
-
-/** Removes the stored copy, e.g. when the show is closed. */
-export function clearShow(): Promise<void> {
-    return enqueue(async () => {
-        if (!folder) return;
-        for (const entry of await entries())
-            await folder.removeEntry(entry.file);
-    });
 }
