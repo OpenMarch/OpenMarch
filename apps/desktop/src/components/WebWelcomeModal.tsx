@@ -3,7 +3,7 @@ import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /**
- * Explains the web build. Opens once per browser session when the app starts
+ * Explains the web build. Opens once per device when the app first starts,
  * and again from the "Web" badge in the title bar.
  */
 export default function WebWelcomeModal() {
@@ -13,32 +13,44 @@ export default function WebWelcomeModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="w-[40rem]">
-                <DialogTitle>Welcome to OpenMarch on the web!</DialogTitle>
+                <DialogTitle>Welcome to OpenMarch</DialogTitle>
                 <div className="text-text-subtitle flex flex-col gap-16 text-sm">
                     <DialogDescription asChild>
-                        <p>
-                            This version runs entirely in your browser. It does
-                            not have all the features of the desktop app, and
-                            some things that rely on your computer, like PDF
-                            export and native windows, are not available.
+                        <p className="text-text">
+                            OpenMarch runs right here on this device.
+                            There&apos;s no account, and nothing is uploaded.
                         </p>
                     </DialogDescription>
-                    <p>
-                        There are no accounts and nothing is uploaded: your
-                        shows stay on this device, saved as you work. Open an
-                        existing <code>.dots</code> file or start a new one to
-                        begin.
-                    </p>
-                    <p>
-                        <strong className="text-text">
-                            Back up your shows (File → Back up, or {save}).
-                        </strong>{" "}
-                        The browser keeps them between visits, but it can clear
-                        them (for example, when space runs low), and they are
-                        only on this device. Backing up saves a{" "}
-                        <code>.dots</code> file somewhere else, such as Files,
-                        Google Drive or email.
-                    </p>
+                    <section className="flex flex-col gap-4">
+                        <h3 className="text-text font-medium">
+                            Your shows are saved on this device
+                        </h3>
+                        <p>
+                            Every change is saved as you work, and the last 20
+                            versions of each show are kept. Find your shows on
+                            the start page.
+                        </p>
+                    </section>
+                    <section className="flex flex-col gap-4">
+                        <h3 className="text-text font-medium">
+                            Back up regularly
+                        </h3>
+                        <p>
+                            File → Back up (or {save}) saves a copy of the show
+                            to Files, Google Drive or email. If this
+                            device&apos;s data is cleared or the device is lost,
+                            only your backups remain.
+                        </p>
+                    </section>
+                    <section className="flex flex-col gap-4">
+                        <h3 className="text-text font-medium">
+                            A few desktop features aren&apos;t here yet
+                        </h3>
+                        <p>
+                            PDF export and some file tools need the desktop app.
+                            Video export works here.
+                        </p>
+                    </section>
                     <div className="flex justify-end pt-16">
                         <Button onClick={() => setOpen(false)}>Got it</Button>
                     </div>

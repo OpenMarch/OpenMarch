@@ -144,6 +144,7 @@ function warnAboutStorage(status: WorkerStatus) {
     });
     if (status.storage === "opfs") {
         const remindedKey = storageKey("reminded");
+        const welcomeSeenKey = storageKey("welcomeSeen");
         try {
             const offerHomeScreen = shouldOfferHomeScreen({
                 appleTouch: isAppleTouchDevice(),
@@ -156,8 +157,10 @@ function warnAboutStorage(status: WorkerStatus) {
                 useWebLibraryStore
                     .getState()
                     .set({ homeScreenPromptOpen: true });
-            } else if (!sessionStorage.getItem(remindedKey)) {
-                sessionStorage.setItem(remindedKey, "1");
+            } else if (!localStorage.getItem(welcomeSeenKey)) {
+                // Once per device: a Home Screen app starts a new session
+                // on every launch. The "Web" badge reopens it any time.
+                localStorage.setItem(welcomeSeenKey, "1");
                 useWebWelcomeStore.getState().setOpen(true);
             }
         } catch {

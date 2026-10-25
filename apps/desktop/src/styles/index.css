@@ -145,6 +145,10 @@ textarea,
  */
 html,
 body {
+    /* The app's own background, so a pixel or two of difference between the
+       page and the app's full-height frame (iPadOS toolbars, rotation) never
+       shows as a white strip */
+    background-color: var(--color-bg-1);
     touch-action: manipulation;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
