@@ -86,7 +86,8 @@ isn't on the Home Screen), shows that weren't backed up are gone.
   second after that, and when the page is hidden. Every write is crash-safe:
   the show (and the index) is written to a new file, and the previous one is
   removed only once the new one is whole; reading takes the newest whole
-  file. A full disk drops the show's oldest versions and tries again.
+  file (for a show, its length must match the page size and count in its
+  SQLite header, so a file cut short isn't taken for whole). A full disk drops the show's oldest versions and tries again.
   Nothing the index doesn't describe is deleted: a show folder it doesn't
   list is added back, an unreadable index is rebuilt from the folders, and
   an index from a newer version leaves the library untouched (read only).

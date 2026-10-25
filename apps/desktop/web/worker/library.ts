@@ -58,9 +58,30 @@ const RECOVERED_NAME = "Recovered show";
 
 const SQLITE_HEADER = "SQLite format 3\0";
 
-export const isDatabase = (bytes: Uint8Array) =>
-    bytes.byteLength >= 100 &&
-    new TextDecoder().decode(bytes.subarray(0, 16)) === SQLITE_HEADER;
+/**
+ * Whether `bytes` are a whole SQLite file, not just one that starts like
+ * one: a file cut short by a crash keeps its header, so the length must
+ * also match the header's page size times its page count (or, where the
+ * count isn't kept up to date, be a whole number of pages).
+ */
+export function isDatabase(bytes: Uint8Array): boolean {
+    if (bytes.byteLength < 100) return false;
+    if (new TextDecoder().decode(bytes.subarray(0, 16)) !== SQLITE_HEADER)
+        return false;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, 100);
+    const raw = view.getUint16(16);
+    const pageSize = raw === 1 ? 65536 : raw;
+    // A power of two from 512 to 65536
+    if (pageSize < 512 || pageSize > 65536 || (pageSize & (pageSize - 1)) !== 0)
+        return false;
+    const pageCount = view.getUint32(28);
+    // The count is valid only if written by the change that last changed the file
+    const countValid =
+        pageCount > 0 && view.getUint32(92) === view.getUint32(24);
+    return countValid
+        ? bytes.byteLength === pageSize * pageCount
+        : bytes.byteLength % pageSize === 0;
+}
 
 /** Writes `bytes` as the next generation of `<base>.<n>.<ext>`, then removes the older ones. */
 export async function writeGeneration(
@@ -299,6 +320,12 @@ export class Library {
         for (const id of await shows.folders()) {
             const dir = await shows.folder(id);
             const files = await dir.files();
+            if (!findShow(next, id) && next.deleted?.includes(id)) {
+                // Deleted, but the page went before the folder did.
+                await shows.remove(id);
+                continue;
+            }
+            // A mark left by an earlier build's delete
             if (files.includes("deleted")) {
                 // Its delete was cut short after the index dropped it: it
                 // was meant to go. Still listed: the delete never happened.
@@ -344,6 +371,12 @@ export class Library {
             for (const file of files) {
                 const match = /^v-(\d+)\.dots$/.exec(file);
                 if (!match || listed.has(file)) continue;
+                // A version cut short by a crash is no use to anyone.
+                const bytes = await dir.read(file).catch(() => null);
+                if (!bytes || !isDatabase(bytes)) {
+                    await dir.remove(file);
+                    continue;
+                }
                 const result = addVersion(next, id, {
                     id: match[1],
                     at: Number(match[1]),
@@ -354,6 +387,13 @@ export class Library {
                     await dir.remove(versionFile(old));
             }
         }
+        // Deletes that have finished need no remembering.
+        const folders = new Set(await shows.folders());
+        if (next.deleted?.some((id) => !folders.has(id)))
+            next = {
+                ...next,
+                deleted: next.deleted.filter((id) => folders.has(id)),
+            };
         if (next !== this.index)
             await this.commit(next).catch((error) => {
                 // Use it anyway; the next change writes it.
@@ -530,7 +570,15 @@ export class Library {
                 await this.keepVersionNow(id, "before-restore", current);
             }
             await writeGeneration(dir, "show", "dots", restored);
-            await this.commit(recordEdit(this.index, id, this.now()));
+            // The restored state is a version already: reopening it needn't
+            // spend another slot on an "opened" copy of it.
+            const edited = recordEdit(this.index, id, this.now());
+            await this.commit({
+                ...edited,
+                shows: edited.shows.map((s) =>
+                    s.id === id ? { ...s, changedSinceVersion: false } : s,
+                ),
+            });
         });
     }
 
@@ -580,12 +628,31 @@ export class Library {
         return this.enqueue(async () => {
             this.assertWritable();
             const shows = await this.root.folder("shows");
-            // Marked first, so a delete cut short after the index is
-            // written finishes on the next start instead of coming back.
-            await (
-                await shows.folder(id)
-            ).write("deleted", new Uint8Array([1]));
-            await this.commit(removeShow(this.index, id));
+            // The index first, listing the id as deleted: that is the
+            // delete. A crash after it leaves a folder the next start
+            // removes (rather than adding back); a crash before it leaves
+            // the show as it was. Nothing new is written beside the show,
+            // so this works on a full disk; if even the index can't be
+            // written, the show's versions go first to make room.
+            const next = removeShow(this.index, id);
+            try {
+                await this.commit(next);
+            } catch {
+                // Make room with the show's own files, which are going
+                // anyway: its versions, then (if that's not enough) the
+                // show. A crash before the index is written then leaves the
+                // show listed without them, to delete again.
+                const dir = await shows.folder(id);
+                for (const version of findShow(this.index, id)?.versions ?? [])
+                    await dir.remove(versionFile(version));
+                try {
+                    await this.commit(next);
+                } catch {
+                    for (const file of await dir.files())
+                        await dir.remove(file);
+                    await this.commit(next);
+                }
+            }
             await shows.remove(id);
         });
     }

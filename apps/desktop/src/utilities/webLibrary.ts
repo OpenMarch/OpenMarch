@@ -49,6 +49,11 @@ export interface LibraryIndex {
     shows: ShowEntry[];
     /** The show that was open, reopened when the page loads; or null. */
     openId: string | null;
+    /**
+     * Shows deleted whose folders may still be there (the page went before
+     * the folder did); the next start removes them.
+     */
+    deleted?: string[];
 }
 
 /** What the page lists for each show. */
@@ -192,6 +197,7 @@ export function removeShow(index: LibraryIndex, id: string): LibraryIndex {
         ...index,
         shows: index.shows.filter((show) => show.id !== id),
         openId: index.openId === id ? null : index.openId,
+        deleted: [...(index.deleted ?? []).filter((d) => d !== id), id],
     };
 }
 
