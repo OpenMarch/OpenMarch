@@ -20,6 +20,6 @@
         "tsup.config.js"
     ],
     "devDependencies": {
-        "tsup": "^8.5.0"
+        "tsup": "^8.5.1"
     }
 }

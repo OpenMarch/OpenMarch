@@ -53,37 +53,37 @@ settingsMenus.forEach(({ name, navigate }) => {
         const page = await navigate(app, mainPage);
         await goToSection(page, "Appearance");
         await page.getByRole("radio", { name: "Dark" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Dark" [checked]:
           - img
         `);
         await page.getByRole("radio", { name: "Light" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Light" [checked]:
           - img
         `);
         await page.getByRole("radio", { name: "Dark" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Dark" [checked]:
           - img
         `);
         await page.getByRole("radio", { name: "Light" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Light" [checked]:
           - img
         `);
         await page.getByRole("radio", { name: "Light" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Light" [checked]:
           - img
         `);
         await page.getByRole("radio", { name: "Dark" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Dark" [checked]:
           - img
         `);
         await page.getByRole("radio", { name: "Dark" }).click();
-        await expect(page.getByRole("group")).toMatchAriaSnapshot(`
+        await expect(page.getByRole("radiogroup")).toMatchAriaSnapshot(`
         - radio "Dark" [checked]:
           - img
         `);
