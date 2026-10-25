@@ -34,6 +34,7 @@ import {
     writeDatabase,
 } from "./sqlite";
 import { claimStorage } from "./storage";
+import { hasUnsavedChanges } from "./saveState";
 import { Library } from "./library";
 import { cleanName } from "@/utilities/webLibrary";
 import {
@@ -470,7 +471,8 @@ function registerLibraryHandlers() {
     ipcMain.handle(
         WEB_CHANNELS.duplicateShow,
         async (_, id: string, copyName: string) => {
-            if (id === openId) await saveCopy();
+            // Copy the latest changes, not what was stored before them
+            if (id === openId) await ensureSaved();
             const newId = await requireLibrary().duplicate(id, () => copyName);
             reportLibrary();
             return newId;
@@ -639,11 +641,24 @@ function registerHandlers() {
     registerWebHandlers();
 }
 
+/**
+ * Tells the page as soon as the open show has changes that aren't stored
+ * yet, before the save's short delay runs out, so leaving the page warns.
+ */
+function reportPending() {
+    const path = DatabaseServices.getDbPath();
+    if (!storageEnabled || !openId || !path) return;
+    const state = changeState(path);
+    if (state && hasUnsavedChanges(savedCopy, path, state.changes))
+        reportStatus({ state: "saving" });
+}
+
 async function handle(message: ToWorker) {
     if (message.type === "send") {
         const listener = ipcListeners.get(message.channel);
         // Electron drops a message no one listens for; so does this.
         if (typeof listener === "function") listener({}, ...message.args);
+        reportPending();
         scheduleSave();
         reportChanges();
         return;
@@ -653,6 +668,8 @@ async function handle(message: ToWorker) {
         if (!handler)
             throw new Error(`No handler registered for '${message.channel}'`);
         const value = await handler({}, ...message.args);
+        // Before the answer, so the page knows before it moves on
+        reportPending();
         post({ type: "result", id: message.id, ok: true, value });
         scheduleSave();
         reportChanges();

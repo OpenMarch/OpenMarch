@@ -9,15 +9,23 @@ import {
 } from "../library";
 import { VERSION_INTERVAL_MS } from "@/utilities/webLibrary";
 
-/** Bytes that pass for a SQLite file, tagged so tests can tell them apart. */
-function show(tag: string): Uint8Array {
-    const bytes = new Uint8Array(200);
+/**
+ * Bytes shaped like a whole SQLite file of `pages` 512-byte pages (header,
+ * page size, page count), tagged so tests can tell them apart.
+ */
+function show(tag: string, pages = 2): Uint8Array {
+    const bytes = new Uint8Array(512 * pages);
     bytes.set(new TextEncoder().encode("SQLite format 3\0"));
+    const view = new DataView(bytes.buffer);
+    view.setUint16(16, 512);
+    view.setUint32(24, 7); // change counter
+    view.setUint32(28, pages); // page count
+    view.setUint32(92, 7); // page count valid for change 7
     bytes.set(new TextEncoder().encode(tag), 100);
     return bytes;
 }
 const tagOf = (bytes: Uint8Array) =>
-    new TextDecoder().decode(bytes.subarray(100)).replace(/\0+$/, "");
+    new TextDecoder().decode(bytes.subarray(100, 140)).replace(/\0+$/, "");
 
 let clock = 0;
 let ids = 0;
@@ -221,12 +229,8 @@ describe("moving an earlier build's show into the library", () => {
     });
 });
 
-/** Bytes that pass for a SQLite file of `size` bytes. */
-function bigShow(tag: string, size: number): Uint8Array {
-    const bytes = new Uint8Array(size);
-    bytes.set(show(tag));
-    return bytes;
-}
+/** A show of about `size` bytes. */
+const bigShow = (tag: string, size: number) => show(tag, Math.ceil(size / 512));
 
 describe("never losing shows the index doesn't describe", () => {
     it("rebuilds the index from the show folders when no index can be read", async () => {
@@ -366,5 +370,116 @@ describe("a full disk", () => {
             if (file.startsWith("v-")) await dir.remove(file);
         const again = await Library.open(base, options());
         expect(again.current.shows[0].versions).toEqual([]);
+    });
+});
+
+describe("files cut short past the header", () => {
+    it("falls back to the older generation when the newest is cut short", async () => {
+        const library = await Library.open(new MemoryDir(), options());
+        const id = await library.addShow("Opener", show("one", 4), {
+            backedUp: false,
+        });
+        // A crash wrote generation 2 only partly: the header is there, the rest isn't
+        const dir = (
+            library as unknown as { showDir(id: string): Promise<MemoryDir> }
+        ).showDir(id);
+        (await dir).entries.set("show.2.dots", show("two", 4).slice(0, 1200));
+        expect(tagOf(await library.readShow(id))).toBe("one");
+    });
+
+    it("doesn't list a version file that was cut short", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Opener", show("A"), {
+            backedUp: false,
+        });
+        const dir = await (
+            await (await libraryFolder(base)).folder("shows")
+        ).folder(id);
+        dir.entries.set("v-123.dots", show("V", 4).slice(0, 700));
+        const again = await Library.open(base, options());
+        expect(again.current.shows[0].versions.map((v) => v.id)).not.toContain(
+            "123",
+        );
+    });
+});
+
+describe("deleting", () => {
+    it("works on a full disk, when people delete to make room", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const keep = await library.addShow("Keep", show("K"), {
+            backedUp: false,
+        });
+        const id = await library.addShow("Big", bigShow("B", 4000), {
+            backedUp: false,
+        });
+        clock += VERSION_INTERVAL_MS;
+        await library.saveShow(id, bigShow("B2", 4000));
+        base.disk.limit = base.used(); // not one byte free
+        await library.remove(id);
+        expect(library.list().map((s) => s.id)).toEqual([keep]);
+        expect(
+            await (await (await libraryFolder(base)).folder("shows")).folders(),
+        ).toEqual([keep]);
+    });
+
+    it("finishes a delete cut short after the index was written", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Gone", show("G"), {
+            backedUp: false,
+        });
+        const shows = await (await libraryFolder(base)).folder("shows");
+        const saved = shows.subfolders.get(id)!;
+        await library.remove(id);
+        // As if the page died before the folder was removed
+        shows.subfolders.set(id, saved);
+        const again = await Library.open(base, options());
+        expect(again.list()).toEqual([]);
+        expect(await shows.folders()).toEqual([]);
+    });
+});
+
+describe("deleting on a disk with no room at all", () => {
+    it("makes room with the show's own files", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Big", bigShow("B", 4000), {
+            backedUp: false,
+        });
+        const dir = await (
+            await (await libraryFolder(base)).folder("shows")
+        ).folder(id);
+        // No versions to drop, and not one byte free
+        for (const file of await dir.files())
+            if (file.startsWith("v-")) await dir.remove(file);
+        (
+            library as unknown as {
+                index: { shows: { versions: unknown[] }[] };
+            }
+        ).index.shows[0].versions = [];
+        base.disk.limit = base.used();
+        await library.remove(id);
+        expect(library.list()).toEqual([]);
+    });
+});
+
+describe("restoring", () => {
+    it("doesn't spend a second version slot when the restored show is reopened", async () => {
+        const library = await Library.open(new MemoryDir(), options());
+        const id = await library.addShow("Opener", show("v0"), {
+            backedUp: false,
+        });
+        await library.saveShow(id, show("v1"));
+        const first = library.current.shows[0].versions[0];
+        clock += 1000;
+        await library.saveShow(id, show("v2"));
+        clock += 1000;
+        await library.restoreVersion(id, first.id);
+        const count = library.current.shows[0].versions.length;
+        clock += 1000;
+        await library.keepVersion(id, "opened");
+        expect(library.current.shows[0].versions).toHaveLength(count);
     });
 });

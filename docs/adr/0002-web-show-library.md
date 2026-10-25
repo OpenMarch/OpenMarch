@@ -24,11 +24,10 @@ openmarch-<channel>/
       show.<n>.dots       the show (a SQLite file)
       meta.<n>.json       its name, so a lost index can be rebuilt
       v-<version id>.dots its versions (whole copies)
-      deleted             marks a delete in progress
 ```
 
 **Index format.** `index.<n>.json` holds `{ "format": 1, "shows": [...],
-"openId": ... }` (`apps/desktop/src/utilities/webLibrary.ts`, which also
+"openId": ..., "deleted": [...] }` (`apps/desktop/src/utilities/webLibrary.ts`, which also
 holds every rule as a pure function). A build reads only formats it knows.
 **Never delete what you can't read:** if any index generation has a `format`
 greater than this build knows (a newer build wrote it, then the person went
@@ -40,9 +39,13 @@ number.
 **Crash safety.** Every write of the index, a show or its name goes to a new
 generation (`<n>` + 1). Older generations are removed only after the new
 file is completely written. Reading takes the newest generation that is
-whole (a SQLite header for shows, JSON that parses for the index), so a write
-cut short by a crash, a killed tab or a full disk leaves the previous one in
-place. A version file is listed in the index only after it is written.
+whole, so a write cut short by a crash, a killed tab or a full disk leaves
+the previous one in place. For the index, whole means JSON that parses. For a
+show or a version, it means a SQLite header whose page size (bytes 16–17,
+1 meaning 65536) times page count (bytes 28–31, when the count is valid for
+the file's last change, bytes 92–95 = 24–27) equals the file's length, or a
+whole number of pages where the count isn't kept. A file cut short keeps its
+header, so the header alone isn't enough. A version file is listed in the index only after it is written.
 
 **Nothing undescribed is deleted.** On start the library reconciles the
 index with the folders:
@@ -52,12 +55,21 @@ index with the folders:
 - If no index generation can be read at all (damage, or a kill during the
   first index write), the index is rebuilt the same way from every folder:
   the newest whole `show.<n>.dots`, its `meta`, and its `v-*.dots` files.
-- A folder marked `deleted` that the index no longer lists finishes its
-  delete (marked before the index drops it). One the index still lists keeps
-  its show and loses the mark.
+- A folder the index lists under `deleted` finishes its delete (see below).
+  A `deleted` mark file left by the first build of this feature is honoured
+  the same way.
 - A folder without a whole show is left alone.
-- Versions whose files are gone are forgotten, and version files the index
-  lost are listed again.
+- Versions whose files are gone are forgotten, and whole version files the
+  index lost are listed again; version files cut short are removed.
+
+**Deleting** works on a full disk, when people delete to make room. The
+index is written first without the show and with its id under `deleted`:
+that write is the delete. Then the folder is removed. A crash before the
+index write leaves the show as it was. A crash after it leaves a folder the
+next start removes, rather than adding it back. Nothing new is written
+beside the show. If even the index can't be written, the show's own files
+make room: its versions first, then the show itself. A crash in that window
+leaves the show listed without its files, to delete again.
 
 When storage is full, the oldest versions' files are deleted before the
 index is written (an index that lists a missing version is tolerated), and
@@ -65,10 +77,15 @@ the save is tried again.
 
 **Versions.** 20 per show: at most one per two minutes of editing, one on
 opening if the show changed since its newest version, and one before a
-restore. Restoring keeps the replaced state as a version.
+restore. Restoring keeps the replaced state as a version. The restored state
+is already a version, so reopening it after the restore doesn't take an
+"opened" copy (one slot per restore, not two).
 
 **Opening, closing, replacing.** The open show lives in memory in the
 worker and is copied to the library within half a second of each change.
+From the change until it is stored, the worker reports "saving" to the page
+(before it answers the call that made the change), so leaving the page
+warns.
 Before the open show is closed or replaced (open another show or a file,
 start a new one, restore a version of it), the worker stores its latest
 changes, then makes the library changes, and closes the show only once both
