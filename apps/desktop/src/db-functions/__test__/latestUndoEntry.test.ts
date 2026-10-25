@@ -64,4 +64,39 @@ describeDbTests("getLatestUndoEntryToken", (it) => {
         expect(next).not.toBeNull();
         expect(next).not.toBe(token);
     });
+
+    describe("onUndoToken (read inside the transaction)", () => {
+        const captureEdit = (db: DbConnection, duration: number) => {
+            let token: string | null | undefined;
+            const done = transactionWithHistory(
+                db,
+                "test edit",
+                async (tx) => {
+                    await insertBeat(tx, duration);
+                },
+                { onUndoToken: (t) => (token = t) },
+            );
+            return done.then(() => token);
+        };
+
+        it("is the token of the entry the transaction made", async ({ db }) => {
+            const token = await captureEdit(db, 0.5);
+            expect(token).not.toBeNull();
+            expect(token).toBe(await getLatestUndoEntryToken(db));
+        });
+
+        it("is not fooled by a write queued right behind it", async ({
+            db,
+        }) => {
+            // Started together: the second runs as soon as the first commits
+            const [first, second] = await Promise.all([
+                captureEdit(db, 0.5),
+                captureEdit(db, 0.75),
+            ]);
+            const latest = await getLatestUndoEntryToken(db);
+            expect(second).toBe(latest);
+            expect(first).not.toBe(latest);
+            expect(first).not.toBe(second);
+        });
+    });
 });

@@ -136,7 +136,10 @@ export default function TimelineContainer() {
                         <div className="flex h-fit items-center">
                             {/* No labels in the compact row: it needs the room */}
                             {!compact && (
-                                <div className={STICKY_LABEL_CLASS}>
+                                <div
+                                    className={STICKY_LABEL_CLASS}
+                                    data-timeline-label
+                                >
                                     <p className={LABEL_COLUMN_CLASS}>
                                         <span className="@max-[360px]:hidden">
                                             <T keyName="timeline.pages" />
@@ -213,14 +216,19 @@ export default function TimelineContainer() {
 }
 
 /**
+ * Labels stay put while the pages and waveform scroll under them. The
+ * panel's see-through fg-1 gradient is layered over the opaque bg-1 color
+ * in one background declaration, so the label matches the panel and hides
+ * what scrolls under it.
+ */
+const STICKY_LABEL_CLASS =
+    "[background:var(--background-image-fg-1),var(--color-bg-1)] sticky -left-8 z-40 -my-4 flex items-center self-stretch py-4";
+
+/**
  * The "Pages"/"Audio" label column. Both rows use it so page 1 and the
  * waveform start at the same x. In a narrow panel the words go and only
  * room for the edit button stays.
  */
-/** Labels stay put while the pages and waveform scroll under them. */
-const STICKY_LABEL_CLASS =
-    "bg-bg-1 bg-fg-1 sticky -left-8 z-40 -my-4 flex items-center self-stretch py-4";
-
 const LABEL_COLUMN_CLASS =
     "text-sub touch:w-[6.5rem] @max-[360px]:touch:w-[2.75rem] @max-[360px]:w-[1.5rem] w-[4rem] shrink-0";
 

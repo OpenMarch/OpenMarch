@@ -56,6 +56,9 @@ const withTransactionWithHistoryLock = async <T>(
  * @param db - The database connection
  * @param funcName - The name of the function to run in the transaction. This is for  logging.
  * @param func - The function to run in the transaction
+ * @param options.onUndoToken - Called after the commit with the undo token
+ *   (see getLatestUndoEntryToken) of the entry this transaction made, read
+ *   inside the transaction so no other write can be mistaken for it
  * @returns The result of the function
  */
 // eslint-disable-next-line max-lines-per-function
@@ -63,9 +66,12 @@ export const transactionWithHistory = async <T>(
     db: DbConnection,
     funcName: string,
     func: (tx: DbTransaction) => Promise<T>,
+    options: { onUndoToken?: (token: string | null) => void } = {},
 ): Promise<T> => {
     // eslint-disable-next-line max-lines-per-function
     async function runLockedTransactionWithHistory(): Promise<T> {
+        // This transaction's undo entry, read before the commit
+        let undoEntry: string | null = null;
         const output = await db.transaction(async (tx) => {
             const startMessage = `=========== start ${funcName} ============`;
             let result: T;
@@ -158,6 +164,7 @@ export const transactionWithHistory = async <T>(
                  *    - Are there triggers for the table that the function is performing actions on?
                  *    - Do the functions actually perform actions on the database?
                  */
+                if (options.onUndoToken) undoEntry = await latestUndoEntry(tx);
             } catch (err: any) {
                 // Remove the items from the history tables that were added by the transaction
                 error = err as Error;
@@ -171,6 +178,10 @@ export const transactionWithHistory = async <T>(
             return result!;
         });
         historyEpoch++;
+        // Same epoch a getLatestUndoEntryToken call right now would see
+        options.onUndoToken?.(
+            undoEntry === null ? null : `${historyEpoch}\n${undoEntry}`,
+        );
         return output;
     }
 
@@ -833,6 +844,14 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
 export async function getLatestUndoEntryToken(
     db: DbConnection,
 ): Promise<string | null> {
+    const entry = await latestUndoEntry(db);
+    return entry === null ? null : `${historyEpoch}\n${entry}`;
+}
+
+/** The newest undo entry's group and statements, or null if there is none. */
+async function latestUndoEntry(
+    db: DbConnection | DbTransaction,
+): Promise<string | null> {
     const top = await db
         .select({ group: max(schema.history_undo.history_group) })
         .from(schema.history_undo)
@@ -847,7 +866,7 @@ export async function getLatestUndoEntryToken(
         .from(schema.history_undo)
         .where(eq(schema.history_undo.history_group, group))
         .orderBy(asc(schema.history_undo.sequence));
-    return `${historyEpoch}\n${group}\n${rows.map((r) => `${r.sequence}:${r.sql}`).join("\n")}`;
+    return `${group}\n${rows.map((r) => `${r.sequence}:${r.sql}`).join("\n")}`;
 }
 
 /**

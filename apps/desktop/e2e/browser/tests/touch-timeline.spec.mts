@@ -523,3 +523,32 @@ test("expanding shows the full transport, and collapsing goes back", async ({
         "compact",
     );
 });
+
+test("the sticky Pages label is opaque, so pages scroll under it unseen", async ({
+    show,
+}) => {
+    const { page } = show;
+    await setUp(show, { expanded: true });
+    const label = page.locator("[data-timeline-label]").first();
+    const style = await label.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { color: s.backgroundColor, image: s.backgroundImage };
+    });
+    // A solid colour under the panel's gradient
+    expect(style.color).toMatch(/^rgb\(/);
+    expect(style.image).toContain("gradient");
+    // Scrolled, the label is what's on top at its spot
+    await page.locator("#timeline").evaluate((el) => {
+        el.style.scrollBehavior = "auto";
+        el.scrollLeft = 200;
+    });
+    const b = (await label.boundingBox())!;
+    const onTop = await page.evaluate(
+        ([x, y]) =>
+            document
+                .elementFromPoint(x, y)
+                ?.closest("[data-timeline-label]") !== null,
+        [b.x + 4, b.y + b.height / 2],
+    );
+    expect(onTop).toBe(true);
+});
