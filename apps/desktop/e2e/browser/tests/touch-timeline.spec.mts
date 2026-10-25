@@ -534,7 +534,7 @@ test("the sticky Pages label is opaque, so pages scroll under it unseen", async 
         const s = getComputedStyle(el);
         return { color: s.backgroundColor, image: s.backgroundImage };
     });
-    // A solid colour under the panel's gradient
+    // A solid color under the panel's gradient
     expect(style.color).toMatch(/^rgb\(/);
     expect(style.image).toContain("gradient");
     // Scrolled, the label is what's on top at its spot
