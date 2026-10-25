@@ -240,9 +240,15 @@ const showPageDeletedToast = (undoToken: string | null) =>
 export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: async (pageIds: Set<number>) => {
-            const deleted = await deletePages({ db, pageIds });
             // Which history entry the deletion is, for the toast's Undo
-            return { deleted, undoToken: await getLatestUndoEntryToken(db) };
+            // (read inside the deletion's transaction)
+            let undoToken: string | null = null;
+            const deleted = await deletePages({
+                db,
+                pageIds,
+                onUndoToken: (token) => (undoToken = token),
+            });
+            return { deleted, undoToken };
         },
         onSuccess: async ({ undoToken }) => {
             showPageDeletedToast(undoToken);
@@ -262,8 +268,13 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
 export const deletePageYankMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: async (pageId: number) => {
-            const deleted = await deletePageYank({ db, pageId });
-            return { deleted, undoToken: await getLatestUndoEntryToken(db) };
+            let undoToken: string | null = null;
+            const deleted = await deletePageYank({
+                db,
+                pageId,
+                onUndoToken: (token) => (undoToken = token),
+            });
+            return { deleted, undoToken };
         },
         onSuccess: async ({ undoToken }) => {
             showPageDeletedToast(undoToken);
