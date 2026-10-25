@@ -378,17 +378,18 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             </div>
 
             <hr className="border-stroke w-full border" />
-            <PlaceSelectedMarchersDropdown />
+            <PlaceSelectedMarchersDropdown disabled={editingDisabled} />
         </>
     );
 }
 
 /** Moves the selected marchers to where they stand on the previous or next page */
-function PlaceSelectedMarchersDropdown() {
+function PlaceSelectedMarchersDropdown({ disabled }: { disabled: boolean }) {
     return (
         <div className="flex flex-col gap-8">
             <Dropdown.Root>
                 <Dropdown.Trigger
+                    disabled={disabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
@@ -969,7 +970,9 @@ function MarcherEditor() {
                                 </form>
                             )}
                             <div className="px-6">
-                                <PlaceSelectedMarchersDropdown />
+                                <PlaceSelectedMarchersDropdown
+                                    disabled={editingDisabled}
+                                />
                             </div>
                             <form
                                 className="marcher-details-editor flex flex-col gap-24"

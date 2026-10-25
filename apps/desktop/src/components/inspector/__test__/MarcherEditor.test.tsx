@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import tolgee from "@/global/singletons/Tolgee";
-import { describeDbTests } from "@/test/base";
+import { describeDbTests, schema } from "@/test/base";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "@/hooks";
@@ -90,4 +90,52 @@ describeDbTests("MarcherEditor", (it) => {
             ).toBeDefined();
         },
     );
+
+    it("disables placing a marcher that is locked in a shape", async ({
+        wrapper,
+        db,
+        marchersAndPages,
+    }) => {
+        const pageId = marchersAndPages.expectedPages[1].id;
+        const [shape] = await db
+            .insert(schema.shapes)
+            .values({ name: "Arc" })
+            .returning();
+        const [shapePage] = await db
+            .insert(schema.shape_pages)
+            .values({ shape_id: shape.id, page_id: pageId, svg_path: "M 0 0" })
+            .returning();
+        await db.insert(schema.shape_page_marchers).values({
+            shape_page_id: shapePage.id,
+            marcher_id: marchersAndPages.expectedMarchers[0].id,
+            position_order: 1,
+        });
+        render(
+            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                <SelectMarchers count={1} />
+                <MarcherEditor />
+            </TolgeeProvider>,
+            { wrapper },
+        );
+
+        fireEvent.click(
+            await screen.findByRole(
+                "button",
+                { name: "select test marchers" },
+                { timeout: 5000 },
+            ),
+        );
+
+        await waitFor(
+            () =>
+                expect(
+                    screen
+                        .getByRole("button", {
+                            name: /place selected marchers/i,
+                        })
+                        .hasAttribute("disabled"),
+                ).toBe(true),
+            { timeout: 5000 },
+        );
+    });
 });
