@@ -425,7 +425,7 @@ export default function TouchModifierButtons({
         );
     };
     const onGripUp = (e: React.PointerEvent<HTMLDivElement>) => {
-        gripLongPress.onPointerUp();
+        gripLongPress.onPointerUp(e);
         const d = drag.current;
         if (!d || d.id !== e.pointerId) return;
         e.stopPropagation();
