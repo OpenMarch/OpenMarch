@@ -29,6 +29,13 @@ const tablesWithHistory = [
 
 let transactionWithHistoryTail = Promise.resolve<void>(undefined);
 
+/**
+ * Counts history changes made in this window: every transaction with history
+ * and every undo or redo. Part of getLatestUndoEntryToken, because an undo
+ * followed by a new edit can put back exactly the same undo statements.
+ */
+let historyEpoch = 0;
+
 const withTransactionWithHistoryLock = async <T>(
     operation: () => Promise<T>,
 ): Promise<T> => {
@@ -163,6 +170,7 @@ export const transactionWithHistory = async <T>(
 
             return result!;
         });
+        historyEpoch++;
         return output;
     }
 
@@ -654,6 +662,7 @@ async function executeHistoryAction(
     db: DbConnection,
     type: HistoryType,
 ): Promise<HistoryResponse> {
+    historyEpoch++;
     mainProcessLog(
         "info",
         `\n============ PERFORMING ${type.toUpperCase()} ============`,
@@ -806,6 +815,39 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
         DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ${maxGroup}
     `);
     mainProcessLog("info", `-------- Done clearing most recent redo --------`);
+}
+
+/**
+ * Identifies the newest entry on the undo stack (the one Undo would revert),
+ * or null when there is nothing to undo. Two equal tokens mean nothing has
+ * changed the history since: that entry is still the one Undo reverts. Use it
+ * to offer "undo that one thing" (e.g. a toast's Undo) only while it is
+ * still the latest.
+ *
+ * The token is this window's history epoch (bumped by every transaction with
+ * history, undo and redo) plus the entry's group and statements. Group and
+ * sequence numbers alone repeat after an undo, and even the statements can
+ * (an undo, then an edit that reuses the same row ids); the epoch catches
+ * that. The statements catch writes recorded outside transactionWithHistory.
+ */
+export async function getLatestUndoEntryToken(
+    db: DbConnection,
+): Promise<string | null> {
+    const top = await db
+        .select({ group: max(schema.history_undo.history_group) })
+        .from(schema.history_undo)
+        .get();
+    const group = top?.group;
+    if (group == null) return null;
+    const rows = await db
+        .select({
+            sequence: schema.history_undo.sequence,
+            sql: schema.history_undo.sql,
+        })
+        .from(schema.history_undo)
+        .where(eq(schema.history_undo.history_group, group))
+        .orderBy(asc(schema.history_undo.sequence));
+    return `${historyEpoch}\n${group}\n${rows.map((r) => `${r.sequence}:${r.sql}`).join("\n")}`;
 }
 
 /**

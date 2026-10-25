@@ -35,6 +35,7 @@ const touch = (cdp: CDPSession) => {
             await send("touchStart", [p]);
             return {
                 cancel: () => send("touchCancel", []),
+                lift: () => send("touchEnd", []),
             };
         },
         tap: async (p: Point) => {
@@ -285,12 +286,53 @@ test("the page-deleted toast undoes the delete", async ({ show }) => {
         .locator("[data-sonner-toast]")
         .getByRole("button", { name: "Undo" })
         .boundingBox())!;
+    // A slow tap (held longer than the toast's old dismiss-on-press delay,
+    // shorter than a long press) still reaches Undo
+    const press = await fingers.hold({
+        x: undo.x + undo.width / 2,
+        y: undo.y + undo.height / 2,
+    });
+    await page.waitForTimeout(350);
+    await press.lift();
+    await expect.poll(() => pageStarts(show)).toEqual(before);
+});
+
+test("the delete toast's Undo leaves a later edit alone", async ({ show }) => {
+    const { page } = show;
+    const fingers = await setUp(show);
+    const before = await pageStarts(show);
+    await tapNamed(page, fingers, "Page 2 options");
+    await tapNamed(page, fingers, /^In Place/);
+    await expect.poll(() => pageStarts(show)).toHaveLength(before.length - 1);
+    // Another edit after the delete: make page 1 a subset
+    const subset = async () =>
+        (
+            await show.query<{ is_subset: number }>(
+                "SELECT is_subset FROM pages WHERE id = 1",
+            )
+        )[0]?.is_subset;
+    await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
+    await tapNamed(page, fingers, "Page 1 options");
+    const toggle = page.locator('[role="menu"]').getByRole("switch");
+    const t = (await toggle.boundingBox())!;
+    await fingers.tap({ x: t.x + t.width / 2, y: t.y + t.height / 2 });
+    await expect.poll(subset).toBe(1);
+    await page.keyboard.press("Escape");
+    // Undo on the delete toast must not undo the subset change
+    const undo = (await page
+        .locator("[data-sonner-toast]")
+        .filter({ hasText: "deleted" })
+        .getByRole("button", { name: "Undo" })
+        .boundingBox())!;
     await fingers.tap({
         x: undo.x + undo.width / 2,
         y: undo.y + undo.height / 2,
     });
-    await page.waitForTimeout(300);
-    await expect.poll(() => pageStarts(show)).toEqual(before);
+    await expect(
+        page.locator("[data-sonner-toast]").filter({ hasText: "Can't undo" }),
+    ).toBeVisible();
+    expect(await subset()).toBe(1);
+    expect(await pageStarts(show)).toHaveLength(before.length - 1);
 });
 
 test("the timeline + and − buttons zoom with a finger", async ({ show }) => {

@@ -1112,6 +1112,7 @@
         "createLastPageFailed": "Failed to create last page - {error}",
         "deletedSuccessfully": "Page deleted successfully",
         "deleteFailed": "Failed to delete page - {error}",
+        "undoDeleteUnavailable": "Can't undo the delete: something changed since. Use Undo in the toolbar to step back.",
         "updateFailed": "Failed to update page - {error}"
     },
     "section": {

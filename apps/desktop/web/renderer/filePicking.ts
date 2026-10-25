@@ -10,19 +10,8 @@
  *   iOS offers that first and falls back to the download.
  */
 
-interface NavigatorLike {
-    userAgent: string;
-    maxTouchPoints?: number;
-}
-
-/**
- * Whether this is an iPad, iPhone or iPod. iPadOS Safari says it is a Mac,
- * so a "Macintosh" with a touch screen counts too (Macs have none).
- */
-export function isAppleTouchDevice(nav: NavigatorLike = navigator): boolean {
-    if (/iPad|iPhone|iPod/.test(nav.userAgent)) return true;
-    return /Macintosh/.test(nav.userAgent) && (nav.maxTouchPoints ?? 0) > 1;
-}
+// The iPad check is shared with the app (src/utilities/device.ts)
+export { isAppleTouchDevice } from "../../src/utilities/device";
 
 /**
  * The `accept` to give the picker. On iOS the picker greys out files it can't

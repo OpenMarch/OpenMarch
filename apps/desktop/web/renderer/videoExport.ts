@@ -16,6 +16,7 @@
  * Photos, Files, AirDrop) and downloads it elsewhere. The temporary file is
  * removed once saved, and leftovers are swept on the next export.
  */
+import { hasOpfs } from "../../src/utilities/device";
 import {
     MemorySink,
     VIDEO_FOLDER,
@@ -204,13 +205,6 @@ function workerCaller() {
             worker.postMessage({ ...request, id });
         });
     return { call, terminate: () => worker.terminate() };
-}
-
-function hasOpfs() {
-    return (
-        typeof Worker === "function" &&
-        typeof navigator.storage?.getDirectory === "function"
-    );
 }
 
 async function openDiskWriter(file: string): Promise<VideoWriter | null> {

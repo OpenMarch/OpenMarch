@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { toast, Toaster as ToasterPrimitive } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { NOTE_TOAST_DURATION_MS } from "./toastDurations";
 
 const GAP = 8;
 
@@ -70,11 +71,22 @@ function useDialogOpen(enabled: boolean): boolean {
 /**
  * Touch mode: a toast never blocks what's under it (taps pass through, except
  * its own buttons, see the CSS below), and a tap on it dismisses it.
+ *
+ * On click, not pointerdown: sonner removes a dismissed toast about 200 ms
+ * later, so a press held longer than that would lose its click. Presses on
+ * the toast's own buttons (Undo, Back up) are left to the button, which
+ * closes the toast itself.
  */
-function useTapToDismiss(enabled: boolean) {
+export function useTapToDismiss(enabled: boolean) {
     useEffect(() => {
         if (!enabled) return;
-        const onPointerDown = (event: PointerEvent) => {
+        const onClick = (event: MouseEvent) => {
+            const target = event.target;
+            if (
+                target instanceof Element &&
+                target.closest("[data-sonner-toast] button")
+            )
+                return;
             const hit = Array.from(
                 document.querySelectorAll("[data-sonner-toast]"),
             ).some((el) => {
@@ -88,9 +100,8 @@ function useTapToDismiss(enabled: boolean) {
             });
             if (hit) toast.dismiss();
         };
-        document.addEventListener("pointerdown", onPointerDown, true);
-        return () =>
-            document.removeEventListener("pointerdown", onPointerDown, true);
+        document.addEventListener("click", onClick, true);
+        return () => document.removeEventListener("click", onClick, true);
     }, [enabled]);
 }
 
@@ -112,8 +123,10 @@ export default function Toaster() {
                           : ("top-center" as const),
                       offset: overlayOpen ? { bottom: 16 } : { top: touchTop },
                       className: "touch-toaster",
-                      // Short notes go quickly; ones with a button keep sonner's own time
-                      duration: 2500,
+                      // Short notes go quickly. Toasts with a button pass their
+                      // own longer duration (ACTION_TOAST_DURATION_MS or more),
+                      // which wins over this default
+                      duration: NOTE_TOAST_DURATION_MS,
                   }
                 : {})}
             toastOptions={{

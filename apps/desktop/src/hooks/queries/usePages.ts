@@ -26,6 +26,9 @@ import {
 import { DEFAULT_STALE_TIME } from "./constants";
 import { toast } from "sonner";
 import { runAction } from "@/shortcuts/registry";
+import { getLatestUndoEntryToken } from "@/db-functions";
+import { undoIfStillLatest } from "./undoIfStillLatest";
+import { ACTION_TOAST_DURATION_MS } from "@/components/ui/toastDurations";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
 import { marcherPageKeys } from "./useMarcherPages";
@@ -207,24 +210,42 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
     });
 };
 
-/** An Undo button on the "page deleted" toast (same as the Undo action). */
-const deleteUndoAction = () => ({
+/**
+ * The "page deleted" toast, with an Undo button that undoes that deletion
+ * only: it runs Undo only while the deletion is still the latest history
+ * entry (see getLatestUndoEntryToken), and otherwise says it can't.
+ */
+export const pageDeletedToastOptions = (undoToken: string | null) => ({
+    // Long enough to reach for Undo
+    duration: ACTION_TOAST_DURATION_MS,
     action: {
         label: tolgee.t("actions.edit.undo"),
-        onClick: () => {
-            runAction("performUndo");
-        },
+        onClick: () =>
+            void undoIfStillLatest({
+                token: undoToken,
+                getLatestToken: () => getLatestUndoEntryToken(db),
+                undo: () => runAction("performUndo"),
+                unavailable: () =>
+                    toast.info(tolgee.t("pages.undoDeleteUnavailable")),
+            }),
     },
 });
 
+const showPageDeletedToast = (undoToken: string | null) =>
+    toast.success(
+        tolgee.t("pages.deletedSuccessfully"),
+        pageDeletedToastOptions(undoToken),
+    );
+
 export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
-        onSuccess: async (_, variables) => {
-            toast.success(
-                tolgee.t("pages.deletedSuccessfully"),
-                deleteUndoAction(),
-            );
+        mutationFn: async (pageIds: Set<number>) => {
+            const deleted = await deletePages({ db, pageIds });
+            // Which history entry the deletion is, for the toast's Undo
+            return { deleted, undoToken: await getLatestUndoEntryToken(db) };
+        },
+        onSuccess: async ({ undoToken }) => {
+            showPageDeletedToast(undoToken);
             // Invalidate all page queries
             void invalidatePageQueries(qc);
         },
@@ -240,12 +261,12 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
 
 export const deletePageYankMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: (pageId: number) => deletePageYank({ db, pageId }),
-        onSuccess: async (_, variables) => {
-            toast.success(
-                tolgee.t("pages.deletedSuccessfully"),
-                deleteUndoAction(),
-            );
+        mutationFn: async (pageId: number) => {
+            const deleted = await deletePageYank({ db, pageId });
+            return { deleted, undoToken: await getLatestUndoEntryToken(db) };
+        },
+        onSuccess: async ({ undoToken }) => {
+            showPageDeletedToast(undoToken);
             await invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
