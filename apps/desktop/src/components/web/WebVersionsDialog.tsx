@@ -4,7 +4,7 @@ import { useTolgee } from "@tolgee/react";
 import { toast } from "sonner";
 import { useWebLibraryStore } from "@/stores/WebLibraryStore";
 import { formatAgo, type VersionReason } from "@/utilities/webLibrary";
-import { restoreVersion } from "./webLibraryActions";
+import { reportFailure, restoreVersion } from "./webLibraryActions";
 
 const REASON_KEYS: Record<VersionReason, string> = {
     edit: "web.versionReason.edit",
@@ -74,10 +74,16 @@ export default function WebVersionsDialog() {
                                     onClick={async () => {
                                         if (!show) return;
                                         close();
-                                        const wasOpen = await restoreVersion(
-                                            show.id,
-                                            version.id,
-                                        );
+                                        let wasOpen: boolean;
+                                        try {
+                                            wasOpen = await restoreVersion(
+                                                show.id,
+                                                version.id,
+                                            );
+                                        } catch (error) {
+                                            reportFailure(t)(error);
+                                            return;
+                                        }
                                         // The page reloads into an open show.
                                         if (!wasOpen)
                                             toast.success(

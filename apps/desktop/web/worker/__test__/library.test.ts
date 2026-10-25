@@ -95,9 +95,18 @@ describe("the library", () => {
             library.addShow("Ballad", show("B"), { backedUp: false }),
         ).rejects.toThrow();
         const again = await Library.open(base, options());
-        expect(again.list().map((s) => s.name)).toEqual(["Opener"]);
-        // The half-added show's folder is cleaned up
-        expect(await (await root.folder("shows")).folders()).toEqual(["id1"]);
+        // The show itself was stored before the index write failed, so it's
+        // added back rather than lost
+        expect(
+            again
+                .list()
+                .map((s) => s.name)
+                .sort(),
+        ).toEqual(["Ballad", "Opener"]);
+        expect(await (await root.folder("shows")).folders()).toEqual([
+            "id1",
+            "id2",
+        ]);
     });
 
     it("saves edits and keeps versions at most every two minutes", async () => {
@@ -209,5 +218,153 @@ describe("moving an earlier build's show into the library", () => {
         const library = await Library.open(new MemoryDir(), options());
         expect(library.list()).toEqual([]);
         expect(library.current.openId).toBeNull();
+    });
+});
+
+/** Bytes that pass for a SQLite file of `size` bytes. */
+function bigShow(tag: string, size: number): Uint8Array {
+    const bytes = new Uint8Array(size);
+    bytes.set(show(tag));
+    return bytes;
+}
+
+describe("never losing shows the index doesn't describe", () => {
+    it("rebuilds the index from the show folders when no index can be read", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const a = await library.addShow("Opener", show("A"), {
+            backedUp: false,
+        });
+        clock += VERSION_INTERVAL_MS;
+        await library.saveShow(a, show("A2"));
+        const b = await library.addShow("Ballad", show("B"), {
+            backedUp: false,
+        });
+        // Every index generation damaged (a kill during the write, a bad disk)
+        const root = await libraryFolder(base);
+        for (const file of await root.files())
+            if (file.startsWith("index."))
+                root.entries.set(file, new TextEncoder().encode("{ broken"));
+
+        const again = await Library.open(base, options());
+        const shows = again.list();
+        expect(shows.map((s) => s.id).sort()).toEqual([a, b].sort());
+        expect(shows.map((s) => s.name).sort()).toEqual(["Ballad", "Opener"]);
+        expect(tagOf(await again.readShow(a))).toBe("A2");
+        expect(
+            again.current.shows.find((s) => s.id === a)!.versions.length,
+        ).toBeGreaterThan(0);
+        expect((await (await root.folder("shows")).folders()).sort()).toEqual(
+            [a, b].sort(),
+        );
+    });
+
+    it("keeps a show folder the index doesn't list, adding it back", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        await library.addShow("Opener", show("A"), { backedUp: false });
+        // A show written whose index write never happened
+        const shows = await (await libraryFolder(base)).folder("shows");
+        const stray = await shows.folder("stray");
+        await stray.write("show.1.dots", show("S"));
+
+        const again = await Library.open(base, options());
+        expect(await shows.folders()).toContain("stray");
+        expect(again.current.shows.some((s) => s.id === "stray")).toBe(true);
+        expect(tagOf(await again.readShow("stray"))).toBe("S");
+    });
+
+    it("finishes a delete that was cut short instead of bringing the show back", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Opener", show("A"), {
+            backedUp: false,
+        });
+        const root = await libraryFolder(base);
+        const shows = await root.folder("shows");
+        // The folder was marked, the index written, then the page died
+        (await shows.folder(id)).entries.set("deleted", new Uint8Array([1]));
+        await library.remove(id).catch(() => {});
+        await shows
+            .folder(id)
+            .then((dir) => dir.write("show.1.dots", show("A")));
+        (await shows.folder(id)).entries.set("deleted", new Uint8Array([1]));
+        const again = await Library.open(base, options());
+        expect(again.list()).toEqual([]);
+        expect(await shows.folders()).toEqual([]);
+    });
+
+    it("never touches a library written by a newer version", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Opener", show("A"), {
+            backedUp: false,
+        });
+        const root = await libraryFolder(base);
+        for (const file of await root.files()) root.entries.delete(file);
+        root.entries.set(
+            "index.9.json",
+            new TextEncoder().encode(JSON.stringify({ format: 2, things: [] })),
+        );
+        const before = JSON.stringify([
+            ...(await root.folder("shows")).subfolders.keys(),
+        ]);
+
+        const again = await Library.open(base, options());
+        expect(again.readOnly).toBe("newer-format");
+        expect(again.list()).toEqual([]);
+        await expect(
+            again.addShow("New", show("N"), { backedUp: false }),
+        ).rejects.toThrow(/newer version/);
+        expect(
+            JSON.stringify([...(await root.folder("shows")).subfolders.keys()]),
+        ).toBe(before);
+        expect(await root.files()).toEqual(["index.9.json"]);
+        expect(
+            tagOf(
+                await (
+                    await (await root.folder("shows")).folder(id)
+                ).read("show.1.dots"),
+            ),
+        ).toBe("A");
+    });
+});
+
+describe("a full disk", () => {
+    it("frees old versions before writing the index, so the save gets through", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Opener", bigShow("v0", 2000), {
+            backedUp: false,
+        });
+        for (let i = 1; i <= 6; i++) {
+            clock += VERSION_INTERVAL_MS;
+            await library.saveShow(id, bigShow(`v${i}`, 2000));
+        }
+        // Not even room for a new index
+        base.disk.limit = base.used() + 10;
+        clock += 1000;
+        await library.saveShow(id, bigShow("v7", 2000));
+        expect(tagOf(await library.readShow(id))).toBe("v7");
+        expect(library.current.shows[0].versions.length).toBeLessThan(6);
+        const again = await Library.open(base, options());
+        expect(tagOf(await again.readShow(id))).toBe("v7");
+    });
+
+    it("drops versions whose files are gone from the index", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Opener", show("v0"), {
+            backedUp: false,
+        });
+        clock += VERSION_INTERVAL_MS;
+        await library.saveShow(id, show("v1"));
+        const dir = await (
+            await (await libraryFolder(base)).folder("shows")
+        ).folder(id);
+        for (const file of await dir.files())
+            if (file.startsWith("v-")) await dir.remove(file);
+        const again = await Library.open(base, options());
+        expect(again.current.shows[0].versions).toEqual([]);
     });
 });

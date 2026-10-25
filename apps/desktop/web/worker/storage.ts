@@ -6,10 +6,11 @@
  * show in memory only, rather than writing over the first tab's library.
  */
 import { opfsDir, type Dir } from "./dir";
+import type { StorageProblem } from "../protocol";
 
 export type StorageStatus =
     | { storage: "opfs"; dir: Dir }
-    | { storage: "memory"; problem: "other-tab" | "unsupported" };
+    | { storage: "memory"; problem: Exclude<StorageProblem, "newer-format"> };
 
 /** Holds `name` for the life of the worker; false if another tab has it. */
 function holdLock(name: string): Promise<boolean> {

@@ -40,6 +40,7 @@ import {
     onIpad,
     openStoredShow,
     renameStoredShow,
+    reportFailure,
 } from "./webLibraryActions";
 
 const menuItemClass =
@@ -69,6 +70,7 @@ export default function WebShowLibrary() {
     const [renaming, setRenaming] = useState<ShowSummary | null>(null);
     const [deleting, setDeleting] = useState<ShowSummary | null>(null);
     const locale = getLanguage() ?? "en";
+    const failed = reportFailure(t);
 
     useEffect(() => {
         if (library?.openFailed)
@@ -107,7 +109,9 @@ export default function WebShowLibrary() {
                     {t(
                         storage.problem === "other-tab"
                             ? "web.library.otherTab"
-                            : "web.library.notKept",
+                            : storage.problem === "newer-format"
+                              ? "web.library.newerFormat"
+                              : "web.library.notKept",
                     )}
                 </p>
             )}
@@ -129,7 +133,9 @@ export default function WebShowLibrary() {
                             aria-label={t("web.library.open", {
                                 name: show.name,
                             })}
-                            onClick={() => void openStoredShow(show.id)}
+                            onClick={() =>
+                                openStoredShow(show.id).catch(failed)
+                            }
                             className="hover:text-accent flex min-h-44 min-w-0 flex-1 flex-col items-start justify-center gap-2 text-left"
                         >
                             <span className="text-body w-full truncate font-medium">
@@ -191,12 +197,12 @@ export default function WebShowLibrary() {
                                 <DropdownMenuItem
                                     className={menuItemClass}
                                     onSelect={() =>
-                                        void duplicateStoredShow(
+                                        duplicateStoredShow(
                                             show.id,
                                             t("web.library.copyName", {
                                                 name: show.name,
                                             }),
-                                        )
+                                        ).catch(failed)
                                     }
                                 >
                                     <CopyIcon size={16} />
@@ -250,7 +256,7 @@ export default function WebShowLibrary() {
                             variant="red"
                             onClick={() => {
                                 if (deleting)
-                                    void deleteStoredShow(deleting.id);
+                                    deleteStoredShow(deleting.id).catch(failed);
                                 setDeleting(null);
                             }}
                         >
@@ -276,7 +282,8 @@ function RenameDialog({
         if (show) setName(show.name);
     }, [show]);
     const save = () => {
-        if (show && name.trim()) void renameStoredShow(show.id, name.trim());
+        if (show && name.trim())
+            renameStoredShow(show.id, name.trim()).catch(reportFailure(t));
         onClose();
     };
     return (

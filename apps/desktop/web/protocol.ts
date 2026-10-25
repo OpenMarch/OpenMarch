@@ -24,6 +24,13 @@ export type FromWorker =
     | { type: "result"; id: number; ok: false; error: string }
     | { type: "emit"; channel: string; args: unknown[] };
 
+/**
+ * Why a tab keeps its show in memory only: another tab has the library, the
+ * browser has no usable storage, or the library was written by a newer
+ * version (it is left as it is).
+ */
+export type StorageProblem = "other-tab" | "unsupported" | "newer-format";
+
 export type WorkerStatus = {
     /**
      * Where the show is kept. "opfs": a copy in the browser's storage, so it
@@ -32,7 +39,7 @@ export type WorkerStatus = {
      */
     storage: "opfs" | "memory";
     /** Why storage is "memory", for the person. */
-    storageProblem?: "other-tab" | "unsupported";
+    storageProblem?: StorageProblem;
 };
 
 /**
@@ -40,13 +47,25 @@ export type WorkerStatus = {
  * stand-ins for Electron's file dialogs use them.
  */
 export const WEB_CHANNELS = {
-    /** (bytes: Uint8Array, name: string) => number (200, or an error code): adds a file to the library and opens it */
+    /**
+     * (bytes: Uint8Array, name: string, force?: boolean) => number (200, or
+     * an error code): adds a file to the library and opens it. Throws if the
+     * open show's latest changes can't be stored first, unless forced.
+     */
     openShow: "web:openShow",
-    /** () => void: closes the open show (it stays in the library) */
+    /**
+     * (force?: boolean) => void: closes the open show (it stays in the
+     * library). Throws, leaving it open, if its latest changes can't be
+     * stored, unless forced.
+     */
     closeShow: "web:closeShow",
     /** () => { name: string; bytes: Uint8Array } | null: the open show's latest bytes */
     exportShow: "web:exportShow",
-    /** () => void: copy the show to browser storage now, e.g. as the page is hidden */
+    /**
+     * () => FlushResult: stores the open show's latest changes now (as the
+     * page is hidden, or before it's closed or replaced) and says whether
+     * they are safely stored.
+     */
     flush: "web:flush",
     /** (bytes: Uint8Array) => PreviousDotsImportResult, for the new-show wizard */
     readPreviousDots: "web:readPreviousDots",
@@ -74,6 +93,8 @@ export const WEB_CHANNELS = {
      */
     restoreVersion: "web:restoreVersion",
 } as const;
+
+export type FlushResult = { safe: boolean; memoryOnly?: true; error?: string };
 
 /** The library as the page sees it. */
 export type LibraryState = {

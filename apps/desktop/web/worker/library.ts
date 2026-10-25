@@ -6,13 +6,21 @@
  *         index.<n>.json              which shows there are (see webLibrary.ts)
  *         shows/<id>/
  *           show.<n>.dots             the show
+ *           meta.<n>.json             its name, to rebuild the index from
  *           v-<version id>.dots       its versions
+ *           deleted                   marks a delete in progress
  *
  * Crash-safe writes: the index and each show are written to a new file
  * (generation `<n>` + 1) and the older generations are removed only once it
  * is complete. Reading takes the newest generation that is whole, so a write
  * cut short by a crash or a full disk leaves the previous one in place.
  * A version file is listed in the index only after it is written.
+ *
+ * Nothing the index doesn't describe is deleted: a show folder it doesn't
+ * list (a crash between writing a show and the index) is added back, and if
+ * no index can be read at all, the index is rebuilt from the folders. An
+ * index in a newer format than this build knows leaves the library read
+ * only. See docs/adr/0002-web-show-library.md.
  *
  * Earlier builds kept one show as `openmarch-<channel>/<sequence>-<name>`;
  * {@link Library.open} moves it into the library.
@@ -41,6 +49,12 @@ import {
     type VersionReason,
 } from "@/utilities/webLibrary";
 import type { Dir } from "./dir";
+
+/** Why a library can't be changed: it was written by a newer version. */
+export type ReadOnlyReason = "newer-format";
+
+/** Names a recovered show when its name can't be read. */
+const RECOVERED_NAME = "Recovered show";
 
 const SQLITE_HEADER = "SQLite format 3\0";
 
@@ -96,6 +110,29 @@ export async function readGeneration<T>(
     return null;
 }
 
+/** Whether an index file is in a format newer than this build reads. */
+function isNewerFormat(bytes: Uint8Array): boolean {
+    try {
+        const value = JSON.parse(new TextDecoder().decode(bytes)) as {
+            format?: unknown;
+        };
+        return typeof value?.format === "number" && value.format > 1;
+    } catch {
+        return false;
+    }
+}
+
+function parseMeta(bytes: Uint8Array): { name: string } | null {
+    try {
+        const value = JSON.parse(new TextDecoder().decode(bytes)) as {
+            name?: unknown;
+        };
+        return typeof value?.name === "string" ? { name: value.name } : null;
+    } catch {
+        return null;
+    }
+}
+
 function parseIndex(bytes: Uint8Array): LibraryIndex | null {
     try {
         const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
@@ -121,6 +158,8 @@ export class Library {
         index: LibraryIndex,
         private readonly now: () => number,
         private readonly newId: () => string,
+        /** Set when this build must not change the library. */
+        readonly readOnly: ReadOnlyReason | null = null,
     ) {
         this.index = index;
     }
@@ -137,10 +176,23 @@ export class Library {
         }: { now?: () => number; newId?: () => string } = {},
     ): Promise<Library> {
         const root = await base.folder("library");
+        // A newer build's library: list nothing, change nothing.
+        for (const file of await root.files()) {
+            if (parseGeneration(file, "index", "json") === null) continue;
+            const bytes = await root.read(file).catch(() => null);
+            if (bytes && isNewerFormat(bytes))
+                return new Library(
+                    root,
+                    emptyIndex(),
+                    now,
+                    newId,
+                    "newer-format",
+                );
+        }
         const index = await readGeneration(root, "index", "json", parseIndex);
         const library = new Library(root, index ?? emptyIndex(), now, newId);
         if (!index) await library.migrateLegacy(base);
-        await library.removeStrays();
+        await library.reconcile();
         return library;
     }
 
@@ -160,6 +212,7 @@ export class Library {
     }
 
     private async commit(next: LibraryIndex) {
+        this.assertWritable();
         await writeGeneration(
             this.root,
             "index",
@@ -167,6 +220,26 @@ export class Library {
             new TextEncoder().encode(JSON.stringify(next)),
         );
         this.index = next;
+    }
+
+    private assertWritable() {
+        if (this.readOnly)
+            throw new Error(
+                "These shows were saved by a newer version of OpenMarch. Use that version to change them.",
+            );
+    }
+
+    /** Records a show's name beside it, so a lost index can be rebuilt. */
+    private async writeMeta(id: string, name: string) {
+        await writeGeneration(
+            await this.showDir(id),
+            "meta",
+            "json",
+            new TextEncoder().encode(JSON.stringify({ name })),
+        ).catch((error) =>
+            // Only used to rebuild a lost index; the show is stored.
+            console.warn("Couldn't record the show's name beside it:", error),
+        );
     }
 
     private async showDir(id: string) {
@@ -213,21 +286,80 @@ export class Library {
         for (const { file } of legacy) await base.remove(file);
     }
 
-    /** Removes show folders and version files the index doesn't list (left by a crash). */
-    private async removeStrays() {
+    /**
+     * Brings the index in line with the folders without deleting anything
+     * it doesn't describe: adds back show folders it doesn't list (or all of
+     * them, when no index could be read), finishes deletes that were cut
+     * short, lists version files it lost, and forgets versions whose files
+     * are gone (e.g. dropped to make room before the index was written).
+     */
+    private async reconcile() {
         const shows = await this.root.folder("shows");
+        let next = this.index;
         for (const id of await shows.folders()) {
-            const show = findShow(this.index, id);
-            if (!show) {
-                await shows.remove(id);
-                continue;
-            }
-            const listed = new Set(show.versions.map(versionFile));
             const dir = await shows.folder(id);
-            for (const file of await dir.files())
-                if (file.startsWith("v-") && !listed.has(file))
-                    await dir.remove(file);
+            const files = await dir.files();
+            if (files.includes("deleted")) {
+                // Its delete was cut short after the index dropped it: it
+                // was meant to go. Still listed: the delete never happened.
+                if (!findShow(next, id)) {
+                    await shows.remove(id);
+                    continue;
+                }
+                await dir.remove("deleted");
+            }
+            let show = findShow(next, id);
+            if (!show) {
+                const bytes = await readGeneration(dir, "show", "dots", (b) =>
+                    isDatabase(b) ? b : null,
+                );
+                // No whole show here: leave the folder as it is.
+                if (!bytes) continue;
+                const meta = await readGeneration(
+                    dir,
+                    "meta",
+                    "json",
+                    parseMeta,
+                );
+                next = addShow(next, {
+                    id,
+                    name: meta?.name ?? RECOVERED_NAME,
+                    now: this.now(),
+                    backedUp: false,
+                });
+                show = findShow(next, id)!;
+            }
+            const present = new Set(files);
+            const listed = new Set(show.versions.map(versionFile));
+            const kept = show.versions.filter((v) =>
+                present.has(versionFile(v)),
+            );
+            if (kept.length !== show.versions.length)
+                next = {
+                    ...next,
+                    shows: next.shows.map((s) =>
+                        s.id === id ? { ...s, versions: kept } : s,
+                    ),
+                };
+            for (const file of files) {
+                const match = /^v-(\d+)\.dots$/.exec(file);
+                if (!match || listed.has(file)) continue;
+                const result = addVersion(next, id, {
+                    id: match[1],
+                    at: Number(match[1]),
+                    reason: "edit",
+                });
+                next = result.index;
+                for (const old of result.dropped)
+                    await dir.remove(versionFile(old));
+            }
         }
+        if (next !== this.index)
+            await this.commit(next).catch((error) => {
+                // Use it anyway; the next change writes it.
+                console.warn("Couldn't write the reconciled index:", error);
+                this.index = next;
+            });
     }
 
     /** Adds a show; returns its id. */
@@ -237,6 +369,7 @@ export class Library {
         { backedUp }: { backedUp: boolean },
     ): Promise<string> {
         return this.enqueue(async () => {
+            this.assertWritable();
             const id = this.newId();
             await writeGeneration(
                 await this.showDir(id),
@@ -244,9 +377,14 @@ export class Library {
                 "dots",
                 bytes,
             );
-            await this.commit(
-                addShow(this.index, { id, name, now: this.now(), backedUp }),
-            );
+            const next = addShow(this.index, {
+                id,
+                name,
+                now: this.now(),
+                backedUp,
+            });
+            await this.writeMeta(id, findShow(next, id)!.name);
+            await this.commit(next);
             return id;
         });
     }
@@ -272,6 +410,7 @@ export class Library {
      */
     saveShow(id: string, bytes: Uint8Array): Promise<void> {
         return this.enqueue(async () => {
+            this.assertWritable();
             const dir = await this.showDir(id);
             try {
                 await writeGeneration(dir, "show", "dots", bytes);
@@ -296,9 +435,17 @@ export class Library {
             id,
             VERSIONS_FREED_WHEN_FULL,
         );
-        await this.commit(index);
+        // Files first: on a full disk even the index can't be written until
+        // they're gone. An index listing a missing version is tolerated.
         const dir = await this.showDir(id);
         for (const version of dropped) await dir.remove(versionFile(version));
+        this.index = index;
+        await this.commit(index).catch((error) =>
+            console.warn(
+                "Couldn't write the index after freeing space:",
+                error,
+            ),
+        );
         return true;
     }
 
@@ -328,6 +475,7 @@ export class Library {
     /** Keeps a version of the stored show now if it changed since its newest one. */
     keepVersion(id: string, reason: VersionReason): Promise<void> {
         return this.enqueue(async () => {
+            if (this.readOnly) return;
             const bytes = await readGeneration(
                 await this.showDir(id),
                 "show",
@@ -358,6 +506,7 @@ export class Library {
      */
     restoreVersion(id: string, versionId: string): Promise<void> {
         return this.enqueue(async () => {
+            this.assertWritable();
             const show = findShow(this.index, id);
             const version = show?.versions.find((v) => v.id === versionId);
             if (!show || !version)
@@ -386,9 +535,11 @@ export class Library {
     }
 
     rename(id: string, name: string): Promise<void> {
-        return this.enqueue(() =>
-            this.commit(renameShow(this.index, id, name)),
-        );
+        return this.enqueue(async () => {
+            const next = renameShow(this.index, id, name);
+            await this.commit(next);
+            await this.writeMeta(id, findShow(next, id)!.name);
+        });
     }
 
     /** Adds a copy of a show (without its versions); returns the copy's id. */
@@ -397,6 +548,7 @@ export class Library {
         copyName?: (name: string) => string,
     ): Promise<string> {
         return this.enqueue(async () => {
+            this.assertWritable();
             const bytes = await readGeneration(
                 await this.showDir(id),
                 "show",
@@ -411,17 +563,30 @@ export class Library {
                 "dots",
                 bytes,
             );
-            await this.commit(
-                duplicateShow(this.index, id, newId, this.now(), copyName),
+            const next = duplicateShow(
+                this.index,
+                id,
+                newId,
+                this.now(),
+                copyName,
             );
+            await this.writeMeta(newId, findShow(next, newId)!.name);
+            await this.commit(next);
             return newId;
         });
     }
 
     remove(id: string): Promise<void> {
         return this.enqueue(async () => {
+            this.assertWritable();
+            const shows = await this.root.folder("shows");
+            // Marked first, so a delete cut short after the index is
+            // written finishes on the next start instead of coming back.
+            await (
+                await shows.folder(id)
+            ).write("deleted", new Uint8Array([1]));
             await this.commit(removeShow(this.index, id));
-            await (await this.root.folder("shows")).remove(id);
+            await shows.remove(id);
         });
     }
 
