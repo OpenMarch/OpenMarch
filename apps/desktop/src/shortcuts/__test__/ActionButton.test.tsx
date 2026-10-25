@@ -10,6 +10,7 @@ import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import ActionButton from "../ActionButton";
+import { Button } from "@openmarch/ui";
 import { getActionLabel, getActionTooltip } from "../labels";
 import { registerActionHandler } from "../registry";
 import { useActionHandler } from "../useActionHandler";
@@ -179,5 +180,41 @@ describe("ActionButton", () => {
         expect(run).toHaveBeenCalledTimes(2);
         off();
         vi.useRealTimers();
+    });
+
+    it("passes the release and cancel events to the caller's own handlers", () => {
+        const onPointerUp = vi.fn((e: React.PointerEvent) => e.pointerType);
+        const onPointerCancel = vi.fn((e: React.PointerEvent) => e.type);
+        render(
+            <>
+                <ActionButton
+                    action="flipHorizontal"
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                >
+                    Flip
+                </ActionButton>
+                <Button
+                    tooltipText="Zoom in"
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                >
+                    Zoom
+                </Button>
+            </>,
+            { wrapper: Providers },
+        );
+        for (const name of ["Flip", "Zoom"]) {
+            const el = screen.getByText(name).closest("button")!;
+            onPointerUp.mockClear();
+            onPointerCancel.mockClear();
+            pointer("pointerup", el, "touch");
+            pointer("pointercancel", el, "touch");
+            expect(onPointerUp).toHaveBeenCalledTimes(1);
+            expect(onPointerUp.mock.calls[0][0]).toBeDefined();
+            expect(onPointerUp).toHaveReturnedWith("touch");
+            expect(onPointerCancel.mock.calls[0][0]).toBeDefined();
+            expect(onPointerCancel).toHaveReturnedWith("pointercancel");
+        }
     });
 });

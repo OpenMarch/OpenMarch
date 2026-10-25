@@ -16,8 +16,8 @@ const LONG_PRESS_SLOP = 10;
 export type LongPressHandlers = {
     onPointerDown: (e: React.PointerEvent) => void;
     onPointerMove: (e: React.PointerEvent) => void;
-    onPointerUp: () => void;
-    onPointerCancel: () => void;
+    onPointerUp: (e: React.PointerEvent) => void;
+    onPointerCancel: (e: React.PointerEvent) => void;
     onClickCapture: (e: React.MouseEvent) => void;
     onContextMenu: (e: React.MouseEvent) => void;
 };
@@ -75,12 +75,12 @@ export function useLongPress(
             )
                 clear();
         },
-        onPointerUp: () => {
-            call("onPointerUp", undefined);
+        onPointerUp: (e) => {
+            call("onPointerUp", e);
             clear();
         },
-        onPointerCancel: () => {
-            call("onPointerCancel", undefined);
+        onPointerCancel: (e) => {
+            call("onPointerCancel", e);
             clear();
         },
         onClickCapture: (e) => {
