@@ -40,6 +40,8 @@ export default defineConfig(() => {
             slowTestThreshold: 1000 * 10, // 10 seconds
 
             pool: "forks",
+            // Inline electron-store so it gets the electron mock from vitest.setup.ts.
+            server: { deps: { inline: ["electron-store"] } },
             environment: "jsdom",
             testTimeout: 10 * 60 * 1000, // 10 minute global timeout for all tests
         },
