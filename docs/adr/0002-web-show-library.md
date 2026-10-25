@@ -1,0 +1,128 @@
+# 0002: The web editor keeps a library of shows in browser storage
+
+- Status: accepted
+- Date: 2026-10-25
+
+## Context
+
+The web editor (editor.openmarch.com, `apps/desktop/web`) kept one show at a
+time: a copy in the browser's origin private file system (OPFS), replaced
+whenever another show was opened, with "save" meaning "download". A college
+class uses it on students' own iPads (Safari, often added to the Home
+Screen) with no accounts and no cloud. Students must not lose work, keep
+several shows, and need a way back from mistakes.
+
+## Decision
+
+The worker keeps a **library** of shows in OPFS, one per release channel:
+
+```
+openmarch-<channel>/
+  library/
+    index.<n>.json        the index: which shows, names, times, versions
+    shows/<id>/
+      show.<n>.dots       the show (a SQLite file)
+      meta.<n>.json       its name, so a lost index can be rebuilt
+      v-<version id>.dots its versions (whole copies)
+      deleted             marks a delete in progress
+```
+
+**Index format.** `index.<n>.json` holds `{ "format": 1, "shows": [...],
+"openId": ... }` (`apps/desktop/src/utilities/webLibrary.ts`, which also
+holds every rule as a pure function). A build reads only formats it knows.
+**Never delete what you can't read:** if any index generation has a `format`
+greater than this build knows (a newer build wrote it, then the person went
+back to an older one), the library opens read only. Nothing is listed,
+written, migrated or removed, and the tab works in memory only and says so.
+A future format must stay readable this way: keep `format` a top-level
+number.
+
+**Crash safety.** Every write of the index, a show or its name goes to a new
+generation (`<n>` + 1). Older generations are removed only after the new
+file is completely written. Reading takes the newest generation that is
+whole (a SQLite header for shows, JSON that parses for the index), so a write
+cut short by a crash, a killed tab or a full disk leaves the previous one in
+place. A version file is listed in the index only after it is written.
+
+**Nothing undescribed is deleted.** On start the library reconciles the
+index with the folders:
+
+- A show folder the index doesn't list (a crash between writing a show and
+  its index) is added back under its recorded name, or "Recovered show".
+- If no index generation can be read at all (damage, or a kill during the
+  first index write), the index is rebuilt the same way from every folder:
+  the newest whole `show.<n>.dots`, its `meta`, and its `v-*.dots` files.
+- A folder marked `deleted` that the index no longer lists finishes its
+  delete (marked before the index drops it). One the index still lists keeps
+  its show and loses the mark.
+- A folder without a whole show is left alone.
+- Versions whose files are gone are forgotten, and version files the index
+  lost are listed again.
+
+When storage is full, the oldest versions' files are deleted before the
+index is written (an index that lists a missing version is tolerated), and
+the save is tried again.
+
+**Versions.** 20 per show: at most one per two minutes of editing, one on
+opening if the show changed since its newest version, and one before a
+restore. Restoring keeps the replaced state as a version.
+
+**Opening, closing, replacing.** The open show lives in memory in the
+worker and is copied to the library within half a second of each change.
+Before the open show is closed or replaced (open another show or a file,
+start a new one, restore a version of it), the worker stores its latest
+changes, then makes the library changes, and closes the show only once both
+have succeeded. If either fails, the show stays open and the page reports
+the error. The page asks first whenever the latest changes aren't safely
+stored, and the person may go on anyway ("force").
+
+**Legacy migration.** Earlier builds kept one show at the channel folder's
+top level as `<sequence>-<name>`. When there is no index, the newest whole
+one becomes the library's first show and stays open. The old files are
+removed only after the library has stored it.
+
+**Locks.** One tab per channel holds a Web Lock on the library. Other tabs
+keep their show in memory only.
+
+**Worker IPC** (`apps/desktop/web/protocol.ts`), in addition to the existing
+`web:openShow` (now also takes `force`), `web:closeShow` (`force`),
+`web:exportShow`, `web:flush` (now answers whether the changes are stored),
+`web:readPreviousDots` and `web:insertAudio`:
+
+| Channel | Does |
+| --- | --- |
+| `web:library` | The library as the page sees it (shows, open show, a show that failed to open) |
+| `web:openStored` | Makes a stored show the one to open; the page reloads |
+| `web:renameShow`, `web:duplicateShow`, `web:deleteShow` | Library edits |
+| `web:exportStored` | A stored show's bytes, for a backup |
+| `web:recordBackup` | Records that a show was backed up |
+| `web:restoreVersion` | Restores a version (keeping the replaced state); true if it was open |
+
+Events: `web:library` (the library changed) and `web:saveStatus` (saving,
+saved, or an error, with "full" told apart).
+
+## Consequences
+
+- Work is on one device, in one browser, until it is backed up. Clearing
+  site data loses shows that weren't backed up. A Home Screen app on iOS has
+  storage apart from Safari's. The UI says so (title bar status, start page,
+  welcome, Home Screen how-to), and Back up (share sheet or download) is one
+  tap.
+- Versions are whole copies, so they cost space: up to 20 times a show's
+  size.
+- A newer build can change the index format. An older build then refuses to
+  touch the library rather than risk it.
+- Unit tests fake crashes and full disks with an in-memory folder
+  (`apps/desktop/web/worker/dir.ts`, `MemoryDir`).
+
+## Verification
+
+- `apps/desktop/web/worker/__test__/library.test.ts`: interrupted writes,
+  a damaged index rebuilt from folders, an unlisted folder kept, a delete
+  cut short, a newer format left untouched, full disk, migration.
+- `apps/desktop/src/utilities/__test__/webLibrary.test.ts`: the pure rules.
+- `apps/desktop/web/renderer/__test__/leave.test.ts`: when to ask before
+  closing or replacing a show.
+- Browser flows against `pnpm run web:preview` (open, edit, back up, reload,
+  close, a second file, rename, duplicate, versions, restore, a failed
+  restore that keeps the show open, delete, migration, a second tab).
