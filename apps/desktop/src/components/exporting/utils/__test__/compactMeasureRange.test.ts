@@ -26,6 +26,13 @@ describe("compactMeasureRange", () => {
         expect(compactMeasureRange("12A(9) → 14(16)")).toBe("12A-14");
     });
 
+    it("never cuts a long range short", () => {
+        expect(compactMeasureRange("123456(2) - 123460")).toBe("123456-123460");
+        expect(compactMeasureRange("123456(2) - 123460(1)")).toBe(
+            "123456-123460",
+        );
+    });
+
     it("passes through values with no measures", () => {
         expect(compactMeasureRange("7")).toBe("7");
         expect(compactMeasureRange("-")).toBe("-");
