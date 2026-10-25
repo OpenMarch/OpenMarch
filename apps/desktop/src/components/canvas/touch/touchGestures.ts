@@ -46,6 +46,11 @@ export interface PointerInput<
     t: number;
     /** The contact is palm-sized (only read on "down") */
     large?: boolean;
+    /**
+     * For a pen move: whether it touches the screen (a pressed button or some
+     * pressure). A pen hovering above the screen sends moves too.
+     */
+    contact?: boolean;
 }
 
 export type GestureInput =
@@ -242,6 +247,9 @@ const enterGesture = (
 };
 
 function handlePen(state: GestureState, input: PointerInput): GestureResult {
+    // A hovering pen (no contact) isn't in use: fingers keep editing
+    if (input.type === "move" && input.contact === false)
+        return result(state, [], true);
     const effects: GestureEffect[] = [];
     let next: GestureState = { ...state, lastPenAt: input.t };
     if (input.type === "down") {

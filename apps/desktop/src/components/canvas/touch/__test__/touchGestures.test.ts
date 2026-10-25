@@ -453,6 +453,29 @@ describe("pen and palm rejection", () => {
         ]).toContain("navigate");
     });
 
+    it("doesn't count a hovering pen (moves without contact) as in use", () => {
+        const hover = (t: number) => ({
+            ...pen("move", 9, 100, 100, t),
+            contact: false,
+        });
+        const { results } = run([
+            hover(0),
+            hover(50),
+            touch("down", 1, 300, 300, 100),
+        ]);
+        // The finger edits as usual
+        expect(results[2].passThrough).toBe(true);
+        expect(types(results[2].effects)).toEqual(["singleStart"]);
+    });
+
+    it("counts pen moves with contact as in use", () => {
+        const { results } = run([
+            { ...pen("move", 9, 100, 100, 0), contact: true },
+            touch("down", 1, 300, 300, 100),
+        ]);
+        expect(results[1].passThrough).toBe(false);
+    });
+
     it("lets a finger edit again once the pen has been away a while", () => {
         const { results } = run([
             pen("down", 9, 100, 100, 0),

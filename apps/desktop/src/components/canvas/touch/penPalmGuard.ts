@@ -23,6 +23,15 @@ export interface PalmGuardState {
     swallowed: Set<number>;
     /** Until when mouse and click events made from a swallowed finger are dropped */
     dropClicksUntil: number;
+    /**
+     * The mouse-compatibility events a pen press still owes (its mousedown
+     * after pointerdown; mouseup and click after pointerup). Mouse events carry
+     * no pointer type, so this is how the pen's own get through while a
+     * resting palm's are dropped.
+     */
+    penOwes: { mousedown: number; mouseup: number; click: number };
+    /** Until when (event time) each owed event is expected */
+    penOwesUntil: { mousedown: number; mouseup: number; click: number };
 }
 
 export const initialPalmGuardState = (): PalmGuardState => ({
@@ -30,7 +39,21 @@ export const initialPalmGuardState = (): PalmGuardState => ({
     touchesDown: new Set(),
     swallowed: new Set(),
     dropClicksUntil: -Infinity,
+    penOwes: { mousedown: 0, mouseup: 0, click: 0 },
+    penOwesUntil: {
+        mousedown: -Infinity,
+        mouseup: -Infinity,
+        click: -Infinity,
+    },
 });
+
+/**
+ * The pen's compatibility events come right after its pointer events (in the
+ * same task, with about the same time stamp); a palm's come much later, when
+ * it lifts. The windows are short so a palm's can't pass for the pen's.
+ */
+const PEN_MOUSE_MS = 100;
+const PEN_CLICK_MS = 300;
 
 /**
  * Whether an event should be swallowed; updates the state.
@@ -52,11 +75,19 @@ export function palmGuardShouldBlock(
     const { type, pointerType, pointerId } = event;
     if (type.startsWith("pointer") && pointerType === "pen") {
         if (type === "pointerdown") {
+            state.penOwes = { mousedown: 1, mouseup: 0, click: 0 };
+            state.penOwesUntil.mousedown = now + PEN_MOUSE_MS;
             state.pensDown.add(pointerId ?? -1);
             // A palm resting before the pen: the rest of its press is swallowed
             for (const id of state.touchesDown) state.swallowed.add(id);
             state.touchesDown.clear();
             if (state.swallowed.size > 0) state.dropClicksUntil = Infinity;
+        }
+        if (type === "pointerup") {
+            state.penOwes.mouseup = 1;
+            state.penOwes.click = 1;
+            state.penOwesUntil.mouseup = now + PEN_MOUSE_MS;
+            state.penOwesUntil.click = now + PEN_CLICK_MS;
         }
         if (type === "pointerup" || type === "pointercancel")
             state.pensDown.delete(pointerId ?? -1);
@@ -94,8 +125,19 @@ export function palmGuardShouldBlock(
         type === "mouseup" ||
         type === "contextmenu"
     ) {
+        // A real pen's (or mouse's) own events must pass. A click may say so
+        // itself; mouse events don't, so the pen's owed ones are counted.
+        const owed = type as keyof PalmGuardState["penOwes"];
+        if (
+            pointerType !== "touch" &&
+            owed in state.penOwes &&
+            state.penOwes[owed] > 0 &&
+            now <= state.penOwesUntil[owed]
+        ) {
+            state.penOwes[owed]--;
+            return false;
+        }
         if (now > state.dropClicksUntil) return false;
-        // A real pen's own compatibility events must pass
         if (pointerType === "pen" || pointerType === "mouse") return false;
         return true;
     }

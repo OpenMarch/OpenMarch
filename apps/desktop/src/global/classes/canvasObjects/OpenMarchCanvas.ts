@@ -1268,27 +1268,30 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         next[4] += (width - last.width) / 2;
         next[5] += (height - last.height) / 2;
         this.setViewportTransform(next);
-        // Nothing of the show left in view (e.g. the field ended up off to one
-        // side after turning): fit the field again
-        if (!this.anyMarcherInView()) this.centerAtBaseZoom();
+        // The field itself left the view (e.g. after turning a tablet): fit it
+        // again. A view merely showing no marchers (zoomed into an empty end
+        // zone) is the user's, and stays.
+        if (!this.fieldInView()) this.centerAtBaseZoom();
     }
 
     /** The last canvas size that wasn't 0 */
     private _lastRealSize: { width: number; height: number } | null = null;
 
-    /** Whether any marcher is inside the visible canvas (true with none) */
-    private anyMarcherInView(): boolean {
-        const marchers = this.getCanvasMarchers();
+    /** Whether any part of the field drawing is inside the visible canvas */
+    private fieldInView(): boolean {
         const vpt = this.viewportTransform;
-        if (marchers.length === 0 || !vpt) return true;
-        const width = this.getWidth();
-        const height = this.getHeight();
-        return marchers.some((marcher) => {
-            const p = marcher.getAbsoluteCoords();
-            const x = p.x * vpt[0] + vpt[4];
-            const y = p.y * vpt[3] + vpt[5];
-            return x >= 0 && x <= width && y >= 0 && y <= height;
-        });
+        const field = this.fieldProperties;
+        if (!vpt || !field) return true;
+        const left = vpt[4];
+        const top = vpt[5];
+        const right = left + field.width * vpt[0];
+        const bottom = top + field.height * vpt[3];
+        return (
+            right > 0 &&
+            bottom > 0 &&
+            left < this.getWidth() &&
+            top < this.getHeight()
+        );
     }
 
     /**

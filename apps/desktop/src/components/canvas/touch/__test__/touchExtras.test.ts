@@ -63,6 +63,35 @@ describe("palmGuardShouldBlock", () => {
         );
     });
 
+    it("lets the pen's own mouse events and click through while a resting palm's are dropped", () => {
+        const s = initialPalmGuardState();
+        // The palm lands first, then the pen presses a button
+        palmGuardShouldBlock(s, ev("pointerdown", "touch", 1), 0);
+        expect(palmGuardShouldBlock(s, ev("pointerdown", "pen", 9), 100)).toBe(
+            false,
+        );
+        // The pen's mousedown (no pointer type on a MouseEvent) right after
+        expect(palmGuardShouldBlock(s, ev("mousedown"), 101)).toBe(false);
+        expect(palmGuardShouldBlock(s, ev("pointerup", "pen", 9), 200)).toBe(
+            false,
+        );
+        expect(palmGuardShouldBlock(s, ev("mouseup"), 201)).toBe(false);
+        expect(palmGuardShouldBlock(s, ev("click"), 202)).toBe(false);
+        // A second pen press, palm still resting: same again
+        palmGuardShouldBlock(s, ev("pointerdown", "pen", 9), 400);
+        expect(palmGuardShouldBlock(s, ev("mousedown"), 400)).toBe(false);
+        palmGuardShouldBlock(s, ev("pointerup", "pen", 9), 450);
+        expect(palmGuardShouldBlock(s, ev("mouseup"), 451)).toBe(false);
+        expect(palmGuardShouldBlock(s, ev("click"), 452)).toBe(false);
+        // The palm lifts: its own mouse events and click are dropped
+        expect(palmGuardShouldBlock(s, ev("pointerup", "touch", 1), 900)).toBe(
+            true,
+        );
+        expect(palmGuardShouldBlock(s, ev("mousedown"), 905)).toBe(true);
+        expect(palmGuardShouldBlock(s, ev("mouseup"), 906)).toBe(true);
+        expect(palmGuardShouldBlock(s, ev("click"), 907)).toBe(true);
+    });
+
     it("swallows the rest of a palm that was resting before the pen came down", () => {
         const s = initialPalmGuardState();
         expect(palmGuardShouldBlock(s, ev("pointerdown", "touch", 1), 0)).toBe(
