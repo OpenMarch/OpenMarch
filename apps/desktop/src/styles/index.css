@@ -166,9 +166,12 @@ textarea,
 }
 
 /*
- * The app's outer frame (App.tsx). As a home-screen app on an iPad the page
- * reaches under the status bar and home indicator (viewport-fit=cover), so
- * it is padded back by the safe areas. In Electron, where the on-screen
+ * The app's outer frame (App.tsx) is pinned to all four edges of the screen
+ * (fixed, inset 0) rather than sized with 100dvh, which iPadOS 17 can make a
+ * little shorter than the screen, leaving the app short of the bottom edge.
+ * As a home-screen app on an iPad the page reaches under the status bar and
+ * home indicator (viewport-fit=cover), so it is padded back by the safe
+ * areas. In Electron, where the on-screen
  * keyboard overlays the page (src/hooks/useOnScreenKeyboard.ts), it is
  * padded above the keyboard. All of these are 0 elsewhere.
  */

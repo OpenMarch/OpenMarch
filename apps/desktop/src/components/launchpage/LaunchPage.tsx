@@ -84,7 +84,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     }, [queryClient, setDatabaseIsReady]);
 
     return (
-        <div className="from-bg-1 to-accent flex h-screen w-screen flex-col bg-linear-to-br from-[60%] to-[150%]">
+        <div className="from-bg-1 to-accent flex h-full min-h-0 w-full flex-col bg-linear-to-br from-[60%] to-[150%]">
             <TitleBar />
             <Tabs.Root
                 value={selectedTab}

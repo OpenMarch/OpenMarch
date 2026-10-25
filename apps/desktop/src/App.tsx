@@ -297,7 +297,7 @@ function App() {
                 {process.env.NODE_ENV !== "production" && (
                     <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                <main className="app-frame bg-bg-1 text-text outline-accent flex h-dvh min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+                <main className="app-frame bg-bg-1 text-text outline-accent fixed inset-0 flex min-h-0 min-w-0 flex-col overflow-hidden font-sans">
                     {analyticsConsent === null && !isCodegen && (
                         <AnalyticsOptInModal
                             onChoice={(choice) => setAnalyticsConsent(choice)}
