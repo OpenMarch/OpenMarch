@@ -149,8 +149,8 @@
         "tsx": "^4.23.15",
         "typescript": "catalog:",
         "vite": "^8.3.5",
-        "vite-plugin-electron": "^0.29.1",
-        "vite-plugin-electron-renderer": "^0.14.7",
+        "vite-plugin-electron": "^1.1.2",
+        "vite-plugin-electron-renderer": "^1.0.0",
         "vitest": "^4.1.12",
         "wrangler": "^4.152.0"
     },
