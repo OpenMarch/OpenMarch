@@ -70,7 +70,9 @@ export default function InspectorDock({
                 id="inspector-dock"
                 data-presentation={presentation}
                 className={clsx(
-                    className,
+                    // `contents` has no box, so opacity there would do nothing:
+                    // in the fixed layout the panel takes the class instead.
+                    presentation !== "fixed" && className,
                     presentation === "fixed" && "contents",
                     presentation === "side" &&
                         clsx("relative flex shrink-0", !open && "-ml-8"),
@@ -99,6 +101,7 @@ export default function InspectorDock({
                 <div
                     id="inspector-panel"
                     className={clsx(
+                        presentation === "fixed" && className,
                         !open && "hidden",
                         drawer &&
                             // bg-fg-1 is see-through; the drawer is over the field
