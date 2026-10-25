@@ -1,0 +1,67 @@
+import { describe, expect } from "vitest";
+import { DbConnection, describeDbTests, schema } from "@/test/base";
+import {
+    getLatestUndoEntryToken,
+    performRedo,
+    performUndo,
+    transactionWithHistory,
+} from "../history";
+import { DbTransaction } from "../types";
+
+describeDbTests("getLatestUndoEntryToken", (it) => {
+    const insertBeat = (tx: DbConnection | DbTransaction, duration: number) =>
+        tx.insert(schema.beats).values({ duration, position: 1 });
+    const edit = (db: DbConnection, duration: number) =>
+        transactionWithHistory(db, "test edit", async (tx) => {
+            await insertBeat(tx, duration);
+        });
+
+    describe("while the entry is the latest", () => {
+        it("gives the same token again", async ({ db }) => {
+            await edit(db, 0.5);
+            const token = await getLatestUndoEntryToken(db);
+            expect(token).not.toBeNull();
+            expect(await getLatestUndoEntryToken(db)).toBe(token);
+        });
+    });
+
+    it("changes after another edit", async ({ db }) => {
+        await edit(db, 0.5);
+        const token = await getLatestUndoEntryToken(db);
+        await edit(db, 0.75);
+        expect(await getLatestUndoEntryToken(db)).not.toBe(token);
+    });
+
+    it("changes once the entry has been undone", async ({ db }) => {
+        await edit(db, 0.5);
+        await edit(db, 0.75);
+        const token = await getLatestUndoEntryToken(db);
+        await performUndo(db);
+        expect(await getLatestUndoEntryToken(db)).not.toBe(token);
+    });
+
+    it("changes after an undo even when the same entry ends up on top", async ({
+        db,
+    }) => {
+        // Conservative: an undo and redo put the entry back, but the toast
+        // that offered it no longer knows nothing else happened in between
+        await edit(db, 0.5);
+        const token = await getLatestUndoEntryToken(db);
+        await performUndo(db);
+        await performRedo(db);
+        expect(await getLatestUndoEntryToken(db)).not.toBe(token);
+    });
+
+    it("differs for a new edit that reuses the undone entry's numbers", async ({
+        db,
+    }) => {
+        await edit(db, 0.5);
+        const token = await getLatestUndoEntryToken(db);
+        await performUndo(db);
+        // The next edit gets the same group and sequence numbers back
+        await edit(db, 0.9);
+        const next = await getLatestUndoEntryToken(db);
+        expect(next).not.toBeNull();
+        expect(next).not.toBe(token);
+    });
+});
