@@ -662,7 +662,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      */
     private _pendingSelectionIds: string[] = [];
 
-    keepSelectionAcross(update: () => void) {
+    keepSelectionAcross(
+        update: () => void,
+        { rebuild = false }: { rebuild?: boolean } = {},
+    ) {
         const objects = this.getActiveObjects();
         const pending = this._pendingSelectionIds;
         if (
@@ -670,6 +673,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             (this as any)._currentTransform
         ) {
             update();
+            return;
+        }
+        // The same objects stay selected (only their positions may change):
+        // keep the selection as it is, without rebuilding it
+        if (!rebuild && pending.length === 0) {
+            this.updateSelectionInPlace(update);
             return;
         }
         const wanted = [
@@ -704,6 +713,46 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.applySelectionVisibility();
     }
 
+    /**
+     * Runs an update that moves marchers while the same objects stay selected.
+     * A multi-selection keeps its object (no selection events, no rebuilt
+     * handlers), and its box is re-fitted only if the marchers actually moved.
+     */
+    private updateSelectionInPlace(update: () => void) {
+        const active = this.getActiveObject();
+        if (!active || active.type !== "activeSelection") {
+            update();
+            return;
+        }
+        const group = active as fabric.ActiveSelection;
+        const children = group.getObjects();
+        const before = children.map((c) => ({ left: c.left, top: c.top }));
+        // setMarcherCoords knows about the selection: it writes positions
+        // relative to it
+        update();
+        const moved = children.some(
+            (child, i) =>
+                Math.abs((child.left ?? 0) - (before[i].left ?? 0)) > 1e-6 ||
+                Math.abs((child.top ?? 0) - (before[i].top ?? 0)) > 1e-6,
+        );
+        if (moved) {
+            // Fit the box to where the marchers are now (as Fabric does when a
+            // selection's members change; this resets its angle)
+            const angle = group.angle ?? 0;
+            group.addWithUpdate();
+            setGroupAttributes(group);
+            applyTouchHandleSizing(group, this.getZoom(), isTouchLayout());
+            if ((group.angle ?? 0) !== angle)
+                this.fire("group:selection", { group });
+        }
+        children.forEach((child) => {
+            child.setCoords();
+            if (child instanceof CanvasMarcher) child.updateTextLabelPosition();
+        });
+        group.setCoords();
+        this.applySelectionVisibility();
+    }
+
     /** The selection's box and handles are hidden (e.g. while playing) */
     private _selectionHidden = false;
 
@@ -716,7 +765,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._selectionHidden = hidden;
         if (!hidden) {
             // Rebuild the box around the marchers' positions now
-            this.keepSelectionAcross(() => {});
+            this.keepSelectionAcross(() => {}, { rebuild: true });
         }
         this.applySelectionVisibility();
         this.requestRenderAll();

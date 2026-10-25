@@ -989,3 +989,52 @@ test("resizing the window keeps a zoomed-in view of empty field (no re-fit)", as
     expect(Math.abs(after.x - before.x)).toBeLessThan(2);
     expect(Math.abs(after.y - before.y)).toBeLessThan(2);
 });
+
+test("refreshing marchers with an unchanged selection keeps it as it is, without selection events", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    await clickMarcher(page, "B1");
+    await clickMarcher(page, "B2", { add: true });
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["B1", "B2"]);
+    await waitForIdle(page);
+    const result = await page.evaluate(() => {
+        const canvas = window.canvas as any;
+        const events: string[] = [];
+        const names = [
+            "selection:created",
+            "selection:updated",
+            "selection:cleared",
+            "group:selection",
+        ];
+        const listeners = names.map((n) => {
+            const l = () => events.push(n);
+            canvas.on(n, l);
+            return [n, l] as const;
+        });
+        const group = canvas.getActiveObject();
+        const box = group.getBoundingRect(true, true);
+        canvas.refreshMarchers();
+        canvas.refreshMarchers();
+        const after = canvas.getActiveObject();
+        const boxAfter = after.getBoundingRect(true, true);
+        for (const [n, l] of listeners) canvas.off(n, l);
+        return {
+            events,
+            same: after === group,
+            boxMoved:
+                Math.abs(box.left - boxAfter.left) +
+                Math.abs(box.top - boxAfter.top),
+            drawnAt: after
+                .getObjects()
+                .map((o: any) => o.getMarcherCoords())
+                .map((p: any) => [Math.round(p.x), Math.round(p.y)]),
+        };
+    });
+    expect(result.events).toEqual([]);
+    expect(result.same).toBe(true);
+    expect(result.boxMoved).toBeLessThan(0.5);
+    await expectCanvasMatchesShow(show);
+});
