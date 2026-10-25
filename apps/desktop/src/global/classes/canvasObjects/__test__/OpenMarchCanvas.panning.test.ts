@@ -51,4 +51,13 @@ describe("OpenMarchCanvas Alt panning", () => {
         window.dispatchEvent(new Event("blur"));
         expect(wrapper.style.cursor).toBe("default");
     });
+
+    it("ends an Alt pan when the window loses focus mid-drag", () => {
+        const { wrapper } = createMountedCanvas();
+        document.dispatchEvent(new KeyboardEvent("keydown", { altKey: true }));
+        pressMouse(wrapper, { altKey: true });
+        // The mouseup lands in the other window
+        window.dispatchEvent(new Event("blur"));
+        expect(wrapper.style.cursor).toBe("default");
+    });
 });

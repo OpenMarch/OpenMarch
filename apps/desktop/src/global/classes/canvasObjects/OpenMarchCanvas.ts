@@ -697,10 +697,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    /** Alt-Tab sends the Alt keyup to the other window, so forget Alt when focus leaves */
+    /**
+     * Alt-Tab sends the Alt keyup to the other window, and a pan's mouseup can land there
+     * too, so forget both when focus leaves
+     */
     private handleWindowBlur() {
         this.forceTrackpadPan = false;
-        if (this.cssZoomWrapper && !this.isPanning) {
+        this.isPanning = false;
+        if (this.cssZoomWrapper) {
             this.cssZoomWrapper.style.cursor = "default";
         }
     }
