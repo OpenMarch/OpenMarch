@@ -7,6 +7,7 @@ import { FieldProperties } from "@openmarch/core";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
+import { gridYAnchorSteps } from "./fieldGrid";
 
 /**
  * Any type that contains an x and y coordinate, primarily used for MarcherPages
@@ -73,6 +74,12 @@ export function getRoundCoordinates({
 }): ModifiedMarcherPageArgs[] {
     const changes: ModifiedMarcherPageArgs[] = [];
     const stepsPerPixel = 1 / fieldProperties.pixelsPerStep;
+    // Snap onto the drawn Y grid lines, which may not start on a whole step.
+    // This function measures Y as steps behind the front (positive toward the back),
+    // while checkpoints measure steps in front of it, hence the negation.
+    const gridYStepsBehindFront = -gridYAnchorSteps(
+        fieldProperties.yCheckpoints,
+    );
     for (const marcherPage of marcherPages) {
         let newX = marcherPage.x as number;
         let newY = marcherPage.y as number;
@@ -94,8 +101,14 @@ export function getRoundCoordinates({
                 stepsPerPixel *
                 (fieldProperties.centerFrontPoint.yPixels -
                     (marcherPage.y as number));
+            // Round the negation so halfway ties go toward the front, the same way
+            // getRoundCoordinates2 rounds marchers while they are dragged
             const roundedYSteps =
-                Math.round(yStepsFromOrigin * denominatorY) / denominatorY;
+                -Math.round(
+                    -(yStepsFromOrigin - gridYStepsBehindFront) * denominatorY,
+                ) /
+                    denominatorY +
+                gridYStepsBehindFront;
             newY =
                 fieldProperties.centerFrontPoint.yPixels -
                 roundedYSteps / stepsPerPixel;
@@ -125,7 +138,7 @@ export function getRoundCoordinates2({
     uiSettings: Pick<UiSettings, "coordinateRounding">;
     fieldProperties: Pick<
         FieldProperties,
-        "centerFrontPoint" | "pixelsPerStep"
+        "centerFrontPoint" | "pixelsPerStep" | "yCheckpoints"
     >;
     customOrigin?: { xPixels: number; yPixels: number };
 }) {
@@ -154,8 +167,14 @@ export function getRoundCoordinates2({
             }
         }
         if (nearestYSteps) {
+            // Without a user reference point, snap onto the drawn Y grid lines
+            // (steps from the front, the same sign convention as checkpoints).
+            // A custom origin rounds relative to that point instead.
             const referenceY =
-                uiSettings.coordinateRounding.referencePointY ?? 0;
+                uiSettings.coordinateRounding.referencePointY ??
+                (customOrigin
+                    ? 0
+                    : gridYAnchorSteps(fieldProperties.yCheckpoints));
 
             const yStepsFromOrigin =
                 stepsPerPixel * (output.yPixels - origin.yPixels) - referenceY;

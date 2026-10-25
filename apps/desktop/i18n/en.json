@@ -638,6 +638,7 @@
             "copyToPreviousPageButton": "Copy to prev page",
             "deleteLastSegmentTooltip": "Delete last segment",
             "errorCopyingPage": "Error copying to page. Are there marchers already assigned to shapes?",
+            "errorCreating": "Couldn't create the shape. Are any of these marchers already in a shape on this page?",
             "errorNoNextPage": "Cannot copy. There is no next page",
             "errorNoPreviousPage": "Cannot copy. There is no previous page.",
             "errorPageNotFound": "Page not found with id {pageId}",

@@ -210,6 +210,12 @@ textarea,
 
 /****** Wavesurfer *******/
 
+/* The timeline scrolls the waveform; its own scroller would let a wheel or trackpad
+   nudge it out of line with the timeline. !important beats WaveSurfer's inline overflow. */
+#waveform ::part(scroll) {
+    overflow: hidden !important;
+}
+
 /* MEASURES */
 #waveform ::part(measure) {
     background-color: rgb(180, 180, 180) !important;
