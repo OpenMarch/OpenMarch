@@ -205,6 +205,34 @@ describe("multi-finger taps", () => {
         expect(types(effects)).not.toContain("redo");
     });
 
+    it("staggered fingers: the first alone, the second 40 ms later, both up within 200 ms", () => {
+        const { results, effects, state } = run([
+            touch("down", 1, 100, 100, 0),
+            // The first finger shakes a little while it is alone
+            touch("move", 1, 103, 101, 25),
+            touch("down", 2, 160, 100, 40),
+            touch("up", 1, 103, 101, 190),
+            touch("up", 2, 160, 100, 200),
+        ]);
+        // While alone it was an ordinary single-finger press...
+        expect(results[0].effects.map((e) => e.type)).toEqual(["singleStart"]);
+        // ...which the second finger cancels before it does anything
+        expect(types(results[2].effects)).toContain("cancelSingle");
+        expect(types(effects)).toContain("undo");
+        expect(types(effects).filter((t) => t === "undo")).toHaveLength(1);
+        expect(state.mode).toBe("idle");
+    });
+
+    it("staggered fingers that lift together are undo", () => {
+        const { effects } = run([
+            touch("down", 1, 100, 100, 0),
+            touch("down", 2, 160, 100, 40),
+            touch("up", 1, 100, 100, 150),
+            touch("up", 2, 160, 100, 150),
+        ]);
+        expect(types(effects).filter((t) => t === "undo")).toHaveLength(1);
+    });
+
     it("a slower two-finger tap (as on a busy tablet) is still undo", () => {
         const { effects } = run([
             touch("down", 3, 675, 300, 4813),

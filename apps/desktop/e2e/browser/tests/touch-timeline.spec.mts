@@ -38,11 +38,35 @@ const touch = (cdp: CDPSession) => {
                 lift: () => send("touchEnd", []),
             };
         },
-        /** Two fingers down and up together */
+        /**
+         * Two fingers, the second landing 30 ms after the first, both up at
+         * 150 ms, stamped with those times as a touch screen stamps them.
+         * Awaited one by one, each dispatch waits for the page to handle the
+         * previous event, and here each touch costs a slow software render of
+         * the field, so the fingers would seem to stay down for a second and
+         * the long-press timer could fire between them. The app reads
+         * event.timeStamp, as it must on a real tablet, whose main thread
+         * can be just as busy.
+         */
         twoFingerTap: async (a: Point, b: Point) => {
-            await send("touchStart", [a]);
-            await send("touchStart", [a, b]);
-            await send("touchEnd", []);
+            const base = Date.now() / 1000;
+            const at = (type: string, points: Point[], seconds: number) =>
+                cdp.send("Input.dispatchTouchEvent", {
+                    type: type as "touchStart",
+                    touchPoints: points.map((p, id) => ({
+                        x: Math.round(p.x),
+                        y: Math.round(p.y),
+                        id,
+                    })),
+                    timestamp: base + seconds,
+                });
+            // Sent together, so they queue up in the browser as a touch
+            // screen's events would while the page is busy
+            await Promise.all([
+                at("touchStart", [a], 0),
+                at("touchStart", [a, b], 0.03),
+                at("touchEnd", [], 0.15),
+            ]);
         },
         tap: async (p: Point) => {
             await send("touchStart", [p]);
