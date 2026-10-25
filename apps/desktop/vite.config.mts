@@ -57,6 +57,9 @@ export default defineConfig(({ command }) => {
                             minify: isBuild,
                             outDir: "dist-electron/main",
                             rolldownOptions: {
+                                // Runtime dependencies stay in node_modules. ESM-only packages
+                                // such as electron-store are devDependencies, so they are
+                                // bundled into this CommonJS build instead.
                                 external: [
                                     "electron",
                                     "node",

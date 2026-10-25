@@ -109,6 +109,8 @@ ipcMain.on("settings:set", (event, settings) => {
 });
 
 ipcMain.handle("settings:get", (_, key) => {
+    // electron-store throws on non-string keys
+    if (typeof key !== "string") return undefined;
     return store.get(key);
 });
 
