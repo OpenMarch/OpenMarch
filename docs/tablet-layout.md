@@ -146,6 +146,8 @@ Other field behavior:
   (`styles/index.css`, `web/renderer/touchGestures.ts`).
 - Home-screen app: manifest and icons in `web/public/`, tags injected by
   `vite.web.config.mts`.
+  The status bar style is "default": with "black-translucent", iPadOS 17
+  left a 20 px strip at the bottom of the screen outside the page.
 - iOS file picking accepts any file and checks it's a show (`web/renderer/filePicking.ts`);
   saving offers the share sheet ("Save to Files") where available.
 - Audio is unlocked on the first touch (`utilities/audioUnlock.ts`).

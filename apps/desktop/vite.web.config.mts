@@ -111,6 +111,13 @@ const WEB_VIEWPORT =
  * "Add to Home Screen" (iPadOS Safari, Android Chrome): opens full screen
  * like an app, with the app icon. The files are in `web/public/`. Electron
  * shares index.html, so these are added only here.
+ *
+ * The status bar style is "default", not "black-translucent": on iPadOS 17,
+ * black-translucent moves the page up under the status bar but still takes
+ * the bar's height off the page, leaving a strip at the bottom of the screen
+ * that isn't part of the page (measured on an iPad 7: a 790 px page on an
+ * 810 px screen). iPadOS reads this when the app is added to the Home
+ * Screen, so a change needs the app removed and added again.
  */
 const HOME_SCREEN_TAGS = [
     '<link rel="manifest" href="/manifest.webmanifest" />',
@@ -118,7 +125,7 @@ const HOME_SCREEN_TAGS = [
     '<meta name="mobile-web-app-capable" content="yes" />',
     '<meta name="apple-mobile-web-app-capable" content="yes" />',
     '<meta name="apple-mobile-web-app-title" content="OpenMarch" />',
-    '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
+    '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
     '<meta name="theme-color" content="#ecebf0" media="(prefers-color-scheme: light)" />',
     '<meta name="theme-color" content="#0f0e13" media="(prefers-color-scheme: dark)" />',
 ].join("\n        ");
