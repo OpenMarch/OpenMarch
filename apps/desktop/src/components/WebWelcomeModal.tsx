@@ -19,8 +19,8 @@ export default function WebWelcomeModal() {
                         <p>
                             This version runs entirely in your browser. It does
                             not have all the features of the desktop app, and
-                            some things that rely on your computer, like
-                            exporting and native windows, are not available.
+                            some things that rely on your computer, like PDF
+                            export and native windows, are not available.
                         </p>
                     </DialogDescription>
                     <p>
@@ -31,7 +31,7 @@ export default function WebWelcomeModal() {
                     </p>
                     <p>
                         <strong className="text-text">
-                            Back up your shows ({save}).
+                            Back up your shows (File → Back up, or {save}).
                         </strong>{" "}
                         The browser keeps them between visits, but it can clear
                         them (for example, when space runs low), and they are

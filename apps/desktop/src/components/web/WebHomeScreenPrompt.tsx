@@ -18,21 +18,36 @@ export default function WebHomeScreenPrompt() {
         <Dialog open={open} onOpenChange={(next) => !next && close()}>
             <DialogContent className="w-[32rem]">
                 <DialogTitle>{t("web.homeScreen.title")}</DialogTitle>
-                <DialogDescription className="text-body text-text-subtitle">
+                <DialogDescription className="text-body text-text">
                     {t("web.homeScreen.why")}
                 </DialogDescription>
-                <ol className="text-body flex list-decimal flex-col gap-8 pl-24">
-                    <li>
-                        {t("web.homeScreen.step1")}{" "}
-                        <ExportIcon
-                            size={18}
-                            aria-hidden
-                            className="text-accent inline align-text-bottom"
-                        />
-                    </li>
-                    <li>{t("web.homeScreen.step2")}</li>
-                    <li>{t("web.homeScreen.step3")}</li>
-                </ol>
+                <section className="flex flex-col gap-6">
+                    <h3 className="text-body text-text font-medium">
+                        {t("web.homeScreen.whyTitle")}
+                    </h3>
+                    <ul className="text-body text-text-subtitle flex list-disc flex-col gap-4 pl-24">
+                        <li>{t("web.homeScreen.why1")}</li>
+                        <li>{t("web.homeScreen.why2")}</li>
+                        <li>{t("web.homeScreen.why3")}</li>
+                    </ul>
+                </section>
+                <section className="flex flex-col gap-6">
+                    <h3 className="text-body text-text font-medium">
+                        {t("web.homeScreen.howTitle")}
+                    </h3>
+                    <ol className="text-body flex list-decimal flex-col gap-8 pl-24">
+                        <li>
+                            {t("web.homeScreen.step1")}{" "}
+                            <ExportIcon
+                                size={18}
+                                aria-hidden
+                                className="text-accent inline align-text-bottom"
+                            />
+                        </li>
+                        <li>{t("web.homeScreen.step2")}</li>
+                        <li>{t("web.homeScreen.step3")}</li>
+                    </ol>
+                </section>
                 <p className="text-sub text-text-subtitle">
                     {t("web.homeScreen.note")}
                 </p>
