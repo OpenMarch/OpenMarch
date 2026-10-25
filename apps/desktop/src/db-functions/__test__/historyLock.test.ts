@@ -19,6 +19,10 @@ describeDbTests("undo while an edit is in progress", (it) => {
         await setNotes("before");
 
         const events: string[] = [];
+        let markEditStarted!: () => void;
+        const editStarted = new Promise<void>((resolve) => {
+            markEditStarted = resolve;
+        });
         let releaseEdit!: () => void;
         const editHeld = new Promise<void>((resolve) => {
             releaseEdit = resolve;
@@ -28,16 +32,18 @@ describeDbTests("undo while an edit is in progress", (it) => {
                 .update(schema.pages)
                 .set({ notes: "during" })
                 .where(eq(schema.pages.id, pageId));
+            markEditStarted();
             await editHeld;
             events.push("edit committed");
         });
-        // Let the held edit open its transaction before undo is requested
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        // Request undo only once the held edit has written inside its transaction
+        await editStarted;
 
         const undo = performUndo(db).then((response) => {
             events.push("undo finished");
             return response;
         });
+        // Give an unlocked undo the chance to run ahead of the held edit
         await new Promise((resolve) => setTimeout(resolve, 50));
         releaseEdit();
         await edit;
