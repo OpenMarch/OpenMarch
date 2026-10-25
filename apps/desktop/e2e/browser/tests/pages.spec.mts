@@ -103,3 +103,20 @@ test.describe("page shortcuts", () => {
         ).toBeVisible();
     });
 });
+
+test("the pages row's text keeps page names apart", async ({ show }) => {
+    const { page } = show;
+    await createTempoGroup(page, {
+        tempo: 120,
+        beatsPerMeasure: 4,
+        measures: 12,
+    });
+    await addPage(page);
+    await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
+    await addPage(page);
+    await expect(page.getByRole("heading", { name: "Page 2" })).toBeVisible();
+    // The Electron suite reads the last page's name from this text (e.g.
+    // "0 1 2", never "012"): the resize handles separate the names
+    const text = (await page.locator("#pages").textContent()) ?? "";
+    expect(text.match(/\d+[A-Z]?/g)?.at(-1)).toBe("2");
+});
