@@ -161,6 +161,12 @@ Other field behavior:
   Home Screen once. Details and limits: `apps/desktop/web/README.md` ("Shows in the
   browser").
 - Focused fields scroll above the on-screen keyboard (`hooks/useOnScreenKeyboard.ts`).
+- Canvas memory: Safari on iPad caps canvas memory at a few hundred MB and kills the
+  page past it ("A problem repeatedly occurred"). Fabric's default gave each of the
+  field's ~1,000 objects its own cache canvas (at least 256 × 256 px), about 500 MB for a
+  76-marcher show and 1 GB zoomed in, remade on every pan. Lines, dots and shapes now
+  draw directly, caches start at 32 px, and dropped caches are freed at once
+  (`global/classes/canvasObjects/fabricMemory.ts`): about 17 MB of canvas in all.
 - **Export video** (☰ menu or File › Export video) renders in the page and
   streams the file to browser storage; when it's done, **Save video** opens
   the share sheet ("Save Video" to Photos). 720p/30 fps by default, a Cancel
