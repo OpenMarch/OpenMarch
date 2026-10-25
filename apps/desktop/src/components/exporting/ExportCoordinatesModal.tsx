@@ -2016,7 +2016,6 @@ function WebVideoNotes({ support }: { support: EncodingSupport }) {
     );
 }
 
-/** iPad or iPhone (iPadOS Safari says it is a Mac with a touch screen). */
 /**
  * Web only: the finished video and its Save button. Saving opens the share
  * sheet on iPads (Save Video, Save to Files, AirDrop) and downloads

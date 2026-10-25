@@ -51,6 +51,10 @@ export default function WaveformTimingOverlay({
         start: 0,
         end: duration,
     });
+    const beatIndexById = useMemo(
+        () => new Map(beats.map((beat, index) => [beat.id, index])),
+        [beats],
+    );
     const beatIdsWithMeasures = useMemo(() => {
         return new Set(measures.map((measure) => measure.startBeat.id));
     }, [measures]);
@@ -157,6 +161,18 @@ export default function WaveformTimingOverlay({
         return null;
     }
 
+    /** The gaps from a beat's line to the previous and next lines, in px. */
+    const gapsPx = (beat: Beat | undefined) => {
+        if (!beat) return { gapBeforePx: 0, gapAfterPx: 0 };
+        const index = beatIndexById.get(beat.id) ?? -1;
+        const previous = index > 0 ? beats[index - 1] : undefined;
+        return {
+            // A beat's duration is the time to the next beat
+            gapBeforePx: (previous?.duration ?? 0) * pxPerSecond,
+            gapAfterPx: beat.duration * pxPerSecond,
+        };
+    };
+
     return (
         <div
             ref={overlayRef}
@@ -185,9 +201,7 @@ export default function WaveformTimingOverlay({
                                         left: x,
                                         width: markerHitWidth({
                                             // A measure may briefly have no beats while it is being deleted
-                                            gapPx:
-                                                (beat?.duration ?? 0) *
-                                                pxPerSecond,
+                                            ...gapsPx(beat),
                                             isTouchMode,
                                         }),
                                     }}
@@ -241,7 +255,7 @@ export default function WaveformTimingOverlay({
                                     top: 0,
                                     height: beatMarkerHeight,
                                     width: markerHitWidth({
-                                        gapPx: beat.duration * pxPerSecond,
+                                        ...gapsPx(beat),
                                         isTouchMode,
                                     }),
                                 }}
