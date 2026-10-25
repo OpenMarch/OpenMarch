@@ -18,6 +18,11 @@ export type HandedOffShow = {
     name: string;
     /** Whether the show had changes that weren't downloaded. */
     changed: boolean;
+    /**
+     * Whether the person has a copy elsewhere: it came from a file they
+     * picked. A new show, or one with changes, wasn't backed up.
+     */
+    backedUp: boolean;
 };
 
 type Entry = HandedOffShow & { at: number };
@@ -73,6 +78,31 @@ async function withStore<T>(
     }
 }
 
+/**
+ * A handed-off show as stored. Entries from before `backedUp` existed
+ * count as not backed up: claiming a backup that may not exist is worse.
+ */
+export function fromEntry(
+    entry: Partial<HandedOffShow> & Pick<HandedOffShow, "bytes" | "name">,
+): HandedOffShow {
+    return {
+        bytes: entry.bytes,
+        name: entry.name,
+        changed: entry.changed ?? false,
+        backedUp: entry.backedUp === true,
+    };
+}
+
+/**
+ * The worker's `web:openShow` arguments for reopening a handed-off show:
+ * not forced, and backed up only if it really was.
+ */
+export function openShowArgs(
+    show: HandedOffShow,
+): [Uint8Array, string, boolean, boolean] {
+    return [show.bytes, show.name, false, show.backedUp];
+}
+
 /** Keeps `show` for this tab's next page. Throws if the browser won't. */
 export async function handOffShow(show: HandedOffShow): Promise<void> {
     const id = tabId();
@@ -99,8 +129,6 @@ export async function takeHandedOffShow(): Promise<HandedOffShow | null> {
         for (const [index, other] of entries.entries())
             if (now - other.at > STALE_MS)
                 await request(store.delete(ids[index]));
-        return entry
-            ? { bytes: entry.bytes, name: entry.name, changed: entry.changed }
-            : null;
+        return entry ? fromEntry(entry) : null;
     });
 }

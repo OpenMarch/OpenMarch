@@ -35,7 +35,7 @@ import {
 } from "./sqlite";
 import { claimStorage } from "./storage";
 import { hasUnsavedChanges } from "./saveState";
-import { Library } from "./library";
+import { isFullError, Library } from "./library";
 import { cleanName } from "@/utilities/webLibrary";
 import {
     WEB_CHANNELS,
@@ -152,14 +152,10 @@ function reportStatus(status: SaveStatus) {
 }
 
 function describeSaveError(error: unknown): SaveStatus {
-    const name = (error as DOMException)?.name ?? "";
     const message = error instanceof Error ? error.message : String(error);
     return {
         state: "error",
-        reason:
-            name === "QuotaExceededError" || /quota|space/i.test(message)
-                ? "full"
-                : "other",
+        reason: isFullError(error) ? "full" : "other",
         message,
     };
 }
@@ -521,7 +517,13 @@ function registerLibraryHandlers() {
 function registerWebHandlers() {
     ipcMain.handle(
         WEB_CHANNELS.openShow,
-        async (_, bytes: Uint8Array, name: string, force = false) => {
+        async (
+            _,
+            bytes: Uint8Array,
+            name: string,
+            force = false,
+            backedUp = false,
+        ) => {
             // The file takes the open show's place: store its changes first,
             // or refuse (unless the person chose to go on without them).
             try {
@@ -562,8 +564,10 @@ function registerWebHandlers() {
             draftPath = null;
             status = DatabaseServices.setDbPath(path);
             if (status === 200) {
-                // The file the person opened is their backup.
-                await storeNewShow(name, true);
+                // Backed up only if it came from a file the person picked
+                // (that file is their copy); a show handed across a reload
+                // says whether it was.
+                await storeNewShow(name, backedUp);
                 markDownloaded();
             }
             return status;

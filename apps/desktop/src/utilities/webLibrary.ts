@@ -54,6 +54,12 @@ export interface LibraryIndex {
      * the folder did); the next start removes them.
      */
     deleted?: string[];
+    /**
+     * Shows being added: listed before their folder is written, so a folder
+     * left by an add that never finished can be told from one a lost index
+     * no longer lists.
+     */
+    pending?: string[];
 }
 
 /** What the page lists for each show. */
