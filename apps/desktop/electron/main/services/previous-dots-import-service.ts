@@ -208,10 +208,12 @@ export async function readPreviousDotsFile(
 
 export async function choosePreviousDotsFile(
     win: BrowserWindow | null,
+    defaultPath?: string,
 ): Promise<PreviousDotsImportResult | null> {
     if (!win) return null;
 
     const result = await dialog.showOpenDialog(win, {
+        defaultPath,
         filters: [
             { name: "OpenMarch File", extensions: ["dots"] },
             { name: "All Files", extensions: ["*"] },
