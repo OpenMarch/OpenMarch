@@ -86,10 +86,11 @@ export const useExportReadyMarcherPages = () => {
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
-    const { isStale, isFetching, refetch } = query;
+    const { isStale, isFetching, isError, refetch } = query;
     useEffect(() => {
-        if (isStale && !isFetching) void refetch();
-    }, [isStale, isFetching, refetch]);
+        // A failed fetch stays stale; fetching again would repeat the failure
+        if (isStale && !isFetching && !isError) void refetch();
+    }, [isStale, isFetching, isError, refetch]);
     return { ...query, isReady: query.isSuccess && !isStale && !isFetching };
 };
 

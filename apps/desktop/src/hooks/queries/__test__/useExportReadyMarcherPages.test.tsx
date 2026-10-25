@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { expect } from "vitest";
 import { describeDbTests, schema } from "@/test/base";
 import { invalidateByPage } from "../sharedInvalidators";
@@ -37,5 +37,33 @@ describeDbTests("useExportReadyMarcherPages", (it) => {
                     .x,
             ).toBe(123.5);
         });
+    });
+
+    it("does not keep fetching after the query fails", async ({ db }) => {
+        // Make every whole-show fetch fail
+        await db.run(
+            sql`ALTER TABLE marcher_pages RENAME TO marcher_pages_gone`,
+        );
+        const qc = new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+        });
+        let fetches = 0;
+        qc.getQueryCache().subscribe((event) => {
+            if (event.type === "updated" && event.action.type === "fetch")
+                fetches++;
+        });
+        const { result } = renderHook(() => useExportReadyMarcherPages(), {
+            wrapper: ({ children }) => (
+                <QueryClientProvider client={qc}>
+                    {children}
+                </QueryClientProvider>
+            ),
+        });
+
+        await waitFor(() => expect(result.current.isError).toBe(true));
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        expect(fetches).toBe(1);
+        expect(result.current.isReady).toBe(false);
     });
 });
