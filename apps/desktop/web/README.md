@@ -63,6 +63,9 @@ before falling back to a download (`renderer/filePicking.ts`).
 
 ### Shows in the browser
 
+The storage layout, format rules and crash-safety scheme are recorded in
+[ADR 0002](../../../docs/adr/0002-web-show-library.md).
+
 **The model, honestly:** work lives on this device, in this browser. It is
 saved as the person works, so closing the tab, a crash or a reload loses
 nothing, but it is only here. Backing up is the only copy anywhere else.
@@ -84,6 +87,13 @@ isn't on the Home Screen), shows that weren't backed up are gone.
   the show (and the index) is written to a new file, and the previous one is
   removed only once the new one is whole; reading takes the newest whole
   file. A full disk drops the show's oldest versions and tries again.
+  Nothing the index doesn't describe is deleted: a show folder it doesn't
+  list is added back, an unreadable index is rebuilt from the folders, and
+  an index from a newer version leaves the library untouched (read only).
+- **Closing and replacing.** Before the open show is closed or replaced, its
+  latest changes are stored first; if that or the library change fails, it
+  stays open and the error shows. The page asks before going on without
+  them.
 - **Versions.** Each show keeps its last 20 versions: at most one per two
   minutes of editing, one when it's opened (if it changed since the last),
   and one before a restore. Restoring a version keeps the state it replaces

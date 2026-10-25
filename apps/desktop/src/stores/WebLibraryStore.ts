@@ -1,5 +1,9 @@
 import { create } from "zustand";
-import type { LibraryState, SaveStatus } from "../../web/protocol";
+import type {
+    LibraryState,
+    SaveStatus,
+    StorageProblem,
+} from "../../web/protocol";
 
 /**
  * The web editor's show library and save status, as the page knows them.
@@ -10,7 +14,7 @@ interface WebLibraryStoreState {
     /** Where shows are kept: "opfs" (browser storage) or "memory" (this tab only). */
     storage:
         | { kind: "opfs" }
-        | { kind: "memory"; problem: "other-tab" | "unsupported" }
+        | { kind: "memory"; problem: StorageProblem }
         | null;
     /** Whether the browser agreed to keep the shows when space runs low. */
     persisted: boolean | null;

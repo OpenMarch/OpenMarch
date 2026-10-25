@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import {
     CheckCircleIcon,
@@ -17,12 +17,26 @@ import { backUp, onIpad } from "./webLibraryActions";
 
 const REMINDER_KEY = "openmarch-web:lastBackupReminder";
 
+/** Also kept here, for a browser that can't keep it in localStorage. */
+let remindedAt: number | null = null;
+
 function lastReminderAt(): number | null {
+    let stored: number | null = null;
     try {
         const value = Number(localStorage.getItem(REMINDER_KEY));
-        return Number.isFinite(value) && value > 0 ? value : null;
+        stored = Number.isFinite(value) && value > 0 ? value : null;
     } catch {
-        return null;
+        // Blocked storage: the page's own memory still counts.
+    }
+    return Math.max(stored ?? 0, remindedAt ?? 0) || null;
+}
+
+function rememberReminder(at: number) {
+    remindedAt = at;
+    try {
+        localStorage.setItem(REMINDER_KEY, String(at));
+    } catch {
+        // Kept in memory for this visit.
     }
 }
 
@@ -41,24 +55,25 @@ export default function WebSaveStatus() {
     const set = useWebLibraryStore((state) => state.set);
     const show = useOpenShowEntry();
 
-    // Gentle backup reminder
+    // Gentle backup reminder: decided from stable values, so a save (which
+    // replaces the show's entry) doesn't run it again.
+    const due = !!show && backupReminderDue(show, Date.now(), lastReminderAt());
+    const showId = show?.id ?? null;
+    const latest = useRef(show);
+    latest.current = show;
     useEffect(() => {
-        if (!show) return;
+        const current = latest.current;
+        if (!due || !current) return;
         const now = Date.now();
-        if (!backupReminderDue(show, now, lastReminderAt())) return;
-        try {
-            localStorage.setItem(REMINDER_KEY, String(now));
-        } catch {
-            // Without storage, it may remind again next visit; harmless.
-        }
-        toast.info(t("web.backupReminder", { name: show.name }), {
+        rememberReminder(now);
+        toast.info(t("web.backupReminder", { name: current.name }), {
             duration: 15_000,
             action: {
                 label: t("web.backUp"),
-                onClick: () => void backUp(t, show.name, show.id),
+                onClick: () => void backUp(t, current.name, current.id),
             },
         });
-    }, [show, t]);
+    }, [showId, due, t]);
 
     const memoryOnly = storage?.kind === "memory";
     const failed = saveStatus?.state === "error";

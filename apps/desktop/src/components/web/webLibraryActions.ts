@@ -19,6 +19,19 @@ export const onIpad = isAppleTouchDevice();
 export const openStoredShow = (id: string) =>
     invoke<number>(WEB_CHANNELS.openStored, id);
 
+/** Says what went wrong with a library action, without the IPC prefix. */
+export function reportFailure(t: Translate) {
+    return (error: unknown) =>
+        toast.error(
+            t("web.actionFailed", {
+                message: (error instanceof Error
+                    ? error.message
+                    : String(error)
+                ).replace(/^Error invoking remote method '[^']+': /, ""),
+            }),
+        );
+}
+
 export const renameStoredShow = (id: string, name: string) =>
     invoke<void>(WEB_CHANNELS.renameShow, id, name);
 

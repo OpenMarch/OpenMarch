@@ -8,7 +8,8 @@
  * when they are unavailable (no recent files, no plugins, signed out), and
  * window controls do nothing. Everything else goes to the worker.
  */
-import { WEB_CHANNELS } from "../protocol";
+import { WEB_CHANNELS, type FlushResult } from "../protocol";
+import { leaveDecision, leaveQuestion } from "./leave";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
@@ -181,13 +182,26 @@ export async function backUpShow(id?: string | null): Promise<BackupResult> {
     return result;
 }
 
-/** Opens `file` as the show and reloads into it, as `setActiveDb` does. */
-export async function openShowFile(file: File): Promise<number> {
-    const status = await invokeWorker<number>(
-        WEB_CHANNELS.openShow,
-        new Uint8Array(await file.arrayBuffer()),
-        file.name,
-    );
+/**
+ * Opens `file` as the show and reloads into it, as `setActiveDb` does.
+ * `force`: the person chose to replace the open show even though its latest
+ * changes couldn't be stored.
+ */
+export async function openShowFile(file: File, force = false): Promise<number> {
+    let status: number;
+    try {
+        status = await invokeWorker<number>(
+            WEB_CHANNELS.openShow,
+            new Uint8Array(await file.arrayBuffer()),
+            file.name,
+            force,
+        );
+    } catch (error) {
+        window.alert(
+            `The file wasn't opened, so your show stays open: ${errorText(error)}`,
+        );
+        return 0;
+    }
     if (status !== 200) {
         emit("load-file-response", status);
         return status;
@@ -249,31 +263,59 @@ export function markChanged() {
 function markDownloaded() {
     changedInPage = false;
 }
+/**
+ * Whether leaving the page now could lose changes: a memory-only tab's
+ * changes since the last download, or a stored show whose latest save is
+ * pending or failed.
+ */
 export function changedSinceDownload() {
-    return !storedInBrowser && changedInPage;
+    if (!storedInBrowser) return changedInPage;
+    const state = useWebLibraryStore.getState().saveStatus?.state;
+    return state === "saving" || state === "error";
 }
 
-/**
- * In a memory-only tab, closing or replacing the show loses it, so asks
- * first when there are changes the person hasn't downloaded.
- */
-function confirmDiscard(): boolean {
-    return (
-        !changedSinceDownload() ||
-        window.confirm(
-            "Your changes since the last download will be lost. Download the show first to keep them.\n\nContinue without downloading?",
-        )
+const errorText = (error: unknown) =>
+    (error instanceof Error ? error.message : String(error)).replace(
+        /^Error invoking remote method '[^']+': /,
+        "",
     );
+
+/**
+ * Before the open show is closed or replaced: stores its latest changes,
+ * and asks if that isn't possible (or, in a memory-only tab, if it has
+ * changes since the last download). `go`: whether to go ahead; `force`:
+ * the person chose to go on without the latest changes.
+ */
+async function confirmLeave(): Promise<{ go: boolean; force: boolean }> {
+    let flush: FlushResult | null = null;
+    try {
+        flush = await invokeWorker<FlushResult>(WEB_CHANNELS.flush);
+    } catch (error) {
+        console.error("Couldn't store the show's latest changes:", error);
+    }
+    const question = leaveQuestion(
+        leaveDecision({ storedInBrowser, changedInPage, flush }),
+    );
+    if (!question) return { go: true, force: false };
+    const go = window.confirm(question);
+    return { go, force: go };
 }
 
 async function closeShow() {
-    if (!confirmDiscard()) {
+    const { go, force } = await confirmLeave();
+    if (!go) {
         // "New file" in the editor asks for the new-show dialog after the
         // reload (see src/utilities/openNewShowDialog.ts); there is none.
         sessionStorage.removeItem("openmarch:openNewShowDialog");
         return 0;
     }
-    await invokeWorker(WEB_CHANNELS.closeShow);
+    try {
+        await invokeWorker(WEB_CHANNELS.closeShow, force);
+    } catch (error) {
+        sessionStorage.removeItem("openmarch:openNewShowDialog");
+        window.alert(`The show stays open: ${errorText(error)}`);
+        return 0;
+    }
     markDownloaded();
     reloadPage();
     return 200;
@@ -350,9 +392,11 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     // picker, saving is a download, and the new-show wizard's file location
     // is just the show's name.
     handleInPage("database:load", async () => {
-        if (!confirmDiscard()) return 0;
+        // The picker first: Safari opens it only right after the tap.
         const file = await pickShowFile();
-        return file ? openShowFile(file) : 0;
+        if (!file) return 0;
+        const { go, force } = await confirmLeave();
+        return go ? openShowFile(file, force) : 0;
     });
     // Saving is a backup: the show is already saved in the browser.
     handleInPage("database:save", async () => {

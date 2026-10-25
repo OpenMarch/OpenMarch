@@ -1397,6 +1397,7 @@
         "trigger": "New Version Available!"
     },
     "web": {
+        "actionFailed": "That didn't work: {message}",
         "backUp": "Back up",
         "backUpDone": "Backed up “{name}”",
         "backUpFailed": "Couldn't back up “{name}”: {message}",
@@ -1427,6 +1428,7 @@
         "library.empty": "No shows here yet. Create a new show, or open a .dots file.",
         "library.more": "More for “{name}”",
         "library.nameLabel": "Name",
+        "library.newerFormat": "Your shows here were saved by a newer version of OpenMarch, so this version leaves them as they are. Use the newer version to open them.",
         "library.notKept": "This browser won't keep your shows (for example, in Private Browsing). Download your work before you close the tab.",
         "library.open": "Open “{name}”",
         "library.openFailed": "Couldn't open “{name}”. It's still in the list: try again, or back it up and report the problem.",

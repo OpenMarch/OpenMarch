@@ -79,3 +79,37 @@ describe("InspectorDock", () => {
         expect(screen.getByText("Inspector contents")).toBeTruthy();
     });
 });
+
+describe("InspectorDock dimming", () => {
+    beforeAll(async () => {
+        await tolgee.run();
+    });
+    afterEach(cleanup);
+
+    it("puts the dimming class on an element with a box in every layout", () => {
+        for (const presentation of ["fixed", "side", "drawer"] as const) {
+            render(
+                <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                    <div style={{ position: "relative" }}>
+                        <InspectorDock
+                            layout={{ presentation, open: true }}
+                            onOpenChange={() => {}}
+                            className="opacity-30"
+                        >
+                            <p>Inspector contents</p>
+                        </InspectorDock>
+                    </div>
+                </TolgeeProvider>,
+            );
+            const dimmed = document.querySelector(".opacity-30");
+            expect(dimmed, presentation).not.toBeNull();
+            expect(dimmed!.classList.contains("contents"), presentation).toBe(
+                false,
+            );
+            expect(
+                dimmed!.contains(screen.getByText("Inspector contents")),
+            ).toBe(true);
+            cleanup();
+        }
+    });
+});

@@ -327,6 +327,29 @@ function scheduleSave(minimumWait = 0) {
     else saveTimer = setTimeout(save, wait);
 }
 
+/**
+ * Makes sure the open show's latest changes are in the library before it is
+ * closed or replaced: saves now (cancelling a pending timed save), or throws
+ * if that isn't possible, so the caller can refuse rather than lose them.
+ */
+async function ensureSaved(): Promise<void> {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = null;
+    const path = DatabaseServices.getDbPath();
+    if (!storageEnabled || !library || !openId || !path) return;
+    const state = changeState(path);
+    if (!state) return;
+    const isSaved = () =>
+        savedCopy?.path === path && savedCopy.changes === state.changes;
+    if (isSaved()) return;
+    if (!state.idle)
+        throw new Error(
+            "The show is in the middle of a change. Try again in a moment.",
+        );
+    await saveCopy();
+    if (!isSaved()) throw new Error("The latest changes couldn't be saved.");
+}
+
 /** Messages and timed saves run one at a time, in order. */
 let operations: Promise<unknown> = Promise.resolve();
 
@@ -358,6 +381,12 @@ function registerMainHandlers() {
 /** The new-show wizard writes into a draft, then names it. */
 function registerNewShowHandlers() {
     ipcMain.handle("newShow:createDraft", async () => {
+        // The draft takes the open show's place: store its changes first.
+        await ensureSaved();
+        if (openId) {
+            openId = null;
+            savedCopy = null;
+        }
         if (draftPath) deleteDatabase(draftPath);
         draftPath = `${DRAFTS}${crypto.randomUUID()}.dots`;
         const status = await openShowAt(draftPath, true);
@@ -423,16 +452,12 @@ function registerLibraryHandlers() {
     ipcMain.handle(WEB_CHANNELS.openStored, async (_, id: string) => {
         const lib = requireLibrary();
         if (!lib.current.shows.some((show) => show.id === id)) return 404;
-        if (openId && openId !== id) {
-            await saveCopy().catch((error) =>
-                console.error(
-                    "Couldn't save the show before switching:",
-                    error,
-                ),
-            );
-            closeOpenShow();
-        }
+        // Store the open show's changes and switch the library over before
+        // closing it: if either fails, it stays open and the error shows.
+        const switching = !!openId && openId !== id;
+        if (switching) await ensureSaved();
         await lib.setOpen(id);
+        if (switching) closeOpenShow();
         return 200;
     });
     ipcMain.handle(
@@ -477,13 +502,12 @@ function registerLibraryHandlers() {
         async (_, id: string, versionId: string) => {
             const lib = requireLibrary();
             const wasOpen = id === openId;
-            if (wasOpen) {
-                // Store the latest edits first: they become a version too.
-                await saveCopy();
-                closeOpenShow();
-                await lib.setOpen(id);
-            }
+            // Store the latest edits first (they become a version too), and
+            // close the show only once the restore is written: if anything
+            // fails, it stays open as it was and the error shows.
+            if (wasOpen) await ensureSaved();
             await lib.restoreVersion(id, versionId);
+            if (wasOpen) closeOpenShow();
             reportLibrary();
             return wasOpen;
         },
@@ -495,7 +519,15 @@ function registerLibraryHandlers() {
 function registerWebHandlers() {
     ipcMain.handle(
         WEB_CHANNELS.openShow,
-        async (_, bytes: Uint8Array, name: string) => {
+        async (_, bytes: Uint8Array, name: string, force = false) => {
+            // The file takes the open show's place: store its changes first,
+            // or refuse (unless the person chose to go on without them).
+            try {
+                await ensureSaved();
+            } catch (error) {
+                if (!force) throw error;
+                console.warn("Replacing the show without its changes:", error);
+            }
             // Check and migrate the file apart from the open show, which
             // stays open (and stored) if the file can't be opened.
             const previous = DatabaseServices.getDbPath();
@@ -535,16 +567,32 @@ function registerWebHandlers() {
             return status;
         },
     );
-    ipcMain.handle(WEB_CHANNELS.closeShow, async () => {
-        // The show stays in the library, with its latest changes.
-        await saveCopy().catch((error) =>
-            console.error("Couldn't save the show before closing:", error),
-        );
+    ipcMain.handle(WEB_CHANNELS.closeShow, async (_, force = false) => {
+        // The show stays in the library, with its latest changes. Without
+        // them (or if the library can't be told), it stays open, unless the
+        // person chose to close anyway.
+        try {
+            await ensureSaved();
+            if (library && !library.readOnly) await library.setOpen(null);
+        } catch (error) {
+            if (!force) throw error;
+            console.warn("Closing the show without its changes:", error);
+        }
         closeOpenShow();
-        if (library) await library.setOpen(null);
         reportLibrary();
     });
-    ipcMain.handle(WEB_CHANNELS.flush, () => saveCopy());
+    ipcMain.handle(WEB_CHANNELS.flush, async () => {
+        if (!storageEnabled) return { safe: false, memoryOnly: true };
+        try {
+            await ensureSaved();
+            return { safe: true };
+        } catch (error) {
+            return {
+                safe: false,
+                error: error instanceof Error ? error.message : String(error),
+            };
+        }
+    });
     registerLibraryHandlers();
     ipcMain.handle(WEB_CHANNELS.exportShow, () => {
         const path = DatabaseServices.getDbPath();
@@ -626,7 +674,9 @@ async function start() {
     if (storage.storage === "opfs") {
         try {
             library = await Library.open(storage.dir);
-            storageEnabled = true;
+            // A newer build's library: kept as it is, and this tab works in
+            // memory only.
+            storageEnabled = !library.readOnly;
         } catch (error) {
             console.error("Couldn't open the show library:", error);
         }
@@ -647,7 +697,9 @@ async function start() {
                   storageProblem:
                       storage.storage === "memory"
                           ? storage.problem
-                          : "unsupported",
+                          : library?.readOnly
+                            ? "newer-format"
+                            : "unsupported",
               },
     });
 }
