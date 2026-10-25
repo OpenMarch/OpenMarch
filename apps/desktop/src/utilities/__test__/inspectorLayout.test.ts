@@ -20,7 +20,8 @@ describe("inspectorPresentation", () => {
         expect(inspectorPresentation(800, 1280, true)).toBe("drawer"); // Galaxy Tab S9
         expect(inspectorPresentation(912, 1368, true)).toBe("drawer"); // Surface Pro
         expect(inspectorPresentation(1032, 1376, true)).toBe("drawer"); // iPad Pro 13
-        expect(inspectorPresentation(900, 700, false)).toBe("drawer"); // small window
+        // The mouse layout never changes: a small desktop window keeps it beside the field
+        expect(inspectorPresentation(900, 700, false)).toBe("fixed");
     });
     it("goes beside the field on wide landscape tablets", () => {
         expect(inspectorPresentation(1180, 820, true)).toBe("side");

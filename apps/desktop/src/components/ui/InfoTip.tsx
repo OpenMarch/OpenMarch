@@ -113,7 +113,8 @@ export const InfoTipButton = forwardRef<
         )}
         {...props}
     >
-        {icon ?? <InfoIcon size={18} className="text-text/60" aria-hidden />}
+        {/* Not aria-hidden: the accessible tree keeps the icon, as before InfoTip */}
+        {icon ?? <InfoIcon size={18} className="text-text/60" />}
     </button>
 ));
 InfoTipButton.displayName = "InfoTipButton";

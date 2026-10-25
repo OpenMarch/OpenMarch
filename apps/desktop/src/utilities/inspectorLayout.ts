@@ -2,12 +2,11 @@
  * How the Inspector panel is laid out, so the field keeps its room on a
  * tablet.
  *
- * - `"fixed"`: with a mouse on a window at least
- *   {@link INSPECTOR_DRAWER_WIDTH} wide it always shows beside the field,
- *   with no button (the desktop layout, unchanged).
+ * - `"fixed"`: with the mouse layout it always shows beside the field, with
+ *   no button (the desktop layout, unchanged, at any window size).
  * - `"side"`: in touch mode on a wide landscape screen it shows beside the
  *   field, and a tab hides it. It starts showing.
- * - `"drawer"`: on a narrow window, or a tablet in portrait, it slides over
+ * - `"drawer"`: in touch mode on a narrow screen, or a tablet in portrait, it slides over
  *   the field from the right instead, so opening it never squeezes the field
  *   or the timeline. It starts closed.
  */
@@ -33,8 +32,9 @@ export function inspectorPresentation(
     height: number,
     isTouchMode: boolean,
 ): InspectorPresentation {
-    if (width < INSPECTOR_DRAWER_WIDTH) return "drawer";
+    // The mouse layout is the desktop one, unchanged, however narrow the window
     if (!isTouchMode) return "fixed";
+    if (width < INSPECTOR_DRAWER_WIDTH) return "drawer";
     return height > width ? "drawer" : "side";
 }
 
