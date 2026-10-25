@@ -674,6 +674,11 @@ export default function PageTimeline() {
                                                 >
                                                     {/* grip: always visible for fingers */}
                                                     <span className="bg-text-subtitle touch:block hidden h-[60%] w-4 rounded-full" />
+                                                    {/* Keeps page names apart in the row's text
+                                                        ("0 1 2", not "012"), as the handle always did */}
+                                                    <span className="sr-only">
+                                                        &nbsp;
+                                                    </span>
                                                 </div>
                                             </ToolTip.Trigger>
                                             <ToolTip.Portal>
