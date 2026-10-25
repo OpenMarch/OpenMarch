@@ -6,7 +6,7 @@ import MarcherCoordinateSheetPreview, {
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import {
-    allMarcherPagesQueryOptions,
+    useExportReadyMarcherPages,
     allSectionAppearancesQueryOptions,
     allTagAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
@@ -117,12 +117,8 @@ function CoordinateSheetExport() {
     const {
         data: marcherPages,
         isSuccess: marcherPagesLoaded,
-        isFetching: marcherPagesRefreshing,
-    } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
+        isReady: marcherPagesReady,
+    } = useExportReadyMarcherPages();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -622,7 +618,7 @@ function CoordinateSheetExport() {
                     size="compact"
                     onClick={handleExport}
                     disabled={
-                        isLoading || !marchersLoaded || marcherPagesRefreshing
+                        isLoading || !marchersLoaded || !marcherPagesReady
                     }
                 >
                     {isLoading ? (
@@ -709,12 +705,8 @@ function DrillChartExport() {
     const {
         data: marcherPages,
         isSuccess: marcherPagesLoaded,
-        isFetching: marcherPagesRefreshing,
-    } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
+        isReady: marcherPagesReady,
+    } = useExportReadyMarcherPages();
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
@@ -887,7 +879,7 @@ function DrillChartExport() {
         pages.length > 1 &&
         marchers &&
         marchers.length > 0 &&
-        !marcherPagesRefreshing
+        marcherPagesReady
     );
 
     /**
@@ -1268,11 +1260,8 @@ function VideoExport() {
         allSectionAppearancesQueryOptions(),
     );
     // Edits mark these stale; wait for the refetch so the export uses current positions
-    const { data: marcherPages, isFetching: marcherPagesRefreshing } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
+    const { data: marcherPages, isReady: marcherPagesReady } =
+        useExportReadyMarcherPages();
     const { data: marcherIdsByTagId } = useQuery(
         marcherIdsForAllTagIdsQueryOptions(),
     );
@@ -1501,7 +1490,7 @@ function VideoExport() {
         pages.length > 1 &&
         marchers &&
         marchers.length > 0 &&
-        !marcherPagesRefreshing
+        marcherPagesReady
     );
 
     // eslint-disable-next-line max-lines-per-function

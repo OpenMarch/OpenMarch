@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { eq } from "drizzle-orm";
 import {
     queryOptions,
@@ -72,6 +73,24 @@ export const allMarcherPagesQueryOptions = ({
         },
         staleTime: DEFAULT_STALE_TIME,
     });
+};
+
+/**
+ * All marcher pages for exporting. Edits mark the whole-show query stale without
+ * refetching it (see invalidateByPage), so this fetches stale data again itself and reports
+ * `isReady` only once the data matches the database.
+ */
+export const useExportReadyMarcherPages = () => {
+    const query = useQuery(
+        allMarcherPagesQueryOptions({
+            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
+        }),
+    );
+    const { isStale, isFetching, refetch } = query;
+    useEffect(() => {
+        if (isStale && !isFetching) void refetch();
+    }, [isStale, isFetching, refetch]);
+    return { ...query, isReady: query.isSuccess && !isStale && !isFetching };
 };
 
 /**
