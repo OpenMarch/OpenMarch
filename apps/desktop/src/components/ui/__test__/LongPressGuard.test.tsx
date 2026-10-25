@@ -125,4 +125,45 @@ describe("LongPressGuard", () => {
         longPress(screen.getByText("Subset"));
         expect(onSelect).toHaveBeenCalledTimes(1);
     });
+
+    it("after a hint that ends in pointercancel, a keyboard click goes through", () => {
+        const onClick = vi.fn();
+        render(
+            <>
+                <LongPressGuard />
+                <button aria-label="Undo" onClick={onClick} />
+            </>,
+        );
+        const undo = screen.getByRole("button", { name: "Undo" });
+        pointer("pointerdown", undo);
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        expect(screen.getByTestId("long-press-bubble")).toBeInTheDocument();
+        pointer("pointercancel", undo);
+        // Enter on a hardware keyboard: a click with no pointerdown before it
+        fireEvent.click(undo);
+        expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops swallowing shortly after the release even if no click came", () => {
+        const onClick = vi.fn();
+        render(
+            <>
+                <LongPressGuard />
+                <button aria-label="Redo" onClick={onClick} />
+            </>,
+        );
+        const redo = screen.getByRole("button", { name: "Redo" });
+        pointer("pointerdown", redo);
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        pointer("pointerup", redo);
+        act(() => {
+            vi.advanceTimersByTime(800);
+        });
+        fireEvent.click(redo);
+        expect(onClick).toHaveBeenCalledTimes(1);
+    });
 });
