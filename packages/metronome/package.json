@@ -43,8 +43,8 @@
         "@openmarch/config": "workspace:*",
         "@types/node": "^20.19.43",
         "@types/node-wav": "^0.0.4",
+        "tsup": "^9.0.0",
         "typescript": "catalog:",
-        "vitest": "^4.1.12",
-        "tsup": "^9.0.0"
+        "vitest": "^5.0.5"
     }
 }

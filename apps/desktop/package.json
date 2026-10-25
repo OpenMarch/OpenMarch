@@ -131,8 +131,8 @@
         "@types/sanitize-html": "^2.16.2",
         "@types/sql.js": "^1.4.11",
         "@vitejs/plugin-react": "^6.1.2",
-        "@vitest/coverage-v8": "^4.1.12",
-        "@vitest/ui": "^4.1.12",
+        "@vitest/coverage-v8": "^5.0.5",
+        "@vitest/ui": "^5.0.5",
         "canvas": "^3.2.3",
         "cross-env": "^10.1.0",
         "dotenv": "^16.6.1",
@@ -151,7 +151,7 @@
         "vite": "^8.3.5",
         "vite-plugin-electron": "^1.1.2",
         "vite-plugin-electron-renderer": "^1.0.0",
-        "vitest": "^4.1.12",
+        "vitest": "^5.0.5",
         "wrangler": "^4.152.0"
     },
     "engines": {
