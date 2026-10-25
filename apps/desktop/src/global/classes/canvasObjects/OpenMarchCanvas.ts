@@ -45,6 +45,10 @@ import {
     STEP_SIZE_WARNING_STROKE_WIDTH,
     WARNING_PATHWAY_DASH,
 } from "./stepSizeWarning";
+import { configureFabricMemory } from "./fabricMemory";
+
+// Few, small cache canvases: Safari on iPad runs out of canvas memory otherwise
+configureFabricMemory();
 
 /** Apple keyboards add to a selection with Command as well as Shift */
 const IS_APPLE =
