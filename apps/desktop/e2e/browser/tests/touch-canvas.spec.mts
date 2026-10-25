@@ -944,3 +944,48 @@ test("a group drag moves in whole coordinate-rounding steps, and the readout say
     expect(readout).toContain(`${dx} steps to`);
     expect(readout).toContain(`${dy} steps toward the front`);
 });
+
+test("resizing the window keeps a zoomed-in view of empty field (no re-fit)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createMarchers(page, { quantity: 4, section: "Baritone" });
+    await expectCanvasMatchesShow(show);
+    // Zoom in on an empty spot near the field's bottom-right corner
+    await page.evaluate(() => {
+        const canvas = window.canvas as any;
+        const field = canvas.fieldProperties;
+        const zoom = 3;
+        const x = field.width * 0.9;
+        const y = field.height * 0.9;
+        canvas.setViewportTransform([
+            zoom,
+            0,
+            0,
+            zoom,
+            canvas.getWidth() / 2 - x * zoom,
+            canvas.getHeight() / 2 - y * zoom,
+        ]);
+    });
+    const centre = () =>
+        page.evaluate(() => {
+            const canvas = window.canvas as any;
+            const v = canvas.viewportTransform;
+            return {
+                zoom: v[0],
+                x: (canvas.getWidth() / 2 - v[4]) / v[0],
+                y: (canvas.getHeight() / 2 - v[5]) / v[0],
+            };
+        });
+    const before = await centre();
+    const size = page.viewportSize()!;
+    await page.setViewportSize({
+        width: size.width - 200,
+        height: size.height - 100,
+    });
+    await page.waitForTimeout(800);
+    const after = await centre();
+    expect(after.zoom).toBeCloseTo(before.zoom, 5);
+    expect(Math.abs(after.x - before.x)).toBeLessThan(2);
+    expect(Math.abs(after.y - before.y)).toBeLessThan(2);
+});

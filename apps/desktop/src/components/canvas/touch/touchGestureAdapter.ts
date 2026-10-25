@@ -243,6 +243,7 @@ export class TouchGestureAdapter {
                 y: e.clientY,
                 t: now,
                 large: e.pointerType === "touch" && isPalmContact(e),
+                contact: e.buttons > 0 || e.pressure > 0,
             },
             e,
         );
