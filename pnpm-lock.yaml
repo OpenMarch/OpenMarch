@@ -441,9 +441,6 @@ importers:
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
-      dotenv:
-        specifier: ^18.0.8
-        version: 18.0.8
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11

@@ -134,7 +134,6 @@
         "@vitest/ui": "^5.0.5",
         "canvas": "^3.2.3",
         "cross-env": "^10.1.0",
-        "dotenv": "^18.0.8",
         "drizzle-kit": "^0.31.11",
         "electron": "^43.8.3",
         "electron-builder": "^26.18.0",
