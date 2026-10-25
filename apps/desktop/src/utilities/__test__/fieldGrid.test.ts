@@ -120,4 +120,36 @@ describe("coordinate rounding on a field with an off-grid front hash", () => {
         });
         expect(change.y).toBeCloseTo(stepsToY(40.5));
     });
+
+    it("breaks a halfway tie the same way when dragging and when applying snap", () => {
+        // 40 steps back is halfway between the 39.5 and 40.5 grid lines
+        const y = gridLineY(40);
+        const dragged = getRoundCoordinates2({
+            coordinate: { xPixels: 1000, yPixels: y },
+            uiSettings: {
+                coordinateRounding: { nearestXSteps: 1, nearestYSteps: 1 },
+            },
+            fieldProperties: {
+                centerFrontPoint,
+                pixelsPerStep,
+                yCheckpoints: offGridYCheckpoints,
+            },
+        });
+        const [applied] = getRoundCoordinates({
+            marcherPages: [
+                { marcher_id: 1, page_id: 1, x: 1000, y } as MarcherPage,
+            ],
+            denominatorX: 1,
+            denominatorY: 1,
+            fieldProperties: {
+                centerFrontPoint,
+                pixelsPerStep,
+                yCheckpoints: offGridYCheckpoints,
+            } as FieldProperties,
+            xAxis: true,
+            yAxis: true,
+        });
+        expect(applied.y).toBeCloseTo(gridLineY(39.5));
+        expect(dragged.yPixels).toBeCloseTo(applied.y);
+    });
 });

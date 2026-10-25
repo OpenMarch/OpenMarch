@@ -101,9 +101,11 @@ export function getRoundCoordinates({
                 stepsPerPixel *
                 (fieldProperties.centerFrontPoint.yPixels -
                     (marcherPage.y as number));
+            // Round the negation so halfway ties go toward the front, the same way
+            // getRoundCoordinates2 rounds marchers while they are dragged
             const roundedYSteps =
-                Math.round(
-                    (yStepsFromOrigin - gridYStepsBehindFront) * denominatorY,
+                -Math.round(
+                    -(yStepsFromOrigin - gridYStepsBehindFront) * denominatorY,
                 ) /
                     denominatorY +
                 gridYStepsBehindFront;
