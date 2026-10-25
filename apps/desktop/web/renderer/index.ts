@@ -15,7 +15,7 @@ import {
     setStoredInBrowser,
     storageLost,
 } from "./handlers";
-import { takeHandedOffShow } from "./handoff";
+import { openShowArgs, takeHandedOffShow } from "./handoff";
 import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import {
     HOME_SCREEN_PROMPT_KEY,
@@ -198,8 +198,7 @@ async function reopenHandedOffShow() {
     if (!show) return;
     const status = await invokeWorker<number>(
         WEB_CHANNELS.openShow,
-        show.bytes,
-        show.name,
+        ...openShowArgs(show),
     );
     if (status !== 200)
         console.error(`Couldn't reopen the show after the reload (${status})`);

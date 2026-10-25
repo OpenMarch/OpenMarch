@@ -103,18 +103,10 @@ describe("the library", () => {
             library.addShow("Ballad", show("B"), { backedUp: false }),
         ).rejects.toThrow();
         const again = await Library.open(base, options());
-        // The show itself was stored before the index write failed, so it's
-        // added back rather than lost
-        expect(
-            again
-                .list()
-                .map((s) => s.name)
-                .sort(),
-        ).toEqual(["Ballad", "Opener"]);
-        expect(await (await root.folder("shows")).folders()).toEqual([
-            "id1",
-            "id2",
-        ]);
+        // The add failed as a whole (whatever was being added still exists
+        // elsewhere); the library is as it was
+        expect(again.list().map((s) => s.name)).toEqual(["Opener"]);
+        expect(await (await root.folder("shows")).folders()).toEqual(["id1"]);
     });
 
     it("saves edits and keeps versions at most every two minutes", async () => {
@@ -481,5 +473,91 @@ describe("restoring", () => {
         clock += 1000;
         await library.keepVersion(id, "opened");
         expect(library.current.shows[0].versions).toHaveLength(count);
+    });
+});
+
+describe("errors that freeing space can't fix", () => {
+    it("keeps the versions when a save fails for another reason", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        const id = await library.addShow("Opener", show("v0"), {
+            backedUp: false,
+        });
+        for (let i = 1; i <= 3; i++) {
+            clock += VERSION_INTERVAL_MS;
+            await library.saveShow(id, show(`v${i}`));
+        }
+        const showDir = await (
+            await (await libraryFolder(base)).folder("shows")
+        ).folder(id);
+        showDir.failWrites = {
+            count: 1,
+            keep: 0,
+            error: "NoModificationAllowedError",
+        };
+        clock += 1000;
+        await expect(library.saveShow(id, show("v4"))).rejects.toThrow(
+            /NoModificationAllowed/,
+        );
+        expect(library.current.shows[0].versions).toHaveLength(3);
+        expect(
+            (await showDir.files()).filter((f) => f.startsWith("v-")),
+        ).toHaveLength(3);
+    });
+});
+
+describe("an add that fails", () => {
+    it("leaves no extra show behind when the index can't be written", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        await library.addShow("Opener", show("A"), { backedUp: false });
+        const root = await libraryFolder(base);
+        for (let attempt = 0; attempt < 3; attempt++) {
+            root.failWrites = { count: 1, keep: 10 };
+            await expect(
+                library.addShow("Ballad", show("B"), { backedUp: false }),
+            ).rejects.toThrow();
+        }
+        const again = await Library.open(base, options());
+        expect(again.list().map((s) => s.name)).toEqual(["Opener"]);
+        expect(await (await root.folder("shows")).folders()).toEqual(["id1"]);
+    });
+
+    it("removes the folder when the index write after it fails", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        await library.addShow("Opener", show("A"), { backedUp: false });
+        const root = await libraryFolder(base);
+        // The write that lists the show fails; earlier index writes go through
+        root.failWrites = { count: 1, keep: 10, skip: 1 };
+        await expect(library.duplicate("id1")).rejects.toThrow();
+        const again = await Library.open(base, options());
+        expect(again.list().map((s) => s.name)).toEqual(["Opener"]);
+        expect(await (await root.folder("shows")).folders()).toEqual(["id1"]);
+    });
+
+    it("cleans up an add cut short by a crash, but keeps folders a lost index can't explain", async () => {
+        const base = new MemoryDir();
+        const library = await Library.open(base, options());
+        await library.addShow("Opener", show("A"), { backedUp: false });
+        const root = await libraryFolder(base);
+        const shows = await root.folder("shows");
+        // A crash after the show was written, before the index listed it:
+        // the index says an add was under way
+        const index = { ...library.current, pending: ["aborted"] };
+        await root.write(
+            "index.99.json",
+            new TextEncoder().encode(JSON.stringify(index)),
+        );
+        await (await shows.folder("aborted")).write("show.1.dots", show("X"));
+        // And one no index mentions at all
+        await (await shows.folder("unknown")).write("show.1.dots", show("U"));
+        const again = await Library.open(base, options());
+        expect((await shows.folders()).sort()).toEqual(["id1", "unknown"]);
+        expect(again.current.shows.map((s) => s.id).sort()).toEqual([
+            "id1",
+            "unknown",
+        ]);
+        expect(again.current.pending ?? []).toEqual([]);
     });
 });

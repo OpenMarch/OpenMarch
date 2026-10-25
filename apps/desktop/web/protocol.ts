@@ -48,9 +48,11 @@ export type WorkerStatus = {
  */
 export const WEB_CHANNELS = {
     /**
-     * (bytes: Uint8Array, name: string, force?: boolean) => number (200, or
-     * an error code): adds a file to the library and opens it. Throws if the
-     * open show's latest changes can't be stored first, unless forced.
+     * (bytes: Uint8Array, name: string, force?: boolean, backedUp?: boolean)
+     * => number (200, or an error code): adds a show to the library and opens
+     * it. `backedUp`: it came from a file the person picked (a show handed
+     * across a reload passes its own state). Throws if the open show's latest
+     * changes can't be stored first, unless forced.
      */
     openShow: "web:openShow",
     /**

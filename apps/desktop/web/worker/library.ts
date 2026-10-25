@@ -53,6 +53,16 @@ import type { Dir } from "./dir";
 /** Why a library can't be changed: it was written by a newer version. */
 export type ReadOnlyReason = "newer-format";
 
+/** Whether a failed write ran out of space (the only failure freeing space fixes). */
+export function isFullError(error: unknown): boolean {
+    const name = (error as { name?: unknown } | null)?.name;
+    const message = error instanceof Error ? error.message : String(error);
+    return (
+        name === "QuotaExceededError" ||
+        /QuotaExceeded|quota|no space|disk full/i.test(message)
+    );
+}
+
 /** Names a recovered show when its name can't be read. */
 const RECOVERED_NAME = "Recovered show";
 
@@ -267,6 +277,46 @@ export class Library {
         return (await this.root.folder("shows")).folder(id);
     }
 
+    /**
+     * Adds a show folder: the index first lists its id as pending, then the
+     * show (and its name) are written, then the index lists the show. If a
+     * step fails, the folder is removed and the id is no longer pending.
+     *
+     * A crash before the last index write leaves a folder the index says
+     * was pending: the next start removes it as an add that never finished.
+     * That loses nothing: whatever was being added still exists elsewhere
+     * (the file the person opened, the show being duplicated, or the show
+     * in memory, which the page hands across the reload when adding fails).
+     * A folder no readable index mentions is kept instead (see reconcile).
+     */
+    private async addFolder(
+        id: string,
+        bytes: Uint8Array,
+        list: (index: LibraryIndex) => LibraryIndex,
+    ) {
+        await this.commit({
+            ...this.index,
+            pending: [...(this.index.pending ?? []), id],
+        });
+        const notPending = (index: LibraryIndex): LibraryIndex => ({
+            ...index,
+            pending: (index.pending ?? []).filter((p) => p !== id),
+        });
+        try {
+            const dir = await this.showDir(id);
+            await writeGeneration(dir, "show", "dots", bytes);
+            const next = notPending(list(this.index));
+            await this.writeMeta(id, findShow(next, id)!.name);
+            await this.commit(next);
+        } catch (error) {
+            await (await this.root.folder("shows")).remove(id).catch(() => {});
+            await this.commit(notPending(this.index)).catch(() => {
+                // Still pending: the next start removes the folder if needed.
+            });
+            throw error;
+        }
+    }
+
     /** The single show of an earlier build becomes the library's first, still open. */
     private async migrateLegacy(base: Dir) {
         const legacy = (await base.files())
@@ -284,15 +334,9 @@ export class Library {
             const bytes = await base.read(file).catch(() => null);
             if (!bytes || !isDatabase(bytes)) continue;
             const id = this.newId();
-            await writeGeneration(
-                await this.showDir(id),
-                "show",
-                "dots",
-                bytes,
-            );
-            await this.commit(
+            await this.addFolder(id, bytes, (index) =>
                 setOpen(
-                    addShow(this.index, {
+                    addShow(index, {
                         id,
                         name: parsed.name,
                         now: this.now(),
@@ -322,6 +366,11 @@ export class Library {
             const files = await dir.files();
             if (!findShow(next, id) && next.deleted?.includes(id)) {
                 // Deleted, but the page went before the folder did.
+                await shows.remove(id);
+                continue;
+            }
+            if (!findShow(next, id) && next.pending?.includes(id)) {
+                // An add that never finished (see addFolder).
                 await shows.remove(id);
                 continue;
             }
@@ -387,6 +436,8 @@ export class Library {
                     await dir.remove(versionFile(old));
             }
         }
+        // Nothing is being added while the library opens.
+        if (next.pending?.length) next = { ...next, pending: [] };
         // Deletes that have finished need no remembering.
         const folders = new Set(await shows.folders());
         if (next.deleted?.some((id) => !folders.has(id)))
@@ -411,20 +462,9 @@ export class Library {
         return this.enqueue(async () => {
             this.assertWritable();
             const id = this.newId();
-            await writeGeneration(
-                await this.showDir(id),
-                "show",
-                "dots",
-                bytes,
+            await this.addFolder(id, bytes, (index) =>
+                addShow(index, { id, name, now: this.now(), backedUp }),
             );
-            const next = addShow(this.index, {
-                id,
-                name,
-                now: this.now(),
-                backedUp,
-            });
-            await this.writeMeta(id, findShow(next, id)!.name);
-            await this.commit(next);
             return id;
         });
     }
@@ -455,7 +495,10 @@ export class Library {
             try {
                 await writeGeneration(dir, "show", "dots", bytes);
             } catch (error) {
-                if (!(await this.freeVersions(id))) throw error;
+                // Only room can help: other errors (a handle still open,
+                // writing not allowed) keep the restore points.
+                if (!isFullError(error) || !(await this.freeVersions(id)))
+                    throw error;
                 await writeGeneration(dir, "show", "dots", bytes);
             }
             const now = this.now();
@@ -605,21 +648,9 @@ export class Library {
             );
             if (!bytes) throw new Error(`The stored copy of ${id} is missing`);
             const newId = this.newId();
-            await writeGeneration(
-                await this.showDir(newId),
-                "show",
-                "dots",
-                bytes,
+            await this.addFolder(newId, bytes, (index) =>
+                duplicateShow(index, id, newId, this.now(), copyName),
             );
-            const next = duplicateShow(
-                this.index,
-                id,
-                newId,
-                this.now(),
-                copyName,
-            );
-            await this.writeMeta(newId, findShow(next, newId)!.name);
-            await this.commit(next);
             return newId;
         });
     }

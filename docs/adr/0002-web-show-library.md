@@ -27,7 +27,7 @@ openmarch-<channel>/
 ```
 
 **Index format.** `index.<n>.json` holds `{ "format": 1, "shows": [...],
-"openId": ..., "deleted": [...] }` (`apps/desktop/src/utilities/webLibrary.ts`, which also
+"openId": ..., "deleted": [...], "pending": [...] }` (`apps/desktop/src/utilities/webLibrary.ts`, which also
 holds every rule as a pure function). A build reads only formats it knows.
 **Never delete what you can't read:** if any index generation has a `format`
 greater than this build knows (a newer build wrote it, then the person went
@@ -46,6 +46,18 @@ show or a version, it means a SQLite header whose page size (bytes 16–17,
 the file's last change, bytes 92–95 = 24–27) equals the file's length, or a
 whole number of pages where the count isn't kept. A file cut short keeps its
 header, so the header alone isn't enough. A version file is listed in the index only after it is written.
+
+**Adding a show** (a new show, an opened file, a duplicate, the legacy
+migration) lists its id under `pending` in the index first, then writes the
+folder (the show and its name), then writes the index listing the show and
+no longer pending. If a step fails, the folder is removed and the id is no
+longer pending, so a failed attempt leaves no extra show. A crash before the
+last index write leaves a folder the index lists as pending, which the next
+start removes as an add that never finished. That loses nothing: what was
+being added still exists elsewhere (the file the person opened, the show
+being duplicated, the legacy file, kept until the add succeeds, or the show
+in memory, which the page hands across the reload when adding fails). A
+folder the pending list doesn't explain is kept, as below.
 
 **Nothing undescribed is deleted.** On start the library reconciles the
 index with the folders:
@@ -71,9 +83,16 @@ beside the show. If even the index can't be written, the show's own files
 make room: its versions first, then the show itself. A crash in that window
 leaves the show listed without its files, to delete again.
 
-When storage is full, the oldest versions' files are deleted before the
-index is written (an index that lists a missing version is tolerated), and
-the save is tried again.
+When storage is full (a `QuotaExceededError`, or a message saying so), the
+oldest versions' files are deleted before the index is written (an index
+that lists a missing version is tolerated), and the save is tried again.
+Other write errors, such as a handle still open or writing not allowed,
+keep the versions: freeing space can't fix them.
+
+**Backed up** is recorded for a show added from a file the person picked
+(that file is their copy). A new show or a duplicate isn't. A show that a
+memory-only tab, or a tab whose storage failed, hands across a reload
+carries its own state.
 
 **Versions.** 20 per show: at most one per two minutes of editing, one on
 opening if the show changed since its newest version, and one before a

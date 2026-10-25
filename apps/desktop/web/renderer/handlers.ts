@@ -195,6 +195,8 @@ export async function openShowFile(file: File, force = false): Promise<number> {
             new Uint8Array(await file.arrayBuffer()),
             file.name,
             force,
+            // A file the person picked: that file is their backup.
+            true,
         );
     } catch (error) {
         window.alert(
@@ -207,7 +209,7 @@ export async function openShowFile(file: File, force = false): Promise<number> {
         return status;
     }
     markDownloaded();
-    if (!(await keepAcrossReload(false))) return 500;
+    if (!(await keepAcrossReload(false, true))) return 500;
     reloadPage();
     return status;
 }
@@ -232,7 +234,10 @@ export function storageLost() {
  * back from storage, and a memory-only one is handed off (see ./handoff.ts).
  * False, after telling the person, if it can't be.
  */
-async function keepAcrossReload(changed: boolean): Promise<boolean> {
+async function keepAcrossReload(
+    changed: boolean,
+    backedUp: boolean,
+): Promise<boolean> {
     if (storedInBrowser) return true;
     try {
         const show = await invokeWorker<{
@@ -240,7 +245,7 @@ async function keepAcrossReload(changed: boolean): Promise<boolean> {
             bytes: Uint8Array;
         } | null>(WEB_CHANNELS.exportShow);
         if (!show) return false;
-        await handOffShow({ ...show, changed });
+        await handOffShow({ ...show, changed, backedUp });
         return true;
     } catch (error) {
         console.error("Couldn't keep the show across the reload:", error);
@@ -453,7 +458,8 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
             if (status !== 200) return status;
             // Never downloaded.
             markChanged();
-            if (!(await keepAcrossReload(true))) return 500;
+            // A new show: never backed up.
+            if (!(await keepAcrossReload(true, false))) return 500;
             reloadPage();
             return status;
         },
