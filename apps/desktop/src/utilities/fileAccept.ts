@@ -1,3 +1,5 @@
+import { isAppleTouchDevice, type NavigatorLike } from "./device";
+
 /**
  * The `accept` for an `<input type="file">`. iPad and iPhone Safari grey out
  * files their picker can't match (custom extensions such as ".fieldots", and
@@ -7,12 +9,9 @@
  */
 export function touchSafeAccept(
     accept: string,
-    nav: { userAgent: string; maxTouchPoints?: number } = navigator,
+    nav: NavigatorLike = navigator,
 ): string {
-    const appleTouch =
-        /iPad|iPhone|iPod/.test(nav.userAgent) ||
-        (/Macintosh/.test(nav.userAgent) && (nav.maxTouchPoints ?? 0) > 1);
-    if (!appleTouch) return accept;
+    if (!isAppleTouchDevice(nav)) return accept;
     return accept
         .split(",")
         .map((part) => part.trim())

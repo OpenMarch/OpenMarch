@@ -124,11 +124,3 @@ export function useEncodingSupport(
     }, [width, height, enabled]);
     return support;
 }
-
-/** Whether the web build can stream the video to disk (OPFS). */
-export function canStreamVideoToDisk(): boolean {
-    return (
-        typeof Worker === "function" &&
-        typeof navigator.storage?.getDirectory === "function"
-    );
-}

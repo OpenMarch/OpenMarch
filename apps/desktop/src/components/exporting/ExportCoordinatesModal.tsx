@@ -82,8 +82,8 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
 import { isWebBuild } from "@/utilities/webBuild";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { hasOpfs, isAppleTouchDevice } from "@/utilities/device";
 import {
-    canStreamVideoToDisk,
     defaultVideoFrameRate,
     defaultVideoResolution,
     keepScreenAwake,
@@ -2010,22 +2010,13 @@ function WebVideoNotes({ support }: { support: EncodingSupport }) {
                     {t("exportCoordinates.videoWebSilent")}
                 </p>
             )}
-            {!canStreamVideoToDisk() && (
-                <p>{t("exportCoordinates.videoWebInMemory")}</p>
-            )}
+            {!hasOpfs() && <p>{t("exportCoordinates.videoWebInMemory")}</p>}
             <p>{t("exportCoordinates.videoWebKeepOpen")}</p>
         </div>
     );
 }
 
 /** iPad or iPhone (iPadOS Safari says it is a Mac with a touch screen). */
-function isAppleTouch() {
-    return (
-        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-        (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
-    );
-}
-
 /**
  * Web only: the finished video and its Save button. Saving opens the share
  * sheet on iPads (Save Video, Save to Files, AirDrop) and downloads
@@ -2073,7 +2064,7 @@ function WebFinishedVideo({
                     {t("exportCoordinates.videoWebReadySilent")}
                 </p>
             )}
-            {isAppleTouch() && (
+            {isAppleTouchDevice() && (
                 <p className="text-sub text-text/75">
                     {t("exportCoordinates.videoWebSaveHintApple")}
                 </p>
