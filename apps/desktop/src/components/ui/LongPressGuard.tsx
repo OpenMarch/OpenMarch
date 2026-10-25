@@ -9,6 +9,10 @@ const PRESSABLE =
 const OWN_LONG_PRESS =
     '[data-own-long-press], canvas, input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"]';
 const SLOP_PX = 10;
+/** How long after the release the click that follows is still swallowed. */
+const SWALLOW_MS = 700;
+/** The longest a fired hint swallows a click without a release (a press held on). */
+const MAX_SWALLOW_MS = 10_000;
 
 /** A trailing " [⌘K]"-style shortcut in a title. */
 const SHORTCUT_SUFFIX = /\s*\[[^\]]+\]\s*$/;
@@ -80,6 +84,12 @@ export default function LongPressGuard() {
             start = null;
         };
 
+        const stopSwallowing = () => {
+            swallowClick = false;
+            if (swallowExpiry !== null) clearTimeout(swallowExpiry);
+            swallowExpiry = null;
+        };
+
         const onPointerDown = (event: PointerEvent) => {
             swallowClick = false;
             cancel();
@@ -97,6 +107,10 @@ export default function LongPressGuard() {
                     text = text.replace(SHORTCUT_SUFFIX, "");
                 if (!text) return;
                 swallowClick = true;
+                // In any case, stop swallowing soon after the finger lifts (or
+                // this long after the hint if no release ever arrives)
+                if (swallowExpiry !== null) clearTimeout(swallowExpiry);
+                swallowExpiry = setTimeout(stopSwallowing, MAX_SWALLOW_MS);
                 setHint({ anchor: el, text });
             }, LONG_PRESS_MS);
         };
@@ -115,11 +129,17 @@ export default function LongPressGuard() {
             // The click follows the release at once; don't keep swallowing after it
             if (swallowClick) {
                 if (swallowExpiry !== null) clearTimeout(swallowExpiry);
-                swallowExpiry = setTimeout(() => {
-                    swallowClick = false;
-                }, 800);
+                swallowExpiry = setTimeout(stopSwallowing, SWALLOW_MS);
             }
         };
+
+        // iOS ends a long press with pointercancel and sends no click: nothing to
+        // swallow, and a later keyboard click (Enter/Space) must go through
+        const onPointerCancel = () => {
+            cancel();
+            stopSwallowing();
+        };
+        const onKeyDown = () => stopSwallowing();
 
         const onClick = (event: MouseEvent) => {
             if (!swallowClick) return;
@@ -138,7 +158,8 @@ export default function LongPressGuard() {
         document.addEventListener("pointerdown", onPointerDown, opts);
         document.addEventListener("pointermove", onPointerMove, opts);
         document.addEventListener("pointerup", onPointerEnd, opts);
-        document.addEventListener("pointercancel", cancel, opts);
+        document.addEventListener("pointercancel", onPointerCancel, opts);
+        document.addEventListener("keydown", onKeyDown, opts);
         document.addEventListener("click", onClick, opts);
         document.addEventListener("contextmenu", onContextMenu, opts);
         return () => {
@@ -147,7 +168,12 @@ export default function LongPressGuard() {
             document.removeEventListener("pointerdown", onPointerDown, opts);
             document.removeEventListener("pointermove", onPointerMove, opts);
             document.removeEventListener("pointerup", onPointerEnd, opts);
-            document.removeEventListener("pointercancel", cancel, opts);
+            document.removeEventListener(
+                "pointercancel",
+                onPointerCancel,
+                opts,
+            );
+            document.removeEventListener("keydown", onKeyDown, opts);
             document.removeEventListener("click", onClick, opts);
             document.removeEventListener("contextmenu", onContextMenu, opts);
         };
