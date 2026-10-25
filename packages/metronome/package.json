@@ -45,6 +45,6 @@
         "@types/node-wav": "^0.0.4",
         "typescript": "catalog:",
         "vitest": "^4.1.12",
-        "tsup": "^8.5.1"
+        "tsup": "^9.0.0"
     }
 }
