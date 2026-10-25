@@ -40,15 +40,26 @@ describeDbTests("getLatestUndoEntryToken", (it) => {
         expect(await getLatestUndoEntryToken(db)).not.toBe(token);
     });
 
-    it("changes after an undo even when the same entry ends up on top", async ({
+    it("is the same again after an undo and a redo of that entry", async ({
         db,
     }) => {
-        // Conservative: an undo and redo put the entry back, but the toast
-        // that offered it no longer knows nothing else happened in between
+        await edit(db, 0.5);
+        await edit(db, 0.75);
+        const token = await getLatestUndoEntryToken(db);
+        await performUndo(db);
+        expect(await getLatestUndoEntryToken(db)).not.toBe(token);
+        await performRedo(db);
+        expect(await getLatestUndoEntryToken(db)).toBe(token);
+    });
+
+    it("differs after an undo and a new edit, even a redo-like one", async ({
+        db,
+    }) => {
         await edit(db, 0.5);
         const token = await getLatestUndoEntryToken(db);
         await performUndo(db);
-        await performRedo(db);
+        // The same insert again: same group, sequences and statements
+        await edit(db, 0.5);
         expect(await getLatestUndoEntryToken(db)).not.toBe(token);
     });
 

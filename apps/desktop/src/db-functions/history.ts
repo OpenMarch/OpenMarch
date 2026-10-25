@@ -30,9 +30,10 @@ const tablesWithHistory = [
 let transactionWithHistoryTail = Promise.resolve<void>(undefined);
 
 /**
- * Counts history changes made in this window: every transaction with history
- * and every undo or redo. Part of getLatestUndoEntryToken, because an undo
- * followed by a new edit can put back exactly the same undo statements.
+ * Counts new history entries made in this window: every transaction with
+ * history (not undo or redo, which move existing entries). Part of
+ * getLatestUndoEntryToken, because an undo followed by a new edit can put
+ * back exactly the same undo statements.
  */
 let historyEpoch = 0;
 
@@ -72,6 +73,7 @@ export const transactionWithHistory = async <T>(
     async function runLockedTransactionWithHistory(): Promise<T> {
         // This transaction's undo entry, read before the commit
         let undoEntry: string | null = null;
+        // eslint-disable-next-line max-lines-per-function
         const output = await db.transaction(async (tx) => {
             const startMessage = `=========== start ${funcName} ============`;
             let result: T;
@@ -673,7 +675,6 @@ async function executeHistoryAction(
     db: DbConnection,
     type: HistoryType,
 ): Promise<HistoryResponse> {
-    historyEpoch++;
     mainProcessLog(
         "info",
         `\n============ PERFORMING ${type.toUpperCase()} ============`,
@@ -835,11 +836,16 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
  * to offer "undo that one thing" (e.g. a toast's Undo) only while it is
  * still the latest.
  *
- * The token is this window's history epoch (bumped by every transaction with
- * history, undo and redo) plus the entry's group and statements. Group and
- * sequence numbers alone repeat after an undo, and even the statements can
- * (an undo, then an edit that reuses the same row ids); the epoch catches
- * that. The statements catch writes recorded outside transactionWithHistory.
+ * The token is this window's count of new entries (bumped by every
+ * transaction with history, not by undo or redo) plus the entry's group and
+ * statements:
+ * - undo then redo of that entry brings back the same group and statements
+ *   with no new entry, so the token matches again: it is the latest again;
+ * - undo then a new edit can reuse the group, sequences and even the
+ *   statements (same row ids), but it is a new entry, so the count differs;
+ * - writes recorded outside transactionWithHistory change the statements.
+ * It is conservative: undoing a later edit, which puts this entry back on
+ * top, still counts as a change (that later edit was a new entry).
  */
 export async function getLatestUndoEntryToken(
     db: DbConnection,

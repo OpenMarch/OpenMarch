@@ -1383,6 +1383,15 @@
             "uiSettingsToolbar": "Ui Settings Toolbar"
         }
     },
+    "touch": {
+        "layoutHint": "Tablet layout has bigger controls",
+        "marcherAdded": "Added {name}",
+        "marcherRemoved": "Removed {name}",
+        "openSettings": "Open Settings",
+        "redone": "Redone",
+        "theMarcher": "the marcher",
+        "undone": "Undone"
+    },
     "versionCheck": {
         "error": {
             "fetchFailed": "An error occurred while fetching the version.",

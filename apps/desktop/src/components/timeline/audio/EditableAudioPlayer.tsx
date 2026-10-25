@@ -24,7 +24,10 @@ import { useTimingObjects } from "@/hooks";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
-import { EditableTimingMarkersPlugin } from "./EditableTimingMarkersPlugin";
+import {
+    EditableTimingMarkersPlugin,
+    PX_PER_SEC_CSS_VAR,
+} from "./EditableTimingMarkersPlugin";
 import {
     darkProgressColor,
     lightProgressColor,
@@ -307,7 +310,17 @@ export default function EditableAudioPlayer() {
                 />
             )}
 
-            <div id="waveform" ref={waveformRef}></div>
+            <div
+                id="waveform"
+                ref={waveformRef}
+                // The zoom, for the beat markers' touch hit strips
+                style={
+                    {
+                        [PX_PER_SEC_CSS_VAR]:
+                            uiSettings.timelinePixelsPerSecond,
+                    } as React.CSSProperties
+                }
+            ></div>
             <div className="border-stroke rounded-6 bg-modal backdrop-blur-32 shadow-modal fixed bottom-[212px] z-50 flex w-fit min-w-0 items-center gap-12 border p-6">
                 <p className="text-sub text-text-subtitle whitespace-nowrap">
                     <T keyName="audio.tapTempo.label" />

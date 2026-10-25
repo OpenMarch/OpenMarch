@@ -4,9 +4,9 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { resetGroupChildTransforms } from "@/global/classes/canvasObjects/GroupUtils";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import { toast } from "sonner";
-import { getRedoStackLength, getUndoStackLength } from "@/db-functions";
-import { db } from "@/global/database/db";
 import { runAction } from "@/shortcuts/registry";
+import { queueHistoryAction } from "@/shortcuts/handlers/historyQueue";
+import tolgee from "@/global/singletons/Tolgee";
 import { isShiftHeld } from "@/stores/TouchModifierStore";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import {
@@ -84,11 +84,11 @@ function maybeShowTouchLayoutHint() {
     } catch {
         return;
     }
-    toast("Tablet layout has bigger controls", {
+    toast(tolgee.t("touch.layoutHint"), {
         id: "touch-layout-hint",
         duration: 10000,
         action: {
-            label: "Open Settings",
+            label: tolgee.t("touch.openSettings"),
             onClick: () => {
                 runAction("openSettings");
             },
@@ -678,25 +678,20 @@ export class TouchGestureAdapter {
         return true;
     }
 
-    /** Undo or redo, as the shortcut does, with a short note that it happened */
+    /**
+     * Undo or redo, through the same queue as the shortcut, with a short note
+     * when it happened. The handler checks the stack and says so itself when
+     * there is nothing to undo.
+     */
     private async history(direction: "undo" | "redo") {
-        let available = true;
-        try {
-            available =
-                (direction === "undo"
-                    ? await getUndoStackLength(db)
-                    : await getRedoStackLength(db)) > 0;
-        } catch {
-            // Let the action report it
-        }
-        const ran = runAction(
-            direction === "undo" ? "performUndo" : "performRedo",
-        );
-        // With nothing to undo, the action shows its own message
-        if (ran && available)
-            toast(direction === "undo" ? "Undone" : "Redone", {
-                duration: 1200,
-            });
+        const did = await queueHistoryAction(direction);
+        if (did)
+            toast(
+                tolgee.t(
+                    direction === "undo" ? "touch.undone" : "touch.redone",
+                ),
+                { duration: 1200 },
+            );
     }
 
     /** The marcher nearest to a finger (client px), within the touch radius */
@@ -833,11 +828,17 @@ export class TouchGestureAdapter {
             : [...before, marcher];
         canvas.setActiveObjects(next);
         this.selectionSnapshot = canvas.getActiveObjects().slice();
-        const name = marcher.marcherObj?.drill_number ?? "the marcher";
-        toast(removing ? `Removed ${name}` : `Added ${name}`, {
-            id: "touch-long-press",
-            duration: 2500,
-        });
+        const name =
+            marcher.marcherObj?.drill_number ?? tolgee.t("touch.theMarcher");
+        toast(
+            tolgee.t(removing ? "touch.marcherRemoved" : "touch.marcherAdded", {
+                name,
+            }),
+            {
+                id: "touch-long-press",
+                duration: 2500,
+            },
+        );
     }
 
     /** A brief ring where the long press fired */

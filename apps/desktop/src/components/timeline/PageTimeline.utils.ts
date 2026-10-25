@@ -11,7 +11,7 @@ import { useTolgee } from "@tolgee/react";
 import { useCallback } from "react";
 import { db } from "@/global/database/db";
 import { invalidatePageQueries, measureKeys } from "@/hooks/queries";
-import Page from "@/global/classes/Page";
+import Page, { generatePageNames } from "@/global/classes/Page";
 import Beat from "@/global/classes/Beat";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "@/hooks";
@@ -123,6 +123,26 @@ export const useCreateLastPageOnTimeline = () => {
 };
 
 /**
+ * The name the app gives a page just added at the end: the same naming as
+ * the timeline (page number offset, subset letters), with the new page last.
+ */
+export const nameOfAddedPage = ({
+    pages,
+    added,
+    pageNumberOffset,
+}: {
+    pages: Pick<Page, "isSubset">[];
+    added: Pick<DatabasePage, "is_subset">;
+    pageNumberOffset: number;
+}): string => {
+    const names = generatePageNames(
+        [...pages.map((p) => p.isSubset), added.is_subset],
+        pageNumberOffset,
+    );
+    return names[names.length - 1];
+};
+
+/**
  * Adds a page at the end of the show. With fingers it also says so with a
  * toast ("Page 4 added"): there is no hover feedback, and the new page may
  * be off screen. Its name is the next whole page number.
@@ -135,14 +155,19 @@ export const useAddPage = () => {
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
+    const pageNumberOffset = workspaceSettings?.pageNumberOffset ?? 0;
     const addPage = useCallback(() => {
-        const pageName = String(pages.filter((p) => !p.isSubset).length);
         mutate(undefined, {
-            onSuccess: () => {
-                if (useInputModeStore.getState().mode === "touch")
-                    toast.success(t("timeline.page.added", { pageName }));
+            onSuccess: (created) => {
+                if (useInputModeStore.getState().mode !== "touch") return;
+                const pageName = nameOfAddedPage({
+                    pages,
+                    added: created,
+                    pageNumberOffset,
+                });
+                toast.success(t("timeline.page.added", { pageName }));
             },
         });
-    }, [mutate, pages, t]);
+    }, [mutate, pages, pageNumberOffset, t]);
     return { addPage, canAddPage: !!workspaceSettings && !isPending };
 };
