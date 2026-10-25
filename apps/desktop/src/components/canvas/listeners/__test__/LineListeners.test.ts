@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { fabric } from "fabric";
 import { generateMarchers } from "@/__mocks__/generators";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
@@ -41,6 +42,47 @@ describe("LineListeners", () => {
             expect(marcher.evented).toBe(true);
         }
         expect(canvas.staticGridRef.hoverCursor).toBe("default");
+        canvas.dispose();
+    });
+
+    it("ends a Ctrl+Shift lasso started in line mode when the mode changes", () => {
+        const canvas = createCanvasWithMarchers();
+        const shapeHandle = new fabric.Rect({
+            left: 260,
+            top: 100,
+            width: 10,
+            height: 10,
+            selectable: true,
+            evented: true,
+        });
+        canvas.add(shapeHandle);
+        canvas.setListeners(new LineListeners({ canvas }));
+
+        const mouse = (type: "mousedown" | "mousemove", x: number, y: number) =>
+            (type === "mousedown"
+                ? canvas.upperCanvasEl
+                : document
+            ).dispatchEvent(
+                new MouseEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    ctrlKey: true,
+                    shiftKey: true,
+                    button: 0,
+                    bubbles: true,
+                }),
+            );
+        mouse("mousedown", 20, 200);
+        mouse("mousemove", 80, 220);
+        // Leave line mode before releasing the mouse
+        canvas.setListeners(new DefaultListeners({ canvas }));
+
+        expect(shapeHandle.evented).toBe(true);
+        expect(shapeHandle.selectable).toBe(true);
+        for (const marcher of canvas.getCanvasMarchers()) {
+            expect(marcher.selectable).toBe(true);
+            expect(marcher.evented).toBe(true);
+        }
         canvas.dispose();
     });
 });

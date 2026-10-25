@@ -43,6 +43,8 @@ export default class LineListeners
     };
 
     cleanupListeners = () => {
+        // Ctrl+Shift-drag can start a lasso here; restore what it suspended first
+        this.endInterruptedLasso();
         this.clearLine();
         this.clearPathwaysAndStaticMarchers();
         // Undo the constructor even when the line was cancelled before it was finished

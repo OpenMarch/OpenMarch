@@ -54,8 +54,7 @@ export default class DefaultListeners implements CanvasListeners {
     };
 
     cleanupListeners = () => {
-        // A mode change mid-lasso never sees the mouseup that would end it
-        if (this.isLassoDrawing) this.resetLassoState();
+        this.endInterruptedLasso();
         this.canvas.off("object:modified", this.handleObjectModified as any);
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
@@ -640,6 +639,11 @@ export default class DefaultListeners implements CanvasListeners {
         }
 
         this.canvas.requestRenderAll();
+    }
+
+    /** A mode change mid-lasso never sees the mouseup that would end it */
+    protected endInterruptedLasso() {
+        if (this.isLassoDrawing) this.resetLassoState();
     }
 
     private resetLassoState() {
