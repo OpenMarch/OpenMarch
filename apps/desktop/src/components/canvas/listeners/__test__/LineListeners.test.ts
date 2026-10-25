@@ -85,4 +85,33 @@ describe("LineListeners", () => {
         }
         canvas.dispose();
     });
+
+    it("keeps marchers unselectable when line mode starts mid-lasso", () => {
+        const canvas = createCanvasWithMarchers();
+        canvas.setListeners(new DefaultListeners({ canvas }));
+        const mouse = (type: "mousedown" | "mousemove", x: number, y: number) =>
+            (type === "mousedown"
+                ? canvas.upperCanvasEl
+                : document
+            ).dispatchEvent(
+                new MouseEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    shiftKey: true,
+                    button: 0,
+                    bubbles: true,
+                }),
+            );
+        mouse("mousedown", 20, 200);
+        mouse("mousemove", 80, 220);
+
+        // e.g. pressing L for Create Line before releasing the mouse
+        canvas.setListeners(new LineListeners({ canvas }));
+
+        for (const marcher of canvas.getCanvasMarchers()) {
+            expect(marcher.selectable).toBe(false);
+        }
+        expect(canvas.staticGridRef.hoverCursor).toBe("crosshair");
+        canvas.dispose();
+    });
 });

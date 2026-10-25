@@ -2,7 +2,6 @@ import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
@@ -24,8 +23,9 @@ export default class LineListeners
     private _midpoints = new Map<number, fabric.Object>();
     private _endpoints = new Map<number, fabric.Object>();
 
-    constructor({ canvas }: { canvas: OpenMarchCanvas }) {
-        super({ canvas });
+    initiateListeners = () => {
+        // Set up here rather than in the constructor: the previous listeners clean up
+        // after this object is constructed, and ending their lasso restores the marchers
         this.canvas.setCursor("crosshair");
         this.canvas.staticGridRef.hoverCursor = "crosshair";
 
@@ -33,9 +33,7 @@ export default class LineListeners
         this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
             canvasMarcher.makeUnselectable();
         });
-    }
 
-    initiateListeners = () => {
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("object:modified", this.handleObjectModified);
