@@ -173,9 +173,6 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
-      vite-tsconfig-paths:
-        specifier: 5.1.4
-        version: 5.1.4(typescript@6.0.3)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1))
       vitest:
         specifier: 4.1.12
         version: 4.1.12(@opentelemetry/api@1.10.0)(@types/node@22.20.5)(@vitest/coverage-v8@4.1.12)(@vitest/ui@4.1.12)(happy-dom@21.0.4)(jsdom@26.1.0(canvas@3.2.3(patch_hash=cbe6ad11ca8470108282514a34931732726ed7ea9376666ba672d81e688df32f)))(vite@8.3.5(@types/node@22.20.5)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1))
@@ -8311,9 +8308,6 @@ packages:
     resolution: {integrity: sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==}
     engines: {node: '>=10'}
 
-  globrex@0.1.2:
-    resolution: {integrity: sha512-uHJgbwAMwNFf5mLst7IWLNg14x1CkeqglJb/K3doi4dw6q2IvAAmM/Y81kevy83wP+Sst+nutFTYOGg3d1lsxg==}
-
   goober@2.1.19:
     resolution: {integrity: sha512-U7veizMqxyKlM58+Z5j2ngJBH/r9siDmxpvNxSw0PylF6WQvrASJEZrxh1hidRBJc2jqoBVSyOban5u8m+6Rxg==}
     peerDependencies:
@@ -11439,17 +11433,6 @@ packages:
   ts-tqdm@0.8.6:
     resolution: {integrity: sha512-3X3M1PZcHtgQbnwizL+xU8CAgbYbeLHrrDwL9xxcZZrV5J+e7loJm1XrXozHjSkl44J0Zg0SgA8rXbh83kCkcQ==}
 
-  tsconfck@3.1.6:
-    resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
-    engines: {node: ^18 || >=20}
-    deprecated: unmaintained
-    hasBin: true
-    peerDependencies:
-      typescript: ^5.0.0
-    peerDependenciesMeta:
-      typescript:
-        optional: true
-
   tsconfig-paths@3.15.0:
     resolution: {integrity: sha512-2Ac2RgzDe/cn48GvOe3M+o82pEFewD3UPbyoUHHdKasHwJKjds4fLXWf/Ux5kATBKN20oaFGu+jbElp1pos0mg==}
 
@@ -11852,14 +11835,6 @@ packages:
       vite-plugin-electron-renderer: '*'
     peerDependenciesMeta:
       vite-plugin-electron-renderer:
-        optional: true
-
-  vite-tsconfig-paths@5.1.4:
-    resolution: {integrity: sha512-cYj0LRuLV2c2sMqhqhGpaO3LretdtMn/BVX4cPLanIZuwwrkVl+lK84E/miEXkCHWXuq65rhNN4rXsBcOB3S4w==}
-    peerDependencies:
-      vite: '*'
-    peerDependenciesMeta:
-      vite:
         optional: true
 
   vite@8.3.5:
@@ -21718,8 +21693,6 @@ snapshots:
       merge2: 1.4.1
       slash: 3.0.0
 
-  globrex@0.1.2: {}
-
   goober@2.1.19(csstype@3.2.3):
     dependencies:
       csstype: 3.2.3
@@ -25695,10 +25668,6 @@ snapshots:
 
   ts-tqdm@0.8.6: {}
 
-  tsconfck@3.1.6(typescript@6.0.3):
-    optionalDependencies:
-      typescript: 6.0.3
-
   tsconfig-paths@3.15.0:
     dependencies:
       '@types/json5': 0.0.29
@@ -26104,17 +26073,6 @@ snapshots:
   vite-plugin-electron@0.29.1(vite-plugin-electron-renderer@0.14.7):
     optionalDependencies:
       vite-plugin-electron-renderer: 0.14.7
-
-  vite-tsconfig-paths@5.1.4(typescript@6.0.3)(vite@8.3.5(@types/node@22.20.5)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1)):
-    dependencies:
-      debug: 4.4.3
-      globrex: 0.1.2
-      tsconfck: 3.1.6(typescript@6.0.3)
-    optionalDependencies:
-      vite: 8.3.5(@types/node@22.20.5)(esbuild@0.25.12)(jiti@2.7.0)(sass@1.77.4)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1)
-    transitivePeerDependencies:
-      - supports-color
-      - typescript
 
   vite@8.3.5(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.77.4)(terser@5.36.0)(tsx@4.23.15)(yaml@2.9.1):
     dependencies:
