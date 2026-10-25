@@ -485,13 +485,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         clearTimeout(this._zoomTimeout);
         this._zoomTimeout = setTimeout(() => {
             this.getObjects().forEach((obj) => {
-                if (
-                    !(
-                        obj instanceof fabric.Text ||
-                        obj instanceof fabric.IText ||
-                        obj instanceof fabric.Textbox
-                    )
-                ) {
+                if (!(
+                    obj instanceof fabric.Text ||
+                    obj instanceof fabric.IText ||
+                    obj instanceof fabric.Textbox
+                )) {
                     obj.objectCaching = false;
                 }
             });

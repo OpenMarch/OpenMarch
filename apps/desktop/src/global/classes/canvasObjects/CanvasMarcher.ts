@@ -151,8 +151,7 @@ export default class CanvasMarcher
         dotRadius?: number;
         /** A single appearance or array of appearances in priority order (highest priority first) */
         appearances?:
-            | AppearanceComponentOptional
-            | AppearanceComponentOptional[];
+            AppearanceComponentOptional | AppearanceComponentOptional[];
     }) {
         // Normalize to array
         const appearances = appearancesInput
@@ -279,8 +278,7 @@ export default class CanvasMarcher
     // eslint-disable-next-line max-lines-per-function
     setAppearance(
         appearancesInput:
-            | AppearanceComponentOptional
-            | AppearanceComponentOptional[],
+            AppearanceComponentOptional | AppearanceComponentOptional[],
         options: { requestRenderAll: boolean } = { requestRenderAll: false },
         labelColor?: RgbaColor,
     ) {

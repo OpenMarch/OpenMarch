@@ -71,8 +71,7 @@ export interface VideoExportArgs {
 }
 
 export type VideoExportResult =
-    | { state: "completed"; path: string }
-    | { state: "cancelled" };
+    { state: "completed"; path: string } | { state: "cancelled" };
 
 /**
  * Pick the best supported container/codec combination.

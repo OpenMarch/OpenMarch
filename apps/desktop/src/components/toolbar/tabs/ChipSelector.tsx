@@ -126,8 +126,7 @@ export default function ChipSelector<T>({
         if (!open || activeIndex < 0) return;
         const listbox = listboxRef.current;
         const option = listbox?.children[activeIndex] as
-            | HTMLElement
-            | undefined;
+            HTMLElement | undefined;
         if (!listbox || !option) return;
 
         const listboxRect = listbox.getBoundingClientRect();

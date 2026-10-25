@@ -1,10 +1,7 @@
 import { create } from "zustand";
 
 export type ExportTab =
-    | "mobile"
-    | "coordinate-sheets"
-    | "drill-charts"
-    | "video";
+    "mobile" | "coordinate-sheets" | "drill-charts" | "video";
 
 /** Open state for app-level dialogs, so actions (shortcuts, the command palette) can open them from anywhere. */
 interface AppDialogStore {
