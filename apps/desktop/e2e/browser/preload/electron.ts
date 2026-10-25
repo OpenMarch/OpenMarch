@@ -63,3 +63,7 @@ export const contextBridge = {
         (window as unknown as Record<string, unknown>)[key] = api;
     },
 };
+
+export const webFrame = {
+    getZoomFactor: () => 1,
+};
