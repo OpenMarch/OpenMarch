@@ -1409,6 +1409,8 @@
         "actionFailed": "That didn't work: {message}",
         "backUp": "Back up",
         "backUpDone": "Backed up “{name}”",
+        "backUpReady": "“{name}” is ready to back up",
+        "backUpSave": "Save backup",
         "backUpFailed": "Couldn't back up “{name}”: {message}",
         "backUpNow": "Back up now",
         "backedUpAgo": "Last backed up: {ago}",

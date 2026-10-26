@@ -60,7 +60,8 @@ const isTouchLayout = () => useInputModeStore.getState().mode === "touch";
 /**
  * A press on a marcher's dot wins over a multi-selection's scale and rotate
  * handles that happen to sit on it: it moves the selection, or adds and
- * removes with Shift, instead of scaling.
+ * removes with Shift, instead of scaling. For a mouse, only the dot itself
+ * (see findTarget).
  */
 const baseFindTargetCorner = (fabric.ActiveSelection.prototype as any)
     ._findTargetCorner;
@@ -231,11 +232,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     // Bound event handlers for proper cleanup
     private boundHandleAdvancedWheel: ((event: WheelEvent) => void) | null =
         null;
-    private boundHandleAdvancedMouseDown: ((event: MouseEvent) => void) | null =
-        null;
-    private boundHandleAdvancedMouseMove: ((event: MouseEvent) => void) | null =
-        null;
-    private boundHandleAdvancedMouseUp: ((event: MouseEvent) => void) | null =
+    private boundHandleAdvancedMouseDown:
+        | ((event: PointerEvent) => void)
+        | null = null;
+    private boundHandleAdvancedMouseMove:
+        | ((event: PointerEvent) => void)
+        | null = null;
+    private boundHandleAdvancedMouseUp: ((event: PointerEvent) => void) | null =
         null;
     private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
     private boundHandleKeyUp: ((event: KeyboardEvent) => void) | null = null;
@@ -837,7 +840,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     findTarget(e: Event, skipGroup: boolean): fabric.Object | undefined {
         const isPress = e.type === "pointerdown" || e.type === "mousedown";
         const dotMarcher = isPress || skipGroup ? this.marcherDotAt(e) : null;
-        if (isPress) this.pressOnMarcherDot = dotMarcher !== null;
+        // A mouse can aim: only a press on the dot itself (no slack) beats a
+        // handle, so the rest of a handle over an outer marcher still scales.
+        // In the desktop layout handles sit right on the outer marchers.
+        const isMouse = (e as PointerEvent).pointerType
+            ? (e as PointerEvent).pointerType === "mouse"
+            : e.type.startsWith("mouse");
+        if (isPress)
+            this.pressOnMarcherDot =
+                (isMouse && dotMarcher
+                    ? this.marcherDotAt(e, 0)
+                    : dotMarcher) !== null;
         const found = this.touchAwareTarget(e, skipGroup, dotMarcher);
         if (isPress && !skipGroup)
             this.lastPressHitSomething = Boolean(
@@ -873,14 +886,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     pressOnMarcherDot = false;
 
     /** The selectable marcher whose dot the pointer is on, if any */
-    private marcherDotAt(e: Event): CanvasMarcher | null {
+    private marcherDotAt(e: Event, slackPx?: number): CanvasMarcher | null {
         const type = (e as PointerEvent).pointerType;
         const slack =
-            type === "touch"
-                ? DOT_SLACK_PX.touch
-                : type === "pen"
-                  ? DOT_SLACK_PX.pen
-                  : DOT_SLACK_PX.mouse;
+            slackPx !== undefined
+                ? slackPx
+                : type === "touch"
+                  ? DOT_SLACK_PX.touch
+                  : type === "pen"
+                    ? DOT_SLACK_PX.pen
+                    : DOT_SLACK_PX.mouse;
         const zoom = this.getZoom();
         if (!(zoom > 0)) return null;
         const point = this.getPointer(e as MouseEvent);
@@ -967,7 +982,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return shouldClear;
     }
 
-    private handleAdvancedMouseDown(event: MouseEvent) {
+    // Pointer events, not mouse events: Fabric listens for pointer events
+    // (enablePointerEvents), and DefaultListeners cancels the Alt press's
+    // pointerdown, which stops the browser sending the mouse events after it.
+    private handleAdvancedMouseDown(event: PointerEvent) {
+        // Fingers and pens navigate in touchGestures.ts
+        if (event.pointerType !== "mouse") return;
         // Do not handle mouse buttons here; DefaultListeners owns mouse-button panning.
         // Only allow Alt-key forced panning (trackpad-like) to start a pan.
         if (this.forceTrackpadPan) {
@@ -981,7 +1001,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    private handleAdvancedMouseMove(event: MouseEvent) {
+    private handleAdvancedMouseMove(event: PointerEvent) {
         // Only handle panning here if Alt-key forced panning is active
         if (this.isPanning && this.viewportTransform && this.forceTrackpadPan) {
             event.preventDefault();
@@ -1001,7 +1021,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    private handleAdvancedMouseUp(event: MouseEvent) {
+    private handleAdvancedMouseUp(event: PointerEvent) {
         if (this.isPanning) {
             this.isPanning = false;
             if (this.cssZoomWrapper) {
@@ -1222,19 +1242,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._dragStepReadout = new DragStepReadout(this, this.cssZoomWrapper);
         this._dragStepReadout.attach();
         this.cssZoomWrapper.addEventListener(
-            "mousedown",
+            "pointerdown",
             this.boundHandleAdvancedMouseDown,
         );
         this.cssZoomWrapper.addEventListener(
-            "mousemove",
+            "pointermove",
             this.boundHandleAdvancedMouseMove,
         );
         this.cssZoomWrapper.addEventListener(
-            "mouseup",
+            "pointerup",
             this.boundHandleAdvancedMouseUp,
         );
         this.cssZoomWrapper.addEventListener(
-            "mouseleave",
+            "pointerleave",
             this.boundHandleAdvancedMouseUp,
         );
         document.addEventListener("keydown", this.boundHandleKeyDown);
@@ -1256,23 +1276,23 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this._dragStepReadout = null;
         if (this.boundHandleAdvancedMouseDown) {
             this.cssZoomWrapper.removeEventListener(
-                "mousedown",
+                "pointerdown",
                 this.boundHandleAdvancedMouseDown,
             );
         }
         if (this.boundHandleAdvancedMouseMove) {
             this.cssZoomWrapper.removeEventListener(
-                "mousemove",
+                "pointermove",
                 this.boundHandleAdvancedMouseMove,
             );
         }
         if (this.boundHandleAdvancedMouseUp) {
             this.cssZoomWrapper.removeEventListener(
-                "mouseup",
+                "pointerup",
                 this.boundHandleAdvancedMouseUp,
             );
             this.cssZoomWrapper.removeEventListener(
-                "mouseleave",
+                "pointerleave",
                 this.boundHandleAdvancedMouseUp,
             );
         }

@@ -15,7 +15,11 @@ import {
     setStoredInBrowser,
     storageLost,
 } from "./handlers";
-import { openShowArgs, takeHandedOffShow } from "./handoff";
+import {
+    forgetHandedOffShow,
+    openShowArgs,
+    takeHandedOffShow,
+} from "./handoff";
 import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import {
     HOME_SCREEN_PROMPT_KEY,
@@ -203,9 +207,18 @@ async function reopenHandedOffShow() {
         WEB_CHANNELS.openShow,
         ...openShowArgs(show),
     );
-    if (status !== 200)
+    if (status !== 200) {
+        // Still kept in the browser: the next reload tries again
         console.error(`Couldn't reopen the show after the reload (${status})`);
-    else if (show.changed) markChanged();
+        showNotice(
+            "OpenMarch couldn't reopen your show after reloading. Reload the page to try again.",
+        );
+        return;
+    }
+    if (show.changed) markChanged();
+    await forgetHandedOffShow().catch((error) =>
+        console.error("Couldn't clear the reopened show:", error),
+    );
 }
 
 async function start() {

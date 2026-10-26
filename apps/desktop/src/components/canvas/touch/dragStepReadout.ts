@@ -85,6 +85,8 @@ export class DragStepReadout {
         this.canvas.off("object:modified", this.hide);
         this.canvas.off("selection:cleared", this.hide);
         this.hide();
+        this.element?.remove();
+        this.element = null;
     }
 
     private onMoving = (event: MovingEvent) => {

@@ -46,6 +46,16 @@ export function useLongPress(
     }, []);
     useEffect(() => clear, [clear]);
 
+    // The click a long press makes (if the browser makes one) comes right
+    // after the release; some browsers make none, and the flag must not then
+    // eat a later click from the keyboard
+    const forgetFiredSoon = () => {
+        if (!fired.current) return;
+        setTimeout(() => {
+            fired.current = false;
+        }, 400);
+    };
+
     const call = (name: keyof LongPressHandlers, e: unknown) =>
         (chain[name] as ((e: unknown) => void) | undefined)?.(e);
 
@@ -78,10 +88,12 @@ export function useLongPress(
         onPointerUp: (e) => {
             call("onPointerUp", e);
             clear();
+            forgetFiredSoon();
         },
         onPointerCancel: (e) => {
             call("onPointerCancel", e);
             clear();
+            forgetFiredSoon();
         },
         onClickCapture: (e) => {
             if (fired.current) {

@@ -116,6 +116,8 @@ function attachPinchZoom(
 export function usePinchZoom(scrollerRef: RefObject<HTMLElement | null>) {
     // Scroll to apply once the new zoom has been rendered
     const pendingScrollLeft = useRef<number | null>(null);
+    /** The scroll behavior to put back once a zoom button's jump is applied */
+    const behaviorAfterJump = useRef<string | null>(null);
     const pixelsPerSecond = useUiSettingsStore(
         (s) => s.uiSettings.timelinePixelsPerSecond,
     );
@@ -125,6 +127,11 @@ export function usePinchZoom(scrollerRef: RefObject<HTMLElement | null>) {
         if (!scroller || pendingScrollLeft.current === null) return;
         scroller.scrollLeft = pendingScrollLeft.current;
         pendingScrollLeft.current = null;
+        // A zoom button's jump is done: glide again, as before it
+        if (behaviorAfterJump.current !== null) {
+            scroller.style.scrollBehavior = behaviorAfterJump.current;
+            behaviorAfterJump.current = null;
+        }
     }, [pixelsPerSecond, scrollerRef]);
 
     useEffect(() => {
@@ -174,6 +181,7 @@ export function usePinchZoom(scrollerRef: RefObject<HTMLElement | null>) {
                     pointX,
                     originX,
                 }).scrollLeft;
+                behaviorAfterJump.current ??= scroller.style.scrollBehavior;
                 scroller.style.scrollBehavior = "auto";
             }
             store.setPixelsPerSecond(target);

@@ -84,7 +84,7 @@ export function showFileProblem(name: string, head: Uint8Array): string | null {
 export async function shareFile(
     file: File,
     nav: Navigator = navigator,
-): Promise<"shared" | "cancelled" | "unavailable"> {
+): Promise<"shared" | "cancelled" | "expired" | "unavailable"> {
     if (typeof nav.share !== "function" || typeof nav.canShare !== "function")
         return "unavailable";
     if (!nav.canShare({ files: [file] })) return "unavailable";
@@ -92,10 +92,12 @@ export async function shareFile(
         await nav.share({ files: [file] });
         return "shared";
     } catch (error) {
-        // AbortError: the person closed the sheet. Anything else (e.g.
-        // NotAllowedError when the tap was too long ago) falls back.
-        return (error as Error)?.name === "AbortError"
-            ? "cancelled"
-            : "unavailable";
+        // AbortError: the person closed the sheet. NotAllowedError: the tap
+        // was too long ago (e.g. a big file took a while to read), so it
+        // needs another tap. Anything else falls back.
+        const name = (error as Error)?.name;
+        if (name === "AbortError") return "cancelled";
+        if (name === "NotAllowedError") return "expired";
+        return "unavailable";
     }
 }

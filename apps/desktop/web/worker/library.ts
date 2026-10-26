@@ -536,6 +536,7 @@ export class Library {
         id: string,
         reason: VersionReason,
         bytes: Uint8Array,
+        keep: string[] = [],
     ) {
         const show = findShow(this.index, id);
         const now = this.now();
@@ -550,7 +551,13 @@ export class Library {
             await dir.remove(versionFile(version)).catch(() => {});
             throw error;
         });
-        const { index, dropped } = addVersion(this.index, id, version);
+        const { index, dropped } = addVersion(
+            this.index,
+            id,
+            version,
+            undefined,
+            keep,
+        );
         await this.commit(index);
         for (const old of dropped) await dir.remove(versionFile(old));
     }
@@ -610,7 +617,10 @@ export class Library {
                         s.id === id ? { ...s, changedSinceVersion: true } : s,
                     ),
                 });
-                await this.keepVersionNow(id, "before-restore", current);
+                // Never by dropping the version being restored
+                await this.keepVersionNow(id, "before-restore", current, [
+                    versionId,
+                ]);
             }
             await writeGeneration(dir, "show", "dots", restored);
             // The restored state is a version already: reopening it needn't

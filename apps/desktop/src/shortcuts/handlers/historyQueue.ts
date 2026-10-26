@@ -25,9 +25,24 @@ export function setHistoryPerformer(next: HistoryPerformer): () => void {
 export function queueHistoryAction(
     direction: HistoryDirection,
 ): Promise<boolean> {
-    const run = tail.then(async () =>
-        performer ? await performer(direction) : false,
+    return queueHistoryStep((perform) => perform(direction), false);
+}
+
+/**
+ * Runs `step` in the same queue as undo/redo presses, so nothing undoes or
+ * redoes between what it checks and what it does. `perform` undoes or redoes
+ * once, directly (queueing from inside a step would wait for itself).
+ * Resolves `fallback` if the step throws.
+ */
+export function queueHistoryStep<T>(
+    step: (perform: HistoryPerformer) => Promise<T>,
+    fallback: T,
+): Promise<T> {
+    const run = tail.then(() =>
+        step(async (direction) =>
+            performer ? await performer(direction) : false,
+        ),
     );
     tail = run.catch(() => undefined);
-    return run.catch(() => false);
+    return run.catch(() => fallback);
 }

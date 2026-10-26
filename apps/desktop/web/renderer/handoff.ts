@@ -110,7 +110,11 @@ export async function handOffShow(show: HandedOffShow): Promise<void> {
     await withStore("readwrite", (store) => request(store.put(entry, id)));
 }
 
-/** Takes back the show this tab handed off before reloading, if any. */
+/**
+ * Reads back the show this tab handed off before reloading, if any. It stays
+ * kept until {@link forgetHandedOffShow}, once it's open again, so a failed
+ * reopen (or the page being killed first) doesn't lose it.
+ */
 export async function takeHandedOffShow(): Promise<HandedOffShow | null> {
     let id: string;
     try {
@@ -121,14 +125,19 @@ export async function takeHandedOffShow(): Promise<HandedOffShow | null> {
     }
     return withStore("readwrite", async (store) => {
         const entry = (await request(store.get(id))) as Entry | undefined;
-        await request(store.delete(id));
         // Clear shows left by tabs that closed before taking theirs back.
         const ids = (await request(store.getAllKeys())) as string[];
         const entries = (await request(store.getAll())) as Entry[];
         const now = Date.now();
         for (const [index, other] of entries.entries())
-            if (now - other.at > STALE_MS)
+            if (ids[index] !== id && now - other.at > STALE_MS)
                 await request(store.delete(ids[index]));
         return entry ? fromEntry(entry) : null;
     });
+}
+
+/** Drops this tab's handed-off show once it has been opened again. */
+export async function forgetHandedOffShow(): Promise<void> {
+    const id = tabId();
+    await withStore("readwrite", (store) => request(store.delete(id)));
 }

@@ -151,12 +151,22 @@ export default function PageTimeline() {
         const onUp = (ev: PointerEvent) => {
             if (!isOurs(ev)) return;
             cleanup();
-            if (!moved) {
+            // A short drag can still snap the edge by a beat: that's a resize
+            const element = document.querySelector<HTMLElement>(
+                `[timeline-page-id="${page.id}"]`,
+            );
+            const drawnDuration = element?.dataset.newDuration;
+            const resized =
+                drawnDuration !== undefined &&
+                Math.abs(Number(drawnDuration) - page.duration) > 1e-6;
+            if (!moved && !resized) {
+                restorePageWidths(page);
+                resetResizeState();
+                // A mouse click on the edge changes nothing, as before
+                if (ev.pointerType === "mouse") return;
                 // A tap on the edge selects the page under the finger, as a tap
                 // on the page does. In touch mode the handle straddles the edge,
                 // so its right half lies over the next page.
-                restorePageWidths(page);
-                resetResizeState();
                 const rect = handle.getBoundingClientRect();
                 const next =
                     pages[pages.findIndex((p) => p.id === page.id) + 1];

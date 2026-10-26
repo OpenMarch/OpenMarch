@@ -15,6 +15,8 @@ import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
 import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import { requestOpenSettings } from "../../src/utilities/settingsSheet";
+import tolgee from "../../src/global/singletons/Tolgee";
+import { toast } from "sonner";
 import {
     audioFileProblem,
     isAppleTouchDevice,
@@ -133,7 +135,7 @@ const shareFirst = appleTouch || /Android/i.test(navigator.userAgent);
 async function saveToDevice(
     bytes: Uint8Array,
     name: string,
-): Promise<"shared" | "downloaded" | "cancelled"> {
+): Promise<"shared" | "downloaded" | "cancelled" | "expired"> {
     if (shareFirst) {
         const shared = await shareFile(
             new File([bytes as BlobPart], name, {
@@ -153,7 +155,58 @@ async function saveToDevice(
     return "downloaded";
 }
 
-export type BackupResult = "shared" | "downloaded" | "cancelled" | "nothing";
+/** "tapAgain": the file is ready but needs a fresh tap (see offerBackupTap) */
+export type BackupResult =
+    | "shared"
+    | "downloaded"
+    | "cancelled"
+    | "tapAgain"
+    | "nothing";
+
+/** Records a backup that was shared or downloaded. */
+async function finishBackup(target: string | null | undefined) {
+    if (!target || target === useWebLibraryStore.getState().library?.openId)
+        markDownloaded();
+    if (target) await invokeWorker(WEB_CHANNELS.recordBackup, target);
+}
+
+/**
+ * The share sheet only opens soon after a tap, and reading a big show can
+ * take longer. Rather than fall back to a download that may never happen
+ * (and record a backup that doesn't exist), offer a button that shares the
+ * file from a fresh tap.
+ */
+function offerBackupTap(
+    bytes: Uint8Array,
+    name: string,
+    target: string | null | undefined,
+) {
+    toast.info(tolgee.t("web.backUpReady", { name }), {
+        duration: 60_000,
+        action: {
+            label: tolgee.t("web.backUpSave"),
+            onClick: () =>
+                void (async () => {
+                    const result = await saveToDevice(bytes, name);
+                    if (result === "expired")
+                        return offerBackupTap(bytes, name, target);
+                    if (result === "cancelled") return;
+                    await finishBackup(target);
+                    toast.success(tolgee.t("web.backUpDone", { name }));
+                })().catch((error) =>
+                    toast.error(
+                        tolgee.t("web.backUpFailed", {
+                            name,
+                            message:
+                                error instanceof Error
+                                    ? error.message
+                                    : String(error),
+                        }),
+                    ),
+                ),
+        },
+    });
+}
 
 /**
  * Backs up a show: shares or downloads its `.dots` file and records when.
@@ -176,9 +229,11 @@ export async function backUpShow(id?: string | null): Promise<BackupResult> {
     if (!show) return "nothing";
     const result = await saveToDevice(show.bytes, show.name);
     if (result === "cancelled") return result;
-    if (!target || target === useWebLibraryStore.getState().library?.openId)
-        markDownloaded();
-    if (target) await invokeWorker(WEB_CHANNELS.recordBackup, target);
+    if (result === "expired") {
+        offerBackupTap(show.bytes, show.name, target);
+        return "tapAgain";
+    }
+    await finishBackup(target);
     return result;
 }
 
@@ -498,6 +553,9 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
             showName: () => invokeWorker<string>("get-current-filename"),
         }),
     );
+    // Leftovers from a tab that was closed or reloaded mid-export, or a
+    // video that was never saved, would otherwise wait for the next export
+    void video.sweepLeftovers();
     handleInPage("export:videoStart", (extension: string) =>
         video.start(extension),
     );

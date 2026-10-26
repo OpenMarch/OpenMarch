@@ -133,7 +133,7 @@ describe("shareFile", () => {
             "cancelled",
         );
         expect(await shareFile(file, nav(fail("NotAllowedError")))).toBe(
-            "unavailable",
+            "expired",
         );
     });
 });

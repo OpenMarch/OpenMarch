@@ -25,7 +25,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { toast } from "sonner";
-import { runAction } from "@/shortcuts/registry";
+import { queueHistoryStep } from "@/shortcuts/handlers/historyQueue";
 import { getLatestUndoEntryToken } from "@/db-functions";
 import { undoIfStillLatest } from "./undoIfStillLatest";
 import { ACTION_TOAST_DURATION_MS } from "@/components/ui/toastDurations";
@@ -221,13 +221,17 @@ export const pageDeletedToastOptions = (undoToken: string | null) => ({
     action: {
         label: tolgee.t("actions.edit.undo"),
         onClick: () =>
-            void undoIfStillLatest({
-                token: undoToken,
-                getLatestToken: () => getLatestUndoEntryToken(db),
-                undo: () => runAction("performUndo"),
-                unavailable: () =>
-                    toast.info(tolgee.t("pages.undoDeleteUnavailable")),
-            }),
+            void queueHistoryStep(
+                (perform) =>
+                    undoIfStillLatest({
+                        token: undoToken,
+                        getLatestToken: () => getLatestUndoEntryToken(db),
+                        undo: () => perform("undo"),
+                        unavailable: () =>
+                            toast.info(tolgee.t("pages.undoDeleteUnavailable")),
+                    }),
+                false,
+            ),
     },
 });
 

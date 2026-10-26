@@ -109,6 +109,39 @@ describe("adding, naming and removing shows", () => {
 });
 
 describe("versions", () => {
+    it("never drops the new version or a kept one, oldest first otherwise", () => {
+        let index = withShow();
+        for (let i = 0; i < 3; i++)
+            index = addVersion(
+                index,
+                "a",
+                { id: `v${i}`, at: T0 + i, reason: "edit" },
+                3,
+            ).index;
+        // Restoring v0, the oldest: the copy kept first must not remove it
+        const restoring = addVersion(
+            index,
+            "a",
+            { id: "before", at: T0 + 10, reason: "before-restore" },
+            3,
+            ["v0"],
+        );
+        expect(restoring.dropped.map((v) => v.id)).toEqual(["v1"]);
+        expect(
+            findShow(restoring.index, "a")!.versions.map((v) => v.id),
+        ).toEqual(["v0", "v2", "before"]);
+        // A clock that went back still keeps the version just made
+        const skewed = addVersion(
+            index,
+            "a",
+            { id: "late", at: T0 - 100, reason: "edit" },
+            3,
+        );
+        expect(skewed.dropped.map((v) => v.id)).toEqual(["v0"]);
+        expect(
+            findShow(skewed.index, "a")!.versions.map((v) => v.id),
+        ).toContain("late");
+    });
     it("keeps one at most every two minutes of editing", () => {
         let index = withShow();
         const show = () => findShow(index, "a")!;

@@ -114,6 +114,12 @@ describe("web video export handlers", () => {
         expect(deps.sweep).toHaveBeenCalledTimes(3);
     });
 
+    it("sweeps leftovers when the app opens, before any export", async () => {
+        const { handlers, deps } = setup();
+        await handlers.sweepLeftovers();
+        expect(deps.sweep).toHaveBeenCalledWith([]);
+    });
+
     it("on iPad, saving opens the share sheet and removes the copy once shared", async () => {
         const { handlers, writers, deps } = setup({ appleTouch: true });
         const { path } = await exportOne(handlers);

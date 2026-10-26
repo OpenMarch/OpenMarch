@@ -44,7 +44,9 @@ export interface VideoExportDeps {
     sweep: (keep: string[]) => Promise<void>;
     showName: () => Promise<string | null | undefined>;
     /** Offers the share sheet (see ./filePicking.ts `shareFile`). */
-    share: (file: File) => Promise<"shared" | "cancelled" | "unavailable">;
+    share: (
+        file: File,
+    ) => Promise<"shared" | "cancelled" | "expired" | "unavailable">;
     download: (file: File) => void;
     /** iPad/iPhone: share first. */
     appleTouch: boolean;
@@ -159,7 +161,9 @@ export function createVideoExportHandlers(deps: VideoExportDeps) {
             if (!entry) return "missing";
             if (deps.appleTouch) {
                 const shared = await deps.share(entry.file);
-                if (shared === "cancelled") return "cancelled";
+                // Too long after the tap: tapping Save again works
+                if (shared === "cancelled" || shared === "expired")
+                    return "cancelled";
                 if (shared === "shared") {
                     await discardReady(name);
                     return "saved";
@@ -170,6 +174,12 @@ export function createVideoExportHandlers(deps: VideoExportDeps) {
             deps.afterDownload(() => void discardReady(name));
             return "saved";
         },
+
+        /**
+         * Removes exports left in storage over an hour ago (see `sweep`),
+         * as `start` does. Called when the app opens, before any export.
+         */
+        sweepLeftovers: () => deps.sweep([]).catch(() => undefined),
 
         /** Whether `name` is a finished video waiting to be saved. */
         isReady: (name: string) => ready.has(name),
@@ -189,6 +199,15 @@ function workerCaller() {
     );
     let nextId = 1;
     const pending = new Map<number, (response: VideoFileResponse) => void>();
+    // Set once the worker fails to load or crashes (iOS can stop it when
+    // memory runs low): every call then fails rather than waiting forever
+    let failure: string | null = null;
+    const fail = (message: string) => {
+        failure ??= message;
+        for (const [id, settle] of pending)
+            settle({ id, ok: false, error: failure });
+        pending.clear();
+    };
     worker.addEventListener(
         "message",
         (event: MessageEvent<VideoFileResponse>) => {
@@ -196,8 +215,21 @@ function workerCaller() {
             pending.delete(event.data.id);
         },
     );
+    worker.addEventListener("error", (event) => {
+        event.preventDefault();
+        fail(
+            `The video file writer stopped: ${event.message || "unknown error"}`,
+        );
+    });
+    worker.addEventListener("messageerror", () =>
+        fail("The video file writer couldn't read a message"),
+    );
     const call = (request: WithoutId<VideoFileRequest>) =>
         new Promise<void>((resolve, reject) => {
+            if (failure !== null) {
+                reject(new Error(failure));
+                return;
+            }
             const id = nextId++;
             pending.set(id, (response) =>
                 response.ok ? resolve() : reject(new Error(response.error)),

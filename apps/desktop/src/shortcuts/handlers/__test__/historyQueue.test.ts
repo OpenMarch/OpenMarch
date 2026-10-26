@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
     queueHistoryAction,
+    queueHistoryStep,
     setHistoryPerformer,
     type HistoryDirection,
 } from "../historyQueue";
@@ -70,5 +71,35 @@ describe("queueHistoryAction", () => {
     it("does nothing without a performer", async () => {
         uninstall();
         expect(await queueHistoryAction("undo")).toBe(false);
+    });
+
+    it("a step's check and its undo run with no press in between", async () => {
+        const { done } = install(5);
+        let stackSeenByStep = -1;
+        const pressBefore = queueHistoryAction("undo");
+        const step = queueHistoryStep(async (perform) => {
+            stackSeenByStep = done.length;
+            await new Promise((r) => setTimeout(r, 5));
+            // No other press ran during the check
+            expect(done.length).toBe(stackSeenByStep);
+            return perform("undo");
+        }, false);
+        const pressAfter = queueHistoryAction("undo");
+        expect(await Promise.all([pressBefore, step, pressAfter])).toEqual([
+            true,
+            true,
+            true,
+        ]);
+        expect(stackSeenByStep).toBe(1);
+        expect(done).toEqual(["undo", "undo", "undo"]);
+    });
+
+    it("a step that throws resolves its fallback and doesn't block later presses", async () => {
+        install(1);
+        const failed = queueHistoryStep(async () => {
+            throw new Error("boom");
+        }, "fallback");
+        expect(await failed).toBe("fallback");
+        expect(await queueHistoryAction("undo")).toBe(true);
     });
 });

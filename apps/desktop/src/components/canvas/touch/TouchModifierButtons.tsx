@@ -205,6 +205,12 @@ function useModifierPress(
         onPointerUp: (e: React.PointerEvent<HTMLButtonElement>) => end(e, true),
         onPointerCancel: (e: React.PointerEvent<HTMLButtonElement>) =>
             end(e, false),
+        // The finger's release can be swallowed (the pen palm guard takes a
+        // finger that was down when the pen landed), but capture still ends:
+        // let go of the modifier then, or it stays held
+        onLostPointerCapture: (e: React.PointerEvent<HTMLButtonElement>) => {
+            if (press.current?.id === e.pointerId) end(e, false);
+        },
         // Keyboard and assistive tech: a click latches
         onKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => {
             if (e.key === "Enter" || e.key === " ") {

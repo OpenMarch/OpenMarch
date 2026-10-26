@@ -306,6 +306,8 @@ async function storeNewShow(name: string, backedUp: boolean) {
         saveTimer = null;
         // So the reload doesn't reopen the previous show instead
         await library.setOpen(null).catch(() => {});
+        // The title bar says "Not saved" from now on, not the last "Saved"
+        reportStatus(describeSaveError(error));
         post({ type: "emit", channel: WEB_EVENTS.storageLost, args: [] });
     }
 }

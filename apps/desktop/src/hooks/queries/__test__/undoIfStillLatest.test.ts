@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { undoIfStillLatest } from "../undoIfStillLatest";
 
 const run = (token: string | null, latest: string | null) => {
-    const undo = vi.fn();
+    const undo = vi.fn(async () => true);
     const unavailable = vi.fn();
     const result = undoIfStillLatest({
         token,

@@ -281,17 +281,24 @@ export function addVersion(
     id: string,
     version: VersionEntry,
     max = MAX_VERSIONS,
+    /** Versions never dropped, e.g. the one being restored */
+    keep: string[] = [],
 ): { index: LibraryIndex; dropped: VersionEntry[] } {
     let dropped: VersionEntry[] = [];
     const next = updateShow(index, id, (show) => {
         const versions = [...show.versions, version].sort(
             (a, b) => a.at - b.at,
         );
-        dropped = versions.slice(0, Math.max(0, versions.length - max));
+        // Oldest first, but never the new one (even if the clock went back)
+        // or one that's kept
+        const droppable = versions.filter(
+            (v) => v.id !== version.id && !keep.includes(v.id),
+        );
+        dropped = droppable.slice(0, Math.max(0, versions.length - max));
         return {
             ...show,
             changedSinceVersion: false,
-            versions: versions.slice(dropped.length),
+            versions: versions.filter((v) => !dropped.includes(v)),
         };
     });
     return { index: next, dropped };
