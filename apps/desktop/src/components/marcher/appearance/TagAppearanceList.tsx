@@ -1,6 +1,11 @@
-import { DotsSixVerticalIcon, PlusIcon } from "@phosphor-icons/react";
+import {
+    CaretDownIcon,
+    CaretUpIcon,
+    DotsSixVerticalIcon,
+    PlusIcon,
+} from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import {
     DatabaseTag,
     getTagName,
@@ -29,12 +34,13 @@ import {
     DragEndEvent,
 } from "@dnd-kit/core";
 import {
-    arrayMove,
     SortableContext,
     useSortable,
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { reorderTagAppearances } from "./tagAppearanceOrder";
 
 export default function TagAppearanceList({
     targetPageId,
@@ -220,7 +226,16 @@ const SinglePageTagAppearanceList = React.forwardRef<
         setLocalOrder(serverSorted);
     }, [serverSorted]);
 
+    // The handle is touch-action: none, so the pointer sensor also serves fingers
     const sensors = useSensors(useSensor(PointerSensor));
+
+    const moveAppearance = (fromIndex: number, toIndex: number) => {
+        const reordered = reorderTagAppearances(localOrder, fromIndex, toIndex);
+        if (!reordered) return;
+        // Update local state immediately to prevent snap-back
+        setLocalOrder(reordered);
+        handleUpdatePriorities(reordered);
+    };
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -229,19 +244,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
         const oldIndex = localOrder.findIndex((a) => a.id === active.id);
         const newIndex = localOrder.findIndex((a) => a.id === over.id);
         if (oldIndex === -1 || newIndex === -1) return;
-
-        const reordered = arrayMove(localOrder, oldIndex, newIndex);
-
-        // Update local state immediately to prevent snap-back
-        setLocalOrder(reordered);
-
-        const updates: ModifiedTagAppearanceArgs[] = reordered.map(
-            (appearance, index) => ({
-                ...appearance,
-                priority: reordered.length - 1 - index,
-            }),
-        );
-        handleUpdatePriorities(updates);
+        moveAppearance(oldIndex, newIndex);
     };
 
     const takenTagIds: Set<number> = useMemo(
@@ -350,7 +353,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
                                 items={localOrder.map((a) => a.id)}
                                 strategy={verticalListSortingStrategy}
                             >
-                                {localOrder.map((tagAppearance) => (
+                                {localOrder.map((tagAppearance, index) => (
                                     <SortableTagAppearance
                                         key={tagAppearance.id}
                                         tagAppearance={tagAppearance}
@@ -390,6 +393,24 @@ const SinglePageTagAppearanceList = React.forwardRef<
                                                 tagAppearance.id,
                                             )
                                         }
+                                        onMoveUp={
+                                            index > 0
+                                                ? () =>
+                                                      moveAppearance(
+                                                          index,
+                                                          index - 1,
+                                                      )
+                                                : undefined
+                                        }
+                                        onMoveDown={
+                                            index < localOrder.length - 1
+                                                ? () =>
+                                                      moveAppearance(
+                                                          index,
+                                                          index + 1,
+                                                      )
+                                                : undefined
+                                        }
                                     />
                                 ))}
                             </SortableContext>
@@ -413,6 +434,8 @@ function SortableTagAppearance({
     setRef,
     handleUpdateAppearance,
     handleDeleteAppearance,
+    onMoveUp,
+    onMoveDown,
 }: {
     tagAppearance: TagAppearance;
     pageId: number;
@@ -423,7 +446,13 @@ function SortableTagAppearance({
         appearance: Omit<ModifiedTagAppearanceArgs, "id">,
     ) => void;
     handleDeleteAppearance: () => void;
+    /** Undefined when already first */
+    onMoveUp?: () => void;
+    /** Undefined when already last */
+    onMoveDown?: () => void;
 }) {
+    const isTouchMode = useIsTouchMode();
+    const { t } = useTolgee();
     const {
         attributes,
         listeners,
@@ -451,14 +480,41 @@ function SortableTagAppearance({
                 isDragging ? "z-50 opacity-90" : "",
             )}
         >
-            <button
-                {...attributes}
-                {...listeners}
-                className="hover:text-accent mt-8 cursor-grab active:cursor-grabbing"
-                aria-label="Drag to reorder"
-            >
-                <DotsSixVerticalIcon size={16} weight="bold" />
-            </button>
+            <div className="flex flex-col items-center">
+                <button
+                    {...attributes}
+                    {...listeners}
+                    className="hover:text-accent touch:mt-0 touch:min-h-44 touch:min-w-44 touch:flex touch:items-center touch:justify-center mt-8 cursor-grab touch-none active:cursor-grabbing"
+                    aria-label={t("marchers.list.dragToReorder")}
+                >
+                    <DotsSixVerticalIcon size={16} weight="bold" />
+                </button>
+                {/* Reorder without dragging (touch layout) */}
+                {isTouchMode && (
+                    <>
+                        <button
+                            type="button"
+                            className="hover:text-accent flex min-h-44 min-w-44 items-center justify-center disabled:opacity-30"
+                            aria-label={t("marchers.list.moveUp")}
+                            title={t("marchers.list.moveUp")}
+                            disabled={!onMoveUp}
+                            onClick={onMoveUp}
+                        >
+                            <CaretUpIcon size={18} />
+                        </button>
+                        <button
+                            type="button"
+                            className="hover:text-accent flex min-h-44 min-w-44 items-center justify-center disabled:opacity-30"
+                            aria-label={t("marchers.list.moveDown")}
+                            title={t("marchers.list.moveDown")}
+                            disabled={!onMoveDown}
+                            onClick={onMoveDown}
+                        >
+                            <CaretDownIcon size={18} />
+                        </button>
+                    </>
+                )}
+            </div>
             <div className="flex-1">
                 <AppearanceEditor
                     label={tagName}

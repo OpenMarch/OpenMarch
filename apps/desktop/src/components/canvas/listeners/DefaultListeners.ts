@@ -5,6 +5,10 @@ import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanv
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
 import { rgbaToString } from "@openmarch/core";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
+import { isShiftHeld } from "@/stores/TouchModifierStore";
+
+/** A finger press that moves less than this (screen px) is a tap, however long it lasts */
+const TOUCH_TAP_SLOP_PX = 10;
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -26,6 +30,8 @@ export default class DefaultListeners implements CanvasListeners {
     private readonly LASSO_STROKE_WIDTH = 2;
     private readonly LASSO_DASH_ARRAY = [5, 5];
     private readonly LASSO_MIN_CLOSE_DISTANCE = 50;
+    /** Whether a finger's long press on empty field starts the lasso */
+    readonly touchLongPressLasso: boolean = true;
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas as OpenMarchCanvas & fabric.Canvas;
@@ -76,7 +82,7 @@ export default class DefaultListeners implements CanvasListeners {
         // Block Shift+click on middle scale handles (ml, mr, mt, mb) for ActiveSelection
         // This prevents cross-axis scaling which causes unexpected behavior
         if (
-            evt?.shiftKey &&
+            isShiftHeld(evt) &&
             corner &&
             ["ml", "mr", "mt", "mb"].includes(corner) &&
             target?.type === "activeSelection"
@@ -117,22 +123,10 @@ export default class DefaultListeners implements CanvasListeners {
             This prevents the marcher from moving a little bit when it's just trying to be selected
         */
         // Check if the timing threshold has past before checking the distance (saves compute)
-        if (
-            fabricEvent &&
-            Date.now() - this.canvas.selectDragStart.time <
-                this.canvas.DRAG_TIMER_MILLISECONDS
-        ) {
-            const mouseDistance = Math.sqrt(
-                (fabricEvent.e.clientX - this.canvas.selectDragStart.x) ** 2 +
-                    (fabricEvent.e.clientY - this.canvas.selectDragStart.y) **
-                        2,
-            );
-            // Check if the mouse has moved more than the threshold
-            if (mouseDistance < this.canvas.DISTANCE_THRESHOLD) {
-                // If the mouse was clicked and not dragged, return and don't update the marcher
-                this.canvas.refreshMarchers();
-                return;
-            }
+        if (fabricEvent && this.wasTapNotDrag(fabricEvent.e)) {
+            // If the mouse was clicked and not dragged, return and don't update the marcher
+            this.canvas.refreshMarchers();
+            return;
         }
 
         if (
@@ -161,12 +155,51 @@ export default class DefaultListeners implements CanvasListeners {
     }
 
     /**
+     * Whether the press that ended with this event was a click or tap rather
+     * than a drag. A mouse click is quick and short; a finger tap is short
+     * however long it is held, since a fingertip wobbles.
+     */
+    private wasTapNotDrag(e: MouseEvent | undefined): boolean {
+        if (!e) return false;
+        const start = this.canvas.selectDragStart;
+        const distance = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+        // Without coordinates there is no telling; treat it as a drag
+        if (!Number.isFinite(distance)) return false;
+        const isTouch = (e as PointerEvent).pointerType === "touch";
+        if (isTouch && distance < TOUCH_TAP_SLOP_PX) return true;
+        return (
+            Date.now() - start.time < this.canvas.DRAG_TIMER_MILLISECONDS &&
+            distance < this.canvas.DISTANCE_THRESHOLD
+        );
+    }
+
+    /**
+     * Drops a half-done press, e.g. when a second finger turns it into a pinch.
+     */
+    cancelActiveInteraction() {
+        if (this.isLassoDrawing) this.resetLassoState();
+        this.isMiddleMouseDown = false;
+        this.canvas.isDragging = false;
+        this.canvas.selection = true;
+    }
+
+    /**
+     * Starts the lasso at this press, as Shift+drag does with a mouse. A finger
+     * starts it with a long press on empty field.
+     */
+    startLasso(e: Event) {
+        if (!this.isLassoSelectionEnabled()) return;
+        this.startLassoSelection({ e } as fabric.IEvent<MouseEvent>);
+    }
+
+    /**
      * Set the canvas to dragging mode on mousedown.
      */
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
 
-        // Alt+drag panning is owned by OpenMarchCanvas (forceTrackpadPan); skip here.
+        // Alt+drag panning is owned by OpenMarchCanvas (forceTrackpadPan), which follows the
+        // keyboard only, so this reads the physical key rather than isAltHeld.
         if (evt.altKey) {
             evt.preventDefault();
             this.canvas.selection = false;
@@ -203,7 +236,7 @@ export default class DefaultListeners implements CanvasListeners {
         // is handled in handleBeforeTransform using the public before:transform event
 
         if (
-            evt.shiftKey &&
+            isShiftHeld(evt) &&
             evt.button === 0 &&
             this.isLassoSelectionEnabled() &&
             !isClickingOnControl
@@ -237,7 +270,7 @@ export default class DefaultListeners implements CanvasListeners {
         // If we clicked on empty space (not on an object and not near a marcher)
         // AND we are not holding shift (adding to selection)
         // AND we are not dragging to create a selection box (which is handled by fabric's default behavior)
-        if (!evt.shiftKey) {
+        if (!isShiftHeld(evt)) {
             // If we have an active selection and we click outside it, clear it
             if (this.canvas.getActiveObject()) {
                 // If we are starting a drag selection, fabric will handle clearing the old selection

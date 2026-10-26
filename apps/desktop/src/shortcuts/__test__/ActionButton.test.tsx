@@ -10,12 +10,21 @@ import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import ActionButton from "../ActionButton";
+import { Button } from "@openmarch/ui";
 import { getActionLabel, getActionTooltip } from "../labels";
 import { registerActionHandler } from "../registry";
 import { useActionHandler } from "../useActionHandler";
+import { useInputModeStore } from "@/stores/InputModeStore";
 
 const t = (key: string, params?: Record<string, string | number>) =>
     params ? `${key}:${JSON.stringify(params)}` : key;
+
+/** jsdom has no PointerEvent, so give a mouse event a pointerType. */
+const pointer = (type: string, el: Element, pointerType: string) => {
+    const event = new MouseEvent(type, { bubbles: true, button: 0 });
+    Object.defineProperty(event, "pointerType", { value: pointerType });
+    fireEvent(el, event);
+};
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
     <TolgeeProvider tolgee={tolgee} fallback="Loading...">
@@ -102,5 +111,110 @@ describe("ActionButton", () => {
         );
         expect(screen.getByRole("button", { name: "Flip" })).toBeDisabled();
         off();
+    });
+
+    it("a caption names the button and shows only in touch mode", () => {
+        const { rerender } = render(
+            <ActionButton action="flipHorizontal" caption="Flip">
+                <svg />
+            </ActionButton>,
+            { wrapper: Providers },
+        );
+        const button = screen.getByRole("button", {
+            name: /^Flip horizontally/,
+        });
+        expect(button.querySelector("[data-touch-caption]")).toBeNull();
+
+        act(() => {
+            useInputModeStore.getState().setPreference("touch");
+        });
+        rerender(
+            <ActionButton action="flipHorizontal" caption="Flip">
+                <svg />
+            </ActionButton>,
+        );
+        expect(button.querySelector("[data-touch-caption]")).toHaveTextContent(
+            "Flip",
+        );
+        act(() => {
+            useInputModeStore.getState().setPreference("auto");
+        });
+        localStorage.clear();
+    });
+
+    it("a long press with a finger explains the button and doesn't run it", () => {
+        vi.useFakeTimers();
+        const run = vi.fn();
+        const off = registerActionHandler("flipHorizontal", {
+            run,
+            isEnabled: () => true,
+        });
+        render(<ActionButton action="flipHorizontal">Flip</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Flip" });
+
+        pointer("pointerdown", button, "touch");
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        pointer("pointerup", button, "touch");
+        fireEvent.click(button);
+        expect(run).not.toHaveBeenCalled();
+        expect(screen.getByTestId("long-press-bubble")).toHaveTextContent(
+            "Flip horizontally",
+        );
+
+        // A short tap still runs it
+        pointer("pointerdown", button, "touch");
+        pointer("pointerup", button, "touch");
+        fireEvent.click(button);
+        expect(run).toHaveBeenCalledTimes(1);
+
+        // A mouse never long-presses
+        pointer("pointerdown", button, "mouse");
+        act(() => {
+            vi.advanceTimersByTime(600);
+        });
+        fireEvent.click(button);
+        expect(run).toHaveBeenCalledTimes(2);
+        off();
+        vi.useRealTimers();
+    });
+
+    it("passes the release and cancel events to the caller's own handlers", () => {
+        const onPointerUp = vi.fn((e: React.PointerEvent) => e.pointerType);
+        const onPointerCancel = vi.fn((e: React.PointerEvent) => e.type);
+        render(
+            <>
+                <ActionButton
+                    action="flipHorizontal"
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                >
+                    Flip
+                </ActionButton>
+                <Button
+                    tooltipText="Zoom in"
+                    onPointerUp={onPointerUp}
+                    onPointerCancel={onPointerCancel}
+                >
+                    Zoom
+                </Button>
+            </>,
+            { wrapper: Providers },
+        );
+        for (const name of ["Flip", "Zoom"]) {
+            const el = screen.getByText(name).closest("button")!;
+            onPointerUp.mockClear();
+            onPointerCancel.mockClear();
+            pointer("pointerup", el, "touch");
+            pointer("pointercancel", el, "touch");
+            expect(onPointerUp).toHaveBeenCalledTimes(1);
+            expect(onPointerUp.mock.calls[0][0]).toBeDefined();
+            expect(onPointerUp).toHaveReturnedWith("touch");
+            expect(onPointerCancel.mock.calls[0][0]).toBeDefined();
+            expect(onPointerCancel).toHaveReturnedWith("pointercancel");
+        }
     });
 });

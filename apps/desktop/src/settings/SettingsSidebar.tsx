@@ -101,7 +101,7 @@ export default function SettingsSidebar({
                             aria-current={isSelected ? "page" : undefined}
                             onClick={() => select(id)}
                             className={clsx(
-                                "rounded-6 text-body flex items-start gap-10 px-10 py-8 text-left outline-hidden duration-150 ease-out",
+                                "rounded-6 text-body touch:min-h-44 touch:items-center flex items-start gap-10 px-10 py-8 text-left outline-hidden duration-150 ease-out",
                                 "focus-visible:ring-accent focus-visible:ring-1",
                                 isSelected
                                     ? "bg-accent/15 text-text"
@@ -112,7 +112,7 @@ export default function SettingsSidebar({
                                 size={16}
                                 aria-hidden
                                 className={clsx(
-                                    "mt-1 shrink-0",
+                                    "touch:mt-0 mt-1 shrink-0",
                                     isSelected && "text-accent",
                                 )}
                             />

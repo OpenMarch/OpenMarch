@@ -1,4 +1,5 @@
 import { fabric } from "fabric";
+import { isSnapOff } from "@/components/canvas/touch/canvasModifiers";
 import OpenMarchCanvas from "../OpenMarchCanvas";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 
@@ -20,7 +21,7 @@ export const roundCoordinatesHandler = (
     if (!object.left || !object.top)
         throw new Error("Object has no coordinates");
 
-    const roundedCoordinates = event.e.shiftKey
+    const roundedCoordinates = isSnapOff(event.e)
         ? { xPixels: object.left, yPixels: object.top }
         : getRoundCoordinates2({
               coordinate: { xPixels: object.left, yPixels: object.top },

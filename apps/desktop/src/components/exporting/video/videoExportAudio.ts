@@ -69,3 +69,54 @@ export function sliceAudioChannels(
     }
     return slices;
 }
+
+/**
+ * The audio of an export as consecutive slices made on demand, so only the
+ * decoded audio and one slice are in memory (not a second full copy). Each
+ * slice equals the same slice of
+ * `sliceAudioChannels(prepareAudioChannels(...))`.
+ */
+export interface AudioSlices {
+    count: number;
+    slice: (index: number) => Float32Array[];
+}
+
+export function lazyAudioSlices(
+    channelData: Float32Array[],
+    sampleRate: number,
+    offsetSeconds: number,
+    durationSeconds: number,
+    sliceSeconds = 1,
+): AudioSlices {
+    const targetLength = Math.round(durationSeconds * sampleRate);
+    const offsetSamples = Math.floor(Math.abs(offsetSeconds) * sampleRate);
+    const sourceStart = offsetSeconds < 0 ? offsetSamples : 0;
+    const destinationStart = offsetSeconds > 0 ? offsetSamples : 0;
+    const sliceLength = Math.max(1, Math.round(sliceSeconds * sampleRate));
+    const count =
+        channelData.length === 0 ? 0 : Math.ceil(targetLength / sliceLength);
+
+    return {
+        count,
+        slice(index) {
+            const start = index * sliceLength;
+            const end = Math.min(start + sliceLength, targetLength);
+            return channelData.map((data) => {
+                const output = new Float32Array(Math.max(0, end - start));
+                // Output positions [from, to) that hold source audio
+                const sourceEndInOutput =
+                    destinationStart + Math.max(0, data.length - sourceStart);
+                const from = Math.max(start, destinationStart);
+                const to = Math.min(end, sourceEndInOutput);
+                if (to > from) {
+                    const sourceFrom = from - destinationStart + sourceStart;
+                    output.set(
+                        data.subarray(sourceFrom, sourceFrom + (to - from)),
+                        from - start,
+                    );
+                }
+                return output;
+            });
+        },
+    };
+}

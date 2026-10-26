@@ -1,0 +1,170 @@
+/**
+ * A folder of files, as the library needs it: the browser's origin private
+ * file system (OPFS) in the app, or memory in tests.
+ */
+export interface Dir {
+    /** Names of the files (not folders) in it. */
+    files(): Promise<string[]>;
+    /** Names of the folders in it. */
+    folders(): Promise<string[]>;
+    /** A file's bytes; throws if there's no such file. */
+    read(name: string): Promise<Uint8Array>;
+    /**
+     * Writes a whole file, replacing any with that name. Throws if not every
+     * byte was written (e.g. out of space); the file may then be partial.
+     */
+    write(name: string, bytes: Uint8Array): Promise<void>;
+    /** Removes a file or (with everything in it) a folder; no error if missing. */
+    remove(name: string): Promise<void>;
+    /** A folder in it, made if missing. */
+    folder(name: string): Promise<Dir>;
+}
+
+/** Only in workers, so missing from the DOM types the app is checked with. */
+type SyncAccessHandle = {
+    truncate(size: number): void;
+    write(buffer: Uint8Array, options: { at: number }): number;
+    flush(): void;
+    close(): void;
+};
+
+async function names(
+    handle: FileSystemDirectoryHandle,
+    kind: "file" | "directory",
+): Promise<string[]> {
+    const found: string[] = [];
+    for await (const [name, entry] of (
+        handle as unknown as {
+            entries(): AsyncIterable<[string, FileSystemHandle]>;
+        }
+    ).entries())
+        if (entry.kind === kind) found.push(name);
+    return found;
+}
+
+/** An OPFS folder. Writes use sync access handles: worker only. */
+export function opfsDir(handle: FileSystemDirectoryHandle): Dir {
+    return {
+        files: () => names(handle, "file"),
+        folders: () => names(handle, "directory"),
+        async read(name) {
+            const file = await (await handle.getFileHandle(name)).getFile();
+            return new Uint8Array(await file.arrayBuffer());
+        },
+        async write(name, bytes) {
+            const file = await handle.getFileHandle(name, { create: true });
+            // Sync access handles work in a worker in every current browser,
+            // where createWritable doesn't (Safari).
+            const access = await (
+                file as unknown as {
+                    createSyncAccessHandle(): Promise<SyncAccessHandle>;
+                }
+            ).createSyncAccessHandle();
+            let written: number;
+            try {
+                access.truncate(0);
+                written = access.write(bytes, { at: 0 });
+                if (written === bytes.byteLength) access.flush();
+            } finally {
+                access.close();
+            }
+            if (written !== bytes.byteLength)
+                throw new Error(
+                    `Only ${written} of ${bytes.byteLength} bytes were stored`,
+                );
+        },
+        async remove(name) {
+            await handle
+                .removeEntry(name, { recursive: true })
+                .catch((error: DOMException) => {
+                    if (error?.name !== "NotFoundError") throw error;
+                });
+        },
+        async folder(name) {
+            return opfsDir(
+                await handle.getDirectoryHandle(name, { create: true }),
+            );
+        },
+    };
+}
+
+/**
+ * A folder in memory, for tests. `failWrites` makes the next writes store
+ * only part of the file and throw, as a crash or a full disk would.
+ * `disk.limit` (shared with every folder in it) makes writes that would go
+ * past that many bytes in total fail the same way.
+ */
+export class MemoryDir implements Dir {
+    readonly entries = new Map<string, Uint8Array>();
+    readonly subfolders = new Map<string, MemoryDir>();
+    /**
+     * Writes left to fail, how many bytes each keeps, how many writes to let
+     * through first, and the error's name (a full disk by default).
+     */
+    failWrites: {
+        count: number;
+        keep: number;
+        skip?: number;
+        error?: string;
+    } = { count: 0, keep: 0 };
+
+    constructor(
+        readonly disk: { limit: number; root?: MemoryDir } = {
+            limit: Infinity,
+        },
+    ) {
+        this.disk.root ??= this;
+    }
+
+    /** Bytes stored in this folder and the ones in it. */
+    used(): number {
+        let total = 0;
+        for (const bytes of this.entries.values()) total += bytes.byteLength;
+        for (const folder of this.subfolders.values()) total += folder.used();
+        return total;
+    }
+
+    async files() {
+        return [...this.entries.keys()];
+    }
+    async folders() {
+        return [...this.subfolders.keys()];
+    }
+    async read(name: string) {
+        const bytes = this.entries.get(name);
+        if (!bytes) throw new Error(`NotFoundError: ${name}`);
+        return bytes.slice();
+    }
+    async write(name: string, bytes: Uint8Array) {
+        if (this.failWrites.count > 0 && (this.failWrites.skip ?? 0) > 0) {
+            this.failWrites.skip!--;
+        } else if (this.failWrites.count > 0) {
+            this.failWrites.count--;
+            this.entries.set(name, bytes.slice(0, this.failWrites.keep));
+            const error = new Error(
+                `${this.failWrites.error ?? "QuotaExceededError"}: simulated`,
+            );
+            error.name = this.failWrites.error ?? "QuotaExceededError";
+            throw error;
+        }
+        const before = this.entries.get(name)?.byteLength ?? 0;
+        const free = this.disk.limit - this.disk.root!.used() + before;
+        if (bytes.byteLength > free) {
+            this.entries.set(name, bytes.slice(0, Math.max(0, free)));
+            throw new Error("QuotaExceededError: disk full");
+        }
+        this.entries.set(name, bytes.slice());
+    }
+    async remove(name: string) {
+        this.entries.delete(name);
+        this.subfolders.delete(name);
+    }
+    async folder(name: string) {
+        let folder = this.subfolders.get(name);
+        if (!folder) {
+            folder = new MemoryDir(this.disk);
+            this.subfolders.set(name, folder);
+        }
+        return folder;
+    }
+}

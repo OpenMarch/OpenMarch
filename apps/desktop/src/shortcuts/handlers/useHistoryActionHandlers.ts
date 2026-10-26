@@ -1,47 +1,48 @@
-import { useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { useTolgee } from "@tolgee/react";
-import {
-    canRedoQueryOptions,
-    canUndoQueryOptions,
-    usePerformHistoryAction,
-} from "@/hooks/queries/useHistory";
+import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
+import { getRedoStackLength, getUndoStackLength } from "@/db-functions";
+import { db } from "@/global/database/db";
 import { useActionHandler } from "../useActionHandler";
+import { queueHistoryAction, setHistoryPerformer } from "./historyQueue";
 
 export function useHistoryActionHandlers() {
     const { t } = useTolgee();
     const databaseReady = useDatabaseReady();
-    const { data: canUndo } = useQuery(canUndoQueryOptions(databaseReady));
-    const { data: canRedo } = useQuery(canRedoQueryOptions(databaseReady));
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
-    const isPerforming = useRef(false);
 
-    const perform = (
-        direction: "undo" | "redo",
-        available: boolean | undefined,
-        emptyKey: string,
-    ) => {
-        if (!available) {
-            toast.warning(t(emptyKey));
-            return;
-        }
-        if (isPerforming.current) return;
-        isPerforming.current = true;
-        void performHistoryAction(direction).finally(() => {
-            isPerforming.current = false;
-        });
-    };
+    // Each queued press checks the stack the previous one left, then acts
+    useEffect(
+        () =>
+            setHistoryPerformer(async (direction) => {
+                const length = await (
+                    direction === "undo"
+                        ? getUndoStackLength(db)
+                        : getRedoStackLength(db)
+                ).catch(() => 0);
+                if (length === 0) {
+                    toast.warning(
+                        t(
+                            direction === "undo"
+                                ? "actions.edit.noUndoAvailable"
+                                : "actions.edit.noRedoAvailable",
+                        ),
+                        { duration: 1500 },
+                    );
+                    return false;
+                }
+                await performHistoryAction(direction);
+                return true;
+            }),
+        [performHistoryAction, t],
+    );
 
-    useActionHandler(
-        "performUndo",
-        () => perform("undo", canUndo, "actions.edit.noUndoAvailable"),
-        { enabled: databaseReady },
-    );
-    useActionHandler(
-        "performRedo",
-        () => perform("redo", canRedo, "actions.edit.noRedoAvailable"),
-        { enabled: databaseReady },
-    );
+    useActionHandler("performUndo", () => void queueHistoryAction("undo"), {
+        enabled: databaseReady,
+    });
+    useActionHandler("performRedo", () => void queueHistoryAction("redo"), {
+        enabled: databaseReady,
+    });
 }

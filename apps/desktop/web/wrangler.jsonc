@@ -9,6 +9,11 @@
 //
 //   wrangler deploy -c web/wrangler.jsonc               # stable
 //   wrangler deploy -c web/wrangler.jsonc --env nightly # nightly
+//
+// and, for every other branch and pull request, uploads a preview version of
+// the nightly Worker with its own URL (Custom Domains are untouched):
+//
+//   wrangler versions upload -c web/wrangler.jsonc --env nightly
 {
     "$schema": "../../../node_modules/wrangler/config-schema.json",
     "name": "openmarch-editor",
@@ -27,6 +32,8 @@
                 },
             ],
             "workers_dev": false,
+            // Pull requests get a preview URL (see above)
+            "preview_urls": true,
         },
     },
 }
