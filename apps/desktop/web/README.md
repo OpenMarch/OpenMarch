@@ -213,5 +213,15 @@ pnpm --filter @openmarch/desktop exec wrangler deploy -c web/wrangler.jsonc
 with the build variables `WEB_CHANNEL` (`nightly` or `stable`) and
 `NODE_VERSION=24`.
 
+The nightly Worker also builds every other branch and pull request, as a
+preview version with its own URL. Its **non-production branch deploy
+command** must name the config too; Cloudflare's default (`npx wrangler
+versions upload`, from the repo root) finds no config and fails with
+"Missing entry-point":
+
+```bash
+pnpm --filter @openmarch/desktop exec wrangler versions upload -c web/wrangler.jsonc --env nightly
+```
+
 `WEB_CHANNEL` (`stable`, `nightly`, or `dev` by default) names a build's
 channel.
