@@ -200,7 +200,7 @@ function TimelineMoreMenu({
                             onValueChange={(values) =>
                                 setAudioVolume(values[0] ?? 0)
                             }
-                            aria-label="Timeline volume slider"
+                            aria-label={t("timeline.volumeSlider")}
                         />
                         <span className="text-sub w-36 text-right font-mono">
                             {audioVolume}%
@@ -233,8 +233,8 @@ function TimelineMoreMenu({
                             className={ICON_BUTTON}
                             onClick={() => zoomTo(pixels / TIMELINE_ZOOM_STEP)}
                             disabled={pixels <= TIMELINE_MIN_PX_PER_SEC}
-                            aria-label="Zoom timeline out"
-                            title="Zoom timeline out"
+                            aria-label={t("timeline.zoomOut")}
+                            title={t("timeline.zoomOut")}
                         >
                             <MagnifyingGlassMinusIcon size={22} />
                         </button>
@@ -242,7 +242,7 @@ function TimelineMoreMenu({
                             type="button"
                             className="text-sub min-h-44 w-48 font-mono"
                             onClick={() => zoomTo(TIMELINE_BASE_PX_PER_SEC)}
-                            title="Reset timeline zoom"
+                            title={t("timeline.zoomReset")}
                         >
                             {Math.round(
                                 (pixels / TIMELINE_BASE_PX_PER_SEC) * 100,
@@ -254,8 +254,8 @@ function TimelineMoreMenu({
                             className={ICON_BUTTON}
                             onClick={() => zoomTo(pixels * TIMELINE_ZOOM_STEP)}
                             disabled={pixels >= TIMELINE_MAX_PX_PER_SEC}
-                            aria-label="Zoom timeline in"
-                            title="Zoom timeline in"
+                            aria-label={t("timeline.zoomIn")}
+                            title={t("timeline.zoomIn")}
                         >
                             <MagnifyingGlassPlusIcon size={22} />
                         </button>

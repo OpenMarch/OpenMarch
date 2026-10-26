@@ -122,14 +122,30 @@ async function expectPlusAfterLastPage(page: Page) {
     const last = (await boxes[boxes.length - 1].boundingBox())!;
     expect(b.x).toBeGreaterThanOrEqual(last.x + last.width - 1);
     expect(b.x).toBeLessThanOrEqual(last.x + last.width + 24);
-    // It scrolls with the pages
-    const before = b.x;
+    // It scrolls with the pages: once the timeline has settled (a new page's
+    // scroll into view can still be gliding), scrolling left moves it right
+    // by as much as the timeline actually scrolled
+    const settled = async () => {
+        let previous = NaN;
+        for (let i = 0; i < 40; i++) {
+            const x = (await add.boundingBox())!.x;
+            if (x === previous) return x;
+            previous = x;
+            await page.waitForTimeout(50);
+        }
+        return previous;
+    };
     await timeline.evaluate((el) => {
-        el.scrollLeft = el.scrollLeft - 60;
+        el.style.scrollBehavior = "auto";
+    });
+    const before = await settled();
+    const scrolled = await timeline.evaluate((el) => {
+        const from = el.scrollLeft;
+        el.scrollLeft = from - 60;
+        return from - el.scrollLeft;
     });
     const after = (await add.boundingBox())!.x;
-    // Less than a pixel is rounding, not scrolling
-    if (Math.abs(after - before) >= 1) expect(after).toBeGreaterThan(before);
+    expect(after - before).toBeCloseTo(scrolled, 0);
 }
 
 /** Taps the centre of a button found by its accessible name. */

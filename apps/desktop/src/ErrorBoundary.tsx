@@ -7,6 +7,7 @@ import {
     ClipboardIcon,
 } from "@phosphor-icons/react";
 import React from "react";
+import tolgee from "@/global/singletons/Tolgee";
 
 export default class ErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -65,7 +66,10 @@ export default class ErrorBoundary extends React.Component<
                                     }}
                                     className="touch:min-h-44 touch:min-w-44 touch:justify-center flex items-center gap-4 rounded px-4"
                                     title="Copy error message"
-                                    aria-label="Copy error message"
+                                    aria-label={tolgee.t(
+                                        "errorBoundary.copyErrorMessage",
+                                        "Copy error message",
+                                    )}
                                 >
                                     <>
                                         <ClipboardIcon

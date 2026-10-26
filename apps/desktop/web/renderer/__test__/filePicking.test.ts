@@ -1,5 +1,6 @@
 // cspell:words KHTML
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import tolgee from "../../../src/global/singletons/Tolgee";
 import {
     hasExtension,
     isAppleTouchDevice,
@@ -9,6 +10,10 @@ import {
     shareFile,
     showFileProblem,
 } from "../filePicking";
+
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 const IPAD_OS =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";

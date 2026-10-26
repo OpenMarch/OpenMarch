@@ -19,7 +19,9 @@ import {
     SelectionIcon,
 } from "@phosphor-icons/react";
 import { LongPressBubble, useLongPress } from "@openmarch/ui";
+import { T, useTolgee } from "@tolgee/react";
 import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import {
@@ -76,48 +78,57 @@ const writeStorage = (key: string, value: string) => {
     }
 };
 
-/** "Apple Pencil" on Apple devices, "a pen" elsewhere */
-const PEN =
+/** Apple Pencil on Apple devices, a pen elsewhere: the `device` param of the pen texts */
+const PEN_DEVICE: "pencil" | "pen" =
     typeof navigator !== "undefined" &&
     /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
-        ? "Apple Pencil"
-        : "a pen";
+        ? "pencil"
+        : "pen";
+
+type Translate = (key: string, params?: Record<string, string>) => string;
 
 /** What the default does, in plain words */
-export const AUTO_DRAG_SENTENCE = `One finger moves the view. ${PEN === "a pen" ? "A pen" : "Pencil"}, or hold then drag, selects.`;
+export const autoDragSentence = (t: Translate = tolgee.t) =>
+    t("touch.dragMode.autoSentence", { device: PEN_DEVICE });
 
 export const DRAG_MODES: Record<
     FieldDragMode,
-    { label: string; describe: string; Icon: typeof SelectionIcon }
+    { labelKey: string; describeKey: string; Icon: typeof SelectionIcon }
 > = {
     auto: {
-        label: "Auto",
-        describe: `finger moves, ${PEN === "a pen" ? "pen" : "Pencil"} selects`,
+        labelKey: "touch.dragMode.auto",
+        describeKey: "touch.dragMode.autoDescribe",
         Icon: MagicWandIcon,
     },
     box: {
-        label: "Box",
-        describe: "drag a box to select",
+        labelKey: "touch.dragMode.box",
+        describeKey: "touch.dragMode.boxDescribe",
         Icon: SelectionIcon,
     },
     lasso: {
-        label: "Lasso",
-        describe: "draw around to select",
+        labelKey: "touch.dragMode.lasso",
+        describeKey: "touch.dragMode.lassoDescribe",
         Icon: LassoIcon,
     },
     pan: {
-        label: "Pan",
-        describe: "drag moves the view",
+        labelKey: "touch.dragMode.pan",
+        describeKey: "touch.dragMode.panDescribe",
         Icon: HandIcon,
     },
 };
 
+/** A drag mode's name and what it does, in the current language */
+export const dragModeText = (mode: FieldDragMode, t: Translate = tolgee.t) => ({
+    label: t(DRAG_MODES[mode].labelKey),
+    describe: t(DRAG_MODES[mode].describeKey, { device: PEN_DEVICE }),
+});
+
 const EXPLAIN = {
-    grip: "Drag to move.",
-    drag: "What dragging on empty field does.",
-    shift: "Tap marchers to add or remove them.",
-    alt: "Move and turn without snapping.",
-    help: "Gestures.",
+    grip: "touch.modifiers.explain.grip",
+    drag: "touch.modifiers.explain.drag",
+    shift: "touch.modifiers.explain.shift",
+    alt: "touch.modifiers.explain.alt",
+    help: "touch.modifiers.explain.help",
 } as const;
 type Explained = keyof typeof EXPLAIN;
 
@@ -271,6 +282,7 @@ export default function TouchModifierButtons({
     showClearLine?: boolean;
     onClearLine?: () => void;
 }) {
+    const { t } = useTolgee();
     const isTouchMode = useIsTouchMode();
     const held = useTouchModifierStore((s) => s.held);
     const latched = useTouchModifierStore((s) => s.latched);
@@ -300,9 +312,11 @@ export default function TouchModifierButtons({
         writeStorage(key, "1");
         if (!useTouchModifierStore.getState().latched[modifier]) return;
         toast(
-            modifier === "shift"
-                ? "Add on: tap marchers to add or remove."
-                : "No snap on.",
+            tolgee.t(
+                modifier === "shift"
+                    ? "touch.modifiers.addOnNote"
+                    : "touch.modifiers.noSnapOnNote",
+            ),
             { duration: 2500 },
         );
     }, []);
@@ -451,7 +465,7 @@ export default function TouchModifierButtons({
             "flex h-44 min-w-48 touch-none items-center justify-center gap-4 rounded-full px-8 text-sm font-medium whitespace-nowrap select-none",
             on ? "bg-accent text-text-invert" : "text-text",
         );
-    const mode = DRAG_MODES[dragMode];
+    const mode = { ...DRAG_MODES[dragMode], ...dragModeText(dragMode, t) };
 
     // Pop-ups open toward the middle of the field, on the side with room,
     // and scroll rather than run off the field
@@ -507,20 +521,34 @@ export default function TouchModifierButtons({
                 >
                     <ul className="flex flex-col gap-4">
                         <li>
-                            <b>1 finger</b> moves · <b>2</b> zoom
+                            <T
+                                keyName="touch.gestures.fingers"
+                                params={{ b: <b /> }}
+                            />
                         </li>
                         <li>
-                            <b>{PEN === "a pen" ? "Pen" : "Pencil"}</b> or{" "}
-                            <b>hold + drag</b> selects
+                            <T
+                                keyName="touch.gestures.penSelects"
+                                params={{ b: <b />, device: PEN_DEVICE }}
+                            />
                         </li>
                         <li>
-                            <b>Hold a marcher</b> adds it
+                            <T
+                                keyName="touch.gestures.holdMarcher"
+                                params={{ b: <b /> }}
+                            />
                         </li>
                         <li>
-                            <b>2-finger tap</b> undo · <b>3</b> redo
+                            <T
+                                keyName="touch.gestures.undoRedo"
+                                params={{ b: <b /> }}
+                            />
                         </li>
                         <li>
-                            <b>Add</b> taps to add · <b>No snap</b> moves freely
+                            <T
+                                keyName="touch.gestures.modifiers"
+                                params={{ b: <b /> }}
+                            />
                         </li>
                     </ul>
                 </div>
@@ -528,7 +556,7 @@ export default function TouchModifierButtons({
             {popup === "mode" && (
                 <div
                     role="menu"
-                    aria-label="Drag from empty field"
+                    aria-label={t("touch.dragMode.menu")}
                     style={popupStyle}
                     className={clsx(
                         popupSide,
@@ -536,7 +564,10 @@ export default function TouchModifierButtons({
                     )}
                 >
                     {(Object.keys(DRAG_MODES) as FieldDragMode[]).map((key) => {
-                        const option = DRAG_MODES[key];
+                        const option = {
+                            ...DRAG_MODES[key],
+                            ...dragModeText(key, t),
+                        };
                         return (
                             <button
                                 key={key}
@@ -574,7 +605,7 @@ export default function TouchModifierButtons({
                     onClick={onClearLine}
                 >
                     <EraserIcon size={18} />
-                    Clear line
+                    {t("touch.modifiers.clearLine")}
                 </button>
             )}
             <div className="flex items-center gap-6">
@@ -587,8 +618,8 @@ export default function TouchModifierButtons({
                     <div
                         ref={setAnchor("grip")}
                         role="button"
-                        aria-label="Move these buttons"
-                        title="Drag to move"
+                        aria-label={t("touch.modifiers.grip")}
+                        title={t("touch.modifiers.gripTitle")}
                         tabIndex={-1}
                         className="text-text-subtitle flex h-44 w-44 cursor-grab touch-none items-center justify-center rounded-full"
                         onPointerDown={onGripDown}
@@ -604,7 +635,10 @@ export default function TouchModifierButtons({
                         type="button"
                         aria-haspopup="menu"
                         aria-expanded={popup === "mode"}
-                        aria-label={`Drag from empty field: ${mode.label}, ${mode.describe}. Tap to change`}
+                        aria-label={t("touch.dragMode.button", {
+                            label: mode.label,
+                            describe: mode.describe,
+                        })}
                         className="border-stroke text-text flex h-36 items-center gap-4 rounded-full border px-8 text-sm whitespace-nowrap select-none"
                         data-testid="field-drag-mode"
                         {...modeLongPress}
@@ -615,7 +649,7 @@ export default function TouchModifierButtons({
                         }
                     >
                         <span className="text-text-subtitle text-xs">
-                            Drag:
+                            {t("touch.dragMode.prefix")}
                         </span>
                         <mode.Icon size={16} />
                         <span className="font-medium">{mode.label}</span>
@@ -626,8 +660,8 @@ export default function TouchModifierButtons({
                         type="button"
                         aria-label={
                             latched.shift
-                                ? "Add, on. Tap to turn off"
-                                : "Add: hold, or tap to keep on. Tapping marchers adds them to the selection"
+                                ? t("touch.modifiers.addOn")
+                                : t("touch.modifiers.addOff")
                         }
                         aria-pressed={shiftOn}
                         className={segment(shiftOn)}
@@ -637,15 +671,15 @@ export default function TouchModifierButtons({
                             size={16}
                             weight={shiftOn ? "fill" : "regular"}
                         />
-                        Add
+                        {t("touch.modifiers.add")}
                     </button>
                     <button
                         ref={setAnchor("alt")}
                         type="button"
                         aria-label={
                             latched.alt
-                                ? "No snap, on. Tap to turn off"
-                                : "No snap: hold, or tap to keep on. Moving and turning don't snap to steps"
+                                ? t("touch.modifiers.noSnapOn")
+                                : t("touch.modifiers.noSnapOff")
                         }
                         aria-pressed={altOn}
                         className={segment(altOn)}
@@ -655,12 +689,12 @@ export default function TouchModifierButtons({
                             size={16}
                             weight={altOn ? "fill" : "regular"}
                         />
-                        No snap
+                        {t("touch.modifiers.noSnap")}
                     </button>
                     <button
                         ref={setAnchor("help")}
                         type="button"
-                        aria-label="What these buttons do"
+                        aria-label={t("touch.modifiers.help")}
                         aria-expanded={popup === "help"}
                         className="text-text-subtitle flex h-44 w-44 items-center justify-center rounded-full"
                         {...helpLongPress}
@@ -680,7 +714,7 @@ export default function TouchModifierButtons({
                 open={explained !== null}
                 onClose={closeExplained}
             >
-                {explained ? EXPLAIN[explained] : ""}
+                {explained ? t(EXPLAIN[explained]) : ""}
             </LongPressBubble>
         </div>
     );

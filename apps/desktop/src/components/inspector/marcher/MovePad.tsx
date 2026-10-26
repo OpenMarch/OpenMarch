@@ -114,8 +114,8 @@ export default function MovePad({ disabled = false }: { disabled?: boolean }) {
     if (!isTouch) return null;
 
     const sides = fieldProperties?.sideDescriptions;
-    const sideLeft = sides?.verboseLeft ?? "Side 1";
-    const sideRight = sides?.verboseRight ?? "Side 2";
+    const sideLeft = sides?.verboseLeft ?? t("inspector.marcher.move.side1");
+    const sideRight = sides?.verboseRight ?? t("inspector.marcher.move.side2");
 
     return (
         <div className="flex flex-col gap-8" data-testid="move-pad">

@@ -160,7 +160,7 @@ function SectionSelector({ marchers }: { marchers: Marcher[] }) {
 
     return (
         <ToolbarSection
-            aria-label="Select sections"
+            aria-label={t("toolbar.select.sectionsLabel")}
             className={sections.length === 0 ? EMPTY_SECTION : undefined}
         >
             <ChipSelector
@@ -184,6 +184,7 @@ function SectionSelector({ marchers }: { marchers: Marcher[] }) {
 }
 
 function TagSelector({ marchers }: { marchers: Marcher[] }) {
+    const { t } = useTranslate();
     const { data: tags, isSuccess: tagsLoaded } = useQuery(
         allTagsQueryOptions(),
     );
@@ -212,7 +213,7 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
     const tagItems = tagsLoaded && marcherIdsForTagsLoaded ? (tags ?? []) : [];
     return (
         <ToolbarSection
-            aria-label="Select tags"
+            aria-label={t("toolbar.select.tagsLabel")}
             // With nothing to choose, the note is plain text, not a box that looks pressable
             className={tagItems.length === 0 ? EMPTY_SECTION : undefined}
         >
@@ -239,6 +240,7 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
 }
 
 function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
+    const { t } = useTranslate();
     const drillPrefixes = Array.from(
         new Set(marchers.map((marcher) => marcher.drill_prefix)),
     ).sort();
@@ -258,7 +260,7 @@ function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
 
     return (
         <ToolbarSection
-            aria-label="Select drill prefixes"
+            aria-label={t("toolbar.select.drillPrefixesLabel")}
             className={drillPrefixes.length === 0 ? EMPTY_SECTION : undefined}
         >
             <ChipSelector

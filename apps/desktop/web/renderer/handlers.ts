@@ -255,7 +255,7 @@ export async function openShowFile(file: File, force = false): Promise<number> {
         );
     } catch (error) {
         window.alert(
-            `The file wasn't opened, so your show stays open: ${errorText(error)}`,
+            tolgee.t("web.fileNotOpened", { message: errorText(error) }),
         );
         return 0;
     }
@@ -304,9 +304,7 @@ async function keepAcrossReload(
         return true;
     } catch (error) {
         console.error("Couldn't keep the show across the reload:", error);
-        window.alert(
-            "This browser window can't open a show, because it won't let OpenMarch keep anything even for a moment. Try a normal (not private) window.",
-        );
+        window.alert(tolgee.t("web.cantKeepForReload"));
         return false;
     }
 }
@@ -373,7 +371,9 @@ async function closeShow() {
         await invokeWorker(WEB_CHANNELS.closeShow, force);
     } catch (error) {
         sessionStorage.removeItem("openmarch:openNewShowDialog");
-        window.alert(`The show stays open: ${errorText(error)}`);
+        window.alert(
+            tolgee.t("web.showStaysOpen", { message: errorText(error) }),
+        );
         return 0;
     }
     markDownloaded();

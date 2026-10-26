@@ -28,6 +28,7 @@ import {
 } from "../../src/utilities/homeScreen";
 import { isAppleTouchDevice } from "./filePicking";
 import { startTouchGestureGuard } from "./touchGestures";
+import tolgee from "../../src/global/singletons/Tolgee";
 import { useWebWelcomeStore } from "../../src/stores/WebWelcomeStore";
 import { storageKey } from "./channel";
 import { invokeWorker, ipcRenderer, startWorker } from "./ipc";
@@ -93,6 +94,19 @@ function showNotice(text: string) {
     close.onclick = () => bar.remove();
     bar.append(close);
     document.body.append(bar);
+}
+
+/**
+ * A notice in the current language. These can come before the app (which
+ * starts the translations) has loaded, so the translations are started here.
+ */
+function showTranslatedNotice(key: string) {
+    void tolgee
+        .run()
+        .catch((error) =>
+            console.error("Couldn't load the translations:", error),
+        )
+        .then(() => showNotice(tolgee.t(key)));
 }
 
 /**
@@ -177,12 +191,12 @@ function warnAboutStorage(status: WorkerStatus) {
         });
         return;
     }
-    showNotice(
+    showTranslatedNotice(
         status.storageProblem === "other-tab"
-            ? "OpenMarch is open in another tab. In this tab, your show is only kept until you close or reload it. Download it to keep your changes."
+            ? "web.storageNotice.otherTab"
             : status.storageProblem === "newer-format"
-              ? "Your shows here were saved by a newer version of OpenMarch, so this version leaves them as they are. Use the newer version to open them. Anything you do in this tab is only kept until you close it."
-              : "This browser won't keep your shows (for example, in Private Browsing). Your work is lost when you close this tab unless you download it. Use a normal Safari tab, or add OpenMarch to your Home Screen.",
+              ? "web.storageNotice.newerFormat"
+              : "web.storageNotice.notKept",
     );
 }
 
@@ -210,9 +224,7 @@ async function reopenHandedOffShow() {
     if (status !== 200) {
         // Still kept in the browser: the next reload tries again
         console.error(`Couldn't reopen the show after the reload (${status})`);
-        showNotice(
-            "OpenMarch couldn't reopen your show after reloading. Reload the page to try again.",
-        );
+        showTranslatedNotice("web.reopenFailed");
         return;
     }
     if (show.changed) markChanged();

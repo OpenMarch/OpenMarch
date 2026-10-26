@@ -24,6 +24,7 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { AppearanceModalContents } from "@/components/marcher/appearance/AppearanceModal";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { TouchCaption } from "@/components/ui/InfoTip";
+import { T } from "@tolgee/react";
 
 const buttonClassName = twMerge("flex items-center gap-4 w-full");
 
@@ -301,7 +302,9 @@ const NewTagButton = ({
                 >
                     <TagIcon size={16} />
                     <SparkleIcon size={16} />
-                    <TouchCaption>New tag</TouchCaption>
+                    <TouchCaption>
+                        <T keyName="inspector.marcher.newTagCaption" />
+                    </TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -395,7 +398,9 @@ const AddToTagButton = ({
                 >
                     <TagIcon size={16} />
                     <PlusIcon size={16} />
-                    <TouchCaption>Add to tag</TouchCaption>
+                    <TouchCaption>
+                        <T keyName="inspector.marcher.addToTagCaption" />
+                    </TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -492,7 +497,9 @@ const DeleteFromTagButton = ({
                 >
                     <TagIcon size={16} />
                     <TrashIcon size={16} />
-                    <TouchCaption>Remove</TouchCaption>
+                    <TouchCaption>
+                        <T keyName="inspector.marcher.removeFromTagCaption" />
+                    </TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>

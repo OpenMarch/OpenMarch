@@ -1,6 +1,7 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
+import tolgee from "@/global/singletons/Tolgee";
 
 const formatSteps = (steps: number) => {
     const rounded = Math.round(Math.abs(steps) * 4) / 4;
@@ -25,16 +26,28 @@ export function describeStepDelta(
 ): string {
     const x = formatSteps(dxSteps);
     const y = formatSteps(dySteps);
-    const unit = (f: { one: boolean }) => (f.one ? "step" : "steps");
+    // `count` picks the plural; `steps` is the number as written above
+    const amount = (f: { text: string; one: boolean }) => ({
+        count: f.one ? 1 : 2,
+        steps: f.text,
+    });
     const side =
         x.text === "0"
-            ? "0 steps side to side"
-            : `${x.text} ${unit(x)} to ${dxSteps > 0 ? sides.terseRight : sides.terseLeft}`;
+            ? tolgee.t("touch.readout.noSideToSide")
+            : tolgee.t("touch.readout.toSide", {
+                  ...amount(x),
+                  side: dxSteps > 0 ? sides.terseRight : sides.terseLeft,
+              });
     const frontBack =
         y.text === "0"
-            ? "0 steps front to back"
-            : `${y.text} ${unit(y)} toward the ${dySteps > 0 ? "front" : "back"}`;
-    return `${side} · ${frontBack}`;
+            ? tolgee.t("touch.readout.noFrontToBack")
+            : tolgee.t(
+                  dySteps > 0
+                      ? "touch.readout.towardFront"
+                      : "touch.readout.towardBack",
+                  amount(y),
+              );
+    return tolgee.t("touch.readout.both", { side, frontBack });
 }
 
 /** Degrees turned, between -180 and 180, rounded to a whole degree */

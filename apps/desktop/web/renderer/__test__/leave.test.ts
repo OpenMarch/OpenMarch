@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import tolgee from "../../../src/global/singletons/Tolgee";
 import { leaveDecision, leaveQuestion } from "../leave";
+
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 describe("leaveDecision", () => {
     it("goes ahead when the latest changes are stored", () => {

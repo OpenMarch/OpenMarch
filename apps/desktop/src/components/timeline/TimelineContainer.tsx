@@ -16,7 +16,7 @@ import TimelineControls from "./TimelineControls";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import clsx from "clsx";
 import { usePinchZoom } from "./usePinchZoom";
 import { scrollLeftForPage } from "./pageScroll";
@@ -237,6 +237,7 @@ function TimelineZoomControls({
 }: {
     zoomTo: (pixelsPerSecond: number) => void;
 }) {
+    const { t } = useTolgee();
     const { uiSettings } = useUiSettingsStore();
     const currentPixels = uiSettings.timelinePixelsPerSecond;
     const zoomPercent = Math.round(
@@ -272,14 +273,14 @@ function TimelineZoomControls({
         <div
             className="border-stroke text-text touch:w-44 flex w-28 shrink-0 flex-col items-stretch border-l @max-[240px]:hidden"
             role="group"
-            aria-label="Timeline zoom"
+            aria-label={t("timeline.compact.zoom")}
         >
             <button
                 onClick={handleZoomIn}
                 className="flex flex-1 items-center justify-center transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={currentPixels >= TIMELINE_MAX_PX_PER_SEC}
-                title="Zoom timeline in"
-                aria-label="Zoom timeline in"
+                title={t("timeline.zoomIn")}
+                aria-label={t("timeline.zoomIn")}
             >
                 <MagnifyingGlassPlusIcon
                     size={16}
@@ -299,8 +300,8 @@ function TimelineZoomControls({
                 onClick={handleZoomOut}
                 className="flex flex-1 items-center justify-center transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={currentPixels <= TIMELINE_MIN_PX_PER_SEC}
-                title="Zoom timeline out"
-                aria-label="Zoom timeline out"
+                title={t("timeline.zoomOut")}
+                aria-label={t("timeline.zoomOut")}
             >
                 <MagnifyingGlassMinusIcon
                     size={16}

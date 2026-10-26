@@ -1,4 +1,15 @@
 {
+    "canvas": {
+        "zoom": {
+            "group": "Zoom",
+            "in": "Zoom in",
+            "out": "Zoom out",
+            "reset": "Zoom {zoom}%, reset zoom and center"
+        }
+    },
+    "errorBoundary": {
+        "copyErrorMessage": "Copy error message"
+    },
     "sidebar": {
         "appearance": "Appearance",
         "field": "Field",
@@ -626,6 +637,7 @@
             "drawLine": "Draw a line."
         },
         "marcher": {
+            "addToTagCaption": "Add to tag",
             "alignHorizontallyCaption": "Horizontal",
             "alignVerticallyCaption": "Vertical",
             "flipHorizontalCaption": "Flip ↔",
@@ -642,6 +654,8 @@
                 "front": "Front",
                 "oneStep": "1 step",
                 "quarterStep": "¼ step",
+                "side1": "Side 1",
+                "side2": "Side 2",
                 "stepSize": "Step size",
                 "title": "Move",
                 "towardBack": "Move toward the back sideline",
@@ -649,7 +663,9 @@
                 "towardSide": "Move toward {side}"
             },
             "name": "Name",
+            "newTagCaption": "New tag",
             "noPageSelected": "No page selected.",
+            "removeFromTagCaption": "Remove",
             "section": "Section",
             "stepSize": "Step Size",
             "stepSizeWarning": "Step size exceeds threshold",
@@ -905,6 +921,7 @@
             "deleteButton": "Delete",
             "deleteSectionStyle": "Delete this section style",
             "discardChanges": "Discard Changes",
+            "dragToReorder": "Drag to reorder",
             "drillNumberTitle": "#",
             "editButton": "Edit",
             "fillColor": "Fill Color",
@@ -1330,7 +1347,11 @@
         "pages": "Pages",
         "perspective": {
             "label": "Perspective"
-        }
+        },
+        "volumeSlider": "Timeline volume slider",
+        "zoomIn": "Zoom timeline in",
+        "zoomOut": "Zoom timeline out",
+        "zoomReset": "Reset timeline zoom"
     },
     "titlebar": {
         "menu": "Menu",
@@ -1356,6 +1377,9 @@
             "toPreviousPagePositions": "...to previous page positions"
         },
         "select": {
+            "drillPrefixesLabel": "Select drill prefixes",
+            "sectionsLabel": "Select sections",
+            "tagsLabel": "Select tags",
             "tapMode.add": "Add",
             "tapMode.ariaLabel": "Choosing a group",
             "tapMode.replace": "Replace",
@@ -1384,10 +1408,60 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "Auto",
+            "autoDescribe": "{device, select, pencil {finger moves, Pencil selects} other {finger moves, pen selects}}",
+            "autoSentence": "{device, select, pencil {One finger moves the view. Pencil, or hold then drag, selects.} other {One finger moves the view. A pen, or hold then drag, selects.}}",
+            "box": "Box",
+            "boxDescribe": "drag a box to select",
+            "button": "Drag from empty field: {label}, {describe}. Tap to change",
+            "lasso": "Lasso",
+            "lassoDescribe": "draw around to select",
+            "menu": "Drag from empty field",
+            "pan": "Pan",
+            "panDescribe": "drag moves the view",
+            "prefix": "Drag:"
+        },
+        "gestures": {
+            "fingers": "<b>1 finger</b> moves · <b>2</b> zoom",
+            "holdMarcher": "<b>Hold a marcher</b> adds it",
+            "modifiers": "<b>Add</b> taps to add · <b>No snap</b> moves freely",
+            "penSelects": "{device, select, pencil {<b>Pencil</b>} other {<b>Pen</b>}} or <b>hold + drag</b> selects",
+            "undoRedo": "<b>2-finger tap</b> undo · <b>3</b> redo"
+        },
         "layoutHint": "Tablet layout has bigger controls",
         "marcherAdded": "Added {name}",
         "marcherRemoved": "Removed {name}",
+        "modifiers": {
+            "add": "Add",
+            "addOff": "Add: hold, or tap to keep on. Tapping marchers adds them to the selection",
+            "addOn": "Add, on. Tap to turn off",
+            "addOnNote": "Add on: tap marchers to add or remove.",
+            "clearLine": "Clear line",
+            "explain": {
+                "alt": "Move and turn without snapping.",
+                "drag": "What dragging on empty field does.",
+                "grip": "Drag to move.",
+                "help": "Gestures.",
+                "shift": "Tap marchers to add or remove them."
+            },
+            "grip": "Move these buttons",
+            "gripTitle": "Drag to move",
+            "help": "What these buttons do",
+            "noSnap": "No snap",
+            "noSnapOff": "No snap: hold, or tap to keep on. Moving and turning don't snap to steps",
+            "noSnapOn": "No snap, on. Tap to turn off",
+            "noSnapOnNote": "No snap on."
+        },
         "openSettings": "Open Settings",
+        "readout": {
+            "both": "{side} · {frontBack}",
+            "noFrontToBack": "0 steps front to back",
+            "noSideToSide": "0 steps side to side",
+            "toSide": "{count, plural, one {{steps} step} other {{steps} steps}} to {side}",
+            "towardBack": "{count, plural, one {{steps} step} other {{steps} steps}} toward the back",
+            "towardFront": "{count, plural, one {{steps} step} other {{steps} steps}} toward the front"
+        },
         "redone": "Redone",
         "theMarcher": "the marcher",
         "undone": "Undone"
@@ -1415,10 +1489,12 @@
         "backUpNow": "Back up now",
         "backedUpAgo": "Last backed up: {ago}",
         "backupReminder": "“{name}” has changes from several days that aren't backed up anywhere else.",
+        "cantKeepForReload": "This browser window can't open a show, because it won't let OpenMarch keep anything even for a moment. Try a normal (not private) window.",
         "close": "Close",
         "download": "Download .dots",
         "downloaded": "Downloaded {name}",
         "fileMenu": "File",
+        "fileNotOpened": "The file wasn't opened, so your show stays open: {message}",
         "gotIt": "Got it",
         "homeScreen.note": "Already made shows in Safari? The Home Screen app keeps its own shows. Back each one up here first (Share → Save to Files), then open the file in the Home Screen app.",
         "homeScreen.step1": "Tap the Share button in Safari's toolbar",
@@ -1432,6 +1508,9 @@
         "homeScreen.why3": "It opens full screen, like any other app.",
         "homeScreen.howTitle": "How to add it",
         "keptHereNote": "Your shows are saved here as you work. Back up to keep a copy somewhere else, such as Files, Google Drive or email.",
+        "leave.memory": "Your changes since the last download will be lost. Download the show first to keep them.\n\nContinue without downloading?",
+        "leave.noAnswer": "The browser didn't answer.",
+        "leave.unsaved": "Your latest changes aren't saved on this device ({error}). If you continue, they are lost. Back up the show first to keep them.\n\nContinue anyway?",
         "library.backedUpAgo": "Backed up {ago}",
         "library.cancel": "Cancel",
         "library.copyName": "{name} copy",
@@ -1457,19 +1536,26 @@
         "library.titleIpad": "Shows on this iPad",
         "memoryNote": "This tab doesn't keep shows (for example, in Private Browsing, or while another tab has OpenMarch open). Download your work before you close it.",
         "neverBackedUp": "Never backed up",
+        "notAudioFile": "\"{name}\" isn't an audio file. Choose an MP3, WAV, M4A or similar.",
         "notDownloadedYet": "Changes since your last download are only in this browser",
         "notKept": "Not kept",
         "notPersistedNote": "The browser may remove shows if space runs low or the site isn't used for a while. Back up often.",
         "notSaved": "Not saved",
         "notSavedFull": "Not saved: storage for OpenMarch is full. Back up your shows, then delete ones you don't need.",
         "notSavedOther": "Not saved: {message}. Back up now to keep a copy.",
+        "notShowFile": "\"{name}\" isn't an OpenMarch show. Choose a file that ends in .dots.",
         "persistedNote": "This browser has agreed to keep your shows when space runs low.",
+        "reopenFailed": "OpenMarch couldn't reopen your show after reloading. Reload the page to try again.",
         "restore": "Restore",
         "restored": "Restored the version from {when}. The state before it is kept in Versions.",
         "savedInBrowser": "Saved in this browser",
         "savedOnIpad": "Saved on this iPad",
         "saving": "Saving…",
+        "showStaysOpen": "The show stays open: {message}",
         "statusDetailsLabel": "Saving and backups",
+        "storageNotice.newerFormat": "Your shows here were saved by a newer version of OpenMarch, so this version leaves them as they are. Use the newer version to open them. Anything you do in this tab is only kept until you close it.",
+        "storageNotice.notKept": "This browser won't keep your shows (for example, in Private Browsing). Your work is lost when you close this tab unless you download it. Use a normal Safari tab, or add OpenMarch to your Home Screen.",
+        "storageNotice.otherTab": "OpenMarch is open in another tab. In this tab, your show is only kept until you close or reload it. Download it to keep your changes.",
         "versionReason.beforeRestore": "Before a restore",
         "versionReason.edit": "While editing",
         "versionReason.opened": "When opened",
@@ -1477,7 +1563,14 @@
         "versionsDescription": "A version is kept every couple of minutes while you edit, and when you open a show. Restoring one keeps the current state as a version too, so nothing is lost.",
         "versionsEmpty": "No versions yet. One is kept after your first change.",
         "versionsMenu": "Versions…",
-        "versionsTitle": "Versions of “{name}”"
+        "versionsTitle": "Versions of “{name}”",
+        "welcome.backUpBody": "File → Back up (or {save}) saves a copy of the show to Files, Google Drive or email. If this device's data is cleared or the device is lost, only your backups remain.",
+        "welcome.backUpTitle": "Back up regularly",
+        "welcome.desktopBody": "PDF export and some file tools need the desktop app. Video export works here.",
+        "welcome.desktopTitle": "A few desktop features aren't here yet",
+        "welcome.intro": "OpenMarch runs right here on this device. There's no account, and nothing is uploaded.",
+        "welcome.savedBody": "Every change is saved as you work, and the last 20 versions of each show are kept. Find your shows on the start page.",
+        "welcome.savedTitle": "Your shows are saved on this device"
     },
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",

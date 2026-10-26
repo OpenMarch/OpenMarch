@@ -9,6 +9,7 @@
  *   the share sheet has "Save to Files", which lets the person choose, so
  *   iOS offers that first and falls back to the download.
  */
+import tolgee from "../../src/global/singletons/Tolgee";
 
 // The iPad check is shared with the app (src/utilities/device.ts)
 export { isAppleTouchDevice } from "../../src/utilities/device";
@@ -47,7 +48,7 @@ const AUDIO_EXTENSIONS = [
 export function audioFileProblem(name: string, type: string): string | null {
     if (type.startsWith("audio/")) return null;
     if (AUDIO_EXTENSIONS.some((ext) => hasExtension(name, ext))) return null;
-    return `"${name}" isn't an audio file. Choose an MP3, WAV, M4A or similar.`;
+    return tolgee.t("web.notAudioFile", { name });
 }
 
 /** Whether `name` ends in `extension` (e.g. ".dots"), ignoring case. */
@@ -73,7 +74,7 @@ export function looksLikeSqlite(bytes: Uint8Array): boolean {
  */
 export function showFileProblem(name: string, head: Uint8Array): string | null {
     if (hasExtension(name, ".dots") && looksLikeSqlite(head)) return null;
-    return `"${name}" isn't an OpenMarch show. Choose a file that ends in .dots.`;
+    return tolgee.t("web.notShowFile", { name });
 }
 
 /**

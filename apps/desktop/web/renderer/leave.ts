@@ -3,6 +3,7 @@
  * New): only when its latest changes aren't safely kept.
  */
 import type { FlushResult } from "../protocol";
+import tolgee from "../../src/global/singletons/Tolgee";
 
 export type LeaveDecision =
     /** Nothing would be lost. */
@@ -28,13 +29,12 @@ export function leaveDecision({
     return {
         ask: true,
         reason: "unsaved",
-        error: flush?.error ?? "The browser didn't answer.",
+        error: flush?.error ?? tolgee.t("web.leave.noAnswer"),
     };
 }
 
 export function leaveQuestion(decision: LeaveDecision): string | null {
     if (!decision.ask) return null;
-    if (decision.reason === "memory")
-        return "Your changes since the last download will be lost. Download the show first to keep them.\n\nContinue without downloading?";
-    return `Your latest changes aren't saved on this device (${decision.error}). If you continue, they are lost. Back up the show first to keep them.\n\nContinue anyway?`;
+    if (decision.reason === "memory") return tolgee.t("web.leave.memory");
+    return tolgee.t("web.leave.unsaved", { error: decision.error });
 }

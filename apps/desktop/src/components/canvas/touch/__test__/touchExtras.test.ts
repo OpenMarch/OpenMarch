@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 import { initialPalmGuardState, palmGuardShouldBlock } from "../penPalmGuard";
 import { paddingForMinimumBox } from "../touchSelectionHandles";
 import { describeRotation, describeStepDelta } from "../dragStepReadout";
@@ -148,6 +149,9 @@ describe("paddingForMinimumBox", () => {
 });
 
 describe("describeStepDelta", () => {
+    beforeAll(async () => {
+        await tolgee.run();
+    });
     const sides = { terseLeft: "S1", terseRight: "S2" };
     it("says how far, which side and front or back", () => {
         expect(describeStepDelta(4, -2, sides)).toBe(

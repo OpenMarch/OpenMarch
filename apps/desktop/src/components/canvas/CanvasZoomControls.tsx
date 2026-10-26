@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { CANVAS_ZOOM_LIMITS } from "./CanvasConstants";
+import { useTolgee } from "@tolgee/react";
 
 interface CanvasZoomControlsProps {
     canvas: OpenMarchCanvas | undefined;
@@ -10,6 +11,7 @@ interface CanvasZoomControlsProps {
 export default function CanvasZoomControls({
     canvas,
 }: CanvasZoomControlsProps) {
+    const { t } = useTolgee();
     const [currentZoom, setCurrentZoom] = useState(100); // Represents percentage
     // The Fabric zoom itself, which the limits apply to (the percentage is relative to the fitted view)
     const [fabricZoom, setFabricZoom] = useState(1);
@@ -143,7 +145,7 @@ export default function CanvasZoomControls({
     return (
         <div
             role="group"
-            aria-label="Zoom"
+            aria-label={t("canvas.zoom.group")}
             className="group border-stroke bg-bg-1 touch:w-auto absolute right-6 bottom-6 z-10 flex w-128 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg"
         >
             {/* Hamburger Icon (placeholder for future menu) */}
@@ -162,7 +164,7 @@ export default function CanvasZoomControls({
                 className="border-stroke text-text touch:min-h-48 touch:min-w-48 flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas || atMinZoom}
                 title="Zoom Out"
-                aria-label="Zoom out"
+                aria-label={t("canvas.zoom.out")}
             >
                 <MinusIcon size={18} weight="bold" />
             </button>
@@ -173,7 +175,7 @@ export default function CanvasZoomControls({
                 className="border-stroke bg-fg-2 text-text touch:min-h-48 touch:min-w-72 flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas}
                 title="Reset Zoom and Center"
-                aria-label={`Zoom ${currentZoom}%, reset zoom and center`}
+                aria-label={t("canvas.zoom.reset", { zoom: currentZoom })}
             >
                 {currentZoom}%
             </button>
@@ -184,7 +186,7 @@ export default function CanvasZoomControls({
                 className="border-stroke text-text touch:min-h-48 touch:min-w-48 flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas || atMaxZoom}
                 title="Zoom In"
-                aria-label="Zoom in"
+                aria-label={t("canvas.zoom.in")}
             >
                 <PlusIcon size={18} weight="bold" />
             </button>

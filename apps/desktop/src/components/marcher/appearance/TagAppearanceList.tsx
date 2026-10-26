@@ -485,7 +485,7 @@ function SortableTagAppearance({
                     {...attributes}
                     {...listeners}
                     className="hover:text-accent touch:mt-0 touch:min-h-44 touch:min-w-44 touch:flex touch:items-center touch:justify-center mt-8 cursor-grab touch-none active:cursor-grabbing"
-                    aria-label="Drag to reorder"
+                    aria-label={t("marchers.list.dragToReorder")}
                 >
                     <DotsSixVerticalIcon size={16} weight="bold" />
                 </button>
