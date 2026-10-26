@@ -149,6 +149,8 @@ body {
        page and the app's full-height frame (iPadOS toolbars, rotation) never
        shows as a white strip */
     background-color: var(--color-bg-1);
+    /* The app frame is fixed, so without this the page has no height */
+    height: 100%;
     touch-action: manipulation;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
