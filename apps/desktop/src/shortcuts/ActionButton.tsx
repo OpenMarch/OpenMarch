@@ -44,6 +44,8 @@ export type ActionButtonProps = Omit<
      * can't be seen. Give it to icon-only buttons.
      */
     caption?: string;
+    /** Called after the action runs, e.g. to close the menu the button sits in */
+    onRun?: () => void;
 };
 
 /**
@@ -55,6 +57,7 @@ export default function ActionButton({
     tooltip,
     toggleState,
     caption,
+    onRun,
     children,
     className,
     disabled,
@@ -133,7 +136,10 @@ export default function ActionButton({
                 ref={setAnchor}
                 disabled={disabled || !runnable}
                 title={title}
-                onClick={() => runAction(action)}
+                onClick={() => {
+                    runAction(action);
+                    onRun?.();
+                }}
                 className={twMerge(
                     clsx(
                         "enabled:hover:text-accent touch:select-none touch:[-webkit-touch-callout:none] outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",

@@ -128,7 +128,8 @@ async function expectPlusAfterLastPage(page: Page) {
         el.scrollLeft = el.scrollLeft - 60;
     });
     const after = (await add.boundingBox())!.x;
-    if (after !== before) expect(after).toBeGreaterThan(before);
+    // Less than a pixel is rounding, not scrolling
+    if (Math.abs(after - before) >= 1) expect(after).toBeGreaterThan(before);
 }
 
 /** Taps the centre of a button found by its accessible name. */

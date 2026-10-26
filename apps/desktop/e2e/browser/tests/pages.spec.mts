@@ -120,3 +120,26 @@ test("the pages row's text keeps page names apart", async ({ show }) => {
     const text = (await page.locator("#pages").textContent()) ?? "";
     expect(text.match(/\d+[A-Z]?/g)?.at(-1)).toBe("2");
 });
+
+test("choosing where to place all marchers closes the menu", async ({
+    show,
+}) => {
+    const { page } = show;
+    await createTempoGroup(page, {
+        tempo: 120,
+        beatsPerMeasure: 4,
+        measures: 8,
+    });
+    await createMarchers(page, { quantity: 2, section: "Baritone" });
+    await addPage(page);
+    await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Alignment" }).click();
+    await page.getByRole("button", { name: "Place all marchers" }).click();
+    const choice = page.getByRole("button", {
+        name: "...to previous page positions",
+    });
+    await expect(choice).toBeEnabled();
+    await choice.click();
+    await expect(choice).toBeHidden();
+});

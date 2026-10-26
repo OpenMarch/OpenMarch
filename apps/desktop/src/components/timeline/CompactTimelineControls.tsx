@@ -139,12 +139,15 @@ function TimelineMoreMenu({
         icon: React.ReactNode,
         disabled = false,
     ) => (
-        <div onClick={close}>
-            <ActionButton action={id} className={MENU_ROW} disabled={disabled}>
-                {icon}
-                {label(id)}
-            </ActionButton>
-        </div>
+        <ActionButton
+            action={id}
+            className={MENU_ROW}
+            disabled={disabled}
+            onRun={close}
+        >
+            {icon}
+            {label(id)}
+        </ActionButton>
     );
 
     return (

@@ -173,6 +173,8 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
     const { t } = useTolgee();
     const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
     const [verticalStepInterval, setVerticalStepInterval] = useState("");
+    const [placeMenuOpen, setPlaceMenuOpen] = useState(false);
+    const closePlaceMenu = () => setPlaceMenuOpen(false);
     const { mutate: updateSelectedMarchers } =
         useUpdateSelectedMarchersOnSelectedPage();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -390,7 +392,10 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             <hr className="border-stroke w-full border" />
             {/* Set Marcher Positions Dropdowns */}
             <div className="flex flex-col gap-8">
-                <Dropdown.Root>
+                <Dropdown.Root
+                    open={placeMenuOpen}
+                    onOpenChange={setPlaceMenuOpen}
+                >
                     <Dropdown.Trigger
                         className={clsx(
                             getButtonClassName({
@@ -407,12 +412,14 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                         <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
                             <ActionButton
                                 action="setSelectedMarchersToPreviousPage"
+                                onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
                             >
                                 <T keyName="toolbar.alignment.toPreviousPagePositions" />
                             </ActionButton>
                             <ActionButton
                                 action="setSelectedMarchersToNextPage"
+                                onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
                             >
                                 <T keyName="toolbar.alignment.toNextPagePositions" />
