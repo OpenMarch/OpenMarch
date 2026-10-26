@@ -8,6 +8,7 @@ import {
     Switch,
 } from "@openmarch/ui";
 import SettingRow from "@/settings/SettingRow";
+import { isWebBuild } from "@/utilities/webBuild";
 import SettingsPanel from "@/settings/SettingsPanel";
 
 const languages = [
@@ -97,21 +98,24 @@ export default function GeneralSettings() {
                 </Select>
             </SettingRow>
 
-            <SettingRow
-                label={<T keyName="settings.general.automaticUpdates" />}
-                htmlFor="automatic-updates"
-            >
-                <Switch
-                    id="automatic-updates"
-                    checked={automaticUpdatesEnabled}
-                    onCheckedChange={(checked) => {
-                        setAutomaticUpdatesEnabled(checked);
-                        window.electron.send("settings:set", {
-                            automaticUpdates: checked,
-                        });
-                    }}
-                />
-            </SettingRow>
+            {/* The web editor is always the latest version: nothing to install */}
+            {!isWebBuild && (
+                <SettingRow
+                    label={<T keyName="settings.general.automaticUpdates" />}
+                    htmlFor="automatic-updates"
+                >
+                    <Switch
+                        id="automatic-updates"
+                        checked={automaticUpdatesEnabled}
+                        onCheckedChange={(checked) => {
+                            setAutomaticUpdatesEnabled(checked);
+                            window.electron.send("settings:set", {
+                                automaticUpdates: checked,
+                            });
+                        }}
+                    />
+                </SettingRow>
+            )}
         </SettingsPanel>
     );
 }

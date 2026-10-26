@@ -8,6 +8,15 @@ import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import { rgbaToString } from "@openmarch/core";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { isSnapOff } from "@/components/canvas/touch/canvasModifiers";
+
+/** A finger or pen that drags further than this (screen px) draws the line in one stroke */
+const STROKE_MIN_PX = 10;
+
+const isFingerOrPen = (e: Event | undefined) => {
+    const type = (e as PointerEvent | undefined)?.pointerType;
+    return type === "touch" || type === "pen";
+};
 
 /**
  * LineListeners is an extension of DefaultListeners that handles the creation of lines on the canvas
@@ -23,6 +32,8 @@ export default class LineListeners
     private _pathways = new Map<number, fabric.Object>();
     private _midpoints = new Map<number, fabric.Object>();
     private _endpoints = new Map<number, fabric.Object>();
+    /** Where (client px) the press that started the active line went down */
+    private _lineStartedAt: { x: number; y: number } | null = null;
 
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         super({ canvas });
@@ -56,12 +67,54 @@ export default class LineListeners
 
     /** Discards the current active line */
     clearLine = () => {
+        this._lineStartedAt = null;
         if (this._activeLine) {
             this.canvas.remove(this._activeLine);
             this._activeLine = null;
             this._isDrawing = false;
         }
     };
+
+    /** A finger's long press does not start the lasso in the line tool */
+    readonly touchLongPressLasso: boolean = false;
+
+    /** A second finger arrived: a line started by this press is dropped */
+    cancelActiveInteraction() {
+        super.cancelActiveInteraction();
+        if (this._isDrawing && this._lineStartedAt) {
+            this.clearLine();
+        }
+        this._lineStartedAt = null;
+    }
+
+    /** Moves the free end of the active line to the pointer, snapping to steps unless snapping is off */
+    private moveLineEnd(e: MouseEvent) {
+        if (!this._activeLine) return;
+        const pointer = this.canvas.getPointer(e);
+        if (isSnapOff(e)) {
+            this._activeLine.set({ x2: pointer.x, y2: pointer.y });
+        } else {
+            this._activeLine.setToNearestStep({
+                pointTwo: { x: pointer.x, y: pointer.y },
+            });
+        }
+    }
+
+    /** Ends drawing and shows where the marchers would go */
+    private finishLine() {
+        this._lineStartedAt = null;
+        this.drawNewMarcherPaths();
+
+        this._isDrawing = false;
+
+        // Make canvasMarchers selectable again
+        this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+            canvasMarcher.makeSelectable();
+        });
+        this.canvas.staticGridRef.hoverCursor = "default";
+
+        this.canvas.selection = true;
+    }
 
     refreshMarchers = () => {
         this.drawNewMarcherPaths();
@@ -119,7 +172,7 @@ export default class LineListeners
                 this.canvas.selection = false;
 
                 // Snap to the nearest step, unless the shift key is being held down
-                if (fabricEvent.e.shiftKey) {
+                if (isSnapOff(fabricEvent.e)) {
                     this._activeLine.set({
                         x1: pointer.x,
                         y1: pointer.y,
@@ -130,19 +183,16 @@ export default class LineListeners
                     });
                 }
                 this._isDrawing = true;
+                this._lineStartedAt = {
+                    x: fabricEvent.e.clientX,
+                    y: fabricEvent.e.clientY,
+                };
             } else {
+                // A finger or pen has no hover to aim the end with: the press marks it
+                if (isFingerOrPen(fabricEvent.e))
+                    this.moveLineEnd(fabricEvent.e);
                 // Finalize the line
-                this.drawNewMarcherPaths();
-
-                this._isDrawing = false;
-
-                // Make canvasMarchers selectable again
-                this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
-                    canvasMarcher.makeSelectable();
-                });
-                this.canvas.staticGridRef.hoverCursor = "default";
-
-                this.canvas.selection = true;
+                this.finishLine();
             }
         }
         // Right click
@@ -263,23 +313,7 @@ export default class LineListeners
     handleMouseMove(fabricEvent: fabric.IEvent<MouseEvent>) {
         if (this.canvas.isDragging) super.handleMouseMove(fabricEvent);
         else if (this._isDrawing && this._activeLine) {
-            const pointer = this.canvas.getPointer(fabricEvent.e);
-
-            // Snap to the nearest step, unless the shift key is being held down
-            if (fabricEvent.e.shiftKey) {
-                this._activeLine.set({
-                    x2: pointer.x,
-                    y2: pointer.y,
-                });
-            } else {
-                this._activeLine.setToNearestStep({
-                    pointTwo: {
-                        x: pointer.x,
-                        y: pointer.y,
-                    },
-                });
-            }
-
+            this.moveLineEnd(fabricEvent.e);
             this.canvas.requestRenderAll();
         }
     }
@@ -290,6 +324,23 @@ export default class LineListeners
     }
 
     handleMouseUp(fabricEvent: fabric.IEvent<MouseEvent>): void {
+        const e = fabricEvent.e;
+        const start = this._lineStartedAt;
+        this._lineStartedAt = null;
         super.handleMouseUp(fabricEvent);
+        // A finger or pen dragged out the line in one stroke: finish it here.
+        // A tap leaves the line drawing until the next tap marks its end.
+        if (
+            start &&
+            this._isDrawing &&
+            this._activeLine &&
+            isFingerOrPen(e) &&
+            Math.hypot(e.clientX - start.x, e.clientY - start.y) >=
+                STROKE_MIN_PX
+        ) {
+            this.moveLineEnd(e);
+            this.finishLine();
+            this.canvas.requestRenderAll();
+        }
     }
 }

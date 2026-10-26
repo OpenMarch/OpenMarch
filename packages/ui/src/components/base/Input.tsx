@@ -1,24 +1,27 @@
 import { clsx } from "clsx";
 import React from "react";
 import { twMerge } from "tailwind-merge";
+import { selectNumberOnTouchFocus } from "./touchSelect";
 
 export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
     className?: string;
     compact?: boolean;
+    onFocus?: React.FocusEventHandler<HTMLInputElement>;
 };
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, compact, ...props }, ref) => (
+    ({ className, compact, onFocus, ...props }, ref) => (
         <input
             className={twMerge(
                 clsx(
-                    `rounded-6 border-stroke bg-fg-2 box-border min-h-0 items-center border whitespace-nowrap focus-visible:outline-none ${compact ? "h-[1.625rem] px-8 py-[4px]" : "h-[2.5rem] px-16"} text-body text-text placeholder:text-text-subtitle focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
+                    `rounded-6 border-stroke bg-fg-2 box-border min-h-0 items-center border whitespace-nowrap focus-visible:outline-none ${compact ? "touch:h-44 h-[1.625rem] px-8 py-[4px]" : "touch:h-44 h-[2.5rem] px-16"} text-body text-text placeholder:text-text-subtitle focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
                     className,
                 ),
             )}
             style={{ backgroundColor: "transparent" }}
             ref={ref}
             {...props}
+            onFocus={selectNumberOnTouchFocus(onFocus)}
         />
     ),
 );

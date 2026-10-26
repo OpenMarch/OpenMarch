@@ -39,7 +39,8 @@ export interface ActionDefinition {
 }
 
 export type NudgeDirection = "up" | "down" | "left" | "right";
-export type NudgeStep = "grid" | "quarter" | "tenth" | "four";
+/** "one" is exactly one step, for the touch Move pad (no binding uses it). */
+export type NudgeStep = "grid" | "quarter" | "tenth" | "one" | "four";
 export interface NudgeArgs {
     direction: NudgeDirection;
     step: NudgeStep;

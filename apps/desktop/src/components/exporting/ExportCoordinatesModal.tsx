@@ -15,15 +15,9 @@ import {
 } from "@/hooks/queries";
 import { buildMarcherAppearancesByPageId } from "./utils/exportAppearances";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogTitle,
-    TooltipClassName,
-} from "@openmarch/ui";
-import { InfoIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
-import * as Tooltip from "@radix-ui/react-tooltip";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@openmarch/ui";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
+import InfoTip from "@/components/ui/InfoTip";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import {
     Button,
@@ -42,7 +36,6 @@ import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
-import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
@@ -87,6 +80,17 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
+import { isWebBuild } from "@/utilities/webBuild";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { hasOpfs, isAppleTouchDevice } from "@/utilities/device";
+import {
+    defaultVideoFrameRate,
+    defaultVideoResolution,
+    keepScreenAwake,
+    useEncodingSupport,
+    videoResolutionsFor,
+    type EncodingSupport,
+} from "./video/exportSettings";
 
 const mobileExportScreenshotUrls = [2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -541,20 +545,13 @@ function CoordinateSheetExport() {
                         <T keyName="exportCoordinates.organizeBySection" />
                     </Form.Label>
 
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <InfoIcon size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <Tooltip.Portal>
-                                <Tooltip.Content
-                                    className={clsx(TooltipClassName, "p-16")}
-                                >
-                                    <T keyName="exportCoordinates.organizeBySectionTooltip" />
-                                </Tooltip.Content>
-                            </Tooltip.Portal>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
+                    <InfoTip
+                        side="top"
+                        contentClassName="z-[100000] p-16"
+                        content={
+                            <T keyName="exportCoordinates.organizeBySectionTooltip" />
+                        }
+                    />
                 </Form.Field>
 
                 <Form.Field
@@ -1043,31 +1040,20 @@ function DrillChartExport() {
                         <Form.Label className="text-body">
                             <T keyName="exportCoordinates.individualCharts" />
                         </Form.Label>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={clsx(
-                                            TooltipClassName,
-                                            "z-[100000] p-16",
-                                        )}
-                                    >
-                                        <div>
-                                            <T keyName="exportCoordinates.individualChartsTooltip" />
-                                        </div>
-                                        <div>
-                                            <T keyName="exportCoordinates.individualChartsTooltipDescription" />
-                                        </div>
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
+                        <InfoTip
+                            side="top"
+                            contentClassName="z-[100000] p-16"
+                            content={
+                                <>
+                                    <div>
+                                        <T keyName="exportCoordinates.individualChartsTooltip" />
+                                    </div>
+                                    <div>
+                                        <T keyName="exportCoordinates.individualChartsTooltipDescription" />
+                                    </div>
+                                </>
+                            }
+                        />
                     </Form.Field>
 
                     <Form.Field
@@ -1085,31 +1071,20 @@ function DrillChartExport() {
                         <Form.Label className="text-body">
                             <T keyName="exportCoordinates.includeNotesAppendix" />
                         </Form.Label>
-                        <Tooltip.TooltipProvider>
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={clsx(
-                                            TooltipClassName,
-                                            "z-[100000] p-16",
-                                        )}
-                                    >
-                                        <div>
-                                            <T keyName="exportCoordinates.includeNotesAppendixTooltip" />
-                                        </div>
-                                        <div>
-                                            <T keyName="exportCoordinates.includeNotesAppendixTooltipDescription" />
-                                        </div>
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
-                        </Tooltip.TooltipProvider>
+                        <InfoTip
+                            side="top"
+                            contentClassName="z-[100000] p-16"
+                            content={
+                                <>
+                                    <div>
+                                        <T keyName="exportCoordinates.includeNotesAppendixTooltip" />
+                                    </div>
+                                    <div>
+                                        <T keyName="exportCoordinates.includeNotesAppendixTooltipDescription" />
+                                    </div>
+                                </>
+                            }
+                        />
                     </Form.Field>
                 </div>
             </Form.Root>
@@ -1237,11 +1212,7 @@ function DrillChartExport() {
     );
 }
 
-const VIDEO_RESOLUTIONS = [
-    { label: "720p", width: 1280, height: 720 },
-    { label: "1080p", width: 1920, height: 1080 },
-    { label: "4K", width: 3840, height: 2160 },
-] as const;
+const VIDEO_RESOLUTIONS = videoResolutionsFor(isWebBuild);
 const VIDEO_FRAME_RATES = [30, 60] as const;
 
 // eslint-disable-next-line max-lines-per-function
@@ -1316,8 +1287,28 @@ function VideoExport() {
         pages,
     ]);
 
-    const [resolution, setResolution] = useState("1080p");
-    const [frameRate, setFrameRate] = useState(60);
+    const isTouch = useIsTouchMode();
+    const [resolution, setResolution] = useState<string>(() =>
+        defaultVideoResolution(isWebBuild, isTouch),
+    );
+    const [frameRate, setFrameRate] = useState<number>(() =>
+        defaultVideoFrameRate(isWebBuild),
+    );
+    const selectedResolution =
+        VIDEO_RESOLUTIONS.find((r) => r.label === resolution) ??
+        VIDEO_RESOLUTIONS[0];
+    // Web only: what this browser can encode, said before starting
+    const encodingSupport = useEncodingSupport(
+        selectedResolution.width,
+        selectedResolution.height,
+        isWebBuild,
+    );
+    /** Web only: the finished video, waiting for a tap to save it. */
+    const [finishedVideo, setFinishedVideo] = useState<{
+        path: string;
+        hasAudio: boolean;
+    } | null>(null);
+    const [savingVideo, setSavingVideo] = useState(false);
     const [videoTheme, setVideoTheme] = useState<VideoTheme>(() =>
         theme === "light" ? "light" : "dark",
     );
@@ -1343,6 +1334,15 @@ function VideoExport() {
 
     const { data: marcherTimelines, isPending: timelinesPending } =
         useManyCoordinateData(pages);
+
+    // On the web the finished video is saved from this dialog, so closing
+    // it stops the export (in Electron it carries on and says when done).
+    useEffect(() => {
+        if (!isWebBuild) return;
+        return () => {
+            isCancelled.current = true;
+        };
+    }, []);
 
     const durationSeconds = useMemo(() => {
         if (pages.length === 0) return 0;
@@ -1482,12 +1482,14 @@ function VideoExport() {
         };
     }, [pages, measures]);
 
-    const canExport = !!(
-        fieldProperties &&
-        pages.length > 1 &&
-        marchers &&
-        marchers.length > 0
-    );
+    const canExport =
+        !!(
+            fieldProperties &&
+            pages.length > 1 &&
+            marchers &&
+            marchers.length > 0
+        ) &&
+        (!isWebBuild || encodingSupport.state === "ok");
 
     // eslint-disable-next-line max-lines-per-function
     const handleExport = useCallback(async () => {
@@ -1495,6 +1497,10 @@ function VideoExport() {
         setIsLoading(true);
         setProgress(0);
         setCurrentStep(t("exportCoordinates.videoRendering"));
+        setFinishedVideo(null);
+        let finishedOnWeb = false;
+        // Tablets dim and lock the screen, which stops the export
+        const wakeLock = isWebBuild ? keepScreenAwake() : null;
 
         try {
             assert(marchersLoaded, t("exportCoordinates.marchersNotLoaded"));
@@ -1503,9 +1509,7 @@ function VideoExport() {
                 t("exportCoordinates.fieldPropertiesNotLoaded"),
             );
 
-            const { width, height } = VIDEO_RESOLUTIONS.find(
-                (r) => r.label === resolution,
-            )!;
+            const { width, height } = selectedResolution;
 
             // Full-show timelines (not the playback window) and audio
             const [timelineMaps, audioFile, backgroundImage] =
@@ -1553,6 +1557,16 @@ function VideoExport() {
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
+            if (isWebBuild) {
+                // Saving needs a fresh tap (the share sheet won't open
+                // this long after the Export tap): see "Save video" below
+                finishedOnWeb = true;
+                setFinishedVideo({
+                    path: result.path,
+                    hasAudio: result.hasAudio,
+                });
+                return;
+            }
             toast.success(
                 <span>
                     {t("exportCoordinates.videoExportSuccess")}{" "}
@@ -1579,18 +1593,23 @@ function VideoExport() {
                 }),
             );
         } finally {
-            setTimeout(() => {
+            wakeLock?.release();
+            if (finishedOnWeb) {
                 isCancelled.current = false;
                 setIsLoading(false);
-                setProgress(0);
-                setCurrentStep("");
-            }, 1500);
+            } else
+                setTimeout(() => {
+                    isCancelled.current = false;
+                    setIsLoading(false);
+                    setProgress(0);
+                    setCurrentStep("");
+                }, 1500);
         }
     }, [
         t,
         marchersLoaded,
         fieldProperties,
-        resolution,
+        selectedResolution,
         pages,
         queryClient,
         marchers,
@@ -1680,14 +1699,14 @@ function VideoExport() {
                     >
                         <ToggleGroup.Item
                             value="light"
-                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent touch:min-h-44 flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
                         >
                             <SunIcon size={20} />
                             <T keyName="settings.general.appearance.light" />
                         </ToggleGroup.Item>
                         <ToggleGroup.Item
                             value="dark"
-                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent touch:min-h-44 flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
                         >
                             <MoonIcon size={20} />
                             <T keyName="settings.general.appearance.dark" />
@@ -1880,6 +1899,8 @@ function VideoExport() {
                     : t("exportCoordinates.videoNoAudio")}
             </p>
 
+            {isWebBuild && <WebVideoNotes support={encodingSupport} />}
+
             {!canExport && (
                 <div className="flex flex-col items-center justify-center gap-12 py-20">
                     <h4 className="text-h4">
@@ -1891,8 +1912,10 @@ function VideoExport() {
                 </div>
             )}
 
-            {/* Export Button */}
-            <div className="flex w-full justify-end gap-8">
+            {/* Export Button (on the web, the progress row has Cancel) */}
+            <div
+                className={`flex w-full justify-end gap-8 ${isWebBuild && isLoading ? "hidden" : ""}`}
+            >
                 <Button
                     size="compact"
                     onClick={handleExport}
@@ -1913,6 +1936,14 @@ function VideoExport() {
                 </DialogClose>
             </div>
 
+            {isWebBuild && finishedVideo && (
+                <WebFinishedVideo
+                    video={finishedVideo}
+                    saving={savingVideo}
+                    setSaving={setSavingVideo}
+                />
+            )}
+
             {/* Progress Bar */}
             {isLoading && (
                 <div
@@ -1920,12 +1951,23 @@ function VideoExport() {
                     tabIndex={-1}
                     className="flex flex-col gap-8"
                 >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-12">
                         <span className="text-body text-text/75">
                             {currentStep}
                         </span>
-                        <span className="text-sub text-text/60">
-                            {Math.round(progress)}%
+                        <span className="flex items-center gap-12">
+                            <span className="text-sub text-text/60">
+                                {Math.round(progress)}%
+                            </span>
+                            {isWebBuild && (
+                                <Button
+                                    size="compact"
+                                    variant="secondary"
+                                    onClick={() => (isCancelled.current = true)}
+                                >
+                                    <T keyName="exportCoordinates.cancel" />
+                                </Button>
+                            )}
                         </span>
                     </div>
                     <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
@@ -1946,6 +1988,94 @@ function VideoExport() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+/** Web only: what this browser can do, and how to keep the export going. */
+function WebVideoNotes({ support }: { support: EncodingSupport }) {
+    const t = tolgee.t;
+    return (
+        <div className="text-body text-text/75 flex flex-col gap-8">
+            {support.state === "checking" && (
+                <p>{t("exportCoordinates.videoWebChecking")}</p>
+            )}
+            {support.state === "unsupported" && (
+                <p className="text-red" role="alert">
+                    {t("exportCoordinates.videoWebUnsupported")}
+                </p>
+            )}
+            {support.state === "ok" && support.audio === "none" && (
+                <p className="text-text" role="alert">
+                    {t("exportCoordinates.videoWebSilent")}
+                </p>
+            )}
+            {!hasOpfs() && <p>{t("exportCoordinates.videoWebInMemory")}</p>}
+            <p>{t("exportCoordinates.videoWebKeepOpen")}</p>
+        </div>
+    );
+}
+
+/**
+ * Web only: the finished video and its Save button. Saving opens the share
+ * sheet on iPads (Save Video, Save to Files, AirDrop) and downloads
+ * elsewhere (web/renderer/videoExport.ts).
+ */
+function WebFinishedVideo({
+    video,
+    saving,
+    setSaving,
+}: {
+    video: { path: string; hasAudio: boolean };
+    saving: boolean;
+    setSaving: (saving: boolean) => void;
+}) {
+    const t = tolgee.t;
+    const save = () => {
+        setSaving(true);
+        // Called straight from the tap: the share sheet needs it
+        const delivered = window.electron.openExportDirectory(
+            video.path,
+        ) as Promise<unknown>;
+        void delivered
+            .then((outcome) => {
+                if (outcome === "saved")
+                    toast.success(t("exportCoordinates.videoWebSaved"));
+                else if (outcome === "missing")
+                    toast.error(t("exportCoordinates.videoWebSaveMissing"));
+            })
+            .catch((error: unknown) => {
+                console.error("Saving the video failed:", error);
+                toast.error(t("exportCoordinates.videoWebSaveMissing"));
+            })
+            .finally(() => setSaving(false));
+    };
+    return (
+        <div
+            role="status"
+            className="border-stroke bg-fg-1 rounded-6 flex flex-col gap-12 border p-16"
+        >
+            <p className="text-body">
+                {t("exportCoordinates.videoWebReady", { name: video.path })}
+            </p>
+            {!video.hasAudio && (
+                <p className="text-sub text-text/75">
+                    {t("exportCoordinates.videoWebReadySilent")}
+                </p>
+            )}
+            {isAppleTouchDevice() && (
+                <p className="text-sub text-text/75">
+                    {t("exportCoordinates.videoWebSaveHintApple")}
+                </p>
+            )}
+            <Button
+                type="button"
+                className="w-fit"
+                onClick={save}
+                disabled={saving}
+            >
+                {t("exportCoordinates.videoWebSave")}
+            </Button>
         </div>
     );
 }
@@ -1997,6 +2127,8 @@ function ExportModalContents({
     onMobileExportClick: () => void;
 }) {
     const { exportTab, setExportTab } = useAppDialogStore();
+    // The web build can only export video (the rest needs Electron)
+    if (isWebBuild) return <VideoExport />;
     return (
         <Tabs
             value={exportTab}
@@ -2054,9 +2186,13 @@ export default function ExportCoordinatesModal() {
                 .export-coordinates-dialog ~ [data-radix-popper-content-wrapper]{z-index:10000 !important;}`}</style>
             <Dialog open={open} onOpenChange={setOpen}>
                 {/* Dialog Setup */}
-                <DialogContent className="export-coordinates-dialog max-h-[80vh] w-[48rem] overflow-y-auto">
+                <DialogContent className="export-coordinates-dialog touch:max-h-[calc(100dvh-2rem)]! max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>
-                        <T keyName="exportCoordinates.title" />
+                        {isWebBuild ? (
+                            <T keyName="exportCoordinates.exportVideoButton" />
+                        ) : (
+                            <T keyName="exportCoordinates.title" />
+                        )}
                     </DialogTitle>
                     <ExportModalContents
                         onMobileExportClick={handleMobileExportClick}

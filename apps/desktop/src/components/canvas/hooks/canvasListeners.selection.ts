@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import Marcher from "@/global/classes/Marcher";
@@ -29,6 +29,17 @@ export const useSelectionListeners = ({
     const { data: marcherPages } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
+    // Bumped when the marchers' canvas objects are rebuilt, so the selection
+    // is put back on the new objects
+    const [rebuilt, setRebuilt] = useState(0);
+    useEffect(() => {
+        if (!canvas) return;
+        const onRebuilt = () => setRebuilt((n) => n + 1);
+        canvas.on("marchers:rebuilt" as any, onRebuilt);
+        return () => {
+            canvas.off("marchers:rebuilt" as any, onRebuilt);
+        };
+    }, [canvas]);
 
     /**
      * Gets the classIds of all the global selected objects on the canvas defined in the classes "Selectable.SelectableClasses"
@@ -259,6 +270,7 @@ export const useSelectionListeners = ({
 
         canvas.setActiveObjects(objectsToSelect);
     }, [
+        rebuilt,
         selectedMarchers,
         marcherPages,
         selectedPage,

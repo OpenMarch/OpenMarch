@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useLayoutEffect, useRef } from "react";
 import NewShowProgressIndicator from "./components/NewShowProgressIndicator";
 import NewShowNavigationButtons from "./components/NewShowNavigationButtons";
 import { NewShowStepId } from "../newShowTypes";
@@ -40,8 +40,14 @@ export default function NewShowModalLayout({
     isCompleting,
     completedSteps,
 }: NewShowModalLayoutProps) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    // Each step starts at its top
+    useLayoutEffect(() => {
+        if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    }, [currentStepIndex]);
     return (
-        <div className="flex min-h-0 flex-col gap-16">
+        // flex-1: on a tablet the dialog has a fixed height, so the buttons stay put between steps
+        <div className="flex min-h-0 flex-1 flex-col gap-16">
             <NewShowProgressIndicator
                 currentStepIndex={currentStepIndex}
                 steps={steps}
@@ -53,7 +59,10 @@ export default function NewShowModalLayout({
                     <p className="text-body text-text/70">{stepDescription}</p>
                 )}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-4">
+            <div
+                ref={scrollRef}
+                className="min-h-0 flex-1 overflow-y-auto px-4"
+            >
                 {children}
             </div>
             <NewShowNavigationButtons

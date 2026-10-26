@@ -12,7 +12,7 @@ import {
 import { Slider } from "@openmarch/ui";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { BEAT_STYLE_IDS, BeatStyleId } from "@openmarch/metronome";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 
 export default function MetronomeModal({
@@ -22,8 +22,10 @@ export default function MetronomeModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
+    const { t } = useTolgee();
     return (
         <SidebarModalLauncher
+            name={t("sidebar.metronome")}
             contents={<MetronomeModalContents />}
             newContentId="@openmarch/metronome"
             buttonLabel={label}

@@ -1,4 +1,10 @@
-import { MinusIcon, SquareIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import {
+    MinusIcon,
+    SquareIcon,
+    ListIcon,
+    XIcon,
+    MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
 import BugReport from "./BugReport";
 import { SealWarningIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
@@ -13,12 +19,16 @@ import {
 } from "@openmarch/ui";
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
+import ActionButton from "@/shortcuts/ActionButton";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { setToolbarTabsSlot } from "./toolbarSlot";
 import clsx from "clsx";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import MarcherLogo from "@/components/MarcherLogo";
 import { isWebBuild, webChannel } from "@/utilities/webBuild";
 import WebFileMenu from "./WebFileMenu";
+import WebSaveStatus from "../web/WebSaveStatus";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
@@ -43,7 +53,11 @@ export default function TitleBar({
     /** "settings" is a minimal bar: no version, update check, file controls or file path. */
     variant?: "main" | "settings";
 }) {
-    const showFilePath = variant === "main";
+    const { t } = useTolgee();
+    const isTouch = useIsTouchMode();
+    // Touch mode in the editor: the toolbar's tabs take the middle of this row (one row of chrome)
+    const tabsInTitleBar = isTouch && variant === "main" && !!showControls;
+    const showFilePath = variant === "main" && !tabsInTitleBar;
     // In a browser there are no traffic lights, native menu or window buttons.
     const isMacOS = window.electron.isMacOS && !isWebBuild;
     const showWindowControls = !isMacOS && !isWebBuild;
@@ -110,11 +124,12 @@ export default function TitleBar({
                 // The traffic lights ignore page zoom, so the bar does too or they drift apart.
                 style={isMacOS ? { zoom: 1 / zoomFactor } : undefined}
             >
-                <div className="titlebar-leading flex items-center gap-20 px-24 py-8">
+                <div className="titlebar-leading touch:gap-8 touch:px-12 touch:py-6 flex items-center gap-20 px-24 py-8">
                     {isWebBuild && variant === "main" && <WebFileMenu />}
                     {showWindowControls && (
                         <button
-                            className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            className="titlebar-button hover:text-accent touch:flex touch:size-44 touch:items-center touch:justify-center cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            aria-label={t("titlebar.menu")}
                             onClick={() => {
                                 window.electron.openMenu();
                             }}
@@ -128,19 +143,20 @@ export default function TitleBar({
                             height={21}
                             className="text-accent"
                         />
-                        <p className="text-body min-w-0 leading-none">
+                        {/* Touch mode: the logo alone, to leave the row for the toolbar tabs */}
+                        <p className="text-body touch:hidden min-w-0 leading-none">
                             OpenMarch
                         </p>
                         {variant === "main" && (
                             <>
-                                <p className="text-body leading-none opacity-50">
+                                <p className="text-body touch:hidden leading-none opacity-50">
                                     {currentVersion}
                                     {webChannel === "nightly" && " nightly"}
                                 </p>
                                 {isWebBuild && (
                                     <button
                                         type="button"
-                                        className="bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
+                                        className="touch:hidden bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
                                         onClick={() => openWebWelcome(true)}
                                     >
                                         Web
@@ -152,17 +168,37 @@ export default function TitleBar({
                         )}
                     </div>
                 </div>
-                <p className="text-sub truncate text-center">
-                    {showFilePath ? displayDbPath : null}
-                </p>
+                {tabsInTitleBar ? (
+                    <div
+                        ref={setToolbarTabsSlot}
+                        className="titlebar-button flex min-w-0 items-center"
+                        data-testid="titlebar-toolbar-tabs"
+                    />
+                ) : (
+                    <p className="text-sub truncate text-center">
+                        {showFilePath ? displayDbPath : null}
+                    </p>
+                )}
                 <div
-                    className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
+                    className={`titlebar-button touch:gap-4 flex items-center gap-12 ${isMacOS ? "pr-24" : ""} ${isWebBuild ? "touch:pr-8 pr-16" : ""}`}
                 >
+                    {isWebBuild && variant === "main" && showControls && (
+                        <WebSaveStatus />
+                    )}
+                    {variant === "main" && (
+                        <ActionButton
+                            action="openCommandPalette"
+                            aria-label={t("actions.ui.openCommandPalette")}
+                            className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
+                        >
+                            <MagnifyingGlassIcon size={18} />
+                        </ActionButton>
+                    )}
                     <BugReport />
                     {showWindowControls && (
                         <div className="titlebar-button flex">
                             <button
-                                className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
+                                className="hover:text-accent focus-visible:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
                                 onClick={() => {
                                     window.electron.minimizeWindow();
                                 }}
@@ -170,7 +206,7 @@ export default function TitleBar({
                                 <MinusIcon size={20} />
                             </button>
                             <button
-                                className="hover:text-accent focus-visible:text-accent cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
+                                className="hover:text-accent focus-visible:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer px-16 py-8 outline-hidden duration-150 ease-out"
                                 onClick={() => {
                                     window.electron.maximizeWindow();
                                 }}
@@ -178,7 +214,7 @@ export default function TitleBar({
                                 <SquareIcon size={20} />
                             </button>
                             <button
-                                className="hover:text-red focus-visible:text-red cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
+                                className="hover:text-red focus-visible:text-red touch:flex touch:min-h-44 touch:items-center cursor-pointer px-16 py-8 pr-24 outline-hidden duration-150 ease-out"
                                 onClick={() => {
                                     window.electron.closeWindow();
                                 }}

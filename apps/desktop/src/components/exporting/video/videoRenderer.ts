@@ -1,23 +1,18 @@
 import {
     AudioBufferSource,
     CanvasSource,
-    getFirstEncodableAudioCodec,
-    getFirstEncodableVideoCodec,
-    Mp4OutputFormat,
     Output,
-    OutputFormat,
     QUALITY_HIGH,
     StreamTarget,
-    WebMOutputFormat,
-    type AudioCodec,
-    type VideoCodec,
 } from "mediabunny";
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
 import { type MarcherTimeline } from "@/utilities/Keyframes";
-import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
+import { lazyAudioSlices, type AudioSlices } from "./videoExportAudio";
+import { chooseEncodingTarget } from "./encodingTarget";
+import { isWebBuild } from "@/utilities/webBuild";
 import Measure from "@/global/classes/Measure";
 import {
     loadBrandingLogo,
@@ -71,56 +66,24 @@ export interface VideoExportArgs {
 }
 
 export type VideoExportResult =
-    | { state: "completed"; path: string }
+    | {
+          state: "completed";
+          path: string;
+          /** False when this browser couldn't encode sound (web only). */
+          hasAudio: boolean;
+      }
     | { state: "cancelled" };
 
 /**
- * Pick the best supported container/codec combination.
- * Prefers MP4 (H.264 + AAC); falls back to WebM (VP9/AV1 + Opus).
+ * Decode the audio file; slices fitted to exactly the show duration are
+ * made on demand (see `lazyAudioSlices`) so the decoded samples are the
+ * only full copy in memory.
  */
-async function chooseEncodingTarget(
-    width: number,
-    height: number,
-): Promise<{
-    format: OutputFormat;
-    fileExtension: string;
-    videoCodec: VideoCodec;
-    audioCodec: AudioCodec;
-}> {
-    const avc = await getFirstEncodableVideoCodec(["avc"], { width, height });
-    const aac = await getFirstEncodableAudioCodec(["aac"]);
-    if (avc && aac) {
-        return {
-            format: new Mp4OutputFormat({ fastStart: "reserve" }),
-            fileExtension: "mp4",
-            videoCodec: avc,
-            audioCodec: aac,
-        };
-    }
-
-    const webmVideo = await getFirstEncodableVideoCodec(["vp9", "av1", "vp8"], {
-        width,
-        height,
-    });
-    const opus = await getFirstEncodableAudioCodec(["opus"]);
-    if (webmVideo && opus) {
-        return {
-            format: new WebMOutputFormat(),
-            fileExtension: "webm",
-            videoCodec: webmVideo,
-            audioCodec: opus,
-        };
-    }
-
-    throw new Error("No supported video encoder is available on this system");
-}
-
-/** Decode the audio file and fit it to exactly the show duration. */
 async function prepareAudio(
     audioData: ArrayBuffer,
     audioOffsetSeconds: number,
     durationSeconds: number,
-): Promise<{ channels: Float32Array[][]; sampleRate: number }> {
+): Promise<{ slices: AudioSlices; sampleRate: number }> {
     // OfflineAudioContext decodes without touching audio hardware and
     // resamples to the context's rate, giving a deterministic sample rate.
     const sampleRate = 44100;
@@ -132,16 +95,12 @@ async function prepareAudio(
         channelData.push(decoded.getChannelData(i));
     }
 
-    const prepared = prepareAudioChannels(
-        channelData,
-        decoded.sampleRate,
-        audioOffsetSeconds,
-        durationSeconds,
-    );
     return {
-        channels: sliceAudioChannels(
-            prepared,
+        slices: lazyAudioSlices(
+            channelData,
             decoded.sampleRate,
+            audioOffsetSeconds,
+            durationSeconds,
             AUDIO_SLICE_SECONDS,
         ),
         sampleRate: decoded.sampleRate,
@@ -197,7 +156,10 @@ export async function exportVideo(
     if (durationSeconds <= 0)
         throw new Error("The show has no duration to export");
 
-    const encodingTarget = await chooseEncodingTarget(width, height);
+    const encodingTarget = await chooseEncodingTarget(width, height, {
+        web: isWebBuild,
+    });
+    const audioCodec = encodingTarget.audioCodec;
 
     // Prompt for the save location before doing any expensive work
     const started = await window.electron.export.videoStart(
@@ -212,11 +174,14 @@ export async function exportVideo(
     > | null = null;
 
     try {
-        const { channels: audioSlices, sampleRate } = await prepareAudio(
-            args.audioData,
-            args.audioOffsetSeconds,
-            durationSeconds,
-        );
+        // A silent export (web, no audio encoder) skips decoding entirely
+        const audio = audioCodec
+            ? await prepareAudio(
+                  args.audioData,
+                  args.audioOffsetSeconds,
+                  durationSeconds,
+              )
+            : null;
 
         renderContext = await createVideoRenderContext({
             fieldProperties,
@@ -240,10 +205,12 @@ export async function exportVideo(
             codec: encodingTarget.videoCodec,
             bitrate: QUALITY_HIGH,
         });
-        const audioSource = new AudioBufferSource({
-            codec: encodingTarget.audioCodec,
-            bitrate: QUALITY_HIGH,
-        });
+        const audioSource = audioCodec
+            ? new AudioBufferSource({
+                  codec: audioCodec,
+                  bitrate: QUALITY_HIGH,
+              })
+            : null;
 
         const output = new Output({
             format: encodingTarget.format,
@@ -257,7 +224,10 @@ export async function exportVideo(
                         );
                     },
                 }),
-                { chunked: true },
+                // Smaller chunks on the web, where tablets have little memory
+                isWebBuild
+                    ? { chunked: true, chunkSize: 4 * 1024 * 1024 }
+                    : { chunked: true },
             ),
         });
         output.addVideoTrack(videoSource, {
@@ -265,12 +235,13 @@ export async function exportVideo(
             // Required by fastStart "reserve"; video packets are 1:1 to frames
             maximumPacketCount: totalFrames + 1,
         });
-        output.addAudioTrack(audioSource, {
-            // AAC packets hold 1024 samples, Opus 960; 1 packet per 512
-            // samples is a safe upper bound for the reserved space
-            maximumPacketCount:
-                Math.ceil((durationSeconds * sampleRate) / 512) + 16,
-        });
+        if (audioSource && audio)
+            output.addAudioTrack(audioSource, {
+                // AAC packets hold 1024 samples, Opus 960; 1 packet per 512
+                // samples is a safe upper bound for the reserved space
+                maximumPacketCount:
+                    Math.ceil((durationSeconds * audio.sampleRate) / 512) + 16,
+            });
         await output.start();
 
         const overlayTimeline = args.overlay
@@ -280,14 +251,15 @@ export async function exportVideo(
 
         let nextAudioSlice = 0;
         const flushAudioUntil = async (seconds: number) => {
+            if (!audioSource || !audio) return;
             while (
-                nextAudioSlice < audioSlices.length &&
+                nextAudioSlice < audio.slices.count &&
                 nextAudioSlice * AUDIO_SLICE_SECONDS <= seconds
             ) {
                 await audioSource.add(
                     channelsToAudioBuffer(
-                        audioSlices[nextAudioSlice],
-                        sampleRate,
+                        audio.slices.slice(nextAudioSlice),
+                        audio.sampleRate,
                     ),
                 );
                 nextAudioSlice++;
@@ -335,7 +307,11 @@ export async function exportVideo(
             sessionId,
             true,
         );
-        return { state: "completed", path: finalPath ?? filePath };
+        return {
+            state: "completed",
+            path: finalPath ?? filePath,
+            hasAudio: audioCodec !== null,
+        };
     } catch (error) {
         await window.electron.export
             .videoEnd(sessionId, false)
