@@ -206,10 +206,10 @@ describe.todo("Adjacent Page Resizing", () => {
         const initialPage2Width = (page2Element as HTMLElement)?.style.width;
 
         // Initial setup - mousedown on resize handle
-        fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
+        fireEvent.pointerDown(resizeHandles[0], { clientX: 100, button: 0 });
 
         // Simulate mouse movement to the right (increasing page 1 width)
-        const mouseMoveEvent = new MouseEvent("mousemove", { clientX: 250 });
+        const mouseMoveEvent = new MouseEvent("pointermove", { clientX: 250 });
         act(() => {
             document.dispatchEvent(mouseMoveEvent);
         });
@@ -224,7 +224,7 @@ describe.todo("Adjacent Page Resizing", () => {
         );
 
         // Simulate mouse up to end resizing
-        const mouseUpEvent = new MouseEvent("mouseup");
+        const mouseUpEvent = new MouseEvent("pointerup");
         act(() => {
             document.dispatchEvent(mouseUpEvent);
         });
@@ -248,10 +248,10 @@ describe.todo("Adjacent Page Resizing", () => {
         const page2Element = container.querySelector(`[timeline-page-id="2"]`);
 
         // Initial setup - mousedown on resize handle
-        fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
+        fireEvent.pointerDown(resizeHandles[0], { clientX: 100, button: 0 });
 
         // Simulate a large mouse movement to the right (which would make page 2 too small)
-        const mouseMoveEvent = new MouseEvent("mousemove", { clientX: 300 });
+        const mouseMoveEvent = new MouseEvent("pointermove", { clientX: 300 });
         act(() => {
             document.dispatchEvent(mouseMoveEvent);
         });
@@ -263,7 +263,7 @@ describe.todo("Adjacent Page Resizing", () => {
         expect(numericWidth).toBeGreaterThanOrEqual(100);
 
         // Simulate mouse up to end resizing
-        const mouseUpEvent = new MouseEvent("mouseup");
+        const mouseUpEvent = new MouseEvent("pointerup");
         act(() => {
             document.dispatchEvent(mouseUpEvent);
         });

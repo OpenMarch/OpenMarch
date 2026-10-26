@@ -171,7 +171,10 @@ async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
-        minWidth: 1000,
+        // Fits a portrait tablet (iPad mini is 744 wide; Windows tablets in
+        // portrait or split screen are ~768), where the Inspector folds away
+        // (src/utilities/inspectorLayout.ts).
+        minWidth: 768,
         minHeight: 600,
         autoHideMenuBar: true,
         // Show frame in codegen mode for easier interaction
@@ -189,6 +192,12 @@ async function createWindow(title?: string) {
         },
     });
     app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
+    // Touch screens (Windows tablets) need nothing here: Chromium's touch
+    // events are on whenever a touch screen is present ("touch-events" is
+    // "automatic" by default), and Electron keeps pinch-to-zoom of the page
+    // off (visual zoom limits 1–1, see webContents.setVisualZoomLevelLimits),
+    // so a pinch reaches the field and the timeline instead of zooming the
+    // window. Leave both as they are.
 
     // Initialize auth IPC handlers before renderer navigation to avoid startup
     // races where the renderer invokes auth channels before handlers exist.

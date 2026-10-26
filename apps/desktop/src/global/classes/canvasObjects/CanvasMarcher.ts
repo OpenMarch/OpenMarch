@@ -1,4 +1,5 @@
 import { fabric } from "fabric";
+import { isSnapOff } from "@/components/canvas/touch/canvasModifiers";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
 import { FieldProperties, RgbaColor } from "@openmarch/core";
@@ -436,7 +437,7 @@ export default class CanvasMarcher
         const currentCanvasCoords = this.getAbsoluteCoords();
 
         // Apply rounding if shift is not held
-        const roundedDatabaseCoords = event.e.shiftKey
+        const roundedDatabaseCoords = isSnapOff(event.e)
             ? currentCanvasCoords
             : this.roundCoordinates(currentCanvasCoords, canvas.uiSettings);
 

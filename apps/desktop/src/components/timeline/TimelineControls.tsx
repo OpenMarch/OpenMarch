@@ -11,6 +11,7 @@ import {
     SpeakerSimpleHighIcon,
     SpeakerSimpleLowIcon,
     SpeakerSimpleXIcon,
+    CaretDownIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "@/shortcuts/ActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -23,8 +24,12 @@ import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
+import { TOUCH_TARGET_CLASS } from "./touchTargets";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useTimelineLayoutStore } from "./timelineLayoutStore";
 
 export default function TimelineControls() {
+    const isTouchMode = useIsTouchMode();
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
     const { uiSettings } = useUiSettingsStore();
     return (
@@ -37,7 +42,10 @@ export default function TimelineControls() {
             {!isFullscreen && (
                 <div className="flex items-center justify-between gap-6">
                     <T keyName="timeline.label" />
-                    <AudioClock />
+                    <div className="flex items-center gap-6">
+                        <AudioClock />
+                        {isTouchMode && <CollapseTimelineButton />}
+                    </div>
                 </div>
             )}
 
@@ -52,12 +60,15 @@ export default function TimelineControls() {
                         "justify-between": !isFullscreen,
                     })}
                 >
-                    <div className="flex items-center gap-12">
+                    <div className="touch:gap-4 flex items-center gap-12">
                         <TimelineMuteButton />
                         <TimelineMetronomeButton />
                     </div>
                     <button
-                        className="text-text enabled:hover:text-accent focus-visible:ring-accent duration-150 ease-out focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                        className={clsx(
+                            "text-text enabled:hover:text-accent focus-visible:ring-accent duration-150 ease-out focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                            TOUCH_TARGET_CLASS,
+                        )}
                         onClick={toggleFullscreen}
                         aria-label="Toggle timeline fullscreen"
                         aria-pressed={isFullscreen}
@@ -72,6 +83,26 @@ export default function TimelineControls() {
                 </div>
             </div>
         </div>
+    );
+}
+
+/** Touch layout: back to the one-row compact timeline. */
+function CollapseTimelineButton() {
+    const { t } = useTolgee();
+    const setExpanded = useTimelineLayoutStore((s) => s.setExpanded);
+    return (
+        <button
+            type="button"
+            className={clsx(
+                "text-text enabled:hover:text-accent",
+                TOUCH_TARGET_CLASS,
+            )}
+            aria-label={t("timeline.compact.collapse")}
+            title={t("timeline.compact.collapse")}
+            onClick={() => setExpanded(false)}
+        >
+            <CaretDownIcon size={22} weight="bold" />
+        </button>
     );
 }
 
@@ -100,6 +131,7 @@ function TimelineMuteButton() {
                         { "text-red": sliderValue === 0 },
                         { "text-text": sliderValue > 0 },
                         "enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                        TOUCH_TARGET_CLASS,
                     )}
                     aria-label="Timeline volume"
                 >
@@ -137,6 +169,7 @@ function TimelineMetronomeButton() {
             <button
                 className={clsx(
                     "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                    TOUCH_TARGET_CLASS,
                     {
                         "text-accent": isMetronomeOn,
                         "text-text enabled:hover:text-accent": !isMetronomeOn,
@@ -158,11 +191,12 @@ function PlaybackControls() {
 
     return (
         <div
-            className={clsx("flex gap-12")}
+            className={clsx("touch:gap-4 flex gap-12")}
             aria-label={t("timeline.controls.label")}
         >
             <ActionButton
                 action="firstPage"
+                className={TOUCH_TARGET_CLASS}
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
@@ -175,6 +209,7 @@ function PlaybackControls() {
 
             <ActionButton
                 action="previousPage"
+                className={TOUCH_TARGET_CLASS}
                 disabled={
                     !selectedPage ||
                     selectedPage.previousPageId === null ||
@@ -187,7 +222,10 @@ function PlaybackControls() {
 
             <ActionButton
                 action="playPause"
-                className="focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-2"
+                className={clsx(
+                    "focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-2",
+                    TOUCH_TARGET_CLASS,
+                )}
                 disabled={
                     !selectedPage ||
                     (!isPlaying && selectedPage.nextPageId === null)
@@ -198,6 +236,7 @@ function PlaybackControls() {
 
             <ActionButton
                 action="nextPage"
+                className={TOUCH_TARGET_CLASS}
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||
@@ -210,6 +249,7 @@ function PlaybackControls() {
 
             <ActionButton
                 action="lastPage"
+                className={TOUCH_TARGET_CLASS}
                 disabled={
                     !selectedPage ||
                     selectedPage.nextPageId === null ||

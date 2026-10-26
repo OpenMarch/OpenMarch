@@ -154,7 +154,7 @@ function ShortcutRow({
                             <Keycaps keys={formatBindingKeys(binding, isMac)} />
                             <button
                                 type="button"
-                                className="hover:text-red text-text-subtitle rounded-full p-2 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100"
+                                className="hover:text-red text-text-subtitle touch:flex touch:size-44 touch:items-center touch:justify-center touch:opacity-100 rounded-full p-2 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100"
                                 aria-label={t("settings.shortcuts.remove", {
                                     binding: row.formatted[i],
                                 })}
@@ -174,7 +174,7 @@ function ShortcutRow({
                     ) : (
                         <button
                             type="button"
-                            className={`hover:text-accent text-text-subtitle rounded-6 p-4 ${row.bindings.length > 0 ? "opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100" : ""}`}
+                            className={`hover:text-accent text-text-subtitle rounded-6 touch:flex touch:size-44 touch:items-center touch:justify-center p-4 ${row.bindings.length > 0 ? "touch:opacity-100 opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100" : ""}`}
                             aria-label={t("settings.shortcuts.add", {
                                 action: row.label,
                             })}
@@ -186,7 +186,7 @@ function ShortcutRow({
                     {isOverridden && (
                         <button
                             type="button"
-                            className="hover:text-accent text-text-subtitle rounded-6 p-4"
+                            className="hover:text-accent text-text-subtitle rounded-6 touch:flex touch:size-44 touch:items-center touch:justify-center p-4"
                             aria-label={t("settings.shortcuts.reset", {
                                 action: row.label,
                             })}

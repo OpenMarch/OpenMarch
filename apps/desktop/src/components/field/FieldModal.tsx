@@ -2,11 +2,13 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { XIcon } from "@phosphor-icons/react";
 import FieldProperties from "./FieldPropertiesSettings";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function FieldModal() {
+    const { t } = useTolgee();
     return (
         <SidebarModalLauncher
+            name={t("sidebar.field")}
             contents={<FieldPropertiesContents />}
             newContentId="field"
             buttonLabel={<FieldIcon />}

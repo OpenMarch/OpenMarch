@@ -8,6 +8,7 @@ import React, {
     useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { isShiftHeld } from "@/stores/TouchModifierStore";
 import {
     DEFAULT_MAX_VISIBLE_CHIPS,
     pushRecentId,
@@ -183,7 +184,7 @@ export default function ChipSelector<T>({
             case "Enter": {
                 e.preventDefault();
                 if (!open || activeIndex < 0) return;
-                selectItem(filteredItems[activeIndex], e.shiftKey);
+                selectItem(filteredItems[activeIndex], isShiftHeld(e));
                 inputRef.current?.blur();
                 return;
             }
@@ -214,7 +215,7 @@ export default function ChipSelector<T>({
 
     const handleOptionMouseDown = (e: React.MouseEvent, item: T) => {
         e.preventDefault();
-        selectItem(item, e.shiftKey);
+        selectItem(item, isShiftHeld(e));
         inputRef.current?.blur();
     };
 
@@ -305,10 +306,10 @@ export default function ChipSelector<T>({
             {visibleItems.map((item, index) => (
                 <React.Fragment key={getId(item)}>
                     <button
-                        className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                        className="hover:text-accent touch:min-h-44 flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                         onClick={(e) => {
                             e.preventDefault();
-                            selectItem(item, e.shiftKey);
+                            selectItem(item, isShiftHeld(e));
                         }}
                     >
                         {getLabel(item)}
