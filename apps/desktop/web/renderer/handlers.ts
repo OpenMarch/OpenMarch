@@ -157,11 +157,7 @@ async function saveToDevice(
 
 /** "tapAgain": the file is ready but needs a fresh tap (see offerBackupTap) */
 export type BackupResult =
-    | "shared"
-    | "downloaded"
-    | "cancelled"
-    | "tapAgain"
-    | "nothing";
+    "shared" | "downloaded" | "cancelled" | "tapAgain" | "nothing";
 
 /** Records a backup that was shared or downloaded. */
 async function finishBackup(target: string | null | undefined) {
