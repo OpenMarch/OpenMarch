@@ -143,6 +143,13 @@ export default defineConfig({
             { find: /^(node:)?path$/, replacement: web("worker/path.ts") },
             { find: /^(node:)?sqlite$/, replacement: web("worker/sqlite.ts") },
             { find: /^(node:)?crypto$/, replacement: web("worker/crypto.ts") },
+            // @mediabunny/aac-encoder imports it only under Node. Left to Vite's shared
+            // browser-external stub, it ties the main chunk and the app chunk into a
+            // cycle and the app fails to start.
+            {
+                find: /^(node:)?worker_threads$/,
+                replacement: web("renderer/workerThreads.ts"),
+            },
             {
                 find: "@sentry/electron/renderer",
                 replacement: web("renderer/sentry.ts"),
