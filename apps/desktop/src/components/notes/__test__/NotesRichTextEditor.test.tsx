@@ -53,7 +53,8 @@ describe("NotesRichTextEditor", () => {
         });
 
         // setEditable on mount emits one update with the loaded HTML.
-        for (const [emitted] of onChange.mock.calls) expect(emitted).toBe(html);
+        expect(onChange).toHaveBeenCalledTimes(1);
+        expect(onChange).toHaveBeenCalledWith(html);
         expect(onBlur).toHaveBeenLastCalledWith(html);
     });
 
