@@ -20,8 +20,12 @@ export const ipcRenderer = {
     sendSync: vi.fn(),
 };
 
-// electron-store keeps its files under userData; give each test process its own folder.
-const userDataPath = path.join(os.tmpdir(), `openmarch-vitest-${process.pid}`);
+// electron-store keeps its files under userData; give each test process its own
+// folder, inside the run's temp folder that vitest.global-setup.ts removes.
+const userDataPath = path.join(
+    process.env.OPENMARCH_VITEST_USER_DATA ?? os.tmpdir(),
+    `openmarch-vitest-${process.pid}`,
+);
 
 export const app = {
     getPath: vi.fn(() => userDataPath),

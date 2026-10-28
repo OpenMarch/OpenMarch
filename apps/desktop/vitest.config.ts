@@ -32,6 +32,7 @@ export default defineConfig(() => {
             // Enable Node.js built-in modules
             globals: true,
             setupFiles: ["./vitest.setup.ts"],
+            globalSetup: ["./vitest.global-setup.ts"],
             include: ["**/__test__/**.test.ts?(x)"],
             coverage: {
                 reporter: ["text", "json", "json-summary", "html"],

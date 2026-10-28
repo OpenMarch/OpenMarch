@@ -21,7 +21,13 @@
         "types": ["vite/client"],
         "typeRoots": ["./node_modules/@types", "./types"]
     },
-    "include": ["src", "electron", "web", "vitest.setup.ts"],
+    "include": [
+        "src",
+        "electron",
+        "web",
+        "vitest.setup.ts",
+        "vitest.global-setup.ts"
+    ],
     "exclude": [
         "**/__test__/**",
         "**/*.test.ts",
