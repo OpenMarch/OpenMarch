@@ -19,6 +19,7 @@ import { applicationMenu } from "./application-menu";
 import { openSettingsWindow } from "./settings-window";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { handleWindowOpen } from "./window-open-policy";
+import { lastShowFolder as findLastShowFolder } from "./last-show-folder";
 import { PDFExportService } from "./services/export-service";
 import { VideoExportService } from "./services/video-export-service";
 import {
@@ -109,6 +110,8 @@ ipcMain.on("settings:set", (event, settings) => {
 });
 
 ipcMain.handle("settings:get", (_, key) => {
+    // electron-store throws on non-string keys
+    if (typeof key !== "string") return undefined;
     return store.get(key);
 });
 
@@ -333,6 +336,15 @@ function getPlaywrightDefaultDocumentsPath(): string | undefined {
     return undefined;
 }
 
+/** Where show file dialogs start; see last-show-folder.ts. */
+function lastShowFolder(): string | undefined {
+    return findLastShowFolder(
+        store.get("databasePath") as string | undefined,
+        getRecentFiles().map((file) => file.path),
+        isNewShowDraftPath,
+    );
+}
+
 async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
     if (!win) return { canceled: true, filePath: "" };
     const playwrightPath = getPlaywrightDefaultDocumentsPath();
@@ -393,7 +405,7 @@ function initDatabaseIpcHandlers() {
     ipcMain.handle("newShow:discardDraft", async () => discardNewShowDraft());
     ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
     ipcMain.handle("newShow:choosePreviousDotsFile", async () =>
-        choosePreviousDotsFile(win),
+        choosePreviousDotsFile(win, lastShowFolder()),
     );
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
@@ -1088,6 +1100,7 @@ export async function newFile() {
     } else {
         const dialogResult = await dialog.showSaveDialog(win, {
             buttonLabel: "Create New",
+            defaultPath: lastShowFolder(),
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         });
         if (dialogResult.canceled || !dialogResult.filePath) return;
@@ -1117,6 +1130,7 @@ export async function saveFile() {
     const response = await dialog
         .showSaveDialog(win, {
             buttonLabel: "Save Copy",
+            defaultPath: lastShowFolder(),
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         })
         .then(async (path) => {
@@ -1163,6 +1177,7 @@ export async function loadDatabaseFile() {
     // If there is no previous path, open a dialog
     dialog
         .showOpenDialog(win, {
+            defaultPath: lastShowFolder(),
             filters: [
                 { name: "OpenMarch File", extensions: ["dots"] },
                 { name: "All Files", extensions: ["*"] },
@@ -1277,9 +1292,13 @@ function audioInsertError(
 async function pickAudioFilePath(): Promise<string | null> {
     if (!win) return null;
     const result = await dialog.showOpenDialog(win, {
+        defaultPath:
+            (store.get("lastAudioFolder") as string | undefined) ??
+            lastShowFolder(),
         filters: AUDIO_FILE_DIALOG_FILTERS,
     });
     if (result.canceled || !result.filePaths[0]) return null;
+    store.set("lastAudioFolder", dirname(result.filePaths[0]));
     return result.filePaths[0];
 }
 

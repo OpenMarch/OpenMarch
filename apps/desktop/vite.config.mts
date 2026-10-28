@@ -56,7 +56,10 @@ export default defineConfig(({ command }) => {
                             sourcemap,
                             minify: isBuild,
                             outDir: "dist-electron/main",
-                            rollupOptions: {
+                            rolldownOptions: {
+                                // Runtime dependencies stay in node_modules. ESM-only packages
+                                // such as electron-store are devDependencies, so they are
+                                // bundled into this CommonJS build instead.
                                 external: [
                                     "electron",
                                     "node",
@@ -87,7 +90,7 @@ export default defineConfig(({ command }) => {
                             sourcemap: sourcemap ? "inline" : undefined, // #332
                             minify: isBuild,
                             outDir: "dist-electron/preload",
-                            rollupOptions: {
+                            rolldownOptions: {
                                 external: Object.keys(
                                     "dependencies" in pkg
                                         ? pkg.dependencies

@@ -52,7 +52,9 @@ async function handle(request: VideoFileRequest) {
         case "remove":
             await sink?.close().catch(() => {});
             sink = null;
-            await (await folder())
+            await (
+                await folder()
+            )
                 .removeEntry(request.file)
                 .catch(() => undefined);
             return;

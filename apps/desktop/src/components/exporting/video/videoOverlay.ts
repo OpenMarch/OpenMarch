@@ -148,8 +148,7 @@ export class OverlayTimeline {
             this.measureCursor++;
         }
         const measure = this.measures[this.measureCursor] as
-            | Measure
-            | undefined;
+            Measure | undefined;
         // The active rehearsal mark is the most recent one at or before the
         // current measure (marks denote the start of a section)
         let rehearsalMark: string | null = null;

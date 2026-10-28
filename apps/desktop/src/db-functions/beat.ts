@@ -87,8 +87,7 @@ const modifiedBeatArgsToRealModifiedBeatArgs = (
             ? {}
             : {
                   include_in_measure: (args.include_in_measure ? 1 : 0) as
-                      | 0
-                      | 1,
+                      0 | 1,
               }),
     } as RealModifiedBeatArgs;
 };

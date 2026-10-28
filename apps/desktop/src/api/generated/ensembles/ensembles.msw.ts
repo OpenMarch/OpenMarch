@@ -72,8 +72,7 @@ export const getGetApiEditorV1EnsemblesMockHandler = (
         | ((
               info: Parameters<Parameters<typeof http.get>[1]>[0],
           ) =>
-              | Promise<GetApiEditorV1Ensembles200>
-              | GetApiEditorV1Ensembles200),
+              Promise<GetApiEditorV1Ensembles200> | GetApiEditorV1Ensembles200),
     options?: RequestHandlerOptions,
 ) => {
     return http.get(

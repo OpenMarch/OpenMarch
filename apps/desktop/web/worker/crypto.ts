@@ -5,7 +5,7 @@
  * same digest Node does, so a show migrated on the web matches one migrated
  * on desktop.
  */
-import { sha256 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2.js";
 
 const toHex = (bytes: Uint8Array) =>
     Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
