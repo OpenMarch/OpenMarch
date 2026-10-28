@@ -19,6 +19,7 @@ import { applicationMenu } from "./application-menu";
 import { openSettingsWindow } from "./settings-window";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { handleWindowOpen } from "./window-open-policy";
+import { lastShowFolder as findLastShowFolder } from "./last-show-folder";
 import { PDFExportService } from "./services/export-service";
 import { VideoExportService } from "./services/video-export-service";
 import {
@@ -335,13 +336,13 @@ function getPlaywrightDefaultDocumentsPath(): string | undefined {
     return undefined;
 }
 
-/**
- * The folder of the show opened last. Since Electron 43, a file dialog without
- * a defaultPath opens in Downloads instead of the folder the OS remembered.
- */
+/** Where show file dialogs start; see last-show-folder.ts. */
 function lastShowFolder(): string | undefined {
-    const lastPath = store.get("databasePath") as string | undefined;
-    return lastPath ? dirname(lastPath) : undefined;
+    return findLastShowFolder(
+        store.get("databasePath") as string | undefined,
+        getRecentFiles().map((file) => file.path),
+        isNewShowDraftPath,
+    );
 }
 
 async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
