@@ -637,60 +637,6 @@ ipcMain.handle("closeCurrentFile", () => {
     void closeCurrentFile();
 });
 
-// Plugins
-ipcMain.handle("plugins:list", async () => {
-    const pluginsDir = join(app.getPath("userData"), "plugins");
-    if (!fs.existsSync(pluginsDir)) return [];
-    return fs
-        .readdirSync(pluginsDir)
-        .filter((file) => file.endsWith(".om.js"))
-        .map((file) => join(pluginsDir, file));
-});
-
-ipcMain.handle("plugins:get", async (_, pluginPath) => {
-    return fs.readFileSync(pluginPath, "utf-8");
-});
-
-ipcMain.handle("plugins:install", async (_, pluginUrl) => {
-    const pluginsDir = join(app.getPath("userData"), "plugins");
-    if (!fs.existsSync(pluginsDir)) {
-        fs.mkdirSync(pluginsDir);
-    }
-    let response;
-
-    try {
-        response = await fetch(pluginUrl);
-        if (!response.ok) {
-            return false;
-        }
-    } catch (e) {
-        console.error(e);
-        return false;
-    }
-
-    const pluginCode = await response.text();
-    const pluginName = pluginUrl.split("/").pop();
-    const pluginPath = join(pluginsDir, pluginName);
-
-    fs.writeFileSync(pluginPath, pluginCode, "utf-8");
-    return true;
-});
-
-ipcMain.handle("plugins:uninstall", async (_, fileName) => {
-    const pluginsDir = join(app.getPath("userData"), "plugins");
-    if (!fs.existsSync(pluginsDir)) {
-        fs.mkdirSync(pluginsDir);
-    }
-
-    try {
-        fs.rmSync(join(pluginsDir, fileName));
-        return true;
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
-});
-
 // Log handler - allows renderer to send logs to main process
 ipcMain.handle(
     "log:print",

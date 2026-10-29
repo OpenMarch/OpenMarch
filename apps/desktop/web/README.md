@@ -44,7 +44,7 @@ In the app's own code, `isWebBuild` (`src/utilities/webBuild.ts`) turns off
 what has no meaning in a browser: the window buttons and native menu in the
 title bar (replaced by `WebFileMenu`), the update check, and the new-show
 wizard's file location, every export but video (and mobile upload), and the settings for
-plugins, privacy, developer tools and file repair. "Save a copy" backs up the file;
+privacy, developer tools and file repair. "Save a copy" backs up the file;
 ⌘/Ctrl+S and ⌘/Ctrl+O are bound, since there is no native menu to bind
 them, so swapping marchers moves to ⌘/Ctrl+Shift+S.
 
@@ -177,7 +177,7 @@ These are hidden, or answer the way the app expects when they're
 unavailable:
 
 - PDF and mobile export (they use Electron's `printToPDF` and sign-in)
-- Sign-in, plugins, automatic updates, analytics
+- Sign-in, automatic updates, analytics
 - Recent files, repairing a file, and backups before migrating
 
 ## Deploying
