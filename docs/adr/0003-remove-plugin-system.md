@@ -51,6 +51,7 @@ a sandbox, recorded in its own ADR.
 
 ## Verification
 
-- `pnpm --filter @openmarch/desktop typecheck` and the desktop unit tests,
-  including `SettingsWindow.test.tsx` and `SettingsSidebar.test.tsx`.
+- `pnpm tsc --noEmit` in `apps/desktop` and the desktop unit tests,
+  including `SettingsWindow.test.tsx` and `SettingsSidebar.test.tsx`, and the
+  Electron settings e2e spec (`e2e/tests/settings.spec.mts`).
 - `git grep -n "plugins:"` under `apps/desktop` finds no IPC channel.
