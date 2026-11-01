@@ -315,7 +315,17 @@ export function pageMenuEntries(
 ): TimelineMenuEntry[] {
     if (!range) return [];
     const page = pageTimelineOver(ctx, range);
-    // Its timeline is gone, or left empty with a move split off it whole (#581)
+    // Its timeline is gone, or left empty with a move split off it whole (#581). Only a move over
+    // the box's counts is a clip to split instead
+    const clipOver =
+        page !== null &&
+        ctx.storedTimelines.some(
+            (t) =>
+                t.id !== page.id &&
+                t.start === range.start &&
+                t.end === range.end &&
+                t.marcherIds.size > 0,
+        );
     if (!page || page.marcherIds.size === 0)
         return ctx.selectedMarcherIds.size === 0
             ? []
@@ -327,7 +337,7 @@ export function pageMenuEntries(
                           "timeline.split.menuNone",
                           "Split selected into new move",
                       ),
-                      disabledReason: page
+                      disabledReason: clipOver
                           ? tolgee.t(
                                 "timeline.split.pageSplitOff",
                                 "This page has no move of its own. To split a move over it, use the move's clip.",

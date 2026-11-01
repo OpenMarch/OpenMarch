@@ -180,6 +180,27 @@ describe("split and merge entries (UI-25)", () => {
             splitEntryState(ctx([1, 2, 3], false, emptied), 8)!.disabledReason,
         ).toMatch(/Every marcher in Move 3 is selected/);
     });
+
+    it("an emptied page box with no move left over it says nothing moves there, not to use a clip", () => {
+        // Everyone split off, then the move deleted (or the page cleared, or held from the page
+        // before): the page timeline is left empty with no clip over its counts
+        const alone = [timeline(3, 9, 17, [])];
+        const [entry] = pageMenuEntries(
+            ctx([2], false, alone),
+            BOXES[1]!,
+            commands(),
+        );
+        expect(entry!.disabledReason).toMatch(/Nothing moves on this page yet/);
+        // A move over other counts of the page isn't a clip over the box's
+        const [inside] = pageMenuEntries(
+            ctx([2], false, [...alone, timeline(8, 10, 14, [1], "Move 3")]),
+            BOXES[1]!,
+            commands(),
+        );
+        expect(inside!.disabledReason).toMatch(
+            /Nothing moves on this page yet/,
+        );
+    });
 });
 
 describe("the clip drag (UI-25)", () => {
