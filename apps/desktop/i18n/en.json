@@ -1003,8 +1003,6 @@
                     "title": "Field setup"
                 },
                 "performers": {
-                    "added": "Added performers",
-                    "addNew": "Add performers",
                     "description": "Add marchers now or skip and add them later in the editor.",
                     "noneAdded": "No performers added yet.",
                     "title": "Performers"
@@ -1375,8 +1373,7 @@
         "addMarcher": "Add",
         "addMarchers": "Add Marchers",
         "addMethod": {
-            "manual": "Add manually",
-            "or": "or"
+            "manual": "Add manually"
         },
         "cancelDeleteButton": "Cancel",
         "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",

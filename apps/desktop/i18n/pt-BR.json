@@ -743,8 +743,6 @@
                     "title": "Configuração do campo"
                 },
                 "performers": {
-                    "added": "Artistas adicionados",
-                    "addNew": "Adicionar artistas",
                     "description": "Adicione os integrantes agora ou pule e adicione-os mais tarde no editor.",
                     "noneAdded": "Nenhum artista adicionado ainda.",
                     "title": "Artistas"

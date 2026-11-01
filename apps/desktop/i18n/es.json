@@ -743,8 +743,6 @@
                     "title": "Configuración de campo"
                 },
                 "performers": {
-                    "added": "Intérpretes añadidos",
-                    "addNew": "Añadir intérpretes",
                     "description": "Agrega marchadores ahora o omite y agrégalos más tarde en el editor.",
                     "noneAdded": "Todavía no se han añadido intérpretes.",
                     "title": "Intérpretes"

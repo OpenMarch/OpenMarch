@@ -743,8 +743,6 @@
                     "title": "Configuration du champ"
                 },
                 "performers": {
-                    "added": "Interprètes ajoutés",
-                    "addNew": "Ajouter des interprètes",
                     "description": "Ajoutez les marcheurs maintenant ou passez et ajoutez-les plus tard dans l'éditeur.",
                     "noneAdded": "Aucun interprète ajouté pour l'instant.",
                     "title": "Interprètes"
