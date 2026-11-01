@@ -6,6 +6,7 @@ import { drawBox, filesOf, ranksOf, type BoxSize } from "../box/boxGeometry";
 import {
     boxesAt,
     membershipAfter,
+    UNGROUPED_KIND,
     movedBox,
     resplit,
     withoutMembers,
@@ -132,6 +133,71 @@ describe("which placed box holds at a moment", () => {
                 positionOf: () => ({ x: 0, y: 0 }),
             }),
         ).toEqual([]);
+    });
+});
+
+describe("ungrouped marchers", () => {
+    const ends = new Map<number | null, number>([
+        [10, 8],
+        [20, 16],
+        [30, 24],
+    ]);
+    const endBeatOf = (id: number | null) => ends.get(id);
+    /** Marks the members of `r` ungrouped in move `timelineId` */
+    const ungrouped = (r: PlacedRecipe, timelineId: number): PlacedRecipe => ({
+        ...r,
+        id: 99,
+        timelineId,
+        kind: UNGROUPED_KIND,
+        params: {},
+    });
+
+    it("ends a box held from an earlier move where it was ungrouped, and shows nothing for it", () => {
+        const r = recipe(4, { x: 40, y: 40 }, 10);
+        const positions = at(r);
+        const find = (beat: number) =>
+            boxesAt({
+                recipes: [r, ungrouped(r, 20)],
+                endBeatOf,
+                beat,
+                positionOf: (id) => positions.get(id),
+            });
+        expect(find(8).map((b) => b.recipe.id)).toEqual([1]);
+        expect(find(12).map((b) => b.recipe.id)).toEqual([1]);
+        expect(find(16)).toEqual([]);
+        expect(find(40)).toEqual([]);
+    });
+
+    it("keeps them ungrouped even if they come back to the box's spots", () => {
+        const r = recipe(4, { x: 40, y: 40 }, 10);
+        const positions = at(r);
+        // Ungrouped where they stood after moving away; now back on the box's spots
+        const moved = {
+            ...ungrouped(r, 20),
+            members: r.members.map((m) => ({ ...m, x: m.x + 50 })),
+        };
+        expect(
+            boxesAt({
+                recipes: [r, moved],
+                endBeatOf,
+                beat: 24,
+                positionOf: (id) => positions.get(id),
+            }),
+        ).toEqual([]);
+    });
+
+    it("lets a shape placed later take them again", () => {
+        const early = recipe(4, { x: 40, y: 40 }, 10, 1);
+        const late = recipe(4, { x: 40, y: 40 }, 30, 2);
+        const positions = at(late);
+        expect(
+            boxesAt({
+                recipes: [early, ungrouped(early, 20), late],
+                endBeatOf,
+                beat: 24,
+                positionOf: (id) => positions.get(id),
+            }).map((b) => b.recipe.id),
+        ).toEqual([2]);
     });
 });
 

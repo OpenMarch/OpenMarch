@@ -4818,6 +4818,95 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         );
     });
 
+    test("change: Ungroup on the next page ends the box there, as an edit there would: nobody moves, Page 1 keeps its box, one undo step; on Page 1 it deletes the box", async ({
+        show,
+    }) => {
+        const { page } = show;
+        const kinds = async () =>
+            (
+                await show.query<{ kind: string }>(
+                    "SELECT kind FROM timeline_shape_recipes ORDER BY id",
+                )
+            ).map((r) => r.kind);
+        const laterMoves = async () =>
+            (
+                await show.query<{ count: number }>(
+                    "SELECT COUNT(*) AS count FROM timelines WHERE end_beat > 32",
+                )
+            )[0]!.count;
+        const readoutShown = page.getByTestId("placed-box-readout");
+        await selectPage(show, "Page 1");
+        await placeBox(show, 1);
+        const placed = await savedPositions(show, 1);
+
+        // From the floating editor, on Page 2, where the box is only carried
+        await selectPage(show, "Page 2");
+        const member = await marcherScreen(page, 1);
+        await page.mouse.click(member.x, member.y);
+        await expect(readoutShown).toBeVisible();
+        const steps = await undoSteps(show);
+        await readoutShown.getByTestId("shape-editor-ungroup").click();
+        await expect.poll(kinds).toEqual(["block", "ungrouped"]);
+        await waitForIdle(page);
+        await expect(readoutShown).toBeHidden();
+        expect(await placedBoxes(page)).toEqual([]);
+        // Page 2 takes the change, everyone set where they stood
+        expect(await laterMoves()).toBe(1);
+        expect(await savedPositions(show, 1)).toEqual(placed);
+        expect(await savedPositions(show, 2)).toEqual(placed);
+        expect(await undoSteps(show)).toBe(steps + 1);
+        // The marchers stay selected, now as plain marchers
+        expect((await readField(page)).selection).toEqual(ALL);
+        // A click on a member picks just that marcher
+        await page.keyboard.press("Escape");
+        await page.mouse.click(member.x, member.y);
+        expect((await readField(page)).selection).toEqual([1]);
+        await expect(readoutShown).toBeHidden();
+
+        // Page 1 keeps its box
+        await page.keyboard.press("Escape");
+        await selectPage(show, "Page 1");
+        await page.mouse.click(member.x, member.y);
+        await expect(readoutShown).toBeVisible();
+
+        // Undo shares Page 1's box with Page 2 again
+        await page.keyboard.press("ControlOrMeta+z");
+        await expect.poll(kinds).toEqual(["block"]);
+        await waitForIdle(page);
+        expect(await laterMoves()).toBe(0);
+        await page.keyboard.press("Escape");
+        await selectPage(show, "Page 2");
+        await page.mouse.click(member.x, member.y);
+        await expect(readoutShown).toBeVisible();
+
+        // The field's menu offers it for a selected box only, first
+        await page.mouse.click(member.x, member.y, { button: "right" });
+        const menu = page.getByTestId("field-menu");
+        await expect(menu).toBeVisible();
+        await expect(menu.getByRole("menuitem").first()).toHaveText(/Ungroup/);
+        await page.keyboard.press("Escape");
+        await expect(menu).toBeHidden();
+
+        // On Page 1, the shortcut deletes the box: nobody moves, and Page 2 follows
+        await page.keyboard.press("Escape");
+        await selectPage(show, "Page 1");
+        await page.mouse.click(member.x, member.y);
+        await expect(readoutShown).toBeVisible();
+        await page.keyboard.press("ControlOrMeta+Shift+g");
+        await expect.poll(kinds).toEqual([]);
+        await waitForIdle(page);
+        await expect(readoutShown).toBeHidden();
+        expect(await savedPositions(show, 1)).toEqual(placed);
+        expect(await laterMoves()).toBe(0);
+        await page.keyboard.press("Escape");
+        await page.mouse.click(member.x, member.y, { button: "right" });
+        await expect(menu).toBeVisible();
+        await expect(menu.getByText(/Ungroup/)).toHaveCount(0);
+        await page.keyboard.press("Escape");
+        await selectPage(show, "Page 2");
+        expect(await placedBoxes(page)).toEqual([]);
+    });
+
     test("change: turned about a member on the next page, the member at the pivot stays in the box there (owner on #486)", async ({
         show,
     }) => {

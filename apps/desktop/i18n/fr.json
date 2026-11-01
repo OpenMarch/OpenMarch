@@ -90,7 +90,9 @@
             "evenOut": "Forme : égaliser le contour",
             "expand": "Forme : agrandir, en gardant les proportions",
             "shrink": "Forme : réduire, en gardant les proportions",
-            "ring": "Anneau des favoris : maintenez pour choisir une forme, touchez pour le garder ouvert"
+            "ring": "Anneau des favoris : maintenez pour choisir une forme, touchez pour le garder ouvert",
+            "ungroup": "Forme : Dégrouper",
+            "ungroupKeywords": "dégrouper forme séparer détacher"
         },
         "swap": {
             "error": "Impossible d'échanger les marcheurs {{marcher1}} et {{marcher2}}",
@@ -1334,7 +1336,8 @@
                 "label": "Graine"
             },
             "steps": "pas",
-            "turn": "Rotation, en degrés dans le sens horaire"
+            "turn": "Rotation, en degrés dans le sens horaire",
+            "ungroup": "Dégrouper : les marcheurs restent où ils sont"
         },
         "field": {
             "stepLimit": "{steps} à 5"
@@ -1503,7 +1506,8 @@
             "summary": {
                 "empty": "{count, plural, one {# vide} other {# vides}}",
                 "steps": "{interval} pas"
-            }
+            },
+            "ungroupError": "Erreur lors du dégroupement de la forme"
         },
         "save": {
             "ariaLabel": "Enregistrer cette forme dans votre bibliothèque",

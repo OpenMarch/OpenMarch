@@ -276,3 +276,25 @@ the consequence about splits. None of this changes the schema.
 
 Verification: the db-function `shapeRecipes.test.ts` covers rules 1 to 3, including the split
 and merge cases (UI-25) with undo; `boxMembership.test.ts` and `box-tool.spec.mts` cover rule 4.
+
+## Amendment, 2026-11-01: ungrouping
+
+**Ungroup** (Shift+⌘G, the field's menu, the floating editor) turns a placed shape back into
+plain marchers. Nobody moves. It follows the same rules as editing the shape (Revision,
+2026-10-14), and it changes no schema.
+
+1. **On the shape's own page** (or an edit window reaching back over its move), the recipe and
+   its members are deleted. Later pages that held the form follow, because they only showed the
+   same recipe.
+2. **On a later page the shape is carried onto**, the change belongs to that page. Its members are
+   set there, as an edit that moves nobody sets them, and a recipe of kind `ungrouped` (version 1,
+   empty `params`) is saved on that page's move with them as members. It describes no shape. It
+   claims its members from its move's end, so the earlier recipe isn't shown from there on and
+   earlier pages keep theirs. It keeps claiming them wherever they go next, until a recipe placed
+   later takes them (decision 4). Being an ordinary recipe, it is deleted with its move, carried
+   by splits and merges, and undone with the positions.
+3. An app without the kind skips the recipe (decision 5), so it shows the earlier shape on later
+   pages as it did before the ungroup. Positions are unaffected.
+
+Verification: `placedBox.test.ts` (ungrouped marchers) and the browser scenario "Ungroup on the
+next page ends the box there" in `box-tool.spec.mts`.

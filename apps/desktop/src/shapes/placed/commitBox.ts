@@ -145,7 +145,7 @@ function savedAs(
  * `box` as it's stored now: a save before this one moved it, or gave it its own copy on this move.
  * The same marchers find it; `box` itself when they don't (a save failed)
  */
-function storedBox(box: PlacedBox, beat: number): PlacedBox {
+export function storedBox(box: PlacedBox, beat: number): PlacedBox {
     const ids = new Set(box.recipe.members.map((m) => m.marcherId));
     return (
         placedBoxesAt(beat).find(
