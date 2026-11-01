@@ -31,6 +31,9 @@ import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
+import TouchModifierButtons from "./touch/TouchModifierButtons";
+import { startPenPalmGuard } from "./touch/penPalmGuard";
+import { startBubbleDismissGuard } from "./touch/swallowPress";
 
 /**
  * The field/stage UI of OpenMarch
@@ -99,6 +102,11 @@ export default function Canvas({
     const fullscreenEnterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const fullscreenExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { currentCollisions } = useCollisionStore();
+
+    // Palm rejection everywhere while a pen is down
+    useEffect(() => startPenPalmGuard(), []);
+    // A press that only closes a long-press explanation doesn't reach the field
+    useEffect(() => startBubbleDismissGuard(() => containerRef.current), []);
 
     // Custom hooks for the canvas
     useSelectionListeners({ canvas });
@@ -235,73 +243,80 @@ export default function Canvas({
             return;
 
         canvas.renderOnAddRemove = false;
-        try {
-            // Remove all marcher visuals from the canvas
-            canvas.getCanvasMarchers().forEach((canvasMarcher) => {
-                canvas.remove(canvasMarcher);
-                canvas.remove(canvasMarcher.textLabel);
-            });
-            canvas.getPathways().forEach((pathway) => {
-                canvas.remove(pathway);
-            });
-            canvas.getMidpoints().forEach((midpoint) => {
-                canvas.remove(midpoint);
-            });
-            canvas.getEndpoints().forEach((endpoint) => {
-                canvas.remove(endpoint);
-            });
+        // Replacing the marchers must not drop the selection
+        canvas.keepSelectionAcross(
+            () => {
+                try {
+                    // Remove all marcher visuals from the canvas
+                    canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+                        canvas.remove(canvasMarcher);
+                        canvas.remove(canvasMarcher.textLabel);
+                    });
+                    canvas.getPathways().forEach((pathway) => {
+                        canvas.remove(pathway);
+                    });
+                    canvas.getMidpoints().forEach((midpoint) => {
+                        canvas.remove(midpoint);
+                    });
+                    canvas.getEndpoints().forEach((endpoint) => {
+                        canvas.remove(endpoint);
+                    });
 
-            // Add all marcher visuals to the canvas
-            marchers.forEach((marcher) => {
-                const visualGroup = marcherVisuals[marcher.id];
-                if (!visualGroup) return;
+                    // Add all marcher visuals to the canvas
+                    marchers.forEach((marcher) => {
+                        const visualGroup = marcherVisuals[marcher.id];
+                        if (!visualGroup) return;
 
-                canvas.add(visualGroup.getCanvasMarcher());
-                canvas.add(visualGroup.getCanvasMarcher().textLabel);
+                        canvas.add(visualGroup.getCanvasMarcher());
+                        canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
-                canvas.add(visualGroup.getPreviousPathway());
-                // TODO: Uncomment when EditablePath is fully implemented
-                // Actually don't do this! We need the editable paths in separate queries since they're by page.
-                // They can't updated on every page change
-                // visualGroup
-                //     .getNextPathway()
-                //     .getFabricObjects()
-                //     .forEach((fabricObject: fabric.Object) => {
-                //         canvas.add(fabricObject);
-                //     });
-                // Using simple pathway method (like previous paths) for now
-                canvas.add(visualGroup.getNextPathway());
-                visualGroup
-                    .getPreviousPathway()
-                    .setColor(fieldProperties.theme.previousPath);
-                visualGroup
-                    .getNextPathway()
-                    .setColor(fieldProperties.theme.nextPath);
+                        canvas.add(visualGroup.getPreviousPathway());
+                        // TODO: Uncomment when EditablePath is fully implemented
+                        // Actually don't do this! We need the editable paths in separate queries since they're by page.
+                        // They can't updated on every page change
+                        // visualGroup
+                        //     .getNextPathway()
+                        //     .getFabricObjects()
+                        //     .forEach((fabricObject: fabric.Object) => {
+                        //         canvas.add(fabricObject);
+                        //     });
+                        // Using simple pathway method (like previous paths) for now
+                        canvas.add(visualGroup.getNextPathway());
+                        visualGroup
+                            .getPreviousPathway()
+                            .setColor(fieldProperties.theme.previousPath);
+                        visualGroup
+                            .getNextPathway()
+                            .setColor(fieldProperties.theme.nextPath);
 
-                canvas.add(visualGroup.getPreviousMidpoint());
-                canvas.add(visualGroup.getNextMidpoint());
-                visualGroup
-                    .getPreviousMidpoint()
-                    .setColor(fieldProperties.theme.previousPath);
-                visualGroup
-                    .getNextMidpoint()
-                    .setColor(fieldProperties.theme.nextPath);
+                        canvas.add(visualGroup.getPreviousMidpoint());
+                        canvas.add(visualGroup.getNextMidpoint());
+                        visualGroup
+                            .getPreviousMidpoint()
+                            .setColor(fieldProperties.theme.previousPath);
+                        visualGroup
+                            .getNextMidpoint()
+                            .setColor(fieldProperties.theme.nextPath);
 
-                canvas.add(visualGroup.getPreviousEndpoint());
-                canvas.add(visualGroup.getNextEndpoint());
-                visualGroup
-                    .getPreviousEndpoint()
-                    .setColor(fieldProperties.theme.previousPath);
-                visualGroup
-                    .getNextEndpoint()
-                    .setColor(fieldProperties.theme.nextPath);
-            });
+                        canvas.add(visualGroup.getPreviousEndpoint());
+                        canvas.add(visualGroup.getNextEndpoint());
+                        visualGroup
+                            .getPreviousEndpoint()
+                            .setColor(fieldProperties.theme.previousPath);
+                        visualGroup
+                            .getNextEndpoint()
+                            .setColor(fieldProperties.theme.nextPath);
+                    });
 
-            // Request render all to ensure the canvas is updated
-            canvas.requestRenderAll();
-        } finally {
-            canvas.renderOnAddRemove = true;
-        }
+                    // Request render all to ensure the canvas is updated
+                    canvas.requestRenderAll();
+                } finally {
+                    canvas.renderOnAddRemove = true;
+                }
+            },
+            { rebuild: true },
+        );
+        canvas.fire("marchers:rebuilt" as any, {});
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher appearances
@@ -536,7 +551,22 @@ export default function Canvas({
         };
     }, [canvas, centerAndFitCanvas, isFullscreen]);
 
+    /** Touch stand-in for the right-click that clears the line being drawn */
+    const clearLine = useCallback(() => {
+        if (!canvas) return;
+        const listeners = canvas.listeners;
+        if (listeners instanceof LineListeners) {
+            listeners.clearLine();
+            canvas.requestRenderAll();
+        }
+    }, [canvas]);
+
     /* --------------------------Animation Functions-------------------------- */
+
+    // While playing, the selection's box would stay behind as the marchers move
+    useEffect(() => {
+        canvas?.setSelectionHidden(isPlaying);
+    }, [canvas, isPlaying]);
 
     // This effect ensures that when the animation is playing, the shape paths
     // are removed from the canvas.
@@ -655,6 +685,13 @@ export default function Canvas({
                         className="text-text animate-spin"
                     />
                 </div>
+            )}
+            {canvas && !isFullscreen && (
+                <TouchModifierButtons
+                    canvas={canvas}
+                    showClearLine={alignmentEvent === "line"}
+                    onClearLine={clearLine}
+                />
             )}
         </div>
     );

@@ -3,6 +3,64 @@ import type Measure from "@/global/classes/Measure";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { ModifiedBeatArgs, updateBeats } from "@/db-functions";
 import { db } from "@/global/database/db";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import {
+    limitingGap,
+    MARKER_HIT_WIDTH_MIN,
+    MARKER_HIT_WIDTH_TOUCH,
+} from "./markerHitWidth";
+
+/**
+ * A CSS custom property with the timeline's zoom (pixels per second), set on
+ * the waveform's container. It reaches into wavesurfer's shadow root, so the
+ * markers' hit strips follow the zoom without being rebuilt.
+ */
+export const PX_PER_SEC_CSS_VAR = "--om-timeline-px-per-sec";
+
+/**
+ * Lets a finger drag a beat marker: the marker claims the touch (so the
+ * timeline doesn't scroll instead) and, in touch mode, gets an invisible
+ * strip around its 2px line to grab. Wavesurfer renders regions in its own
+ * shadow root, so this is done with inline styles rather than classes.
+ */
+export function prepareMarkerForTouch(
+    element: HTMLElement | null | undefined,
+    isTouchMode: boolean,
+    gapsSeconds: { before: number; after: number } = {
+        before: Infinity,
+        after: Infinity,
+    },
+): void {
+    if (!element) return;
+    element.style.touchAction = "none";
+    if (!isTouchMode) return;
+    const hit = document.createElement("div");
+    hit.setAttribute("part", "marker-touch-hit");
+    Object.assign(hit.style, {
+        position: "absolute",
+        top: "0",
+        bottom: "0",
+        left: "0",
+        transform: "translateX(-50%)",
+        width: markerHitWidthCss(gapsSeconds),
+        touchAction: "none",
+    });
+    element.appendChild(hit);
+}
+
+/**
+ * The hit strip's CSS width: 32 px, but no wider than the gap to either
+ * neighboring beat (in seconds, times the zoom from PX_PER_SEC_CSS_VAR), so
+ * at fast tempos or zoomed out a drag still grabs the beat under the finger.
+ */
+export function markerHitWidthCss(gapsSeconds: {
+    before: number;
+    after: number;
+}): string {
+    const gap = limitingGap(gapsSeconds.before, gapsSeconds.after);
+    if (gap === Infinity) return `${MARKER_HIT_WIDTH_TOUCH}px`;
+    return `clamp(${MARKER_HIT_WIDTH_MIN}px, calc(var(${PX_PER_SEC_CSS_VAR}, 40) * ${gap} * 1px), ${MARKER_HIT_WIDTH_TOUCH}px)`;
+}
 
 /**
  * Calculates the modified beats when a beat's duration is changed. The duration is calculated from the region's width.
@@ -142,6 +200,7 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
      * Measure markers remain non-draggable and non-resizable
      */
     createTimingMarkers = () => {
+        const isTouchMode = useInputModeStore.getState().mode === "touch";
         let curTimestamp = this.beats[0].duration;
         this.beats.forEach((beat, index) => {
             // Don't create markers for the first two beats
@@ -166,6 +225,12 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
 
             // Add event listener for when resizing ends
             newRegion.on("update-end", () => this.handleBeatResized(newRegion));
+            if (index > 1)
+                prepareMarkerForTouch(newRegion.element, isTouchMode, {
+                    // A beat's duration is the time to the next beat
+                    before: this.beats[index - 1].duration,
+                    after: beat.duration,
+                });
 
             this.beatRegions.set(beat.id, newRegion);
             curTimestamp = end;

@@ -1,4 +1,5 @@
 import WaveSurfer from "wavesurfer.js";
+import { keepWaveformFromScrolling } from "./keepWaveformFromScrolling";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -495,6 +496,7 @@ export default function AudioPlayer() {
         const blob = new Blob([waveformBuffer], { type: "audio/wav" });
         void ws.loadBlob(blob);
 
+        keepWaveformFromScrolling(ws);
         setWaveSurfer(ws);
 
         return () => {

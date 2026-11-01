@@ -4,10 +4,9 @@ import {
     splitPatternString,
     useCreateFromTempoGroup,
 } from "@/components/music/TempoGroup/TempoGroup";
-import { Input, Button, UnitInput, TooltipClassName } from "@openmarch/ui";
-import { InfoIcon } from "@phosphor-icons/react";
+import { Input, Button, UnitInput } from "@openmarch/ui";
+import InfoTip from "@/components/ui/InfoTip";
 import { Form, FormField, Label } from "@radix-ui/react-form";
-import * as Tooltip from "@radix-ui/react-tooltip";
 import clsx from "clsx";
 import React, { useMemo } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
@@ -206,22 +205,10 @@ const NewTempoGroupForm = React.forwardRef<
                     >
                         <Label className="text-sm">
                             <T keyName="music.endTempo" />
-                            <Tooltip.Root>
-                                <Tooltip.Trigger type="button">
-                                    <InfoIcon
-                                        size={18}
-                                        className="text-text/60"
-                                    />
-                                </Tooltip.Trigger>
-                                <Tooltip.Portal>
-                                    <Tooltip.Content
-                                        className={TooltipClassName}
-                                        side="top"
-                                    >
-                                        <T keyName="music.endTempoTooltip" />
-                                    </Tooltip.Content>
-                                </Tooltip.Portal>
-                            </Tooltip.Root>
+                            <InfoTip
+                                side="top"
+                                content={<T keyName="music.endTempoTooltip" />}
+                            />
                         </Label>
                         <UnitInput
                             id="end-tempo-input"

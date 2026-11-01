@@ -30,7 +30,7 @@ export const ToggleGroup = React.forwardRef<
         return (
             <RadixToggleGroup.Root
                 className={clsx(
-                    "border-stroke bg-fg-2 rounded-6 inline-flex h-[2.5rem] w-fit border",
+                    "border-stroke bg-fg-2 rounded-6 touch:h-44 inline-flex h-[2.5rem] w-fit border",
                     className,
                 )}
                 ref={forwardedRef}
@@ -56,7 +56,7 @@ export const ToggleGroupItem = React.forwardRef<
     return (
         <RadixToggleGroup.Item
             className={clsx(
-                "border-stroke text-text flex items-center justify-center border-r px-6 outline-none first:rounded-l last:rounded-r last:border-r-0 hover:bg-white/20 focus:z-10",
+                "border-stroke text-text touch:min-w-44 flex items-center justify-center border-r px-6 outline-none first:rounded-l last:rounded-r last:border-r-0 hover:bg-white/20 focus:z-10",
                 "data-[state=on]:border-accent data-[state=on]:border",
                 className,
             )}

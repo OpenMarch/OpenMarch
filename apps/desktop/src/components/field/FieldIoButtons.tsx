@@ -1,4 +1,5 @@
 import { Button } from "@openmarch/ui";
+import { touchSafeAccept } from "@/utilities/fileAccept";
 import { T, useTolgee } from "@tolgee/react";
 import { useRef, useState } from "react";
 import {
@@ -42,7 +43,7 @@ export default function FieldIoButtons() {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept=".fieldots"
+                accept={touchSafeAccept(".fieldots")}
                 style={{ display: "none" }}
                 onChange={handleFileInputChange}
             />

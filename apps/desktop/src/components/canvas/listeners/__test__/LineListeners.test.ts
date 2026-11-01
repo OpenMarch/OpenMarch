@@ -58,20 +58,26 @@ describe("LineListeners", () => {
         canvas.add(shapeHandle);
         canvas.setListeners(new LineListeners({ canvas }));
 
-        const mouse = (type: "mousedown" | "mousemove", x: number, y: number) =>
+        // The canvas listens for pointer events, which jsdom has no class for
+        const mouse = (
+            type: "mousedown" | "mousemove",
+            x: number,
+            y: number,
+        ) => {
+            const event = new MouseEvent(type.replace("mouse", "pointer"), {
+                clientX: x,
+                clientY: y,
+                ctrlKey: true,
+                shiftKey: true,
+                button: 0,
+                bubbles: true,
+            });
+            Object.defineProperty(event, "pointerType", { value: "mouse" });
             (type === "mousedown"
                 ? canvas.upperCanvasEl
                 : document
-            ).dispatchEvent(
-                new MouseEvent(type, {
-                    clientX: x,
-                    clientY: y,
-                    ctrlKey: true,
-                    shiftKey: true,
-                    button: 0,
-                    bubbles: true,
-                }),
-            );
+            ).dispatchEvent(event);
+        };
         mouse("mousedown", 20, 200);
         mouse("mousemove", 80, 220);
         // Leave line mode before releasing the mouse
@@ -89,19 +95,25 @@ describe("LineListeners", () => {
     it("keeps marchers unselectable when line mode starts mid-lasso", () => {
         const canvas = createCanvasWithMarchers();
         canvas.setListeners(new DefaultListeners({ canvas }));
-        const mouse = (type: "mousedown" | "mousemove", x: number, y: number) =>
+        // The canvas listens for pointer events, which jsdom has no class for
+        const mouse = (
+            type: "mousedown" | "mousemove",
+            x: number,
+            y: number,
+        ) => {
+            const event = new MouseEvent(type.replace("mouse", "pointer"), {
+                clientX: x,
+                clientY: y,
+                shiftKey: true,
+                button: 0,
+                bubbles: true,
+            });
+            Object.defineProperty(event, "pointerType", { value: "mouse" });
             (type === "mousedown"
                 ? canvas.upperCanvasEl
                 : document
-            ).dispatchEvent(
-                new MouseEvent(type, {
-                    clientX: x,
-                    clientY: y,
-                    shiftKey: true,
-                    button: 0,
-                    bubbles: true,
-                }),
-            );
+            ).dispatchEvent(event);
+        };
         mouse("mousedown", 20, 200);
         mouse("mousemove", 80, 220);
 

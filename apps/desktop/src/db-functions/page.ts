@@ -644,9 +644,12 @@ export const deletePagesInTransaction = async ({
 export async function deletePages({
     pageIds,
     db,
+    onUndoToken,
 }: {
     pageIds: Set<number>;
     db: DbConnection;
+    /** Told the deletion's undo token (see transactionWithHistory) */
+    onUndoToken?: (token: string | null) => void;
 }): Promise<DatabasePage[]> {
     pageIds = filterOutFirstPage(pageIds);
     if (pageIds.size === 0) return [];
@@ -659,6 +662,7 @@ export async function deletePages({
                 tx,
                 operation: () => deletePagesInTransaction({ pageIds, tx }),
             }),
+        { onUndoToken },
     );
     return response;
 }
@@ -666,9 +670,12 @@ export async function deletePages({
 export async function deletePageYank({
     pageId,
     db,
+    onUndoToken,
 }: {
     pageId: number;
     db: DbConnection;
+    /** Told the deletion's undo token (see transactionWithHistory) */
+    onUndoToken?: (token: string | null) => void;
 }): Promise<DatabasePage[]> {
     if (pageId === FIRST_PAGE_ID) return [];
 
@@ -719,6 +726,7 @@ export async function deletePageYank({
                     return response;
                 },
             }),
+        { onUndoToken },
     );
     return response;
 }

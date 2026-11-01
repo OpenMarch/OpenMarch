@@ -43,10 +43,11 @@ export function isActionEnabled(id: ActionId): boolean {
     return top(id)?.isEnabled() ?? false;
 }
 
-export function runAction(id: ActionId): boolean {
+/** Runs the action; `args` replaces the definition's args (e.g. an exact nudge distance). */
+export function runAction(id: ActionId, args?: ActionArgs): boolean {
     const handler = top(id);
     if (!handler || !handler.isEnabled()) return false;
-    handler.run(getActionDefinition(id).args);
+    handler.run(args ?? getActionDefinition(id).args);
     return true;
 }
 

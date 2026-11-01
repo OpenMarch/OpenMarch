@@ -7,8 +7,9 @@ import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import CommandPalette from "@/shortcuts/palette/CommandPalette";
+import LongPressGuard from "@/components/ui/LongPressGuard";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
 import {
@@ -45,11 +46,38 @@ import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
 import WebWelcomeModal from "./components/WebWelcomeModal";
+import WebSettingsSheet from "./components/WebSettingsSheet";
+import WebHomeScreenPrompt from "./components/web/WebHomeScreenPrompt";
+import WebVersionsDialog from "./components/web/WebVersionsDialog";
 import { isWebBuild } from "./utilities/webBuild";
 import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
 import { version as currentVersion } from "../package.json";
 import { shouldShowUpdateNotification } from "./utilities/updateNotification";
+import { useIsTouchMode } from "./stores/InputModeStore";
+import { useOnScreenKeyboard } from "./hooks/useOnScreenKeyboard";
+import { startAudioUnlock } from "./utilities/audioUnlock";
+import { audioContextRef } from "@/components/timeline/audio/AudioPlayer";
+import {
+    inspectorLayout,
+    type InspectorChoices,
+} from "./utilities/inspectorLayout";
+import InspectorDock from "@/components/layout/InspectorDock";
+
+/** The window's size, kept current. */
+function useWindowSize() {
+    const read = () => ({
+        width: window.innerWidth,
+        height: window.innerHeight,
+    });
+    const [size, setSize] = useState(read);
+    useEffect(() => {
+        const onResize = () => setSize(read());
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+    return size;
+}
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -81,6 +109,33 @@ function App() {
     } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
+    const isTouchMode = useIsTouchMode();
+    const windowSize = useWindowSize();
+    const [inspectorChoices, setInspectorChoices] = useState<InspectorChoices>({
+        side: null,
+        drawer: false,
+    });
+    const inspector = inspectorLayout(
+        windowSize.width,
+        windowSize.height,
+        isTouchMode,
+        inspectorChoices,
+    );
+    const drawerShown = inspector.presentation === "drawer";
+    const setInspectorOpen = useCallback(
+        (open: boolean) =>
+            setInspectorChoices((choices) =>
+                drawerShown
+                    ? { ...choices, drawer: open }
+                    : { ...choices, side: open },
+            ),
+        [drawerShown],
+    );
+
+    useOnScreenKeyboard();
+
+    // iPads and phones: audio may only start during a press.
+    useEffect(() => startAudioUnlock(() => [audioContextRef]), []);
 
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
@@ -242,7 +297,7 @@ function App() {
                 {process.env.NODE_ENV !== "production" && (
                     <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+                <main className="app-frame bg-bg-1 text-text outline-accent fixed inset-0 flex min-h-0 min-w-0 flex-col overflow-hidden font-sans">
                     {analyticsConsent === null && !isCodegen && (
                         <AnalyticsOptInModal
                             onChoice={(choice) => setAnalyticsConsent(choice)}
@@ -256,8 +311,12 @@ function App() {
                     )}
                     <AlertModal />
                     {isWebBuild && <WebWelcomeModal />}
+                    {isWebBuild && <WebSettingsSheet />}
+                    {isWebBuild && <WebHomeScreenPrompt />}
+                    {isWebBuild && <WebVersionsDialog />}
                     <ShortcutDispatcher />
                     <CommandPalette />
+                    <LongPressGuard />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
                         <SelectedAudioFileProvider>
@@ -284,7 +343,7 @@ function App() {
                                             <FocusNotice />
                                             <div
                                                 id="app"
-                                                className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                                className="relative flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                             >
                                                 <div
                                                     id="workspace"
@@ -321,13 +380,17 @@ function App() {
                                                     <TimelineContainer />
                                                 </div>
                                                 {!isFullscreen && (
-                                                    <div
+                                                    <InspectorDock
+                                                        layout={inspector}
+                                                        onOpenChange={
+                                                            setInspectorOpen
+                                                        }
                                                         className={
                                                             timelineFocussedClass
                                                         }
                                                     >
                                                         <Inspector />
-                                                    </div>
+                                                    </InspectorDock>
                                                 )}
                                             </div>
                                             <Toaster />

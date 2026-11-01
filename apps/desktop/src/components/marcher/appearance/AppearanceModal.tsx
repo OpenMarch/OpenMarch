@@ -2,7 +2,7 @@ import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { TabContent, TabItem, Tabs, TabsList } from "@openmarch/ui";
 import { PaletteIcon, XIcon } from "@phosphor-icons/react";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import SectionAppearanceList from "./SectionAppearanceList";
 import TagAppearanceList from "./TagAppearanceList";
 
@@ -13,8 +13,10 @@ export default function MetronomeModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
+    const { t } = useTolgee();
     return (
         <SidebarModalLauncher
+            name={t("sidebar.appearance")}
             contents={<AppearanceModalContents />}
             newContentId="marcher-appearance"
             buttonLabel={label}

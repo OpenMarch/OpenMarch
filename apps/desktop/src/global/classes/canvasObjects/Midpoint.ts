@@ -48,7 +48,7 @@ export default class Midpoint extends fabric.Circle {
             strokeWidth: 2,
             originX: "center",
             originY: "center",
-            objectCaching: true,
+            objectCaching: false,
             ...NoControls,
         });
         this.marcherId = marcherId;

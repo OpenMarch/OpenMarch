@@ -1,6 +1,38 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Touch mode: set by the app on <html data-input="touch"> (InputModeStore). Use for finger-sized targets. */
+@custom-variant touch (&:where([data-input="touch"], [data-input="touch"] *));
+
+/*
+ * Touch mode: every menu row (Radix dropdown, context menu and select items, and
+ * other listbox options) is at least a finger tall. In the base layer, so a
+ * component's own classes still win.
+ */
+/*
+ * Every Radix popper (popover, dropdown, select, tooltip, hover card) is
+ * portaled to <body> and must sit above the app's panels and drawers (the
+ * touch Inspector drawer is z-50) and above dialogs (z-501, alert z-999), even
+ * when its content asks for less (e.g. z-10). Toasts stay above it.
+ */
+/* Touch mode toasts (desktop Toaster): taps go through to what's underneath, except the toast's own buttons */
+.touch-toaster [data-sonner-toast] {
+    pointer-events: none;
+}
+.touch-toaster [data-sonner-toast] button {
+    pointer-events: auto;
+}
+
+[data-radix-popper-content-wrapper] {
+    z-index: 1000 !important;
+}
+
+@layer base {
+    [data-input="touch"] :where([role^="menuitem"], [role="option"]) {
+        min-height: 44px;
+        align-content: center;
+    }
+}
 
 @theme {
     --font-sans:

@@ -23,6 +23,8 @@ import { DatabaseTag, getTagName, NewMarcherTagArgs } from "@/db-functions";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { AppearanceModalContents } from "@/components/marcher/appearance/AppearanceModal";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { TouchCaption } from "@/components/ui/InfoTip";
+import { T } from "@tolgee/react";
 
 const buttonClassName = twMerge("flex items-center gap-4 w-full");
 
@@ -300,11 +302,14 @@ const NewTagButton = ({
                 >
                     <TagIcon size={16} />
                     <SparkleIcon size={16} />
+                    <TouchCaption>
+                        <T keyName="inspector.marcher.newTagCaption" />
+                    </TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    className="bg-bg-1 rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
                     sideOffset={8}
                     align="center"
                     onCloseAutoFocus={(e) => {
@@ -393,11 +398,14 @@ const AddToTagButton = ({
                 >
                     <TagIcon size={16} />
                     <PlusIcon size={16} />
+                    <TouchCaption>
+                        <T keyName="inspector.marcher.addToTagCaption" />
+                    </TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    className="bg-bg-1 rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
                     sideOffset={8}
                     align="center"
                     onCloseAutoFocus={(e) => {
@@ -412,7 +420,7 @@ const AddToTagButton = ({
                         {allTags.map((tag) => (
                             <div
                                 key={tag.id}
-                                className="text-text hover:text-accent cursor-pointer"
+                                className="text-text hover:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     handleCreateTag(tag.id);
@@ -489,11 +497,14 @@ const DeleteFromTagButton = ({
                 >
                     <TagIcon size={16} />
                     <TrashIcon size={16} />
+                    <TouchCaption>
+                        <T keyName="inspector.marcher.removeFromTagCaption" />
+                    </TouchCaption>
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    className="bg-bg-1 rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
                     sideOffset={8}
                     align="center"
                     onCloseAutoFocus={(e) => {
@@ -512,7 +523,7 @@ const DeleteFromTagButton = ({
                             .map((tag) => (
                                 <div
                                     key={tag.id}
-                                    className="text-text hover:text-accent cursor-pointer"
+                                    className="text-text hover:text-accent touch:flex touch:min-h-44 touch:items-center cursor-pointer"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         handleDeleteFromTag(tag.id);

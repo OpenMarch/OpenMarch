@@ -5,6 +5,8 @@ import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 
 interface InspectorCollapsibleProps extends CollapsibleProps {
+    /** Keep the content mounted (and its state, e.g. typed input) while folded. */
+    keepMounted?: boolean;
     title?: string;
     translatableTitle?: {
         keyName: string;
@@ -18,10 +20,21 @@ export const InspectorCollapsible = ({
     title,
     translatableTitle,
     defaultOpen,
+    open: controlledOpen,
+    onOpenChange,
+    keepMounted,
     ...props
 }: InspectorCollapsibleProps) => {
     const { t } = useTranslate();
-    const [open, setOpen] = useState<boolean>(defaultOpen || false);
+    const [uncontrolledOpen, setUncontrolledOpen] = useState<boolean>(
+        defaultOpen || false,
+    );
+    // Controlled when `open` is given
+    const open = controlledOpen ?? uncontrolledOpen;
+    const setOpen = (next: boolean) => {
+        if (controlledOpen === undefined) setUncontrolledOpen(next);
+        onOpenChange?.(next);
+    };
 
     const getTitleText = () => {
         if (translatableTitle) {
@@ -47,7 +60,10 @@ export const InspectorCollapsible = ({
                 <h4 className="text-h4">{getTitleText()}</h4>
                 {open ? <CaretUpIcon size={24} /> : <CaretDownIcon size={24} />}
             </RadixCollapsible.Trigger>
-            <RadixCollapsible.Content className={className}>
+            <RadixCollapsible.Content
+                className={className}
+                forceMount={keepMounted ? true : undefined}
+            >
                 {children}
             </RadixCollapsible.Content>
         </RadixCollapsible.Root>

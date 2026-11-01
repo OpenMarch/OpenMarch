@@ -137,6 +137,56 @@ textarea,
     user-select: text;
 }
 
+/*
+ * Tablets: no double-tap zoom (taps also lose their delay), no rubber band
+ * or pull-to-refresh, no grey flash on tap, and no callout (copy, share,
+ * look up) on a long press outside text. Pinch-zoom of the page is stopped
+ * in web/renderer/touchGestures.ts.
+ */
+html,
+body {
+    /* The app's own background, so a pixel or two of difference between the
+       page and the app's full-height frame (iPadOS toolbars, rotation) never
+       shows as a white strip */
+    background-color: var(--color-bg-1);
+    /* The app frame is fixed, so without this the page has no height */
+    height: 100%;
+    touch-action: manipulation;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    -webkit-touch-callout: none;
+}
+
+input,
+textarea,
+[contenteditable="true"],
+.select-text {
+    -webkit-touch-callout: default;
+}
+
+/*
+ * The app's outer frame (App.tsx) is pinned to all four edges of the screen
+ * (fixed, inset 0) rather than sized with 100dvh, which iPadOS 17 can make a
+ * little shorter than the screen, leaving the app short of the bottom edge.
+ * As a home-screen app on an iPad the page reaches under the status bar and
+ * home indicator (viewport-fit=cover), so it is padded back by the safe
+ * areas. In Electron, where the on-screen
+ * keyboard overlays the page (src/hooks/useOnScreenKeyboard.ts), it is
+ * padded above the keyboard. All of these are 0 elsewhere.
+ */
+.app-frame {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: max(
+        env(safe-area-inset-bottom, 0px),
+        env(keyboard-inset-height, 0px)
+    );
+    padding-left: env(safe-area-inset-left, 0px);
+}
+
 input,
 button,
 textarea,

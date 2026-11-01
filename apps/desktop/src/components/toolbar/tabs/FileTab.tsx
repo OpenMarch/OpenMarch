@@ -81,18 +81,20 @@ export function FileTab() {
                     </button>
                 </ToolbarSection>
             )}
-            {/* Export needs Electron (printToPDF, file streams, sign-in). */}
-            {!isWebBuild && (
-                <ToolbarSection>
-                    <ActionButton
-                        action="openExportDialog"
-                        className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                    >
-                        <ArrowSquareOutIcon size={24} />
+            {/* On the web the export dialog offers only video. */}
+            <ToolbarSection>
+                <ActionButton
+                    action="openExportDialog"
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <ArrowSquareOutIcon size={24} />
+                    {isWebBuild ? (
+                        <T keyName="exportCoordinates.exportVideoButton" />
+                    ) : (
                         <T keyName="exportCoordinates.exportButton" />
-                    </ActionButton>
-                </ToolbarSection>
-            )}
+                    )}
+                </ActionButton>
+            </ToolbarSection>
             <ToolbarSection>
                 <ActionButton
                     action="openSettings"

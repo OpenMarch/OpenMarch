@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { touchSafeAccept } from "@/utilities/fileAccept";
 import { T, useTolgee } from "@tolgee/react";
 import clsx from "clsx";
 import { Button, InfoNote, ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
@@ -174,7 +175,7 @@ export default function MarcherCsvImportForm({
                 <input
                     ref={fileInput}
                     type="file"
-                    accept=".csv,text/csv"
+                    accept={touchSafeAccept(".csv,text/csv")}
                     hidden
                     aria-label="Marcher CSV file"
                     onChange={(e) => {

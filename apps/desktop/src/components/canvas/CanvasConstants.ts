@@ -36,3 +36,13 @@ export const ActiveObjectArgs: IGroupOptions = {
     borderColor: "#0d6efd",
     borderScaleFactor: 2,
 } as const;
+
+/**
+ * Lowest and highest Fabric zoom on the field (1 = one canvas unit per CSS pixel).
+ * Every way of zooming (wheel, trackpad, pinch, zoom buttons) stays inside these.
+ */
+export const CANVAS_ZOOM_LIMITS = { min: 0.2, max: 25 } as const;
+
+/** Keeps a Fabric zoom inside CANVAS_ZOOM_LIMITS */
+export const clampCanvasZoom = (zoom: number): number =>
+    Math.max(CANVAS_ZOOM_LIMITS.min, Math.min(CANVAS_ZOOM_LIMITS.max, zoom));

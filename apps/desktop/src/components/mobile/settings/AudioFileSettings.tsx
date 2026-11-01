@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { touchSafeAccept } from "@/utilities/fileAccept";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     DropdownMenu,
@@ -534,7 +535,7 @@ export function AudioFileSettings({
                 <input
                     ref={addAudioFileInputRef}
                     type="file"
-                    accept="audio/*"
+                    accept={touchSafeAccept("audio/*")}
                     className="hidden"
                     aria-hidden
                     onChange={handleAddAudioFileSelected}

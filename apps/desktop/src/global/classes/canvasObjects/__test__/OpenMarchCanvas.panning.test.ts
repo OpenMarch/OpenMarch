@@ -20,8 +20,12 @@ const createMountedCanvas = () => {
     return { canvas, wrapper };
 };
 
-const pressMouse = (wrapper: HTMLElement, init: MouseEventInit = {}) =>
-    wrapper.dispatchEvent(new MouseEvent("mousedown", init));
+// The canvas listens for pointer events, which jsdom has no class for
+const pressMouse = (wrapper: HTMLElement, init: MouseEventInit = {}) => {
+    const event = new MouseEvent("pointerdown", init);
+    Object.defineProperty(event, "pointerType", { value: "mouse" });
+    return wrapper.dispatchEvent(event);
+};
 
 describe("OpenMarchCanvas Alt panning", () => {
     afterEach(() => {

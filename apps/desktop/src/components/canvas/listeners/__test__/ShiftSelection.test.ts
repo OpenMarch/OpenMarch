@@ -35,15 +35,16 @@ const fire = (
     shiftKey = true,
 ) => {
     const target = type === "mousedown" ? canvas.upperCanvasEl : document;
-    target.dispatchEvent(
-        new MouseEvent(type, {
-            clientX: x,
-            clientY: y,
-            shiftKey,
-            button: 0,
-            bubbles: true,
-        }),
-    );
+    // The canvas listens for pointer events, which jsdom has no class for
+    const event = new MouseEvent(type.replace("mouse", "pointer"), {
+        clientX: x,
+        clientY: y,
+        shiftKey,
+        button: 0,
+        bubbles: true,
+    });
+    Object.defineProperty(event, "pointerType", { value: "mouse" });
+    target.dispatchEvent(event);
 };
 
 const selectedIds = (canvas: OpenMarchCanvas) =>

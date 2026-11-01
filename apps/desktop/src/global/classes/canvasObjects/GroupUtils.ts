@@ -1,4 +1,6 @@
 import { fabric } from "fabric";
+import { isSnapOff } from "@/components/canvas/touch/canvasModifiers";
+import { isShiftHeld } from "@/stores/TouchModifierStore";
 import CanvasMarcher from "./CanvasMarcher";
 
 /**
@@ -79,20 +81,72 @@ export const handleGroupRotating = (
     e: fabric.IEvent<Event>,
     group: fabric.Group,
 ) => {
-    const shiftKey = (e.e as MouseEvent).shiftKey;
     const angle = group.angle ?? 0;
 
-    if (!shiftKey) {
+    if (!isSnapOff(e.e as MouseEvent)) {
         const snappedAngle = Math.round(angle / 15) * 15;
         group.rotate(snappedAngle);
     }
     rotationSideEffects(group);
 };
 
+/**
+ * The distance a group of marchers has been dragged, snapped to whole steps
+ * of the coordinate rounding setting on each axis (e.g. 2 steps at a time),
+ * so the group keeps its shape. An axis with no rounding moves freely.
+ */
+export function snapGroupDelta(
+    dxPixels: number,
+    dyPixels: number,
+    rounding: { nearestXSteps?: number; nearestYSteps?: number } | undefined,
+    pixelsPerStep: number,
+): { dx: number; dy: number } {
+    const snap = (d: number, steps?: number) => {
+        if (!steps || !(pixelsPerStep > 0)) return d;
+        const unit = steps * pixelsPerStep;
+        return Math.round(d / unit) * unit;
+    };
+    return {
+        dx: snap(dxPixels, rounding?.nearestXSteps),
+        dy: snap(dyPixels, rounding?.nearestYSteps),
+    };
+}
+
 const handleGroupMoving = (e: fabric.IEvent<Event>, group: fabric.Group) => {
     if (!group || typeof group.getObjects !== "function") return;
     const objects = group.getObjects?.();
     if (!Array.isArray(objects)) return;
+    // Move the group in whole rounding steps, like a single marcher snaps
+    const canvas = group.canvas as
+        | (fabric.Canvas & {
+              uiSettings?: {
+                  coordinateRounding?: {
+                      nearestXSteps?: number;
+                      nearestYSteps?: number;
+                  };
+              };
+              fieldProperties?: { pixelsPerStep: number };
+          })
+        | undefined;
+    const original = (e as { transform?: { original?: fabric.Object } })
+        .transform?.original;
+    if (
+        groupContainsMarchers(group) &&
+        canvas?.uiSettings?.coordinateRounding &&
+        canvas.fieldProperties &&
+        original?.left !== undefined &&
+        original?.top !== undefined &&
+        !isSnapOff(e.e as MouseEvent)
+    ) {
+        const { dx, dy } = snapGroupDelta(
+            (group.left ?? 0) - original.left,
+            (group.top ?? 0) - original.top,
+            canvas.uiSettings.coordinateRounding,
+            canvas.fieldProperties.pixelsPerStep,
+        );
+        group.set({ left: original.left + dx, top: original.top + dy });
+        group.setCoords();
+    }
     for (const object of objects) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();
@@ -115,7 +169,7 @@ export const handleGroupScaling = (
         // Get the corner being dragged from the transform
         const transform = (group.canvas as any)?._currentTransform;
         const corner = transform?.corner;
-        const shiftKey = (e.e as MouseEvent)?.shiftKey;
+        const shiftKey = isShiftHeld(e.e as MouseEvent);
 
         // Track the scaling corner on first frame
         if (corner && !(group as any).__scalingCorner) {
@@ -171,6 +225,13 @@ export const handleGroupScaling = (
     group.canvas?.requestRenderAll();
 };
 
+/**
+ * Re-applies the group's counter transform to its marchers, e.g. after the
+ * group's own transform was put back.
+ */
+export const resetGroupChildTransforms = (group: fabric.Group) =>
+    rotationSideEffects(group);
+
 export const resetMarcherRotation = (group: fabric.Group) => {
     group._objects.forEach((o) => {
         if (o instanceof CanvasMarcher) o.angle = 0;
@@ -225,8 +286,35 @@ export const cleanupGroupHandlers = (group: fabric.Group) => {
     delete groupAny.__originalScaleY;
 };
 
+/**
+ * Spread (canvas units) below which a selection counts as flat on an axis,
+ * e.g. a single row: scaling it on that axis has nothing to scale and only
+ * moves it.
+ */
+const FLAT_SPREAD = 1;
+
+/** Hides the side handles that would scale a flat selection on its flat axis */
+export const hideFlatAxisHandles = (group: fabric.Group) => {
+    const centres = group
+        .getObjects()
+        .filter((o) => o instanceof CanvasMarcher)
+        .map((o) => o.getCenterPoint());
+    if (centres.length < 2) return;
+    const spread = (values: number[]) =>
+        Math.max(...values) - Math.min(...values);
+    const flatX = spread(centres.map((c) => c.x)) < FLAT_SPREAD;
+    const flatY = spread(centres.map((c) => c.y)) < FLAT_SPREAD;
+    group.setControlsVisibility({
+        ml: !flatX,
+        mr: !flatX,
+        mt: !flatY,
+        mb: !flatY,
+    });
+};
+
 export const setGroupAttributes = (group: fabric.Group) => {
     const isLocked = anyObjectsAreLocked(group);
+    hideFlatAxisHandles(group);
     group.hasControls = !isLocked;
     group.hasBorders = true;
     group.hasRotatingPoint = !isLocked;

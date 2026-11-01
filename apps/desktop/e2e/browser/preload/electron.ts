@@ -63,3 +63,8 @@ export const contextBridge = {
         (window as unknown as Record<string, unknown>)[key] = api;
     },
 };
+
+/** A plain page is never zoomed by Electron. */
+export const webFrame = {
+    getZoomFactor: () => 1,
+};

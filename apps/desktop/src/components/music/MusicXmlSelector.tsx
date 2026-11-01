@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { touchSafeAccept } from "@/utilities/fileAccept";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
@@ -45,7 +46,7 @@ export default function MusicXmlSelector() {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept=".xml,.musicxml,.mxl"
+                accept={touchSafeAccept(".xml,.musicxml,.mxl")}
                 className="hidden"
                 onChange={handleFileChange}
             />

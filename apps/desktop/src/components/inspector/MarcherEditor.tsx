@@ -24,7 +24,7 @@ import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import type { FieldProperties } from "@openmarch/core";
 import {
@@ -38,6 +38,7 @@ import {
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
+import MovePad from "./marcher/MovePad";
 
 const DEFAULT_SORTING_THRESHOLD = 0.1;
 
@@ -164,7 +165,12 @@ interface AlignmentButtonsProps {
     editingDisabled: boolean;
 }
 
+/** In touch mode the caption stacks under the icon and the button grows to fit. */
+const alignButtonClassName =
+    "flex flex-1 items-center justify-center touch:h-auto touch:min-h-44 touch:flex-col touch:gap-2 touch:py-4";
+
 function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
+    const { t } = useTolgee();
     const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
     const [verticalStepInterval, setVerticalStepInterval] = useState("");
     const { mutate: updateSelectedMarchers } =
@@ -253,26 +259,28 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             <div className="flex gap-8">
                 <ActionButton
                     action="alignVertically"
+                    caption={t("inspector.marcher.alignVerticallyCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <AlignCenterVerticalSimpleIcon size={16} weight="bold" />
                 </ActionButton>
                 <ActionButton
                     action="alignHorizontally"
+                    caption={t("inspector.marcher.alignHorizontallyCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <AlignCenterHorizontalSimpleIcon size={16} weight="bold" />
@@ -280,26 +288,28 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
 
                 <ActionButton
                     action="flipHorizontal"
+                    caption={t("inspector.marcher.flipHorizontalCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <FlipHorizontalIcon size={16} weight="bold" />
                 </ActionButton>
                 <ActionButton
                     action="flipVertical"
+                    caption={t("inspector.marcher.flipVerticalCaption")}
                     disabled={editingDisabled}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
                             size: "compact",
                         }),
-                        "flex flex-1 items-center justify-center",
+                        alignButtonClassName,
                     )}
                 >
                     <FlipVerticalIcon size={16} weight="bold" />
@@ -385,9 +395,12 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
 
 /** Moves the selected marchers to where they stand on the previous or next page */
 function PlaceSelectedMarchersDropdown({ disabled }: { disabled: boolean }) {
+    const [open, setOpen] = useState(false);
+    const close = () => setOpen(false);
+
     return (
         <div className="flex flex-col gap-8">
-            <Dropdown.Root>
+            <Dropdown.Root open={open} onOpenChange={setOpen}>
                 <Dropdown.Trigger
                     disabled={disabled}
                     className={clsx(
@@ -405,12 +418,14 @@ function PlaceSelectedMarchersDropdown({ disabled }: { disabled: boolean }) {
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
                         <ActionButton
                             action="setSelectedMarchersToPreviousPage"
+                            onRun={close}
                             className="text-text px-6 py-4"
                         >
                             <T keyName="toolbar.alignment.toPreviousPagePositions" />
                         </ActionButton>
                         <ActionButton
                             action="setSelectedMarchersToNextPage"
+                            onRun={close}
                             className="text-text px-6 py-4"
                         >
                             <T keyName="toolbar.alignment.toNextPagePositions" />
@@ -649,6 +664,8 @@ function MarcherEditor() {
                             }}
                             className="mt-12 flex flex-col gap-16"
                         >
+                            {/* First in the section, as for one marcher, so it doesn't move around */}
+                            <MovePad disabled={editingDisabled} />
                             <p className="text-sub text-text/80 w-full px-6 font-mono">
                                 {selectedMarchers
                                     .map((marcher) => marcher.drill_number)
@@ -779,6 +796,7 @@ function MarcherEditor() {
                             }}
                             className="mt-12 flex flex-col gap-24"
                         >
+                            <MovePad disabled={editingDisabled} />
                             {!rCoords ? (
                                 <p className="text-body text-red">
                                     <T keyName="inspector.marcher.errorLoadingCoords" />

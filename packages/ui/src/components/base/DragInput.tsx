@@ -52,11 +52,11 @@ export type DragInputProps = Omit<
     ) => void;
     /**
      * Called continuously as the value changes during dragging.
-     * Receives the new value and the triggering MouseEvent.
+     * Receives the new value and the triggering pointer event (a MouseEvent).
      */
     onDragChange?: (value: number, event: MouseEvent) => void;
     /**
-     * Called once when dragging ends, with the final value and the MouseEvent.
+     * Called once when dragging ends, with the final value and the pointer event.
      */
     onDragEnd?: (value: number, event: MouseEvent) => void;
     /**
@@ -81,8 +81,8 @@ export type DragInputProps = Omit<
 /**
  * An input component that allows changing values by dragging.
  * - Users can manually input a number, with changes reflected on blur
- * - Users can click on the icon and drag up/down to change the value
- * - Provides callbacks for continuous changes during dragging and final value on mouse up
+ * - Users can press the icon (mouse, pen or finger) and drag up/down to change the value
+ * - Provides callbacks for continuous changes during dragging and final value on release
  */
 export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
     (
@@ -189,9 +189,20 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
             }
         };
 
-        const handleMouseDown = useCallback(
-            (e: React.MouseEvent) => {
+        // The pointer driving the drag; other fingers are ignored
+        const dragPointerId = useRef<number | null>(null);
+
+        const handlePointerDown = useCallback(
+            (e: React.PointerEvent<HTMLElement>) => {
+                if (e.pointerType === "mouse" && e.button !== 0) return;
                 e.preventDefault();
+                dragPointerId.current = e.pointerId ?? null;
+                try {
+                    // Keep receiving moves when the finger leaves the icon
+                    e.currentTarget.setPointerCapture?.(e.pointerId);
+                } catch {
+                    // The pointer may already be gone
+                }
                 setIsDragging(true);
                 const startVal = parseFloat(value?.toString() ?? "0");
                 startValue.current = startVal;
@@ -206,9 +217,17 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
             [value],
         );
 
-        const handleMouseMove = useCallback(
-            (e: MouseEvent) => {
-                if (!isDragging) return;
+        const isDragPointer = useCallback(
+            (e: PointerEvent) =>
+                dragPointerId.current === null ||
+                e.pointerId === undefined ||
+                e.pointerId === dragPointerId.current,
+            [],
+        );
+
+        const handlePointerMove = useCallback(
+            (e: PointerEvent) => {
+                if (!isDragging || !isDragPointer(e)) return;
 
                 const prev = lastDragState.current;
                 const currShift = e.shiftKey;
@@ -271,16 +290,18 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                 onDragChange,
                 applyRounding,
                 localValue,
+                isDragPointer,
             ],
         );
 
-        const handleMouseUp = useCallback(
-            (e: MouseEvent) => {
+        const handlePointerUp = useCallback(
+            (e: PointerEvent) => {
                 // This function is now only responsible for handling the end of a drag operation.
                 // The removal of event listeners is handled by the useEffect hook.
-                if (!isDragging) return;
+                if (!isDragging || !isDragPointer(e)) return;
 
                 setIsDragging(false);
+                dragPointerId.current = null;
 
                 // Get the final value and call onDragEnd
                 let finalValue = parseFloat(localValue ?? "0");
@@ -290,25 +311,24 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                     onDragEnd?.(finalValue, e);
                 }
             },
-            [isDragging, localValue, onDragEnd, applyRounding],
+            [isDragging, localValue, onDragEnd, applyRounding, isDragPointer],
         );
 
         // Effect to add/remove global event listeners for dragging
         useEffect(() => {
-            if (isDragging) {
-                document.addEventListener("mousemove", handleMouseMove);
-                document.addEventListener("mouseup", handleMouseUp);
-            } else {
-                document.removeEventListener("mousemove", handleMouseMove);
-                document.removeEventListener("mouseup", handleMouseUp);
-            }
+            if (!isDragging) return;
+            // A cancelled touch (e.g. the browser took it) ends the drag where it is
+            document.addEventListener("pointermove", handlePointerMove);
+            document.addEventListener("pointerup", handlePointerUp);
+            document.addEventListener("pointercancel", handlePointerUp);
 
-            // Cleanup function to remove listeners when the component unmounts
+            // Cleanup function to remove listeners when dragging stops or the component unmounts
             return () => {
-                document.removeEventListener("mousemove", handleMouseMove);
-                document.removeEventListener("mouseup", handleMouseUp);
+                document.removeEventListener("pointermove", handlePointerMove);
+                document.removeEventListener("pointerup", handlePointerUp);
+                document.removeEventListener("pointercancel", handlePointerUp);
             };
-        }, [isDragging, handleMouseMove, handleMouseUp]); // Need start value in here
+        }, [isDragging, handlePointerMove, handlePointerUp]);
 
         const DragIcon =
             Icon || (dragAxis === "x" ? ArrowsLeftRightIcon : ArrowsDownUpIcon);
@@ -333,7 +353,7 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                 <div className="relative w-full">
                     <div
                         className={clsx(
-                            "absolute top-0 left-0 flex h-full items-center justify-center px-8",
+                            "touch:px-12 absolute top-0 left-0 flex h-full touch-none items-center justify-center px-8 select-none",
                             dragAxis === "y"
                                 ? "cursor-ns-resize"
                                 : "cursor-ew-resize",
@@ -341,7 +361,7 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                                 ? "text-accent"
                                 : "text-text-subtitle hover:text-accent",
                         )}
-                        onMouseDown={handleMouseDown}
+                        onPointerDown={handlePointerDown}
                     >
                         <DragIcon size={16} />
                     </div>
@@ -350,8 +370,8 @@ export const DragInput = React.forwardRef<HTMLInputElement, DragInputProps>(
                             clsx(
                                 `rounded-6 border-stroke bg-fg-2 box-border min-h-0 w-full items-center border whitespace-nowrap focus-visible:outline-none ${
                                     compact
-                                        ? "h-[1.625rem] py-[4px] pr-8 pl-32"
-                                        : "h-[2.5rem] pr-16 pl-32"
+                                        ? "touch:h-44 touch:pl-40 h-[1.625rem] py-[4px] pr-8 pl-32"
+                                        : "touch:h-44 touch:pl-40 h-[2.5rem] pr-16 pl-32"
                                 } ${unit ? "pr-22" : ""} text-body text-text placeholder-text-subtitle placeholder:text-body focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
                                 isDragging && "border-accent",
                                 className,

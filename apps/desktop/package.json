@@ -51,6 +51,7 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
+        "@mediabunny/aac-encoder": "1.46.0",
         "@openmarch/core": "workspace:*",
         "@openmarch/metronome": "workspace:*",
         "@openmarch/musicxml-parser": "workspace:*",

@@ -14,7 +14,8 @@ import {
 } from "@openmarch/ui";
 import { AlertDialog } from "@openmarch/ui";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
+import { TouchCaption } from "@/components/ui/InfoTip";
 import { useCascadeDeleteMeasures } from "@/global/classes/Measure";
 
 export default function TempoGroupCard({
@@ -56,6 +57,7 @@ function StaticTempoGroupCard({
     setNewGroupFormIndex: (index: number) => void;
     index: number;
 }) {
+    const { t } = useTolgee();
     const { mutate: cascadeDeleteMeasures, isPending: isDeleting } =
         useCascadeDeleteMeasures();
     const isManualTempo = useMemo(
@@ -142,7 +144,10 @@ function StaticTempoGroupCard({
                     <div className="flex items-center gap-4">
                         <AlertDialog>
                             <AlertDialogTrigger>
-                                <button className="hover:text-red text-text duration-150 ease-out">
+                                <button
+                                    aria-label={t("music.deleteTempoGroup")}
+                                    className="hover:text-red text-text duration-150 ease-out"
+                                >
                                     <TrashIcon size={24} />
                                 </button>
                             </AlertDialogTrigger>
@@ -194,9 +199,15 @@ function StaticTempoGroupCard({
                                         setNewGroupFormIndex(index);
                                         setIsEditing(false);
                                     }}
-                                    className="hover:text-accent text-text duration-150 ease-out"
+                                    aria-label={t(
+                                        "music.addNewTempoGroupAfter",
+                                    )}
+                                    className="hover:text-accent text-text touch:min-h-44 flex items-center gap-4 duration-150 ease-out"
                                 >
                                     <PlusIcon size={24} />
+                                    <TouchCaption>
+                                        <T keyName="music.addAfterCaption" />
+                                    </TouchCaption>
                                 </button>
                             </Tooltip.Trigger>
                             <Tooltip.Portal>
@@ -210,6 +221,7 @@ function StaticTempoGroupCard({
                         </Tooltip.Root>
                         <button
                             onClick={() => setIsEditing(true)}
+                            aria-label={t("music.editTempoGroup")}
                             className="hover:text-accent text-text duration-150 ease-out"
                         >
                             <PencilSimpleIcon size={24} />

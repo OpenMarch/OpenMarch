@@ -4,10 +4,10 @@ import { useEffect, useRef } from "react";
 import {
     XIcon,
     PencilSimpleIcon,
-    PlusIcon,
-    MinusIcon,
+    MagnifyingGlassPlusIcon,
+    MagnifyingGlassMinusIcon,
 } from "@phosphor-icons/react";
-import { defaultSettings, useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import AudioPlayer from "./audio/AudioPlayer";
 import ActionButton from "@/shortcuts/ActionButton";
@@ -16,8 +16,23 @@ import TimelineControls from "./TimelineControls";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import clsx from "clsx";
+import { usePinchZoom } from "./usePinchZoom";
+import { scrollLeftForPage } from "./pageScroll";
+import { useInputModeStore, useIsTouchMode } from "@/stores/InputModeStore";
+import { TOUCH_TARGET_CLASS } from "./touchTargets";
+import {
+    TIMELINE_BASE_PX_PER_SEC,
+    TIMELINE_MAX_PX_PER_SEC,
+    TIMELINE_MIN_PX_PER_SEC,
+    TIMELINE_ZOOM_STEP,
+} from "./pinchZoom";
+import {
+    CompactTransport,
+    CompactViewToggles,
+} from "./CompactTimelineControls";
+import { useTimelineLayoutStore } from "./timelineLayoutStore";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -26,6 +41,14 @@ export default function TimelineContainer() {
     const { uiSettings } = useUiSettingsStore();
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
+    const { zoomTo } = usePinchZoom(timelineRef);
+    const isTouchMode = useIsTouchMode();
+    const expanded = useTimelineLayoutStore((s) => s.expanded);
+    const showAudioPref = useTimelineLayoutStore((s) => s.showAudio);
+    const editingAudio = uiSettings.focussedComponent === "timeline";
+    // Touch only: one slim row unless expanded (the mouse layout is full)
+    const compact = isTouchMode && !expanded && !isFullscreen;
+    const showAudio = !compact || showAudioPref || editingAudio;
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -52,12 +75,25 @@ export default function TimelineContainer() {
             // Set the scroll directly without transition (animation handled by CSS)
             container.scrollLeft = targetScroll;
         } else {
-            // Manual selection: Smooth scroll
-            container.style.scrollBehavior = "smooth";
-            selectedPageElement.scrollIntoView({
-                block: "nearest",
-                inline: "center",
+            // Manual selection: smooth scroll to show the page with an edge.
+            // With fingers, a page already in view stays put, so the next tap
+            // at the same spot lands on the same page.
+            const containerRect = container.getBoundingClientRect();
+            const elementRect = selectedPageElement.getBoundingClientRect();
+            const target = scrollLeftForPage({
+                pageLeft:
+                    elementRect.left -
+                    containerRect.left +
+                    container.scrollLeft,
+                pageWidth: elementRect.width,
+                viewWidth: container.clientWidth,
+                scrollLeft: container.scrollLeft,
+                keepIfVisible: useInputModeStore.getState().mode === "touch",
             });
+            if (target !== null) {
+                container.style.scrollBehavior = "smooth";
+                container.scrollLeft = target;
+            }
         }
 
         return () => {
@@ -73,75 +109,136 @@ export default function TimelineContainer() {
 
     return (
         <div className="flex gap-8">
-            {uiSettings.focussedComponent !== "timeline" && (
+            {!compact && uiSettings.focussedComponent !== "timeline" && (
                 <TimelineControls />
             )}
             {isFullscreen && <PerspectiveSlider />}
+            {/* The panel: the scrolling timeline, then its zoom buttons in their own column */}
             <div
-                ref={timelineRef}
-                id="timeline"
-                className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto overflow-y-hidden border p-8 transition-all duration-200"
+                className={clsx(
+                    "rounded-6 border-stroke bg-fg-1 @container flex h-full w-full min-w-0 border",
+                    compact && "items-center gap-2 px-4",
+                )}
+                data-timeline-layout={compact ? "compact" : "full"}
             >
-                <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
-                    <div className="flex h-fit items-center">
-                        <div>
-                            <p className="text-sub w-[4rem]">
-                                <T keyName="timeline.pages" />
-                            </p>
+                {compact && !editingAudio && (
+                    <CompactTransport zoomTo={zoomTo} />
+                )}
+                <div
+                    ref={timelineRef}
+                    id="timeline"
+                    className={clsx(
+                        "relative flex h-full w-full min-w-0 touch-pan-x overflow-x-auto overflow-y-hidden transition-all duration-200",
+                        compact ? "px-4 py-6" : "p-8",
+                    )}
+                >
+                    <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
+                        <div className="flex h-fit items-center">
+                            {/* No labels in the compact row: it needs the room */}
+                            {!compact && (
+                                <div
+                                    className={STICKY_LABEL_CLASS}
+                                    data-timeline-label
+                                >
+                                    <p className={LABEL_COLUMN_CLASS}>
+                                        <span className="@max-[360px]:hidden">
+                                            <T keyName="timeline.pages" />
+                                        </span>
+                                    </p>
+                                </div>
+                            )}
+                            <PageTimeline />
                         </div>
-                        <PageTimeline />
-                    </div>
 
-                    <div className={"flex items-center"}>
-                        {!isFullscreen && (
-                            <div className="flex w-[4rem] gap-6">
-                                <p className="text-sub">
-                                    <T keyName="timeline.audio" />
-                                </p>
-                                {uiSettings.focussedComponent !== "timeline" ? (
-                                    <ActionButton
-                                        action="focusTimeline"
-                                        className="w-fit"
+                        {showAudio && (
+                            <div className={"flex items-center"}>
+                                {!isFullscreen && !compact && (
+                                    <div
+                                        className={clsx(
+                                            LABEL_COLUMN_CLASS,
+                                            STICKY_LABEL_CLASS,
+                                            "touch:items-center gap-6",
+                                        )}
                                     >
-                                        <PencilSimpleIcon />
-                                    </ActionButton>
-                                ) : (
-                                    <ActionButton
-                                        action="focusCanvas"
-                                        className="w-fit"
-                                    >
-                                        <XIcon />
-                                    </ActionButton>
+                                        <p className="text-sub @max-[360px]:hidden">
+                                            <T keyName="timeline.audio" />
+                                        </p>
+                                        {uiSettings.focussedComponent !==
+                                        "timeline" ? (
+                                            <ActionButton
+                                                action="focusTimeline"
+                                                className={clsx(
+                                                    "w-fit",
+                                                    TOUCH_TARGET_CLASS,
+                                                )}
+                                            >
+                                                <PencilSimpleIcon />
+                                            </ActionButton>
+                                        ) : (
+                                            <ActionButton
+                                                action="focusCanvas"
+                                                className={clsx(
+                                                    "w-fit",
+                                                    TOUCH_TARGET_CLASS,
+                                                )}
+                                            >
+                                                <XIcon />
+                                            </ActionButton>
+                                        )}
+                                    </div>
                                 )}
-                            </div>
-                        )}
 
-                        {uiSettings.focussedComponent === "timeline" ? (
-                            <EditableAudioPlayer />
-                        ) : (
-                            <div
-                                style={{
-                                    display: isFullscreen ? "none" : "flex",
-                                }}
-                            >
-                                <AudioPlayer />
+                                {uiSettings.focussedComponent === "timeline" ? (
+                                    <EditableAudioPlayer />
+                                ) : (
+                                    <div
+                                        style={{
+                                            display: isFullscreen
+                                                ? "none"
+                                                : "flex",
+                                        }}
+                                    >
+                                        <AudioPlayer />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
                 </div>
-                <TimelineZoomControls />
+                {compact ? (
+                    <CompactViewToggles audioForced={editingAudio} />
+                ) : (
+                    <TimelineZoomControls zoomTo={zoomTo} />
+                )}
             </div>
         </div>
     );
 }
 
-const TIMELINE_MIN_PX_PER_SEC = 10;
-const TIMELINE_MAX_PX_PER_SEC = 200;
-const TIMELINE_BASE_PX_PER_SEC = defaultSettings.timelinePixelsPerSecond;
+/**
+ * Labels stay put while the pages and waveform scroll under them. The
+ * panel's see-through fg-1 gradient is layered over the opaque bg-1 color
+ * in one background declaration, so the label matches the panel and hides
+ * what scrolls under it.
+ */
+const STICKY_LABEL_CLASS =
+    "[background:var(--background-image-fg-1),var(--color-bg-1)] sticky -left-8 z-40 -my-4 flex items-center self-stretch py-4";
 
-function TimelineZoomControls() {
-    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
-    const { isFullscreen } = useFullscreenStore();
+/**
+ * The "Pages"/"Audio" label column. Both rows use it so page 1 and the
+ * waveform start at the same x. In a narrow panel the words go and only
+ * room for the edit button stays.
+ */
+const LABEL_COLUMN_CLASS =
+    "text-sub touch:w-[6.5rem] @max-[360px]:touch:w-[2.75rem] @max-[360px]:w-[1.5rem] w-[4rem] shrink-0";
+
+function TimelineZoomControls({
+    zoomTo: setPixelsPerSecond,
+}: {
+    zoomTo: (pixelsPerSecond: number) => void;
+}) {
+    const { t } = useTolgee();
+    const { uiSettings } = useUiSettingsStore();
     const currentPixels = uiSettings.timelinePixelsPerSecond;
     const zoomPercent = Math.round(
         (currentPixels / TIMELINE_BASE_PX_PER_SEC) * 100,
@@ -150,7 +247,7 @@ function TimelineZoomControls() {
     const handleZoomOut = () => {
         if (currentPixels <= TIMELINE_MIN_PX_PER_SEC) return;
         const nextValue = Math.max(
-            currentPixels * 0.8,
+            currentPixels / TIMELINE_ZOOM_STEP,
             TIMELINE_MIN_PX_PER_SEC,
         );
         setPixelsPerSecond(nextValue);
@@ -159,7 +256,7 @@ function TimelineZoomControls() {
     const handleZoomIn = () => {
         if (currentPixels >= TIMELINE_MAX_PX_PER_SEC) return;
         const nextValue = Math.min(
-            currentPixels * 1.2,
+            currentPixels * TIMELINE_ZOOM_STEP,
             TIMELINE_MAX_PX_PER_SEC,
         );
         setPixelsPerSecond(nextValue);
@@ -170,36 +267,47 @@ function TimelineZoomControls() {
         setPixelsPerSecond(TIMELINE_BASE_PX_PER_SEC);
     };
 
+    // A column at the panel's right edge: never over the waveform or other
+    // panels, and vertical so it doesn't read as the field's zoom bar.
     return (
         <div
-            className={clsx(
-                { "right-290": !isFullscreen },
-                "border-stroke bg-modal fixed right-16 bottom-16 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg",
-            )}
+            className="border-stroke text-text touch:w-44 flex w-28 shrink-0 flex-col items-stretch border-l @max-[240px]:hidden"
+            role="group"
+            aria-label={t("timeline.compact.zoom")}
         >
             <button
-                onClick={handleZoomOut}
-                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={currentPixels <= TIMELINE_MIN_PX_PER_SEC}
-                title="Zoom out"
+                onClick={handleZoomIn}
+                className="flex flex-1 items-center justify-center transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={currentPixels >= TIMELINE_MAX_PX_PER_SEC}
+                title={t("timeline.zoomIn")}
+                aria-label={t("timeline.zoomIn")}
             >
-                <MinusIcon size={14} weight="bold" />
+                <MagnifyingGlassPlusIcon
+                    size={16}
+                    weight="bold"
+                    className="touch:size-22"
+                />
             </button>
             <button
                 onClick={handleReset}
-                className="border-stroke bg-fg-2 text-text text-sub flex h-full w-full items-center justify-center border-r border-l px-3 py-2 font-mono transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-stroke text-text touch:text-sub flex flex-1 items-center justify-center border-y font-mono text-[11px] transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed"
                 disabled={currentPixels === TIMELINE_BASE_PX_PER_SEC}
                 title="Reset timeline zoom"
             >
                 {zoomPercent}%
             </button>
             <button
-                onClick={handleZoomIn}
-                className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={currentPixels >= TIMELINE_MAX_PX_PER_SEC}
-                title="Zoom in"
+                onClick={handleZoomOut}
+                className="flex flex-1 items-center justify-center transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={currentPixels <= TIMELINE_MIN_PX_PER_SEC}
+                title={t("timeline.zoomOut")}
+                aria-label={t("timeline.zoomOut")}
             >
-                <PlusIcon size={14} weight="bold" />
+                <MagnifyingGlassMinusIcon
+                    size={16}
+                    weight="bold"
+                    className="touch:size-22"
+                />
             </button>
         </div>
     );

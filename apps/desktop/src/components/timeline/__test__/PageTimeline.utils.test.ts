@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
-import { getAvailableOffsets } from "../PageTimeline.utils";
+import { getAvailableOffsets, nameOfAddedPage } from "../PageTimeline.utils";
 
 describe("getAvailableOffsets", () => {
     it("should return correct offsets for a single page with no next page", () => {
@@ -117,5 +117,40 @@ describe("getAvailableOffsets", () => {
 
         // Should return [0, 0, 0, 0]
         expect(result).toEqual([0, 0]);
+    });
+});
+
+describe("nameOfAddedPage", () => {
+    const pages = (subsets: boolean[]) =>
+        subsets.map((isSubset) => ({ isSubset }));
+
+    it("names the new last page like the timeline does", () => {
+        expect(
+            nameOfAddedPage({
+                pages: pages([false, false, false]),
+                added: { is_subset: false },
+                pageNumberOffset: 0,
+            }),
+        ).toBe("3");
+    });
+
+    it("follows the page number offset", () => {
+        expect(
+            nameOfAddedPage({
+                pages: pages([false, false, false]),
+                added: { is_subset: false },
+                pageNumberOffset: 10,
+            }),
+        ).toBe("13");
+    });
+
+    it("isn't fooled by subset pages", () => {
+        expect(
+            nameOfAddedPage({
+                pages: pages([false, false, true, true]),
+                added: { is_subset: false },
+                pageNumberOffset: 0,
+            }),
+        ).toBe("2");
     });
 });

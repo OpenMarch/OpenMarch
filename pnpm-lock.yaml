@@ -248,6 +248,9 @@ importers:
       '@fontsource/dm-sans':
         specifier: ^5.2.6
         version: 5.2.8
+      '@mediabunny/aac-encoder':
+        specifier: 1.46.0
+        version: 1.46.0(mediabunny@1.46.0)
       '@openmarch/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -3672,6 +3675,11 @@ packages:
 
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
+
+  '@mediabunny/aac-encoder@1.46.0':
+    resolution: {integrity: sha512-T2oWim9pUvtUIg+uXyJ0ImQbaCCqUlZsz/2BoufnUNahXqxjy2/GZryq7C5UNeGg/7Q486NeeZzzN9CiMc+iCw==}
+    peerDependencies:
+      mediabunny: ^1.0.0
 
   '@monaco-editor/loader@1.7.0':
     resolution: {integrity: sha512-gIwR1HrJrrx+vfyOhYmCZ0/JcWqG5kbfG7+d3f/C1LXk2EvzAbHSg3MQ5lO2sMlo9izoAZ04shohfKLVT6crVA==}
@@ -16998,6 +17006,10 @@ snapshots:
       vfile: 6.0.3
     transitivePeerDependencies:
       - supports-color
+
+  '@mediabunny/aac-encoder@1.46.0(mediabunny@1.46.0)':
+    dependencies:
+      mediabunny: 1.46.0
 
   '@monaco-editor/loader@1.7.0':
     dependencies:

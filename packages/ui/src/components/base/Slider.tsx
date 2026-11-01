@@ -12,7 +12,7 @@ export function Slider({
         <RadixSlider.Root
             {...props}
             className={twMerge(
-                "relative flex h-5 w-[200px] touch-none items-center select-none",
+                "touch:h-44 relative flex h-5 w-[200px] touch-none items-center select-none",
                 className,
             )}
         >
@@ -20,7 +20,7 @@ export function Slider({
                 <RadixSlider.Range className="bg-accent/75 absolute h-full rounded-full" />
             </RadixSlider.Track>
             <RadixSlider.Thumb
-                className="bg-accent block size-16 cursor-pointer rounded-full duration-150 hover:scale-110 focus:outline-none"
+                className="bg-accent touch:size-20 touch:before:absolute touch:before:-inset-12 touch:before:rounded-full touch:before:content-[''] relative block size-16 cursor-pointer rounded-full duration-150 hover:scale-110 focus:outline-none"
                 aria-label={ariaLabel || "Slider"}
             />
         </RadixSlider.Root>

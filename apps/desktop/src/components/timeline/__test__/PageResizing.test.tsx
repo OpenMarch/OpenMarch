@@ -205,7 +205,7 @@ describe.todo("PageTimeline Resizing", () => {
         expect(screen.getByText("3")).toBeInTheDocument();
     });
 
-    it("starts page resizing when mouse down on resize handle", async () => {
+    it("starts page resizing when pressing the resize handle", async () => {
         const { container } = render(
             <Providers>
                 <PageTimeline />
@@ -217,7 +217,7 @@ describe.todo("PageTimeline Resizing", () => {
         expect(resizeHandles.length).toBeGreaterThan(0);
 
         // Simulate mouse down on the resize handle
-        fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
+        fireEvent.pointerDown(resizeHandles[0], { clientX: 100, button: 0 });
 
         // Verify that the resize event listeners are added
         // This is hard to test directly, but we can check if the element gets the right class
@@ -236,10 +236,10 @@ describe.todo("PageTimeline Resizing", () => {
         const pageElement = container.querySelector(`[timeline-page-id="1"]`);
 
         // Initial setup - mousedown on resize handle
-        fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
+        fireEvent.pointerDown(resizeHandles[0], { clientX: 100, button: 0 });
 
         // Simulate mouse movement
-        const mouseMoveEvent = new MouseEvent("mousemove", { clientX: 150 });
+        const mouseMoveEvent = new MouseEvent("pointermove", { clientX: 150 });
         act(() => {
             document.dispatchEvent(mouseMoveEvent);
         });
@@ -261,16 +261,16 @@ describe.todo("PageTimeline Resizing", () => {
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
 
         // Initial setup - mousedown on resize handle
-        fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
+        fireEvent.pointerDown(resizeHandles[0], { clientX: 100, button: 0 });
 
         // Simulate mouse movement
-        const mouseMoveEvent = new MouseEvent("mousemove", { clientX: 150 });
+        const mouseMoveEvent = new MouseEvent("pointermove", { clientX: 150 });
         act(() => {
             document.dispatchEvent(mouseMoveEvent);
         });
 
         // Simulate mouse up to end resizing
-        const mouseUpEvent = new MouseEvent("mouseup");
+        const mouseUpEvent = new MouseEvent("pointerup");
         act(() => {
             document.dispatchEvent(mouseUpEvent);
         });
@@ -302,7 +302,7 @@ describe.todo("PageTimeline Resizing", () => {
         const resizeHandles = container.querySelectorAll(".cursor-ew-resize");
 
         // Simulate mouse down on the resize handle
-        fireEvent.mouseDown(resizeHandles[0], { clientX: 100 });
+        fireEvent.pointerDown(resizeHandles[0], { clientX: 100, button: 0 });
 
         // Verify that the resize event listeners are not added
         // This is hard to test directly, but we can check if the element gets the right class

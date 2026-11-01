@@ -5,12 +5,14 @@ import MarcherForm, { MarcherFormProps } from "./MarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
-import { T } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { AppearanceModalContents } from "./appearance/AppearanceModal";
 
 export default function MarchersModal() {
+    const { t } = useTolgee();
     return (
         <SidebarModalLauncher
+            name={t("sidebar.marchers")}
             contents={<MarcherListContents />}
             newContentId="marchers"
             buttonLabel={<UsersThreeIcon size={24} />}
