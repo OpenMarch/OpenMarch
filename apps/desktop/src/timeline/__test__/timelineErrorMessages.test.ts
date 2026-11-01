@@ -406,13 +406,20 @@ describe("en.json", () => {
                 staticData: { en: { [key]: lookup(key) as string } },
             });
         await tolgee.run();
-        const say = (shapeNames: string[], leaderNames: string[]): string =>
+        const say = (
+            shapeNames: string[],
+            leaderNames: string[],
+            orderNames: string[] = [],
+        ): string =>
             tolgee.t(key, {
-                count: shapeNames.length + leaderNames.length,
+                count:
+                    shapeNames.length + leaderNames.length + orderNames.length,
                 shapeCount: shapeNames.length,
                 shapeNames: shapeNames.join(" and "),
                 leaderCount: leaderNames.length,
                 leaderNames: leaderNames.join(" and "),
+                orderCount: orderNames.length,
+                orderNames: orderNames.join(" and "),
             });
         expect(say(["B1"], [])).toBe(
             "B1 is in a shape, so it keeps its move here.",
@@ -422,6 +429,15 @@ describe("en.json", () => {
         );
         expect(say(["B1", "B2"], ["T1"])).toBe(
             "B1 and B2 are in a shape, and T1 follows the leader, so they keep their move here.",
+        );
+        expect(say([], [], ["T3"])).toBe(
+            "T3 shares a curved move with a follow-the-leader order, so it keeps its move here.",
+        );
+        expect(say([], ["T1"], ["T3", "T4"])).toBe(
+            "T1 follows the leader, and T3 and T4 share a curved move with a follow-the-leader order, so they keep their move here.",
+        );
+        expect(say(["B1"], [], ["T3"])).toBe(
+            "B1 is in a shape, and T3 shares a curved move with a follow-the-leader order, so they keep their move here.",
         );
     });
 });

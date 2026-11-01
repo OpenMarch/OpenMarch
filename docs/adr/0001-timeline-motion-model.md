@@ -340,6 +340,11 @@ and `02-adr-amendment-draft.md`; fork #469).
     as a split by marcher (`allowSharedRanges`). The other members keep their stored layers, since
     layer derivation isn't built. The marcher is then removed from that page's part, and the slot
     is compacted.
+  - _Clarified (fork #584, 2026-11-01):_ where others share a move whose path a cut would change
+    (one that isn't direct, which a cut samples), the marcher is first taken into a move of its
+    own and only that move is cut, so the others keep their move, recipe and motion. A direct path
+    is still cut for everyone, since that changes no one's motion. Where split by marcher refuses
+    (an inheriting follow-the-leader order), the marcher keeps its moves and is named.
   - The Expert drag back in a shared move does the same.
   - **Shape and follow-the-leader members are skipped,** by the command and by the drag back. The
     rest still applies, and the skipped marchers are named through `TimelineEditRefusedError` (its
@@ -353,8 +358,9 @@ and `02-adr-amendment-draft.md`; fork #469).
   each half (`takeMarchersIntoOwnMoveInTransaction`, a split by marcher as in UI-25, with a shared
   transition into a stored shape switched to individual points first). Nobody's motion changes.
   It skips the same shape and follow-the-leader members as a removal, and every refusal,
-  including split by marcher's own, is decided before anything is written. It is the only other
-  way holds change a move's membership.
+  including split by marcher's own, is decided before anything is written. Clear this page and
+  the drag back use the same take for a shared move whose path a cut would change (above); these
+  are the only other ways holds change a move's membership.
 - **A part of a cut never takes over a page's move.** A page's move is the oldest timeline over its
   box, so the cut move's id stays with a part that doesn't land on a range a newer move has; when
   both parts would, neither keeps it.
