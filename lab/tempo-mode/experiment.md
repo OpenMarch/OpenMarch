@@ -6,13 +6,13 @@ title: Line the counts up with your music in tempo mode
 summary: A Tempo button opens tempo lanes in the timeline. Fit lines the counts up with the music, and you can pin counts, hold a fermata, set meters like 7/8 and renumber measures.
 status: open
 questions:
-  - Did Fit to the music line the counts up with your music? Where did it go wrong, if anywhere?
-  - When the counts were off, could you fix them by dragging a count onto its hit in the music? Did the counts around it move the way you expected?
-  - Did you try a hold (fermata), a gradual change, a new meter or renumbering a measure? Which were easy to find, and which weren't?
-  - When you added or removed a count, was it clear which of the three choices to pick?
-  - Was it clear what Play would do: play from the playhead, or loop the measures you'd selected?
-  - Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?
-  - Did Undo always put back what you expected, including the music moving when Fit lined up the first hit?
+  - "Did Fit to the music line the counts up with your music? Where did it go wrong, if anywhere?"
+  - "When the counts were off, could you fix them by dragging a count onto its hit in the music? Did the counts around it move the way you expected?"
+  - "Did you try a hold (fermata), a gradual change, a new meter or renumbering a measure? Which were easy to find, and which weren't?"
+  - "When you added or removed a count, was it clear which of the three choices to pick?"
+  - "Was it clear what Play would do: play from the playhead, or loop the measures you'd selected?"
+  - "Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?"
+  - "Did Undo always put back what you expected, including the music moving when Fit lined up the first hit?"
 ---
 
 Tempo mode edits the counts against the music inside the timeline, the way a
