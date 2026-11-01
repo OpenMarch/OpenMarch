@@ -19,6 +19,7 @@ import {
     removeAssignmentRowsInTransaction,
 } from "./timelineMembership";
 import { joinList } from "@/timeline/timelineRangeWords";
+import { english, type KeepTranslate } from "@/timeline/timelineKeepLater";
 import { nextMoveNameInTransaction, readMoveWords } from "./timelineMoveNames";
 import type { TimelinePathParams } from "./timelineTransitionsInTransaction";
 import {
@@ -133,20 +134,35 @@ export interface SplitMoveResult {
 
 /**
  * Why `marcherIds` can't be split out of a move whose members are `members`, or `null` when
- * they can, as far as membership goes (UI-25): none of them in it, or every member chosen. The
- * timeline menu, the Move card and the command palette show the same reason on a disabled item.
+ * they can, as far as membership goes (UI-25): none of them in it, or every member chosen of a
+ * move that isn't a page's own (that would only rename it). A page's own move can be split off
+ * whole (#581): its marchers get a move of their own, and the page box keeps its timeline, empty.
+ * The timeline menu, the Move card and the command palette show the same reason on a disabled
+ * item, worded by `t` (Tolgee's in the app; English for the write's refusal).
  */
 export function splitMembershipBlocker(
     members: ReadonlySet<number>,
     marcherIds: Iterable<number>,
     moveName: string,
+    {
+        pageMove = false,
+        t = english,
+    }: { pageMove?: boolean; t?: KeepTranslate } = {},
 ): string | null {
     let chosen = 0;
     for (const id of new Set(marcherIds)) if (members.has(id)) chosen++;
     if (chosen === 0)
-        return `Select marchers in ${moveName} to split them into a new move.`;
-    if (chosen === members.size)
-        return `Every marcher in ${moveName} is selected. Select only the ones to split off.`;
+        return t(
+            "timeline.split.selectMembers",
+            "Select marchers in {name} to split them into a new move.",
+            { name: moveName },
+        );
+    if (chosen === members.size && !pageMove)
+        return t(
+            "timeline.split.everyMarcher",
+            "Every marcher in {name} is selected. Select only the ones to split off.",
+            { name: moveName },
+        );
     return null;
 }
 
@@ -226,10 +242,15 @@ export async function splitRefusal(
  * transitions as they are (see the module comment). Selected marchers who aren't members are left
  * alone and reported.
  *
+ * Every member of a page's own move may be chosen (#581): every transition moves whole, and the
+ * page's timeline stays, empty, so the page box still stands for it and the new move is a move
+ * (ADR 0001, UI-25 amendment: an edit that empties the page's timeline keeps its row while
+ * another shares its range). Nothing moves on the field.
+ *
  * Refused (E-ARGS) before anything is written: a missing timeline, no marchers, none of them in
- * the move, every member chosen (that would only rename the move), and a marcher whose
- * transition is shared with a marcher who stays and can't be split slot by slot (into a shape,
- * follow the leader, or in an inheriting follow-the-leader order).
+ * the move, every member of a move that isn't a page's chosen (that would only rename it), and a
+ * marcher whose transition is shared with a marcher who stays and can't be split slot by slot
+ * (into a shape, follow the leader, or in an inheriting follow-the-leader order).
  */
 // eslint-disable-next-line max-lines-per-function
 export const splitMarchersIntoNewMoveInTransaction = async ({
@@ -246,9 +267,11 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
     if (marcherIds.length === 0) refuse("select the marchers to split off");
     const rows = await memberRows(tx, timelineId);
     const members = new Set(rows.map((r) => r.assignment.marcher_id));
-    const { nameOf } = await timelineWords(tx);
+    const { nameOf, pageTimelineIds } = await timelineWords(tx);
     const name = nameOf(timelineId);
-    const blocker = splitMembershipBlocker(members, marcherIds, name);
+    const blocker = splitMembershipBlocker(members, marcherIds, name, {
+        pageMove: pageTimelineIds.has(timelineId),
+    });
     if (blocker) refuse(blocker);
     const chosen = new Set(marcherIds.filter((id) => members.has(id)));
     const notInMove = [...new Set(marcherIds)]

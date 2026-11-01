@@ -1222,7 +1222,11 @@ from it. The spec still wins on the model; this file decides presentation.
     by the "Move N" rule (UI-14), and gets its own clip row; it is selected and isolated
     (_lead default_, V-334), so Esc goes back to where you were. Disabled, with the reason behind
     a **?** (UI-14): while playing ("Pause to split or merge moves."), when none of the selected marchers is in
-    the move, and when all of them are (that would only rename it). The entry shows, disabled,
+    the move, and when all of a move's marchers are (that would only rename it). A page's own
+    move is the exception (owner, 2026-11-01, #581): with all of its marchers selected the split
+    gives them a move of their own that can be resized or dragged across page flags, and the
+    page's timeline stays, empty, so the page box still stands for it (ADR 0001, UI-25 amendment).
+    That page box's entry then says the page has no move of its own. The entry shows, disabled,
     with no marchers selected too, so it can be found (_lead default_, V-337).
   - **No motion changes** (owner). Each chosen marcher's transition moves to the new timeline as it
     is: destination and path, as one undoable edit

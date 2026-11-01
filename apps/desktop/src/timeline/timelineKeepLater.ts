@@ -240,7 +240,8 @@ export type KeepTranslate = (
     params?: Record<string, string>,
 ) => string;
 
-const english: KeepTranslate = (_key, defaultValue, params) =>
+/** `KeepTranslate` in English: the default text, its `{params}` filled in. */
+export const english: KeepTranslate = (_key, defaultValue, params) =>
     defaultValue.replace(
         /\{(\w+)\}/g,
         (_, name: string) => params?.[name] ?? "",
