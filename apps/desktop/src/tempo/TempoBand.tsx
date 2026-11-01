@@ -529,6 +529,11 @@ type Gesture =
           segment: TempoSegment;
           startY: number;
           factor: number;
+          /**
+           * BPM per px, from the lane's scale when the drag started. The scale grows while the
+           * line is dragged past it; reading it live would make the drag speed up
+           */
+          bpmPerPx: number;
       }
     | {
           kind: "range";
@@ -2693,6 +2698,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const s = segments[i];
         return s ? { kind: "lane", stretch: s } : null;
     };
+    /** The tempo lane's scale: BPM per px */
+    const bpmPerPx = () => (bpmScale.hi - bpmScale.lo) / (TEMPO.height - 8);
     /** The stored lane tempos (before any drag) */
     const storedBpms = () => laneBpms(data.durations);
     /** New lengths for counts `from`..`to - 1` from quarter-note tempos; holds keep theirs */
@@ -2838,7 +2845,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     to: segment.from,
                     axis: null,
                 });
-            else setGesture({ kind: "tempo", segment, startY: y, factor: 1 });
+            else
+                setGesture({
+                    kind: "tempo",
+                    segment,
+                    startY: y,
+                    factor: 1,
+                    bpmPerPx: bpmPerPx(),
+                });
         } else if (y >= TEMPO.top) {
             // off the line: a drag selects counts, a click clears the selection
             const b = Math.round(beat);
@@ -3009,6 +3023,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         segment,
                         startY: gesture.startY,
                         factor: 1,
+                        bpmPerPx: bpmPerPx(),
                     });
                 return;
             }
@@ -3041,7 +3056,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
         } else if (gesture.kind === "tempo") {
             const dy = localY(e) - gesture.startY;
-            const perPx = (bpmScale.hi - bpmScale.lo) / (TEMPO.height - 8);
+            const perPx = gesture.bpmPerPx;
             const bpm0 = (gesture.segment.bpmFrom + gesture.segment.bpmTo) / 2;
             const step = e.shiftKey ? 0.1 : 1;
             const bpm = Math.round((bpm0 - dy * perPx) / step) * step;
