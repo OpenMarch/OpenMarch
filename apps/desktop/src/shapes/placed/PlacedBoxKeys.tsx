@@ -12,6 +12,7 @@ import type { AnyToolKind } from "../tool/toolKind";
 import { useBoxSelectionStore } from "./boxSelectionStore";
 import { commitBox } from "./commitBox";
 import { leaveBox, selectOnField } from "./boxSelection";
+import { ungroupShape } from "./ungroupShape";
 
 const DIRECTIONS = {
     up: { x: 0, y: -1 },
@@ -49,6 +50,7 @@ export function stepPlacedBoxFiles(
  *   keeps its form (the plain nudge rounds each marcher on its own, which bends a box on half
  *   steps).
  * - Escape inside a box selects the whole box again, and on a box selected whole deselects it.
+ * - Ungroup (shapeUngroup) ungroups the shape selected whole; its marchers stay selected.
  */
 export function PlacedBoxKeys(): null {
     const queryClient = useQueryClient();
@@ -81,6 +83,14 @@ export function PlacedBoxKeys(): null {
         "cancelAlignmentUpdates",
         () => (inside ? leaveBox() : selectOnField([])),
         { enabled: inside || selected },
+    );
+    useActionHandler(
+        "shapeUngroup",
+        () => {
+            const box = useBoxSelectionStore.getState().selected;
+            if (box) void ungroupShape(box, queryClient);
+        },
+        { enabled: selected, ignoreRepeat: true },
     );
     return null;
 }
