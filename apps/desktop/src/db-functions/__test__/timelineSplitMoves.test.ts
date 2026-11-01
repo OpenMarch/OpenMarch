@@ -12,8 +12,16 @@ import {
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
-import { addMarchersToTimeline, type BeatRange } from "../timelineMembership";
-import { createTrack, deleteTimeline } from "../timelineCommands";
+import {
+    addMarchersToTimeline,
+    removeMarchersFromTimeline,
+    type BeatRange,
+} from "../timelineMembership";
+import {
+    createTrack,
+    deleteTimeline,
+    renameTimeline,
+} from "../timelineCommands";
 import { moveMarchersInTarget } from "../timelineMoves";
 import { addPageFlag, deletePageFlags, movePageFlag } from "../pageFlags";
 import { deletePageYankWithMoves, deletePagesWithMoves } from "../pageDelete";
@@ -1523,6 +1531,64 @@ describeDbTests("splitting and merging moves (UI-25)", (it) => {
                     (await membersOf(db, over[1]!.id)).map((m) => m.marcher),
                 ).toEqual(chosen);
             }
+        });
+
+        /** Adds a flag mid page 4, deletes page 5's flag, moves page 4's and deletes page 4 */
+        const pageEditsAfterPage3 = async (db: DbConnection, pages: Page[]) => {
+            expect(pages.length).toBeGreaterThan(5);
+            const page4 = pageRange(pages, 4);
+            await addPageFlag({ db, beat: page4.start + 2 });
+            expect(await violations(db)).toEqual([]);
+            await deletePageFlags({ db, pageIds: new Set([pages[5]!.id]) });
+            expect(await violations(db)).toEqual([]);
+            await movePageFlag({
+                db,
+                pageId: pages[4]!.id,
+                beat: page4.end - 1,
+            });
+            expect(await violations(db)).toEqual([]);
+            await deletePagesWithMoves({
+                db,
+                pageIds: new Set([pages[4]!.id]),
+            });
+            expect(await violations(db)).toEqual([]);
+        };
+
+        it("a move emptied with Remove stays through page edits elsewhere (UI-9 Remove)", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const pages = await setUp(db);
+            const range = {
+                start: pageRange(pages, 2).start,
+                end: pageRange(pages, 3).end,
+            };
+            const marcherId = ids(marchersAndPages)[0]!;
+            const { timelineId } = await createTrack({
+                db,
+                target: { kind: "marcher", marcherId },
+                startBeat: range.start,
+                endBeat: range.end,
+            });
+            await renameTimeline({ db, timelineId, name: "Kept empty" });
+            await removeMarchersFromTimeline({
+                db,
+                timelineId,
+                marcherIds: [marcherId],
+            });
+            expect(await membersOf(db, timelineId)).toEqual([]);
+
+            await pageEditsAfterPage3(db, pages);
+            const kept = await db
+                .select()
+                .from(schema.timelines)
+                .where(eq(schema.timelines.id, timelineId))
+                .get();
+            expect([kept?.name, kept?.start_beat, kept?.end_beat]).toEqual([
+                "Kept empty",
+                range.start,
+                range.end,
+            ]);
         });
     });
 

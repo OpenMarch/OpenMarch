@@ -8,6 +8,7 @@ import {
     deleteStrayEmptyTimelinesInTransaction,
     planTimelineRipple,
     readPageGrid,
+    readPageTimelinesInTransaction,
     readRippleRows,
     withTimelinePageRipple,
     type GridPage,
@@ -206,6 +207,7 @@ export async function addPageFlagInTransaction({
     if (plan.kind === "split") {
         const { page } = plan;
         const lastPageCounts = plan.last ? await lastPageCountsIn(tx) : 0;
+        const pageTimelines = await readPageTimelinesInTransaction(tx, grid);
         // Before the page rows change, while the split page's box is still a page's
         const split = splitMoves
             ? await splitMovesAtBeatInTransaction({
@@ -235,7 +237,7 @@ export async function addPageFlagInTransaction({
                 lastPageCounts: page.start + lastPageCounts - beat,
             });
         // An empty page timeline (everyone split off, #581) now crosses the new flag
-        await deleteStrayEmptyTimelinesInTransaction(tx);
+        await deleteStrayEmptyTimelinesInTransaction(tx, pageTimelines);
         return {
             page: created!,
             startBeat: page.start,
@@ -302,6 +304,7 @@ export async function deletePageFlagsInTransaction({
     const order = new Map(initial.pages.map((p, i) => [p.id, i]));
     for (const id of ids)
         if (!order.has(id)) refuse(`page ${id} doesn't exist`);
+    const pageTimelines = await readPageTimelinesInTransaction(tx, initial);
     // Latest first, re-reading the grid each time, so each delete sees the pages it leaves
     ids.sort((a, b) => order.get(b)! - order.get(a)!);
 
@@ -348,7 +351,7 @@ export async function deletePageFlagsInTransaction({
         if (row) deleted.push(realDatabasePageToDatabasePage(row));
     }
     // An empty page timeline (everyone split off, #581) is no longer on a box
-    await deleteStrayEmptyTimelinesInTransaction(tx);
+    await deleteStrayEmptyTimelinesInTransaction(tx, pageTimelines);
     return deleted;
 }
 
