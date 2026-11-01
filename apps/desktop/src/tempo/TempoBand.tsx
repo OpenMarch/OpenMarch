@@ -96,6 +96,7 @@ import {
 } from "./tempoMath";
 import {
     changesFrom,
+    curveAt,
     curveThrough,
     endTempo,
     rampMiddle,
@@ -881,6 +882,55 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
      * steady stretch's at the end of its line, before the jump to the next tempo (Logic's corner).
      * An uneven stretch, or one with no jump after it, can't bend.
      */
+    /**
+     * The tempo line's height at `beat` (fractional). A ramp is drawn smooth through the middle
+     * of each count, the way Logic draws its curves, though each count plays at one tempo; an
+     * uneven stretch keeps its steps, which say where the counts are.
+     */
+    const tempoYAt = useCallback(
+        (beat: number) => {
+            const b = Math.floor(beat);
+            const s = segments.find((x) => b >= x.from && b < x.to);
+            if (!s?.ramp) return yOfBpm(qBpm(b));
+            const n = s.to - s.from;
+            const t =
+                n <= 1
+                    ? 0
+                    : Math.min(1, Math.max(0, (beat - s.from - 0.5) / (n - 1)));
+            return yOfBpm(
+                s.bpmFrom + (s.bpmTo - s.bpmFrom) * curveAt(t, s.curve ?? 0),
+            );
+        },
+        [segments, yOfBpm, qBpm],
+    );
+    /** Draws the tempo line over count `b` onto `ctx`'s path, from wherever the pen is */
+    const traceCount = useCallback(
+        (
+            ctx: CanvasRenderingContext2D,
+            b: number,
+            X: (beat: number) => number,
+            pen: boolean,
+        ) => {
+            const ramp = segments.some(
+                (x) => x.ramp && b >= x.from && b < x.to,
+            );
+            if (!ramp) {
+                const y = tempoYAt(b);
+                if (!pen) ctx.moveTo(X(b), y);
+                else ctx.lineTo(X(b), y);
+                ctx.lineTo(X(b + 1), y);
+                return;
+            }
+            const steps = Math.max(2, Math.ceil(ppb / 3));
+            for (let i = 0; i <= steps; i++) {
+                const beat = b + i / steps;
+                const y = tempoYAt(Math.min(beat, b + 0.999999));
+                if (i === 0 && !pen) ctx.moveTo(X(beat), y);
+                else ctx.lineTo(X(beat), y);
+            }
+        },
+        [segments, tempoYAt, ppb],
+    );
     const curveHandleOf = useCallback(
         (s: TempoSegment, next: TempoSegment | undefined) => {
             const counts = s.to - s.from;
@@ -1276,17 +1326,16 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 b++
             ) {
                 if (data.holds.has(b)) continue;
-                const y = yOfBpm(qBpm(b));
-                ctx.moveTo(X(b), y);
-                ctx.lineTo(X(b + 1), y);
+                traceCount(ctx, b, X, false);
             }
             ctx.stroke();
             ctx.restore();
         }
 
-        // the tempo line: each count's tempo as a step, gaps at holds
+        // the tempo line: steps, ramps drawn smooth, gaps at holds
         ctx.strokeStyle = accent;
         ctx.lineWidth = 2;
+        ctx.lineJoin = "round";
         ctx.beginPath();
         let pen = false;
         for (let b = firstBeat; b <= lastBeat && b < durations.length; b++) {
@@ -1294,10 +1343,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 pen = false;
                 continue;
             }
-            const y = yOfBpm(qBpm(b));
-            if (!pen) ctx.moveTo(X(b), y);
-            else ctx.lineTo(X(b), y);
-            ctx.lineTo(X(b + 1), y);
+            traceCount(ctx, b, X, pen);
             pen = true;
         }
         ctx.stroke();
@@ -1422,6 +1468,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         hover,
         segments,
         curveHandleOf,
+        traceCount,
         outliers,
         highlight,
         ui.range,
@@ -2670,7 +2717,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         if (y < TEMPO.top || y >= TEMPO.top + TEMPO.height) return null;
         const b = Math.floor(beatAtX(x, ppb));
         if (b < 1 || b >= durations.length || data.holds.has(b)) return null;
-        return Math.abs(yOfBpm(qBpm(b)) - y) <= TEMPO_LINE_GRAB_PX ? b : null;
+        return Math.abs(tempoYAt(beatAtX(x, ppb)) - y) <= TEMPO_LINE_GRAB_PX
+            ? b
+            : null;
     };
     /** What's under the point (band px) in the tempo lane: a handle, a point, the line, or none */
     const tempoTargetAt = (x: number, y: number): TempoHover | null => {
