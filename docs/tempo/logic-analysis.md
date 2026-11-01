@@ -17,6 +17,16 @@ Apple's guide for each one; the wider DAW survey is [daw-research.md](daw-resear
   (straight or curved ramps, double-click for a jump), and Fit placing points.
 - **Next, after the owner's lab check:** D, the seconds view, starting with a throwaway prototype.
 
+## Measures are optional (owner, 2026-11-01)
+
+- A show doesn't need measures at all: someone can turn them off and work in counts only.
+- A show with measures can have stretches with none (a voiceover, a break), and measures carry
+  on after. Numbering continues across the gap.
+- No separate "pause" kind: a fermata stays one held count inside a measure.
+- Storage idea: `beats.include_in_measure` is already in the file format and read by nothing.
+  `0` on a stretch of counts = no measures there. Open: how counts in a measureless stretch are
+  named in the UI (absolute count, "ct 37"?), and what the measure row and meter chips show there.
+
 ## The owner's feedback
 
 1. The cursor should change to up/down over the tempo line, and only the line should drag. Today a

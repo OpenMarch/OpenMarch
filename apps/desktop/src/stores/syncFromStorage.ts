@@ -18,6 +18,8 @@ export function syncFromStorage<T>(
             );
         }
     };
+    // no window in a node test that imports a store (the tempo mode shortcuts load one)
+    if (typeof window === "undefined") return () => {};
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
 }

@@ -40,10 +40,10 @@ import {
     HandTapIcon,
     MagicWandIcon,
     MagnetIcon,
+    GaugeIcon,
     MetronomeIcon,
     PushPinSlashIcon,
     QuestionIcon,
-    SpeakerHighIcon,
     TimerIcon,
     XIcon,
 } from "@phosphor-icons/react";
@@ -63,6 +63,8 @@ import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
 import { useAudioEnvelopeStore } from "@/timeline/timelineWaveform";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import { getActionShortcutKeys } from "@/shortcuts/labels";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import {
     audioContextRef,
@@ -4303,6 +4305,10 @@ function TempoToolbar(props: {
     const ui = useTempoUi();
     const click = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleClick = useMetronomeStore((s) => s.toggleMetronome);
+    const overrides = useShortcutOverridesStore((s) => s.overrides);
+    const metronomeKey = getActionShortcutKeys("toggleMetronome", {
+        overrides,
+    })?.join(" + ");
     const fitName = props.range
         ? `Fit to the music: ${props.rangeText}`
         : "Fit to the music";
@@ -4320,7 +4326,7 @@ function TempoToolbar(props: {
                 onContextMenu={(e) => e.stopPropagation()}
             >
                 <span className="text-accent flex shrink-0 items-center gap-4 text-[12px] font-bold whitespace-nowrap">
-                    <MetronomeIcon size={14} weight="bold" aria-hidden />
+                    <GaugeIcon size={14} weight="bold" aria-hidden />
                     <span className="@max-[640px]:hidden">Tempo mode</span>
                 </span>
                 <span className="bg-stroke h-16 w-px shrink-0" aria-hidden />
@@ -4424,20 +4430,28 @@ function TempoToolbar(props: {
                         </ShortcutTooltip>
                     </>
                 )}
+                {/* The metronome, up front: editing tempo is listening to the counts against the
+                    music (owner, 2026-11-01: not hidden in the audio menu). Its label stays on
+                    narrow windows too */}
                 <ShortcutTooltip
                     closeOnPress
-                    label={click ? "Click: on" : "Click: off"}
+                    label={click ? "Metronome: on" : "Metronome: off"}
+                    shortcut={metronomeKey}
                     hint="A click on every count, to hear whether the counts sit on the music"
                 >
                     <button
                         type="button"
-                        aria-label="Click"
+                        aria-label="Metronome"
                         aria-pressed={click}
                         className={toolButton(click)}
                         onClick={toggleClick}
                     >
-                        <SpeakerHighIcon size={12} aria-hidden />
-                        <span className="@max-[860px]:hidden">Click</span>
+                        <MetronomeIcon
+                            size={12}
+                            weight={click ? "fill" : "regular"}
+                            aria-hidden
+                        />
+                        <span>Metronome</span>
                     </button>
                 </ShortcutTooltip>
                 <ShortcutTooltip

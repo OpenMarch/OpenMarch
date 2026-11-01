@@ -2,7 +2,7 @@
  * PROTOTYPE (tempo mode, branch tempo/track-proto): turns tempo mode on and off (Shift+T). Lit
  * while on.
  */
-import { MetronomeIcon } from "@phosphor-icons/react";
+import { GaugeIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { useEffect } from "react";
 import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
@@ -49,7 +49,7 @@ export function TempoModeButton() {
                     on ? "text-accent bg-fg-2" : "text-text hover:text-accent",
                 )}
             >
-                <MetronomeIcon size={16} weight={on ? "bold" : "regular"} />
+                <GaugeIcon size={16} weight={on ? "bold" : "regular"} />
                 <span className="text-[11px]">Tempo</span>
             </button>
         </ShortcutTooltip>
