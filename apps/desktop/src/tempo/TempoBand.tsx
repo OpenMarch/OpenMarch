@@ -42,6 +42,12 @@ import {
     MagnetIcon,
     GaugeIcon,
     MetronomeIcon,
+    MinusIcon,
+    PlusIcon,
+    PushPinIcon,
+    TrashIcon,
+    TrendDownIcon,
+    TrendUpIcon,
     PushPinSlashIcon,
     QuestionIcon,
     TimerIcon,
@@ -604,8 +610,10 @@ interface Editor {
 interface Menu {
     x: number;
     y: number;
-    /** A line above the items (a question the items answer) */
+    /** A line above the items: the place the menu is about, said once (owner, 2026-11-01) */
     title?: string;
+    /** Beside the title, quieter: the tempo there, the meter, the selection's size */
+    subtitle?: string;
     items: {
         label: string;
         onSelect: () => void;
@@ -613,6 +621,11 @@ interface Menu {
         hint?: string;
         /** The counts the item changes, shown in the lanes while the item is pointed at */
         range?: CountRange;
+        icon?: ReactNode;
+        /** Quiet text at the right: what it goes to, a value */
+        aside?: string;
+        /** A line above it, starting a group */
+        separatorBefore?: boolean;
     }[];
 }
 
@@ -2435,6 +2448,29 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         });
     };
 
+    /** Type how long a hold lasts, in seconds (it's a length, not a tempo) */
+    const editHold = (e: { clientX: number; clientY: number }, b: number) =>
+        setEditor({
+            x: e.clientX,
+            y: e.clientY,
+            value: `${Math.round(data.durations[b]! * 100) / 100}`,
+            hint: `How long ${measureLabel(b)} is held, in seconds`,
+            range: { from: b, to: b + 1 },
+            onCommit: (value) => {
+                const seconds = Number(value.replace(/s$/i, "").trim());
+                if (!(seconds >= 0.05 && seconds <= 600)) {
+                    toast.error("A hold is a length in seconds, such as 2.5");
+                    return;
+                }
+                commit(
+                    `Held ${measureLabel(b)} for ${seconds} s`,
+                    retime(data.durations, data.locks, b, b + 1, [seconds], {
+                        hold: true,
+                    }),
+                );
+            },
+        });
+
     // ---- keys while playing: T taps, M drops a rehearsal mark ----------------------------
     const gestureRef = useRef<Gesture | null>(null);
     gestureRef.current = gesture;
@@ -3352,42 +3388,167 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const range = ui.range;
         const one = { from: beat, to: beat + 1 };
         const items: Menu["items"] = [];
-        if (y >= TEMPO.top) {
+        const where = { clientX: e.clientX, clientY: e.clientY };
+        const I = 14;
+        const countTitle = m
+            ? `m. ${m.number}, count ${beat - m.start + 1}`
+            : `Count ${beat}`;
+        let title: string;
+        let subtitle: string | undefined;
+
+        // D: a right-click inside the selection is about the selection
+        if (range && beat >= range.from && beat < range.to) {
+            title = measuresLabel(range.from, range.to);
+            subtitle = `${range.to - range.from} counts`;
             items.push(
-                data.locks.has(beat)
-                    ? {
-                          label: `Unpin ${measureLabel(beat)}`,
-                          onSelect: () => togglePin(beat),
-                          range: { from: beat, to: beat },
-                      }
-                    : {
-                          label: `Pin ${measureLabel(beat)} where it is`,
-                          onSelect: () => togglePin(beat),
-                          range: { from: beat, to: beat },
-                      },
-                data.holds.has(beat)
-                    ? {
-                          label: `${measureLabel(beat)} is not a hold`,
-                          onSelect: () => toggleHold(beat),
-                          range: one,
-                      }
-                    : {
-                          label: `Make ${measureLabel(beat)} a hold (fermata)`,
-                          onSelect: () => toggleHold(beat),
-                          range: one,
-                      },
+                {
+                    label: "Fit to the music",
+                    icon: <MagicWandIcon size={I} aria-hidden />,
+                    onSelect: () => fitToMusic(range.from, range.to),
+                    range,
+                },
+                {
+                    label: "Set tempo…",
+                    icon: <GaugeIcon size={I} aria-hidden />,
+                    onSelect: () =>
+                        editTempo(
+                            where,
+                            range.from,
+                            range.to,
+                            `${Math.round(qBpm(range.from, data.durations))}`,
+                        ),
+                    range,
+                },
+                {
+                    label: "Twice as fast",
+                    icon: <TextGlyph>×2</TextGlyph>,
+                    onSelect: () => scaleSelection(0.5),
+                    range,
+                },
+                {
+                    label: "Half as fast",
+                    icon: <TextGlyph>÷2</TextGlyph>,
+                    onSelect: () => scaleSelection(2),
+                    range,
+                },
+                {
+                    label: "Remove these counts…",
+                    icon: <TrashIcon size={I} aria-hidden />,
+                    onSelect: () => void askRemove(e, range.from, range.to),
+                    range,
+                    separatorBefore: true,
+                },
+                {
+                    label: "Clear the selection",
+                    icon: <XIcon size={I} aria-hidden />,
+                    aside: "Esc",
+                    onSelect: () => useTempoUi.getState().setRange(null),
+                },
             );
-            if (!data.holds.has(beat) && beat < data.storedCount) {
+        } else if (y < TEMPO.top && m) {
+            // B: the marks and measures lanes: the measure
+            const measure = { from: m.start, to: m.start + m.counts };
+            const meter = m.meter ?? `${m.counts}/4`;
+            const [top, bottom] = meter.split("/");
+            title = `Measure ${m.number}`;
+            subtitle = m.mark ? `${meter} · mark ${m.mark}` : meter;
+            items.push(
+                {
+                    label: "Time signature…",
+                    icon: <MeterGlyph top={top ?? ""} bottom={bottom ?? ""} />,
+                    onSelect: () =>
+                        setMenu(signatureMenu(e.clientX, e.clientY, m.start)),
+                    range: measure,
+                },
+                {
+                    label: "Renumber from here…",
+                    icon: <NumberGlyph n={m.number} />,
+                    onSelect: () => renumber(e, m),
+                    range: measure,
+                },
+                {
+                    label: m.mark ? "Rehearsal mark…" : "Add a rehearsal mark…",
+                    icon: <MarkGlyph letter={m.mark ?? "A"} />,
+                    onSelect: () => editMark(e, m),
+                    range: measure,
+                },
+                {
+                    label: "Add a measure before…",
+                    icon: <PlusIcon size={I} aria-hidden />,
+                    onSelect: () =>
+                        void askAdd(
+                            e,
+                            m.start,
+                            m.counts,
+                            `a measure (${m.counts} counts) before measure ${m.number}`,
+                        ),
+                    range: { from: m.start, to: m.start },
+                    separatorBefore: true,
+                },
+                {
+                    label: "Remove this measure…",
+                    icon: <MinusIcon size={I} aria-hidden />,
+                    onSelect: () =>
+                        void askRemove(e, m.start, m.start + m.counts),
+                    range: measure,
+                },
+            );
+        } else {
+            // B: the tempo and music lanes: the count, and (on the tempo lane) its tempo
+            const hold = data.holds.has(beat);
+            title = countTitle;
+            subtitle = hold
+                ? `hold ${data.durations[beat]!.toFixed(1)} s`
+                : bpmText(qBpm(beat, data.durations));
+            const onTempo = y < MUSIC.top;
+            if (hold)
+                items.push(
+                    {
+                        label: "Hold length…",
+                        icon: <FermataGlyph />,
+                        aside: `${data.durations[beat]!.toFixed(1)} s`,
+                        onSelect: () => editHold(where, beat),
+                        range: one,
+                    },
+                    {
+                        label: "Not a hold",
+                        icon: <FermataGlyph />,
+                        onSelect: () => toggleHold(beat),
+                        range: one,
+                    },
+                );
+            if (onTempo && !hold && beat < data.storedCount) {
+                if (beat > 1)
+                    items.push(
+                        changes.has(beat)
+                            ? {
+                                  label: "Remove this tempo change",
+                                  icon: <StepGlyph />,
+                                  onSelect: () => removeChange(beat),
+                                  range: { from: beat, to: beat },
+                              }
+                            : {
+                                  label: "Add a tempo change here",
+                                  icon: <StepGlyph />,
+                                  onSelect: () => addChange(beat),
+                                  range: { from: beat, to: beat },
+                              },
+                    );
                 // From this count to the end of its tempo, or the next pin or hold first
                 const end = tempoStretchEnd(beat);
                 const stretch = { from: beat, to: end };
-                const span = rangeLabel(beat, end);
                 const current = qBpm(beat, data.durations);
+                const last = measureAt(end - 1);
                 items.push({
-                    label: `Change the tempo from ${span}…`,
+                    label: "Set tempo…",
+                    icon: <GaugeIcon size={I} aria-hidden />,
+                    aside:
+                        end - beat > 1 && last
+                            ? `to m. ${last.number}`
+                            : undefined,
                     onSelect: () =>
                         editTempo(
-                            e,
+                            where,
                             beat,
                             end,
                             `${Math.round(current * 10) / 10}`,
@@ -3402,8 +3563,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     Math.abs(target - current) < 0.5;
                 items.push({
                     label: same
-                        ? `Change gradually from ${measureLabel(beat)}`
-                        : `Change gradually to ${bpmText(target!)} from ${span}`,
+                        ? "Gradual change"
+                        : `Gradual change to ${bpmText(target!)}`,
+                    icon:
+                        !same && target! < current ? (
+                            <TrendDownIcon size={I} aria-hidden />
+                        ) : (
+                            <TrendUpIcon size={I} aria-hidden />
+                        ),
                     onSelect: () =>
                         target !== null && setTempo(beat, end, current, target),
                     disabled: same,
@@ -3413,136 +3580,87 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     range: stretch,
                 });
             }
-        }
-        if (range)
+            items.push(
+                data.locks.has(beat)
+                    ? {
+                          label: "Unpin",
+                          icon: <PushPinSlashIcon size={I} aria-hidden />,
+                          onSelect: () => togglePin(beat),
+                          range: { from: beat, to: beat },
+                          separatorBefore: items.length > 0,
+                      }
+                    : {
+                          label: "Pin to the music",
+                          icon: <PushPinIcon size={I} aria-hidden />,
+                          onSelect: () => togglePin(beat),
+                          range: { from: beat, to: beat },
+                          separatorBefore: items.length > 0,
+                      },
+            );
+            if (!hold)
+                items.push({
+                    label: "Make a hold (fermata)",
+                    icon: <FermataGlyph />,
+                    onSelect: () => toggleHold(beat),
+                    range: one,
+                });
             items.push(
                 {
-                    label: `Fit ${rangeLabel(range.from, range.to)} to the music`,
-                    onSelect: () => fitToMusic(range.from, range.to),
-                    range,
-                },
-                {
-                    label: `Set the tempo of ${rangeLabel(range.from, range.to)}…`,
+                    label: "Add a count before…",
+                    icon: <PlusIcon size={I} aria-hidden />,
                     onSelect: () =>
-                        editTempo(
+                        void askAdd(
                             e,
-                            range.from,
-                            range.to,
-                            `${Math.round(qBpm(range.from, data.durations))}`,
+                            beat,
+                            1,
+                            `a count before ${measureLabel(beat)}`,
                         ),
-                    range,
+                    range: { from: beat, to: beat },
                 },
                 {
-                    label: "Counts twice as fast (×2)",
-                    onSelect: () => scaleSelection(0.5),
-                    range,
+                    label: "Add a count after…",
+                    icon: <PlusIcon size={I} aria-hidden />,
+                    onSelect: () =>
+                        void askAdd(
+                            e,
+                            beat + 1,
+                            1,
+                            `a count after ${measureLabel(beat)}`,
+                        ),
+                    range: { from: beat + 1, to: beat + 1 },
                 },
                 {
-                    label: "Counts half as fast (÷2)",
-                    onSelect: () => scaleSelection(2),
-                    range,
-                },
-                {
-                    label: `Remove ${rangeLabel(range.from, range.to)}…`,
-                    onSelect: () => void askRemove(e, range.from, range.to),
-                    range,
-                },
-                {
-                    label: "Clear the selection",
-                    onSelect: () => useTempoUi.getState().setRange(null),
+                    label: "Remove this count…",
+                    icon: <MinusIcon size={I} aria-hidden />,
+                    onSelect: () => void askRemove(e, beat, beat + 1),
+                    range: one,
                 },
             );
-        else {
             // from the count clicked: what's before it stays as it is (nothing to fit past the
             // end of the music)
             const from = Math.max(1, beat);
             const pin = lockAfter(data.locks, from);
-            const end = pin ?? musicEndBeat();
-            if (end > from)
+            const fitEnd = pin ?? musicEndBeat();
+            if (fitEnd > from)
                 items.push({
-                    // up to a pin, or on to the end of the music (where that is on the counts as
-                    // they are now is only a guess)
-                    label:
+                    label: "Fit from here",
+                    icon: <MagicWandIcon size={I} aria-hidden />,
+                    aside:
                         pin === null
-                            ? `Fit from ${measureLabel(from)} to the end of the music`
-                            : `Fit ${rangeLabel(from, end)} to the music`,
-                    onSelect: () => fitToMusic(from, end, pin === null),
-                    range: { from, to: end },
+                            ? "to the end"
+                            : `to ${measureLabel(pin).replace(" count", ", count")}`,
+                    // up to a pin, or on to the end of the music (where that is on the
+                    // counts as they are now is only a guess)
+                    onSelect: () => fitToMusic(from, fitEnd, pin === null),
+                    range: { from, to: fitEnd },
+                    separatorBefore: true,
                 });
-        }
-        items.push(
-            {
-                label: `Add a count before ${measureLabel(beat)}…`,
-                onSelect: () =>
-                    void askAdd(
-                        e,
-                        beat,
-                        1,
-                        `a count before ${measureLabel(beat)}`,
-                    ),
-                range: { from: beat, to: beat },
-            },
-            {
-                label: `Add a count after ${measureLabel(beat)}…`,
-                onSelect: () =>
-                    void askAdd(
-                        e,
-                        beat + 1,
-                        1,
-                        `a count after ${measureLabel(beat)}`,
-                    ),
-                range: { from: beat + 1, to: beat + 1 },
-            },
-            {
-                label: `Remove ${measureLabel(beat)}…`,
-                onSelect: () => void askRemove(e, beat, beat + 1),
-                range: one,
-            },
-        );
-        if (m) {
-            const measure = { from: m.start, to: m.start + m.counts };
-            items.push(
-                {
-                    label: `Add a measure before measure ${m.number}…`,
-                    onSelect: () =>
-                        void askAdd(
-                            e,
-                            m.start,
-                            m.counts,
-                            `a measure (${m.counts} counts) before measure ${m.number}`,
-                        ),
-                    range: { from: m.start, to: m.start },
-                },
-                {
-                    label: `Remove measure ${m.number}…`,
-                    onSelect: () =>
-                        void askRemove(e, m.start, m.start + m.counts),
-                    range: measure,
-                },
-                {
-                    label: `Rehearsal mark at measure ${m.number}…`,
-                    onSelect: () => editMark(e, m),
-                    range: measure,
-                },
-                {
-                    label: `Renumber from m. ${m.number}…`,
-                    onSelect: () => renumber(e, m),
-                    range: measure,
-                },
-                {
-                    label: `Time signature from measure ${m.number}…`,
-                    onSelect: () =>
-                        setMenu(signatureMenu(e.clientX, e.clientY, m.start)),
-                },
-            );
         }
         setMenu({
             x: e.clientX,
             y: e.clientY,
-            // over a mark or a measure number, the menu says which measure it's about
-            title: laneMeasure
-                ? `Measure ${laneMeasure.number}${laneMeasure.mark ? ` (rehearsal mark ${laneMeasure.mark})` : ""}`
-                : undefined,
+            title,
+            subtitle,
             items,
         });
     };
@@ -4837,6 +4955,88 @@ function InlineEditor({
     );
 }
 
+/** A time signature as a menu icon: 3 over 4 (owner, 2026-11-01) */
+function MeterGlyph({ top, bottom }: { top: string; bottom: string }) {
+    return (
+        <span
+            className="flex flex-col items-center text-[8px] leading-[7px] font-bold"
+            aria-hidden
+        >
+            <span>{top}</span>
+            <span>{bottom}</span>
+        </span>
+    );
+}
+
+/** A rehearsal mark as a menu icon: its letter in a box */
+function MarkGlyph({ letter }: { letter: string }) {
+    return (
+        <span
+            className="flex h-[13px] min-w-[13px] items-center justify-center rounded-[2px] border border-current px-[1px] text-[8px] leading-none font-bold"
+            aria-hidden
+        >
+            {letter}
+        </span>
+    );
+}
+
+/** A measure number as a menu icon: "m34" */
+function NumberGlyph({ n }: { n: number }) {
+    return (
+        <span className="text-[9px] leading-none font-bold" aria-hidden>
+            m{n}
+        </span>
+    );
+}
+
+/** Text as a menu icon: ×2 */
+function TextGlyph({ children }: { children: ReactNode }) {
+    return (
+        <span className="text-[11px] leading-none font-bold" aria-hidden>
+            {children}
+        </span>
+    );
+}
+
+/** A fermata as a menu icon: an arc over a dot (fonts often lack 𝄐) */
+function FermataGlyph() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            aria-hidden
+        >
+            <path d="M2 11a6 6 0 0 1 12 0" />
+            <circle cx="8" cy="10" r="1.3" fill="currentColor" />
+        </svg>
+    );
+}
+
+/** A tempo change as a menu icon: a step with its dot */
+function StepGlyph() {
+    return (
+        <svg
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+        >
+            <path d="M2 11h5V5h7" />
+            <circle cx="7" cy="5" r="1.6" fill="currentColor" />
+        </svg>
+    );
+}
+
 function ContextMenu({
     menu,
     onClose,
@@ -4878,26 +5078,43 @@ function ContextMenu({
             onPointerLeave={() => onHover(null)}
         >
             {menu.title && (
-                <div className="border-stroke mb-2 border-b px-10 py-4 text-[12px] font-bold">
-                    {menu.title}
+                <div className="border-stroke mb-2 flex items-baseline justify-between gap-12 border-b px-10 py-4 text-[12px] font-bold">
+                    <span>{menu.title}</span>
+                    {menu.subtitle && (
+                        <span className="text-text-subtitle font-medium">
+                            {menu.subtitle}
+                        </span>
+                    )}
                 </div>
             )}
             {menu.items.map((item) => (
-                <button
-                    key={item.label}
-                    type="button"
-                    disabled={item.disabled}
-                    title={item.hint}
-                    className="hover:bg-fg-2 text-text px-10 py-3 text-left text-[12px] disabled:opacity-40"
-                    onPointerEnter={() => onHover(item.range ?? null)}
-                    onFocus={() => onHover(item.range ?? null)}
-                    onClick={() => {
-                        onClose();
-                        item.onSelect();
-                    }}
-                >
-                    {item.label}
-                </button>
+                <Fragment key={item.label}>
+                    {item.separatorBefore && (
+                        <div className="bg-stroke mx-0 my-3 h-px" aria-hidden />
+                    )}
+                    <button
+                        type="button"
+                        disabled={item.disabled}
+                        title={item.hint}
+                        className="hover:bg-fg-2 text-text flex items-center gap-8 px-10 py-3 text-left text-[12px] disabled:opacity-40"
+                        onPointerEnter={() => onHover(item.range ?? null)}
+                        onFocus={() => onHover(item.range ?? null)}
+                        onClick={() => {
+                            onClose();
+                            item.onSelect();
+                        }}
+                    >
+                        <span className="text-text-subtitle flex w-[16px] shrink-0 items-center justify-center">
+                            {item.icon}
+                        </span>
+                        <span className="flex-1">{item.label}</span>
+                        {item.aside && (
+                            <span className="text-text-subtitle text-[11px]">
+                                {item.aside}
+                            </span>
+                        )}
+                    </button>
+                </Fragment>
             ))}
         </div>
     );
