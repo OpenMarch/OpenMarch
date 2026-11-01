@@ -40,9 +40,10 @@ it back.
   that were holding the form follow, and "Keep … as before" exists. That page gets its own copy
   of the box. Earlier pages keep the old one.
 - The readout says "from page N" when the box was drawn on an earlier page.
-- **Ungroup** (Shift+⌘G, the field's menu, the floating editor) keeps everyone where they are and
-  ends the box, by the same rule: on the box's own page it's deleted, and on a later page that
-  page takes the change and the box ends there, earlier pages keeping it (ADR 0006, 2026-11-01).
+- **Ungroup** (Shift+⌘G or Ctrl+Shift+G, the field's menu, the floating editor) keeps everyone
+  where they are and ends the box, by the same rule: on the box's own page it ends there and on
+  the pages holding it, and on a later page that page takes the change and the box ends there,
+  earlier pages keeping it (ADR 0006, 2026-11-01).
 
 ## Seeing it
 

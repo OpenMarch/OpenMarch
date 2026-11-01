@@ -319,15 +319,6 @@ export async function hasShapeRecipes(
     return row !== undefined;
 }
 
-/** Deletes recipe `id` and its members (a shape ungrouped on its own page); positions stay */
-export async function deleteShapeRecipeInTransaction(
-    tx: DbTransaction,
-    id: number,
-): Promise<void> {
-    await tx.delete(members).where(eq(members.recipe_id, id)).run();
-    await tx.delete(recipes).where(eq(recipes.id, id)).run();
-}
-
 /** Deletes move `timelineId`'s recipes nobody is in anymore (every move's when omitted) */
 export async function deleteEmptyRecipes(
     tx: DbTransaction,

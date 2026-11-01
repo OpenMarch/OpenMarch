@@ -4818,7 +4818,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         );
     });
 
-    test("change: Ungroup on the next page ends the box there, as an edit there would: nobody moves, Page 1 keeps its box, one undo step; on Page 1 it deletes the box", async ({
+    test("change: Ungroup on the next page ends the box there, as an edit there would: nobody moves, Page 1 keeps its box, one undo step; on Page 1 it ends the box everywhere", async ({
         show,
     }) => {
         const { page } = show;
@@ -4879,6 +4879,25 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
 
+        // Page 2's own copy (a pivot change there) ungroups too, and Page 1's box doesn't come
+        // back over the same spots (review of #601)
+        await pickPlacedPivot(page, "se");
+        await expect.poll(kinds).toEqual(["block", "block"]);
+        await waitForIdle(page);
+        await readoutShown.getByTestId("shape-editor-ungroup").click();
+        await expect.poll(kinds).toEqual(["block", "ungrouped"]);
+        await waitForIdle(page);
+        await expect(readoutShown).toBeHidden();
+        expect(await placedBoxes(page)).toEqual([]);
+        await page.keyboard.press("ControlOrMeta+z");
+        await expect.poll(kinds).toEqual(["block", "block"]);
+        await page.keyboard.press("ControlOrMeta+z");
+        await expect.poll(kinds).toEqual(["block"]);
+        await waitForIdle(page);
+        await page.keyboard.press("Escape");
+        await page.mouse.click(member.x, member.y);
+        await expect(readoutShown).toBeVisible();
+
         // The field's menu offers it for a selected box only, first
         await page.mouse.click(member.x, member.y, { button: "right" });
         const menu = page.getByTestId("field-menu");
@@ -4887,13 +4906,13 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         await page.keyboard.press("Escape");
         await expect(menu).toBeHidden();
 
-        // On Page 1, the shortcut deletes the box: nobody moves, and Page 2 follows
+        // On Page 1, the shortcut ends the box there: nobody moves, and Page 2 follows
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 1");
         await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
         await page.keyboard.press("ControlOrMeta+Shift+g");
-        await expect.poll(kinds).toEqual([]);
+        await expect.poll(kinds).toEqual(["ungrouped"]);
         await waitForIdle(page);
         await expect(readoutShown).toBeHidden();
         expect(await savedPositions(show, 1)).toEqual(placed);

@@ -279,22 +279,29 @@ and merge cases (UI-25) with undo; `boxMembership.test.ts` and `box-tool.spec.mt
 
 ## Amendment, 2026-11-01: ungrouping
 
-**Ungroup** (Shift+⌘G, the field's menu, the floating editor) turns a placed shape back into
-plain marchers. Nobody moves. It follows the same rules as editing the shape (Revision,
-2026-10-14), and it changes no schema.
+**Ungroup** (Shift+⌘G on a Mac, Ctrl+Shift+G elsewhere; the field's menu; the floating editor)
+turns a placed shape back into plain marchers. Nobody moves. It follows the same rules as editing
+the shape (Revision, 2026-10-14), and it changes no schema. Both cases store a recipe of kind
+`ungrouped` (version 1, empty `params`) with the shape's members. It describes no shape: it claims
+its members from its move's end, wherever they go next, until a recipe placed later takes them
+(decision 4). Against older recipes it keeps whichever members a later shape hasn't taken. Being
+an ordinary recipe, it is deleted with its move, carried by splits and merges, and undone with the
+positions.
 
-1. **On the shape's own page** (or an edit window reaching back over its move), the recipe and
-   its members are deleted. Later pages that held the form follow, because they only showed the
-   same recipe.
+1. **On the shape's own page** (or an edit window reaching back over its move), the shape's recipe
+   becomes the `ungrouped` mark in place. Later pages that held the form follow. It isn't
+   deleted, because an earlier recipe over the same spots would then show again: a later page's
+   own copy of a box (a pivot changed there) sits on the earlier page's spots.
 2. **On a later page the shape is carried onto**, the change belongs to that page. Its members are
-   set there, as an edit that moves nobody sets them, and a recipe of kind `ungrouped` (version 1,
-   empty `params`) is saved on that page's move with them as members. It describes no shape. It
-   claims its members from its move's end, so the earlier recipe isn't shown from there on and
-   earlier pages keep theirs. It keeps claiming them wherever they go next, until a recipe placed
-   later takes them (decision 4). Being an ordinary recipe, it is deleted with its move, carried
-   by splits and merges, and undone with the positions.
-3. An app without the kind skips the recipe (decision 5), so it shows the earlier shape on later
-   pages as it did before the ungroup. Positions are unaffected.
+   set there, as an edit that moves nobody sets them, and the mark is saved on that page's move.
+   Earlier pages keep their shape.
+3. Where no edit can be made (past the last page in Basic, the timeline not ready), Ungroup is
+   refused as an edit is. While isolating a later move, a shape carried from an earlier one is
+   refused with a toast: the isolated move can't take the change, and the shape's own page
+   shouldn't lose it.
+4. An app without the kind skips the recipe (decision 5), so it shows the earlier shape on later
+   pages as it did before the ungroup, and a shape ungrouped on its own page disappears there
+   too. Positions are unaffected.
 
 Verification: `placedBox.test.ts` (ungrouped marchers) and the browser scenario "Ungroup on the
 next page ends the box there" in `box-tool.spec.mts`.

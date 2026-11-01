@@ -186,6 +186,32 @@ describe("ungrouped marchers", () => {
         ).toEqual([]);
     });
 
+    it("keeps the members a later shape didn't take, so an older shape over them stays hidden", () => {
+        const early = recipe(4, { x: 40, y: 40 }, 10, 1);
+        const positions = at(early);
+        /** A shape of `early`'s members `ids`, where they stand, in move `timelineId` */
+        const over = (id: number, timelineId: number, ids: number[]) => ({
+            ...early,
+            id,
+            timelineId,
+            members: early.members.filter((m) => ids.includes(m.marcherId)),
+            params: { ...(early.params as object), spots: ids.length },
+        });
+        const found = boxesAt({
+            recipes: [
+                early,
+                over(3, 10, [3, 4]),
+                ungrouped(early, 20),
+                over(2, 30, [1, 2]),
+            ],
+            endBeatOf,
+            beat: 24,
+            positionOf: (id) => positions.get(id),
+        });
+        // The later shape takes 1 and 2; the mark still holds 3 and 4 against the older pair
+        expect(found.map((b) => b.recipe.id)).toEqual([2]);
+    });
+
     it("lets a shape placed later take them again", () => {
         const early = recipe(4, { x: 40, y: 40 }, 10, 1);
         const late = recipe(4, { x: 40, y: 40 }, 30, 2);

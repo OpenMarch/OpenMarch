@@ -1507,7 +1507,8 @@
                 "empty": "{count, plural, one {# vazio} other {# vazios}}",
                 "steps": "{interval} passos"
             },
-            "ungroupError": "Erro ao desagrupar a forma"
+            "ungroupError": "Erro ao desagrupar a forma",
+            "ungroupIsolated": "Desagrupe esta forma fora do isolamento: ela vem de uma página anterior"
         },
         "save": {
             "ariaLabel": "Salvar esta forma na sua biblioteca",

@@ -64,9 +64,10 @@ const ON_SPOT = 0.01;
 
 /**
  * The kind of a recipe that marks marchers **ungrouped** from its move on (`ungroupShape`): a
- * shape held from an earlier move, ungrouped on a later page, ends there. It draws nothing and
- * claims its members from its move's end, so the earlier shape isn't shown from there on, and a
- * shape placed later takes them again. Older builds don't know the kind and skip it.
+ * shape ungrouped on its own page becomes one, and one ungrouped on a later page it's carried onto
+ * ends there with one. It draws nothing and claims its members from its move's end, so no earlier
+ * shape over them is shown from there on, and a shape placed later takes them again. Older builds
+ * don't know the kind and skip it.
  */
 export const UNGROUPED_KIND = "ungrouped";
 
@@ -155,9 +156,14 @@ export function boxesAt({
     const claimed = new Set<number>();
     const out: PlacedBox[] = [];
     for (const box of candidates) {
+        // A mark keeps whoever a later shape hasn't taken; a shape needs all its members
+        if ("ungrouped" in box) {
+            for (const m of box.recipe.members) claimed.add(m.marcherId);
+            continue;
+        }
         if (box.recipe.members.some((m) => claimed.has(m.marcherId))) continue;
         for (const m of box.recipe.members) claimed.add(m.marcherId);
-        if (!("ungrouped" in box)) out.push(box);
+        out.push(box);
     }
     return out;
 }

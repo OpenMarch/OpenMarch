@@ -2093,7 +2093,8 @@
                 "empty": "{count, plural, other {# empty}}",
                 "steps": "{interval} steps"
             },
-            "ungroupError": "Error ungrouping the shape"
+            "ungroupError": "Error ungrouping the shape",
+            "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page"
         },
         "save": {
             "descriptionLabel": "Description of the saved shape (optional)",

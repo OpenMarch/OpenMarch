@@ -96,6 +96,8 @@ export function commitBox(
             // What ran before it (a save, an undo) read back first, as it starts from that
             await timelinePositionsSettled();
             await placedBoxesRead();
+            // Ungrouped meanwhile (or every member taken by another shape): nothing to edit
+            if (!shownStill(box, at.beat)) return;
             await saveBox(
                 storedBox(box, at.beat),
                 params,
@@ -153,6 +155,14 @@ export function storedBox(box: PlacedBox, beat: number): PlacedBox {
                 b.recipe.members.length === ids.size &&
                 b.recipe.members.every((m) => ids.has(m.marcherId)),
         ) ?? box
+    );
+}
+
+/** Whether any member of `box` is still in a shape shown at `beat` */
+function shownStill(box: PlacedBox, beat: number): boolean {
+    const ids = new Set(box.recipe.members.map((m) => m.marcherId));
+    return placedBoxesAt(beat).some((b) =>
+        b.recipe.members.some((m) => ids.has(m.marcherId)),
     );
 }
 
