@@ -34,8 +34,8 @@ import type { ShapeContext, XY } from "../types";
 import { rowTool, spreadTool } from "./fakeRowKind";
 
 /**
- * The draggable pivot (#350, spec #344): Cmd/Ctrl-drag from the center dot pulls it out, it then
- * drags on its own, snaps to marchers, the frame's 9 points and half steps (Alt off), and a double
+ * The draggable pivot (#350, spec #344): a reach-inside ($mod) drag from the center dot pulls it
+ * out, it then drags on its own, snaps to marchers, the frame's 9 points and half steps (fine off), and a double
  * click sends it back to the center. Turning, flipping and scaling go around it, and it is saved
  * with the shape. Driven with the box and with fake kinds the host has never heard of.
  */
@@ -46,7 +46,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     ...over,
@@ -163,7 +163,7 @@ describe("snapping the pivot", () => {
         expect(at({ x: 141.2, y: 76.6 })).toEqual({ x: 140, y: 75 });
     });
 
-    it("doesn't snap with Alt", () => {
+    it("doesn't snap with fine", () => {
         const marcher = { x: 131.3, y: 87.9 };
         const p = at({ x: 130.4, y: 89.1 }, { snap: false }, [marcher]);
         expect(near(p, { x: 130.4, y: 89.1 })).toBe(true);
@@ -177,11 +177,11 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         expect(pivotOf(open().params)).toBe("c");
     });
 
-    it("Cmd/Ctrl-drag from the center dot moves the pivot, as one undo step", () => {
+    it("a reach-inside ($mod) drag from the center dot moves the pivot, as one undo step", () => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const to = { x: center.x + 30, y: center.y - 20 };
-        const moved = dragged(t, center, to, { mod: true });
+        const moved = dragged(t, center, to, { reachInside: true });
         // The shape stays where it was
         expect(kind.frameOf(moved.params, N)).toEqual(
             kind.frameOf(t.params, N),
@@ -205,7 +205,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const out = { x: center.x + 30, y: center.y - 20 };
-        let moved = dragged(t, center, out, { mod: true });
+        let moved = dragged(t, center, out, { reachInside: true });
         expect(shapeTargetAt(kind, moved.params, N, out, env())).toEqual({
             type: "pivot",
         });
@@ -231,7 +231,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const out = { x: center.x + 30, y: center.y - 20 };
-        let moved = dragged(t, center, out, { mod: true });
+        let moved = dragged(t, center, out, { reachInside: true });
         moved = press(moved, out, env());
         moved = release(moved, ctx, { double: true });
         expect(pivotOf(moved.params)).toBe("c");
@@ -241,7 +241,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const out = { x: center.x + 30, y: center.y - 20 };
-        const moved = dragged(t, center, out, { mod: true });
+        const moved = dragged(t, center, out, { reachInside: true });
         const turned = edit(
             moved,
             turnShape(
@@ -271,7 +271,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const out = { x: center.x + 30, y: center.y };
-        const moved = dragged(t, center, out, { mod: true });
+        const moved = dragged(t, center, out, { reachInside: true });
         const { knob } = frameControls(kind, moved.params, N, env());
         // A quarter turn clockwise around the pivot
         const v = { x: knob.x - out.x, y: knob.y - out.y };
@@ -286,7 +286,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const out = { x: center.x + 30, y: center.y - 20 };
-        const moved = dragged(t, center, out, { mod: true });
+        const moved = dragged(t, center, out, { reachInside: true });
         const flip = (s: ToolState) =>
             edit(
                 s,
@@ -315,7 +315,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const { center } = kind.frameOf(t.params, N);
         // A corner marcher, so the box's spots stay on half steps as it grows from it
         const corner = pivotPoint(kind.frameOf(t.params, N), "se");
-        const moved = dragged(t, center, corner, { mod: true });
+        const moved = dragged(t, center, corner, { reachInside: true });
         expect(near(pivotField(kind, moved), corner)).toBe(true);
         const scaled = scaleShape(
             kind,
@@ -340,7 +340,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
             t,
             center,
             pivotPoint(kind.frameOf(t.params, N), "e"),
-            { mod: true },
+            { reachInside: true },
         );
         const other = kind === rowTool ? spreadTool : rowTool;
         const switched = switchKind(moved, other, ctx, env());
@@ -351,7 +351,7 @@ describe.each(KINDS)("the pivot on the field, with %s", (_, kind, a, b) => {
         const t = open();
         const { center } = kind.frameOf(t.params, N);
         const out = { x: center.x + 30, y: center.y - 20 };
-        const moved = dragged(t, center, out, { mod: true });
+        const moved = dragged(t, center, out, { reachInside: true });
         const stored = placementOf(moved, ctx)!.recipe.params as {
             pivot?: Pivot;
         };
@@ -363,10 +363,10 @@ describe("a pivot of its own stays put when the shape settles on the grid", () =
     it("turning a box around an off-grid point keeps the pivot there", () => {
         const t = drawn(boxTool, N, { x: 100, y: 100 }, { x: 120, y: 110 });
         const { center } = boxTool.frameOf(t.params, N);
-        // Dropped with Alt, so off the half steps (a marcher standing there, say)
+        // Dropped with fine, so off the half steps (a marcher standing there, say)
         const out = { x: center.x + 31.3, y: center.y - 18.6 };
         const moved = dragged(t, center, out, {
-            mod: true,
+            reachInside: true,
             snap: false,
             fine: true,
         });

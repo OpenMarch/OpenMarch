@@ -21,9 +21,10 @@ gestures on the new field. Every rule here is in the
   unchanged. Pending positions, snap-back, one undo step, the "move them
   too" toast. Nudges and field actions verified unchanged.
 - **#197 Snapping, precision and locks.** Single-marcher vs group snapping,
-  Shift, Alt at ¼ speed, Lock X/Y on marchers only.
+  fine (Shift) at ¼ speed, the Snap toggle, constrain ($mod), Lock X/Y on
+  marchers only.
 - **#198 Group scale and rotate handles.** Corner, middle and rotate handles
-  in the overlay, with their Shift and Alt rules, no flipping, refit after
+  in the overlay, with fine, constrain and the Snap toggle, no flipping, refit after
   each transform. The inspector's rotation input uses the same transform.
 
 ## Order
@@ -220,7 +221,8 @@ in between still drags (start, move and end at once).
 **The seam for #197.** `FieldEditorOptions.moveTransform` gets the raw
 delta in field units, the pointer (its modifiers) and where the marchers
 started, and returns their positions. `followPointer` is today's: snapping,
-Alt at ¼ speed and Lock X/Y replace it. Nothing else changes.
+fine at ¼ speed, the Snap toggle, constrain and Lock X/Y replace it. Nothing
+else changes.
 
 **Live, pending and snap-back** are the editor's. It writes positions through
 the `showPositions` port, which `ThreeField` maps to
@@ -325,33 +327,35 @@ pointer event (the coordinate-rounding settings, Lock X/Y from
 `useUiSettingsStore`, the field's grid), so a setting changed mid-drag applies
 at the next move. One marcher snaps through `getRoundCoordinates2`, the
 function Fabric's `CanvasMarcher.handleMoving` uses; a group's delta is
-rounded to whole multiples of each axis's rounding step. Shift or Alt turns
-snapping off; a locked axis stays where the marchers started (a single locked
-marcher snaps on the other axis only, as on Fabric).
+rounded to whole multiples of each axis's rounding step. Fine (Shift) or the
+Snap toggle off drops grid snapping; a locked axis stays where the marchers
+started (a single locked marcher snaps on the other axis only, as on Fabric).
+Constrain ($mod) keeps the drag on one axis.
 
-**Alt** is in `MoveGesture`, not the transform: `precisionDelta` counts the
-pointer's distance since the last event at ¼ while Alt is down, so the
+**Fine** is in `MoveGesture`, not the transform: `precisionDelta` counts the
+pointer's distance since the last event at ¼ while fine is held, so the
 transform gets the slowed delta (the seam's "raw delta" is that now). Pressing
-Alt re-anchors on where the first marcher is drawn (`anchorAt`), so a snapped
-drag goes on from the grid point with no jump. Releasing Alt keeps the lag
+Shift re-anchors on where the first marcher is drawn (`anchorAt`), so a snapped
+drag goes on from the grid point with no jump. Releasing Shift keeps the lag
 and snaps again. A modifier pressed while the pointer stands still applies at
 the next pointer move: the renderer reports pointer events only. So a release
-where the last move left the pointer drops the positions last drawn (Alt up
-or Shift down just before letting go doesn't change the drop); a release
-that moved evaluates the rules with its own modifiers.
+where the last move left the pointer drops the positions last drawn (fine up
+just before letting go doesn't change the drop); a release that moved evaluates
+the rules with its own modifiers.
 
 **Scenarios.** `e2e/browser/tests/snapping-and-locks.spec.mts`. The rounding
 ones set `coordinateRounding` through localStorage and reload; the grid comes
 from the show file (`fieldGrid` in `positions.mts`, through the host bundle's
 `FieldProperties`). `change:` scenarios on Fabric: a group snapping in whole
-steps, Alt at ¼ speed, Alt pressed mid-drag. Fabric drops land up to about
+steps, fine at ¼ speed, Shift pressed mid-drag. Fabric drops land up to about
 1.1 field units off the pointer (half a unit for its dot offset, the rest
 whole-pixel mouse positions zoomed out), so drags aim a quarter step off the
 grid and compare within 1.5 units.
 
 **For #198 and #204.** Lock X / Lock Y must not constrain shape or group
-handles (rules table; Fabric locks them, a `change:` to pin there). Alt's
-quarter speed for handles can reuse `precisionDelta` and `anchorAt`.
+handles (rules table; Fabric locks them, a `change:` to pin there). Fine's
+quarter speed for scale handles reuses `precisionDelta`; a rotation turns at
+full speed with fine, in whole degrees (owner 2026-10-30).
 
 ### #198 Group scale and rotate handles
 
@@ -360,12 +364,13 @@ quarter speed for handles can reuse `precisionDelta` and `anchorAt`.
 the padded box, 40 CSS px above it for `rot`, turned with the box while a
 rotation is dragged), `handleAt` (a 13 CSS px square per handle, Fabric's
 control size; the nearest wins), `handleCursor`, `scaleFor` and
-`scalePositions` (corners uniform along the diagonal, Shift frees them;
-middles one axis, Shift ignored; `MIN_SCALE` instead of a flip),
-`turnBetween`, `snapRotation` (15°, free with Shift or Alt) and
-`rotatePositions`. `src/field/editor/transformGestures.ts` has
-`ScaleGesture` and `RotateGesture`, the `FieldGesture`s, with Alt through
-#197's `precisionDelta` (and `anchorAt` for the snapped angle).
+`scalePositions` (corners uniform along the diagonal, constrain frees them;
+middles one axis, constrain ignored; `MIN_SCALE` instead of a flip),
+`turnBetween`, `snapRotation` (15°, whole degrees with fine, free with the
+Snap toggle off) and `rotatePositions`. `src/field/editor/transformGestures.ts`
+has `ScaleGesture` and `RotateGesture`, the `FieldGesture`s. A scale's fine
+goes through #197's `precisionDelta`; a rotation's fine only snaps to whole
+degrees, at full speed (owner 2026-10-30).
 
 **In the editor.** `pointerDown` asks `handleAt` after `takePress` and
 before the marcher hit test, so a handle wins over a marcher under it, and
@@ -403,8 +408,8 @@ nothing even off the thousandths grid. During a handle rotation it doesn't follo
 did): that would re-render the inspector on every pointer move.
 
 **Decided changes** (`change:` in `scale-and-rotate.spec.mts`, `test.fail`
-on Fabric): Shift on a middle handle still scales its axis ("Shift does
-nothing there"; Fabric cancels the scale while Shift is down), Alt is
+on Fabric): constrain on a middle handle still scales its axis ("constrain does
+nothing there"; Fabric cancelled the scale while Shift was down), fine (Shift) is
 precision on scale and rotate (Alt pans on Fabric), and a press on a handle
 held over 300 ms but moved under 4 px changes nothing (Fabric's click has a
 time limit, so it transforms). As on Fabric, Lock X / Lock Y leave the group

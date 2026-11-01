@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words teardrop
 import { describe, expect, it } from "vitest";
 import { catalogDims, catalogEntries, silkDepthM } from "../catalog";

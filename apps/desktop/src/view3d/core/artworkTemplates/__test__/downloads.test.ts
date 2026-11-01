@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { catalogEntries } from "../../sizes/catalog";

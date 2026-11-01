@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type Beat from "@/global/classes/Beat";
 import type { PositionSource } from "@/timeline/positionBuffer";

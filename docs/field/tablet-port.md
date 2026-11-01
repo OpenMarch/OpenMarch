@@ -27,6 +27,17 @@ These work as upstream describes, with no changes needed for the new field:
   repeats are still skipped while a press is waiting.
 - Web editor: the show library, versions, backups, web video export, settings sheet and
   Home Screen prompt. The fork's lab build and 3D View pop-up still work on top of it.
+- The touch pill over the field (`components/canvas/touch/TouchModifierButtons.tsx`,
+  rendered by `ThreeField`): upstream's grip, saved spot, `pillPlacement`, long-press
+  explanations and help, with its buttons as role toggles (modifier roles, version A):
+  Fine, Equal and From center (`TouchModifierStore`, OR'd into every drag through
+  `onScreenRoles`), Add (the old Shift, `isShiftHeld`) and a magnet, "Snap off", for the
+  Snap toggle (`uiSettings.snap`, pressed while Snap is off). From center reaches the
+  shape tool's roles: boxes draw and resize from their center (#510). Each toggle is named by
+  its label, with on or off in `aria-pressed`, and latches on a click with no pointer
+  (VoiceOver, Voice Control, Switch Control).
+  Upstream's field drag-mode menu (Auto / Box / Lasso / Pan) and Clear line were left
+  out: they need touch-finger editing, which the field doesn't take yet.
 - Renderer-free gesture rules and helpers, kept for the port:
   `components/canvas/touch/touchGestures.ts` (the gesture state machine),
   `penPalmGuard.ts`, `touchHitTest.ts`, `pillPlacement.ts`, `fieldDragMode.ts`,
@@ -36,16 +47,15 @@ These work as upstream describes, with no changes needed for the new field:
 
 ## Left out of the merge
 
-| Upstream file (at `c9784b34a`)                                                                                             | Why                                                                   | Port to                                                                                    |
-| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `components/canvas/touch/touchGestureAdapter.ts`                                                                           | Feeds Fabric events to `touchGestures.ts`                             | `src/field`: feed `FieldPointer` events (add `kind: "mouse" \| "pen" \| "touch"`)          |
-| `components/canvas/touch/TouchModifierButtons.tsx`                                                                         | Reads Fabric's viewport and marchers to place itself                  | The field's overlay; `TouchModifierStore` and `canvasModifiers.ts` are already in the fork |
-| `components/canvas/touch/dragStepReadout.ts`, `touchSelectionHandles.ts`                                                   | Fabric objects; their pure parts were tested in `touchExtras.test.ts` | The field's handles and readouts                                                           |
-| Fabric changes in `OpenMarchCanvas.ts`, `Canvas.tsx`, listeners, `GroupUtils.ts` (`snapGroupDelta`), `fabricMemory.ts`     | Fabric is gone from the fork                                          | `src/field/editor`                                                                         |
-| `components/timeline/CompactTimelineControls.tsx`, `timelineLayoutStore.ts`, `usePinchZoom.ts`, `PageTimeline.tsx` changes | The fork's timeline is a different component                          | The fork's timeline (`Timeline.tsx`, `TimelineContainer.tsx`)                              |
-| Touch layout of `Toolbar.tsx` (tabs in the title bar, panel over the field) and `TimelineContainer.tsx`                    | Both files are the fork's own design                                  | The fork's toolbar and timeline container                                                  |
-| Touch sizes in `CanvasZoomControls.tsx`                                                                                    | The fork's zoom controls drive the three.js view                      | The same file                                                                              |
-| `e2e/browser/tests/touch-canvas.spec.mts`, `touch-timeline.spec.mts`, `mouse-canvas.spec.mts`                              | Drive `window.canvas` and the old page timeline                       | Field scenarios on `window.fieldTest`; they describe behavior, not Fabric                  |
+| Upstream file (at `c9784b34a`)                                                                                             | Why                                                                   | Port to                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `components/canvas/touch/touchGestureAdapter.ts`                                                                           | Feeds Fabric events to `touchGestures.ts`                             | `src/field`: feed `FieldPointer` events (add `kind: "mouse" \| "pen" \| "touch"`) |
+| `components/canvas/touch/dragStepReadout.ts`, `touchSelectionHandles.ts`                                                   | Fabric objects; their pure parts were tested in `touchExtras.test.ts` | The field's handles and readouts                                                  |
+| Fabric changes in `OpenMarchCanvas.ts`, `Canvas.tsx`, listeners, `GroupUtils.ts` (`snapGroupDelta`), `fabricMemory.ts`     | Fabric is gone from the fork                                          | `src/field/editor`                                                                |
+| `components/timeline/CompactTimelineControls.tsx`, `timelineLayoutStore.ts`, `usePinchZoom.ts`, `PageTimeline.tsx` changes | The fork's timeline is a different component                          | The fork's timeline (`Timeline.tsx`, `TimelineContainer.tsx`)                     |
+| Touch layout of `Toolbar.tsx` (tabs in the title bar, panel over the field) and `TimelineContainer.tsx`                    | Both files are the fork's own design                                  | The fork's toolbar and timeline container                                         |
+| Touch sizes in `CanvasZoomControls.tsx`                                                                                    | The fork's zoom controls drive the three.js view                      | The same file                                                                     |
+| `e2e/browser/tests/touch-canvas.spec.mts`, `touch-timeline.spec.mts`, `mouse-canvas.spec.mts`                              | Drive `window.canvas` and the old page timeline                       | Field scenarios on `window.fieldTest`; they describe behavior, not Fabric         |
 
 `toolbarSlot` (the title bar's slot for the toolbar tabs) is merged but nothing fills
 it until the toolbar's touch layout is ported.

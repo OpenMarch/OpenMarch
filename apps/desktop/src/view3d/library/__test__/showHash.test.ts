@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { computeVersionHash, sha256Hex } from "@om-electron/main/library/hash";
 import { hashParts, sha256HexOf, versionHashOf } from "../showHash";

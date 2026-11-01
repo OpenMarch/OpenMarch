@@ -1,7 +1,7 @@
 import type { PivotKey } from "../frame/frame";
 import { create } from "zustand";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import type { FieldMode, FieldPointer } from "@/field/editor/fieldEditor";
+import type { FieldMode } from "@/field/editor/fieldEditor";
 import type { ShapeField } from "../field/shapeField";
 import type { XY } from "../types";
 import { shapeOutline } from "../frame/gestures";
@@ -10,13 +10,14 @@ import {
     drillNumbers,
     frameDrawing,
     guideDrawing,
-    keysOf,
     memoDrawing,
     shapeCursor,
     SPOT_LABEL_LIMIT,
 } from "../field/fieldModeBase";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import { toolEnvFor } from "./toolEnv";
+import type { Roles } from "@/input/modifierRoles";
+import { pressShapeKeys, type HeldFieldGesture } from "../field/heldGesture";
 import {
     cancelGesture,
     pointerMove,
@@ -176,7 +177,7 @@ const drawingOf = memoDrawing(
         const drawing = tool.gesture?.type === "draw";
         const targets = drawing ? [] : targetsNow(tool, field);
         const names = drillNumbers(field);
-        const env = toolEnvFor(field, { shift: false, alt: false });
+        const env = toolEnvFor(field);
         const gap = drawing ? null : outlineGapAt(tool.kind, tool.params, n);
         const g =
             tool.gesture &&
@@ -331,45 +332,90 @@ function glidingDrawing(shown: Shown | null) {
     };
 }
 
-/** The env for a pointer event: a dragged pivot also snaps to the open shape's spots (#350) */
-const envOf = (field: ShapeField, tool: ToolState, pointer: FieldPointer) =>
-    toolEnvFor(field, keysOf(pointer), () =>
-        slotsOf(tool, shapeContextFor(field)),
-    );
+/** The env for the roles held: a dragged pivot also snaps to the open shape's spots (#350) */
+const envOf = (field: ShapeField, tool: ToolState, roles?: Roles) =>
+    toolEnvFor(field, roles, {
+        spots: () => slotsOf(tool, shapeContextFor(field)),
+    });
+
+/** The held roles of the gesture under way, from its press to its end */
+let held: HeldFieldGesture | null = null;
+
+const endHeld = () => {
+    held?.end();
+    held = null;
+};
+
+/** A role key pressed or released mid-drag: the last move again, at the last pointer */
+function rerun(at: XY, roles: Roles) {
+    const field = currentShapeField();
+    if (!field) return;
+    updateTool((t) => pointerMove(t, at, envOf(field, t, roles)));
+}
+
+/**
+ * Escape mid-gesture: the shape as it was at the press, and the keys no longer followed, though
+ * the pointer is still down
+ */
+export function cancelShapeGesture(): void {
+    endHeld();
+    updateTool(cancelGesture);
+}
 
 /**
  * The open shape tool on the field (docs/timeline/research/shapes/06-box-v1.md): a field editor
  * mode that takes every edit press while the tool is open and hands it to the tool's state
  * machine, so nothing selects, drags or lassos underneath. Navigation keeps its presses (right and
- * middle drags, the wheel). Alt is the tool's "don't snap", not a pan, on this field.
+ * middle drags, the wheel). Alt is `fromCenter` here (version A, through `pressShapeKeys`), not a
+ * pan.
  */
 export const shapeToolMode: FieldMode = {
     claims: () => useShapeToolStore.getState().tool !== null,
-    press(pointer) {
+    press(pointer, { isMac }) {
         const field = currentShapeField();
-        if (!field) return;
-        updateTool((t) => press(t, pointer.field, envOf(field, t, pointer)));
+        const tool = useShapeToolStore.getState().tool;
+        if (!field || !tool) return;
+        endHeld();
+        const pressed = pressShapeKeys(
+            pointer,
+            { kind: tool.kind, params: tool.params, n: tool.spots },
+            (reachInside) =>
+                pressTarget(tool, pointer.field, {
+                    ...envOf(field, tool),
+                    reachInside,
+                }),
+            rerun,
+            isMac,
+        );
+        held = pressed.held;
+        const roles = held.roles();
+        updateTool((t) =>
+            press(t, pointer.field, {
+                ...envOf(field, t, roles),
+                reachInside: pressed.reachInside,
+            }),
+        );
     },
     move(pointer) {
         const field = currentShapeField();
         if (!field) return;
+        const roles = held?.move(pointer);
         updateTool((t) =>
-            pointerMove(t, pointer.field, envOf(field, t, pointer)),
+            pointerMove(t, pointer.field, envOf(field, t, roles)),
         );
     },
     release(_pointer, click) {
+        endHeld();
         const field = currentShapeField();
         if (!field) return;
         updateTool((t) => release(t, shapeContextFor(field), click));
     },
-    cancel() {
-        updateTool(cancelGesture);
-    },
+    cancel: cancelShapeGesture,
     cursorAt(pointer) {
         const tool = useShapeToolStore.getState().tool;
         const field = currentShapeField();
         if (!tool || !field) return null;
-        const env = envOf(field, tool, pointer);
+        const env = envOf(field, tool);
         // The editor asks for the cursor as the pointer moves, so this is where hovering is seen
         hoverAt(tool, pointer.field, env.hitRadius);
         const target = pressTarget(tool, pointer.field, env);

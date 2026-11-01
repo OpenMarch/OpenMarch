@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /** The web build (`isWebBuild`) changes some default bindings; load them as it does. */

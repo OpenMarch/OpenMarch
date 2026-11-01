@@ -347,7 +347,7 @@ function TransportGuide({
                     <span className="flex items-center gap-4 text-[12px]">
                         {row.content ?? row.label}
                     </span>
-                    <Keycaps shortcut={row.shortcut} plus />
+                    <Keycaps shortcut={row.shortcut} />
                 </span>
             ))}
         </span>

@@ -273,6 +273,48 @@ test("B opens the box tool, and a drag draws a box edge to edge on half steps, m
     expect((await readField(page)).selection).toEqual(ALL);
 });
 
+test("change: with Alt held, a drag draws the box from its center: the press is its middle, the pointer a corner", async ({
+    show,
+}) => {
+    const { page } = show;
+    const grid = await fieldGrid(show);
+    const S = grid.pixelsPerStep;
+    const cf = grid.centerFront;
+    await selectAll(page);
+    await page.keyboard.press("b");
+    await expect(page.getByTestId("shape-tool-hint")).toBeVisible();
+
+    const pressed = { x: cf.x - 15 * S, y: cf.y - 25 * S };
+    await page.keyboard.down("Alt");
+    await drag(
+        page,
+        await toScreen(page, pressed),
+        await toScreen(page, { x: pressed.x + 5 * S, y: pressed.y + 3 * S }),
+    );
+    await page.keyboard.up("Alt");
+
+    const drawn = (await shapeOverlay(page))!;
+    expect(drawn.spots).toHaveLength(ALL.length);
+    for (const spot of drawn.spots) {
+        expect(onHalfSteps(spot.x, cf.x, S)).toBe(true);
+        expect(onHalfSteps(spot.y, cf.y, S)).toBe(true);
+    }
+    // Grown both ways from the press: 10 steps wide and 6 deep, as the drag corner to corner
+    // draws, centered within a quarter step (an even count stays on the half steps)
+    const xs = drawn.spots.map((p) => p.x);
+    const ys = drawn.spots.map((p) => p.y);
+    const middle = {
+        x: (Math.min(...xs) + Math.max(...xs)) / 2,
+        y: (Math.min(...ys) + Math.max(...ys)) / 2,
+    };
+    expect(Math.abs(middle.x - pressed.x)).toBeLessThanOrEqual(S / 4 + CLOSE);
+    expect(Math.abs(middle.y - pressed.y)).toBeLessThanOrEqual(S / 4 + CLOSE);
+    expect(Math.min(...xs)).toBeLessThan(pressed.x - 4 * S);
+    expect(Math.min(...ys)).toBeLessThan(pressed.y - 2 * S);
+    expect(await readout(page)).toMatch(/^4 × 2 · /);
+    expect(await savedPositions(show, 0)).toEqual(asPositions(HOME));
+});
+
 test("handles stretch the intervals with files and ranks fixed, + adds a file, and a drag inside moves the box", async ({
     show,
 }) => {
@@ -985,7 +1027,17 @@ test("change: turned 90°, 180° or 270°, the knob is never under the floating 
     await expect(editor.getByTestId("shape-editor-rotation")).toHaveText("0°");
 });
 
-test("change: the knob turns in 15° steps, as the field's rotate handle does, and freely with Alt", async ({
+/**
+ * Turns the Snap toggle off with the floating editor's Snap button (modifier roles, version A),
+ * which then shows pressed. Never saved, so the next test starts with it on.
+ */
+async function turnSnapOff(page: Page) {
+    const snap = page.getByTestId("shape-editor-snap");
+    await snap.click();
+    await expect(snap).toHaveAttribute("aria-pressed", "true");
+}
+
+test("change: the knob turns in 15° steps, as the field's rotate handle does, in whole degrees with Shift (fine), and freely with the Snap toggle off", async ({
     show,
 }) => {
     const { page } = show;
@@ -1014,13 +1066,22 @@ test("change: the knob turns in 15° steps, as the field's rotate handle does, a
     await turnKnob(37);
     await expect.poll(degreesShown).toBe(30);
 
-    await page.keyboard.down("Alt");
+    await page.keyboard.down("Shift");
     await turnKnob(37);
-    await page.keyboard.up("Alt");
+    await page.keyboard.up("Shift");
+    const fine = await degreesShown();
+    expect(Number.isInteger(fine)).toBe(true);
+    expect(fine % 15).not.toBe(0);
+    expect(fine).toBeGreaterThan(55);
+    expect(fine).toBeLessThan(80);
+
+    // With the Snap toggle off (the editor's Snap button): free of the 15° steps
+    await turnSnapOff(page);
+    await turnKnob(37);
     const free = await degreesShown();
     expect(free % 15).not.toBe(0);
-    expect(free).toBeGreaterThan(55);
-    expect(free).toBeLessThan(80);
+    expect(free).toBeGreaterThan(fine + 25);
+    expect(free).toBeLessThan(fine + 50);
 
     // Typed, a rotation stays as typed
     await rotation.click();
@@ -1529,6 +1590,57 @@ test("change: a click on a placed box's member selects the whole box, and a doub
         .toEqual(ALL);
 });
 
+test("change: a Cmd/Ctrl-click on a placed box's member picks just that marcher and goes inside the box, and a Cmd/Ctrl-drag moves only it, on both axes (reach inside)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await placeBox(show);
+
+    const t3 = await marcherScreen(page, 3);
+    await page.mouse.click(t3.x, t3.y);
+    await expect
+        .poll(async () => (await readField(page)).selection)
+        .toEqual(ALL);
+    // On the box selected whole, the press reaches inside it
+    await page.keyboard.down("ControlOrMeta");
+    await page.mouse.click(t3.x, t3.y);
+    await page.keyboard.up("ControlOrMeta");
+    await expect
+        .poll(async () => (await readField(page)).selection)
+        .toEqual([3]);
+    // Inside, as a double click leaves it: the other members' outline shows, a click picks one
+    await expect.poll(async () => (await placedBoxes(page)).length).toBe(1);
+    const t5 = await marcherScreen(page, 5);
+    await page.mouse.click(t5.x, t5.y);
+    await expect
+        .poll(async () => (await readField(page)).selection)
+        .toEqual([5]);
+    await page.keyboard.press("Escape");
+    await page.keyboard.press("Escape");
+    await expect
+        .poll(async () => (await readField(page)).selection)
+        .toEqual([]);
+
+    // From nothing selected, a Cmd/Ctrl-drag takes the one marcher, and the press's key doesn't
+    // keep it to one axis
+    const before = await drawnMarchers(page);
+    await page.keyboard.down("ControlOrMeta");
+    await drag(page, t3, { x: t3.x + 60, y: t3.y + 45 });
+    await page.keyboard.up("ControlOrMeta");
+    await waitForIdle(page);
+    await expect
+        .poll(async () => (await readField(page)).selection)
+        .toEqual([3]);
+    const after = await drawnMarchers(page);
+    for (const m of after) {
+        const was = before.find((b) => b.id === m.id)!.screen;
+        if (m.id === 3) {
+            expect(Math.abs(m.screen.x - was.x)).toBeGreaterThan(20);
+            expect(Math.abs(m.screen.y - was.y)).toBeGreaterThan(20);
+        } else expect(m.screen).toEqual(was);
+    }
+});
+
 test("a selected box's handle stretches it and saves at once, as one undo step", async ({
     show,
 }) => {
@@ -2009,7 +2121,7 @@ test("change: the inspector shows no shape section while a shape is open or a pl
     await inspectorShape();
 });
 
-test("change: handles snap spacings to half steps, Alt to hundredths, with a length readout while dragging, and a typed spacing keeps hundredths", async ({
+test("change: handles snap spacings to half steps, Shift (fine) to hundredths, with a length readout while dragging, and a typed spacing keeps hundredths", async ({
     show,
 }) => {
     const { page } = show;
@@ -2035,11 +2147,11 @@ test("change: handles snap spacings to half steps, Alt to hundredths, with a len
     expect((await shapeOverlay(page))!.tip).toBeNull();
     for (const s of await spacings(page)) expect((s * 2) % 1).toBe(0);
 
-    // With Alt: hundredths (#411)
+    // With Shift (fine): hundredths (#411)
     from = await se();
-    await page.keyboard.down("Alt");
+    await page.keyboard.down("Shift");
     await drag(page, from, { x: from.x + 13, y: from.y + 7 });
-    await page.keyboard.up("Alt");
+    await page.keyboard.up("Shift");
     const bar = page.getByTestId("shape-tool-readout");
     for (const id of ["shape-editor-across", "shape-editor-deep"]) {
         const text = await bar.getByTestId(id).innerText();
@@ -2265,8 +2377,9 @@ test("change: a press that makes the editor too wide for one row keeps its rows 
     show,
 }) => {
     const { page } = show;
-    // One row only just fits here, and a + that leaves marchers short widens it past the field
-    await page.setViewportSize({ width: 1000, height: 1000 });
+    // One row only just fits here (with the Snap button), and a + that leaves marchers short widens
+    // it past the field
+    await page.setViewportSize({ width: 1030, height: 1000 });
     await drawBox(show);
     const bar = page.getByTestId("shape-tool-readout-bar");
     await expect(bar).toHaveAttribute("data-rows", "1");
@@ -2469,7 +2582,7 @@ const heldGuides = (page: Page): Promise<HeldGuides> =>
         return { guides, guideEdges, guideMarks, onGuides };
     });
 
-test("change: moving an open box near the front hash lands its front edge on it, with the guide named as on the coordinate sheet; away from lines no guide; Alt still lands it, Cmd/Ctrl doesn't pull (#444, #453)", async ({
+test("change: moving an open box near the front hash lands its front edge on it, with the guide named as on the coordinate sheet; away from lines no guide; Shift (fine) still lands it, the Snap toggle off doesn't pull (#444, #453)", async ({
     show,
 }) => {
     const { page } = show;
@@ -2504,8 +2617,8 @@ test("change: moving an open box near the front hash lands its front edge on it,
     const near = nearPx / perUnit;
 
     /** Drags the box from inside so its front edge would end `by` field units from where it is */
-    /** `key`: held through the drag, Alt (fine control) or Cmd/Ctrl (no snapping) */
-    const moveBy = async (by: Point, key?: "Alt" | "ControlOrMeta") => {
+    /** `key`: held through the drag, Shift (fine control) */
+    const moveBy = async (by: Point, key?: "Shift") => {
         const grab = await grabOf();
         const from = await toScreen(page, grab);
         const to = await toScreen(page, { x: grab.x + by.x, y: grab.y + by.y });
@@ -2544,20 +2657,22 @@ test("change: moving an open box near the front hash lands its front edge on it,
     expect(onHalfSteps(e.back, grid.centerFront.y, S)).toBe(true);
     expect(onHalfSteps(e.left, grid.centerFront.x, S)).toBe(true);
 
-    // With Alt, near the hash again: fine control still lands it there, with the guide
-    held = await moveBy({ x: 0, y: frontHash - e.front + near }, "Alt");
+    // With Shift, near the hash again: fine control still lands it there, with the guide
+    held = await moveBy({ x: 0, y: frontHash - e.front + near }, "Shift");
     expect(held.guides.map((g) => g.label)).toEqual(["On FH"]);
     e = await edgesOf();
     expect(Math.abs(e.front - frontHash)).toBeLessThan(CLOSE);
 
-    // With Cmd/Ctrl, near it from the other side: no pull and no guide
-    held = await moveBy({ x: 0, y: -2 * near }, "ControlOrMeta");
+    // With the Snap toggle off (the editor's Snap button), near it from the other side: no pull
+    // and no guide
+    await turnSnapOff(page);
+    held = await moveBy({ x: 0, y: -2 * near });
     expect(held.guides).toEqual([]);
     e = await edgesOf();
     expect(Math.abs(e.front - frontHash)).toBeGreaterThan(CLOSE);
 });
 
-test("change: moving a box turned 15° lands its front corner on the 40, with the guide named and the corner ringed; Cmd/Ctrl doesn't pull (#446, #453)", async ({
+test("change: moving a box turned 15° lands its front corner on the 40, with the guide named and the corner ringed; the Snap toggle off doesn't pull (#446)", async ({
     show,
 }) => {
     const { page } = show;
@@ -2576,7 +2691,7 @@ test("change: moving a box turned 15° lands its front corner on the 40, with th
     const perUnit = await screenPerUnit(page, grid.centerFront);
     const near = Math.min(3, (S / 4) * perUnit * 0.8) / perUnit;
     /** Drags the box from inside by `by` in field units */
-    const moveBy = async (by: Point, noSnap = false) => {
+    const moveBy = async (by: Point) => {
         const { spots } = (await shapeOverlay(page))!;
         // 3 steps out along its width, turned with it, well clear of the center dot
         const turn = (15 * Math.PI) / 180;
@@ -2589,7 +2704,6 @@ test("change: moving a box turned 15° lands its front corner on the 40, with th
                 3 * S * Math.sin(turn),
         };
         let held: HeldGuides | null = null;
-        if (noSnap) await page.keyboard.down("ControlOrMeta");
         await drag(
             page,
             await toScreen(page, grab),
@@ -2600,7 +2714,6 @@ test("change: moving a box turned 15° lands its front corner on the 40, with th
                 },
             },
         );
-        if (noSnap) await page.keyboard.up("ControlOrMeta");
         return held!;
     };
     /**
@@ -2608,8 +2721,8 @@ test("change: moving a box turned 15° lands its front corner on the 40, with th
      * this side its center stays out of reach of the half line 4 outside the 40, which would
      * otherwise be nearer and win.
      */
-    const moveOnto40 = async (noSnap = false) =>
-        moveBy({ x: forty - (await frontCorner()).x - near, y: 0 }, noSnap);
+    const moveOnto40 = async () =>
+        moveBy({ x: forty - (await frontCorner()).x - near, y: 0 });
 
     const held = await moveOnto40();
     expect(held.guides.map((g) => g.label)).toContain("S1: On 40");
@@ -2624,9 +2737,10 @@ test("change: moving a box turned 15° lands its front corner on the 40, with th
     await expect(editor.getByTestId("shape-editor-rotation")).toHaveText("15°");
     expect((await shapeOverlay(page))!.guides).toEqual([]);
 
-    // Moved away and back with Cmd/Ctrl: no pull and no guide
+    // Moved away, then back with the Snap toggle off: no pull and no guide
     await moveBy({ x: 2 * S, y: 0 });
-    const free = await moveOnto40(true);
+    await turnSnapOff(page);
+    const free = await moveOnto40();
     expect(free.guides).toEqual([]);
     expect(Math.abs((await frontCorner()).x - forty)).toBeGreaterThan(CLOSE);
 });
@@ -2678,7 +2792,7 @@ test("change: dragging a 45° box's across spacing lands a corner on a line, wit
     ).toBe(true);
 });
 
-test("change: Alt-dragging a 45° box's corner slides it smoothly and lands it exactly on a yard line, with the guide (#453)", async ({
+test("change: Shift-dragging (fine) a 45° box's corner slides it smoothly and lands it exactly on a yard line, with the guide (#453)", async ({
     show,
 }) => {
     const { page } = show;
@@ -2691,7 +2805,7 @@ test("change: Alt-dragging a 45° box's corner slides it smoothly and lands it e
     // Turned 45°, the handle farthest right is a corner
     const { handles } = (await shapeOverlay(page))!;
     const corner = handles.reduce((a, b) => (b.x > a.x ? b : a));
-    await page.keyboard.down("Alt");
+    await page.keyboard.down("Shift");
     await page.mouse.move(corner.x, corner.y);
     await page.mouse.down();
     // Half a pixel at a time, rightward, until the corner catches a line
@@ -2708,7 +2822,7 @@ test("change: Alt-dragging a 45° box's corner slides it smoothly and lands it e
         }
     }
     await page.mouse.up();
-    await page.keyboard.up("Alt");
+    await page.keyboard.up("Shift");
     expect(held).not.toBeNull();
     expect(held!.guides.every((g) => (g.label ?? "").length > 0)).toBe(true);
     expect(held!.guideMarks.length).toBeGreaterThan(0);
@@ -4303,7 +4417,7 @@ test("change: Keep in view: a typed spacing that makes the box wider than the vi
     expect((await readField(page)).viewport.zoom).toBe(out);
 });
 
-// The pivot on the field (#350): Cmd/Ctrl-drag from the center dot pulls it
+// The pivot on the field (#350): Cmd/Ctrl-drag from the center dot (reach inside) pulls it
 // out into a yellow crosshair, it snaps to marchers, turns go around it, it is
 // saved with the box, and a double click sends it back to the center.
 

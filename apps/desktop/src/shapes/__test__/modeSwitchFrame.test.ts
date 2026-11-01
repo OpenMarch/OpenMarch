@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxTool } from "../box/boxTool";
 import { circleTool } from "../circle/circleTool";
@@ -28,7 +29,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env: ToolEnv = {
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
 };

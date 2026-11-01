@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { PerspectiveCamera, Vector3, type Vector3Tuple } from "three";
 import type { CameraSeat } from "@/view3d/core/types";

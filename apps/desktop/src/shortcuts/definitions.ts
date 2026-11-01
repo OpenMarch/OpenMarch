@@ -476,6 +476,19 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["X"],
     },
+    // The Snap toggle (modifier roles, version A). Shift+S is the fine nudge down, so M, for the
+    // magnet on its buttons
+    toggleSnap: {
+        labelKey: "actions.alignment.toggleSnap",
+        toggleOnKey: "actions.alignment.snapOn",
+        toggleOffKey: "actions.alignment.snapOff",
+        keywordsKey: "actions.alignment.toggleSnapKeywords",
+        category: "alignment",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["Shift+M"],
+        ignoreRepeat: true,
+    },
     alignVertically: {
         labelKey: "actions.alignment.alignVertically",
         category: "alignment",

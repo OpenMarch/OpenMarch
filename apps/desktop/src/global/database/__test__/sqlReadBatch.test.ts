@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createSqlReadBatch } from "../sqlReadBatch";
 import { createSerialQueue } from "../sqlProxyQueue";

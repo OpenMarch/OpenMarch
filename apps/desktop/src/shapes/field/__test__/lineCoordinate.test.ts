@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeAll, describe, expect, it } from "vitest";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";

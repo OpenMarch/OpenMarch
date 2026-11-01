@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { _createSectionMappings } from "../create-section-mappings";
 

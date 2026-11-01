@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
     clientXToNearestBeat,
     filterMarkersByMinimumSpacing,
@@ -341,6 +342,16 @@ describe("page snapping (UI-2)", () => {
     it("turns snapping off while Alt is held", () => {
         expect(isPageSnapDisabled({ altKey: true })).toBe(true);
         expect(isPageSnapDisabled({ altKey: false })).toBe(false);
+    });
+
+    it("keeps its own held Alt and ignores the field's Snap toggle (modifier roles, version A)", () => {
+        useUiSettingsStore.getState().setSnap(false);
+        try {
+            expect(isPageSnapDisabled({ altKey: false })).toBe(false);
+            expect(isPageSnapDisabled({ altKey: true })).toBe(true);
+        } finally {
+            useUiSettingsStore.getState().setSnap(true);
+        }
     });
 });
 

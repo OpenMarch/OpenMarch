@@ -1,4 +1,9 @@
-import { formatBinding, formatBindingKeys } from "./bindings";
+import {
+    formatBinding,
+    formatBindingKeys,
+    formatModifier,
+    type Modifier,
+} from "./bindings";
 import { getActionDefinition, type ActionId } from "./definitions";
 import { getEffectiveBindings, type ShortcutOverrides } from "./keymap";
 import { isMacPlatform } from "./platform";
@@ -37,6 +42,14 @@ export function getActionShortcutKeys(
 ): string[] | undefined {
     const [first] = getEffectiveBindings(id, overrides);
     return first ? formatBindingKeys(first, isMac) : undefined;
+}
+
+/** A modifier held on its own, e.g. "⇧" on a Mac or "Shift" elsewhere. */
+export function getModifierLabel(
+    modifier: Modifier,
+    isMac: boolean = isMacPlatform(),
+): string {
+    return formatModifier(modifier, isMac);
 }
 
 export function getActionTooltip(

@@ -184,7 +184,7 @@ export const curveKind: ShapeKind<CurveParams> = {
         ];
     },
 
-    drag(p, key, to, { shift }) {
+    drag(p, key, to, { constrain }) {
         if (key === "move") {
             const delta = sub(to, middleOf(curvePath(p)));
             return { ...p, points: p.points.map((q) => add(q, delta)) };
@@ -193,10 +193,10 @@ export const curveKind: ShapeKind<CurveParams> = {
         if (!match) return p;
         const index = Number(match[1]);
         if (index >= p.points.length) return p;
-        // Shift: the leg from the previous point (the next one, for the first) at 45° steps
+        // Constrain: the leg from the previous point (the next one, for the first) at 45° steps
         const neighbor = p.points[index === 0 ? 1 : index - 1];
         const target =
-            shift && neighbor ? snapAngle(neighbor, to, Math.PI / 4) : to;
+            constrain && neighbor ? snapAngle(neighbor, to, Math.PI / 4) : to;
         return {
             ...p,
             points: p.points.map((q, i) => (i === index ? target : q)),

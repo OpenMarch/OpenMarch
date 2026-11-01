@@ -165,7 +165,7 @@ export function StartFlagPositionsButton() {
                                     {t(
                                         "timeline.startFlagPositions.holdHeading",
                                     )}
-                                    <Keycaps shortcut={key} plus />
+                                    <Keycaps shortcut={key} />
                                 </>
                             )
                         }

@@ -35,11 +35,11 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env: ToolEnv = {
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
 };
-const alt: ToolEnv = { ...env, snap: false, gridSnap: (p) => p };
+const fine: ToolEnv = { ...env, snap: false, fine: true, gridSnap: (p) => p };
 const ctx: ShapeContext = { stepPx: STEP, snapPoint: (p) => p };
 const marchers = (n: number) =>
     Array.from({ length: n }, (_, i) => ({
@@ -78,8 +78,10 @@ describe("drawing a circle", () => {
         expect(radiusOf(p, 8)).toBeCloseTo(radiusFor(20, 8));
     });
 
-    it("draws hundredths of a step and off the grid with Alt (#411)", () => {
-        const p = paramsOf(drawn(8, { x: 101, y: 99 }, { x: 125, y: 99 }, alt));
+    it("draws hundredths of a step and off the grid with fine (#411)", () => {
+        const p = paramsOf(
+            drawn(8, { x: 101, y: 99 }, { x: 125, y: 99 }, fine),
+        );
         expect(p.center).toEqual({ x: 101, y: 99 });
         // 2 · 24 · sin(π/8) = 18.37, to hundredths of a step
         expect(p.interval).toBeCloseTo(18.4);
@@ -164,15 +166,15 @@ describe("editing a circle", () => {
         );
         expect(out.interval).toBe(30);
         expect(out.center).toEqual(p.center);
-        // Alt: hundredths, 30.90
-        const fine = circleTool.dragHandle(
+        // fine: hundredths, 30.90
+        const hundredths = circleTool.dragHandle(
             p,
             N,
             "radius",
             { x: 100, y: 150 },
-            alt,
+            fine,
         );
-        expect(fine.interval).toBeCloseTo(30.9);
+        expect(hundredths.interval).toBeCloseTo(30.9);
     });
 
     it("has no handle for one marcher", () => {
@@ -359,5 +361,21 @@ describe("the circle and the host", () => {
             ["mode", "Outline"],
             ["interval", "2"],
         ]);
+    });
+});
+
+describe("with fromCenter (Alt, version A)", () => {
+    it("draws and resizes the same with or without it: it's drawn from its center already", () => {
+        const centered: ToolEnv = { ...env, fromCenter: true };
+        const from = { x: 100, y: 100 };
+        const to = { x: 137, y: 121 };
+        const plain = circleTool.draw(from, to, 12, env);
+        expect(plain).toBeDefined();
+        expect(circleTool.draw(from, to, 12, centered)).toEqual(plain);
+        const [handle] = circleTool.handles(plain, 12);
+        const at = { x: handle!.at.x + 13, y: handle!.at.y + 4 };
+        expect(
+            circleTool.dragHandle(plain, 12, handle!.key, at, centered),
+        ).toEqual(circleTool.dragHandle(plain, 12, handle!.key, at, env));
     });
 });

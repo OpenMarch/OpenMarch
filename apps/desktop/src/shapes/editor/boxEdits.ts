@@ -313,7 +313,8 @@ function reorientedGap(p: BoxParams, spots: number): Partial<BoxParams> {
 
 /**
  * A spacing (the box's own `which`) dragged `distance` px for more: ½ step per 8 px, hundredths
- * with Alt (still pulled onto the field's lines, #452) or Cmd/Ctrl (not), from where it started
+ * with fine (still pulled onto the field's lines, #452) or the Snap toggle off (not), from where it
+ * started
  */
 export function scrubSpacing(
     base: BoxParams,
@@ -438,7 +439,7 @@ export function scrubSize(
     return inVersion(base, spots, next.version, env);
 }
 
-/** The rotation dragged `distance` px clockwise: 1° per 2 px in 15° steps, whole degrees with Shift, free with Alt */
+/** The rotation dragged `distance` px clockwise: 1° per 2 px in 15° steps, whole degrees with `fine`, free with the Snap toggle off */
 export const scrubRotation = (
     base: BoxParams,
     distance: number,

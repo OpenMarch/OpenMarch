@@ -1,9 +1,4 @@
-import type {
-    FieldCursor,
-    FieldModeDrawing,
-    FieldPointer,
-} from "@/field/editor/fieldEditor";
-import { isMacPlatform } from "@/shortcuts/platform";
+import type { FieldCursor, FieldModeDrawing } from "@/field/editor/fieldEditor";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import type { XY } from "../types";
 import {
@@ -19,15 +14,6 @@ import { useShapePointerStore } from "./shapePointer";
 import { lengthReadout } from "../frame/scale";
 import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
 import type { ShapeField } from "./shapeField";
-
-/** The keys a shape gesture reads from a pointer event */
-export const keysOf = (pointer: FieldPointer) => ({
-    shift: pointer.shift,
-    alt: pointer.alt,
-    // The app's $mod: Cmd on a Mac, where Ctrl+press is a right-click that pans and never
-    // reaches a shape; Ctrl elsewhere
-    mod: isMacPlatform() ? pointer.meta : pointer.ctrl,
-});
 
 /** A handle's cursor from a shape kind, as the field shows it */
 export const asCursor = (cursor: string): FieldCursor => cursor as FieldCursor;

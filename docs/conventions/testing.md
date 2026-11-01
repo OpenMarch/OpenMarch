@@ -32,6 +32,14 @@ the page show unconverted (converter tests, or tests that convert it themselves)
 default) and throws under `--no-isolate`. History tests check the timeline data tables through
 `timelineHistoryTables()`.
 
+Each of those databases is built once per run and copied for every test
+(`apps/desktop/src/test/fixtureCache.ts`), so a test file must not `vi.mock` the code that builds
+them (migrations, undo triggers, convert on open), or fake `Date` or `setTimeout` while they're
+built (faking only animation frames is fine).
+
+Test files run in jsdom by default. A `.ts` test that needs no DOM can start with
+`// @vitest-environment node`, which skips building the browser environment for that file.
+
 To test a feature end to end in the renderer, render it with
 `apps/desktop/src/test/featureHarness.tsx` (the app's providers, the timeline resolver host, page
 and marcher selection, and `positionOn`, which reads the resolver).

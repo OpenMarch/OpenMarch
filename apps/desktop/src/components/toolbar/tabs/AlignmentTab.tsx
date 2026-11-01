@@ -5,6 +5,7 @@ import {
     ArrowsVerticalIcon,
     ArrowsInCardinalIcon,
     CaretDownIcon,
+    MagnetIcon,
 } from "@phosphor-icons/react";
 import ActionButton from "@/shortcuts/ActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
@@ -20,6 +21,7 @@ export default function AlignmentTab() {
         useShallow((s) => ({
             lockX: s.uiSettings.lockX,
             lockY: s.uiSettings.lockY,
+            snap: s.uiSettings.snap,
         })),
     );
     return (
@@ -46,6 +48,21 @@ export default function AlignmentTab() {
                     className={`touch:min-h-44 flex items-center gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}
                 >
                     <ArrowsHorizontalIcon size={24} />
+                </ActionButton>
+                {/* The Snap toggle (modifier roles, version A): pressed while snapping is off, as
+                    on the floating editor, so a forgotten off state is in plain sight */}
+                <ActionButton
+                    toggleState={uiSettings.snap ? "off" : "on"}
+                    action="toggleSnap"
+                    caption={t("toolbar.alignment.snapToggleCaption")}
+                    aria-pressed={!uiSettings.snap}
+                    data-testid="toolbar-snap-toggle"
+                    className={clsx(
+                        "touch:min-h-44 flex items-center gap-6",
+                        uiSettings.snap ? "text-text" : "text-accent",
+                    )}
+                >
+                    <MagnetIcon size={24} />
                 </ActionButton>
                 <ActionButton
                     action="snapToNearestCustomFraction"

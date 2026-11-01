@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import { createResolver, type Resolver } from "@openmarch/core";
 import { GOLDEN_FIXTURES } from "../fixtures/goldenFixtures";

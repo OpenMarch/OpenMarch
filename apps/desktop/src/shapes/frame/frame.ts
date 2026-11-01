@@ -254,21 +254,21 @@ export const ROTATION_SNAP_DEGREES = 15;
 
 /**
  * A rotation as dragged: 15° steps, as the field's rotate handle and the old app turn; whole
- * degrees with Shift; as is with Alt (#403). Typed rotations don't come through here. Kept in
- * [0, 2π).
+ * degrees with `fine`; as is with the Snap toggle off (`pull` false) (#403, modifier roles).
+ * Typed rotations don't come through here. Kept in [0, 2π).
  */
 export function snapRotation(
     rad: number,
-    keys: { readonly shift: boolean; readonly snap: boolean },
+    env: { readonly fine?: boolean; readonly pull?: boolean },
 ): number {
-    if (!keys.snap) return normalizeAngle(rad);
-    const step = (keys.shift ? 1 : ROTATION_SNAP_DEGREES) * DEGREE;
+    if (env.pull === false) return normalizeAngle(rad);
+    const step = (env.fine ? 1 : ROTATION_SNAP_DEGREES) * DEGREE;
     const snapped = normalizeAngle(Math.round(rad / step) * step);
     // A full turn reads as 0
     return Math.abs(snapped - TAU) < 1e-9 ? 0 : snapped;
 }
 
-/** A rotation in degrees for people: 0 to 359, whole unless Alt left it between */
+/** A rotation in degrees for people: 0 to 359, whole unless the Snap toggle left it between */
 export function rotationDegrees(rad: number): number {
     const deg = (normalizeAngle(rad) / DEGREE) % 360;
     const rounded = Math.round(deg * 10) / 10;

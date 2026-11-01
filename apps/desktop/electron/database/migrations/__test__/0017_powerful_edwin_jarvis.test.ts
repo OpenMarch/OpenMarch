@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words rootpage
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { DatabaseSync } from "node:sqlite";

@@ -35,7 +35,7 @@ import {
 
 /**
  * The Transform section's host side (#349, spec #344): scaling by interval or by footprint in half
- * steps around the pivot, handles snapping spacings to half steps (Alt hundredths) with a length
+ * steps around the pivot, handles snapping spacings to half steps (fine: hundredths) with a length
  * readout, a shape's turn and flip surviving a reselect, and a plain selection turned and flipped
  * with positions only. Driven with the box and with fake kinds the host has never heard of.
  */
@@ -46,7 +46,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     ...over,
@@ -256,7 +256,7 @@ describe("handles snap spacings", () => {
         expect(stretched({ x: 77, y: 5 }).across).toBe(25);
     });
 
-    it("to hundredths of a step with Alt (#411)", () => {
+    it("to hundredths of a step with fine (#411)", () => {
         // 2.5667 steps is 2.57
         expect(stretched({ x: 77, y: 5 }, { snap: false }).across).toBeCloseTo(
             25.7,

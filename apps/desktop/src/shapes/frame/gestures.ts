@@ -38,10 +38,10 @@ export type ShapeTarget =
     /** The center dot: the shape's center follows the pointer */
     | { readonly type: "center" }
     /**
-     * The pivot (#350): its crosshair once it's out of the center, or Cmd/Ctrl on the center dot,
-     * which pulls it out
+     * The pivot (#350): its crosshair once it's out of the center, or a reach-inside press on the
+     * center dot, which pulls it out (`pulled`: the press used its key)
      */
-    | { readonly type: "pivot" }
+    | { readonly type: "pivot"; readonly pulled?: true }
     /** The shape's body */
     | { readonly type: "move" };
 
@@ -93,7 +93,7 @@ const near = (a: XY, b: XY, r: number) => Math.hypot(a.x - b.x, a.y - b.y) <= r;
 
 /**
  * What a press at `at` grabs on the shape, nearest the front of what's drawn first: the pivot's
- * crosshair, a handle, the knob, the center dot (the pivot with Cmd/Ctrl), the ring just outside
+ * crosshair, a handle, the knob, the center dot (the pivot with reach inside), the ring just outside
  * a corner, then the body. Null when it misses.
  */
 export function shapeTargetAt(
@@ -117,7 +117,9 @@ export function shapeTargetAt(
     if (near(controls.knob, at, env.hitRadius))
         return { type: "rotate", from: "knob" };
     if (near(controls.center, at, env.hitRadius))
-        return env.mod ? { type: "pivot" } : { type: "center" };
+        return env.reachInside
+            ? { type: "pivot", pulled: true }
+            : { type: "center" };
     const frame = kind.frameOf(params, n);
     const local = fieldToFrame(frame, at);
     // Diagonally past a corner, as in design apps; past an edge is the body (it has a margin)
@@ -180,11 +182,7 @@ export function dragShape(
 ): unknown {
     const base = gesture.base;
     if (gesture.type === "pivot")
-        return withPivot(
-            base,
-            // Cmd/Ctrl pulled the pivot out and may still be held: only Alt frees it
-            snapPivot(kind.frameOf(base, n), at, { ...env, snap: !env.fine }),
-        );
+        return withPivot(base, snapPivot(kind.frameOf(base, n), at, env));
     return carryPivot(base, dragged(kind, n, gesture, at, env));
 }
 
@@ -200,7 +198,7 @@ function dragged(
         case "handle":
             return kind.dragHandle(base, n, gesture.key, at, env);
         case "move":
-            return moveOntoLines(
+            return movedOnAxis(
                 kind,
                 base,
                 n,
@@ -209,7 +207,7 @@ function dragged(
             );
         case "center": {
             const { center } = kind.frameOf(base, n);
-            return moveOntoLines(
+            return movedOnAxis(
                 kind,
                 base,
                 n,
@@ -236,13 +234,44 @@ function dragged(
 }
 
 /**
+ * `base` moved by `delta` ({@link moveOntoLines}); with `constrain` held, on one axis only, across
+ * or down, whichever the drag has gone further along, as a marcher drag does (`ruledMove`). The
+ * other axis stays where it was, whatever the grid or a line would pull it to.
+ */
+function movedOnAxis(
+    kind: AnyToolKind,
+    base: unknown,
+    n: number,
+    delta: XY,
+    env: ToolEnv,
+): unknown {
+    if (!env.constrain) return moveOntoLines(kind, base, n, delta, env);
+    const across = Math.abs(delta.y) <= Math.abs(delta.x);
+    const moved = moveOntoLines(
+        kind,
+        base,
+        n,
+        across ? { x: delta.x, y: 0 } : { x: 0, y: delta.y },
+        env,
+    );
+    const start = kind.frameOf(base, n).center;
+    const frame = kind.frameOf(moved, n);
+    return kind.withFrame(moved, n, {
+        ...frame,
+        center: across
+            ? { x: frame.center.x, y: start.y }
+            : { x: start.x, y: frame.center.y },
+    });
+}
+
+/**
  * `base` moved by `delta`, one of its snap points (a corner or the center, at any turn) landing
  * on a field line within the pull radius (#444, #446), or on two lines' crossing, as a stretch's
  * edge does (#425); the kind's own grid snap on an axis with none.
  * The radius is never more than a quarter step (half the grid's detent), so every half step near
  * a line can still be reached: a stretch's quarter of its detent (#425) would be under a pixel for
- * a move at the fitted zoom. Alt (fine control) still pulls, off the grid; Cmd/Ctrl (no
- * snapping) doesn't (owner on #453).
+ * a move at the fitted zoom. `fine` still pulls, off the grid; the Snap toggle off doesn't (owner
+ * on #453).
  */
 function moveOntoLines(
     kind: AnyToolKind,
@@ -370,7 +399,7 @@ export const ROTATION_PX_PER_DEGREE = 2;
 
 /**
  * The shape's rotation dragged `distance` px clockwise, 1° per 2 px from where it started: in 15°
- * steps as the knob turns (#403), whole degrees with Shift, free with Alt
+ * steps as the knob turns (#403), whole degrees with `fine`, free with the Snap toggle off
  */
 export function scrubTurn(
     kind: AnyToolKind,
@@ -381,9 +410,10 @@ export function scrubTurn(
     env: ToolEnv,
 ): unknown {
     const turn = distance / ROTATION_PX_PER_DEGREE;
-    if (Math.trunc(turn) === 0 && env.snap) return base;
+    const stepped = env.pull !== false;
+    if (Math.trunc(turn) === 0 && stepped) return base;
     const degrees = rotationDegrees(kind.frameOf(base, n).rotation) + turn;
-    const step = env.shift ? 1 : ROTATION_SNAP_DEGREES;
-    const snapped = env.snap ? Math.round(degrees / step) * step : degrees;
+    const step = env.fine ? 1 : ROTATION_SNAP_DEGREES;
+    const snapped = stepped ? Math.round(degrees / step) * step : degrees;
     return turnShape(kind, base, n, snapped * DEGREE, pivot, env);
 }

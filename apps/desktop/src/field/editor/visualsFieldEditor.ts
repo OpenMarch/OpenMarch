@@ -4,7 +4,9 @@ import {
     type DropResult,
     type FieldEditorOptions,
     type FieldEditorPorts,
+    type FieldGesture,
     type FieldPointer,
+    type FieldPress,
 } from "./fieldEditor";
 
 /**
@@ -15,8 +17,8 @@ import {
  *   Facing cue toward a point) is that point, and nothing more.
  * - Read-only ({@link setReadOnly}): clicks, the marquee and the lasso still
  *   select, as the selection is who a cue is for, but no drag, scale, rotation
- *   or typed rotation moves a marcher: nothing is drawn moved and nothing
- *   drops, and no field mode (a shape tool) is on.
+ *   or typed rotation moves a marcher: no move starts, nothing is drawn moved
+ *   and nothing drops, and no field mode (a shape tool) is on.
  */
 export class VisualsFieldEditor extends FieldEditor {
     private readOnly = false;
@@ -99,6 +101,21 @@ export class VisualsFieldEditor extends FieldEditor {
     /** Whether presses only select ({@link setReadOnly}). */
     isReadOnly(): boolean {
         return this.readOnly;
+    }
+
+    /**
+     * No move while read-only: a press that would drag still selects as it
+     * does, but starts no gesture, so nothing follows the keys and no chip
+     * names roles nothing honors.
+     */
+    protected override startDrag(
+        press: FieldPress,
+        pointer: FieldPointer,
+    ): FieldGesture | null {
+        const gesture = super.startDrag(press, pointer);
+        if (!this.readOnly || gesture?.kind !== "move") return gesture;
+        gesture.cancel();
+        return null;
     }
 
     /** Nothing scales or rotates while read-only. */

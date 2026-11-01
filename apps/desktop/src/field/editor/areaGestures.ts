@@ -1,3 +1,8 @@
+import {
+    pressChoiceOf,
+    type AreaChoice,
+    type PressChoice,
+} from "@/input/modifierRoles";
 import type { FieldGesture, FieldPoint, FieldPointer } from "./fieldEditor";
 import { hitRadius, type DrawnMarchers } from "./hitTest";
 import {
@@ -15,14 +20,18 @@ import {
  * The overlay draws {@link AreaShape}; nothing else does.
  */
 
-/** What the overlay draws during a marquee or lasso, in field units. */
+/**
+ * What the overlay draws during a marquee or lasso, in field units. `subtract`: it removes what it
+ * covers from the selection (Alt at the press), and is drawn so.
+ */
 export type AreaShape =
-    | { kind: "marquee"; rect: FieldRect }
+    | { kind: "marquee"; rect: FieldRect; subtract: boolean }
     | {
           kind: "lasso";
           points: readonly FieldPoint[];
           /** Releasing now closes the lasso and selects: the stroke turns green. */
           closes: boolean;
+          subtract: boolean;
       };
 
 /** What a marquee or lasso reads and writes. */
@@ -43,19 +52,37 @@ export interface AreaGesture extends FieldGesture {
     shape(): AreaShape;
 }
 
+const AREA_CHOICES: ReadonlySet<PressChoice> = new Set(["add", "subtract"]);
+
+/**
+ * What an area does with what it covers, decided at the press: add (Shift), subtract (Alt; add
+ * wins when both are held), or null to replace the selection.
+ */
+export function areaChoice(press: FieldPointer, isMac?: boolean): AreaChoice {
+    const chosen = pressChoiceOf(press, "field", {
+        applicable: AREA_CHOICES,
+        isMac,
+    })?.choice;
+    return chosen === "add" || chosen === "subtract" ? chosen : null;
+}
+
 /**
  * A marquee: the rectangle from the press to the pointer. On release it
  * replaces the selection with every marcher whose dot it touches, leaving out
  * items when performers are among them (`areaPicks`); with Shift held at the
- * press, it adds them.
+ * press, it adds them, and with Alt it removes them.
  */
 export function startMarquee(
     ports: AreaPorts,
     start: FieldPointer,
+    isMac?: boolean,
 ): AreaGesture {
+    const choice = areaChoice(start, isMac);
+    const subtract = choice === "subtract";
     let shape: AreaShape = {
         kind: "marquee",
         rect: rectBetween(start.field, start.field),
+        subtract,
     };
     return {
         kind: "marquee",
@@ -64,6 +91,7 @@ export function startMarquee(
             shape = {
                 kind: "marquee",
                 rect: rectBetween(start.field, next.field),
+                subtract,
             };
             ports.changed();
         },
@@ -77,9 +105,7 @@ export function startMarquee(
                 ),
                 (id) => ports.isItem?.(id) ?? false,
             );
-            ports.select(
-                selectionAfterArea(ports.selection(), inside, start.shift),
-            );
+            ports.select(selectionAfterArea(ports.selection(), inside, choice));
         },
         cancel() {},
     };
@@ -89,20 +115,27 @@ export function startMarquee(
  * A lasso: a freehand line from the press. Released within
  * `LASSO_CLOSE_DISTANCE` (50) screen px of its start it closes, and replaces
  * the selection with every marcher whose center is inside it, as a marquee
- * picks them (Shift at the press adds them). Released farther away, it selects nothing and changes
- * nothing; the double-click's first click has already cleared the selection,
- * unless Shift was held.
+ * picks them (Shift at the press adds them, Alt removes them). Released farther away, it selects
+ * nothing and changes nothing; the double-click's first click has already cleared the selection,
+ * unless Shift or Alt was held.
  */
-export function startLasso(ports: AreaPorts, start: FieldPointer): AreaGesture {
+export function startLasso(
+    ports: AreaPorts,
+    start: FieldPointer,
+    isMac?: boolean,
+): AreaGesture {
+    const choice = areaChoice(start, isMac);
+    const subtract = choice === "subtract";
     // Appended to in place: a long lasso isn't copied on every move
     const points: FieldPoint[] = [start.field];
-    let shape: AreaShape = { kind: "lasso", points, closes: true };
+    let shape: AreaShape = { kind: "lasso", points, closes: true, subtract };
     const add = (point: FieldPoint) => {
         points.push(point);
         shape = {
             kind: "lasso",
             points,
             closes: lassoCloses(start.field, point, ports.zoom()),
+            subtract,
         };
     };
     return {
@@ -119,9 +152,7 @@ export function startLasso(ports: AreaPorts, start: FieldPointer): AreaGesture {
                 marchersInPolygon(ports.marchers(), points, ports.canSelect),
                 (id) => ports.isItem?.(id) ?? false,
             );
-            ports.select(
-                selectionAfterArea(ports.selection(), inside, start.shift),
-            );
+            ports.select(selectionAfterArea(ports.selection(), inside, choice));
         },
         cancel() {},
     };

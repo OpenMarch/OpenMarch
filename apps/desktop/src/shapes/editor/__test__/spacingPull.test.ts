@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxFrame, type BoxParams } from "../../box/boxGeometry";
 import { BOX_PARAMS } from "../../box/boxParams";
@@ -24,7 +25,7 @@ const LINES = {
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     fieldLines: LINES,
@@ -32,9 +33,9 @@ const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     ...over,
 });
 const N = 12;
-/** Alt: fine control, off the half-step ladder, still pulled (owner on #453) */
-const ALT = { snap: false, fine: true };
-/** Cmd/Ctrl: no snapping at all */
+/** fine: off the half-step ladder, still pulled (owner on #453) */
+const FINE = { snap: false, fine: true };
+/** The Snap toggle off: no snapping at all */
 const NO_SNAP = { snap: false, pull: false };
 /** 4 files by 3 ranks, 2 steps apart, turned `degrees` around the default pivot */
 const turned = (
@@ -127,11 +128,11 @@ describe("dragging a spacing onto a line", () => {
             expect(onHalves(drag(p, px, far).across)).toBe(true);
     });
 
-    it("with Alt, gives hundredths away from lines and still lands a corner on one (owner on #453)", () => {
+    it("with fine, gives hundredths away from lines and still lands a corner on one (owner on #453)", () => {
         const p = turned(45);
         let landed = false;
         for (let px = 0; px <= 160; px += 0.5) {
-            const out = drag(p, px, ALT);
+            const out = drag(p, px, FINE);
             const hundredths = out.across / (STEP / 100);
             const onHundredths =
                 Math.abs(hundredths - Math.round(hundredths)) < 1e-6;
@@ -142,7 +143,7 @@ describe("dragging a spacing onto a line", () => {
         expect(landed).toBe(true);
     });
 
-    it("with Cmd/Ctrl, gives hundredths and pulls nothing (owner on #453)", () => {
+    it("with the Snap toggle off, gives hundredths and pulls nothing (owner on #453)", () => {
         const p = turned(45);
         for (let px = 0; px <= 80; px += 1) {
             const out = drag(p, px, NO_SNAP);

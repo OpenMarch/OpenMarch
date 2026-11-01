@@ -102,16 +102,26 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
 });
 
 describe("the shortcuts list (UI-17 follow-up)", () => {
-    it("lists a shape drag's Alt (fine, still catching lines) and Mod (no snapping) for the platform (#453)", () => {
-        const shapes = (isMac: boolean) =>
+    it("lists the drag keys for shapes and marchers: Shift (fine), Mod (constrain), Alt (from center) (#453)", () => {
+        const shapeKeys = (isMac: boolean) =>
             shortcutGroups((key) => key, {}, isMac)
                 .find((g) => g.title === "Shapes")!
                 .rows.map((row) => row.keys);
-        expect(shapes(false)).toEqual(
-            expect.arrayContaining(["Alt + Drag", "Ctrl + Drag"]),
+        expect(shapeKeys(false)).toEqual(
+            expect.arrayContaining([
+                "Shift + Drag",
+                "Ctrl + Drag",
+                "Alt + Drag",
+            ]),
         );
-        expect(shapes(true)).toEqual(
-            expect.arrayContaining(["Alt + Drag", "⌘ + Drag"]),
+        expect(shapeKeys(true)).toEqual(
+            expect.arrayContaining(["Shift + Drag", "⌘ + Drag", "Alt + Drag"]),
+        );
+        const movement = shortcutGroups((key) => key, {}, false)
+            .find((g) => g.title === "Move marchers")!
+            .rows.map((row) => row.keys);
+        expect(movement).toEqual(
+            expect.arrayContaining(["Shift + Drag", "Ctrl + Drag"]),
         );
     });
 

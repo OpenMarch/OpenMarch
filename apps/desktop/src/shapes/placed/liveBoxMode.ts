@@ -1,18 +1,26 @@
 import type { PivotKey } from "../frame/frame";
 import type { QueryClient } from "@tanstack/react-query";
-import type { FieldMode, FieldPointer } from "@/field/editor/fieldEditor";
+import type {
+    FieldMode,
+    FieldModePress,
+    FieldPointer,
+} from "@/field/editor/fieldEditor";
 import {
     drillNumbers,
     frameDrawing,
     guideDrawing,
-    keysOf,
     memoDrawing,
     shapeCursor,
     SPOT_LABEL_LIMIT,
 } from "../field/fieldModeBase";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
-import { shapeOutline, shapeTargetAt } from "../frame/gestures";
+import {
+    shapeOutline,
+    shapeTargetAt,
+    type ShapeTarget,
+} from "../frame/gestures";
 import { toolEnvFor } from "../tool/toolEnv";
+import { pressShapeKeys, type HeldFieldGesture } from "../field/heldGesture";
 import { commitBox } from "./commitBox";
 import {
     liveTargets,
@@ -30,6 +38,8 @@ import {
 } from "./boxSelectionStore";
 import { outlineGapAt } from "../distribute/outlineGap";
 import type { AnyToolKind } from "../tool/toolKind";
+import type { XY } from "../types";
+import type { Roles } from "@/input/modifierRoles";
 import {
     setShapeDragging,
     setShapePointerOver,
@@ -37,6 +47,13 @@ import {
     useShapePointerStore,
     guideGesture,
 } from "../field/shapePointer";
+
+/** What a press that reaches inside keeps for the box: its pivot, handles and knob */
+const OWN_CONTROLS: ReadonlySet<ShapeTarget["type"]> = new Set([
+    "pivot",
+    "handle",
+    "rotate",
+]);
 
 /** An odd-count outline's gap, the spot nobody stands on by design (#390) */
 function gapsOf(kind: AnyToolKind, params: unknown, n: number) {
@@ -75,7 +92,7 @@ const drawingOf = memoDrawing(
               ).members
             : [];
         const names = drillNumbers(field);
-        const env = toolEnvFor(field, { shift: false, alt: false });
+        const env = toolEnvFor(field);
         return {
             stage: "open" as const,
             outline: shapeOutline(kind, live.params, n),
@@ -116,8 +133,9 @@ const drawingOf = memoDrawing(
 /**
  * A selected placed shape of any kind, edited in place (07-placed-boxes.md), as a field editor
  * mode: it claims presses on its handles and inside it. Its handles resize it (a box's stretch it),
- * a drag inside moves it, and each gesture is saved when it ends, as one undo step. A double click on a member goes inside the box. Other presses go through the editor's
- * rules as usual. The selection box's own handles (#198) are off while it's on.
+ * a drag inside moves it, and each gesture is saved when it ends, as one undo step. A double click
+ * on a member goes inside the box. A press that reaches inside ($mod on a member, away from the
+ * box's controls) and other presses go through the editor's rules as usual. The selection box's own handles (#198) are off while it's on.
  */
 export class LiveBoxMode implements FieldMode {
     private live: LiveBox;
@@ -129,6 +147,8 @@ export class LiveBoxMode implements FieldMode {
     readonly gesture = { kind: "box", always: false } as const;
 
     private shown: Shown | null = null;
+    /** The held roles of the gesture under way, from its press to its end */
+    private held: HeldFieldGesture | null = null;
 
     constructor(
         box: PlacedBox,
@@ -144,12 +164,64 @@ export class LiveBoxMode implements FieldMode {
         this.emit();
     }
 
-    claims(pointer: FieldPointer): boolean {
-        return this.pressed(pointer) !== null;
+    claims(pointer: FieldPointer, press: FieldModePress): boolean {
+        return (
+            !this.yieldsToEditor(pointer, press) &&
+            this.pressed(pointer) !== null
+        );
     }
 
-    press(pointer: FieldPointer): void {
-        this.live = this.pressed(pointer) ?? this.live;
+    /**
+     * A press that reaches inside a placed box, by the field editor's own rule: the editor's,
+     * which picks that marcher out of the box. Where the editor says no (you're inside this box
+     * already, no member under the press), $mod is `constrain` on the box's own move. The box's
+     * controls drawn over a member keep their press: on the pivot (the crosshair, or the center
+     * dot that $mod pulls the pivot out of) $mod is reach inside's, and on a handle or the knob
+     * it's `constrain` (on a corner, an equal-spaced resize).
+     */
+    private yieldsToEditor(
+        pointer: FieldPointer,
+        press: FieldModePress,
+    ): boolean {
+        if (!press.reachesInside()) return false;
+        const field = currentShapeField();
+        if (!field) return false;
+        const { kind, params, spots } = this.live.box;
+        const target = shapeTargetAt(kind, params, spots, pointer.field, {
+            ...toolEnvFor(field),
+            reachInside: true,
+        });
+        return !target || !OWN_CONTROLS.has(target.type);
+    }
+
+    press(pointer: FieldPointer, { isMac }: FieldModePress): void {
+        const field = currentShapeField();
+        this.endHeld();
+        if (!field) return;
+        const { held, reachInside } = pressShapeKeys(
+            pointer,
+            {
+                kind: this.live.box.kind,
+                params: this.live.box.params,
+                n: this.live.box.spots,
+            },
+            (reachInside) =>
+                shapeTargetAt(
+                    this.live.box.kind,
+                    this.live.box.params,
+                    this.live.box.spots,
+                    pointer.field,
+                    { ...toolEnvFor(field), reachInside },
+                ),
+            (at, roles) => this.rerun(at, roles),
+            isMac,
+        );
+        this.held = held;
+        this.live =
+            pressLive(this.live, pointer.field, {
+                ...toolEnvFor(field, held.roles()),
+                reachInside,
+            }) ?? this.live;
         this.emit();
     }
 
@@ -159,12 +231,26 @@ export class LiveBoxMode implements FieldMode {
         this.live = moveLive(
             this.live,
             pointer.field,
-            toolEnvFor(field, keysOf(pointer)),
+            toolEnvFor(field, this.held?.move(pointer)),
         );
         this.emit();
     }
 
+    /** A role key pressed or released mid-drag: the last move again, at the last pointer */
+    private rerun(at: XY, roles: Roles): void {
+        const field = currentShapeField();
+        if (!field) return;
+        this.live = moveLive(this.live, at, toolEnvFor(field, roles));
+        this.emit();
+    }
+
+    private endHeld(): void {
+        this.held?.end();
+        this.held = null;
+    }
+
     release(pointer: FieldPointer, click: { double: boolean } | null): void {
+        this.endHeld();
         const before = this.live;
         const out = releaseLive(before, click);
         this.live = out.live;
@@ -179,6 +265,7 @@ export class LiveBoxMode implements FieldMode {
     }
 
     cancel(): void {
+        this.endHeld();
         this.live = openLive(this.live.box);
         this.emit();
     }
@@ -196,7 +283,7 @@ export class LiveBoxMode implements FieldMode {
             this.live.params,
             this.live.box.spots,
             pointer.field,
-            toolEnvFor(field, keysOf(pointer)),
+            toolEnvFor(field),
         );
         // The editor asks for the cursor as the pointer moves, so this is where hovering is seen
         setShapePointerOver(target !== null);
@@ -240,11 +327,7 @@ export class LiveBoxMode implements FieldMode {
     private pressed(pointer: FieldPointer): LiveBox | null {
         const field = currentShapeField();
         if (!field) return null;
-        return pressLive(
-            this.live,
-            pointer.field,
-            toolEnvFor(field, keysOf(pointer)),
-        );
+        return pressLive(this.live, pointer.field, toolEnvFor(field));
     }
 
     /** Goes inside the box at the member nearest `pointer` */

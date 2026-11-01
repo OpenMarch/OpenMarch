@@ -144,12 +144,12 @@ export const circleKind: ShapeKind<CircleParams> = {
         },
     ],
 
-    drag(p, key, to, { shift }) {
+    drag(p, key, to, { constrain }) {
         if (key === "move") {
             return { ...p, center: to };
         }
         if (key === "radius") {
-            const rim = shift ? snapAngle(p.center, to, Math.PI / 4) : to;
+            const rim = constrain ? snapAngle(p.center, to, Math.PI / 4) : to;
             const r = dist(p.center, rim);
             if (r === 0) return { ...p, r };
             return {

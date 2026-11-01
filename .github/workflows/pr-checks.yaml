@@ -80,33 +80,102 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Test all packages
-        run: pnpm run test
+      # Desktop's unit tests run in the desktop-test and desktop-history jobs
+      - name: Test other packages
+        run: pnpm turbo run test --filter='!@openmarch/desktop'
 
-      - name: Test desktop with history
-        working-directory: apps/desktop
-        run: pnpm run test:history $(find . -type f -name "*.test.*" -exec grep -l "getTestWithHistory" {} +) --silent
-
-  desktop-e2e:
+  # Desktop unit tests, split in four so they run side by side
+  desktop-test:
     needs: check-changes
     if: needs.check-changes.outputs.desktop == 'true'
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: desktop-test (${{ matrix.shard }}/4)
     steps:
       - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
 
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4.1.0
+          cache: pnpm
 
       - name: Install project dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+      - name: Build workspace packages
+        run: pnpm turbo run build --filter=@openmarch/desktop^...
+
+      - name: Test desktop
+        working-directory: apps/desktop
+        run: pnpm exec vitest run --silent --shard=${{ matrix.shard }}/4
+
+  # The undo/redo checks (src/test/history.ts) on the files that use them, next to the
+  # plain run so each reports on its own
+  desktop-history:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install project dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm turbo run build --filter=@openmarch/desktop^...
+
+      - name: Test desktop with history
+        working-directory: apps/desktop
+        run: pnpm run test:history $(find . -type f -name "*.test.*" -not -path "*/node_modules/*" -exec grep -l "getTestWithHistory" {} +) --silent
+
+  # The packaged app under Xvfb. Linux runners start right away; macOS ones queued for
+  # minutes on the free tier.
+  desktop-e2e:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install project dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # Electron needs no Playwright browser, only the shared libraries and Xvfb
+      - name: Install Electron system dependencies
+        run: |
+          pnpm exec playwright install-deps chromium
+          sudo apt-get install -y xvfb
+
+      # Ubuntu 24.04 blocks the unprivileged user namespaces Chromium's sandbox uses, so
+      # Electron would abort at launch
+      - name: Allow the Chromium sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 # cspell:disable-line
 
       - name: Build monorepo
         run: pnpm run build
@@ -121,7 +190,7 @@ jobs:
 
       - name: Run E2E tests
         working-directory: apps/desktop
-        run: pnpm run e2e
+        run: xvfb-run -a --server-args="-screen 0 1600x1000x24" pnpm run e2e
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -197,6 +266,8 @@ jobs:
     needs:
       - basic-checks
       - test
+      - desktop-test
+      - desktop-history
       - desktop-e2e
       - desktop-browser-e2e
     steps:
@@ -204,12 +275,16 @@ jobs:
         run: |
           echo "basic-checks: ${{ needs.basic-checks.result }}"
           echo "test: ${{ needs.test.result }}"
+          echo "desktop-test: ${{ needs.desktop-test.result }}"
+          echo "desktop-history: ${{ needs.desktop-history.result }}"
           echo "desktop-e2e: ${{ needs.desktop-e2e.result }}"
           echo "desktop-browser-e2e: ${{ needs.desktop-browser-e2e.result }}"
 
           # Fail if any job failed (skipped jobs are OK)
           if [[ "${{ needs.basic-checks.result }}" != "success" && "${{ needs.basic-checks.result }}" != "skipped" ]] || \
              [[ "${{ needs.test.result }}" != "success" && "${{ needs.test.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-test.result }}" != "success" && "${{ needs.desktop-test.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-history.result }}" != "success" && "${{ needs.desktop-history.result }}" != "skipped" ]] || \
              [[ "${{ needs.desktop-e2e.result }}" != "success" && "${{ needs.desktop-e2e.result }}" != "skipped" ]] || \
              [[ "${{ needs.desktop-browser-e2e.result }}" != "success" && "${{ needs.desktop-browser-e2e.result }}" != "skipped" ]]; then
             echo "One or more jobs failed or were cancelled"

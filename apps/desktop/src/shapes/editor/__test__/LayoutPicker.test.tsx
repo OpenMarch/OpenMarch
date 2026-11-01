@@ -34,7 +34,7 @@ beforeEach(() => useLastLayoutStore.setState({ family: "shortBack" }));
 const env: ToolEnv = {
     stepPx: 10,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => p,
     hitRadius: 3,
 };

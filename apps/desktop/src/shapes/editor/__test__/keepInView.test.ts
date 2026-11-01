@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { MIN_ZOOM, type FieldView } from "@/field/editor/view";
 import { CLEAR_PX, editorPlacement, GAP_PX } from "../editorPlacement";

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { pickAlong, registerPicker } from "../scenePick";
 

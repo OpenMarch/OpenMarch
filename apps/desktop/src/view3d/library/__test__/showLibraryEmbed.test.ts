@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { LibraryItem } from "@om-electron/main/library/types";
 import { sha256Hex } from "@om-electron/main/library/hash";

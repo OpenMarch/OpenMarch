@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { TimingMarkersPlugin } from "../audio/TimingMarkersPlugin";
 import type Beat from "@/global/classes/Beat";

@@ -37,7 +37,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const envWith = (layout?: LayoutFamily): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     layout,

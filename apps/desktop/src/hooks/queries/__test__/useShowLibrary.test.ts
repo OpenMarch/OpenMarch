@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { getTableName } from "drizzle-orm";
 import { schema } from "@/global/database/db";

@@ -14,7 +14,7 @@ questions:
   - Did Outline mode make sense? Could you easily set the spacing side to side and front to back?
   - In Outline, could you easily see where the leftover went, whether it left a gap or spread evenly?
   - Did Spread mode make sense? Was it clear what Edge does?
-  - If you'd been told up front, would you have used Option/Alt for smooth, fine adjustments?
+  - If you'd been told up front, would you have used Shift for smooth, fine adjustments?
   - Did snapping ever move marchers, or catch a yard line or hash, when you didn't want it to?
 ---
 
@@ -58,8 +58,11 @@ the same controls can carry other shapes later.
   out of the inspector on purpose, so you never have to look away from the
   field.
 
-- Hold **Alt** for fine control (no half steps, lines still catch). Hold
-  **Cmd** (Mac) or **Ctrl** for no snapping at all.
+- Hold **Shift** for fine control (no half steps, lines still catch). Hold
+  **Cmd** (Mac) or **Ctrl** to constrain (equal spacings, one axis when moving,
+  flips proportional scaling). Hold **Alt** to draw or resize a box from its
+  center. Turn snapping off with the **Snap** toggle (**Shift+M**), not a held
+  key.
 - If the box or its editor would end up off the screen, the field glides just
   far enough to bring them back.
 

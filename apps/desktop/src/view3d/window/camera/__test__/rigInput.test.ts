@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { PerspectiveCamera, Vector3 } from "three";
 import { RigController } from "../rigController";

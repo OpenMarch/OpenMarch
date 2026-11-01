@@ -1,3 +1,5 @@
+import type { Roles } from "@/input/modifierRoles";
+
 /**
  * The floating editor's numbers, which you type or drag (08-shape-system-ux.md, "Numbers you can
  * type or drag"). The pixel rates are first guesses, to be tuned by feel. Everything here is pure.
@@ -12,10 +14,8 @@ export interface ScrubMove {
     readonly dy: number;
     /** The direction a two-way number locked to */
     readonly axis: ScrubAxis;
-    readonly alt: boolean;
-    /** Cmd on a Mac, Ctrl elsewhere: no snapping at all (owner on #453) */
-    readonly mod?: boolean;
-    readonly shift: boolean;
+    /** The held roles: `fine` is hundredths of a step (#411) */
+    readonly roles: Roles;
 }
 
 export interface ScrubRate {
@@ -27,13 +27,13 @@ export interface ScrubRate {
 }
 
 /**
- * Spacings: half a step per 8 px; with Alt, hundredths of a step (#411), one per px so a step is
- * still a short drag
+ * Spacings: half a step per 8 px; with `fine`, hundredths of a step (#411), one per px so a step
+ * is still a short drag
  */
 export const SPACING_RATE = { px: 8, step: 0.5 } as const;
 export const SPACING_FINE_RATE = { px: 1, step: 0.01 } as const;
 
-/** The spacing drag's rate: half steps, or with Alt (`snap` off) hundredths */
+/** The spacing drag's rate: half steps, or with `snap` off (`fine`, or the Snap toggle) hundredths */
 export const spacingRate = (snap: boolean, axis: ScrubAxis): ScrubRate => ({
     axis,
     ...(snap ? SPACING_RATE : SPACING_FINE_RATE),

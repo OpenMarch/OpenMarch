@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxTool } from "../box/boxTool";
 import { boxFrame, drawBox, type BoxParams } from "../box/boxGeometry";
@@ -18,7 +19,7 @@ const half = STEP / 2;
 const env: ToolEnv = {
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({
         x: Math.round(p.x / half) * half,
         y: Math.round(p.y / half) * half,

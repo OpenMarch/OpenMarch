@@ -330,7 +330,7 @@ export const blockKind: ShapeKind<BlockParams> = {
         ];
     },
 
-    drag(p, key, to, { shift }, n, ctx) {
+    drag(p, key, to, { constrain }, n, ctx) {
         const out = handleOffset(ctx);
         if (key === "move") {
             const at = moveHandleAt(p, n, ctx);
@@ -349,7 +349,7 @@ export const blockKind: ShapeKind<BlockParams> = {
             const angle = Math.atan2(d.y, d.x) + ROTATE_OFFSET;
             return {
                 ...p,
-                rotation: shift ? snapRotation(angle, Math.PI / 12) : angle,
+                rotation: constrain ? snapRotation(angle, Math.PI / 12) : angle,
             };
         }
         if (key === "across") {

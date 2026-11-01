@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words teardrop demoulin styleplus ihdr plte idat
 import { deflateSync, inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";

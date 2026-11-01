@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { GUIDE_INK, GUIDE_INK_TEXT } from "../guideInk";
 

@@ -11,9 +11,10 @@ import {
     useActionHandlerGroup,
 } from "@/shortcuts/useActionHandler";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
-import { toolEnvFor } from "./toolEnv";
-import { cancelGesture, edit, redo } from "./toolMachine";
+import { nudgeEnvFor } from "./toolEnv";
+import { edit, redo } from "./toolMachine";
 import { updateTool, useShapeToolStore } from "./shapeToolStore";
+import { cancelShapeGesture } from "./shapeToolMode";
 
 const NUDGE_DIRECTIONS = {
     up: { x: 0, y: -1 },
@@ -35,7 +36,7 @@ export function ShapeToolKeys(): null {
     const rounding = useUiSettingsStore((s) => s.uiSettings.coordinateRounding);
     useActionHandler("cancelAlignmentUpdates", () => {
         const { tool } = useShapeToolStore.getState();
-        if (tool?.gesture) updateTool(cancelGesture);
+        if (tool?.gesture) cancelShapeGesture();
         else discardShapeTool();
     });
     useActionHandler("performUndo", undoOpenShape);
@@ -48,7 +49,7 @@ export function ShapeToolKeys(): null {
         const px =
             resolveNudgeDistance(nudge, rounding) *
             field.fieldProperties.pixelsPerStep;
-        const env = toolEnvFor(field, { shift: false, alt: !nudge.snap });
+        const env = nudgeEnvFor(field, nudge);
         updateTool((tool) => {
             if (tool.params === null || tool.gesture) return tool;
             const params = tool.kind.move(

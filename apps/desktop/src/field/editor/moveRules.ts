@@ -6,9 +6,10 @@ import { followPointer, type MoveTransform } from "./moveGesture";
 
 /**
  * The rules that modify a marcher drag (#197, #189 user stories 36 to 40;
- * rules table: Snapping, Alt, Lock X / Lock Y, Shift). Pure: the move
- * gesture calls them on every pointer event with the settings as they are
- * then, so what's drawn is what's dropped.
+ * rules table: Snapping, Lock X / Lock Y; held roles from the modifier roles
+ * design, version A: fine and constrain). Pure: the move gesture calls them
+ * on every pointer event, and when a role key changes mid-drag, with the
+ * settings and roles as they are then, so what's drawn is what's dropped.
  */
 
 /** What the drag rules read from the app's settings and the field. */
@@ -21,28 +22,36 @@ export type MoveRules = {
     lockY: boolean;
     /** The grid rounding is measured on; null (no field yet) turns snapping off. */
     grid: Pick<FieldProperties, "centerFrontPoint" | "pixelsPerStep"> | null;
+    /** The Snap toggle; off turns snapping off. On when omitted. */
+    snap?: boolean;
 };
 
-/** Alt moves the selection at this fraction of the pointer's speed. */
+/** Fine moves the selection at this fraction of the pointer's speed. */
 export const PRECISION_SPEED = 0.25;
 
 /**
  * The drag rules as a {@link MoveTransform}, reading `rules` on every call:
  *
  * - Lock X / Lock Y keep that axis where the marchers started.
+ * - Constrain keeps the marchers on one axis too, across or down, whichever
+ *   the drag has gone further along, on top of the locks.
  * - With coordinate rounding on, one marcher snaps onto the rounding grid; a
  *   group moves in whole rounding steps, so each marcher keeps its offset
  *   from the grid.
- * - Shift, or Alt (precision), turns snapping off.
+ * - Fine (precision), or the Snap toggle off, turns snapping off.
  *
- * Alt's quarter speed is in the delta already ({@link precisionDelta}).
+ * Fine's quarter speed is in the delta already ({@link precisionDelta}).
  */
 export function ruledMove(rules: () => MoveRules): MoveTransform {
-    return (delta, pointer, starts) => {
-        const { rounding, lockX, lockY, grid } = rules();
+    return (delta, roles, starts) => {
+        const { rounding, grid, snap: snapOn = true, ...locks } = rules();
+        const across = Math.abs(locks.lockX ? 0 : delta.x);
+        const down = Math.abs(locks.lockY ? 0 : delta.y);
+        const lockX = locks.lockX || (roles.constrain && down > across);
+        const lockY = locks.lockY || (roles.constrain && down <= across);
         const locked = { x: lockX ? 0 : delta.x, y: lockY ? 0 : delta.y };
-        const snap = grid !== null && !pointer.shift && !pointer.alt;
-        if (!snap) return followPointer(locked, pointer, starts);
+        const snap = grid !== null && snapOn && !roles.fine;
+        if (!snap) return followPointer(locked, roles, starts);
 
         if (starts.length === 1) {
             const [start] = starts;
@@ -68,7 +77,7 @@ export function ruledMove(rules: () => MoveRules): MoveTransform {
             y: wholeSteps(locked.y, rounding?.nearestYSteps, grid),
         };
         // As getRoundCoordinates2 does, so float noise never reaches a save
-        return followPointer(stepped, pointer, starts).map(({ id, x, y }) => ({
+        return followPointer(stepped, roles, starts).map(({ id, x, y }) => ({
             id,
             x: thousandths(x),
             y: thousandths(y),
@@ -91,7 +100,7 @@ function wholeSteps(
 }
 
 /**
- * How far a drag has moved the marchers, with Alt at {@link PRECISION_SPEED}.
+ * How far a drag has moved the marchers, with fine at {@link PRECISION_SPEED}.
  * `lag` is how far they've fallen behind the pointer, in field units.
  */
 export type PrecisionTrack = {
@@ -109,17 +118,17 @@ export const PRECISION_START: PrecisionTrack = {
 /**
  * The marchers' delta for a pointer at `pointer` (its delta from the press),
  * after `track`. The distance the pointer moved since the last event counts
- * at a quarter while Alt is down, in full otherwise. So pressing or releasing
- * Alt mid-drag doesn't jump: the marchers carry on from where they are, at
- * the new speed (the drag re-anchors on every event). Without Alt the
- * marchers keep their lag; with none they follow the pointer exactly.
+ * at a quarter while fine is on, in full otherwise. So fine turning on or off
+ * mid-drag doesn't jump: the marchers carry on from where they are, at the
+ * new speed (the drag re-anchors on every event). Without fine the marchers
+ * keep their lag; with none they follow the pointer exactly.
  */
 export function precisionDelta(
     track: PrecisionTrack,
     pointer: FieldPoint,
-    alt: boolean,
+    fine: boolean,
 ): { delta: FieldPoint; track: PrecisionTrack } {
-    const slowed = alt ? 1 - PRECISION_SPEED : 0;
+    const slowed = fine ? 1 - PRECISION_SPEED : 0;
     const lag = {
         x: track.lag.x + (pointer.x - track.pointer.x) * slowed,
         y: track.lag.y + (pointer.y - track.pointer.y) * slowed,
@@ -132,7 +141,7 @@ export function precisionDelta(
 
 /**
  * `track` re-anchored so the marchers' delta is `drawn`, where they're drawn
- * now. The move gesture calls it when Alt is pressed: a drag snapped to the
+ * now. The move gesture calls it when fine turns on: a drag snapped to the
  * grid goes on slowly from the grid point, not from the unsnapped pointer.
  */
 export function anchorAt(

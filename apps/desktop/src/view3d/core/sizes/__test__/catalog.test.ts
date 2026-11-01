@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words demoulin styleplus
 import { describe, expect, it } from "vitest";
 import {

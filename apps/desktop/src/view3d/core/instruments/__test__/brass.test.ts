@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { bounds, triangleCount } from "../mesh";
 import { BRASS_DIMENSIONS, brassModel, type BrassModelId } from "../brass";

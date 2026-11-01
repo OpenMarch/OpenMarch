@@ -100,7 +100,7 @@ export function beginShapeCommand(
     if (!field) return null;
     const before = useShapeToolStore.getState();
     const ctx = shapeContextFor(field);
-    const env = toolEnvFor(field, { shift: false, alt: false });
+    const env = toolEnvFor(field);
     const from = startFrom(kind, ids, field, env);
     if (!from) return null;
     const { start, base } = from;

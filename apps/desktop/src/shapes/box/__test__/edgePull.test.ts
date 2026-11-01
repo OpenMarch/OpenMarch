@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { fieldToFrame, frameToField } from "../../frame/frame";
 import {
@@ -26,14 +27,14 @@ const LINES = {
     x: [-160, -80, 0, 80, 160],
     y: [0, -280, -560],
 };
-/** Alt: fine control, off the half-step ladder, still pulled (owner on #453) */
-const ALT = { snap: false, fine: true };
-/** Cmd/Ctrl: no snapping at all */
+/** fine: off the half-step ladder, still pulled (owner on #453) */
+const FINE = { snap: false, fine: true };
+/** The Snap toggle off: no snapping at all */
 const NO_SNAP = { snap: false, pull: false };
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     fieldLines: LINES,
@@ -129,27 +130,74 @@ describe("stretching a box onto a line", () => {
         onHalves(stretch(three, 3, "e", { x: 83, y: -100 }).across);
     });
 
-    it("with Alt, still lands the edge on the line: 2⅔ exactly (owner on #453)", () => {
-        const alt = stretch(row(7), 7, "e", { x: 162, y: -100 }, ALT);
-        exact(alt.across, (8 / 3) * STEP);
-        exact(edges(alt, 7).right, 160);
+    it("with fine, still lands the edge on the line: 2⅔ exactly (owner on #453)", () => {
+        const fine = stretch(row(7), 7, "e", { x: 162, y: -100 }, FINE);
+        exact(fine.across, (8 / 3) * STEP);
+        exact(edges(fine, 7).right, 160);
         // Away from lines, hundredths rather than half steps
-        const free = stretch(row(7), 7, "e", { x: 131.3, y: -100 }, ALT);
+        const free = stretch(row(7), 7, "e", { x: 131.3, y: -100 }, FINE);
         // 131.3 over 6 gaps, to hundredths of a 10-unit step
         exact(free.across, 21.9);
     });
 
-    it("doesn't pull with Cmd/Ctrl or Shift, or a 45° box with no corner near a line", () => {
-        const mod = stretch(row(7), 7, "e", { x: 162, y: -100 }, NO_SNAP);
-        expect(Math.abs(mod.across - (8 / 3) * STEP)).toBeGreaterThan(1e-3);
-        onHalves(
-            stretch(row(7), 7, "e", { x: 162, y: -100 }, { shift: true })
-                .across,
-        );
+    it("doesn't pull with the Snap toggle off, or a 45° box with no corner near a line", () => {
+        const noSnap = stretch(row(7), 7, "e", { x: 162, y: -100 }, NO_SNAP);
+        expect(Math.abs(noSnap.across - (8 / 3) * STEP)).toBeGreaterThan(1e-3);
         const turned = { ...row(7), rotation: Math.PI / 4 };
         const to = boxHandlePoint(turned, 7, "e");
         const p = stretch(turned, 7, "e", { x: to.x + 1, y: to.y + 1 });
         onHalves(p.across);
+    });
+
+    it("doesn't pull a corner while constrain equalizes the spacings", () => {
+        // 7 files, 2 ranks: the south-east corner moves both ways
+        const block: BoxParams = { ...row(7), files: 7 };
+        const free = stretch(block, 14, "se", { x: 162, y: -77 });
+        exact(free.across, (8 / 3) * STEP);
+        const equal = stretch(
+            block,
+            14,
+            "se",
+            { x: 162, y: -77 },
+            { constrain: true },
+        );
+        expect(Math.abs(equal.across - (8 / 3) * STEP)).toBeGreaterThan(1e-3);
+        onHalves(equal.across);
+        exact(equal.deep, equal.across);
+        // In hundredths a pulled 2⅔ across would show: 27 across and 33 deep make 30 each, not 29.8
+        const fine = stretch(
+            block,
+            14,
+            "se",
+            { x: 162, y: -77 },
+            { ...FINE, constrain: true },
+        );
+        exact(fine.across, 30);
+        exact(fine.deep, 30);
+    });
+
+    it("still pulls a side handle with constrain, which only flips the ratio lock there", () => {
+        // What toolEnvFor gives a $mod side drag: constrain, and the ratio lock flipped on
+        const p = stretch(
+            row(7),
+            7,
+            "e",
+            { x: 162, y: -100 },
+            { constrain: true, ratioLocked: true },
+        );
+        exact(p.across, (8 / 3) * STEP);
+        exact(edges(p, 7).right, 160);
+        // The same drag with the lock button on and no key lands the same
+        const locked = stretch(
+            row(7),
+            7,
+            "e",
+            { x: 162, y: -100 },
+            {
+                ratioLocked: true,
+            },
+        );
+        exact(locked.across, p.across);
     });
 
     it("with the ratio lock at 1, a pulled 2⅔ across makes deep exactly 2⅔", () => {
@@ -231,31 +279,31 @@ describe("drawing a box onto a line", () => {
         exact(edges(p, 7).left, 0);
     });
 
-    it("drawn with Alt, still lands on the line (owner on #453)", () => {
-        const alt = drawBox(
+    it("drawn with fine, still lands on the line (owner on #453)", () => {
+        const fine = drawBox(
             { x: 0, y: -100 },
             { x: 162, y: -99 },
             7,
-            env(ALT),
+            env(FINE),
         )!;
-        exact(alt.across, (8 / 3) * STEP);
+        exact(fine.across, (8 / 3) * STEP);
     });
 
-    it("doesn't pull with Shift or Cmd/Ctrl", () => {
-        const shift = drawBox(
+    it("doesn't pull with constrain or the Snap toggle off", () => {
+        const equal = drawBox(
             { x: 0, y: -100 },
             { x: 162, y: -99 },
             7,
-            env({ shift: true }),
+            env({ constrain: true }),
         )!;
-        onHalves(shift.across);
-        const mod = drawBox(
+        onHalves(equal.across);
+        const noSnap = drawBox(
             { x: 0, y: -100 },
             { x: 162, y: -99 },
             7,
             env(NO_SNAP),
         )!;
-        expect(Math.abs(mod.across - (8 / 3) * STEP)).toBeGreaterThan(1e-3);
+        expect(Math.abs(noSnap.across - (8 / 3) * STEP)).toBeGreaterThan(1e-3);
     });
 });
 
@@ -334,14 +382,14 @@ describe("stretching a turned box onto a line (#446)", () => {
         exact(out.deep, (HD - cross.y) / 2);
     });
 
-    it("steps by half steps away from lines; Alt still pulls, Cmd/Ctrl doesn't", () => {
+    it("steps by half steps away from lines; fine still pulls, the Snap toggle off doesn't", () => {
         const p = turned(15, { x: HW, y: -HD }, { x: 50, y: -150 });
         const to = field(p, { x: HW + 9, y: 0 });
         onHalves(stretch(p, N, "e", to).across);
         const near = turned(15, { x: HW, y: -HD }, { x: 76, y: -150 });
         const u = field(near, { x: HW + 1, y: -HD }).x - 76;
         const t = field(near, { x: HW + 4 / u - 1, y: 0 });
-        expect(hasCorner(stretch(near, N, "e", t, ALT), { x: 80 })).toBe(true);
+        expect(hasCorner(stretch(near, N, "e", t, FINE), { x: 80 })).toBe(true);
         expect(hasCorner(stretch(near, N, "e", t, NO_SNAP), { x: 80 })).toBe(
             false,
         );
@@ -387,5 +435,95 @@ describe("stretching a turned box onto a line (#446)", () => {
                     expect(seen.has(across.toFixed(6)), `${across}`).toBe(true);
             });
         }
+    });
+});
+
+describe("from the center (fromCenter)", () => {
+    const CENTER = { fromCenter: true };
+
+    describe("drawing 2 × 2 with fine, from a press 1 step short of the 45", () => {
+        /** The right edge of a box drawn from 70 to `x` */
+        const right = (x: number) =>
+            edges(
+                drawBox(
+                    { x: 70, y: -100 },
+                    { x, y: -90 },
+                    4,
+                    env({ ...FINE, ...CENTER }),
+                )!,
+                4,
+            ).right;
+
+        it("still lands the dragged edge on the line: one gap is half a gap from the center", () => {
+            exact(right(80.5), 80);
+        });
+
+        it("pulls within a quarter of the edge's own detent, half the reach of a fixed edge", () => {
+            // An interval's half step moves the edge a quarter step from the center: 0.625 here
+            exact(right(80.6), 80);
+            exact(right(81), 81);
+        });
+    });
+
+    it("doesn't pull the far side, mirrored across the press, onto a line", () => {
+        // 4 files from 50: the dragged edge 18½ short of the 50, the far one 1½ past the 40
+        const p = drawBox(
+            { x: 50, y: -100 },
+            { x: 98.5, y: -90 },
+            4,
+            env(CENTER),
+        )!;
+        // On the half steps, as with no line there: 3 steps apart, 5 to 95
+        expect(p.files).toBe(4);
+        expect(p.across).toBe(30);
+        exact(edges(p, 4).left, 5);
+    });
+
+    describe("a 3 × 3 box turned 30°, its se corner dragged", () => {
+        const N = 9;
+        /** 3 × 3, 2 steps apart, turned 30°, around `center` */
+        const turned = (center: XY): BoxParams => ({
+            center,
+            rotation: Math.PI / 6,
+            files: 3,
+            across: 2 * STEP,
+            deep: 2 * STEP,
+        });
+        /** `p` with its se corner dragged to own 20.1, 20.1: a tenth past where it was */
+        const dragged = (p: BoxParams) =>
+            stretch(
+                p,
+                N,
+                "se",
+                frameToField(boxFrame(p, N), { x: 20.1, y: 20.1 }),
+                CENTER,
+            );
+        const corner = (p: BoxParams, own: XY) => {
+            const f = boxFrame(p, N);
+            return frameToField(f, {
+                x: own.x * f.halfWidth,
+                y: own.y * f.halfDepth,
+            });
+        };
+
+        it("lands the moving east edge's other corner on a line near it", () => {
+            // The ne corner just short of the 50; the se corner nowhere near a line
+            const p = turned({ x: 52.5, y: -140 });
+            expect(Math.abs(corner(p, { x: 1, y: -1 }).x - 80)).toBeLessThan(1);
+            const out = dragged(p);
+            exact(corner(out, { x: 1, y: -1 }).x, 80);
+            exact(out.center.x, 52.5);
+            exact(out.center.y, -140);
+        });
+
+        it("doesn't take the middle of a moving edge for a corner", () => {
+            // The middle of the east edge just short of the 50, no corner near a line
+            const p = turned({ x: 62.5, y: -140 });
+            expect(
+                Math.abs(frameToField(boxFrame(p, N), { x: 20, y: 0 }).x - 80),
+            ).toBeLessThan(1);
+            const out = dragged(p);
+            expect([out.across, out.deep]).toEqual([20, 20]);
+        });
     });
 });

@@ -54,7 +54,7 @@ export function carryPivot<P>(before: unknown, after: P): P {
 /**
  * The pivot dragged to `at` on `frame`: onto a marcher ({@link ToolEnv.pivotSnaps}) or one of the
  * frame's 9 points within reach, whichever is nearer (a point when they're the same), or else onto
- * the half-step grid. Alt (`snap` false) leaves it where the pointer is.
+ * the half-step grid. `fine` or the Snap toggle off (`snap` false) leaves it where the pointer is.
  */
 export function snapPivot(frame: ShapeFrame, at: XY, env: ToolEnv): Pivot {
     if (!env.snap) return pivotAt(frame, at);

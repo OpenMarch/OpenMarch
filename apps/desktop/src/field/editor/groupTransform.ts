@@ -6,7 +6,8 @@ import type { FieldRect } from "./selectionArea";
 
 /**
  * Scaling and rotating a selection with the selection box's handles (#198,
- * #189 user stories 46 to 55; rules table: Handles, Shift, Alt). Pure, in
+ * #189 user stories 46 to 55; rules table: Handles; held roles fine,
+ * constrain and from center, version A of the modifier roles design). Pure, in
  * field units except where a rule is on screen. Only positions change: dots
  * and labels are drawn upright and the same size wherever they go.
  */
@@ -18,7 +19,7 @@ export type HandleId = FieldTestHandle;
 export const HANDLE_SIZE = 13;
 /** How far above the box's top middle the rotate handle sits, in CSS px. */
 export const ROTATE_HANDLE_OFFSET = 40;
-/** Rotation snaps to multiples of this many degrees unless Shift or Alt is down. */
+/** Rotation snaps to multiples of this many degrees, or to whole degrees with fine. */
 export const ROTATION_SNAP = 15;
 /**
  * The smallest a handle scales the formation to. A handle dragged past the
@@ -147,13 +148,17 @@ const FACING: Record<Exclude<HandleId, "rot">, FieldPoint> = {
 
 /**
  * The scale a handle's drag gives, for the marchers' bounds `box` and the
- * drag's `delta` in field units. The handle's opposite side or corner stays
- * put (`anchor`), and the handle's side moves with the pointer:
+ * drag's `delta` in field units. The handle's side moves with the pointer,
+ * and the handle's opposite side or corner stays put (`anchor`):
  *
- * - a middle handle scales its own axis only, Shift or not (user story 49);
- * - a corner scales both axes by the same amount, the pointer's progress
- *   along the corner's diagonal, unless `free` (Shift), when each axis
- *   follows the pointer (user story 48);
+ * - with `keepRatio` both axes scale by the same amount: a corner's by the
+ *   pointer's progress along its diagonal, and a middle handle's other axis
+ *   with its own, evenly about the box's center line (owner, #545);
+ * - without it a corner's axes each follow the pointer, and a middle handle
+ *   scales its own axis only (user stories 48, 49; a corner is free by
+ *   default as a box shape's is, owner on #545);
+ * - with `fromCenter` the box's center stays put instead, and the opposite
+ *   side mirrors the handle's, as a box shape's handles do (#510);
  * - neither axis goes below {@link MIN_SCALE}: no flipping (user story 52).
  *
  * An axis the marchers have no extent along (all in one row) can't scale.
@@ -162,24 +167,40 @@ export function scaleFor(
     handle: Exclude<HandleId, "rot">,
     box: FieldRect,
     delta: FieldPoint,
-    free: boolean,
+    keepRatio: boolean,
+    fromCenter = false,
 ): Scale {
     const facing = FACING[handle];
+    // Along each axis the opposite side stays put, or the center: with from
+    // center, and across a middle handle that keeps the ratio
+    const anchorOn = (side: number, low: number, high: number) =>
+        fromCenter || (side === 0 && keepRatio)
+            ? (low + high) / 2
+            : side < 0
+              ? high
+              : low;
     const anchor = {
-        x: facing.x < 0 ? box.right : box.left,
-        y: facing.y < 0 ? box.bottom : box.top,
+        x: anchorOn(facing.x, box.left, box.right),
+        y: anchorOn(facing.y, box.top, box.bottom),
     };
-    // From the anchor to the handle's side, signed
+    // From the anchor to the handle's side, signed: half the box from its center
+    const share = fromCenter ? 0.5 : 1;
     const reach = {
-        x: facing.x * (box.right - box.left),
-        y: facing.y * (box.bottom - box.top),
+        x: facing.x * (box.right - box.left) * share,
+        y: facing.y * (box.bottom - box.top) * share,
     };
     const along = (extent: number, moved: number) =>
         extent === 0 ? 1 : Math.max(MIN_SCALE, (extent + moved) / extent);
 
-    if (facing.x === 0) return { anchor, x: 1, y: along(reach.y, delta.y) };
-    if (facing.y === 0) return { anchor, x: along(reach.x, delta.x), y: 1 };
-    if (free)
+    if (facing.x === 0) {
+        const y = along(reach.y, delta.y);
+        return { anchor, x: keepRatio ? y : 1, y };
+    }
+    if (facing.y === 0) {
+        const x = along(reach.x, delta.x);
+        return { anchor, x, y: keepRatio ? x : 1 };
+    }
+    if (!keepRatio)
         return {
             anchor,
             x: along(reach.x, delta.x),
@@ -234,9 +255,19 @@ export function turnBetween(
           : degrees;
 }
 
-/** `degrees` to the nearest {@link ROTATION_SNAP}, unless `free` (Shift or Alt; user stories 50, 51). */
-export const snapRotation = (degrees: number, free: boolean) =>
-    free ? degrees : Math.round(degrees / ROTATION_SNAP) * ROTATION_SNAP + 0;
+/**
+ * `degrees` to the nearest {@link ROTATION_SNAP}, or to the nearest whole
+ * degree with `fine` (user stories 50, 51); as they are with the Snap toggle
+ * off (`snap: false`).
+ */
+export function snapRotation(
+    degrees: number,
+    { fine, snap = true }: { fine: boolean; snap?: boolean },
+): number {
+    if (!snap) return degrees;
+    const step = fine ? 1 : ROTATION_SNAP;
+    return Math.round(degrees / step) * step + 0;
+}
 
 /**
  * `starts` turned `degrees` clockwise about `center`, to three decimal

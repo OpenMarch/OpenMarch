@@ -33,7 +33,7 @@ const OUTLINE_GAP = 0.22;
 const ENV: ToolEnv = {
     stepPx: 1,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: ({ x, y }) => ({
         x: Math.round(x * 2) / 2,
         y: Math.round(y * 2) / 2,

@@ -256,7 +256,7 @@ export function usePlacedEditTarget(): ShapeEditTarget | null {
                     const params = closedUpParams(
                         box,
                         box.recipe.members.length,
-                        toolEnvFor(field, { shift: false, alt: false }),
+                        toolEnvFor(field),
                     );
                     // Least travel, whatever order it was laid out in (spec #385)
                     if (params !== null)

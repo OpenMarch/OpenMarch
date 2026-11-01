@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeAll, describe, expect, it } from "vitest";
 import { PerspectiveCamera, Scene, SpotLight } from "three";
 import {

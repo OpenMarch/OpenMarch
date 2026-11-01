@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { PIXELS_PER_METER } from "../itemOutlines";
 import { newPropFromDrawing } from "../newPropFromDrawing";

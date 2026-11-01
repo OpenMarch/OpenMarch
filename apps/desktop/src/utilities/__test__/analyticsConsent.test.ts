@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import posthog from "posthog-js";
 import * as Sentry from "@sentry/electron/renderer";

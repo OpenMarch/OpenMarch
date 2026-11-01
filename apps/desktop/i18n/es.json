@@ -14,8 +14,12 @@
             "lockY": "Bloqueo del eje Y",
             "lockYOff": "Desbloquear movimiento Y",
             "lockYOn": "Bloquear movimiento Y",
+            "snapOff": "Desactivar la alineación",
+            "snapOn": "La alineación está desactivada: actívala de nuevo",
             "snapToCustomFraction": "Ajustar a la cuadrícula",
-            "snapToWhole": "Alinear al entero más cercano"
+            "snapToWhole": "Alinear al entero más cercano",
+            "toggleSnap": "Activar o desactivar la alineación",
+            "toggleSnapKeywords": "alinear alineación imán cuadrícula libre snap"
         },
         "batchEdit": {
             "noNextPage": "No se pueden establecer las coordenadas del marchador en la página siguiente. No hay una página siguiente",
@@ -372,6 +376,16 @@
         "videoResolution": "Resolución"
     },
     "field": {
+        "gestureChip": {
+            "equalSpacings": "espaciados iguales",
+            "fine": "fino",
+            "freeRatio": "proporción libre",
+            "fromCenter": "desde el centro",
+            "keepRatio": "mantener proporción",
+            "oneAxis": "un eje",
+            "snapOff": "Sin alineación",
+            "wholeDegrees": "grados enteros"
+        },
         "general": {
             "exportField": "Exportar campo",
             "exportField.tooltip": "Exportar este campo a un archivo para usar en otros proyectos",
@@ -729,8 +743,6 @@
                     "title": "Configuración de campo"
                 },
                 "performers": {
-                    "added": "Intérpretes añadidos",
-                    "addNew": "Añadir intérpretes",
                     "description": "Agrega marchadores ahora o omite y agrégalos más tarde en el editor.",
                     "noneAdded": "Todavía no se han añadido intérpretes.",
                     "title": "Intérpretes"
@@ -1267,6 +1279,10 @@
                 "hide": "Ocultar las rutas desde la bandera de inicio",
                 "show": "Mostrar las rutas desde la bandera de inicio"
             },
+            "snap": {
+                "off": "La alineación está desactivada: actívala de nuevo",
+                "on": "Desactivar la alineación"
+            },
             "pivot": {
                 "aria": "Pivote: {pivot}",
                 "custom": "Pivote: donde se arrastró en el campo",
@@ -1553,9 +1569,14 @@
         "x": "X"
     },
     "shortcutsDialog": {
+        "movement": {
+            "constrain": "Mover en un solo eje al arrastrar",
+            "fineControl": "Control fino al arrastrar marchadores"
+        },
         "shape": {
+            "constrain": "Restringir (espaciados iguales, un eje, invierte el escalado proporcional)",
             "fineControl": "Control fino, que sigue ajustándose a las líneas de yardas y los hashes",
-            "noSnapping": "Arrastrar una forma sin ajuste"
+            "fromCenter": "Dibujar o redimensionar una caja desde el centro"
         }
     },
     "tags": {
@@ -1634,6 +1655,7 @@
             "lockMarchersAriaLabel": "Movimiento del cursor y ajuste de marchadores",
             "placeAllMarchers": "Colocar todos los manifestantes",
             "placeSelectedMarchers": "Colocar manifestantes seleccionados",
+            "snapToggleCaption": "Alineación",
             "toNextPagePositions": "...a posiciones de página siguientes",
             "toPreviousPagePositions": "...a posiciones en la página anterior"
         },
@@ -1664,6 +1686,37 @@
             "shapesOff": "Desactivado",
             "shapesSelected": "Al seleccionar",
             "uiSettingsToolbar": "Barra de herramientas de configuración"
+        }
+    },
+    "touch": {
+        "modifiers": {
+            "add": "Añadir",
+            "addHint": "Añadir: mantén pulsado o toca para dejarlo activo. Tocar marchadores los añade a la selección",
+            "constrain": "Igual",
+            "constrainHint": "Igual: mantén pulsado o toca para dejarlo activo. Espaciados iguales, un solo eje al mover, invierte el escalado proporcional",
+            "explain": {
+                "add": "Toca marchadores para añadirlos o quitarlos.",
+                "constrain": "Espaciados iguales, un solo eje al mover, invierte el escalado proporcional.",
+                "fine": "Los marchadores van despacio, fuera de la cuadrícula. Las formas dejan los medios pasos pero siguen ajustándose a las líneas. Los giros van de grado en grado.",
+                "fromCenter": "Los bloques se dibujan y cambian de tamaño desde su centro.",
+                "grip": "Arrastra para mover.",
+                "help": "Gestos.",
+                "snap": "Alineación con pasos y líneas, activada o desactivada."
+            },
+            "fine": "Fino",
+            "fineHint": "Fino: mantén pulsado o toca para dejarlo activo. Los marchadores van despacio, fuera de la cuadrícula; las formas dejan los medios pasos; los giros van de grado en grado",
+            "fromCenter": "Desde el centro",
+            "fromCenterHint": "Desde el centro: mantén pulsado o toca para dejarlo activo. Los bloques se dibujan y cambian de tamaño desde su centro",
+            "grip": "Mover estos botones",
+            "gripTitle": "Arrastra para mover",
+            "help": "Qué hacen estos botones",
+            "helpList": {
+                "add": "<b>Añadir</b> tocar añade a la selección · <b>Sin alineación</b> mueve libremente",
+                "fine": "<b>Fino</b> arrastres y giros precisos · <b>Igual</b> espaciados iguales",
+                "fromCenter": "<b>Desde el centro</b> los bloques crecen desde el medio",
+                "toggles": "<b>Toca</b> un botón para dejarlo activo, o <b>mantenlo pulsado</b> mientras arrastras"
+            },
+            "noSnap": "Sin alineación"
         }
     },
     "versionCheck": {

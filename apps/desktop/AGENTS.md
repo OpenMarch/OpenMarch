@@ -12,6 +12,10 @@ adds what is specific to the Electron + React app.
 - New desktop e2e files must be `apps/desktop/e2e/tests/*.spec.mts`; Playwright support files in that suite use `.mts`/`.mjs`.
 - Browser scenario tests (`apps/desktop/e2e/browser/tests/*.spec.mts`) run the renderer in headless Chromium against the real database handlers, with no Electron build or display: `pnpm run build:browser`, then `pnpm run e2e:browser`. Prefer them for user workflows inside an open show; keep Electron e2e for what only Electron does. The same scenarios run in Electron with `pnpm run e2e:scenarios:electron`. See `e2e/browser/README.md`.
 
+## UI Text
+
+- Show keyboard shortcuts as keycaps, never as plain text. A shortcut is one `Keycaps` unit, a cap per key joined by "+" (e.g. Ctrl + Z), so never build one from separate caps or write the "+" yourself: build the keys with `formatBindingKeys` (`src/shortcuts/bindings.ts`, so Mac shows ⌘ and others Ctrl) and render them with `Keycaps` (`src/components/ui/Keycaps.tsx`). Inside translated text, put a tag in the string (`zoom out with <keys></keys>`) and render it with `<T params={{ keys: () => <Keycaps … /> }}>`. For an action's own shortcut use `getActionShortcutKeys` (`src/shortcuts/labels.ts`). The timeline's small muted caps (`Keycaps` in `src/components/timeline/ShortcutTooltip.tsx`) follow the same rule.
+
 ## Field
 
 - The field is `src/field/`: a renderer-free editor (`editor/`) and a React Three Fiber renderer (`three/`) with an SVG overlay ([ADR 0005](../../docs/adr/0005-three-field-renderer.md), [docs/field](../../docs/field/README.md)). Keep editing rules in the editor, with Vitest tests there, and check behavior through browser scenarios that read the field test API (`window.fieldTest`) and saved data, never three.js objects.

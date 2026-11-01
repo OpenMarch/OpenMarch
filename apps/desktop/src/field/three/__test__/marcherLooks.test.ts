@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createFieldTheme } from "@openmarch/core";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";

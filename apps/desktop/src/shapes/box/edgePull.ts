@@ -19,7 +19,11 @@ export interface BoxField {
 /** One axis of the box's own: where its fixed edge is, and its edges or moving edge's count */
 export type PullAxis =
     | {
-          /** The edge the drag moves: from the fixed edge at `anchor` toward `to`, `count` files or ranks */
+          /**
+           * The edge the drag moves: from the fixed edge at `anchor` toward `to`, `count` files or
+           * ranks. With `fromCenter`, `anchor` is the box's center and the opposite edge moves the
+           * other way, so the moving edge is half the span from it.
+           */
           readonly moves: true;
           readonly anchor: number;
           readonly to: number;
@@ -42,6 +46,33 @@ export interface Pulled {
 /** Near enough to nothing, for a coefficient (a line the moving edge runs along) */
 const EPS = 1e-9;
 
+/**
+ * How far the box reaches for how far the pointer is from what the drag holds: as far from a
+ * fixed edge, twice as far from the center (`fromCenter`), as far again the other way
+ */
+export const reachOf = (env: ToolEnv): number => (env.fromCenter ? 2 : 1);
+
+/**
+ * A corner's place on one of the box's own axes: `at` plus `follows` times the moving edge (1 on
+ * it, -1 its mirror across the center, 0 a fixed edge)
+ */
+interface Side {
+    readonly at: number;
+    readonly follows: number;
+}
+
+/**
+ * Axis `a`'s sides for the box's corners: the moving edge and the fixed one, or from the center
+ * the moving edge and its mirror; on an axis that doesn't move, both edges
+ */
+function sidesOf(a: PullAxis, env: ToolEnv): Side[] {
+    if (!a.moves) return a.edges.map((at) => ({ at, follows: 0 }));
+    const other = env.fromCenter
+        ? { at: 2 * a.anchor, follows: -1 }
+        : { at: a.anchor, follows: 0 };
+    return [{ at: 0, follows: 1 }, other];
+}
+
 /** A field line a moving corner could land on: `a·ex + b·ey = c` in the moving edges */
 interface Pull {
     readonly corner: number;
@@ -61,10 +92,13 @@ interface Pull {
  * radius on screen, never more than a quarter of its own half-step detent, so half steps win away
  * from lines at any turn (measured on the edge, not the corner: a line the edge runs nearly along
  * would fling it); only a
- * line beyond the fixed edge, at least a half step apart, counts. Each field axis takes the
- * nearest such line, a corner near a line each way landing on their crossing. Alt (fine control)
- * still pulls, the ladder giving hundredths; Cmd/Ctrl (no snapping) and Shift (equal spacings)
- * don't (owner on #453).
+ * line beyond the fixed edge, at least a half step apart, counts. From the center (`fromCenter`)
+ * the moving edge is half the gaps from it, so its detent and reach are half as far; both corners
+ * of each moving edge can still land, by moving that edge (never the far side). Each field axis
+ * takes the nearest such line, a corner near a line each way landing on their crossing. fine
+ * still pulls, the ladder giving hundredths; the Snap toggle off doesn't (owner on #453), nor
+ * constrain while it equalizes a corner's spacings. On a side handle constrain only flips the
+ * ratio lock, so the edge still lands on the line, as with the lock button.
  */
 export function pullEdges(
     x: PullAxis,
@@ -72,34 +106,27 @@ export function pullEdges(
     field: BoxField | undefined,
     env: ToolEnv,
 ): Pulled {
-    // Cmd/Ctrl snaps nothing; Alt keeps the pull, off the ladder (owner on #453)
-    if (!field || env.pull === false || env.shift) return {};
+    // The Snap toggle off snaps nothing; fine keeps the pull, off the ladder (owner on #453)
+    if (!field || env.pull === false) return {};
+    // Equal spacings win over a line, on a draw or a corner (constrain on one axis is the ratio lock)
+    if (env.constrain && x.moves && y.moves) return {};
     const half = env.stepPx / 2;
     const own = [x, y] as const;
-    const gaps = own.map((a) => (a.moves ? a.count - 1 : 0));
+    // The gaps between the anchor and the moving edge: half of them from the center
+    const gaps = own.map((a) => (a.moves ? (a.count - 1) / reachOf(env) : 0));
     const sign = own.map((a) => (a.moves && a.to < a.anchor ? -1 : 1));
-    if (own.every((a, i) => !a.moves || gaps[i]! < 1)) return {};
-    // Where a point is on the field: o + px·u + py·v
-    const o = field.toField({ x: 0, y: 0 });
-    const ux = field.toField({ x: 1, y: 0 });
-    const vy = field.toField({ x: 0, y: 1 });
-    const u = { x: ux.x - o.x, y: ux.y - o.y };
-    const v = { x: vy.x - o.x, y: vy.y - o.y };
+    if (own.every((a, i) => !a.moves || gaps[i]! <= 0)) return {};
     const radiusOf = (i: number) =>
         Math.min(env.pullRadius ?? 0, (gaps[i]! * half) / 4);
     /** Whether `e` puts axis `i`'s moving edge beyond its fixed edge, a half step or more apart */
     const fits = (i: number, e: number) => {
         const a = own[i]!;
-        if (!a.moves || gaps[i]! < 1) return false;
+        if (!a.moves || gaps[i]! <= 0) return false;
         return (
             (e - a.anchor) * sign[i]! > 0 &&
             Math.abs(e - a.anchor) / gaps[i]! >= half - EPS
         );
     };
-    // The box's corners: on each axis the fixed edge and the moving one (null), or both edges
-    const sides = own.map((a) =>
-        a.moves ? [a.anchor, null] : [a.edges[0], a.edges[1]],
-    );
     const raw = own.map((a) => (a.moves ? a.to : 0));
     /** Where axis `i`'s moving edge is on its half-step ladder, or as dragged with no ladder */
     const ladder = (i: number) => {
@@ -110,50 +137,23 @@ export function pullEdges(
             : a.anchor + sign[i]! * gaps[i]! * a.ladder;
     };
     /**
-     * Whether edges `e` land within reach: each moved edge travels no farther than its own pull
-     * radius from where the drag has it (a line the edge runs nearly along would otherwise fling
-     * it, review of #448) and still fits
+     * Whether `e` is within reach for axis `i`'s moving edge: it travels no farther than its own
+     * pull radius from where the drag has it (a line the edge runs nearly along would otherwise
+     * fling it, review of #448) and still fits
      */
+    const near = (i: number, e: number) =>
+        Math.abs(e - raw[i]!) <= radiusOf(i) + EPS && fits(i, e);
+    /** Whether edges `e` land within reach, each moved one */
     const reaches = (e: readonly (number | undefined)[]) =>
         e.every(
-            (v, i) =>
-                v === undefined ||
-                (Number.isFinite(v) &&
-                    Math.abs(v - raw[i]!) <= radiusOf(i) + EPS &&
-                    fits(i, v)),
+            (v, i) => v === undefined || (Number.isFinite(v) && near(i, v)),
         );
-    const pulls: Pull[] = [];
-    let corner = 0;
-    for (const cx of sides[0]!)
-        for (const cy of sides[1]!) {
-            corner++;
-            if (cx !== null && cy !== null) continue;
-            for (const axis of ["x", "y"] as const) {
-                const a = cx === null ? u[axis] : 0;
-                const b = cy === null ? v[axis] : 0;
-                if (Math.abs(a) < EPS && Math.abs(b) < EPS) continue;
-                const fixed =
-                    o[axis] + (cx ?? 0) * u[axis] + (cy ?? 0) * v[axis];
-                // The edge this line moves most is the one it sets
-                const i = Math.abs(a) >= Math.abs(b) ? 0 : 1;
-                for (const line of field.lines[axis]) {
-                    const pull = {
-                        corner,
-                        axis,
-                        a,
-                        b,
-                        c: line - fixed,
-                        i,
-                        travel: 0,
-                    };
-                    // How far the edge travels to put the corner on the line, the other as dragged
-                    const e = solveOne(pull, i, raw[1 - i]!);
-                    const travel = Math.abs(e - raw[i]!);
-                    if (travel <= radiusOf(i) + EPS && fits(i, e))
-                        pulls.push({ ...pull, travel });
-                }
-            }
-        }
+    const pulls = cornerPulls(
+        own.map((a) => sidesOf(a, env)),
+        field,
+        raw,
+        near,
+    );
     if (pulls.length === 0) return {};
     const chosen = choose(pulls);
     const options: (number | undefined)[][] = [];
@@ -180,6 +180,59 @@ export function pullEdges(
             out[i === 0 ? "x" : "y"] = Math.abs(e - a.anchor) / gaps[i]!;
     }
     return out;
+}
+
+/**
+ * The field lines the corners of the moving edges could land on, from `sides` on each of the
+ * box's own axes, each with how far its edge travels from where the drag has it (`raw`) to get
+ * there, the other edge as dragged: those `near` keeps
+ */
+function cornerPulls(
+    sides: readonly (readonly Side[])[],
+    field: BoxField,
+    raw: readonly number[],
+    near: (i: number, e: number) => boolean,
+): Pull[] {
+    // Where a point is on the field: o + px·u + py·v
+    const o = field.toField({ x: 0, y: 0 });
+    const ux = field.toField({ x: 1, y: 0 });
+    const vy = field.toField({ x: 0, y: 1 });
+    const u = { x: ux.x - o.x, y: ux.y - o.y };
+    const v = { x: vy.x - o.x, y: vy.y - o.y };
+    const pulls: Pull[] = [];
+    let corner = 0;
+    for (const sx of sides[0]!)
+        for (const sy of sides[1]!) {
+            corner++;
+            // Only a corner on a moving edge
+            if (sx.follows !== 1 && sy.follows !== 1) continue;
+            for (const axis of ["x", "y"] as const) {
+                const a = sx.follows * u[axis];
+                const b = sy.follows * v[axis];
+                if (Math.abs(a) < EPS && Math.abs(b) < EPS) continue;
+                const fixed = o[axis] + sx.at * u[axis] + sy.at * v[axis];
+                // The edge this line moves most is the one it sets, and only the corner's own: a
+                // line setting the far side, mirrored across the center, isn't taken
+                const i = Math.abs(a) >= Math.abs(b) ? 0 : 1;
+                if ((i === 0 ? sx : sy).follows !== 1) continue;
+                for (const line of field.lines[axis]) {
+                    const pull = {
+                        corner,
+                        axis,
+                        a,
+                        b,
+                        c: line - fixed,
+                        i,
+                        travel: 0,
+                    };
+                    // How far the edge travels to put the corner on the line, the other as dragged
+                    const e = solveOne(pull, i, raw[1 - i]!);
+                    if (near(i, e))
+                        pulls.push({ ...pull, travel: Math.abs(e - raw[i]!) });
+                }
+            }
+        }
+    return pulls;
 }
 
 /** `pull` solved for moving edge `i`, the other at `other` */

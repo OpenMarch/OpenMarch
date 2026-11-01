@@ -1,5 +1,5 @@
 import type { BlockParams } from "../kinds/block";
-import { pullEdges, type BoxField } from "./edgePull";
+import { pullEdges, reachOf, type BoxField } from "./edgePull";
 import type { XY } from "../types";
 import {
     filesDistribution,
@@ -457,7 +457,7 @@ export const halfStep = (env: ToolEnv): number => env.stepPx / 2;
 const TYPED_PER_STEP = 600;
 
 /**
- * An interval as drawn, stretched or typed: half steps, hundredths of a step with Alt (spec #344,
+ * An interval as drawn, stretched or typed: half steps, hundredths of a step with fine (spec #344,
  * #411), or as typed (`typed`: 1/600 of a step, so 1⅔ stays exact, #423); never under half a step
  */
 export function snapInterval(v: number, env: ToolEnv, typed = false): number {
@@ -519,8 +519,8 @@ export interface HeldAxes {
 /**
  * `p` moved so its marchers stand on the grid: the back-left corner snaps (a spot of the full
  * grid, even when the short back rank leaves it empty), and every other marcher follows, the
- * intervals being whole half steps. Unchanged without snap, and for a box turned off the field's
- * axes, whose marchers can't all stand on the grid.
+ * intervals being whole half steps. Unchanged with the Snap toggle off or fine held (`env.snap`
+ * is off), and for a box turned off the field's axes, whose marchers can't all stand on the grid.
  *
  * On a `held` field axis the box isn't moved: the caller has put the marcher being held (a
  * stretch's fixed edge, the pivot's spot) where it was, on the grid if it was. With an interval
@@ -603,21 +603,16 @@ function breakTies(at: XY, snapped: XY, tie: XY, unit: number): XY {
 }
 
 /**
- * A box from its file count and intervals, its edge marchers reaching from `anchor` toward
- * `sign`, filled in `distribution` (Files, Short back when absent)
+ * A box at 0, 0 from its file count and intervals, filled in `distribution` (Files, Short back
+ * when absent)
  */
-function boxFrom(
-    anchor: XY,
-    sign: XY,
+function sizedBox(
     files: number,
     across: number,
     deep: number,
-    n: number,
-    env: ToolEnv,
     distribution?: Distribution,
-    held?: HeldAxes,
 ): BoxParams {
-    const sized = withFileCount(
+    return withFileCount(
         {
             center: { x: 0, y: 0 },
             rotation: 0,
@@ -628,20 +623,43 @@ function boxFrom(
         },
         files,
     );
+}
+
+/**
+ * A box from its file count and intervals, its edge marchers reaching from `anchor` toward
+ * `grow` on each axis, or centered on it where `grow` is 0 (`fromCenter`), filled in
+ * `distribution` (Files, Short back when absent). Its marchers go on the half-step grid, except
+ * on `held` axes (by default those whose marchers aren't half steps apart, pulled onto a line or
+ * fine), which stay as built. Centered, an even count with an odd number of half steps between
+ * puts them between grid spots, so the box goes a quarter step off `anchor`, toward `tie`.
+ */
+function boxFrom(
+    anchor: XY,
+    grow: XY,
+    files: number,
+    across: number,
+    deep: number,
+    n: number,
+    env: ToolEnv,
+    distribution?: Distribution,
+    held?: HeldAxes,
+    tie?: XY,
+): BoxParams {
+    const sized = sizedBox(files, across, deep, distribution);
     const span = spanOf(sized, n);
     const box: BoxParams = {
         ...sized,
         center: {
-            x: anchor.x + (sign.x * (span.files - 1) * across) / 2,
-            y: anchor.y + (sign.y * (span.ranks - 1) * deep) / 2,
+            x: anchor.x + (grow.x * (span.files - 1) * across) / 2,
+            y: anchor.y + (grow.y * (span.ranks - 1) * deep) / 2,
         },
     };
-    return snapToGrid(box, n, env, undefined, held);
+    return snapToGrid(box, n, env, tie, held ?? offHalfSteps(box, n, env));
 }
 
 const signOf = (v: number) => (v < 0 ? -1 : 1);
 
-/** Shift: one interval both ways, between the two the drag gives */
+/** `constrain`: one interval both ways, between the two the drag gives */
 function equalized(across: number, deep: number, env: ToolEnv) {
     const both = snapInterval((across + deep) / 2, env);
     return { across: both, deep: both };
@@ -725,9 +743,10 @@ export function boxInFrame(
 /**
  * The box a drag from `from` to `to` draws for `n` marchers: the files suit the rectangle's
  * proportions, a marcher stands on the corner pressed, and the intervals spread the rest to the
- * opposite edges, in half steps (so the far edge lands near the cursor, not always on it).
- * `previous` is the box this drag drew a moment ago, so its file count holds until another fits
- * clearly better. Undefined for a drag too short to be a box.
+ * opposite edges, in half steps (so the far edge lands near the cursor, not always on it). With
+ * `fromCenter` the press is the box's center and the pointer one corner, the box reaching as far
+ * the other way. `previous` is the box this drag drew a moment ago, so its file count holds until
+ * another fits clearly better. Undefined for a drag too short to be a box.
  */
 export function drawBox(
     from: XY,
@@ -736,8 +755,9 @@ export function drawBox(
     env: ToolEnv,
     previous?: BoxParams,
 ): BoxParams | undefined {
-    const width = Math.abs(to.x - from.x);
-    const depth = Math.abs(to.y - from.y);
+    // From the center, the box is twice as far across as the pointer is from the press
+    const width = reachOf(env) * Math.abs(to.x - from.x);
+    const depth = reachOf(env) * Math.abs(to.y - from.y);
     if (Math.max(width, depth) < halfStep(env)) return undefined;
     const drawn = drawnLayout(width, depth, n, env, previous);
     // One file or one rank has no interval on that axis: it takes the other's, for a later
@@ -746,8 +766,16 @@ export function drawBox(
     // The dragged corner's edges land on field lines near the pointer (#425): the count can
     // change on the way, and the edge stays on its line while the interval follows
     const ladder = {
-        x: spread(Math.abs(to.x - corner.x), drawn.block.across, env),
-        y: spread(Math.abs(to.y - corner.y), drawn.block.deep, env),
+        x: spread(
+            reachOf(env) * Math.abs(to.x - corner.x),
+            drawn.block.across,
+            env,
+        ),
+        y: spread(
+            reachOf(env) * Math.abs(to.y - corner.y),
+            drawn.block.deep,
+            env,
+        ),
     };
     const pull = pullEdges(
         {
@@ -774,10 +802,12 @@ export function drawBox(
     const d = pull.y ?? ladder.y;
     let across = a ?? d ?? snapInterval(Math.max(width, depth), env);
     let deep = d ?? across;
-    if (env.shift) ({ across, deep } = equalized(across, deep, env));
+    if (env.constrain) ({ across, deep } = equalized(across, deep, env));
     return boxFrom(
         corner,
-        { x: signOf(to.x - from.x), y: signOf(to.y - from.y) },
+        env.fromCenter
+            ? { x: 0, y: 0 }
+            : { x: signOf(to.x - from.x), y: signOf(to.y - from.y) },
         drawn.distribution.layout.files,
         across,
         deep,
@@ -786,7 +816,10 @@ export function drawBox(
         drawn.distribution,
         // The pressed corner is on the grid already; with a pulled interval, snapping the
         // back-left corner instead would shift the box off the line (#423)
-        { x: true, y: true },
+        env.fromCenter ? undefined : { x: true, y: true },
+        // From the center, a box between grid spots goes toward the pointer, so a drag one way
+        // and the other draw mirror images
+        { x: Math.sign(to.x - from.x), y: Math.sign(to.y - from.y) },
     );
 }
 
@@ -847,8 +880,10 @@ export function handleDirection(
 
 /**
  * The box with handle `key` dragged to `to`: the opposite corner or side stays put and the
- * intervals stretch, in half steps; files and ranks never change here. An outline moves only the
- * dragged edge, its spacing following and the rest kept exactly (#458, owner on #459).
+ * intervals stretch, in half steps; files and ranks never change here. With `fromCenter` the
+ * center stays put instead, the opposite corner or side moving the other way. An outline moves
+ * only the dragged edge (both ways from the center), its spacing following and the rest kept
+ * exactly (#458, owner on #459).
  */
 export function stretchBox(
     base: BoxParams,
@@ -914,12 +949,34 @@ export function stretchBox(
                 field,
             ),
         // The fixed edge stays where it was, and so does an axis the handle doesn't move whose
-        // marchers aren't half steps apart (#423)
+        // marchers aren't half steps apart (#423). From the center nothing is held on the half
+        // steps: the marchers go on the grid, at most a quarter step off the center.
         (out) => {
             const off = offHalfSteps(out, n, env);
-            return { x: movesX || off.x, y: movesY || off.y };
+            const fixed = !env.fromCenter;
+            return {
+                x: (fixed && movesX) || off.x,
+                y: (fixed && movesY) || off.y,
+            };
         },
+        env.fromCenter ? backToGrid(base, env) : undefined,
     );
+}
+
+/**
+ * Which way a resize about the center moves a box whose marchers land exactly between two grid
+ * spots: with its center a quarter step off the grid already, back to the grid spot the field's
+ * rounding doesn't take it to, so each such center pairs with one spot and resizing again and
+ * again doesn't walk the box away; with its center on the grid, the field's rounding (0)
+ */
+function backToGrid(p: BoxParams, env: ToolEnv): XY {
+    const snapped = env.gridSnap(p.center);
+    const axis = (d: number) =>
+        Math.abs(Math.abs(d) - halfStep(env) / 2) < 1e-6 ? Math.sign(d) : 0;
+    return {
+        x: axis(p.center.x - snapped.x),
+        y: axis(p.center.y - snapped.y),
+    };
 }
 
 /**
@@ -939,6 +996,8 @@ function inBoxAxes(
     ) => BoxParams,
     /** The box's own axes on which `change` holds a marcher where it was, not to be snapped */
     held?: (out: BoxParams) => HeldAxes,
+    /** Which way the result goes on the field's axes when its marchers are between grid spots */
+    tie?: XY,
 ): BoxParams {
     const frame = boxFrame(base, n);
     const flat: BoxParams = {
@@ -963,9 +1022,45 @@ function inBoxAxes(
         placed,
         n,
         env,
-        undefined,
+        tie,
         held && toFieldAxes(placed, n, held(out)),
     );
+}
+
+/**
+ * What a stretch with handle `key` toward `to` holds on each of the box's own axes, `at` among
+ * `edges`, and which way the box grows from there, `grow`: the edge opposite the handle (left for
+ * an east handle), growing toward `to` and past it flipping over; on an axis the handle doesn't
+ * move, the left or back edge, growing as before; or with `fromCenter`, the center, growing both
+ * ways (0), so the box reaches as far again the other way
+ */
+function stretchAnchor(
+    edges: Footprint,
+    key: BoxHandleKey,
+    to: XY,
+    env: ToolEnv,
+): { at: XY; grow: XY } {
+    if (env.fromCenter)
+        return {
+            at: {
+                x: (edges.left + edges.right) / 2,
+                y: (edges.top + edges.bottom) / 2,
+            },
+            grow: { x: 0, y: 0 },
+        };
+    const movesX = key.includes("e") || key.includes("w");
+    const movesY = key.includes("n") || key.includes("s");
+    const at = {
+        x: !movesX || key.includes("e") ? edges.left : edges.right,
+        y: !movesY || key.includes("s") ? edges.top : edges.bottom,
+    };
+    return {
+        at,
+        grow: {
+            x: movesX ? signOf(to.x - at.x) : 1,
+            y: movesY ? signOf(to.y - at.y) : 1,
+        },
+    };
 }
 
 /** {@link stretchBox} in the box's own axes, `to` in them too */
@@ -981,22 +1076,20 @@ function stretchSquare(
     const { files: across0, ranks } = spanOf(base, n);
     const movesX = key.includes("e") || key.includes("w");
     const movesY = key.includes("n") || key.includes("s");
-    // The fixed edge on each axis: the one opposite the handle (left for an east handle)
-    const anchor = {
-        x: key.includes("e") ? f.left : f.right,
-        y: key.includes("s") ? f.top : f.bottom,
-    };
+    const { at, grow } = stretchAnchor(f, key, to, env);
+    // How far the box reaches on an axis, edge to edge, for the pointer there
+    const extent = (a: "x" | "y") => reachOf(env) * Math.abs(to[a] - at[a]);
     // A moving corner lands on a field line near the pointer, at any turn (#425, #446), or the
     // interval steps by halves
     const ladder = {
-        x: movesX ? spread(Math.abs(to.x - anchor.x), across0, env) : undefined,
-        y: movesY ? spread(Math.abs(to.y - anchor.y), ranks, env) : undefined,
+        x: movesX ? spread(extent("x"), across0, env) : undefined,
+        y: movesY ? spread(extent("y"), ranks, env) : undefined,
     };
     const pull = pullEdges(
         movesX
             ? {
                   moves: true,
-                  anchor: anchor.x,
+                  anchor: at.x,
                   to: to.x,
                   count: across0,
                   ladder: ladder.x,
@@ -1005,7 +1098,7 @@ function stretchSquare(
         movesY
             ? {
                   moves: true,
-                  anchor: anchor.y,
+                  anchor: at.y,
                   to: to.y,
                   count: ranks,
                   ladder: ladder.y,
@@ -1022,7 +1115,7 @@ function stretchSquare(
         : null;
     let across = x?.interval || base.across;
     let deep = y?.interval || base.deep;
-    if (env.shift && movesX && movesY)
+    if (env.constrain && movesX && movesY)
         ({ across, deep } = equalized(across, deep, env));
     else if (env.ratioLocked)
         // A pulled value drives the other spacing exactly (#425)
@@ -1030,18 +1123,9 @@ function stretchSquare(
             across: x?.pulled === true,
             deep: y?.pulled === true,
         }));
-    // A side handle keeps the other axis where it was; past the fixed edge, the box flips over it
-    const sign = {
-        x: movesX ? signOf(to.x - anchor.x) : 1,
-        y: movesY ? signOf(to.y - anchor.y) : 1,
-    };
-    const start = {
-        x: movesX ? anchor.x : f.left,
-        y: movesY ? anchor.y : f.top,
-    };
     return boxFrom(
-        start,
-        sign,
+        at,
+        grow,
         filesOf(base),
         across,
         deep,
@@ -1053,8 +1137,9 @@ function stretchSquare(
 
 /**
  * {@link stretchBox} for a spread square to the field, `to` in its axes (#439): the frame follows
- * the handle, the opposite corner or side staying put, its edges on half steps (with snap), and
- * the interval is what fits the count in it. A side handle keeps the other side as it was.
+ * the handle, the opposite corner or side staying put (the center, with `fromCenter`), its edges
+ * on half steps (with snap), and the interval is what fits the count in it. A side handle keeps
+ * the other side as it was.
  */
 function reshapeSpread(
     base: BoxParams,
@@ -1066,17 +1151,25 @@ function reshapeSpread(
     const frame = boxFrame(base, n);
     const movesX = key.includes("e") || key.includes("w");
     const movesY = key.includes("n") || key.includes("s");
-    const anchor = {
-        x: key.includes("e") ? -frame.halfWidth : frame.halfWidth,
-        y: key.includes("s") ? -frame.halfDepth : frame.halfDepth,
-    };
+    // The frame is centered on 0, 0 here
+    const { at, grow } = stretchAnchor(
+        {
+            left: -frame.halfWidth,
+            right: frame.halfWidth,
+            top: -frame.halfDepth,
+            bottom: frame.halfDepth,
+        },
+        key,
+        to,
+        env,
+    );
     const least = halfStep(env);
     const side = (v: number) =>
         Math.max(least, env.snap ? Math.round(v / least) * least : v);
     const w0 = 2 * frame.halfWidth;
     const d0 = 2 * frame.halfDepth;
-    let width = movesX ? side(Math.abs(to.x - anchor.x)) : w0;
-    let depth = movesY ? side(Math.abs(to.y - anchor.y)) : d0;
+    let width = movesX ? side(reachOf(env) * Math.abs(to.x - at.x)) : w0;
+    let depth = movesY ? side(reachOf(env) * Math.abs(to.y - at.y)) : d0;
     // The handle stops where the interval would go under half a step, as at the least size
     const d = boxDistribution(base);
     if (d.mode !== "spread") throw new Error("Not a spread");
@@ -1094,13 +1187,12 @@ function reshapeSpread(
         width = w0 + (width - w0) * lo;
         depth = d0 + (depth - d0) * lo;
     }
-    const next = spreadSized(base, n, width, depth, true);
-    // Grown away from the fixed corner or side, toward the handle (past it, the other way)
+    // Grown from what it holds, toward the handle (past it, the other way)
     return {
-        ...next,
+        ...spreadSized(base, n, width, depth, true),
         center: {
-            x: movesX ? anchor.x + signOf(to.x - anchor.x) * (width / 2) : 0,
-            y: movesY ? anchor.y + signOf(to.y - anchor.y) * (depth / 2) : 0,
+            x: at.x + grow.x * (width / 2),
+            y: at.y + grow.y * (depth / 2),
         },
     };
 }

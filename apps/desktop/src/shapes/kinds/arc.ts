@@ -306,7 +306,7 @@ export const arcKind: ShapeKind<ArcParams> = {
         { key: "move", role: "move", at: mid(p.a, p.b) },
     ],
 
-    drag(p, key, to, { shift }) {
+    drag(p, key, to, { constrain }) {
         if (key === "move") {
             const delta = sub(to, mid(p.a, p.b));
             return { ...p, a: add(p.a, delta), b: add(p.b, delta) };
@@ -319,8 +319,8 @@ export const arcKind: ShapeKind<ArcParams> = {
         const ratio = len(sub(p.b, p.a)) === 0 ? 0 : p.bulge / dist(p.a, p.b);
         const next =
             key === "a"
-                ? { ...p, a: shift ? snapAngle(p.b, to, Math.PI / 4) : to }
-                : { ...p, b: shift ? snapAngle(p.a, to, Math.PI / 4) : to };
+                ? { ...p, a: constrain ? snapAngle(p.b, to, Math.PI / 4) : to }
+                : { ...p, b: constrain ? snapAngle(p.a, to, Math.PI / 4) : to };
         return { ...next, bulge: ratio * dist(next.a, next.b) };
     },
 

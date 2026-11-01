@@ -13,7 +13,7 @@ export { currentShapeField } from "./shapeField";
 
 /**
  * The field as shape kinds see it. Points snap to the View tab's coordinate rounding, like a
- * marcher drag, unless `snap` is false (Alt held, the timeline's no-snap modifier).
+ * marcher drag, unless `snap` is false.
  */
 export function shapeContextFor(field: ShapeField, snap = true): ShapeContext {
     const { fieldProperties } = field;

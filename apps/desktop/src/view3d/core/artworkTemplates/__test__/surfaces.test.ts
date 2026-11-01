@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { catalogDims, catalogEntries, silkDepthM } from "../../sizes/catalog";
 import { enterLength, toMeters } from "../../sizes/units";

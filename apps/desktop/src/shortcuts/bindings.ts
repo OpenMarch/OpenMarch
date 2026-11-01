@@ -207,14 +207,21 @@ function formatKey(key: string, isMac: boolean): string {
     return key;
 }
 
+/** A modifier on its own keycap, e.g. "⌥" on a Mac or "Alt" elsewhere. */
+export function formatModifier(modifier: Modifier, isMac: boolean): string {
+    return isMac
+        ? MAC_MODIFIER_SYMBOLS[modifier]
+        : OTHER_MODIFIER_NAMES[modifier];
+}
+
 /** Each key of a binding as it's shown on its own keycap, e.g. ["⇧", "⌘", "Z"] or ["Ctrl", "Shift", "Z"]. */
 export function formatBindingKeys(binding: string, isMac: boolean): string[] {
     const { modifiers, key } = parseBinding(binding);
     const modifierKeys = isMac
-        ? MAC_SYMBOL_ORDER.filter((m) => modifiers.includes(m)).map(
-              (m) => MAC_MODIFIER_SYMBOLS[m],
+        ? MAC_SYMBOL_ORDER.filter((m) => modifiers.includes(m)).map((m) =>
+              formatModifier(m, true),
           )
-        : modifiers.map((m) => OTHER_MODIFIER_NAMES[m]);
+        : modifiers.map((m) => formatModifier(m, false));
     return [...modifierKeys, formatKey(key, isMac)];
 }
 

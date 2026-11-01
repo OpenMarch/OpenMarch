@@ -17,10 +17,12 @@ import {
 import { seedShowSql, type SeedPosition } from "../seed.mjs";
 
 // The rules that modify a marcher drag (#197; #189 user stories 36 to 40,
-// rules table rows Snapping, Alt, Lock X / Lock Y, Shift): with coordinate
-// rounding on, one marcher snaps onto the rounding grid and a group moves in
-// whole rounding steps; Shift turns snapping off; Alt moves at a quarter of
-// the pointer's speed with snapping off; Lock X and Lock Y hold an axis.
+// rules table rows Snapping, Lock X / Lock Y; keys from the modifier roles
+// design, version A): with coordinate rounding on, one marcher snaps onto the
+// rounding grid and a group moves in whole rounding steps; fine (Shift) moves
+// at a quarter of the pointer's speed with snapping off; constrain (Cmd/Ctrl)
+// keeps a drag on one axis; the Snap toggle off (Shift+M) turns snapping off
+// until the show opens again; Lock X and Lock Y hold an axis.
 //
 // The "change:" scenarios are the rules-table changes decided in #189. Lock X
 // / Lock Y leaving shape handles free is #198's and #204's to pin: there are no shape handles here.
@@ -227,7 +229,7 @@ test("change: rounding on: a dragged group moves in whole rounding steps and kee
     await expectCanvasMatchesShow(show);
 });
 
-test("rounding on: Shift pressed just before the release still drops where the marcher is drawn (user stories 41, 42)", async ({
+test("rounding on: fine (Shift) pressed just before the release still drops where the marcher is drawn (user stories 41, 42)", async ({
     show,
 }) => {
     const { page } = show;
@@ -245,7 +247,28 @@ test("rounding on: Shift pressed just before the release still drops where the m
     await expectCanvasMatchesShow(show);
 });
 
-test("rounding on: Shift during a drag turns snapping off", async ({
+test("change: rounding on: a Shift-press that adds a marcher drags the group snapped, at full speed (the press rule)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await roundToSteps(show);
+    await clickMarcher(page, "T1");
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["T1"]);
+
+    const grid = await fieldGrid(show);
+    const step = grid.pixelsPerStep;
+    const by = { x: 3.25 * step, y: 2.25 * step };
+    // Shift down from the press: it adds T2, so it isn't fine
+    await page.keyboard.down("Shift");
+    await dragLegs(page, "T2", [{ by }]);
+    await page.keyboard.up("Shift");
+
+    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["T1", "T2"]);
+    await expectSaved(show, movedBy([1, 2], { x: 3 * step, y: 2 * step }));
+    await expectCanvasMatchesShow(show);
+});
+
+test("change: rounding on: Alt during a drag no longer turns snapping off", async ({
     show,
 }) => {
     const { page } = show;
@@ -255,13 +278,53 @@ test("rounding on: Shift during a drag turns snapping off", async ({
     const by = offGridDrag(start, { x: 3, y: 2 }, grid);
     const half = { x: by.x / 2, y: by.y / 2 };
 
-    await dragLegs(page, "T2", [{ by: half }, { by: half, hold: ["Shift"] }]);
+    await dragLegs(page, "T2", [{ by: half }, { by: half, hold: ["Alt"] }]);
 
-    await expectSaved(show, withMarcherAt(2, plus(start, by)));
+    await expectSaved(show, withMarcherAt(2, snapped(plus(start, by), grid)));
     await expectCanvasMatchesShow(show);
 });
 
-test("change: rounding on: Alt during a drag moves the marcher at a quarter of the pointer's speed, with snapping off", async ({
+test("change: rounding on: with the Snap toggle off (Shift+M) a dragged marcher isn't rounded, until the show opens again", async ({
+    show,
+}) => {
+    const { page } = show;
+    await roundToSteps(show);
+    const grid = await fieldGrid(show);
+    const start = startOf(2);
+    const by = offGridDrag(start, { x: 3, y: 2 }, grid);
+
+    await page.keyboard.press("Shift+M");
+    await dragLegs(page, "T2", [{ by }]);
+
+    const free = plus(start, by);
+    await expectSaved(show, withMarcherAt(2, free));
+    await expectCanvasMatchesShow(show);
+
+    // Never saved: opened again, the show snaps again (1½ steps, well past the click slop)
+    await roundToSteps(show);
+    const further = { x: 1.5 * grid.pixelsPerStep, y: 0 };
+    await dragLegs(page, "T2", [{ by: further }]);
+    await expectSaved(
+        show,
+        withMarcherAt(2, snapped(plus(free, further), grid)),
+    );
+    await expectCanvasMatchesShow(show);
+});
+
+test("change: constrain (Cmd/Ctrl) during a drag keeps the marcher on the axis it has gone further along", async ({
+    show,
+}) => {
+    const { page } = show;
+
+    await dragLegs(page, "T2", [
+        { by: { x: 60, y: 20 }, hold: ["ControlOrMeta"] },
+    ]);
+
+    await expectSaved(show, movedBy([2], { x: 60, y: 0 }));
+    await expectCanvasMatchesShow(show);
+});
+
+test("change: rounding on: fine (Shift) during a drag moves the marcher at a quarter of the pointer's speed, with snapping off", async ({
     show,
 }) => {
     const { page } = show;
@@ -272,13 +335,13 @@ test("change: rounding on: Alt during a drag moves the marcher at a quarter of t
     const moved = offGridDrag(start, { x: 1, y: 1 }, grid);
     const pointer = { x: moved.x * 4, y: moved.y * 4 };
 
-    await dragLegs(page, "T2", [{ by: pointer, hold: ["Alt"] }]);
+    await dragLegs(page, "T2", [{ by: pointer, hold: ["Shift"] }]);
 
     await expectSaved(show, withMarcherAt(2, plus(start, moved)));
     await expectCanvasMatchesShow(show);
 });
 
-test("change: rounding on: pressing Alt mid-drag goes on slowly from where the marcher is drawn, without a jump", async ({
+test("change: rounding on: pressing Shift mid-drag goes on slowly from where the marcher is drawn, without a jump", async ({
     show,
 }) => {
     const { page } = show;
@@ -289,13 +352,12 @@ test("change: rounding on: pressing Alt mid-drag goes on slowly from where the m
     const onTheGrid = snapped(plus(start, first), grid);
     const slow = { x: 8, y: -6 };
 
-    let drawnAtAlt: { x: number; y: number } | null = null;
+    let drawnAtFine: { x: number; y: number } | null = null;
     await dragLegs(page, "T2", [{ by: first }], async () => {
-        await page.keyboard.down("Alt");
-        // A pointer move with Alt down and no distance: no jump
+        // Shift down with no pointer move: redrawn where it is, no jump
+        await page.keyboard.down("Shift");
+        drawnAtFine = await drawnPosition(page, "T2");
         const at = await screenOf(page, "T2");
-        await page.mouse.move(at.x, at.y);
-        drawnAtAlt = await drawnPosition(page, "T2");
         const scale = await canvasScale(page);
         await page.mouse.move(
             at.x + slow.x * 4 * scale,
@@ -303,11 +365,11 @@ test("change: rounding on: pressing Alt mid-drag goes on slowly from where the m
             { steps: 8 },
         );
     });
-    await page.keyboard.up("Alt");
+    await page.keyboard.up("Shift");
 
     expect(
-        near(drawnAtAlt!, onTheGrid),
-        JSON.stringify({ drawnAtAlt, onTheGrid }),
+        near(drawnAtFine!, onTheGrid),
+        JSON.stringify({ drawnAtFine, onTheGrid }),
     ).toBe(true);
     await expectSaved(show, withMarcherAt(2, plus(onTheGrid, slow)));
     await expectCanvasMatchesShow(show);

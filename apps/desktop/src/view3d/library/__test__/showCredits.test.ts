@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { creditText, licenseLabel, showCredits } from "../showCredits";
 import type { ShowLibraryItem } from "@/db-functions/showLibrary";

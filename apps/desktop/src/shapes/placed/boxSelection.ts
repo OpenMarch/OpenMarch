@@ -38,14 +38,16 @@ const boxOf = (marcherId: number): PlacedBox | undefined =>
  * The selection a press on marcher `hit` makes when placed boxes are on the field
  * (`FieldEditorPorts.pressSelection`), Figma-style (07-placed-boxes.md, `clickOnMarcher`): a
  * member selects its whole box, Shift adds or removes a whole box, and inside a box (after a
- * double click) Shift toggles one marcher. Null leaves the press to the editor's rules. Also
- * keeps which box you're inside. Off when the View tab's Shapes setting is Off, during playback
- * and while the Shape tool is open (`useBoxSelection` says so).
+ * double click) Shift toggles one marcher. A press that reaches inside ($mod, `reachInside`) goes
+ * inside the box and is then a press inside it: the editor picks the marcher. Null leaves the
+ * press to the editor's rules. Also keeps which box you're inside. Off when the View tab's Shapes
+ * setting is Off, during playback and while the Shape tool is open (`useBoxSelection` says so).
  */
 export function boxPressSelection(
     hit: number,
     shift: boolean,
     selection: readonly number[],
+    reachInside = false,
 ): readonly number[] | null {
     const state = useBoxSelectionStore.getState();
     if (!state.enabled) return null;
@@ -54,6 +56,7 @@ export function boxPressSelection(
     const out = clickOnMarcher({
         marcherId: hit,
         shift,
+        reachInside,
         selected,
         box: box && {
             id: box.recipe.id,
@@ -69,6 +72,18 @@ export function boxPressSelection(
         if (members.every((id) => selected.has(id))) return [...selection];
     }
     return out.select;
+}
+
+/**
+ * Whether a press on marcher `hit` can reach inside ($mod, `FieldEditorPorts.reachesInside`): it's
+ * a member of a placed box on the field while box selection is on, and you're not inside that box
+ * already, where a click picks one marcher anyway and $mod stays `constrain`
+ */
+export function canReachInside(hit: number): boolean {
+    const { enabled, inside } = useBoxSelectionStore.getState();
+    if (!enabled) return false;
+    const box = boxOf(hit);
+    return box !== undefined && box.recipe.id !== inside;
 }
 
 /** Goes inside the box `marcherId` is in, selecting just that marcher */

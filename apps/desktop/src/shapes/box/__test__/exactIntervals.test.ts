@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { BOX_PARAMS } from "../boxParams";
 import {
@@ -21,7 +22,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     ...over,
@@ -54,8 +55,8 @@ describe("typing a spacing that isn't a half step", () => {
         expect(ACROSS!.display(p, 9, STEP)).toBe("1.37");
     });
 
-    it("keeps Alt drags on hundredths", () => {
-        // 7 px with Alt: 7 hundredths more
+    it("keeps fine drags on hundredths", () => {
+        // 7 px with fine: 7 hundredths more
         const p = scrubSpacing(box, "across", 7, 9, env({ snap: false }));
         exact(p.across, 2.07 * STEP);
     });

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import MarcherPage from "@/global/classes/MarcherPage";
 import {
     alignHorizontally,

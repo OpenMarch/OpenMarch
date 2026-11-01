@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { Tolgee, FormatSimple } from "@tolgee/react";
 import { FormatIcu } from "@tolgee/format-icu";

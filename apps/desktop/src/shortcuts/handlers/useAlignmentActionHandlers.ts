@@ -63,6 +63,10 @@ export function useAlignmentActionHandlers() {
         setUiSettings({ ...uiSettings, lockY: !uiSettings.lockY }, "lockY");
     });
 
+    useActionHandler("toggleSnap", () =>
+        useUiSettingsStore.getState().setSnap(),
+    );
+
     useActionHandler(
         "alignVertically",
         () => {

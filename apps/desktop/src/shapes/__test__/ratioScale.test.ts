@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxTool } from "../box/boxTool";
 import { boxFrame, type BoxParams } from "../box/boxGeometry";
@@ -99,7 +100,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     ...over,
@@ -254,7 +255,7 @@ describe("scrubbing Expand", () => {
         expect(Math.min(...tiny)).toBeGreaterThanOrEqual(0.5 - 1e-9);
     });
 
-    it("with Alt, moves the driver in hundredths, the ratio kept", () => {
+    it("with fine, moves the driver in hundredths, the ratio kept", () => {
         const base = p();
         const [a, d] = spacings(
             scrubKeepingRatio(
@@ -271,7 +272,7 @@ describe("scrubbing Expand", () => {
         expect(a / d).toBeCloseTo(2 / 3, 2);
     });
 
-    it("with Cmd or Ctrl, scales freely", () => {
+    it("with the Snap toggle off, scales freely", () => {
         const base = p();
         const [, d] = spacings(
             scrubKeepingRatio(
@@ -280,7 +281,7 @@ describe("scrubbing Expand", () => {
                 N,
                 3,
                 "c",
-                env({ snap: false, mod: true }),
+                env({ snap: false, pull: false }),
             ),
             N,
         );

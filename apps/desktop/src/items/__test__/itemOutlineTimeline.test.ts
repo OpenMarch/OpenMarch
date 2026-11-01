@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { endlessIdOf } from "@/timeline/endlessTimeline";
 import { describe, expect, it } from "vitest";
 import type { DatabaseItemGeometry } from "@/db-functions/items";

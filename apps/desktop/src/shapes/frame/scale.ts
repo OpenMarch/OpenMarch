@@ -161,8 +161,8 @@ const EXPAND_PX = SPACING_RATE.px;
 
 /**
  * Expand or Shrink dragged `distance` px (positive for bigger) from `base`, the shape at the
- * press: one step of the rule per 8 px, stopping at the smallest it can go. With Alt (`env.fine`)
- * the driver moves a hundredth of a step per px, with Cmd or Ctrl (`env.mod`) freely, the other
+ * press: one step of the rule per 8 px, stopping at the smallest it can go. With `fine` the driver
+ * moves a hundredth of a step per px, with the Snap toggle off (`env.pull` false) freely, the other
  * in proportion either way. Around `pivot`; `base` where it can't change.
  */
 export function scrubKeepingRatio(
@@ -173,13 +173,13 @@ export function scrubKeepingRatio(
     pivot: Pivot,
     env: ToolEnv,
 ): unknown {
-    if (env.fine || env.mod) {
+    if (env.fine || env.pull === false) {
         const px = Math.trunc(distance);
         const continuous = (steps: readonly number[]) => {
             const driver = steps[ratioDriver(steps)]!;
-            const to = env.mod
-                ? driver + (px * SPACING_RATE.step) / EXPAND_PX
-                : driver + px * SPACING_FINE_RATE.step;
+            const to = env.fine
+                ? driver + px * SPACING_FINE_RATE.step
+                : driver + (px * SPACING_RATE.step) / EXPAND_PX;
             // As small as it goes: the smallest spacing at half a step
             const floor = (SCALE_STEP * driver) / Math.min(...steps);
             const scale = Math.max(to, floor) / driver;

@@ -14,8 +14,12 @@
             "lockY": "Y 軸 をロック",
             "lockYOff": "Y方向の移動のロックを解除",
             "lockYOn": "Y の動きをロック",
+            "snapOff": "スナップをオフ",
+            "snapOn": "スナップはオフです：オンに戻す",
             "snapToCustomFraction": "グリッドにスナップ",
-            "snapToWhole": "最も近い 整数 に スナップ"
+            "snapToWhole": "最も近い 整数 に スナップ",
+            "toggleSnap": "スナップの切り替え",
+            "toggleSnapKeywords": "スナップ マグネット グリッド snap"
         },
         "batchEdit": {
             "noNextPage": "進行中の座標を 次のページには設定できません 。次のページがありません",
@@ -372,6 +376,16 @@
         "videoResolution": "解像度"
     },
     "field": {
+        "gestureChip": {
+            "equalSpacings": "等間隔",
+            "fine": "微調整",
+            "freeRatio": "比率フリー",
+            "fromCenter": "中心から",
+            "keepRatio": "比率を保持",
+            "oneAxis": "1軸",
+            "snapOff": "スナップオフ",
+            "wholeDegrees": "1度単位"
+        },
         "general": {
             "exportField": "フィールドをエクスポート",
             "exportField.tooltip": "このフィールドをファイルにエクスポートして、他のプロジェクトで使用",
@@ -729,8 +743,6 @@
                     "title": "フィールド セット アップ"
                 },
                 "performers": {
-                    "added": "出演者 を追加済み",
-                    "addNew": "出演者 を追加",
                     "description": "今すぐ マーチャーズ を追加するか、スキップして後でエディター に追加します。",
                     "noneAdded": "まだ出演者 は 追加されていません。",
                     "title": "出演者"
@@ -1267,6 +1279,10 @@
                 "hide": "スタートフラグからのパスを非表示",
                 "show": "スタートフラグからのパスを表示"
             },
+            "snap": {
+                "off": "スナップはオフです：オンに戻す",
+                "on": "スナップをオフ"
+            },
             "pivot": {
                 "aria": "ピボット：{pivot}",
                 "custom": "ピボット：フィールド上でドラッグした位置",
@@ -1553,9 +1569,14 @@
         "x": "X"
     },
     "shortcutsDialog": {
+        "movement": {
+            "constrain": "ドラッグ中に一軸だけ移動",
+            "fineControl": "マーチャーをドラッグ中の細かい調整"
+        },
         "shape": {
+            "constrain": "制約（等間隔・一軸・比率固定の切り替え）",
             "fineControl": "細かく調整（ヤードラインとハッシュには引き続きスナップ）",
-            "noSnapping": "スナップせずに形状をドラッグ"
+            "fromCenter": "中心からボックスを描く・リサイズ"
         }
     },
     "tags": {
@@ -1634,6 +1655,7 @@
             "lockMarchersAriaLabel": "カーソル 移動 と マーチャー スナップ",
             "placeAllMarchers": "すべての行進者を配置",
             "placeSelectedMarchers": "選択された行進者を配置",
+            "snapToggleCaption": "スナップ",
             "toNextPagePositions": "次の ページ位置 に進む",
             "toPreviousPagePositions": "...前のページ位置へ"
         },
@@ -1664,6 +1686,37 @@
             "shapesOff": "オフ",
             "shapesSelected": "選択時",
             "uiSettingsToolbar": "UI 設定 ツールバー"
+        }
+    },
+    "touch": {
+        "modifiers": {
+            "add": "追加",
+            "addHint": "追加：長押し、またはタップでオンのまま。マーチャーをタップすると選択に追加",
+            "constrain": "均等",
+            "constrainHint": "均等：長押し、またはタップでオンのまま。均等な間隔、移動時は1軸のみ、比率固定の拡大縮小を切り替え",
+            "explain": {
+                "add": "マーチャーをタップして追加・削除。",
+                "constrain": "均等な間隔、移動時は1軸のみ、比率固定の拡大縮小を切り替え。",
+                "fine": "マーチャーはゆっくり動き、グリッドから外れます。図形は半歩から外れますが、線には引き続きスナップします。回転は1度単位です。",
+                "fromCenter": "ブロックを中心から描画・サイズ変更。",
+                "grip": "ドラッグで移動。",
+                "help": "ジェスチャー。",
+                "snap": "ステップや線へのスナップのオン・オフ。"
+            },
+            "fine": "微調整",
+            "fineHint": "微調整：長押し、またはタップでオンのまま。マーチャーはゆっくりグリッド外へ、図形は半歩から外れ、回転は1度単位",
+            "fromCenter": "中心から",
+            "fromCenterHint": "中心から：長押し、またはタップでオンのまま。ブロックを中心から描画・サイズ変更",
+            "grip": "ボタンを移動",
+            "gripTitle": "ドラッグで移動",
+            "help": "ボタンの説明",
+            "helpList": {
+                "add": "<b>追加</b> タップで選択に追加 · <b>スナップオフ</b> 自由に移動",
+                "fine": "<b>微調整</b> 正確なドラッグと回転 · <b>均等</b> 間隔をそろえる",
+                "fromCenter": "<b>中心から</b> ブロックが中央から広がる",
+                "toggles": "ボタンを<b>タップ</b>でオンのまま、ドラッグ中は<b>長押し</b>"
+            },
+            "noSnap": "スナップオフ"
         }
     },
     "versionCheck": {

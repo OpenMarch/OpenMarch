@@ -1,5 +1,6 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
-import type { FieldPointer } from "../fieldEditor";
+import type { Roles } from "@/input/modifierRoles";
 import type { MarcherPosition } from "../moveGesture";
 import {
     PRECISION_START,
@@ -25,15 +26,11 @@ const rules = (overrides: Partial<MoveRules> = {}): MoveRules => ({
     ...overrides,
 });
 
-const pointer = (modifiers: Partial<FieldPointer> = {}): FieldPointer => ({
-    field: { x: 0, y: 0 },
-    screen: { x: 0, y: 0 },
-    button: 0,
-    shift: false,
-    alt: false,
-    ctrl: false,
-    meta: false,
-    ...modifiers,
+const roles = (held: Partial<Roles> = {}): Roles => ({
+    fine: false,
+    constrain: false,
+    fromCenter: false,
+    ...held,
 });
 
 /** Three marchers off the grid: 3 units right of it and 4 below. */
@@ -47,8 +44,8 @@ const move = (
     overrides: Partial<MoveRules>,
     delta: { x: number; y: number },
     starts: MarcherPosition[],
-    modifiers?: Partial<FieldPointer>,
-) => ruledMove(() => rules(overrides))(delta, pointer(modifiers), starts);
+    held?: Partial<Roles>,
+) => ruledMove(() => rules(overrides))(delta, roles(held), starts);
 
 describe("ruledMove snapping (user stories 36 and 37)", () => {
     it("snaps a single marcher onto the rounding grid", () => {
@@ -100,7 +97,7 @@ describe("ruledMove snapping (user stories 36 and 37)", () => {
                 rounding: { nearestXSteps: 0.1, nearestYSteps: 0 },
                 grid: { ...GRID, pixelsPerStep: 11.25 },
             }),
-        )({ x: 3.4, y: 0.1 + 0.2 }, pointer(), [
+        )({ x: 3.4, y: 0.1 + 0.2 }, roles(), [
             { id: 1, x: 0.1, y: 0.2 },
             { id: 2, x: 10, y: 10 },
         ]);
@@ -148,26 +145,89 @@ describe("ruledMove snapping (user stories 36 and 37)", () => {
     });
 });
 
-describe("ruledMove modifiers", () => {
-    it("turns snapping off with Shift (user story 38)", () => {
-        expect(
-            move({}, { x: 26, y: -12 }, [GROUP[0]], { shift: true }),
-        ).toEqual([{ id: 1, x: 529, y: 392 }]);
-        expect(move({}, { x: 26, y: -12 }, GROUP, { shift: true })).toEqual([
+describe("ruledMove roles (version A)", () => {
+    it("turns snapping off with fine (user story 39)", () => {
+        expect(move({}, { x: 26, y: -12 }, [GROUP[0]], { fine: true })).toEqual(
+            [{ id: 1, x: 529, y: 392 }],
+        );
+        expect(move({}, { x: 26, y: -12 }, GROUP, { fine: true })).toEqual([
             { id: 1, x: 529, y: 392 },
             { id: 2, x: 549, y: 392 },
             { id: 3, x: 539, y: 422 },
         ]);
     });
 
-    it("turns snapping off with Alt (user story 39)", () => {
-        expect(move({}, { x: 26, y: -12 }, [GROUP[0]], { alt: true })).toEqual([
-            { id: 1, x: 529, y: 392 },
-        ]);
-        expect(move({}, { x: 26, y: -12 }, GROUP, { alt: true })).toEqual([
+    it("snaps with constrain or from center held: only fine and the Snap toggle turn it off", () => {
+        expect(
+            move({}, { x: 26, y: -12 }, [GROUP[0]], { fromCenter: true }),
+        ).toEqual([{ id: 1, x: 530, y: 390 }]);
+        expect(
+            move({}, { x: 26, y: -2 }, [GROUP[0]], { constrain: true }),
+        ).toEqual([{ id: 1, x: 530, y: 404 }]);
+    });
+
+    it("turns snapping off with the Snap toggle off", () => {
+        expect(move({ snap: false }, { x: 26, y: -12 }, GROUP)).toEqual([
             { id: 1, x: 529, y: 392 },
             { id: 2, x: 549, y: 392 },
             { id: 3, x: 539, y: 422 },
+        ]);
+    });
+
+    it("keeps to the axis the drag has gone further along with constrain", () => {
+        expect(
+            move({ rounding: undefined }, { x: 26, y: -12 }, GROUP, {
+                constrain: true,
+            }),
+        ).toEqual([
+            { id: 1, x: 529, y: 404 },
+            { id: 2, x: 549, y: 404 },
+            { id: 3, x: 539, y: 434 },
+        ]);
+        expect(
+            move({ rounding: undefined }, { x: 6, y: -32 }, GROUP, {
+                constrain: true,
+            }),
+        ).toEqual([
+            { id: 1, x: 503, y: 372 },
+            { id: 2, x: 523, y: 372 },
+            { id: 3, x: 513, y: 402 },
+        ]);
+        // Snapped, the kept axis lands on the grid and the other stays put
+        expect(
+            move({}, { x: 6, y: -32 }, [GROUP[0]], { constrain: true }),
+        ).toEqual([{ id: 1, x: 503, y: 370 }]);
+    });
+
+    it("constrains on top of Lock X and Lock Y", () => {
+        // Lock X leaves only Y to keep, however far the pointer went across
+        expect(
+            move(
+                { lockX: true, rounding: undefined },
+                { x: 26, y: -12 },
+                GROUP,
+                {
+                    constrain: true,
+                },
+            ),
+        ).toEqual([
+            { id: 1, x: 503, y: 392 },
+            { id: 2, x: 523, y: 392 },
+            { id: 3, x: 513, y: 422 },
+        ]);
+        expect(
+            move(
+                { lockY: true, rounding: undefined },
+                { x: 6, y: -32 },
+                GROUP,
+                {
+                    constrain: true,
+                },
+            ),
+        ).toEqual([
+            { id: 1, x: 509, y: 404 },
+            { id: 2, x: 529, y: 404 },
+            { id: 3, x: 519, y: 434 },
         ]);
     });
 });
@@ -199,7 +259,7 @@ describe("ruledMove locks (user story 40)", () => {
         ]);
         expect(
             move({ lockY: true }, { x: 26, y: -12 }, [GROUP[0]], {
-                shift: true,
+                fine: true,
             }),
         ).toEqual([{ id: 1, x: 529, y: 404 }]);
     });
@@ -210,18 +270,18 @@ describe("ruledMove locks (user story 40)", () => {
     });
 });
 
-describe("precisionDelta (Alt at a quarter speed)", () => {
+describe("precisionDelta (fine at a quarter speed)", () => {
     /** Runs pointer deltas through the tracker, returning each delta out. */
     const run = (steps: [number, number, boolean][]) => {
         let track: PrecisionTrack = PRECISION_START;
-        return steps.map(([x, y, alt]) => {
-            const moved = precisionDelta(track, { x, y }, alt);
+        return steps.map(([x, y, fine]) => {
+            const moved = precisionDelta(track, { x, y }, fine);
             track = moved.track;
             return moved.delta;
         });
     };
 
-    it("follows the pointer exactly without Alt", () => {
+    it("follows the pointer exactly without fine", () => {
         expect(
             run([
                 [0.1, 0.2, false],
@@ -233,7 +293,7 @@ describe("precisionDelta (Alt at a quarter speed)", () => {
         ]);
     });
 
-    it("moves a quarter as far as the pointer with Alt", () => {
+    it("moves a quarter as far as the pointer with fine", () => {
         expect(
             run([
                 [40, -20, true],
@@ -245,13 +305,13 @@ describe("precisionDelta (Alt at a quarter speed)", () => {
         ]);
     });
 
-    it("doesn't jump when Alt is pressed or released, and keeps the lag after", () => {
+    it("doesn't jump when fine turns on or off, and keeps the lag after", () => {
         expect(
             run([
                 [40, 0, false],
-                [40, 0, true], // Alt pressed: same place
+                [40, 0, true], // fine on: same place
                 [80, 0, true], // +40 counts as +10
-                [80, 0, false], // Alt released: same place
+                [80, 0, false], // fine off: same place
                 [100, 0, false], // full speed, 30 behind the pointer
             ]),
         ).toEqual([

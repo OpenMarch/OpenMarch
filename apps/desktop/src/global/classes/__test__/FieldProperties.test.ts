@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
 import { FieldProperties } from "@openmarch/core";
 import { getFieldProperties } from "../FieldProperties";

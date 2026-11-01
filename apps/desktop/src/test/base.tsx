@@ -23,14 +23,9 @@ import {
     pageEraBlankPath,
     timelineFixtureMode,
 } from "./timelineMode";
+import { copyCachedDatabase } from "./fixtureCache";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
-import { JSX } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { IsPlayingProvider } from "@/context/IsPlayingContext";
-import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
-import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
-import { SelectedPageProvider } from "@/context/SelectedPageContext";
+import type { JSX } from "react";
 import { createRendererSqlProxyQueue } from "@/global/database/sqlProxyQueue";
 import { createSqlReadBatch } from "@/global/database/sqlReadBatch";
 import {
@@ -74,10 +69,7 @@ const getTempDotsPath = (task: Readonly<{ id: string }>) => {
     return path.join(tempDotsDir, `${process.pid}-${taskId}.tmp.dots`);
 };
 
-const getTempDb = async (task: Readonly<{ id: string }>) => {
-    // Get the path to the temporary database file
-    const dbPath = getTempDotsPath(task);
-
+const getTempDb = async (dbPath: string) => {
     // ✅ Assert database file exists
     if (!fs.existsSync(dbPath)) {
         throw new Error(`Expected DB file at ${dbPath} to exist`);
@@ -127,19 +119,24 @@ const loadSqlIntoDatabase = async (
     // converted, so the page-era file gets every fixture's SQL so far, in order
     const loaded = [...(loadedSqlFiles.get(task.id) ?? []), sqlPath];
     loadedSqlFiles.set(task.id, loaded);
-    await fs.copyFile(await pageEraBlankPath(), getTempDotsPath(task));
-    const { db, dbPath, orm } = await getTempDb(task);
+    const timeline = timelineFixtureMode();
+    const key = `${timeline ? "timeline" : "page"}-${loaded.map((file) => path.basename(file, ".sql")).join("+")}`;
+    await copyCachedDatabase(key, getTempDotsPath(task), async (dbPath) => {
+        await fs.copyFile(await pageEraBlankPath(), dbPath);
+        const { db, orm } = await getTempDb(dbPath);
 
-    // drop all triggers
-    await dropAllUndoTriggers(orm as unknown as any);
-    for (const file of loaded) await db.exec(fs.readFileSync(file, "utf-8"));
-    await createAllUndoTriggers(orm as unknown as any);
-    const updatedDbBuffer = db.export();
-    fs.writeFileSync(dbPath, updatedDbBuffer);
-    db.close();
-    // Like opening an older show in the app: convert it to timelines (see ./timelineMode.ts)
-    if (timelineFixtureMode()) await convertFixtureFile(dbPath);
-    else addLaterMarcherColumns(dbPath);
+        // drop all triggers
+        await dropAllUndoTriggers(orm as unknown as any);
+        for (const file of loaded)
+            await db.exec(fs.readFileSync(file, "utf-8"));
+        await createAllUndoTriggers(orm as unknown as any);
+        const updatedDbBuffer = db.export();
+        fs.writeFileSync(dbPath, updatedDbBuffer);
+        db.close();
+        // Like opening an older show in the app: convert it to timelines (see ./timelineMode.ts)
+        if (timeline) await convertFixtureFile(dbPath);
+        else addLaterMarcherColumns(dbPath);
+    });
 };
 
 /********* FIXTURES *********/
@@ -221,7 +218,8 @@ type DbTestAPI = {
 /**
  * Base test fixture that sets up a temporary database file before each test function.
  *
- * The database file is created by copying the blank database file from the migrations folder.
+ * The database file is a copy of the blank database file from the migrations folder with the
+ * undo triggers added, built once per run (./fixtureCache.ts).
  * After each test function, the database file is deleted.
  */
 const baseFixture = baseTest.extend<BaseApi>({
@@ -235,15 +233,21 @@ const baseFixture = baseTest.extend<BaseApi>({
             const tempDatabaseFile = getTempDotsPath(task);
 
             try {
-                await fs.copyFile(blankDatabaseFile, tempDatabaseFile);
-                const { orm, db } = await getTempDb(task);
+                await copyCachedDatabase(
+                    "blank",
+                    tempDatabaseFile,
+                    async (dbPath) => {
+                        await fs.copyFile(blankDatabaseFile, dbPath);
+                        const { orm, db } = await getTempDb(dbPath);
 
-                // create the undo triggers and save the database
-                await createAllUndoTriggers(orm as unknown as any);
-                const updatedDbBuffer = db.export();
+                        // create the undo triggers and save the database
+                        await createAllUndoTriggers(orm as unknown as any);
+                        const updatedDbBuffer = db.export();
 
-                fs.writeFileSync(tempDatabaseFile, updatedDbBuffer);
-                db.close();
+                        fs.writeFileSync(dbPath, updatedDbBuffer);
+                        db.close();
+                    },
+                );
                 await use();
             } catch (error) {
                 console.error("Error setting up database:", error);
@@ -261,6 +265,23 @@ const baseFixture = baseTest.extend<BaseApi>({
     ],
     // eslint-disable-next-line no-empty-pattern
     wrapper: async ({}, use) => {
+        // Imported here, so the many DB tests that never render don't load React Query, Radix
+        // and the app's providers
+        const [
+            { QueryClient, QueryClientProvider },
+            { TooltipProvider },
+            { IsPlayingProvider },
+            { SelectedAudioFileProvider },
+            { SelectedMarchersProvider },
+            { SelectedPageProvider },
+        ] = await Promise.all([
+            import("@tanstack/react-query"),
+            import("@radix-ui/react-tooltip"),
+            import("@/context/IsPlayingContext"),
+            import("@/context/SelectedAudioFileContext"),
+            import("@/context/SelectedMarchersContext"),
+            import("@/context/SelectedPageContext"),
+        ]);
         const queryClient = new QueryClient();
         const wrapper = ({ children }: { children: React.ReactNode }) => {
             return (

@@ -51,19 +51,36 @@ const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
         { label: "Zoom the timeline", keys: "Ctrl + Scroll" },
         { label: "Drag without snapping", keys: "Alt + Drag" },
     ],
-    movement: [{ label: "Nudge the selected marchers", keys: "W A S D" }],
-    // While drawing, stretching, moving or dragging a spacing of a shape (owner on #453); "Mod" is
-    // Cmd on a Mac, Ctrl elsewhere
+    movement: [
+        { label: "Nudge the selected marchers", keys: "W A S D" },
+        {
+            label: "Fine control while dragging marchers",
+            labelKey: "shortcutsDialog.movement.fineControl",
+            keys: "Shift + Drag",
+        },
+        {
+            label: "Move on one axis while dragging",
+            labelKey: "shortcutsDialog.movement.constrain",
+            keys: "Mod + Drag",
+        },
+    ],
+    // While drawing, stretching, moving or dragging a spacing of a shape (modifier roles, version
+    // A); "Mod" is Cmd on a Mac, Ctrl elsewhere. Snapping off is the Snap toggle (Shift+M).
     shape: [
         {
             label: "Fine control, still catching yard lines and hashes",
             labelKey: "shortcutsDialog.shape.fineControl",
-            keys: "Alt + Drag",
+            keys: "Shift + Drag",
         },
         {
-            label: "Drag a shape without snapping",
-            labelKey: "shortcutsDialog.shape.noSnapping",
+            label: "Constrain (equal spacings, one axis, flips proportional scaling)",
+            labelKey: "shortcutsDialog.shape.constrain",
             keys: "Mod + Drag",
+        },
+        {
+            label: "Draw or resize a box from center",
+            labelKey: "shortcutsDialog.shape.fromCenter",
+            keys: "Alt + Drag",
         },
     ],
 };

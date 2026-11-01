@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxShape } from "../box/boxShape";
 import {
@@ -32,7 +33,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     ...over,
@@ -144,17 +145,17 @@ describe("drawing a box", () => {
         expect(backRank[0]!.x).toBe(box.center.x);
     });
 
-    it("Shift makes the intervals equal", () => {
+    it("constrain makes the intervals equal", () => {
         const box = drawBox(
             { x: 0, y: 0 },
             { x: 120, y: 40 },
             4,
-            env({ shift: true }),
+            env({ constrain: true }),
         )!;
         expect(box.across).toBe(box.deep);
     });
 
-    it("Alt rounds to hundredths of a step, not half steps (#411)", () => {
+    it("fine rounds to hundredths of a step, not half steps (#411)", () => {
         const box = drawBox(
             { x: 0, y: 0 },
             { x: 83, y: 83 },
@@ -210,6 +211,27 @@ describe("editing a box", () => {
         expect(out.deep).toBe(35);
         const f = footprintOf(out, 16);
         expect([f.left, f.top, f.right, f.bottom]).toEqual([0, 0, 120, 105]);
+    });
+
+    it("a corner with constrain makes the intervals equal; a side with it doesn't", () => {
+        const out = stretchBox(
+            box,
+            16,
+            "se",
+            { x: 120, y: 105 },
+            env({ constrain: true }),
+        );
+        expect(out.across).not.toBe(35);
+        expect(out.across).toBe(out.deep);
+        expect(filesOf(out)).toBe(4);
+        const side = stretchBox(
+            box,
+            16,
+            "e",
+            { x: 120, y: 999 },
+            env({ constrain: true }),
+        );
+        expect(side.deep).toBe(box.deep);
     });
 
     it("a side stretches only its own axis", () => {

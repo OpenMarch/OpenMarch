@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxCorners, boxFrame, type BoxParams } from "../../box/boxGeometry";
 import { boxTool } from "../../box/boxTool";
@@ -23,7 +24,7 @@ const LINES = {
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     fieldLines: LINES,
@@ -127,18 +128,18 @@ describe("moving a box onto a line", () => {
         expect(Math.abs(e.center.x - free.x)).toBeLessThan(half);
     });
 
-    it("with Alt, still lands on the line, and moves freely away from lines (owner on #453)", () => {
+    it("with fine, still lands on the line, and moves freely away from lines (owner on #453)", () => {
         const before = edges(box);
-        const alt = { snap: false, fine: true };
-        const p = move(boxTool, box, { x: 0, y: -before.front - 0.8 }, alt);
+        const fine = { snap: false, fine: true };
+        const p = move(boxTool, box, { x: 0, y: -before.front - 0.8 }, fine);
         exact(edges(p as BoxParams).front, 0);
         // Off the half steps, exactly where it was dragged
-        const away = move(boxTool, box, { x: 3.3, y: -7.1 }, alt) as BoxParams;
+        const away = move(boxTool, box, { x: 3.3, y: -7.1 }, fine) as BoxParams;
         exact(away.center.x, box.center.x + 3.3);
         exact(away.center.y, box.center.y - 7.1);
     });
 
-    it("doesn't pull with Cmd/Ctrl (no snapping)", () => {
+    it("doesn't pull with the Snap toggle off", () => {
         const before = edges(box);
         const p = move(
             boxTool,
@@ -285,5 +286,40 @@ describe("moving a box onto a line", () => {
         );
         const p = move(circleTool, circle, { x: 0, y: 0.3 }, {}, 8);
         expect(p).toEqual(free);
+    });
+});
+
+describe("moving with constrain held ($mod)", () => {
+    /** Off the half steps both ways, so the grid would pull either axis */
+    const off: BoxParams = { ...box, center: { x: 31.3, y: -151.7 } };
+
+    it("stays on the axis the drag has gone further along, across or down", () => {
+        const across = edges(
+            move(
+                boxTool,
+                off,
+                { x: 23, y: 9 },
+                { constrain: true },
+            ) as BoxParams,
+        ).center;
+        exact(across.y, off.center.y);
+        expect(across.x).toBeGreaterThan(off.center.x + STEP);
+        const down = edges(
+            move(
+                boxTool,
+                off,
+                { x: -6, y: -24 },
+                { constrain: true },
+            ) as BoxParams,
+        ).center;
+        exact(down.x, off.center.x);
+        expect(down.y).toBeLessThan(off.center.y - STEP);
+    });
+
+    it("moves on both axes without it", () => {
+        const free = edges(
+            move(boxTool, off, { x: 23, y: 9 }) as BoxParams,
+        ).center;
+        expect(free.y).toBeGreaterThan(off.center.y + half);
     });
 });

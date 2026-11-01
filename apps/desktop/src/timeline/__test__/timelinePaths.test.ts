@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createResolver, type Resolver } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";

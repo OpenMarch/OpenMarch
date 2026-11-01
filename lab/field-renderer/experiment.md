@@ -26,8 +26,8 @@ the old field, open the build from before the switch:
 - Open a demo show. Play it, scrub the timeline, zoom and pan.
 - Click, Shift+click, drag a box around marchers, and double-click-drag to
   lasso them.
-- Drag marchers, with coordinate rounding on and off. Hold **Shift** to turn
-  snapping off and **Alt** for fine, slow moves.
+- Drag marchers, with coordinate rounding on and off. Hold **Shift** for fine,
+  slow moves off the grid; the Snap toggle (**Shift+M**) turns snapping off.
 - Select several marchers and use the corner, side and rotate handles.
 - Try the line tool (**L**), and export a drill chart or a video.
 

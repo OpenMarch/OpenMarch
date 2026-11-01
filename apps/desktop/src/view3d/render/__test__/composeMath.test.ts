@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { composeSlot, type ComposeSetup } from "../composeMath";
 import { emptyState, writeChannelState, writeFeetState } from "../channelState";

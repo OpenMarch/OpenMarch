@@ -92,7 +92,7 @@ function showOne(leave: BoxLeave, rewrite: BoxRewrite): void {
     const field = currentShapeField();
     if (!field) return;
     const ctx = shapeContextFor(field);
-    const env = () => toolEnvFor(field, { shift: false, alt: false });
+    const env = () => toolEnvFor(field);
     const names = leave.left.map(nameOf);
     const { box } = leave;
     const message = isPlacedBox(box)

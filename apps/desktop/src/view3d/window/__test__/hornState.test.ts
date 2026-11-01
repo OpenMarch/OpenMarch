@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { parseHornState } from "../hornState";
 import { useView3dSceneStore } from "../sceneStore";

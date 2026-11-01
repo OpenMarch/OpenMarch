@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { defaultVenueForKit } from "@/view3d/core/venueSettings";
 import type { LightingPreset } from "@/view3d/core/types";

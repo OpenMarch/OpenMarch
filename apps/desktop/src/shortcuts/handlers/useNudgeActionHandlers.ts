@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { isSnapOn, useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import { useUpdateSelectedMarchersOnSelectedPage } from "@/hooks/queries";
 import { NUDGE_ACTION_IDS, type NudgeArgs } from "../definitions";
@@ -28,7 +28,8 @@ export function useNudgeActionHandlers() {
                 marcherPages: getSelectedMarcherPages(),
                 direction: nudge.direction,
                 distance,
-                snap: nudge.snap,
+                // The Snap toggle off: no nudge snaps (modifier roles, version A)
+                snap: nudge.snap && isSnapOn(),
                 fieldProperties,
                 snapDenominatorX: 1.0 / distance,
                 snapDenominatorY: 1.0 / distance,

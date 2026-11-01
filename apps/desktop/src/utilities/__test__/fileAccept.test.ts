@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words KHTML
 import { describe, expect, it } from "vitest";
 import { touchSafeAccept } from "../fileAccept";

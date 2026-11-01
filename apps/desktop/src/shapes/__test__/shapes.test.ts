@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { assignSlots } from "../assign";
 import { fitCircle, principalExtremes } from "../geometry/fit";
@@ -301,7 +302,7 @@ describe("line kind", () => {
         close(dist(slots[0]!, slots[1]!), dist(slots[2]!, slots[3]!));
     });
 
-    it("drags an end with Shift to a 45° direction", () => {
+    it("drags an end with constrain to a 45° direction", () => {
         const params: LineParams = {
             a: xy(0, 0),
             b: xy(10, 0),
@@ -311,7 +312,7 @@ describe("line kind", () => {
             params,
             "b",
             xy(10, 9),
-            { shift: true },
+            { constrain: true },
             2,
             ctx,
         );
@@ -333,7 +334,7 @@ describe("line kind", () => {
             params,
             "move",
             xy(handle.at.x, handle.at.y + 10),
-            { shift: false },
+            { constrain: false },
             2,
             ctx,
         );
@@ -415,12 +416,40 @@ describe("arc kind", () => {
         for (const s of slots) close(dist(s, xy(0, 0)), 50, 1e-6);
     });
 
+    it("drags an end with constrain to a 45° direction from the other end", () => {
+        for (const [key, to] of [
+            ["b", xy(28, 17)],
+            ["a", xy(-28, -17)],
+        ] as const) {
+            const free = arcKind.drag(
+                params,
+                key,
+                to,
+                { constrain: false },
+                3,
+                ctx,
+            );
+            const snapped = arcKind.drag(
+                params,
+                key,
+                to,
+                { constrain: true },
+                3,
+                ctx,
+            );
+            const chord = (p: ArcParams) =>
+                Math.atan2(p.b.y - p.a.y, p.b.x - p.a.x);
+            expect(chord(free) % (Math.PI / 4)).not.toBeCloseTo(0, 3);
+            close(chord(snapped), Math.PI / 4);
+        }
+    });
+
     it("keeps its proportions when an end is dragged", () => {
         const next = arcKind.drag(
             params,
             "b",
             xy(30, 0),
-            { shift: false },
+            { constrain: false },
             3,
             ctx,
         );

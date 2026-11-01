@@ -1,3 +1,4 @@
+import type { AreaChoice } from "@/input/modifierRoles";
 import type { FieldPoint } from "./fieldEditor";
 import type { DrawnMarchers } from "./hitTest";
 
@@ -121,13 +122,21 @@ export function areaPicks(
     return performers.length > 0 ? performers : inside;
 }
 
-/** The selection an area leaves: it replaces the selection, or with Shift adds to it. */
+/**
+ * The selection an area leaves: it replaces the selection, or with the press's choice adds to it
+ * (Shift) or removes from it (Alt). Marchers one by one, placed boxes or not.
+ */
 export function selectionAfterArea(
     current: readonly number[],
     inside: readonly number[],
-    shift: boolean,
+    choice: AreaChoice,
 ): readonly number[] {
-    if (!shift) return inside;
+    if (choice === null) return inside;
+    if (choice === "subtract") {
+        const covered = new Set(inside);
+        const kept = current.filter((id) => !covered.has(id));
+        return kept.length < current.length ? kept : current;
+    }
     const selected = new Set(current);
     const added = inside.filter((id) => !selected.has(id));
     return added.length ? [...current, ...added] : current;

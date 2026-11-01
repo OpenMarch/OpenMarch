@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { blockKind, type BlockParams } from "../../kinds/block";
 import { boxTool } from "../../box/boxTool";

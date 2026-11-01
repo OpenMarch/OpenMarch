@@ -14,8 +14,12 @@
             "lockY": "Verrouiller l'axe Y",
             "lockYOff": "Déverrouiller le mouvement Y",
             "lockYOn": "Verrouiller mouvement en Y",
+            "snapOff": "Désactiver le magnétisme",
+            "snapOn": "Le magnétisme est désactivé : le réactiver",
             "snapToCustomFraction": "Aligner sur la grille",
-            "snapToWhole": "Aligner avec l'entier le plus proche"
+            "snapToWhole": "Aligner avec l'entier le plus proche",
+            "toggleSnap": "Activer ou désactiver le magnétisme",
+            "toggleSnapKeywords": "magnétisme aimant grille libre snap"
         },
         "batchEdit": {
             "noNextPage": "Impossible de définir les coordonnées des marcheurs sur la page suivante. Il n'y a pas de page suivante.",
@@ -372,6 +376,16 @@
         "videoResolution": "Résolution"
     },
     "field": {
+        "gestureChip": {
+            "equalSpacings": "espacements égaux",
+            "fine": "fin",
+            "freeRatio": "proportions libres",
+            "fromCenter": "depuis le centre",
+            "keepRatio": "garder les proportions",
+            "oneAxis": "un axe",
+            "snapOff": "Sans magnétisme",
+            "wholeDegrees": "degrés entiers"
+        },
         "general": {
             "exportField": "Exporter le champ",
             "exportField.tooltip": "Exporter ce champ vers un fichier pour l'utiliser dans d'autres projets",
@@ -729,8 +743,6 @@
                     "title": "Configuration du champ"
                 },
                 "performers": {
-                    "added": "Interprètes ajoutés",
-                    "addNew": "Ajouter des interprètes",
                     "description": "Ajoutez les marcheurs maintenant ou passez et ajoutez-les plus tard dans l'éditeur.",
                     "noneAdded": "Aucun interprète ajouté pour l'instant.",
                     "title": "Interprètes"
@@ -1267,6 +1279,10 @@
                 "hide": "Masquer les chemins depuis le drapeau de départ",
                 "show": "Afficher les chemins depuis le drapeau de départ"
             },
+            "snap": {
+                "off": "Le magnétisme est désactivé : le réactiver",
+                "on": "Désactiver le magnétisme"
+            },
             "pivot": {
                 "aria": "Pivot : {pivot}",
                 "custom": "Pivot : là où il a été glissé sur le terrain",
@@ -1553,9 +1569,14 @@
         "x": "X"
     },
     "shortcutsDialog": {
+        "movement": {
+            "constrain": "Déplacer sur un seul axe en glissant",
+            "fineControl": "Contrôle fin en faisant glisser des marcheurs"
+        },
         "shape": {
+            "constrain": "Contraindre (espacements égaux, un axe, inverse la mise à l'échelle proportionnelle)",
             "fineControl": "Contrôle fin, toujours aimanté aux lignes de verges et aux hashes",
-            "noSnapping": "Faire glisser une forme sans aimantation"
+            "fromCenter": "Dessiner ou redimensionner une boîte depuis le centre"
         }
     },
     "tags": {
@@ -1634,6 +1655,7 @@
             "lockMarchersAriaLabel": "Déplacement du curseur et ajustement des marcheurs",
             "placeAllMarchers": "Placer tous les marcheurs",
             "placeSelectedMarchers": "Placer les marcheurs sélectionnés",
+            "snapToggleCaption": "Magnétisme",
             "toNextPagePositions": "...aux positions suivantes de la page",
             "toPreviousPagePositions": "...aux positions précédentes de la page"
         },
@@ -1664,6 +1686,37 @@
             "shapesOff": "Désactivé",
             "shapesSelected": "Si sélectionné",
             "uiSettingsToolbar": "Barre d'outils des paramètres de l'interface utilisateur"
+        }
+    },
+    "touch": {
+        "modifiers": {
+            "add": "Ajouter",
+            "addHint": "Ajouter : maintenez, ou touchez pour le garder actif. Toucher des marcheurs les ajoute à la sélection",
+            "constrain": "Égal",
+            "constrainHint": "Égal : maintenez, ou touchez pour le garder actif. Espacements égaux, un seul axe en déplaçant, inverse la mise à l'échelle proportionnelle",
+            "explain": {
+                "add": "Touchez des marcheurs pour les ajouter ou les retirer.",
+                "constrain": "Espacements égaux, un seul axe en déplaçant, inverse la mise à l'échelle proportionnelle.",
+                "fine": "Les marcheurs vont lentement, hors de la grille. Les formes quittent les demi-pas mais restent aimantées aux lignes. Les rotations vont degré par degré.",
+                "fromCenter": "Les blocs se dessinent et se redimensionnent depuis leur centre.",
+                "grip": "Glissez pour déplacer.",
+                "help": "Gestes.",
+                "snap": "Magnétisme aux pas et aux lignes, actif ou non."
+            },
+            "fine": "Précis",
+            "fineHint": "Précis : maintenez, ou touchez pour le garder actif. Les marcheurs vont lentement, hors de la grille ; les formes quittent les demi-pas ; les rotations vont degré par degré",
+            "fromCenter": "Depuis le centre",
+            "fromCenterHint": "Depuis le centre : maintenez, ou touchez pour le garder actif. Les blocs se dessinent et se redimensionnent depuis leur centre",
+            "grip": "Déplacer ces boutons",
+            "gripTitle": "Glissez pour déplacer",
+            "help": "À quoi servent ces boutons",
+            "helpList": {
+                "add": "<b>Ajouter</b> toucher ajoute à la sélection · <b>Sans magnétisme</b> déplace librement",
+                "fine": "<b>Précis</b> glissements et rotations exacts · <b>Égal</b> espacements égaux",
+                "fromCenter": "<b>Depuis le centre</b> les blocs grandissent depuis le milieu",
+                "toggles": "<b>Touchez</b> un bouton pour le garder actif, ou <b>maintenez-le</b> pendant que vous glissez"
+            },
+            "noSnap": "Sans magnétisme"
         }
     },
     "versionCheck": {

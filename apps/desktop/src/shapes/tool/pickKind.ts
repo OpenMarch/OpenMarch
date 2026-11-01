@@ -61,12 +61,7 @@ export function pickShapeKind(
     if (!field) return false;
     if (isShapeShown()) {
         updateTool((tool) =>
-            switchKind(
-                tool,
-                kind,
-                shapeContextFor(field),
-                toolEnvFor(field, { shift: false, alt: false }),
-            ),
+            switchKind(tool, kind, shapeContextFor(field), toolEnvFor(field)),
         );
         return true;
     }

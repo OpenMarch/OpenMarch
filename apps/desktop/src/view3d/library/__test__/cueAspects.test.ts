@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { compileCues, type CueInput } from "@openmarch/core";
 import type { ShowLibraryItem } from "@/db-functions/showLibrary";

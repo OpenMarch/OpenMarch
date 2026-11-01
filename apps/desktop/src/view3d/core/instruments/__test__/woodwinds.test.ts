@@ -1,3 +1,4 @@
+// @vitest-environment node
 // apps/desktop/src/view3d/core/instruments/__test__/woodwinds.test.ts
 import { describe, expect, it } from "vitest";
 import {

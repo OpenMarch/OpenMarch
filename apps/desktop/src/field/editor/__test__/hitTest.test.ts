@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { hitRadius, marcherAt, MIN_HIT_SCREEN_RADIUS } from "../hitTest";
 

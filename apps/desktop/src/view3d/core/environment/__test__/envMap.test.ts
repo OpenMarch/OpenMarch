@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { Mesh, type ShaderMaterial } from "three";
 import { disposeEnvironmentScene, environmentScene, lightingValues } from "..";

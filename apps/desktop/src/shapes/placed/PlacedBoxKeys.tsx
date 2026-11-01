@@ -7,7 +7,7 @@ import {
 } from "@/shortcuts/useActionHandler";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { currentShapeField } from "../field/shapeFieldContext";
-import { toolEnvFor } from "../tool/toolEnv";
+import { nudgeEnvFor, toolEnvFor } from "../tool/toolEnv";
 import type { AnyToolKind } from "../tool/toolKind";
 import { useBoxSelectionStore } from "./boxSelectionStore";
 import { commitBox } from "./commitBox";
@@ -36,12 +36,7 @@ export function stepPlacedBoxFiles(
     const box = useBoxSelectionStore.getState().selected;
     const stepper = box && steppedParam(box.kind)?.stepper;
     if (!field || !box || !stepper) return;
-    const params = stepper.by(
-        box.params,
-        box.spots,
-        delta,
-        toolEnvFor(field, { shift: false, alt: false }),
-    );
+    const params = stepper.by(box.params, box.spots, delta, toolEnvFor(field));
     if (params !== null && params !== box.params)
         void commitBox(box, params, queryClient);
 }
@@ -75,7 +70,7 @@ export function PlacedBoxKeys(): null {
                 box.params,
                 box.spots,
                 { x: d.x * px, y: d.y * px },
-                toolEnvFor(field, { shift: false, alt: !nudge.snap }),
+                nudgeEnvFor(field, nudge),
             );
             void commitBox(box, params, queryClient);
         },

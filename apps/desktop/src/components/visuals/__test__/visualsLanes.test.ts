@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words choreo
 import { describe, expect, it } from "vitest";
 import { compileCues } from "@openmarch/core";

@@ -3,6 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import type { Table } from "drizzle-orm";
+import { inject } from "vitest";
 import { schema, getOrm } from "@/../electron/database/db";
 import { DrizzleMigrationService } from "@/../electron/database/services/DrizzleMigrationService";
 import { PAGE_MODEL_USER_VERSION } from "@/../electron/database/fileVersion";
@@ -64,11 +65,13 @@ let pageEraBlank: string | undefined;
 
 /**
  * A blank page-era file (version 7, the migrations before the timeline-only ones, and the rows
- * a new file got), built once per process. Data fixtures copy it to load a page show.
+ * a new file got), built once per process. Data fixtures copy it to load a page show. It goes in
+ * the run's fixture cache folder (./globalSetup.ts), which is deleted afterwards.
  */
 export async function pageEraBlankPath(): Promise<string> {
     if (pageEraBlank && fs.existsSync(pageEraBlank)) return pageEraBlank;
-    const dir = path.join(os.tmpdir(), "openmarch-test");
+    const dir =
+        inject("fixtureCacheDir") ?? path.join(os.tmpdir(), "openmarch-test");
     fs.mkdirSync(dir, { recursive: true });
     const file = path.join(dir, `${process.pid}-page-era-blank.dots`);
     fs.rmSync(file, { force: true });

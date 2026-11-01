@@ -66,15 +66,17 @@ Auto (`components/canvas/touch/fieldDragMode.ts`).
 Other field behavior:
 
 - **Floating pill** (`components/canvas/touch/TouchModifierButtons.tsx`):
-  "Drag: … ▾" mode menu, **Add** (on-screen Shift: add to selection, axis lock),
-  **No snap** (on-screen Alt/Shift-for-snapping), and **?** (explains the gestures).
+  **Fine**, **Equal** and **From center** (role toggles, tap to latch or hold),
+  **Add** (add to selection, like Shift at the press), **Snap off** (the Snap
+  toggle) and **?** (explains the gestures). The "Drag: … ▾" mode menu isn't
+  ported to the three.js field yet (`docs/field/tablet-port.md`).
   Long press on any pill control explains it. It places itself where it covers the
   fewest marchers (`pillPlacement.ts`) and can be dragged by its grip.
 - **Handles**: a press on a marcher dot always wins over a selection handle (all
   pointer types). In touch mode handles sit 20 px outside the dots, the box is at
   least 48 px, and the rotate handle is 96 px out. Flat selections (a row or a
   column) hide the scale handles for the flat axis.
-- **Rounding**: dragging a group moves it in whole steps of the coordinate rounding setting (e.g. 2 steps at a time), keeping its shape, the way a single marcher snaps to the grid; No snap moves freely. This also applies to the desktop layout.
+- **Rounding**: dragging a group moves it in whole steps of the coordinate rounding setting (e.g. 2 steps at a time), keeping its shape, the way a single marcher snaps to the grid; Snap off moves freely. This also applies to the desktop layout.
 - **Readouts**: a live step readout while dragging marchers ("4 steps to S2 · 2 steps
   toward the back", after rounding) and an angle readout while rotating (snaps to 15°). Both also
   show for the mouse.

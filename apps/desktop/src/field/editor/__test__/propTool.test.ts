@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import type { DrawnOutline } from "@/items/itemOutlines";
 import type { OutlineType } from "@/db-functions/items";

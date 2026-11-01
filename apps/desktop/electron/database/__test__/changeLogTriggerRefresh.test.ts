@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Files migrated before a change-log trigger body changed keep the old body, because triggers use
  * IF NOT EXISTS and are rebuilt only when a migration runs. Opening such a file must bring the

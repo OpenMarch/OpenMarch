@@ -9,6 +9,8 @@ import {
 import type { MarcherPosition } from "../moveGesture";
 import { VisualsFieldEditor } from "../visualsFieldEditor";
 import { cancelFieldPoint, requestFieldPoint } from "../../fieldPointPick";
+import { useGestureChipStore } from "@/input/gestureChipStore";
+import { watchKeyListeners } from "@/shapes/__test__/keyListeners";
 
 /**
  * Marchers 1 to 4 in a row 100 field units apart, at zoom 2 (2 CSS px per
@@ -139,6 +141,26 @@ describe("VisualsFieldEditor read-only (Visuals mode)", () => {
         expect(ports.drop).not.toHaveBeenCalled();
         expect(state.drops).toEqual([]);
         expect(state.shown).toBeNull();
+    });
+
+    it("shows no chip and follows no keys on a drag: nothing moves, so no role is honored", () => {
+        const keyListeners = watchKeyListeners();
+        const { editor, state } = setup({ selected: [1, 2] });
+        editor.setReadOnly(true);
+        // Shift from an unselected marcher (which it still adds), then $mod inside the selection box
+        for (const [x, y, keys] of [
+            [300, 100, { shift: true }],
+            [250, 104, { ctrl: true }],
+        ] as const) {
+            editor.pointerDown(at(x, y, keys));
+            editor.pointerMove(at(x + 60, y + 40, keys));
+            expect(useGestureChipStore.getState().active).toBe(false);
+            expect(keyListeners()).toBe(0);
+            editor.pointerUp(at(x + 60, y + 40, keys));
+        }
+        expect(state.selected).toEqual([1, 2, 3]);
+        expect(state.drops).toEqual([]);
+        vi.restoreAllMocks();
     });
 
     it("has no scale or rotation, and refuses a typed rotation", () => {

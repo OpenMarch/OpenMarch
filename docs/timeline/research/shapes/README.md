@@ -26,6 +26,7 @@ Status: research, 2026-10-10. Nothing here is decided until the owner answers th
 | [06-box-v1.md](06-box-v1.md)                   | The interaction rebuild: why, the build order, and the owner's box v1 spec                                                                                                    |
 | [07-placed-boxes.md](07-placed-boxes.md)       | A box stays a box after Place: membership, time, selecting                                                                                                                    |
 | [08-shape-system-ux.md](08-shape-system-ux.md) | The shape system UX spec: ways in, the floating editor, the inspector, field gestures, marcher styling                                                                        |
+| [modifier-roles.md](modifier-roles.md)         | Modifier keys as roles (fine, constrain, from center), a Snap toggle and press choices: audit of every modifier read, the role module, an A/B lab test                        |
 
 ## What the research agrees on
 

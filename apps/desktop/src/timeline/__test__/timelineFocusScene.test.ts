@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createResolver, type TimelineSnapshot } from "@openmarch/core";
 import { buildFocusScene, sceneHasGhosts } from "../timelineFocusScene";

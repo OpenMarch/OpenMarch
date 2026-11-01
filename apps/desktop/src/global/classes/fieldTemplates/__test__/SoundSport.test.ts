@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { FieldProperties } from "@openmarch/core";
 import GridFieldTemplates from "../GridFields";

@@ -24,8 +24,8 @@ export interface ShapeContext {
     /** Field units per 8-to-5 step */
     readonly stepPx: number;
     /**
-     * Snaps a point to the grid the canvas uses. Identity when snapping is off (Alt held, the
-     * timeline's no-snap modifier).
+     * Snaps a point to the grid the canvas uses. Identity when snapping is off (the Snap
+     * toggle off, or fine held).
      */
     readonly snapPoint: (p: XY) => XY;
     /**
@@ -154,8 +154,8 @@ export interface Measure<P> {
 }
 
 export interface DragModifiers {
-    /** Constrain: angles to 45°, for example */
-    readonly shift: boolean;
+    /** The `constrain` role: angles to 45°, for example */
+    readonly constrain: boolean;
 }
 
 export type IssueLevel = "error" | "warning" | "info";

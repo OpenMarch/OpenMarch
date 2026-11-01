@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { calculateTimestamps } from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";

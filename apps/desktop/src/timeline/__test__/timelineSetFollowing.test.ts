@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { createResolver, type XY } from "@openmarch/core";
 import {

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
 import { FieldProperties } from "@openmarch/core";
 import { StepSize } from "../StepSize";

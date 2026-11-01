@@ -14,8 +14,12 @@
             "lockY": "Travar eixo Y",
             "lockYOff": "Desbloquear movimento Y",
             "lockYOn": "Bloquear movimento Y",
+            "snapOff": "Desativar o ajuste",
+            "snapOn": "O ajuste está desativado: ativar de novo",
             "snapToCustomFraction": "Ajustar à grade",
-            "snapToWhole": "Ajustar para o inteiro mais próximo"
+            "snapToWhole": "Ajustar para o inteiro mais próximo",
+            "toggleSnap": "Ativar ou desativar o ajuste",
+            "toggleSnapKeywords": "ajustar ajuste ímã grade livre snap"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
@@ -372,6 +376,16 @@
         "videoResolution": "Resolução"
     },
     "field": {
+        "gestureChip": {
+            "equalSpacings": "espaçamentos iguais",
+            "fine": "fino",
+            "freeRatio": "proporção livre",
+            "fromCenter": "a partir do centro",
+            "keepRatio": "manter proporção",
+            "oneAxis": "um eixo",
+            "snapOff": "Sem ajuste",
+            "wholeDegrees": "graus inteiros"
+        },
         "general": {
             "exportField": "Exportar Campo",
             "exportField.tooltip": "Exportar este campo para um arquivo para usar em outros projetos",
@@ -729,8 +743,6 @@
                     "title": "Configuração do campo"
                 },
                 "performers": {
-                    "added": "Artistas adicionados",
-                    "addNew": "Adicionar artistas",
                     "description": "Adicione os integrantes agora ou pule e adicione-os mais tarde no editor.",
                     "noneAdded": "Nenhum artista adicionado ainda.",
                     "title": "Artistas"
@@ -1267,6 +1279,10 @@
                 "hide": "Ocultar os caminhos a partir da bandeira de início",
                 "show": "Mostrar os caminhos a partir da bandeira de início"
             },
+            "snap": {
+                "off": "O ajuste está desativado: ativar de novo",
+                "on": "Desativar o ajuste"
+            },
             "pivot": {
                 "aria": "Pivô: {pivot}",
                 "custom": "Pivô: onde foi arrastado no campo",
@@ -1553,9 +1569,14 @@
         "x": "X"
     },
     "shortcutsDialog": {
+        "movement": {
+            "constrain": "Mover em um só eixo ao arrastar",
+            "fineControl": "Controle fino ao arrastar marchadores"
+        },
         "shape": {
+            "constrain": "Restringir (espaçamentos iguais, um eixo, inverte a escala proporcional)",
             "fineControl": "Controle fino, ainda se ajustando às linhas de jardas e hashes",
-            "noSnapping": "Arrastar uma forma sem ajuste"
+            "fromCenter": "Desenhar ou redimensionar uma caixa a partir do centro"
         }
     },
     "tags": {
@@ -1634,6 +1655,7 @@
             "lockMarchersAriaLabel": "Movimento de cursor e encaixe de marchadores",
             "placeAllMarchers": "Colocar todos os marchadores",
             "placeSelectedMarchers": "Colocar marchadores selecionados",
+            "snapToggleCaption": "Ajuste",
             "toNextPagePositions": "...para posições da próxima página",
             "toPreviousPagePositions": "...para posições anteriores de página"
         },
@@ -1664,6 +1686,37 @@
             "shapesOff": "Desativado",
             "shapesSelected": "Quando selecionado",
             "uiSettingsToolbar": "Barra de Ferramentas de Configurações da UI"
+        }
+    },
+    "touch": {
+        "modifiers": {
+            "add": "Adicionar",
+            "addHint": "Adicionar: segure, ou toque para manter ativo. Tocar em marchadores os adiciona à seleção",
+            "constrain": "Igual",
+            "constrainHint": "Igual: segure, ou toque para manter ativo. Espaçamentos iguais, um só eixo ao mover, inverte a escala proporcional",
+            "explain": {
+                "add": "Toque em marchadores para adicioná-los ou removê-los.",
+                "constrain": "Espaçamentos iguais, um só eixo ao mover, inverte a escala proporcional.",
+                "fine": "Os marchadores vão devagar, fora da grade. As formas saem dos meios passos mas ainda se ajustam às linhas. Os giros vão de grau em grau.",
+                "fromCenter": "Os blocos são desenhados e redimensionados a partir do centro.",
+                "grip": "Arraste para mover.",
+                "help": "Gestos.",
+                "snap": "Ajuste a passos e linhas, ativo ou não."
+            },
+            "fine": "Fino",
+            "fineHint": "Fino: segure, ou toque para manter ativo. Os marchadores vão devagar, fora da grade; as formas saem dos meios passos; os giros vão de grau em grau",
+            "fromCenter": "Do centro",
+            "fromCenterHint": "Do centro: segure, ou toque para manter ativo. Os blocos são desenhados e redimensionados a partir do centro",
+            "grip": "Mover estes botões",
+            "gripTitle": "Arraste para mover",
+            "help": "O que estes botões fazem",
+            "helpList": {
+                "add": "<b>Adicionar</b> tocar adiciona à seleção · <b>Sem ajuste</b> move livremente",
+                "fine": "<b>Fino</b> arrastos e giros exatos · <b>Igual</b> espaçamentos iguais",
+                "fromCenter": "<b>Do centro</b> os blocos crescem a partir do meio",
+                "toggles": "<b>Toque</b> em um botão para mantê-lo ativo, ou <b>segure-o</b> enquanto arrasta"
+            },
+            "noSnap": "Sem ajuste"
         }
     },
     "versionCheck": {

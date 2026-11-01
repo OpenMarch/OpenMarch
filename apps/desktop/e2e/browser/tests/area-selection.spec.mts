@@ -51,6 +51,13 @@ test.use({
 
 type Point = { x: number; y: number };
 
+type DragOptions = {
+    shift?: boolean;
+    alt?: boolean;
+    /** Called halfway through the drag, while the marquee or lasso is drawn */
+    halfway?: () => Promise<void>;
+};
+
 const screenOf = async (page: Page, drillNumber: string) => {
     const drawn = (await drawnMarchers(page)).find(
         (m) => m.drillNumber === drillNumber,
@@ -75,15 +82,22 @@ const around = async (page: Page, drillNumbers: string[], pad: number) => {
 
 /**
  * Presses at the first point and drags through the rest, with Shift held when
- * `shift`. Returns the gesture the field reported halfway through.
+ * `shift` and Alt when `alt`. Returns the gesture the field reported halfway
+ * through, when `halfway` is called too.
  */
 async function dragThrough(
     page: Page,
     points: Point[],
-    { shift = false, double = false } = {},
+    {
+        shift = false,
+        alt = false,
+        double = false,
+        halfway,
+    }: DragOptions & { double?: boolean } = {},
 ) {
     const [first, ...rest] = points;
     if (shift) await page.keyboard.down("Shift");
+    if (alt) await page.keyboard.down("Alt");
     await page.mouse.move(first.x, first.y);
     // A double-click-and-drag: a click, then a press that drags
     if (double) await page.mouse.click(first.x, first.y);
@@ -91,10 +105,13 @@ async function dragThrough(
     let gesture: string | null = null;
     for (const [i, point] of rest.entries()) {
         await page.mouse.move(point.x, point.y, { steps: 8 });
-        if (i === Math.floor(rest.length / 2))
+        if (i === Math.floor(rest.length / 2)) {
             gesture = (await readField(page)).activeGesture;
+            await halfway?.();
+        }
     }
     await page.mouse.up();
+    if (alt) await page.keyboard.up("Alt");
     if (shift) await page.keyboard.up("Shift");
     await waitForIdle(page);
     return gesture;
@@ -103,7 +120,7 @@ async function dragThrough(
 type Rect = Awaited<ReturnType<typeof around>>;
 
 /** A marquee from the top-left of `rect` to its bottom-right. */
-const marquee = (page: Page, rect: Rect, options?: { shift?: boolean }) =>
+const marquee = (page: Page, rect: Rect, options?: DragOptions) =>
     dragThrough(
         page,
         [
@@ -121,12 +138,7 @@ const marquee = (page: Page, rect: Rect, options?: { shift?: boolean }) =>
  * A lasso around `rect`, clockwise from its top-left corner, released `gap`
  * screen px below where it started.
  */
-const lasso = (
-    page: Page,
-    rect: Rect,
-    gap: number,
-    options?: { shift?: boolean },
-) =>
+const lasso = (page: Page, rect: Rect, gap: number, options?: DragOptions) =>
     dragThrough(
         page,
         [
@@ -304,5 +316,77 @@ test.describe("lasso", () => {
         const gesture = await marquee(page, rect);
         expect(gesture).toBe("marquee");
         await expectSelected(page, ["T2", "T3"]);
+    });
+});
+
+// Subtract is a press choice (modifier roles, version A): Alt at the press
+// takes what the marquee or lasso covers out of the selection; Shift wins
+// when both are held.
+test.describe("subtract (Alt)", () => {
+    test("Alt+drag on empty field takes the marquee's marchers out of the selection, and draws it so", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await clickMarcher(page, "T1");
+        await clickMarcher(page, "T2", { add: true });
+        await clickMarcher(page, "B2", { add: true });
+        await expectSelected(page, ["B2", "T1", "T2"]);
+        const t1 = await screenOf(page, "T1");
+        const rect = await around(page, ["T1", "T2"], 12);
+        let subtractDrawn: string | null = null;
+        const gesture = await marquee(
+            page,
+            { ...rect, left: t1.x - 40, top: t1.y - 40 },
+            {
+                alt: true,
+                halfway: async () => {
+                    subtractDrawn = await page
+                        .getByTestId("fieldMarquee")
+                        .getAttribute("data-subtract");
+                },
+            },
+        );
+        expect(gesture).toBe("marquee");
+        expect(subtractDrawn).toBe("true");
+        await expectSelected(page, ["B2"]);
+    });
+
+    test("Alt+double-click-and-drag takes the lasso's marchers out of the selection", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await clickMarcher(page, "B1");
+        await clickMarcher(page, "T2", { add: true });
+        await clickMarcher(page, "T3", { add: true });
+        await expectSelected(page, ["B1", "T2", "T3"]);
+        // The double-click's first click, with Alt, keeps the selection
+        await lasso(page, await around(page, ["T2", "T3"], 20), 10, {
+            alt: true,
+        });
+        await expectSelected(page, ["B1"]);
+    });
+
+    test("Alt+drag from empty field inside a multi-selection's box starts a marquee that subtracts", async ({
+        show,
+    }) => {
+        // A plain press there moves the selection; an Alt (or Shift) press
+        // starts the marquee or lasso instead (owner decision, 2026-10-30)
+        const { page } = show;
+        await clickMarcher(page, "T1");
+        await clickMarcher(page, "T2", { add: true });
+        await clickMarcher(page, "T3", { add: true });
+        await clickMarcher(page, "T4", { add: true });
+        await expectSelected(page, ["T1", "T2", "T3", "T4"]);
+        // Between T1 and T2, inside the box from T1 to T4, clear of every marcher
+        const t2 = await screenOf(page, "T2");
+        const t3 = await screenOf(page, "T3");
+        const start = { x: t2.x - 30, y: t3.y + 15 };
+        const gesture = await dragThrough(
+            page,
+            [start, t2, { x: t2.x + 30, y: t2.y + 30 }],
+            { alt: true },
+        );
+        expect(gesture).toBe("marquee");
+        await expectSelected(page, ["T1", "T3", "T4"]);
     });
 });

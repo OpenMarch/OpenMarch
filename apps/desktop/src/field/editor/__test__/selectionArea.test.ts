@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
     areaPicks,
@@ -142,12 +143,22 @@ describe("rectBetween", () => {
 });
 
 describe("selectionAfterArea", () => {
-    it("replaces the selection, or with Shift adds what's new to it", () => {
-        expect(selectionAfterArea([1, 2], [3], false)).toEqual([3]);
-        expect(selectionAfterArea([1, 2], [], false)).toEqual([]);
-        expect(selectionAfterArea([1, 2], [2, 3], true)).toEqual([1, 2, 3]);
+    it("replaces the selection, or with add adds what's new to it", () => {
+        expect(selectionAfterArea([1, 2], [3], null)).toEqual([3]);
+        expect(selectionAfterArea([1, 2], [], null)).toEqual([]);
+        expect(selectionAfterArea([1, 2], [2, 3], "add")).toEqual([1, 2, 3]);
         const current = [1, 2];
-        expect(selectionAfterArea(current, [2], true)).toBe(current);
+        expect(selectionAfterArea(current, [2], "add")).toBe(current);
+    });
+
+    it("with subtract, removes what it covers and keeps the rest in order", () => {
+        expect(selectionAfterArea([1, 2, 3], [2, 4], "subtract")).toEqual([
+            1, 3,
+        ]);
+        expect(selectionAfterArea([1, 2], [1, 2], "subtract")).toEqual([]);
+        const current = [1, 2];
+        expect(selectionAfterArea(current, [3], "subtract")).toBe(current);
+        expect(selectionAfterArea(current, [], "subtract")).toBe(current);
     });
 });
 

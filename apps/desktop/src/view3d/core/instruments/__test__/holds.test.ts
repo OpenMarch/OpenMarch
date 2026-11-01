@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { HOLD_STATES, hold, holdId, type HoldFamily } from "../holds";
 

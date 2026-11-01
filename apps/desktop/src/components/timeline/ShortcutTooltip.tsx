@@ -29,20 +29,13 @@ export function TransportTooltipProvider({
     );
 }
 
-/** A keyboard shortcut ("Shift + Space", as `KeyboardShortcut.toString` writes it) as keycaps. */
-export function Keycaps({
-    shortcut,
-    plus = false,
-}: {
-    shortcut: string;
-    /** Writes a "+" between the keycaps */
-    plus?: boolean;
-}) {
+/** A keyboard shortcut ("Shift + Space", as `KeyboardShortcut.toString` writes it) as keycaps joined by "+". */
+export function Keycaps({ shortcut }: { shortcut: string }) {
     return (
         <span className="inline-flex items-center gap-2">
             {shortcut.split(/\s*\+\s*/).map((key, i) => (
                 <Fragment key={key}>
-                    {plus && i > 0 && (
+                    {i > 0 && (
                         <span aria-hidden="true" className="text-[11px]">
                             +
                         </span>

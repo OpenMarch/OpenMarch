@@ -1,3 +1,4 @@
+// @vitest-environment node
 // cspell:words startxref ihdr plte idat iend
 import { deflateSync, inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";

@@ -36,6 +36,7 @@ import {
     PlusIcon,
     ArrowClockwiseIcon,
     EqualsIcon,
+    MagnetIcon,
     PathIcon,
 } from "@phosphor-icons/react";
 import {
@@ -58,6 +59,7 @@ import {
     useShapeEditorStore,
 } from "../frame/shapeEditorStore";
 import { HANDLE_REACH_PX, toolEnvFor } from "../tool/toolEnv";
+import type { Roles } from "@/input/modifierRoles";
 import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
 import { useShapeHidden, useShapeToolStore } from "../tool/shapeToolStore";
 import { ShapeAwayChip } from "./ShapeAwayChip";
@@ -161,20 +163,11 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
     );
 }
 
-/**
- * The env an editor change is worked out with, the keys as on the field: Alt fine control, Cmd or
- * Ctrl no snapping (owner on #453)
- */
-const envFor = (keys: {
-    alt: boolean;
-    shift: boolean;
-    mod?: boolean;
-}): ToolEnv | null => {
+/** The env an editor change is worked out with, the roles held as on the field; none by default */
+const envFor = (roles?: Roles): ToolEnv | null => {
     const field = currentShapeField();
-    return field ? toolEnvFor(field, keys) : null;
+    return field ? toolEnvFor(field, roles) : null;
 };
-
-const PLAIN = { alt: false, shift: false };
 
 function ShapeEditorBar({
     target: shape,
@@ -203,7 +196,7 @@ function ShapeEditorBar({
     // A run of − and + presses grows from where it began, so the shape doesn't creep (#387)
     const run = useRef<SizeRun | null>(null);
     const anchor = sizeRun(run.current, kind, params, spots);
-    const env = envFor(PLAIN);
+    const env = envFor();
     const layout = env
         ? chipLayout(kind, params, spots, { ...env, stepPx, anchor })
         : { values: [], intervals: [], ratioLock: false };
@@ -435,7 +428,7 @@ function evenStateOf(
     params: unknown,
     spots: number,
 ): EvenState {
-    const env = envFor(PLAIN);
+    const env = envFor();
     const evened = env && kind.closed?.evenOut?.(params, spots, env);
     if (evened === undefined || evened === null) return "none";
     return evened === params ? "even" : "uneven";
@@ -457,7 +450,7 @@ const applyWith = (
     target: ShapeEditTarget,
     change: (env: ToolEnv) => unknown,
 ) => {
-    const env = envFor(PLAIN);
+    const env = envFor();
     if (env) target.apply(change(env));
 };
 
@@ -466,7 +459,7 @@ const updateWith = (
     target: ShapeEditTarget,
     change: (params: unknown, env: ToolEnv) => unknown,
 ) => {
-    const env = envFor(PLAIN);
+    const env = envFor();
     if (env) target.update((now) => change(now, env));
 };
 
@@ -492,7 +485,7 @@ const scrubWith = (
         if (guides) setShapeScrubbing(true);
     },
     onScrub: (m: ScrubMove) => {
-        const env = envFor(m);
+        const env = envFor(m.roles);
         if (env) target.preview(change(base.current, m, env));
     },
     onScrubEnd: (keep: boolean) => {
@@ -532,12 +525,12 @@ function numberActions(
             ),
         /** A "≈" number pressed: onto the nearest half step, as an edit of it (#459) */
         snap: (param: Param) => {
-            const env = envFor(PLAIN);
+            const env = envFor();
             if (env && param.snap)
                 target.apply(param.snap(target.params, target.spots, env));
         },
         type: (param: Param, text: string) => {
-            const env = envFor(PLAIN);
+            const env = envFor();
             const next =
                 env && param.type(target.params, target.spots, text, env);
             if (next == null) return false;
@@ -825,7 +818,7 @@ const TurnControls = memo(function TurnControls({
     );
 });
 
-/** Pathways and ☆ Save, then Place for a new shape */
+/** Snap, Pathways and ☆ Save, then Place for a new shape */
 const EndControls = memo(function EndControls({
     live: target,
     stepPx,
@@ -838,6 +831,7 @@ const EndControls = memo(function EndControls({
     return (
         <>
             <span className="flex items-center gap-2">
+                <SnapButton />
                 {canPlace && <PathwaysButton />}
                 <SaveShapeButton
                     shape={target}
@@ -903,7 +897,7 @@ const FillPill = memo(function FillPill({
     canPlace: boolean;
     testId: string;
 }) {
-    const env = () => envFor(PLAIN);
+    const env = () => envFor();
     return (
         <div
             className="rounded-6 border-stroke bg-bg-1 bg-modal shadow-modal flex items-center gap-6 border px-6 py-2 empty:hidden"
@@ -1334,6 +1328,34 @@ function PathwaysButton() {
             testId="shape-editor-pathways"
         >
             <PathIcon size={14} />
+        </IconButton>
+    );
+}
+
+/**
+ * The Snap toggle (modifier roles, version A), as in the toolbar's alignment tab: pressed while
+ * snapping is off, so a forgotten off state shows on the editor of every shape. Off, the shape's
+ * drags land on no half steps, are pulled onto nothing and turn freely.
+ */
+export function SnapButton() {
+    const on = useUiSettingsStore((s) => s.uiSettings.snap);
+    const overrides = useShortcutOverridesStore((s) => s.overrides);
+    return (
+        <IconButton
+            label={
+                on
+                    ? tolgee.t("shapes.edit.snap.on", "Turn Snap off")
+                    : tolgee.t(
+                          "shapes.edit.snap.off",
+                          "Snap off: turn it back on",
+                      )
+            }
+            shortcut={getActionShortcutLabel("toggleSnap", { overrides })}
+            pressed={!on}
+            onClick={() => useUiSettingsStore.getState().setSnap()}
+            testId="shape-editor-snap"
+        >
+            <MagnetIcon size={14} />
         </IconButton>
     );
 }

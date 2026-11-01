@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { hold, type HoldFamily, type HoldState } from "../holds";
 import { bounds, PART_METAL, type Vec3 } from "../mesh";

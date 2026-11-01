@@ -16,6 +16,12 @@ export type FocusableComponents = "canvas" | "timeline";
 export interface UiSettings {
     lockX: boolean;
     lockY: boolean;
+    /**
+     * The Snap toggle (modifier roles, version A): off, shape and marcher drags on the field don't
+     * snap to half steps, the rounding grid or 15° turns, and nothing pulls them onto lines, guides
+     * or other marchers. Never saved: on at every launch and whenever a file opens.
+     */
+    snap: boolean;
     isPlaying: boolean;
     /** Whether to show the full database path in the title bar */
     showFullDatabasePath: boolean;
@@ -123,6 +129,7 @@ export const defaultSettings: UiSettings = {
     isPlaying: false,
     lockX: false,
     lockY: false,
+    snap: true,
     showFullDatabasePath: false,
     nextPaths: false,
     startFlagPositions: DEFAULT_START_FLAG_POSITIONS,
@@ -187,6 +194,8 @@ const parseSettings = (raw: string): UiSettings => {
     return {
         ...defaultSettings,
         ...parsed,
+        // Never kept: a stored value (from before it was dropped on save) is ignored
+        snap: defaultSettings.snap,
         timelineHeight: parseTimelineHeight(parsed.timelineHeight),
         timelineWaveformStyle: parseWaveformStyle(parsed.timelineWaveformStyle),
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
@@ -213,8 +222,10 @@ const loadSettings = (): UiSettings => {
 
 // Helper function to save settings to localStorage
 const saveSettings = (settings: UiSettings): void => {
+    // The Snap toggle is never kept
+    const { snap: _snap, ...kept } = settings;
     try {
-        localStorage.setItem(UI_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+        localStorage.setItem(UI_SETTINGS_STORAGE_KEY, JSON.stringify(kept));
     } catch (error) {
         console.error("Failed to save UI settings to localStorage:", error);
     }
@@ -236,6 +247,8 @@ interface UiSettingsStoreActions {
     setStartFlagPositions: (settings: StartFlagPositionsSettings) => void;
     toggleAudioMute: () => void;
     setAudioVolume: (volume: number) => void;
+    /** Turns the Snap toggle on or off (`!snap` without an argument); never saved */
+    setSnap: (on?: boolean) => void;
 }
 interface UiSettingsStoreInterface
     extends UiSettingsStoreState, UiSettingsStoreActions {}
@@ -315,12 +328,25 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             set({ uiSettings: newSettings });
             saveSettings(newSettings);
         },
+        setSnap: (on?: boolean) => {
+            const current = get().uiSettings;
+            const snap = on ?? !current.snap;
+            if (current.snap === snap) return;
+            set({ uiSettings: { ...current, snap } });
+        },
     }),
 );
 
+// Another window's save carries no Snap toggle: this window keeps its own
 syncFromStorage(UI_SETTINGS_STORAGE_KEY, parseSettings, (uiSettings) =>
-    useUiSettingsStore.setState({ uiSettings }),
+    useUiSettingsStore.setState((state) => ({
+        uiSettings: { ...uiSettings, snap: state.uiSettings.snap },
+    })),
 );
+
+/** The Snap toggle as it is now (`UiSettings.snap`), for code that reads it at event time */
+export const isSnapOn = (): boolean =>
+    useUiSettingsStore.getState().uiSettings.snap;
 /**
  * Sets one setting and saves it. An unchanged value keeps the settings object, so nothing
  * re-renders and nothing is written (the timeline saves its zoom and fit after every gesture).

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { boxShape } from "../box/boxShape";
 import {
@@ -61,7 +62,7 @@ const snapHalf = (v: number) => Math.round(v / half) * half;
 const env = (over: Partial<ToolEnv> = {}): ToolEnv => ({
     stepPx: STEP,
     snap: true,
-    shift: false,
+    constrain: false,
     gridSnap: (p) => ({ x: snapHalf(p.x), y: snapHalf(p.y) }),
     hitRadius: 3,
     ...over,
@@ -113,34 +114,55 @@ describe("the shape frame", () => {
         expect(turned.flipX).toBe(true);
     });
 
-    it("snaps rotation to 15° as the field's rotate handle does, whole degrees with Shift, and not with Alt", () => {
-        const turn = (deg: number, keys: { shift: boolean; snap: boolean }) =>
-            rotationDegrees(snapRotation(deg * DEGREE, keys));
-        expect(turn(33.4, { shift: false, snap: true })).toBe(30);
-        expect(turn(38, { shift: false, snap: true })).toBe(45);
-        expect(turn(33.4, { shift: true, snap: true })).toBe(33);
-        expect(turn(33.4, { shift: false, snap: false })).toBe(33.4);
-        expect(snapRotation(-0.1 * DEGREE, { shift: false, snap: true })).toBe(
-            0,
-        );
-        expect(snapRotation(355 * DEGREE, { shift: false, snap: true })).toBe(
-            0,
-        );
+    it("snaps rotation to 15° as the field's rotate handle does, whole degrees with fine, and not with the Snap toggle off", () => {
+        const turn = (deg: number, over: Partial<ToolEnv> = {}) =>
+            rotationDegrees(snapRotation(deg * DEGREE, env(over)));
+        expect(turn(33.4)).toBe(30);
+        expect(turn(38)).toBe(45);
+        expect(turn(33.4, { fine: true, snap: false })).toBe(33);
+        expect(turn(33.4, { snap: false, pull: false })).toBe(33.4);
+        // constrain doesn't change a turn
+        expect(turn(33.4, { constrain: true })).toBe(30);
+        expect(snapRotation(-0.1 * DEGREE, env())).toBe(0);
+        expect(snapRotation(355 * DEGREE, env())).toBe(0);
         expect(rotationDegrees(-90 * DEGREE)).toBe(270);
     });
 
-    it("the rotation number drags in 15° steps, whole degrees with Shift, freely with Alt, and a typed one stays exact", () => {
+    it("the rotation number drags in 15° steps, whole degrees with fine, freely with the Snap toggle off, and a typed one stays exact", () => {
         const b = box4x2();
         const degreesOf = (p: unknown) =>
             rotationDegrees(boxTool.frameOf(p as BoxParams, 8).rotation);
         // 2 px a degree: 20 px is 10°, which lands on 15°
         expect(degreesOf(scrubTurn(boxTool, b, 8, 20, "c", env()))).toBe(15);
         expect(
-            degreesOf(scrubTurn(boxTool, b, 8, 20, "c", env({ snap: false }))),
+            degreesOf(
+                scrubTurn(
+                    boxTool,
+                    b,
+                    8,
+                    20,
+                    "c",
+                    env({ snap: false, pull: false }),
+                ),
+            ),
         ).toBe(10);
         expect(
-            degreesOf(scrubTurn(boxTool, b, 8, 21, "c", env({ shift: true }))),
+            degreesOf(
+                scrubTurn(
+                    boxTool,
+                    b,
+                    8,
+                    21,
+                    "c",
+                    env({ fine: true, snap: false }),
+                ),
+            ),
         ).toBe(11);
+        expect(
+            degreesOf(
+                scrubTurn(boxTool, b, 8, 20, "c", env({ constrain: true })),
+            ),
+        ).toBe(15);
         const typed = turnShape(boxTool, b, 8, 33.4 * DEGREE, "c", env());
         expect(degreesOf(typed)).toBe(33.4);
         // From a typed angle, the next 15° step
@@ -343,7 +365,7 @@ describe("who goes where, held through turns and flips", () => {
 });
 
 describe("the floating editor's numbers", () => {
-    it("spacing drags half a step per 8 px, a hundredth per px with Alt, from where it started", () => {
+    it("spacing drags half a step per 8 px, a hundredth per px with fine, from where it started", () => {
         const b = box4x2();
         expect(scrubSpacing(b, "across", 16, 8, env()).across).toBe(20);
         expect(scrubSpacing(b, "deep", 8, 8, env()).deep).toBe(15);
@@ -466,14 +488,15 @@ describe("the decisions of 2026-10-17", () => {
         expect(filesOf(withRanks(big, 64, 9, env()))).toBe(7);
     });
 
-    it("the rotation drags 1° per 2 px in 15° steps (#403), whole degrees with Shift, and back to the start changes nothing", () => {
+    it("the rotation drags 1° per 2 px in 15° steps (#403), whole degrees with fine, and back to the start changes nothing", () => {
         const b = box4x2();
         expect(
             rotationDegrees(scrubRotation(b, 60, 8, "c", env()).rotation),
         ).toBe(30);
         expect(
             rotationDegrees(
-                scrubRotation(b, 44, 8, "c", env({ shift: true })).rotation,
+                scrubRotation(b, 44, 8, "c", env({ fine: true, snap: false }))
+                    .rotation,
             ),
         ).toBe(22);
         expect(

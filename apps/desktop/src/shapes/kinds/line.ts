@@ -122,15 +122,21 @@ export const lineKind: ShapeKind<LineParams> = {
         { key: "move", role: "move", at: moveHandleAt(p, ctx.stepPx) },
     ],
 
-    drag(p, key, to, { shift }, _n, ctx) {
+    drag(p, key, to, { constrain }, _n, ctx) {
         if (key === "move") {
             const delta = sub(to, moveHandleAt(p, ctx.stepPx));
             return { ...p, a: add(p.a, delta), b: add(p.b, delta) };
         }
         if (key === "a")
-            return { ...p, a: shift ? snapAngle(p.b, to, Math.PI / 4) : to };
+            return {
+                ...p,
+                a: constrain ? snapAngle(p.b, to, Math.PI / 4) : to,
+            };
         if (key === "b")
-            return { ...p, b: shift ? snapAngle(p.a, to, Math.PI / 4) : to };
+            return {
+                ...p,
+                b: constrain ? snapAngle(p.a, to, Math.PI / 4) : to,
+            };
         return p;
     },
 

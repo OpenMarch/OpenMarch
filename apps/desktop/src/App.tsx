@@ -36,6 +36,7 @@ import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "@/components/titlebar/TitleBar";
 import { useUiSettingsStore } from "./stores/UiSettingsStore";
+import { useSnapOnWhenFileOpens } from "./hooks/useSnapOnWhenFileOpens";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
@@ -86,24 +87,11 @@ import {
     type InspectorChoices,
 } from "./utilities/inspectorLayout";
 import InspectorDock from "@/components/layout/InspectorDock";
+import WindowTooSmallNotice from "@/components/layout/WindowTooSmallNotice";
+import { useWindowSize } from "./hooks/useWindowSize";
 
 // The field's own chunk, so the launch page doesn't load three.js
 const ThreeField = lazy(() => import("@/field/three/ThreeField"));
-
-/** The window's size, kept current. */
-function useWindowSize() {
-    const read = () => ({
-        width: window.innerWidth,
-        height: window.innerHeight,
-    });
-    const [size, setSize] = useState(read);
-    useEffect(() => {
-        const onResize = () => setSize(read());
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
-    }, []);
-    return size;
-}
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -253,6 +241,9 @@ function App() {
         fetchUiSettings();
     }, [fetchUiSettings]);
 
+    // A forgotten Snap toggle doesn't carry into the file just opened or made
+    useSnapOnWhenFileOpens(databaseIsReady);
+
     /**
      * Invalidate history queries when a mutation is added.
      * This is to keep the UI fresh for when an undo/redo is available.
@@ -372,6 +363,7 @@ function App() {
                     <ShortcutsDialog />
                     <MusicXmlChecksDialog />
                     <LongPressGuard />
+                    <WindowTooSmallNotice size={windowSize} />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
                         <SelectedAudioFileProvider>

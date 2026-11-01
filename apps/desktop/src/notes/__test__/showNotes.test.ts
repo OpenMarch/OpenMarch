@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from "vitest";
 import type { PlacementChange, PutDownAnchor, XY } from "@openmarch/core";
 import {
