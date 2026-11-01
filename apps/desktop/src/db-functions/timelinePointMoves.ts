@@ -13,7 +13,7 @@ import {
     type BeatRange,
 } from "./timelineMembership";
 import { createRangeTimelineInTransaction } from "./timelineMoveNames";
-import { findTimelineByRange } from "./timelines";
+import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { readPageGrid } from "./timelineRipple";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitions";
 import { clearOwnPageMoves } from "./timelineMoveHelpers";
@@ -80,6 +80,11 @@ interface NewMove {
     end: number;
     point: XY;
     layer: number;
+    /**
+     * The move (not a page's, UI-25) this is a part of: it goes into a move of its own over its
+     * range, never into the timeline a page box there stands for (`splitMovesAtBeatInTransaction`)
+     */
+    moveOf?: number;
 }
 
 /** What one edit writes, decided before the first write. */
@@ -397,19 +402,25 @@ const writePlan = async (
         await clearOwnPageMoves(tx, removed, { tidyShared: true });
     }
 
+    // Parts of a move after the rest, so each range's oldest timeline is never one of them
     const byRange = new Map<string, NewMove[]>();
-    for (const added of plan.added) {
-        const key = `${added.start}:${added.end}`;
+    for (const added of [
+        ...plan.added.filter((a) => a.moveOf === undefined),
+        ...plan.added.filter((a) => a.moveOf !== undefined),
+    ]) {
+        const key = `${added.start}:${added.end}:${added.moveOf ?? ""}`;
         byRange.set(key, [...(byRange.get(key) ?? []), added]);
     }
     for (const members of byRange.values()) {
-        const { start, end } = members[0]!;
+        const { start, end, moveOf } = members[0]!;
         const timeline =
-            (await findTimelineByRange(tx, { start, end })) ??
-            (await createRangeTimelineInTransaction(tx, {
-                startBeat: start,
-                endBeat: end,
-            }));
+            moveOf === undefined
+                ? ((await findTimelineByRange(tx, { start, end })) ??
+                  (await createRangeTimelineInTransaction(tx, {
+                      startBeat: start,
+                      endBeat: end,
+                  })))
+                : await movePartTimeline(tx, { start, end });
         const own = await createOwnTransitionsInTransaction(
             tx,
             timeline,
@@ -425,6 +436,26 @@ const writePlan = async (
     if (plan.cleared.length > 0)
         result.cleared = [...new Set(plan.cleared)].sort((x, y) => x - y);
     return result;
+};
+
+/**
+ * A new move over `range` for part of a move (`NewMove.moveOf`). Its range keeps an older
+ * timeline, empty if none is stored yet, so the move stays a move (a clip) and the page box there
+ * stands for the older one (ADR 0001, UI-25 amendment).
+ */
+const movePartTimeline = async (tx: DbTransaction, range: BeatRange) => {
+    if (!(await findTimelineByRange(tx, range)))
+        await createTimelinesInTransaction({
+            tx,
+            newTimelines: [
+                { name: null, startBeat: range.start, endBeat: range.end },
+            ],
+        });
+    return await createRangeTimelineInTransaction(tx, {
+        startBeat: range.start,
+        endBeat: range.end,
+        allowSharedRanges: true,
+    });
 };
 
 /**
@@ -574,7 +605,11 @@ export interface SplitMovesResult {
  * the two halves give the same position at every beat as r did. Marchers that aren't simple on the box (moves across its flags,
  * overlapping, shaped or not direct) are left alone and listed in `leftAlone`: they stay Expert
  * moves. Timelines are reused or created per range (C-12), and a timeline left empty is deleted,
- * as the point writer does.
+ * as the point writer does. The halves of a move over the box that isn't the page's (split off
+ * it, UI-25) stay moves: each goes into a new move over its half, which keeps an older timeline
+ * (empty if need be) for the new box to stand for, so neither becomes a new page's own move. The
+ * page edit then deletes the box's old page timeline if it was left empty across the new flag
+ * (`deleteStrayEmptyTimelinesInTransaction`).
  *
  * Refused (`E-ARGS`) before any write: a beat that isn't whole or strictly inside `box`, and a
  * box that isn't a page's.
@@ -605,6 +640,16 @@ export async function splitMovesAtBeatInTransaction({
     const state = await readBoxState(tx, box, across, {
         refuseLocked: false,
     });
+    // A move over the box that isn't the page's (split off it, UI-25) splits into two moves
+    const page = await findTimelineByRange(tx, box);
+    const moveOf = (timelineId: number) => {
+        const range = state.timelineRange.get(timelineId);
+        return range?.start === box.start &&
+            range.end === box.end &&
+            timelineId !== page?.id
+            ? { moveOf: timelineId }
+            : {};
+    };
     const plan = emptyPlan();
     const split: number[] = [];
     for (const marcherId of across) {
@@ -614,6 +659,7 @@ export async function splitMovesAtBeatInTransaction({
             .find((r) => r.start < beat && beat < r.end);
         if (!row) continue;
         plan.removed.push(row);
+        const part = moveOf(row.timelineId);
         plan.added.push(
             {
                 marcherId,
@@ -621,6 +667,7 @@ export async function splitMovesAtBeatInTransaction({
                 end: beat,
                 point: await state.positionAt(marcherId, beat),
                 layer: row.layer,
+                ...part,
             },
             {
                 marcherId,
@@ -628,6 +675,7 @@ export async function splitMovesAtBeatInTransaction({
                 end: row.end,
                 point: await state.positionAt(marcherId, row.end),
                 layer: row.layer,
+                ...part,
             },
         );
         split.push(marcherId);

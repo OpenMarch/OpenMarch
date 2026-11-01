@@ -1226,7 +1226,12 @@ from it. The spec still wins on the model; this file decides presentation.
     move is the exception (owner, 2026-11-01, #581): with all of its marchers selected the split
     gives them a move of their own that can be resized or dragged across page flags, and the
     page's timeline stays, empty, so the page box still stands for it (ADR 0001, UI-25 amendment).
-    That page box's entry then says the page has no move of its own. The entry shows, disabled,
+    That page box's entry then says the page has no move of its own, and to use the move's clip
+    while one is over the box's counts. A page edit that leaves the empty timeline off its page's
+    box (deleting the page or a flag next to it, adding a flag inside it) deletes it, so it never
+    shows as an empty clip; one that keeps it on its box keeps it while a move shares its counts.
+    Basic's **Split page** across such a move splits the move into two moves, and each new page box
+    keeps an empty timeline of its own under its half. The entry shows, disabled,
     with no marchers selected too, so it can be found (_lead default_, V-337).
   - **No motion changes** (owner). Each chosen marcher's transition moves to the new timeline as it
     is: destination and path, as one undoable edit

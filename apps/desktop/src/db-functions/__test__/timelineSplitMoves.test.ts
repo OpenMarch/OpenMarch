@@ -13,9 +13,10 @@ import {
 } from "@/timeline/timelineStore";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { addMarchersToTimeline, type BeatRange } from "../timelineMembership";
-import { createTrack } from "../timelineCommands";
+import { createTrack, deleteTimeline } from "../timelineCommands";
 import { moveMarchersInTarget } from "../timelineMoves";
-import { movePageFlag } from "../pageFlags";
+import { addPageFlag, deletePageFlags, movePageFlag } from "../pageFlags";
+import { deletePageYankWithMoves, deletePagesWithMoves } from "../pageDelete";
 import {
     createTimelineShape,
     createTimelineShapesInTransaction,
@@ -1258,6 +1259,270 @@ describeDbTests("splitting and merging moves (UI-25)", (it) => {
             expect(new Set(locked.get(page2)!.values())).toEqual(
                 new Set(["crossesFlag"]),
             );
+        });
+    });
+
+    describe("the empty page timeline after page edits (#581 review)", () => {
+        /**
+         * Page 2's timeline with everyone split off it into a move over the same counts, as
+         * `splitEveryone` above
+         */
+        const splitPage2 = async (
+            db: DbConnection,
+            m: { expectedMarchers: readonly { id: number }[] },
+        ) => {
+            const pages = await setUp(db);
+            const range = pageRange(pages, 2);
+            const page = await timelineOf(db, range);
+            const { timeline: move } = await splitMarchersIntoNewMove({
+                db,
+                timelineId: page.id,
+                marcherIds: ids(m),
+            });
+            expect(await membersOf(db, page.id)).toEqual([]);
+            return { pages, range, page, move };
+        };
+
+        /** Timelines with no transition, as `[id, start, end]` */
+        const emptyTimelines = async (db: DbConnection) => {
+            const used = new Set(
+                (
+                    await db
+                        .select({ id: schema.timeline_transitions.timeline_id })
+                        .from(schema.timeline_transitions)
+                        .all()
+                ).map((t) => t.id),
+            );
+            return (
+                await db
+                    .select()
+                    .from(schema.timelines)
+                    .orderBy(asc(schema.timelines.id))
+                    .all()
+            )
+                .filter((t) => !used.has(t.id))
+                .map((t) => [t.id, t.start_beat, t.end_beat]);
+        };
+
+        const rangeOf = async (db: DbConnection, timelineId: number) => {
+            const t = await db
+                .select()
+                .from(schema.timelines)
+                .where(eq(schema.timelines.id, timelineId))
+                .get();
+            return t ? [t.start_beat, t.end_beat] : undefined;
+        };
+
+        /** Runs `edit`, then checks one undo and one redo restore each side exactly */
+        const exactUndo = async (
+            db: DbConnection,
+            edit: () => Promise<unknown>,
+        ) => {
+            const before = await snapshot(db);
+            await edit();
+            expect(await violations(db)).toEqual([]);
+            await roundTrip(db, before, await snapshot(db));
+        };
+
+        it("Delete page and its moves takes the empty page timeline with the page", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { pages, page } = await splitPage2(db, marchersAndPages);
+            await exactUndo(db, () =>
+                deletePagesWithMoves({ db, pageIds: new Set([pages[2]!.id]) }),
+            );
+            expect(await rangeOf(db, page.id)).toBeUndefined();
+            expect(await emptyTimelines(db)).toEqual([]);
+        });
+
+        it("Delete page (yank) of a page left with only its empty timeline deletes it rather than refusing", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { pages, page, move } = await splitPage2(
+                db,
+                marchersAndPages,
+            );
+            await deleteTimeline({ db, timelineId: move.id });
+            const page3 = pageRange(pages, 3);
+            const page3Timeline = (await timelineOf(db, page3)).id;
+            await exactUndo(db, () =>
+                deletePageYankWithMoves({ db, pageId: pages[2]!.id }),
+            );
+            expect(await rangeOf(db, page.id)).toBeUndefined();
+            expect(await emptyTimelines(db)).toEqual([]);
+            // Page 3's box moved back onto page 2's counts: it still stands for page 3's move
+            const moved = {
+                start: page.start_beat,
+                end: page.start_beat + page3.end - page3.start,
+            };
+            expect((await timelineOf(db, moved)).id).toBe(page3Timeline);
+        });
+
+        it("deleting page 2's flag or page 1's, keeping moves, drops the empty page timeline and leaves the split move a clip", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { pages, range, page, move } = await splitPage2(
+                db,
+                marchersAndPages,
+            );
+            const positions = await everyBeat(pages);
+            for (const flag of [2, 1]) {
+                await exactUndo(db, () =>
+                    deletePageFlags({
+                        db,
+                        pageIds: new Set([pages[flag]!.id]),
+                    }),
+                );
+                expect(await rangeOf(db, page.id)).toBeUndefined();
+                expect(await emptyTimelines(db)).toEqual([]);
+                expect(await rangeOf(db, move.id)).toEqual([
+                    range.start,
+                    range.end,
+                ]);
+                expectSamePositions(positions, await everyBeat(pages));
+                await performUndo(db);
+            }
+        });
+
+        it("a flag added mid page 2 (Expert) drops the empty page timeline; the split move stays a move across the flag", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { pages, range, page, move } = await splitPage2(
+                db,
+                marchersAndPages,
+            );
+            const positions = await everyBeat(pages);
+            await exactUndo(db, () =>
+                addPageFlag({ db, beat: range.start + 4 }),
+            );
+            expect(await rangeOf(db, page.id)).toBeUndefined();
+            expect(await emptyTimelines(db)).toEqual([]);
+            expect(await rangeOf(db, move.id)).toEqual([
+                range.start,
+                range.end,
+            ]);
+            expectSamePositions(positions, await everyBeat(pages));
+        });
+
+        it("an edit elsewhere keeps the empty page timeline while the split move shares its box", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { pages, range, page, move } = await splitPage2(
+                db,
+                marchersAndPages,
+            );
+            await addPageFlag({ db, beat: pageRange(pages, 4).start + 2 });
+            await deletePageFlags({ db, pageIds: new Set([pages[5]!.id]) });
+            expect(await violations(db)).toEqual([]);
+            expect(await emptyTimelines(db)).toEqual([
+                [page.id, range.start, range.end],
+            ]);
+            expect((await timelineOf(db, range)).id).toBe(page.id);
+            expect(await rangeOf(db, move.id)).toEqual([
+                range.start,
+                range.end,
+            ]);
+
+            // Deleting page 3 grows page 2's box over it: both timelines follow its flag
+            const grown = { start: range.start, end: pageRange(pages, 3).end };
+            await exactUndo(db, () =>
+                deletePagesWithMoves({ db, pageIds: new Set([pages[3]!.id]) }),
+            );
+            expect(await emptyTimelines(db)).toEqual([
+                [page.id, grown.start, grown.end],
+            ]);
+            expect((await timelineOf(db, grown)).id).toBe(page.id);
+            expect(await rangeOf(db, move.id)).toEqual([
+                grown.start,
+                grown.end,
+            ]);
+        });
+
+        it("Basic's Split page keeps the split move's halves moves: each new box keeps an empty page timeline older than its half", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { pages, range, page } = await splitPage2(
+                db,
+                marchersAndPages,
+            );
+            const all = ids(marchersAndPages);
+            const positions = await everyBeat(pages);
+            const beat = range.start + 4;
+            await exactUndo(db, () =>
+                addPageFlag({ db, beat, splitMoves: true }),
+            );
+            expectSamePositions(positions, await everyBeat(pages));
+            // The old page timeline crossed the new flag, so it went
+            expect(await rangeOf(db, page.id)).toBeUndefined();
+            for (const half of [
+                { start: range.start, end: beat },
+                { start: beat, end: range.end },
+            ]) {
+                const over = await db
+                    .select()
+                    .from(schema.timelines)
+                    .where(
+                        sql`${schema.timelines.start_beat} = ${half.start} AND ${schema.timelines.end_beat} = ${half.end}`,
+                    )
+                    .orderBy(asc(schema.timelines.id))
+                    .all();
+                // The box's own (oldest) timeline is empty; the half is a move over it
+                expect(over).toHaveLength(2);
+                expect(await membersOf(db, over[0]!.id)).toEqual([]);
+                expect(
+                    (await membersOf(db, over[1]!.id)).map((m) => m.marcher),
+                ).toEqual(all);
+                expect(over[1]!.name).toMatch(/^Move \d+$/);
+            }
+        });
+
+        it("Basic's Split page of a page with some marchers split off: the page's halves are the new boxes', the move's halves stay moves", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const pages = await setUp(db);
+            const range = pageRange(pages, 2);
+            const page = await timelineOf(db, range);
+            const all = ids(marchersAndPages);
+            const chosen = all.slice(0, 2);
+            await splitMarchersIntoNewMove({
+                db,
+                timelineId: page.id,
+                marcherIds: chosen,
+            });
+            const positions = await everyBeat(pages);
+            const beat = range.start + 4;
+            const before = await snapshot(db);
+            await addPageFlag({ db, beat, splitMoves: true });
+            expect(await violations(db)).toEqual([]);
+            await roundTrip(db, before, await snapshot(db));
+            expectSamePositions(positions, await everyBeat(pages));
+            for (const half of [
+                { start: range.start, end: beat },
+                { start: beat, end: range.end },
+            ]) {
+                const over = await db
+                    .select()
+                    .from(schema.timelines)
+                    .where(
+                        sql`${schema.timelines.start_beat} = ${half.start} AND ${schema.timelines.end_beat} = ${half.end}`,
+                    )
+                    .orderBy(asc(schema.timelines.id))
+                    .all();
+                expect(over).toHaveLength(2);
+                expect(
+                    (await membersOf(db, over[0]!.id)).map((m) => m.marcher),
+                ).toEqual(all.slice(2));
+                expect(
+                    (await membersOf(db, over[1]!.id)).map((m) => m.marcher),
+                ).toEqual(chosen);
+            }
         });
     });
 
