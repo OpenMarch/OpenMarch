@@ -1095,13 +1095,21 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         ctx.fillRect(0, MUSIC.top, w, 1);
         ctx.fillRect(0, MEASURES.top, w, 1);
 
-        if (ui.range) {
+        // the selection, or the one being dragged out (shown as it grows, not only on release)
+        const shownRange =
+            gesture?.kind === "range" && gesture.to !== gesture.anchor
+                ? {
+                      from: Math.min(gesture.anchor, gesture.to),
+                      to: Math.max(gesture.anchor, gesture.to),
+                  }
+                : ui.range;
+        if (shownRange) {
             ctx.fillStyle = accent;
             ctx.globalAlpha = 0.1;
             ctx.fillRect(
-                X(ui.range.from),
+                X(shownRange.from),
                 MARKS.top,
-                (ui.range.to - ui.range.from) * ppb,
+                (shownRange.to - shownRange.from) * ppb,
                 TEMPO_BAND_HEIGHT - MARKS.top,
             );
             ctx.globalAlpha = 1;
