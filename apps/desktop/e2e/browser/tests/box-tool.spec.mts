@@ -691,32 +691,22 @@ test("change: while a box is open everyone else fades, and nobody once it closes
     await expect.poll(dimmedIds).toEqual([]);
 });
 
-test("change: the View tab keeps only labels, paths, shapes and 3D; the rest moved to Settings › Field", async ({
+test("change: the field display bar holds paths, labels and shapes; the rest is in Settings › Field", async ({
     show,
 }) => {
     const { page } = show;
-    await page.getByRole("tab", { name: "View" }).click();
-    // Nothing but these: grid lines, half lines, label size and position,
-    // step-size warnings and shape focus moved to Settings
-    await expect(page.getByRole("tabpanel", { name: "View" }))
-        .toMatchAriaSnapshot(`
-      - tabpanel "View":
-        - /children: equal
-        - group:
-          - /children: equal
-          - text: Labels
-          - combobox "Labels"
-          - button "Next paths":
-            - text: Next paths
-            - img
-          - text: Shapes
-          - combobox "Shapes"
-        - group:
-          - /children: equal
-          - button "Open 3D View":
-            - text: Open 3D View
-            - img
-    `);
+    // The toolbar's View tab is gone: display settings sit on the field
+    await expect(page.getByRole("tab", { name: "View" })).toHaveCount(0);
+    const bar = page.getByTestId("field-display-bar");
+    for (const id of [
+        "start-flag-positions",
+        "field-display-labels",
+        "field-display-shapes",
+    ])
+        await expect(bar.getByTestId(id)).toBeVisible();
+    // Nothing else crept in: those three and the two placeholders
+    await expect(bar.getByRole("button")).toHaveCount(5);
+    await expect(page.getByTestId("open-view3d")).toBeVisible();
 
     const settings = await openSettings(page, "Field");
     for (const name of ["Grid lines", "Half lines", "Step size warnings"])

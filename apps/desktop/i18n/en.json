@@ -575,6 +575,16 @@
         },
         "title": "Field"
     },
+    "fieldDisplay": {
+        "caption": {
+            "direction": "Direction",
+            "sections": "Sections"
+        },
+        "comingSoon": "Coming soon",
+        "direction": "Field direction",
+        "label": "Field display",
+        "sections": "Visible sections"
+    },
     "fieldProperties": {
         "applyFieldType": "Apply Field Type",
         "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
@@ -903,8 +913,7 @@
             "shapesTab": "Shapes",
             "successfullyCopied": "Shape successfully copied to page",
             "ungroupShapeButton": "Un-group",
-            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
-            "viewTab": "View"
+            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
         },
         "timeline": {
             "move": {
@@ -2639,8 +2648,7 @@
             "shapes": "Shapes",
             "shapesAlways": "Always",
             "shapesOff": "Off",
-            "shapesSelected": "When selected",
-            "uiSettingsToolbar": "Ui Settings Toolbar"
+            "shapesSelected": "When selected"
         },
         "hideToolbar": "Hide toolbar",
         "showToolbar": "Show toolbar"

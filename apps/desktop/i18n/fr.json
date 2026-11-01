@@ -660,8 +660,7 @@
             "shapesTab": "Formes",
             "successfullyCopied": "Forme copiée avec succès sur la page {pageName}",
             "ungroupShapeButton": "Dissocier",
-            "ungroupShapeTooltip": "Supprimer cette forme pour cette page. Ne déplacera pas les marcheurs de leur position actuelle",
-            "viewTab": "Vue"
+            "ungroupShapeTooltip": "Supprimer cette forme pour cette page. Ne déplacera pas les marcheurs de leur position actuelle"
         },
         "title": "Inspecteur"
     },
@@ -1689,8 +1688,7 @@
             "shapes": "Formes",
             "shapesAlways": "Toujours",
             "shapesOff": "Désactivé",
-            "shapesSelected": "Si sélectionné",
-            "uiSettingsToolbar": "Barre d'outils des paramètres de l'interface utilisateur"
+            "shapesSelected": "Si sélectionné"
         }
     },
     "touch": {
