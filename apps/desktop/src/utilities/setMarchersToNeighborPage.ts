@@ -28,10 +28,12 @@ import { joinList } from "@/timeline/timelineRangeWords";
  * - **Previous page** is **Clear this page** (holds decision 16): each marcher is taken out of
  *   every move over the page, so the page is Not set and follows earlier pages again (and later
  *   edits before it carry through). A move shared with others, or longer than the page, is cut in
- *   time at the page's flags first (`takeMarchersOutOfRangeInTransaction`). Shape and
- *   follow-the-leader members are left as they are; the write names them, and they aren't
- *   counted. On the first page of a Held hold that runs on, the later pages' hold goes too (its
- *   arrival is gone), and the message says so.
+ *   time at the page's flags first (`takeMarchersOutOfRangeInTransaction`); where others share a
+ *   move whose path a cut would change, only a move of the marcher's own is cut, so they keep
+ *   their motion. Shape and follow-the-leader members, and marchers split by marcher can't take
+ *   into a move of their own (an inheriting follow-the-leader order), are left as they are; the
+ *   write names them, and they aren't counted. On the first page of a Held hold that runs on, the
+ *   later pages' hold goes too (its arrival is gone), and the message says so.
  *
  * The success message shows only once the edit is written; a refused edit writes nothing and the
  * write's own error handler shows why.
