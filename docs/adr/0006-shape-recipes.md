@@ -296,8 +296,8 @@ positions.
    set there, as an edit that moves nobody sets them, and the mark is saved on that page's move.
    Earlier pages keep their shape.
 3. Where no edit can be made (past the last page in Basic, the timeline not ready), Ungroup is
-   refused as an edit is. While isolating a later move, a shape carried from an earlier one is
-   refused with a toast: the isolated move can't take the change, and the shape's own page
+   refused as an edit is. While isolating a move, a shape from another move is
+   refused with a toast: the isolated move can't take the change, and the shape's own move
    shouldn't lose it.
 4. An app without the kind skips the recipe (decision 5), so it shows the earlier shape on later
    pages as it did before the ungroup, and a shape ungrouped on its own page disappears there

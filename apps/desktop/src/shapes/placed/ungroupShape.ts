@@ -42,8 +42,8 @@ const UNGROUPED_RECIPE = {
  *   there on. Earlier pages keep it, and later pages holding the form follow.
  *
  * Where no edit can be made (past the last page in Basic, the timeline not ready) it's refused as
- * an edit is. Isolating a later move, a shape carried from an earlier one is refused too: the
- * isolated move can't take the change, and the shape's own page shouldn't lose it.
+ * an edit is. Isolating a move, a shape from another move is refused too: the isolated move
+ * can't take the change, and the shape's own move shouldn't lose it.
  *
  * It runs in the queue undo, redo and shape saves do, after what's queued before it.
  */
@@ -53,7 +53,7 @@ export function ungroupShape(
 ): Promise<void> {
     const plan = planCanvasEdit();
     const beat = displayedBeat(useTimelineSelectionStore.getState());
-    const isolating = useTimelineSelectionStore.getState().isolation !== null;
+    const isolated = useTimelineSelectionStore.getState().isolation?.timelineId;
     return queueHistoryStep(async () => {
         try {
             if (!plan.ok) {
@@ -66,7 +66,10 @@ export function ungroupShape(
             const stored = storedBox(box, beat);
             if (carriedOnto(plan, stored))
                 await markUngrouped(stored, plan, queryClient);
-            else if (isolating && stored.endBeat < plan.beat - 1e-9)
+            else if (
+                isolated !== undefined &&
+                stored.recipe.timelineId !== isolated
+            )
                 toast.error(
                     tolgee.t(
                         "shapes.placed.ungroupIsolated",
