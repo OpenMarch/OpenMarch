@@ -75,8 +75,9 @@ why pins didn't undo, they moved into the database.
 
 - The migration rollback test (`electron/database/__test__/migrationRollback.ts`) runs 0029 back.
 - Tempo unit tests (`src/tempo/__test__`) cover the math, Fit, meters and groupings, and the
-  writes. Undo and redo of pins, holds, meters and the offset were checked by hand in the
-  prototype (om-capture scenarios), not by unit tests. Add those before this is accepted.
+  writes. `tempoUndo.test.ts` covers undo and redo of pins, a hold with its length, a meter with
+  its measures and count lengths, and the music offset (alone, and with the counts a Fit lined
+  up). `tempoWrites.test.ts` covers the tempo-change flags.
 - Open an older `.dots` file and a page-era demo in the desktop app after the migration
   (apps/desktop/AGENTS.md).
 - Owner hands-on in the lab build: Fit, a hold, a 7/8 meter, renumbering and undoing a lead-in move.
