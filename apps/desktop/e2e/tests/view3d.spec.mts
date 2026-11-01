@@ -229,15 +229,14 @@ async function view3dRequests(app: ElectronApplication): Promise<string[]> {
     });
 }
 
-/** Opens the 3D View from the View toolbar tab and returns its page. */
+/** Opens the 3D View from the button beside the workspace switch and returns its page. */
 async function openView3d(
     app: ElectronApplication,
     editor: Page,
     networkUrls: string[],
 ): Promise<Page> {
-    await editor.getByRole("tab", { name: "View" }).click();
     const opened = app.waitForEvent("window");
-    await editor.getByRole("button", { name: "Open 3D View" }).click();
+    await editor.getByTestId("open-view3d").click();
     const view3d = await opened;
     view3d.on("request", (request) => {
         if (!isLocalUrl(request.url())) networkUrls.push(request.url());

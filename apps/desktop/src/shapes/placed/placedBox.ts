@@ -62,6 +62,19 @@ export const PLACED_KINDS: readonly AnyToolKind[] = SHAPE_TOOLS.map(
 /** How close a marcher must stand to its spot to be on it, in field units */
 const ON_SPOT = 0.01;
 
+/**
+ * The kind of a recipe that marks marchers **ungrouped** from its move on (`ungroupShape`): a
+ * shape ungrouped on its own page becomes one, and one ungrouped on a later page it's carried onto
+ * ends there with one. It draws nothing and claims its members from its move's end, so no earlier
+ * shape over them is shown from there on, and a shape placed later takes them again. Older builds
+ * don't know the kind and skip it.
+ */
+export const UNGROUPED_KIND = "ungrouped";
+
+/** Whether `recipe` marks its members ungrouped rather than describing a shape */
+export const isUngrouped = (recipe: Pick<PlacedRecipe, "kind">): boolean =>
+    recipe.kind === UNGROUPED_KIND;
+
 const same = (a: XY, b: XY) =>
     Math.abs(a.x - b.x) <= ON_SPOT && Math.abs(a.y - b.y) <= ON_SPOT;
 
@@ -101,7 +114,8 @@ function placedOf(
 
 /**
  * The placed shapes to show at `beat`: placed at or before it, with every member on its spot. A
- * marcher is in one shape at a time, the latest placed.
+ * marcher is in one shape at a time, the latest placed; one ungrouped since (`UNGROUPED_KIND`) is
+ * in none.
  *
  * @param endBeatOf the end beat of a move (`null`: homes, beat 0), undefined for a move that's gone
  * @param positionOf where a marcher stands at `beat`
@@ -120,12 +134,18 @@ export function boxesAt({
     positionOf: (marcherId: number) => XY | undefined;
     kinds?: readonly AnyToolKind[];
 }): PlacedBox[] {
-    const candidates: PlacedBox[] = [];
+    const candidates: (PlacedBox | Ungrouped)[] = [];
     for (const recipe of recipes) {
-        const box = placedOf(recipe, kinds);
         const endBeat = endBeatOf(recipe.timelineId);
-        if (!box || endBeat === undefined || endBeat > beat + 1e-9) continue;
+        if (endBeat === undefined || endBeat > beat + 1e-9) continue;
         if (recipe.members.length === 0) continue;
+        // Ungrouped stays ungrouped wherever its members go next, until a later shape takes them
+        if (isUngrouped(recipe)) {
+            candidates.push({ recipe, endBeat, ungrouped: true });
+            continue;
+        }
+        const box = placedOf(recipe, kinds);
+        if (!box) continue;
         const held = recipe.members.every((m) => {
             const p = positionOf(m.marcherId);
             return p !== undefined && same(p, m);
@@ -136,11 +156,23 @@ export function boxesAt({
     const claimed = new Set<number>();
     const out: PlacedBox[] = [];
     for (const box of candidates) {
+        // A mark keeps whoever a later shape hasn't taken; a shape needs all its members
+        if ("ungrouped" in box) {
+            for (const m of box.recipe.members) claimed.add(m.marcherId);
+            continue;
+        }
         if (box.recipe.members.some((m) => claimed.has(m.marcherId))) continue;
         for (const m of box.recipe.members) claimed.add(m.marcherId);
         out.push(box);
     }
     return out;
+}
+
+/** An ungrouped mark among the shapes `boxesAt` weighs: it claims its members and shows nothing */
+interface Ungrouped {
+    readonly recipe: PlacedRecipe;
+    readonly endBeat: number;
+    readonly ungrouped: true;
 }
 
 export type MembershipChange =

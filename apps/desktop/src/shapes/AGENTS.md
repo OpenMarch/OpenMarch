@@ -32,7 +32,8 @@ ordinary positions it writes.
 - `field/`: how the shape code reads the three.js field (`shapeField.ts`, registered by the
   field, never `window.canvas`), pointer routing and the field modes it installs.
 - `placed/`: placed shapes read back from recipes, their membership (a marcher that moves away
-  leaves the shape), selecting and editing them (`commitBox.ts`), and their overlay.
+  leaves the shape), selecting and editing them (`commitBox.ts`), ungrouping them
+  (`ungroupShape.ts`), and their overlay.
 - `library/`: saved shapes and stars. `command/`: the command bar's shape steps.
   `preview/`: a shape's small picture, drawn from its own geometry. `transform/`: turning and
   flipping a plain selection, with no recipe. `draw/`: conversions between fills.

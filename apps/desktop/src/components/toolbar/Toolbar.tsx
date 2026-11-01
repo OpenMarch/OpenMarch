@@ -2,7 +2,6 @@ import { Tabs, TabContent, TabItem, TabsList } from "@openmarch/ui";
 import { FileTab } from "./tabs/FileTab";
 import { CollisionsTab } from "./tabs/CollisionsTab";
 import AlignmentTab from "./tabs/AlignmentTab";
-import ViewTab from "./tabs/ViewTab";
 import ShapesTab from "@/shapes/tool/ShapesTab";
 import { useEffect, useState } from "react";
 import { T } from "@tolgee/react";
@@ -15,6 +14,7 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import VisualsToolbar from "@/components/visuals/VisualsToolbar";
 import WorkspaceViewSwitch from "@/components/visuals/WorkspaceViewSwitch";
+import View3dButton from "@/components/visuals/View3dButton";
 
 export default function Topbar() {
     const [activeTab, setActiveTab] = useState("alignment");
@@ -41,8 +41,16 @@ export default function Topbar() {
     ]);
 
     return (
-        <div className="group relative">
-            <WorkspaceViewSwitch className="absolute top-0 right-0 z-10" />
+        <div className="group @container relative">
+            <div className="absolute top-0 right-0 z-10 flex items-center gap-8">
+                {/* Its words go first, then the whole button, so it never covers the tabs at the
+                    narrowest window (the shortcut and ⌘K still open the 3D View) */}
+                <View3dButton
+                    className="@max-[480px]:hidden"
+                    labelClassName="@max-[600px]:sr-only"
+                />
+                <WorkspaceViewSwitch />
+            </div>
             {visuals ? (
                 <VisualsToolbar />
             ) : (
@@ -67,9 +75,6 @@ export default function Topbar() {
 
                         <TabItem value="select">
                             <T keyName="inspector.shape.selectTab" />
-                        </TabItem>
-                        <TabItem value="view">
-                            <T keyName="inspector.shape.viewTab" />
                         </TabItem>
                         {selectedPage && currentCollisions.length > 0 && (
                             <TabItem value="collisions">
@@ -100,10 +105,6 @@ export default function Topbar() {
 
                     <TabContent value="select">
                         <SelectTab />
-                    </TabContent>
-
-                    <TabContent value="view">
-                        <ViewTab />
                     </TabContent>
 
                     <TabContent value="collisions">

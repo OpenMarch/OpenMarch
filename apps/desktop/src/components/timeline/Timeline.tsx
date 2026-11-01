@@ -178,8 +178,6 @@ export interface TimelineProps {
     readonly transportAccessories?: ReactNode;
     /** Transport controls that fold into "⋯" on a narrow panel, such as Sound */
     readonly transportSecondary?: ReactNode;
-    /** View controls first in the transport's right group, before Fit, such as start flag positions */
-    readonly transportLeadingViewControls?: ReactNode;
     /** View controls at the transport's end, such as Compact */
     readonly transportViewControls?: ReactNode;
     readonly showTransport?: boolean;
@@ -1024,7 +1022,6 @@ export function Timeline(props: TimelineProps) {
         loop: viewLoop,
         onLoopChange: changeLoop,
         transportSecondary: props.transportSecondary,
-        transportLeadingViewControls: props.transportLeadingViewControls,
         transportViewControls: props.transportViewControls,
         showTransport: props.showTransport ?? true,
         transportClock: props.transportClock,

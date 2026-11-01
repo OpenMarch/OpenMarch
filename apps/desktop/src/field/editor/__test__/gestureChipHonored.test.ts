@@ -49,15 +49,63 @@ describe("what each field drag honors", () => {
             { fine: "fine", constrain: "oneAxis", snaps: true },
         ],
         [
-            "a scale corner: fine, a free ratio, no snapping",
+            "a scale corner: fine, a kept ratio, from center, no snapping",
             () =>
                 new ScaleGesture(at(10, 10), marchers, host, "se", box, keys()),
-            { fine: "fine", constrain: "freeRatio", snaps: false },
+            {
+                fine: "fine",
+                constrain: "keepRatio",
+                fromCenter: "fromCenter",
+                snaps: false,
+            },
         ],
         [
-            "a scale side: fine only",
+            "a scale corner with the ratio lock on: a free ratio (#545)",
+            () =>
+                new ScaleGesture(
+                    at(10, 10),
+                    marchers,
+                    host,
+                    "se",
+                    box,
+                    keys(),
+                    true,
+                ),
+            {
+                fine: "fine",
+                constrain: "freeRatio",
+                fromCenter: "fromCenter",
+                snaps: false,
+            },
+        ],
+        [
+            "a scale side: fine, a kept ratio, from center, no snapping",
             () => new ScaleGesture(at(10, 5), marchers, host, "e", box, keys()),
-            { fine: "fine", snaps: false },
+            {
+                fine: "fine",
+                constrain: "keepRatio",
+                fromCenter: "fromCenter",
+                snaps: false,
+            },
+        ],
+        [
+            "a scale side with the ratio lock on: a free ratio (#545)",
+            () =>
+                new ScaleGesture(
+                    at(10, 5),
+                    marchers,
+                    host,
+                    "e",
+                    box,
+                    keys(),
+                    true,
+                ),
+            {
+                fine: "fine",
+                constrain: "freeRatio",
+                fromCenter: "fromCenter",
+                snaps: false,
+            },
         ],
         [
             "a rotate: whole degrees, snapping",

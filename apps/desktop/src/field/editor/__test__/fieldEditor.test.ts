@@ -27,6 +27,8 @@ function setup({
     pressSelection = undefined as FieldEditorPorts["pressSelection"],
     doubleClickMarcher = undefined as FieldEditorPorts["doubleClickMarcher"],
     reachesInside = undefined as FieldEditorPorts["reachesInside"],
+    positions = [100, 100, 200, 100, 300, 100, 400, 100],
+    ratioLocked = undefined as (() => boolean) | undefined,
 } = {}) {
     const clock = { now: 1000 };
     const state = {
@@ -48,9 +50,7 @@ function setup({
         },
         marchers: () => ({
             ids: [1, 2, 3, 4],
-            positions: Float64Array.from([
-                100, 100, 200, 100, 300, 100, 400, 100,
-            ]),
+            positions: Float64Array.from(positions),
             hidden: Uint8Array.from([1, 2, 3, 4], (id) =>
                 hidden.includes(id) ? 1 : 0,
             ),
@@ -77,6 +77,7 @@ function setup({
         isMac,
         moveTransform,
         now: () => clock.now,
+        ratioLocked,
     });
     return { editor, state, ports, clock };
 }
@@ -1504,14 +1505,47 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         ]);
     });
 
-    it("ignores constrain on a middle handle", () => {
-        const plain = setup({ selected: ALL });
-        drag(plain.editor, HANDLE.e, { x: 560, y: 160 });
-        const constrained = setup({ selected: ALL });
-        drag(constrained.editor, HANDLE.e, { x: 560, y: 160 }, { ctrl: true });
-        expect(constrained.state.drops[0].positions).toEqual(
-            plain.state.drops[0].positions,
-        );
+    describe("a formation with height", () => {
+        // Marcher 4 is 100 lower: the box runs from (100, 100) to (400, 200), its right-hand
+        // handle at (410, 150)
+        const TALL = [100, 100, 200, 100, 300, 100, 400, 200];
+        const EAST = { x: 410, y: 150 };
+        // 150 across is half again, both ways: the left side stays, and the height grows evenly
+        // about the center line y = 150
+        const BOTH_WAYS = [
+            { id: 1, x: 100, y: 75 },
+            { id: 2, x: 250, y: 75 },
+            { id: 3, x: 400, y: 75 },
+            { id: 4, x: 550, y: 225 },
+        ];
+        const ONE_AXIS = [
+            { id: 1, x: 100, y: 100 },
+            { id: 2, x: 250, y: 100 },
+            { id: 3, x: 400, y: 100 },
+            { id: 4, x: 550, y: 200 },
+        ];
+        const dropped = (
+            modifiers: Parameters<typeof at>[2],
+            ratioLocked?: () => boolean,
+        ) => {
+            const { editor, state } = setup({
+                selected: ALL,
+                positions: TALL,
+                ratioLocked,
+            });
+            drag(editor, EAST, { x: 560, y: 150 }, modifiers);
+            return state.drops[0].positions;
+        };
+
+        it("scales the other axis too with constrain on a middle handle, about the center line (#545)", () => {
+            expect(dropped({})).toEqual(ONE_AXIS);
+            expect(dropped({ ctrl: true })).toEqual(BOTH_WAYS);
+        });
+
+        it("keeps the ratio with the box's ratio lock on, read at the press, and constrain frees it (#545)", () => {
+            expect(dropped({}, () => true)).toEqual(BOTH_WAYS);
+            expect(dropped({ ctrl: true }, () => true)).toEqual(ONE_AXIS);
+        });
     });
 
     it("scales at a quarter speed with fine (Shift)", () => {

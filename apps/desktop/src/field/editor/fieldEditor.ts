@@ -185,6 +185,11 @@ export type FieldEditorOptions = {
     /** The Snap toggle, read on every pointer event; off, a rotation turns freely. On when omitted. */
     snap?: () => boolean;
     /**
+     * The ratio lock a box shape shares (`useShapeEditorStore`), read at a scale handle's press:
+     * on, a selection's handles keep the ratio, and constrain frees it. Off when omitted.
+     */
+    ratioLocked?: () => boolean;
+    /**
      * The touch pill's toggles (`onScreenToggles` in `TouchModifierStore`): its held roles count
      * as held keys for every drag, a toggle changed mid-drag re-runs it as a key does, and the
      * press rule never blocks them. `add` is the add press choice at every press, as Shift is: a
@@ -963,6 +968,7 @@ export class FieldEditor {
                   press.handle,
                   box,
                   keys,
+                  this.options.ratioLocked?.() ?? false,
               );
     }
 
