@@ -146,14 +146,22 @@ const loadSqlIntoDatabase = async (
 type beats = {
     expectedBeats: Omit<
         typeof schema.beats.$inferSelect,
-        "created_at" | "updated_at" | "tempo_pin" | "tempo_hold"
+        | "created_at"
+        | "updated_at"
+        | "tempo_pin"
+        | "tempo_hold"
+        | "tempo_change"
     >[];
 };
 
 type pages = {
     expectedBeats: Omit<
         typeof schema.beats.$inferSelect,
-        "created_at" | "updated_at" | "tempo_pin" | "tempo_hold"
+        | "created_at"
+        | "updated_at"
+        | "tempo_pin"
+        | "tempo_hold"
+        | "tempo_change"
     >[];
     expectedPages: Omit<
         typeof schema.pages.$inferSelect,
@@ -164,7 +172,11 @@ type pages = {
 type marchersAndPages = {
     expectedBeats: Omit<
         typeof schema.beats.$inferSelect,
-        "created_at" | "updated_at" | "tempo_pin" | "tempo_hold"
+        | "created_at"
+        | "updated_at"
+        | "tempo_pin"
+        | "tempo_hold"
+        | "tempo_change"
     >[];
     expectedMarchers: Omit<
         typeof schema.marchers.$inferSelect,

@@ -109,6 +109,16 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         db.exec("ALTER TABLE measures DROP COLUMN meter");
         db.exec("ALTER TABLE measures DROP COLUMN grouping");
     },
+    // Tempo mode: where tempo changes start (the tempo lane's points)
+    30: (db) => {
+        const triggers = db
+            .prepare(
+                "SELECT name FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = 'beats'",
+            )
+            .all() as { name: string }[];
+        for (const { name } of triggers) db.exec(`DROP TRIGGER \`${name}\``);
+        db.exec("ALTER TABLE beats DROP COLUMN tempo_change");
+    },
 };
 
 /**

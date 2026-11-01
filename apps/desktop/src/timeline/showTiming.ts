@@ -41,6 +41,7 @@ export async function readShowTiming(
                     ...b,
                     tempo_pin: 0,
                     tempo_hold: 0,
+                    tempo_change: 0,
                 }),
                 i,
             ),

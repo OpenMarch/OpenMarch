@@ -259,6 +259,8 @@ export interface TempoSegment {
     ramp: boolean;
     /** Whether the counts wander (tapped or fitted to the music) */
     uneven: boolean;
+    /** A ramp's curve (0 straight; see tempoShape.ts `curveAt`) */
+    curve?: number;
 }
 
 /**

@@ -43,6 +43,20 @@ why pins didn't undo, they moved into the database.
 4. **One migration** (`0029`) adds all of it. The rollback in `migrationRollback.ts` drops the
    table and the columns, and drops the triggers on those tables so the migration service can
    recreate them.
+5. **Amendment (2026-11-01): where tempo changes start is stored; their shape is not.** The tempo
+   lane edits tempo the way Logic's tempo track does, with points and curves
+   (docs/tempo/logic-analysis.md). A point is a flag, `beats.tempo_change` (integer `0`/`1`,
+   default `0`, not null, migration `0030`). Between two points, the lane reads the shape back
+   from the durations: steady, a ramp (straight or curved) or uneven (`tempo/tempoShape.ts`).
+   Editing a shape writes the durations of its counts.
+   - We didn't store tempo as BPM or as a tempo graph. Durations would still be needed by every
+     reader, so either would be a second source of truth to keep in step. Pins (a count at a time
+     in the music) and holds (a length, not a tempo) are natural in seconds, and Fit measures
+     seconds.
+   - A show with no flags yet gets points read from its durations. The first tempo edit stores
+     them, so opening a show writes nothing.
+   - Durations changed outside tempo mode leave the flags where they are, and the shape between
+     them is read again. Nothing has to be kept in step.
 
 ## Consequences
 

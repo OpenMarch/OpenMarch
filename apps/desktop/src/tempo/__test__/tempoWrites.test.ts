@@ -1,7 +1,13 @@
 import { expect } from "vitest";
 import { asc } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import { endMovesEarly, insertCounts } from "../tempoWrites";
+import {
+    endMovesEarly,
+    insertCounts,
+    writeDurations,
+    writeMarks,
+} from "../tempoWrites";
+import { performUndo } from "@/db-functions/history";
 
 /**
  * Tempo mode's count edits on the `marchersAndPages` show, converted to timelines on open: beat 0,
@@ -119,5 +125,60 @@ describeDbTests("tempo mode count edits", (it) => {
             beatsBefore,
         );
         expect(await pageStarts(db)).toEqual([0, 1, 9, 17, 25, 33, 41]);
+    });
+});
+
+/** The spec beats whose flag `column` is set */
+const flagged = async (
+    db: DbConnection,
+    column: "tempo_change" | "tempo_pin",
+) => {
+    const beats = await db
+        .select()
+        .from(schema.beats)
+        .orderBy(asc(schema.beats.position))
+        .all();
+    return beats.flatMap((b, i) => (b[column] === 1 ? [i] : []));
+};
+
+describeDbTests("tempo changes (the tempo lane's points)", (it) => {
+    it("are stored as beat flags, and undo", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await writeMarks({ changes: new Set([9, 17]) });
+        expect(await flagged(db, "tempo_change")).toEqual([9, 17]);
+        await writeMarks({ changes: new Set([17]) });
+        expect(await flagged(db, "tempo_change")).toEqual([17]);
+        await performUndo(db);
+        expect(await flagged(db, "tempo_change")).toEqual([9, 17]);
+    });
+
+    it("are written with the new lengths in one undo step, and a no-op writes nothing", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const lengths = async () =>
+            (
+                await db
+                    .select()
+                    .from(schema.beats)
+                    .orderBy(asc(schema.beats.position))
+                    .all()
+            ).map((b) => b.duration);
+        const before = await lengths();
+        const after = before.map((d, b) => (b >= 9 && b < 17 ? 0.4 : d));
+        await writeDurations({ before, after, changes: new Set([9, 17]) });
+        expect((await lengths())[9]).toBe(0.4);
+        expect(await flagged(db, "tempo_change")).toEqual([9, 17]);
+        // the same again changes nothing, so it makes no undo step
+        await writeDurations({
+            before: after,
+            after,
+            changes: new Set([9, 17]),
+        });
+        await performUndo(db);
+        expect(await lengths()).toEqual(before);
+        expect(await flagged(db, "tempo_change")).toEqual([]);
     });
 });

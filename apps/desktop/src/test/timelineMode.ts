@@ -123,6 +123,11 @@ export const LATER_COLUMNS = [
         sql: "ALTER TABLE `beats` ADD `tempo_hold` integer DEFAULT 0 NOT NULL",
     },
     {
+        table: "beats",
+        name: "tempo_change",
+        sql: "ALTER TABLE `beats` ADD `tempo_change` integer DEFAULT 0 NOT NULL",
+    },
+    {
         table: "measures",
         name: "number_override",
         sql: "ALTER TABLE `measures` ADD `number_override` integer",

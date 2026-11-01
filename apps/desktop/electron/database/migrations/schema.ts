@@ -94,6 +94,8 @@ export const beats = sqliteTable(
         tempo_pin: integer().default(0).notNull(),
         /** PROTOTYPE (tempo mode): 1 when this beat is a hold (a fermata: one count, its own length) */
         tempo_hold: integer().default(0).notNull(),
+        /** PROTOTYPE (tempo mode): 1 when a tempo change starts on this beat (the tempo lane's points) */
+        tempo_change: integer().default(0).notNull(),
         ...timestamps,
     },
     (_table) => [

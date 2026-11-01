@@ -32,6 +32,8 @@ export interface DatabaseBeat {
     tempo_pin?: number;
     /** PROTOTYPE (tempo mode): 1 when a hold (fermata) */
     tempo_hold?: number;
+    /** PROTOTYPE (tempo mode): 1 when a tempo change starts here */
+    tempo_change?: number;
     /** Timestamp when the beat was created */
     created_at: string;
     /** Timestamp when the beat was last updated */

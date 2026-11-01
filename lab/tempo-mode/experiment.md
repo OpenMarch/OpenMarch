@@ -11,6 +11,7 @@ questions:
   - Did you try a hold (fermata), a gradual change, a new meter or renumbering a measure? Which were easy to find, and which weren't?
   - When you added or removed a count, was it clear which of the three choices to pick?
   - Was it clear what Play would do: play from the playhead, or loop the measures you'd selected?
+  - Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?
   - Did Undo always put back what you expected, including the music moving when Fit lined up the first hit?
 ---
 
@@ -35,6 +36,11 @@ your own music to a show.
 - Drag along the measure row to select some measures. Fit then works on just
   those, and Play loops them until you clear the selection (click empty space
   or press Esc).
+- Edit the tempo line the way a tempo track works in a music app. Only the
+  line itself drags (the pointer turns to up/down over it). Double-click the
+  tempo lane to add a tempo change, then drag its dot sideways to move it.
+  Drag the round handle at the end of a stretch to make a gradual change, and
+  further to curve it. Double-click a dot to remove that change.
 - Tempo mode has one playhead and one Play: Space plays from the playhead, or
   loops the selected measures, and stops where it is. Turn on **Click** to
   hear the counts against the music.
