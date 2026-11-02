@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import { DbTransaction } from "./types";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
@@ -57,7 +57,9 @@ export {
  * coordinates are lost and the earlier page's move runs until the next page starts). A marcher's
  * row that would stretch into its next row at the same layer (a track, or a move crossing the
  * deleted page's flag) stops where that row starts instead.
- * A timeline left with no transition goes too (C-11: a timeline is the container for its moves).
+ * A timeline left with no transition goes too (C-11: a timeline is the container for its moves),
+ * and so does an empty page timeline that its page box no longer keeps
+ * (`deleteStrayEmptyTimelinesInTransaction`); any other empty timeline ripples as usual.
  *
  * **Held marks** (`timeline_held_marks`, ADR 0001 amendment 2026-10-30, part 2) move with the
  * rows, by the owner's rules (2026-10-28):
@@ -368,14 +370,36 @@ export function planTimelineRipple(
         return `${marcherName(a.marcher_id)}'s part of ${t ? moveName(t) : "a move"}`;
     };
 
-    // A timeline whose transitions all go is deleted with them (C-11), so it isn't rippled
+    // A timeline whose transitions all go is deleted with them (C-11), so it isn't rippled. Nor is
+    // an empty page timeline (everyone split off it, #581) unless it stays on its own page's box:
+    // it's deleted, so it never lands on another page's box and outranks that page's move there.
+    // Any other empty timeline (a move emptied with Remove, UI-9) ripples as usual
+    const pageTimelines = pageTimelinesOf(
+        timelines.map((l) => ({
+            id: l.id,
+            start: l.start_beat,
+            end: l.end_beat,
+        })),
+        before.pages.slice(1),
+    );
+    const afterBox = new Map(after.pages.map((p) => [p.id, p]));
+    const staysOnItsBox = (l: (typeof timelines)[number]) => {
+        const page = before.pages.find(
+            (p) =>
+                p.id !== 0 && p.start === l.start_beat && p.end === l.end_beat,
+        );
+        const box = page && afterBox.get(page.id);
+        if (!box) return false;
+        const r = map.range(l.start_beat, l.end_beat);
+        return r[0] === box.start && r[1] === box.end;
+    };
     const emptied = new Set(
         timelines
             .filter((l) => {
                 const owned = transitions.filter((t) => t.timeline_id === l.id);
-                return (
-                    owned.length > 0 && owned.every((t) => removed.has(t.id))
-                );
+                return owned.length > 0
+                    ? owned.every((t) => removed.has(t.id))
+                    : pageTimelines.has(l.id) && !staysOnItsBox(l);
             })
             .map((l) => l.id),
     );
@@ -454,6 +478,8 @@ export function planTimelineRipple(
 
     return {
         removed,
+        emptied,
+        pageTimelines,
         rippled,
         newTimeline,
         newTransition,
@@ -520,6 +546,8 @@ export async function rippleTimelineToPageGridInTransaction({
     const { transitions, marks = [] } = rows;
     const {
         removed,
+        emptied,
+        pageTimelines,
         rippled,
         newTimeline,
         newTransition,
@@ -627,6 +655,119 @@ export async function rippleTimelineToPageGridInTransaction({
                 .where(eq(H.id, m.id));
         }
     });
+    // 8. Empty timelines off their page's box (the others went with their transitions in 1)
+    if (emptied.size > 0)
+        await mapDbErrors(() =>
+            tx.delete(L).where(inArray(L.id, [...emptied])),
+        );
+    await deleteStrayEmptyTimelinesInTransaction(tx, pageTimelines, after);
+}
+
+interface Span {
+    id: number;
+    start: number;
+    end: number;
+}
+
+type Box = { start: number; end: number };
+const sameSpan = (a: Box, b: Box) => a.start === b.start && a.end === b.end;
+
+/** `l` is a page's own timeline: the oldest over exactly a page box (UI-25). */
+const isPageTimeline = (
+    l: Span,
+    timelines: readonly Span[],
+    boxes: readonly Box[],
+) =>
+    boxes.some((b) => sameSpan(b, l)) &&
+    !timelines.some((o) => sameSpan(o, l) && o.id < l.id);
+
+/**
+ * The page timelines before a page edit, for `deleteStrayEmptyTimelinesInTransaction` to check
+ * after it (`isPageTimeline`). Pure: `boxes` are the page boxes.
+ */
+export function pageTimelinesOf(
+    timelines: readonly Span[],
+    boxes: readonly Box[],
+): Set<number> {
+    return new Set(
+        timelines
+            .filter((l) => isPageTimeline(l, timelines, boxes))
+            .map((l) => l.id),
+    );
+}
+
+const readSpans = async (tx: DbTransaction) => {
+    const L = schema.timelines;
+    const timelines = await tx
+        .select({ id: L.id, start: L.start_beat, end: L.end_beat })
+        .from(L)
+        .all();
+    const used = new Set(
+        (
+            await tx
+                .selectDistinct({
+                    id: schema.timeline_transitions.timeline_id,
+                })
+                .from(schema.timeline_transitions)
+                .all()
+        ).map((t) => t.id),
+    );
+    return { timelines, used };
+};
+
+/**
+ * `pageTimelinesOf` read from the database: call it before a page edit's first write, and pass
+ * the result to `deleteStrayEmptyTimelinesInTransaction` after its last. Pass `grid` when it was
+ * just read.
+ */
+export async function readPageTimelinesInTransaction(
+    tx: DbTransaction,
+    grid?: PageGrid,
+): Promise<Set<number>> {
+    const { timelines } = await readSpans(tx);
+    const boxes = (grid ?? (await readPageGrid(tx))).pages.slice(1);
+    return pageTimelinesOf(timelines, boxes);
+}
+
+/**
+ * Deletes each of `pageTimelines` (the page timelines before a page edit,
+ * `readPageTimelinesInTransaction`) that the edit left empty and the UI-25 rule no longer keeps
+ * (#581 review). Splitting every marcher off a page leaves the page's timeline empty, and it keeps
+ * its row while another timeline shares its range, so a split move never becomes the page's by
+ * accident (ADR 0001, UI-25 amendment). Once a page edit leaves it off its box (the page deleted,
+ * a flag deleted or added across it), or the box's oldest timeline isn't it, or no timeline with
+ * transitions shares its range, it would only draw as an empty clip, so it goes. Any other empty
+ * timeline, such as a move emptied with Remove (UI-9), is never touched. Pass `grid` when it was
+ * just read. Returns the deleted ids.
+ */
+export async function deleteStrayEmptyTimelinesInTransaction(
+    tx: DbTransaction,
+    pageTimelines: ReadonlySet<number>,
+    grid?: PageGrid,
+): Promise<number[]> {
+    if (pageTimelines.size === 0) return [];
+    const { timelines, used } = await readSpans(tx);
+    const candidates = timelines.filter(
+        (l) => pageTimelines.has(l.id) && !used.has(l.id),
+    );
+    if (candidates.length === 0) return [];
+    const boxes = (grid ?? (await readPageGrid(tx))).pages.slice(1);
+    const stray = candidates
+        .filter(
+            (l) =>
+                !isPageTimeline(l, timelines, boxes) ||
+                !timelines.some(
+                    (o) => o.id !== l.id && sameSpan(o, l) && used.has(o.id),
+                ),
+        )
+        .map((l) => l.id);
+    if (stray.length > 0)
+        await mapDbErrors(() =>
+            tx
+                .delete(schema.timelines)
+                .where(inArray(schema.timelines.id, stray)),
+        );
+    return stray;
 }
 
 // ---------------------------------------------------------------------------

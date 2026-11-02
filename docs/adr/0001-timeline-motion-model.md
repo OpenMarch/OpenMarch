@@ -152,7 +152,8 @@ selected page. Rules on stored data, enforced by the write functions
   exception to C-11's rule that deleting a timeline's last transition deletes
   the timeline.
 - Adding or deleting a page writes only page rows (and `last_page_counts`),
-  never timeline rows.
+  never timeline rows, except that it deletes a page's own timeline a split left empty once that
+  timeline no longer qualifies to stay (UI-25 amendment below, #581).
 
 **Amendment (2026-10-08, project owner): a page has a position only where a marcher was
 moved.** No path writes timeline rows on a page's behalf:
@@ -226,6 +227,10 @@ merge it back. So the first rule above is relaxed:
   ("Move N") and a clip. A page flag drag moves timelines that already shared a range together.
   An edit that empties the page's timeline keeps its row while another timeline shares its range,
   so a split move never becomes the page's by accident.
+  Clarified with #581: a page's own timeline left empty by a split stays only while it sits on
+  its page's box and a move with marchers shares its counts; a page edit (adding, deleting or
+  moving a flag, deleting a page) deletes it otherwise. The check covers any empty timeline that
+  was a page's own before the edit; a move that isn't a page's, emptied with Remove (UI-9), stays.
 - A marcher is still in at most one of the timelines over one range: split and merge move whole
   transitions (or peel a slot of a shared shapeless one into its own one-slot transition), and
   merge refuses a marcher in both.

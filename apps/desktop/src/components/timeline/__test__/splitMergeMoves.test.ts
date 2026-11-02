@@ -71,8 +71,13 @@ describe("split and merge entries (UI-25)", () => {
         expect(splitEntryState(ctx([9]), 3)!.disabledReason).toMatch(
             /Select marchers in Page 2/,
         );
-        expect(splitEntryState(ctx([1, 2, 3]), 3)!.disabledReason).toMatch(
-            /Every marcher in Page 2 is selected/,
+        // A page's own move splits off whole (#581); another move doesn't
+        expect(splitEntryState(ctx([1, 2, 3]), 3)).toEqual({
+            label: "Split 3 selected into new move",
+            disabledReason: null,
+        });
+        expect(splitEntryState(ctx([4, 5]), 7)!.disabledReason).toMatch(
+            /Every marcher in Move 2 is selected/,
         );
         expect(splitEntryState(ctx([1], true), 3)!.disabledReason).toBe(
             pauseToSplit(),
@@ -158,6 +163,44 @@ describe("split and merge entries (UI-25)", () => {
         ).toMatch(/Nothing moves on this page yet/);
         expect(pageMenuEntries(ctx([]), BOXES[0]!, c)).toEqual([]);
     });
+
+    it("a page box whose timeline everyone was split off says it has no move of its own (#581)", () => {
+        const c = commands();
+        const emptied = [
+            timeline(3, 9, 17, []),
+            timeline(8, 9, 17, [1, 2, 3], "Move 3"),
+        ];
+        const [entry] = pageMenuEntries(ctx([2], false, emptied), BOXES[1]!, c);
+        expect(entry!.disabledReason).toMatch(/no move of its own/);
+        entry!.onSelect();
+        expect(c.split).not.toHaveBeenCalled();
+        // The split move is a move: named as one, and split as one
+        expect(timelineLabel(ctx([], false, emptied), 8)).toBe("Move 3");
+        expect(
+            splitEntryState(ctx([1, 2, 3], false, emptied), 8)!.disabledReason,
+        ).toMatch(/Every marcher in Move 3 is selected/);
+    });
+
+    it("an emptied page box with no move left over it says nothing moves there, not to use a clip", () => {
+        // Everyone split off, then the move deleted (or the page cleared, or held from the page
+        // before): the page timeline is left empty with no clip over its counts
+        const alone = [timeline(3, 9, 17, [])];
+        const [entry] = pageMenuEntries(
+            ctx([2], false, alone),
+            BOXES[1]!,
+            commands(),
+        );
+        expect(entry!.disabledReason).toMatch(/Nothing moves on this page yet/);
+        // A move over other counts of the page isn't a clip over the box's
+        const [inside] = pageMenuEntries(
+            ctx([2], false, [...alone, timeline(8, 10, 14, [1], "Move 3")]),
+            BOXES[1]!,
+            commands(),
+        );
+        expect(inside!.disabledReason).toMatch(
+            /Nothing moves on this page yet/,
+        );
+    });
 });
 
 describe("the clip drag (UI-25)", () => {
@@ -174,7 +217,10 @@ describe("the clip drag (UI-25)", () => {
         expect(splitVerdict(ctx([1, 2]), 3)).toEqual({
             label: "Split 2 marchers",
         });
-        expect(splitVerdict(ctx([1, 2, 3]), 3)).toMatchObject({
+        expect(splitVerdict(ctx([1, 2, 3]), 3)).toEqual({
+            label: "Split 3 marchers",
+        });
+        expect(splitVerdict(ctx([4, 5]), 7)).toMatchObject({
             refused: true,
         });
     });

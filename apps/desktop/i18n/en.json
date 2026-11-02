@@ -2591,7 +2591,10 @@
             "drag": "Split {count, plural, one {# marcher} other {# marchers}}",
             "done": "Split {count, plural, one {# marcher} other {# marchers}} into {label}",
             "paused": "Pause to split or merge moves.",
-            "nothingOnPage": "Nothing moves on this page yet, so there is nothing to split."
+            "nothingOnPage": "Nothing moves on this page yet, so there is nothing to split.",
+            "pageSplitOff": "This page has no move of its own. To split a move over it, use the move's clip.",
+            "selectMembers": "Select marchers in {name} to split them into a new move.",
+            "everyMarcher": "Every marcher in {name} is selected. Select only the ones to split off."
         },
         "merge": {
             "menuPair": "Merge {source} into {target}",
