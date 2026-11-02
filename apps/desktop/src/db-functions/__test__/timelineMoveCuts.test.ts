@@ -1137,6 +1137,129 @@ describeDbTests(
             expect(aRows[0]!.timelineId).not.toBe(arc.id);
         });
 
+        /**
+         * One arc move over `range` on layer 1, the only move in the show, its one transition
+         * holding `ids` in order, each heading for a spot of its own.
+         */
+        const arcOver = (
+            db: DbConnection,
+            ids: number[],
+            range: BeatRange,
+            bulge: number,
+        ) =>
+            transactionWithHistory(db, "arc", async (tx) => {
+                const [t] = await createTimelinesInTransaction({
+                    tx,
+                    newTimelines: [
+                        {
+                            name: "Arc",
+                            startBeat: range.start,
+                            endBeat: range.end,
+                        },
+                    ],
+                });
+                const [made] = await createTimelineTransitionsInTransaction({
+                    tx,
+                    newTransitions: [
+                        {
+                            timelineId: t!.id,
+                            slotCount: ids.length,
+                            destination: {
+                                kind: "individual",
+                                points: ids.map(
+                                    (_, i) => [400 + 40 * i, 300] as XY,
+                                ),
+                            },
+                            pathStyle: "arc",
+                            pathParams: { bulge },
+                        },
+                    ],
+                });
+                await createTimelineAssignmentsInTransaction({
+                    tx,
+                    newAssignments: ids.map((marcherId, i) => ({
+                        marcherId,
+                        transitionId: made!.id,
+                        slotIndex: i,
+                        startBeat: range.start,
+                        endBeat: range.end,
+                        layer: 1,
+                    })),
+                });
+                return t!;
+            });
+
+        /** Each count's position of `id` from `from` to `to`. */
+        const countsOver = (
+            r: Resolver,
+            id: number,
+            from: number,
+            to: number,
+        ) =>
+            Array.from({ length: to - from + 1 }, (_, i) =>
+                r.positionAt(id, from + i),
+            );
+
+        it("the cleared marcher keeps its own arc at every count before the page (#591 probe)", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            await convertPagesToTimeline(db);
+            await clearTimelines(db);
+            const [c, d] = (await resolverOf(db)).marcherIds();
+            await arcOver(db, [c!, d!], { start: 1, end: 25 }, 0.4);
+            const r0 = await resolverOf(db);
+            const cBefore = countsOver(r0, c!, 0, PAGE3.start);
+            const dBefore = countsOver(r0, d!, 0, 25);
+            const data = await dataOf(db);
+
+            const result = await clearPage3(db, c!);
+
+            expect(result.cleared).toEqual([c]);
+            const r1 = await resolverOf(db);
+            expectClose(
+                [cBefore, dBefore],
+                [countsOver(r1, c!, 0, PAGE3.start), countsOver(r1, d!, 0, 25)],
+            );
+            // c's part before the page is still an arc, not a straight line
+            const cRows = await rowsOf(db, c!);
+            expect(cRows.map((r) => [r.start, r.end, r.pathStyle])).toEqual([
+                [1, 17, "arc"],
+            ]);
+            // Not set over page 3: it stands where the arc left it
+            for (let beat = PAGE3.start; beat <= PAGE3.end; beat++)
+                expect(r1.positionAt(c!, beat)).toEqual(
+                    r0.positionAt(c!, PAGE3.start),
+                );
+
+            const done = await dataOf(db);
+            const undo = await performUndo(db);
+            expect(undo.success, undo.error?.message).toBe(true);
+            expect(await dataOf(db)).toEqual(data);
+            const redo = await performRedo(db);
+            expect(redo.success, redo.error?.message).toBe(true);
+            expect(await dataOf(db)).toEqual(done);
+        });
+
+        it("clearing a page in the middle of a marcher's own arc keeps every count before it", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            await convertPagesToTimeline(db);
+            await clearTimelines(db);
+            const [c] = (await resolverOf(db)).marcherIds();
+            await arcOver(db, [c!], { start: 1, end: 41 }, -0.35);
+            const r0 = await resolverOf(db);
+            const before = countsOver(r0, c!, 0, PAGE3.start);
+
+            await clearPage3(db, c!);
+
+            const r1 = await resolverOf(db);
+            expectClose([before], [countsOver(r1, c!, 0, PAGE3.start)]);
+            expect(r1.positionAt(c!, 41)).toEqual(r0.positionAt(c!, 41));
+            expect(await rowsOver(db, [c!], PAGE3)).toEqual([]);
+        });
+
         it("one undo step puts back every row, and redo does it again exactly", async ({
             db,
             marchersAndPages: _,

@@ -309,14 +309,16 @@ export function moveAtPlayhead(
 }
 
 /**
- * "Split Move 2 at Page 3 count 4", and when paths changed (a path that wasn't a straight line
- * before the split, UI-27), "… · 3 marchers' paths are redrawn: straight before it, restarted
- * after".
+ * "Split Move 2 at Page 3 count 4", and when paths changed (UI-27): "… · 3 marchers' curved paths
+ * restart after it" when every change starts at the split `beat` (an arc keeps its curve before
+ * it, #591), else "… · 3 marchers' paths are redrawn: straight before it, restarted after" (follow
+ * the leader goes straight before it).
  */
 export function moveSplitMessage(
     label: string,
     where: string,
     changed: readonly MotionChange[],
+    beat: number,
 ): string {
     const base = tolgee.t(
         "timeline.moveSplit.message",
@@ -324,18 +326,39 @@ export function moveSplitMessage(
         { label, where },
     );
     if (changed.length === 0) return base;
-    const note =
-        changed.length === 1
-            ? tolgee.t(
-                  "timeline.moveSplit.oneChanged",
-                  "1 marcher's path is redrawn: straight before it, restarted after",
-              )
-            : tolgee.t(
-                  "timeline.moveSplit.changed",
-                  "{count} marchers' paths are redrawn: straight before it, restarted after",
-                  { count: changed.length },
-              );
-    return `${base} · ${note}`;
+    // Curved paths keep every count before the split and only restart after it (#591); a path
+    // that changes before it too (follow the leader) is redrawn straight there. Each is counted
+    // on its own, so a move with both says both
+    const restarted = changed.filter((c) => c.fromBeat >= beat).length;
+    const redrawn = changed.length - restarted;
+    const notes: string[] = [];
+    if (restarted > 0)
+        notes.push(
+            restarted === 1
+                ? tolgee.t(
+                      "timeline.moveSplit.oneRestarted",
+                      "1 marcher's curved path restarts after it",
+                  )
+                : tolgee.t(
+                      "timeline.moveSplit.restarted",
+                      "{count} marchers' curved paths restart after it",
+                      { count: restarted },
+                  ),
+        );
+    if (redrawn > 0)
+        notes.push(
+            redrawn === 1
+                ? tolgee.t(
+                      "timeline.moveSplit.oneChanged",
+                      "1 marcher's path is redrawn: straight before it, restarted after",
+                  )
+                : tolgee.t(
+                      "timeline.moveSplit.changed",
+                      "{count} marchers' paths are redrawn: straight before it, restarted after",
+                      { count: redrawn },
+                  ),
+        );
+    return [base, ...notes].join(" · ");
 }
 
 /**
@@ -521,6 +544,7 @@ async function splitMoveAtPlayhead({
                 label,
                 beatWhere(playheadBeat, pageBoxes) ?? "the playhead",
                 motionChanged,
+                playheadBeat,
             ),
             undo,
         );

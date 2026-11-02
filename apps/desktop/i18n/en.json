@@ -2504,6 +2504,8 @@
             "message": "Split {label} at {where}",
             "oneChanged": "1 marcher's path is redrawn: straight before it, restarted after",
             "changed": "{count} marchers' paths are redrawn: straight before it, restarted after",
+            "oneRestarted": "1 marcher's curved path restarts after it",
+            "restarted": "{count} marchers' curved paths restart after it",
             "paused": "Pause to split a move."
         },
         "music": {
