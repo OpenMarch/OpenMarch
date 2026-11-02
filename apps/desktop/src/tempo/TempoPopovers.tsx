@@ -5,6 +5,13 @@
  */
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
+import {
+    ArrowLineRightIcon,
+    ArrowsInLineHorizontalIcon,
+    CaretRightIcon,
+    PauseIcon,
+} from "@phosphor-icons/react";
+import { Keycaps } from "@/components/timeline/ShortcutTooltip";
 import { useOnScreen } from "./bandLayout";
 import { CountAsk, CountRange, Editor, Menu } from "./tempoBandTypes";
 import { CountAnswer, useTempoUi } from "./tempoUi";
@@ -67,6 +74,13 @@ export function CountAskPopover({
         window.addEventListener("keydown", onKey, true);
         return () => window.removeEventListener("keydown", onKey, true);
     }, [onClose]);
+    // Each choice is an action, done on click (owner, 2026-11-01: they read as radios). The one
+    // Enter takes shows the key instead of a radio dot
+    const icons: Record<CountAnswer, ReactNode> = {
+        keep: <ArrowsInLineHorizontalIcon size={14} aria-hidden />,
+        shift: <ArrowLineRightIcon size={14} aria-hidden />,
+        hold: <PauseIcon size={14} aria-hidden />,
+    };
     const option = (
         choice: CountAnswer,
         title: string,
@@ -77,32 +91,38 @@ export function CountAskPopover({
             ref={choice === preferred ? ref : undefined}
             type="button"
             disabled={!!disabled}
-            aria-pressed={choice === picked}
             data-picked={choice === picked ? "true" : undefined}
             className={clsx(
-                "rounded-6 flex gap-8 border p-8 text-left outline-hidden disabled:opacity-50",
+                "rounded-6 group flex cursor-pointer items-start gap-8 border p-8 text-left outline-hidden disabled:cursor-default disabled:opacity-50",
                 choice === picked
-                    ? "border-accent bg-accent/10 border-2"
-                    : "border-stroke hover:bg-fg-2 m-px",
+                    ? "border-accent bg-accent/10"
+                    : "border-stroke hover:border-accent/60 hover:bg-fg-2",
             )}
             onFocus={() => setPicked(choice)}
             onClick={() => choose(choice)}
         >
-            {/* a radio mark: filled on the picked card only */}
             <span
-                aria-hidden
                 className={clsx(
-                    "mt-2 flex size-12 shrink-0 items-center justify-center rounded-full border",
-                    choice === picked ? "border-accent" : "border-stroke",
+                    "mt-1 shrink-0",
+                    choice === picked ? "text-accent" : "text-text-subtitle",
                 )}
             >
-                {choice === picked && (
-                    <span className="bg-accent size-6 rounded-full" />
-                )}
+                {icons[choice]}
             </span>
-            <span className="flex flex-col">
+            <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-[12px] font-bold">{title}</span>
                 <span className="text-text-subtitle text-[11px]">{text}</span>
+            </span>
+            <span className="mt-1 shrink-0 self-center">
+                {choice === picked ? (
+                    <Keycaps shortcut="Enter" />
+                ) : (
+                    <CaretRightIcon
+                        size={12}
+                        className="text-text-subtitle opacity-0 group-hover:opacity-100"
+                        aria-hidden
+                    />
+                )}
             </span>
         </button>
     );
@@ -142,8 +162,8 @@ export function CountAskPopover({
                 </>
             )}
             <div className="text-text-subtitle text-[10px]">
-                Your last choice is picked to start with: Enter takes the picked
-                one, or click any. Esc cancels; Undo takes any of them back.
+                Click one to do it. Enter does the one marked, your last choice;
+                Esc cancels, and Undo takes any of them back.
             </div>
         </div>
     );

@@ -20,9 +20,12 @@ export function TempoHelp() {
             "(the triangle atop the music) onto the music",
         ],
         ["Shift while dragging", "moves just that count"],
-        ["Drag the tempo line", "up or down; double-click it to type a tempo"],
         [
-            "Double-click the tempo lane",
+            "Drag the tempo line",
+            "up or down; right-click > Set tempo… to type one",
+        ],
+        [
+            "Double-click the tempo lane or line",
             "adds a tempo change there; double-click a change's dot to remove it",
         ],
         [
@@ -32,6 +35,14 @@ export function TempoHelp() {
         [
             "Drag a stretch's round handle",
             "makes a gradual change, straight or curved; double-click it for a jump again",
+        ],
+        [
+            "Drag a stretch's square end dot",
+            "sets the tempo it ends on, so a rit. can jump back (a tempo); with a pinned count after it, the counts up to the pin make room",
+        ],
+        [
+            "Right-click in a gradual change",
+            "A tempo: back to the tempo it started at",
         ],
         ["Drag along Measures", "selects counts to edit"],
         [

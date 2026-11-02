@@ -12,6 +12,7 @@ questions:
   - "When you added or removed a count, was it clear which of the three choices to pick?"
   - "Was it clear what Play would do: play from the playhead, or loop the measures you'd selected?"
   - "Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?"
+  - "Could you make a rit. that goes straight back to the old tempo (a tempo)? Which way did you use: the end square or the A tempo menu item?"
   - "Did Undo always put back what you expected, including the music moving when you dropped a spot on count 1?"
 ---
 
@@ -42,8 +43,12 @@ your own music to a show.
 - Edit the tempo line the way a tempo track works in a music app. Only the
   line itself drags (the pointer turns to up/down over it). Double-click the
   tempo lane to add a tempo change, then drag its dot sideways to move it.
-  Drag the round handle at the end of a stretch to make a gradual change, and
-  further to curve it. Double-click a dot to remove that change.
+  Drag the small square at the end of a stretch to set the tempo it ends on,
+  then the round handle in the middle to curve it. Double-click a dot to
+  remove that change.
+- Try a rit. then a tempo: drag a stretch's end square down so it slows and
+  then jumps back, or make a long gradual change, right-click a count inside
+  it and choose **A tempo**.
 - Tempo mode has one playhead and one Play: Space plays from the playhead, or
   loops the selected measures, and stops where it is.
 

@@ -135,7 +135,8 @@ import type {
 
 /** Low enough that Fit shows a long show whole (UI-12): 500 beats fit in 500px */
 export const TIMELINE_MIN_PX_PER_BEAT = 1;
-export const TIMELINE_MAX_PX_PER_BEAT = 64;
+/** High enough to place a count line within a few milliseconds (owner, 2026-11-01: zoom in more) */
+export const TIMELINE_MAX_PX_PER_BEAT = 512;
 export const TIMELINE_INITIAL_PAGE_WIDTH = 40;
 
 export interface TimelineSelectionInteraction {
@@ -2838,6 +2839,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
     livePositionBeat,
     pixelsPerBeat,
     height,
+    grabHeight,
     beatCount,
     anchorRef,
     onSeek,
@@ -2856,6 +2858,12 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
     livePositionBeat?: () => number | null;
     pixelsPerBeat: number;
     height: number;
+    /**
+     * How far down the line can be grabbed (px); the line is drawn the full `height` either way.
+     * A focused band (tempo mode) takes the clicks below its top, as a DAW's lanes do: the
+     * playhead is grabbed in the ruler there
+     */
+    grabHeight?: number;
     beatCount: number;
     anchorRef: RefObject<HTMLButtonElement | null>;
     onSeek?: (beat: BeatPosition, options?: TimelineSeekOptions) => void;
@@ -2967,7 +2975,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 }}
                 onBlur={keySteps.end}
                 className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-50 w-12 -translate-x-1/2 cursor-ew-resize! touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"
-                style={{ left, height }}
+                style={{ left, height: grabHeight ?? height }}
             >
                 {/* UI-20: a 2px line from the headroom strip down, and a head in the strip, centered on
                 the line, so its tip runs into the line */}
