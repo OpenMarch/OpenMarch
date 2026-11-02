@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import tolgee from "@/global/singletons/Tolgee";
+import { holdTerms } from "@/timeline/holdTerms";
 import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
 import type { TimelinePageMarker } from "./TimelineViewModel";
 import {
@@ -71,13 +72,15 @@ function heldBarLabel(
     const last = getPageCountAt({ pages }, bar.end).pageLabel;
     const title =
         first === last
-            ? tolgee.t("timeline.heldBar.title", "Held · Page {page}", {
+            ? tolgee.t("timeline.heldBar.title", "{held} · Page {page}", {
+                  ...holdTerms(),
                   page: last,
               })
             : tolgee.t(
                   "timeline.heldBar.titleRange",
-                  "Held · Pages {first}–{last}",
+                  "{held} · Pages {first}–{last}",
                   {
+                      ...holdTerms(),
                       first,
                       last,
                   },

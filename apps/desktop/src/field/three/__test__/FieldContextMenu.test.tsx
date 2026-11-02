@@ -93,11 +93,11 @@ describe("FieldContextMenu", () => {
         const off = registerActionHandler("timelineUnsetHereAndFollowing", {
             run: vi.fn(),
             isEnabled: () => true,
-            label: () => "Remove keyframe, Pages 3–4 follow back",
+            label: () => "Remove keyframe, Pages 3–4 move back too",
         });
         open();
         expect(item("timelineUnsetHereAndFollowing")).toHaveTextContent(
-            "Remove keyframe, Pages 3–4 follow back",
+            "Remove keyframe, Pages 3–4 move back too",
         );
         cleanup();
         off();

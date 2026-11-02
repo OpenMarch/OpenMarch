@@ -23,6 +23,7 @@ import {
     QuestionIcon,
 } from "@phosphor-icons/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { holdTerms } from "@/timeline/holdTerms";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
@@ -557,7 +558,8 @@ export function useTimelineRangeMenu({
                                     <DiamondIcon size={14} />
                                     {tolgee.t(
                                         "timeline.rangeMenu.setAsShown",
-                                        "Set as shown",
+                                        "{defineAsShown}",
+                                        holdTerms(),
                                     )}
                                 </MenuItemWithReason>
                                 {holdReason === undefined && (
@@ -580,7 +582,8 @@ export function useTimelineRangeMenu({
                                     <PauseIcon size={14} />
                                     {tolgee.t(
                                         "timeline.rangeMenu.holdFromPrevious",
-                                        "Hold from previous page",
+                                        "{holdFromPrevious}",
+                                        holdTerms(),
                                     )}
                                 </MenuItemWithReason>
                                 <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />

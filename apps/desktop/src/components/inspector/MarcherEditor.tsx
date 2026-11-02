@@ -24,6 +24,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { clsx } from "clsx";
 import { T, useTolgee } from "@tolgee/react";
+import { holdTerms } from "@/timeline/holdTerms";
 import { useQuery } from "@tanstack/react-query";
 import type { FieldProperties } from "@openmarch/core";
 import { usePositionAt } from "@/timeline/timelineStore";
@@ -413,7 +414,10 @@ function AlignmentButtons() {
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
                             >
-                                <T keyName="toolbar.alignment.clearThisPage" />
+                                <T
+                                    keyName="toolbar.alignment.clearThisPage"
+                                    params={holdTerms()}
+                                />
                             </ActionButton>
                             <ActionButton
                                 action="setSelectedMarchersToNextPage"
