@@ -285,8 +285,10 @@ export async function goTo(page: Page, where: string) {
  * page's move, so drops and actions edit it.
  */
 export async function selectPage(show: Show, pageName: string) {
+    // The timeline's box, not an inspector section of the same name
     await show.page
         .getByRole("button", { name: pageName, exact: true })
+        .and(show.page.locator("[data-timeline-range-page]"))
         .click();
     await expect(
         show.page.getByRole("heading", { name: pageName }),
