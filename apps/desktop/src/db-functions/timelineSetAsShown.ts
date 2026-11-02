@@ -13,7 +13,11 @@ import { NothingToDo, refuse } from "./timelineErrors";
 import { readPageGrid } from "./timelineRipple";
 import { isPageBox } from "./timelineMoves";
 import { addMarchersToTimelineInTransaction } from "./timelineMembership";
-import { readHeldMarks } from "./timelineHeldMarks";
+import { readHeldMarks, type HeldConflict } from "./timelineHeldMarks";
+import {
+    readHeldArrivalsBefore,
+    startHoldsLostInTransaction,
+} from "./timelineHeldUpkeep";
 import { overlapsBox } from "@/timeline/basicSimple";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitionsInTransaction";
 
@@ -52,6 +56,11 @@ export interface SetAsShownResult {
     changed: number[];
     /** The others, with why */
     skipped: SetAsShownSkip[];
+    /**
+     * Holds from the starting spots (#619) on later pages that the new moves left with nothing to
+     * grow out of, so they went (`startHoldsLostInTransaction`), for the command's warning
+     */
+    droppedHolds?: HeldConflict;
 }
 
 const ascending = (ids: Iterable<number>) => [...ids].sort((a, b) => a - b);
@@ -101,6 +110,7 @@ export async function setAsShownOnPage({
             db,
             "setAsShownOnPage",
             async (tx) => {
+                const heldBefore = await readHeldArrivalsBefore(tx);
                 const result = await setAsShownOnPageInTransaction({
                     tx,
                     pageBox,
@@ -108,6 +118,11 @@ export async function setAsShownOnPage({
                     at,
                 });
                 if (result.changed.length === 0) throw new NothingToDo(result);
+                const dropped = await startHoldsLostInTransaction(
+                    tx,
+                    heldBefore,
+                );
+                if (dropped) result.droppedHolds = dropped;
                 return result;
             },
         );

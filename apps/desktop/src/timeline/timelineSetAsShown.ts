@@ -8,7 +8,7 @@ import {
 import type { TimelineSetAsShownMenu } from "@/components/timeline/TimelineRangeMenu";
 import type { PageBoxRange } from "./timelinePageBoxState";
 import { pagesText, type PageKeepState } from "./timelineKeepLater";
-import { toastTimelineError } from "./timelineErrorMessages";
+import { toastDroppedHolds, toastTimelineError } from "./timelineErrorMessages";
 
 /**
  * **Set as shown** as the UI runs it (holds, fork #466): one undo step, and a refusal is a toast,
@@ -25,11 +25,14 @@ export async function setAsShownOn(
     database: DbConnection = db,
 ): Promise<SetAsShownResult> {
     try {
-        return await setAsShownOnPage({
+        const result = await setAsShownOnPage({
             db: database,
             pageBox: box,
             marcherIds,
         });
+        // Holds from the starting spots on later pages the new moves left nothing to grow out of
+        toastDroppedHolds(result.droppedHolds);
+        return result;
     } catch (error) {
         toastTimelineError(error, "Error setting marchers as shown");
         return NOTHING;

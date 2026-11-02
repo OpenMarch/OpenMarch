@@ -1,12 +1,16 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import type { DbTransaction } from "./types";
+import { shapeRecipesOnly } from "./shapeRecipes";
 import type { MoveMemberSkip, MoveMemberSkipReason } from "./timelineMoveCuts";
 import {
     hasHeldMarksTable,
     isInsideHeldMark,
     readArrival,
+    readHeldMarkArrivals,
     readHeldMarks,
+    HOME_ARRIVAL,
+    marchersWithShapeHome,
     type HeldArrival,
     type HeldMark,
 } from "./timelineHeldArrival";
@@ -60,6 +64,45 @@ export interface HeldArrivalEdit<M extends { marcherId: number }> {
 }
 
 /**
+ * A Held marcher's edit whose hold grows out of its **starting spot** (#619): it sets the
+ * marcher's starting spot, so the whole hold moves with it.
+ */
+export interface HeldHomeEdit<M extends { marcherId: number }> {
+    readonly move: M;
+    readonly mark: HeldMark;
+}
+
+/** A Held marcher an edit inside its hold left alone, with why. */
+export type HeldEditSkip = Pick<MoveMemberSkip, "marcherId" | "reason">;
+
+/**
+ * Deletes the holds from the starting spots (#619) of those of `marcherIds` whose starting spot a
+ * placed shape now sets (`marchersWithShapeHome`): a shape's starting spots get no Held hold, the
+ * shape carried on is its hold (owner, 2026-11-01). Run in the edit that placed the shape, after
+ * its recipe is written, so both are one undo step.
+ *
+ * @returns the marchers whose holds went
+ */
+export async function dropShapeHomeHoldsInTransaction(
+    tx: DbTransaction,
+    marcherIds: readonly number[],
+): Promise<number[]> {
+    const shaped = await marchersWithShapeHome(tx, marcherIds);
+    if (shaped.size === 0) return [];
+    const gone = (await readHeldMarkArrivals(tx)).filter(
+        (m) => m.fromHome && shaped.has(m.marcherId),
+    );
+    if (gone.length === 0) return [];
+    await tx.delete(schema.timeline_held_marks).where(
+        inArray(
+            schema.timeline_held_marks.id,
+            gone.map((m) => m.id),
+        ),
+    );
+    return [...new Set(gone.map((m) => m.marcherId))].sort((x, y) => x - y);
+}
+
+/**
  * Splits an edit at the count `beat` into the moved marchers that are Held there, those skipped,
  * and the rest.
  *
@@ -69,6 +112,10 @@ export interface HeldArrivalEdit<M extends { marcherId: number }> {
  * arrival is a shape's move or a follow-the-leader move, which the edit would rewrite, is left
  * alone and named in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436):
  * a later edit, such as a shape placed on the arrival's page, can make it one.
+ *
+ * A marcher Held from its starting spot (`readArrival`, `HOME_ARRIVAL`) goes in `homes`: its edit
+ * sets its starting spot. One whose starting spot a placed shape sets (`marchersWithShapeHome`) is
+ * skipped and named the same way.
  */
 export async function splitHeldEditsInTransaction<
     M extends { marcherId: number },
@@ -78,7 +125,8 @@ export async function splitHeldEditsInTransaction<
     moves: readonly M[],
 ): Promise<{
     held: HeldArrivalEdit<M>[];
-    skipped: MoveMemberSkip[];
+    homes: HeldHomeEdit<M>[];
+    skipped: HeldEditSkip[];
     rest: M[];
 }> {
     const marks = (
@@ -87,21 +135,32 @@ export async function splitHeldEditsInTransaction<
             moves.map((m) => m.marcherId),
         )
     ).filter((mark) => isInsideHeldMark(mark, beat));
-    if (marks.length === 0) return { held: [], skipped: [], rest: [...moves] };
+    if (marks.length === 0)
+        return { held: [], homes: [], skipped: [], rest: [...moves] };
     const markOf = new Map(marks.map((mark) => [mark.marcherId, mark]));
     const arrivals = new Map<number, HeldArrival>();
+    const fromHome = new Set<number>();
     for (const mark of marks) {
         const arrival = await readArrival(tx, mark.marcherId, mark.start);
-        if (arrival) arrivals.set(mark.marcherId, arrival);
+        if (arrival === HOME_ARRIVAL) fromHome.add(mark.marcherId);
+        else if (arrival) arrivals.set(mark.marcherId, arrival);
     }
+    const shapeHome = await marchersWithShapeHome(tx, [...fromHome]);
     const inRecipe = await marcherRecipeTimelines(tx, [
         ...new Set([...arrivals.values()].map((a) => a.timelineId)),
     ]);
     const held: HeldArrivalEdit<M>[] = [];
-    const skipped: MoveMemberSkip[] = [];
+    const homes: HeldHomeEdit<M>[] = [];
+    const skipped: HeldEditSkip[] = [];
     const rest: M[] = [];
     for (const move of moves) {
         const mark = markOf.get(move.marcherId);
+        if (mark && fromHome.has(move.marcherId)) {
+            if (shapeHome.has(move.marcherId))
+                skipped.push({ marcherId: move.marcherId, reason: "shape" });
+            else homes.push({ move, mark });
+            continue;
+        }
         const arrival = arrivals.get(move.marcherId);
         if (!mark || !arrival) {
             rest.push(move);
@@ -111,15 +170,10 @@ export async function splitHeldEditsInTransaction<
             arrival,
             inRecipe.get(arrival.timelineId)?.has(move.marcherId) ?? false,
         );
-        if (reason)
-            skipped.push({
-                marcherId: move.marcherId,
-                timelineId: arrival.timelineId,
-                reason,
-            });
+        if (reason) skipped.push({ marcherId: move.marcherId, reason });
         else held.push({ move, mark, timelineId: arrival.timelineId });
     }
-    return { held, skipped, rest };
+    return { held, homes, skipped, rest };
 }
 
 /**
@@ -136,7 +190,10 @@ export function arrivalSkipReason(
     return null;
 }
 
-/** For each of `timelineIds` with a placed shape's recipe, the marchers it holds. */
+/**
+ * For each of `timelineIds` with a placed shape's recipe, the marchers it holds. An ungrouped mark
+ * (`shapeRecipesOnly`) holds nobody in a shape.
+ */
 export async function marcherRecipeTimelines(
     tx: DbTransaction,
     timelineIds: readonly number[],
@@ -149,7 +206,12 @@ export async function marcherRecipeTimelines(
         .select({ timelineId: r.timeline_id, marcherId: m.marcher_id })
         .from(m)
         .innerJoin(r, eq(r.id, m.recipe_id))
-        .where(inArray(r.timeline_id, [...new Set(timelineIds)]))
+        .where(
+            and(
+                inArray(r.timeline_id, [...new Set(timelineIds)]),
+                shapeRecipesOnly(),
+            ),
+        )
         .all();
     for (const row of rows) {
         if (row.timelineId === null) continue;
