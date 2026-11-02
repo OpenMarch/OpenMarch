@@ -59,6 +59,47 @@ describe("meters", () => {
 });
 
 describe("planMeter", () => {
+    it("keeps every count's tempo: a rit. and an a tempo survive 4/4 to 2/4", () => {
+        // 4/4 at 120, a rit. to 90 over m. 2 and 3, a tempo at m. 4 (counts 13–16)
+        const bpm = [
+            0,
+            ...Array<number>(4).fill(120),
+            ...Array.from({ length: 8 }, (_, i) => 120 - (30 * i) / 7),
+            ...Array<number>(8).fill(120),
+        ];
+        const durations = bpm.map((b) => (b ? 60 / b : 0));
+        const plan = planMeter({
+            durations,
+            locks: new Set(),
+            measureStarts: [1, 5, 9, 13, 17],
+            beatCount: durations.length,
+            start: 9,
+            meter: parse("2/4")!,
+            units: [],
+        });
+        expect(plan.starts).toEqual([9, 11, 13, 15, 17, 19]);
+        expect(plan.result.durations).toEqual(durations);
+    });
+    it("a longer count keeps its own tempo inside a rit.", () => {
+        const durations = [0, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75];
+        const plan = planMeter({
+            durations,
+            locks: new Set(),
+            measureStarts: [1, 4],
+            beatCount: durations.length,
+            start: 1,
+            meter: parse("7/8 2+2+3")!,
+            units: [],
+        });
+        expect(plan.result.durations.slice(1)).toEqual([
+            0.5,
+            0.55,
+            0.6 * 1.5,
+            0.65,
+            0.7,
+            0.75 * 1.5,
+        ]);
+    });
     it("regroups a run of 3-count measures as 7/8 2+2+3 at the same quarter tempo, keeping the next pin", () => {
         // beat 0, 8 counts of 4/4 at 120 (measures at 1, 5), 6 counts in 3s (measures at 9, 12), 4 more (15)
         const durations = [0, ...Array<number>(18).fill(0.5)];
@@ -69,7 +110,7 @@ describe("planMeter", () => {
             beatCount: 19,
             start: 9,
             meter: parse("7/8 2+2+3")!,
-            quarterBpm: 120,
+            units: [],
         });
         expect(plan.from).toBe(9);
         expect(plan.to).toBe(15);

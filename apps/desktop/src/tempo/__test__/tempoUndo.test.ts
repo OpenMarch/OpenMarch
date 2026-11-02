@@ -92,7 +92,7 @@ describeDbTests("tempo mode undo and redo", (it) => {
             beatCount: rows.length,
             start: 5,
             meter,
-            quarterBpm: 120,
+            units: [],
         });
         await writeMeter({
             plan,

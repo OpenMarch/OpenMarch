@@ -2845,8 +2845,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             beatCount: data.storedCount,
             start,
             meter,
-            // the tempo just before: the counts from `start` on may still be at a guessed tempo
-            quarterBpm: qBpm(Math.max(1, start - 1), data.durations),
+            units,
+            holds: data.holds,
         });
         const label = meterLabel(meter, true);
         setPreview(plan.result);
@@ -2861,7 +2861,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             });
             await refetch();
             toast.success(
-                `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure at ♩${Math.round(plan.quarterBpm * 10) / 10}` +
+                `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was` +
                     (plan.leftover
                         ? `. The last measure before the next change is short: ${plan.leftover} count(s) (marked *)`
                         : ""),
