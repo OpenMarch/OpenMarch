@@ -6,8 +6,18 @@ import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
+import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 import { APP_LANGUAGES } from "@/utilities/languages";
 import WelcomeFlow from "../WelcomeFlow";
+
+// The web build flag, switchable per test.
+const webBuild = vi.hoisted(() => ({ isWeb: false }));
+vi.mock("@/utilities/webBuild", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("@/utilities/webBuild")>()),
+    get isWebBuild() {
+        return webBuild.isWeb;
+    },
+}));
 
 /**
  * Stands in for the preload's settings bridge (the IPC boundary). `language`
@@ -65,6 +75,7 @@ beforeEach(() => {
 });
 afterEach(async () => {
     vi.restoreAllMocks();
+    webBuild.isWeb = false;
     // Back to jsdom's own navigator.languages.
     delete (navigator as { languages?: unknown }).languages;
     await tolgee.changeLanguage("en");
@@ -115,6 +126,72 @@ describe("WelcomeFlow", () => {
         expect(electron.send).toHaveBeenCalledTimes(1);
         expect(onFinish).toHaveBeenCalledWith({ willReload: false });
         expect(reload).not.toHaveBeenCalled();
+    });
+
+    // Vitest runs with import.meta.env.DEV, so the dev-only button shows.
+    it("dev skip saves Expert and answers an open analytics question no", async () => {
+        const electron = stubElectron(undefined);
+        useWebWelcomeStore.setState({ open: true });
+        const { onFinish, reload } = renderFlow();
+        await waitFor(() => expect(electron.invoke).toHaveBeenCalled());
+
+        fireEvent.click(await screen.findByTestId("welcome-dev-skip"));
+
+        expect(useWebWelcomeStore.getState().open).toBe(false);
+        expect(useEditorModeStore.getState().mode).toBe("expert");
+        expect(electron.send).toHaveBeenCalledWith("settings:set", {
+            editorMode: "expert",
+        });
+        expect(electron.send).toHaveBeenCalledWith("settings:set", {
+            optOutAnalytics: true,
+        });
+        expect(onFinish).toHaveBeenCalledWith({ willReload: true });
+        expect(reload).toHaveBeenCalled();
+    });
+
+    it("dev skip keeps an analytics answer and doesn't reload", async () => {
+        const electron = stubElectron(false);
+        const { onFinish, reload } = renderFlow();
+        await waitFor(() => expect(electron.invoke).toHaveBeenCalled());
+
+        await goToModeStep();
+        fireEvent.click(screen.getByTestId("welcome-dev-skip"));
+
+        expect(useEditorModeStore.getState().mode).toBe("expert");
+        expect(electron.send).toHaveBeenCalledTimes(1);
+        expect(onFinish).toHaveBeenCalledWith({ willReload: false });
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it("dev skip on the web closes the web welcome and saves no analytics", async () => {
+        webBuild.isWeb = true;
+        const electron = stubElectron(undefined);
+        useWebWelcomeStore.setState({ open: true });
+        const { onFinish, reload } = renderFlow();
+
+        fireEvent.click(await screen.findByTestId("welcome-dev-skip"));
+
+        expect(useWebWelcomeStore.getState().open).toBe(false);
+        expect(useEditorModeStore.getState().mode).toBe("expert");
+        expect(electron.send).toHaveBeenCalledTimes(1);
+        expect(onFinish).toHaveBeenCalledWith({ willReload: false });
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it("dev skip waits for the analytics setting off the web", async () => {
+        const electron = stubElectron(true);
+        let answer: (value: unknown) => void = () => {};
+        electron.invoke.mockImplementation(async (_channel, key) =>
+            key === "optOutAnalytics"
+                ? new Promise((resolve) => (answer = resolve))
+                : undefined,
+        );
+        renderFlow();
+
+        const skip = await screen.findByTestId("welcome-dev-skip");
+        expect(skip).toBeDisabled();
+        answer(false);
+        await waitFor(() => expect(skip).toBeEnabled());
     });
 
     it("switches and saves the language and theme as they are picked", async () => {
