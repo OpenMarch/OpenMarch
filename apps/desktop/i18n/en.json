@@ -26,6 +26,9 @@
             "clearThisPageHoldsToo": "{count, plural, one {{names}'s hold on {pages} was cleared too} other {{names}'s holds on {pages} were cleared too}}",
             "clearThisPageAllSuccess": "{count, plural, one {Page {currentPage} is {notDefined} for {count} marcher} other {Page {currentPage} is {notDefined} for {count} marchers}}",
             "clearThisPageSelected": "{clearThisPage} (selected)",
+            "defineAsShown": "{defineAsShown}",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "hold held defined not defined keep stay set keyframe page state previous",
             "clearThisPageSelectedSuccess": "{count, plural, one {Page {currentPage} is {notDefined} for {count} marcher} other {Page {currentPage} is {notDefined} for {count} marchers}}",
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
@@ -2547,7 +2550,8 @@
             "deleteWithMoves": "Delete page and its moves",
             "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "{defineAsShown}",
-            "setAsShownNone": "Every selected marcher is already {definedLower} on {page}, or partway through a move"
+            "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
+            "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move"
         },
         "terms": {
             "clearThisPage": "Clear this page",

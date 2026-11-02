@@ -21,9 +21,14 @@ import {
     UserPlusIcon,
     ScissorsIcon,
     QuestionIcon,
+    CheckIcon,
 } from "@phosphor-icons/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { holdTerms } from "@/timeline/holdTerms";
+import {
+    type HoldCommand,
+    type HoldEntryState,
+} from "@/timeline/holdMenuState";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
@@ -156,6 +161,58 @@ function MenuItemWithReason({
                 </span>
             )}
         </>
+    );
+}
+
+/**
+ * A hold command's page box entry (holds), by its name. When every selected
+ * marcher is already in the state it sets, it's checked and does nothing (a disabled checkbox
+ * entry with a check in place of its icon); otherwise it's unavailable with its reason, or runs.
+ */
+function HoldCommandItem({
+    command,
+    testId,
+    menu,
+    pageId,
+    reason,
+    icon,
+    name,
+}: {
+    command: HoldCommand;
+    testId: string;
+    menu: TimelinePageCommandMenu;
+    pageId: string | number;
+    reason: string | null;
+    icon: ReactNode;
+    /** The entry's name */
+    name: string;
+}) {
+    const entry = menu.entryOn?.(pageId);
+    const label = name;
+    if (entry?.checked)
+        return (
+            <DropdownMenu.CheckboxItem
+                data-testid={testId}
+                checked
+                disabled
+                className={TIMELINE_MENU_ITEM_CLASS}
+            >
+                <DropdownMenu.ItemIndicator className="flex">
+                    <CheckIcon size={14} />
+                </DropdownMenu.ItemIndicator>
+                {label}
+            </DropdownMenu.CheckboxItem>
+        );
+    return (
+        <MenuItemWithReason
+            testId={testId}
+            reason={reason}
+            reasonTestId={`${testId}-reason`}
+            onSelect={() => menu.onSet(pageId)}
+        >
+            {icon}
+            {label}
+        </MenuItemWithReason>
     );
 }
 
@@ -378,6 +435,12 @@ export interface TimelinePageCommandMenu {
      */
     readonly reasonFor: (pageId: string | number) => string | null | undefined;
     readonly onSet: (pageId: string | number) => void;
+    /**
+     * What the entry would do for the selection on the page (`holdEntryStates`): checked when it
+     * would change nobody because every selected marcher is already in its state, and how many it
+     * would change for its label
+     */
+    readonly entryOn?: (pageId: string | number) => HoldEntryState | undefined;
 }
 
 /**
@@ -545,23 +608,19 @@ export function useTimelineRangeMenu({
                         )}
                         {setAsShownReason !== undefined && (
                             <>
-                                <MenuItemWithReason
+                                <HoldCommandItem
+                                    command="defineAsShown"
                                     testId="timeline-range-menu-set-as-shown"
+                                    menu={menu!.setAsShown!}
+                                    pageId={open.target.pageId!}
                                     reason={setAsShownReason}
-                                    reasonTestId="timeline-range-menu-set-as-shown-reason"
-                                    onSelect={() =>
-                                        menu?.setAsShown?.onSet(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                >
-                                    <DiamondIcon size={14} />
-                                    {tolgee.t(
+                                    icon={<DiamondIcon size={14} />}
+                                    name={tolgee.t(
                                         "timeline.rangeMenu.setAsShown",
                                         "{defineAsShown}",
                                         holdTerms(),
                                     )}
-                                </MenuItemWithReason>
+                                />
                                 {holdReason === undefined && (
                                     <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                                 )}
@@ -569,23 +628,19 @@ export function useTimelineRangeMenu({
                         )}
                         {holdReason !== undefined && (
                             <>
-                                <MenuItemWithReason
+                                <HoldCommandItem
+                                    command="holdFromPrevious"
                                     testId="timeline-range-menu-hold-from-previous"
+                                    menu={menu!.holdFromPrevious!}
+                                    pageId={open.target.pageId!}
                                     reason={holdReason}
-                                    reasonTestId="timeline-range-menu-hold-from-previous-reason"
-                                    onSelect={() =>
-                                        menu?.holdFromPrevious?.onSet(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                >
-                                    <PauseIcon size={14} />
-                                    {tolgee.t(
+                                    icon={<PauseIcon size={14} />}
+                                    name={tolgee.t(
                                         "timeline.rangeMenu.holdFromPrevious",
                                         "{holdFromPrevious}",
                                         holdTerms(),
                                     )}
-                                </MenuItemWithReason>
+                                />
                                 <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                             </>
                         )}

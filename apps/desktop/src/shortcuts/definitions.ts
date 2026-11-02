@@ -439,6 +439,28 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Shift+P"],
     },
+    // Holds: the selected marchers on the current page box become Defined where they are shown
+    // (the page box menu's entry and the inspector's button run this). Unbound
+    timelineDefineAsShown: {
+        labelKey: "actions.batchEdit.defineAsShown",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    // Holds (#472): the selected marchers on the current page box are Held where the previous
+    // page leaves them, as the page box menu's entry. H for hold
+    timelineHoldFromPrevious: {
+        labelKey: "actions.batchEdit.holdFromPrevious",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["H"],
+    },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.setAllToNext",
         category: "batchEdit",

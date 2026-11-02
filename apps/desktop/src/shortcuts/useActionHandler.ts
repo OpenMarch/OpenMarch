@@ -27,6 +27,12 @@ interface HandlerOptions {
      * page range). Translated by the caller. Default: the definition's label.
      */
     label?: string;
+    /**
+     * Whether the action is already done for its target, so menus show it checked (holds: every
+     * selected marcher is already in the state it sets). Pass `enabled: false` with it. Default
+     * false.
+     */
+    checked?: boolean;
 }
 
 export function useActionHandler(
@@ -61,6 +67,7 @@ export function useActionHandlerGroup(
     const hasPress = options.onPress !== undefined;
     const releaseRef = useRef(options.onRelease);
     const labelRef = useRef(options.label);
+    const checkedRef = useRef(options.checked ?? false);
     const hasRelease = options.onRelease !== undefined;
     useLayoutEffect(() => {
         runRef.current = run;
@@ -73,6 +80,12 @@ export function useActionHandlerGroup(
         labelRef.current = options.label;
         notifyActionHandlersChanged();
     }, [options.label]);
+    useLayoutEffect(() => {
+        const checked = options.checked ?? false;
+        if (checkedRef.current === checked) return;
+        checkedRef.current = checked;
+        notifyActionHandlersChanged();
+    }, [options.checked]);
     useLayoutEffect(() => {
         if (enabledRef.current === enabled) return;
         enabledRef.current = enabled;
@@ -99,6 +112,7 @@ export function useActionHandlerGroup(
                     ? (reason) => releaseRef.current?.(reason)
                     : undefined,
                 label: () => labelRef.current,
+                checked: () => checkedRef.current,
             }),
         );
         return () => unregister.forEach((off) => off());

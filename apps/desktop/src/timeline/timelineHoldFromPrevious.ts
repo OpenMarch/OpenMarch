@@ -17,6 +17,8 @@ import {
 } from "./timelineKeepLater";
 import { toastTimelineError } from "./timelineErrorMessages";
 import { holdTerms } from "./holdTerms";
+import { holdEntryStates } from "./holdMenuState";
+import type { HeldMark } from "@/db-functions/timelineHeldMarks";
 
 /**
  * **Hold from previous page** as the UI runs it (holds, fork #472): one undo step, and a refusal
@@ -136,10 +138,12 @@ export async function holdFromPreviousOn(
 
 /**
  * The page box menu's **Hold from previous page** entry from the selection's states on each page
- * box (`usePageKeepStates`): it runs for every selected marcher and says what it did. With nothing
- * selected the states are empty, so the entry doesn't show.
+ * box (`usePageKeepStates`) and the Held marks: it runs for every selected marcher and says what
+ * it did, and is unavailable, saying why, where no selected marcher could become Held
+ * (`holdEntryStates`). With nothing selected the states are empty, so the entry doesn't show.
  *
  * @param run the command, for tests; defaults to `holdFromPreviousOn`
+ * @param marks every Held mark (`useHeldMarksStore`)
  */
 export function holdFromPreviousMenu(
     states: readonly PageKeepState[],
@@ -149,12 +153,28 @@ export function holdFromPreviousMenu(
         box: PageBoxRange,
         marcherIds: readonly number[],
     ) => Promise<HoldFromPreviousResult> = holdFromPreviousOn,
+    marks: readonly HeldMark[] = [],
 ): TimelinePageCommandMenu {
     const of = (pageId: string | number) =>
         states.find((s) => String(s.pageId) === String(pageId));
+    const entryOn = (pageId: string | number) => {
+        const state = of(pageId);
+        return state && marcherIds.length > 0
+            ? holdEntryStates(state, marks).holdFromPrevious
+            : undefined;
+    };
     return {
-        reasonFor: (pageId) =>
-            of(pageId) && marcherIds.length > 0 ? null : undefined,
+        entryOn,
+        reasonFor: (pageId) => {
+            const entry = entryOn(pageId);
+            if (!entry) return undefined;
+            if (entry.changes > 0) return null;
+            return tolgee.t(
+                "timeline.rangeMenu.holdFromPreviousNone",
+                "Every selected marcher is already {heldLower} on {page}, or partway through a move",
+                { ...holdTerms(), page: pagesText([of(pageId)!.pageName]) },
+            );
+        },
         onSet: (pageId) => {
             const state = of(pageId);
             if (!state || marcherIds.length === 0) return;

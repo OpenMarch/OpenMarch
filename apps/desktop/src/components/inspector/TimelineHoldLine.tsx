@@ -262,6 +262,9 @@ function TimelineHoldLineContent({
                           page,
                       })
             }
+            // Writes directly rather than through the timelineDefineAsShown action: this line
+            // counts performers only (`performersOnly` in MarcherEditor), and the action takes the
+            // whole selection, items too
             onClick={() => void setAsShownOn(here.box, follows)}
         />
     );
