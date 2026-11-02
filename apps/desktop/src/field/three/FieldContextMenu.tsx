@@ -32,17 +32,25 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  * editor selects an unselected marcher right-clicked before it opens.
  *
  * - **Ungroup**, first, shown only while a placed shape is selected whole.
- * - **Unset here** and **Unset here and on Pages N–M** (Set vs Following,
- *   #304, #305): timeline mode only, as in the inspector. The second is shown
- *   only while it's offered (some pages follow), with its handler's label
- *   naming the pages.
+ * - **Remove keyframe** and **Remove keyframe, Pages N–M move back too** (Set
+ *   vs Following, #304, #305): timeline mode only, as in the inspector. The
+ *   second is shown only while it's offered (some pages follow), with its
+ *   handler's label naming the pages.
+ * - The commands that set the selection's state on the current page (holds):
+ *   **Define as shown** and **Hold from previous page** (timeline mode only),
+ *   then **Clear this page**, with **set to next page** after it.
  * - Arranging the selection: align and distribute, and Swap (two marchers).
- * - Copying positions from the previous or next page, for the selection.
  * - **Select all**, which right-clicking empty field reaches for.
  */
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeUngroup"],
     ["timelineUnsetHere", "timelineUnsetHereAndFollowing"],
+    [
+        "timelineDefineAsShown",
+        "timelineHoldFromPrevious",
+        "setSelectedMarchersToPreviousPage",
+        "setSelectedMarchersToNextPage",
+    ],
     [
         "alignHorizontally",
         "alignVertically",
@@ -50,7 +58,6 @@ const GROUPS: readonly (readonly ActionId[])[] = [
         "evenlyDistributeVertically",
         "swapMarchers",
     ],
-    ["setSelectedMarchersToPreviousPage", "setSelectedMarchersToNextPage"],
     ["selectAllMarchers"],
 ];
 
@@ -60,6 +67,12 @@ export const FIELD_MENU_ACTIONS: readonly ActionId[] = GROUPS.flat();
 const UNSET: ReadonlySet<ActionId> = new Set([
     "timelineUnsetHere",
     "timelineUnsetHereAndFollowing",
+]);
+
+/** Holds, shown only in timeline mode (unavailable where they can't run) */
+const HOLDS: ReadonlySet<ActionId> = new Set([
+    "timelineDefineAsShown",
+    "timelineHoldFromPrevious",
 ]);
 
 /** The entries' style, as the timeline's menus */
@@ -83,7 +96,7 @@ export default function FieldContextMenu({
     at: { x: number; y: number } | null;
     onClose: () => void;
     selectedCount: number;
-    /** Whether the show's timeline is loaded (Unset needs it). */
+    /** Whether the show's timeline is loaded (Unset and the holds need it). */
     timelineMode: boolean;
 }) {
     const { t } = useTolgee();
@@ -105,7 +118,9 @@ export default function FieldContextMenu({
             : UNSET.has(id)
               ? timelineMode &&
                 (id === "timelineUnsetHere" || isActionEnabled(id))
-              : true;
+              : HOLDS.has(id)
+                ? timelineMode
+                : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
     const groups = GROUPS.map((group) => group.filter(shown)).filter(

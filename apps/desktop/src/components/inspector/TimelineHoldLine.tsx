@@ -21,7 +21,7 @@ import {
     type KeepTranslate,
     type MarcherNameOf,
 } from "@/timeline/timelineKeepLater";
-import { setAsShownOn } from "@/timeline/timelineSetAsShown";
+import { runAction } from "@/shortcuts/registry";
 import { holdTerms } from "@/timeline/holdTerms";
 import { OWN_KEYS_WITH_SPACE } from "@/components/timeline/timelineHotkeys";
 import { usePageKeepStates } from "@/timeline/useKeepLaterPages";
@@ -262,7 +262,8 @@ function TimelineHoldLineContent({
                           page,
                       })
             }
-            onClick={() => void setAsShownOn(here.box, follows)}
+            // The timelineDefineAsShown action, on the current page as this line
+            onClick={() => runAction("timelineDefineAsShown")}
         />
     );
     /** The buttons, a dot before each (or only between them, `leading` false) */

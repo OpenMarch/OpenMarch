@@ -114,6 +114,73 @@ describe("FieldContextMenu", () => {
         expect(item("alignHorizontally")).not.toBeNull();
     });
 
+    it("lists the actions in groups, with the page state commands together", () => {
+        for (const id of FIELD_MENU_ACTIONS) handle(id);
+        handle("shapeUngroup", { enabled: false });
+        open();
+        const content = screen.getByTestId("field-menu");
+        const groups: string[][] = [[]];
+        for (const el of Array.from(content.children)) {
+            if (el.getAttribute("role") === "separator") groups.push([]);
+            else
+                groups[groups.length - 1]!.push(
+                    el.getAttribute("data-testid")!.replace("field-menu-", ""),
+                );
+        }
+        expect(groups).toEqual([
+            ["timelineUnsetHere", "timelineUnsetHereAndFollowing"],
+            [
+                "timelineDefineAsShown",
+                "timelineHoldFromPrevious",
+                "setSelectedMarchersToPreviousPage",
+                "setSelectedMarchersToNextPage",
+            ],
+            [
+                "alignHorizontally",
+                "alignVertically",
+                "evenlyDistributeHorizontally",
+                "evenlyDistributeVertically",
+                "swapMarchers",
+            ],
+            ["selectAllMarchers"],
+        ]);
+        expect(item("timelineDefineAsShown")).toHaveTextContent(
+            "Define as shown",
+        );
+        expect(item("timelineHoldFromPrevious")).toHaveTextContent(
+            "Hold from previous page",
+        );
+        expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
+            "Clear this page (selected)",
+        );
+    });
+
+    it("runs the hold commands through the actions layer, and greys them out where they can't run", () => {
+        const hold = handle("timelineHoldFromPrevious");
+        const define = handle("timelineDefineAsShown", { enabled: false });
+        open();
+        fireEvent.click(item("timelineDefineAsShown")!);
+        expect(define).not.toHaveBeenCalled();
+        expect(item("timelineDefineAsShown")).toHaveAttribute("data-disabled");
+        cleanup();
+        open();
+        expect(item("timelineHoldFromPrevious")).not.toHaveAttribute(
+            "data-disabled",
+        );
+        fireEvent.click(item("timelineHoldFromPrevious")!);
+        expect(hold).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves the hold commands out outside timeline mode, but keeps Clear this page", () => {
+        handle("timelineHoldFromPrevious");
+        handle("timelineDefineAsShown");
+        handle("setSelectedMarchersToPreviousPage");
+        open({ timelineMode: false });
+        expect(item("timelineHoldFromPrevious")).toBeNull();
+        expect(item("timelineDefineAsShown")).toBeNull();
+        expect(item("setSelectedMarchersToPreviousPage")).not.toBeNull();
+    });
+
     it("offers Swap only with two marchers selected", () => {
         const run = handle("swapMarchers");
         open({ selectedCount: 3 });
