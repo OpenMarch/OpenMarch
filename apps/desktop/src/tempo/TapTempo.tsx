@@ -46,7 +46,7 @@ export function TapTempo(props: {
             </ShortcutTooltip>
             <Popover.Portal>
                 <Popover.Content
-                    side="bottom"
+                    side="top"
                     align="start"
                     sideOffset={6}
                     collisionPadding={8}
@@ -55,6 +55,9 @@ export function TapTempo(props: {
                     onPointerDown={(e) => e.stopPropagation()}
                     // the T key taps; focus stays where it was so Space still plays
                     onOpenAutoFocus={(e) => e.preventDefault()}
+                    // it stays open (above the toolbar, clear of the lanes) while counts are
+                    // selected and played: the toolbar button or Esc closes it
+                    onInteractOutside={(e) => e.preventDefault()}
                 >
                     <div className="flex items-baseline justify-between">
                         <span className="text-[12px] font-bold">Tap tempo</span>
@@ -87,7 +90,7 @@ export function TapTempo(props: {
                         // on press, not on release: a click lands later than the beat it's for
                         onPointerDown={(e) => {
                             e.preventDefault();
-                            tap(performance.now());
+                            tap(e.timeStamp);
                         }}
                     >
                         Tap
@@ -97,7 +100,11 @@ export function TapTempo(props: {
                             type="button"
                             className={toolButton()}
                             disabled={taps.length === 0}
-                            onClick={reset}
+                            onClick={(e) => {
+                                reset();
+                                // Space plays, never re-presses this
+                                e.currentTarget.blur();
+                            }}
                         >
                             Reset
                         </button>
@@ -115,7 +122,8 @@ export function TapTempo(props: {
                                 data-testid="tap-tempo-use"
                                 className={`${toolButton(true)} flex-1 justify-center`}
                                 disabled={rounded === null || !props.target}
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.currentTarget.blur();
                                     if (rounded !== null) props.onUse(rounded);
                                 }}
                             >

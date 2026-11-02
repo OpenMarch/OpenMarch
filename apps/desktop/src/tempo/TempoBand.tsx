@@ -233,10 +233,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }),
         [],
     );
-    // leaving tempo mode clears the selection and the last note
+    // leaving tempo mode clears the selection, tap tempo and the last note
     useEffect(
         () => () => {
-            useTempoUi.getState().setRange(null);
+            const state = useTempoUi.getState();
+            state.setRange(null);
+            state.setTapOpen(false);
+            state.resetTaps();
             toast.dismiss(NOTE_TOAST);
         },
         [],
@@ -1726,8 +1729,15 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const tapTarget = tapCounts
         ? measuresLabel(tapCounts.from, tapCounts.to)
         : null;
+    // The taps are counts, not quarter notes: in 6/8 counted in 2 a count is three eighths. The
+    // quarter-note tempo written makes the counts average the tapped length (2+2+3 included)
     const applyTapTempo = (bpm: number) => {
-        if (tapCounts) setTempo(tapCounts.from, tapCounts.to, bpm, bpm);
+        if (!tapCounts) return;
+        const { from, to } = tapCounts;
+        let eighths = 0;
+        for (let b = from; b < to; b++) eighths += units[b] ?? 2;
+        const quarter = (bpm * eighths) / (2 * (to - from));
+        setTempo(from, to, quarter, quarter);
     };
 
     // ---- keys: T taps tempo, M drops a rehearsal mark while playing ----------------------
@@ -1759,7 +1769,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat) return;
-                useTempoUi.getState().tap(performance.now());
+                // when the key went down (same clock as performance.now), not when this runs
+                useTempoUi.getState().tap(e.timeStamp);
             } else if (key === "m" && isPlaying) {
                 e.preventDefault();
                 e.stopPropagation();

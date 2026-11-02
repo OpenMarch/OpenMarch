@@ -30,8 +30,8 @@ export const toolButton = (on = false, iconOnly = false) =>
     );
 
 /**
- * Tempo mode's header row: the mode's name, its tools, a line of status, help and Done. Narrow, the
- * tools drop their words for their icons (the full name is the tooltip) and the status shortens.
+ * Tempo mode's header row: the mode's name, its tools, a hint, help and Done. Narrow, the tools
+ * drop their words for their icons (the full name is the tooltip) and the hint shortens.
  */
 export function TempoToolbar(props: {
     lockCount: number;
