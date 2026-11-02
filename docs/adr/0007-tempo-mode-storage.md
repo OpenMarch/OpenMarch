@@ -1,7 +1,7 @@
 # 0007: Tempo mode stores pins, holds, tempo changes, time signatures, measure numbers and the music offset in the show
 
-- Status: proposed
-- Date: 2026-10-30, revised 2026-11-02
+- Status: accepted
+- Date: 2026-10-30, revised and accepted 2026-11-02
 
 ## Context
 
@@ -75,10 +75,12 @@ why pins didn't undo, they moved into the database.
 - Older app versions opening a show saved by this one see ordinary beats and measures. Timing is
   unchanged, but they don't show renumbered measures or time signatures, and they ignore the offset
   in `tempo_settings`, so they play the music at the workspace setting's offset.
-- Code outside tempo mode that creates measures (the Music modal's tempo groups, MusicXML import,
-  adding counts past the end) writes no `meter`. In a show that has written time signatures, a
-  measure it adds carries on the one before; if its length differs, it shows as short or long
-  against it. Those writers should write `meter` where the length changes.
+- Code outside tempo mode that adds measures next to existing ones (the Music modal's tempo groups,
+  adding measures from the audio player) writes no `meter`. In a show that has written time
+  signatures, a measure it adds carries on the one before; if its length differs, it shows as short
+  or long against it. Those writers should write `meter` where the length changes. MusicXML import
+  replaces every measure, so its shows read the old way; adding counts past the end continues the
+  last measure's length, so it needs nothing.
 - Readers that list beat or measure columns explicitly have to tolerate files from before the
   migrations. The converter's `readShowTiming` selects explicit columns for this reason, and the
   migration tests' `LATER_COLUMNS` cover the new ones.
