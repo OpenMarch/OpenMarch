@@ -17,8 +17,8 @@ const state = (pageId: number): PageKeepState => ({
     box: { start: pageId * 8 + 1, end: pageId * 8 + 9 },
     follows: [],
     fromStart: [],
-    kept: [],
     from: [],
+    midMove: [],
     selected: 3,
 });
 
@@ -41,6 +41,38 @@ describe("holdFromPreviousMenu", () => {
             { start: 25, end: 33 },
             [2, 1],
         );
+    });
+
+    it("is checked where every selected marcher is Held, and says why where nobody could be", () => {
+        const page3 = { ...state(3), follows: [1, 2], selected: 2 };
+        const held = [1, 2].map((marcherId) => ({
+            id: marcherId,
+            marcherId,
+            start: 25,
+            end: 33,
+        }));
+        const menu = holdFromPreviousMenu(
+            [page3],
+            [1, 2],
+            nameOf,
+            vi.fn(),
+            held,
+        );
+        expect(menu.entryOn?.(3)).toEqual({
+            checked: true,
+            changes: 0,
+            selected: 2,
+        });
+        expect(menu.reasonFor(3)).toContain("Page 3");
+        // Partway through a move: not Held, but it can't be held either
+        const partway = holdFromPreviousMenu(
+            [{ ...state(3), midMove: [1, 2], selected: 2 }],
+            [1, 2],
+            nameOf,
+            vi.fn(),
+        );
+        expect(partway.entryOn?.(3)?.checked).toBe(false);
+        expect(partway.reasonFor(3)).toContain("partway through a move");
     });
 
     it("hides the entry when nothing is selected", () => {

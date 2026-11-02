@@ -132,7 +132,7 @@ const keyframeMenu = (
         stateFor: vi.fn((beat: number) => ({
             canUnset: true,
             followingLabel:
-                beat === 16 ? "Remove keyframe, Pages 3–4 follow back" : null,
+                beat === 16 ? "Remove keyframe, Pages 3–4 move back too" : null,
             ...state,
         })),
         onUnset: vi.fn(),
@@ -167,7 +167,7 @@ describe.each([
             );
             expect(menuItems()).toEqual([
                 "Remove keyframe",
-                "Remove keyframe, Pages 3–4 follow back",
+                "Remove keyframe, Pages 3–4 move back too",
             ]);
             expect(menu.stateFor).toHaveBeenCalledWith(16);
             fireEvent.click(
@@ -180,7 +180,7 @@ describe.each([
             );
             fireEvent.click(
                 screen.getByRole("menuitem", {
-                    name: "Remove keyframe, Pages 3–4 follow back",
+                    name: "Remove keyframe, Pages 3–4 move back too",
                 }),
             );
             expect(menu.onUnsetAndFollowing.mock.calls).toEqual([[16]]);
@@ -247,7 +247,7 @@ describe.each([
             fireEvent.keyDown(diamond, key);
             expect(menuItems()).toEqual([
                 "Remove keyframe",
-                "Remove keyframe, Pages 3–4 follow back",
+                "Remove keyframe, Pages 3–4 move back too",
             ]);
         });
 

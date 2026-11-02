@@ -138,7 +138,7 @@ async function fromPaletteThenUndo(show: Show) {
     await atPage2With(show, ["T2"]);
     await searchUnset(page);
     const item = page.getByRole("option", {
-        name: "Remove keyframe, Page 3 follows back",
+        name: "Remove keyframe, Page 3 moves back too",
     });
     await expect(item).not.toHaveAttribute("aria-disabled", "true");
     await item.click();
@@ -158,7 +158,7 @@ test("the inspector names the pages, and a mixed selection takes back only the S
     const { page } = show;
     await atPage2With(show, ["T2", "T3"]);
     await expect(button(page)).toHaveText(
-        "Remove keyframe, Page 3 follows back",
+        "Remove keyframe, Page 3 moves back too",
     );
     await button(page).click();
     await expectFollowedBack(show);
@@ -176,7 +176,7 @@ test("it isn't offered when no later page follows the spot", async ({
     await searchUnset(page);
     await expect(
         page.getByRole("option", {
-            name: "Remove keyframe, later pages follow back",
+            name: "Remove keyframe, later pages move back too",
         }),
     ).toHaveAttribute("aria-disabled", "true");
     await page.keyboard.press("Escape");

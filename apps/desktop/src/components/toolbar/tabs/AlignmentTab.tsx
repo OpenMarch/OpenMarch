@@ -13,6 +13,7 @@ import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
 import { T, useTolgee } from "@tolgee/react";
+import { holdTerms } from "@/timeline/holdTerms";
 import { useState } from "react";
 
 export default function AlignmentTab() {
@@ -94,7 +95,10 @@ function SetMarcherPositionsDropdown() {
                             onRun={close}
                             className="text-text touch:min-h-44 px-6 py-4"
                         >
-                            <T keyName="toolbar.alignment.clearThisPage" />
+                            <T
+                                keyName="toolbar.alignment.clearThisPage"
+                                params={holdTerms()}
+                            />
                         </ActionButton>
                         <ActionButton
                             action="setAllMarchersToNextPage"

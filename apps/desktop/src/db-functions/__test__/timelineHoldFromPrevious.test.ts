@@ -1489,7 +1489,7 @@ describeDbTests("Clear this page on the first page of a joined hold", (it) => {
         expect(count).toBe(1);
         expect(await marksOf(db, a)).toEqual([]);
         expect(notify.success).toHaveBeenCalledExactlyOnceWith(
-            `Page 3 is Not set for 1 marcher; ${m.drill_prefix}${m.drill_order}'s hold on Page 4 was cleared too`,
+            `Page 3 is Not defined for 1 marcher; ${m.drill_prefix}${m.drill_order}'s hold on Page 4 was cleared too`,
         );
     });
 });
@@ -1900,7 +1900,7 @@ describeDbTests(
                 pages: ["3"],
             });
             expect(heldDroppedMessage(result.droppedHolds, fill)).toBe(
-                `${await nameOf(db, c)} is no longer Held on Page 3: it held from the starting spot, and now a move before it ends somewhere else.`,
+                `${await nameOf(db, c)} is no longer Held on Page 3: it was held from the starting spot, and now a move before it ends somewhere else.`,
             );
             await roundTrip(db, before, await snapshot(db));
         });

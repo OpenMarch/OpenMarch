@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { toastBasicLock } from "./basicLockToast";
 import type { NotJoined } from "@/db-functions/timelineJoinAtBeat";
 import { joinList } from "./timelineRangeWords";
+import { holdTerms } from "./holdTerms";
 import type { HeldConflict } from "@/db-functions/timelineHeldConflict";
 import {
     marcherNamesText,
@@ -109,12 +110,12 @@ export const TIMELINE_ERROR_MESSAGES: Readonly<
     "E-H1": {
         key: "timeline.errors.moveInHeldHold",
         defaultMessage:
-            "That would put a move inside a Held hold. Clear this page to remove the hold, or drag inside it to move it.",
+            "That would put a move inside a {held} hold. {clearThisPage} to remove the hold, or drag inside it to move it.",
     },
     "E-H3": {
         key: "timeline.errors.heldHoldsOverlap",
         defaultMessage:
-            "A marcher can't have two Held holds over the same counts.",
+            "A marcher can't have two {held} holds over the same counts.",
     },
     "E-A3": {
         key: "timeline.errors.assignmentOverlap",
@@ -179,12 +180,12 @@ export const HELD_CONFLICT_MESSAGES: Readonly<
     one: {
         key: "timeline.errors.heldConflict.one",
         defaultMessage:
-            "{names} is Held on {pages}. Clear this page to remove the hold, or drag inside it to move it.",
+            "{names} is {held} on {pages}. {clearThisPage} to remove the hold, or drag inside it to move it.",
     },
     many: {
         key: "timeline.errors.heldConflict.many",
         defaultMessage:
-            "{names} are Held on {pages}. Clear this page to remove the holds, or drag inside them to move them.",
+            "{names} are {held} on {pages}. {clearThisPage} to remove the holds, or drag inside them to move them.",
     },
 };
 
@@ -200,6 +201,7 @@ function heldConflictMessage(
     const names = held.names;
     const message = HELD_CONFLICT_MESSAGES[names.length === 1 ? "one" : "many"];
     return translate(message.key, message.defaultMessage, {
+        ...holdTerms(),
         names:
             marcherNamesText(
                 names.map((_, i) => i),
@@ -215,12 +217,12 @@ const HELD_DROPPED_MESSAGES = {
     one: {
         key: "timeline.errors.heldDropped.one",
         defaultMessage:
-            "{names} is no longer Held on {pages}: it held from the starting spot, and now a move before it ends somewhere else.",
+            "{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.",
     },
     many: {
         key: "timeline.errors.heldDropped.many",
         defaultMessage:
-            "{names} are no longer Held on {pages}: they held from the starting spot, and now a move before it ends somewhere else.",
+            "{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.",
     },
 };
 
@@ -237,6 +239,7 @@ export function heldDroppedMessage(
     const names = held.names;
     const message = HELD_DROPPED_MESSAGES[names.length === 1 ? "one" : "many"];
     return translate(message.key, message.defaultMessage, {
+        ...holdTerms(),
         names:
             marcherNamesText(
                 names.map((_, i) => i),
@@ -406,7 +409,8 @@ export function timelineErrorMessage(
               ? TIMELINE_LEGACY_CONVERSION_MESSAGE
               : TIMELINE_ERROR_MESSAGES[code];
     const message = mapped ?? TIMELINE_UNKNOWN_ERROR_MESSAGE;
-    return translate(message.key, message.defaultMessage);
+    // A message may name a state or a command (`holdTerms`), as E-H1's does
+    return translate(message.key, message.defaultMessage, holdTerms());
 }
 
 /**

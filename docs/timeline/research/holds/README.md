@@ -93,6 +93,10 @@ Tickets built from this doc should say the same.
 
 ## Vocabulary (owner, 2026-10-28)
 
+Working words since 2026-11-02 (owner): **Defined · Held · Not defined**, and **Define as shown**
+for Set as shown. They live only in the `timeline.terms.*` block of `apps/desktop/i18n/en.json`,
+read through `apps/desktop/src/timeline/holdTerms.ts`; the rest of this doc still says Set/Not set.
+
 The UI uses three words for a marcher's state on a count:
 
 - **Set:** a keyframe, where a move of its own ends.

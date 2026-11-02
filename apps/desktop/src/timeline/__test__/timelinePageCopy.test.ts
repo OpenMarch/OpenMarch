@@ -1,3 +1,4 @@
+import { holdTerms } from "../holdTerms";
 import { afterEach, describe, expect, it as plainIt, vi } from "vitest";
 import { and, eq, getTableName } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
@@ -210,6 +211,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         expect(notify.success).toHaveBeenCalledTimes(1);
         expect(notify.success.mock.calls[0]).toEqual([
             t("actions.batchEdit.clearThisPageAllSuccess", {
+                ...holdTerms(),
                 count,
                 currentPage: page.name,
                 previousPage: previous.name,
@@ -757,6 +759,7 @@ describeDbTests("Clear this page on a converted show (holds 4, #469)", (it) => {
         expect(result).toBe(2);
         expect(notify.success.mock.calls[0]).toEqual([
             t("actions.batchEdit.clearThisPageSelectedSuccess", {
+                ...holdTerms(),
                 count: 2,
                 currentPage: page.name,
                 previousPage: previous.name,
@@ -836,6 +839,7 @@ describeDbTests("Clear this page on a converted show (holds 4, #469)", (it) => {
         expect(notify.success.mock.calls).toEqual([
             [
                 t("actions.batchEdit.clearThisPageSelectedSuccess", {
+                    ...holdTerms(),
                     count: 1,
                     currentPage: page.name,
                     previousPage: pages[2]!.name,

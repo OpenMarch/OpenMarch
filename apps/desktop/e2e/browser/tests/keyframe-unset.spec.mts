@@ -135,7 +135,7 @@ async function unsetHereThenUndo(show: Show) {
         .click({ button: "right" });
     expect(await menuItems(page)).toEqual([
         "Remove keyframe",
-        "Remove keyframe, Page 3 follows back",
+        "Remove keyframe, Page 3 moves back too",
     ]);
     await page
         .getByRole("menuitem", { name: "Remove keyframe", exact: true })
@@ -170,7 +170,9 @@ test("Unset here and on Page 3 from a diamond lets page 3 follow back", async ({
         .getByTestId("timeline-keyframe-16-filled")
         .click({ button: "right" });
     await page
-        .getByRole("menuitem", { name: "Remove keyframe, Page 3 follows back" })
+        .getByRole("menuitem", {
+            name: "Remove keyframe, Page 3 moves back too",
+        })
         .click();
 
     await expect

@@ -41,6 +41,8 @@ export interface ActionDefinition {
     /** i18n key appended in parentheses, e.g. "(fine)" */
     labelSuffixKey?: string;
     labelParams?: Readonly<Record<string, string | number>>;
+    /** The label names a page state or a hold command, filled from `holdTerms` */
+    labelHoldTerms?: true;
     toggleOnKey?: string;
     toggleOffKey?: string;
     category: ActionCategory;
@@ -423,6 +425,7 @@ const STATIC_ACTIONS = {
     // Batch editing
     setAllMarchersToPreviousPage: {
         labelKey: "actions.batchEdit.clearThisPageAll",
+        labelHoldTerms: true,
         category: "batchEdit",
         editsDrill: true,
         scope: "canvas",
@@ -430,10 +433,33 @@ const STATIC_ACTIONS = {
     },
     setSelectedMarchersToPreviousPage: {
         labelKey: "actions.batchEdit.clearThisPageSelected",
+        labelHoldTerms: true,
         category: "batchEdit",
         editsDrill: true,
         scope: "canvas",
         defaultBindings: ["Shift+P"],
+    },
+    // Holds: the selected marchers on the current page box become Defined where they are shown
+    // (the page box menu's entry and the inspector's button run this). Unbound
+    timelineDefineAsShown: {
+        labelKey: "actions.batchEdit.defineAsShown",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    // Holds (#472): the selected marchers on the current page box are Held where the previous
+    // page leaves them, as the page box menu's entry. H for hold
+    timelineHoldFromPrevious: {
+        labelKey: "actions.batchEdit.holdFromPrevious",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["H"],
     },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.setAllToNext",
@@ -804,6 +830,7 @@ const STATIC_ACTIONS = {
     // coordinate and follow from earlier; later pages keep their spots. Unbound
     timelineUnsetHere: {
         labelKey: "actions.timeline.unsetHere",
+        labelHoldTerms: true,
         keywordsKey: "actions.timeline.unsetHereKeywords",
         category: "timeline",
         editsDrill: true,
@@ -815,6 +842,7 @@ const STATIC_ACTIONS = {
     // back to the earlier one. Its handler names the pages ("Unset here and on Pages 3–5"). Unbound
     timelineUnsetHereAndFollowing: {
         labelKey: "actions.timeline.unsetHereAndFollowing",
+        labelHoldTerms: true,
         keywordsKey: "actions.timeline.unsetHereKeywords",
         category: "timeline",
         editsDrill: true,

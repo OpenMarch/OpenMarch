@@ -7,6 +7,7 @@ import {
 import { getActionDefinition, type ActionId } from "./definitions";
 import { getEffectiveBindings, type ShortcutOverrides } from "./keymap";
 import { isMacPlatform } from "./platform";
+import { holdTerms } from "@/timeline/holdTerms";
 
 export type Translate = (
     key: string,
@@ -15,9 +16,10 @@ export type Translate = (
 
 export function getActionLabel(id: ActionId, t: Translate): string {
     const def = getActionDefinition(id);
-    const base = def.labelParams
-        ? t(def.labelKey, { ...def.labelParams })
-        : t(def.labelKey);
+    const params = def.labelHoldTerms
+        ? { ...holdTerms(), ...def.labelParams }
+        : def.labelParams;
+    const base = params ? t(def.labelKey, { ...params }) : t(def.labelKey);
     return def.labelSuffixKey ? `${base} (${t(def.labelSuffixKey)})` : base;
 }
 

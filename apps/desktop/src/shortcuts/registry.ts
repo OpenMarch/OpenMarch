@@ -25,6 +25,11 @@ export interface ActionHandler {
     release?: (reason: ReleaseReason) => void;
     /** The label right now, when it depends on state (a page range); the definition's otherwise */
     label?: () => string | undefined;
+    /**
+     * Whether the action is already done for its target (every selected marcher already in the
+     * state it sets): menus show it checked. Such an action is disabled too
+     */
+    checked?: () => boolean;
 }
 
 const handlers = new Map<ActionId, ActionHandler[]>();
@@ -65,6 +70,11 @@ export function isActionEnabled(id: ActionId): boolean {
 /** The label the action's handler gives right now (`useActionHandler`'s `label`), if any */
 export function actionLabelNow(id: ActionId): string | undefined {
     return top(id)?.label?.();
+}
+
+/** Whether the action's handler says it is already done (`useActionHandler`'s `checked`) */
+export function isActionChecked(id: ActionId): boolean {
+    return top(id)?.checked?.() ?? false;
 }
 
 /** Whether the action's handler skips key repeats right now (`useActionHandler`'s `ignoreRepeat`) */
