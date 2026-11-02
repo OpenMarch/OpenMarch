@@ -44,7 +44,7 @@ export function useHoldActionHandlers() {
         },
         {
             enabled: !isPlaying && canRunOn(defineAsShown, pageId),
-            ...holdActionOptions("defineAsShown", entries?.defineAsShown),
+            ...holdActionOptions(entries?.defineAsShown),
         },
     );
     useActionHandler(
@@ -54,7 +54,7 @@ export function useHoldActionHandlers() {
         },
         {
             enabled: !isPlaying && canRunOn(holdFromPrevious, pageId),
-            ...holdActionOptions("holdFromPrevious", entries?.holdFromPrevious),
+            ...holdActionOptions(entries?.holdFromPrevious),
         },
     );
 }

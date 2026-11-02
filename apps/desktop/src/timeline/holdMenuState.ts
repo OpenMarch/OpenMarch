@@ -1,7 +1,5 @@
 import { overlapsBox } from "./basicSimple";
-import { holdTerms } from "./holdTerms";
 import type { PageKeepState } from "./timelineKeepLater";
-import tolgee from "@/global/singletons/Tolgee";
 
 /**
  * What the hold commands would do for the selection on one page, so the menus that offer them
@@ -109,35 +107,4 @@ export function holdEntryStates(
             counts.notDefined === selected,
         ),
     };
-}
-
-/**
- * The entry's label: the command's name (`holdTerms`), and how many of the selection it would
- * change when that's some but not all, "Hold from previous page (3 of 5)". Clear this page's
- * action is "Clear this page (selected)", so its count reads "(3 of 5 selected)". Null for no
- * count: the caller keeps its own label.
- */
-export function holdEntryCountLabel(
-    command: HoldCommand,
-    entry: HoldEntryState | null | undefined,
-): string | null {
-    if (!entry || entry.changes === 0 || entry.changes >= entry.selected)
-        return null;
-    const params = {
-        ...holdTerms(),
-        command: holdTerms()[command],
-        count: entry.changes,
-        total: entry.selected,
-    };
-    return command === "clearThisPage"
-        ? tolgee.t(
-              "timeline.holdMenu.someSelected",
-              "{command} ({count} of {total} selected)",
-              params,
-          )
-        : tolgee.t(
-              "timeline.holdMenu.some",
-              "{command} ({count} of {total})",
-              params,
-          );
 }

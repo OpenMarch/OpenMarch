@@ -2464,10 +2464,6 @@
             "notHeld": "Not {heldLower}:",
             "shape": "{names}: in a shape on this page"
         },
-        "holdMenu": {
-            "some": "{command} ({count} of {total})",
-            "someSelected": "{command} ({count} of {total} selected)"
-        },
         "keep": {
             "chain": {
                 "ariaLabel": "Page {page}: {label}. {hint}",

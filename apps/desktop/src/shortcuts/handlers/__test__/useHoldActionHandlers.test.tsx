@@ -21,12 +21,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import FieldContextMenu from "@/field/three/FieldContextMenu";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
-import {
-    actionLabelNow,
-    isActionChecked,
-    isActionEnabled,
-    runAction,
-} from "../../registry";
+import { isActionChecked, isActionEnabled, runAction } from "../../registry";
 import { useHoldActionHandlers } from "../useHoldActionHandlers";
 import { useBatchEditActionHandlers } from "../useBatchEditActionHandlers";
 
@@ -284,24 +279,21 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(holdFromPreviousPage).not.toHaveBeenCalled();
     });
 
-    it("mixed: the entries count whom they'd change, and stay on", () => {
+    it("mixed: the entries stay on, with no count", () => {
         // Marcher 1 is Not defined on page 3, marcher 2 is Defined there
         openFieldMenu([1, 2]);
         expect(entry("timelineDefineAsShown")).toHaveTextContent(
-            "Define as shown (1 of 2)",
+            /^Define as shown$/,
         );
         expect(entry("timelineDefineAsShown")).not.toHaveAttribute(
             "data-disabled",
         );
-        // It would change both: no count (the H after it is its shortcut)
+        // The H after it is its shortcut
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
             /^Hold from previous pageH$/,
         );
         expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(
-            "Clear this page (1 of 2 selected)",
-        );
-        expect(actionLabelNow("timelineDefineAsShown")).toBe(
-            "Define as shown (1 of 2)",
+            /^Clear this page \(selected\)/,
         );
         expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(true);
     });
@@ -338,17 +330,11 @@ describe("the field menu shows the selection's state on the current page", () =>
         }
     });
 
-    it("on the first page, Clear this page and the holds are off: the starting spots are the marchers' own", () => {
+    it("on the first page the holds are off; Clear this page still runs and says there's no previous page", () => {
         mocks.selectedPage = PAGES[0];
         openFieldMenu([1]);
-        for (const id of [
-            "timelineDefineAsShown",
-            "timelineHoldFromPrevious",
-            "setSelectedMarchersToPreviousPage",
-        ])
+        for (const id of ["timelineDefineAsShown", "timelineHoldFromPrevious"])
             expect(entry(id)).toHaveAttribute("data-disabled");
-        expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(
-            false,
-        );
+        expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(true);
     });
 });

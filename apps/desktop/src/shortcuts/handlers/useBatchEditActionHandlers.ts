@@ -18,9 +18,9 @@ import { useEditorReadiness } from "./useEditorReadiness";
 
 /**
  * "Set all or selected marchers to the previous or next page" (`setMarchersToNeighborPage`, P7.6).
- * Previous page is **Clear this page**: it's off on the first page (there's no previous page, the
- * starting spots are each marcher's own) and, for the selection, where every selected marcher is
- * already Not defined, when it shows checked, as the hold commands are (`useHoldCommands`).
+ * Previous page is **Clear this page**: for the selection, it's off where every selected marcher
+ * is already Not defined, when it shows checked, as the hold commands are (`useHoldCommands`). On
+ * the first page it still runs and says there's no previous page.
  */
 export function useBatchEditActionHandlers() {
     const { t } = useTolgee();
@@ -34,9 +34,6 @@ export function useBatchEditActionHandlers() {
     );
     const enabled = ready && !!pages && pages.length > 0;
     const hasSelection = enabled && selectedMarchers.length > 0;
-    const hasPrevious =
-        !!selectedPage &&
-        !!pages?.some((page) => page.id === selectedPage.previousPageId);
     const idsKey = selectedMarchers.map((m) => m.id).join(",");
     const marcherIds = useMemo(
         () => (idsKey === "" ? [] : idsKey.split(",").map(Number)),
@@ -62,7 +59,7 @@ export function useBatchEditActionHandlers() {
     useActionHandler(
         "setAllMarchersToPreviousPage",
         () => run("previous", "all"),
-        { enabled: enabled && hasPrevious },
+        { enabled },
     );
     useActionHandler(
         "setSelectedMarchersToPreviousPage",
@@ -70,9 +67,8 @@ export function useBatchEditActionHandlers() {
         {
             enabled:
                 hasSelection &&
-                hasPrevious &&
                 (clearEntry === undefined || clearEntry.changes > 0),
-            ...holdActionOptions("clearThisPage", clearEntry),
+            ...holdActionOptions(clearEntry),
         },
     );
     useActionHandler("setAllMarchersToNextPage", () => run("next", "all"), {

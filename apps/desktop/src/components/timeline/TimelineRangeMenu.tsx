@@ -26,7 +26,6 @@ import {
 import tolgee from "@/global/singletons/Tolgee";
 import { holdTerms } from "@/timeline/holdTerms";
 import {
-    holdEntryCountLabel,
     type HoldCommand,
     type HoldEntryState,
 } from "@/timeline/holdMenuState";
@@ -166,8 +165,7 @@ function MenuItemWithReason({
 }
 
 /**
- * A hold command's page box entry (holds): its name, with how many of the selection it would
- * change when that's not all of them, "Hold from previous page (3 of 5)". When every selected
+ * A hold command's page box entry (holds), by its name. When every selected
  * marcher is already in the state it sets, it's checked and does nothing (a disabled checkbox
  * entry with a check in place of its icon); otherwise it's unavailable with its reason, or runs.
  */
@@ -186,11 +184,11 @@ function HoldCommandItem({
     pageId: string | number;
     reason: string | null;
     icon: ReactNode;
-    /** The entry's name, without a count */
+    /** The entry's name */
     name: string;
 }) {
     const entry = menu.entryOn?.(pageId);
-    const label = holdEntryCountLabel(command, entry) ?? name;
+    const label = name;
     if (entry?.checked)
         return (
             <DropdownMenu.CheckboxItem

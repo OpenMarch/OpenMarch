@@ -6,7 +6,6 @@ import { setAsShownMenu } from "./timelineSetAsShown";
 import { usePageKeepStates } from "./useKeepLaterPages";
 import { useHeldMarksStore } from "./useHeldMarks";
 import {
-    holdEntryCountLabel,
     holdEntryStates,
     type HoldCommand,
     type HoldEntryState,
@@ -69,17 +68,13 @@ export function useHoldCommands(
 
 /**
  * A hold command's action options on a page (`useActionHandler`): checked, and so off, when every
- * selected marcher is already in its state, and its label with a count when it would change some
- * but not all of them (`holdEntryCountLabel`).
+ * selected marcher is already in its state. No counts: the menu can't know every marcher the write
+ * will refuse (no arrival, Expert moves, shapes), so a number would promise too much.
  */
-export function holdActionOptions(
-    command: HoldCommand,
-    entry: HoldEntryState | null | undefined,
-): { checked: boolean; label: string | undefined } {
-    return {
-        checked: entry?.checked ?? false,
-        label: holdEntryCountLabel(command, entry) ?? undefined,
-    };
+export function holdActionOptions(entry: HoldEntryState | null | undefined): {
+    checked: boolean;
+} {
+    return { checked: entry?.checked ?? false };
 }
 
 /** Whether a hold command can run on the page: it's offered there and says no reason not to. */

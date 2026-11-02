@@ -330,16 +330,16 @@ describe("the page box menu's hold commands", () => {
         expect(runDefine).not.toHaveBeenCalled();
     });
 
-    it("mixed: each counts whom it would change, and runs", () => {
+    it("mixed: both stay on, with no count, and run", () => {
         // 1 Held, 2 and 3 Not defined, 4 and 5 Defined
         const { hold, define, runDefine } = openMenu(
             [state({ follows: [1, 2, 3], selected: 5 })],
             [1, 2, 3, 4, 5],
             [mark(1)],
         );
-        expect(hold).toHaveTextContent("Hold from previous page (4 of 5)");
+        expect(hold).toHaveTextContent(/^Hold from previous page$/);
         expect(hold).not.toHaveAttribute("aria-disabled");
-        expect(define).toHaveTextContent("Define as shown (2 of 5)");
+        expect(define).toHaveTextContent(/^Define as shown$/);
         expect(define).not.toHaveAttribute("aria-disabled");
         fireEvent.click(define);
         // Only the Not defined ones

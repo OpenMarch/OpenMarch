@@ -1,10 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
-import {
-    holdEntryCountLabel,
-    holdEntryStates,
-    marcherPageStates,
-} from "../holdMenuState";
+import { holdEntryStates, marcherPageStates } from "../holdMenuState";
 import type { PageKeepState } from "../timelineKeepLater";
 
 /**
@@ -166,35 +162,5 @@ describe("holdEntryStates", () => {
     it("checks nothing with nothing selected", () => {
         const entries = holdEntryStates(page3({ selected: 0 }), []);
         expect(Object.values(entries).some((e) => e.checked)).toBe(false);
-    });
-});
-
-describe("holdEntryCountLabel", () => {
-    it("counts only when it's some of the selection", () => {
-        const some = { checked: false, changes: 3, selected: 5 };
-        expect(holdEntryCountLabel("holdFromPrevious", some)).toBe(
-            "Hold from previous page (3 of 5)",
-        );
-        expect(holdEntryCountLabel("defineAsShown", some)).toBe(
-            "Define as shown (3 of 5)",
-        );
-        expect(holdEntryCountLabel("clearThisPage", some)).toBe(
-            "Clear this page (3 of 5 selected)",
-        );
-        expect(
-            holdEntryCountLabel("holdFromPrevious", {
-                checked: false,
-                changes: 5,
-                selected: 5,
-            }),
-        ).toBeNull();
-        expect(
-            holdEntryCountLabel("holdFromPrevious", {
-                checked: true,
-                changes: 0,
-                selected: 5,
-            }),
-        ).toBeNull();
-        expect(holdEntryCountLabel("holdFromPrevious", null)).toBeNull();
     });
 });
