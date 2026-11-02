@@ -7,7 +7,7 @@ summary: A Tempo button opens tempo lanes in the timeline. Drag counts onto the 
 status: open
 questions:
   - "Could you line the counts up by dragging a count onto its spot in the music, with the metronome on? Did the counts around it move the way you expected?"
-  - "Did Tap tempo give you the tempo you expected? Was Use (putting it on the selected counts) where you looked for it?"
+  - "Did Tap tempo give you the tempo you expected? Was it clear that it only measures, and how to set that tempo on the show if you wanted to?"
   - "Did you try a hold (fermata), a gradual change, a new meter or renumbering a measure? Which were easy to find, and which weren't?"
   - "When you added or removed a count, was it clear which of the three choices to pick?"
   - "Was it clear what Play would do: play from the playhead, or loop the measures you'd selected?"
@@ -29,8 +29,8 @@ your own music to a show.
   and later edits keep it in place. Drag the first hit onto count 1 to move
   the music instead; Undo puts it back.
 - Click **Tap tempo** (or press T) and tap along on each beat to see how fast
-  the music is. Select some measures first, and **Use** puts that tempo on
-  them.
+  the music is. It only measures. To put that tempo on some measures, select
+  them and press **Set** at the bottom of the panel.
 - Right-click a count for more: make it a hold (a fermata), change tempo
   gradually, or add or remove a count.
 - Click a measure's meter chip to set a meter, such as 7/8 counted 2+2+3.

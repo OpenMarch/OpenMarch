@@ -20,7 +20,7 @@
  *   otherwise the rest slides. Shift moves only that count line. A drag stops at a pin and says
  *   why. Dropping a spot on count 1 moves the music instead. Nothing is detected in the music:
  *   lining up is by ear and eye (detection is a later spike).
- * - **T** taps tempo: a panel shows how fast you tap, and Use puts that tempo on the selected
+ * - **T** taps tempo: a panel measures how fast you tap (nothing changes); Set puts it on the selected
  *   counts or the tempo stretch under the playhead (TapTempo.tsx).
  */
 import {
@@ -1717,7 +1717,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             },
         });
 
-    // Tap tempo's Use: a steady tempo on the selected counts, or on the stretch under the playhead
+    // Tap tempo's Set: a steady tempo on the selected counts, or on the stretch under the playhead
     const tapCounts = (() => {
         if (ui.range) return ui.range;
         const s = segmentAt(Math.max(1, Math.floor(playheadBeat)));
