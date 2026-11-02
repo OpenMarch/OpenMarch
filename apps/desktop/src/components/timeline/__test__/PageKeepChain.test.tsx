@@ -397,7 +397,6 @@ describe("the chains on the page boxes", () => {
             "OT1 and OT4 have no position of their own here, shown where earlier pages left them. Right-click the page to change this",
         );
         fireEvent.focus(box);
-        // The words, then K as a keycap
         expect(
             (
                 await screen.findAllByText(
@@ -408,8 +407,8 @@ describe("the chains on the page boxes", () => {
         expect(
             screen
                 .getAllByRole("tooltip")
-                .some((tip) => tip.querySelector("kbd")?.textContent === "K"),
-        ).toBe(true);
+                .some((tip) => tip.querySelector("kbd") !== null),
+        ).toBe(false);
     });
 
     it("a box too narrow for its chain keeps its label's usual padding", () => {

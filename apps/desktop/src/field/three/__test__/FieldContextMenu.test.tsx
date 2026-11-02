@@ -146,6 +146,7 @@ describe("FieldContextMenu", () => {
 
     it("lists the actions in groups, with the page state commands together", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
+        handle("shapeGroup", { enabled: false });
         handle("shapeUngroup", { enabled: false });
         open();
         const content = screen.getByTestId("field-menu");

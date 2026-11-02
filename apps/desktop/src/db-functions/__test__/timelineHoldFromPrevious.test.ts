@@ -1,3 +1,4 @@
+import { refusalText } from "@/test/refusalText";
 import { afterEach, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -422,7 +423,7 @@ describeDbTests("Hold from previous page", (it) => {
             marcherIds: [a],
         }).catch((e: unknown) => e);
         expect(timelineErrorCode(notABox)).toBe("E-ARGS");
-        expect((notABox as Error).message).toContain(
+        expect(refusalText(notABox)).toContain(
             "Hold from previous page works on a whole page, not Page 3, counts 1–4",
         );
         expect(await snapshot(db)).toEqual(rows);
@@ -1283,16 +1284,7 @@ describeDbTests("The E-H1 refusal names who and where", (it) => {
         const m = (await db.select().from(schema.marchers).all()).find(
             (r) => r.id === a,
         )!;
-        const fill = (
-            _key: string,
-            text: string,
-            params?: Record<string, string>,
-        ) =>
-            text.replace(
-                /\{(\w+)\}/g,
-                (_, name: string) => params?.[name] ?? "",
-            );
-        expect(timelineErrorMessage(error, { translate: fill })).toBe(
+        expect(timelineErrorMessage(error)).toBe(
             `${m.drill_prefix}${m.drill_order} is Held on Page 3. Clear this page to remove the hold, or drag inside it to move it.`,
         );
     });
@@ -1312,14 +1304,7 @@ describeDbTests("The E-H1 refusal names the page of the conflict", (it) => {
             { marcherId: a, xy: FAR },
         ]).catch((e: unknown) => e);
         expect(timelineErrorCode(error)).toBe("E-H1");
-        expect(
-            timelineErrorMessage(error, {
-                translate: (_key, text, params) =>
-                    text.replace(/\{(\w+)\}/g, (_, name: string) =>
-                        String(params?.[name] ?? ""),
-                    ),
-            }),
-        ).toContain("is Held on Page 4.");
+        expect(timelineErrorMessage(error)).toContain("is Held on Page 4.");
     });
 });
 
@@ -1877,16 +1862,6 @@ describeDbTests(
 describeDbTests(
     "An edit of an earlier page that leaves a hold from the starting spots nothing to grow out of (#619 review)",
     (it) => {
-        const fill = (
-            _key: string,
-            text: string,
-            params?: Record<string, string>,
-        ) =>
-            text.replace(
-                /\{(\w+)\}/g,
-                (_, name: string) => params?.[name] ?? "",
-            );
-
         it("a move on Page 1 drops a Page 3 hold from the start, and says whose and where", async ({
             db,
             marchersAndPages: _,
@@ -1900,7 +1875,7 @@ describeDbTests(
                 names: [await nameOf(db, c)],
                 pages: ["3"],
             });
-            expect(heldDroppedMessage(result.droppedHolds, fill)).toBe(
+            expect(heldDroppedMessage(result.droppedHolds)).toBe(
                 `${await nameOf(db, c)} is no longer Held on Page 3: it was held from the starting spot, and now a move before it ends somewhere else.`,
             );
             await roundTrip(db, before, await snapshot(db));
@@ -2204,16 +2179,7 @@ describeDbTests(
                 { marcherId: c, xy: FAR },
             ]).catch((e: unknown) => e);
             expect(timelineErrorCode(error)).toBe("E-H1");
-            const fill = (
-                _key: string,
-                text: string,
-                params?: Record<string, string>,
-            ) =>
-                text.replace(
-                    /\{(\w+)\}/g,
-                    (_, name: string) => params?.[name] ?? "",
-                );
-            expect(timelineErrorMessage(error, { translate: fill })).toBe(
+            expect(timelineErrorMessage(error)).toBe(
                 `${await nameOf(db, c)} is Held on Page 1. Clear this page to remove the hold, or drag inside it to move it.`,
             );
             expect(await snapshotWithHomes(db)).toEqual(rows);

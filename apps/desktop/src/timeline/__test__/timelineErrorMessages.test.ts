@@ -15,7 +15,8 @@ import { TimelineEditRefusedError } from "../timelineEditRefusals";
 import {
     TIMELINE_DB_ERROR_MESSAGE,
     TIMELINE_ERROR_MESSAGES,
-    HELD_CONFLICT_MESSAGES,
+    HELD_CONFLICT_MESSAGE,
+    HELD_DROPPED_MESSAGE,
     TIMELINE_LEGACY_CONVERSION_MESSAGE,
     TIMELINE_NOT_READY_MESSAGE,
     isLegacyConversionViolation,
@@ -124,15 +125,6 @@ describe("timelineErrorMessage", () => {
     );
 
     it("an E-H1 that knows who names the marchers and the page, and points to Clear this page", () => {
-        const fill = (
-            _key: string,
-            text: string,
-            params?: Record<string, string>,
-        ) =>
-            text.replace(
-                /\{(\w+)\}/g,
-                (_, name: string) => params?.[name] ?? "",
-            );
         const violation = {
             code: "E-H1",
             transitionId: null,
@@ -142,14 +134,14 @@ describe("timelineErrorMessage", () => {
             names: ["T1"],
             pages: ["3"],
         });
-        expect(timelineErrorMessage(one, { translate: fill })).toBe(
+        expect(timelineErrorMessage(one)).toBe(
             "T1 is Held on Page 3. Clear this page to remove the hold, or drag inside it to move it.",
         );
         const many = new TimelineCommitViolationError([violation], {
             names: ["T1", "T2"],
             pages: ["3", "5"],
         });
-        expect(timelineErrorMessage(many, { translate: fill })).toBe(
+        expect(timelineErrorMessage(many)).toBe(
             "T1 and T2 are Held on Pages 3 and 5. Clear this page to remove the holds, or drag inside them to move them.",
         );
     });
@@ -339,6 +331,15 @@ describe("toastTimelineError", () => {
         const error = new TimelineEditRefusedError("inShapeOrFollowTheLeader", {
             marcherIds: [3],
             message: "B3 is in a shape, so it keeps its move here.",
+            params: {
+                count: 1,
+                shapeCount: 1,
+                shapeNames: { list: ["B3"] },
+                leaderCount: 0,
+                leaderNames: { list: [] },
+                orderCount: 0,
+                orderNames: { list: [] },
+            },
         });
         toastTimelineError(error);
         expect(toast.warning).toHaveBeenCalledWith(
@@ -422,7 +423,8 @@ describe("en.json", () => {
             TIMELINE_LEGACY_CONVERSION_MESSAGE,
             NOT_JOINED_MESSAGE,
             ...Object.values(NOT_JOINED_REASONS),
-            ...Object.values(HELD_CONFLICT_MESSAGES),
+            HELD_CONFLICT_MESSAGE,
+            HELD_DROPPED_MESSAGE,
         ])
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });

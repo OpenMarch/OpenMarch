@@ -184,14 +184,6 @@ const timelineCount = async (db: DbConnection) =>
 
 const fieldProperties = new FieldProperties(mockNCAAFieldProperties);
 
-/** English with the parameters filled in, as the labels' defaults read */
-const english = (
-    _key: string,
-    defaultValue: string,
-    params: Record<string, string> = {},
-) =>
-    defaultValue.replace(/\{(\w+)\}/g, (_, name: string) => params[name] ?? "");
-
 describeDbTests("sparse timeline writes: no-op writes write nothing", (it) => {
     it("align on an inherited page writes no row for a marcher it leaves still, so an upstream edit still carries it (owner bug via align, 07a §3)", async ({
         db,
@@ -1040,14 +1032,12 @@ describeDbTests(
             await move(db, page3, [{ marcherId: 1, x: 300, y: 300 }]);
             const later = pages.slice(4).map((p) => p.name);
             expect(following([1, 2])).toEqual(later);
-            expect(
-                clearPageFollowingLabel(pages[3]!.name, later, english),
-            ).toBe(
+            expect(clearPageFollowingLabel(pages[3]!.name, later)).toBe(
                 later.length === 1
                     ? `Clear Page ${pages[3]!.name}, Page ${later[0]} moves back too`
                     : `Clear Page ${pages[3]!.name}, Pages ${later[0]}–${later.at(-1)} move back too`,
             );
-            expect(clearPageLabel(pages[3]!.name, english)).toBe(
+            expect(clearPageLabel(pages[3]!.name)).toBe(
                 `Clear Page ${pages[3]!.name}`,
             );
 

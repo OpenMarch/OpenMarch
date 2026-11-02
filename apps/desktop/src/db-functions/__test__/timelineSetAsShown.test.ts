@@ -270,7 +270,7 @@ describeDbTests("Set as shown", (it) => {
         }).catch((e: unknown) => e);
         expect(timelineErrorCode(notABox)).toBe("E-ARGS");
         expect(refusalText(notABox)).toContain(
-            "Set as shown works on a whole page, not Page 3, counts 1–4",
+            "Define as shown works on a whole page, not Page 3, counts 1–4",
         );
         expect(await snapshot(db)).toEqual(rows);
     });
