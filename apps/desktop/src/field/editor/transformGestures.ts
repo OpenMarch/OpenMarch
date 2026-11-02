@@ -25,9 +25,9 @@ import type { FieldRect } from "./selectionArea";
  * Lock X and Lock Y don't apply to handles (rules table: Lock X / Lock Y).
  * While fine is on a scale handle counts the pointer at a quarter of its
  * speed (`precisionDelta`, #197); a rotation turns at full speed in whole
- * degrees. As in a move, a role key pressed or released
- * mid-drag redraws the marchers at the last pointer. Each handle declares the
- * roles it reads, for the chip.
+ * degrees. Alt (from center) scales about the box's center. As in a move, a
+ * role key pressed or released mid-drag redraws the marchers at the last
+ * pointer. Each handle declares the roles it reads, for the chip.
  */
 abstract class HandleGesture implements FieldGesture {
     abstract readonly kind: FieldTestGesture;
@@ -73,18 +73,18 @@ abstract class HandleGesture implements FieldGesture {
 }
 
 /**
- * A corner scales proportionally, and constrain frees its ratio; a middle handle scales one axis,
- * which constrain doesn't change. Nothing snaps.
+ * A corner scales each axis with the pointer and a middle handle scales one axis, and constrain
+ * keeps the ratio; with the box shape's ratio lock on they keep it, and constrain frees it (a box's
+ * corner gives equal spacings instead). Either scales from the center with from center. Nothing
+ * snaps.
  */
-const scaleHonors = (handle: Exclude<HandleId, "rot">): HonoredRoles =>
-    handle.length === 2
-        ? {
-              context: "field",
-              fine: "fine",
-              constrain: "freeRatio",
-              snaps: false,
-          }
-        : { context: "field", fine: "fine", snaps: false };
+const scaleHonors = (ratioLocked: boolean): HonoredRoles => ({
+    context: "field",
+    fine: "fine",
+    constrain: ratioLocked ? "freeRatio" : "keepRatio",
+    fromCenter: "fromCenter",
+    snaps: false,
+});
 
 /** A rotate handle reads fine (whole degrees, at full speed) and snaps to 15°; constrain does nothing */
 export const ROTATE_HONORS: HonoredRoles = {
@@ -93,7 +93,7 @@ export const ROTATE_HONORS: HonoredRoles = {
     snaps: true,
 };
 
-/** A corner or middle handle: scales the selection from the opposite side. */
+/** A corner or middle handle: scales the selection from the opposite side, or from its center. */
 export class ScaleGesture extends HandleGesture {
     readonly kind: FieldTestGesture = "scale";
     private track = PRECISION_START;
@@ -106,8 +106,10 @@ export class ScaleGesture extends HandleGesture {
         /** The marchers' bounds at the press. */
         private readonly box: FieldRect,
         keys: FieldKeys,
+        /** The ratio lock a box shape shares, at the press: on, keeping the ratio is the default. */
+        private readonly ratioLocked = false,
     ) {
-        super(origin, starts, host, keys, scaleHonors(handle));
+        super(origin, starts, host, keys, scaleHonors(ratioLocked));
     }
 
     protected positionsAt(at: FieldPoint, roles: Roles) {
@@ -119,10 +121,16 @@ export class ScaleGesture extends HandleGesture {
             roles.fine,
         );
         this.track = moved.track;
-        // A corner scales proportionally; constrain flips that, freeing each axis
+        // Constrain flips the ratio lock for the drag, as on a box shape: one idea, not two
         return scalePositions(
             this.starts,
-            scaleFor(this.handle, this.box, moved.delta, roles.constrain),
+            scaleFor(
+                this.handle,
+                this.box,
+                moved.delta,
+                this.ratioLocked !== roles.constrain,
+                roles.fromCenter,
+            ),
         );
     }
 }

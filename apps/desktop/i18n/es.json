@@ -86,7 +86,9 @@
             "evenOut": "Forma: igualar el contorno",
             "expand": "Forma: ampliar, manteniendo las proporciones",
             "shrink": "Forma: reducir, manteniendo las proporciones",
-            "ring": "Anillo de favoritos: mantén pulsado para elegir una forma, toca para dejarlo abierto"
+            "ring": "Anillo de favoritos: mantén pulsado para elegir una forma, toca para dejarlo abierto",
+            "ungroup": "Forma: Desagrupar",
+            "ungroupKeywords": "desagrupar forma separar soltar"
         },
         "swap": {
             "error": "No se pudo intercambiar marchadores {marcher1} y {marcher2}",
@@ -654,8 +656,7 @@
             "shapesTab": "Formas",
             "successfullyCopied": "Forma copiada con éxito a la página {pageName}",
             "ungroupShapeButton": "Desagrupar",
-            "ungroupShapeTooltip": "Eliminar esta forma para esta página. No moverá los marchadores de su posición actual",
-            "viewTab": "Vista"
+            "ungroupShapeTooltip": "Eliminar esta forma para esta página. No moverá los marchadores de su posición actual"
         },
         "title": "Inspector"
     },
@@ -739,8 +740,6 @@
                     "title": "Configuración de campo"
                 },
                 "performers": {
-                    "added": "Intérpretes añadidos",
-                    "addNew": "Añadir intérpretes",
                     "description": "Agrega marchadores ahora o omite y agrégalos más tarde en el editor.",
                     "noneAdded": "Todavía no se han añadido intérpretes.",
                     "title": "Intérpretes"
@@ -1332,7 +1331,8 @@
                 "label": "Semilla"
             },
             "steps": "pasos",
-            "turn": "Giro, en grados en sentido horario"
+            "turn": "Giro, en grados en sentido horario",
+            "ungroup": "Desagrupar: los integrantes se quedan donde están"
         },
         "field": {
             "stepLimit": "{steps} a 5"
@@ -1501,7 +1501,9 @@
             "summary": {
                 "empty": "{count, plural, one {# vacío} other {# vacíos}}",
                 "steps": "{interval} pasos"
-            }
+            },
+            "ungroupError": "Error al desagrupar la forma",
+            "ungroupIsolated": "Desagrupa esta forma fuera del aislamiento: viene de una página anterior"
         },
         "save": {
             "ariaLabel": "Guardar esta forma en tu biblioteca",
@@ -1681,8 +1683,7 @@
             "shapes": "Formas",
             "shapesAlways": "Siempre",
             "shapesOff": "Desactivado",
-            "shapesSelected": "Al seleccionar",
-            "uiSettingsToolbar": "Barra de herramientas de configuración"
+            "shapesSelected": "Al seleccionar"
         }
     },
     "touch": {
