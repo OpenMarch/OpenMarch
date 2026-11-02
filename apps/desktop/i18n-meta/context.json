@@ -13,5 +13,9 @@
     "shapes.placed.ungroupIsolated": "Error toast when Ungroup is used while one move on the timeline is isolated, on a shape that was made on an earlier page. The user has to leave isolation first.",
     "timeline.rangeMenu.setAsShown": "Menu item in a page's right-click menu on the timeline. Stores the selected marchers' current on-field positions as set (fixed) positions on that page, so they stop following the move around them.",
     "timeline.rangeMenu.setAsShownNone": "Why \"Set as shown\" is unavailable, shown next to the disabled menu item. {page} is a page name such as \"Page 3\". \"Set\" means a marcher has a stored position on that page; \"partway through a move\" means the marcher is in the middle of a move there.",
-    "toolbar.collisions.collisionsToolbar": "Screen-reader label for the Collisions toolbar section, which lists marchers who are too close together on the current page."
+    "toolbar.collisions.collisionsToolbar": "Screen-reader label for the Collisions toolbar section, which lists marchers who are too close together on the current page.",
+    "view3d.autoOpenPrompt.description": "Second line of the 3D View's \"open on launch\" question card. Settings › General is the app settings section where the answer can be changed later.",
+    "view3d.autoOpenPrompt.no": "Button answering no to the 3D View's \"open on launch\" question: the 3D View won't open by itself (it stays open for now).",
+    "view3d.autoOpenPrompt.title": "Question in a card at the bottom right of the 3D View window, shown each time the window opens until answered: should the 3D View open by itself whenever a show is opened?",
+    "view3d.autoOpenPrompt.yes": "Button answering yes to the 3D View's \"open on launch\" question: the 3D View will open by itself with every show."
 }
