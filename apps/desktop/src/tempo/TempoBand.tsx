@@ -12,8 +12,9 @@
  * - **Tempo**: each count's tempo as a line, Logic-style (docs/tempo/logic-analysis.md). Only the
  *   line, a change's dot and a stretch's curve handle drag; elsewhere a drag selects counts. Drag
  *   the line up or down; drag a dot sideways to move the change; drag the handle for a gradual
- *   change (tempoShape.ts). Double-click empty lane to add a change, a dot to remove it, the line
- *   to type "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
+ *   change (tempoShape.ts). A stretch's end dot sets the tempo it ends on, so a rit. can jump back
+ *   (a tempo); right-click a count in a ramp for A tempo. Double-click empty lane to add a
+ *   change, a dot to remove it, the line to type "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
  * - **Music**: the waveform under the count lines. Drag a spot in the music onto the count it
  *   belongs to, or a count line onto its spot (Logic's Beat Mapping). The count pins; the
  *   counts back to the pin before re-space, and the counts up to the pin after (if any) too,
@@ -41,6 +42,7 @@ import {
     PushPinIcon,
     TrashIcon,
     TrendDownIcon,
+    ArrowUUpLeftIcon,
     TrendUpIcon,
     PushPinSlashIcon,
     XIcon,
@@ -428,20 +430,27 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         [segments, tempoYAt, ppb],
     );
     const curveHandleOf = useCallback(
-        (s: TempoSegment, next: TempoSegment | undefined) => {
+        (s: TempoSegment) => {
             const counts = s.to - s.from;
-            if (s.ramp)
-                return {
-                    x: xOf(s.from + (counts - 1) / 2, ppb) + ppb / 2,
-                    y: yOfBpm(rampMiddle(s.bpmFrom, s.bpmTo, s.curve ?? 0)),
-                    target: s.bpmTo,
-                };
-            if (s.uneven || !next || counts < 3) return null;
-            if (Math.abs(next.bpmFrom - s.bpmFrom) < 0.5) return null;
+            if (!s.ramp) return null;
             return {
-                x: xOf(s.to, ppb) - Math.min(8, ppb / 2),
-                y: yOfBpm(s.bpmFrom),
-                target: next.bpmFrom,
+                x: xOf(s.from + (counts - 1) / 2, ppb) + ppb / 2,
+                y: yOfBpm(rampMiddle(s.bpmFrom, s.bpmTo, s.curve ?? 0)),
+                target: s.bpmTo,
+            };
+        },
+        [ppb, yOfBpm],
+    );
+    /**
+     * A stretch's end dot, on its last count: dragging it sets the tempo the stretch ends on (a
+     * ramp from its start), so it can stop short of the next tempo and jump back (a tempo)
+     */
+    const endHandleOf = useCallback(
+        (s: TempoSegment) => {
+            if (s.uneven || s.to - s.from < 3) return null;
+            return {
+                x: xOf(s.to - 1, ppb) + ppb / 2,
+                y: yOfBpm(s.bpmTo),
             };
         },
         [ppb, yOfBpm],
@@ -816,15 +825,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             ctx.fill();
         }
         const handleFor =
-            gesture?.kind === "curve"
+            gesture?.kind === "curve" || gesture?.kind === "end"
                 ? gesture.stretch.from
                 : !gesture && hover
                   ? hover.stretch.from
                   : null;
         if (handleFor !== null) {
             const i = segments.findIndex((s) => s.from === handleFor);
-            const h =
-                i >= 0 ? curveHandleOf(segments[i]!, segments[i + 1]) : null;
+            const h = i >= 0 ? curveHandleOf(segments[i]!) : null;
             if (h) {
                 ctx.save();
                 ctx.strokeStyle = accent;
@@ -840,6 +848,21 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     0,
                     Math.PI * 2,
                 );
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            }
+            // the end dot: a small square, so it isn't taken for the curve handle or a point
+            const end = i >= 0 ? endHandleOf(segments[i]!) : null;
+            if (end) {
+                const big = hover?.kind === "end" || gesture?.kind === "end";
+                const r = big ? 5 : 3.5;
+                ctx.save();
+                ctx.strokeStyle = accent;
+                ctx.fillStyle = cssColor(root, "--color-modal", "#fff");
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.rect(end.x + ox - r, end.y - r, r * 2, r * 2);
                 ctx.fill();
                 ctx.stroke();
                 ctx.restore();
@@ -896,6 +919,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         hover,
         segments,
         curveHandleOf,
+        endHandleOf,
         traceCount,
         outliers,
         highlight,
@@ -1861,7 +1885,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         for (const j of [i, i - 1, i + 1]) {
             const s = segments[j];
             if (!s) continue;
-            const h = curveHandleOf(s, segments[j + 1]);
+            const end = endHandleOf(s);
+            if (end && Math.hypot(end.x - x, end.y - y) <= 7)
+                return { kind: "end", stretch: s };
+            const h = curveHandleOf(s);
             if (h && Math.hypot(h.x - x, h.y - y) <= 7)
                 return { kind: "curve", stretch: s };
         }
@@ -1957,6 +1984,42 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             result && { ...result, changes: removed },
         );
     };
+    /**
+     * Where A tempo would go back at count `b`: inside a ramp (a rit. or accel.), the rest of it
+     * returns to the tempo the ramp started from; on the first count of a steady stretch right
+     * after a ramp, that stretch does. Null where there's no ramp to come back from.
+     */
+    const aTempoAt = (b: number) => {
+        const inside = storedSegments.find((s) => b >= s.from && b < s.to);
+        if (!inside || inside.uneven) return null;
+        if (inside.ramp && b > inside.from)
+            return { from: b, to: inside.to, bpm: inside.bpmFrom };
+        const before = storedSegments.find((s) => s.to === b);
+        if (
+            inside.from === b &&
+            !inside.ramp &&
+            before?.ramp &&
+            Math.abs(inside.bpmFrom - before.bpmFrom) > 0.5
+        )
+            return { from: b, to: inside.to, bpm: before.bpmFrom };
+        return null;
+    };
+    /** A tempo at count `b`: a steady stretch from there, back at the tempo before the ramp */
+    const aTempo = (b: number) => {
+        const at = aTempoAt(b);
+        if (!at) return;
+        const result = withTempos(
+            at.from,
+            at.to,
+            Array<number>(at.to - at.from).fill(at.bpm),
+        );
+        const marked = new Set(changes);
+        marked.add(at.from);
+        commit(
+            `A tempo at ${measureLabel(at.from)}`,
+            result && { ...result, changes: marked },
+        );
+    };
     const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
         // the band owns its lanes: the timeline's own scrub mustn't take the press
         e.stopPropagation();
@@ -1988,14 +2051,24 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 });
         } else if (
             y >= TEMPO.top &&
-            ["curve", "point", "line"].includes(tempoTargetAt(x, y)?.kind ?? "")
+            ["end", "curve", "point", "line"].includes(
+                tempoTargetAt(x, y)?.kind ?? "",
+            )
         ) {
             const target = tempoTargetAt(x, y)!;
             const i = segments.findIndex((s) => s.from === target.stretch.from);
             const segment = segments[i];
             if (!segment) return;
-            if (target.kind === "curve") {
-                const h = curveHandleOf(segment, segments[i + 1]);
+            if (target.kind === "end")
+                setGesture({
+                    kind: "end",
+                    stretch: segment,
+                    startY: y,
+                    bpmPerPx: bpmPerPx(),
+                    bpm: segment.bpmTo,
+                });
+            else if (target.kind === "curve") {
+                const h = curveHandleOf(segment);
                 if (!h) return;
                 setGesture({
                     kind: "curve",
@@ -2188,6 +2261,37 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
             setGesture({ ...gesture, axis: "x", to });
             setPreview(to === gesture.at ? null : movedChange(gesture.at, to));
+        } else if (gesture.kind === "end") {
+            const { stretch } = gesture;
+            const step = e.shiftKey ? 0.1 : 1;
+            let bpm =
+                Math.round(
+                    (stretch.bpmTo -
+                        (localY(e) - gesture.startY) * gesture.bpmPerPx) /
+                        step,
+                ) * step;
+            // catches at the next stretch's tempo (a ramp into it) and at its own start (steady)
+            const next = segments.find((s) => s.from === stretch.to);
+            for (const at of [next?.bpmFrom, stretch.bpmFrom])
+                if (
+                    at !== undefined &&
+                    Math.abs(bpm - at) / gesture.bpmPerPx <= 5
+                )
+                    bpm = at;
+            bpm = Math.max(20, Math.min(400, bpm));
+            setGesture({ ...gesture, bpm });
+            setPreview(
+                withTempos(
+                    stretch.from,
+                    stretch.to,
+                    rampTempos(
+                        stretch.to - stretch.from,
+                        stretch.bpmFrom,
+                        bpm,
+                        stretch.ramp ? (stretch.curve ?? 0) : 0,
+                    ),
+                ),
+            );
         } else if (gesture.kind === "curve") {
             const { stretch, target } = gesture;
             const yFrom = yOfBpm(stretch.bpmFrom);
@@ -2324,6 +2428,18 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     movedChange(g.at, g.to),
                 );
             else setPreview(null);
+        } else if (g.kind === "end") {
+            if (!preview || Math.abs(g.bpm - g.stretch.bpmTo) < 1e-6)
+                setPreview(null);
+            else {
+                const next = segments.find((s) => s.from === g.stretch.to);
+                commit(
+                    next && Math.abs(g.bpm - next.bpmFrom) > 0.5
+                        ? `Ends on ${bpmText(g.bpm)}, then ${bpmText(next.bpmFrom)}`
+                        : `Ends on ${bpmText(g.bpm)}`,
+                    preview,
+                );
+            }
         } else if (g.kind === "curve") {
             if (preview)
                 commit(
@@ -2368,7 +2484,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 removeChange(target.stretch.from);
                 return;
             }
-            if (target.kind === "curve") {
+            if (target.kind === "curve" || target.kind === "end") {
                 const st = segmentAt(target.stretch.from);
                 if (st?.ramp)
                     commit(
@@ -2631,6 +2747,17 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         : `Ends on the tempo after it (${bpmText(target!)}); holds and pins outside stay as they are`,
                     range: stretch,
                 });
+                // After a rit. or accel.: back to the tempo before it, from this count
+                const back = aTempoAt(beat);
+                if (back)
+                    items.push({
+                        label: "A tempo",
+                        icon: <ArrowUUpLeftIcon size={I} aria-hidden />,
+                        aside: `back to ${bpmText(back.bpm)}`,
+                        onSelect: () => aTempo(beat),
+                        hint: `From ${measureLabel(back.from)}, back to the tempo before the gradual change. The counts before it keep their tempo.`,
+                        range: { from: back.from, to: back.to },
+                    });
             }
             items.push(
                 data.locks.has(beat)
@@ -3156,6 +3283,25 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             </span>,
         );
     }
+    // While an end dot is dragged: the tempo the stretch will end on
+    if (gesture?.kind === "end") {
+        const text = bpmText(gesture.bpm);
+        const x = xOf(gesture.stretch.to - 1, ppb) + ppb / 2;
+        const y = yOfBpm(gesture.bpm);
+        labels.push(
+            <span
+                key="tempo-drag-tag"
+                data-testid="tempo-drag-tag"
+                className="bg-accent text-text-invert pointer-events-none absolute z-[6] rounded-[3px] px-5 text-[11px] leading-[16px] font-semibold whitespace-nowrap"
+                style={{
+                    left: Math.min(x + 10, viewRight - 60),
+                    top: y < TEMPO.top + 22 ? y + 6 : y - 22,
+                }}
+            >
+                {text}
+            </span>,
+        );
+    }
     if (tip && !gesture) {
         const w = Math.min(300, textWidth(tip.text, `11px ${fontFamily}`) + 16);
         labels.push(
@@ -3233,7 +3379,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 width,
                 height: TEMPO_BAND_HEIGHT,
                 cursor: gesture
-                    ? gesture.kind === "tempo"
+                    ? gesture.kind === "tempo" || gesture.kind === "end"
                         ? "ns-resize"
                         : gesture.kind === "point"
                           ? gesture.axis === "x"
@@ -3242,7 +3388,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                           : gesture.kind === "curve"
                             ? "grabbing"
                             : undefined
-                    : hover?.kind === "line"
+                    : hover?.kind === "line" || hover?.kind === "end"
                       ? "ns-resize"
                       : hover?.kind === "point" || hover?.kind === "curve"
                         ? "grab"

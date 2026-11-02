@@ -33,6 +33,14 @@ export function TempoHelp() {
             "Drag a stretch's round handle",
             "makes a gradual change, straight or curved; double-click it for a jump again",
         ],
+        [
+            "Drag a stretch's square end dot",
+            "sets the tempo it ends on, so a rit. can jump back (a tempo)",
+        ],
+        [
+            "Right-click in a gradual change",
+            "A tempo: back to the tempo before it",
+        ],
         ["Drag along Measures", "selects counts to edit"],
         [
             "Right-click",

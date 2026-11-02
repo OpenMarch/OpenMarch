@@ -66,6 +66,19 @@ export type Gesture =
           curve: number;
       }
     | {
+          /**
+           * Holding a stretch's end dot (its last count): up or down sets the tempo it ends on,
+           * leaving the stretch after it alone, so a rit. can jump back (a tempo). It catches at
+           * the next stretch's tempo and at its own start
+           */
+          kind: "end";
+          stretch: TempoSegment;
+          startY: number;
+          /** The scale at the press (the lane's scale grows with the preview) */
+          bpmPerPx: number;
+          bpm: number;
+      }
+    | {
           /** Dragging a rehearsal mark along the marks lane to another measure */
           kind: "mark";
           measure: TempoMeasure;
@@ -81,7 +94,7 @@ export interface CountRange {
 
 /** What's under the pointer in the tempo lane: it shows, and sets the cursor */
 export interface TempoHover {
-    kind: "line" | "point" | "curve" | "lane";
+    kind: "line" | "point" | "curve" | "end" | "lane";
     /** The stretch it belongs to (a point: the stretch it starts) */
     stretch: CountRange;
 }
