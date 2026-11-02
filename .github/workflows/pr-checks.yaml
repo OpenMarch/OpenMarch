@@ -37,6 +37,7 @@ jobs:
           - format:check
           - lint
           - spellcheck
+          - check:i18n
       fail-fast: false
     runs-on: ubuntu-latest
     steps:

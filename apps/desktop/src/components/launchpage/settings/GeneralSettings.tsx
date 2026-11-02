@@ -45,13 +45,20 @@ export default function GeneralSettings() {
             if (isMounted) setAutomaticUpdatesEnabled(savedValue !== false);
         };
         void loadAutomaticUpdatesSetting();
+        // Never answered opens it too (the 3D View asks), so only an explicit off reads as off
         void window.electron
             .invoke("settings:get", VIEW3D_AUTO_OPEN_SETTING)
             .then((savedValue: unknown) => {
-                if (isMounted) setView3dAutoOpen(savedValue === true);
+                if (isMounted) setView3dAutoOpen(savedValue !== false);
             });
+        // The 3D View's answer, given while this is open
+        const unsubscribe = window.electron.onSettingsChanged?.((change) => {
+            if (VIEW3D_AUTO_OPEN_SETTING in change)
+                setView3dAutoOpen(change[VIEW3D_AUTO_OPEN_SETTING] !== false);
+        });
         return () => {
             isMounted = false;
+            unsubscribe?.();
         };
     }, []);
 

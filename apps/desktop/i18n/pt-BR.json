@@ -90,7 +90,9 @@
             "evenOut": "Forma: igualar o contorno",
             "expand": "Forma: ampliar, mantendo as proporções",
             "shrink": "Forma: reduzir, mantendo as proporções",
-            "ring": "Anel de favoritos: segure para escolher uma forma, toque para mantê-lo aberto"
+            "ring": "Anel de favoritos: segure para escolher uma forma, toque para mantê-lo aberto",
+            "ungroup": "Forma: Desagrupar",
+            "ungroupKeywords": "desagrupar forma separar soltar"
         },
         "swap": {
             "error": "Não foi possível trocar marchadores {marcher1} e {marcher2}",
@@ -658,8 +660,7 @@
             "shapesTab": "Formas",
             "successfullyCopied": "Forma copiada com sucesso para a página {pageName}",
             "ungroupShapeButton": "Desagrupar",
-            "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual",
-            "viewTab": "Visualizar"
+            "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual"
         },
         "title": "Inspetor"
     },
@@ -1334,7 +1335,8 @@
                 "label": "Semente"
             },
             "steps": "passos",
-            "turn": "Giro, em graus no sentido horário"
+            "turn": "Giro, em graus no sentido horário",
+            "ungroup": "Desagrupar: os integrantes ficam onde estão"
         },
         "field": {
             "stepLimit": "{steps} por 5"
@@ -1503,7 +1505,9 @@
             "summary": {
                 "empty": "{count, plural, one {# vazio} other {# vazios}}",
                 "steps": "{interval} passos"
-            }
+            },
+            "ungroupError": "Erro ao desagrupar a forma",
+            "ungroupIsolated": "Desagrupe esta forma fora do isolamento: ela vem de uma página anterior"
         },
         "save": {
             "ariaLabel": "Salvar esta forma na sua biblioteca",
@@ -1684,8 +1688,7 @@
             "shapes": "Formas",
             "shapesAlways": "Sempre",
             "shapesOff": "Desativado",
-            "shapesSelected": "Quando selecionado",
-            "uiSettingsToolbar": "Barra de Ferramentas de Configurações da UI"
+            "shapesSelected": "Quando selecionado"
         }
     },
     "touch": {

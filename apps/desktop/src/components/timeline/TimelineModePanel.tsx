@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 import { TEMPO_BAND, useTempoModeStore } from "@/tempo/TempoBand";
 import { TempoModeButton } from "@/tempo/TempoModeButton";
 import { toast } from "sonner";
@@ -152,16 +151,18 @@ const LOOP_BUTTONS = (
     </>
 );
 const SPEED_BUTTON = <TimelineSpeedButton />;
-/** PROTOTYPE (tempo mode): Play loops the selected measures, so no Loop button; no start flag */
+/**
+ * PROTOTYPE (tempo mode): the Tempo button leads the transport's view controls. In tempo mode
+ * it's the only one: Play loops the selected measures, so no Loop button
+ */
 const TEMPO_VIEW_CONTROLS = <TempoModeButton />;
-/** First on the transport's right in both modes, before Fit: start flag positions (fork #331) */
-const LEADING_VIEW_CONTROLS = (
+const BASIC_VIEW_CONTROLS = <TempoModeButton />;
+const EXPERT_VIEW_CONTROLS = (
     <>
         <TempoModeButton />
-        <StartFlagPositionsButton />
+        <TimelineCompactButton />
     </>
 );
-const EXPERT_VIEW_CONTROLS = <TimelineCompactButton />;
 
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
 export const toTimelineSelection = (
@@ -566,11 +567,12 @@ export default function TimelineModePanel() {
                         basic || tempoMode ? SPEED_BUTTON : LOOP_BUTTONS
                     }
                     transportSecondary={SOUND_BUTTON}
-                    transportLeadingViewControls={
-                        tempoMode ? TEMPO_VIEW_CONTROLS : LEADING_VIEW_CONTROLS
-                    }
                     transportViewControls={
-                        basic ? undefined : EXPERT_VIEW_CONTROLS
+                        tempoMode
+                            ? TEMPO_VIEW_CONTROLS
+                            : basic
+                              ? BASIC_VIEW_CONTROLS
+                              : EXPERT_VIEW_CONTROLS
                     }
                     keyframes={keyframes}
                     keyframeMenu={keyframeMenu}

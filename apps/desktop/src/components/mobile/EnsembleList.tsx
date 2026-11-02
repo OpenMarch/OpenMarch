@@ -280,7 +280,7 @@ export default function EnsembleList() {
                     <AlertDialogDescription>
                         {t("ensembles.attachDialog.description", {
                             defaultValue:
-                                "Attach this .dots file to this production? This will allow you to upload from this file into the the OpenMarch - On the Move mobile app.",
+                                "Attach this .dots file to this production? This will allow you to upload from this file into the OpenMarch - On the Move mobile app.",
                         })}
                     </AlertDialogDescription>
                     <div className="flex items-center justify-end gap-8 align-middle">

@@ -111,7 +111,9 @@
             "evenOut": "Shape: Even out the outline",
             "expand": "Shape: Expand, keeping the proportions",
             "shrink": "Shape: Shrink, keeping the proportions",
-            "keywords": "shape form formation set place"
+            "keywords": "shape form formation set place",
+            "ungroup": "Shape: Ungroup",
+            "ungroupKeywords": "ungroup shape break apart release separate"
         },
         "swap": {
             "error": "Could not swap marchers {marcher1} and {marcher2}",
@@ -260,6 +262,7 @@
                 "addBeat": "Add Beat",
                 "cannotDeleteOnPage": "Beats on pages cannot be deleted",
                 "errorCreating": "Error creating beat",
+                "errorCreatingMeasure": "Error creating measure",
                 "errorDeleting": "Error deleting beat",
                 "markAsMeasure": "Mark as Measure"
             },
@@ -572,6 +575,16 @@
             "unavailable.web": "This browser has WebGL graphics turned off or blocked. Turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\"), restart the browser, then reload this page. Your show is safe."
         },
         "title": "Field"
+    },
+    "fieldDisplay": {
+        "caption": {
+            "direction": "Direction",
+            "sections": "Sections"
+        },
+        "comingSoon": "Coming soon",
+        "direction": "Field direction",
+        "label": "Field display",
+        "sections": "Visible sections"
     },
     "fieldProperties": {
         "applyFieldType": "Apply Field Type",
@@ -901,8 +914,7 @@
             "shapesTab": "Shapes",
             "successfullyCopied": "Shape successfully copied to page",
             "ungroupShapeButton": "Un-group",
-            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
-            "viewTab": "View"
+            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
         },
         "timeline": {
             "move": {
@@ -2075,7 +2087,8 @@
                 "label": "Seed"
             },
             "steps": "steps",
-            "turn": "Turn, in degrees clockwise"
+            "turn": "Turn, in degrees clockwise",
+            "ungroup": "Ungroup: the marchers stay where they are"
         },
         "placed": {
             "label": "{name} · {interval} steps",
@@ -2089,7 +2102,9 @@
             "summary": {
                 "empty": "{count, plural, other {# empty}}",
                 "steps": "{interval} steps"
-            }
+            },
+            "ungroupError": "Error ungrouping the shape",
+            "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page"
         },
         "save": {
             "descriptionLabel": "Description of the saved shape (optional)",
@@ -2517,7 +2532,9 @@
         "rangeMenu": {
             "deleteWithMoves": "Delete page and its moves",
             "followAgain": "Let selected marchers follow again",
-            "keepHere": "Keep selected marchers here"
+            "keepHere": "Keep selected marchers here",
+            "setAsShown": "Set as shown",
+            "setAsShownNone": "Every selected marcher is already set on {page}, or partway through a move"
         },
         "startFlagPositions": {
             "always": "Always",
@@ -2602,6 +2619,9 @@
             "toNextPagePositions": "...to next page positions",
             "toPreviousPagePositions": "...to previous page positions"
         },
+        "collisions": {
+            "collisionsToolbar": "Collisions"
+        },
         "select": {
             "drillPrefixesLabel": "Select drill prefixes",
             "sectionsLabel": "Select sections",
@@ -2634,8 +2654,7 @@
             "shapes": "Shapes",
             "shapesAlways": "Always",
             "shapesOff": "Off",
-            "shapesSelected": "When selected",
-            "uiSettingsToolbar": "Ui Settings Toolbar"
+            "shapesSelected": "When selected"
         },
         "hideToolbar": "Hide toolbar",
         "showToolbar": "Show toolbar"
@@ -2654,6 +2673,12 @@
         "trigger": "New Version Available!"
     },
     "view3d": {
+        "autoOpenPrompt": {
+            "description": "You can change this later in Settings › General.",
+            "no": "No",
+            "title": "Open the 3D View on launch?",
+            "yes": "Yes"
+        },
         "camera": {
             "blimp": "Blimp",
             "corner": "Corner",
