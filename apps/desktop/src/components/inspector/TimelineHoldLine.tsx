@@ -21,7 +21,7 @@ import {
     type KeepTranslate,
     type MarcherNameOf,
 } from "@/timeline/timelineKeepLater";
-import { runAction } from "@/shortcuts/registry";
+import { setAsShownOn } from "@/timeline/timelineSetAsShown";
 import { holdTerms } from "@/timeline/holdTerms";
 import { OWN_KEYS_WITH_SPACE } from "@/components/timeline/timelineHotkeys";
 import { usePageKeepStates } from "@/timeline/useKeepLaterPages";
@@ -262,8 +262,10 @@ function TimelineHoldLineContent({
                           page,
                       })
             }
-            // The timelineDefineAsShown action, on the current page as this line
-            onClick={() => runAction("timelineDefineAsShown")}
+            // Writes directly rather than through the timelineDefineAsShown action: this line
+            // counts performers only (`performersOnly` in MarcherEditor), and the action takes the
+            // whole selection, items too
+            onClick={() => void setAsShownOn(here.box, follows)}
         />
     );
     /** The buttons, a dot before each (or only between them, `leading` false) */

@@ -13,8 +13,7 @@ import type { Resolver, SpanInfo } from "@openmarch/core";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
-import { setAsShownOnPage } from "@/db-functions/timelineSetAsShown";
-import { useHoldActionHandlers } from "@/shortcuts/handlers/useHoldActionHandlers";
+import { setAsShownOn } from "@/timeline/timelineSetAsShown";
 import { isTimelineOwnKey } from "@/components/timeline/timelineHotkeys";
 import TimelineHoldLine from "../TimelineHoldLine";
 
@@ -43,7 +42,6 @@ const PAGES = [
 const mocks = vi.hoisted(() => ({
     selectedPage: null as unknown,
     pages: [] as unknown[],
-    selectedMarchers: [] as { id: number; drill_number: string }[],
 }));
 
 vi.mock("@/context/SelectedPageContext", () => ({
@@ -52,15 +50,9 @@ vi.mock("@/context/SelectedPageContext", () => ({
 vi.mock("@/hooks", () => ({
     useTimingObjects: () => ({ pages: mocks.pages }),
 }));
-vi.mock("@/context/SelectedMarchersContext", () => ({
-    useSelectedMarchers: () => ({ selectedMarchers: mocks.selectedMarchers }),
-}));
-// Define as shown writes through the real API (tested on a database elsewhere); here, who asks.
-// The button runs the timelineDefineAsShown action, so its handler is mounted with the line
-vi.mock("@/db-functions/timelineSetAsShown", () => ({
-    setAsShownOnPage: vi.fn(() =>
-        Promise.resolve({ changed: [], skipped: [] }),
-    ),
+// Set as shown writes through the real API (tested on a database elsewhere); here, who asks
+vi.mock("@/timeline/timelineSetAsShown", () => ({
+    setAsShownOn: vi.fn(() => Promise.resolve({ changed: [], skipped: [] })),
 }));
 
 let nextAssignment = 1;
@@ -120,37 +112,17 @@ beforeEach(() => {
     mocks.selectedPage = PAGES[2];
     useTimelineResolverStore.setState({ resolver, version: 1 });
     useTimelineSelectionStore.getState().reset();
-    vi.mocked(setAsShownOnPage).mockClear();
+    vi.mocked(setAsShownOn).mockClear();
 });
-
-function HoldActions() {
-    useHoldActionHandlers();
-    return null;
-}
 
 const show = (
     marcherIds: number[],
     nameOf?: (id: number) => string | undefined,
-) => {
-    mocks.selectedMarchers = marcherIds.map((id) => ({
-        id,
-        drill_number: `T${id}`,
-    }));
-    return render(
+) =>
+    render(
         <TolgeeProvider tolgee={tolgee} fallback="Loading...">
-            <HoldActions />
             <TimelineHoldLine marcherIds={marcherIds} nameOf={nameOf} />
         </TolgeeProvider>,
-    );
-};
-
-/** Define as shown ran for these marchers on the page box */
-const definedOn = (
-    pageBox: { start: number; end: number },
-    marcherIds: number[],
-) =>
-    expect(setAsShownOnPage).toHaveBeenCalledWith(
-        expect.objectContaining({ pageBox, marcherIds }),
     );
 
 const otName = (id: number) => `OT${id}`;
@@ -256,7 +228,10 @@ describe("TimelineHoldLine", () => {
             expect(button).not.toHaveAttribute("aria-keyshortcuts");
             expect(screen.queryByTestId("timeline-follow-again")).toBeNull();
             fireEvent.click(button);
-            definedOn({ start: 9, end: 17 }, [1]);
+            expect(setAsShownOn).toHaveBeenCalledWith(
+                { start: 9, end: 17 },
+                [1],
+            );
             // The line still links to page 2
             fireEvent.click(line()!);
             expect(useTimelineSelectionStore.getState().playheadBeat).toBe(9);
@@ -294,7 +269,10 @@ describe("TimelineHoldLine", () => {
                 "Make 1 of the 2 selected defined on Page 3 where they are shown, so editing Page 2 won't move them here",
             );
             fireEvent.click(setAsShown()!);
-            definedOn({ start: 9, end: 17 }, [1]);
+            expect(setAsShownOn).toHaveBeenCalledWith(
+                { start: 9, end: 17 },
+                [1],
+            );
         });
 
         it("on the page they move: the quiet line names the later pages that follow", () => {
@@ -331,7 +309,10 @@ describe("TimelineHoldLine", () => {
                 "Make these marchers defined on Page 3 where they are shown, so editing earlier pages won't move them here",
             );
             fireEvent.click(setAsShown()!);
-            definedOn({ start: 9, end: 17 }, [3]);
+            expect(setAsShownOn).toHaveBeenCalledWith(
+                { start: 9, end: 17 },
+                [3],
+            );
             // Every later page follows them: the quiet line doesn't say so
             expect(following()).toBeNull();
         });
