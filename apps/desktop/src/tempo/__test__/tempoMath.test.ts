@@ -36,12 +36,36 @@ describe("retime", () => {
     it("absorbs a tempo change before the next lock", () => {
         const r = retime(even(8), new Set([8]), 1, 3, rampLengths(2, 100));
         expect(startsOf(r.durations)[8]).toBeCloseTo(3.5);
-        expect(r.note).toBeUndefined();
+        expect(r.pin).toMatchObject({ at: 8, held: false, from: 3 });
     });
     it("scales the edit when the lock is right after it", () => {
         const r = retime(even(8), new Set([3]), 1, 3, rampLengths(2, 100));
         expect(startsOf(r.durations)[3]).toBeCloseTo(1);
-        expect(r.note).toBeDefined();
+        expect(r.pin).toMatchObject({ at: 3, held: true });
+    });
+    it("offers the same edit with the pin released", () => {
+        const r = retime(even(8), new Set([3, 6]), 1, 3, rampLengths(2, 100));
+        const free = r.pin!.free();
+        expect([...free.locks]).toEqual([6]);
+        expect(free.durations[1]).toBeCloseTo(0.6);
+        expect(free.durations[2]).toBeCloseTo(0.6);
+        // the next pin still holds: the counts up to it make room
+        expect(startsOf(free.durations)[6]).toBeCloseTo(2.5);
+        expect(free.pin).toMatchObject({ at: 6, held: false });
+    });
+    it("cancels an even slowdown that runs right up to a pin (owner's m. 5–8 case)", () => {
+        const r = retime(even(40), new Set([33]), 17, 33, rampLengths(16, 80));
+        r.durations.slice(17, 33).forEach((d) => expect(d).toBeCloseTo(0.5));
+        expect(r.pin).toMatchObject({ at: 33, held: true });
+        expect(startsOf(r.pin!.free().durations)[33]).toBeCloseTo(20); // 16 s + 16 counts × 0.25 s
+    });
+    it("says nothing when no pin had to make room", () => {
+        expect(
+            retime(even(8), new Set([8]), 1, 3, rampLengths(2, 120)).pin,
+        ).toBeUndefined();
+        expect(
+            retime(even(8), new Set(), 1, 3, rampLengths(2, 60)).pin,
+        ).toBeUndefined();
     });
     it("slides everything with no lock after", () => {
         const r = retime(even(8), new Set(), 1, 3, rampLengths(2, 60));
@@ -58,7 +82,7 @@ describe("retime", () => {
         expect(r.durations[5]).toBe(3);
         expect(r.durations[1]).toBeCloseTo(0.6);
         expect(startsOf(r.durations)[8]).toBeCloseTo(startsOf(d)[8]!);
-        expect(r.note).toBeUndefined();
+        expect(r.pin).toMatchObject({ at: 8, held: false });
     });
     it("fits the edit to a lock right after it without touching a hold in it", () => {
         const d = even(8);
@@ -68,7 +92,7 @@ describe("retime", () => {
         });
         expect(r.durations[2]).toBe(4);
         expect(startsOf(r.durations)[3]).toBeCloseTo(4.5);
-        expect(r.note).toBeDefined();
+        expect(r.pin).toMatchObject({ at: 3, held: true });
     });
 });
 

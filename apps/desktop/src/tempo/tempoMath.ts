@@ -54,8 +54,21 @@ export function lockAfter(
 export interface TempoEditResult {
     durations: number[];
     locks: Set<number>;
-    /** Something the person should know, such as a lock that kept the edit from fitting exactly */
+    /** Something the person should know */
     note?: string;
+    /**
+     * The pin after the edit that it had to work around (`retime`): with `held`, the edit was
+     * scaled down to fit before it; otherwise the counts `from`..`at - 1` between stretched or
+     * squeezed to keep it. `free` is the same edit with that pin released.
+     */
+    pin?: PinEffect;
+}
+
+export interface PinEffect {
+    at: number;
+    held: boolean;
+    from: number;
+    free: () => TempoEditResult;
 }
 
 const scaleRange = (
@@ -145,10 +158,30 @@ export function retime(
         tailCounts > 0 &&
         tailWanted >= tailCounts * MIN_COUNT_SECONDS &&
         tailWanted <= tailCounts * MAX_COUNT_SECONDS;
+    const pin = (held: boolean): PinEffect => ({
+        at: lock,
+        held,
+        from: to,
+        free: () =>
+            retime(
+                durations,
+                new Set([...locks].filter((l) => l !== lock)),
+                from,
+                to,
+                lengths,
+                { hold, fixed },
+            ),
+    });
     if (fits) {
         for (let b = to; b < lock; b++)
             if (!isFixed(b)) next[b] = next[b]! * (tailWanted / tailNow);
-        return { durations: next, locks: nextLocks };
+        return {
+            durations: next,
+            locks: nextLocks,
+            ...(Math.abs(tailWanted - tailNow) > 1e-9
+                ? { pin: pin(false) }
+                : {}),
+        };
     }
     // The lock wins: the edited counts plus the tail keep their total
     let edited = 0;
@@ -163,9 +196,7 @@ export function retime(
     return {
         durations: next,
         locks: nextLocks,
-        note: tolgee.t("tempoMode.errors.keptCountOnMusic", {
-            count: String(lock),
-        }),
+        pin: pin(true),
     };
 }
 

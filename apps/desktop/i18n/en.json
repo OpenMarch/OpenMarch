@@ -3471,13 +3471,20 @@
                 "pinsInSelection": "There are pinned counts in the selection; unpin them first",
                 "respaced": "Pinned {where}. Re-spaced {stretches}",
                 "tooFastOrSlow": "{action}: that would make a count too fast or too slow"
+            },
+            "pin": {
+                "tag": "{tempo} · {note}",
+                "tagHeld": "{pin} is pinned",
+                "tagSqueezed": "{range} → ♩{after} for the pin at {pin}",
+                "held": "{pin} is pinned to the music, so your tempo change was scaled down to keep it there",
+                "squeezed": "{range} went from ♩{before} to ♩{after} to keep {pin} on its hit",
+                "unpinAndApply": "Unpin {pin} and apply"
             }
         },
         "errors": {
             "cantRemoveLastCount": "Can't remove the last count",
             "countPinned": "count {count} is pinned",
             "holdTooShort": "a hold can't be shorter than a count at 400 BPM",
-            "keptCountOnMusic": "Kept count {count} on the music, so the tempo was adjusted to fit",
             "moveOneCountLong": "That move is only one count long",
             "tooFastAfterPin": "count {count} is pinned: the counts between would pass 400 BPM",
             "tooFastFromStart": "the show starts here: the counts between would pass 400 BPM",

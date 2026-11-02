@@ -213,6 +213,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const [menu, setMenu] = useState<Menu | null>(null);
     const [ask, setAsk] = useState<CountAsk | null>(null);
     const [busy, setBusy] = useState(false);
+    type Edit = TempoEditResult & { changes?: ReadonlySet<number> };
+    /** The latest render's `commit` and `sayPin`, for toasts and edits that finish later */
+    const commitRef = useRef<(label: string, result: Edit | null) => void>(
+        () => {},
+    );
+    const sayPinRef = useRef<(label: string, result: Edit) => () => void>(
+        () => () => {},
+    );
     /** The counts the menu item under the pointer would change */
     const [menuRange, setMenuRange] = useState<CountRange | null>(null);
     useEffect(() => {
@@ -539,12 +547,16 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 return;
             }
             setPreview(result);
-            void run(label, () =>
-                commitEdit(data, result, refetch, audioOffset, changes),
-            );
+            // measured against the counts as they are now, said once the edit is in
+            const sayPin = sayPinRef.current(label, result);
+            void run(label, async () => {
+                await commitEdit(data, result, refetch, audioOffset, changes);
+                sayPin();
+            });
         },
         [data, refetch, run, changes, t],
     );
+    commitRef.current = commit;
 
     // ---- drawing -------------------------------------------------------------------------
     useEffect(() => {
@@ -980,6 +992,69 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                   from: measureLabel(from),
                   to: measureLabel(to - 1),
               });
+    /** The counts `from`..`to - 1`'s average tempo in the lane (quarter notes) */
+    const averageBpm = (
+        lengths: readonly number[],
+        from: number,
+        to: number,
+    ) => {
+        const bpms = laneBpms(lengths).slice(from, to);
+        return bpms.length ? bpms.reduce((a, b) => a + b, 0) / bpms.length : 0;
+    };
+    /**
+     * What a pin after an edit did to it, in words, when it matters (owner, 2026-11-02): it held
+     * the edit back, or it changed the counts between by more than 10%. Null when it didn't.
+     */
+    const pinEffect = (result: Edit | null) => {
+        const p = result?.pin;
+        if (!p) return null;
+        const pin = measureLabel(p.at);
+        if (p.held)
+            return {
+                pin,
+                tag: t("tempoMode.band.pin.tagHeld", { pin }),
+                toast: t("tempoMode.band.pin.held", { pin }),
+            };
+        const before = averageBpm(data.durations, p.from, p.at);
+        const after = averageBpm(result.durations, p.from, p.at);
+        if (!before || Math.abs(after / before - 1) <= 0.1) return null;
+        const params = {
+            pin,
+            range: measuresLabel(p.from, p.at),
+            before: String(Math.round(before)),
+            after: String(Math.round(after)),
+        };
+        return {
+            pin,
+            tag: t("tempoMode.band.pin.tagSqueezed", params),
+            toast: t("tempoMode.band.pin.squeezed", params),
+        };
+    };
+    /**
+     * For an edit a pin worked around, before it's written: a way to say what the pin did, and
+     * offer the edit without it, once it is
+     */
+    const sayPin = (label: string, result: Edit) => {
+        const effect = pinEffect(result);
+        const p = result.pin;
+        if (!effect || !p) return () => {};
+        return () =>
+            toast.info(effect.toast, {
+                id: NOTE_TOAST,
+                duration: 10000,
+                action: {
+                    label: t("tempoMode.band.pin.unpinAndApply", {
+                        pin: effect.pin,
+                    }),
+                    onClick: () =>
+                        commitRef.current(label, {
+                            ...p.free(),
+                            changes: result.changes,
+                        }),
+                },
+            });
+    };
+    sayPinRef.current = sayPin;
     /** The same, shorter, in measures: "m. 11–12" */
     const measuresLabel = (from: number, to: number) => {
         const a = measureAt(from)?.number;
@@ -3618,11 +3693,19 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     if (gesture?.kind === "tempo") {
         const { from, to, bpmFrom, bpmTo } = gesture.segment;
         const bpm0 = (bpmFrom + bpmTo) / 2;
-        const now = bpm0 / gesture.factor;
-        const text =
-            gesture.segment.ramp || gesture.segment.uneven
+        // held back by a pin: the tempo it really gets, not the one under the pointer
+        const held = preview?.pin?.held ?? false;
+        const now = held
+            ? averageBpm(preview!.durations, from, to)
+            : bpm0 / gesture.factor;
+        const tempo =
+            (gesture.segment.ramp || gesture.segment.uneven) && !held
                 ? `${Math.round((1 / gesture.factor) * 1000) / 10}% · ${bpmText(now)}`
                 : bpmText(now);
+        const effect = pinEffect(preview);
+        const text = effect
+            ? t("tempoMode.band.pin.tag", { tempo, note: effect.tag })
+            : tempo;
         const left = Math.max(xOf(from, ppb), gutterRight + 2);
         const right = Math.min(xOf(to, ppb), viewRight);
         const w = textWidth(text, `600 11px ${fontFamily}`) + 10;
@@ -3643,7 +3726,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     }
     // While an end dot is dragged: the tempo the stretch will end on
     if (gesture?.kind === "end") {
-        const text = bpmText(gesture.bpm);
+        const effect = pinEffect(preview);
+        const text = effect
+            ? t("tempoMode.band.pin.tag", {
+                  tempo: bpmText(gesture.bpm),
+                  note: effect.tag,
+              })
+            : bpmText(gesture.bpm);
         const x = xOf(gesture.stretch.to - 1, ppb) + ppb / 2;
         const y = yOfBpm(gesture.bpm);
         labels.push(
@@ -3652,7 +3741,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 data-testid="tempo-drag-tag"
                 className="bg-accent text-text-invert pointer-events-none absolute z-[6] rounded-[3px] px-5 text-[11px] leading-[16px] font-semibold whitespace-nowrap"
                 style={{
-                    left: Math.min(x + 10, viewRight - 60),
+                    left: Math.min(
+                        x + 10,
+                        viewRight -
+                            textWidth(text, `600 11px ${fontFamily}`) -
+                            14,
+                    ),
                     top: y < TEMPO.top + 22 ? y + 6 : y - 22,
                 }}
             >
