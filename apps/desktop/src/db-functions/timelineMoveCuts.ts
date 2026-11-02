@@ -770,7 +770,7 @@ const REASON_WORDS: Record<MoveMemberSkipReason, [string, string]> = {
  */
 export async function skippedRefusal(
     tx: DbTransaction,
-    skipped: readonly MoveMemberSkip[],
+    skipped: readonly Pick<MoveMemberSkip, "marcherId" | "reason">[],
 ): Promise<TimelineEditRefusedError | null> {
     if (skipped.length === 0) return null;
     const ids = ascending(skipped.map((s) => s.marcherId));

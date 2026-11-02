@@ -12,7 +12,10 @@ import type { DbConnection } from "@/db-functions/types";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { allMarcherRowsQueryOptions } from "@/hooks/queries/useMarchers";
-import { toastTimelineError } from "@/timeline/timelineErrorMessages";
+import {
+    toastDroppedHolds,
+    toastTimelineError,
+} from "@/timeline/timelineErrorMessages";
 import {
     isPageTimeline,
     moveLabel,
@@ -150,7 +153,10 @@ function useAddSelectedMarchers(
                         end: range.endBeatIndex,
                     },
                     marcherIds: [...selectedMarcherIds],
-                }).catch((error: unknown) => toastTimelineError(error));
+                })
+                    // A hold from the starting spot this move cut off is named (#619)
+                    .then((result) => toastDroppedHolds(result.droppedHolds))
+                    .catch((error: unknown) => toastTimelineError(error));
             },
         }),
         [database, selectedMarcherIds],

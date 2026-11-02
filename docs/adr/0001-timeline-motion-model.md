@@ -419,6 +419,22 @@ holds to the resolver (spec R-6), so the mark is app data:
   the page, following the leader on the page, or an arrival that is a shape's move or a
   follow-the-leader move, which a drag inside the hold would rewrite (shape and follow-the-leader
   members are skipped and named until fork #504).
+- **Holds from the starting spots** (owner, 2026-11-01, fork #619). This amends "where a move of
+  the marcher must end" above: a marcher with no row starting before the box's start (Page 1, or a
+  later page it reaches only by standing on its starting spot) is Held from its starting spot
+  (`marchers.home_x`, `home_y`). That is its arrival, and a drag inside it sets the starting spot,
+  moving the whole hold. The mark stays while no row of the marcher starts before it, or once a
+  move arrives at its start (that move becomes its arrival). A mark whose arrival row an edit
+  deleted doesn't become one. An edit that gives the marcher a move starting before the mark
+  without ending at its start (a move on an earlier page, or Set as shown there) leaves it nothing
+  to grow out of, so the mark is deleted: holding from where that move ends is a borrowed hold
+  (#474). The edit names the holds it dropped in its warning ("T1 is no longer Held on Page 3"),
+  for point and range moves, Set as shown and Add to move. Placing a shape at the starting spots
+  drops its marchers' holds from the starting spots in the same edit. Starting spots a placed shape
+  sets (a recipe with no move, other than an ungrouped mark) are skipped and named: the shape
+  carried on is its hold, so
+  the way to hold its marchers one by one is to ungroup it at the start of the show (Ungroup on a
+  later page only marks that page's move). No schema change: the arrival follows from the rows.
 - **A drag on a count inside a Held hold** (a range edit whose end, or a Basic point edit whose
   count, is inside it) sets the marcher's ending in the move that arrives at the hold's start, as
   an edit of that move's timeline would. The arrival and the whole hold move together; earlier and
@@ -427,7 +443,10 @@ holds to the resolver (spec R-6), so the mark is app data:
   (`notSimple`), naming the marchers. A marcher whose arrival has since become a shape's move or a
   follow-the-leader move (a shape placed on its page, say) is left alone and named, as Hold from
   previous page skips it. A shape's after-write step gets the arrival's move when only
-  Held marchers were dragged, and `keepUnchanged` applies to Held marchers too.
+  Held marchers were dragged, and `keepUnchanged` applies to Held marchers too. When everyone
+  dragged is Held from the starting spot, it gets the homes (`null`), so a shape placed there is
+  stored at the starting spots, and in the same edit those marchers' holds from the starting spot
+  go: a starting spot a shape sets can't be held.
 - **Set as shown** (with Only Page N's and Remove keyframe's stays, which share its write) treats a
   Held marcher as decided: it is skipped and reported (`held`), and nothing is written inside the
   hold.

@@ -6,7 +6,7 @@ import {
     readHeldMarkArrivals,
     type HeldMarkArrival,
 } from "./timelineHeldArrival";
-import { nameHeldConflict } from "./timelineHeldConflict";
+import { nameHeldConflict, type HeldConflict } from "./timelineHeldConflict";
 
 /**
  * **Keeping Held marks true after an edit** (ADR 0001 amendment 2026-10-30, part 2; the small
@@ -27,6 +27,14 @@ import { nameHeldConflict } from "./timelineHeldConflict";
  * A mark something still arrives at stays, whichever row that is: Basic rewrites a page's move
  * (a new row ending at the same flag), and page and beat edits move a mark with its arrival
  * (`planTimelineRipple`).
+ *
+ * A mark that grows out of the marcher's **starting spot** (`homeArrivalSql`, #619: no row of the
+ * marcher starts before it) has an arrival too, and stays. One whose arrival row the edit deleted
+ * doesn't become one: removing the keyframe a hold grows out of removes the hold, even when the
+ * marcher now stands on its starting spot up to it. One an edit gave a move starting before it,
+ * not ending at its start (a move on an earlier page, or **Set as shown** there), has nothing left
+ * to grow out of and is deleted too: holding from where that move ends is a borrowed hold (#474).
+ * The edits that can do this say whose holds went (`startHoldsLostInTransaction`).
  */
 
 /** Each mark's arrival row before an edit, by mark id (`readHeldMarkArrivals`). */
@@ -42,6 +50,31 @@ export async function readHeldArrivalsBefore(
 }
 
 /**
+ * The holds from the starting spots (#619) that the upkeep after this edit will delete, named for
+ * the edit's message, or `undefined` when there are none: marks that had no arrival row before the
+ * edit, and now have neither a row nor the starting spot to grow out of, because the edit gave the
+ * marcher a move starting before the hold that doesn't end at its start. Call it at the end of the
+ * edit's function, with the arrivals read at its start (`readHeldArrivalsBefore`).
+ */
+export async function startHoldsLostInTransaction(
+    tx: DbTransaction,
+    before: HeldArrivalsBefore,
+): Promise<HeldConflict | undefined> {
+    const lost = (await readHeldMarkArrivals(tx)).filter(
+        (m) =>
+            m.arrivalId === null &&
+            !m.fromHome &&
+            before.has(m.id) &&
+            before.get(m.id) === null,
+    );
+    if (lost.length === 0) return undefined;
+    return nameHeldConflict(
+        tx,
+        lost.map((m) => ({ marcherId: m.marcherId, beat: m.start })),
+    );
+}
+
+/**
  * Drops the marks whose arrival row the edit deleted, and refuses (`E-H1`) an edit that left a
  * mark's arrival row ending elsewhere (see the module comment).
  */
@@ -49,8 +82,12 @@ export async function keepHeldMarksTrueInTransaction(
     tx: DbTransaction,
     before: HeldArrivalsBefore,
 ): Promise<void> {
+    const hadRow = (m: HeldMarkArrival) => {
+        const id = before.get(m.id);
+        return id !== undefined && id !== null;
+    };
     const orphans = (await readHeldMarkArrivals(tx)).filter(
-        (m) => m.arrivalId === null,
+        (m) => m.arrivalId === null && (!m.fromHome || hadRow(m)),
     );
     if (orphans.length === 0) return;
     const A = schema.timeline_assignments;

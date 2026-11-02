@@ -2419,6 +2419,10 @@
                 "many": "{names} are Held on {pages}. Clear this page to remove the holds, or drag inside them to move them.",
                 "one": "{names} is Held on {pages}. Clear this page to remove the hold, or drag inside it to move it."
             },
+            "heldDropped": {
+                "many": "{names} are no longer Held on {pages}: they held from the starting spot, and now a move before it ends somewhere else.",
+                "one": "{names} is no longer Held on {pages}: it held from the starting spot, and now a move before it ends somewhere else."
+            },
             "heldHoldsOverlap": "A marcher can't have two Held holds over the same counts.",
             "legacyConvertedTimeline": "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion).",
             "moveInHeldHold": "That would put a move inside a Held hold. Clear this page to remove the hold, or drag inside it to move it.",
@@ -2451,6 +2455,7 @@
             "expertMoves": "{names}: Expert moves on this page",
             "followLeader": "{names}: follows the leader on this page",
             "held": "{names}: already Held here",
+            "homeShape": "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
             "noArrival": "{names}: no move ends where {page} starts",
             "none": "Nobody Held on {page}",
             "notHeld": "Not held:",
