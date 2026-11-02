@@ -13,8 +13,8 @@
  *   line, a change's dot and a stretch's curve handle drag; elsewhere a drag selects counts. Drag
  *   the line up or down; drag a dot sideways to move the change; drag the handle for a gradual
  *   change (tempoShape.ts). A stretch's end dot sets the tempo it ends on, so a rit. can jump back
- *   (a tempo); right-click a count in a ramp for A tempo. Double-click empty lane to add a
- *   change, a dot to remove it, the line to type "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
+ *   (a tempo); right-click a count in a ramp for A tempo. Double-click the lane or the line to
+ *   add a change, a dot to remove it; right-click > Set tempo… types "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
  * - **Music**: the waveform under the count lines. Drag a spot in the music onto the count it
  *   belongs to, or a count line onto its spot (Logic's Beat Mapping). The count pins; the
  *   counts back to the pin before re-space, and the counts up to the pin after (if any) too,
@@ -43,6 +43,7 @@ import {
     TrashIcon,
     TrendDownIcon,
     ArrowUUpLeftIcon,
+    CheckIcon,
     TrendUpIcon,
     PushPinSlashIcon,
     XIcon,
@@ -2472,8 +2473,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             const b = nearLine(x);
             if (b !== null && data.locks.has(b)) togglePin(b);
         } else if (y >= TEMPO.top) {
-            // Logic: double-click empty space adds a point, double-click a point removes it; a
-            // handle goes back to a jump; the line types a tempo
+            // Logic: double-click the lane or the line adds a point, double-click a point removes
+            // it; a handle goes back to a jump
             const target = tempoTargetAt(x, y);
             if (!target) return;
             if (target.kind === "lane") {
@@ -2497,28 +2498,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     );
                 return;
             }
+            // The line too adds a change (owner, 2026-11-01: double-clicking the line never did
+            // what was expected); typing a tempo is right-click > Set tempo…. On a hold, its length
             const b = tempoLineAt(x, y);
             if (b === null) return;
-            const s = segmentAt(b);
-            if (!s) return;
-            // A hold isn't tempo: the stretch it's in, as before
-            if (data.holds.has(b)) {
-                editTempo(e, s.from, s.to, segmentText(s));
-                return;
-            }
-            // From the count double-clicked to the end of its tempo (or the next pin or hold),
-            // so typing a tempo never rewrites the counts before it (sam); the whole stretch is a
-            // link in the box
-            const end = tempoStretchEnd(b);
-            editTempo(
-                e,
-                b,
-                end,
-                b === s.from && end === s.to
-                    ? segmentText(s)
-                    : `${Math.round(qBpm(b, data.durations) * 10) / 10}`,
-                s,
-            );
+            if (data.holds.has(b)) editHold(e, b);
+            else addChange(Math.round(beat));
         } else if (y >= MEASURES.top) {
             const m = laneMeasureAt(x, y);
             if (m && m.id !== null) renumber(e, m);
@@ -2828,7 +2813,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
      * Set a meter with its grouping from the measure at `start` to the next change, at the
      * quarter-note tempo just before it (owner, 2026-10-21: "7/8 2+2+3")
      */
-    const setMeter = (start: number, text: string) => {
+    const setMeter = (start: number, text: string, only = false) => {
         const meter = parseMeter(text);
         if (!meter) {
             toast.error(
@@ -2836,12 +2821,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
             return;
         }
+        const measureStarts = data.measures
+            .filter((m) => m.id !== null)
+            .map((m) => m.start);
         const plan = planMeter({
             durations: data.durations,
             locks: data.locks,
-            measureStarts: data.measures
-                .filter((m) => m.id !== null)
-                .map((m) => m.start),
+            measureStarts,
             beatCount: data.storedCount,
             start,
             meter,
@@ -2849,7 +2835,39 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             holds: data.holds,
         });
         const label = meterLabel(meter, true);
-        setPreview(plan.result);
+        // This measure only: the old meter again from the next measure, in the same edit (a 2/4
+        // bar in a 4/4 piece moves the downbeats after it, as in the score)
+        const was = measureAt(start);
+        const old = was ? meterOfMeasure(was) : null;
+        const next = start + meter.grouping.length;
+        let then: Parameters<typeof writeMeter>[0]["then"];
+        if (only && old && next < plan.to) {
+            const nextUnits = [...units];
+            for (let b = plan.from; b < plan.to; b++)
+                nextUnits[b] =
+                    meter.grouping[(b - plan.from) % meter.grouping.length];
+            then = {
+                plan: planMeter({
+                    durations: plan.result.durations,
+                    locks: plan.result.locks,
+                    measureStarts: [
+                        ...measureStarts.filter((b) => b < plan.from),
+                        ...plan.starts,
+                        ...measureStarts.filter((b) => b >= plan.to),
+                    ],
+                    beatCount: data.storedCount,
+                    start: next,
+                    meter: old,
+                    units: nextUnits,
+                    holds: data.holds,
+                }),
+                meter: {
+                    meter: `${old.top}/${old.bottom}`,
+                    grouping: old.grouping.join("+"),
+                },
+            };
+        }
+        setPreview(then?.plan.result ?? plan.result);
         void run("Time signature", async () => {
             await writeMeter({
                 plan,
@@ -2858,8 +2876,16 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     meter: `${meter.top}/${meter.bottom}`,
                     grouping: meter.grouping.join("+"),
                 },
+                then,
             });
             await refetch();
+            if (then && old) {
+                toast.success(
+                    `${label} for m. ${was!.number} only, then ${meterLabel(old, true)} again; the tempo is as it was`,
+                    { id: NOTE_TOAST },
+                );
+                return;
+            }
             toast.success(
                 `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was` +
                     (plan.leftover
@@ -2869,29 +2895,61 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
         });
     };
-    const signatureMenu = (x: number, y: number, start: number): Menu => ({
-        x,
-        y,
-        items: [
-            ...METER_CHOICES.map((choice) => ({
-                label: choice.includes(" ")
-                    ? `${choice.split(" ")[0]} counted ${choice.split(" ")[1]}`
-                    : choice,
-                onSelect: () => setMeter(start, choice),
-            })),
-            {
-                label: "Other… (like 11/8 3+3+3+2)",
-                onSelect: () =>
-                    setEditor({
-                        x,
-                        y,
-                        value: "",
-                        hint: 'Time signature, and how it is counted in eighths: "7/8 2+2+3", "5/8 3+2", "3/2" (counted in quarters)',
-                        onCommit: (value) => setMeter(start, value),
-                    }),
-            },
-        ],
-    });
+    /**
+     * The time signatures to pick from the measure at `start`: until the next change (as in a
+     * score), or for that measure only, the old one again after it
+     */
+    const signatureMenu = (
+        x: number,
+        y: number,
+        start: number,
+        only = false,
+    ): Menu => {
+        const m = measureAt(start);
+        const old = m ? meterLabel(meterOfMeasure(m), true) : null;
+        return {
+            x,
+            y,
+            title: m
+                ? only
+                    ? `m. ${m.number} only`
+                    : `From m. ${m.number}`
+                : undefined,
+            subtitle: only
+                ? old
+                    ? `then ${old} again`
+                    : undefined
+                : "until the next time signature",
+            items: [
+                {
+                    label: "Just this measure",
+                    icon: only ? (
+                        <CheckIcon size={14} aria-hidden />
+                    ) : undefined,
+                    hint: "On: the time signature is for this measure only, and the one before comes back after it. Off: it lasts until the next time signature, as in a score.",
+                    onSelect: () => setMenu(signatureMenu(x, y, start, !only)),
+                },
+                ...METER_CHOICES.map((choice, i) => ({
+                    label: choice.includes(" ")
+                        ? `${choice.split(" ")[0]} counted ${choice.split(" ")[1]}`
+                        : choice,
+                    onSelect: () => setMeter(start, choice, only),
+                    separatorBefore: i === 0,
+                })),
+                {
+                    label: "Other… (like 11/8 3+3+3+2)",
+                    onSelect: () =>
+                        setEditor({
+                            x,
+                            y,
+                            value: "",
+                            hint: 'Time signature, and how it is counted in eighths: "7/8 2+2+3", "5/8 3+2", "3/2" (counted in quarters)',
+                            onCommit: (value) => setMeter(start, value, only),
+                        }),
+                },
+            ],
+        };
+    };
 
     // ---- labels --------------------------------------------------------------------------
     // Placed in order of importance; one that would overlap another (or hide under the lane
@@ -2943,7 +3001,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const next = data.measures[i + 1];
         const visible = m.start + m.counts >= firstBeat && m.start <= lastBeat;
         const changed = !prev || m.counts !== prev.counts;
+        // A short measure (marked *) is one cut short, not one with its own time signature: a
+        // single 2/4 bar set for that measure only shows its chip
+        const ownMeter =
+            !!m.meter && meterOfMeasure(m).grouping.length === m.counts;
         const partial =
+            !ownMeter &&
             !!prev &&
             m.counts < prev.counts &&
             (!next || next.counts !== m.counts);
@@ -3369,6 +3432,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 .map((m) => `${m.start}:${m.counts}:${m.number}`)
                 .join(",")}
             data-holds={[...data.holds].join(",")}
+            data-changes={[...changes].sort((x, y) => x - y).join(",")}
             data-counts={durations
                 .slice(1, 400)
                 .map((d) => d.toFixed(3))

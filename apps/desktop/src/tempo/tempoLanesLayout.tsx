@@ -62,16 +62,12 @@ export const HANDLE_STRIP = 16;
 export function useScrollWindow(ref: React.RefObject<HTMLElement | null>) {
     const [win, setWin] = useState({ left: 0, width: 1200 });
     useLayoutEffect(() => {
-        let scroller: HTMLElement | null = ref.current?.parentElement ?? null;
-        while (scroller) {
-            const style = getComputedStyle(scroller);
-            if (
-                /(auto|scroll)/.test(style.overflowX) &&
-                scroller.scrollWidth > scroller.clientWidth
-            )
-                break;
-            scroller = scroller.parentElement;
-        }
+        // The timeline's viewport, found by what it is, not by whether it scrolls yet: opened at
+        // a zoom that fits the whole show it doesn't, and zooming in later must still be heard
+        const scroller =
+            ref.current?.closest<HTMLElement>(
+                '[data-testid="timeline-viewport"]',
+            ) ?? null;
         if (!scroller) return;
         const el = scroller;
         let frame = 0;

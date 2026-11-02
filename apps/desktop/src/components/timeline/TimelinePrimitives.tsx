@@ -135,7 +135,8 @@ import type {
 
 /** Low enough that Fit shows a long show whole (UI-12): 500 beats fit in 500px */
 export const TIMELINE_MIN_PX_PER_BEAT = 1;
-export const TIMELINE_MAX_PX_PER_BEAT = 64;
+/** High enough to place a count line within a few milliseconds (owner, 2026-11-01: zoom in more) */
+export const TIMELINE_MAX_PX_PER_BEAT = 512;
 export const TIMELINE_INITIAL_PAGE_WIDTH = 40;
 
 export interface TimelineSelectionInteraction {

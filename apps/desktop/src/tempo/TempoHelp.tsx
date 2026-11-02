@@ -20,9 +20,12 @@ export function TempoHelp() {
             "(the triangle atop the music) onto the music",
         ],
         ["Shift while dragging", "moves just that count"],
-        ["Drag the tempo line", "up or down; double-click it to type a tempo"],
         [
-            "Double-click the tempo lane",
+            "Drag the tempo line",
+            "up or down; right-click > Set tempo… to type one",
+        ],
+        [
+            "Double-click the tempo lane or line",
             "adds a tempo change there; double-click a change's dot to remove it",
         ],
         [
