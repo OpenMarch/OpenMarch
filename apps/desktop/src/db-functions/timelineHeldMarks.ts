@@ -1,6 +1,7 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import type { DbTransaction } from "./types";
+import { shapeRecipesOnly } from "./shapeRecipes";
 import type { MoveMemberSkip, MoveMemberSkipReason } from "./timelineMoveCuts";
 import {
     hasHeldMarksTable,
@@ -136,7 +137,10 @@ export function arrivalSkipReason(
     return null;
 }
 
-/** For each of `timelineIds` with a placed shape's recipe, the marchers it holds. */
+/**
+ * For each of `timelineIds` with a placed shape's recipe, the marchers it holds. An ungrouped mark
+ * (`shapeRecipesOnly`) holds nobody in a shape.
+ */
 export async function marcherRecipeTimelines(
     tx: DbTransaction,
     timelineIds: readonly number[],
@@ -149,7 +153,12 @@ export async function marcherRecipeTimelines(
         .select({ timelineId: r.timeline_id, marcherId: m.marcher_id })
         .from(m)
         .innerJoin(r, eq(r.id, m.recipe_id))
-        .where(inArray(r.timeline_id, [...new Set(timelineIds)]))
+        .where(
+            and(
+                inArray(r.timeline_id, [...new Set(timelineIds)]),
+                shapeRecipesOnly(),
+            ),
+        )
         .all();
     for (const row of rows) {
         if (row.timelineId === null) continue;

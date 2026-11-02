@@ -16,7 +16,10 @@ import {
 } from "../timelines";
 import { createTimelineTransitionsInTransaction } from "../timelineTransitionsInTransaction";
 import { createTimelineAssignmentsInTransaction } from "../timelineAssignments";
-import { saveShapeRecipeInTransaction } from "../shapeRecipes";
+import {
+    saveShapeRecipeInTransaction,
+    UNGROUPED_RECIPE_KIND,
+} from "../shapeRecipes";
 import { moveMarchersInRangeInTransaction } from "../timelineMoves";
 import {
     cutMoveAtBeatInTransaction,
@@ -809,6 +812,41 @@ describeDbTests(
             expect(both.stayed.map((s) => s.marcherId)).toEqual([a]);
             expect(await membersOf(db, pageMove.id)).toContain(a);
             expect(await membersOf(db, both.timelineId!)).toEqual([b]);
+        });
+
+        it("a member of an ungrouped mark is taken: it isn't in a shape", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            await convertPagesToTimeline(db);
+            const [a] = (await resolverOf(db)).marcherIds();
+            const pageMove = await page2Move(db);
+            // What Ungroup leaves on the shape's own page (`ungroupShape`)
+            await db.transaction((tx) =>
+                saveShapeRecipeInTransaction({
+                    tx,
+                    timelineId: pageMove.id,
+                    recipe: {
+                        kind: UNGROUPED_RECIPE_KIND,
+                        kindVersion: 1,
+                        params: {},
+                        orderMode: "nearest",
+                        reverse: false,
+                    },
+                    members: [{ marcherId: a!, slot: 0, x: 10, y: 10 }],
+                }),
+            );
+
+            const result = await transactionWithHistory(db, "take", (tx) =>
+                takeMarchersIntoOwnMoveInTransaction({
+                    tx,
+                    timelineId: pageMove.id,
+                    marcherIds: [a!],
+                }),
+            );
+            expect(result.taken).toEqual([a]);
+            expect(result.stayed).toEqual([]);
+            expect(await membersOf(db, result.timelineId!)).toEqual([a]);
         });
     },
 );

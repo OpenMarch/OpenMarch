@@ -1,7 +1,8 @@
 import { canLayOut, type Distribution } from "../distribute/distribution";
-import type {
-    ShapeRecipeMember,
-    StoredShapeRecipe,
+import {
+    UNGROUPED_RECIPE_KIND,
+    type ShapeRecipeMember,
+    type StoredShapeRecipe,
 } from "@/db-functions/shapeRecipes";
 import { assignSlots, type AssignMarcher } from "../assign";
 import {
@@ -69,7 +70,7 @@ const ON_SPOT = 0.01;
  * shape over them is shown from there on, and a shape placed later takes them again. Older builds
  * don't know the kind and skip it.
  */
-export const UNGROUPED_KIND = "ungrouped";
+export const UNGROUPED_KIND = UNGROUPED_RECIPE_KIND;
 
 /** Whether `recipe` marks its members ungrouped rather than describing a shape */
 export const isUngrouped = (recipe: Pick<PlacedRecipe, "kind">): boolean =>

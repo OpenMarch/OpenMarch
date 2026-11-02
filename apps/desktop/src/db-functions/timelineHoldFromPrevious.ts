@@ -205,7 +205,10 @@ export async function holdFromPreviousPageInTransaction({
             .from(a)
             .where(inArray(a.id, toRemove))
             .all();
-        await clearOwnPageMoves(tx, removed, { tidyShared: true });
+        await clearOwnPageMoves(tx, removed, {
+            tidyShared: true,
+            dropUngrouped: result.held,
+        });
     }
     const h = schema.timeline_held_marks;
     if (replaced.length > 0) await tx.delete(h).where(inArray(h.id, replaced));
