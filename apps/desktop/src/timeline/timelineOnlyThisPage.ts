@@ -168,7 +168,7 @@ export function onlyThisPageMessage(
         ? {
               message: translate(
                   "timeline.keep.followed.onePage",
-                  "Page {page} was {notDefined} for them, so it changed too",
+                  "Page {page} had no positions of its own for these marchers, so it changed too",
                   { ...holdTerms(), page: first },
               ),
               actionLabel: translate(
@@ -180,7 +180,7 @@ export function onlyThisPageMessage(
         : {
               message: translate(
                   "timeline.keep.followed.pages",
-                  "Pages {first}–{last} were {notDefined} for them, so they changed too",
+                  "Pages {first}–{last} had no positions of their own for these marchers, so they changed too",
                   { ...holdTerms(), first, last },
               ),
               actionLabel: translate(

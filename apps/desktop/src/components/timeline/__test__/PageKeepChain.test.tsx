@@ -77,10 +77,11 @@ const PAGES = [
     page(4, "4", BEATS.slice(17, 25)),
 ];
 
-const LABEL = "2 marchers are Not defined here, shown where Page 2 left them";
+const LABEL =
+    "2 marchers have no position of their own here, shown where Page 2 left them";
 const chain = (extra: Partial<PageKeepChain> = {}): PageKeepChain => ({
     label: LABEL,
-    hint: "Click to make them Defined here, where they're shown",
+    hint: "Click to make them defined here, where they're shown",
     menuLabel: LABEL,
     menuHint: "Right-click the page to change this",
     marcherIds: [1, 2],
@@ -151,7 +152,7 @@ describe("the chains on the page boxes", () => {
         const [button] = chains();
         expect(button).toHaveAttribute("data-chain", "follows");
         expect(button).toHaveAccessibleName(
-            `Page 3: ${LABEL}. Click to make them Defined here, where they're shown`,
+            `Page 3: ${LABEL}. Click to make them defined here, where they're shown`,
         );
         // Full size in a wide box
         expect(button!.style.width).toBe("16px");
@@ -378,7 +379,7 @@ describe("the chains on the page boxes", () => {
                     3,
                     chain({
                         menuLabel:
-                            "OT1 and OT4 are Not defined here, shown where earlier pages left them",
+                            "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
                     }),
                 ],
             ]),
@@ -387,13 +388,13 @@ describe("the chains on the page boxes", () => {
         const box = screen.getByRole("button", { name: "Page 3" });
         expect(box).not.toHaveAttribute("aria-keyshortcuts");
         expect(box).toHaveAccessibleDescription(
-            "OT1 and OT4 are Not defined here, shown where earlier pages left them. Right-click the page to change this",
+            "OT1 and OT4 have no position of their own here, shown where earlier pages left them. Right-click the page to change this",
         );
         fireEvent.focus(box);
         expect(
             (
                 await screen.findAllByText(
-                    "OT1 and OT4 are Not defined here, shown where earlier pages left them",
+                    "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
                 )
             ).length,
         ).toBeGreaterThan(0);
@@ -466,10 +467,10 @@ describe("a narrow box's words and its menu change the same marchers", () => {
         const words = pageChainWords(state(), undefined, nameOf)!;
         expect(words.marcherIds).toEqual([1]);
         expect(words.label).toBe(
-            "OT1 is Not defined here, shown where Page 2 left it",
+            "OT1 has no position of its own here, shown where Page 2 left it",
         );
         expect(words.menuLabel).toBe(
-            "OT1 and OT4 are Not defined here, shown where earlier pages left them",
+            "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
         );
         expect(words.menuHint).toBe(
             "Changes to earlier pages carry onto Page 3. Right-click the page and choose Define as shown to keep them here",

@@ -217,12 +217,12 @@ const HELD_DROPPED_MESSAGES = {
     one: {
         key: "timeline.errors.heldDropped.one",
         defaultMessage:
-            "{names} is no longer {held} on {pages}: it held from the starting spot, and now a move before it ends somewhere else.",
+            "{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.",
     },
     many: {
         key: "timeline.errors.heldDropped.many",
         defaultMessage:
-            "{names} are no longer {held} on {pages}: they held from the starting spot, and now a move before it ends somewhere else.",
+            "{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.",
     },
 };
 

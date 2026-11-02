@@ -156,13 +156,13 @@ function FollowingPagesLine({
         ? one
             ? t("inspector.marcher.timeline.pageFollows", {
                   defaultValue:
-                      "Page {page} is {notDefined} for these marchers and shows this page",
+                      "Page {page} shows these marchers where this page leaves them",
                   ...terms,
                   page: first,
               })
             : t("inspector.marcher.timeline.pagesFollow", {
                   defaultValue:
-                      "Pages {first}–{last} are {notDefined} for these marchers and show this page",
+                      "Pages {first}–{last} show these marchers where this page leaves them",
                   ...terms,
                   first,
                   last,
@@ -170,13 +170,13 @@ function FollowingPagesLine({
         : one
           ? t("inspector.marcher.timeline.pageFollowsSome", {
                 defaultValue:
-                    "Page {page} is {notDefined} for some of these marchers and shows this page",
+                    "Page {page} shows some of these marchers where this page leaves them",
                 ...terms,
                 page: first,
             })
           : t("inspector.marcher.timeline.pagesFollowSome", {
                 defaultValue:
-                    "Pages {first}–{last} are {notDefined} for some of these marchers and show this page",
+                    "Pages {first}–{last} show some of these marchers where this page leaves them",
                 ...terms,
                 first,
                 last,
@@ -248,7 +248,7 @@ function TimelineHoldLineContent({
                 from
                     ? t("inspector.marcher.timeline.setAsShownHint", {
                           defaultValue:
-                              "Make {who} {defined} on Page {page} where they are shown, so editing Page {from} won't move them here",
+                              "Make {who} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here",
                           ...terms,
                           who: who(follows),
                           page,
@@ -256,7 +256,7 @@ function TimelineHoldLineContent({
                       })
                     : t("inspector.marcher.timeline.setAsShownHintEarlier", {
                           defaultValue:
-                              "Make {who} {defined} on Page {page} where they are shown, so editing earlier pages won't move them here",
+                              "Make {who} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here",
                           ...terms,
                           who: who(follows),
                           page,
@@ -363,12 +363,13 @@ function TimelineHoldLineContent({
         line = textLine(
             follows.length === selected
                 ? t("inspector.marcher.timeline.holdHere", {
-                      defaultValue: "These marchers are {notDefined} here",
+                      defaultValue:
+                          "These marchers have no position of their own here",
                       ...terms,
                   })
                 : t("inspector.marcher.timeline.someHoldHere", {
                       defaultValue:
-                          "Some of these marchers are {notDefined} here",
+                          "Some of these marchers have no position of their own here",
                       ...terms,
                   }),
             follows.length !== selected,

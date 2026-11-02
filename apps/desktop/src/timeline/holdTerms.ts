@@ -9,7 +9,15 @@
  * - **Held**: it stays where the last page left it, on purpose.
  * - **Not defined**: nothing decided yet; it shows the last position for now.
  *
- * The lowercase forms are separate keys because ICU can't lowercase a placeholder.
+ * The lowercase forms are separate keys because ICU can't lowercase a placeholder. Title case is
+ * for a state shown on its own (a menu item, a bar title, "is Not defined" in a toast); sentences
+ * use the lowercase forms. The sentences read the state words as adjectives ("is {held} on Page 3",
+ * "Not {heldLower}"), so a replacement word has to read that way too, or those sentences change
+ * with it.
+ *
+ * Strings about marchers that only show an earlier page's position say "no position of its own"
+ * rather than {notDefined}: they can't tell a Held marcher from a Not defined one (the resolver
+ * doesn't see held marks), so naming either state there could be wrong.
  */
 import tolgee from "@/global/singletons/Tolgee";
 

@@ -346,18 +346,18 @@ const followsWords = (
         ? one
             ? t(
                   "timeline.keep.chain.followsNamedOne",
-                  "{names} is {notDefined} here, shown {where} it",
+                  "{names} has no position of its own here, shown {where} it",
                   { ...terms, names, where },
               )
             : t(
                   "timeline.keep.chain.followsNamed",
-                  "{names} are {notDefined} here, shown {where} them",
+                  "{names} have no position of their own here, shown {where} them",
                   { ...terms, names, where },
               )
         : one
           ? t(
                 "timeline.keep.chain.followsOne",
-                "1 marcher is {notDefined} here, shown {where} it",
+                "1 marcher has no position of its own here, shown {where} it",
                 {
                     ...terms,
                     where,
@@ -365,7 +365,7 @@ const followsWords = (
             )
           : t(
                 "timeline.keep.chain.follows",
-                "{count} marchers are {notDefined} here, shown {where} them",
+                "{count} marchers have no position of their own here, shown {where} them",
                 { ...terms, count: String(follows.length), where },
             );
     const changes = fromPage
@@ -378,12 +378,12 @@ const followsWords = (
         hint: one
             ? t(
                   "timeline.keep.chain.followsHintOne",
-                  "{changes} carry onto Page {page}. Click to make it {defined} here, where it's shown",
+                  "{changes} carry onto Page {page}. Click to make it {definedLower} here, where it's shown",
                   { ...terms, changes, page },
               )
             : t(
                   "timeline.keep.chain.followsHint",
-                  "{changes} carry onto Page {page}. Click to make them {defined} here, where they're shown",
+                  "{changes} carry onto Page {page}. Click to make them {definedLower} here, where they're shown",
                   { ...terms, changes, page },
               ),
         menuHint: one
