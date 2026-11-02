@@ -19,6 +19,7 @@ import { glideTo, isGliding } from "@/field/three/fieldNavigation";
 import { setShapeScrubbing, useShapePointerStore } from "../field/shapePointer";
 import { keepFocus } from "./keepFocus";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
+import { runAction } from "@/shortcuts/registry";
 import { getActionShortcutLabel } from "@/shortcuts/labels";
 import type { ActionId } from "@/shortcuts/definitions";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
@@ -38,6 +39,7 @@ import {
     EqualsIcon,
     MagnetIcon,
     PathIcon,
+    SelectionSlashIcon,
 } from "@phosphor-icons/react";
 import {
     fieldToElement,
@@ -113,7 +115,8 @@ const EDIT_WINDOW_MS = 1000;
  * under it shows, and it is solid while the pointer is over either, with focus inside it or a
  * menu of its open (`ShapeEditorSurface.css`). Its numbers are the kind's primary parameters (#344, `chipLayout`), so it works for any kind.
  * One row, no ⋯ (#429; owner: keep it compact), for a box:
- * `− 6 × 2 + │ ↔ 2 ↕ 2 steps 🔗 │ ↻ 0° ⌖▾ ⇋ ⇵ ⤡ ⤢ Recalculate │ ⌇ ☆ │ Place`. Every number can be
+ * `− 6 × 2 + │ ↔ 2 ↕ 2 steps 🔗 │ ↻ 0° ⌖▾ ⇋ ⇵ ⤡ ⤢ Recalculate │ ⌇ ☆ │ Place` (Ungroup for a
+ * placed shape). Every number can be
  * typed or dragged, and follows the field: across is side to side however the box is turned. ↻
  * adds a quarter turn to the degrees beside it, and ⌖▾ opens the pivot grid (#435). After the
  * flips, Shrink and Expand scale the shape keeping its proportions (#489, `ScaleButtons`).
@@ -818,7 +821,7 @@ const TurnControls = memo(function TurnControls({
     );
 });
 
-/** Snap, Pathways and ☆ Save, then Place for a new shape */
+/** Snap, Pathways and ☆ Save, then Place for a new shape or Ungroup for a placed one */
 const EndControls = memo(function EndControls({
     live: target,
     stepPx,
@@ -828,6 +831,7 @@ const EndControls = memo(function EndControls({
     stepPx: number;
     canPlace: boolean;
 }) {
+    const overrides = useShortcutOverridesStore((s) => s.overrides);
     return (
         <>
             <span className="flex items-center gap-2">
@@ -853,6 +857,24 @@ const EndControls = memo(function EndControls({
                     >
                         {tolgee.t("shapes.edit.place", "Place")}
                     </button>
+                </>
+            )}
+            {!canPlace && (
+                <>
+                    <Divider />
+                    <IconButton
+                        label={tolgee.t(
+                            "shapes.edit.ungroup",
+                            "Ungroup: the marchers stay where they are",
+                        )}
+                        shortcut={getActionShortcutLabel("shapeUngroup", {
+                            overrides,
+                        })}
+                        onClick={() => runAction("shapeUngroup")}
+                        testId="shape-editor-ungroup"
+                    >
+                        <SelectionSlashIcon size={14} />
+                    </IconButton>
                 </>
             )}
         </>

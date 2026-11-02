@@ -13,9 +13,9 @@ import { useStartFlagKeyStore } from "@/stores/StartFlagKeyStore";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { DEFAULT_START_FLAG_POSITIONS } from "@/timeline/startFlagLevels";
 import { StartFlagPositionsButton } from "../StartFlagPositionsButton";
-import { TransportTooltipProvider } from "../ShortcutTooltip";
+import { TransportTooltipProvider } from "@/components/timeline/ShortcutTooltip";
 
-/** Start flag positions' transport control (fork #331, #336). */
+/** Start flag positions' control on the field's display bar (fork #331, #336). */
 
 /** What the field publishes it draws (`useStartFlagOverlay`) */
 const fieldDraws = (drawn: boolean) =>

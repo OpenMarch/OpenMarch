@@ -7,6 +7,13 @@ import { gestureChipSegments } from "./heldRoleChipText";
 
 const OFFSET_X = 16;
 const OFFSET_Y = 18;
+/**
+ * Dimmer than the drag readout it sits under: a hint, not a measurement, so it never reads as a
+ * second readout (owner). See-through, so it still reads over the field's lines.
+ */
+const CHIP_CLASS =
+    "rounded-6 bg-bg-1/60 text-text-subtitle px-6 py-2 whitespace-nowrap";
+const CHIP_PX = 11;
 
 /**
  * A small readout near the cursor while a field drag runs: the held roles the drag reads, and Snap
@@ -49,8 +56,8 @@ export function HeldRolesChipBelowTip() {
     if (text === null) return null;
     return (
         <div
-            className="rounded-6 bg-modal text-sub text-text shadow-modal px-8 py-4 whitespace-nowrap"
-            style={{ fontSize: 12 }}
+            className={CHIP_CLASS}
+            style={{ fontSize: CHIP_PX }}
             data-testid="heldRolesChip"
         >
             {text}
@@ -64,11 +71,11 @@ function ChipAtPointer({ text }: { text: string }) {
     if (!screen) return null;
     return (
         <div
-            className="rounded-6 bg-modal text-sub text-text shadow-modal pointer-events-none absolute z-20 px-8 py-4 whitespace-nowrap"
+            className={`${CHIP_CLASS} pointer-events-none absolute z-20`}
             style={{
                 left: screen.x + OFFSET_X,
                 top: screen.y + OFFSET_Y,
-                fontSize: 12,
+                fontSize: CHIP_PX,
             }}
             data-testid="heldRolesChip"
         >

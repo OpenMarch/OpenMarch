@@ -61,14 +61,8 @@ test("Toolbars are visible", async ({ electronApp }) => {
     await canvasIsVisible(page);
     await page.getByRole("tab", { name: "File" }).click();
     await expect(page.getByText("Open FileNew FileSave Copy")).toBeVisible();
-    console.log("clicking view tab");
-    await page.getByRole("tab", { name: "View" }).click();
-    console.log("checking the paths button");
-    await expect(
-        page
-            .getByRole("tabpanel", { name: "View" })
-            .getByRole("button", { name: "Next paths" }),
-    ).toBeVisible();
+    console.log("checking the field display bar");
+    await expect(page.getByTestId("field-display-bar")).toBeVisible();
     console.log("clicking alignment tab");
     await page.getByRole("tab", { name: "Alignment" }).click();
     await expect(

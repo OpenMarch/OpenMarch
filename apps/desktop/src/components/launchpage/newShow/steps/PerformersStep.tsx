@@ -93,9 +93,6 @@ export default function PerformersStep({
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-24">
             <div className="grid grid-cols-1 gap-24 lg:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-12">
-                    <h5 className="text-body font-medium">
-                        <T keyName="launchpage.newShow.steps.performers.addNew" />
-                    </h5>
                     <MarcherForm
                         hideInfoNote
                         skipSidebarContent
@@ -105,9 +102,6 @@ export default function PerformersStep({
                     />
                 </div>
                 <div className="flex flex-col gap-12">
-                    <h5 className="text-body font-medium">
-                        <T keyName="launchpage.newShow.steps.performers.added" />
-                    </h5>
                     {marchers.length === 0 ? (
                         <div className="rounded-12 bg-fg-1 border-stroke border p-16">
                             <p className="text-body text-text/60">

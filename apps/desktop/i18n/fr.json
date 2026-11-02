@@ -86,7 +86,9 @@
             "evenOut": "Forme : égaliser le contour",
             "expand": "Forme : agrandir, en gardant les proportions",
             "shrink": "Forme : réduire, en gardant les proportions",
-            "ring": "Anneau des favoris : maintenez pour choisir une forme, touchez pour le garder ouvert"
+            "ring": "Anneau des favoris : maintenez pour choisir une forme, touchez pour le garder ouvert",
+            "ungroup": "Forme : Dégrouper",
+            "ungroupKeywords": "dégrouper forme séparer détacher"
         },
         "swap": {
             "error": "Impossible d'échanger les marcheurs {{marcher1}} et {{marcher2}}",
@@ -654,8 +656,7 @@
             "shapesTab": "Formes",
             "successfullyCopied": "Forme copiée avec succès sur la page {pageName}",
             "ungroupShapeButton": "Dissocier",
-            "ungroupShapeTooltip": "Supprimer cette forme pour cette page. Ne déplacera pas les marcheurs de leur position actuelle",
-            "viewTab": "Vue"
+            "ungroupShapeTooltip": "Supprimer cette forme pour cette page. Ne déplacera pas les marcheurs de leur position actuelle"
         },
         "title": "Inspecteur"
     },
@@ -739,8 +740,6 @@
                     "title": "Configuration du champ"
                 },
                 "performers": {
-                    "added": "Interprètes ajoutés",
-                    "addNew": "Ajouter des interprètes",
                     "description": "Ajoutez les marcheurs maintenant ou passez et ajoutez-les plus tard dans l'éditeur.",
                     "noneAdded": "Aucun interprète ajouté pour l'instant.",
                     "title": "Interprètes"
@@ -1332,7 +1331,8 @@
                 "label": "Graine"
             },
             "steps": "pas",
-            "turn": "Rotation, en degrés dans le sens horaire"
+            "turn": "Rotation, en degrés dans le sens horaire",
+            "ungroup": "Dégrouper : les marcheurs restent où ils sont"
         },
         "field": {
             "stepLimit": "{steps} à 5"
@@ -1501,7 +1501,9 @@
             "summary": {
                 "empty": "{count, plural, one {# vide} other {# vides}}",
                 "steps": "{interval} pas"
-            }
+            },
+            "ungroupError": "Erreur lors du dégroupement de la forme",
+            "ungroupIsolated": "Dégroupez cette forme hors de l'isolement : elle vient d'une page précédente"
         },
         "save": {
             "ariaLabel": "Enregistrer cette forme dans votre bibliothèque",
@@ -1681,8 +1683,7 @@
             "shapes": "Formes",
             "shapesAlways": "Toujours",
             "shapesOff": "Désactivé",
-            "shapesSelected": "Si sélectionné",
-            "uiSettingsToolbar": "Barre d'outils des paramètres de l'interface utilisateur"
+            "shapesSelected": "Si sélectionné"
         }
     },
     "touch": {
