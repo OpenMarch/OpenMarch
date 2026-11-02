@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 import { ArrowsInIcon } from "@phosphor-icons/react";
 import type { ShapeEditTarget } from "./editTargets";

@@ -37,11 +37,16 @@ const commonProps = {
     pixelsPerBeat: 16,
 };
 
-/** A guide row's words, a space between each piece (marks and keycaps split them) */
+/**
+ * A guide row's words as shown, a space between each piece (marks and keycaps split them),
+ * without the words a screen reader hears for a shortcut
+ */
 const rowWords = (node: Node): string =>
     (node.nodeType === Node.TEXT_NODE
         ? node.textContent!
-        : [...node.childNodes].map(rowWords).join(" ")
+        : node instanceof Element && node.classList.contains("sr-only")
+          ? ""
+          : [...node.childNodes].map(rowWords).join(" ")
     )
         .replace(/\s+/g, " ")
         .trim();

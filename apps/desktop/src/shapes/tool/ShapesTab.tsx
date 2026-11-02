@@ -1,5 +1,7 @@
 import tolgee from "@/global/singletons/Tolgee";
 import clsx from "clsx";
+import { T } from "@tolgee/react";
+import Shortcut from "@/components/ui/Shortcut";
 import { useMemo } from "react";
 import { ShapesIcon } from "@phosphor-icons/react";
 import { performersOnly } from "@/global/classes/Marcher";
@@ -14,7 +16,7 @@ import { SHAPE_TOOLS } from "./shapeTools";
 import { useShapeShown, useShapeToolStore } from "./shapeToolStore";
 import { useStarredShapes } from "./starredShapes";
 import ShapePreviewIcon from "../preview/ShapePreviewIcon";
-import { Tip } from "../editor/Tip";
+import { Tip } from "@/components/ui/Tip";
 
 /** Shapes show as pictures only, so many fit (#378): the name is the tooltip and the label */
 const PREVIEW_SIZE = 26;
@@ -67,13 +69,7 @@ export default function ShapesTab() {
                                 greyedTitle(kind.shape.label) ??
                                 kind.shape.label
                             }
-                            shortcut={
-                                gate.ok
-                                    ? getActionShortcutLabel(action, {
-                                          overrides,
-                                      })
-                                    : undefined
-                            }
+                            action={gate.ok ? action : undefined}
                         >
                             <span>
                                 <ActionButton
@@ -169,11 +165,14 @@ export default function ShapesTab() {
                     className="text-sub text-text-subtitle"
                     data-testid="shapes-tab-ring-hint"
                 >
-                    {tolgee.t(
-                        "shapes.tool.tab.ringHint",
-                        "Hold {key} on the field for the shape ring",
-                        { key: ringKey },
-                    )}
+                    <T
+                        keyName="shapes.tool.tab.ringHint"
+                        defaultValue="Hold <keys></keys> on the field for the shape ring"
+                        params={{
+                            key: ringKey,
+                            keys: () => <Shortcut action="openShapeRing" />,
+                        }}
+                    />
                 </span>
             )}
             {!gate.ok && (

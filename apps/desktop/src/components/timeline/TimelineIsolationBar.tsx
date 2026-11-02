@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
 import { FlagIcon } from "@phosphor-icons/react";
-import { Keycaps } from "./ShortcutTooltip";
+import Shortcut from "@/components/ui/Shortcut";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
 import { isTyping, overlayOpen, spaceStaysPlay } from "./timelineHotkeys";
@@ -428,7 +428,7 @@ export function TimelineFromStartBadge() {
                         aria-hidden="true"
                         className="flex items-center gap-4"
                     >
-                        <Keycaps shortcut="Space" />
+                        <Shortcut action="playPause" />
                         loops {loopName}
                     </span>
                 </span>

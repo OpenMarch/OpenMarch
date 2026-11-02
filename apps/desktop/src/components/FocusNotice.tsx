@@ -1,6 +1,8 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { Button } from "@openmarch/ui";
+import { T } from "@tolgee/react";
 import ActionButton from "@/shortcuts/ActionButton";
+import Shortcut from "@/components/ui/Shortcut";
 import { InfoIcon } from "@phosphor-icons/react";
 
 export default function FocusNotice() {
@@ -17,14 +19,17 @@ export default function FocusNotice() {
             <div className="flex items-center gap-16">
                 <InfoIcon size={24} />
                 <span className="text-body text-text flex-1">
-                    Timeline is currently focussed, all other interaction is
-                    disabled. Press ESC or the button below to re-focus the main
-                    editor.
+                    <T
+                        keyName="timeline.focusNotice.body"
+                        params={{
+                            keys: () => <Shortcut binding="Escape" />,
+                        }}
+                    />
                 </span>
             </div>
             <ActionButton action="focusCanvas">
                 <Button size="compact" variant="secondary">
-                    Exit Timeline Focus
+                    <T keyName="timeline.focusNotice.exit" />
                 </Button>
             </ActionButton>
         </div>

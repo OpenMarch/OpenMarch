@@ -22,7 +22,7 @@ import {
 import { kindPickGate, pickShapeKind } from "../tool/pickKind";
 import { useShapeShown } from "../tool/shapeToolStore";
 import { addSavedShapeToLibrary, deleteSavedShape } from "./saveShape";
-import { Tip } from "../editor/Tip";
+import { Tip } from "@/components/ui/Tip";
 
 export const SHAPE_LIBRARY_CONTENT_ID = "shapes";
 

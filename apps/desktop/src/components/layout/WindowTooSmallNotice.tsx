@@ -7,10 +7,8 @@ import {
     SquareIcon,
     XIcon,
 } from "@phosphor-icons/react";
-import Keycaps from "@/components/ui/Keycaps";
+import Shortcut from "@/components/ui/Shortcut";
 import { isTextEntry } from "@/hooks/useOnScreenKeyboard";
-import { formatBindingKeys } from "@/shortcuts/bindings";
-import { isMacPlatform } from "@/shortcuts/platform";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { isWebBuild } from "@/utilities/webBuild";
 import {
@@ -109,7 +107,6 @@ export default function WindowTooSmallNotice({
     // zoom is what made it too small
     const zoomedIn = !isWebBuild && window.electron.getZoomFactor() > 1;
     // The View menu's Zoom Out (electron/main/application-menu.ts)
-    const zoomOut = formatBindingKeys("$mod+Minus", isMacPlatform());
     const hintKey = isWebBuild
         ? "layout.windowTooSmall.hintWeb"
         : zoomedIn
@@ -146,7 +143,9 @@ export default function WindowTooSmallNotice({
                             <T
                                 keyName={hintKey}
                                 params={{
-                                    keys: () => <Keycaps keys={zoomOut} />,
+                                    keys: () => (
+                                        <Shortcut binding="$mod+Minus" />
+                                    ),
                                 }}
                             />
                         </p>

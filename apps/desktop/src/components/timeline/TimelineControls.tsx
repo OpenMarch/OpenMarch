@@ -6,6 +6,7 @@ import {
     RowsIcon,
     RepeatIcon,
 } from "@phosphor-icons/react";
+import Shortcut from "@/components/ui/Shortcut";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
@@ -261,8 +262,8 @@ export function TimelineSoundButton() {
                         <span className="text-body">
                             Metronome {isMetronomeOn ? "on" : "off"}
                         </span>
-                        <span className="text-sub text-text-subtitle ml-auto font-mono">
-                            Ctrl+M
+                        <span className="ml-auto">
+                            <Shortcut action="toggleMetronome" />
                         </span>
                     </button>
                 </Popover.Content>

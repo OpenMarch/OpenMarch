@@ -61,8 +61,8 @@ translate differently.
 - Counts use ICU plurals: `"{count, plural, one {# marcher} other {# marchers}}"`.
 - Inline elements are tags in the string, rendered with `<T params>`:
   `"zoom out with <keys></keys>"` and
-  `<T keyName="…" params={{ keys: () => <Keycaps … /> }} />`. Keyboard shortcuts
-  always render as keycaps (see `apps/desktop/AGENTS.md`).
+  `<T keyName="…" params={{ keys: () => <Shortcut … /> }} />`. Keyboard shortcuts
+  always render with `Shortcut`, never as text in the string (see `apps/desktop/AGENTS.md`).
 - Units and short labels (`"fps"`, `"X:"`, `"bpm"`) are text too.
 
 ## Translator context

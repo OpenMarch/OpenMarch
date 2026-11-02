@@ -1,3 +1,4 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFormProps } from "../../global/Interfaces";
@@ -154,22 +155,29 @@ export default function MarcherList({
                                 handleSubmit={handleSubmit}
                                 isDangerButton={true}
                                 alertDialogTitle={t("marchers.deleteTitle")}
-                                alertDialogDescription={t(
-                                    "marchers.deleteWarning",
-                                    {
-                                        marchers: deletionsRef.current
-                                            .map((marcherId) => {
-                                                const marcherName =
-                                                    marchers?.find(
-                                                        (marcher) =>
-                                                            marcher.id ===
-                                                            marcherId,
-                                                    )?.drill_number;
-                                                return marcherName || "Unknown";
-                                            })
-                                            .join(", "),
-                                    },
-                                )}
+                                alertDialogDescription={
+                                    <T
+                                        keyName="marchers.deleteWarning"
+                                        params={{
+                                            marchers: deletionsRef.current
+                                                .map((marcherId) => {
+                                                    const marcherName =
+                                                        marchers?.find(
+                                                            (marcher) =>
+                                                                marcher.id ===
+                                                                marcherId,
+                                                        )?.drill_number;
+                                                    return (
+                                                        marcherName || "Unknown"
+                                                    );
+                                                })
+                                                .join(", "),
+                                            keys: () => (
+                                                <Shortcut action="performUndo" />
+                                            ),
+                                        }}
+                                    />
+                                }
                                 alertDialogActions={
                                     <>
                                         <AlertDialogAction>

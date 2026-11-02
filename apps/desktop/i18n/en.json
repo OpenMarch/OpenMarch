@@ -962,7 +962,7 @@
                 "clearCache.description": "Deleting the cache and metadata folder can often fix performance issues. (This will also delete your recent files list and theme!)",
                 "description": "OpenMarch is still under development, so here are some tips when something goes wrong.",
                 "refresh": "Refresh the page",
-                "refresh.description": "When in doubt, refresh the page (Ctrl/Cmd + R). If OpenMarch ever seems broken, refreshing will often fix it.",
+                "refresh.description": "When in doubt, refresh the page (<keys></keys>). If OpenMarch ever seems broken, refreshing will often fix it.",
                 "title": "Troubleshooting Tips"
             },
             "videoGuides": {
@@ -1205,7 +1205,7 @@
                     "misnamed": "Found {names}, which doesn’t match OM_grip_R. Pre-set to its longest side; click the model to move it.",
                     "manual": "Set by your click on the model.",
                     "pick": "Click a point on the model",
-                    "picking": "Clicking… (Esc to stop)"
+                    "picking": "Clicking… <keys></keys> to stop"
                 },
                 "surface": {
                     "title": "Artwork surface",
@@ -1318,7 +1318,7 @@
                     "side": "Side",
                     "top": "Top"
                 },
-                "pickGrip": "Click a point on the model to set the grip · Esc to stop",
+                "pickGrip": "Click a point on the model to set the grip · <keys></keys> to stop",
                 "surface": "Artwork surface: {name}"
             },
             "errors": {
@@ -1409,7 +1409,7 @@
             },
             "ignoredColumns": "Ignoring columns: {columns}",
             "importButton": "{count, plural, =0 {Import} one {Import 1 marcher} other {Import {count} marchers}}",
-            "info": "Name, year and notes are optional. Rows with errors are skipped; fix them and import again. Undo with [Ctrl/Cmd+Z].",
+            "info": "Name, year and notes are optional. Rows with errors are skipped; fix them and import again. Undo with <keys></keys>.",
             "line": "Line {line}",
             "missingColumns": "The file needs a {columns} column",
             "mode": {
@@ -1436,7 +1436,7 @@
         "deleteButton": "Delete",
         "deleteDescription": "You are about to delete these section styles: {sections}. This can be undone with [Ctrl/Cmd+Z].",
         "deleteTitle": "Warning",
-        "deleteWarning": "You are about to delete these marchers: {marchers}. This can be undone with [Ctrl/Cmd+Z].",
+        "deleteWarning": "You are about to delete these marchers: {marchers}. This can be undone with <keys></keys>.",
         "drillOrder": "Drill Number",
         "drillOrderError": {
             "exists": "This drill number already exists"
@@ -1671,7 +1671,7 @@
         "tempoGroupUpdated": "Tempo group updated",
         "timeSignature": "Time signature: {timeSignature}",
         "title": "Music",
-        "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
+        "undoWithCtrlZ": "This action is undoable with <keys></keys>",
         "volume": "Volume",
         "addAfterCaption": "Add after",
         "deleteTempoGroup": "Delete tempo group",
@@ -1901,11 +1901,11 @@
         "shortcuts.category.shape": "Shapes",
         "shortcuts.category.timeline": "Timeline",
         "shortcuts.category.ui": "Interface",
-        "shortcuts.conflict": "{binding} is already used by {actions}.",
+        "shortcuts.conflict": "<keys></keys> is already used by {actions}.",
         "shortcuts.description": "Change the keys for any action. Changes apply right away.",
         "shortcuts.noResults": "No shortcuts match your search.",
         "shortcuts.reassign": "Reassign",
-        "shortcuts.recording": "Press keys… (Esc to cancel)",
+        "shortcuts.recording": "Press keys… <keys></keys> to cancel",
         "shortcuts.remove": "Remove {binding}",
         "shortcuts.reset": "Reset {action} to default",
         "shortcuts.resetAll": "Reset all",
@@ -2010,7 +2010,7 @@
                 "goBack": "Go back",
                 "text": "Shape open at {moment}"
             },
-            "drawHint": "Drag on the field to draw a {shape} · Esc to cancel",
+            "drawHint": "Drag on the field to draw a {shape} · <keys></keys> to cancel",
             "drawnOn": "from {page}",
             "edge": {
                 "label": "Edge",
@@ -2330,7 +2330,7 @@
                 "kinds": "Shape kinds",
                 "library": "Library",
                 "libraryTip": "Open the shape library, to star shapes",
-                "ringHint": "Hold {key} on the field for the shape ring"
+                "ringHint": "Hold <keys></keys> on the field for the shape ring"
             }
         },
         "transform": {
@@ -2595,7 +2595,14 @@
         "volumeSlider": "Timeline volume slider",
         "zoomIn": "Zoom timeline in",
         "zoomOut": "Zoom timeline out",
-        "zoomReset": "Reset timeline zoom"
+        "zoomReset": "Reset timeline zoom",
+        "focusNotice": {
+            "body": "Timeline is currently focussed, all other interaction is disabled. Press <keys></keys> or the button below to re-focus the main editor.",
+            "exit": "Exit Timeline Focus"
+        },
+        "fit": {
+            "hint": "Press again to go back. Pinch or <keys></keys> to zoom"
+        }
     },
     "titlebar": {
         "menu": "Menu",
@@ -2810,18 +2817,6 @@
             "pan": "Pan (or right-drag)",
             "zoom": "Zoom"
         },
-        "keyNames": {
-            "playPause": "Space",
-            "previousNext": "Q / E",
-            "firstLast": "Shift+Q / E",
-            "cameras": "1–9",
-            "fullscreen": "F",
-            "crowd": "C",
-            "escape": "Esc",
-            "orbit": "Drag",
-            "pan": "Shift+drag",
-            "zoom": "Scroll"
-        },
         "uniformPreset": {
             "fade": "Ultraviolet Fade",
             "military": "Night Watch",
@@ -2980,7 +2975,7 @@
         "versionsEmpty": "No versions yet. One is kept after your first change.",
         "versionsMenu": "Versions…",
         "versionsTitle": "Versions of “{name}”",
-        "welcome.backUpBody": "File → Back up (or {save}) saves a copy of the show to Files, Google Drive or email. If this device's data is cleared or the device is lost, only your backups remain.",
+        "welcome.backUpBody": "File → Back up (or <keys></keys>) saves a copy of the show to Files, Google Drive or email. If this device's data is cleared or the device is lost, only your backups remain.",
         "welcome.backUpTitle": "Back up regularly",
         "welcome.desktopBody": "PDF export and some file tools need the desktop app. Video export works here.",
         "welcome.desktopTitle": "A few desktop features aren't here yet",
@@ -3096,7 +3091,7 @@
             "notes": "Notes",
             "facingWheel": "Facing angle",
             "pickPoint": "Pick the point on the field",
-            "pickingPoint": "Click a point on the field (Esc cancels)"
+            "pickingPoint": "Click a point on the field · <keys></keys> to cancel"
         },
         "why": {
             "title": "Why, at {where}",
@@ -3271,6 +3266,13 @@
             "constrain": "Constrain (equal spacings, one axis, flips proportional scaling)",
             "fineControl": "Fine control, still catching yard lines and hashes",
             "fromCenter": "Draw or resize a box from center"
+        }
+    },
+    "shortcut": {
+        "gesture": {
+            "drag": "drag",
+            "scroll": "scroll",
+            "click": "click"
         }
     }
 }

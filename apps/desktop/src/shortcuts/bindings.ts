@@ -225,6 +225,81 @@ export function formatBindingKeys(binding: string, isMac: boolean): string[] {
     return [...modifierKeys, formatKey(key, isMac)];
 }
 
+/**
+ * A binding as one plain string, the way each system writes it: "⇧⌘Z" on a Mac, "Ctrl+Shift+Z"
+ * elsewhere. For text that can't hold markup (aria-label, a native menu); show `Shortcut` otherwise.
+ */
 export function formatBinding(binding: string, isMac: boolean): string {
-    return formatBindingKeys(binding, isMac).join(isMac ? "" : "+");
+    return joinKeys(formatBindingKeys(binding, isMac), isMac);
+}
+
+/** Display keys as one plain string: run together on a Mac, joined by "+" elsewhere. */
+export function joinKeys(keys: readonly string[], isMac: boolean): string {
+    return keys.join(isMac ? "" : "+");
+}
+
+/** Pointer gestures a shortcut can end with ("Shift + Drag"). They're words, not keys. */
+export const SHORTCUT_GESTURES = ["drag", "scroll", "click"] as const;
+export type ShortcutGesture = (typeof SHORTCUT_GESTURES)[number];
+
+/**
+ * A binding that may end with a gesture ("Alt+drag", "$mod + Scroll"), split into the keys to
+ * show and the gesture. A plain binding has no gesture.
+ */
+export function formatShortcutParts(
+    binding: string,
+    isMac: boolean,
+): { keys: string[]; gesture?: ShortcutGesture } {
+    const parts = binding.split("+").map((part) => part.trim());
+    const last = parts[parts.length - 1]?.toLowerCase();
+    const gesture = SHORTCUT_GESTURES.find((g) => g === last);
+    if (!gesture) return { keys: formatBindingKeys(binding, isMac) };
+    const { modifiers } = parseBinding([...parts.slice(0, -1), "X"].join("+"));
+    const keys = isMac
+        ? MAC_SYMBOL_ORDER.filter((m) => modifiers.includes(m)).map((m) =>
+              formatModifier(m, true),
+          )
+        : modifiers.map((m) => formatModifier(m, false));
+    return { keys, gesture };
+}
+
+const SPOKEN_KEYS: Record<string, string> = {
+    "⌘": "Command",
+    "⇧": "Shift",
+    "⌥": "Option",
+    "⌃": "Control",
+    Ctrl: "Control",
+    Esc: "Escape",
+    Del: "Delete",
+    "↩": "Return",
+    "⌫": "Delete",
+    "⌦": "Forward Delete",
+    "↑": "Up Arrow",
+    "↓": "Down Arrow",
+    "←": "Left Arrow",
+    "→": "Right Arrow",
+    Win: "Windows",
+    /* cspell: disable */
+    "[": "Left Bracket",
+    "]": "Right Bracket",
+    "/": "Slash",
+    "\\": "Backslash",
+    ",": "Comma",
+    ".": "Period",
+    ";": "Semicolon",
+    "'": "Quote",
+    "-": "Minus",
+    "−": "Minus",
+    "=": "Equals",
+    "`": "Backquote",
+    "?": "Question Mark",
+    /* cspell: enable */
+};
+
+/**
+ * Display keys as words for a screen reader ("Shift Command Z"): voices read ⇧ and ⌥
+ * differently or not at all. Key names stay in English, as they're printed on the keys.
+ */
+export function spokenKeys(keys: readonly string[]): string {
+    return keys.map((key) => SPOKEN_KEYS[key] ?? key).join(" ");
 }

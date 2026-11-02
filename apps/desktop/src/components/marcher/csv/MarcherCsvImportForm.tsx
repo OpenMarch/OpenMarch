@@ -1,3 +1,4 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { useMemo, useRef, useState } from "react";
 import { touchSafeAccept } from "@/utilities/fileAccept";
 import { T, useTolgee } from "@tolgee/react";
@@ -337,7 +338,12 @@ export default function MarcherCsvImportForm({
             </Button>
             {showInfoNote && (
                 <InfoNote>
-                    <T keyName="marchers.csv.info" />
+                    <T
+                        keyName="marchers.csv.info"
+                        params={{
+                            keys: () => <Shortcut action="performUndo" />,
+                        }}
+                    />
                 </InfoNote>
             )}
         </div>

@@ -4,6 +4,7 @@
  * or length (a phrase), the value's own settings, its ripple and notes.
  * Each change is one undoable edit. No popovers: everything is here.
  */
+import Shortcut from "@/components/ui/Shortcut";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { T, useTolgee } from "@tolgee/react";
@@ -466,6 +467,7 @@ function PickPointButton({
                         ? "visuals.cue.pickingPoint"
                         : "visuals.cue.pickPoint"
                 }
+                params={{ keys: () => <Shortcut binding="Escape" /> }}
             />
         </Button>
     );

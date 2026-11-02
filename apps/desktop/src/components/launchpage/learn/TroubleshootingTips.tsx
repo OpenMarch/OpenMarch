@@ -1,3 +1,4 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { T } from "@tolgee/react";
 
 export default function TroubleshootingTips() {
@@ -14,7 +15,10 @@ export default function TroubleshootingTips() {
                     <T keyName="launchpage.learn.troubleshooting.refresh" />
                 </h5>
                 <p className="text-body leading-[180%]">
-                    <T keyName="launchpage.learn.troubleshooting.refresh.description" />
+                    <T
+                        keyName="launchpage.learn.troubleshooting.refresh.description"
+                        params={{ keys: () => <Shortcut binding="$mod+R" /> }}
+                    />
                 </p>
                 <h5 className="text-h5">
                     <T keyName="launchpage.learn.troubleshooting.clearCache" />

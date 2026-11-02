@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { heldKeysOf } from "@/input/modifierRoles";
 import { holdGesture, type HeldGesture } from "../field/heldGesture";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import {

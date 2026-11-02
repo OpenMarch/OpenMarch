@@ -3,6 +3,7 @@
  * the report, grouped as Can't import, Needs your choice (pre-selected),
  * Fixed for you (collapsed) and Notes (props-spec.md §2 "The review").
  */
+import Shortcut from "@/components/ui/Shortcut";
 import { Button, Checkbox } from "@openmarch/ui";
 import {
     BookOpenIcon,
@@ -305,9 +306,18 @@ function Choice({
                                 }
                             >
                                 <CrosshairIcon size={14} />
-                                {model.pickingGrip
-                                    ? k("grip.picking")
-                                    : k("grip.pick")}
+                                {model.pickingGrip ? (
+                                    <T
+                                        keyName="library.import.choices.grip.picking"
+                                        params={{
+                                            keys: () => (
+                                                <Shortcut binding="Escape" />
+                                            ),
+                                        }}
+                                    />
+                                ) : (
+                                    k("grip.pick")
+                                )}
                             </Button>
                         </div>
                     )}

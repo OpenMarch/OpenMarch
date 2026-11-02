@@ -1,3 +1,4 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { TempoGroup } from "@/components/music/TempoGroup/TempoGroup";
 import { useMemo, useState } from "react";
 import { PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
@@ -177,7 +178,14 @@ function StaticTempoGroupCard({
                                         </Button>
                                     </AlertDialogAction>
                                     <div className="text-sub text-text-subtitle">
-                                        <T keyName="music.undoWithCtrlZ" />
+                                        <T
+                                            keyName="music.undoWithCtrlZ"
+                                            params={{
+                                                keys: () => (
+                                                    <Shortcut action="performUndo" />
+                                                ),
+                                            }}
+                                        />
                                     </div>
                                     <AlertDialogCancel asChild>
                                         <Button

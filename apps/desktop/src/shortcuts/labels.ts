@@ -51,24 +51,3 @@ export function getModifierLabel(
 ): string {
     return formatModifier(modifier, isMac);
 }
-
-export function getActionTooltip(
-    id: ActionId,
-    t: Translate,
-    options: {
-        toggleState?: "on" | "off";
-        overrides?: ShortcutOverrides;
-        isMac?: boolean;
-    } = {},
-): string {
-    const def = getActionDefinition(id);
-    const toggleKey =
-        options.toggleState === "on"
-            ? def.toggleOnKey
-            : options.toggleState === "off"
-              ? def.toggleOffKey
-              : undefined;
-    const label = toggleKey ? t(toggleKey) : getActionLabel(id, t);
-    const shortcut = getActionShortcutLabel(id, options);
-    return shortcut ? `${label} [${shortcut}]` : label;
-}
