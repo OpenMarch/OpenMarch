@@ -5,73 +5,190 @@
 import { Fragment } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { QuestionIcon } from "@phosphor-icons/react";
-import {
-    Keycaps,
-    ShortcutTooltip,
-} from "@/components/timeline/ShortcutTooltip";
+import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
+import Shortcut from "@/components/ui/Shortcut";
+import tolgee from "@/global/singletons/Tolgee";
 import { toolButton } from "./TempoToolbar";
 
 /** How tempo mode works, behind a "?" in its header */
 export function TempoHelp() {
-    const rows: [string, string][] = [
-        ["Drag a spot in the music", "onto its count"],
+    // Each row: a gesture, then what it does (a two-column list)
+    const rows: [id: string, what: string, how: string][] = [
         [
-            "Drag a count's handle",
-            "(the triangle atop the music) onto the music",
-        ],
-        ["Shift while dragging", "moves just that count"],
-        [
-            "Drag the tempo line",
-            "up or down; right-click > Set tempo… to type one",
-        ],
-        [
-            "Double-click the tempo lane or line",
-            "adds a tempo change there; double-click a change's dot to remove it",
+            "dragMusic",
+            tolgee.t(
+                "tempoMode.help.dragMusic.gesture",
+                "Drag a spot in the music",
+            ),
+            tolgee.t("tempoMode.help.dragMusic.effect", "onto its count"),
         ],
         [
-            "Drag a tempo change's dot",
-            "up or down for its tempo, sideways to move where it changes",
+            "dragHandle",
+            tolgee.t(
+                "tempoMode.help.dragHandle.gesture",
+                "Drag a count's handle",
+            ),
+            tolgee.t(
+                "tempoMode.help.dragHandle.effect",
+                "(the triangle atop the music) onto the music",
+            ),
         ],
         [
-            "Drag a stretch's round handle",
-            "makes a gradual change, straight or curved; double-click it for a jump again",
+            "shiftDrag",
+            tolgee.t(
+                "tempoMode.help.shiftDrag.gesture",
+                "Shift while dragging",
+            ),
+            tolgee.t(
+                "tempoMode.help.shiftDrag.effect",
+                "moves just that count",
+            ),
         ],
         [
-            "Drag a stretch's square end dot",
-            "sets the tempo it ends on, so a rit. can jump back (a tempo); with a pinned count after it, the counts up to the pin make room",
+            "dragLine",
+            tolgee.t("tempoMode.help.dragLine.gesture", "Drag the tempo line"),
+            tolgee.t(
+                "tempoMode.help.dragLine.effect",
+                "up or down; right-click > Set tempo… to type one",
+            ),
         ],
         [
-            "Right-click in a gradual change",
-            "A tempo: back to the tempo it started at",
+            "doubleClickLane",
+            tolgee.t(
+                "tempoMode.help.doubleClickLane.gesture",
+                "Double-click the tempo lane or line",
+            ),
+            tolgee.t(
+                "tempoMode.help.doubleClickLane.effect",
+                "adds a tempo change there; double-click a change's dot to remove it",
+            ),
         ],
-        ["Drag along Measures", "selects counts to edit"],
         [
-            "Right-click",
-            "pins, holds, tempo changes, adding and removing counts",
+            "dragChangeDot",
+            tolgee.t(
+                "tempoMode.help.dragChangeDot.gesture",
+                "Drag a tempo change's dot",
+            ),
+            tolgee.t(
+                "tempoMode.help.dragChangeDot.effect",
+                "up or down for its tempo, sideways to move where it changes",
+            ),
         ],
         [
-            "Right-click a measure",
-            "renumber from there (or double-click its number), rehearsal mark, time signature",
+            "dragRoundHandle",
+            tolgee.t(
+                "tempoMode.help.dragRoundHandle.gesture",
+                "Drag a stretch's round handle",
+            ),
+            tolgee.t(
+                "tempoMode.help.dragRoundHandle.effect",
+                "makes a gradual change, straight or curved; double-click it for a jump again",
+            ),
         ],
-        ["Drag a rehearsal mark", "to another measure"],
+        [
+            "dragEndDot",
+            tolgee.t(
+                "tempoMode.help.dragEndDot.gesture",
+                "Drag a stretch's square end dot",
+            ),
+            tolgee.t(
+                "tempoMode.help.dragEndDot.effect",
+                "sets the tempo it ends on, so a rit. can jump back (a tempo); with a pinned count after it, the counts up to the pin make room",
+            ),
+        ],
+        [
+            "rightClickGradual",
+            tolgee.t(
+                "tempoMode.help.rightClickGradual.gesture",
+                "Right-click in a gradual change",
+            ),
+            tolgee.t(
+                "tempoMode.help.rightClickGradual.effect",
+                "A tempo: back to the tempo it started at",
+            ),
+        ],
+        [
+            "dragMeasures",
+            tolgee.t(
+                "tempoMode.help.dragMeasures.gesture",
+                "Drag along Measures",
+            ),
+            tolgee.t(
+                "tempoMode.help.dragMeasures.effect",
+                "selects counts to edit",
+            ),
+        ],
+        [
+            "rightClick",
+            tolgee.t("tempoMode.help.rightClick.gesture", "Right-click"),
+            tolgee.t(
+                "tempoMode.help.rightClick.effect",
+                "pins, holds, tempo changes, adding and removing counts",
+            ),
+        ],
+        [
+            "rightClickMeasure",
+            tolgee.t(
+                "tempoMode.help.rightClickMeasure.gesture",
+                "Right-click a measure",
+            ),
+            tolgee.t(
+                "tempoMode.help.rightClickMeasure.effect",
+                "renumber from there (or double-click its number), rehearsal mark, time signature",
+            ),
+        ],
+        [
+            "dragMark",
+            tolgee.t(
+                "tempoMode.help.dragMark.gesture",
+                "Drag a rehearsal mark",
+            ),
+            tolgee.t("tempoMode.help.dragMark.effect", "to another measure"),
+        ],
     ];
-    const keys: [string, string][] = [
-        ["T", "Tap tempo: tap on each beat to see how fast it is"],
-        ["M", "Drop a rehearsal mark while playing"],
-        ["Space", "Play from the playhead, or stop where it is"],
+    // Each row: a binding for `Shortcut`, then what the key does
+    const keys: [binding: string, what: string][] = [
         [
-            "Esc",
-            "Clear the selection, or cancel a drag; with nothing to clear, leave tempo mode",
+            "T",
+            tolgee.t(
+                "tempoMode.help.keys.tap",
+                "Tap tempo: tap on each beat to see how fast it is",
+            ),
         ],
-        ["Shift + T", "Tempo mode on and off"],
+        [
+            "M",
+            tolgee.t(
+                "tempoMode.help.keys.mark",
+                "Drop a rehearsal mark while playing",
+            ),
+        ],
+        [
+            "Space",
+            tolgee.t(
+                "tempoMode.help.keys.play",
+                "Play from the playhead, or stop where it is",
+            ),
+        ],
+        [
+            "Escape",
+            tolgee.t(
+                "tempoMode.help.keys.escape",
+                "Clear the selection, or cancel a drag; with nothing to clear, leave tempo mode",
+            ),
+        ],
+        [
+            "Shift + T",
+            tolgee.t("tempoMode.help.keys.toggle", "Tempo mode on and off"),
+        ],
     ];
+    const label = tolgee.t("tempoMode.help.label", "How tempo mode works");
     return (
         <Popover.Root>
-            <ShortcutTooltip closeOnPress label="How tempo mode works">
+            <ShortcutTooltip closeOnPress label={label}>
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        aria-label="How tempo mode works"
+                        aria-label={label}
                         className={toolButton(false, true)}
                     >
                         <QuestionIcon size={13} aria-hidden />
@@ -88,11 +205,14 @@ export function TempoHelp() {
                     onPointerDown={(e) => e.stopPropagation()}
                 >
                     <div className="text-[12px] font-bold">
-                        Line the counts up with the music
+                        {tolgee.t(
+                            "tempoMode.help.title",
+                            "Line the counts up with the music",
+                        )}
                     </div>
                     <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-[11px]">
-                        {rows.map(([what, how]) => (
-                            <Fragment key={what}>
+                        {rows.map(([id, what, how]) => (
+                            <Fragment key={id}>
                                 <dt className="font-medium whitespace-nowrap">
                                     {what}
                                 </dt>
@@ -104,7 +224,7 @@ export function TempoHelp() {
                         {keys.map(([key, what]) => (
                             <Fragment key={key}>
                                 <dt>
-                                    <Keycaps shortcut={key} />
+                                    <Shortcut binding={key} />
                                 </dt>
                                 <dd className="text-text-subtitle">{what}</dd>
                             </Fragment>

@@ -74,13 +74,7 @@
         "src/hooks/useShowNotes.ts": 1,
         "src/shortcuts/handlers/useFileActionHandlers.tsx": 5,
         "src/stores/AlertModalStore.tsx": 1,
-        "src/stores/SidebarModalStore.tsx": 1,
-        "src/tempo/TapTempo.tsx": 16,
-        "src/tempo/TempoBand.tsx": 23,
-        "src/tempo/TempoHelp.tsx": 3,
-        "src/tempo/TempoModeButton.tsx": 4,
-        "src/tempo/TempoPopovers.tsx": 3,
-        "src/tempo/TempoToolbar.tsx": 11
+        "src/stores/SidebarModalStore.tsx": 1
     },
     "keysWithoutContext": [
         "actions.alignment.alignHorizontally",

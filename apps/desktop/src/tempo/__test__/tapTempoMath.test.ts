@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addTap, TAP_RESET_MS, tapBpm } from "../tapTempo";
+import { addTap, TAP_RESET_MS, tapBpm } from "../tapTempoMath";
 
 const tapAll = (times: number[]) =>
     times.reduce<number[]>((taps, t) => addTap(taps, t), []);

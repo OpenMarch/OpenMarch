@@ -14,6 +14,7 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
+import tolgee from "@/global/singletons/Tolgee";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { getActionShortcutKeys } from "@/shortcuts/labels";
@@ -46,6 +47,12 @@ export function TempoToolbar(props: {
     const metronomeKey = getActionShortcutKeys("toggleMetronome", {
         overrides,
     })?.join(" + ");
+    const metronome = tolgee.t("tempoMode.toolbar.metronome", "Metronome");
+    const unpinAll = tolgee.t("tempoMode.toolbar.unpinAll", "Unpin all");
+    const dragHint = tolgee.t(
+        "tempoMode.toolbar.dragHint",
+        "Drag a hit in the music onto its count",
+    );
     return (
         // A tooltip closes as soon as the pointer leaves its button or presses it, so none stays
         // up over a menu or the help card opened next (dana, priya)
@@ -61,7 +68,9 @@ export function TempoToolbar(props: {
             >
                 <span className="text-accent flex shrink-0 items-center gap-4 text-[12px] font-bold whitespace-nowrap">
                     <GaugeIcon size={14} weight="bold" aria-hidden />
-                    <span className="@max-[640px]:hidden">Tempo mode</span>
+                    <span className="@max-[640px]:hidden">
+                        {tolgee.t("tempoMode.toolbar.title", "Tempo mode")}
+                    </span>
                 </span>
                 <span className="bg-stroke h-16 w-px shrink-0" aria-hidden />
                 <TapTempo target={props.tapTarget} onUse={props.onUseTap} />
@@ -70,13 +79,26 @@ export function TempoToolbar(props: {
                     narrow windows too */}
                 <ShortcutTooltip
                     closeOnPress
-                    label={click ? "Metronome: on" : "Metronome: off"}
+                    label={
+                        click
+                            ? tolgee.t(
+                                  "tempoMode.toolbar.metronomeOn",
+                                  "Metronome: on",
+                              )
+                            : tolgee.t(
+                                  "tempoMode.toolbar.metronomeOff",
+                                  "Metronome: off",
+                              )
+                    }
                     shortcut={metronomeKey}
-                    hint="A click on every count, to hear whether the counts sit on the music"
+                    hint={tolgee.t(
+                        "tempoMode.toolbar.metronomeHint",
+                        "A click on every count, to hear whether the counts sit on the music",
+                    )}
                 >
                     <button
                         type="button"
-                        aria-label="Metronome"
+                        aria-label={metronome}
                         aria-pressed={click}
                         className={toolButton(click)}
                         onClick={toggleClick}
@@ -86,24 +108,35 @@ export function TempoToolbar(props: {
                             weight={click ? "fill" : "regular"}
                             aria-hidden
                         />
-                        <span>Metronome</span>
+                        <span>{metronome}</span>
                     </button>
                 </ShortcutTooltip>
                 {props.lockCount > 0 && (
                     <ShortcutTooltip
                         closeOnPress
-                        label={`Unpin all ${props.lockCount} pinned counts`}
-                        hint="Pinned counts stay where they are when you drag or tap"
+                        label={tolgee.t(
+                            "tempoMode.toolbar.unpinAllLabel",
+                            "{count, plural, one {Unpin the # pinned count} other {Unpin all # pinned counts}}",
+                            { count: props.lockCount },
+                        )}
+                        hint={tolgee.t(
+                            "tempoMode.toolbar.unpinAllHint",
+                            "Pinned counts stay where they are when you drag or tap",
+                        )}
                     >
                         <button
                             type="button"
-                            aria-label={`Unpin all (${props.lockCount})`}
+                            aria-label={tolgee.t(
+                                "tempoMode.toolbar.unpinAllAria",
+                                "Unpin all ({count})",
+                                { count: props.lockCount },
+                            )}
                             className={toolButton()}
                             onClick={props.onClearPins}
                         >
                             <PushPinSlashIcon size={12} aria-hidden />
                             <span className="@max-[860px]:hidden">
-                                Unpin all
+                                {unpinAll}
                             </span>
                             <span className="text-text-subtitle tabular-nums">
                                 {props.lockCount}
@@ -113,32 +146,32 @@ export function TempoToolbar(props: {
                 )}
                 <span
                     className="text-text-subtitle min-w-0 flex-1 truncate text-[11px]"
-                    title={DRAG_HINT}
+                    title={dragHint}
                 >
-                    {DRAG_HINT}
+                    {dragHint}
                 </span>
                 <TempoHelp />
                 <ShortcutTooltip
                     closeOnPress
-                    label="Done: leave tempo mode"
+                    label={tolgee.t(
+                        "tempoMode.toolbar.doneLabel",
+                        "Done: leave tempo mode",
+                    )}
                     shortcut="Esc"
                 >
                     <button
                         type="button"
-                        aria-label="Done"
+                        aria-label={tolgee.t("tempoMode.toolbar.done", "Done")}
                         className="bg-accent text-text-invert rounded-6 focus-visible:ring-accent pointer-events-auto flex h-22 shrink-0 items-center gap-4 px-10 text-[11px] font-bold whitespace-nowrap outline-hidden hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-1"
                         onClick={() =>
                             useTempoModeStore.getState().setOn(false)
                         }
                     >
                         <CheckIcon size={12} weight="bold" aria-hidden />
-                        Done
+                        {tolgee.t("tempoMode.toolbar.done", "Done")}
                     </button>
                 </ShortcutTooltip>
             </div>
         </TransportTooltipProvider>
     );
 }
-
-/** The toolbar's line when there's nothing to report: the main gesture */
-export const DRAG_HINT = "Drag a hit in the music onto its count";

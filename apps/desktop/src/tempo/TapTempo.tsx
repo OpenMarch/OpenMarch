@@ -5,11 +5,11 @@
  */
 import * as Popover from "@radix-ui/react-popover";
 import { HandTapIcon } from "@phosphor-icons/react";
-import {
-    Keycaps,
-    ShortcutTooltip,
-} from "@/components/timeline/ShortcutTooltip";
-import { tapBpm } from "./tapTempo";
+import { T } from "@tolgee/react";
+import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
+import Shortcut from "@/components/ui/Shortcut";
+import tolgee from "@/global/singletons/Tolgee";
+import { tapBpm } from "./tapTempoMath";
 import { toolButton } from "./TempoToolbar";
 import { useTempoUi } from "./tempoUi";
 
@@ -25,22 +25,30 @@ export function TapTempo(props: {
     const reset = useTempoUi((s) => s.resetTaps);
     const bpm = tapBpm(taps);
     const rounded = bpm === null ? null : Math.round(bpm);
+    const name = tolgee.t("tempoMode.tap.name", "Tap tempo");
+    // "Use ♩120", then the counts it goes on in a lighter span, as one sentence
+    const muted = (chunk: React.ReactNode) => (
+        <span className="text-text-subtitle font-normal">{chunk}</span>
+    );
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
             <ShortcutTooltip
                 closeOnPress
-                label="Tap tempo"
+                label={name}
                 shortcut="T"
-                hint="Tap along to find roughly what tempo the music is"
+                hint={tolgee.t(
+                    "tempoMode.tap.hint",
+                    "Tap along to find roughly what tempo the music is",
+                )}
             >
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        aria-label="Tap tempo"
+                        aria-label={name}
                         className={toolButton(open)}
                     >
                         <HandTapIcon size={12} aria-hidden />
-                        <span className="@max-[860px]:hidden">Tap tempo</span>
+                        <span className="@max-[860px]:hidden">{name}</span>
                     </button>
                 </Popover.Trigger>
             </ShortcutTooltip>
@@ -60,32 +68,46 @@ export function TapTempo(props: {
                     onInteractOutside={(e) => e.preventDefault()}
                 >
                     <div className="flex items-baseline justify-between">
-                        <span className="text-[12px] font-bold">Tap tempo</span>
+                        <span className="text-[12px] font-bold">{name}</span>
                         <span className="text-text-subtitle text-[11px]">
                             {taps.length === 0
                                 ? ""
-                                : `${taps.length} tap${taps.length === 1 ? "" : "s"}`}
+                                : tolgee.t(
+                                      "tempoMode.tap.count",
+                                      "{count, plural, one {# tap} other {# taps}}",
+                                      { count: taps.length },
+                                  )}
                         </span>
                     </div>
                     <div
                         data-testid="tap-tempo-bpm"
                         className="text-center text-[28px] leading-[32px] font-bold tabular-nums"
                     >
+                        {/* i18n-ignore: a quarter note and a number (or a dash), the same in every language */}
                         {rounded === null ? "♩ –" : `♩${rounded}`}
                     </div>
                     <div className="text-text-subtitle -mt-4 text-center text-[11px]">
                         {bpm === null ? (
                             <span className="inline-flex items-center gap-4">
-                                Tap <Keycaps shortcut="T" /> or the button on
-                                each beat
+                                <T
+                                    keyName="tempoMode.tap.instructions"
+                                    defaultValue="Tap <key></key> or the button on each beat"
+                                    params={{
+                                        key: () => <Shortcut binding="T" />,
+                                    }}
+                                />
                             </span>
                         ) : (
-                            `Average ${bpm.toFixed(1)} · starts over after 2 s`
+                            tolgee.t(
+                                "tempoMode.tap.average",
+                                "Average {bpm} · starts over after 2 s",
+                                { bpm: bpm.toFixed(1) },
+                            )
                         )}
                     </div>
                     <button
                         type="button"
-                        aria-label="Tap"
+                        aria-label={tolgee.t("tempoMode.tap.tap", "Tap")}
                         className="border-accent text-accent hover:bg-accent/10 rounded-6 h-40 border text-[12px] font-medium select-none"
                         // on press, not on release: a click lands later than the beat it's for
                         onPointerDown={(e) => {
@@ -93,7 +115,7 @@ export function TapTempo(props: {
                             tap(e.timeStamp);
                         }}
                     >
-                        Tap
+                        {tolgee.t("tempoMode.tap.tap", "Tap")}
                     </button>
                     <div className="flex gap-6">
                         <button
@@ -106,16 +128,29 @@ export function TapTempo(props: {
                                 e.currentTarget.blur();
                             }}
                         >
-                            Reset
+                            {tolgee.t("tempoMode.tap.reset", "Reset")}
                         </button>
                         <ShortcutTooltip
                             closeOnPress
                             label={
                                 props.target
-                                    ? `Set ${props.target} to ♩${rounded ?? "–"}`
-                                    : "Select some counts first"
+                                    ? tolgee.t(
+                                          "tempoMode.tap.setTarget",
+                                          "Set {target} to ♩{bpm}",
+                                          {
+                                              target: props.target,
+                                              bpm: rounded ?? "–",
+                                          },
+                                      )
+                                    : tolgee.t(
+                                          "tempoMode.tap.selectFirst",
+                                          "Select some counts first",
+                                      )
                             }
-                            hint="A steady tempo on the selected counts, or else on the tempo stretch under the playhead"
+                            hint={tolgee.t(
+                                "tempoMode.tap.useHint",
+                                "A steady tempo on the selected counts, or else on the tempo stretch under the playhead",
+                            )}
                         >
                             <button
                                 type="button"
@@ -127,11 +162,33 @@ export function TapTempo(props: {
                                     if (rounded !== null) props.onUse(rounded);
                                 }}
                             >
-                                {rounded === null ? "Use" : `Use ♩${rounded}`}
-                                {props.target && (
-                                    <span className="text-text-subtitle font-normal">
-                                        on {props.target}
-                                    </span>
+                                {rounded === null && !props.target ? (
+                                    tolgee.t("tempoMode.tap.use", "Use")
+                                ) : rounded === null ? (
+                                    <T
+                                        keyName="tempoMode.tap.useOn"
+                                        defaultValue="Use <muted>on {target}</muted>"
+                                        params={{
+                                            target: props.target,
+                                            muted,
+                                        }}
+                                    />
+                                ) : !props.target ? (
+                                    tolgee.t(
+                                        "tempoMode.tap.useBpm",
+                                        "Use ♩{bpm}",
+                                        { bpm: rounded },
+                                    )
+                                ) : (
+                                    <T
+                                        keyName="tempoMode.tap.useBpmOn"
+                                        defaultValue="Use ♩{bpm} <muted>on {target}</muted>"
+                                        params={{
+                                            bpm: rounded,
+                                            target: props.target,
+                                            muted,
+                                        }}
+                                    />
                                 )}
                             </button>
                         </ShortcutTooltip>

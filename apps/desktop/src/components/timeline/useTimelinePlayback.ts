@@ -22,6 +22,7 @@ import type { TimelinePlayback } from "./Timeline";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useIsPreviewMode } from "@/stores/PreviewModeStore";
 import { useTempoModeStore } from "@/tempo/tempoModeStore";
+import tolgee from "@/global/singletons/Tolgee";
 
 interface PlaybackState {
     readonly countGrid: CountClock;
@@ -166,8 +167,15 @@ export function useTimelinePlayback({
                       onPlayFromPlayhead: undefined,
                       playOnly:
                           tempoLoop !== null
-                              ? `Loop ${tempoLoop}`
-                              : "Play from the playhead",
+                              ? tolgee.t(
+                                    "tempoMode.timeline.playLoop",
+                                    "Loop {measures}",
+                                    { measures: tempoLoop },
+                                )
+                              : tolgee.t(
+                                    "tempoMode.timeline.playFromPlayhead",
+                                    "Play from the playhead",
+                                ),
                   }
                 : {
                       liveBeat,

@@ -13,6 +13,7 @@
  *
  * Beat 1 always starts at 0, so it is an implicit lock.
  */
+import tolgee from "@/global/singletons/Tolgee";
 
 /** The shortest a count may get: 400 BPM */
 export const MIN_COUNT_SECONDS = 60 / 400;
@@ -162,7 +163,9 @@ export function retime(
     return {
         durations: next,
         locks: nextLocks,
-        note: `Kept count ${lock} on the music, so the tempo was adjusted to fit`,
+        note: tolgee.t("tempoMode.errors.keptCountOnMusic", {
+            count: String(lock),
+        }),
     };
 }
 
@@ -365,23 +368,30 @@ export function moveLimits(
         ? starts[beat - 1]! + MIN_COUNT_SECONDS
         : starts[prev]! + left * MIN_COUNT_SECONDS;
     let max = afterHold ? Infinity : starts[prev]! + left * MAX_COUNT_SECONDS;
-    const pinBefore =
-        prev > 1 ? `count ${prev} is pinned` : "the show starts here";
+    const pinned = prev > 1 ? { count: String(prev) } : null;
     let minReason = afterHold
-        ? "a hold can't be shorter than a count at 400 BPM"
-        : `${pinBefore}: the counts between would pass 400 BPM`;
-    let maxReason = `${pinBefore}: the counts between would drop under 20 BPM`;
+        ? tolgee.t("tempoMode.errors.holdTooShort")
+        : pinned
+          ? tolgee.t("tempoMode.errors.tooFastAfterPin", pinned)
+          : tolgee.t("tempoMode.errors.tooFastFromStart");
+    let maxReason = pinned
+        ? tolgee.t("tempoMode.errors.tooSlowAfterPin", pinned)
+        : tolgee.t("tempoMode.errors.tooSlowFromStart");
     if (next !== null && next < starts.length) {
         const right = next - beat;
         const nMax = starts[next]! - right * MIN_COUNT_SECONDS;
         const nMin = starts[next]! - right * MAX_COUNT_SECONDS;
         if (nMax < max) {
             max = nMax;
-            maxReason = `count ${next} is pinned`;
+            maxReason = tolgee.t("tempoMode.errors.countPinned", {
+                count: String(next),
+            });
         }
         if (nMin > min) {
             min = nMin;
-            minReason = `count ${next} is pinned`;
+            minReason = tolgee.t("tempoMode.errors.countPinned", {
+                count: String(next),
+            });
         }
     }
     return { min, max, minReason, maxReason };

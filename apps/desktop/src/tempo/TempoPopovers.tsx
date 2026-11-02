@@ -11,7 +11,9 @@ import {
     CaretRightIcon,
     PauseIcon,
 } from "@phosphor-icons/react";
-import { Keycaps } from "@/components/timeline/ShortcutTooltip";
+import { T } from "@tolgee/react";
+import Shortcut from "@/components/ui/Shortcut";
+import tolgee from "@/global/singletons/Tolgee";
 import { useOnScreen } from "./bandLayout";
 import { CountAsk, CountRange, Editor, Menu } from "./tempoBandTypes";
 import { CountAnswer, useTempoUi } from "./tempoUi";
@@ -115,7 +117,7 @@ export function CountAskPopover({
             </span>
             <span className="mt-1 shrink-0 self-center">
                 {choice === picked ? (
-                    <Keycaps shortcut="Enter" />
+                    <Shortcut binding="Enter" />
                 ) : (
                     <CaretRightIcon
                         size={12}
@@ -142,28 +144,49 @@ export function CountAskPopover({
             <div className="text-text-subtitle text-[11px]">{ask.intro}</div>
             {option(
                 "keep",
-                "Keep everything else in place",
+                tolgee.t(
+                    "tempoMode.popovers.countAsk.keep",
+                    "Keep everything else in place",
+                ),
                 ask.keep.text,
                 "disabled" in ask.keep ? ask.keep.disabled : undefined,
             )}
-            {option("shift", "Shift everything after", ask.shift.text)}
+            {option(
+                "shift",
+                tolgee.t(
+                    "tempoMode.popovers.countAsk.shift",
+                    "Shift everything after",
+                ),
+                ask.shift.text,
+            )}
             {ask.hold && (
                 <>
                     <div className="text-text-subtitle pt-2 text-[11px]">
-                        The music has no extra beat, but the marchers need a
-                        breath here?
+                        {tolgee.t(
+                            "tempoMode.popovers.countAsk.holdIntro",
+                            "The music has no extra beat, but the marchers need a breath here?",
+                        )}
                     </div>
                     {option(
                         "hold",
-                        "Hold the drill here instead",
+                        tolgee.t(
+                            "tempoMode.popovers.countAsk.hold",
+                            "Hold the drill here instead",
+                        ),
                         ask.hold.text,
                         "disabled" in ask.hold ? ask.hold.disabled : undefined,
                     )}
                 </>
             )}
             <div className="text-text-subtitle text-[10px]">
-                Click one to do it. Enter does the one marked, your last choice;
-                Esc cancels, and Undo takes any of them back.
+                <T
+                    keyName="tempoMode.popovers.countAsk.footer"
+                    defaultValue="Click one to do it. <enter></enter> does the one marked, your last choice; <escape></escape> cancels, and Undo takes any of them back."
+                    params={{
+                        enter: () => <Shortcut binding="Enter" />,
+                        escape: () => <Shortcut binding="Escape" />,
+                    }}
+                />
             </div>
         </div>
     );
@@ -258,7 +281,9 @@ export function MarkGlyph({ letter }: { letter: string }) {
 export function NumberGlyph({ n }: { n: number }) {
     return (
         <span className="text-[9px] leading-none font-bold" aria-hidden>
-            m{n}
+            {tolgee.t("tempoMode.popovers.measureGlyph", "m{number}", {
+                number: String(n),
+            })}
         </span>
     );
 }

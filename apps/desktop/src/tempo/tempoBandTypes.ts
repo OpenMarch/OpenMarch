@@ -126,8 +126,8 @@ export interface Menu {
         /** The counts the item changes, shown in the lanes while the item is pointed at */
         range?: CountRange;
         icon?: ReactNode;
-        /** Quiet text at the right: what it goes to, a value */
-        aside?: string;
+        /** Quiet text at the right: what it goes to, a value, a shortcut */
+        aside?: ReactNode;
         /** A line above it, starting a group */
         separatorBefore?: boolean;
     }[];

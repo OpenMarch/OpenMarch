@@ -3,6 +3,7 @@
  * names, counts to x and back, grab distances, the header slot and the visible scroll window.
  */
 import { useLayoutEffect, useState } from "react";
+import tolgee from "@/global/singletons/Tolgee";
 import { useHeaderSlot } from "./tempoUi";
 
 /** How far above or below the tempo line (px) a press still takes it */
@@ -14,27 +15,58 @@ export const MUSIC = { top: 118, height: 124 };
 export const TEMPO_BAND_HEIGHT = MUSIC.top + MUSIC.height + 6;
 /** The lane names' column at the view's left edge: as wide as the home page's column before beat 0 */
 export const LANE_GUTTER = 40;
-/** The lanes' names in that column, with what each lane does */
+/**
+ * The lanes' names in that column, with what each lane does. Getters, so each read is in the
+ * current language.
+ */
 export const LANES = [
     {
         ...MARKS,
-        name: "Marks",
-        title: "Rehearsal marks: double-click to name one, drag one to another measure, or press M while playing to drop the next",
+        get name() {
+            return tolgee.t("tempoMode.lanes.marks.name", "Marks");
+        },
+        get title() {
+            return tolgee.t(
+                "tempoMode.lanes.marks.title",
+                "Rehearsal marks: double-click to name one, drag one to another measure, or press M while playing to drop the next",
+            );
+        },
     },
     {
         ...MEASURES,
-        name: "Meas.",
-        title: "Measures: drag along to select counts, right-click or double-click a number to renumber from there, click a time signature to change it",
+        get name() {
+            return tolgee.t("tempoMode.lanes.measures.name", "Meas.");
+        },
+        get title() {
+            return tolgee.t(
+                "tempoMode.lanes.measures.title",
+                "Measures: drag along to select counts, right-click or double-click a number to renumber from there, click a time signature to change it",
+            );
+        },
     },
     {
         ...TEMPO,
-        name: "Tempo",
-        title: "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change or type a tempo. Drag off the line to select counts",
+        get name() {
+            return tolgee.t("tempoMode.lanes.tempo.name", "Tempo");
+        },
+        get title() {
+            return tolgee.t(
+                "tempoMode.lanes.tempo.title",
+                "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change or type a tempo. Drag off the line to select counts",
+            );
+        },
     },
     {
         ...MUSIC,
-        name: "Music",
-        title: "The music: drag a hit onto its count, or a count's handle (the triangle at the top) onto the music",
+        get name() {
+            return tolgee.t("tempoMode.lanes.music.name", "Music");
+        },
+        get title() {
+            return tolgee.t(
+                "tempoMode.lanes.music.title",
+                "The music: drag a hit onto its count, or a count's handle (the triangle at the top) onto the music",
+            );
+        },
     },
 ];
 

@@ -25,6 +25,7 @@ import {
 import clsx from "clsx";
 import { ShortcutTooltip } from "./ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
+import tolgee from "@/global/singletons/Tolgee";
 import { isMac } from "./platform";
 import { START_INK } from "./startFlagInk";
 import type { TimelineNavigation } from "./TimelineViewModel";
@@ -519,7 +520,7 @@ const playOnlyGuide = (
         ? {
               mode: "play",
               icon: STOP_ICON,
-              label: "Stop here",
+              label: tolgee.t("tempoMode.timeline.stopHere", "Stop here"),
               shortcut: TRANSPORT_SHORTCUTS.play,
           }
         : {

@@ -5,7 +5,10 @@
 import { GaugeIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { useEffect } from "react";
+import { T } from "@tolgee/react";
 import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
+import Shortcut from "@/components/ui/Shortcut";
+import tolgee from "@/global/singletons/Tolgee";
 import { useTempoModeStore } from "./tempoModeStore";
 import { installTempoKeyGuard } from "./tempoShortcuts";
 
@@ -29,18 +32,36 @@ export function TempoModeButton() {
     }, []);
     return (
         <ShortcutTooltip
-            label={on ? "Tempo mode: on" : "Tempo mode"}
+            label={
+                on
+                    ? tolgee.t("tempoMode.button.labelOn", "Tempo mode: on")
+                    : tolgee.t("tempoMode.button.label", "Tempo mode")
+            }
             shortcut="Shift + T"
             hint={
-                on
-                    ? "Line the counts up with the music. Esc or Shift + T leaves."
-                    : "Line the counts up with the music: tempo, time signatures, rehearsal marks"
+                on ? (
+                    <span className="text-text-subtitle block text-[11px]">
+                        <T
+                            keyName="tempoMode.button.hintOn"
+                            defaultValue="Line the counts up with the music. <escape></escape> or <toggle></toggle> leaves."
+                            params={{
+                                escape: () => <Shortcut binding="Escape" />,
+                                toggle: () => <Shortcut binding="Shift + T" />,
+                            }}
+                        />
+                    </span>
+                ) : (
+                    tolgee.t(
+                        "tempoMode.button.hint",
+                        "Line the counts up with the music: tempo, time signatures, rehearsal marks",
+                    )
+                )
             }
         >
             <button
                 type="button"
                 data-testid="timeline-tempo-mode"
-                aria-label="Tempo mode"
+                aria-label={tolgee.t("tempoMode.button.label", "Tempo mode")}
                 aria-pressed={on}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={toggle}
@@ -50,7 +71,9 @@ export function TempoModeButton() {
                 )}
             >
                 <GaugeIcon size={16} weight={on ? "bold" : "regular"} />
-                <span className="text-[11px]">Tempo</span>
+                <span className="text-[11px]">
+                    {tolgee.t("tempoMode.button.text", "Tempo")}
+                </span>
             </button>
         </ShortcutTooltip>
     );

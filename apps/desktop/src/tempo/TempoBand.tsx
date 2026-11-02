@@ -49,6 +49,10 @@ import {
     XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { useTranslate } from "@tolgee/react";
+import { formatBinding } from "@/shortcuts/bindings";
+import Shortcut from "@/components/ui/Shortcut";
+import { isMacPlatform } from "@/shortcuts/platform";
 import { queryClient } from "@/App";
 import { historyKeys } from "@/hooks/queries/useHistory";
 import { subscribeHistoryChanges } from "@/db-functions/history";
@@ -151,7 +155,6 @@ import {
     beatAtX,
     cssColor,
     fontOf,
-    upperFirst,
     useScrollWindow,
     xOf,
 } from "./tempoLanesLayout";
@@ -181,6 +184,7 @@ export const TEMPO_BAND: TimelineBand = {
 // eslint-disable-next-line max-lines-per-function
 function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const { top, width, pixelsPerBeat: ppb, beatCount } = geometry;
+    const { t } = useTranslate();
     const rootRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const win = useScrollWindow(rootRef);
@@ -507,14 +511,17 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 await work();
             } catch (e) {
                 toast.error(
-                    `${label}: ${e instanceof Error ? e.message : String(e)}`,
+                    t("tempoMode.band.toast.failed", {
+                        action: label,
+                        error: e instanceof Error ? e.message : String(e),
+                    }),
                 );
             } finally {
                 setBusy(false);
                 setPreview(null);
             }
         },
-        [busy],
+        [busy, t],
     );
     const commit = useCallback(
         (
@@ -526,7 +533,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         ) => {
             if (!result) {
                 toast.error(
-                    `${label}: that would make a count too fast or too slow`,
+                    t("tempoMode.band.toast.tooFastOrSlow", { action: label }),
                 );
                 setPreview(null);
                 return;
@@ -536,7 +543,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 commitEdit(data, result, refetch, audioOffset, changes),
             );
         },
-        [data, refetch, run, changes],
+        [data, refetch, run, changes, t],
     );
 
     // ---- drawing -------------------------------------------------------------------------
@@ -950,20 +957,40 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const measureLabel = (beat: number) => {
         const m = measureAt(beat);
         return m
-            ? `m. ${m.number} count ${beat - m.start + 1}`
-            : `count ${beat}`;
+            ? t("tempoMode.band.label.measureCount", {
+                  measure: String(m.number),
+                  count: String(beat - m.start + 1),
+              })
+            : t("tempoMode.band.label.count", { count: String(beat) });
+    };
+    /** The measure holding `beat`, "m. 11" (or its count, before the first measure) */
+    const measureOnlyLabel = (beat: number) => {
+        const m = measureAt(beat);
+        return m
+            ? t("tempoMode.band.label.measure", {
+                  measure: String(m.number),
+              })
+            : measureLabel(beat);
     };
     /** Counts `from`..`to - 1` in measure words: "m. 11 count 1 to m. 12 count 4" */
     const rangeLabel = (from: number, to: number) =>
         to - from <= 1
             ? measureLabel(from)
-            : `${measureLabel(from)} to ${measureLabel(to - 1)}`;
+            : t("tempoMode.band.label.range", {
+                  from: measureLabel(from),
+                  to: measureLabel(to - 1),
+              });
     /** The same, shorter, in measures: "m. 11–12" */
     const measuresLabel = (from: number, to: number) => {
         const a = measureAt(from)?.number;
         const b = measureAt(Math.max(from, to - 1))?.number;
         if (a === undefined || b === undefined) return rangeLabel(from, to);
-        return a === b ? `m. ${a}` : `m. ${a}–${b}`;
+        return a === b
+            ? t("tempoMode.band.label.measure", { measure: String(a) })
+            : t("tempoMode.band.label.measures", {
+                  from: String(a),
+                  to: String(b),
+              });
     };
     // Play loops the selected measures (owner, 2026-10-30): the transport reads them, and the
     // Play button's tooltip names them
@@ -1011,7 +1038,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const v: number[] = [];
         for (let b = from; b < to && b < lengths.length; b++)
             if (!data.holds.has(b)) v.push(qBpm(b, lengths));
-        if (v.length === 0) return "a hold";
+        if (v.length === 0) return t("tempoMode.band.label.aHold");
         const lo = Math.min(...v);
         const hi = Math.max(...v);
         if (hi - lo <= 1.2)
@@ -1102,13 +1129,18 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 : movePinsWithMusic(data.durations, data.locks, seconds);
         if (firstPin !== null && !moved) {
             toast.error(
-                `Can't move the music that far: ${measureLabel(firstPin)} is pinned to its hit, and the counts before it would get too fast. Unpin it first, or drag a hit closer to count 1.`,
+                t("tempoMode.band.toast.musicCantMove", {
+                    where: measureLabel(firstPin),
+                }),
                 { id: NOTE_TOAST },
             );
             return;
         }
-        const said = `Moved the music ${Math.abs(seconds).toFixed(2)} s ${seconds > 0 ? "earlier" : "later"}, so that hit is on count 1`;
-        void run("Music start", async () => {
+        const movedParams = {
+            seconds: Math.abs(seconds).toFixed(2),
+            direction: seconds > 0 ? "earlier" : "later",
+        };
+        void run(t("tempoMode.band.action.musicStart"), async () => {
             // in the show's history: it undoes like any tempo edit
             if (moved)
                 await writeDurations({
@@ -1122,8 +1154,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             await refetch();
             toast.success(
                 moved
-                    ? `${said}. The pinned counts moved with the music, so they're still on their hits.`
-                    : said,
+                    ? t("tempoMode.band.toast.musicMovedWithPins", movedParams)
+                    : t("tempoMode.band.toast.musicMoved", movedParams),
             );
         });
     };
@@ -1151,7 +1183,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const typed = new Set(changes);
         if (from > 1) typed.add(from);
         if (to < data.storedCount) typed.add(to);
-        commit("Tempo", result && { ...result, changes: typed });
+        commit(
+            t("tempoMode.band.action.tempo"),
+            result && {
+                ...result,
+                changes: typed,
+            },
+        );
     };
     /** "120" or "120-90" as tempos, or why it isn't one (priya: say the range) */
     const parseTempo = (
@@ -1162,14 +1200,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             .match(/^(\d+(?:\.\d+)?)\s*(?:(?:-|>|→|to)\s*(\d+(?:\.\d+)?))?$/);
         if (!m)
             return {
-                error: `"${value}" isn't a tempo: type a number like 120, or 120-90 to change gradually`,
+                error: t("tempoMode.band.editor.notATempo", { value }),
             };
         const a = Number(m[1]);
         const b = m[2] ? Number(m[2]) : a;
         return a >= 20 && a <= 400 && b >= 20 && b <= 400
             ? { tempo: [a, b] }
             : {
-                  error: `"${value}" is out of range: a tempo goes from 20 to 400 beats a minute`,
+                  error: t("tempoMode.band.editor.tempoOutOfRange", { value }),
               };
     };
     /** A tempo segment's tempo as the editor shows it: "120", or "120-90" for a gradual one */
@@ -1192,21 +1230,29 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             x: e.clientX,
             y: e.clientY,
             value: current,
-            hint: `${
+            hint:
                 to - from <= 1
-                    ? `Tempo of ${measureLabel(from)}`
-                    : `Tempo from ${measureLabel(from)} to ${measureLabel(to - 1)}`
-            }: "120", or "120-90" to change gradually`,
+                    ? t("tempoMode.band.editor.tempoOfHint", {
+                          where: measureLabel(from),
+                      })
+                    : t("tempoMode.band.editor.tempoFromToHint", {
+                          from: measureLabel(from),
+                          to: measureLabel(to - 1),
+                      }),
             range: { from, to },
             onCommit: (value) => {
-                const t = parseTempo(value);
-                if ("tempo" in t) setTempo(from, to, t.tempo[0], t.tempo[1]);
-                else toast.error(t.error);
+                const parsed = parseTempo(value);
+                if ("tempo" in parsed)
+                    setTempo(from, to, parsed.tempo[0], parsed.tempo[1]);
+                else toast.error(parsed.error);
             },
             extra:
                 whole && (whole.from !== from || whole.to !== to)
                     ? {
-                          label: `Whole stretch ${rangeLabel(whole.from, whole.to)} (now ♩${segmentText(whole)}) instead`,
+                          label: t("tempoMode.band.editor.wholeStretch", {
+                              range: rangeLabel(whole.from, whole.to),
+                              tempo: segmentText(whole),
+                          }),
                           onSelect: () =>
                               editTempo(
                                   e,
@@ -1222,13 +1268,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const r = ui.range;
         if (!r) return;
         if ([...data.locks].some((l) => l > r.from && l < r.to)) {
-            toast.error(
-                "There are pinned counts in the selection; unpin them first",
-            );
+            toast.error(t("tempoMode.band.toast.pinsInSelection"));
             return;
         }
         commit(
-            factor < 1 ? "Counts twice as fast" : "Counts half as fast",
+            factor < 1
+                ? t("tempoMode.band.action.countsTwiceAsFast")
+                : t("tempoMode.band.action.countsHalfAsFast"),
             retime(
                 data.durations,
                 data.locks,
@@ -1255,11 +1301,15 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             if (result.kept)
                 parts.push(
                     keptText?.(result.kept) ??
-                        `${result.kept} move(s) kept their counts`,
+                        t("tempoMode.band.toast.movesKept", {
+                            count: result.kept,
+                        }),
                 );
             if (result.couldNotKeep)
                 parts.push(
-                    `${result.couldNotKeep} move(s) couldn't keep their counts and changed length`,
+                    t("tempoMode.band.toast.movesCouldNotKeep", {
+                        count: result.couldNotKeep,
+                    }),
                 );
             toast.success(parts.join(". "));
         });
@@ -1295,34 +1345,56 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     /** A move by the page it starts on: "Page 11" */
     const moveName = (m: MoveSpan) => {
         const p = pageAt(m.start);
-        return p ? `Page ${p.name}` : `The move from ${measureLabel(m.start)}`;
+        return p
+            ? t("tempoMode.band.move.page", { page: p.name })
+            : t("tempoMode.band.move.from", { where: measureLabel(m.start) });
     };
-    const countsText = (n: number) => (n === 1 ? "1 count" : `${n} counts`);
+    /** A move as the subject of a sentence: "Its move" when it is the page's own */
+    const whoseMove = (m: MoveSpan, own: boolean) => {
+        if (own) return t("tempoMode.band.move.its");
+        const p = pageAt(m.start);
+        return p
+            ? t("tempoMode.band.move.pagesMove", { page: p.name })
+            : t("tempoMode.band.move.from", { where: measureLabel(m.start) });
+    };
     /** "m. 103 count 4, before C" when a rehearsal mark starts right after */
     const holdSpot = (end: number) => {
         const next = data.measures.find((m) => m.start === end);
-        return `${measureLabel(end - 1)}${next?.mark ? `, before ${next.mark}` : ""}`;
+        return next?.mark
+            ? t("tempoMode.band.label.beforeMark", {
+                  where: measureLabel(end - 1),
+                  mark: next.mark,
+              })
+            : measureLabel(end - 1);
     };
+    /** A page's counts before and after an edit: "Page 11: 8 → 9 counts" */
+    const pageCountsText = (name: string, from: number, to: number) =>
+        t("tempoMode.band.ask.pageCounts", {
+            page: name,
+            from: String(from),
+            to,
+        });
     const readMovesSafely = () => readMoves().catch(() => [] as MoveSpan[]);
 
     const askAdd = async (
         e: { clientX: number; clientY: number },
         at: number,
         count: number,
-        what: string,
+        /** The box's title ("Add a count before …") and the toast once done ("Added …") */
+        what: { title: string; done: string },
     ) => {
         const whole = count > 1;
         const span = keepSpan(at === 1 ? 1 : at - 1, whole);
         const len = data.durations[Math.max(1, at - 1)] ?? 0.5;
         const moves = await readMovesSafely();
         const page = pageAt(Math.max(1, at - 1));
-        const pageText = page
-            ? `Page ${page.name}: ${page.counts} → ${page.counts + count} counts`
-            : `${countsText(count)} more`;
+        const pageText = t("tempoMode.band.ask.pagesSentence", {
+            pages: page
+                ? pageCountsText(page.name, page.counts, page.counts + count)
+                : t("tempoMode.band.ask.countsMore", { count }),
+        });
         const whose = (m: MoveSpan) =>
-            page && moveName(m) === `Page ${page.name}`
-                ? "its move"
-                : `${moveName(m)}'s move`;
+            whoseMove(m, !!page && pageAt(m.start)?.name === page.name);
         // The moves the new counts lengthen: one running over the spot, or a page's own move
         // ending at a page boundary (the page before takes the count)
         const grows = moves.filter(
@@ -1331,19 +1403,33 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 (m.end > at || (m.end === at && isPageStart(at))),
         );
         const drill = (choice: CountChoice) => {
-            if (grows.length === 0)
-                return "No move runs over it, so the marchers hold through it.";
+            if (grows.length === 0) return t("tempoMode.band.ask.add.noMove");
             if (grows.length === 1) {
                 const m = grows[0]!;
                 const n = m.end - m.start;
                 return choice === "keep"
-                    ? `${whose(m)} stays ${n} counts and its marchers hold ${countsText(count)} at its end.`
-                    : `${whose(m)} stretches from ${n} to ${n + count} counts.`;
+                    ? t("tempoMode.band.ask.add.oneKeep", {
+                          move: whose(m),
+                          moveCounts: n,
+                          count,
+                      })
+                    : t("tempoMode.band.ask.add.oneShift", {
+                          move: whose(m),
+                          from: String(n),
+                          to: n + count,
+                      });
             }
             return choice === "keep"
-                ? `The ${grows.length} moves over it keep their counts; their marchers hold ${countsText(count)} at each one's end.`
-                : `The ${grows.length} moves over it each get ${countsText(count)} longer.`;
+                ? t("tempoMode.band.ask.add.manyKeep", {
+                      moves: grows.length,
+                      count,
+                  })
+                : t("tempoMode.band.ask.add.manyShift", {
+                      moves: grows.length,
+                      count,
+                  });
         };
+        const laterStay = t("tempoMode.band.ask.laterCountsStay");
         const starts = startsOf(data.durations);
         // The breath instead: the move over the spot ends a count early, no count added
         const breath =
@@ -1353,22 +1439,34 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                           m.start < at && m.end >= at && m.end - m.start >= 2,
                   )
                 : [];
-        const breathText = () => {
+        /** What the breath does (the toast once it's done says just this) */
+        const breathDone = () => {
             if (breath.length === 1) {
                 const m = breath[0]!;
                 const n = m.end - m.start;
-                return `No count is added and the music stays. ${moveName(m)}: move ${n} → ${n - 1} counts; the marchers hold on ${holdSpot(m.end)}.`;
+                return t("tempoMode.band.ask.breath.one", {
+                    move: moveName(m),
+                    from: String(n),
+                    to: n - 1,
+                    where: holdSpot(m.end),
+                });
             }
-            return `No count is added and the music stays. The ${breath.length} moves over it end 1 count early; their marchers hold for that count.`;
+            return t("tempoMode.band.ask.breath.many", {
+                moves: breath.length,
+            });
         };
+        const breathText = () =>
+            [t("tempoMode.band.ask.breath.noCountAdded"), breathDone()].join(
+                " ",
+            );
         setAsk({
             x: e.clientX,
             y: e.clientY,
             boundary:
                 count === 1 &&
                 (isPageStart(at) || moves.some((m) => m.end === at)),
-            title: `Add ${what}`,
-            intro: "For when the music has an extra beat here that the counts miss. The recording doesn't change: only the counts do.",
+            title: what.title,
+            intro: t("tempoMode.band.ask.add.intro"),
             range: { from: at, to: at },
             keep: span
                 ? (() => {
@@ -1376,11 +1474,21 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                       const n = span.e - span.a;
                       const tempo = `${bpmText((n * 60) / total)} → ${bpmText(((n + count) * 60) / total)}`;
                       return {
-                          text: `${
+                          text: [
                               whole
-                                  ? `${rangeLabel(span.a, span.e)} make room for it in the same time (${tempo})`
-                                  : `${measureLabel(span.a).split(" count")[0]} gets ${n + count} counts in the same time (${tempo})`
-                          }. Later counts stay on the music: for when they already are. ${pageText}. ${upperFirst(drill("keep"))}`,
+                                  ? t("tempoMode.band.ask.add.keepWhole", {
+                                        range: rangeLabel(span.a, span.e),
+                                        tempo,
+                                    })
+                                  : t("tempoMode.band.ask.add.keepMeasure", {
+                                        measure: measureOnlyLabel(span.a),
+                                        count: n + count,
+                                        tempo,
+                                    }),
+                              laterStay,
+                              pageText,
+                              drill("keep"),
+                          ].join(" "),
                           run: () => {
                               const before = data.durations.slice(
                                   span.a,
@@ -1392,7 +1500,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                   ...before.slice(at - span.a),
                               ];
                               countEdit(
-                                  `Added ${what}`,
+                                  what.done,
                                   () =>
                                       insertCounts({
                                           at,
@@ -1409,19 +1517,29 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                           },
                                       }),
                                   (kept) =>
-                                      `${kept === 1 ? "The move over it kept its counts: its marchers hold" : `${kept} moves kept their counts: their marchers hold`} ${countsText(count)} at the end`,
+                                      t("tempoMode.band.toast.movesKeptHold", {
+                                          kept,
+                                          count,
+                                      }),
                               );
                           },
                       };
                   })()
                 : {
-                      text: "Pin a count after it first, so there's a stretch of music to fit it into",
-                      disabled: "no pin after",
+                      text: t("tempoMode.band.ask.add.needPin"),
+                      disabled: t("tempoMode.band.ask.noPinAfter"),
                   },
             shift: {
-                text: `${countsText(count)} more time here (${(len * count).toFixed(2)} s): later counts and drill move that much later against the music, for when they were early. ${pageText}. ${upperFirst(drill("shift"))}`,
+                text: [
+                    t("tempoMode.band.ask.add.shift", {
+                        count,
+                        seconds: (len * count).toFixed(2),
+                    }),
+                    pageText,
+                    drill("shift"),
+                ].join(" "),
                 run: () =>
-                    countEdit(`Added ${what}`, () =>
+                    countEdit(what.done, () =>
                         insertCounts({
                             at,
                             count,
@@ -1437,22 +1555,22 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                       ? {
                             text: breathText(),
                             run: () =>
-                                void run("Hold the drill", async () => {
-                                    await endMovesEarly({
-                                        timelineIds: breath.map((m) => m.id),
-                                    });
-                                    await refetch();
-                                    toast.success(
-                                        breathText().replace(
-                                            "No count is added and the music stays. ",
-                                            "",
-                                        ),
-                                    );
-                                }),
+                                void run(
+                                    t("tempoMode.band.action.holdDrill"),
+                                    async () => {
+                                        await endMovesEarly({
+                                            timelineIds: breath.map(
+                                                (m) => m.id,
+                                            ),
+                                        });
+                                        await refetch();
+                                        toast.success(breathDone());
+                                    },
+                                ),
                         }
                       : {
-                            text: "For a breath in the drill with the music as it is: no move runs over this spot to end early.",
-                            disabled: "no move here",
+                            text: t("tempoMode.band.ask.breath.none"),
+                            disabled: t("tempoMode.band.ask.noMoveHere"),
                         },
         });
     };
@@ -1475,42 +1593,63 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 start + p.counts > from
             );
         });
-        const pageText = pagesHit.length
-            ? pagesHit
-                  .map((p) => {
-                      const start = p.beats[0]!.index;
-                      const lost =
-                          Math.min(to, start + p.counts) -
-                          Math.max(from, start);
-                      return `Page ${p.name}: ${p.counts} → ${p.counts - lost} counts`;
-                  })
-                  .join(", ")
-            : `${countsText(removed)} fewer`;
+        const pageText = t("tempoMode.band.ask.pagesSentence", {
+            pages: pagesHit.length
+                ? pagesHit
+                      .map((p) => {
+                          const start = p.beats[0]!.index;
+                          const lost =
+                              Math.min(to, start + p.counts) -
+                              Math.max(from, start);
+                          return pageCountsText(
+                              p.name,
+                              p.counts,
+                              p.counts - lost,
+                          );
+                      })
+                      .join(", ")
+                : t("tempoMode.band.ask.countsFewer", { count: removed }),
+        });
         const whose = (m: MoveSpan) =>
-            pagesHit.length === 1 && moveName(m) === `Page ${pagesHit[0]!.name}`
-                ? "its move"
-                : `${moveName(m)}'s move`;
+            whoseMove(
+                m,
+                pagesHit.length === 1 &&
+                    pageAt(m.start)?.name === pagesHit[0]!.name,
+            );
         // The moves that lose counts: the ones running over a removed count
         const losing = moves.filter((m) => m.start < to && m.end > from);
         const drill = (choice: CountChoice) => {
-            if (losing.length === 0) return "No move runs over it.";
+            if (losing.length === 0)
+                return t("tempoMode.band.ask.remove.noMove");
             if (losing.length === 1) {
                 const m = losing[0]!;
                 const n = m.end - m.start;
                 return choice === "keep"
-                    ? `${whose(m)} keeps its ${n} counts by ending ${countsText(removed)} later, if nothing is in the way there.`
-                    : `${whose(m)} gets ${countsText(removed)} shorter.`;
+                    ? t("tempoMode.band.ask.remove.oneKeep", {
+                          move: whose(m),
+                          moveCounts: n,
+                          count: removed,
+                      })
+                    : t("tempoMode.band.ask.remove.oneShift", {
+                          move: whose(m),
+                          count: removed,
+                      });
             }
             return choice === "keep"
-                ? `The ${losing.length} moves over it keep their counts by ending later, if nothing is in the way there.`
-                : `The ${losing.length} moves over it get shorter.`;
+                ? t("tempoMode.band.ask.remove.manyKeep", {
+                      moves: losing.length,
+                  })
+                : t("tempoMode.band.ask.remove.manyShift", {
+                      moves: losing.length,
+                  });
         };
         const starts = startsOf(data.durations);
+        const done = t("tempoMode.band.ask.removed", { where: what });
         setAsk({
             x: e.clientX,
             y: e.clientY,
-            title: `Remove ${what}`,
-            intro: "For when the music has fewer beats here than counts. The recording doesn't change: only the counts do.",
+            title: t("tempoMode.band.ask.remove.title", { where: what }),
+            intro: t("tempoMode.band.ask.remove.intro"),
             range: { from, to },
             keep:
                 span && span.e - span.a > removed
@@ -1519,7 +1658,19 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                           const n = span.e - span.a;
                           const tempo = `${bpmText((n * 60) / total)} → ${bpmText(((n - removed) * 60) / total)}`;
                           return {
-                              text: `The counts around it fill the same time (${whole ? rangeLabel(span.a, span.e) : measureLabel(span.a).split(" count")[0]}: ${n} → ${n - removed} counts, ${tempo}). Later counts stay on the music: for when they already are. ${pageText}. ${upperFirst(drill("keep"))}`,
+                              text: [
+                                  t("tempoMode.band.ask.remove.keep", {
+                                      where: whole
+                                          ? rangeLabel(span.a, span.e)
+                                          : measureOnlyLabel(span.a),
+                                      from: String(n),
+                                      to: n - removed,
+                                      tempo,
+                                  }),
+                                  t("tempoMode.band.ask.laterCountsStay"),
+                                  pageText,
+                                  drill("keep"),
+                              ].join(" "),
                               run: () => {
                                   const before = data.durations.slice(
                                       span.a,
@@ -1529,7 +1680,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                       ...before.slice(0, from - span.a),
                                       ...before.slice(to - span.a),
                                   ];
-                                  countEdit(`Removed ${what}`, () =>
+                                  countEdit(done, () =>
                                       deleteCounts({
                                           from,
                                           to,
@@ -1548,13 +1699,17 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                           };
                       })()
                     : {
-                          text: "Pin a count after it first, so the counts around it have a stretch of music to fill",
-                          disabled: "no pin after",
+                          text: t("tempoMode.band.ask.remove.needPin"),
+                          disabled: t("tempoMode.band.ask.noPinAfter"),
                       },
             shift: {
-                text: `Its time goes too: later counts and drill move earlier against the music, for when they were late. ${pageText}. ${upperFirst(drill("shift"))}`,
+                text: [
+                    t("tempoMode.band.ask.remove.shift"),
+                    pageText,
+                    drill("shift"),
+                ].join(" "),
                 run: () =>
-                    countEdit(`Removed ${what}`, () =>
+                    countEdit(done, () =>
                         deleteCounts({ from, to, drill: "adjust" }),
                     ),
             },
@@ -1566,10 +1721,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         if (measure.id === null) return;
         const n = value.trim() === "" ? null : Number(value);
         if (n !== null && !Number.isInteger(n)) {
-            toast.error(`"${value}" isn't a measure number`);
+            toast.error(t("tempoMode.band.toast.notMeasureNumber", { value }));
             return;
         }
-        void run("Measure number", async () => {
+        void run(t("tempoMode.band.action.measureNumber"), async () => {
             await writeMeasureNumber({ measureId: measure.id!, number: n });
             await refetch();
         });
@@ -1587,25 +1742,30 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         measure: TempoMeasure,
     ) => {
         if (measure.id === null) {
-            toast.info("Add pages or counts out here first");
+            toast.info(t("tempoMode.band.toast.addCountsFirst"));
             return;
         }
         setEditor({
             x: e.clientX,
             y: e.clientY,
             value: measure.mark ?? nextMarkName(),
-            hint: `Rehearsal mark at measure ${measure.number} (empty removes it)`,
+            hint: t("tempoMode.band.editor.markHint", {
+                measure: String(measure.number),
+            }),
             range: { from: measure.start, to: measure.start + measure.counts },
             onCommit: (value) => {
                 const mark = value.trim() || null;
                 const write = () =>
-                    void run("Rehearsal mark", async () => {
-                        await setRehearsalMark({
-                            measureId: measure.id!,
-                            mark,
-                        });
-                        await refetch();
-                    });
+                    void run(
+                        t("tempoMode.band.action.rehearsalMark"),
+                        async () => {
+                            await setRehearsalMark({
+                                measureId: measure.id!,
+                                mark,
+                            });
+                            await refetch();
+                        },
+                    );
                 // The same letter twice is allowed, but not by accident
                 const other =
                     mark === null
@@ -1620,25 +1780,40 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 setMenu({
                     x: e.clientX,
                     y: e.clientY,
-                    title: `${mark} is already at m. ${other.number}. Use it again?`,
+                    title: t("tempoMode.band.menu.markTaken", {
+                        mark,
+                        measure: String(other.number),
+                    }),
                     items: [
                         {
-                            label: `Use ${mark} again at m. ${measure.number}`,
+                            label: t("tempoMode.band.menu.markUseAgain", {
+                                mark,
+                                measure: String(measure.number),
+                            }),
                             onSelect: write,
                         },
                         {
-                            label: `Move ${mark} here from m. ${other.number}`,
+                            label: t("tempoMode.band.menu.markMoveHere", {
+                                mark,
+                                measure: String(other.number),
+                            }),
                             onSelect: () =>
-                                void run("Rehearsal mark", async () => {
-                                    await moveRehearsalMark({
-                                        fromId: other.id!,
-                                        toId: measure.id!,
-                                        mark,
-                                    });
-                                    await refetch();
-                                }),
+                                void run(
+                                    t("tempoMode.band.action.rehearsalMark"),
+                                    async () => {
+                                        await moveRehearsalMark({
+                                            fromId: other.id!,
+                                            toId: measure.id!,
+                                            mark,
+                                        });
+                                        await refetch();
+                                    },
+                                ),
                         },
-                        { label: "Cancel", onSelect: () => {} },
+                        {
+                            label: t("tempoMode.band.menu.cancel"),
+                            onSelect: () => {},
+                        },
                     ],
                 });
             },
@@ -1650,14 +1825,16 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         measure: TempoMeasure,
     ) => {
         if (measure.id === null) {
-            toast.info("Add pages or counts out here first");
+            toast.info(t("tempoMode.band.toast.addCountsFirst"));
             return;
         }
         setEditor({
             x: e.clientX,
             y: e.clientY,
             value: String(measure.number),
-            hint: `Renumber from m. ${measure.number}: the measures after count on from the number you give it. Empty goes back to counting on.`,
+            hint: t("tempoMode.band.editor.renumberHint", {
+                measure: String(measure.number),
+            }),
             range: { from: measure.start, to: measure.start + measure.counts },
             onCommit: (v) => setMeasureNumber(measure, v),
         });
@@ -1709,18 +1886,22 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const next = new Set(data.locks);
         if (next.has(beat)) next.delete(beat);
         else next.add(beat);
-        void run("Pin", () => saveMarks({ locks: next }));
+        void run(t("tempoMode.band.action.pin"), () =>
+            saveMarks({ locks: next }),
+        );
     };
     const toggleHold = (beat: number) => {
         const next = new Set(data.holds);
         const making = !next.has(beat);
         if (making) next.add(beat);
         else next.delete(beat);
-        void run("Hold", async () => {
+        void run(t("tempoMode.band.action.hold"), async () => {
             await saveMarks({ holds: next });
             if (making)
                 toast.info(
-                    `${measureLabel(beat)} is a hold. Drag the next count line (or its hit) to where the music goes on.`,
+                    t("tempoMode.band.toast.holdMade", {
+                        where: measureLabel(beat),
+                    }),
                 );
         });
     };
@@ -1731,16 +1912,21 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             x: e.clientX,
             y: e.clientY,
             value: `${Math.round(data.durations[b]! * 100) / 100}`,
-            hint: `How long ${measureLabel(b)} is held, in seconds`,
+            hint: t("tempoMode.band.editor.holdHint", {
+                where: measureLabel(b),
+            }),
             range: { from: b, to: b + 1 },
             onCommit: (value) => {
                 const seconds = Number(value.replace(/s$/i, "").trim());
                 if (!(seconds >= 0.05 && seconds <= 600)) {
-                    toast.error("A hold is a length in seconds, such as 2.5");
+                    toast.error(t("tempoMode.band.toast.holdInvalid"));
                     return;
                 }
                 commit(
-                    `Held ${measureLabel(b)} for ${seconds} s`,
+                    t("tempoMode.band.action.held", {
+                        where: measureLabel(b),
+                        seconds: String(seconds),
+                    }),
                     retime(data.durations, data.locks, b, b + 1, [seconds], {
                         hold: true,
                     }),
@@ -1802,14 +1988,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             } else if (key === "m" && isPlaying) {
                 e.preventDefault();
                 e.stopPropagation();
-                const t = audible();
+                const heard = audible();
                 let best: TempoMeasure | null = null;
                 for (const m of data.measures)
                     if (
                         m.id !== null &&
                         (!best ||
-                            Math.abs(starts[m.start]! - t) <
-                                Math.abs(starts[best.start]! - t))
+                            Math.abs(starts[m.start]! - heard) <
+                                Math.abs(starts[best.start]! - heard))
                     )
                         best = m;
                 if (!best) return;
@@ -1819,7 +2005,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     .then(refetch)
                     .then(() =>
                         toast.success(
-                            `Rehearsal mark ${name} at measure ${measure.number}`,
+                            t("tempoMode.band.toast.markDropped", {
+                                mark: name,
+                                measure: String(measure.number),
+                            }),
                         ),
                     );
             }
@@ -1961,11 +2150,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         if (b <= 1 || b >= data.storedCount || changes.has(b)) return;
         const added = new Set(changes);
         added.add(b);
-        commit(`Added a tempo change at ${measureLabel(b)}`, {
-            durations: [...data.durations],
-            locks: data.locks,
-            changes: added,
-        });
+        commit(
+            t("tempoMode.band.action.addedChange", { where: measureLabel(b) }),
+            {
+                durations: [...data.durations],
+                locks: data.locks,
+                changes: added,
+            },
+        );
     };
     /** Remove the change at `at`: the tempo before it carries on (Logic) */
     const removeChange = (at: number) => {
@@ -1985,7 +2177,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const removed = new Set(changes);
         removed.delete(at);
         commit(
-            `Removed the tempo change at ${measureLabel(at)}`,
+            t("tempoMode.band.action.removedChange", {
+                where: measureLabel(at),
+            }),
             result && { ...result, changes: removed },
         );
     };
@@ -2021,7 +2215,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const marked = new Set(changes);
         marked.add(at.from);
         commit(
-            `A tempo at ${measureLabel(at.from)}`,
+            t("tempoMode.band.action.aTempo", { where: measureLabel(at.from) }),
             result && { ...result, changes: marked },
         );
     };
@@ -2141,7 +2335,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 return {
                     x: cx,
                     y: yOfBpm(o.bpm),
-                    text: `${measureLabel(o.beat)} is much ${o.bpm > o.before ? "faster" : "slower"} (${bpmText(o.bpm)}) than its neighbours (${bpmText(o.before)}, ${bpmText(o.after)}): a count line may be on the wrong hit. Drag its handle onto the right hit, or leave it if the music really does that.`,
+                    text: t("tempoMode.band.tip.outlier", {
+                        where: measureLabel(o.beat),
+                        direction: o.bpm > o.before ? "faster" : "slower",
+                        tempo: bpmText(o.bpm),
+                        before: bpmText(o.before),
+                        after: bpmText(o.after),
+                    }),
                 };
         }
         return null;
@@ -2188,7 +2388,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 setGesture({ ...gesture, beat });
                 setBlocked({
                     x: xOf(1, ppb),
-                    text: "Drop to move the music so this hit is on count 1",
+                    text: t("tempoMode.band.drag.hitToCountOne"),
                 });
                 return;
             }
@@ -2206,7 +2406,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 );
                 setBlocked({
                     x: xOf(beat, ppb),
-                    text: `Can't put it on count ${beat}: ${gesture.seconds < lim.min ? lim.minReason : lim.maxReason}`,
+                    text: t("tempoMode.band.drag.cantPut", {
+                        count: String(beat),
+                        reason:
+                            gesture.seconds < lim.min
+                                ? lim.minReason
+                                : lim.maxReason,
+                    }),
                 });
             }
         } else if (gesture.kind === "line") {
@@ -2216,7 +2422,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 setGesture({ ...gesture, seconds, moved: true });
                 setBlocked({
                     x,
-                    text: "Drop to move the music so this spot is on count 1",
+                    text: t("tempoMode.band.drag.spotToCountOne"),
                 });
                 return;
             }
@@ -2235,7 +2441,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 reason = lim.maxReason;
             }
             setGesture({ ...gesture, seconds, moved: true });
-            setBlocked(reason ? { x, text: `Stops here: ${reason}` } : null);
+            setBlocked(
+                reason
+                    ? { x, text: t("tempoMode.band.drag.stops", { reason }) }
+                    : null,
+            );
         } else if (gesture.kind === "point") {
             const y = localY(e);
             let axis: "x" | "y" | null = gesture.axis;
@@ -2382,11 +2592,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 return;
             if (target.mark) {
                 toast.error(
-                    `m. ${target.number} already has rehearsal mark ${target.mark}`,
+                    t("tempoMode.band.toast.markAlreadyThere", {
+                        measure: String(target.number),
+                        mark: target.mark,
+                    }),
                 );
                 return;
             }
-            void run("Rehearsal mark", async () => {
+            void run(t("tempoMode.band.action.rehearsalMark"), async () => {
                 await moveRehearsalMark({
                     fromId: g.measure.id!,
                     toId: target.id!,
@@ -2394,7 +2607,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 });
                 await refetch();
                 toast.success(
-                    `Moved ${mark} from m. ${g.measure.number} to m. ${target.number}`,
+                    t("tempoMode.band.toast.markMoved", {
+                        mark,
+                        from: String(g.measure.number),
+                        to: String(target.number),
+                    }),
                 );
             });
             return;
@@ -2417,7 +2634,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }
             if (!preview) return;
             sayRespaced(beat, preview);
-            commit(`Pinned ${measureLabel(beat)} to the music`, preview);
+            commit(
+                t("tempoMode.band.action.pinned", {
+                    where: measureLabel(beat),
+                }),
+                preview,
+            );
         } else if (g.kind === "line") {
             if (g.beat === 1) {
                 moveMusicToCountOne(g.seconds);
@@ -2425,11 +2647,18 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }
             const result = placement(g.beat, g.seconds, g.one);
             if (result) sayRespaced(g.beat, result);
-            commit(`Pinned ${measureLabel(g.beat)} to the music`, result);
+            commit(
+                t("tempoMode.band.action.pinned", {
+                    where: measureLabel(g.beat),
+                }),
+                result,
+            );
         } else if (g.kind === "point") {
             if (g.axis === "x" && g.to !== g.at)
                 commit(
-                    `Moved the tempo change to ${measureLabel(g.to)}`,
+                    t("tempoMode.band.action.movedChange", {
+                        where: measureLabel(g.to),
+                    }),
                     movedChange(g.at, g.to),
                 );
             else setPreview(null);
@@ -2440,15 +2669,22 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 const next = segments.find((s) => s.from === g.stretch.to);
                 commit(
                     next && Math.abs(g.bpm - next.bpmFrom) > 0.5
-                        ? `Ends on ${bpmText(g.bpm)}, then ${bpmText(next.bpmFrom)}`
-                        : `Ends on ${bpmText(g.bpm)}`,
+                        ? t("tempoMode.band.action.endsOnThen", {
+                              tempo: bpmText(g.bpm),
+                              next: bpmText(next.bpmFrom),
+                          })
+                        : t("tempoMode.band.action.endsOn", {
+                              tempo: bpmText(g.bpm),
+                          }),
                     preview,
                 );
             }
         } else if (g.kind === "curve") {
             if (preview)
                 commit(
-                    g.curve === 0 ? "Gradual tempo change" : "Tempo curve",
+                    g.curve === 0
+                        ? t("tempoMode.band.action.gradual")
+                        : t("tempoMode.band.action.curve"),
                     preview,
                 );
         } else if (g.kind === "tempo") {
@@ -2458,7 +2694,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 setPreview(null);
                 return;
             }
-            commit("Tempo", preview);
+            commit(t("tempoMode.band.action.tempo"), preview);
         } else {
             const from = Math.min(g.anchor, g.to);
             const to = Math.max(g.anchor, g.to);
@@ -2504,7 +2740,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 }
                 if (st?.ramp)
                     commit(
-                        "Tempo jump",
+                        t("tempoMode.band.action.jump"),
                         withTempos(
                             st.from,
                             st.to,
@@ -2536,12 +2772,18 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         if (stretches.every((s) => s.from >= beat - 4 && s.to <= beat + 4))
             return;
         toast.info(
-            `Pinned ${measureLabel(beat)}. Re-spaced ${stretches
-                .map(
-                    (s) =>
-                        `${rangeLabel(s.from, s.to)}: now ${stretchTempo(result.durations, s.from, s.to)} (was ${stretchTempo(data.durations, s.from, s.to)})`,
-                )
-                .join("; ")}`,
+            t("tempoMode.band.toast.respaced", {
+                where: measureLabel(beat),
+                stretches: stretches
+                    .map((s) =>
+                        t("tempoMode.band.label.respacedStretch", {
+                            range: rangeLabel(s.from, s.to),
+                            now: stretchTempo(result.durations, s.from, s.to),
+                            was: stretchTempo(data.durations, s.from, s.to),
+                        }),
+                    )
+                    .join("; "),
+            }),
             { id: "tempo-respaced" },
         );
     };
@@ -2564,18 +2806,25 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const where = { clientX: e.clientX, clientY: e.clientY };
         const I = 14;
         const countTitle = m
-            ? `m. ${m.number}, count ${beat - m.start + 1}`
-            : `Count ${beat}`;
+            ? t("tempoMode.band.menu.countTitle", {
+                  measure: String(m.number),
+                  count: String(beat - m.start + 1),
+              })
+            : t("tempoMode.band.menu.countTitleNoMeasure", {
+                  count: String(beat),
+              });
         let title: string;
         let subtitle: string | undefined;
 
         // D: a right-click inside the selection is about the selection
         if (range && beat >= range.from && beat < range.to) {
             title = measuresLabel(range.from, range.to);
-            subtitle = `${range.to - range.from} counts`;
+            subtitle = t("tempoMode.band.menu.selectionCounts", {
+                count: range.to - range.from,
+            });
             items.push(
                 {
-                    label: "Set tempo…",
+                    label: t("tempoMode.band.menu.setTempo"),
                     icon: <GaugeIcon size={I} aria-hidden />,
                     onSelect: () =>
                         editTempo(
@@ -2587,28 +2836,28 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     range,
                 },
                 {
-                    label: "Twice as fast",
+                    label: t("tempoMode.band.menu.twiceAsFast"),
                     icon: <TextGlyph>×2</TextGlyph>,
                     onSelect: () => scaleSelection(0.5),
                     range,
                 },
                 {
-                    label: "Half as fast",
+                    label: t("tempoMode.band.menu.halfAsFast"),
                     icon: <TextGlyph>÷2</TextGlyph>,
                     onSelect: () => scaleSelection(2),
                     range,
                 },
                 {
-                    label: "Remove these counts…",
+                    label: t("tempoMode.band.menu.removeCounts"),
                     icon: <TrashIcon size={I} aria-hidden />,
                     onSelect: () => void askRemove(e, range.from, range.to),
                     range,
                     separatorBefore: true,
                 },
                 {
-                    label: "Clear the selection",
+                    label: t("tempoMode.band.menu.clearSelection"),
                     icon: <XIcon size={I} aria-hidden />,
-                    aside: "Esc",
+                    aside: <Shortcut binding="Escape" />,
                     onSelect: () => useTempoUi.getState().setRange(null),
                 },
             );
@@ -2617,43 +2866,61 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             const measure = { from: m.start, to: m.start + m.counts };
             const meter = meterLabel(meterOf(m).meter, true);
             const [top, bottom] = meter.split(" ")[0]!.split("/");
-            title = `Measure ${m.number}`;
-            subtitle = m.mark ? `${meter} · mark ${m.mark}` : meter;
+            title = t("tempoMode.band.menu.measureTitle", {
+                measure: String(m.number),
+            });
+            subtitle = m.mark
+                ? t("tempoMode.band.menu.measureSubtitleMark", {
+                      meter,
+                      mark: m.mark,
+                  })
+                : meter;
             items.push(
                 {
-                    label: "Time signature…",
+                    label: t("tempoMode.band.menu.timeSignature"),
                     icon: <MeterGlyph top={top ?? ""} bottom={bottom ?? ""} />,
                     onSelect: () =>
                         setMenu(signatureMenu(e.clientX, e.clientY, m.start)),
                     range: measure,
                 },
                 {
-                    label: "Renumber from here…",
+                    label: t("tempoMode.band.menu.renumber"),
                     icon: <NumberGlyph n={m.number} />,
                     onSelect: () => renumber(e, m),
                     range: measure,
                 },
                 {
-                    label: m.mark ? "Rehearsal mark…" : "Add a rehearsal mark…",
+                    label: m.mark
+                        ? t("tempoMode.band.menu.editMark")
+                        : t("tempoMode.band.menu.addMark"),
                     icon: <MarkGlyph letter={m.mark ?? "A"} />,
                     onSelect: () => editMark(e, m),
                     range: measure,
                 },
                 {
-                    label: "Add a measure before…",
+                    label: t("tempoMode.band.menu.addMeasureBefore"),
                     icon: <PlusIcon size={I} aria-hidden />,
-                    onSelect: () =>
-                        void askAdd(
-                            e,
-                            m.start,
-                            m.counts,
-                            `a measure (${m.counts} counts) before measure ${m.number}`,
-                        ),
+                    onSelect: () => {
+                        const params = {
+                            count: m.counts,
+                            measure: String(m.number),
+                        };
+                        void askAdd(e, m.start, m.counts, {
+                            title: t(
+                                "tempoMode.band.ask.addMeasureBefore",
+                                params,
+                            ),
+                            done: t(
+                                "tempoMode.band.ask.addedMeasureBefore",
+                                params,
+                            ),
+                        });
+                    },
                     range: { from: m.start, to: m.start },
                     separatorBefore: true,
                 },
                 {
-                    label: "Remove this measure…",
+                    label: t("tempoMode.band.menu.removeMeasure"),
                     icon: <MinusIcon size={I} aria-hidden />,
                     onSelect: () =>
                         void askRemove(e, m.start, m.start + m.counts),
@@ -2665,20 +2932,24 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             const hold = data.holds.has(beat);
             title = countTitle;
             subtitle = hold
-                ? `hold ${data.durations[beat]!.toFixed(1)} s`
+                ? t("tempoMode.band.menu.holdSubtitle", {
+                      seconds: data.durations[beat]!.toFixed(1),
+                  })
                 : bpmText(qBpm(beat, data.durations));
             const onTempo = y < MUSIC.top;
             if (hold)
                 items.push(
                     {
-                        label: "Hold length…",
+                        label: t("tempoMode.band.menu.holdLength"),
                         icon: <FermataGlyph />,
-                        aside: `${data.durations[beat]!.toFixed(1)} s`,
+                        aside: t("tempoMode.band.menu.seconds", {
+                            seconds: data.durations[beat]!.toFixed(1),
+                        }),
                         onSelect: () => editHold(where, beat),
                         range: one,
                     },
                     {
-                        label: "Not a hold",
+                        label: t("tempoMode.band.menu.notAHold"),
                         icon: <FermataGlyph />,
                         onSelect: () => toggleHold(beat),
                         range: one,
@@ -2689,13 +2960,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     items.push(
                         changes.has(beat)
                             ? {
-                                  label: "Remove this tempo change",
+                                  label: t("tempoMode.band.menu.removeChange"),
                                   icon: <StepGlyph />,
                                   onSelect: () => removeChange(beat),
                                   range: { from: beat, to: beat },
                               }
                             : {
-                                  label: "Add a tempo change here",
+                                  label: t("tempoMode.band.menu.addChange"),
                                   icon: <StepGlyph />,
                                   onSelect: () => addChange(beat),
                                   range: { from: beat, to: beat },
@@ -2707,11 +2978,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 const current = qBpm(beat, data.durations);
                 const last = measureAt(end - 1);
                 items.push({
-                    label: "Set tempo…",
+                    label: t("tempoMode.band.menu.setTempo"),
                     icon: <GaugeIcon size={I} aria-hidden />,
                     aside:
                         end - beat > 1 && last
-                            ? `to m. ${last.number}`
+                            ? t("tempoMode.band.menu.toMeasure", {
+                                  measure: String(last.number),
+                              })
                             : undefined,
                     onSelect: () =>
                         editTempo(
@@ -2730,8 +3003,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     Math.abs(target - current) < 0.5;
                 items.push({
                     label: same
-                        ? "Gradual change"
-                        : `Gradual change to ${bpmText(target!)}`,
+                        ? t("tempoMode.band.menu.gradual")
+                        : t("tempoMode.band.menu.gradualTo", {
+                              tempo: bpmText(target!),
+                          }),
                     icon:
                         !same && target! < current ? (
                             <TrendDownIcon size={I} aria-hidden />
@@ -2742,33 +3017,39 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         target !== null && setTempo(beat, end, current, target),
                     disabled: same,
                     hint: same
-                        ? "Nothing to change to: the tempo after it is the same, or it's one count"
-                        : `Ends on the tempo after it (${bpmText(target!)}); holds and pins outside stay as they are`,
+                        ? t("tempoMode.band.menu.gradualNothingHint")
+                        : t("tempoMode.band.menu.gradualHint", {
+                              tempo: bpmText(target!),
+                          }),
                     range: stretch,
                 });
                 // After a rit. or accel.: back to the tempo before it, from this count
                 const back = aTempoAt(beat);
                 if (back)
                     items.push({
-                        label: "A tempo",
+                        label: t("tempoMode.band.menu.aTempo"),
                         icon: <ArrowUUpLeftIcon size={I} aria-hidden />,
-                        aside: `back to ${bpmText(back.bpm)}`,
+                        aside: t("tempoMode.band.menu.aTempoAside", {
+                            tempo: bpmText(back.bpm),
+                        }),
                         onSelect: () => aTempo(beat),
-                        hint: `From ${measureLabel(back.from)}, back to the tempo the gradual change started at. The counts before it keep their tempo.`,
+                        hint: t("tempoMode.band.menu.aTempoHint", {
+                            where: measureLabel(back.from),
+                        }),
                         range: { from: back.from, to: back.to },
                     });
             }
             items.push(
                 data.locks.has(beat)
                     ? {
-                          label: "Unpin",
+                          label: t("tempoMode.band.menu.unpin"),
                           icon: <PushPinSlashIcon size={I} aria-hidden />,
                           onSelect: () => togglePin(beat),
                           range: { from: beat, to: beat },
                           separatorBefore: items.length > 0,
                       }
                     : {
-                          label: "Pin to the music",
+                          label: t("tempoMode.band.menu.pin"),
                           icon: <PushPinIcon size={I} aria-hidden />,
                           onSelect: () => togglePin(beat),
                           range: { from: beat, to: beat },
@@ -2777,38 +3058,42 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
             if (!hold)
                 items.push({
-                    label: "Make a hold (fermata)",
+                    label: t("tempoMode.band.menu.makeHold"),
                     icon: <FermataGlyph />,
                     onSelect: () => toggleHold(beat),
                     range: one,
                 });
             items.push(
                 {
-                    label: "Add a count before…",
+                    label: t("tempoMode.band.menu.addCountBefore"),
                     icon: <PlusIcon size={I} aria-hidden />,
                     onSelect: () =>
-                        void askAdd(
-                            e,
-                            beat,
-                            1,
-                            `a count before ${measureLabel(beat)}`,
-                        ),
+                        void askAdd(e, beat, 1, {
+                            title: t("tempoMode.band.ask.addCountBefore", {
+                                where: measureLabel(beat),
+                            }),
+                            done: t("tempoMode.band.ask.addedCountBefore", {
+                                where: measureLabel(beat),
+                            }),
+                        }),
                     range: { from: beat, to: beat },
                 },
                 {
-                    label: "Add a count after…",
+                    label: t("tempoMode.band.menu.addCountAfter"),
                     icon: <PlusIcon size={I} aria-hidden />,
                     onSelect: () =>
-                        void askAdd(
-                            e,
-                            beat + 1,
-                            1,
-                            `a count after ${measureLabel(beat)}`,
-                        ),
+                        void askAdd(e, beat + 1, 1, {
+                            title: t("tempoMode.band.ask.addCountAfter", {
+                                where: measureLabel(beat),
+                            }),
+                            done: t("tempoMode.band.ask.addedCountAfter", {
+                                where: measureLabel(beat),
+                            }),
+                        }),
                     range: { from: beat + 1, to: beat + 1 },
                 },
                 {
-                    label: "Remove this count…",
+                    label: t("tempoMode.band.menu.removeCount"),
                     icon: <MinusIcon size={I} aria-hidden />,
                     onSelect: () => void askRemove(e, beat, beat + 1),
                     range: one,
@@ -2830,9 +3115,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const setMeter = (start: number, text: string, only = false) => {
         const meter = parseMeter(text);
         if (!meter) {
-            toast.error(
-                `"${text}" isn't a time signature: try 7/8, or 7/8 2+2+3 (the grouping in eighths)`,
-            );
+            toast.error(t("tempoMode.band.toast.notATimeSignature", { text }));
             return;
         }
         const label = meterLabel(meter, true);
@@ -2854,29 +3137,38 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const dropped = [...data.locks].filter(
             (l) => !plan.result.locks.has(l),
         );
-        const pinsNote = dropped.length
-            ? `. Unpinned ${dropped.length} count(s) inside, since their lengths changed`
-            : "";
         const by = plan.shift;
-        const shiftNote = by
-            ? `. The measures after it start ${Math.abs(by)} count${Math.abs(by) === 1 ? "" : "s"} ${by < 0 ? "earlier" : "later"}`
-            : "";
-        const shortNote = plan.short
-            ? `. The last measure before the next time signature is short: ${plan.short.counts} count${plan.short.counts === 1 ? "" : "s"} (marked *)`
-            : "";
+        // Each note is a sentence of its own, after what was set
+        const notes = [
+            only && was
+                ? t("tempoMode.band.toast.meterSetOnly", {
+                      meter: label,
+                      measure: String(was.number),
+                  })
+                : t("tempoMode.band.toast.meterSetFrom", {
+                      meter: label,
+                      where: measureLabel(plan.from),
+                      count: meter.grouping.length,
+                  }),
+            plan.short &&
+                t("tempoMode.band.toast.meterShortNote", {
+                    count: plan.short.counts,
+                }),
+            by &&
+                t("tempoMode.band.toast.meterShiftNote", {
+                    count: Math.abs(by),
+                    direction: by < 0 ? "earlier" : "later",
+                }),
+            dropped.length &&
+                t("tempoMode.band.toast.meterPinsNote", {
+                    count: dropped.length,
+                }),
+        ].filter((note): note is string => typeof note === "string");
         setPreview(plan.result);
-        void run("Time signature", async () => {
+        void run(t("tempoMode.band.action.timeSignature"), async () => {
             await writeMeter({ plan, before: data.durations });
             await refetch();
-            toast.success(
-                (only && was
-                    ? `${label} for m. ${was.number} only; the tempo is as it was`
-                    : `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was`) +
-                    shortNote +
-                    shiftNote +
-                    pinsNote,
-                { id: NOTE_TOAST },
-            );
+            toast.success(notes.join(". "), { id: NOTE_TOAST });
         });
     };
     /**
@@ -2895,36 +3187,43 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             y,
             title: m
                 ? only
-                    ? `m. ${m.number} only`
-                    : `From m. ${m.number}`
+                    ? t("tempoMode.band.meterMenu.onlyTitle", {
+                          measure: String(m.number),
+                      })
+                    : t("tempoMode.band.meterMenu.fromTitle", {
+                          measure: String(m.number),
+                      })
                 : undefined,
             subtitle: only
-                ? "the measures after keep theirs"
-                : "until the next time signature",
+                ? t("tempoMode.band.meterMenu.onlySubtitle")
+                : t("tempoMode.band.meterMenu.fromSubtitle"),
             items: [
                 {
-                    label: "Just this measure",
+                    label: t("tempoMode.band.meterMenu.justThisMeasure"),
                     icon: only ? (
                         <CheckIcon size={14} aria-hidden />
                     ) : undefined,
-                    hint: "On: the time signature is for this measure only; the measures after keep theirs and move to follow it. Off: it lasts until the next time signature, as in a score.",
+                    hint: t("tempoMode.band.meterMenu.justThisMeasureHint"),
                     onSelect: () => setMenu(signatureMenu(x, y, start, !only)),
                 },
                 ...METER_CHOICES.map((choice, i) => ({
                     label: choice.includes(" ")
-                        ? `${choice.split(" ")[0]} counted ${choice.split(" ")[1]}`
+                        ? t("tempoMode.band.meterMenu.counted", {
+                              meter: choice.split(" ")[0],
+                              grouping: choice.split(" ")[1],
+                          })
                         : choice,
                     onSelect: () => setMeter(start, choice, only),
                     separatorBefore: i === 0,
                 })),
                 {
-                    label: "Other… (like 11/8 3+3+3+2)",
+                    label: t("tempoMode.band.meterMenu.other"),
                     onSelect: () =>
                         setEditor({
                             x,
                             y,
                             value: "",
-                            hint: 'Time signature, and how it is counted in eighths: "7/8 2+2+3", "5/8 3+2", "3/2" (counted in quarters)',
+                            hint: t("tempoMode.band.meterMenu.otherHint"),
                             onCommit: (value) => setMeter(start, value, only),
                         }),
                 },
@@ -3024,9 +3323,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     key={`n-${m.start}`}
                     title={
                         partial
-                            ? `Measure ${m.number}: a short measure, ${m.counts} count(s)`
+                            ? t("tempoMode.band.lane.shortMeasureTitle", {
+                                  measure: String(m.number),
+                                  count: m.counts,
+                              })
                             : m.overridden
-                              ? `Measure ${m.number}: renumbered by hand; the measures after count on from it. Right-click or double-click to change it.`
+                              ? t("tempoMode.band.lane.renumberedTitle", {
+                                    measure: String(m.number),
+                                })
                               : undefined
                     }
                     className={`absolute text-[10px] leading-[14px] whitespace-nowrap ${m.overridden ? "text-accent font-bold" : "text-text-subtitle"} ${partial ? "text-red" : ""}`}
@@ -3059,7 +3363,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         data-meter-start={m.start}
                         className="bg-fg-1 border-stroke text-text hover:border-accent absolute rounded-full border px-4 text-[10px] leading-[14px] whitespace-nowrap"
                         style={{ left: box.x, top: box.y }}
-                        title={`Time signature ${meterLabel(mMeter, true)}: click to change it from here to the next time signature`}
+                        title={t("tempoMode.band.lane.timeSignatureTitle", {
+                            meter: meterLabel(mMeter, true),
+                        })}
                         // A press goes on to the lane, so a drag from the chip selects measures
                         // and a click without a drag opens the menu there (priya, jo); this is
                         // for Enter and Space on the focused chip
@@ -3096,7 +3402,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                 "opacity-40",
                         )}
                         style={{ left: box.x, top: box.y }}
-                        title={`Rehearsal mark ${mark} at m. ${m.number}: drag it to another measure; double-click to rename it`}
+                        title={t("tempoMode.band.lane.markTitle", {
+                            mark,
+                            measure: String(m.number),
+                        })}
                     >
                         {mark}
                     </span>
@@ -3157,7 +3466,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     for (const b of data.holds) {
         if (b < firstBeat || b > lastBeat) continue;
         const seconds = durations[b]!.toFixed(1);
-        const texts = [`hold ${seconds}s`, `${seconds}s`];
+        const texts = [
+            t("tempoMode.band.lane.holdLabel", { seconds }),
+            t("tempoMode.band.lane.holdLabelShort", { seconds }),
+        ];
         const center = xOf(b, ppb) + ppb / 2;
         candidates.push({
             priority: 0,
@@ -3223,8 +3535,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             const now = result
                 ? stretchTempo(result.durations, st.from, st.to)
                 : bpmText(st.after);
-            const full = `${rangeLabel(st.from, st.to)}: now ${now} (was ${was})`;
-            const short = `now ${now} (was ${was})`;
+            const full = t("tempoMode.band.label.respacedStretch", {
+                range: rangeLabel(st.from, st.to),
+                now,
+                was,
+            });
+            const short = t("tempoMode.band.label.respacedShort", { now, was });
             const text =
                 textWidth(full, `11px ${fontFamily}`) + 12 < w ? full : short;
             const tw = textWidth(text, `11px ${fontFamily}`) + 10;
@@ -3260,7 +3576,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 )}
                 style={{ left: xOf(gesture.to, ppb) + 1, top: MARKS.top + 2 }}
             >
-                {gesture.measure.mark} → m. {target?.number ?? "?"}
+                {t("tempoMode.band.lane.markDrag", {
+                    mark: gesture.measure.mark,
+                    measure: target ? String(target.number) : "?",
+                })}
             </span>,
         );
     }
@@ -3272,8 +3591,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 key="clear-range"
                 type="button"
                 data-testid="tempo-clear-selection"
-                aria-label="Clear the selection"
-                title="Clear the selection (Esc)"
+                aria-label={t("tempoMode.band.lane.clearSelection")}
+                title={t("tempoMode.band.lane.clearSelectionTitle", {
+                    key: formatBinding("Escape", isMacPlatform()),
+                })}
                 className="bg-accent text-text-invert absolute z-[6] flex size-16 items-center justify-center rounded-full hover:opacity-90"
                 style={{
                     left: Math.max(
@@ -3494,7 +3815,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         tapTarget={tapTarget}
                         onUseTap={applyTapTempo}
                         onClearPins={() =>
-                            void run("Pins", () =>
+                            void run(t("tempoMode.band.action.pins"), () =>
                                 saveMarks({ locks: new Set() }),
                             )
                         }

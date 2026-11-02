@@ -7,6 +7,7 @@
 import { setAudioOffsetInTransaction } from "./audioOffset";
 import { and, asc, eq, gt, gte, inArray, lt } from "drizzle-orm";
 import { db, schema } from "@/global/database/db";
+import tolgee from "@/global/singletons/Tolgee";
 import { transactionWithHistory } from "@/db-functions/history";
 import type { DbTransaction } from "@/db-functions/types";
 import {
@@ -295,7 +296,7 @@ export async function endMovesEarly({
                 .where(eq(schema.timelines.id, id))
                 .get();
             if (!move || move.end_beat - move.start_beat < 2)
-                throw new Error("That move is only one count long");
+                throw new Error(tolgee.t("tempoMode.errors.moveOneCountLong"));
             await resizeTimelineInTransaction({
                 tx,
                 timelineId: id,
@@ -392,7 +393,7 @@ export async function deleteCounts({
         const doomed = ids.slice(Math.max(1, from), to);
         const survivor = ids[to];
         if (doomed.length === 0 || survivor === undefined)
-            throw new Error("Can't remove the last count");
+            throw new Error(tolgee.t("tempoMode.errors.cantRemoveLastCount"));
         const around = new Map<number, typeof schema.timelines.$inferSelect>();
         for (let b = from; b < to; b++)
             for (const m of await movesAround(tx, b)) around.set(m.id, m);
@@ -431,9 +432,7 @@ export async function deleteCounts({
                 movingPages.length > 1 ||
                 (movingPages.length && pageOnSurvivor)
             )
-                throw new Error(
-                    "That would remove a page. Remove fewer counts, or delete the page first.",
-                );
+                throw new Error(tolgee.t("tempoMode.errors.wouldRemovePage"));
             for (const p of movingPages)
                 await tx
                     .update(schema.pages)

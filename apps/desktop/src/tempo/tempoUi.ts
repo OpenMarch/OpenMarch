@@ -4,7 +4,7 @@
  * where the mode's header row is.
  */
 import { create } from "zustand";
-import { addTap } from "./tapTempo";
+import { addTap } from "./tapTempoMath";
 
 /** Adding or removing counts: re-divide the same time, or shift everything after */
 export type CountChoice = "keep" | "shift";
