@@ -84,8 +84,7 @@ export default function Topbar() {
                                         height={18}
                                         className="text-yellow size-20"
                                     />
-                                    {/*<T keyName="inspector.shape.collisionsTab" /> */}
-                                    Collisions
+                                    <T keyName="toolbar.collisions.tab" />
                                 </div>
                             </TabItem>
                         )}

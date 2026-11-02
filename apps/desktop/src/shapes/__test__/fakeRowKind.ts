@@ -526,3 +526,114 @@ export const padTool: ToolKind<PadParams> = {
         withDistribution: (p, _n, distribution) => ({ ...p, distribution }),
     },
 };
+
+/**
+ * A fifth test kind (#524): a polyline drawn by clicking point after point, as well as by one drag.
+ * Its points land on the grid; its spots spread evenly along it. It shows the host's click-to-add
+ * draw doesn't depend on the Line.
+ */
+export interface PolyParams {
+    readonly points: readonly XY[];
+    /** Closed by a click on the first point (#529) */
+    readonly closed?: true;
+}
+
+const polyLength = (points: readonly XY[]) =>
+    points
+        .slice(1)
+        .reduce(
+            (sum, b, i) =>
+                sum + Math.hypot(b.x - points[i]!.x, b.y - points[i]!.y),
+            0,
+        );
+
+function polySpots(p: PolyParams, n: number) {
+    const total = polyLength(p.points);
+    return Array.from({ length: n }, (_, i) => {
+        let left = n > 1 ? (total * i) / (n - 1) : 0;
+        for (let k = 1; k < p.points.length; k++) {
+            const a = p.points[k - 1]!;
+            const b = p.points[k]!;
+            const len = Math.hypot(b.x - a.x, b.y - a.y);
+            if (left <= len || k === p.points.length - 1) {
+                const t = len === 0 ? 0 : Math.min(1, left / len);
+                return {
+                    x: a.x + (b.x - a.x) * t,
+                    y: a.y + (b.y - a.y) * t,
+                    row: 0,
+                    col: i,
+                };
+            }
+            left -= len;
+        }
+        return { ...p.points[0]!, row: 0, col: i };
+    });
+}
+
+function polyFrame(p: PolyParams): ShapeFrame {
+    const a = p.points[0]!;
+    const b = p.points.at(-1)!;
+    return {
+        center: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        halfWidth: Math.hypot(b.x - a.x, b.y - a.y) / 2,
+        halfDepth: 0,
+        rotation: Math.atan2(b.y - a.y, b.x - a.x),
+        flipX: false,
+        flipY: false,
+    };
+}
+
+const polyShape: ShapeKind<PolyParams> = {
+    ...(rowShape as unknown as ShapeKind<PolyParams>),
+    id: "test-poly",
+    label: "Poly",
+    fit: () => ({
+        points: [
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+        ],
+    }),
+    outline: (p) => [[...p.points]],
+    generate: polySpots,
+    orderKey: (_p, point) => [point.x],
+};
+
+/** The points as one shape, or undefined while they're under half a step long */
+const polyOf = (points: readonly XY[], env: { stepPx: number }) =>
+    polyLength(points) < env.stepPx / 2 ? undefined : { points };
+
+export const polyTool: ToolKind<PolyParams> = {
+    shape: polyShape,
+    params: [],
+    scaling: "footprint",
+    draw: (from, to, _n, env) =>
+        polyOf([env.gridSnap(from), env.gridSnap(to)], env),
+    clickPoints: {
+        land: (_previous, at, env) => env.gridSnap(at),
+        draw: (points, _n, env) =>
+            points.length < 2 ? undefined : polyOf(points, env),
+        close: (points, _n, env) => {
+            const p = polyOf(points, env);
+            return p && { ...p, closed: true };
+        },
+    },
+    handles: (p) =>
+        p.points.map((at, i) => ({ key: `p${i}`, at, cursor: "move" })),
+    dragHandle: (base) => base,
+    contains: (p, n, at) =>
+        polySpots(p, n).some((s) => Math.hypot(s.x - at.x, s.y - at.y) < 3),
+    move: (base, _n, delta) => ({
+        points: base.points.map((q) => ({
+            x: q.x + delta.x,
+            y: q.y + delta.y,
+        })),
+    }),
+    frameOf: polyFrame,
+    fromFrame: (frame) => ({
+        points: [
+            { x: frame.center.x - frame.halfWidth, y: frame.center.y },
+            { x: frame.center.x + frame.halfWidth, y: frame.center.y },
+        ],
+    }),
+    withFrame: (p) => p,
+};

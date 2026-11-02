@@ -6,7 +6,7 @@ import {
     useSyncExternalStore,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
@@ -31,7 +31,8 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  * palette do, and is unavailable when they are. It acts on the selection: the
  * editor selects an unselected marcher right-clicked before it opens.
  *
- * - **Ungroup**, first, shown only while a placed shape is selected whole.
+ * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
+ *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - **Unset here** and **Unset here and on Pages N–M** (Set vs Following,
  *   #304, #305): timeline mode only, as in the inspector. The second is shown
  *   only while it's offered (some pages follow), with its handler's label
@@ -41,7 +42,7 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  * - **Select all**, which right-clicking empty field reaches for.
  */
 const GROUPS: readonly (readonly ActionId[])[] = [
-    ["shapeUngroup"],
+    ["shapeGroup", "shapeUngroup"],
     ["timelineUnsetHere", "timelineUnsetHereAndFollowing"],
     [
         "alignHorizontally",
@@ -85,7 +86,7 @@ export default function FieldContextMenu({
     /** Whether the show's timeline is loaded (Unset needs it). */
     timelineMode: boolean;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     useSyncExternalStore(subscribeToActionHandlers, handlerSnapshot);
     const open = at !== null;
     // The context-menu key and Shift+F10 also fire the browser's own menu
@@ -98,7 +99,7 @@ export default function FieldContextMenu({
     if (!at) return null;
 
     const shown = (id: ActionId) =>
-        id === "shapeUngroup"
+        id === "shapeGroup" || id === "shapeUngroup"
             ? isActionEnabled(id)
             : UNSET.has(id)
               ? timelineMode &&

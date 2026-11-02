@@ -1,4 +1,5 @@
 import type { ValidationError, ValidationResult } from "@openmarch/core";
+import { timelineTextForLog, type TimelineText } from "@/timeline/timelineText";
 
 /**
  * A rejected timeline write (spec section 6). `code` is the spec's error code: `E-S1`, `E-P1`,
@@ -8,24 +9,32 @@ import type { ValidationError, ValidationResult } from "@openmarch/core";
  * (`E-A1/E-A2`, `E-T3/E-T4`), `code` is that combined code: the database doesn't say which half
  * failed, so the write path doesn't guess. `E-ARGS` marks a call the write path refuses before writing (a missing row,
  * a slot count that needs destinations, and so on), and `E-DB` any other database rejection.
+ *
+ * A refusal for the user carries `text`, its message as a Tolgee key and arguments, which
+ * `timelineErrorMessage` translates when it is shown. `message` is that key with its arguments,
+ * for logs (`timelineTextForLog`): this module doesn't import Tolgee, so the convert-on-open
+ * worker and the web build's worker can run the write path. A message given as a plain string is
+ * for developers only.
  */
 export class TimelineWriteError extends Error {
     readonly code: string;
     readonly details: ValidationError[];
+    /** The message for the user, translated when shown; absent for a developer-only message */
+    readonly text?: TimelineText;
 
     constructor(
         code: string,
-        message: string,
+        message: string | TimelineText,
         details: ValidationError[] = [],
         options?: { cause?: unknown },
     ) {
-        super(
-            message.startsWith("E-") ? message : `${code}: ${message}`,
-            options,
-        );
+        const own =
+            typeof message === "string" ? message : timelineTextForLog(message);
+        super(own.startsWith("E-") ? own : `${code}: ${own}`, options);
         this.name = "TimelineWriteError";
         this.code = code;
         this.details = details;
+        if (typeof message !== "string") this.text = message;
     }
 }
 
@@ -43,8 +52,13 @@ export function assertValid(result: ValidationResult, what: string): void {
     );
 }
 
-/** Throws an `E-ARGS` error for a call the write path refuses before writing. */
-export function refuse(message: string): never {
+/**
+ * Throws an `E-ARGS` error for a call the write path refuses before writing. A `TimelineText` is
+ * the message the user sees. A plain string is for developers: a call the app never makes (a
+ * missing row, beats that aren't whole), so the user sees the generic message and the log has
+ * the string.
+ */
+export function refuse(message: string | TimelineText): never {
     throw new TimelineWriteError("E-ARGS", message);
 }
 

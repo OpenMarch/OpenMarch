@@ -1,3 +1,4 @@
+import tolgee from "@/global/singletons/Tolgee";
 import { db } from "@/global/database/db";
 import type { DbConnection } from "@/db-functions/types";
 import {
@@ -42,7 +43,13 @@ export async function keepOnPage(
         applyKeptChange(result.markers);
         return result;
     } catch (error) {
-        toastTimelineError(error, "Error keeping marchers on the page");
+        toastTimelineError(
+            error,
+            tolgee.t(
+                "timeline.keep.errors.keep",
+                "Error keeping marchers on the page",
+            ),
+        );
         return NOTHING;
     }
 }
@@ -62,7 +69,13 @@ export async function followAgainOn(
         applyKeptChange(result.markers);
         return result;
     } catch (error) {
-        toastTimelineError(error, "Error letting marchers follow again");
+        toastTimelineError(
+            error,
+            tolgee.t(
+                "timeline.keep.errors.followAgain",
+                "Error letting marchers follow again",
+            ),
+        );
         return NOTHING;
     }
 }
@@ -93,7 +106,13 @@ export async function toggleKeepOnPage({
     try {
         kept = await readKeptAssignmentIds(database);
     } catch (error) {
-        toastTimelineError(error, "Error reading the kept spots");
+        toastTimelineError(
+            error,
+            tolgee.t(
+                "timeline.keep.errors.readKept",
+                "Error reading the kept spots",
+            ),
+        );
         return null;
     }
     const toggle = keepToggle(

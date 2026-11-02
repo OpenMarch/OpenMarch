@@ -1,12 +1,25 @@
+import tolgee from "@/global/singletons/Tolgee";
+
 export interface CoordinateRoundingOption {
-    label: string;
-    value: number;
+    /** i18n key of the option's name */
+    readonly labelKey: string;
+    /** The option's name in the app's language, read when shown (never at import) */
+    readonly label: string;
+    readonly value: number;
 }
 
-export const coordinateRoundingOptions: CoordinateRoundingOption[] = [
-    { label: "1/1 (Whole Step)", value: 1 },
-    { label: "1/2 (Half Step)", value: 2 },
-    { label: "1/4 (Quarter Step)", value: 4 },
-    { label: "1/8 (Eighth Step)", value: 8 },
-    { label: "1/10 (Tenth Step)", value: 10 },
+const option = (labelKey: string, value: number): CoordinateRoundingOption => ({
+    labelKey,
+    get label() {
+        return tolgee.t(labelKey);
+    },
+    value,
+});
+
+export const coordinateRoundingOptions: readonly CoordinateRoundingOption[] = [
+    option("exportCoordinates.rounding.whole", 1),
+    option("exportCoordinates.rounding.half", 2),
+    option("exportCoordinates.rounding.quarter", 4),
+    option("exportCoordinates.rounding.eighth", 8),
+    option("exportCoordinates.rounding.tenth", 10),
 ];

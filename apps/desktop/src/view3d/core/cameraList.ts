@@ -126,16 +126,15 @@ export function newCameraId(list: readonly SavedCamera[]): string {
 }
 
 /**
- * `${base} ${n}` with the smallest n from 1 up that no shown name uses, so a
+ * `nameFor(n)` with the smallest n from 1 up that no shown name uses, so a
  * new view reads "Camera 1", "Camera 2" and so on.
  */
 export function newCameraName(
     shownNames: readonly string[],
-    base: string,
+    nameFor: (n: number) => string,
 ): string {
     const names = new Set(shownNames);
-    for (let n = 1; ; n++)
-        if (!names.has(`${base} ${n}`)) return `${base} ${n}`;
+    for (let n = 1; ; n++) if (!names.has(nameFor(n))) return nameFor(n);
 }
 
 function roundPoint(point: Vector3Tuple): Vector3Tuple {

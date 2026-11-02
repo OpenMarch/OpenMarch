@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import type { CueTarget } from "@openmarch/core";
 import { allTagsQueryOptions } from "@/hooks/queries/tags/queries";
 import { getSectionObjectByName } from "@/global/classes/Sections";
@@ -10,7 +10,7 @@ import { getSectionObjectByName } from "@/global/classes/Sections";
  * null target is the selection with nobody selected.
  */
 export function useTargetLabel() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { data: tags } = useQuery(allTagsQueryOptions());
     return (target: CueTarget | null): string => {
         if (!target) return t("visuals.inspector.selection");
@@ -25,7 +25,12 @@ export function useTargetLabel() {
             }
             case "tag": {
                 const tag = tags?.find((x) => x.id === target.tagId);
-                return tag?.name?.trim() || `tag-${target.tagId}`;
+                return (
+                    tag?.name?.trim() ||
+                    t("visuals.inspector.unnamedTag", {
+                        id: String(target.tagId),
+                    })
+                );
             }
             case "set":
                 return t("visuals.band.marchers", {

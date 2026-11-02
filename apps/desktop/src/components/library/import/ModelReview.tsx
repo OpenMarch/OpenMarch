@@ -37,6 +37,8 @@ import {
     UNIT_FACTORS,
     type Translate,
 } from "./reportText";
+import { formatList } from "@/utilities/formatList";
+import { formatLocale } from "@/utilities/formatLocale";
 
 type ChoiceRow = ModelImportReport["needsChoice"][number];
 type Actions = Pick<
@@ -166,7 +168,10 @@ function Choice({
                     <Row
                         title={k("units.title")}
                         detail={k("units.detail", {
-                            largest: largest.toLocaleString("en-US", {
+                            largest: largest.toLocaleString(formatLocale(), {
+                                style: "unit",
+                                unit: "meter",
+                                unitDisplay: "short",
                                 maximumFractionDigits: 2,
                             }),
                         })}
@@ -224,11 +229,12 @@ function Choice({
                         disabled={busy}
                         onChange={(v) => actions.setChoices({ simplify: v })}
                         title={k("simplify.title", {
-                            cap: row.cap.toLocaleString("en-US"),
+                            cap: row.cap.toLocaleString(formatLocale()),
                         })}
                         detail={k("simplify.detail", {
-                            triangles: row.triangles.toLocaleString("en-US"),
-                            cap: row.cap.toLocaleString("en-US"),
+                            triangles:
+                                row.triangles.toLocaleString(formatLocale()),
+                            cap: row.cap.toLocaleString(formatLocale()),
                             kind: kind ? kindName(kind, t) : "",
                         })}
                     />
@@ -242,7 +248,9 @@ function Choice({
                             >
                                 {k("before", {
                                     triangles:
-                                        row.triangles.toLocaleString("en-US"),
+                                        row.triangles.toLocaleString(
+                                            formatLocale(),
+                                        ),
                                 })}
                             </Chip>
                             <Chip
@@ -254,7 +262,7 @@ function Choice({
                                 {k("after", {
                                     triangles:
                                         row.simplifiedTriangles.toLocaleString(
-                                            "en-US",
+                                            formatLocale(),
                                         ),
                                 })}
                             </Chip>
@@ -286,7 +294,7 @@ function Choice({
                                 ? k("grip.manual")
                                 : row.misnamed.length
                                   ? k("grip.misnamed", {
-                                        names: row.misnamed.join(", "),
+                                        names: formatList(row.misnamed),
                                     })
                                   : k("grip.detail")
                         }
@@ -418,8 +426,16 @@ function ArtworkSurfaceChoice({
                     const size = slotSizeFor(m);
                     if (!size) return null;
                     const dims = k("size", {
-                        width: formatLength(size.widthM, "metric"),
-                        height: formatLength(size.heightM, "metric"),
+                        width: formatLength(
+                            size.widthM,
+                            "metric",
+                            formatLocale(),
+                        ),
+                        height: formatLength(
+                            size.heightM,
+                            "metric",
+                            formatLocale(),
+                        ),
                     });
                     return (
                         <SurfaceOption

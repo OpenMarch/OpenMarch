@@ -3,6 +3,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import type { XY } from "../types";
 import {
     frameControls,
+    shapeTurn,
     shapeOutline,
     type ShapeGesture,
     type ShapeTarget,
@@ -24,6 +25,7 @@ export function shapeCursor(
     params: unknown,
     n: number,
     target: ShapeTarget,
+    selected?: string | null,
 ): FieldCursor {
     switch (target.type) {
         case "move":
@@ -34,11 +36,38 @@ export function shapeCursor(
             return "grab";
         case "handle": {
             const handle = kind
-                .handles(params, n)
+                .handles(params, n, selected)
                 .find((h) => h.key === target.key);
             return handle ? asCursor(handle.cursor) : "default";
         }
     }
+}
+
+/**
+ * A shape's handles as the field draws them: squares, the selected one filled too (#557), the
+ * small round ones that add a point (#524), and the round ones on a selected point's bar (#557)
+ */
+export function handleDrawing(
+    kind: AnyToolKind,
+    params: unknown,
+    n: number,
+    selected: string | null | undefined,
+): Pick<
+    FieldModeDrawing,
+    "handles" | "addHandles" | "selectedHandles" | "barHandles"
+> {
+    const all = kind.handles(params, n, selected);
+    const square = all.filter((h) => !h.adds && !h.bar);
+    return {
+        handles: square.map((h) => h.at),
+        addHandles: all.filter((h) => h.adds).map((h) => h.at),
+        selectedHandles: square
+            .filter((h) => h.key === selected)
+            .map((h) => h.at),
+        barHandles: all.flatMap((h) =>
+            h.bar ? [{ at: h.at, from: h.bar }] : [],
+        ),
+    };
 }
 
 /** Spot labels show up to this many marchers; above it they pile up (08) */
@@ -98,7 +127,7 @@ export function frameDrawing(
     };
     if (!gesture || !pointer) return out;
     if (gesture.type === "rotate") {
-        const degrees = rotationDegrees(kind.frameOf(params, n).rotation);
+        const degrees = rotationDegrees(shapeTurn(kind, params, n));
         return {
             ...out,
             pivot: { at: gesture.pivot, to: pointer },
@@ -107,7 +136,12 @@ export function frameDrawing(
     }
     if (gesture.type === "handle") {
         // How long the shape is and how far apart, so a long one shows where the next snap lands
-        const text = lengthReadout(kind, params, n, env);
+        const text = [
+            kind.handleTip?.(params, n, gesture.key),
+            lengthReadout(kind, params, n, env),
+        ]
+            .filter(Boolean)
+            .join(" · ");
         return text ? { ...out, tip: { at: pointer, text } } : out;
     }
     if (gesture.type === "center" || gesture.type === "move") {
@@ -137,7 +171,8 @@ export function guideDrawing(
     const type = gesture?.type;
     // A spacing drag grows the shape from its pivot, so its center can land on a line too (#452)
     const moving = type === "move" || type === "center" || type === "scrub";
-    if (type !== "draw" && type !== "handle" && !moving) return {};
+    const drawing = type === "draw" || type === "points";
+    if (!drawing && type !== "handle" && !moving) return {};
     if (!kind.snapPoints) return {};
     const { fieldProperties } = field;
     const { width, height } = fieldProperties;

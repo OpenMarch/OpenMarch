@@ -6,6 +6,7 @@
  * (`src/lab/labVariant.ts` keeps it), so a reload keeps it and the lab's
  * feedback, which records the page's URL, says which version was on.
  */
+import tolgee from "@/global/singletons/Tolgee";
 import { useLabVariantStore } from "@/lab/labVariant";
 
 interface LabVariant {
@@ -38,16 +39,27 @@ export function mountVariantSwitch() {
     if (!variants.length) return;
     const group = document.createElement("div");
     group.setAttribute("role", "radiogroup");
-    group.setAttribute("aria-label", "Version to try");
     // Stands out, since comparing is the test
     group.style.cssText =
         "position:fixed;left:12px;bottom:12px;z-index:2147483000;display:flex;align-items:center;" +
         "gap:2px;padding:3px 3px 3px 10px;border-radius:999px;background:rgba(20,20,24,0.88);" +
         "border:1px solid #967eff;color:#b9aaff;font:500 12px 'DM Sans',system-ui,sans-serif";
     const name = document.createElement("span");
-    name.textContent = "Version";
     name.style.marginRight = "4px";
     group.append(name);
+    // The switch comes before the app starts the translations, so its words follow once they
+    // load, and on every language change. The versions' own names are the lab test's.
+    const word = () => {
+        group.setAttribute("aria-label", tolgee.t("web.variants.label"));
+        name.textContent = tolgee.t("web.variants.name");
+    };
+    void tolgee
+        .run()
+        .catch((error) =>
+            console.error("Couldn't load the translations:", error),
+        )
+        .then(word);
+    tolgee.on("language", word);
 
     const buttons = variants.map((variant) => {
         const button = document.createElement("button");

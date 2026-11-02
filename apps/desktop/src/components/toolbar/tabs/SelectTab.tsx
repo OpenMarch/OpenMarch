@@ -26,7 +26,8 @@ import { ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
 import ActionButton from "@/shortcuts/ActionButton";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import * as Popover from "@radix-ui/react-popover";
-import { getTagName, type DatabaseTag } from "@/db-functions/tag";
+import { type DatabaseTag } from "@/db-functions/tag";
+import { tagDisplayName } from "@/components/tags/tagDisplayName";
 import ChipSelector from "./ChipSelector";
 
 export default function ViewTab() {
@@ -176,7 +177,7 @@ function SectionSelector({ marchers }: { marchers: Marcher[] }) {
                         <T keyName="toolbar.select.noSectionsToSelect" />
                     </p>
                 }
-                ariaLabel="Select sections"
+                ariaLabel={t("toolbar.select.sectionsLabel")}
                 recentCategory="section"
             />
         </ToolbarSection>
@@ -221,10 +222,10 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
                 items={tagItems}
                 getId={(tag) => tag.id}
                 getLabel={(tag) =>
-                    getTagName({ tag_id: tag.id, name: tag.name })
+                    tagDisplayName({ tag_id: tag.id, name: tag.name }, t)
                 }
                 getSearchText={(tag) =>
-                    getTagName({ tag_id: tag.id, name: tag.name })
+                    tagDisplayName({ tag_id: tag.id, name: tag.name }, t)
                 }
                 onSelect={handleSelectByTag}
                 emptyMessage={
@@ -232,7 +233,7 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
                         <T keyName="toolbar.select.noTagsToSelect" />
                     </p>
                 }
-                ariaLabel="Select tags"
+                ariaLabel={t("toolbar.select.tagsLabel")}
                 recentCategory="tag"
             />
         </ToolbarSection>
@@ -274,7 +275,7 @@ function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
                         <T keyName="toolbar.select.noDrillPrefixesToSelect" />
                     </p>
                 }
-                ariaLabel="Select drill prefixes"
+                ariaLabel={t("toolbar.select.drillPrefixesLabel")}
                 recentCategory="drillPrefix"
             />
         </ToolbarSection>
@@ -305,14 +306,14 @@ function FamilySelector({ marchers }: { marchers: Marcher[] }) {
     );
 
     return (
-        <ToolbarSection aria-label="Select families">
+        <ToolbarSection aria-label={t("toolbar.select.familiesLabel")}>
             <ChipSelector
                 items={families}
                 getId={(family) => family.name}
                 getLabel={(family) => <T keyName={family.tName} />}
                 getSearchText={(family) => t(family.tName)}
                 onSelect={handleSelectByFamily}
-                ariaLabel="Select families"
+                ariaLabel={t("toolbar.select.familiesLabel")}
             />
         </ToolbarSection>
     );
@@ -370,7 +371,11 @@ function SelectTabContents() {
     }, [selectByOption]);
 
     if (!marchersLoaded) {
-        return <div>Loading...</div>;
+        return (
+            <div>
+                <T keyName="toolbar.select.loading" />
+            </div>
+        );
     }
     let Selector: React.JSX.Element;
     switch (selectByOption) {
@@ -387,7 +392,8 @@ function SelectTabContents() {
             Selector = <FamilySelector marchers={marchers ?? []} />;
             break;
         default:
-            Selector = <div>No selector found</div>;
+            // Every option has a selector above
+            Selector = <></>;
             break;
     }
     return (

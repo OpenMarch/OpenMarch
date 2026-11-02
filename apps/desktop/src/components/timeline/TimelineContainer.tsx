@@ -8,7 +8,7 @@ import VisualsTimeline from "@/components/visuals/VisualsTimeline";
 import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import { useIsPreviewMode } from "@/stores/PreviewModeStore";
 import { PreviewTimelinePanel } from "./TimelineNavigationPanel";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function TimelineContainer() {
     const focussedComponent = useUiSettingsStore(
@@ -53,6 +53,7 @@ const TIMELINE_MAX_PX_PER_SEC = 200;
 const TIMELINE_BASE_PX_PER_SEC = defaultSettings.timelinePixelsPerSecond;
 
 function TimelineZoomControls() {
+    const { t } = useTranslate();
     const setPixelsPerSecond = useUiSettingsStore((s) => s.setPixelsPerSecond);
     const currentPixels = useUiSettingsStore(
         (s) => s.uiSettings.timelinePixelsPerSecond,
@@ -90,7 +91,7 @@ function TimelineZoomControls() {
                 onClick={handleZoomOut}
                 className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={currentPixels <= TIMELINE_MIN_PX_PER_SEC}
-                title="Zoom out"
+                title={t("timeline.beatEditor.zoomOut")}
             >
                 <MinusIcon size={14} weight="bold" />
             </button>
@@ -98,15 +99,15 @@ function TimelineZoomControls() {
                 onClick={handleReset}
                 className="border-stroke bg-fg-2 text-text text-sub flex h-full w-full items-center justify-center border-r border-l px-3 py-2 font-mono transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={currentPixels === TIMELINE_BASE_PX_PER_SEC}
-                title="Reset timeline zoom"
+                title={t("timeline.zoomReset")}
             >
-                {zoomPercent}%
+                {t("timeline.percent", { percent: zoomPercent })}
             </button>
             <button
                 onClick={handleZoomIn}
                 className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={currentPixels >= TIMELINE_MAX_PX_PER_SEC}
-                title="Zoom in"
+                title={t("timeline.beatEditor.zoomIn")}
             >
                 <PlusIcon size={14} weight="bold" />
             </button>

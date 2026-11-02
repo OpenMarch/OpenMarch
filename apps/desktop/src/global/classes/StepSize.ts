@@ -1,4 +1,5 @@
 import { FieldProperties } from "@openmarch/core";
+import tolgee from "@/global/singletons/Tolgee";
 
 const INCHES_PER_YARD = 36;
 
@@ -93,19 +94,19 @@ export class StepSize {
      */
     displayString() {
         if (Number.isNaN(this.stepsPerFiveYards)) {
-            return "Undefined"; // when there are 0 counts in the page.
+            return tolgee.t("stepSize.undefined"); // when there are 0 counts in the page.
         }
 
         if (this.stepsPerFiveYards === Infinity) {
-            return "Hold"; // when the performer hasn't moved at all from the previous page.
+            return tolgee.t("stepSize.hold"); // when the performer hasn't moved at all from the previous page.
         }
 
         const roundedSteps = Math.round(this.stepsPerFiveYards * 10) / 10;
         if (roundedSteps > 64) {
-            return "Tiny"; // show 'Tiny' instead of something crazy like 73,249.7 to 5
+            return tolgee.t("stepSize.tiny"); // show 'Tiny' instead of something crazy like 73,249.7 to 5
         }
 
-        return `${roundedSteps.toLocaleString()} to 5`;
+        return tolgee.t("stepSize.toFive", { steps: roundedSteps });
     }
 
     // Real distance covered per step in inches, 0 for a hold and NaN for an undefined step

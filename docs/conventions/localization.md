@@ -5,8 +5,10 @@ piece of user-facing text through Tolgee as you build, even though only English
 ships at first. Translators fill in the other languages later, from the English
 text and the context you leave for them.
 
-`pnpm check:i18n` enforces this for `apps/desktop/src`. It runs in `pnpm check:quick`,
-in the pre-commit hook when desktop source or i18n files change, and in PR checks.
+`pnpm check:i18n` enforces this for the renderer (`apps/desktop/src`), the Electron
+main process and preload (`apps/desktop/electron`), and the web build's page and worker
+(`apps/desktop/web`). It runs in `pnpm check:quick`, in
+the pre-commit hook when desktop source or i18n files change, and in PR checks.
 
 ## What counts as user-facing text
 
@@ -33,8 +35,20 @@ directly in the places above, so these stay your responsibility:
 - Text built elsewhere and passed in through a variable or a prop not in the list.
 - Error messages (`throw new Error("…")`) that end up on screen.
 - `t` renamed on import (`const { t: translate } = …`); keys aren't checked there.
-- The Electron main process (`apps/desktop/electron`: menus, native dialogs) and
-  `packages/ui`.
+- In the main process, the check sees `t()` keys and literal text in native dialogs
+  (`dialog.show*` text options, `buttons`, file-filter `name`s, `dialog.showErrorBox`),
+  menu item labels, role menu items without a `label`, and window titles
+  (`new BrowserWindow({ title })`, `setTitle`). It doesn't see text main returns to the renderer (error messages in IPC results,
+  thrown errors), or dialog and menu options built in a helper and passed in.
+- Text the web build sets on the page directly (`textContent`, `setAttribute("aria-label", …)`,
+  `alert`) and errors its worker throws.
+- `packages/ui` isn't checked. It has no translations, so its components take every
+  piece of text through props, with no English default; pass translated text from
+  the app.
+
+Keys written in `labelKey`-style properties (`labelKey`, `titleKey`, `messageKey`,
+`descriptionKey`, `detailKey`, `tooltipKey`, `placeholderKey`) for code elsewhere to
+translate are checked like `t()` keys.
 
 ## How to add text
 
@@ -54,11 +68,55 @@ Key names are `<area>.<feature>.<thing>`, for example
 the same thing in the same place; "Set" on a button and "Set" as a state can
 translate differently.
 
+### Main process
+
+The Electron main process translates with `t()` from `apps/desktop/electron/main/i18n.ts`:
+the same keys, `en.json` and ICU formatting as the renderer, with English for keys a
+language lacks. It follows the app language the renderer saves (the `language`
+setting).
+
+- Call `t()` when the text is shown: build dialog options, file filters and menu
+  templates in a function, never in a module-level constant, or they keep the
+  language they were first read in.
+- The application menu is built by `buildApplicationMenu()` and rebuilt when the
+  language changes; a context menu is built each time it opens. Give role items
+  (`cut`, `zoomIn`) a `label` too: Electron's own role labels are English only, in
+  every language, so the check flags a role item without one.
+- Window titles are set when the window opens; a window whose renderer sets
+  `document.title` follows language changes from there.
+- Text for the renderer to show: prefer returning a code and let the renderer word
+  it. When main words it, use `t()`. Code the web build or a worker also runs
+  (`electron/database`, modules `web/` imports) must not import `i18n.ts`; return the
+  key instead (`messageKey`, `messageParams`) and translate where it's shown. The same
+  goes for `src/db-functions` (the convert-on-open worker runs it): refusals carry their
+  text as keys (`text.t`), and logs use `timelineTextForLog`.
+
+### Web build
+
+The web build (`apps/desktop/web`) runs the main process's work in a worker, which
+doesn't load Tolgee. An error the worker words for the person is one of `WORKER_ERRORS`
+in `web/protocol.ts`, sent with its key as the message; the page translates it when it
+arrives (`web/renderer/workerErrors.ts`). Text the page shows before the app starts
+(notices, the version switch) waits for `tolgee.run()`; only a message for when the
+translations themselves fail to load stays in English, with an `i18n-ignore`.
+
+- Native menus and dialogs can't show a `Shortcut`, so a shortcut there is plain text in
+  the string's arguments (`menu.withShortcut`).
+
 ## Writing translatable strings
 
 - Never build a sentence from pieces (`"Page " + label + " flag"`). Other languages
   reorder words. Use one string with arguments: `"Page {page}'s flag"`.
 - Counts use ICU plurals: `"{count, plural, one {# marcher} other {# marchers}}"`.
+- When a branch means exactly one rather than the singular form of a number, write
+  `=1`, not `one`: `"{count, plural, =1 {Page {first} follows} other {Pages {first}–{last} follow}}"`.
+  That covers a branch that doesn't show the number (`#`): "A cue uses it", "Keep Page 3",
+  "it" or "them" for the marchers, a verb that agrees with a list of names. In some
+  languages `one` also matches 21 (Russian), and Japanese has no `one` at all, so a `one`
+  branch with that wording would show for the wrong counts, or never.
+- Join a list with `formatList` or `formatAndList` (`src/utilities/formatList.ts`), never
+  `", "`. Code that can't import Tolgee returns the items and leaves the joining to the
+  caller.
 - Inline elements are tags in the string, rendered with `<T params>`:
   `"zoom out with <keys></keys>"` and
   `<T keyName="…" params={{ keys: () => <Shortcut … /> }} />`. Keyboard shortcuts
@@ -88,6 +146,23 @@ change. A stale note misleads more than a missing one, and the check can't tell.
 Every new key needs context. Keys that existed before the check are listed in
 `keysWithoutContext` in `apps/desktop/i18n-meta/baseline.json`; adding their context
 is welcome.
+
+## Changing a key
+
+The other languages keep their translation of a key until Tolgee retranslates it,
+so a translation made for the old English stays on screen after you change it:
+
+- A change that keeps the meaning, arguments and tags (a typo, `one {` to `=1 {`,
+  a plural for English only) keeps the key. The old translations still fit.
+- A change to the arguments or tags, or to what the text says, needs a **new key
+  name**. Then the other languages fall back to English until they're translated,
+  instead of showing the old meaning or "invalid". Move the note to the new key,
+  and don't edit the other language files.
+
+`pnpm check:i18n` checks every language file against English: a translation may
+only use the arguments and tags its English has, can't print a `select` argument
+as is, and must parse. If a pulled translation fails, fix it in Tolgee, or rename
+the key when the English changed.
 
 ## Source of truth and syncing
 

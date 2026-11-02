@@ -316,16 +316,19 @@ export async function readPreviousDotsFile(
     }
 }
 
+/**
+ * Asks for a show file to copy from. The caller passes the dialog's file-type
+ * `filters`, already translated: the web worker imports this module, so it
+ * doesn't load the main process's translations.
+ */
 export async function choosePreviousDotsFile(
     win: BrowserWindow | null,
+    filters: Electron.FileFilter[],
 ): Promise<PreviousDotsImportResult | null> {
     if (!win) return null;
 
     const result = await dialog.showOpenDialog(win, {
-        filters: [
-            { name: "OpenMarch File", extensions: ["dots"] },
-            { name: "All Files", extensions: ["*"] },
-        ],
+        filters,
         properties: ["openFile"],
     });
 

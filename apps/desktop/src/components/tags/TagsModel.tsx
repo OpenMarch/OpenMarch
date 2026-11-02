@@ -1,7 +1,7 @@
 import { TagIcon, XIcon } from "@phosphor-icons/react";
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function TagsModalLauncher({
     label = <TagIcon size={24} />,
@@ -21,6 +21,7 @@ export default function TagsModalLauncher({
 }
 
 function TagsModalContents() {
+    const { t } = useTranslate();
     const { toggleOpen } = useSidebarModalStore();
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
@@ -29,6 +30,7 @@ function TagsModalContents() {
                     <T keyName="tags.title" />
                 </h4>
                 <button
+                    aria-label={t("sidebar.close")}
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >

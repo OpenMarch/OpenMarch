@@ -1,4 +1,5 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, beforeAll } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 import { getTableName, sql } from "drizzle-orm";
 import { createResolver, type Resolver } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
@@ -12,12 +13,17 @@ import { addPageFlag, deletePageFlags } from "../pageFlags";
 import {
     deletePageYankWithMoves,
     deletePagesWithMoves,
-    pageDeleteWithMovesMessage,
-    pageRunsLabel,
+    pageRuns,
 } from "../pageDelete";
+import { pageDeleteWithMovesMessage } from "@/hooks/queries/pageDeleteMessage";
 import { moveMarchersInTarget } from "../timelineMoves";
 import { createTagAppearances, createTags } from "../tag";
 import { readPageGrid } from "../timelineRipple";
+
+// Refusals and toasts are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 keepFixturesInPageMode(
     "its tests build their own timeline state: a show made in timeline mode, or a converted one",
@@ -131,7 +137,7 @@ const S4 = async (db: DbConnection) => {
     return { a: a!, b: b! };
 };
 
-describe("pageRunsLabel and the toast", () => {
+describe("pageRuns", () => {
     const page = (name: string, order: number, renamed = false) => ({
         id: order,
         name,
@@ -140,63 +146,13 @@ describe("pageRunsLabel and the toast", () => {
     });
 
     test("runs of pages next to each other", () => {
-        expect(pageRunsLabel([page("3", 3), page("4", 4), page("5", 5)])).toBe(
+        expect(pageRuns([page("3", 3), page("4", 4), page("5", 5)])).toEqual([
             "3–5",
-        );
+        ]);
         expect(
-            pageRunsLabel([
-                page("2", 2),
-                page("4", 4),
-                page("4A", 5),
-                page("5", 6),
-            ]),
-        ).toBe("2, 4–5");
-        expect(pageRunsLabel([page("1", 1)])).toBe("1");
-    });
-
-    test("says where the counts went and which pages changed, by their old numbers", () => {
-        expect(
-            pageDeleteWithMovesMessage({
-                deletedNames: ["2"],
-                grownPages: [{ ...page("1", 1), counts: 32 }],
-                changedPages: [page("3", 3, true), page("4", 4, true)],
-            }),
-        ).toBe(
-            "Deleted Page 2 · Page 1 is now 32 counts · old Pages 3–4 changed",
-        );
-        expect(
-            pageDeleteWithMovesMessage({
-                deletedNames: ["3"],
-                grownPages: [],
-                changedPages: [page("2", 2), page("4", 4, true)],
-            }),
-        ).toBe("Deleted Page 3 · Page 2 and old Page 4 changed");
-        expect(
-            pageDeleteWithMovesMessage({
-                deletedNames: ["3"],
-                grownPages: [{ ...page("2", 2), counts: 16 }],
-                changedPages: [],
-            }),
-        ).toBe(
-            "Deleted Page 3 · Page 2 is now 16 counts · No other page changed",
-        );
-        // After home, the next page takes the box and is renumbered
-        expect(
-            pageDeleteWithMovesMessage({
-                deletedNames: ["1"],
-                grownPages: [{ ...page("2", 2, true), counts: 16 }],
-                changedPages: [],
-            }),
-        ).toBe(
-            "Deleted Page 1 · old Page 2 is now 16 counts · No other page changed",
-        );
-        expect(
-            pageDeleteWithMovesMessage({
-                deletedNames: ["2", "4"],
-                grownPages: [],
-                changedPages: [],
-            }),
-        ).toBe("Deleted Pages 2, 4 · No other page changed");
+            pageRuns([page("2", 2), page("4", 4), page("4A", 5), page("5", 6)]),
+        ).toEqual(["2", "4–5"]);
+        expect(pageRuns([page("1", 1)])).toEqual(["1"]);
     });
 });
 

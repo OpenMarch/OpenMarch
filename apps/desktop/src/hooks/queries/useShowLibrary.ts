@@ -16,6 +16,7 @@ import {
     type ImportedVersion,
 } from "@/view3d/library/showLibraryEmbed";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import { DEFAULT_STALE_TIME } from "./constants";
 
 /**
@@ -68,7 +69,7 @@ export const useEmbedImportedVersions = () => {
         },
         onError: (error, saved) => {
             conToastError(
-                "Couldn't copy the import into the show",
+                tolgee.t("library.import.copyIntoShowFailed"),
                 error,
                 saved.map((s) => s.item.id),
             );

@@ -51,7 +51,10 @@ export interface ShapeContext {
     };
 }
 
-/** One run of a mixed interval: `count` gaps of `steps` steps each, written `steps x count`. */
+/**
+ * One run of the older path kinds' mixed interval (`kinds/`): `count` gaps of `steps` steps each.
+ * The typed list counts marchers instead (`IntervalGroup` in `spacing.ts`, spec #522).
+ */
 export interface IntervalRun {
     readonly steps: number;
     readonly count: number;
@@ -64,7 +67,7 @@ export interface IntervalRun {
  * - `fit` (interval unlocked): the shape is as drawn and the marchers spread evenly over it.
  *   Its `sizeLocked` remembers the size lock for when the interval is locked.
  * - `interval` with `size: "follow"` (interval locked, "Keep interval"): the gaps are fixed (one
- *   interval, or mixed runs like `5x3,2x4`) and the shape is resized to fit them as it is edited.
+ *   interval, or runs of gaps) and the shape is resized to fit them as it is edited.
  *   `anchor` is the point that stays put when the length changes.
  * - `interval` with `size: "keep"` (interval and size locked, "on the path"): the shape is as
  *   drawn and the run is laid along it from `anchor`; a run longer than the shape continues past

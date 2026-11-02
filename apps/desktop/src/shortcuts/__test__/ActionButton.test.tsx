@@ -35,7 +35,7 @@ const Providers = ({ children }: { children: React.ReactNode }) => (
 describe("labels", () => {
     it("builds suffix and param labels", () => {
         expect(getActionLabel("moveSelectedMarchersUpFine", t)).toBe(
-            "actions.movement.moveUp (actions.movement.variants.fine)",
+            'actions.labelWithVariant:{"label":"actions.movement.moveUp","variant":"actions.movement.variants.fine"}',
         );
         expect(getActionLabel("timelineTapBeats2", t)).toBe(
             'actions.timeline.tapBeats:{"count":2}',

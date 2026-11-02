@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslate } from "@tolgee/react";
 import type { KeyboardEvent, PointerEvent, ReactNode } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
@@ -28,6 +29,7 @@ import {
  * until the drag ends (`setLayoutResizing`).
  */
 export function TimelineSplitter({ children }: { children: ReactNode }) {
+    const { t } = useTranslate();
     const basicMode = useIsBasicMode();
     const preview = useIsPreviewMode();
     // Tempo mode fits the pane to its lanes, so they are never cut off (tempo mode)
@@ -171,7 +173,7 @@ export function TimelineSplitter({ children }: { children: ReactNode }) {
                 <div
                     role="separator"
                     aria-orientation="horizontal"
-                    aria-label="Resize timeline"
+                    aria-label={t("timeline.splitter.label")}
                     aria-valuemin={MIN_TIMELINE_HEIGHT}
                     aria-valuenow={shown}
                     tabIndex={0}

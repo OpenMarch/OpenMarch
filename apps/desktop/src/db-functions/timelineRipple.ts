@@ -6,6 +6,11 @@ import { DbTransaction } from "./types";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
 import { deleteTimelineTransitionsInTransaction } from "./timelineTransitions";
 import { moveInSentence } from "@/timeline/timelineRangeWords";
+import {
+    text,
+    type TimelineTextArg,
+    timelineTextForLog,
+} from "@/timeline/timelineText";
 
 /**
  * Page and beat ripple (docs/timeline/phases/07-page-parity.md P7.4, P7.5).
@@ -278,13 +283,11 @@ const union = (a: Range, b: Range): Range => [
 
 const sameRange = (a: Range, b: Range) => a[0] === b[0] && a[1] === b[1];
 
-const checkBeats = (r: Range, what: string) => {
+const checkBeats = (r: Range, what: TimelineTextArg) => {
     if (r[0] >= r[1])
-        refuse(
-            `this change would leave ${what} with no counts; delete or shorten it first`,
-        );
+        refuse(text.t("timeline.refusals.ripple.noCounts", { what }));
     if (r[0] < 0 || r[1] > MAX_BEAT)
-        refuse(`this change would move ${what} outside the show`);
+        refuse(text.t("timeline.refusals.ripple.outsideShow", { what }));
 };
 
 /**
@@ -391,13 +394,16 @@ export function planTimelineRipple(
     }));
     const moveName = (r: { start_beat: number; end_beat: number }) =>
         moveInSentence({ start: r.start_beat, end: r.end_beat }, boxes, moves);
-    const marcherName = (id: number) =>
-        `marcher ${marcherLabels?.get(id) ?? id}`;
     const transitionOf = new Map(transitions.map((t) => [t.id, t]));
     const partName = (a: (typeof assignments)[number]) => {
         const t = transitionOf.get(a.transition_id);
-        return `${marcherName(a.marcher_id)}'s part of ${t ? moveName(t) : "a move"}`;
+        return text.t("timeline.where.marcherPart", {
+            marcher: marcherLabels?.get(a.marcher_id) ?? a.marcher_id,
+            move: t ? moveName(t) : text.t("timeline.where.aMove"),
+        });
     };
+    // The invariant refusals below show their code's own message; theirs is for the log
+    const logged = (value: TimelineTextArg) => timelineTextForLog(value);
 
     // A timeline whose transitions all go is deleted with them (C-11), so it isn't rippled
     const emptied = new Set(
@@ -425,7 +431,7 @@ export function planTimelineRipple(
         if (r[0] < l[0] || r[1] > l[1])
             throw new TimelineWriteError(
                 "E-T1",
-                `this change would put ${moveName(t)} outside its timeline`,
+                `this change would put ${logged(moveName(t))} outside its timeline`,
             );
         newTransition.set(t.id, r);
     }
@@ -440,7 +446,7 @@ export function planTimelineRipple(
         if (r[0] < t[0] || r[1] > t[1])
             throw new TimelineWriteError(
                 "E-A1",
-                `this change would move ${partName(a)} outside that move`,
+                `this change would move ${logged(partName(a))} outside that move`,
             );
         newAssignment.set(a.id, r);
     }
@@ -470,7 +476,7 @@ export function planTimelineRipple(
             if (prev[1] > cur[0])
                 throw new TimelineWriteError(
                     "E-A3",
-                    `this change would overlap ${partName(chain[i - 1]!)} and its part of ${moveName(transitionOf.get(chain[i]!.transition_id)!)}`,
+                    `this change would overlap ${logged(partName(chain[i - 1]!))} and its part of ${logged(moveName(transitionOf.get(chain[i]!.transition_id)!))}`,
                 );
         }
     }

@@ -12,7 +12,7 @@ import Shortcut from "@/components/ui/Shortcut";
 import { Tip } from "@/components/ui/Tip";
 import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import clsx from "clsx";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { twMerge } from "tailwind-merge";
 import { TouchCaption } from "@/components/ui/InfoTip";
 import type { ActionId } from "./definitions";
@@ -61,7 +61,7 @@ export default function ActionButton({
     onClick,
     ...rest
 }: ActionButtonProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const runnable = useSyncExternalStore(subscribeToActionHandlers, () =>
         isActionEnabled(action),
     );

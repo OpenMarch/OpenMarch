@@ -258,6 +258,7 @@ export default function View3dOverlay() {
                             }
                             label={fullscreenLabel}
                             tooltip={fullscreenLabel}
+                            shortcut="F"
                             iconOnly
                             testId="view3d-fullscreen"
                         />

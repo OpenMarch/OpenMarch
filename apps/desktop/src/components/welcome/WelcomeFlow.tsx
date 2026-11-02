@@ -69,7 +69,7 @@ export default function WelcomeFlow({
     reload = () => window.location.reload(),
 }: WelcomeFlowProps) {
     const { t } = useTranslate();
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const { theme, setTheme } = useTheme();
     const [language, setLanguage] = useState<LanguageChoice | null>(null);
     // Languages this flow switched to, so their (possibly late) language

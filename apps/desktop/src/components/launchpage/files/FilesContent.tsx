@@ -10,6 +10,7 @@ import { utf8ToBase64 } from "@/utilities/utils";
 
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
+import { formatLocale } from "@/utilities/formatLocale";
 
 /**
  * Builds a `data:image/svg+xml;base64,...` URI from a cached SVG preview.
@@ -34,7 +35,9 @@ const getSvgPreviewDataUri = (
 
 // eslint-disable-next-line max-lines-per-function
 export default function FilesTabContent() {
-    const { t } = useTolgee();
+    const { t, getLanguage } = useTolgee(["language"]);
+    // Dates follow the app's language, or the system's regional format in English
+    const language = formatLocale(getLanguage());
 
     const [recentFiles, setRecentFiles] = useState<RecentFile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -158,7 +161,7 @@ export default function FilesTabContent() {
                     <div className="flex h-full w-full">
                         <CircleNotchIcon
                             size={32}
-                            aria-label="Loading"
+                            aria-label={t("launchpage.files.loading")}
                             className="text-text my-8 animate-spin"
                         />
                     </div>
@@ -216,19 +219,19 @@ export default function FilesTabContent() {
                                             <div className="text-text-subtitle text-body min-w-0 break-words">
                                                 {new Date(
                                                     file.lastOpened,
-                                                ).toLocaleDateString()}{" "}
-                                                {new Date(
-                                                    file.lastOpened,
-                                                ).toLocaleTimeString(
-                                                    undefined,
-                                                    {
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    },
-                                                )}
+                                                ).toLocaleString(language, {
+                                                    year: "numeric",
+                                                    month: "numeric",
+                                                    day: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
                                             </div>
                                         </div>
                                         <Button
+                                            aria-label={t(
+                                                "launchpage.files.removeFile",
+                                            )}
                                             size="compact"
                                             variant="secondary"
                                             tooltipText={t(

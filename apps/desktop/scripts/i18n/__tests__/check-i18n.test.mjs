@@ -14,19 +14,25 @@ after(async () => {
 
 const json = (value) => `${JSON.stringify(value, null, 4)}\n`;
 
-/** A desktop package with one source file, en.json, context and a baseline. */
+/**
+ * A desktop package with one source file (`src/View.tsx`, or `files` by path), en.json,
+ * context and a baseline.
+ */
 async function fixture({
     source,
+    files = { "src/View.tsx": source },
     english = { menu: { save: "Save" } },
     context = { "menu.save": "Menu item that saves the show." },
     baseline = { untranslatedText: {}, keysWithoutContext: [] },
 }) {
     const dir = await mkdtemp(path.join(tmpdir(), "check-i18n-"));
     fixtures.push(dir);
-    await mkdir(path.join(dir, "src"), { recursive: true });
     await mkdir(path.join(dir, "i18n"), { recursive: true });
     await mkdir(path.join(dir, "i18n-meta"), { recursive: true });
-    await writeFile(path.join(dir, "src/View.tsx"), source);
+    for (const [file, text] of Object.entries(files)) {
+        await mkdir(path.dirname(path.join(dir, file)), { recursive: true });
+        await writeFile(path.join(dir, file), text);
+    }
     await writeFile(path.join(dir, PATHS.english), json(english));
     await writeFile(path.join(dir, PATHS.context), json(context));
     await writeFile(path.join(dir, PATHS.baseline), json(baseline));
@@ -328,4 +334,86 @@ test("a baseline checked out with CRLF line endings isn't stale", async () => {
         (await readFile(file, "utf8")).replace(/\n/g, "\r\n"),
     );
     assert.deepEqual((await checkI18n(dir)).errors, []);
+});
+
+test("main-process keys are checked, and labelKey-style properties hold keys", async () => {
+    const files = {
+        "electron/main/menu.ts": `
+import { t } from "./i18n";
+export const items = [
+    { label: t("menu.save"), click() {} },
+    { label: t("menu.missing"), click() {} },
+];
+`,
+        "src/global/menuActions.ts": `
+export const ACTIONS = [
+    { action: "save", labelKey: "menu.save" },
+    { action: "gone", labelKey: "menu.gone" },
+    { action: "custom", labelKey: "" },
+];
+`,
+    };
+    const { errors } = await checkI18n(await fixture({ files }));
+    const text = errors.join("\n");
+    assert.match(text, /electron\/main\/menu\.ts:5:\d+ +Key "menu\.missing"/);
+    assert.match(text, /src\/global\/menuActions\.ts:4:\d+ +Key "menu\.gone"/);
+    assert.equal(errors.length, 2, text);
+});
+
+test("flags a main-process role menu item without a label", async () => {
+    const files = {
+        "electron/main/menu.ts": `
+import { t } from "./i18n";
+export const items = (copy: object) => [
+    { role: "undo" },
+    { role: "copy", label: t("menu.save") },
+    { ...copy, role: "copy" },
+    { role: "paste" }, // i18n-ignore: a test of the ignore comment
+    { type: "separator" },
+];
+`,
+    };
+    const { errors } = await checkI18n(await fixture({ files }));
+    const text = errors.join("\n");
+    assert.match(text, /electron\/main\/menu\.ts: 1 untranslated UI text:/);
+    assert.match(text, /menu\.ts:4:\d+ +.*menu item "undo" has no label/);
+    assert.ok(!text.includes('"paste"'), text);
+});
+
+test("flags the main process's literal dialog, menu and window text", async () => {
+    const files = {
+        "electron/main/index.ts": `
+import { BrowserWindow, dialog } from "electron";
+export async function run(win: BrowserWindow, path: string) {
+    dialog.showErrorBox("Couldn't open", path);
+    await dialog.showSaveDialog(win, {
+        title: "Save a copy",
+        buttonLabel: t("menu.save"),
+        filters: [{ name: "Show file", extensions: ["dots"] }],
+    });
+    await dialog.showMessageBox(win, { message: "Converted", buttons: ["OK"] });
+    new BrowserWindow({ title: "Settings", width: 800 });
+    win.setTitle("OpenMarch - " + path); // i18n-ignore: product name and path
+    console.log("Not UI text");
+    return [{ label: "Open File", click() {} }, { label: "Not a menu" }];
+}
+`,
+    };
+    const { errors } = await checkI18n(await fixture({ files }));
+    const text = errors.join("\n");
+    assert.match(text, /electron\/main\/index\.ts: 7 untranslated UI texts/);
+    for (const found of [
+        `"Couldn't open"`,
+        '"Save a copy"',
+        '"Show file"',
+        '"Converted"',
+        '"OK"',
+        '"Settings"',
+        '"Open File"',
+    ]) {
+        assert.ok(text.includes(found), `expected ${found} in:\n${text}`);
+    }
+    for (const missing of ["OpenMarch", "Not UI text", "Not a menu"]) {
+        assert.ok(!text.includes(missing), `didn't expect ${missing}`);
+    }
 });

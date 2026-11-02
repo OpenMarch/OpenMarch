@@ -2,6 +2,7 @@
  * Utilities for syncing the local background image when uploading a revision
  * to the server (source checksum matching, upload if different or missing).
  */
+import tolgee from "@/global/singletons/Tolgee";
 import { sniffArtworkFormat } from "@om-electron/main/artwork-import/formats";
 
 export type BackgroundImageDrawType = "fill" | "fit";
@@ -72,12 +73,24 @@ export const canvasPngEncoder: PngEncoder = async (bytes) => {
         canvas.width = image.naturalWidth || 300;
         canvas.height = image.naturalHeight || 150;
         const context = canvas.getContext("2d");
-        if (!context) throw new Error("No 2D canvas");
+        if (!context)
+            throw new Error(
+                tolgee.t(
+                    "mobileExport.settings.backgroundImage.drawFailed",
+                    "The background image couldn't be drawn",
+                ),
+            );
         context.drawImage(image, 0, 0, canvas.width, canvas.height);
         const blob = await new Promise<Blob | null>((resolve) =>
             canvas.toBlob(resolve, "image/png"),
         );
-        if (!blob) throw new Error("The background image couldn't be drawn");
+        if (!blob)
+            throw new Error(
+                tolgee.t(
+                    "mobileExport.settings.backgroundImage.drawFailed",
+                    "The background image couldn't be drawn",
+                ),
+            );
         return new Uint8Array(await blob.arrayBuffer());
     } finally {
         URL.revokeObjectURL(url);

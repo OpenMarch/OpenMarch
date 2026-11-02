@@ -37,6 +37,7 @@ export function Tip({
     action,
     hint,
     disabled,
+    side,
     children,
 }: {
     label: string | undefined;
@@ -48,6 +49,8 @@ export function Tip({
     hint?: string;
     /** Never opens, while keeping the control's place in the tree */
     disabled?: boolean;
+    /** Where it opens; above the control by default */
+    side?: "top" | "bottom" | "left" | "right";
     children: ReactElement;
 }) {
     const shared = useContext(InRichTips);
@@ -59,6 +62,7 @@ export function Tip({
             action={action}
             hint={hint}
             disabled={disabled}
+            side={side}
             closeOnPress
         >
             {children}

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import tolgee from "@/global/singletons/Tolgee";
 
 /** The speeds a click on the speed button steps through, in order; it wraps from the last */
 export const PLAYBACK_SPEEDS = [0.25, 0.5, 1, 1.5, 2, 4] as const;
@@ -46,9 +47,13 @@ export function effectivePlaybackSpeed(state: {
     return state.speed;
 }
 
-/** "1×", "0.25×", "1.5×" */
-export const formatPlaybackSpeed = (speed: number): string =>
-    `${Number(speed.toFixed(2))}×`;
+/** "1×", "0.25×", "1.5×" in English; the number and the × follow the app's language */
+export const formatPlaybackSpeed = (
+    speed: number,
+    t: (key: string, params: { speed: number }) => string = (key, params) =>
+        tolgee.t(key, params),
+): string =>
+    t("timeline.playbackSpeed.value", { speed: Number(speed.toFixed(2)) });
 
 /**
  * Playback speed, like a video player's. Not saved: a show opens at 1×. The audio player, the

@@ -311,9 +311,8 @@ export function PageKeepChainButton({
     const hidden = chain.kind === "follows" && !always;
     return (
         <ShortcutTooltip
-            label={
-                chain.withK ? `${chain.label} (${KEEP_SHORTCUT})` : chain.label
-            }
+            label={chain.label}
+            shortcut={chain.withK ? KEEP_SHORTCUT : undefined}
             hint={chain.hint}
             side="top"
             closeOnPress

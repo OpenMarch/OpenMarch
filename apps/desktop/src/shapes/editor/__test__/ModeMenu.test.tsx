@@ -49,6 +49,13 @@ describe("the mode switch", () => {
         expect(screen.getByTestId("shape-mode-menu")).toHaveTextContent("Grid");
     });
 
+    it("shows the current mode's picture on its button (#559)", () => {
+        shown(padTool, pad);
+        expect(screen.getByTestId("shape-mode-menu-picture").innerHTML).toBe(
+            screen.getByTestId("shape-mode-preview-files").innerHTML,
+        );
+    });
+
     it("fills the shape in the mode picked", () => {
         const apply = vi.fn();
         shown(padTool, pad, apply);

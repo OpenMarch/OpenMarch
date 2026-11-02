@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { lineCoordinate } from "../lineCoordinate";
+import tolgee from "@/global/singletons/Tolgee";
 
 /**
  * A snap guide's name (#427): the line as the coordinate sheet writes a spot on it, in its terse
@@ -14,7 +15,11 @@ const x = (steps: number) =>
 const y = (steps: number) =>
     field.centerFrontPoint.yPixels + steps * field.pixelsPerStep;
 
-beforeAll(() => ReadableCoords.setFieldProperties(field));
+// The coordinates are translated: load English so they read as written
+beforeAll(async () => {
+    ReadableCoords.setFieldProperties(field);
+    await tolgee.run();
+});
 
 describe("lineCoordinate", () => {
     it("names a side-to-side line the way the sheet writes its x", () => {

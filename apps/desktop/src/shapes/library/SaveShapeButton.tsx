@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { keepFocus } from "../editor/keepFocus";
 import { Tip } from "@/components/ui/Tip";
 import { saveShape, type SavableShape } from "./saveShape";
-import { suggestedName } from "./savedShapes";
+import { suggestedName, whyNotSavable } from "./savedShapes";
 
 /**
  * ☆ Save (#353, spec #344 story 26–27): in the floating editor (an icon, #429) and at the bottom of the inspector's
@@ -36,30 +36,42 @@ export function SaveShapeButton({
     const savedAs = (name: string) =>
         tolgee.t("shapes.save.savedAs", "Saved as {name}", { name });
 
+    // A shape saving can't keep yet: greyed out, the tooltip saying why
+    const notSavable = whyNotSavable(
+        shape.kind,
+        shape.params,
+        shape.spots,
+        stepPx,
+    );
     if (name === null)
         return (
             <Tip
                 label={
-                    saved && compact
+                    notSavable ??
+                    (saved && compact
                         ? savedAs(saved)
                         : tolgee.t(
                               "shapes.save.tip",
                               "Save this shape to your library, starred",
-                          )
+                          ))
                 }
             >
                 <button
                     type="button"
                     aria-label={
-                        saved && compact
+                        notSavable ??
+                        (saved && compact
                             ? savedAs(saved)
                             : tolgee.t(
                                   "shapes.save.ariaLabel",
                                   "Save this shape to your library",
-                              )
+                              ))
                     }
+                    // aria-disabled, not disabled, so the tooltip still says why
+                    aria-disabled={notSavable !== null || undefined}
                     onPointerDown={keepFocus}
                     onClick={() => {
+                        if (notSavable !== null) return;
                         setSaved(null);
                         setDescription("");
                         setName(
@@ -71,7 +83,12 @@ export function SaveShapeButton({
                             ),
                         );
                     }}
-                    className={clsx("flex items-center gap-4", className)}
+                    className={clsx(
+                        "flex items-center gap-4",
+                        className,
+                        notSavable !== null &&
+                            "cursor-default opacity-40 hover:text-inherit",
+                    )}
                     data-testid={testId}
                 >
                     <StarIcon size={14} weight={saved ? "fill" : "regular"} />

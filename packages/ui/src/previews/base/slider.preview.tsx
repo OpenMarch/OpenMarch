@@ -5,5 +5,5 @@ export const PreviewProps = {
 };
 
 export default function Preview({ ...props }) {
-    return <Slider max={100} defaultValue={[50]} />;
+    return <Slider max={100} defaultValue={[50]} aria-label="Volume" />;
 }

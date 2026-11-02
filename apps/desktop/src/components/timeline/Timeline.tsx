@@ -87,6 +87,11 @@ export interface TimelineInput {
     readonly targetId: string | number;
     readonly targetType: TimelineTrackTargetType;
     readonly label: string;
+    /**
+     * `label` is a stand-in ("Timeline 12") for a stored timeline without a name, for logs and
+     * tests; the app words it when it shows it (`describeMoveClips`)
+     */
+    readonly unnamed?: boolean;
     readonly color: string;
     readonly startBeatIndex: number;
     readonly endBeatIndex: number;

@@ -248,10 +248,19 @@ export function formatFeetInches(m: number): string {
     return feet > 0 ? `${sign}${feet}' ${inches}"` : `${sign}${inches}"`;
 }
 
-/** `1.83 m`. Rounds to the nearest cm. */
-export function formatMeters(m: number): string {
+/**
+ * `1.83 m`. Rounds to the nearest cm. `locale` picks the decimal mark; core has no app
+ * language, so callers that show the text pass one (`formatLocale()`); omitted, it's "1.83".
+ */
+export function formatMeters(m: number, locale: string = "en"): string {
     const cm = Math.round(m * 100);
-    return `${(cm / 100).toFixed(2)} m`;
+    // `+ 0` turns -0 into 0, which Intl would write as "-0"
+    const value = (cm / 100 + 0).toLocaleString(locale, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+        useGrouping: false,
+    });
+    return `${value} m`;
 }
 
 /**
@@ -262,6 +271,7 @@ export function formatMeters(m: number): string {
 export function formatLength(
     length: Length | number,
     system: MeasurementSystem,
+    locale?: string,
 ): string {
     const { m, typed } = typeof length === "number" ? { m: length } : length;
     if (typed !== undefined) {
@@ -269,5 +279,5 @@ export function formatLength(
         if (parsed && isImperialUnit(parsed.unit) && parsed.m === m)
             return parsed.typed;
     }
-    return system === "metric" ? formatMeters(m) : formatFeetInches(m);
+    return system === "metric" ? formatMeters(m, locale) : formatFeetInches(m);
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
@@ -15,7 +15,7 @@ import {
 } from "@openmarch/ui";
 
 export default function DatabaseRepairSettings() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [isOpen, setIsOpen] = useState(false);
     const [isRepairing, setIsRepairing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ export default function DatabaseRepairSettings() {
             // Get current database path
             const currentPath = await window.electron.databaseGetPath();
             if (!currentPath) {
-                throw new Error("No database file is currently open");
+                throw new Error(t("settings.repairDotsFile.noFileOpen"));
             }
 
             // Call repair function
@@ -61,7 +61,9 @@ export default function DatabaseRepairSettings() {
             toast.success(t("settings.repairDotsFile.success"));
         } catch (err) {
             const errorMessage =
-                err instanceof Error ? err.message : "Unknown error occurred";
+                err instanceof Error
+                    ? err.message
+                    : t("settings.repairDotsFile.unknownError");
             setError(errorMessage);
             // Show error toast
             toast.error(

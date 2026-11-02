@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { boxTool } from "../../box/boxTool";
+import { curveTool, lineTool } from "../../line/lineTool";
 import { rowTool } from "../../__test__/fakeRowKind";
 import { savedShapeItems } from "../../command/useShapePaletteSource";
 import { savedShapeRows } from "../../library/savedShapes";
@@ -25,6 +26,15 @@ describe("a shape's picture (#378)", () => {
         const svg = svgOf(<ShapePreviewIcon kind={rowTool} />);
         expect(svg.querySelectorAll("circle")).toHaveLength(PREVIEW_SPOTS);
         expect(svg.querySelector("polygon")).toBeNull();
+    });
+
+    it("draws an open line and curve with a polyline, not a closed polygon", () => {
+        for (const kind of [lineTool, curveTool]) {
+            const svg = svgOf(<ShapePreviewIcon kind={kind} />);
+            expect(svg.querySelector("polyline")).not.toBeNull();
+            expect(svg.querySelector("polygon")).toBeNull();
+            cleanup();
+        }
     });
 
     it("leads with the outline: a full line and a fill, with smaller, lighter dots (#382)", () => {

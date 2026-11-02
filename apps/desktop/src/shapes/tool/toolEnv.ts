@@ -79,6 +79,7 @@ export function toolEnvFor(
             return { x: r.xPixels, y: r.yPixels };
         },
         hitRadius: HANDLE_REACH_PX / (field.zoom() || 1),
+        zoom: field.zoom() || 1,
         fieldLines: fieldLinesOf(fieldProperties),
         pullRadius: EDGE_PULL_PX / (field.zoom() || 1),
         // constrain flips the box's ratio lock for the drag: one idea, not two (modifier roles, 2)

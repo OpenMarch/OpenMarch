@@ -1,5 +1,6 @@
 import { FieldProperties, Checkpoint } from "@openmarch/core";
 import MarcherPage from "./MarcherPage";
+import tolgee from "@/global/singletons/Tolgee";
 
 export enum X_DESCRIPTION {
     INSIDE = "inside",
@@ -257,58 +258,30 @@ export class ReadableCoords {
     }
 
     /**
-     * Formats an amount of steps into a string with at most two decimal places.
-     *
-     * @param steps number of steps
-     * @param includeStepsString Whether or not to include the word "steps" in the string. False by default.
-     * @param includeTrailingSpace Whether or not to include a trailing space at the end of the string. True by default.
-     * @returns String of steps with at most two decimal places, plus the word "steps" if includeStepsString is true.
-     * 0 steps returns an empty string.
-     * (E.g. "3.14 steps ", "2 steps ", "1 step " - "3.14 ", "2 ", "1 ")
+     * Steps rounded to at most two decimal places, for the readouts below.
      */
-    private static formatStepsString(
-        steps: number,
-        includeStepsString = false,
-        includeTrailingSpace = true,
-    ) {
-        if (steps === 0) return "";
-        const roundedSteps = Math.round(steps * 100) / 100;
-        const stepString = includeStepsString
-            ? steps === 1
-                ? " step"
-                : " steps"
-            : "";
-        const trailingSpace = includeTrailingSpace ? " " : "";
-        return roundedSteps + stepString + trailingSpace;
+    private static roundSteps(steps: number) {
+        return Math.round(steps * 100) / 100;
     }
 
-    static getTerseXDescription(xDescription: X_DESCRIPTION) {
-        switch (xDescription) {
-            case X_DESCRIPTION.INSIDE:
-                return "IN";
-            case X_DESCRIPTION.OUTSIDE:
-                return "OUT";
-            case X_DESCRIPTION.ON:
-                return "On";
-        }
-    }
-
-    static getTerseYDescription(yDescription: Y_DESCRIPTION) {
-        switch (yDescription) {
-            case Y_DESCRIPTION.IN_FRONT_OF:
-                return "FR";
-            case Y_DESCRIPTION.BEHIND:
-                return "BE";
-            case Y_DESCRIPTION.ON:
-                return "On";
-        }
+    /** "S1: <position>", or the position alone at the center line, where there's no side. */
+    private withSide(position: string) {
+        return this.sideDescription.length === 0
+            ? position
+            : tolgee.t("coordinates.withSide", {
+                  side: this.sideDescription,
+                  position,
+              });
     }
 
     /**
      * @returns A verbose string description of the ReadableCoords.
      */
     toString() {
-        return `${this.toVerboseStringX()} - ${this.toVerboseStringY()}`;
+        return tolgee.t("coordinates.full", {
+            x: this.toVerboseStringX(),
+            y: this.toVerboseStringY(),
+        });
     }
 
     isFieldCenter() {
@@ -320,73 +293,108 @@ export class ReadableCoords {
      *
      * @param includeStepsString Whether or not to include the word "step(s)" in the string. False by default.
      * @returns A string description of the marcher's readable x coordinate.
-     * (E.g. "3 steps inside 35 yard line side 1", "On 40 yard line side 2")
+     * (E.g. "S1: 3 steps inside 35 yard line", "S2: On 40 yard line")
      */
     toVerboseStringX({
         includeStepsString = false,
     }: {
         includeStepsString?: boolean;
     } = {}) {
-        // Handle case where the marcher is on the center x checkpoint
-        return (
-            (this.sideDescription.length === 0
-                ? ""
-                : `${this.sideDescription}: `) +
-            ReadableCoords.formatStepsString(this.xSteps, includeStepsString) +
-            this.xDescription +
-            " " +
-            this.xCheckpoint.name
-        );
+        const params = {
+            steps: ReadableCoords.roundSteps(this.xSteps),
+            checkpoint: this.xCheckpoint.name,
+        };
+        switch (this.xDescription) {
+            case X_DESCRIPTION.INSIDE:
+                return this.withSide(
+                    includeStepsString
+                        ? tolgee.t("coordinates.verbose.insideSteps", params)
+                        : tolgee.t("coordinates.verbose.inside", params),
+                );
+            case X_DESCRIPTION.OUTSIDE:
+                return this.withSide(
+                    includeStepsString
+                        ? tolgee.t("coordinates.verbose.outsideSteps", params)
+                        : tolgee.t("coordinates.verbose.outside", params),
+                );
+            case X_DESCRIPTION.ON:
+                return this.withSide(
+                    tolgee.t("coordinates.verbose.onX", params),
+                );
+        }
     }
 
     /**
      * Create a terse description of a ReadableCoords' X properties.
      *
      * @returns A string description of the marcher's readable x coordinate.
-     * ("3 in 35 S1" ," 2 out 0 S2" , "On 20 S1")
+     * ("S1: 3 IN 35", "S2: 2 OUT 0", "S1: On 20")
      */
     toTerseStringX() {
-        // Handle case where the marcher is on the center x checkpoint
-        return (
-            (this.sideDescription.length === 0
-                ? ""
-                : `${this.sideDescription}: `) +
-            ReadableCoords.formatStepsString(this.xSteps) +
-            ReadableCoords.getTerseXDescription(this.xDescription) +
-            " " +
-            this.xCheckpoint.terseName
-        );
+        const params = {
+            steps: ReadableCoords.roundSteps(this.xSteps),
+            checkpoint: this.xCheckpoint.terseName,
+        };
+        switch (this.xDescription) {
+            case X_DESCRIPTION.INSIDE:
+                return this.withSide(
+                    tolgee.t("coordinates.terse.inside", params),
+                );
+            case X_DESCRIPTION.OUTSIDE:
+                return this.withSide(
+                    tolgee.t("coordinates.terse.outside", params),
+                );
+            case X_DESCRIPTION.ON:
+                return this.withSide(tolgee.t("coordinates.terse.onX", params));
+        }
     }
+
     /**
-     * Create a verbose description of a ReadableCoords' X properties.
+     * Create a verbose description of a ReadableCoords' Y properties.
      *
      * @param includeStepsString Whether or not to include the word "step(s)" in the string. False by default.
-     * @returns A string description of the marcher's readable x coordinate.
+     * @returns A string description of the marcher's readable y coordinate.
      * ("5 steps behind front hash", "On front sideline")
      */
     toVerboseStringY({
         includeStepsString = false,
     }: { includeStepsString?: boolean } = {}) {
-        return (
-            ReadableCoords.formatStepsString(this.ySteps, includeStepsString) +
-            this.yDescription +
-            " " +
-            this.yCheckpoint.name
-        );
+        const params = {
+            steps: ReadableCoords.roundSteps(this.ySteps),
+            checkpoint: this.yCheckpoint.name,
+        };
+        switch (this.yDescription) {
+            case Y_DESCRIPTION.IN_FRONT_OF:
+                return includeStepsString
+                    ? tolgee.t("coordinates.verbose.inFrontOfSteps", params)
+                    : tolgee.t("coordinates.verbose.inFrontOf", params);
+            case Y_DESCRIPTION.BEHIND:
+                return includeStepsString
+                    ? tolgee.t("coordinates.verbose.behindSteps", params)
+                    : tolgee.t("coordinates.verbose.behind", params);
+            case Y_DESCRIPTION.ON:
+                return tolgee.t("coordinates.verbose.onY", params);
+        }
     }
 
     /**
      * Create a terse description of a ReadableCoords' Y properties.
      *
      * @returns A string description of the marcher's readable  coordinate.
-     * ("9 fr. BH" -> 9 steps in front of the back hash , "12 be. FSL" -> 12 steps behind front sideline , "On FH")
+     * ("9 FR BH" -> 9 steps in front of the back hash , "12 BE FSL" -> 12 steps behind front sideline , "On FH")
      */
     toTerseStringY() {
-        return (
-            ReadableCoords.formatStepsString(this.ySteps) +
-            ReadableCoords.getTerseYDescription(this.yDescription) +
-            " " +
-            this.yCheckpoint.terseName
-        );
+        const params = {
+            steps: ReadableCoords.roundSteps(this.ySteps),
+            checkpoint: this.yCheckpoint.terseName,
+        };
+        switch (this.yDescription) {
+            case Y_DESCRIPTION.IN_FRONT_OF:
+                return tolgee.t("coordinates.terse.inFrontOf", params);
+            case Y_DESCRIPTION.BEHIND:
+                return tolgee.t("coordinates.terse.behind", params);
+            case Y_DESCRIPTION.ON:
+                return tolgee.t("coordinates.terse.onY", params);
+        }
     }
 }

@@ -8,6 +8,7 @@ import {
 import { FRACTIONS, formatSteps } from "../editor/format";
 import { RING_SLOTS, type RingShape } from "../tool/ringMachine";
 import type { ShapeToolEntry } from "../tool/shapeTools";
+import { toolId } from "../tool/toolKind";
 import type { SavedShape } from "./savedShapes";
 
 /** The most shapes that can be starred: one star puts a shape in the ring, which holds this many */
@@ -31,61 +32,85 @@ export interface ShapeLibraryRow extends RingShape {
     };
 }
 
+/** The spacing as numbers: "2", or "2 × 4" when they differ; null for no spacing */
+function spacingText(steps: readonly number[]): string | null {
+    if (steps.length === 0) return null;
+    const shown = steps.map((s) => formatSteps(s));
+    const same = shown.every((s) => s === shown[0]);
+    return same ? shown[0]! : shown.join(" × ");
+}
+
 /** How far apart the spots are, in steps: "2 apart", "2 × 4 apart"; null for no spacing */
 export function intervalNote(steps: readonly number[]): string | null {
-    if (steps.length === 0) return null;
-    const shown = steps.map(formatSteps);
-    const same = shown.every((s) => s === shown[0]);
-    return tolgee.t("shapes.library.note.apart", "{spacing} apart", {
-        spacing: same ? shown[0]! : shown.join(" × "),
-    });
+    const spacing = spacingText(steps);
+    return spacing === null
+        ? null
+        : tolgee.t("shapes.library.note.apart", "{spacing} apart", {
+              spacing,
+          });
 }
 
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
 
-/** A stagger as words: "stagger ½", "stagger ⅓ left"; null for none */
-function staggerNote([p, q]: Fraction): string | null {
+/** A stagger's shift as a fraction ("½") and whether it goes left; null for none */
+function staggerOf([p, q]: Fraction): {
+    fraction: string;
+    left: boolean;
+} | null {
     if (p === 0) return null;
     const d = gcd(Math.abs(p), q);
     const plain = `${Math.abs(p) / d}/${q / d}`;
-    const fraction = FRACTIONS[plain] ?? plain;
-    return p < 0
-        ? tolgee.t(
-              "shapes.library.note.staggerLeft",
-              "stagger {fraction} left",
-              {
-                  fraction,
-              },
-          )
-        : tolgee.t("shapes.library.note.stagger", "stagger {fraction}", {
-              fraction,
-          });
+    return { fraction: FRACTIONS[plain] ?? plain, left: p < 0 };
 }
 
 /**
  * How a shape is spaced and filled: the spacing, then a Files stagger ("2 apart, stagger ½"), or
  * the mode first for Outline and Spread ("Spread 2 apart"). `distribution` is a recipe's or a
- * saved shape's; none, or one this version doesn't read, is plain Files.
+ * saved shape's; none, or one this version doesn't read, is plain Files. One message for each
+ * combination, so a language can order and word it whole.
  */
 export function spacingNote(
     steps: readonly number[],
     distribution?: { readonly mode: string } | null,
 ): string | null {
-    const spacing = intervalNote(steps);
+    const spacing = spacingText(steps);
     const d = distribution
         ? storedDistribution({ distribution }, 1)
         : undefined;
-    if (!d) return spacing;
+    if (!d) return intervalNote(steps);
     if (d.mode !== "files") {
-        const mode = MODE_LABELS[d.mode as DistributionMode];
         return spacing
-            ? tolgee.t("shapes.library.note.modeSpacing", "{mode} {spacing}", {
-                  mode,
-                  spacing,
-              })
-            : mode;
+            ? tolgee.t(
+                  "shapes.library.note.modeApart",
+                  "{mode, select, outline {Outline} other {Spread}} {spacing} apart",
+                  { mode: d.mode, spacing },
+              )
+            : MODE_LABELS[d.mode as DistributionMode];
     }
-    return [spacing, staggerNote(d.stagger)].filter(Boolean).join(", ") || null;
+    const stagger = staggerOf(d.stagger);
+    if (!stagger) return intervalNote(steps);
+    const { fraction, left } = stagger;
+    if (spacing === null)
+        return left
+            ? tolgee.t(
+                  "shapes.library.note.staggerLeft",
+                  "stagger {fraction} left",
+                  { fraction },
+              )
+            : tolgee.t("shapes.library.note.stagger", "stagger {fraction}", {
+                  fraction,
+              });
+    return left
+        ? tolgee.t(
+              "shapes.library.note.apartStaggerLeft",
+              "{spacing} apart, stagger {fraction} left",
+              { spacing, fraction },
+          )
+        : tolgee.t(
+              "shapes.library.note.apartStagger",
+              "{spacing} apart, stagger {fraction}",
+              { spacing, fraction },
+          );
 }
 
 /** Every basic kind, in the Shapes tab's order, noted with its default spacing */
@@ -94,7 +119,7 @@ export function basicShapeRows(
 ): ShapeLibraryRow[] {
     // Getters: the rows are made once, and the words follow the app's language
     return tools.map(({ kind }) => ({
-        id: kind.shape.id,
+        id: toolId(kind),
         group: "basic",
         get label() {
             return kind.shape.label;

@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
+import { text, type TimelineText } from "@/timeline/timelineText";
 import * as schema from "@om-electron/database/migrations/schema";
 import { readShowTiming } from "@/timeline/showTiming";
 import { pageFlags } from "@/timeline/timelinePlayhead";
@@ -56,9 +57,27 @@ export const pageMoveTakenOver = async (
     return page && timelineId < page.id ? page : undefined;
 };
 
+/** Each marcher's drill number ("T3"), for refusals. */
+export const marcherLabels = async (
+    tx: DbTransaction,
+    marcherIds: readonly number[],
+): Promise<Map<number, string>> => {
+    if (marcherIds.length === 0) return new Map();
+    const rows = await tx
+        .select({
+            id: schema.marchers.id,
+            prefix: schema.marchers.drill_prefix,
+            order: schema.marchers.drill_order,
+        })
+        .from(schema.marchers)
+        .where(inArray(schema.marchers.id, [...marcherIds]))
+        .all();
+    return new Map(rows.map((r) => [r.id, `${r.prefix}${r.order}`]));
+};
+
 /** Says why `pageMoveTakenOver` refuses a landing. */
-export const PAGE_TAKEOVER_REFUSAL =
-    "Landing on exactly this page's counts would make this move the page's own move. Merge it into the page instead.";
+export const pageTakeoverRefusal = (): TimelineText =>
+    text.t("timeline.refusals.pageTakeover");
 
 /**
  * What a refusal needs to name a moment or a move in pages and counts (`beatWhere`, `moveName` in

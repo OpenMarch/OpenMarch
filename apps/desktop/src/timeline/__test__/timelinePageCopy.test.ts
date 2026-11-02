@@ -206,7 +206,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         expect(writeTimeline).toHaveBeenCalledTimes(1);
         expect(notify.success).toHaveBeenCalledTimes(1);
         expect(notify.success.mock.calls[0]).toEqual([
-            t("actions.batchEdit.setAllToPreviousSuccess", {
+            t("actions.batchEdit.setAllToPreviousDone", {
                 count,
                 currentPage: page.name,
                 previousPage: previous.name,

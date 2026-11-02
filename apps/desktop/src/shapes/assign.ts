@@ -14,6 +14,38 @@ export type OrderMode =
     /** Marchers keep their order along the shape (their current order projected onto it) */
     | "keep";
 
+/**
+ * Who goes where as the floating editor offers it on a kind with an order along it (a Line, #528):
+ * Least travel, Keep order, or Reverse order (Keep order the other way round). Stored as a recipe's
+ * order mode and reverse ({@link orderFields}).
+ */
+export type OrderChoice = "nearest" | "keep" | "reverse";
+
+/** Who goes where on a kind: its choice when it has an order along it (a Line), Least travel otherwise */
+export const orderOn = (
+    kind: { readonly ordered?: boolean },
+    choice: OrderChoice,
+): OrderChoice => (kind.ordered ? choice : "nearest");
+
+/** A choice as a recipe stores it */
+export const orderFields = (
+    choice: OrderChoice,
+): { orderMode: OrderMode; reverse: boolean } =>
+    choice === "nearest"
+        ? { orderMode: "nearest", reverse: false }
+        : { orderMode: "keep", reverse: choice === "reverse" };
+
+/**
+ * A recipe's order mode and reverse as a choice; anything older (drill order) is Least travel.
+ * Least travel has no order, so a reverse stored with it is ignored here, and the Line's next save
+ * writes it back as false ({@link orderFields}).
+ */
+export const orderChoiceOf = (
+    orderMode: string,
+    reverse: boolean,
+): OrderChoice =>
+    orderMode === "keep" ? (reverse ? "reverse" : "keep") : "nearest";
+
 export interface AssignMarcher {
     readonly id: number;
     /** Where the marcher is drawn now, at the moment being edited: what a shape fits through */
@@ -26,6 +58,11 @@ export interface AssignMarcher {
     readonly from?: XY;
     /** Sort position by drill number (drill prefix, then number): breaks ties in keep order */
     readonly drillRank: number;
+    /**
+     * The marcher's place along the placed Line it comes from (its slot there), when every marcher
+     * being assigned is a member of that one Line: keep order follows it (#528)
+     */
+    readonly along?: number;
 }
 
 /** Above this many marchers, nearest falls back to keep order (the solve is cubic). */
@@ -73,6 +110,9 @@ export function assignSlots<P>({
             slots,
         );
 
+    if (mode === "keep" && marchers.every((m) => m.along !== undefined))
+        return alongOrder(marchers, slots, reverse);
+
     if (mode === "keep") {
         const around = ringOrder(marchers);
         if (around)
@@ -109,6 +149,30 @@ export function assignSlots<P>({
     marcherOrder.forEach((marcherIndex, i) => {
         result[marcherIndex] = slotOrder[i]!;
     });
+    return result;
+}
+
+/**
+ * Marchers in their order along the Line they come from, laid on the spots in the shape's order:
+ * how far along a path each spot is when it says, the kind's order otherwise
+ */
+function alongOrder(
+    marchers: readonly AssignMarcher[],
+    slots: readonly Slot[],
+    reverse: boolean,
+): number[] {
+    const slotOrder = slots
+        .map((slot, index) => ({ index, s: slot.s ?? index }))
+        .sort((a, b) => a.s - b.s || a.index - b.index)
+        .map((entry) => entry.index);
+    if (reverse) slotOrder.reverse();
+    const result = new Array<number>(marchers.length);
+    marchers
+        .map((m, index) => ({ index, along: m.along!, rank: m.drillRank }))
+        .sort((a, b) => a.along - b.along || a.rank - b.rank)
+        .forEach((entry, i) => {
+            result[entry.index] = slotOrder[i]!;
+        });
     return result;
 }
 

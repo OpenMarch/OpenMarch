@@ -1,6 +1,6 @@
 import { Button } from "@openmarch/ui";
 import { touchSafeAccept } from "@/utilities/fileAccept";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useRef, useState } from "react";
 import {
     handleFileInputChange as handleFileInputChangeUtil,
@@ -9,7 +9,7 @@ import {
 } from "./FieldIoButtons.utils";
 
 export default function FieldIoButtons() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [isExporting, setIsExporting] = useState(false);

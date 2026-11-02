@@ -17,7 +17,12 @@ import {
     marchersInInheritingFollowTheLeader,
     removeAssignmentRowsInTransaction,
 } from "./timelineMembership";
-import { joinList } from "@/timeline/timelineRangeWords";
+import {
+    text,
+    textList,
+    type TimelineText,
+    type TimelineTextArg,
+} from "@/timeline/timelineText";
 import { nextMoveNameInTransaction, readMoveWords } from "./timelineMoveNames";
 import type { TimelinePathParams } from "./timelineTransitionsInTransaction";
 import {
@@ -50,12 +55,21 @@ import {
 
 /** "T1, T2 and T3", or "T1, T2, T3 and 4 more", in marcher id order. */
 const labelList = (labels: Map<number, string>, ids: readonly number[]) => {
-    const names = [...ids]
+    const names: TimelineTextArg[] = [...ids]
         .sort((a, b) => a - b)
-        .map((id) => labels.get(id) ?? `marcher ${id}`);
-    return joinList(
+        .map(
+            (id) =>
+                labels.get(id) ??
+                text.t("timeline.where.marcher", { marcher: id }),
+        );
+    return textList(
         names.length > 3
-            ? [...names.slice(0, 3), `${names.length - 3} more`]
+            ? [
+                  ...names.slice(0, 3),
+                  text.t("timeline.where.moreMarchers", {
+                      count: names.length - 3,
+                  }),
+              ]
             : names,
     );
 };
@@ -67,7 +81,7 @@ const labelList = (labels: Map<number, string>, ids: readonly number[]) => {
 const timelineWords = async (
     tx: DbTransaction,
 ): Promise<{
-    nameOf: (timelineId: number) => string;
+    nameOf: (timelineId: number) => TimelineTextArg;
     pageTimelineIds: Set<number>;
 }> => {
     const { boxes, moves } = await readMoveWords(tx);
@@ -85,7 +99,9 @@ const timelineWords = async (
         pageTimelineIds: pages,
         nameOf: (id) =>
             labels.get(id) ??
-            (pageName.has(id) ? `Page ${pageName.get(id)}` : "this move"),
+            (pageName.has(id)
+                ? text.t("timeline.where.page", { page: pageName.get(id)! })
+                : text.t("timeline.where.thisMove")),
     };
 };
 
@@ -164,13 +180,26 @@ export function splitMembershipBlocker(
     members: ReadonlySet<number>,
     marcherIds: Iterable<number>,
     moveName: string,
-): string | null {
+): TimelineText | null {
+    return splitMembershipBlockerText(members, marcherIds, moveName);
+}
+
+/** `splitMembershipBlocker`'s reason as text, translated where it is shown (the write path's). */
+function splitMembershipBlockerText(
+    members: ReadonlySet<number>,
+    marcherIds: Iterable<number>,
+    moveName: TimelineTextArg,
+): TimelineText | null {
     let chosen = 0;
     for (const id of new Set(marcherIds)) if (members.has(id)) chosen++;
     if (chosen === 0)
-        return `Select marchers in ${moveName} to split them into a new move.`;
+        return text.t("timeline.refusals.split.noneSelected", {
+            move: moveName,
+        });
     if (chosen === members.size)
-        return `Every marcher in ${moveName} is selected. Select only the ones to split off.`;
+        return text.t("timeline.refusals.split.allSelected", {
+            move: moveName,
+        });
     return null;
 }
 
@@ -197,12 +226,13 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
 }): Promise<SplitMoveResult> => {
     const from = await readTimeline(tx, timelineId);
     if (!from) refuse(`timeline ${timelineId} does not exist`);
-    if (marcherIds.length === 0) refuse("select the marchers to split off");
+    if (marcherIds.length === 0)
+        refuse(text.t("timeline.refusals.split.selectToSplit"));
     const rows = await memberRows(tx, timelineId);
     const members = new Set(rows.map((r) => r.assignment.marcher_id));
     const { nameOf } = await timelineWords(tx);
     const name = nameOf(timelineId);
-    const blocker = splitMembershipBlocker(members, marcherIds, name);
+    const blocker = splitMembershipBlockerText(members, marcherIds, name);
     if (blocker) refuse(blocker);
     const chosen = new Set(marcherIds.filter((id) => members.has(id)));
     const notInMove = [...new Set(marcherIds)]
@@ -245,20 +275,23 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
             const labels = await marcherLabels(tx, [
                 ...new Set(list.map((r) => r.assignment.marcher_id)),
             ]);
-            const why =
-                tr.dest_shape_id !== null
-                    ? "move into one shape together"
-                    : "follow the leader together";
-            refuse(
-                `${labelList(
+            const params = {
+                count: leaving.length,
+                marchers: labelList(
                     labels,
                     leaving.map((r) => r.assignment.marcher_id),
-                )} ${why} with ${labelList(
+                ),
+                others: labelList(
                     labels,
                     list
                         .filter((r) => !chosen.has(r.assignment.marcher_id))
                         .map((r) => r.assignment.marcher_id),
-                )}, so they can't be split apart. Select them all, or none of them.`,
+                ),
+            };
+            refuse(
+                tr.dest_shape_id !== null
+                    ? text.t("timeline.refusals.split.sharedShape", params)
+                    : text.t("timeline.refusals.split.followTogether", params),
             );
         }
         peeled.push(...leaving);
@@ -415,7 +448,7 @@ export const mergeMovesInTransaction = async ({
     sourceId: number;
     targetId: number;
 }): Promise<MergeMovesResult> => {
-    if (sourceId === targetId) refuse("a move can't be merged with itself");
+    if (sourceId === targetId) refuse(text.t("timeline.refusals.merge.itself"));
     const source = await readTimeline(tx, sourceId);
     if (!source) refuse(`timeline ${sourceId} does not exist`);
     const target = await readTimeline(tx, targetId);
@@ -423,7 +456,10 @@ export const mergeMovesInTransaction = async ({
     const { nameOf, pageTimelineIds } = await timelineWords(tx);
     if (pageTimelineIds.has(sourceId))
         refuse(
-            `${nameOf(sourceId)} is a page's own move. Merge ${nameOf(targetId)} into it instead.`,
+            text.t("timeline.refusals.merge.pageMove", {
+                source: nameOf(sourceId),
+                target: nameOf(targetId),
+            }),
         );
     const sourceRows = await memberRows(tx, sourceId);
     const targetMembers = new Set(
@@ -438,11 +474,12 @@ export const mergeMovesInTransaction = async ({
     ];
     if (both.length > 0)
         refuse(
-            `${labelList(await marcherLabels(tx, both), both)} ${
-                both.length === 1 ? "is" : "are"
-            } in both ${nameOf(sourceId)} and ${nameOf(targetId)}, so merging would give ${
-                both.length === 1 ? "it" : "them"
-            } two moves at once.`,
+            text.t("timeline.refusals.merge.inBoth", {
+                count: both.length,
+                marchers: labelList(await marcherLabels(tx, both), both),
+                source: nameOf(sourceId),
+                target: nameOf(targetId),
+            }),
         );
     if (
         mergeFits(
@@ -497,7 +534,7 @@ async function refuseBadFit(
     source: DatabaseTimeline,
     target: DatabaseTimeline,
     sourceRows: readonly MemberRow[],
-    nameOf: (timelineId: number) => string,
+    nameOf: (timelineId: number) => TimelineTextArg,
 ): Promise<void> {
     const fitted = sourceRows.map(({ assignment: a }) => ({
         row: a,
@@ -516,11 +553,12 @@ async function refuseBadFit(
     if (partway.length > 0) {
         const ids = [...new Set(partway.map((f) => f.row.marcher_id))];
         refuse(
-            `${labelList(await marcherLabels(tx, ids), ids)} ${
-                ids.length === 1 ? "joins or leaves" : "join or leave"
-            } ${nameOf(source.id)} partway, outside ${nameOf(target.id)}'s counts. Resize ${nameOf(
-                source.id,
-            )} to ${nameOf(target.id)}'s counts first.`,
+            text.t("timeline.refusals.merge.partway", {
+                count: ids.length,
+                marchers: labelList(await marcherLabels(tx, ids), ids),
+                source: nameOf(source.id),
+                target: nameOf(target.id),
+            }),
         );
     }
     const marcherIds = [...new Set(fitted.map((f) => f.row.marcher_id))];
@@ -559,12 +597,12 @@ async function refuseBadFit(
     if (hits.length > 0) {
         const ids = [...new Set(hits.map((h) => h.marcherId))];
         refuse(
-            `Fitting ${nameOf(source.id)} to ${nameOf(target.id)}'s counts would run ${labelList(
-                await marcherLabels(tx, ids),
-                ids,
-            )} into ${nameOf(hits[0]!.timelineId)}. Resize ${nameOf(source.id)} to ${nameOf(
-                target.id,
-            )}'s counts first.`,
+            text.t("timeline.refusals.merge.fitCollides", {
+                marchers: labelList(await marcherLabels(tx, ids), ids),
+                source: nameOf(source.id),
+                target: nameOf(target.id),
+                other: nameOf(hits[0]!.timelineId),
+            }),
         );
     }
     await refuseSecondMoveOverCounts(tx, others, source, target, nameOf);
@@ -585,7 +623,7 @@ async function refuseSecondMoveOverCounts(
     }[],
     source: DatabaseTimeline,
     target: DatabaseTimeline,
-    nameOf: (timelineId: number) => string,
+    nameOf: (timelineId: number) => TimelineTextArg,
 ): Promise<void> {
     const sameCounts = rows.filter(
         (o) =>
@@ -597,13 +635,12 @@ async function refuseSecondMoveOverCounts(
     if (sameCounts.length === 0) return;
     const ids = [...new Set(sameCounts.map((o) => o.marcherId))];
     refuse(
-        `${labelList(await marcherLabels(tx, ids), ids)} ${
-            ids.length === 1 ? "is" : "are"
-        } already in ${nameOf(sameCounts[0]!.timelineId)}, over ${nameOf(
-            target.id,
-        )}'s counts, so merging would give ${
-            ids.length === 1 ? "it" : "them"
-        } two moves over the same counts.`,
+        text.t("timeline.refusals.merge.sameCounts", {
+            count: ids.length,
+            marchers: labelList(await marcherLabels(tx, ids), ids),
+            other: nameOf(sameCounts[0]!.timelineId),
+            target: nameOf(target.id),
+        }),
     );
 }
 

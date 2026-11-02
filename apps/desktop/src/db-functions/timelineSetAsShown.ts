@@ -1,5 +1,6 @@
 import type { KeptPageBox, KeptState } from "@/timeline/timelineKept";
 import { countsText } from "@/timeline/timelineRangeWords";
+import { text } from "@/timeline/timelineText";
 import type { DbConnection } from "./types";
 import { transactionWithHistory } from "./history";
 import { refuse } from "./timelineErrors";
@@ -68,7 +69,9 @@ export async function setAsShownOnPage({
                 // Worded in pages and counts like the other refusals; home has no box
                 if (!isPageBox(grid, pageBox))
                     refuse(
-                        `Set as shown works on a whole page, not ${countsText(pageBox, grid.pages.slice(1))}`,
+                        text.t("timeline.refusals.setAsShown.wholePage", {
+                            counts: countsText(pageBox, grid.pages.slice(1)),
+                        }),
                     );
                 const written = await keepMarchersOnPageInTransaction({
                     tx,

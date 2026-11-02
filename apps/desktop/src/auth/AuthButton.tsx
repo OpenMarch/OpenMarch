@@ -20,7 +20,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import { isSignInEnabled } from "@/global/auth/constants";
 import { useAuth } from "@/auth/useAuth";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 
 export const SignInButton = ({
     className,
@@ -32,7 +32,7 @@ export const SignInButton = ({
     showIcon?: boolean;
 }) => {
     const { login, isLoggingIn } = useAuth();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     if (!isSignInEnabled) return null;
 
@@ -70,7 +70,7 @@ export const SignInButton = ({
  */
 export function AuthButton() {
     const { isAuthenticated, isLoading, user, logout } = useAuth();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     // Loading state
     if (isLoading) {
@@ -93,12 +93,16 @@ export function AuthButton() {
     // Authenticated - show user avatar with dropdown
     const displayName =
         user?.firstName && user?.lastName
-            ? `${user.firstName} ${user.lastName}`
+            ? t("auth.fullName", {
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+              })
             : user?.email || t("auth.userFallback");
 
     const initials = user?.firstName
         ? user.firstName.charAt(0).toUpperCase()
-        : user?.email?.charAt(0).toUpperCase() || "U";
+        : user?.email?.charAt(0).toUpperCase() ||
+          t("auth.userFallback").charAt(0).toUpperCase();
 
     const firstName = user?.firstName;
 

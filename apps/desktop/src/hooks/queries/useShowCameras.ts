@@ -11,6 +11,7 @@ import {
 } from "@/db-functions/view3dCameras";
 import type { ShowCameras } from "@/view3d/core/cameraList";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import { DEFAULT_STALE_TIME } from "./constants";
 
 /**
@@ -43,6 +44,10 @@ export const updateShowCamerasMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: showCamerasKeys.all() });
         },
         onError: (error, cameras) => {
-            conToastError("Failed to save the 3D View cameras", error, cameras);
+            conToastError(
+                tolgee.t("view3d.cameras.saveFailed"),
+                error,
+                cameras,
+            );
         },
     });

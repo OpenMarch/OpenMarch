@@ -4,6 +4,7 @@
  * stands in for the main process (`../worker/index.ts`).
  */
 import type { FromWorker, ToWorker, WorkerStatus } from "../protocol";
+import { workerErrorText } from "./workerErrors";
 
 type Handler = (...args: any[]) => unknown;
 type Listener = (event: unknown, ...args: any[]) => void;
@@ -139,7 +140,10 @@ export function startWorker(): Promise<WorkerStatus> {
                         pending.delete(message.id);
                         if (!call) break;
                         if (message.ok) call.resolve(message.value);
-                        else call.reject(new Error(message.error));
+                        else
+                            call.reject(
+                                new Error(workerErrorText(message.error)),
+                            );
                         break;
                     }
                 }

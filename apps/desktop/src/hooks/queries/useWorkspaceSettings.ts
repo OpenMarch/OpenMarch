@@ -9,6 +9,7 @@ import {
 } from "@/db-functions/workspaceSettings";
 import { mutationOptions } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 
 export const workspaceSettingsKeys = {
     all: () => ["workspaceSettings"] as const,
@@ -78,7 +79,7 @@ export const updateWorkspaceSettingsMutationOptions = (queryClient: any) =>
             });
         },
         onError: (error) => {
-            conToastError("Failed to update workspace settings", error);
+            conToastError(tolgee.t("workspaceSettings.updateFailed"), error);
         },
     });
 
@@ -97,6 +98,6 @@ export const updateWorkspaceSettingsJSONMutationOptions = (queryClient: any) =>
             });
         },
         onError: (error) => {
-            conToastError("Failed to update workspace settings", error);
+            conToastError(tolgee.t("workspaceSettings.updateFailed"), error);
         },
     });

@@ -29,10 +29,6 @@ const { chipT } = vi.hoisted(() => ({
         })[key] ?? `?${key}`,
 }));
 
-vi.mock("@tolgee/react", () => ({
-    useTranslate: () => ({ t: chipT }),
-}));
-
 beforeEach(() => {
     vi.spyOn(platform, "isMacPlatform").mockReturnValue(false);
 });
@@ -83,9 +79,9 @@ const sync = (...args: Parameters<typeof syncGestureChip>) =>
 describe("gestureChipSegments", () => {
     it("names only the roles the gesture honors, in its own words, and Snap off where it snaps", () => {
         expect(gestureChipSegments(MOVE, ALL, false, false, chipT)).toEqual([
-            "Shift fine",
-            "Ctrl one axis",
-            "Snap off",
+            { key: "Shift", word: "fine" },
+            { key: "Ctrl", word: "one axis" },
+            { key: null, word: "Snap off" },
         ]);
     });
 
@@ -97,8 +93,8 @@ describe("gestureChipSegments", () => {
             snaps: false,
         };
         expect(gestureChipSegments(scale, ALL, false, false, chipT)).toEqual([
-            "Shift fine",
-            "Ctrl free ratio",
+            { key: "Shift", word: "fine" },
+            { key: "Ctrl", word: "free ratio" },
         ]);
     });
 
@@ -121,7 +117,7 @@ describe("gestureChipSegments", () => {
                 chipT,
                 map,
             ),
-        ).toEqual(["Alt fine"]);
+        ).toEqual([{ key: "Alt", word: "fine" }]);
     });
 });
 
@@ -166,6 +162,8 @@ describe("HeldRolesChip", () => {
         renderChip();
         sync(MOVE, { ...NONE, fine: true }, { x: 100, y: 200 });
         expect(chip()).toHaveTextContent("Shift fine");
+        // The held key is a keycap, not plain text
+        expect(chip()!.querySelector("kbd")).toHaveTextContent("Shift");
         expect(chip()).toHaveStyle({ left: "116px", top: "218px" });
     });
 
@@ -207,7 +205,10 @@ describe("HeldRolesChip", () => {
             x: 0,
             y: 0,
         });
-        expect(chip()).toHaveTextContent("⇧ fine · ⌘ one axis · ⌥ from center");
+        // As shown: a screen reader hears the symbols as words instead
+        const shown = chip()!.cloneNode(true) as Element;
+        shown.querySelectorAll(".sr-only").forEach((node) => node.remove());
+        expect(shown).toHaveTextContent("⇧ fine · ⌘ one axis · ⌥ from center");
     });
 
     it("doesn't render again as the pointer moves while it's hidden", () => {

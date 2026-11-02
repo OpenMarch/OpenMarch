@@ -5,6 +5,7 @@
 
 import Axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { OPENMARCH_API_ENDPOINT } from "@/global/Constants";
+import tolgee from "@/global/singletons/Tolgee";
 
 function getBaseURL(): string {
     const base = OPENMARCH_API_ENDPOINT.endsWith("/")
@@ -42,7 +43,12 @@ AXIOS_INSTANCE.interceptors.response.use(
         const message =
             errorData?.error ||
             errorData?.message ||
-            `API request failed: ${response.status} ${response.statusText}`;
+            tolgee
+                .t("auth.api.requestFailedStatus", {
+                    status: response.status,
+                    statusText: response.statusText ?? "",
+                })
+                .trim();
         return Promise.reject(new Error(message));
     },
     (error: AxiosError) => {

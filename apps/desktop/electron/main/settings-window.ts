@@ -1,6 +1,7 @@
 import { BrowserWindow, screen, shell } from "electron";
 import type Store from "electron-store";
 import { handleWindowOpen } from "./window-open-policy";
+import { t } from "./i18n";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import {
     fitBounds,
@@ -56,7 +57,7 @@ export function openSettingsWindow({
         ...bounds,
         minWidth: SETTINGS_MIN.width,
         minHeight: SETTINGS_MIN.height,
-        title: "Settings",
+        title: t("settings.title"),
         show: false,
         autoHideMenuBar: true,
         frame,

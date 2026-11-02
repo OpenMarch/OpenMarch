@@ -81,7 +81,10 @@ function suppressBrowserContextMenu() {
     });
 }
 
-/** A bar along the bottom of the page, for problems the person should know about. */
+/**
+ * A bar along the bottom of the page, for problems the person should know about. Call it once the
+ * translations have started (`showTranslatedNotice`).
+ */
 function showNotice(text: string) {
     const bar = document.createElement("div");
     bar.setAttribute("role", "status");
@@ -92,7 +95,7 @@ function showNotice(text: string) {
     bar.textContent = text;
     const close = document.createElement("button");
     close.textContent = "×";
-    close.setAttribute("aria-label", "Dismiss");
+    close.setAttribute("aria-label", tolgee.t("web.noticeDismiss"));
     close.style.cssText =
         "position:absolute;right:8px;top:4px;background:none;border:0;color:inherit;font-size:18px;cursor:pointer";
     close.onclick = () => bar.remove();
@@ -111,6 +114,21 @@ function showTranslatedNotice(key: string) {
             console.error("Couldn't load the translations:", error),
         )
         .then(() => showNotice(tolgee.t(key)));
+}
+
+/**
+ * What the page says when the app can't start: in the app's language, once the translations
+ * load, or in English when they can't.
+ */
+async function startFailedText(error: string): Promise<string> {
+    try {
+        await tolgee.run();
+        return tolgee.t("web.startFailed", { error });
+    } catch (translationError) {
+        console.error("Couldn't load the translations:", translationError);
+        // i18n-ignore: the translations failed to load, so English is the only text there is
+        return `OpenMarch couldn't start in this browser: ${error}`;
+    }
 }
 
 /**
@@ -264,9 +282,7 @@ async function start() {
         ipcRenderer.on(WEB_EVENTS.changed, markChanged);
         ipcRenderer.on(WEB_EVENTS.storageLost, () => {
             storageLost();
-            showNotice(
-                "This browser couldn't store your show (it may be out of space), so it's only kept in this tab until you close or reload it. Download it to keep your changes.",
-            );
+            showTranslatedNotice("web.storageNotice.lost");
         });
         try {
             const status = await startWorker();
@@ -278,9 +294,9 @@ async function start() {
             warnAboutStorage(status);
             registerView3dHost();
         } catch (error) {
-            document.body.textContent = `OpenMarch couldn't start in this browser: ${
-                error instanceof Error ? error.message : String(error)
-            }`;
+            document.body.textContent = await startFailedText(
+                error instanceof Error ? error.message : String(error),
+            );
             throw error;
         }
     }

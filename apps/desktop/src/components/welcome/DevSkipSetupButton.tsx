@@ -4,8 +4,9 @@ import { FastForwardIcon } from "@phosphor-icons/react";
 import { isDevBuild } from "@/utilities/devBuild";
 
 /**
- * Skips the welcome flow in developer builds (see `isDevBuild`). Not part of
- * the app: it renders nothing elsewhere, and its text is not translated.
+ * Skips the welcome flow in developer builds (see `isDevBuild`: dev servers and
+ * the dev, preview and nightly web channels). Not part of the released app: it
+ * renders nothing in stable, lab or packaged builds, and its text is not translated.
  */
 export default function DevSkipSetupButton({
     onSkip,
@@ -18,7 +19,7 @@ export default function DevSkipSetupButton({
 }) {
     if (!isDevBuild) return null;
     return (
-        // i18n-ignore: developer-build tool, never shown to users
+        // i18n-ignore: developer tool, only in dev, preview and nightly builds (never stable, lab or packaged)
         <Button
             variant="ghost"
             size="compact"

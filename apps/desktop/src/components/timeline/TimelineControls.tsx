@@ -9,7 +9,7 @@ import {
 import Shortcut from "@/components/ui/Shortcut";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { clsx } from "clsx";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import * as Popover from "@radix-ui/react-popover";
 import { Slider } from "@openmarch/ui";
@@ -26,6 +26,7 @@ import {
 } from "@/stores/PlaybackSpeedStore";
 
 export function TimelineMuteButton() {
+    const { t } = useTranslate();
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
     const setAudioVolume = useUiSettingsStore((s) => s.setAudioVolume);
 
@@ -52,7 +53,7 @@ export function TimelineMuteButton() {
                         "enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
                         TOUCH_TARGET_CLASS,
                     )}
-                    aria-label="Timeline volume"
+                    aria-label={t("timeline.volume")}
                 >
                     <VolumeIcon size={24} />
                 </button>
@@ -63,7 +64,9 @@ export function TimelineMuteButton() {
                         <p className="text-body">
                             <T keyName="timeline.masterVolume" />
                         </p>
-                        <span className="text-body font-mono">{`${sliderValue}%`}</span>
+                        <span className="text-body font-mono">
+                            {t("timeline.percent", { percent: sliderValue })}
+                        </span>
                     </div>
                     <Slider
                         min={0}
@@ -71,7 +74,7 @@ export function TimelineMuteButton() {
                         step={1}
                         value={[sliderValue]}
                         onValueChange={handleSliderChange}
-                        aria-label="Timeline volume slider"
+                        aria-label={t("timeline.volumeSlider")}
                     />
                 </Popover.Content>
             </Popover.Portal>
@@ -80,12 +83,15 @@ export function TimelineMuteButton() {
 }
 
 export function TimelineMetronomeButton() {
+    const { t } = useTranslate();
     const isMetronomeOn = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleMetronome = useMetronomeStore((s) => s.toggleMetronome);
 
     return (
         <div className="flex gap-10" id="timelineMetronome">
             <button
+                aria-label={t("actions.playback.toggleMetronome")}
+                aria-pressed={isMetronomeOn}
                 className={clsx(
                     "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
                     TOUCH_TARGET_CLASS,
@@ -107,6 +113,7 @@ export function TimelineMetronomeButton() {
  * then a bar on the ruler whose ends drag.
  */
 export function TimelineLoopButton() {
+    const { t } = useTranslate();
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
     // An isolated move always loops (UI-17): lit, and it can't be turned off
     const looping = useTimelineSelectionStore(
@@ -115,20 +122,33 @@ export function TimelineLoopButton() {
     const shortcut = TRANSPORT_SHORTCUTS.loop;
     return (
         <ShortcutTooltip
-            label={looping ? "Loop: on" : "Loop: off"}
+            label={t(looping ? "timeline.loop.on" : "timeline.loop.off")}
             shortcut={isolated ? undefined : shortcut}
             hint={
-                isolated
-                    ? "Loop is always on for an isolated move"
-                    : looping
-                      ? "Space loops the bar on the ruler; drag its ends to change it"
-                      : "Loops the page you're on"
+                isolated ? (
+                    t("timeline.loop.hintIsolated")
+                ) : looping ? (
+                    <span className="text-text-subtitle flex items-center gap-4 text-[11px]">
+                        <T
+                            keyName="timeline.loop.hintOn"
+                            params={{
+                                keys: () => (
+                                    <Shortcut
+                                        binding={TRANSPORT_SHORTCUTS.play}
+                                    />
+                                ),
+                            }}
+                        />
+                    </span>
+                ) : (
+                    t("timeline.loop.hintOff")
+                )
             }
         >
             <button
                 type="button"
                 data-testid="timeline-loop"
-                aria-label="Loop"
+                aria-label={t("timeline.loop.label")}
                 aria-pressed={looping}
                 // Not `disabled` in isolation, so the tooltip still says why it can't turn off
                 aria-disabled={isolated || undefined}
@@ -178,6 +198,7 @@ export function TimelineSpeedButton() {
  * on (Ctrl+M still does). The icon shows the music muted, and a dot shows the metronome is on.
  */
 export function TimelineSoundButton() {
+    const { t } = useTranslate();
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
     const audioMuted = useUiSettingsStore((s) => s.uiSettings.audioMuted);
     const setAudioVolume = useUiSettingsStore((s) => s.setAudioVolume);
@@ -190,7 +211,16 @@ export function TimelineSoundButton() {
         : audioVolume < 50
           ? SpeakerSimpleLowIcon
           : SpeakerSimpleHighIcon;
-    const state = `${silent ? "music muted" : `volume ${audioVolume}%`}, metronome ${isMetronomeOn ? "on" : "off"}`;
+    const state = t(
+        silent
+            ? isMetronomeOn
+                ? "timeline.sound.stateMutedMetronomeOn"
+                : "timeline.sound.stateMutedMetronomeOff"
+            : isMetronomeOn
+              ? "timeline.sound.stateMetronomeOn"
+              : "timeline.sound.stateMetronomeOff",
+        { volume: audioVolume },
+    );
     return (
         <Popover.Root>
             <Popover.Trigger asChild>
@@ -203,8 +233,8 @@ export function TimelineSoundButton() {
                             ? "text-red"
                             : "text-text enabled:hover:text-accent",
                     )}
-                    aria-label={`Sound: ${state}`}
-                    title={`Sound: ${state}`}
+                    aria-label={state}
+                    title={state}
                 >
                     <VolumeIcon size={18} />
                     {isMetronomeOn && (
@@ -220,12 +250,12 @@ export function TimelineSoundButton() {
                     <div className="flex items-center gap-8">
                         <button
                             type="button"
-                            aria-label="Mute the music"
+                            aria-label={t("timeline.sound.mute")}
                             aria-pressed={audioMuted}
                             title={
                                 audioMuted
-                                    ? "Unmute the music"
-                                    : "Mute the music (the metronome keeps counting)"
+                                    ? t("timeline.sound.unmuteTooltip")
+                                    : t("timeline.sound.muteTooltip")
                             }
                             onClick={toggleAudioMute}
                             className={clsx(
@@ -243,10 +273,14 @@ export function TimelineSoundButton() {
                             onValueChange={(values) =>
                                 setAudioVolume(values[0] ?? 0)
                             }
-                            aria-label="Volume"
+                            aria-label={t("timeline.sound.volume")}
                         />
                         <span className="text-sub w-36 shrink-0 text-right font-mono">
-                            {audioMuted ? "Muted" : `${audioVolume}%`}
+                            {audioMuted
+                                ? t("timeline.sound.muted")
+                                : t("timeline.percent", {
+                                      percent: audioVolume,
+                                  })}
                         </span>
                     </div>
                     <button
@@ -260,7 +294,11 @@ export function TimelineSoundButton() {
                     >
                         <MetronomeIcon size={18} />
                         <span className="text-body">
-                            Metronome {isMetronomeOn ? "on" : "off"}
+                            {t(
+                                isMetronomeOn
+                                    ? "timeline.sound.metronomeOn"
+                                    : "timeline.sound.metronomeOff",
+                            )}
                         </span>
                         <span className="ml-auto">
                             <Shortcut action="toggleMetronome" />
@@ -277,6 +315,7 @@ export function TimelineSoundButton() {
  * choice is remembered for every show. Lit while compact, like the other toggles.
  */
 export function TimelineCompactButton() {
+    const { t } = useTranslate();
     const compact = useUiSettingsStore((s) => s.uiSettings.timelineCompact);
     const setCompact = useUiSettingsStore((s) => s.setTimelineCompact);
     return (
@@ -289,12 +328,12 @@ export function TimelineCompactButton() {
                     ? "text-accent bg-accent/10"
                     : "text-text enabled:hover:text-accent",
             )}
-            aria-label="Compact timeline"
+            aria-label={t("timeline.compact.label")}
             aria-pressed={compact}
             title={
                 compact
-                    ? "Compact timeline: on. Click to show the full timeline"
-                    : "Compact timeline"
+                    ? t("timeline.compact.onTooltip")
+                    : t("timeline.compact.label")
             }
             onClick={() => setCompact()}
         >

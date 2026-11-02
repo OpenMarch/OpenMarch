@@ -121,6 +121,7 @@ function ShortcutRow({
     isRecording,
     conflict,
     t,
+    language,
     isMac,
     onStartRecording,
     onRemove,
@@ -133,6 +134,8 @@ function ShortcutRow({
     isRecording: boolean;
     conflict: PendingConflict | null;
     t: Translate;
+    /** The app's language, for the list of conflicting actions */
+    language: string;
     isMac: boolean;
     onStartRecording: () => void;
     onRemove: (binding: string) => void;
@@ -170,7 +173,7 @@ function ShortcutRow({
                             className="border-accent text-accent rounded-6 text-sub border px-6 py-2"
                         >
                             <T
-                                keyName="settings.shortcuts.recording"
+                                keyName="settings.shortcuts.recordingHint"
                                 params={{
                                     keys: () => (
                                         <Shortcut
@@ -214,18 +217,21 @@ function ShortcutRow({
                 >
                     <span className="text-sub text-text">
                         <T
-                            keyName="settings.shortcuts.conflict"
+                            keyName="settings.shortcuts.conflictWith"
                             params={{
-                                binding: formatBinding(conflict.binding, isMac),
                                 keys: () => (
                                     <Shortcut
                                         binding={conflict.binding}
                                         isMac={isMac}
                                     />
                                 ),
-                                actions: conflict.owners
-                                    .map((owner) => getActionLabel(owner, t))
-                                    .join(", "),
+                                actions: new Intl.ListFormat(language, {
+                                    type: "conjunction",
+                                }).format(
+                                    conflict.owners.map((owner) =>
+                                        getActionLabel(owner, t),
+                                    ),
+                                ),
                             }}
                         />
                     </span>
@@ -248,7 +254,8 @@ function ShortcutRow({
 }
 
 export default function ShortcutSettings() {
-    const { t: tolgeeT } = useTolgee();
+    const { t: tolgeeT, getLanguage } = useTolgee(["language"]);
+    const language = getLanguage() ?? "en";
     const t: Translate = useCallback(
         (key, params) => tolgeeT(key, params as never),
         [tolgeeT],
@@ -390,6 +397,7 @@ export default function ShortcutSettings() {
                                                 : null
                                         }
                                         t={t}
+                                        language={language}
                                         isMac={isMac}
                                         onStartRecording={() => {
                                             setPending(null);

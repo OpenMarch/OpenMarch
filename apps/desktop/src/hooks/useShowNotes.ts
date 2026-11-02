@@ -36,6 +36,7 @@ import {
 } from "@/settings/workspaceSettings";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     cueNotes,
     CREW_REACH_STEPS,
@@ -282,9 +283,5 @@ export const snapItemToHolderMutationOptions = () =>
             snapItemToHolder({ db, placementId }),
         // The move is a timeline write: the resolver store follows it, and the notes with it
         onError: (e, placementId) =>
-            conToastError(
-                "Error snapping an item to its holder",
-                e,
-                placementId,
-            ),
+            conToastError(tolgee.t("notes.snapToHolderFailed"), e, placementId),
     });

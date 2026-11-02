@@ -5,7 +5,11 @@ import {
     useUpdateSelectedMarchersOnSelectedPage,
     type MarcherCoordinate,
 } from "@/hooks/queries";
-import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import {
+    ReadableCoords,
+    X_DESCRIPTION,
+    Y_DESCRIPTION,
+} from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import ActionButton from "@/shortcuts/ActionButton";
 import {
@@ -23,7 +27,7 @@ import { performersOnly } from "@/global/classes/Marcher";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { clsx } from "clsx";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import type { FieldProperties } from "@openmarch/core";
 import { usePositionAt } from "@/timeline/timelineStore";
@@ -47,6 +51,8 @@ import UnsetHereButton, {
 } from "./UnsetHereButton";
 import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 import MovePad from "./marcher/MovePad";
+import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
+import { formatList } from "@/utilities/formatList";
 
 const DEFAULT_SORTING_THRESHOLD = 0.1;
 
@@ -174,7 +180,7 @@ const alignButtonClassName =
     "flex flex-1 items-center justify-center touch:h-auto touch:min-h-44 touch:flex-col touch:gap-2 touch:py-4";
 
 function AlignmentButtons() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
     const [verticalStepInterval, setVerticalStepInterval] = useState("");
     const [placeMenuOpen, setPlaceMenuOpen] = useState(false);
@@ -261,7 +267,9 @@ function AlignmentButtons() {
     return (
         <>
             {/* Align buttons */}
-            <h5 className="text-h5">Align</h5>
+            <h5 className="text-h5">
+                <T keyName="inspector.marcher.alignHeading" />
+            </h5>
             <div className="flex gap-8">
                 <ActionButton
                     action="alignVertically"
@@ -320,9 +328,14 @@ function AlignmentButtons() {
 
             {/* Distribute buttons */}
             <div className="flex flex-col gap-8">
-                <h5 className="text-h5">Distribute</h5>
+                <h5 className="text-h5">
+                    <T keyName="inspector.marcher.distributeHeading" />
+                </h5>
                 <div className="flex flex-1 items-center justify-center gap-4">
                     <Button
+                        aria-label={t(
+                            "actions.alignment.distributeHorizontally",
+                        )}
                         disabled={distributionDisabled}
                         className={clsx(
                             getButtonClassName({
@@ -345,7 +358,9 @@ function AlignmentButtons() {
                     <Input
                         type="number"
                         min={1}
-                        placeholder="Steps"
+                        placeholder={t(
+                            "inspector.marcher.distributeStepsPlaceholder",
+                        )}
                         value={horizontalStepInterval}
                         onChange={(e) =>
                             setHorizontalStepInterval(e.target.value)
@@ -356,6 +371,7 @@ function AlignmentButtons() {
                 </div>
                 <div className="flex flex-1 items-center justify-center gap-4">
                     <Button
+                        aria-label={t("actions.alignment.distributeVertically")}
                         disabled={distributionDisabled}
                         className={clsx(
                             getButtonClassName({
@@ -376,7 +392,9 @@ function AlignmentButtons() {
                     <Input
                         type="number"
                         min={1}
-                        placeholder="Steps"
+                        placeholder={t(
+                            "inspector.marcher.distributeStepsPlaceholder",
+                        )}
                         value={verticalStepInterval}
                         compact
                         onChange={(e) =>
@@ -430,11 +448,24 @@ function AlignmentButtons() {
     );
 }
 
+/** Keys for the words ReadableCoords uses to place a marcher relative to a checkpoint */
+const X_DESCRIPTION_KEYS: Record<X_DESCRIPTION, string> = {
+    [X_DESCRIPTION.INSIDE]: "inspector.marcher.coords.inside",
+    [X_DESCRIPTION.OUTSIDE]: "inspector.marcher.coords.outside",
+    [X_DESCRIPTION.ON]: "inspector.marcher.coords.on",
+};
+const Y_DESCRIPTION_KEYS: Record<Y_DESCRIPTION, string> = {
+    [Y_DESCRIPTION.ON]: "inspector.marcher.coords.on",
+    [Y_DESCRIPTION.IN_FRONT_OF]: "inspector.marcher.coords.inFrontOf",
+    [Y_DESCRIPTION.BEHIND]: "inspector.marcher.coords.behind",
+};
+
 /** No marchers, stable across renders */
 const NO_MARCHERS: readonly number[] = [];
 
 // eslint-disable-next-line max-lines-per-function
 function MarcherEditor() {
+    const { t } = useTranslate();
     const { selectedMarchers: selection, setSelectedMarchers } =
         useSelectedMarchers()!;
     // Performers: items (props and equipment) are edited in the Props panel, not as marchers
@@ -573,11 +604,19 @@ function MarcherEditor() {
     const xCheckpoint = (rCoords: ReadableCoords) =>
         rCoords.xCheckpoint.terseName ||
         rCoords.xCheckpoint.name ||
-        `X-Checkpoint ${rCoords.xCheckpoint.id.toString()}`;
+        t("inspector.marcher.coords.xCheckpoint", {
+            id: rCoords.xCheckpoint.id,
+        });
     const yCheckpoint = (rCoords: ReadableCoords) =>
         rCoords.yCheckpoint.terseName ||
         rCoords.yCheckpoint.name ||
-        `Y-Checkpoint ${rCoords.yCheckpoint.id.toString()}`;
+        t("inspector.marcher.coords.yCheckpoint", {
+            id: rCoords.yCheckpoint.id,
+        });
+    const xDescription = (rCoords: ReadableCoords) =>
+        t(X_DESCRIPTION_KEYS[rCoords.xDescription]);
+    const yDescription = (rCoords: ReadableCoords) =>
+        t(Y_DESCRIPTION_KEYS[rCoords.yDescription]);
 
     return (
         <>
@@ -610,12 +649,12 @@ function MarcherEditor() {
                                 <>
                                     <MovePad />
                                     <p className="text-sub text-text/80 w-full px-6 font-mono">
-                                        {selectedMarchers
-                                            .map(
+                                        {formatList(
+                                            selectedMarchers.map(
                                                 (marcher) =>
                                                     marcher.drill_number,
-                                            )
-                                            .join(", ")}
+                                            ),
+                                        )}
                                     </p>
                                     {minMaxStepSize &&
                                         minMaxStepSize.min &&
@@ -758,7 +797,7 @@ function MarcherEditor() {
                                                     htmlFor="xInput"
                                                     className="text-body mx-6 w-full leading-none opacity-80"
                                                 >
-                                                    X
+                                                    <T keyName="inspector.marcher.coords.x" />
                                                 </label>
                                                 <div className="flex w-full flex-wrap gap-4">
                                                     {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
@@ -780,9 +819,9 @@ function MarcherEditor() {
                                                         }
                                                     >
                                                         <SelectTriggerCompact
-                                                            label={
-                                                                rCoords.xDescription
-                                                            }
+                                                            label={xDescription(
+                                                                rCoords,
+                                                            )}
                                                             className="disabled:cursor-auto disabled:opacity-100"
                                                         />
                                                         <SelectContent>
@@ -791,9 +830,9 @@ function MarcherEditor() {
                                                                     rCoords.xDescription
                                                                 }
                                                             >
-                                                                {
-                                                                    rCoords.xDescription
-                                                                }
+                                                                {xDescription(
+                                                                    rCoords,
+                                                                )}
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -871,7 +910,7 @@ function MarcherEditor() {
                                                     htmlFor="yInput"
                                                     className="text-body mx-6 w-full leading-none opacity-80"
                                                 >
-                                                    Y
+                                                    <T keyName="inspector.marcher.coords.y" />
                                                 </label>
                                                 <div className="flex w-full flex-wrap gap-4">
                                                     <span className="w-[4.2rem]">
@@ -892,9 +931,9 @@ function MarcherEditor() {
                                                         }
                                                     >
                                                         <SelectTriggerCompact
-                                                            label={
-                                                                rCoords.yDescription
-                                                            }
+                                                            label={yDescription(
+                                                                rCoords,
+                                                            )}
                                                             className="disabled:cursor-auto disabled:opacity-100"
                                                         />
                                                         <SelectContent>
@@ -903,9 +942,9 @@ function MarcherEditor() {
                                                                     rCoords.yDescription
                                                                 }
                                                             >
-                                                                {
-                                                                    rCoords.yDescription
-                                                                }
+                                                                {yDescription(
+                                                                    rCoords,
+                                                                )}
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -974,13 +1013,11 @@ function MarcherEditor() {
                                                     }
                                                 />
                                             </div>
-                                            {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
+                                            {/* Hidden, so the form submits when Enter is pressed */}
                                             <button
                                                 type="submit"
                                                 style={{ display: "none" }}
-                                            >
-                                                Submit
-                                            </button>
+                                            />
                                         </form>
                                     )}
                                     <form
@@ -1025,10 +1062,11 @@ function MarcherEditor() {
                                                 <Input
                                                     compact
                                                     disabled
-                                                    value={
+                                                    value={sectionDisplayName(
                                                         selectedMarchers[0]
-                                                            .section
-                                                    }
+                                                            .section,
+                                                        t,
+                                                    )}
                                                     className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
                                                 />
                                             </span>
@@ -1059,13 +1097,11 @@ function MarcherEditor() {
                                                 ])
                                             }
                                         />
-                                        {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
+                                        {/* Hidden, so the form submits when Enter is pressed */}
                                         <button
                                             type="submit"
                                             style={{ display: "none" }}
-                                        >
-                                            Submit
-                                        </button>
+                                        />
                                     </form>
                                 </>
                             )}

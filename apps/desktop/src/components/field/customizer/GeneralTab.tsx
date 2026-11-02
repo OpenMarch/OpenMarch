@@ -7,7 +7,7 @@ import {
     SelectItem,
     SelectTriggerButton,
 } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import FormField from "@/components/ui/FormField";
 import { inputClassname } from "./utils";
@@ -29,7 +29,7 @@ export function GeneralTab({
     stepSizeInputRef,
     blurOnEnter,
 }: GeneralTabProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     return (
         <TabContent value="general" className="flex flex-col gap-32">
@@ -73,7 +73,11 @@ export function GeneralTab({
                         inputMode="numeric"
                         pattern="[0-9]*\.?[0-9]*"
                         containerClassName={inputClassname}
-                        unit={measurementSystem === "imperial" ? "in" : "cm"}
+                        unit={
+                            measurementSystem === "imperial"
+                                ? t("fieldProperties.units.inches")
+                                : t("fieldProperties.units.centimeters")
+                        }
                         onBlur={(e) => {
                             e.preventDefault();
 
@@ -116,12 +120,9 @@ export function GeneralTab({
                         currentFieldProperties.stepSizeWarningThresholdInches >
                         0
                             ? t(
-                                  "fieldProperties.labels.stepSizeWarningThresholdRatio",
-                                  "{label} ({steps} to 5)",
+                                  "fieldProperties.labels.stepSizeWarningRatio",
+                                  "Step Size Warning Threshold ({steps} to 5)",
                                   {
-                                      label: t(
-                                          "fieldProperties.labels.stepSizeWarningThreshold",
-                                      ),
                                       steps:
                                           Math.round(
                                               (180 /
@@ -143,7 +144,11 @@ export function GeneralTab({
                         inputMode="numeric"
                         pattern="[0-9]*\.?[0-9]*"
                         containerClassName={inputClassname}
-                        unit={measurementSystem === "imperial" ? "in" : "cm"}
+                        unit={
+                            measurementSystem === "imperial"
+                                ? t("fieldProperties.units.inches")
+                                : t("fieldProperties.units.centimeters")
+                        }
                         onBlur={(e) => {
                             e.preventDefault();
                             if (e.target.value !== "") {
@@ -194,7 +199,10 @@ export function GeneralTab({
                     >
                         <SelectTriggerButton
                             className={inputClassname}
-                            label={fieldProperties?.name || "Field type"}
+                            label={
+                                fieldProperties?.name ||
+                                t("fieldProperties.fieldType.label")
+                            }
                         />
                         <SelectContent>
                             <SelectGroup>

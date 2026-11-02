@@ -55,27 +55,31 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
 
     it("lists Play, Play from Playhead / Pause and Loop, plus the shortcuts list (UI-17)", () => {
         expect(PLAYBACK_MENU_ACTIONS).toEqual([
-            { action: "playPause", label: "Play / Stop", accelerator: "Space" },
+            {
+                action: "playPause",
+                labelKey: "menu.playback.playPause",
+                accelerator: "Space",
+            },
             {
                 action: "playPage",
-                label: "Play from Playhead / Pause",
+                labelKey: "menu.playback.playPage",
                 accelerator: "Shift+Space",
             },
             {
                 action: "playOn",
-                label: "Play On from Start Flag",
+                labelKey: "menu.playback.playOn",
                 accelerator: "Alt+Space",
             },
             {
                 action: "toggleLoop",
-                label: "Loop On / Off",
+                labelKey: "menu.playback.toggleLoop",
                 accelerator: "C",
             },
         ]);
         expect(HELP_MENU_ACTIONS).toEqual([
             {
                 action: "showShortcuts",
-                label: "Keyboard Shortcuts",
+                labelKey: "menu.help.showShortcuts",
                 accelerator: "Shift+/",
             },
         ]);

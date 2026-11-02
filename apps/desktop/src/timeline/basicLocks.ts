@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { create } from "zustand";
+import tolgee from "@/global/singletons/Tolgee";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { toastBasicLock } from "./basicLockToast";
 import {
@@ -119,8 +120,10 @@ export function withoutLockedMarchers<
  */
 export function toastLockedMarchers(count: number, wrote: boolean): void {
     if (count === 0) return;
-    const who = count === 1 ? "One marcher uses" : `${count} marchers use`;
     toastBasicLock(
-        `${who} Expert moves on this page${wrote ? `, so ${count === 1 ? "it wasn't" : "they weren't"} moved` : ""}. Switch to Expert to edit ${count === 1 ? "it" : "them"}.`,
+        tolgee.t(
+            wrote ? "timeline.basic.lockedNotMoved" : "timeline.basic.locked",
+            { count },
+        ),
     );
 }

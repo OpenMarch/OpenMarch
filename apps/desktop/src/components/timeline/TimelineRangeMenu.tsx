@@ -25,6 +25,7 @@ import {
     QuestionIcon,
 } from "@phosphor-icons/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { useTranslate } from "@tolgee/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
@@ -72,14 +73,16 @@ export const TimelineMenuClose = createContext<(() => void) | null>(null);
  * menu's arrow-key order, as menus keep disabled entries, but does nothing: its words dim and a
  * **?** at its end opens the reason beside it while the entry is highlighted (hover or keys) or
  * pressed (touch). Screen readers hear the reason as the entry's description. Escape closes the
- * tip and the menu together (`TimelineMenuClose`).
+ * tip and the menu together (`TimelineMenuClose`). With `checked`, it's one of a set of answers
+ * (`menuitemradio`), and says whether it's the one chosen whether or not it's available.
  */
-function MenuItemWithReason({
+export function MenuItemWithReason({
     testId,
     reason,
     reasonTestId,
     onSelect,
     className = TIMELINE_MENU_ITEM_CLASS,
+    checked,
     children,
 }: {
     testId: string;
@@ -87,6 +90,7 @@ function MenuItemWithReason({
     reasonTestId: string;
     onSelect: () => void;
     className?: string;
+    checked?: boolean;
     children: ReactNode;
 }) {
     const reasonId = useId();
@@ -100,6 +104,9 @@ function MenuItemWithReason({
         <>
             <DropdownMenu.Item
                 data-testid={testId}
+                {...(checked === undefined
+                    ? {}
+                    : { role: "menuitemradio", "aria-checked": checked })}
                 aria-disabled={unavailable ? "true" : undefined}
                 aria-describedby={unavailable ? reasonId : undefined}
                 onSelect={(event) => {
@@ -282,6 +289,7 @@ export function TimelineMoveMenuItems({
 }: {
     actions: TimelineMoveMenuActions;
 }) {
+    const { t } = useTranslate();
     const reason = actions.disabledReason ?? null;
     // Read as the menu renders: the playhead may have moved since the clip's actions were made.
     // Its own reason first, so playing says "Pause to split a move."
@@ -298,7 +306,7 @@ export function TimelineMoveMenuItems({
                 onSelect={actions.onEdit}
             >
                 <PencilSimpleIcon size={14} />
-                Edit move
+                {t("timeline.moveMenu.edit")}
             </MenuItemWithReason>
             <DropdownMenu.Item
                 data-testid="timeline-move-menu-rename"
@@ -306,7 +314,7 @@ export function TimelineMoveMenuItems({
                 className={TIMELINE_MENU_ITEM_CLASS}
             >
                 <CursorTextIcon size={14} />
-                Rename move…
+                {t("timeline.moveMenu.rename")}
             </DropdownMenu.Item>
             {actions.onSplit && (
                 <MenuItemWithReason
@@ -316,7 +324,7 @@ export function TimelineMoveMenuItems({
                     onSelect={actions.onSplit}
                 >
                     <ScissorsIcon size={14} />
-                    Split at playhead
+                    {t("timeline.moveMenu.splitAtPlayhead")}
                 </MenuItemWithReason>
             )}
             {extra.length > 0 && (
@@ -334,7 +342,7 @@ export function TimelineMoveMenuItems({
                 className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
             >
                 <TrashIcon size={14} />
-                Delete move
+                {t("timeline.moveMenu.delete")}
             </MenuItemWithReason>
         </>
     );
@@ -557,7 +565,7 @@ export function useTimelineRangeMenu({
                                 onSelect={() => menu.onAdd?.(open.target)}
                             >
                                 <UserPlusIcon size={14} />
-                                Add selected marchers
+                                {tolgee.t("timeline.rangeMenu.addSelected")}
                             </MenuItemWithReason>
                         )}
                         {pageExtra.length > 0 && (
@@ -668,7 +676,7 @@ export function useTimelineRangeMenu({
                                     className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
                                 >
                                     <FlagIcon size={14} />
-                                    Delete page
+                                    {tolgee.t("timeline.rangeMenu.deletePage")}
                                 </DropdownMenu.Item>
                             )}
                         {menu?.onDeleteWithMoves &&

@@ -1,5 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeAll, describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
+import { TolgeeProvider } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 import CanvasZoomControls, {
     type ZoomControlsCanvas,
 } from "../CanvasZoomControls";
@@ -30,13 +32,24 @@ function fakeCanvas(initialZoom: number) {
     };
 }
 
+const Providers = ({ children }: { children: React.ReactNode }) => (
+    <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+        {children}
+    </TolgeeProvider>
+);
+
 describe("CanvasZoomControls slider", () => {
+    beforeAll(async () => {
+        await tolgee.run();
+    });
+
     it("zooms about the canvas centre and stays within the button range", () => {
         const canvas = fakeCanvas(1);
         render(
             <CanvasZoomControls
                 canvas={canvas as unknown as ZoomControlsCanvas}
             />,
+            { wrapper: Providers },
         );
         const thumb = screen.getByRole("slider");
         expect(thumb.getAttribute("aria-valuemin")).toBe(String(Math.log(0.2)));
@@ -57,6 +70,7 @@ describe("CanvasZoomControls slider", () => {
             <CanvasZoomControls
                 canvas={canvas as unknown as ZoomControlsCanvas}
             />,
+            { wrapper: Providers },
         );
         canvas.setZoomExternally(5);
         await act(async () => {

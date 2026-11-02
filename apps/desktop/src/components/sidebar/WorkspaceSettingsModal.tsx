@@ -22,7 +22,7 @@ import FormField from "../ui/FormField";
 import { XIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 
 const inputClassname = clsx("col-span-6 self-center");
@@ -43,7 +43,7 @@ export default function WorkspaceSettingsModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <SidebarModalLauncher
             name={t("sidebar.settings")}
@@ -59,7 +59,7 @@ function WorkspaceSettingsModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const queryClient = useQueryClient();
     const effectiveOffset = useAudioOffsetSeconds();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { data: settings, isLoading } = useQuery(
         workspaceSettingsQueryOptions(),
     );

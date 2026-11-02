@@ -1,5 +1,7 @@
 /**
- * `pnpm check:i18n`: keeps user-facing text in the desktop app going through Tolgee.
+ * `pnpm check:i18n`: keeps user-facing text in the desktop app going through Tolgee, in the
+ * renderer (`src`), the Electron main process and preload (`electron`), and the web build's page
+ * and worker (`web`).
  *
  * - No new untranslated UI text. Text that predates the check is listed per file in
  *   `i18n-meta/baseline.json`; a file may only go down.
@@ -15,11 +17,16 @@
 import { ESLint } from "eslint";
 import { execFileSync } from "node:child_process";
 import { realpathSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { knownTranslationKey, noUntranslatedText } from "./rules.mjs";
+import {
+    knownTranslationKey,
+    noUntranslatedMainText,
+    noUntranslatedText,
+} from "./rules.mjs";
+import { checkTranslations } from "./translations.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -34,7 +41,17 @@ export const PATHS = {
     baseline: "i18n-meta/baseline.json",
 };
 
-const SOURCES = ["src/**/*.ts", "src/**/*.tsx"];
+const SOURCES = [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "electron/**/*.ts",
+    // The web build's page and worker (`pnpm web:build`)
+    "web/**/*.ts",
+    "web/**/*.tsx",
+];
+
+/** The main process and preload: no JSX, so they get their own untranslated-text rule. */
+const MAIN_SOURCES = ["electron/**"];
 
 /** Not shipped to users, or shown only to developers. */
 const IGNORED_SOURCES = [
@@ -44,6 +61,7 @@ const IGNORED_SOURCES = [
     "**/*.d.ts",
     "src/field/benchmark/**",
     "src/test/**",
+    "electron/database/migrations/**",
 ];
 
 export function flattenMessages(tree, prefix = "", into = {}) {
@@ -76,6 +94,7 @@ async function lintSources(dir, english) {
             i18n: {
                 rules: {
                     "no-untranslated-text": noUntranslatedText,
+                    "no-untranslated-main-text": noUntranslatedMainText,
                     "known-translation-key": knownTranslationKey,
                 },
             },
@@ -93,6 +112,15 @@ async function lintSources(dir, english) {
                 "i18n/no-untranslated-text": "error",
                 "i18n/known-translation-key": ["error", { english }],
             },
+            overrides: [
+                {
+                    files: MAIN_SOURCES,
+                    rules: {
+                        "i18n/no-untranslated-text": "off",
+                        "i18n/no-untranslated-main-text": "error",
+                    },
+                },
+            ],
         },
     });
     return eslint.lintFiles(SOURCES);
@@ -132,6 +160,22 @@ function compareWithBase(baseline, base) {
         );
     }
     return errors;
+}
+
+/** Every translated language file in `i18n/`, flattened, by language code. */
+async function readTranslations(dir) {
+    const englishFile = path.basename(PATHS.english);
+    const folder = path.join(dir, path.dirname(PATHS.english));
+    const files = (await readdir(folder)).filter(
+        (file) => file.endsWith(".json") && file !== englishFile,
+    );
+    const languages = {};
+    for (const file of files.sort()) {
+        languages[file.slice(0, -".json".length)] = flattenMessages(
+            await readJson(dir, path.join(path.dirname(PATHS.english), file)),
+        );
+    }
+    return languages;
 }
 
 /** The base branch's baseline on a pull request, or undefined when there's none to compare. */
@@ -188,7 +232,10 @@ export async function checkI18n(
                 errors.push(formatProblem(file, message));
             } else if (message.ruleId === "i18n/known-translation-key") {
                 errors.push(formatProblem(file, message));
-            } else if (message.ruleId === "i18n/no-untranslated-text") {
+            } else if (
+                message.ruleId === "i18n/no-untranslated-text" ||
+                message.ruleId === "i18n/no-untranslated-main-text"
+            ) {
                 const list = textByFile.get(file) ?? [];
                 list.push(message);
                 textByFile.set(file, list);
@@ -218,6 +265,18 @@ export async function checkI18n(
                 `${file}: ${allowed - now} fewer untranslated UI text (now ${now})`,
             );
         }
+    }
+
+    // Translations: each language file has to fit the English it translates.
+    const translationErrors = checkTranslations(
+        english,
+        await readTranslations(dir),
+    );
+    if (translationErrors.length > 0) {
+        errors.push(
+            "Translations that no longer fit their English (rename the key when its arguments, tags or meaning change; fix a pulled translation in Tolgee):",
+            ...translationErrors,
+        );
     }
 
     // Translator context.

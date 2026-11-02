@@ -88,9 +88,13 @@
             "quarterTurn": "形状：時計回りに90°回転",
             "recalculate": "形状：誰がどこに行くかを再計算",
             "evenOut": "形状: 輪郭を均等にする",
+            "hideMarchers": "図形: マーチャーを隠す（長押しで一時表示、タップで隠したまま）",
+            "hideMarchersKeywords": "隠す 表示 マーチャー 点 経路 図形のみ のぞく 目",
             "expand": "形状：比率を保って拡大",
             "shrink": "形状：比率を保って縮小",
             "ring": "お気に入りリング：長押しで形状を選択、タップで開いたままにする",
+            "group": "選択範囲をグループ化",
+            "groupKeywords": "グループ化 形状 固定 そのまま まとめる",
             "ungroup": "形状: グループ解除",
             "ungroupKeywords": "グループ解除 形状 分解 解除"
         },
@@ -383,6 +387,7 @@
             "fine": "微調整",
             "freeRatio": "比率フリー",
             "fromCenter": "中心から",
+            "keepDirection": "方向を保持",
             "keepRatio": "比率を保持",
             "oneAxis": "1軸",
             "snapOff": "スナップオフ",
@@ -1307,6 +1312,10 @@
                 "locked": "間隔は連動中：クリックで解除",
                 "unlocked": "2つの間隔を連動させる"
             },
+            "hideMarchers": {
+                "hide": "マーチャーを隠す",
+                "show": "マーチャーを表示"
+            },
             "evenOut": {
                 "label": "均等にする",
                 "tip": "ブロックが許す限り均等にマーチャーを配置する",
@@ -1442,6 +1451,12 @@
                     "noSize": "形状にサイズがありません"
                 }
             },
+            "group": {
+                "label": "グループ",
+                "params": {
+                    "interval": "隣同士の最小間隔（歩数）"
+                }
+            },
             "line": {
                 "label": "直線",
                 "validate": {
@@ -1506,6 +1521,7 @@
                 "empty": "{count, plural, other {空き#}}",
                 "steps": "{interval}ステップ"
             },
+            "groupError": "マーチャーのグループ化中にエラーが発生しました",
             "ungroupError": "形状のグループ解除中にエラーが発生しました",
             "ungroupIsolated": "このフォームは前のページのものです。分離表示の外でグループ解除してください"
         },

@@ -112,7 +112,14 @@ export default function WebSaveStatus() {
                 <button
                     type="button"
                     data-testid="web-save-status"
-                    aria-label={`${short}${backup ? `. ${backup}` : ""}`}
+                    aria-label={
+                        backup
+                            ? t("web.saveStatusLabel", {
+                                  status: short,
+                                  backup,
+                              })
+                            : short
+                    }
                     className={clsx(
                         "titlebar-button hover:bg-fg-1 rounded-6 touch:min-h-44 flex min-w-0 items-center gap-6 px-6 py-2 text-left",
                         (memoryOnly || failed) && "text-red",

@@ -14,7 +14,7 @@ import SettingsPanel from "@/settings/SettingsPanel";
 import { APP_LANGUAGES } from "@/utilities/languages";
 
 export default function GeneralSettings() {
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const [currentLanguage, setCurrentLanguage] = useState("en");
     const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] =
         useState(true);

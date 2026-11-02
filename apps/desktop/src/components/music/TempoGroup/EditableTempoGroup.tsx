@@ -11,7 +11,7 @@ import { Form, FormField, Label } from "@radix-ui/react-form";
 import clsx from "clsx";
 import React, { useMemo, useState } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { isValidTempoBpm, MIN_TEMPO_BPM } from "@/global/classes/Beat";
 import { toast } from "sonner";
 
@@ -25,7 +25,7 @@ export default function EditableTempoGroup({
     setIsVisible,
 }: EditableTempoGroupProps) {
     const subTextClass = clsx("text-text-subtitle text-sub");
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const updateTempoGroupMutation = useUpdateTempoGroup();
     const updateManualTemposMutation = useUpdateManualTempos();
     const isMixedMeter = useMemo(
@@ -258,7 +258,7 @@ export default function EditableTempoGroup({
                                         {index + 1}
                                     </p>
                                     <UnitInput
-                                        unit="BPM"
+                                        unit={t("music.bpmUnit")}
                                         className="col-span-5"
                                         type="number"
                                         min={MIN_TEMPO_BPM}

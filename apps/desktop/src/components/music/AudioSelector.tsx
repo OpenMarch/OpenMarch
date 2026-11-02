@@ -19,7 +19,7 @@ import {
 import ActionButton from "@/shortcuts/ActionButton";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function AudioSelector() {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
@@ -28,7 +28,7 @@ export default function AudioSelector() {
         selectedAudioFileContext?.selectedAudioFile ?? null;
     const setSelectedAudioFile =
         selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const refreshAudioFiles = useCallback(() => {
         AudioFile.getAudioFilesDetails().then((audioFiles) => {

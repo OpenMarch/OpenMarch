@@ -24,7 +24,7 @@ import { useTimingObjects } from "@/hooks";
 import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
 import { MusicNotesIcon } from "@phosphor-icons/react";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTolgee, useTranslate } from "@tolgee/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     workspaceSettingsQueryOptions,
@@ -39,7 +39,7 @@ export default function MusicModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <SidebarModalLauncher
             name={t("sidebar.music")}
@@ -60,13 +60,17 @@ function MusicModalContents() {
     const [newGroupFormHidden, setNewGroupFormHidden] = React.useState(
         measures.length > 0,
     );
+    // The groups carry translated range text ("m 1-4"), so rebuild them when the
+    // app language changes.
+    const language = useTolgee(["language"]).getLanguage();
     const tempoGroups = useMemo(
         () => TempoGroupsFromMeasures(measures),
-        [measures],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [measures, language],
     );
 
     const newFormRef = useRef<HTMLDivElement>(null);
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const scrollToBottom = () => {
         newFormRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -97,6 +101,7 @@ function MusicModalContents() {
                     <T keyName="music.title" />
                 </h4>
                 <button
+                    aria-label={t("sidebar.close")}
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
@@ -187,7 +192,7 @@ function MusicModalContents() {
 
 function AudioOffsetInput() {
     const queryClient = useQueryClient();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { data: settings } = useQuery(workspaceSettingsQueryOptions());
     const { mutate: updateSettings } = useMutation(
         updateWorkspaceSettingsMutationOptions(queryClient),

@@ -5,7 +5,7 @@ import { InfoIcon } from "@phosphor-icons/react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { forwardRef, useState, type ReactElement, type ReactNode } from "react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 
 export interface InfoTipProps {
@@ -39,7 +39,7 @@ export default function InfoTip({
     delayDuration,
 }: InfoTipProps) {
     const isTouch = useIsTouchMode();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [open, setOpen] = useState(false);
     const trigger = children ?? (
         <InfoTipButton aria-label={label ?? t("infoTip.moreInfo")} />

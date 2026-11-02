@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     useCallback,
     useEffect,
@@ -219,17 +220,17 @@ export function resizedRange({
                   min: { beat: 0, reason: null },
                   max: {
                       beat: range.endBeatIndex - 1,
-                      reason: "1 count minimum",
+                      reason: tolgee.t("timeline.clipResize.minimum"),
                   },
               })
             : (limits?.endEdge ?? {
                   min: {
                       beat: range.startBeatIndex + 1,
-                      reason: "1 count minimum",
+                      reason: tolgee.t("timeline.clipResize.minimum"),
                   },
                   max: { beat: beatCount, reason: null },
               });
-    const one = { reason: "1 count minimum" };
+    const one = { reason: tolgee.t("timeline.clipResize.minimum") };
     let max =
         edge === "end" && bounds.max.beat > beatCount
             ? { beat: beatCount, reason: null }
@@ -273,8 +274,6 @@ export function resizedRange({
     };
 }
 
-const counts = (n: number) => `${n} count${n === 1 ? "" : "s"}`;
-
 /**
  * The drag tag's text, worded as a dragged page flag's readout (UI-15): "Move 3: 4 → 6 counts",
  * then why the edge stopped, why it waits short of the pointer, or how many page flags the move
@@ -287,7 +286,16 @@ export function clipResizeTagText(
     label?: string,
 ): string {
     const length = (r: TimelineBeatRange) => r.endBeatIndex - r.startBeatIndex;
-    const change = `${label ? `${label}: ` : ""}${length(from)} → ${counts(length(preview))}`;
+    const change = label
+        ? tolgee.t("timeline.clipResize.changeNamed", {
+              label,
+              before: length(from),
+              after: length(preview),
+          })
+        : tolgee.t("timeline.clipResize.change", {
+              before: length(from),
+              after: length(preview),
+          });
     const note =
         preview.blockedBy ??
         preview.stoppedBy ??
@@ -299,9 +307,13 @@ export function clipResizeTagText(
             ).length;
             return crossed === 0
                 ? null
-                : `through ${crossed} page flag${crossed === 1 ? "" : "s"}`;
+                : tolgee.t("timeline.clipResize.throughFlags", {
+                      count: crossed,
+                  });
         })();
-    return note ? `${change} · ${note}` : change;
+    return note
+        ? tolgee.t("timeline.clipResize.withNote", { change, note })
+        : change;
 }
 
 /**

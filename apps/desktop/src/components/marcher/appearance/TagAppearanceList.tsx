@@ -1,3 +1,4 @@
+import { tagDisplayName } from "@/components/tags/tagDisplayName";
 import {
     CaretDownIcon,
     CaretUpIcon,
@@ -5,10 +6,9 @@ import {
     PlusIcon,
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import {
     DatabaseTag,
-    getTagName,
     ModifiedTagAppearanceArgs,
     TagAppearance,
 } from "@/db-functions";
@@ -206,6 +206,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
     },
     ref,
 ) {
+    const { t } = useTranslate();
     const { highlightSelection } = useSidebarModalStore();
     const { data: tagAppearances } = useQuery(
         tagAppearancesByStartPageIdQueryOptions(page.id),
@@ -299,13 +300,17 @@ const SinglePageTagAppearanceList = React.forwardRef<
 
     return (
         <div
-            aria-label={`page ${page.name} tag appearance list`}
+            aria-label={t("marchers.tagAppearances.pageListLabel", {
+                page: page.name,
+            })}
             ref={ref}
             className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
         >
             <div className="flex flex-col gap-16">
                 <h3 className="text-text-subtitle text-lg leading-none">
-                    Page {page.name}
+                    {t("marchers.tagAppearances.pageHeading", {
+                        page: page.name,
+                    })}
                 </h3>
                 <Dropdown.Root>
                     <Dropdown.Trigger
@@ -333,10 +338,13 @@ const SinglePageTagAppearanceList = React.forwardRef<
                                             : "text-text hover:text-accent cursor-pointer duration-150 ease-out",
                                     )}
                                 >
-                                    {getTagName({
-                                        tag_id: tag.id,
-                                        name: tag.name,
-                                    })}
+                                    {tagDisplayName(
+                                        {
+                                            tag_id: tag.id,
+                                            name: tag.name,
+                                        },
+                                        t,
+                                    )}
                                 </Dropdown.Item>
                             ))}
                         </Dropdown.Content>
@@ -358,12 +366,15 @@ const SinglePageTagAppearanceList = React.forwardRef<
                                         key={tagAppearance.id}
                                         tagAppearance={tagAppearance}
                                         pageId={page.id}
-                                        tagName={getTagName({
-                                            tag_id: tagAppearance.tag_id,
-                                            name: tagNamesByTagId.get(
-                                                tagAppearance.tag_id,
-                                            ),
-                                        })}
+                                        tagName={tagDisplayName(
+                                            {
+                                                tag_id: tagAppearance.tag_id,
+                                                name: tagNamesByTagId.get(
+                                                    tagAppearance.tag_id,
+                                                ),
+                                            },
+                                            t,
+                                        )}
                                         isHighlighted={
                                             highlightedTagId ===
                                             tagAppearance.tag_id
@@ -452,7 +463,7 @@ function SortableTagAppearance({
     onMoveDown?: () => void;
 }) {
     const isTouchMode = useIsTouchMode();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const {
         attributes,
         listeners,
@@ -474,7 +485,7 @@ function SortableTagAppearance({
                 setRef(el);
             }}
             style={style}
-            aria-label={`page_${pageId}-tag_appearance_${tagAppearance.id}`}
+            data-testid={`page_${pageId}-tag_appearance_${tagAppearance.id}`}
             className={twMerge(
                 "text-body text-text flex w-[28rem] items-start gap-4",
                 isDragging ? "z-50 opacity-90" : "",

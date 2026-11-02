@@ -1,4 +1,5 @@
 import { afterEach, describe, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { asc, eq, getTableName } from "drizzle-orm";
 import { createResolver, type Resolver } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
@@ -306,7 +307,7 @@ describeDbTests("timeline commands", (it) => {
                 }),
             );
             // Beat 0 is as early as it can start
-            expect(error.message).toContain(
+            expect(refusalText(error)).toContain(
                 "starts at beat 1, so it can't move 2 beats earlier",
             );
             await expectRefused(db, "E-ARGS", () =>
@@ -680,7 +681,7 @@ describeDbTests("timeline commands", (it) => {
                     endBeat: 5,
                 }),
             );
-            expect(error.message).toContain("room for 2");
+            expect(refusalText(error)).toContain("room for 2");
             await expectRefused(db, "E-ARGS", () =>
                 createTrack({
                     db,

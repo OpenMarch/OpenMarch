@@ -2,7 +2,6 @@ import clsx from "clsx";
 import { useTranslate } from "@tolgee/react";
 import { getButtonClassName } from "@openmarch/ui";
 import ActionButton from "@/shortcuts/ActionButton";
-import { pagesText } from "@/timeline/timelineKeepLater";
 import {
     unsetFollowingLabel,
     useUnsetFollowingPages,
@@ -46,9 +45,12 @@ export default function UnsetHereButton({
             action="timelineUnsetHere"
             data-testid="timeline-unset-here"
             tooltip={tooltip}
-            aria-label={`${t("inspector.marcher.timeline.unsetHere", {
-                defaultValue: "Remove keyframe",
-            })}. ${tooltip}`}
+            aria-label={t("inspector.marcher.timeline.buttonWithHint", {
+                label: t("inspector.marcher.timeline.unsetHere", {
+                    defaultValue: "Remove keyframe",
+                }),
+                hint: tooltip,
+            })}
             className={clsx(
                 getButtonClassName({ variant: "secondary", size: "compact" }),
             )}
@@ -77,27 +79,34 @@ export function UnsetHereAndFollowingButton({
     const label = unsetFollowingLabel(following, (key, defaultValue, params) =>
         t(key, { defaultValue, ...params }),
     );
-    const pages = pagesText(following);
+    const pageArgs = {
+        pageCount: following.length,
+        first: following[0] ?? "",
+        last: following[following.length - 1] ?? "",
+    };
     const tooltip =
         targets.length === marcherIds.length
             ? t("inspector.marcher.timeline.unsetHereAndFollowingHint", {
                   defaultValue:
-                      "Remove their keyframe on this count, and {pages} follow back to the keyframe before it",
-                  pages,
+                      "Remove their keyframe on this count, and {pageCount, plural, =1 {Page {first} follows} other {Pages {first}–{last} follow}} back to the keyframe before it",
+                  ...pageArgs,
               })
             : t("inspector.marcher.timeline.unsetHereAndFollowingHintSome", {
                   defaultValue:
-                      "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pages} follow back to the keyframe before it",
+                      "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pageCount, plural, =1 {Page {first} follows} other {Pages {first}–{last} follow}} back to the keyframe before it",
                   count: String(targets.length),
                   total: String(marcherIds.length),
-                  pages,
+                  ...pageArgs,
               });
     return (
         <ActionButton
             action="timelineUnsetHereAndFollowing"
             data-testid="timeline-unset-here-and-following"
             tooltip={tooltip}
-            aria-label={`${label}. ${tooltip}`}
+            aria-label={t("inspector.marcher.timeline.buttonWithHint", {
+                label,
+                hint: tooltip,
+            })}
             className={clsx(
                 getButtonClassName({ variant: "secondary", size: "compact" }),
             )}

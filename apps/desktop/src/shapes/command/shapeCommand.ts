@@ -25,6 +25,7 @@ import {
 } from "../tool/shapeToolStore";
 import { fillAhead, shapeSteps, startingParams } from "./shapeSteps";
 import { useLastLayoutStore } from "../tool/lastLayout";
+import { distributionOf } from "../distribute/modes";
 
 /** A layout typed in the bar becomes the one a new box starts in, as picking one does (#387) */
 function rememberLayout(
@@ -37,7 +38,7 @@ function rememberLayout(
     const { params, steps } = shapeSteps(kind, base, n, env, answers);
     const at = steps.findIndex((s) => s.param.key === "layout");
     if (at < 0 || steps[at]!.invalid || !answers[at]?.trim()) return;
-    const d = kind.closed?.distribution(params, n);
+    const d = distributionOf(kind, params, n);
     if (d?.mode === "files")
         useLastLayoutStore.getState().remember(d.layout.family);
 }

@@ -60,6 +60,7 @@ import { cleanName } from "@/utilities/webLibrary";
 import {
     WEB_CHANNELS,
     WEB_EVENTS,
+    WORKER_ERRORS,
     type FromWorker,
     type LibraryState,
     type SaveStatus,
@@ -386,12 +387,9 @@ async function ensureSaved(): Promise<void> {
     const isSaved = () =>
         savedCopy?.path === path && savedCopy.changes === state.changes;
     if (isSaved()) return;
-    if (!state.idle)
-        throw new Error(
-            "The show is in the middle of a change. Try again in a moment.",
-        );
+    if (!state.idle) throw new Error(WORKER_ERRORS.midChange.messageKey);
     await saveCopy();
-    if (!isSaved()) throw new Error("The latest changes couldn't be saved.");
+    if (!isSaved()) throw new Error(WORKER_ERRORS.notSaved.messageKey);
 }
 
 /** Messages and timed saves run one at a time, in order. */
@@ -536,7 +534,7 @@ function closeOpenShow() {
 }
 
 function requireLibrary(): Library {
-    if (!library) throw new Error("This tab doesn't keep shows in the browser");
+    if (!library) throw new Error(WORKER_ERRORS.noLibrary.messageKey);
     return library;
 }
 
@@ -580,7 +578,7 @@ function registerLibraryHandlers() {
     ipcMain.handle(WEB_CHANNELS.exportStored, async (_, id: string) => {
         const lib = requireLibrary();
         const entry = lib.current.shows.find((show) => show.id === id);
-        if (!entry) throw new Error(`No show ${id}`);
+        if (!entry) throw new Error(WORKER_ERRORS.noShow.messageKey);
         const path = DatabaseServices.getDbPath();
         const bytes =
             id === openId && path
@@ -724,7 +722,7 @@ function registerWebHandlers() {
                 return new DatabaseServices.LegacyDatabaseResponse(
                     false,
                     undefined,
-                    new Error("No file is open. Create or open a show first."),
+                    new Error(WORKER_ERRORS.noFileOpen.messageKey),
                 );
             return DatabaseServices.insertAudioFile({
                 data,

@@ -39,7 +39,7 @@ export default function WelcomeStep({
     "aria-label"?: string;
 }) {
     const { t } = useTranslate();
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const [imageFailed, setImageFailed] = useState(false);
     // Only the app's language is loaded at first; cycle once all are.
     const [allLoaded, setAllLoaded] = useState(false);

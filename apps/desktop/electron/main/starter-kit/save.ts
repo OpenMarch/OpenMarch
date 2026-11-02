@@ -6,6 +6,7 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { app, BrowserWindow, dialog, shell } from "electron";
+import { t } from "../i18n";
 import {
     buildStarterKitZip,
     readKitVersion,
@@ -33,12 +34,17 @@ export async function saveStarterKit(
     try {
         const version = await readKitVersion(kitDir);
         const spec = {
-            title: "Save the Blender starter kit",
+            title: t("library.starterKit.saveDialogTitle"),
             defaultPath: path.join(
                 app.getPath("downloads"),
                 starterKitFilename(version),
             ),
-            filters: [{ name: "Zip archive", extensions: ["zip"] }],
+            filters: [
+                {
+                    name: t("fileDialog.filters.zipArchive"),
+                    extensions: ["zip"],
+                },
+            ],
         };
         const result = window
             ? await dialog.showSaveDialog(window, spec)
@@ -49,7 +55,7 @@ export async function saveStarterKit(
     } catch (error) {
         console.error("Couldn't save the Blender starter kit:", error);
         dialog.showErrorBox(
-            "Couldn't save the Blender starter kit",
+            t("library.starterKit.saveFailed"),
             error instanceof Error ? error.message : String(error),
         );
     }

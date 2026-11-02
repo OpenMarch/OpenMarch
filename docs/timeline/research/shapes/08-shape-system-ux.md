@@ -212,8 +212,15 @@ Every number in the editor works the same way. Owner choice, 2026-10-16.
 - **Click** a number to type over it. Enter applies it, Esc cancels, and clicking away applies it.
 - **Exact intervals (#424).** A spacing can be typed as `2`, `2.5`, `2½`, `1⅔`, `1 2/3`, `1-2/3`
   or `5/3`, with or without "steps". It's kept exact (1⅔ is 5/3 of a step, read in the field's
-  step grid; owner, 2026-10-25), and the same parser reads interval lists such as `2⅔x3,2` and
-  the command bar. Halves, thirds and quarters show as fractions (2½, 1⅔, 2¾); anything else shows
+  step grid; owner, 2026-10-25), and the same parser reads interval lists and the command bar.
+  An interval list (#526, spec #522) is groups of marchers, count × interval: `2*3+4*2` is 2
+  marchers at 3 steps, then 4 at 2 (`x` for `*` and `,` for `+` work too, so `2x2⅔, 4x2`). One
+  group may go without a count: it's the rest, and where it's typed puts the counted groups at the
+  start (`2.5+3*4`), the end (`3*4+2.5`) or both (`2*3+2+2*3`). Without a rest the last group grows
+  to take extra marchers; with too few, groups drop from the end; the seam between two groups is
+  the larger interval. The old interval × gaps form (`2⅔x3`) is gone. A Line spaced by groups
+  shows a chip per group in the editor (`2 × 3 │ 4 × 2`), each count and interval typed or
+  dragged, `+` to add a group and × to remove one, a grown group marked `+4`. Halves, thirds and quarters show as fractions (2½, 1⅔, 2¾); anything else shows
   to 2 decimals. Saved shapes and the command bar bring an interval back exactly. A box with a
   spacing off the half steps doesn't creep when its count or a side changes: the marcher held in
   place stays put.
@@ -283,8 +290,16 @@ row: **Grid** (rows and files), **Outline** (round the edge, the middle empty) a
   of a box; the rest spread over the whole frame around them, right up to the edge, so the two read
   as one spread. Reshuffle moves only the inside. Turning it on or off keeps the frame. With too few
   marchers for an inside, everyone stands on the edge, and the tooltip says so; otherwise it says
-  how many stand on the edge and how many inside. Boxes and circles only; it's hidden for other
-  shapes.
+  how many stand on the edge and how many inside. Boxes, circles and closed Lines; it's hidden for
+  other shapes.
+- **A closed Line (#529)** is filled the same three ways. It closes by a click on its first point
+  while clicking points, an end dropped on the other, or Closed in its Open or closed menu.
+  **Outline** is the line itself, a marcher on every corner and a gap for every marcher (the last
+  back to the first), with its spacing menu. **Grid** is the widest square grid that has room for
+  everyone inside the drawn outline, any extra spots off its back rank; **Spread** (and Edge) fill
+  the drawn outline. In Grid and Spread the drawn outline is the shape, so the spacing is whatever
+  fits, and typing one grows the outline from its pivot. **Open** turns it back into a line
+  through the spots its outline has.
 
 ## The kind contract
 

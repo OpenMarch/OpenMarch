@@ -1,3 +1,5 @@
+import tolgee from "@/global/singletons/Tolgee";
+
 /** Max length for generated silent-audio placeholders (avoids OOM from bad beat durations). */
 export const MAX_PLACEHOLDER_AUDIO_SECONDS = 1800;
 
@@ -122,7 +124,7 @@ export default class AudioFile {
                 id: -1,
                 data: silentAudio,
                 path: "silent-audio.wav",
-                nickname: "Silent Audio",
+                nickname: tolgee.t("audio.silentPlaceholder"),
                 selected: true,
             });
             response = silentAudioFile;

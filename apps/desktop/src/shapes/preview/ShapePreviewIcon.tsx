@@ -24,7 +24,12 @@ export default function ShapePreviewIcon({
     picked?: boolean;
     className?: string;
 }) {
-    const { spots, outline } = useMemo(() => shapePreview(kind), [kind]);
+    const { spots, outline, openOutline } = useMemo(
+        () => shapePreview(kind),
+        [kind],
+    );
+    const outlinePoints =
+        outline?.map(({ x, y }) => `${x},${y}`).join(" ") ?? "";
     return (
         <svg
             width={size}
@@ -37,16 +42,26 @@ export default function ShapePreviewIcon({
             data-spots={spots.length}
             data-picked={picked}
         >
-            {outline && (
-                <polygon
-                    points={outline.map(({ x, y }) => `${x},${y}`).join(" ")}
-                    fill="currentColor"
-                    fillOpacity={picked ? 0.3 : 0.1}
-                    stroke="currentColor"
-                    strokeWidth={1.75}
-                    strokeLinejoin="round"
-                />
-            )}
+            {outline &&
+                (openOutline ? (
+                    <polyline
+                        points={outlinePoints}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.75}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                    />
+                ) : (
+                    <polygon
+                        points={outlinePoints}
+                        fill="currentColor"
+                        fillOpacity={picked ? 0.3 : 0.1}
+                        stroke="currentColor"
+                        strokeWidth={1.75}
+                        strokeLinejoin="round"
+                    />
+                ))}
             {spots.map(({ x, y }, i) => (
                 <circle
                     key={i}

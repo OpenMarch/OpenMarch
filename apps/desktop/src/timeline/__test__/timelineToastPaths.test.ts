@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 import { QueryClient } from "@tanstack/react-query";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
+import { text } from "@/timeline/timelineText";
 import { moveMarchersToNeighborPageMutationOptions } from "@/hooks/queries/useMarcherPages";
 import {
     createMarchersMutationOptions,
@@ -21,6 +23,11 @@ vi.mock("@/utilities/utils", async (importOriginal) => ({
     ...(await importOriginal<typeof import("@/utilities/utils")>()),
     conToastError: vi.fn(),
 }));
+
+// The fallback messages are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 afterEach(() => vi.mocked(conToastError).mockReset());
 
@@ -44,9 +51,17 @@ describe("timeline write paths toast the mapped message", () => {
     it("a refused move's E-ARGS keeps its own words", () => {
         fail(
             moveMarchersToNeighborPageMutationOptions(),
-            new TimelineWriteError("E-ARGS", "marcher 3 has no move here"),
+            new TimelineWriteError(
+                "E-ARGS",
+                text.t("timeline.refusals.positions.noMoveEndsAtPage", {
+                    marcher: "T3",
+                    page: text.t("timeline.where.page", { page: "2" }),
+                }),
+            ),
         );
-        expect(toasted()).toBe("marcher 3 has no move here");
+        expect(toasted()).toBe(
+            "marcher T3 has no move that ends at the end of Page 2, so there is no destination to change there",
+        );
     });
 
     it("creating marchers (P7.3)", () => {

@@ -8,7 +8,7 @@ import {
     WarningNote,
 } from "@openmarch/ui";
 import { WizardFormField } from "@/components/ui/FormField";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import MusicXmlSelector from "@/components/music/MusicXmlSelector";
 import { useQuery } from "@tanstack/react-query";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
@@ -41,7 +41,7 @@ interface TempoStepProps {
 }
 
 export default function TempoStep({ tempo, onChange }: TempoStepProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [databaseReady, setDatabaseReady] = useState(false);
     const [checkingDatabase, setCheckingDatabase] = useState(true);
     const { data: measures } = useQuery({

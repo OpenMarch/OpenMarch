@@ -7,6 +7,13 @@ import {
     createSerialQueue,
 } from "./src/global/database/sqlProxyQueue";
 import { createSqlReadBatch } from "./src/global/database/sqlReadBatch";
+import { GlobalContextPlugin } from "@tolgee/react";
+import tolgee from "./src/global/singletons/Tolgee";
+
+// Components that call `useTranslate` or render `<T>` get the app's Tolgee (English) without
+// each test wrapping them in a `TolgeeProvider`; `tolgee.t` outside React works too
+tolgee.addPlugin(GlobalContextPlugin());
+await tolgee.run();
 
 // jest-dom's matchers, on this app's own vitest. `@testing-library/jest-dom/vitest` extends
 // whichever `vitest` pnpm hoists to the repo root, and other workspace packages still use

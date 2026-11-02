@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import { useActionHandler } from "../useActionHandler";
@@ -8,7 +8,7 @@ import { useUpdateCoordinates } from "./useUpdateCoordinates";
 
 // eslint-disable-next-line max-lines-per-function
 export function useAlignmentActionHandlers() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const {
         fieldProperties,
         ready,

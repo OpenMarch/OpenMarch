@@ -31,6 +31,15 @@ const keepsShortcut = new WeakSet<Event>();
  */
 export const shortcutStillRuns = (event: Event) => keepsShortcut.has(event);
 
+/** Cancels a key press's default (pressing the focused button) and lets the app's shortcut still run it */
+export const keepShortcut = (event: {
+    readonly nativeEvent: Event;
+    preventDefault: () => void;
+}) => {
+    event.preventDefault();
+    keepsShortcut.add(event.nativeEvent);
+};
+
 /**
  * Space always plays (docs/timeline/ui.md UI-14, round-2 review): on the move controls (a clip,
  * its ⋯ button, the Move card, the isolation bar) Space doesn't also press the focused button or

@@ -369,17 +369,17 @@ describe("TimelineHoldLine", () => {
             );
         });
 
-        it("says (K) on the button K would run here", async () => {
+        it("shows K as a keycap on the button K would run here", async () => {
             show([1], otName);
             expect(keepHere()).toHaveAttribute("aria-keyshortcuts", "K");
             fireEvent.focus(keepHere()!);
-            expect(
-                (
-                    await screen.findAllByText(
-                        "Keep OT1 on Page 3, so editing Page 2 won't move them here (K)",
-                    )
-                ).length,
-            ).toBeGreaterThan(0);
+            const caps = await screen.findAllByText("K", { selector: "kbd" });
+            expect(caps.length).toBeGreaterThan(0);
+            // The tooltip holds the hint and the K cap together
+            const tip = caps[0]!.closest("[data-radix-popper-content-wrapper]");
+            expect(tip).toHaveTextContent(
+                "Keep OT1 on Page 3, so editing Page 2 won't move them here",
+            );
             cleanup();
             // Kept here: K lets them follow again
             show([4]);

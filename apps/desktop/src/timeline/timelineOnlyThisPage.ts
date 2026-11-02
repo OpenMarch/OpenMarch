@@ -168,31 +168,23 @@ export function onlyThisPageMessage(
     void edited;
     // Says why the later pages changed and names what the action keeps (shape sims: "I didn't
     // touch pages 3 and 4!", and "Change only Page 2" read as an undo)
-    return first === last
-        ? {
-              message: translate(
-                  "timeline.keep.followed.onePage",
-                  "Page {page} was holding this form, so it changed too",
-                  { page: first },
-              ),
-              actionLabel: translate(
-                  "timeline.keep.followed.keepOne",
-                  "Keep Page {page} as before",
-                  { page: first },
-              ),
-          }
-        : {
-              message: translate(
-                  "timeline.keep.followed.pages",
-                  "Pages {first}–{last} were holding this form, so they changed too",
-                  { first, last },
-              ),
-              actionLabel: translate(
-                  "timeline.keep.followed.keepPages",
-                  "Keep Pages {first}–{last} as before",
-                  { first, last },
-              ),
-          };
+    const pages = {
+        first,
+        last,
+        count: first === last ? 1 : followed.length,
+    };
+    return {
+        message: translate(
+            "timeline.keep.followed.changed",
+            "{count, plural, =1 {Page {first} was holding this form, so it changed too} other {Pages {first}–{last} were holding this form, so they changed too}}",
+            pages,
+        ),
+        actionLabel: translate(
+            "timeline.keep.followed.keepAsBefore",
+            "{count, plural, =1 {Keep Page {first} as before} other {Keep Pages {first}–{last} as before}}",
+            pages,
+        ),
+    };
 }
 
 /** The run of edits behind one **Only Page N** toast: the spots before its first edit */
@@ -248,7 +240,13 @@ function showOnlyThisPageToast({
                 })
                     .then((kept) => applyKeptChange(kept.markers))
                     .catch((e: unknown) =>
-                        toastTimelineError(e, "Error keeping the later pages"),
+                        toastTimelineError(
+                            e,
+                            tolgee.t(
+                                "timeline.keep.followed.keepError",
+                                "Error keeping the later pages",
+                            ),
+                        ),
                     );
             },
         },

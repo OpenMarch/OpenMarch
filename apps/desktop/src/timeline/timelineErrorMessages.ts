@@ -4,6 +4,7 @@ import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import { conToastError } from "@/utilities/utils";
 import { toast } from "sonner";
 import { toastBasicLock } from "./basicLockToast";
+import { translateTimelineText } from "./translateTimelineText";
 
 /**
  * User-facing messages for the timeline's refusals (spec section 6, P8.6). One place maps every
@@ -13,8 +14,9 @@ import { toastBasicLock } from "./basicLockToast";
  * - The spec's codes (`E-S1`, `E-P1`, `E-T1` to `E-T6`, `E-A1` to `E-A3`) and the app's `E-D2` and
  *   `E-N2` each have a message. The combined codes the database reports when one trigger checks
  *   two invariants (`E-A1/E-A2`, `E-T3/E-T4`) have their own, which name both halves.
- * - `E-ARGS` is a refusal the write path words itself ("slot 3 is already taken"): its own message
- *   is shown, without the code prefix.
+ * - `E-ARGS` is a refusal the write path words itself ("select the marchers to add"): its `text`
+ *   (a key and arguments) is translated and shown. One without `text` is a developer-only message
+ *   (a call the app never makes) and gets the generic message.
  * - `E-DB` is any other database rejection. The user gets a generic message; the original error
  *   (kept as the `cause`) goes to the log.
  * - Commit-time violations (`TimelineCommitViolationError`) map by their code, like row errors.
@@ -156,11 +158,20 @@ export const TIMELINE_NOT_READY_MESSAGE: TimelineErrorMessage = {
     defaultMessage: "The timeline is still loading. Try again in a moment.",
 };
 
-/** Looks a message up by key and default; the Tolgee singleton by default, anything in tests. */
-export type TimelineTranslate = (key: string, defaultMessage: string) => string;
+/**
+ * Looks a message up by key, default and arguments; the Tolgee singleton by default, anything in
+ * tests. A refusal's own text (`E-ARGS`) has no default.
+ */
+export type TimelineTranslate = (
+    key: string,
+    defaultMessage: string | undefined,
+    params?: Record<string, string | number>,
+) => string;
 
-const defaultTranslate: TimelineTranslate = (key, defaultMessage) =>
-    tolgee.t(key, defaultMessage);
+const defaultTranslate: TimelineTranslate = (key, defaultMessage, params) =>
+    defaultMessage === undefined
+        ? tolgee.t(key, params ?? {})
+        : tolgee.t(key, defaultMessage, params ?? {});
 
 /** The spec error code of a timeline refusal, or null for an error that isn't one. */
 export function timelineErrorCode(error: unknown): string | null {
@@ -172,13 +183,10 @@ export function timelineErrorCode(error: unknown): string | null {
     return null;
 }
 
-/** An `E-ARGS` error's own message, without its `E-ARGS: ` prefix. */
-const argsMessage = (message: string): string =>
-    message.replace(/^E-ARGS:\s*/, "").trim();
-
 /**
  * The message to show for `error`, or `fallback` (when given) for an error that isn't a timeline
- * refusal. An error that isn't a refusal and has no fallback gets the generic message.
+ * refusal or is an `E-ARGS` refusal without text for the user (a developer-only message). Either
+ * without a fallback gets the generic message.
  */
 export function timelineErrorMessage(
     error: unknown,
@@ -209,9 +217,13 @@ export function timelineErrorMessage(
                 TIMELINE_UNKNOWN_ERROR_MESSAGE.defaultMessage,
             )
         );
-    if (code === "E-ARGS") {
-        const own = argsMessage((error as Error).message);
-        if (own) return own;
+    if (code === "E-ARGS" && error instanceof TimelineWriteError) {
+        if (error.text)
+            return translateTimelineText(error.text, (key, params) =>
+                translate(key, undefined, params),
+            );
+        // A developer-only refusal (a plain string): the caller's words for what failed, if any
+        if (fallback !== undefined) return fallback;
     }
     const mapped =
         code === "E-DB"

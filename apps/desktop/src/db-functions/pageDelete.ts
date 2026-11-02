@@ -294,9 +294,11 @@ export async function deletePageYankWithMoves({
 }
 
 /**
- * Runs of pages next to each other in show order, as "3–5", joined with commas: "2, 4–6".
+ * Runs of pages next to each other in show order, each as a page's name or a range "3–5":
+ * `["2", "4–6"]`. The caller joins them as a list in the app's language (`formatList`) where they
+ * are shown; this module doesn't import Tolgee.
  */
-export function pageRunsLabel(pages: readonly NamedPage[]): string {
+export function pageRuns(pages: readonly NamedPage[]): string[] {
     const runs: NamedPage[][] = [];
     for (const page of pages) {
         const run = runs[runs.length - 1];
@@ -304,55 +306,9 @@ export function pageRunsLabel(pages: readonly NamedPage[]): string {
         if (run && last && page.order === last.order + 1) run.push(page);
         else runs.push([page]);
     }
-    return runs
-        .map((run) =>
-            run.length === 1
-                ? run[0]!.name
-                : `${run[0]!.name}–${run[run.length - 1]!.name}`,
-        )
-        .join(", ");
-}
-
-/** "Page 3", or "old Page 3" when the delete renumbered it. */
-const oldPageLabel = (page: PageAfterDelete) =>
-    page.renamed ? `old Page ${page.name}` : `Page ${page.name}`;
-
-/** "Pages 3–5" or "old Page 3", for pages that all were or all weren't renumbered. */
-const pagesLabel = (pages: readonly PageAfterDelete[], renamed: boolean) =>
-    `${renamed ? "old " : ""}${pages.length === 1 ? "Page" : "Pages"} ${pageRunsLabel(pages)}`;
-
-/**
- * The toast after a delete with its moves, in set and count terms with the numbers the user knew
- * (defined-coordinates 08): "Deleted Page 2 · Page 1 is now 16 counts · old Pages 3–4 changed",
- * leaving out what doesn't apply, and "· No other page changed" when every page left looks the
- * same.
- */
-export function pageDeleteWithMovesMessage({
-    deletedNames,
-    grownPages,
-    changedPages,
-}: Pick<
-    PageDeleteWithMovesResult,
-    "deletedNames" | "grownPages" | "changedPages"
->): string {
-    const parts = [
-        deletedNames.length === 1
-            ? `Deleted Page ${deletedNames[0]}`
-            : `Deleted Pages ${deletedNames.join(", ")}`,
-        ...grownPages.map(
-            (p) => `${oldPageLabel(p)} is now ${p.counts} counts`,
-        ),
-    ];
-    const kept = changedPages.filter((p) => !p.renamed);
-    const renamed = changedPages.filter((p) => p.renamed);
-    const changed = [
-        ...(kept.length > 0 ? [pagesLabel(kept, false)] : []),
-        ...(renamed.length > 0 ? [pagesLabel(renamed, true)] : []),
-    ];
-    parts.push(
-        changed.length > 0
-            ? `${changed.join(" and ")} changed`
-            : "No other page changed",
+    return runs.map((run) =>
+        run.length === 1
+            ? run[0]!.name
+            : `${run[0]!.name}–${run[run.length - 1]!.name}`,
     );
-    return parts.join(" · ");
 }

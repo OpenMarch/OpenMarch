@@ -17,6 +17,8 @@ export class FieldDimming {
     private focus: ReadonlySet<number> | null = null;
     /** The open shape is drawn: its own marchers' dots hide, its spots show where they'll be */
     private hideFocus = false;
+    /** The edited shape's marchers while it's seen on its own (#558, H): not drawn at all */
+    private hidden: ReadonlySet<number> | null = null;
     private readonly listeners = new Set<() => void>();
 
     /** Calls `listener` after each change (a layer asks for a frame). Returns the unsubscribe. */
@@ -56,8 +58,25 @@ export class FieldDimming {
         for (const listener of this.listeners) listener();
     }
 
+    /**
+     * Hides `ids` (the edited shape's marchers, #558) whatever else would draw them; null hides
+     * nobody. Everyone else keeps their look.
+     */
+    setHidden(ids: ReadonlySet<number> | null) {
+        if (sameMembers(ids, this.hidden)) return;
+        this.hidden = ids;
+        this.version++;
+        for (const listener of this.listeners) listener();
+    }
+
+    /** Whether a marcher is hidden by {@link setHidden} */
+    isHidden(id: number): boolean {
+        return this.hidden?.has(id) ?? false;
+    }
+
     /** How opaque a marcher's dot is drawn: hidden 0, faded by a shape, dimmed, or 1 */
     opacityOf(id: number): number {
+        if (this.isHidden(id)) return 0;
         if (this.focus !== null) {
             if (!this.focus.has(id)) return SHAPE_FADED_OPACITY;
             if (this.hideFocus) return 0;

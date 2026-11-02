@@ -1,4 +1,5 @@
 import { afterEach, describe, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { and, eq, getTableName } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
@@ -504,7 +505,7 @@ describeDbTests("moving marchers on a page in timeline mode", (it) => {
             }),
         );
         // Named by drill number, not database id
-        expect(error.message).toContain(
+        expect(refusalText(error)).toContain(
             `marcher ${await drillNumber(db, 3)} has no move that ends`,
         );
     });
@@ -606,7 +607,7 @@ describeDbTests("moving marchers on a page in timeline mode", (it) => {
                 moves: [{ marcherId: 4, x: 1, y: 2 }],
             }),
         );
-        expect(error.message).toContain(
+        expect(refusalText(error)).toContain(
             `marcher ${await drillNumber(db, 4)} has no move that ends`,
         );
     });

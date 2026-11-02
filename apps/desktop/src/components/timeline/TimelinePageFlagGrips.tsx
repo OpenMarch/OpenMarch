@@ -1,5 +1,7 @@
 import { snapEdgeBeat, stepOffForbidden } from "./timelineEdgeSnap";
 import clsx from "clsx";
+import tolgee from "@/global/singletons/Tolgee";
+import { useTranslate } from "@tolgee/react";
 import {
     type KeyboardEvent as ReactKeyboardEvent,
     type PointerEvent as ReactPointerEvent,
@@ -140,13 +142,15 @@ const neighborLimits = (
         min: box.range.startBeatIndex + 1,
         max: next?.range ? next.range.endBeatIndex - 1 : beatCount,
         minReason: previous
-            ? `Page ${previous.page.label}'s flag`
+            ? tolgee.t("timeline.rangeName.flag", {
+                  page: previous.page.label,
+              })
             : homeLabel
-              ? `Page ${homeLabel}'s flag`
-              : "The start of the show",
+              ? tolgee.t("timeline.rangeName.flag", { page: homeLabel })
+              : tolgee.t("timeline.pageFlagBlock.showStart"),
         maxReason: next
-            ? `Page ${next.page.label}'s flag`
-            : "The end of the show",
+            ? tolgee.t("timeline.rangeName.flag", { page: next.page.label })
+            : tolgee.t("timeline.pageFlagBlock.showEnd"),
     };
 };
 
@@ -188,8 +192,6 @@ const gripWidth = (
     );
 };
 
-const countsText = (n: number) => (n === 1 ? "1 count" : `${n} counts`);
-
 /**
  * What the drag readout says: each page's counts, before and after ("Page 2: 8 → 10 counts"), and
  * what stopped the flag.
@@ -206,13 +208,21 @@ export function describeFlagPreview(
     if (box) {
         const before = counts(box.range);
         pages.push(
-            `Page ${box.page.label}: ${before} → ${countsText(before + delta)}`,
+            tolgee.t("timeline.pageFlag.readoutLine", {
+                page: box.page.label,
+                before,
+                after: before + delta,
+            }),
         );
     }
     if (next) {
         const before = counts(next.range);
         pages.push(
-            `Page ${next.page.label}: ${before} → ${countsText(before - delta)}`,
+            tolgee.t("timeline.pageFlag.readoutLine", {
+                page: next.page.label,
+                before,
+                after: before - delta,
+            }),
         );
     }
     return { pages, blocked: preview.blocked };
@@ -248,6 +258,7 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
     onPreviewChange: (preview: TimelinePageFlagPreview | null) => void;
     onSelectPage: (page: TimelinePageMarker) => void;
 }) {
+    const { t } = useTranslate();
     const drag = useRef<{
         pointerId: number;
         pageId: string | number;
@@ -476,8 +487,13 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
                         data-timeline-interactive="true"
                         // Its arrow keys move the flag, not the selected marchers (UI-14's marker)
                         data-timeline-own-keys="true"
-                        aria-label={`Page ${page.label}'s flag, after ${countsText(counts(range))}. Drag, or use the arrow keys, to move it`}
-                        title={`Page ${page.label}'s flag: drag to move it. Page ${page.label} gains what the next page loses; other flags stay.`}
+                        aria-label={t("timeline.pageFlag.gripLabel", {
+                            page: page.label,
+                            counts: counts(range),
+                        })}
+                        title={t("timeline.pageFlag.gripTooltip", {
+                            page: page.label,
+                        })}
                         onPointerDown={(event) => onPointerDown(event, index)}
                         onPointerMove={onPointerMove}
                         onPointerUp={onPointerUp}

@@ -1,5 +1,6 @@
 import Measure from "@/global/classes/Measure";
 import Page from "@/global/classes/Page";
+import tolgee from "@/global/singletons/Tolgee";
 import { recolorMarcherIconSvg } from "@/assets/open-march-marcher";
 import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
 
@@ -19,10 +20,28 @@ export interface OverlayOptions {
     showTempo: boolean;
     /** Show elapsed / total time, e.g. "1:23 / 6:45" */
     showClock: boolean;
-    /** Translated label for "Set" */
-    setLabel: string;
-    /** Translated label for "Count" */
-    countLabel: string;
+    /** The overlay's translated text, built from whole strings */
+    text: OverlayText;
+}
+
+/**
+ * Builds each overlay line from its values. The values are already formatted
+ * (padded numbers, set names), or digit templates when the overlay measures
+ * its widest possible text, so a formatter must only place them in the string.
+ */
+export interface OverlayText {
+    /** e.g. "Set 4" */
+    set: (set: string) => string;
+    /** e.g. "Set 4 → 5" */
+    setTransition: (from: string, to: string) => string;
+    /** e.g. "Count 7 / 16" */
+    count: (count: string, total: string) => string;
+    /** e.g. "m. 23" */
+    measure: (measure: string) => string;
+    /** e.g. "[A]  m. 23" */
+    measureWithMark: (measure: string, mark: string) => string;
+    /** e.g. "144 bpm" */
+    tempo: (bpm: string) => string;
 }
 
 /**
@@ -334,21 +353,25 @@ export function buildOverlaySegments(
     } = state.formatBounds;
     const countTemplate = digitTemplate(countDigits);
     const setTemplate = setNameLayoutTemplate(setNumberDigits, setSuffixChars);
-    const setTransitionLayout = `${options.setLabel} ${setTemplate} → ${setTemplate}`;
+    const { text } = options;
+    const setTransitionLayout = text.setTransition(setTemplate, setTemplate);
     const segments: OverlaySegment[] = [];
     if (options.showSet) {
         segments.push({
             text: state.previousSetName
-                ? `${options.setLabel} ${state.previousSetName} → ${state.setName}`
-                : `${options.setLabel} ${state.setName}`,
+                ? text.setTransition(state.previousSetName, state.setName)
+                : text.set(state.setName),
             layoutText: setTransitionLayout,
             bold: true,
         });
     }
     if (options.showCounts) {
         segments.push({
-            text: `${options.countLabel} ${padInteger(state.count, countDigits)} / ${padInteger(state.totalCounts, countDigits)}`,
-            layoutText: `${options.countLabel} ${countTemplate} / ${countTemplate}`,
+            text: text.count(
+                padInteger(state.count, countDigits),
+                padInteger(state.totalCounts, countDigits),
+            ),
+            layoutText: text.count(countTemplate, countTemplate),
             bold: true,
         });
     }
@@ -357,18 +380,18 @@ export function buildOverlaySegments(
         const measureTemplate = digitTemplate(measureDigits);
         segments.push({
             text: state.rehearsalMark
-                ? `[${state.rehearsalMark}]  m. ${measureNumber}`
-                : `m. ${measureNumber}`,
+                ? text.measureWithMark(measureNumber, state.rehearsalMark)
+                : text.measure(measureNumber),
             layoutText: state.rehearsalMark
-                ? `[${state.rehearsalMark}]  m. ${measureTemplate}`
-                : `m. ${measureTemplate}`,
+                ? text.measureWithMark(measureTemplate, state.rehearsalMark)
+                : text.measure(measureTemplate),
             bold: false,
         });
     }
     if (options.showTempo && state.tempoBpm !== null) {
         segments.push({
-            text: `${padIntegerSpaced(state.tempoBpm, tempoDigits)} bpm`,
-            layoutText: `${digitTemplate(tempoDigits)} bpm`,
+            text: text.tempo(padIntegerSpaced(state.tempoBpm, tempoDigits)),
+            layoutText: text.tempo(digitTemplate(tempoDigits)),
             bold: false,
         });
     }
@@ -498,7 +521,12 @@ export function drawOverlay(
 
 /* ------------------------------ Branding ------------------------------ */
 
-export const BRANDING_TEXT = "Made with OpenMarch";
+/** The branding line, in the app's language. Resolved per frame so it's never frozen at load. */
+function brandingText(): string {
+    return tolgee.t("exportCoordinates.videoBranding", {
+        product: "OpenMarch", // i18n-ignore: product name, the same in every language
+    });
+}
 
 const logoPromises = new Map<VideoTheme, Promise<HTMLImageElement | null>>();
 
@@ -545,7 +573,8 @@ export function drawBranding(
     ctx.save();
     ctx.font = `500 ${fontSize}px ${FONT_FAMILY}`;
     ctx.textBaseline = "middle";
-    const textWidth = ctx.measureText(BRANDING_TEXT).width;
+    const text = brandingText();
+    const textWidth = ctx.measureText(text).width;
     const logoHeight = Math.round(fontSize * 1.4);
     const logoWidth = logo
         ? Math.round(logoHeight * (logo.width / logo.height))
@@ -575,6 +604,6 @@ export function drawBranding(
         ctx.globalAlpha = 1;
     }
     ctx.fillStyle = colors.brandingText;
-    ctx.fillText(BRANDING_TEXT, boxX + padding + logoWidth + gap, centerY);
+    ctx.fillText(text, boxX + padding + logoWidth + gap, centerY);
     ctx.restore();
 }

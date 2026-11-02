@@ -23,9 +23,9 @@ import {
 import {
     deletePageYankWithMoves,
     deletePagesWithMoves,
-    pageDeleteWithMovesMessage,
     type PageDeleteWithMovesResult,
 } from "@/db-functions/pageDelete";
+import { pageDeleteWithMovesMessage } from "./pageDeleteMessage";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { invalidatePageQueries } from "./usePages";

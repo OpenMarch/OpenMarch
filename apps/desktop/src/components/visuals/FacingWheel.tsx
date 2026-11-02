@@ -6,7 +6,7 @@
  * in whole degrees, with Shift in 45° steps; it saves on release.
  */
 import { useState, type PointerEvent as ReactPointerEvent } from "react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 
 const SIZE = 72;
 const R = SIZE / 2 - 6;
@@ -25,7 +25,7 @@ export default function FacingWheel({
     degrees: number;
     onCommit: (degrees: number) => void;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [dragging, setDragging] = useState<number | null>(null);
     const shown = dragging ?? degrees;
     const angleAt = (e: ReactPointerEvent<SVGSVGElement>) => {

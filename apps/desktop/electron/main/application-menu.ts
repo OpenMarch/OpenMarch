@@ -1,6 +1,6 @@
 import * as mainProcess from "./index";
 import { openView3dWindow } from "./view3dWindow";
-import { MenuItem } from "electron";
+import { t } from "./i18n";
 import { app, dialog, Menu, shell } from "electron";
 import type { MenuItemConstructorOptions } from "electron";
 import {
@@ -19,190 +19,201 @@ const isMacOS = process.platform === "darwin";
  */
 const rendererActionItem = ({
     action,
-    label,
+    labelKey,
     accelerator,
 }: MenuAction): MenuItemConstructorOptions =>
     isMacOS
         ? {
-              label: `${label}  (${accelerator.replace("Shift+/", "?")})`,
+              label: t("menu.withShortcut", {
+                  label: t(labelKey),
+                  shortcut: accelerator.replace("Shift+/", "?"),
+              }),
               click: () => mainProcess.sendMenuAction(action),
           }
         : {
-              label,
+              label: t(labelKey),
               accelerator,
               registerAccelerator: false,
               click: () => mainProcess.sendMenuAction(action),
           };
 
-const template: MenuItem[] = [];
+/** A link in the Help menu. */
+const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
+    label,
+    click: async () => {
+        await shell.openExternal(url);
+    },
+});
 
-if (isMacOS) {
-    template.push(
-        new MenuItem({
-            label: app.name,
+/**
+ * The application menu in the app language (`./i18n`). Built again whenever the language
+ * changes, since Electron can't relabel a menu in place. Role items get their labels here too:
+ * Electron's own role labels are English only.
+ */
+// eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
+export function buildApplicationMenu(): Menu {
+    const appName = app.name;
+    const template: MenuItemConstructorOptions[] = [];
+
+    if (isMacOS) {
+        template.push({
+            label: appName,
             submenu: [
-                { role: "about" },
+                { role: "about", label: t("menu.app.about", { appName }) },
                 { type: "separator" },
-                { role: "services" },
+                { role: "services", label: t("menu.app.services") },
                 { type: "separator" },
-                { role: "hide" },
-                { role: "hideOthers" },
-                { role: "unhide" },
+                { role: "hide", label: t("menu.app.hide", { appName }) },
+                { role: "hideOthers", label: t("menu.app.hideOthers") },
+                { role: "unhide", label: t("menu.app.showAll") },
                 { type: "separator" },
-                { role: "quit" },
+                { role: "quit", label: t("menu.app.quit", { appName }) },
             ],
-        }),
-    );
-}
+        });
+    }
 
-template.push(
-    ...[
-        // { role: 'fileMenu' }
-        new MenuItem({
-            label: "File",
+    template.push(
+        {
+            label: t("menu.file.title"),
             submenu: [
                 {
-                    label: "Open File",
+                    label: t("menu.file.open"),
                     accelerator: "CommandOrControl+O",
-                    click(item: any, focusedWindow: any) {
+                    click() {
                         void mainProcess.loadDatabaseFile();
                     },
                 },
                 { type: "separator" },
                 {
-                    label: "Create New",
+                    label: t("menu.file.createNew"),
                     accelerator: "CommandOrControl+N",
                     click() {
                         void mainProcess.requestNewShowFromMenu();
                     },
                 },
                 {
-                    label: "Save As Copy",
-                    //accelerator: "CommandOrControl+S",
-                    click(item: any, focusedWindow: any) {
+                    label: t("menu.file.saveAsCopy"),
+                    click(_item, focusedWindow) {
                         if (!focusedWindow) {
                             return dialog.showErrorBox(
-                                "Cannot Save or Export",
-                                "There is currently no active document to save or export.",
+                                t("menu.file.noDocument.title"),
+                                t("menu.file.noDocument.message"),
                             );
                         }
                         void mainProcess.saveFile();
                     },
                 },
                 {
-                    label: "Close File",
+                    label: t("menu.file.closeFile"),
                     accelerator: "CommandOrControl+Q",
-                    click(item: any, focusedWindow: any) {
+                    click() {
                         void mainProcess.closeCurrentFile();
                     },
                 },
             ],
-        }),
-        // { role: 'editMenu' }
-        new MenuItem({
-            label: "Edit",
+        },
+        {
+            label: t("menu.edit.title"),
             submenu: [
-                // {
-                //     label: "Undo",
-                //     id: "undo",
-                //     accelerator: "CommandOrControl+Z",
-                //     // role: 'undo',
-                //     click(item: any, focusedWindow: any) {
-                //         console.log("Undoing");
-                //         // if (focusedWindow) focusedWindow.webContents.undo();
-                //         mainProcess.executeHistoryAction("undo");
-                //     },
-                // },
-                // {
-                //     label: "Redo",
-                //     id: "redo",
-                //     accelerator: "Shift+CommandOrControl+Z",
-                //     // role: 'redo',
-                //     click(item: any, focusedWindow: any) {
-                //         console.log("Redoing");
-                //         // if (focusedWindow) focusedWindow.webContents.undo();
-                //         mainProcess.executeHistoryAction("redo");
-                //     },
-                // },
                 { type: "separator" },
-                { role: "cut" },
-                { role: "copy" },
-                { role: "paste" },
+                { role: "cut", label: t("menu.edit.cut") },
+                { role: "copy", label: t("menu.edit.copy") },
+                { role: "paste", label: t("menu.edit.paste") },
                 ...(isMacOS
-                    ? [
-                          { role: "pasteAndMatchStyle" as const },
-                          { role: "delete" as const },
-                          { role: "selectAll" as const },
-                          { type: "separator" as const },
+                    ? ([
                           {
-                              label: "Speech",
+                              role: "pasteAndMatchStyle",
+                              label: t("menu.edit.pasteAndMatchStyle"),
+                          },
+                          { role: "delete", label: t("menu.edit.delete") },
+                          {
+                              role: "selectAll",
+                              label: t("menu.edit.selectAll"),
+                          },
+                          { type: "separator" },
+                          {
+                              label: t("menu.edit.speech"),
                               submenu: [
-                                  { role: "startSpeaking" as const },
-                                  { role: "stopSpeaking" as const },
+                                  {
+                                      role: "startSpeaking",
+                                      label: t("menu.edit.startSpeaking"),
+                                  },
+                                  {
+                                      role: "stopSpeaking",
+                                      label: t("menu.edit.stopSpeaking"),
+                                  },
                               ],
                           },
-                      ]
-                    : [
-                          { role: "delete" as const },
-                          { type: "separator" as const },
-                          { role: "selectAll" as const },
-                      ]),
+                      ] satisfies MenuItemConstructorOptions[])
+                    : ([
+                          { role: "delete", label: t("menu.edit.delete") },
+                          { type: "separator" },
+                          {
+                              role: "selectAll",
+                              label: t("menu.edit.selectAll"),
+                          },
+                      ] satisfies MenuItemConstructorOptions[])),
             ],
-        }),
-        // { role: 'viewMenu' }
-        new MenuItem({
-            label: "View",
+        },
+        {
+            label: t("menu.view.title"),
             submenu: [
                 {
-                    label: "Open 3D View",
+                    label: t("menu.view.open3dView"),
                     click() {
                         openView3dWindow();
                     },
                 },
                 { type: "separator" },
-                { role: "reload" },
-                { role: "forceReload" },
-                { role: "toggleDevTools" },
+                { role: "reload", label: t("menu.view.reload") },
+                { role: "forceReload", label: t("menu.view.forceReload") },
+                {
+                    role: "toggleDevTools",
+                    label: t("menu.view.toggleDevTools"),
+                },
                 { type: "separator" },
-                { role: "resetZoom" },
-                { role: "zoomIn" },
-                { role: "zoomOut" },
+                { role: "resetZoom", label: t("menu.view.resetZoom") },
+                { role: "zoomIn", label: t("menu.view.zoomIn") },
+                { role: "zoomOut", label: t("menu.view.zoomOut") },
                 { type: "separator" },
-                { role: "togglefullscreen" },
+                {
+                    role: "togglefullscreen",
+                    label: t("menu.view.toggleFullScreen"),
+                },
             ],
-        }),
-        new MenuItem({
-            label: "Playback",
+        },
+        {
+            label: t("menu.playback.title"),
             submenu: PLAYBACK_MENU_ACTIONS.map(rendererActionItem),
-        }),
-        // { role: 'windowMenu' }
+        },
         isMacOS
-            ? new MenuItem({
-                  label: "Window",
+            ? {
+                  label: t("menu.window.title"),
                   submenu: [
-                      { role: "minimize" },
-                      { role: "zoom" },
+                      { role: "minimize", label: t("menu.window.minimize") },
+                      { role: "zoom", label: t("menu.window.zoom") },
                       { type: "separator" },
-                      { role: "front" },
+                      { role: "front", label: t("menu.window.front") },
                       { type: "separator" },
-                      { role: "window" },
+                      { role: "window", label: t("menu.window.title") },
                   ],
-              })
-            : new MenuItem({
-                  label: "Window",
+              }
+            : {
+                  label: t("menu.window.title"),
                   submenu: [
-                      { role: "minimize" },
-                      { role: "zoom" },
-                      { role: "close" },
+                      { role: "minimize", label: t("menu.window.minimize") },
+                      { role: "zoom", label: t("menu.window.zoom") },
+                      { role: "close", label: t("menu.window.close") },
                   ],
-              }),
-        new MenuItem({
+              },
+        {
             role: "help",
+            label: t("menu.help.title"),
             submenu: [
                 ...HELP_MENU_ACTIONS.map(rendererActionItem),
                 { type: "separator" },
                 {
-                    label: "Get the Blender starter kit…",
+                    label: t("menu.help.starterKit"),
                     click: async () => {
                         const { saveStarterKit } =
                             await import("./starter-kit/save");
@@ -210,39 +221,15 @@ template.push(
                     },
                 },
                 { type: "separator" },
-                {
-                    label: "Website",
-                    click: async () => {
-                        await shell.openExternal("https://openmarch.com");
-                    },
-                },
-                {
-                    label: "Docs/Guides",
-                    click: async () => {
-                        await shell.openExternal(
-                            "https://openmarch.com/guides",
-                        );
-                    },
-                },
-                {
-                    label: "Discord",
-                    click: async () => {
-                        await shell.openExternal(
-                            "https://discord.gg/eTsQ98uZzq",
-                        );
-                    },
-                },
-                {
-                    label: "GitHub",
-                    click: async () => {
-                        await shell.openExternal(
-                            "https://github.com/OpenMarch",
-                        );
-                    },
-                },
+                linkItem(t("menu.help.website"), "https://openmarch.com"),
+                linkItem(t("menu.help.guides"), "https://openmarch.com/guides"),
+                // i18n-ignore: brand name, the same in every language
+                linkItem("Discord", "https://discord.gg/eTsQ98uZzq"),
+                // i18n-ignore: brand name, the same in every language
+                linkItem("GitHub", "https://github.com/OpenMarch"),
             ],
-        }),
-    ],
-);
+        },
+    );
 
-export const applicationMenu = Menu.buildFromTemplate(template);
+    return Menu.buildFromTemplate(template);
+}
