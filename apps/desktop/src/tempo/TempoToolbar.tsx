@@ -1,14 +1,12 @@
 // cspell:ignore priya
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): tempo mode's header row: Fit, Tap, the
- * metronome, snapping, the status line and Done.
+ * PROTOTYPE (tempo mode, branch tempo/track-proto): tempo mode's header row: Tap, the
+ * metronome, the status line and Done.
  */
 import clsx from "clsx";
 import {
     CheckIcon,
     HandTapIcon,
-    MagicWandIcon,
-    MagnetIcon,
     GaugeIcon,
     MetronomeIcon,
     PushPinSlashIcon,
@@ -24,7 +22,6 @@ import { getActionShortcutKeys } from "@/shortcuts/labels";
 import { readTapCheck } from "./TapCheck";
 import { useTempoModeStore } from "./tempoModeStore";
 import { TempoHelp } from "./TempoHelp";
-import { useTempoUi } from "./tempoUi";
 
 /** A tool button in tempo mode's header, lit when `on` (its colors are either/or, not overrides) */
 export const toolButton = (on = false, iconOnly = false) =>
@@ -43,27 +40,19 @@ export function TempoToolbar(props: {
     busy: boolean;
     tapping: boolean;
     draftCount: number;
-    range: { from: number; to: number } | null;
-    /** The selection in measures ("m. 11–12") */
-    rangeText: string | null;
     lockCount: number;
-    onFit: () => void;
     onTap: () => void;
     onCheckTapping: () => void;
     onApplyDraft: () => void;
     onDiscardDraft: () => void;
     onClearPins: () => void;
 }) {
-    const ui = useTempoUi();
     const click = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleClick = useMetronomeStore((s) => s.toggleMetronome);
     const overrides = useShortcutOverridesStore((s) => s.overrides);
     const metronomeKey = getActionShortcutKeys("toggleMetronome", {
         overrides,
     })?.join(" + ");
-    const fitName = props.range
-        ? `Fit to the music: ${props.rangeText}`
-        : "Fit to the music";
     return (
         // A tooltip closes as soon as the pointer leaves its button or presses it, so none stays
         // up over a menu or the help card opened next (dana, priya)
@@ -130,30 +119,6 @@ export function TempoToolbar(props: {
                     <>
                         <ShortcutTooltip
                             closeOnPress
-                            label={fitName}
-                            hint={
-                                props.range
-                                    ? `Lines up just the selected counts (${props.rangeText}) with the hits in the music. Counts you dragged onto the music stay where they are.`
-                                    : "Lines up the counts with the hits in the music, across the whole show. To fit only some counts, drag along Measures to select them first. Counts you dragged onto the music stay where they are."
-                            }
-                        >
-                            <button
-                                type="button"
-                                aria-label={fitName}
-                                className={toolButton()}
-                                disabled={props.busy}
-                                onClick={props.onFit}
-                            >
-                                <MagicWandIcon size={12} aria-hidden />
-                                <span className="@max-[860px]:hidden">
-                                    {props.range
-                                        ? `Fit ${props.rangeText}`
-                                        : "Fit to the music"}
-                                </span>
-                            </button>
-                        </ShortcutTooltip>
-                        <ShortcutTooltip
-                            closeOnPress
                             label={
                                 props.tapping
                                     ? "Tapping: stop to review"
@@ -206,27 +171,11 @@ export function TempoToolbar(props: {
                         <span>Metronome</span>
                     </button>
                 </ShortcutTooltip>
-                <ShortcutTooltip
-                    closeOnPress
-                    label={ui.snap ? "Snap to hits: on" : "Snap to hits: off"}
-                    hint="Dragged counts and taps land on hits in the music. Hold Alt while dragging to place freely."
-                >
-                    <button
-                        type="button"
-                        aria-label="Snap to hits"
-                        aria-pressed={ui.snap}
-                        className={toolButton(ui.snap)}
-                        onClick={() => ui.setSnap(!ui.snap)}
-                    >
-                        <MagnetIcon size={12} aria-hidden />
-                        <span className="@max-[860px]:hidden">Snap</span>
-                    </button>
-                </ShortcutTooltip>
                 {props.lockCount > 0 && (
                     <ShortcutTooltip
                         closeOnPress
                         label={`Unpin all ${props.lockCount} pinned counts`}
-                        hint="Pinned counts stay where they are when you fit or drag"
+                        hint="Pinned counts stay where they are when you drag or tap"
                     >
                         <button
                             type="button"

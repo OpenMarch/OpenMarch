@@ -143,8 +143,8 @@ export function stretchesOf(
 }
 
 /**
- * Where the tempo changes, read from the counts: for a show with none stored yet, and for what
- * Fit lines up. Wobble within `tolerance` BPM doesn't start a change.
+ * Where the tempo changes, read from the counts, for a show with none stored yet. Wobble within
+ * `tolerance` BPM doesn't start a change.
  */
 export function changesFrom(
     bpms: readonly number[],

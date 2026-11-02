@@ -35,7 +35,7 @@ why pins didn't undo, they moved into the database.
 2. **The music offset moves into the show's history.** A new one-row table `tempo_settings`
    (`id` checked to be `0`, `audio_offset_seconds` real, null = use the workspace setting) has
    history triggers (`historyTriggers.ts`), so undo and redo restore it with the counts. Every reader
-   of the offset (playback, onsets, exports, settings) goes through `tempo/audioOffset.ts`. The
+   of the offset (playback, exports, settings) goes through `tempo/audioOffset.ts`. The
    workspace setting stays as the fallback for shows that never set it here.
 3. **Durations stay the source of truth for timing.** `beats.duration` is still what playback, the
    resolver, exports and older readers use. Pins, holds, meters and groupings only steer how tempo

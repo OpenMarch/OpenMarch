@@ -14,13 +14,12 @@ import { toolButton } from "./TempoToolbar";
 /** How tempo mode works, behind a "?" in its header */
 export function TempoHelp() {
     const rows: [string, string][] = [
-        ["Drag a hit in the music", "onto its count"],
+        ["Drag a spot in the music", "onto its count"],
         [
             "Drag a count's handle",
             "(the triangle atop the music) onto the music",
         ],
         ["Shift while dragging", "moves just that count"],
-        ["Alt while dragging", "places it without snapping to hits"],
         ["Drag the tempo line", "up or down; double-click it to type a tempo"],
         [
             "Double-click the tempo lane",
@@ -34,7 +33,7 @@ export function TempoHelp() {
             "Drag a stretch's round handle",
             "makes a gradual change, straight or curved; double-click it for a jump again",
         ],
-        ["Drag along Measures", "selects counts to fit or edit"],
+        ["Drag along Measures", "selects counts to edit"],
         [
             "Right-click",
             "pins, holds, tempo changes, adding and removing counts",

@@ -14,11 +14,12 @@
  *   the line up or down; drag a dot sideways to move the change; drag the handle for a gradual
  *   change (tempoShape.ts). Double-click empty lane to add a change, a dot to remove it, the line
  *   to type "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
- * - **Music**: the waveform under the count lines, with the hits found in it. Drag a hit onto the
- *   count it belongs to, or a count line onto its hit (Logic's Beat Mapping). The count pins; the
+ * - **Music**: the waveform under the count lines. Drag a spot in the music onto the count it
+ *   belongs to, or a count line onto its spot (Logic's Beat Mapping). The count pins; the
  *   counts back to the pin before re-space, and the counts up to the pin after (if any) too,
- *   otherwise the rest slides. Shift moves only that count line; Alt doesn't snap to hits. A drag
- *   stops at a pin and says why. Dropping a hit on count 1 moves the music instead.
+ *   otherwise the rest slides. Shift moves only that count line. A drag stops at a pin and says
+ *   why. Dropping a spot on count 1 moves the music instead. Nothing is detected in the music:
+ *   lining up is by ear and eye (detection is a later spike).
  * - **T** taps along while playing; stopping shows the taps as drafts to apply or discard.
  */
 import {
@@ -33,7 +34,6 @@ import {
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import {
-    MagicWandIcon,
     GaugeIcon,
     MinusIcon,
     PlusIcon,
@@ -106,10 +106,6 @@ import {
     writeDurations,
     type CountEditResult,
 } from "./tempoWrites";
-import { useMusicOnsets } from "./useMusicOnsets";
-import { snapToOnset } from "./onsets";
-import { planFit } from "./fitMusic";
-import { tempoRegions } from "./tempoSummary";
 import { tempoSettingsKey, writeAudioOffset } from "./audioOffset";
 import {
     METER_CHOICES,
@@ -207,7 +203,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         });
     }, [fetchTimingObjects]);
     const envelope = useAudioEnvelopeStore((s) => s.envelope);
-    const { envelope: onsets, status: onsetStatus } = useMusicOnsets(true);
     const ui = useTempoUi();
     const playing = useIsPlaying();
     const isPlaying = playing?.isPlaying ?? false;
@@ -230,7 +225,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     }, [menu]);
     /** What a menu item, an open editor or the add/remove box is about to change */
     const highlight = menuRange ?? editor?.range ?? ask?.range ?? null;
-    /** A hover explanation (a red dot, a count that found no hit) */
+    /** A hover explanation (a red dot) */
     const [tip, setTip] = useState<{
         x: number;
         y: number;
@@ -251,45 +246,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }),
         [],
     );
-    // The counts a fit found no hit for are marked until the counts change under them (an undo,
-    // a redo, another edit) or the music moves; leaving tempo mode clears them, the selection and
-    // the fit's note. Only the stored counts are compared: the endless ones after them follow the
-    // last stored tempo, so they change when the fit is written without matching its result (sam:
-    // the marks stayed after Undo because the fit never counted as written).
-    const unsureFor = useRef<{
-        durations: number[];
-        offset: number;
-        landed: boolean;
-    } | null>(null);
-    useEffect(() => {
-        const watch = unsureFor.current;
-        if (!watch) return;
-        if (useTempoUi.getState().unsure.size === 0) {
-            unsureFor.current = null;
-            return;
-        }
-        const n = Math.min(
-            watch.durations.length,
-            data.durations.length,
-            data.storedCount,
-        );
-        let same = Math.abs(watch.offset - data.audioOffset) < 1e-9;
-        for (let b = 1; b < n && same; b++)
-            same = Math.abs(watch.durations[b]! - data.durations[b]!) < 1e-6;
-        if (same) {
-            watch.landed = true;
-            return;
-        }
-        if (!watch.landed) return; // the fit isn't written yet
-        unsureFor.current = null;
-        useTempoUi.getState().setUnsure(new Set());
-        toast.dismiss(NOTE_TOAST);
-    }, [data.durations, data.audioOffset, data.storedCount]);
+    // leaving tempo mode clears the selection and the last note
     useEffect(
         () => () => {
-            const state = useTempoUi.getState();
-            state.setRange(null);
-            state.setUnsure(new Set());
+            useTempoUi.getState().setRange(null);
             toast.dismiss(NOTE_TOAST);
         },
         [],
@@ -554,7 +514,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             result:
                 | (TempoEditResult & { changes?: ReadonlySet<number> })
                 | null,
-            keepUnsure = false,
             audioOffset?: number,
         ) => {
             if (!result) {
@@ -564,33 +523,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 setPreview(null);
                 return;
             }
-            if (!keepUnsure) useTempoUi.getState().setUnsure(new Set());
-            unsureFor.current = keepUnsure
-                ? {
-                      durations: result.durations,
-                      offset: audioOffset ?? data.audioOffset,
-                      landed: false,
-                  }
-                : null;
             setPreview(result);
-            void run(label, async () => {
-                try {
-                    await commitEdit(
-                        data,
-                        result,
-                        refetch,
-                        audioOffset,
-                        changes,
-                    );
-                } catch (e) {
-                    // nothing was written: the marks would never be cleared
-                    if (keepUnsure) {
-                        unsureFor.current = null;
-                        useTempoUi.getState().setUnsure(new Set());
-                    }
-                    throw e;
-                }
-            });
+            void run(label, () =>
+                commitEdit(data, result, refetch, audioOffset, changes),
+            );
         },
         [data, refetch, run, changes],
     );
@@ -618,7 +554,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             "rgba(0,0,0,.5)",
         );
         const stroke = cssColor(root, "--color-stroke", "rgba(0,0,0,.1)");
-        const yellow = cssColor(root, "--color-yellow", "#c8aa00");
         const red = cssColor(root, "--color-red", "#b03333");
         const ox = -win.left;
         const X = (b: number) => xOf(b, ppb) + ox;
@@ -731,46 +666,17 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             ctx.globalAlpha = 1;
         }
 
-        // hits in the music: what drags and taps snap to
-        if (onsets) {
-            ctx.fillStyle = yellow;
-            const t0 = starts[firstBeat] ?? 0;
-            const t1 = starts[Math.min(lastBeat + 1, starts.length - 1)] ?? t0;
-            const { values, rate, startSeconds } = onsets;
-            const i0 = Math.max(1, Math.floor((t0 - startSeconds) * rate));
-            const i1 = Math.min(
-                values.length - 1,
-                Math.ceil((t1 - startSeconds) * rate),
-            );
-            for (let i = i0; i < i1; i++) {
-                const v = values[i]!;
-                if (v < 0.35 || v < values[i - 1]! || v < values[i + 1]!)
-                    continue;
-                const x = xAtSeconds(startSeconds + i / rate);
-                const h = Math.min(12, 3 + v * 6);
-                ctx.globalAlpha = Math.min(1, 0.35 + v * 0.5);
-                ctx.beginPath();
-                ctx.moveTo(x, MUSIC.top + MUSIC.height - h);
-                ctx.lineTo(x - 3, MUSIC.top + MUSIC.height);
-                ctx.lineTo(x + 3, MUSIC.top + MUSIC.height);
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        }
-
-        // count lines: faint, downbeats stronger, pins in the accent with a dot, unsure ones red
+        // count lines: faint, downbeats stronger, pins in the accent with a dot
         const downbeats = new Set(data.measures.map((m) => m.start));
         for (let b = firstBeat; b <= lastBeat; b++) {
             const x = Math.round(X(b)) + 0.5;
             const pinned = locks.has(b);
             const down = downbeats.has(b);
-            const unsure = ui.unsure.has(b);
-            if (!pinned && !unsure && ppb < 6 && !down) continue;
+            if (!pinned && ppb < 6 && !down) continue;
             ctx.save();
-            ctx.strokeStyle = pinned ? accent : unsure ? red : text;
-            ctx.globalAlpha = pinned || unsure ? 1 : down ? 0.5 : 0.16;
+            ctx.strokeStyle = pinned ? accent : text;
+            ctx.globalAlpha = pinned ? 1 : down ? 0.5 : 0.16;
             ctx.lineWidth = pinned ? 1.5 : 1;
-            if (unsure) ctx.setLineDash([3, 3]);
             ctx.beginPath();
             ctx.moveTo(x, TEMPO.top);
             ctx.lineTo(x, MUSIC.top + MUSIC.height);
@@ -1009,7 +915,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         width,
         ppb,
         envelope,
-        onsets,
         durations,
         starts,
         locks,
@@ -1028,7 +933,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         ui.range,
         ui.taps,
         ui.draft,
-        ui.unsure,
     ]);
 
     // ---- helpers -------------------------------------------------------------------------
@@ -1040,14 +944,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const beat = beatAtX(x, ppb);
         const b = Math.max(1, Math.min(durations.length - 1, Math.floor(beat)));
         return starts[b]! + (beat - b) * durations[b]!;
-    };
-    /** Snap to a hit within 0.12 s, or 8 px of music where a count holds a lot of it (a hold) */
-    const snapSeconds = (s: number, alt: boolean, window = 0.12) => {
-        if (!ui.snap || alt || !onsets) return s;
-        let b = 1;
-        while (b + 1 < starts.length - 1 && starts[b + 1]! <= s) b++;
-        const perPx = (durations[b] ?? 0.5) / ppb;
-        return snapToOnset(onsets, s, Math.max(window, 8 * perPx));
     };
     const segmentAt = (beat: number) =>
         segments.find((s) => beat >= s.from && beat < s.to) ?? null;
@@ -1131,44 +1027,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             ? `♩${Math.round(v[0]!)}→${Math.round(v[v.length - 1]!)}`
             : `♩${Math.round(lo)}–${Math.round(hi)}`;
     };
-    /** Where a tempo starts, in words: "m. 41 (C)" on a downbeat, else "m. 41 count 3" */
-    const spotLabel = (beat: number) => {
-        const m = measureAt(beat);
-        if (!m || m.start !== beat) return measureLabel(beat);
-        return `m. ${m.number}${m.mark ? ` (${m.mark})` : ""}`;
-    };
-    /**
-     * What tempos counts `from`..`to - 1` are at, in a few words (dana: say what Fit found):
-     * "♩138, then ♩112 from m. 41 (C)"; more than three changes are summed up
-     */
-    const tempoWords = (
-        lengths: readonly number[],
-        from: number,
-        to: number,
-    ) => {
-        const bpms = lengths.map((_, b) =>
-            b === 0 || data.holds.has(b) ? NaN : qBpm(b, lengths),
-        );
-        const regions = tempoRegions(bpms, segmentsOf(lengths), from, to);
-        if (regions.length === 0) return null;
-        const t = (bpm: number) => `♩${Math.round(bpm)}`;
-        if (regions.length === 1) return `${t(regions[0]!.bpm)} throughout`;
-        if (regions.length <= 4)
-            return regions
-                .map((r, i) =>
-                    i === 0
-                        ? t(r.bpm)
-                        : `then ${t(r.bpm)} from ${spotLabel(r.from)}`,
-                )
-                .join(", ");
-        const values = regions.map((r) => r.bpm);
-        const up = values.every((x, i) => i === 0 || x >= values[i - 1]!);
-        const down = values.every((x, i) => i === 0 || x <= values[i - 1]!);
-        const span = measuresLabel(from, to);
-        return up || down
-            ? `${t(values[0]!)} to ${t(values[values.length - 1]!)} over ${span}`
-            : `between ${t(Math.min(...values))} and ${t(Math.max(...values))} over ${span}`;
-    };
     /** The stretches of counts whose lengths differ, split at `split`, with their tempo before and after */
     const changedStretches = (
         before: readonly number[],
@@ -1200,17 +1058,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             b = e;
         }
         return out;
-    };
-    /** The count where the music ends (its last hit), or the last count drawn */
-    const musicEndBeat = () => {
-        const last = data.durations.length - 1;
-        if (!onsets) return last;
-        let i = onsets.values.length - 1;
-        while (i > 0 && onsets.values[i]! < 0.2) i--;
-        const t = onsets.startSeconds + i / onsets.rate;
-        let b = 1;
-        while (b < last && starts[b + 1]! <= t) b++;
-        return Math.min(last, b + 1);
     };
     /** The music heard now; for a tap, less how late this person's taps land (the tapping check) */
     const audible = (tap = false) =>
@@ -1377,100 +1224,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                       }
                     : undefined,
         });
-
-    /**
-     * Fit counts to the hits in the music, never moving a pin (research: detection is
-     * suggestions; it fills between pins). Between two pins both ends stay; past the last pin the
-     * counts are followed one at a time from the pin, and the ones that found no hit are marked.
-     */
-    /** `toEnd`: `to` is the end of the music as the counts were; the fit goes on to the real end */
-    const fitToMusic = (from: number, to: number, toEnd = false) => {
-        if (!onsets) {
-            toast.info("Still listening to the music…");
-            return;
-        }
-        const end = Math.min(to, data.durations.length - 1);
-        const plan = planFit({
-            env: onsets,
-            durations: data.durations,
-            locks: data.locks,
-            holds: data.holds,
-            from,
-            to: end,
-            measureStarts: data.measures
-                .filter((m) => m.id !== null)
-                .map((m) => m.start),
-            toEnd: toEnd ? { carryTo: data.storedCount } : undefined,
-            // each count's eighths, so meters set before fitting are followed as they're counted
-            units: data.durations.map((_, b) => units[b] ?? 2),
-        });
-        if (plan.refused === "start-off-music") {
-            toast.error(
-                `${measureLabel(from)} isn't on a hit in the music, so fitting from there would follow the wrong beats. Fit the whole show, or drag a hit onto ${measureLabel(from)} first.`,
-                { id: NOTE_TOAST },
-            );
-            return;
-        }
-        useTempoUi.getState().setUnsure(plan.unsure);
-        const last = plan.fittedTo;
-        const fitted = Math.max(1, last - from);
-        // The counts lined up: `fittedTo` is the last count whose start was put on a hit. Going on
-        // to the end of the music, that count is the music's own (its start is the last hit), so
-        // it's named too (marcus: m. 78 count 4 was fitted, the toast said count 3). Where it
-        // stopped, or at the end of a range, the count at `fittedTo` is the first not changed.
-        const lined = plan.stoppedAt === null && last > end ? last + 1 : last;
-        // say plainly how well it went: most counts on hits, or not
-        const onHits = 1 - plan.unsure.size / fitted;
-        const parts: string[] = [];
-        if (plan.moveMusic !== 0)
-            parts.push(
-                `Started the music ${Math.abs(plan.moveMusic).toFixed(2)} s ${plan.moveMusic > 0 ? "earlier" : "later"}, so its first hit is on count 1 (the recording isn't changed; Undo puts it back)`,
-            );
-        parts.push(
-            onHits >= 0.8
-                ? `Lined up ${rangeLabel(from, lined)} with the music`
-                : `Tried to line up ${rangeLabel(from, lined)}, but only ${Math.round(onHits * 100)}% of the counts found a hit: check it, or Undo`,
-        );
-        // what it found, in words: the tempos and where they change (dana)
-        const found =
-            onHits >= 0.8
-                ? tempoWords(plan.result.durations, from, lined)
-                : null;
-        if (found) parts.push(`Found ${found}`);
-        if (plan.stoppedAt !== null)
-            parts.push(
-                `It stopped at ${measureLabel(plan.stoppedAt)}, where it lost the music (a hold, a meter change or a cut?). ${measureLabel(plan.stoppedAt)} to ${measureLabel(end)} weren't changed: fix that spot, then right-click it and Fit from there`,
-            );
-        if (plan.downbeat)
-            parts.push(
-                `The strongest hits land on count ${plan.downbeat.count} of the measures, not count 1: the counts may be a beat or two off the bars. Drag a strong hit onto count 1 of its measure`,
-            );
-        if (plan.unsure.size && onHits >= 0.8)
-            parts.push(
-                `${plan.unsure.size} count(s) found no hit (dashed red)`,
-            );
-        // Fit places the points where the tempo really changes in what it lined up; the points
-        // outside stay. The first count it didn't change starts a stretch of its own.
-        const fitChanges = new Set(
-            [...changes].filter((b) => b < from || b >= lined),
-        );
-        for (const b of changesFrom(
-            laneBpms(plan.result.durations),
-            from,
-            lined,
-        ))
-            fitChanges.add(b);
-        if (from > 1) fitChanges.add(from);
-        if (lined < data.storedCount) fitChanges.add(lined);
-        commit(
-            "Fit to the music",
-            { ...plan.result, note: parts.join(". "), changes: fitChanges },
-            true,
-            plan.moveMusic !== 0
-                ? data.audioOffset - plan.moveMusic
-                : undefined,
-        );
-    };
 
     const scaleSelection = (factor: number) => {
         const r = ui.range;
@@ -2196,9 +1949,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const from = tapFrom ?? 1;
         setTapFrom(null);
         if (!taps || taps.length === 0) return;
-        const snapped = taps.map((t) => snapSeconds(t, false, 0.07));
         const s = startsOf(data.durations);
-        let pins = assignTaps(s, snapped);
+        let pins = assignTaps(s, taps);
         // a tap far from where the counts say the next one is (more than 40% off) is a stray
         let strays = 0;
         pins = pins.filter((p, i) => {
@@ -2440,7 +2192,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             else
                 setGesture({
                     kind: "grab",
-                    seconds: snapSeconds(secondsAtX(x), e.altKey),
+                    seconds: secondsAtX(x),
                     pointerX: x,
                     beat: null,
                     one: e.shiftKey,
@@ -2511,7 +2263,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         }
         e.currentTarget.setPointerCapture(e.pointerId);
     };
-    /** The explanation for what's under the pointer: a red dot, or a count that found no hit */
+    /** The explanation for what's under the pointer: a red dot */
     const tipAt = (x: number, y: number) => {
         for (const o of outliers) {
             const cx = xOf(o.beat, ppb) + ppb / 2;
@@ -2523,15 +2275,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     x: cx,
                     y: yOfBpm(o.bpm),
                     text: `${measureLabel(o.beat)} is much ${o.bpm > o.before ? "faster" : "slower"} (${bpmText(o.bpm)}) than its neighbours (${bpmText(o.before)}, ${bpmText(o.after)}): a count line may be on the wrong hit. Drag its handle onto the right hit, or leave it if the music really does that.`,
-                };
-        }
-        if (y >= TEMPO.top && ui.unsure.size) {
-            const b = Math.round(beatAtX(x, ppb));
-            if (ui.unsure.has(b) && Math.abs(xOf(b, ppb) - x) <= 6)
-                return {
-                    x: xOf(b, ppb),
-                    y: Math.max(y, TEMPO.top + 8),
-                    text: `No hit in the music near ${measureLabel(b)}: Fit placed it by the tempo around it. Fine in a silence; elsewhere, drag its handle onto the music.`,
                 };
         }
         return null;
@@ -2606,7 +2349,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }
         } else if (gesture.kind === "line") {
             if (Math.abs(x - gesture.pointerX) < 3 && !gesture.moved) return;
-            let seconds = snapSeconds(secondsAtX(x), e.altKey);
+            let seconds = secondsAtX(x);
             if (gesture.beat === 1) {
                 setGesture({ ...gesture, seconds, moved: true });
                 setBlocked({
@@ -2933,12 +2676,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             subtitle = `${range.to - range.from} counts`;
             items.push(
                 {
-                    label: "Fit to the music",
-                    icon: <MagicWandIcon size={I} aria-hidden />,
-                    onSelect: () => fitToMusic(range.from, range.to),
-                    range,
-                },
-                {
                     label: "Set tempo…",
                     icon: <GaugeIcon size={I} aria-hidden />,
                     onSelect: () =>
@@ -3167,25 +2904,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     range: one,
                 },
             );
-            // from the count clicked: what's before it stays as it is (nothing to fit past the
-            // end of the music)
-            const from = Math.max(1, beat);
-            const pin = lockAfter(data.locks, from);
-            const fitEnd = pin ?? musicEndBeat();
-            if (fitEnd > from)
-                items.push({
-                    label: "Fit from here",
-                    icon: <MagicWandIcon size={I} aria-hidden />,
-                    aside:
-                        pin === null
-                            ? "to the end"
-                            : `to ${measureLabel(pin).replace(" count", ", count")}`,
-                    // up to a pin, or on to the end of the music (where that is on the
-                    // counts as they are now is only a guess)
-                    onSelect: () => fitToMusic(from, fitEnd, pin === null),
-                    range: { from, to: fitEnd },
-                    separatorBefore: true,
-                });
         }
         setMenu({
             x: e.clientX,
@@ -3722,15 +3440,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         );
     }
 
-    const status =
-        tapCue ??
-        (onsetStatus === "working"
-            ? "Listening to the music…"
-            : onsetStatus === "none"
-              ? "No music in this show"
-              : onsetStatus === "error"
-                ? "Couldn't read the music"
-                : null);
+    const status = tapCue;
 
     return (
         <div
@@ -3739,9 +3449,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             data-ppb={ppb}
             data-offset={data.audioOffset}
             data-pins={[...data.locks].join(",")}
-            // for scenario checks: the selection, unsure counts, red dots (beat:x:y), page starts
+            // for scenario checks: the selection, red dots (beat:x:y), page starts
             data-range={ui.range ? `${ui.range.from}-${ui.range.to}` : ""}
-            data-unsure={[...ui.unsure].join(",")}
             data-outliers={outliers
                 .map(
                     (o) =>
@@ -3847,21 +3556,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         busy={busy}
                         tapping={ui.taps !== null}
                         draftCount={ui.draft?.length ?? 0}
-                        range={ui.range}
-                        rangeText={
-                            ui.range
-                                ? measuresLabel(ui.range.from, ui.range.to)
-                                : null
-                        }
                         lockCount={data.locks.size}
-                        onFit={() => {
-                            const r = ui.range;
-                            if (r) return fitToMusic(r.from, r.to);
-                            // the whole show (owner, 2026-10-21): what's already on the music is
-                            // only nudged, so running it again is safe
-                            // (fitted between any pins on the way, which never move)
-                            fitToMusic(1, musicEndBeat(), true);
-                        }}
                         onTap={() => {
                             if (!playing) return;
                             if (isPlaying) stopTapping(false);

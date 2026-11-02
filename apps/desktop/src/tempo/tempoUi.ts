@@ -23,31 +23,23 @@ export const readChoice = (): CountAnswer | null => {
 export interface TempoUiState {
     /** The last answer in the add/remove box, or null before the first */
     choice: CountAnswer | null;
-    /** Whether grabbing the music, count lines and taps snap to hits in the music */
-    snap: boolean;
     /** Selected counts (spec beats, `to` exclusive), from dragging along the measures lane */
     range: { from: number; to: number } | null;
     /** Taps of the pass in progress (show seconds), or null when not tapping */
     taps: number[] | null;
     /** Taps waiting to be applied: which count, and when */
     draft: { beat: number; seconds: number }[] | null;
-    /** Counts the last fit placed without a hit to land on */
-    unsure: ReadonlySet<number>;
     setChoice: (choice: CountAnswer) => void;
-    setSnap: (snap: boolean) => void;
     setRange: (range: { from: number; to: number } | null) => void;
     setTaps: (taps: number[] | null) => void;
     setDraft: (draft: { beat: number; seconds: number }[] | null) => void;
-    setUnsure: (unsure: ReadonlySet<number>) => void;
 }
 
 export const useTempoUi = create<TempoUiState>((set) => ({
     choice: readChoice(),
-    snap: true,
     range: null,
     taps: null,
     draft: null,
-    unsure: new Set(),
     setChoice: (choice) => {
         try {
             localStorage.setItem("tempoProto.countChoice", choice);
@@ -56,11 +48,9 @@ export const useTempoUi = create<TempoUiState>((set) => ({
         }
         set({ choice });
     },
-    setSnap: (snap) => set({ snap }),
     setRange: (range) => set({ range }),
     setTaps: (taps) => set({ taps }),
     setDraft: (draft) => set({ draft }),
-    setUnsure: (unsure) => set({ unsure }),
 }));
 
 /** Where tempo mode's header goes: a row over the timeline's transport (`TimelineBand.header`) */

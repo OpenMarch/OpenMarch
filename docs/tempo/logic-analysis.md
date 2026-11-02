@@ -15,7 +15,11 @@ Apple's guide for each one; the wider DAW survey is [daw-research.md](daw-resear
 - **Built on fork PR #550:** A (grab only the line, cursors, a tag while dragging), points
   (double-click to add or remove, drag up/down or sideways, one axis per drag), curve handles
   (straight or curved ramps, double-click for a jump), and Fit placing points.
-- **Next, after the owner's lab check:** D, the seconds view, starting with a throwaway prototype.
+- **Next:** D, the seconds view, is fork issue #605.
+- **Detection removed (owner, 2026-11-01):** the hits found in the music (the yellow marks), Fit,
+  Fit from here, snapping and the no-hit marks are out of tempo mode. Lining up is by hand
+  (dragging counts onto the music, taps, pins). Detection comes back as its own spike. The Fit
+  notes below are history.
 
 ## Measures are optional (owner, 2026-11-01)
 
