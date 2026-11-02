@@ -1,6 +1,6 @@
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee } from "@tolgee/react";
 import {
     pageFlagMoveLimits,
@@ -13,6 +13,7 @@ import {
     movePageFlagMutationOptions,
     useAddPageFlag,
 } from "@/hooks/queries/usePageFlags";
+import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { updatePagesMutationOptions } from "@/hooks/queries/usePages";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { useTimingObjects } from "@/hooks";
@@ -87,6 +88,7 @@ import { useKeyframeUnsetMenu } from "@/timeline/timelineUnset";
 import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 import { usePageKeepChains } from "./PageKeepChain";
 import { useHoldCommands } from "@/timeline/useHoldCommands";
+import { clearPageMenu } from "@/timeline/timelineClearPage";
 import { describeMoveClips } from "./moveClipText";
 import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
@@ -262,8 +264,22 @@ export default function TimelineModePanel() {
         keepStates,
         defineAsShown: setAsShown,
         holdFromPrevious,
+        entriesOn,
     } = useHoldCommands(pages, selectedIdList, keepNameOf);
     const keepChains = usePageKeepChains(keepStates, keepNameOf);
+    // #573: Clear Page N, for the selected marchers or every performer when none is selected;
+    // ticked when every selected marcher is already Not defined on the page (`entriesOn`)
+    const { data: performers } = useQuery(allMarchersQueryOptions());
+    const clearPage = useMemo(
+        () =>
+            clearPageMenu({
+                pages,
+                selectedIds: selectedIdList,
+                performerIds: (performers ?? []).map((m) => m.id),
+                entryOn: (pageId) => entriesOn(pageId)?.clearThisPage,
+            }),
+        [pages, selectedIdList, performers, entriesOn],
+    );
     const { tracks: timelines, current: tracksCurrent } =
         useTimelineTracksState({
             database: db,
@@ -536,6 +552,7 @@ export default function TimelineModePanel() {
                     keepChains={keepChains}
                     setAsShown={setAsShown}
                     holdFromPrevious={holdFromPrevious}
+                    clearPage={clearPage}
                     onSelectionChange={changeSelection}
                     onTimelineRangeCommit={
                         basic ? undefined : commands.commitTimelineRange

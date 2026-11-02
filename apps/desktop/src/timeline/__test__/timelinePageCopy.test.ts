@@ -1,4 +1,3 @@
-import { holdTerms } from "../holdTerms";
 import { afterEach, describe, expect, it as plainIt, vi } from "vitest";
 import { and, eq, getTableName } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
@@ -132,6 +131,7 @@ const runTimeline = async (
         direction,
         scope,
         selected = [],
+        followBack = false,
         onSuccess,
     }: {
         page: Page;
@@ -139,6 +139,7 @@ const runTimeline = async (
         direction: NeighborPageDirection;
         scope: NeighborPageScope;
         selected?: number[];
+        followBack?: boolean;
         onSuccess?: () => void;
     },
 ) => {
@@ -148,6 +149,7 @@ const runTimeline = async (
     const notify = {
         success: vi.fn(() => onSuccess?.()),
         error: vi.fn(),
+        note: vi.fn(),
     };
     const reportError = vi.fn();
     const result = await setMarchersToNeighborPage({
@@ -156,6 +158,7 @@ const runTimeline = async (
         selectedPage: page,
         pages,
         selectedMarcherIds: selected,
+        followBack,
         writeTimeline,
         notify,
         t,
@@ -178,7 +181,7 @@ describe("copyPagePositions without a resolver", () => {
 });
 
 describeDbTests("set marchers to the previous or next page", (it) => {
-    it("all to previous: every marcher takes its previous-page position in one undoable edit; success only after the write", async ({
+    it("all to previous (Clear this page): every marcher takes its previous-page position in one undoable edit, with no message (#573)", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -195,29 +198,19 @@ describeDbTests("set marchers to the previous or next page", (it) => {
             .map((p) => [p, positionsAt(pageEndBeat(p))] as const);
         expect(before).not.toEqual(target);
 
-        // When the success message shows, the edit is already in the resolver
-        let atSuccess: unknown;
         const { result, writeTimeline, notify } = await runTimeline(db, {
             page,
             pages,
             direction: "previous",
             scope: "all",
-            onSuccess: () => (atSuccess = positionsAt(endBeat)),
         });
 
         const count = resolver().marcherIds().length;
         expect(result).toBe(count);
         expect(writeTimeline).toHaveBeenCalledTimes(1);
-        expect(notify.success).toHaveBeenCalledTimes(1);
-        expect(notify.success.mock.calls[0]).toEqual([
-            t("actions.batchEdit.clearThisPageAllSuccess", {
-                ...holdTerms(),
-                count,
-                currentPage: page.name,
-                previousPage: previous.name,
-            }),
-        ]);
-        expect(atSuccess).toEqual(target);
+        // Everyone cleared: nothing to say
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).not.toHaveBeenCalled();
         expect(positionsAt(endBeat)).toEqual(target);
         // Only the selected page changes
         for (const [p, positions] of otherPages)
@@ -453,7 +446,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         expect(positionsAt(endBeat)).toEqual(target);
     });
 
-    it("nothing to move: no edit is written, and the action still succeeds", async ({
+    it("nothing to move: no edit is written, and the action still counts the marcher", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -475,7 +468,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         const again = await runTimeline(db, args);
         expect(again.result).toBe(1);
         expect(again.writeTimeline).toHaveBeenCalledTimes(1);
-        expect(again.notify.success).toHaveBeenCalledTimes(1);
+        expect(again.notify.success).not.toHaveBeenCalled();
         expect(await undoRows(db)).toEqual(history);
 
         // Next with every marcher already there doesn't write at all
@@ -683,6 +676,10 @@ describeDbTests("set marchers to the previous or next page", (it) => {
             /^\S+ follows the leader, so it keeps its move here\.$/,
         );
         expect(notify.success).not.toHaveBeenCalled();
+        // The quiet message names who was skipped, and why
+        expect(notify.note).toHaveBeenCalledExactlyOnceWith(
+            expect.stringMatching(/follows the leader/),
+        );
         expect(await timelineRows(db)).toEqual(before);
         expect(await undoRows(db)).toHaveLength(undoBefore);
     });
@@ -757,14 +754,8 @@ describeDbTests("Clear this page on a converted show (holds 4, #469)", (it) => {
         });
 
         expect(result).toBe(2);
-        expect(notify.success.mock.calls[0]).toEqual([
-            t("actions.batchEdit.clearThisPageSelectedSuccess", {
-                ...holdTerms(),
-                count: 2,
-                currentPage: page.name,
-                previousPage: previous.name,
-            }),
-        ]);
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).not.toHaveBeenCalled();
         expect(await rowsOverPage(db, page, selected)).toEqual([]);
         const after = everyBeat(last);
         for (let beat = 0; beat <= last; beat++)
@@ -835,17 +826,11 @@ describeDbTests("Clear this page on a converted show (holds 4, #469)", (it) => {
         });
 
         expect(result).toBe(1);
-        // Counts only the marcher it cleared; the write's warning names the one it skipped
-        expect(notify.success.mock.calls).toEqual([
-            [
-                t("actions.batchEdit.clearThisPageSelectedSuccess", {
-                    ...holdTerms(),
-                    count: 1,
-                    currentPage: page.name,
-                    previousPage: pages[2]!.name,
-                }),
-            ],
-        ]);
+        // Counts only the marcher it cleared; one quiet message names the one it skipped
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).toHaveBeenCalledExactlyOnceWith(
+            expect.stringMatching(/is in a shape, so it keeps its move here/),
+        );
         const written = (await writeTimeline.mock.results[0]!
             .value) as TimelineMoveResult;
         expect(written.cleared).toEqual([other]);

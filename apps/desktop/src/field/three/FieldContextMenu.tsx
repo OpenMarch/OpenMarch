@@ -97,6 +97,9 @@ const handlerSnapshot = () =>
             `${isActionEnabled(id) ? 1 : 0}${isActionChecked(id) ? 1 : 0}${actionLabelNow(id) ?? ""}`,
     ).join("\n");
 
+/** Closed, the menu shows nothing, so it reads no handler (a label may run a check) */
+const closedSnapshot = () => "";
+
 export default function FieldContextMenu({
     at,
     onClose,
@@ -112,8 +115,11 @@ export default function FieldContextMenu({
 }) {
     const { t } = useTolgee();
     const overrides = useShortcutOverridesStore((s) => s.overrides);
-    useSyncExternalStore(subscribeToActionHandlers, handlerSnapshot);
     const open = at !== null;
+    useSyncExternalStore(
+        subscribeToActionHandlers,
+        open ? handlerSnapshot : closedSnapshot,
+    );
     // The context-menu key and Shift+F10 also fire the browser's own menu
     useEffect(() => {
         if (!open) return;

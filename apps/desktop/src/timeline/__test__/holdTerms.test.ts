@@ -44,12 +44,11 @@ describe("holdTerms", () => {
 
     it("fills a string that names a state", () => {
         expect(
-            tolgee.t("actions.batchEdit.clearThisPageAllSuccess", "", {
+            tolgee.t("timeline.heldBar.title", "", {
                 ...holdTerms(),
-                count: 2,
-                currentPage: "3",
+                page: "3",
             }),
-        ).toBe("Page 3 is Not defined for 2 marchers");
+        ).toBe("Held · Page 3");
         expect(holdTerm("notDefined")).toBe("Not defined");
     });
 });

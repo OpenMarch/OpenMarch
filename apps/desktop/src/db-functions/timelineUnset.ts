@@ -1,14 +1,12 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { createResolver, type XY } from "@openmarch/core";
 import { schema } from "@/global/database/db";
-import { readTimelineTables } from "@/timeline/timelineRows";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
-import { readPageGrid } from "./timelineRipple";
-import { FIRST_PAGE_ID } from "./rowMappers";
-import { samePosition } from "./timelineMoves";
 import { clearOwnPageMoves } from "./timelineMoveHelpers";
-import { setAsShownOnPageInTransaction } from "./timelineSetAsShown";
+import {
+    keepNextPageInTransaction,
+    readNextPageSpots,
+} from "./timelineNextPageStays";
 import type { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
 import {
     joinMovesAtInTransaction,
@@ -114,15 +112,9 @@ export async function unsetMarchersAtInTransaction({
     result.unset = ascending(rows.map((r) => r.marcher_id));
 
     // Where the later pages begin, and where each marcher stands there before the delete
-    const box = keepLaterPages ? await nextPageBox(tx, beat) : null;
-    const before = new Map<number, XY>();
-    if (box) {
-        const resolver = createResolver(
-            (await readTimelineTables(tx)).snapshot,
-        );
-        for (const id of result.unset)
-            before.set(id, resolver.positionAt(id, box.end));
-    }
+    const later = keepLaterPages
+        ? await readNextPageSpots(tx, beat, result.unset)
+        : null;
 
     const ends = await readMoveEnds(
         tx,
@@ -136,36 +128,8 @@ export async function unsetMarchersAtInTransaction({
     const notTaken = await skippedRefusal(tx, apart.leftInGroup);
     if (notTaken) result.notTakenApart = notTaken;
 
-    if (box) {
-        const resolver = createResolver(
-            (await readTimelineTables(tx)).snapshot,
-        );
-        const at = new Map<number, XY>();
-        for (const [id, spot] of before)
-            if (!samePosition(spot, resolver.positionAt(id, box.end)))
-                at.set(id, spot);
-        await setAsShownOnPageInTransaction({
-            tx,
-            pageBox: box,
-            marcherIds: [...at.keys()],
-            at,
-        });
-    }
+    await keepNextPageInTransaction(tx, later);
     return result;
-}
-
-/** The first page box starting on or after `beat`, or null past the last page. */
-async function nextPageBox(
-    tx: DbTransaction,
-    beat: number,
-): Promise<{ start: number; end: number } | null> {
-    const grid = await readPageGrid(tx);
-    const next = grid.pages
-        .filter((p) => p.id !== FIRST_PAGE_ID && p.start >= beat)
-        .sort((x, y) => x.start - y.start)[0];
-    return next && next.end > next.start
-        ? { start: next.start, end: next.end }
-        : null;
 }
 
 /**

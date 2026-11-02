@@ -133,4 +133,24 @@ describe("useActionHandler", () => {
         expect(labelOf()).toBe("actions.alignment.lockX");
         unmount();
     });
+
+    it("reads a label or enabled given as a function only when asked, not on render (#573 review)", () => {
+        const t = (key: string) => key;
+        const label = vi.fn(() => "Lock X on Page 4");
+        const enabled = vi.fn(() => false);
+        const { rerender, unmount } = renderHook(() =>
+            useActionHandler("lockX", () => {}, { label, enabled }),
+        );
+        rerender();
+        expect(label).not.toHaveBeenCalled();
+        expect(enabled).not.toHaveBeenCalled();
+
+        const item = getActionPaletteItems({ t }, {}).find(
+            (i) => i.id === "action:lockX",
+        );
+        expect(item?.label).toBe("Lock X on Page 4");
+        expect(isActionEnabled("lockX")).toBe(false);
+        expect(runAction("lockX")).toBe(false);
+        unmount();
+    });
 });

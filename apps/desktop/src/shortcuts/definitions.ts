@@ -439,6 +439,25 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Shift+P"],
     },
+    // #573: as Clear this page, but the later pages that showed the page's spot move back to the
+    // page before instead of keeping where they were. Its handler names the pages ("Clear Page 3,
+    // Pages 4–6 move back too"). Unbound
+    setAllMarchersToPreviousPageAndFollowing: {
+        labelKey: "actions.batchEdit.clearThisPageAllAndFollowing",
+        labelHoldTerms: true,
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    setSelectedMarchersToPreviousPageAndFollowing: {
+        labelKey: "actions.batchEdit.clearThisPageSelectedAndFollowing",
+        labelHoldTerms: true,
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
     // Holds: the selected marchers on the current page box become Defined where they are shown
     // (the page box menu's entry and the inspector's button run this). Unbound
     timelineDefineAsShown: {

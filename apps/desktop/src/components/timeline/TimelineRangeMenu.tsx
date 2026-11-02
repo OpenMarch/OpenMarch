@@ -12,6 +12,7 @@ import { TooltipClassName } from "@openmarch/ui";
 import {
     CursorTextIcon,
     DiamondIcon,
+    EraserIcon,
     PauseIcon,
     FlagIcon,
     ArrowsMergeIcon,
@@ -414,6 +415,11 @@ export interface TimelineAddMarchersMenu<T = TimelineBeatRange> {
      */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
     /**
+     * **Clear Page N** on a page box, and **Clear Page N, Pages N–M move back too** where later
+     * pages would (#573). Without it, the menu has no such entries.
+     */
+    readonly clearPage?: TimelineClearPageMenu;
+    /**
      * **Subset** on a page box (UI-9): a switch that shows whether the page is a subset, and
      * flips it. Without it, the menu has no such entry.
      */
@@ -441,6 +447,23 @@ export interface TimelinePageCommandMenu {
      * would change for its label
      */
     readonly entryOn?: (pageId: string | number) => HoldEntryState | undefined;
+}
+
+/** The page box menu's **Clear Page N** entries (#573), by page id. */
+export interface TimelineClearPageMenu {
+    /**
+     * The entries' labels on the page, read when its menu opens; undefined for none (home).
+     * `checked` when every selected marcher is already Not defined there (`holdEntryStates`): the
+     * Clear Page N entry shows ticked and off, and the follow-back entry doesn't show.
+     */
+    readonly labelsFor: (pageId: string | number) =>
+        | {
+              clear: string;
+              followBack: string | null;
+              checked?: boolean;
+          }
+        | undefined;
+    readonly onClear: (pageId: string | number, followBack: boolean) => void;
 }
 
 /**
@@ -542,6 +565,7 @@ export function useTimelineRangeMenu({
                 menu?.onDeleteWithMoves !== undefined ||
                 menu?.setAsShown !== undefined ||
                 menu?.holdFromPrevious !== undefined ||
+                menu?.clearPage !== undefined ||
                 menu?.subset !== undefined ||
                 menu?.extraFor !== undefined) &&
             target.pageId !== undefined;
@@ -558,6 +582,10 @@ export function useTimelineRangeMenu({
     const holdReason =
         open && menu?.holdFromPrevious && open.target.pageId !== undefined
             ? menu.holdFromPrevious.reasonFor(open.target.pageId)
+            : undefined;
+    const clearLabels =
+        open && menu?.clearPage && open.target.pageId !== undefined
+            ? menu.clearPage.labelsFor(open.target.pageId)
             : undefined;
     const pageExtra =
         open && menu?.extraFor && open.target.pageId !== undefined
@@ -641,6 +669,56 @@ export function useTimelineRangeMenu({
                                         holdTerms(),
                                     )}
                                 />
+                                {clearLabels === undefined && (
+                                    <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                )}
+                            </>
+                        )}
+                        {clearLabels !== undefined && (
+                            <>
+                                {clearLabels.checked ? (
+                                    <DropdownMenu.CheckboxItem
+                                        data-testid="timeline-range-menu-clear-page"
+                                        checked
+                                        disabled
+                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                    >
+                                        <DropdownMenu.ItemIndicator className="flex">
+                                            <CheckIcon size={14} />
+                                        </DropdownMenu.ItemIndicator>
+                                        {clearLabels.clear}
+                                    </DropdownMenu.CheckboxItem>
+                                ) : (
+                                    <DropdownMenu.Item
+                                        data-testid="timeline-range-menu-clear-page"
+                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                        onSelect={() =>
+                                            menu?.clearPage?.onClear(
+                                                open.target.pageId!,
+                                                false,
+                                            )
+                                        }
+                                    >
+                                        <EraserIcon size={14} />
+                                        {clearLabels.clear}
+                                    </DropdownMenu.Item>
+                                )}
+                                {!clearLabels.checked &&
+                                    clearLabels.followBack !== null && (
+                                        <DropdownMenu.Item
+                                            data-testid="timeline-range-menu-clear-page-follow-back"
+                                            className={TIMELINE_MENU_ITEM_CLASS}
+                                            onSelect={() =>
+                                                menu?.clearPage?.onClear(
+                                                    open.target.pageId!,
+                                                    true,
+                                                )
+                                            }
+                                        >
+                                            <EraserIcon size={14} />
+                                            {clearLabels.followBack}
+                                        </DropdownMenu.Item>
+                                    )}
                                 <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                             </>
                         )}

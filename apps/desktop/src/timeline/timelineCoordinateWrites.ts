@@ -418,6 +418,8 @@ export interface TimelineNeighborPageRequest {
     target: TimelineEditTarget;
     moves: TimelineMarcherMove[];
     clearPage: boolean;
+    /** Clear Page N keeps the next page where it was (`moveMarchersInTarget`) */
+    keepLaterPages?: boolean;
 }
 
 /** What a canvas move hands to the timeline write path (`moveMarchersInTarget`). */

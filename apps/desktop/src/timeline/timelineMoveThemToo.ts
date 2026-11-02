@@ -293,6 +293,7 @@ export async function moveMarchersAndOfferFollowUp({
     target,
     moves: requested,
     clearPage,
+    keepLaterPages,
     setUnmovedFrom,
     afterWrite,
     writesShapes = false,
@@ -301,7 +302,13 @@ export async function moveMarchersAndOfferFollowUp({
     database?: DbConnection;
     target: TimelineEditTarget;
     moves: readonly TimelineMarcherMove[];
+    /**
+     * Clear this page: the caller says who was skipped (`setMarchersToNeighborPage`), and nothing
+     * is offered after it, since the menu already chose what the later pages do (#573)
+     */
     clearPage?: boolean;
+    /** With `clearPage`: the next page keeps where it was (`moveMarchersInTarget`) */
+    keepLaterPages?: boolean;
     /**
      * Where each marcher stands now: when the moves that are written (Basic's locked marchers
      * left out) move any of them, the ones they leave where they are are written as stays
@@ -349,6 +356,7 @@ export async function moveMarchersAndOfferFollowUp({
         target,
         moves,
         clearPage,
+        keepLaterPages,
         keepUnchanged,
         afterWrite: membership
             ? async (tx, timelineId) => {
@@ -366,8 +374,10 @@ export async function moveMarchersAndOfferFollowUp({
     });
     const mark = editHistoryMark();
     toastLockedMarchers(editable.locked.length, true);
-    // Clear this page or a drag back left shape and follow-the-leader members in their move: say
-    // who and why (a warning, since the rest was written)
+    // Clear this page's caller says who it skipped, quietly, and it offers nothing after
+    if (clearPage) return result;
+    // A drag back left shape and follow-the-leader members in their move: say who and why (a
+    // warning, since the rest was written)
     if (result.skipped) toastTimelineError(result.skipped);
     // Holds from the starting spots on later pages the edit left nothing to grow out of (#619)
     toastDroppedHolds(result.droppedHolds);

@@ -52,6 +52,10 @@ import {
     takeMarchersOutOfRangeInTransaction,
 } from "./timelineMoveCuts";
 import { sampleShape } from "./timelineMoveHelpers";
+import {
+    keepNextPageInTransaction,
+    readNextPageSpots,
+} from "./timelineNextPageStays";
 
 /** A move result that wrote nothing. */
 const emptyMoveResult = (): TimelineMoveResult => ({
@@ -134,6 +138,11 @@ export interface TimelineMoveResult {
      * the refusal's message (`skippedRefusal`), for the toast after the rest was written
      */
     skipped?: TimelineEditRefusedError;
+    /**
+     * Clear Page N (`keepLaterPages`): the marchers given a move of their own over the next page,
+     * so it stays where it was
+     */
+    keptLaterPages?: number[];
 }
 
 /**
@@ -1242,6 +1251,7 @@ export const moveMarchersInTarget = async ({
     target,
     moves,
     clearPage = false,
+    keepLaterPages = false,
     keepUnchanged = false,
     onStart,
     afterWrite,
@@ -1254,6 +1264,13 @@ export const moveMarchersInTarget = async ({
      * previous page; a point move only when its beat is the box's flag)
      */
     clearPage?: boolean;
+    /**
+     * With `clearPage` (**Clear Page N**, #573): the next page keeps where it was, with a move of
+     * its own for each marcher that would otherwise follow back (`keepNextPageInTransaction`), as
+     * Remove keyframe does. Without it the later pages follow back (**…, Pages N–M follow back**).
+     * A marcher whose later Held hold went with the page follows back either way (holds 17).
+     */
+    keepLaterPages?: boolean;
     /**
      * Range and point moves only: write a marcher left where it is as a stay in the move, not
      * nothing (a shape's members)
@@ -1302,6 +1319,16 @@ export const moveMarchersInTarget = async ({
                 return withDroppedHolds(result);
             }
             if (target.kind === "range" || target.kind === "point") {
+                const pageBox = target.kind === "range" ? target : target.box;
+                // Clear Page N keeps the next page: where everyone stands there before the clear
+                const later =
+                    clearPage && keepLaterPages
+                        ? await readNextPageSpots(
+                              tx,
+                              pageBox.end,
+                              moves.map((m) => m.marcherId),
+                          )
+                        : null;
                 // A marcher Held at the edited count edits the move arriving at its hold
                 // instead, so the whole hold moves (holds decision 4); one whose arrival is a
                 // shape's or follow-the-leader move is skipped and named
@@ -1348,7 +1375,7 @@ export const moveMarchersInTarget = async ({
                     const clearedHolds = await clearHeldMarksOverInTransaction(
                         tx,
                         moves.map((m) => m.marcherId),
-                        target.kind === "range" ? target : target.box,
+                        pageBox,
                     );
                     if (clearedHolds.marchers.length > 0)
                         result.cleared = [
@@ -1362,6 +1389,21 @@ export const moveMarchersInTarget = async ({
                             tx,
                             clearedHolds.later,
                         );
+                    // Only the marchers taken out of the page: a skipped one still has its move
+                    const kept = await keepNextPageInTransaction(
+                        tx,
+                        later,
+                        new Set([
+                            ...clearedHolds.later.map((h) => h.marcherId),
+                            ...moves
+                                .map((m) => m.marcherId)
+                                .filter((id) => !result.cleared?.includes(id)),
+                        ]),
+                        // A move left over from the cut that runs through the next page's
+                        // flag is cut there too, so the page keeps its spot
+                        { cutMovesAcross: true },
+                    );
+                    if (kept.length > 0) result.keptLaterPages = kept;
                 }
                 await moveHeldArrivalsInTransaction(tx, held, result, {
                     basic: target.kind === "point",

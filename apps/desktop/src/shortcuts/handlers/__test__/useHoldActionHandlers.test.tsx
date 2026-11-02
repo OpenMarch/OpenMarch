@@ -292,8 +292,9 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
             /^Hold from previous pageH$/,
         );
+        // #573: it names the page
         expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(
-            /^Clear this page \(selected\)/,
+            /^Clear Page 3 \(selected\)/,
         );
         expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(true);
     });
@@ -317,7 +318,8 @@ describe("the field menu shows the selection's state on the current page", () =>
             const clear = entry("setSelectedMarchersToPreviousPage");
             expect(clear).toHaveAttribute("aria-checked", "true");
             expect(clear).toHaveAttribute("data-disabled");
-            expect(clear).toHaveTextContent(/^Clear this page \(selected\)/);
+            // Ticked, it still names the page (#573)
+            expect(clear).toHaveTextContent(/^Clear Page 3 \(selected\)/);
             expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(
                 false,
             );

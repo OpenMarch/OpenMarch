@@ -75,6 +75,31 @@ describe("FieldContextMenu", () => {
         expect(screen.queryByTestId("field-menu")).toBeNull();
     });
 
+    it("reads no labels or enabled states while closed, as handlers change (#573 re-review)", () => {
+        const label = vi.fn(() => "Clear Page 3");
+        const isEnabled = vi.fn(() => true);
+        handlers.push(
+            registerActionHandler("setSelectedMarchersToPreviousPage", {
+                run: vi.fn(),
+                isEnabled,
+                label,
+            }),
+        );
+        render(
+            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                <FieldContextMenu
+                    at={null}
+                    onClose={vi.fn()}
+                    selectedCount={1}
+                    timelineMode
+                />
+            </TolgeeProvider>,
+        );
+        handle("alignHorizontally");
+        expect(label).not.toHaveBeenCalled();
+        expect(isEnabled).not.toHaveBeenCalled();
+    });
+
     it("runs the action chosen through the actions layer, then closes", () => {
         const run = handle("timelineUnsetHere");
         const { onClose } = open();

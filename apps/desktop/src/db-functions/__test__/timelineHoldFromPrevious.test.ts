@@ -1463,7 +1463,7 @@ const english = (key: string, params: Record<string, string | number> = {}) => {
 };
 
 describeDbTests("Clear this page on the first page of a joined hold", (it) => {
-    it("clears the later pages too, and the toast says so", async ({
+    it("clears the later pages too, and a quiet message says so", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -1474,7 +1474,7 @@ describeDbTests("Clear this page on the first page of a joined hold", (it) => {
         const m = (await db.select().from(schema.marchers).all()).find(
             (r) => r.id === a,
         )!;
-        const notify = { success: vi.fn(), error: vi.fn() };
+        const notify = { success: vi.fn(), error: vi.fn(), note: vi.fn() };
         const count = await setMarchersToNeighborPage({
             direction: "previous",
             scope: "selected",
@@ -1488,8 +1488,9 @@ describeDbTests("Clear this page on the first page of a joined hold", (it) => {
         });
         expect(count).toBe(1);
         expect(await marksOf(db, a)).toEqual([]);
-        expect(notify.success).toHaveBeenCalledExactlyOnceWith(
-            `Page 3 is Not defined for 1 marcher; ${m.drill_prefix}${m.drill_order}'s hold on Page 4 was cleared too`,
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).toHaveBeenCalledExactlyOnceWith(
+            `${m.drill_prefix}${m.drill_order}'s hold on Page 4 was cleared too.`,
         );
     });
 });

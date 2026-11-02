@@ -18,7 +18,10 @@ import type Page from "@/global/classes/Page";
 import { Timeline } from "../Timeline";
 import { isTimelineOwnKey } from "../timelineHotkeys";
 import type { TimelineSelection } from "../TimelineViewModel";
-import type { TimelineSetAsShownMenu } from "../TimelineRangeMenu";
+import type {
+    TimelineClearPageMenu,
+    TimelineSetAsShownMenu,
+} from "../TimelineRangeMenu";
 import {
     CHAIN_INSET,
     chainFit,
@@ -92,6 +95,7 @@ const chain = (extra: Partial<PageKeepChain> = {}): PageKeepChain => ({
 const show = ({
     keepChains,
     setAsShown,
+    clearPage,
     selection = null,
     onSelectionChange = vi.fn(),
     pixelsPerBeat = 16,
@@ -104,6 +108,7 @@ const show = ({
     onSeek?: (beat: number, options?: unknown) => void;
     keepChains?: PageKeepChains;
     setAsShown?: TimelineSetAsShownMenu;
+    clearPage?: TimelineClearPageMenu;
     selection?: TimelineSelection;
     onSelectionChange?: (selection: TimelineSelection) => void;
     /**
@@ -124,6 +129,7 @@ const show = ({
             onSelectionChange={onSelectionChange}
             keepChains={keepChains}
             setAsShown={setAsShown}
+            clearPage={clearPage}
             pixelsPerBeat={pixelsPerBeat}
             playback={
                 positionBeat === undefined && !onSeek
@@ -439,6 +445,57 @@ describe("the page box menu", () => {
         expect(item("timeline-range-menu-follow-again")).toBeNull();
         expect(item("timeline-range-menu-set-as-shown")).not.toBeNull();
         expect(screen.queryAllByTestId("timeline-menu-shortcut")).toEqual([]);
+    });
+
+    it("offers Clear Page N, and the follow-back entry only where the menu gives one (#573)", () => {
+        const clearPage = (
+            followBack: string | null,
+        ): TimelineClearPageMenu => ({
+            labelsFor: vi.fn(() => ({ clear: "Clear Page 3", followBack })),
+            onClear: vi.fn(),
+        });
+        const plain = clearPage(null);
+        show({ setAsShown: setAsShown(), clearPage: plain });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        expect(plain.labelsFor).toHaveBeenCalledWith("3");
+        expect(item("timeline-range-menu-clear-page")?.textContent).toBe(
+            "Clear Page 3",
+        );
+        expect(item("timeline-range-menu-clear-page-follow-back")).toBeNull();
+        fireEvent.click(item("timeline-range-menu-clear-page")!);
+        expect(plain.onClear).toHaveBeenCalledExactlyOnceWith("3", false);
+        cleanup();
+
+        const both = clearPage("Clear Page 3, Page 4 moves back too");
+        show({ clearPage: both });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        const followBack = item("timeline-range-menu-clear-page-follow-back");
+        expect(followBack?.textContent).toBe(
+            "Clear Page 3, Page 4 moves back too",
+        );
+        fireEvent.click(followBack!);
+        expect(both.onClear).toHaveBeenCalledExactlyOnceWith("3", true);
+    });
+
+    it("ticks Clear Page N, still naming the page, when every selected marcher is already Not defined there", () => {
+        const ticked: TimelineClearPageMenu = {
+            labelsFor: vi.fn(() => ({
+                clear: "Clear Page 3",
+                followBack: "Clear Page 3, Page 4 moves back too",
+                checked: true,
+            })),
+            onClear: vi.fn(),
+        };
+        show({ clearPage: ticked });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        const clear = item("timeline-range-menu-clear-page")!;
+        expect(clear).toHaveAttribute("aria-checked", "true");
+        expect(clear).toHaveAttribute("data-disabled");
+        expect(clear.textContent).toBe("Clear Page 3");
+        // Nothing to clear, so nothing moves back either
+        expect(item("timeline-range-menu-clear-page-follow-back")).toBeNull();
+        fireEvent.click(clear);
+        expect(ticked.onClear).not.toHaveBeenCalled();
     });
 
     it("a right-click on a chain opens its box's menu", () => {
