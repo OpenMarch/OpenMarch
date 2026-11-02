@@ -111,9 +111,8 @@ import {
     meterOfMeasure,
     parseMeter,
     quarterBpmOf,
-    type Meter,
 } from "./meters";
-import { planMeter, planMeterOnly, writeMeter } from "./meterWrites";
+import { planMeter, writeMeter } from "./meterWrites";
 import { createLabelPlacer, textWidth, type LabelBox } from "./bandLayout";
 import { useTempoModeStore } from "./tempoModeStore";
 import {
@@ -2852,44 +2851,33 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             units,
             holds: data.holds,
         };
-        // This measure only: the old meter again from the next count, in the same edit (a 2/4
-        // bar in a 4/4 piece moves the downbeats after it, as in the score). Where the run is
-        // that one measure, it's an ordinary change
-        const onlyPlan = only && old ? planMeterOnly({ ...common, old }) : null;
-        const plan = onlyPlan?.first ?? planMeter(common);
-        const last = onlyPlan?.then ?? plan;
-        const fmt = (m: Meter) => ({
-            meter: `${m.top}/${m.bottom}`,
-            grouping: m.grouping.join("+"),
+        // This measure only: the measures after keep their meters and move to follow it (a 2/4
+        // bar in a 4/4 piece brings the downbeats after it 2 counts earlier, as in the score)
+        const plan = planMeter({
+            ...common,
+            only: only && old ? { old } : undefined,
         });
         // a meter that changes count lengths re-times the counts, which lets go of the pins
         // inside; say so (4/4 to 2/4 keeps them all)
         const dropped = [...data.locks].filter(
-            (l) => !last.result.locks.has(l),
+            (l) => !plan.result.locks.has(l),
         );
         const pinsNote = dropped.length
             ? `. Unpinned ${dropped.length} count(s) inside, since their lengths changed`
             : "";
-        const shortNote = last.leftover
-            ? `. The last measure before the next change is short: ${last.leftover} count(s) (marked *)`
+        const by = plan.shift?.by ?? 0;
+        const shiftNote = by
+            ? `. The measures after it start ${Math.abs(by)} count${Math.abs(by) === 1 ? "" : "s"} ${by < 0 ? "earlier" : "later"}`
             : "";
-        setPreview(last.result);
+        setPreview(plan.result);
         void run("Time signature", async () => {
-            await writeMeter({
-                plan,
-                before: data.durations,
-                meter: fmt(meter),
-                then:
-                    onlyPlan && old
-                        ? { plan: onlyPlan.then, meter: fmt(old) }
-                        : undefined,
-            });
+            await writeMeter({ plan, before: data.durations });
             await refetch();
             toast.success(
-                (onlyPlan && old
-                    ? `${label} for m. ${was!.number} only, then ${meterLabel(old, true)} again; the tempo is as it was`
+                (only && old
+                    ? `${label} for m. ${was!.number} only; the tempo is as it was`
                     : `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was`) +
-                    shortNote +
+                    shiftNote +
                     pinsNote,
                 { id: NOTE_TOAST },
             );
@@ -2897,7 +2885,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     };
     /**
      * The time signatures to pick from the measure at `start`: until the next change (as in a
-     * score), or for that measure only, the old one again after it
+     * score), or for that measure only, the measures after keeping theirs
      */
     const signatureMenu = (
         x: number,
@@ -2906,7 +2894,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         only = false,
     ): Menu => {
         const m = measureAt(start);
-        const old = m ? meterLabel(meterOfMeasure(m), true) : null;
         return {
             x,
             y,
@@ -2916,9 +2903,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     : `From m. ${m.number}`
                 : undefined,
             subtitle: only
-                ? old
-                    ? `then ${old} again`
-                    : undefined
+                ? "the measures after keep theirs"
                 : "until the next time signature",
             items: [
                 {
@@ -2926,7 +2911,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     icon: only ? (
                         <CheckIcon size={14} aria-hidden />
                     ) : undefined,
-                    hint: "On: the time signature is for this measure only, and the one before comes back after it. Off: it lasts until the next time signature, as in a score.",
+                    hint: "On: the time signature is for this measure only; the measures after keep theirs and move to follow it. Off: it lasts until the next time signature, as in a score.",
                     onSelect: () => setMenu(signatureMenu(x, y, start, !only)),
                 },
                 ...METER_CHOICES.map((choice, i) => ({

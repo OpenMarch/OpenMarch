@@ -577,6 +577,50 @@ export async function regroupMeasuresInTransaction(
     }
 }
 
+/**
+ * Move every stored measure from count `from` on by `by` counts (later when positive), each
+ * keeping its meter, mark and number. Moving earlier, the last one keeps its length and the
+ * counts freed at the end start a measure in its meter; moving later stores counts for the ones
+ * pushed past the end.
+ */
+export async function shiftMeasuresInTransaction(
+    tx: DbTransaction,
+    { from, by }: { from: number; by: number },
+): Promise<void> {
+    if (!by) return;
+    let ids = await beatIdsInTransaction(tx);
+    const storedEnd = ids.length;
+    const ordinalOf = new Map(ids.map((id, i) => [id, i]));
+    const rows = (await tx.select().from(schema.measures))
+        .map((m) => ({ m, o: ordinalOf.get(m.start_beat) }))
+        .filter((r): r is typeof r & { o: number } => (r.o ?? -1) >= from)
+        .sort((a, b) => a.o - b.o);
+    const last = rows[rows.length - 1];
+    if (!last) return;
+    if (by > 0) {
+        await ensureCountsInTransaction({ tx, through: last.o + by + 1 });
+        ids = await beatIdsInTransaction(tx);
+    }
+    await updateMeasuresInTransaction({
+        tx,
+        modifiedItems: rows.map((r) => ({
+            id: r.m.id,
+            start_beat: ids[r.o + by]!,
+        })),
+    });
+    if (by < 0)
+        await createMeasuresInTransaction({
+            tx,
+            newItems: [
+                {
+                    start_beat: ids[storedEnd + by]!,
+                    meter: last.m.meter,
+                    grouping: last.m.grouping,
+                },
+            ],
+        });
+}
+
 /** Move a rehearsal mark from one measure to another: one undo step */
 export async function moveRehearsalMark({
     fromId,
