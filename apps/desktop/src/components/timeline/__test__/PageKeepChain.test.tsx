@@ -477,6 +477,27 @@ describe("the page box menu", () => {
         expect(both.onClear).toHaveBeenCalledExactlyOnceWith("3", true);
     });
 
+    it("ticks Clear Page N, still naming the page, when every selected marcher is already Not defined there", () => {
+        const ticked: TimelineClearPageMenu = {
+            labelsFor: vi.fn(() => ({
+                clear: "Clear Page 3",
+                followBack: "Clear Page 3, Page 4 moves back too",
+                checked: true,
+            })),
+            onClear: vi.fn(),
+        };
+        show({ clearPage: ticked });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        const clear = item("timeline-range-menu-clear-page")!;
+        expect(clear).toHaveAttribute("aria-checked", "true");
+        expect(clear).toHaveAttribute("data-disabled");
+        expect(clear.textContent).toBe("Clear Page 3");
+        // Nothing to clear, so nothing moves back either
+        expect(item("timeline-range-menu-clear-page-follow-back")).toBeNull();
+        fireEvent.click(clear);
+        expect(ticked.onClear).not.toHaveBeenCalled();
+    });
+
     it("a right-click on a chain opens its box's menu", () => {
         const menu = setAsShown();
         show({ setAsShown: menu, keepChains: new Map([[3, chain()]]) });

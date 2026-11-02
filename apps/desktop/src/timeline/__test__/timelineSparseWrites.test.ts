@@ -1082,7 +1082,24 @@ describeDbTests(
             expect(selected.labelsFor(page.id)).toEqual({
                 clear: clearPageLabel(page.name),
                 followBack: clearPageFollowingLabel(page.name, later),
+                checked: false,
             });
+            // Ticked when every selected marcher is already Not defined there (holds/core #635),
+            // keeping the label that names the page; never for every performer
+            const ticked = (selectedIds: number[]) =>
+                clearPageMenu({
+                    pages,
+                    selectedIds,
+                    performerIds: [1, 2, 3, 4],
+                    entryOn: () => ({ checked: true, changes: 0, selected: 1 }),
+                    run,
+                }).labelsFor(page.id);
+            expect(ticked([1])).toEqual({
+                clear: clearPageLabel(page.name),
+                followBack: clearPageFollowingLabel(page.name, later),
+                checked: true,
+            });
+            expect(ticked([])?.checked).toBe(false);
             selected.onClear(String(page.id), true);
             expect(run).toHaveBeenCalledExactlyOnceWith({
                 page,
