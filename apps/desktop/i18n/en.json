@@ -3478,7 +3478,7 @@
                 "tagSqueezed": "{range} → ♩{after} for the pin at {pin}",
                 "held": "{pin} is pinned to the music, so your tempo change was scaled down to keep it there",
                 "squeezed": "{range} went from ♩{before} to ♩{after} to keep {pin} on its hit",
-                "unpinAndApply": "Unpin {pin} and apply"
+                "unpinAndApply": "Unpin and apply"
             }
         },
         "errors": {

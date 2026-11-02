@@ -1043,9 +1043,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 id: NOTE_TOAST,
                 duration: 10000,
                 action: {
-                    label: t("tempoMode.band.pin.unpinAndApply", {
-                        pin: effect.pin,
-                    }),
+                    label: t("tempoMode.band.pin.unpinAndApply"),
                     onClick: () =>
                         commitRef.current(label, {
                             ...p.free(),
