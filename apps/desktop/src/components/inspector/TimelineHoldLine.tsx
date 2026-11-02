@@ -22,6 +22,7 @@ import {
     type MarcherNameOf,
 } from "@/timeline/timelineKeepLater";
 import { setAsShownOn } from "@/timeline/timelineSetAsShown";
+import { holdTerms } from "@/timeline/holdTerms";
 import { OWN_KEYS_WITH_SPACE } from "@/components/timeline/timelineHotkeys";
 import { usePageKeepStates } from "@/timeline/useKeepLaterPages";
 import {
@@ -31,7 +32,7 @@ import {
 
 /**
  * The selection's state on the current page, in timeline mode (docs/timeline/ui.md UI-18):
- * "Moves on this page" or "Hold from Page X" ("Hold from the start" when they haven't moved since
+ * "Moves on this page" or "Last moved on Page X" ("No moves since the start" when they haven't moved since
  * their starting set), where the selected marchers agree; nothing when they
  * don't. The current page is the selected page, which follows the paused playhead
  * (`useTimelinePageBridge`).
@@ -147,28 +148,36 @@ function FollowingPagesLine({
     const { t } = useTranslate();
     if (!following) return null;
     const { names, all } = following;
+    const terms = holdTerms();
     const first = names[0]!;
     const last = names[names.length - 1]!;
     const one = names.length === 1;
     const text = all
         ? one
             ? t("inspector.marcher.timeline.pageFollows", {
-                  defaultValue: "Page {page} follows these marchers",
+                  defaultValue:
+                      "Page {page} is {notDefined} for these marchers and shows this page",
+                  ...terms,
                   page: first,
               })
             : t("inspector.marcher.timeline.pagesFollow", {
-                  defaultValue: "Pages {first}–{last} follow these marchers",
+                  defaultValue:
+                      "Pages {first}–{last} are {notDefined} for these marchers and show this page",
+                  ...terms,
                   first,
                   last,
               })
         : one
           ? t("inspector.marcher.timeline.pageFollowsSome", {
-                defaultValue: "Page {page} follows some of these marchers",
+                defaultValue:
+                    "Page {page} is {notDefined} for some of these marchers and shows this page",
+                ...terms,
                 page: first,
             })
           : t("inspector.marcher.timeline.pagesFollowSome", {
                 defaultValue:
-                    "Pages {first}–{last} follow some of these marchers",
+                    "Pages {first}–{last} are {notDefined} for some of these marchers and show this page",
+                ...terms,
                 first,
                 last,
             });
@@ -196,6 +205,7 @@ function TimelineHoldLineContent({
     const follows = here?.follows ?? [];
     const page = here?.pageName ?? "";
     const from = here?.from.length === 1 ? here.from[0]! : null;
+    const terms = holdTerms();
     const translate: KeepTranslate = (key, defaultValue, params) =>
         t(key, { defaultValue, ...params });
     /**
@@ -231,20 +241,23 @@ function TimelineHoldLineContent({
         <SetAsShownButton
             testId="timeline-set-as-shown"
             label={t("inspector.marcher.timeline.setAsShown", {
-                defaultValue: "Set as shown",
+                defaultValue: "{defineAsShown}",
+                ...terms,
             })}
             tooltip={
                 from
                     ? t("inspector.marcher.timeline.setAsShownHint", {
                           defaultValue:
-                              "Set {who} on Page {page} where they are shown, so editing Page {from} won't move them here",
+                              "Make {who} {defined} on Page {page} where they are shown, so editing Page {from} won't move them here",
+                          ...terms,
                           who: who(follows),
                           page,
                           from,
                       })
                     : t("inspector.marcher.timeline.setAsShownHintEarlier", {
                           defaultValue:
-                              "Set {who} on Page {page} where they are shown, so editing earlier pages won't move them here",
+                              "Make {who} {defined} on Page {page} where they are shown, so editing earlier pages won't move them here",
+                          ...terms,
                           who: who(follows),
                           page,
                       })
@@ -334,10 +347,10 @@ function TimelineHoldLineContent({
                     >
                         {fromStart
                             ? t("inspector.marcher.timeline.holdFromStart", {
-                                  defaultValue: "Hold from the start",
+                                  defaultValue: "No moves since the start",
                               })
                             : t("inspector.marcher.timeline.holdFrom", {
-                                  defaultValue: "Hold from Page {page}",
+                                  defaultValue: "Last moved on Page {page}",
                                   page: holdPage.name,
                               })}
                         <ArrowRightIcon size={14} aria-hidden />
@@ -350,10 +363,13 @@ function TimelineHoldLineContent({
         line = textLine(
             follows.length === selected
                 ? t("inspector.marcher.timeline.holdHere", {
-                      defaultValue: "These marchers hold here",
+                      defaultValue: "These marchers are {notDefined} here",
+                      ...terms,
                   })
                 : t("inspector.marcher.timeline.someHoldHere", {
-                      defaultValue: "Some of these marchers hold here",
+                      defaultValue:
+                          "Some of these marchers are {notDefined} here",
+                      ...terms,
                   }),
             follows.length !== selected,
             setButton,

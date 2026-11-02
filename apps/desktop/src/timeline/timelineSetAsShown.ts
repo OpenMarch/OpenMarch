@@ -8,6 +8,7 @@ import {
 import type { TimelineSetAsShownMenu } from "@/components/timeline/TimelineRangeMenu";
 import type { PageBoxRange } from "./timelinePageBoxState";
 import { pagesText, type PageKeepState } from "./timelineKeepLater";
+import { holdTerms } from "./holdTerms";
 import { toastDroppedHolds, toastTimelineError } from "./timelineErrorMessages";
 
 /**
@@ -62,8 +63,8 @@ export function setAsShownMenu(
             if (state.follows.length > 0) return null;
             return tolgee.t(
                 "timeline.rangeMenu.setAsShownNone",
-                "Every selected marcher is already set on {page}, or partway through a move",
-                { page: pagesText([state.pageName]) },
+                "Every selected marcher is already {definedLower} on {page}, or partway through a move",
+                { ...holdTerms(), page: pagesText([state.pageName]) },
             );
         },
         onSet: (pageId) => {

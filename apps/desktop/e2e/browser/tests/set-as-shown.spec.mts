@@ -107,7 +107,7 @@ async function openWith(show: Show, drillNumbers: string[]) {
     await waitForIdle(page);
 }
 
-/** Right-clicks the page box at `startBeat` and picks Set as shown. */
+/** Right-clicks the page box at `startBeat` and picks Define as shown. */
 async function setAsShown(page: Page, startBeat: number) {
     // The selection's page states settle after the field shows the selection
     await expect(async () => {

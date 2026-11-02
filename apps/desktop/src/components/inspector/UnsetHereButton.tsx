@@ -3,6 +3,7 @@ import { useTranslate } from "@tolgee/react";
 import { getButtonClassName } from "@openmarch/ui";
 import ActionButton from "@/shortcuts/ActionButton";
 import { pagesText } from "@/timeline/timelineKeepLater";
+import { holdTerms } from "@/timeline/holdTerms";
 import {
     unsetFollowingLabel,
     useUnsetFollowingPages,
@@ -33,11 +34,11 @@ export default function UnsetHereButton({
             : targets.length === marcherIds.length
               ? t("inspector.marcher.timeline.unsetHereHint", {
                     defaultValue:
-                        "Remove their keyframe on this count, so they follow from earlier. Later pages stay where they are",
+                        "Remove their keyframe on this count, so they go back to the keyframe before it. Later pages stay where they are",
                 })
               : t("inspector.marcher.timeline.unsetHereHintSome", {
                     defaultValue:
-                        "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they follow from earlier. Later pages stay where they are",
+                        "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they go back to the keyframe before it. Later pages stay where they are",
                     count: String(targets.length),
                     total: String(marcherIds.length),
                 });
@@ -47,14 +48,16 @@ export default function UnsetHereButton({
             data-testid="timeline-unset-here"
             tooltip={tooltip}
             aria-label={`${t("inspector.marcher.timeline.unsetHere", {
-                defaultValue: "Remove keyframe",
+                defaultValue: "{removeKeyframe}",
+                ...holdTerms(),
             })}. ${tooltip}`}
             className={clsx(
                 getButtonClassName({ variant: "secondary", size: "compact" }),
             )}
         >
             {t("inspector.marcher.timeline.unsetHere", {
-                defaultValue: "Remove keyframe",
+                defaultValue: "{removeKeyframe}",
+                ...holdTerms(),
             })}
         </ActionButton>
     );
@@ -82,12 +85,12 @@ export function UnsetHereAndFollowingButton({
         targets.length === marcherIds.length
             ? t("inspector.marcher.timeline.unsetHereAndFollowingHint", {
                   defaultValue:
-                      "Remove their keyframe on this count, and {pages} follow back to the keyframe before it",
+                      "Remove their keyframe on this count, and {pages} go back to the keyframe before it",
                   pages,
               })
             : t("inspector.marcher.timeline.unsetHereAndFollowingHintSome", {
                   defaultValue:
-                      "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pages} follow back to the keyframe before it",
+                      "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pages} go back to the keyframe before it",
                   count: String(targets.length),
                   total: String(marcherIds.length),
                   pages,

@@ -16,6 +16,7 @@ import {
     type PageKeepState,
 } from "./timelineKeepLater";
 import { toastTimelineError } from "./timelineErrorMessages";
+import { holdTerms } from "./holdTerms";
 
 /**
  * **Hold from previous page** as the UI runs it (holds, fork #472): one undo step, and a refusal
@@ -36,7 +37,7 @@ const SKIP_WORDS: Record<
     },
     held: {
         key: "timeline.holdFromPrevious.held",
-        defaultValue: "{names}: already Held here",
+        defaultValue: "{names}: already {held} here",
     },
     crossesFlag: {
         key: "timeline.holdFromPrevious.crossesFlag",
@@ -80,7 +81,7 @@ export function holdFromPreviousMessage(
 ): { title: string; description: string | null } | null {
     const page = pagesText([pageName]);
     const t = (key: string, defaultValue: string, params = {}) =>
-        tolgee.t(key, defaultValue, params);
+        tolgee.t(key, defaultValue, { ...holdTerms(), ...params });
     const names = (ids: readonly number[]) =>
         marcherNamesText(ids, nameOf, t) ??
         t("timeline.holdFromPrevious.count", "{count} marchers", {
@@ -99,11 +100,11 @@ export function holdFromPreviousMessage(
     if (result.held.length === 0 && reasons.length === 0) return null;
     const title =
         result.held.length > 0
-            ? t("timeline.holdFromPrevious.done", "{names} Held on {page}", {
+            ? t("timeline.holdFromPrevious.done", "{names} {held} on {page}", {
                   names: names(result.held),
                   page,
               })
-            : t("timeline.holdFromPrevious.none", "Nobody Held on {page}", {
+            : t("timeline.holdFromPrevious.none", "Nobody {held} on {page}", {
                   page,
               });
     return {
@@ -111,7 +112,7 @@ export function holdFromPreviousMessage(
         description:
             reasons.length === 0
                 ? null
-                : `${t("timeline.holdFromPrevious.notHeld", "Not held:")} ${reasons.join("; ")}`,
+                : `${t("timeline.holdFromPrevious.notHeld", "Not {heldLower}:")} ${reasons.join("; ")}`,
     };
 }
 
