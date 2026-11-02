@@ -14,6 +14,7 @@ const state = (pageId: number, follows: number[]): PageKeepState => ({
     follows,
     fromStart: [],
     from: [],
+    midMove: [],
     selected: 3,
 });
 
@@ -36,6 +37,27 @@ describe("setAsShownMenu", () => {
         expect(menu.reasonFor(4)).toContain("Page 4");
         menu.onSet(4);
         expect(run).not.toHaveBeenCalled();
+    });
+
+    it("leaves Held marchers alone, and is checked where every selected marcher is Defined", () => {
+        const run = vi.fn();
+        const mark = { id: 1, marcherId: 1, start: 25, end: 33 };
+        const menu = setAsShownMenu([state(3, [1, 2])], run, [mark]);
+        expect(menu.entryOn?.(3)).toEqual({
+            checked: false,
+            changes: 1,
+            selected: 3,
+        });
+        menu.onSet(3);
+        expect(run).toHaveBeenCalledExactlyOnceWith(
+            { start: 25, end: 33 },
+            [2],
+        );
+        expect(setAsShownMenu([state(4, [])], vi.fn()).entryOn?.(4)).toEqual({
+            checked: true,
+            changes: 0,
+            selected: 3,
+        });
     });
 
     it("hides the entry when nothing is selected (no states)", () => {

@@ -39,6 +39,11 @@ export interface PageKeepState {
      * order. Empty when they hold from the start.
      */
     readonly from: string[];
+    /**
+     * The selected marchers partway through a move at the box (a move of theirs runs across one of
+     * its flags), ascending. The others not in `follows` have a move of their own ending there
+     */
+    readonly midMove: number[];
     /** How many marchers are selected */
     readonly selected: number;
 }
@@ -160,9 +165,12 @@ export function pageKeepStates({
         const follows: number[] = [];
         const fromStart: number[] = [];
         const fromPages = new Set<number>();
+        const midMove: number[] = [];
         for (const id of ids) {
             const indexed = moves.get(id)!;
-            if (pageBoxStateOf(indexed.over(box), box) !== "follows") continue;
+            const state = pageBoxStateOf(indexed.over(box), box);
+            if (state === "midMove") midMove.push(id);
+            if (state !== "follows") continue;
             const before = indexed.before(box);
             follows.push(id);
             if (!before) fromStart.push(id);
@@ -178,6 +186,7 @@ export function pageKeepStates({
             from: [...fromPages]
                 .sort((a, b) => a - b)
                 .map((i) => pages[i]!.name),
+            midMove,
             selected: ids.length,
         });
     }

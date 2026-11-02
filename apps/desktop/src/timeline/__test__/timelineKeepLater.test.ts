@@ -268,6 +268,7 @@ describe("pageKeepStates at scale (pre-merge review U4)", () => {
             const follows: number[] = [];
             const fromStart: number[] = [];
             const from = new Set<number>();
+            const midMove: number[] = [];
             for (const id of [...new Set(marcherIds)].sort((a, b) => a - b)) {
                 const rows = spansOf(id)
                     .filter((s) => s.kind !== "hold" && s.assignmentId !== null)
@@ -275,6 +276,8 @@ describe("pageKeepStates at scale (pre-merge review U4)", () => {
                 const over = rows.filter(
                     (r) => r.start < box.end && r.end > box.start,
                 );
+                if (over.some((r) => r.start < box.start || r.end > box.end))
+                    midMove.push(id);
                 if (over.length > 0) continue;
                 const before = rows
                     .filter((r) => r.end <= box.start)
@@ -303,6 +306,7 @@ describe("pageKeepStates at scale (pre-merge review U4)", () => {
                     from: [...from]
                         .sort((a, b) => a - b)
                         .map((i) => pages[i]!.name),
+                    midMove,
                     selected: new Set(marcherIds).size,
                 },
             ];

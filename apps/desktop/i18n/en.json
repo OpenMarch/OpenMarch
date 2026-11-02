@@ -2464,6 +2464,10 @@
             "notHeld": "Not {heldLower}:",
             "shape": "{names}: in a shape on this page"
         },
+        "holdMenu": {
+            "some": "{command} ({count} of {total})",
+            "someSelected": "{command} ({count} of {total} selected)"
+        },
         "keep": {
             "chain": {
                 "ariaLabel": "Page {page}: {label}. {hint}",
@@ -2550,7 +2554,8 @@
             "deleteWithMoves": "Delete page and its moves",
             "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "{defineAsShown}",
-            "setAsShownNone": "Every selected marcher is already {definedLower} on {page}, or partway through a move"
+            "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
+            "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move"
         },
         "terms": {
             "clearThisPage": "Clear this page",

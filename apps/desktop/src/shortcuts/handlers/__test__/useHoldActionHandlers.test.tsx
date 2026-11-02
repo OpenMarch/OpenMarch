@@ -16,8 +16,19 @@ import { setAsShownOnPage } from "@/db-functions/timelineSetAsShown";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useHoldCommands } from "@/timeline/useHoldCommands";
 import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
-import { isActionEnabled, runAction } from "../../registry";
+import { TolgeeProvider } from "@tolgee/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { screen } from "@testing-library/react";
+import FieldContextMenu from "@/field/three/FieldContextMenu";
+import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import {
+    actionLabelNow,
+    isActionChecked,
+    isActionEnabled,
+    runAction,
+} from "../../registry";
 import { useHoldActionHandlers } from "../useHoldActionHandlers";
+import { useBatchEditActionHandlers } from "../useBatchEditActionHandlers";
 
 /**
  * Holds: the `timelineDefineAsShown` and `timelineHoldFromPrevious` actions run the page box
@@ -27,6 +38,7 @@ import { useHoldActionHandlers } from "../useHoldActionHandlers";
 const page = (id: number, name: string, first: number, last: number) => ({
     id,
     name,
+    previousPageId: id === 1 ? null : id - 1,
     beats: Array.from({ length: last - first + 1 }, (_, i) => ({
         index: first + i,
     })),
@@ -51,6 +63,14 @@ vi.mock("@/context/IsPlayingContext", () => ({
 }));
 vi.mock("@/hooks", () => ({
     useTimingObjects: () => ({ pages: PAGES }),
+}));
+// Clear this page's handler reads the editor's state from here
+vi.mock("../useEditorReadiness", () => ({
+    useEditorReadiness: () => ({
+        selectedPage: mocks.selectedPage,
+        ready: true,
+        selectedMarchers: mocks.selectedMarchers,
+    }),
 }));
 vi.mock("sonner", () => ({
     toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn() },
@@ -134,6 +154,7 @@ beforeEach(() => {
     vi.mocked(holdFromPreviousPage).mockClear();
     vi.mocked(setAsShownOnPage).mockClear();
     vi.mocked(toast.info).mockClear();
+    useHeldMarksStore.setState({ marks: [] });
 });
 afterEach(() => {
     cleanup();
@@ -200,5 +221,134 @@ describe("hold actions", () => {
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(setAsShownOnPage).not.toHaveBeenCalled();
         expect(holdFromPreviousPage).not.toHaveBeenCalled();
+    });
+});
+
+/** The field menu with the real handlers: the hold actions and Clear this page */
+function FieldMenuHarness() {
+    useHoldActionHandlers();
+    useBatchEditActionHandlers();
+    return (
+        <FieldContextMenu
+            at={{ x: 10, y: 10 }}
+            onClose={vi.fn()}
+            selectedCount={mocks.selectedMarchers.length}
+            timelineMode
+        />
+    );
+}
+
+function openFieldMenu(ids: number[]) {
+    mocks.selectedMarchers = ids.map((id) => ({
+        id,
+        drill_number: `T${id}`,
+    }));
+    render(
+        <QueryClientProvider client={new QueryClient()}>
+            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                <FieldMenuHarness />
+            </TolgeeProvider>
+        </QueryClientProvider>,
+    );
+}
+
+const entry = (id: string) => screen.getByTestId(`field-menu-${id}`);
+const heldOnPage3 = (marcherId: number) => ({
+    id: marcherId,
+    marcherId,
+    start: 9,
+    end: 17,
+});
+
+describe("the field menu shows the selection's state on the current page", () => {
+    it("all Held: Hold from previous page is checked, and off for the palette and H too", () => {
+        // Marcher 1 has no move on page 3; its mark makes it Held there
+        useHeldMarksStore.setState({ marks: [heldOnPage3(1)] });
+        openFieldMenu([1]);
+        const hold = entry("timelineHoldFromPrevious");
+        expect(hold).toHaveAttribute("aria-checked", "true");
+        expect(hold).toHaveAttribute("data-disabled");
+        expect(hold).toHaveTextContent(/^Hold from previous page/);
+        expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
+        expect(isActionChecked("timelineHoldFromPrevious")).toBe(true);
+        expect(runAction("timelineHoldFromPrevious")).toBe(false);
+        // Define as shown skips Held marchers: off, not checked
+        expect(entry("timelineDefineAsShown")).toHaveAttribute("data-disabled");
+        expect(entry("timelineDefineAsShown")).not.toHaveAttribute(
+            "aria-checked",
+        );
+        // Clear this page would take the hold away
+        expect(entry("setSelectedMarchersToPreviousPage")).not.toHaveAttribute(
+            "data-disabled",
+        );
+        expect(holdFromPreviousPage).not.toHaveBeenCalled();
+    });
+
+    it("mixed: the entries count whom they'd change, and stay on", () => {
+        // Marcher 1 is Not defined on page 3, marcher 2 is Defined there
+        openFieldMenu([1, 2]);
+        expect(entry("timelineDefineAsShown")).toHaveTextContent(
+            "Define as shown (1 of 2)",
+        );
+        expect(entry("timelineDefineAsShown")).not.toHaveAttribute(
+            "data-disabled",
+        );
+        // It would change both: no count (the H after it is its shortcut)
+        expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
+            /^Hold from previous pageH$/,
+        );
+        expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(
+            "Clear this page (1 of 2 selected)",
+        );
+        expect(actionLabelNow("timelineDefineAsShown")).toBe(
+            "Define as shown (1 of 2)",
+        );
+        expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(true);
+    });
+
+    it("after Clear this page, a menu opened again shows Clear this page checked", () => {
+        openFieldMenu([1, 2]);
+        expect(entry("setSelectedMarchersToPreviousPage")).not.toHaveAttribute(
+            "aria-checked",
+        );
+        cleanup();
+        // The edit: marcher 2's move on page 3 is gone, and the resolver says so
+        const saved = SPANS[2]!;
+        SPANS[2] = [
+            span(2, -Infinity, 1, "hold"),
+            span(2, 1, 9, "founding"),
+            span(2, 9, Infinity, "hold"),
+        ];
+        try {
+            useTimelineResolverStore.setState({ resolver, version: 2 });
+            openFieldMenu([1, 2]);
+            const clear = entry("setSelectedMarchersToPreviousPage");
+            expect(clear).toHaveAttribute("aria-checked", "true");
+            expect(clear).toHaveAttribute("data-disabled");
+            expect(clear).toHaveTextContent(/^Clear this page \(selected\)/);
+            expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(
+                false,
+            );
+            // Both others would change everyone, with no count
+            expect(entry("timelineDefineAsShown")).toHaveTextContent(
+                /^Define as shown$/,
+            );
+        } finally {
+            SPANS[2] = saved;
+        }
+    });
+
+    it("on the first page, Clear this page and the holds are off: the starting spots are the marchers' own", () => {
+        mocks.selectedPage = PAGES[0];
+        openFieldMenu([1]);
+        for (const id of [
+            "timelineDefineAsShown",
+            "timelineHoldFromPrevious",
+            "setSelectedMarchersToPreviousPage",
+        ])
+            expect(entry(id)).toHaveAttribute("data-disabled");
+        expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(
+            false,
+        );
     });
 });
