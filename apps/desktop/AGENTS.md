@@ -14,6 +14,7 @@ adds what is specific to the Electron + React app.
 
 ## UI Text
 
+- Write all user-facing text through Tolgee: add the key and English text to `i18n/en.json`, a translator note to `i18n-meta/context.json` (written for someone without the code; update it whenever the text or its behavior changes), and show it with `t()` or `<T>`. Only English is needed; other languages come from Tolgee later. `pnpm check:i18n` enforces this; read [localization](../../docs/conventions/localization.md) for string rules, exceptions and the baseline.
 - Show keyboard shortcuts as keycaps, never as plain text. A shortcut is one `Keycaps` unit, a cap per key joined by "+" (e.g. Ctrl + Z), so never build one from separate caps or write the "+" yourself: build the keys with `formatBindingKeys` (`src/shortcuts/bindings.ts`, so Mac shows ⌘ and others Ctrl) and render them with `Keycaps` (`src/components/ui/Keycaps.tsx`). Inside translated text, put a tag in the string (`zoom out with <keys></keys>`) and render it with `<T params={{ keys: () => <Keycaps … /> }}>`. For an action's own shortcut use `getActionShortcutKeys` (`src/shortcuts/labels.ts`). The timeline's small muted caps (`Keycaps` in `src/components/timeline/ShortcutTooltip.tsx`) follow the same rule.
 
 ## Field

@@ -27,6 +27,8 @@
         "lint:check": "eslint .",
         "format": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
+        "check:i18n": "node scripts/i18n/check-i18n.mjs",
+        "test:check-i18n": "node --test scripts/i18n/__tests__/check-i18n.test.mjs",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest run --silent",
         "test:focused": "vitest run --silent=true",

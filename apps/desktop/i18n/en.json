@@ -262,6 +262,7 @@
                 "addBeat": "Add Beat",
                 "cannotDeleteOnPage": "Beats on pages cannot be deleted",
                 "errorCreating": "Error creating beat",
+                "errorCreatingMeasure": "Error creating measure",
                 "errorDeleting": "Error deleting beat",
                 "markAsMeasure": "Mark as Measure"
             },
@@ -2531,7 +2532,9 @@
         "rangeMenu": {
             "deleteWithMoves": "Delete page and its moves",
             "followAgain": "Let selected marchers follow again",
-            "keepHere": "Keep selected marchers here"
+            "keepHere": "Keep selected marchers here",
+            "setAsShown": "Set as shown",
+            "setAsShownNone": "Every selected marcher is already set on {page}, or partway through a move"
         },
         "startFlagPositions": {
             "always": "Always",
@@ -2615,6 +2618,9 @@
             "snapToggleCaption": "Snap",
             "toNextPagePositions": "...to next page positions",
             "toPreviousPagePositions": "...to previous page positions"
+        },
+        "collisions": {
+            "collisionsToolbar": "Collisions"
         },
         "select": {
             "drillPrefixesLabel": "Select drill prefixes",

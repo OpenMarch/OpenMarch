@@ -26,5 +26,7 @@ Use these references when their condition applies:
   multi-table write.
 - Read [multi-query hooks](multi-query-hooks.md) before combining data from several
   queries.
+- Read [localization](localization.md) before adding or changing user-facing text
+  in the desktop app.
 - Read [testing](testing.md) before writing or running unit tests.
 - Read [troubleshooting](troubleshooting.md) when local hooks or formatting misbehave.

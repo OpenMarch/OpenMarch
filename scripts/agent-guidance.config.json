@@ -42,6 +42,7 @@
         "docs/conventions/database-interactions.md",
         "docs/conventions/database-transactions.md",
         "docs/conventions/multi-query-hooks.md",
+        "docs/conventions/localization.md",
         "docs/conventions/testing.md",
         "docs/conventions/troubleshooting.md"
     ]
