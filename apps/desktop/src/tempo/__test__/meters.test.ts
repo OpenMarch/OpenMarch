@@ -9,6 +9,7 @@ import {
 } from "../meters";
 
 import { planMeter } from "../meterPlan";
+import { readMeters } from "../meters";
 import { parseMeter as parse } from "../meters";
 import { startsOf } from "../tempoMath";
 
@@ -58,6 +59,73 @@ describe("meters", () => {
     });
 });
 
+/** Stored measures from starts and written time signatures ("" for none) */
+const stored = (spec: [number, string][]) =>
+    spec.map(([start, text]) => {
+        const m = text ? parse(text)! : null;
+        return {
+            start,
+            meter: m ? `${m.top}/${m.bottom}` : null,
+            grouping: m ? m.grouping.join("+") : null,
+        };
+    });
+/** A plan's measures back as stored measures */
+const asStored = (plan: ReturnType<typeof planMeter>) =>
+    plan.measures.map((m) => ({
+        start: m.start,
+        meter: m.meter ? `${m.meter.top}/${m.meter.bottom}` : null,
+        grouping: m.meter ? m.meter.grouping.join("+") : null,
+    }));
+/** "start:meter" for each measure, "-" where none is written */
+const show = (ms: { start: number; meter: string | null }[]) =>
+    ms.map((m) => `${m.start}:${m.meter ?? "-"}`).join(" ");
+
+describe("readMeters", () => {
+    it("carries a written time signature on to the next one", () => {
+        const read = readMeters([
+            { counts: 4, meter: "4/4" },
+            { counts: 4 },
+            { counts: 3, meter: "3/4" },
+            { counts: 3 },
+            { counts: 2 },
+            { counts: 3, meter: "3/4" },
+        ]);
+        expect(read.map((r) => r.written)).toEqual([
+            true,
+            false,
+            true,
+            false,
+            false,
+            true,
+        ]);
+        expect(read.map((r) => r.meter.top)).toEqual([4, 4, 3, 3, 3, 3]);
+        expect(read.map((r) => r.short)).toEqual([
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+        ]);
+    });
+    it("reads older shows (nothing stored) from measure lengths", () => {
+        const read = readMeters([
+            { counts: 4 },
+            { counts: 4 },
+            { counts: 2 },
+            { counts: 4 },
+        ]);
+        expect(read.map((r) => r.written)).toEqual([true, false, true, true]);
+        expect(read.map((r) => r.meter.top)).toEqual([4, 4, 2, 4]);
+    });
+    it("gives each count of a grouping its eighths", () => {
+        expect(
+            readMeters([{ counts: 3, meter: "7/8", grouping: "2+2+3" }])[0]!
+                .units,
+        ).toEqual([2, 2, 3]);
+    });
+});
+
 describe("planMeter", () => {
     it("keeps every count's tempo: a rit. and an a tempo survive 4/4 to 2/4", () => {
         // 4/4 at 120, a rit. to 90 over m. 2 and 3, a tempo at m. 4 (counts 13–16)
@@ -71,13 +139,20 @@ describe("planMeter", () => {
         const plan = planMeter({
             durations,
             locks: new Set(),
-            measureStarts: [1, 5, 9, 13, 17],
+            measures: stored([
+                [1, "4/4"],
+                [5, ""],
+                [9, ""],
+                [13, ""],
+                [17, ""],
+            ]),
             beatCount: durations.length,
             start: 9,
             meter: parse("2/4")!,
-            units: [],
         });
-        expect(plan.steps[0]!.starts).toEqual([9, 11, 13, 15, 17, 19]);
+        expect(show(asStored(plan))).toBe(
+            "1:4/4 5:- 9:2/4 11:- 13:- 15:- 17:- 19:-",
+        );
         expect(plan.result.durations).toEqual(durations);
     });
     it("a longer count keeps its own tempo inside a rit.", () => {
@@ -85,11 +160,13 @@ describe("planMeter", () => {
         const plan = planMeter({
             durations,
             locks: new Set(),
-            measureStarts: [1, 4],
+            measures: stored([
+                [1, "3/4"],
+                [4, ""],
+            ]),
             beatCount: durations.length,
             start: 1,
             meter: parse("7/8 2+2+3")!,
-            units: [],
         });
         expect(plan.result.durations.slice(1)).toEqual([
             0.5,
@@ -100,187 +177,211 @@ describe("planMeter", () => {
             0.75 * 1.5,
         ]);
     });
-    it("regroups a run of 3-count measures as 7/8 2+2+3 at the same quarter tempo, keeping the next pin", () => {
-        // beat 0, 8 counts of 4/4 at 120 (measures at 1, 5), 6 counts in 3s (measures at 9, 12), 4 more (15)
+    it("7/8 2+2+3 on a 3/4 section keeps the pin at the next time signature", () => {
+        // 4/4 (1, 5), 3/4 (9, 12), 4/4 again at 15
         const durations = [0, ...Array<number>(18).fill(0.5)];
         const plan = planMeter({
             durations,
             locks: new Set([15]),
-            measureStarts: [1, 5, 9, 12, 15],
+            measures: stored([
+                [1, "4/4"],
+                [5, ""],
+                [9, "3/4"],
+                [12, ""],
+                [15, "4/4"],
+            ]),
             beatCount: 19,
             start: 9,
             meter: parse("7/8 2+2+3")!,
-            units: [],
         });
-        expect(plan.steps).toMatchObject([
-            { from: 9, to: 15, starts: [9, 12] },
-        ]);
-        expect(plan.shift).toBeNull();
-        // 2, 2, 3 eighths at ♩=120: 0.5, 0.5, 0.75 — but pin 15 is held, so the stretch is scaled to fit
+        expect(show(asStored(plan))).toBe("1:4/4 5:- 9:7/8 12:- 15:4/4");
         const d = plan.result.durations.slice(9, 15);
         expect(d[2]! / d[0]!).toBeCloseTo(1.5);
         expect(startsOf(plan.result.durations)[15]).toBeCloseTo(
             startsOf(durations)[15]!,
         );
     });
-});
-
-describe("planMeter, just this measure", () => {
-    // 8 bars of 4/4 (counts 1–32), then 3/4 bars from 33 to 41
-    const durations = [0, ...Array<number>(41).fill(0.5)];
-    const measureStarts = [1, 5, 9, 13, 17, 21, 25, 29, 33, 36, 39];
-    const base = {
-        durations,
-        locks: new Set<number>(),
-        measureStarts,
-        beatCount: durations.length,
-        units: [],
-    };
-    const four = parse("4/4")!;
-
-    it("one 2/4 bar: the measures after keep their meters and start 2 counts earlier", () => {
-        const plan = planMeter({
-            ...base,
-            start: 1,
-            meter: parse("2/4")!,
-            only: { old: four },
-        });
-        expect(plan.steps).toMatchObject([{ from: 1, to: 5, starts: [1] }]);
-        expect(plan.shift).toEqual({ from: 5, by: -2 });
-        expect(plan.result.durations).toEqual(durations);
-    });
-
-    it("keeps pins where nothing changes length", () => {
-        const plan = planMeter({
-            ...base,
-            locks: new Set([7, 11]),
-            start: 5,
-            meter: parse("2/4")!,
-            only: { old: four },
-        });
-        expect([...plan.result.locks].sort((a, b) => a - b)).toEqual([7, 11]);
-    });
-
-    it("one 5/4 bar moves the measures after 1 count later", () => {
-        const plan = planMeter({
-            ...base,
-            start: 29,
-            meter: parse("5/4")!,
-            only: { old: four },
-        });
-        expect(plan.shift).toEqual({ from: 33, by: 1 });
-    });
-
-    it("the last stored measure: what's left of it is the old meter again", () => {
-        const plan = planMeter({
-            ...base,
-            measureStarts: [1, 5],
-            beatCount: 9,
-            durations: durations.slice(0, 9),
-            start: 5,
-            meter: parse("2/4")!,
-            only: { old: four },
-        });
-        expect(plan.shift).toBeNull();
-        expect(plan.steps).toMatchObject([
-            { from: 5, to: 9, starts: [5] },
-            { from: 7, to: 9, starts: [7], meter: four },
-        ]);
-    });
-});
-
-describe("planMeter leaves no short measure before the next change (owner, 2026-11-02)", () => {
-    // 8 bars of 4/4 (counts 1–32), then 3/4 bars from 33 to 41
-    const durations = [0, ...Array<number>(41).fill(0.5)];
-    const base = {
-        durations,
-        locks: new Set<number>(),
-        beatCount: durations.length,
-        units: [],
-    };
-
-    it("2/4 to the next change, then 4/4 from the measure after, is one 2/4 bar", () => {
-        const first = planMeter({
-            ...base,
-            measureStarts: [1, 5, 9, 13, 17, 21, 25, 29, 33, 36, 39],
-            start: 1,
-            meter: parse("2/4")!,
-        });
-        expect(first.shift).toBeNull();
-        const twos = first.steps[0]!.starts;
-        expect(twos).toEqual([
-            1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31,
-        ]);
-        const second = planMeter({
-            ...base,
-            measureStarts: [...twos, 33, 36, 39],
-            start: 3,
-            meter: parse("4/4")!,
-        });
-        // 30 counts: seven bars of 4/4 and 2 left over, which the 3/4 bars start with
-        expect(second.steps[0]!.starts).toEqual([3, 7, 11, 15, 19, 23, 27]);
-        expect(second.shift).toEqual({ from: 33, by: -2 });
-        const only = planMeter({
-            ...base,
-            measureStarts: [1, 5, 9, 13, 17, 21, 25, 29, 33, 36, 39],
-            start: 1,
-            meter: parse("2/4")!,
-            only: { old: parse("4/4")! },
-        });
-        // the same downbeats: 1, 3, 7 … 27, then the 3/4 bars from 31
-        expect(only.shift).toEqual({ from: 5, by: -2 });
-    });
-
-    it("a lone 2-count measure set to 4/4 takes 2 counts from after it", () => {
-        const plan = planMeter({
-            ...base,
-            measureStarts: [1, 5, 9, 11, 15],
-            start: 9,
-            meter: parse("4/4")!,
-        });
-        expect(plan.steps[0]!.starts).toEqual([9]);
-        expect(plan.shift).toEqual({ from: 11, by: 2 });
-    });
-
-    it("a run that fills whole measures moves nothing", () => {
-        const plan = planMeter({
-            ...base,
-            measureStarts: [1, 5, 9, 13, 17, 21, 25, 29, 33, 36, 39],
-            start: 1,
-            meter: parse("2/4")!,
-        });
-        expect(plan.shift).toBeNull();
-    });
-
-    it("the show's last measures may end short", () => {
-        // ten bars of 4/4 to the end of the stored counts
-        const plan = planMeter({
-            ...base,
-            durations: durations.slice(0, 41),
-            beatCount: 41,
-            measureStarts: [1, 5, 9, 13, 17, 21, 25, 29, 33, 37],
-            start: 1,
-            meter: parse("3/4")!,
-        });
-        expect(plan.shift).toBeNull();
-        expect(plan.steps[0]!.starts).toEqual([
-            1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40,
-        ]);
-    });
-});
-
-describe("planMeter keeps pins", () => {
     it("4/4 to 2/4 lets go of no pin", () => {
         const durations = [0, ...Array<number>(16).fill(0.5)];
         const plan = planMeter({
             durations,
             locks: new Set([7, 11]),
-            measureStarts: [1, 5, 9, 13],
+            measures: stored([
+                [1, ""],
+                [5, ""],
+                [9, ""],
+                [13, ""],
+            ]),
             beatCount: durations.length,
             start: 5,
             meter: parse("2/4")!,
-            units: [],
         });
         expect([...plan.result.locks].sort((a, b) => a - b)).toEqual([7, 11]);
+    });
+});
+
+describe("planMeter: written time signatures (owner, 2026-11-02)", () => {
+    // 4/4 bars from 1 to 20, a 3/4 section from 21, 4/4 again from 33; 44 counts stored
+    const durations = [0, ...Array<number>(44).fill(0.5)];
+    const start = stored([
+        [1, "4/4"],
+        [5, ""],
+        [9, ""],
+        [13, ""],
+        [17, ""],
+        [21, "3/4"],
+        [24, ""],
+        [27, ""],
+        [30, ""],
+        [33, "4/4"],
+        [37, ""],
+        [41, ""],
+    ]);
+    const set = (
+        measures: ReturnType<typeof stored>,
+        at: number,
+        text: string,
+        only = false,
+        lengths: readonly number[] = durations,
+    ) =>
+        planMeter({
+            durations: lengths,
+            locks: new Set(),
+            measures,
+            beatCount: 45,
+            start: at,
+            meter: parse(text)!,
+            only,
+        });
+
+    it("until the next written one: the 3/4 section after it never moves", () => {
+        const plan = set(start, 9, "3/4");
+        // 12 counts of 3/4 run straight into the written 3/4: two sections, both kept
+        expect(show(asStored(plan))).toBe(
+            "1:4/4 5:- 9:3/4 12:- 15:- 18:- 21:3/4 24:- 27:- 30:- 33:4/4 37:- 41:-",
+        );
+        expect(plan.short).toBeNull();
+        expect(plan.shift).toBe(0);
+    });
+
+    it("counts that don't divide leave the last measure before it short", () => {
+        const plan = set(start, 13, "3/4");
+        expect(show(asStored(plan))).toBe(
+            "1:4/4 5:- 9:- 13:3/4 16:- 19:- 21:3/4 24:- 27:- 30:- 33:4/4 37:- 41:-",
+        );
+        expect(plan.short).toEqual({ start: 19, counts: 2 });
+    });
+
+    it("just this measure moves every measure after it, written ones too", () => {
+        const plan = set(start, 9, "2/4", true);
+        expect(show(asStored(plan))).toBe(
+            "1:4/4 5:- 9:2/4 11:4/4 15:- 19:3/4 22:- 25:- 28:- 31:4/4 35:- 39:- 43:-",
+        );
+        expect(plan.shift).toBe(-2);
+        expect(plan.short).toBeNull();
+    });
+
+    // any time signature, at any measure, then the old one back at that measure: exactly as before
+    const cases: [number, string, boolean][] = [];
+    for (const at of [1, 9, 17, 21, 27, 33])
+        for (const text of ["2/4", "3/4", "5/4", "6/8", "7/8 2+2+3", "4/4"])
+            for (const only of [false, true]) cases.push([at, text, only]);
+    it.each(cases)(
+        "at %i, %s (just this measure: %s), then back",
+        (at, text, only) => {
+            const read = readMeters(
+                start.map((m, i) => ({
+                    ...m,
+                    counts: (start[i + 1]?.start ?? 45) - m.start,
+                })),
+            );
+            const old = read[start.findIndex((m) => m.start === at)]!.meter;
+            const oldText = `${old.top}/${old.bottom} ${old.grouping.join("+")}`;
+            const there = set(start, at, text, only);
+            const back = set(
+                asStored(there),
+                at,
+                oldText,
+                only,
+                there.result.durations,
+            );
+            expect(show(asStored(back))).toBe(show(start));
+            expect(back.result.durations.map((d) => +d.toFixed(9))).toEqual(
+                durations,
+            );
+        },
+    );
+
+    // two changes, then each put back in turn: the show after each step back is the one before
+    const nested: [number, string, boolean, number, string, boolean][] = [];
+    for (const [a, ta] of [
+        [9, "3/4"],
+        [17, "2/4"],
+        [21, "5/4"],
+    ] as const)
+        for (const [b, tb] of [
+            [1, "6/8"],
+            [13, "2/4"],
+            [33, "3/4"],
+        ] as const)
+            for (const oa of [false, true])
+                for (const ob of [false, true])
+                    nested.push([a, ta, oa, b, tb, ob]);
+    it.each(nested)(
+        "%i to %s (only: %s), then %i to %s (only: %s), then each back",
+        (a, ta, oa, b, tb, ob) => {
+            const backText = (ms: ReturnType<typeof stored>, at: number) => {
+                const read = readMeters(
+                    ms.map((m, i) => ({
+                        ...m,
+                        counts: (ms[i + 1]?.start ?? 45) - m.start,
+                    })),
+                );
+                const i = ms.findIndex((m) => m.start === at);
+                if (i < 0) return null;
+                const o = read[i]!.meter;
+                return `${o.top}/${o.bottom} ${o.grouping.join("+")}`;
+            };
+            const oldA = backText(start, a)!;
+            const one = set(start, a, ta, oa);
+            const s1 = asStored(one);
+            const oldB = backText(s1, b);
+            if (oldB === null) return; // b isn't a measure start any more
+            const two = set(s1, b, tb, ob, one.result.durations);
+            const backB = set(asStored(two), b, oldB, ob, two.result.durations);
+            expect(show(asStored(backB))).toBe(show(s1));
+            const backA = set(
+                asStored(backB),
+                a,
+                oldA,
+                oa,
+                backB.result.durations,
+            );
+            expect(show(asStored(backA))).toBe(show(start));
+            expect(backA.result.durations.map((d) => +d.toFixed(9))).toEqual(
+                durations,
+            );
+        },
+    );
+
+    it("older shows get their time signatures written in", () => {
+        const plan = planMeter({
+            durations: durations.slice(0, 19),
+            locks: new Set(),
+            measures: stored([
+                [1, ""],
+                [5, ""],
+                [9, ""],
+                [11, ""],
+                [15, ""],
+            ]),
+            beatCount: 19,
+            start: 1,
+            meter: parse("2/4")!,
+        });
+        // 4/4 4/4 then 2/4 then 4/4: the 2/4 and the 4/4 after it are written now, and stay
+        expect(show(asStored(plan))).toBe(
+            "1:2/4 3:- 5:- 7:- 9:2/4 11:4/4 15:-",
+        );
     });
 });

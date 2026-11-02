@@ -108,9 +108,10 @@ import { tempoSettingsKey, writeAudioOffset } from "./audioOffset";
 import {
     METER_CHOICES,
     meterLabel,
-    meterOfMeasure,
     parseMeter,
     quarterBpmOf,
+    readMeters,
+    type MeasureMeter,
 } from "./meters";
 import { planMeter, writeMeter } from "./meterWrites";
 import { createLabelPlacer, textWidth, type LabelBox } from "./bandLayout";
@@ -253,16 +254,20 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const starts = useMemo(() => startsOf(durations), [durations]);
     // Eighths per count, from each measure's grouping (2 = a quarter): the tempo lane reads in
     // quarter notes, so 7/8 as 2+2+3 at ♩=176 reads 176, not a sawtooth
+    // Each measure's time signature: written on it, or carried on from the last one written
+    const meters = useMemo(() => readMeters(data.measures), [data.measures]);
+    const meterOf = useCallback(
+        (m: (typeof data.measures)[number]): MeasureMeter =>
+            meters[data.measures.indexOf(m)]!,
+        [data.measures, meters],
+    );
     const units = useMemo(() => {
         const out: number[] = [];
-        for (const m of data.measures) {
-            if (!m.meter) continue;
-            const g = meterOfMeasure(m).grouping;
-            if (g.length !== m.counts) continue;
-            g.forEach((u, i) => (out[m.start + i] = u));
-        }
+        data.measures.forEach((m, i) =>
+            meters[i]!.units.forEach((u, j) => (out[m.start + j] = u)),
+        );
         return out;
-    }, [data.measures]);
+    }, [data.measures, meters]);
     /** Count `b`'s tempo, in quarter notes per minute */
     const qBpm = useCallback(
         (b: number, d: readonly number[] = durations) =>
@@ -700,12 +705,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         // gets a bracket along the foot of the measures lane with its eighths in it ("2 2 3"), and
         // the long counts are in the accent (sam: "I can't see the long third count")
         for (const m of data.measures) {
-            if (
-                !m.meter ||
-                m.start > lastBeat ||
-                m.start + m.counts < firstBeat
-            )
-                continue;
+            if (m.start > lastBeat || m.start + m.counts < firstBeat) continue;
             const g = Array.from(
                 { length: m.counts },
                 (_, i) => units[m.start + i],
@@ -1685,9 +1685,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         ? left + textWidth(m.mark, `bold 11px ${font}`) + 12
                         : -Infinity
                     : left +
-                      (!prev || prev.counts !== m.counts
+                      (meterOf(m).written
                           ? textWidth(
-                                meterLabel(meterOfMeasure(m)),
+                                meterLabel(meterOf(m).meter),
                                 `10px ${font}`,
                             ) + 16
                           : 0) +
@@ -2615,8 +2615,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         } else if (y < TEMPO.top && m) {
             // B: the marks and measures lanes: the measure
             const measure = { from: m.start, to: m.start + m.counts };
-            const meter = m.meter ?? `${m.counts}/4`;
-            const [top, bottom] = meter.split("/");
+            const meter = meterLabel(meterOf(m).meter, true);
+            const [top, bottom] = meter.split(" ")[0]!.split("/");
             title = `Measure ${m.number}`;
             subtitle = m.mark ? `${meter} · mark ${m.mark}` : meter;
             items.push(
@@ -2835,48 +2835,44 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
             return;
         }
-        const measureStarts = data.measures
-            .filter((m) => m.id !== null)
-            .map((m) => m.start);
         const label = meterLabel(meter, true);
         const was = measureAt(start);
-        const old = was ? meterOfMeasure(was) : null;
-        const common = {
+        // just this measure: the measures after keep their time signatures and move to follow
+        // it (a 2/4 bar in 4/4 brings the downbeats after it 2 counts earlier, as in the score)
+        const plan = planMeter({
             durations: data.durations,
             locks: data.locks,
-            measureStarts,
+            holds: data.holds,
+            measures: data.measures.filter((m) => m.id !== null),
             beatCount: data.storedCount,
             start,
             meter,
-            units,
-            holds: data.holds,
-        };
-        // This measure only: the measures after keep their meters and move to follow it (a 2/4
-        // bar in a 4/4 piece brings the downbeats after it 2 counts earlier, as in the score)
-        const plan = planMeter({
-            ...common,
-            only: only && old ? { old } : undefined,
+            only,
         });
-        // a meter that changes count lengths re-times the counts, which lets go of the pins
-        // inside; say so (4/4 to 2/4 keeps them all)
+        // a time signature that changes count lengths re-times the counts, which lets go of the
+        // pins inside; say so (4/4 to 2/4 keeps them all)
         const dropped = [...data.locks].filter(
             (l) => !plan.result.locks.has(l),
         );
         const pinsNote = dropped.length
             ? `. Unpinned ${dropped.length} count(s) inside, since their lengths changed`
             : "";
-        const by = plan.shift?.by ?? 0;
+        const by = plan.shift;
         const shiftNote = by
             ? `. The measures after it start ${Math.abs(by)} count${Math.abs(by) === 1 ? "" : "s"} ${by < 0 ? "earlier" : "later"}`
+            : "";
+        const shortNote = plan.short
+            ? `. The last measure before the next time signature is short: ${plan.short.counts} count${plan.short.counts === 1 ? "" : "s"} (marked *)`
             : "";
         setPreview(plan.result);
         void run("Time signature", async () => {
             await writeMeter({ plan, before: data.durations });
             await refetch();
             toast.success(
-                (only && old
-                    ? `${label} for m. ${was!.number} only; the tempo is as it was`
+                (only && was
+                    ? `${label} for m. ${was.number} only; the tempo is as it was`
                     : `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was`) +
+                    shortNote +
                     shiftNote +
                     pinsNote,
                 { id: NOTE_TOAST },
@@ -2985,24 +2981,15 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const prev = data.measures[i - 1];
         const next = data.measures[i + 1];
         const visible = m.start + m.counts >= firstBeat && m.start <= lastBeat;
-        const changed = !prev || m.counts !== prev.counts;
-        // A short measure (marked *) is one cut short, not one with its own time signature: a
-        // single 2/4 bar set for that measure only shows its chip
-        const stored = m.meter
-            ? parseMeter(m.grouping ? `${m.meter} ${m.grouping}` : m.meter)
-            : null;
-        const ownMeter = !!stored && stored.grouping.length === m.counts;
-        const partial =
-            !ownMeter &&
-            !!prev &&
-            m.counts < prev.counts &&
-            (!next || next.counts !== m.counts);
+        // A chip where a time signature is written; a measure with fewer counts than its time
+        // signature is short (marked *). The show's last measure runs on, so it never is
+        const { meter: mMeter, written: changed, short } = meters[i]!;
+        const partial = short && !!next;
         if (!visible) return;
         const left = xOf(m.start, ppb);
         const chip = changed && !partial;
         const chipWidth = chip
-            ? textWidth(meterLabel(meterOfMeasure(m)), `10px ${fontFamily}`) +
-              10
+            ? textWidth(meterLabel(mMeter), `10px ${fontFamily}`) + 10
             : 0;
         const measureWidth = ppb * m.counts;
         const numberText = `${m.number}${partial ? "*" : ""}`;
@@ -3072,7 +3059,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         data-meter-start={m.start}
                         className="bg-fg-1 border-stroke text-text hover:border-accent absolute rounded-full border px-4 text-[10px] leading-[14px] whitespace-nowrap"
                         style={{ left: box.x, top: box.y }}
-                        title={`Time signature ${meterLabel(meterOfMeasure(m), true)}: click to change it from here to the next change`}
+                        title={`Time signature ${meterLabel(mMeter, true)}: click to change it from here to the next time signature`}
                         // A press goes on to the lane, so a drag from the chip selects measures
                         // and a click without a drag opens the menu there (priya, jo); this is
                         // for Enter and Space on the focused chip
@@ -3082,7 +3069,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                             setMenu(signatureMenu(r.left, r.bottom, m.start));
                         }}
                     >
-                        {meterLabel(meterOfMeasure(m))}
+                        {meterLabel(mMeter)}
                     </button>
                 ),
             });

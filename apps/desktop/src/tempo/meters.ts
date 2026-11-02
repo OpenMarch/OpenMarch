@@ -120,3 +120,88 @@ export const METER_CHOICES: readonly string[] = [
     "7/8 2+3+2",
     "3/2",
 ];
+
+/** Same meter and grouping */
+export const sameMeter = (a: Meter | null, b: Meter | null): boolean =>
+    !!a &&
+    !!b &&
+    a.top === b.top &&
+    a.bottom === b.bottom &&
+    a.grouping.join("+") === b.grouping.join("+");
+
+/** n counts of n/4 */
+const meterByCounts = (counts: number): Meter => ({
+    top: Math.max(1, counts),
+    bottom: 4,
+    grouping: Array<number>(Math.max(1, counts)).fill(2),
+});
+
+/** A stored meter, parsed: null when there's none (or it doesn't read) */
+export function storedMeterOf(measure: {
+    meter?: string | null;
+    grouping?: string | null;
+}): Meter | null {
+    if (!measure.meter) return null;
+    return parseMeter(
+        measure.grouping
+            ? `${measure.meter} ${measure.grouping}`
+            : measure.meter,
+    );
+}
+
+export interface MeasureMeter {
+    /** The time signature in effect: written here, or the one before carried on */
+    meter: Meter;
+    /** A time signature is written here: where a stretch of measures starts */
+    written: boolean;
+    /** Fewer counts than its meter (a short measure, marked *) */
+    short: boolean;
+    /** Eighths of each of its counts */
+    units: number[];
+}
+
+/**
+ * Every measure's time signature, as in a score (owner, 2026-11-02): a measure with a stored meter
+ * has one written there, and the measures after carry it on until the next written one. A measure
+ * with fewer counts than its meter is short; with more, its extra counts are quarters.
+ *
+ * Shows with no stored meter at all (older files) read the old way: each measure is its counts/4,
+ * and one is written wherever the length changes. The first time signature edit writes those in.
+ */
+export function readMeters(
+    measures: readonly {
+        counts: number;
+        meter?: string | null;
+        grouping?: string | null;
+    }[],
+): MeasureMeter[] {
+    const legacy = !measures.some((m) => m.meter);
+    const out: MeasureMeter[] = [];
+    measures.forEach((m, i) => {
+        const prev = out[i - 1];
+        const stored = storedMeterOf(m);
+        let meter: Meter;
+        let written: boolean;
+        if (stored) {
+            meter = stored;
+            written = true;
+        } else if (!prev) {
+            meter = meterByCounts(m.counts);
+            written = true;
+        } else if (legacy) {
+            meter = meterByCounts(m.counts);
+            written = m.counts !== measures[i - 1]!.counts;
+        } else {
+            meter = prev.meter;
+            written = false;
+        }
+        const g = meter.grouping;
+        out.push({
+            meter,
+            written,
+            short: m.counts < g.length,
+            units: Array.from({ length: m.counts }, (_, j) => g[j] ?? 2),
+        });
+    });
+    return out;
+}

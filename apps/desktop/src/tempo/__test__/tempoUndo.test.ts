@@ -66,6 +66,7 @@ describeDbTests("tempo mode undo and redo", (it) => {
     }) => {
         // measures of 4 counts from count 1 to 24
         const rows = await beats(db);
+        await db.delete(schema.measures).run();
         await db
             .insert(schema.measures)
             .values(
@@ -88,11 +89,10 @@ describeDbTests("tempo mode undo and redo", (it) => {
         const plan = planMeter({
             durations: before,
             locks: new Set(),
-            measureStarts: [1, 5, 9, 13, 17, 21],
+            measures: [1, 5, 9, 13, 17, 21].map((start) => ({ start })),
             beatCount: rows.length,
             start: 5,
             meter,
-            units: [],
         });
         await writeMeter({ plan, before });
         const measuresAfter = await measuresNow();
@@ -108,61 +108,81 @@ describeDbTests("tempo mode undo and redo", (it) => {
         expect(await lengths(db)).toEqual(lengthsAfter);
     });
 
-    it("one 2/4 bar moves the measures after it, keeping their meters, as one edit", async ({
+    it("one 2/4 bar moves the measures after it, and 4/4 for that bar puts them back", async ({
         db,
         marchersAndPages: _,
     }) => {
-        // 4/4 from count 1, then a 3/4 bar marked B at 13 and 4/4 to the end
+        // 4/4 from count 1, a 3/4 bar marked B at 13, 4/4 again from 16 to the end
         const rows = await beats(db);
         await db.delete(schema.measures).run();
         await db
             .insert(schema.measures)
             .values([
-                ...[1, 5, 9].map((b) => ({
-                    start_beat: rows[b]!.id,
-                    meter: "4/4",
-                })),
-                { start_beat: rows[13]!.id, meter: "3/4", rehearsal_mark: "B" },
-                ...[16, 20, 24, 28, 32, 36, 40, 44].map((b) => ({
-                    start_beat: rows[b]!.id,
-                    meter: "4/4",
-                })),
+                { start_beat: rows[1]!.id, meter: "4/4", grouping: "2+2+2+2" },
+                ...[5, 9].map((b) => ({ start_beat: rows[b]!.id })),
+                {
+                    start_beat: rows[13]!.id,
+                    meter: "3/4",
+                    grouping: "2+2+2",
+                    rehearsal_mark: "B",
+                },
+                { start_beat: rows[16]!.id, meter: "4/4", grouping: "2+2+2+2" },
+                // to the end of the stored counts, as in a show
+                ...Array.from(
+                    { length: Math.ceil((rows.length - 20) / 4) },
+                    (_, i) => ({ start_beat: rows[20 + 4 * i]!.id }),
+                ),
             ])
             .run();
         const ordinalOf = new Map(rows.map((r, i) => [r.id, i]));
+        const all = async () => await db.select().from(schema.measures).all();
         const measuresNow = async () =>
-            (await db.select().from(schema.measures).all())
+            (await all())
                 .map((m) => [
                     ordinalOf.get(m.start_beat)!,
                     m.meter,
                     m.rehearsal_mark,
                 ])
                 .sort((a, b) => (a[0] as number) - (b[0] as number));
+        const stored = async () =>
+            (await all()).map((m) => ({
+                ...m,
+                start: ordinalOf.get(m.start_beat)!,
+            }));
         const before = await measuresNow();
         const durations = await lengths(db);
-        const plan = planMeter({
-            durations,
-            locks: new Set(),
-            measureStarts: before.map(([o]) => o as number),
-            beatCount: rows.length,
-            start: 5,
-            meter: parseMeter("2/4")!,
-            units: [],
-            only: { old: parseMeter("4/4")! },
-        });
-        await writeMeter({ plan, before: durations });
-        expect(await measuresNow()).toEqual([
+        const set = async (text: string) =>
+            await writeMeter({
+                plan: planMeter({
+                    durations: await lengths(db),
+                    locks: new Set(),
+                    measures: await stored(),
+                    beatCount: rows.length,
+                    start: 5,
+                    meter: parseMeter(text)!,
+                    only: true,
+                }),
+                before: await lengths(db),
+            });
+        await set("2/4");
+        expect((await measuresNow()).slice(0, 7)).toEqual([
             [1, "4/4", null],
             [5, "2/4", null],
             [7, "4/4", null],
             [11, "3/4", "B"],
-            ...[14, 18, 22, 26, 30, 34, 38, 42].map((o) => [o, "4/4", null]),
-            // the last bar keeps its length; the 2 counts freed at the end start another
-            [rows.length - 2, "4/4", null],
+            [14, "4/4", null],
+            [18, null, null],
+            [22, null, null],
         ]);
         expect(await lengths(db)).toEqual(durations);
+        // one undo step
         await performUndo(db);
         expect(await measuresNow()).toEqual(before);
+        await performRedo(db);
+        // and 4/4 for that bar again puts everything back
+        await set("4/4");
+        expect(await measuresNow()).toEqual(before);
+        expect(await lengths(db)).toEqual(durations);
     });
 
     it("the music offset undoes, alone and with the counts it lined up", async ({

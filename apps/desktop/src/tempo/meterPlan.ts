@@ -1,141 +1,227 @@
 /**
- * PROTOTYPE (tempo mode): the plan for setting a meter with a grouping (pure; written by
- * `meterWrites.ts`). See there for what it does.
+ * PROTOTYPE (tempo mode): the plan for setting a time signature (pure; written by
+ * `meterWrites.ts`).
+ *
+ * Time signatures are written as in a score (owner, 2026-11-02): on the measure where one starts,
+ * carried on by the measures after until the next written one (`readMeters`). Setting one never
+ * moves a written time signature after it, except "just this measure", which changes one bar's
+ * length so everything after it moves, as in the score. Setting a measure back to the time
+ * signature before it clears it again, so any change can be changed back exactly.
  */
-import { regroupMeasures, retime, type TempoEditResult } from "./tempoMath";
-import { type Meter } from "./meters";
+import { retime, type TempoEditResult } from "./tempoMath";
+import { readMeters, sameMeter, type Meter } from "./meters";
 
-/** Measures `from`..`to - 1` regrouped to start at `starts`, each in `meter` */
-export interface MeterStep {
-    from: number;
-    to: number;
-    starts: number[];
-    meter: Meter;
+/** A stored measure: its first count, and the time signature written there (null: none) */
+export interface PlanMeasure {
+    start: number;
+    meter: Meter | null;
+}
+
+/** A measure after the edit; `from` is the start of the stored measure it was (null: new) */
+export interface NewMeasure extends PlanMeasure {
+    from: number | null;
 }
 
 export interface MeterPlan {
-    /** Where the new meter starts */
+    /** Where the new time signature starts */
     from: number;
-    steps: MeterStep[];
-    /**
-     * The stored measures from count `from` on move `by` counts (later when positive), each
-     * keeping its own meter: a 2/4 bar in 4/4 brings every downbeat after it 2 counts earlier, as
-     * in the score. Null when nothing after moves
-     */
-    shift: { from: number; by: number } | null;
+    /** Every stored measure after the edit, in order */
+    measures: NewMeasure[];
+    /** A measure left short before the next written time signature (marked *) */
+    short: { start: number; counts: number } | null;
+    /** Counts the measures after moved ("just this measure"; later when positive) */
+    shift: number;
     /** The new count lengths, and the pins after */
     result: TempoEditResult;
 }
 
+/** `readMeters` for a list of measures, each running to the next (the last to the stored end) */
+function readList(measures: readonly PlanMeasure[], beatCount: number) {
+    const end = Math.max(beatCount, (measures.at(-1)?.start ?? 0) + 1);
+    return readMeters(
+        measures.map((m, i) => ({
+            counts: (measures[i + 1]?.start ?? end) - m.start,
+            meter: m.meter ? `${m.meter.top}/${m.meter.bottom}` : null,
+            grouping: m.meter?.grouping.join("+") ?? null,
+        })),
+    );
+}
+
 /**
- * Plan `meter` from the measure starting at spec beat `start`: until the next change (the run of
- * measures as long as the one at `start`), or with `only`, for that measure alone.
+ * The end of the stored measures made regular: a last measure longer than its time signature is
+ * split into measures of it (the last may be short), as the counts past the end carry it on
+ */
+function fillEnd(measures: NewMeasure[], beatCount: number): NewMeasure[] {
+    const last = measures.at(-1);
+    if (!last) return measures;
+    const length = readList(measures, beatCount).at(-1)!.meter.grouping.length;
+    const out = [...measures];
+    for (let s = last.start + length; s < beatCount; s += length)
+        out.push({ start: s, meter: null, from: null });
+    return out;
+}
+
+/** Each count's eighths under a list of measures */
+function unitsOf(
+    measures: readonly PlanMeasure[],
+    beatCount: number,
+): number[] {
+    const read = readList(measures, beatCount);
+    const out: number[] = [];
+    measures.forEach((m, i) =>
+        read[i]!.units.forEach((u, j) => (out[m.start + j] = u)),
+    );
+    return out;
+}
+
+/**
+ * Plan `meter` at the measure starting at spec beat `start`.
  *
- * A time signature never leaves a short measure behind it. When the counts up to the next change
- * don't fill whole measures, the ones left over go to the next measure, which starts that much
- * earlier (a lone measure too short for the meter takes what it needs from after it instead); with
- * `only`, the measure gets the new meter's counts. Either way the measures after move to follow,
- * keeping their own meters, so 2/4 to the next change then 4/4 from the measure after is the same
- * as one 2/4 bar. Only the show's last stored measure may end short (the counts past it carry on
- * its meter).
+ * - Until the next written time signature: the measures from here to there are regrouped into
+ *   the new meter's counts. That one never moves, so when the counts don't divide evenly the last
+ *   measure before it is short.
+ * - `only` (just this measure): this measure gets the new meter's counts and the one after gets
+ *   the old time signature back; every measure after moves to follow (written ones too), as when
+ *   a bar changes length in a score.
  *
- * A time signature never changes the tempo: each count keeps its own quarter-note tempo (a
- * gradual change, an a tempo), and only a count that now holds a different number of eighths
- * changes length (the 3 of 7/8 2+2+3 is half as long again). 4/4 to 2/4 changes no lengths. Holds
- * keep theirs.
+ * A time signature never changes the tempo: each count keeps its quarter-note tempo, and only a
+ * count that now holds a different number of eighths changes length (the 3 of 7/8 2+2+3 is half
+ * as long again). Holds keep theirs.
  *
- * @param measureStarts first spec beat of every stored measure
+ * @param measures the stored measures, in order, with the time signatures written on them
+ *   (`readMeters` reads older shows' measure lengths as written ones; the plan writes them in)
  * @param beatCount stored counts
- * @param units each count's eighths now (missing: 2, a quarter note)
- * @param only the measure at `start` only; `old` is its meter now, which the counts left over
- * get back when it's the last stored measure
  */
 export function planMeter({
     durations,
     locks,
-    measureStarts,
+    holds,
+    measures,
     beatCount,
     start,
     meter,
-    units,
-    holds,
-    only,
+    only = false,
 }: {
     durations: readonly number[];
     locks: ReadonlySet<number>;
-    measureStarts: readonly number[];
+    holds?: ReadonlySet<number>;
+    measures: readonly {
+        start: number;
+        meter?: string | null;
+        grouping?: string | null;
+    }[];
     beatCount: number;
     start: number;
     meter: Meter;
-    units: readonly (number | undefined)[];
-    holds?: ReadonlySet<number>;
-    only?: { old: Meter };
+    only?: boolean;
 }): MeterPlan {
     const per = meter.grouping.length;
-    const sorted = [...measureStarts].sort((a, b) => a - b);
-    const i = sorted.indexOf(start);
-    const steps: MeterStep[] = [];
-    let oldTo: number;
-    let by = 0;
+    const sorted = [...measures].sort((a, b) => a.start - b.start);
+    const counts = sorted.map(
+        (m, i) => (sorted[i + 1]?.start ?? beatCount) - m.start,
+    );
+    const read = readMeters(
+        sorted.map((m, i) => ({ ...m, counts: counts[i]! })),
+    );
+    // as stored after the edit: older shows get their time signatures written in, and a long
+    // last measure is split
+    const before = fillEnd(
+        sorted.map((m, i) => ({
+            start: m.start,
+            meter: read[i]!.written ? read[i]!.meter : null,
+            from: m.start,
+        })),
+        beatCount,
+    );
+    const k = sorted.findIndex((m) => m.start === start);
+    const old = read[k]!.meter;
+    // the same as the one before: no time signature written here (that's changing it back)
+    const prior = k > 0 ? read[k - 1]!.meter : null;
+    const written = sameMeter(prior, meter) ? null : meter;
+    let after: NewMeasure[];
+    let short: MeterPlan["short"] = null;
+    let shift = 0;
     if (only) {
-        oldTo = sorted[i + 1] ?? beatCount;
-        steps.push({ from: start, to: oldTo, starts: [start], meter });
-        const grow = per - (oldTo - start);
-        if (i + 1 < sorted.length) by = grow;
-        else if (grow < 0)
-            // the last stored measure: what's left of it is the old meter again
-            steps.push({
-                from: start + per,
-                to: oldTo,
-                starts: [start + per],
-                meter: only.old,
-            });
-    } else {
-        const r = regroupMeasures(sorted, beatCount, start, per);
-        oldTo = r.to;
-        let starts = r.starts;
-        // stored measures after the run (the last one runs to the stored end)
-        if (r.leftover && r.to < beatCount) {
-            if (r.to - start > per) {
-                // the counts left over start the next measure: it comes that much earlier
-                by = -r.leftover;
-                starts = starts.slice(0, -1);
-            }
-            // a lone measure too short for the meter takes what it needs from after it
-            else by = per - r.leftover;
+        const own = (before[k + 1]?.start ?? beatCount) - start;
+        const head = before.slice(0, k);
+        const here: NewMeasure = { start, meter: written, from: start };
+        const next = before[k + 1];
+        if (next) {
+            shift = per - own;
+            const moved = before
+                .slice(k + 1)
+                .map((m) => ({ ...m, start: m.start + shift }));
+            // the old time signature again after it, unless that's what this bar has now
+            const back = next.meter ?? old;
+            moved[0] = {
+                ...moved[0]!,
+                meter: sameMeter(back, meter) ? null : back,
+            };
+            // moving later, a bar with no time signature pushed past the stored counts goes;
+            // moving earlier, the counts freed at the end get measures again (fillEnd, below)
+            after = [
+                ...head,
+                here,
+                ...moved.filter(
+                    (m, i) =>
+                        i === 0 || m.meter !== null || m.start < beatCount,
+                ),
+            ];
+        } else {
+            // the last stored measure: what's left of it is the old time signature again
+            const tail: NewMeasure[] =
+                per < own
+                    ? [
+                          {
+                              start: start + per,
+                              meter: sameMeter(old, meter) ? null : old,
+                              from: null,
+                          },
+                      ]
+                    : [];
+            after = [...head, here, ...tail];
         }
-        steps.push({ from: start, to: r.to, starts, meter });
+    } else {
+        const j = before.findIndex((m, i) => i > k && m.meter !== null);
+        const to = j < 0 ? beatCount : before[j]!.start;
+        const run: NewMeasure[] = [];
+        for (let s = start; s < to; s += per)
+            run.push({
+                start: s,
+                meter: s === start ? written : null,
+                from: before.some((m) => m.start === s) ? s : null,
+            });
+        const left = (to - start) % per;
+        if (left && j >= 0) short = { start: to - left, counts: left };
+        after = [
+            ...before.slice(0, k),
+            ...run,
+            ...(j < 0 ? [] : before.slice(j)),
+        ];
     }
-    // where the regrouped measures end now; past it, each count keeps the eighths it had
-    const end = oldTo + by;
-    const eighths = (b: number): number => {
-        if (b >= end) return units[b - by] ?? 2;
-        let step = steps[0]!;
-        for (const s of steps) if (b >= s.from) step = s;
-        let first = step.starts[0]!;
-        for (const s of step.starts) if (s <= b) first = s;
-        const g = step.meter.grouping;
-        return g[(b - first) % g.length]!;
-    };
+    after = fillEnd(after, beatCount);
+    const oldUnits = unitsOf(before, beatCount);
+    const newUnits = unitsOf(after, beatCount);
     return {
         from: start,
-        steps,
-        shift: by ? { from: oldTo, by } : null,
-        result: keepTempo(durations, locks, start, eighths, units, holds),
+        measures: after,
+        short,
+        shift,
+        result: keepTempo(durations, locks, start, oldUnits, newUnits, holds),
     };
 }
 
 /**
- * The counts from `from` on regrouped at their own tempo: each scaled by its new eighths over its
- * old. Only the counts up to the last one that changes length are re-timed (up to the next pin);
- * when none changes, every pin stays
+ * The counts from `from` on at their own tempo: each scaled by its new eighths over its old. Only
+ * the counts up to the last one that changes length are re-timed (up to the next pin); when none
+ * changes, every pin stays
  */
 function keepTempo(
     durations: readonly number[],
     locks: ReadonlySet<number>,
     from: number,
-    eighths: (b: number) => number,
-    units: readonly (number | undefined)[],
+    oldUnits: readonly (number | undefined)[],
+    newUnits: readonly (number | undefined)[],
     holds: ReadonlySet<number> | undefined,
 ): TempoEditResult {
     const lengths: number[] = [];
@@ -143,7 +229,7 @@ function keepTempo(
     for (let b = from; b < durations.length; b++) {
         const length = holds?.has(b)
             ? durations[b]!
-            : (durations[b]! * eighths(b)) / (units[b] ?? 2);
+            : (durations[b]! * (newUnits[b] ?? 2)) / (oldUnits[b] ?? 2);
         if (Math.abs(length - durations[b]!) > 1e-12) to = b + 1;
         lengths.push(length);
     }
