@@ -8,7 +8,8 @@ import {
     clampPlaybackSpeed,
     formatPlaybackSpeed,
 } from "@/stores/PlaybackSpeedStore";
-import { Keycaps, ShortcutTooltip } from "./ShortcutTooltip";
+import { ShortcutTooltip } from "./ShortcutTooltip";
+import Shortcut from "@/components/ui/Shortcut";
 
 // The popover's chips: the click cycle's speeds and the ones between
 const SPEED_CHIPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4] as const;
@@ -28,10 +29,10 @@ const SPEED_HINT = (
     <span className="text-text-subtitle flex flex-col gap-4 text-[11px]">
         <span>Click for the next speed, right-click for more</span>
         <span className="flex items-center gap-6">
-            Hold <Keycaps shortcut="]" /> for double speed
+            Hold <Shortcut action="holdFasterPlayback" /> for double speed
         </span>
         <span className="flex items-center gap-6">
-            Hold <Keycaps shortcut="[" /> for half speed
+            Hold <Shortcut action="holdSlowerPlayback" /> for half speed
         </span>
     </span>
 );
@@ -148,8 +149,9 @@ export function PlaybackSpeedButton({
                         ))}
                     </div>
                     <p className="text-sub text-text-subtitle border-stroke flex items-center gap-4 border-t pt-8">
-                        Hold <Keycaps shortcut="]" /> for double speed,
-                        <Keycaps shortcut="[" /> for half
+                        Hold <Shortcut action="holdFasterPlayback" /> for double
+                        speed,
+                        <Shortcut action="holdSlowerPlayback" /> for half
                     </p>
                 </Popover.Content>
             </Popover.Portal>

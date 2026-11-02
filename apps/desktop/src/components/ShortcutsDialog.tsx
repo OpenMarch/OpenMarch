@@ -1,10 +1,11 @@
 import { useTolgee } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
-import { Keycaps } from "@/components/timeline/ShortcutTooltip";
+import { Fragment } from "react";
+import Shortcut from "@/components/ui/Shortcut";
 import { useShortcutsDialogStore } from "@/stores/ShortcutsDialogStore";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
-import { formatBindingKeys, platformBinding } from "@/shortcuts/bindings";
+import { platformBinding } from "@/shortcuts/bindings";
 import {
     ACTION_IDS,
     NUDGE_ACTION_IDS,
@@ -34,6 +35,10 @@ const GROUPS: readonly (readonly [category: string, title: string])[] = [
 
 interface Row {
     readonly label: string;
+    /**
+     * Its shortcut as a binding ("Shift+Space", "Mod + Drag", "?"), or alternatives joined by
+     * " / " ("W / A / S / D"); shown as `Shortcut`s for this platform
+     */
     readonly keys: string;
     /** i18n key for `label`, which is its English default */
     readonly labelKey?: string;
@@ -46,13 +51,13 @@ interface Row {
 const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
     timeline: [
         { label: "Fit the show, or back", keys: "Shift + Z" },
-        { label: "Leave an isolated move", keys: "Esc" },
-        { label: "Draw a range (drag)", keys: "Ctrl + Drag" },
-        { label: "Zoom the timeline", keys: "Ctrl + Scroll" },
+        { label: "Leave an isolated move", keys: "Escape" },
+        { label: "Draw a range (drag)", keys: "Mod + Drag" },
+        { label: "Zoom the timeline", keys: "Mod + Scroll" },
         { label: "Drag without snapping", keys: "Alt + Drag" },
     ],
     movement: [
-        { label: "Nudge the selected marchers", keys: "W A S D" },
+        { label: "Nudge the selected marchers", keys: "W / A / S / D" },
         {
             label: "Fine control while dragging marchers",
             labelKey: "shortcutsDialog.movement.fineControl",
@@ -85,10 +90,6 @@ const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
     ],
 };
 
-/** An extra row's keys for this platform: "Mod" is Cmd on a Mac, Ctrl elsewhere */
-const extraKeys = (keys: string, isMac: boolean) =>
-    keys.replace(/^Mod\b/, isMac ? "⌘" : "Ctrl");
-
 /** Shown elsewhere: the nudge (`EXTRA_ROWS`), the tap-beat digits and the beat editor's keys */
 const LISTED_ELSEWHERE: ReadonlySet<ActionId> = new Set([
     ...NUDGE_ACTION_IDS,
@@ -96,13 +97,13 @@ const LISTED_ELSEWHERE: ReadonlySet<ActionId> = new Set([
 ]);
 
 /**
- * An action's shortcut as keycaps joined with " + ". "?" is Shift plus a key that varies by
- * layout, so it is written alone.
+ * An action's binding for its row. "?" is Shift plus a key that varies by layout, so it is
+ * written alone.
  */
 const shortcutKeys = (binding: string, isMac: boolean) =>
     platformBinding(binding, isMac) === platformBinding("Shift+Slash", isMac)
         ? "?"
-        : formatBindingKeys(binding, isMac).join(" + ");
+        : binding;
 
 /** Every shortcut, grouped (the actions in `shortcuts/definitions.ts`, as rebound, plus `EXTRA_ROWS`) */
 export function shortcutGroups(
@@ -131,7 +132,7 @@ export function shortcutGroups(
                 label: row.labelKey
                     ? tolgee.t(row.labelKey, row.label)
                     : row.label,
-                keys: extraKeys(row.keys, isMac),
+                keys: row.keys,
             })),
         ];
         byCategory.delete(category);
@@ -147,6 +148,24 @@ export function shortcutGroups(
         else groups.push({ title: "Other", rows });
     }
     return groups;
+}
+
+/** A row's shortcut, or its alternatives with "/" between */
+function RowKeys({ keys }: { keys: string }) {
+    return (
+        <span className="flex items-center gap-4">
+            {keys.split(" / ").map((binding, i) => (
+                <Fragment key={binding}>
+                    {i > 0 && (
+                        <span aria-hidden="true" className="text-text-subtitle">
+                            /
+                        </span>
+                    )}
+                    <Shortcut binding={binding} size="md" />
+                </Fragment>
+            ))}
+        </span>
+    );
 }
 
 /**
@@ -193,7 +212,7 @@ export default function ShortcutsDialog() {
                                             {row.label}
                                         </dt>
                                         <dd className="shrink-0">
-                                            <Keycaps shortcut={row.keys} />
+                                            <RowKeys keys={row.keys} />
                                         </dd>
                                     </div>
                                 ))}

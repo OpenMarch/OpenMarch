@@ -58,13 +58,14 @@ describe("the toolbar's Snap button", () => {
         const button = screen.getByTestId("toolbar-snap-toggle");
         expect(button.getAttribute("aria-pressed")).toBe("false");
         expect(button.classList.contains("text-accent")).toBe(false);
-        expect(button.title).toContain("Turn Snap off");
+        // Icon-only, so the action's label names it (the tooltip shows it on hover)
+        expect(button).toHaveAccessibleName(/Turn Snap off/);
 
         fireEvent.click(button);
         expect(snapOn()).toBe(false);
         expect(button.getAttribute("aria-pressed")).toBe("true");
         expect(button.classList.contains("text-accent")).toBe(true);
-        expect(button.title).toContain("Snap off: turn it back on");
+        expect(button).toHaveAccessibleName(/Snap off: turn it back on/);
 
         fireEvent.click(button);
         expect(snapOn()).toBe(true);

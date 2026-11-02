@@ -6,7 +6,7 @@ import { useShapeAway, useShapeToolStore } from "../tool/shapeToolStore";
 import { goBackTo, momentLabel } from "../tool/shapeMoment";
 import { discardShapeTool } from "../tool/shapeLeave";
 import { keepFocus } from "./keepFocus";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 
 /**

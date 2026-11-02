@@ -8,6 +8,7 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
+import type { ActionId } from "@/shortcuts/definitions";
 
 const InRichTips = createContext(false);
 
@@ -24,21 +25,29 @@ export function RichTips({ children }: { children: ReactNode }) {
 }
 
 /**
- * A control's tooltip in the shapes UI: the app's own (the timeline's `ShortcutTooltip`), never
+ * A control's tooltip: the app's own (the timeline's `ShortcutTooltip`), never
  * a browser `title` (owner, #429). It never shows while the control is pressed, so a number's
  * drag goes on undisturbed. `children` is one element that takes a ref, such as a `<button>`;
- * with no `label` it has no tooltip. `shortcut` adds its keys as keycaps, `hint` a second line.
+ * with no `label` it has no tooltip. `action` adds that action's shortcut (as the user has bound
+ * it), `shortcut` a binding of keys that aren't an action, and `hint` a second line.
  */
 export function Tip({
     label,
     shortcut,
+    action,
     hint,
+    disabled,
     children,
 }: {
     label: string | undefined;
+    /** A binding ("Shift + Space") for keys that aren't an action */
     shortcut?: string;
+    /** The action whose shortcut the tooltip shows */
+    action?: ActionId;
     /** A second, quieter line: the whole of a description shown cut short */
     hint?: string;
+    /** Never opens, while keeping the control's place in the tree */
+    disabled?: boolean;
     children: ReactElement;
 }) {
     const shared = useContext(InRichTips);
@@ -47,7 +56,9 @@ export function Tip({
         <ShortcutTooltip
             label={label}
             shortcut={shortcut}
+            action={action}
             hint={hint}
+            disabled={disabled}
             closeOnPress
         >
             {children}

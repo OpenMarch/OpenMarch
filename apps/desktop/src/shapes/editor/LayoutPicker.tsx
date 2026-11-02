@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 import * as Popover from "@radix-ui/react-popover";
 import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";

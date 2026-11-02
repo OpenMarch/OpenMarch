@@ -14,11 +14,12 @@
  * It floats at the right and doesn't block the scene, so the viewer can
  * orbit while trying a look.
  */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslate } from "@tolgee/react";
 import { XIcon } from "@phosphor-icons/react";
 import { Input, Switch } from "@openmarch/ui";
 import clsx from "clsx";
+import Shortcut from "@/components/ui/Shortcut";
 import { useView3dSceneStore } from "../sceneStore";
 import { QUALITY_MODES } from "../qualityPreference";
 import { HAS_SETTINGS_WINDOW, RESOLUTIONS } from "../renderPrefs";
@@ -450,32 +451,45 @@ function StepOffFootRow() {
 
 /**
  * The window's keyboard and mouse controls (ui.md UI-3, UI-4), in display
- * order. Each has `view3d.keys.<name>` for what it does and
- * `view3d.keyNames.<name>` for the key or gesture.
+ * order: `view3d.keys.<name>` says what each does, and its keys are bindings
+ * (or display keys) shown as `Shortcut`s, alternatives joined by "/".
  */
-const SHORTCUTS = [
-    "playPause",
-    "previousNext",
-    "firstLast",
-    "cameras",
-    "fullscreen",
-    "crowd",
-    "escape",
-    "orbit",
-    "pan",
-    "zoom",
-] as const;
+const SHORTCUTS: readonly (readonly [
+    name: string,
+    keys: readonly ({ binding: string } | { keys: readonly string[] })[],
+])[] = [
+    ["playPause", [{ binding: "Space" }]],
+    ["previousNext", [{ binding: "Q" }, { binding: "E" }]],
+    ["firstLast", [{ binding: "Alt+Q" }, { binding: "Alt+E" }]],
+    ["cameras", [{ keys: ["1–9"] }]],
+    ["fullscreen", [{ binding: "F" }]],
+    ["crowd", [{ binding: "C" }]],
+    ["escape", [{ binding: "Escape" }]],
+    ["orbit", [{ binding: "drag" }]],
+    ["pan", [{ binding: "Shift+drag" }]],
+    ["zoom", [{ binding: "scroll" }]],
+];
 
 function ShortcutList() {
     const { t } = useTranslate();
     return (
         <dl className="text-sub grid grid-cols-[auto_1fr] items-baseline gap-x-12 gap-y-4">
-            {SHORTCUTS.map((name) => (
+            {SHORTCUTS.map(([name, keys]) => (
                 <div key={name} className="contents">
-                    <dt>
-                        <kbd className="border-stroke rounded-4 text-text/80 border px-4 font-mono whitespace-nowrap">
-                            {t(`view3d.keyNames.${name}`)}
-                        </kbd>
+                    <dt className="flex items-center gap-4 whitespace-nowrap">
+                        {keys.map((source, i) => (
+                            <Fragment key={i}>
+                                {i > 0 && (
+                                    <span
+                                        aria-hidden="true"
+                                        className="text-text-subtitle"
+                                    >
+                                        /
+                                    </span>
+                                )}
+                                <Shortcut {...source} />
+                            </Fragment>
+                        ))}
                     </dt>
                     <dd className="text-text/80">{t(`view3d.keys.${name}`)}</dd>
                 </div>

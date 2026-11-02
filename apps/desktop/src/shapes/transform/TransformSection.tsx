@@ -12,7 +12,7 @@ import { useBoxSelectionStore } from "../placed/boxSelectionStore";
 import { useShapeToolStore } from "../tool/shapeToolStore";
 import { flipSelection, selectionPivot } from "./selectionTransform";
 import { GlyphText } from "../editor/GlyphText";
-import { Tip } from "../editor/Tip";
+import { Tip } from "@/components/ui/Tip";
 import { PivotGrid } from "../editor/PivotGrid";
 
 /**

@@ -8,7 +8,7 @@ import { ModePicture } from "./modePictures";
 import type { ToolEnv } from "../tool/toolKind";
 import type { ShapeEditTarget } from "./editTargets";
 import { arrowFocus, useEditorMenu, useMenuFocus } from "./menuFocus";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 
 const modeLabel = (mode: DistributionMode) =>
     tolgee.t(`shapes.edit.mode.${mode}`, MODE_LABELS[mode]);

@@ -2,8 +2,8 @@ import { useState, type ReactNode } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import tolgee from "@/global/singletons/Tolgee";
 import type { ActionId } from "@/shortcuts/definitions";
-import { getActionLabel, getActionShortcutLabel } from "@/shortcuts/labels";
-import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import { getActionLabel } from "@/shortcuts/labels";
+import Shortcut from "@/components/ui/Shortcut";
 import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
@@ -93,8 +93,6 @@ function MenuEntry({
     onSelect: () => void;
     name?: string;
 }) {
-    const overrides = useShortcutOverridesStore((s) => s.overrides);
-    const shortcut = getActionShortcutLabel(action, { overrides });
     return (
         <ContextMenu.Item
             data-testid={testId}
@@ -110,14 +108,12 @@ function MenuEntry({
                     {name}
                 </span>
             )}
-            {shortcut && (
-                <span
-                    data-testid="timeline-add-page-shortcut"
-                    className="text-text-subtitle ml-auto pl-16 text-[11px]"
-                >
-                    {shortcut}
-                </span>
-            )}
+            <span
+                data-testid="timeline-add-page-shortcut"
+                className="ml-auto pl-16"
+            >
+                <Shortcut action={action} />
+            </span>
         </ContextMenu.Item>
     );
 }

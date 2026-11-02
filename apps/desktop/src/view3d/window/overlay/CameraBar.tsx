@@ -17,6 +17,7 @@ import {
     VideoCameraIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
+import Shortcut from "@/components/ui/Shortcut";
 import { useCameraStore } from "../camera/cameraStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { Panel, PanelSeparator, ToggleButton } from "./Panel";
@@ -102,9 +103,7 @@ export function CameraBar({
                                         {list.label(camera)}
                                     </span>
                                     {index < 9 && (
-                                        <kbd className="text-sub text-text/60 font-mono">
-                                            {index + 1}
-                                        </kbd>
+                                        <Shortcut keys={[String(index + 1)]} />
                                     )}
                                 </DropdownMenu.Item>
                             );

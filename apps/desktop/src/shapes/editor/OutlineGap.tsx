@@ -17,7 +17,7 @@ import { formatSteps } from "./format";
 import type { ToolEnv } from "../tool/toolKind";
 import type { ShapeEditTarget } from "./editTargets";
 import { useEditorMenu, useMenuFocus } from "./menuFocus";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import { GlyphText } from "./GlyphText";
 import { useId } from "react";
 

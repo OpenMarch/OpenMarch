@@ -1,6 +1,8 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { Description as DialogDescription } from "@radix-ui/react-dialog";
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
-import { useTolgee } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
+import { formatBinding } from "@/shortcuts/bindings";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 import { useWelcomeFlowStore } from "@/stores/WelcomeFlowStore";
 import { webChannel } from "@/utilities/webBuild";
@@ -14,7 +16,6 @@ export default function WebWelcomeModal() {
     const { t } = useTolgee();
     const { open, setOpen } = useWebWelcomeStore();
     const welcomeFlowShowing = useWelcomeFlowStore((s) => s.showing);
-    const save = window.electron.isMacOS ? "⌘S" : "Ctrl+S";
 
     return (
         <Dialog open={open && !welcomeFlowShowing} onOpenChange={setOpen}>
@@ -41,7 +42,20 @@ export default function WebWelcomeModal() {
                         <h3 className="text-text font-medium">
                             {t("web.welcome.backUpTitle")}
                         </h3>
-                        <p>{t("web.welcome.backUpBody", { save })}</p>
+                        <p>
+                            <T
+                                keyName="web.welcome.backUpBody"
+                                params={{
+                                    save: formatBinding(
+                                        "$mod+S",
+                                        window.electron.isMacOS,
+                                    ),
+                                    keys: () => (
+                                        <Shortcut action="launchSaveFileDialogue" />
+                                    ),
+                                }}
+                            />
+                        </p>
                     </section>
                     <section className="flex flex-col gap-4">
                         <h3 className="text-text font-medium">

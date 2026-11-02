@@ -13,7 +13,7 @@ test("says when the window is too small, and comes back when it grows", async ({
     await expect(notice).toContainText("Make the window bigger");
     await expect(notice).toContainText("This window is 700 × 800.");
     // The zoom-out shortcut, as one shortcut of keycaps
-    await expect(notice.locator(".keycaps .keycap")).toHaveCount(2);
+    await expect(notice.locator(".shortcut .shortcut-key")).toHaveCount(2);
 
     await page.setViewportSize({ width: 1200, height: 450 });
     await expect(notice).toContainText("This window is 1200 × 450.");

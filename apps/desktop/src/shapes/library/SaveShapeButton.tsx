@@ -4,7 +4,7 @@ import { useState } from "react";
 import { StarIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { keepFocus } from "../editor/keepFocus";
-import { Tip } from "../editor/Tip";
+import { Tip } from "@/components/ui/Tip";
 import { saveShape, type SavableShape } from "./saveShape";
 import { suggestedName } from "./savedShapes";
 

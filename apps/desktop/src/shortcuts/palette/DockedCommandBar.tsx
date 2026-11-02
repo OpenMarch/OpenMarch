@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import Shortcut from "@/components/ui/Shortcut";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTolgee } from "@tolgee/react";
 import { CaretRightIcon } from "@phosphor-icons/react";
@@ -211,17 +212,17 @@ function DockedSteps({
                           })}
                 </span>
                 <span className="palette-footer-hint" aria-hidden>
-                    <kbd className="keycap">Enter</kbd>
+                    <Shortcut binding="Enter" />
                     {index === steps.length - 1
                         ? (run.finishLabel ?? t("commandPalette.done"))
                         : t("commandPalette.next")}
                 </span>
                 <span className="palette-footer-hint" aria-hidden>
-                    <kbd className="keycap">Backspace</kbd>
+                    <Shortcut binding="Backspace" />
                     {t("commandPalette.back")}
                 </span>
                 <span className="palette-footer-hint" aria-hidden>
-                    <kbd className="keycap">Esc</kbd>
+                    <Shortcut binding="Escape" />
                     {t("commandPalette.cancel")}
                 </span>
             </div>

@@ -6,6 +6,7 @@ import {
     type MouseEvent,
     type ReactNode,
 } from "react";
+import Shortcut from "@/components/ui/Shortcut";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipClassName } from "@openmarch/ui";
@@ -44,8 +45,8 @@ import type { TimelineBeatRange } from "./TimelineViewModel";
 export const TIMELINE_MENU_ITEM_CLASS =
     "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50";
 
-/** A shortcut after an entry's words, as the transport's popover shows Ctrl+M */
-const SHORTCUT_CLASS = "text-text-subtitle ml-auto pl-16 font-mono text-[11px]";
+/** Where a shortcut sits after an entry's words */
+const SHORTCUT_CLASS = "text-text-subtitle ml-auto pl-16";
 
 /**
  * A small switch in front of a checkbox entry's words, drawn from the entry's `data-state`. It's
@@ -166,7 +167,7 @@ function MenuItemWithReason({
 const MenuShortcut = ({ keys }: { keys?: string }) =>
     keys ? (
         <span className={SHORTCUT_CLASS} data-testid="timeline-menu-shortcut">
-            {keys}
+            <Shortcut binding={keys} />
         </span>
     ) : null;
 
