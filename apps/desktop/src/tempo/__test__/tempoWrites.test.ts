@@ -2,12 +2,14 @@ import { expect } from "vitest";
 import { asc } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import {
+    deleteCounts,
     endMovesEarly,
     insertCounts,
     writeDurations,
     writeMarks,
 } from "../tempoWrites";
-import { performUndo } from "@/db-functions/history";
+import { performRedo, performUndo } from "@/db-functions/history";
+import { createCues } from "@/db-functions/cues";
 
 /**
  * Tempo mode's count edits on the `marchersAndPages` show, converted to timelines on open: beat 0,
@@ -180,5 +182,160 @@ describeDbTests("tempo changes (the tempo lane's points)", (it) => {
         await performUndo(db);
         expect(await lengths()).toEqual(before);
         expect(await flagged(db, "tempo_change")).toEqual([]);
+    });
+});
+
+describeDbTests("removing a whole measure", (it) => {
+    /** Measures of 4 counts from count 1 to the end of the stored counts, `facts` on some */
+    const setMeasures = async (
+        db: DbConnection,
+        facts: Record<
+            number,
+            Partial<typeof schema.measures.$inferInsert> | undefined
+        >,
+    ) => {
+        const rows = await db
+            .select()
+            .from(schema.beats)
+            .orderBy(asc(schema.beats.position))
+            .all();
+        await db.delete(schema.measures).run();
+        await db
+            .insert(schema.measures)
+            .values(
+                Array.from(
+                    { length: Math.floor((rows.length - 1) / 4) },
+                    (_, i) => ({
+                        start_beat: rows[1 + 4 * i]!.id,
+                        ...facts[1 + 4 * i],
+                    }),
+                ),
+            )
+            .run();
+    };
+    /** [start count, meter, grouping, number, rehearsal mark] of the first `n` measures */
+    const measuresNow = async (db: DbConnection, n = 8) => {
+        const rows = await db
+            .select()
+            .from(schema.beats)
+            .orderBy(asc(schema.beats.position))
+            .all();
+        const ordinal = new Map(rows.map((b, i) => [b.id, i]));
+        return (await db.select().from(schema.measures).all())
+            .map((m) => [
+                ordinal.get(m.start_beat)!,
+                m.meter,
+                m.grouping,
+                m.number_override,
+                m.rehearsal_mark,
+            ])
+            .sort((a, b) => (a[0] as number) - (b[0] as number))
+            .slice(0, n);
+    };
+
+    it("keeps the time signature, number and mark written on it for the measures after", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        // 4/4 from m1, 3/4 (marked C, numbered 101) written on m5 at count 17 and carried on
+        await setMeasures(db, {
+            1: { meter: "4/4", grouping: "2+2+2+2" },
+            17: {
+                meter: "3/4",
+                grouping: "2+2+2",
+                number_override: 101,
+                rehearsal_mark: "C",
+            },
+        });
+        const before = await measuresNow(db);
+        const result = await deleteCounts({
+            from: 17,
+            to: 21,
+            drill: "adjust",
+        });
+        expect(result.cues).toEqual({ moved: [], dropped: [] });
+        expect(await measuresNow(db, 6)).toEqual([
+            [1, "4/4", "2+2+2+2", null, null],
+            [5, null, null, null, null],
+            [9, null, null, null, null],
+            [13, null, null, null, null],
+            // m6 now starts at 17 and reads 3/4 as before, with m5's number and mark
+            [17, "3/4", "2+2+2", 101, "C"],
+            [21, null, null, null, null],
+        ]);
+        await performUndo(db);
+        expect(await measuresNow(db)).toEqual(before);
+        await performRedo(db);
+        expect((await measuresNow(db))[4]).toEqual([
+            17,
+            "3/4",
+            "2+2+2",
+            101,
+            "C",
+        ]);
+    });
+
+    it("clears a time signature that now repeats the one before", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        // one 3/4 bar at m5, 4/4 written again on m6
+        await setMeasures(db, {
+            1: { meter: "4/4", grouping: "2+2+2+2" },
+            17: { meter: "3/4", grouping: "2+2+2" },
+            21: { meter: "4/4", grouping: "2+2+2+2" },
+        });
+        const before = await measuresNow(db);
+        await deleteCounts({ from: 17, to: 21, drill: "adjust" });
+        expect((await measuresNow(db)).slice(3, 6)).toEqual([
+            [13, null, null, null, null],
+            [17, null, null, null, null],
+            [21, null, null, null, null],
+        ]);
+        await performUndo(db);
+        expect(await measuresNow(db)).toEqual(before);
+    });
+
+    it("writes nothing on a show that has no time signatures written", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await setMeasures(db, {});
+        await deleteCounts({ from: 17, to: 21, drill: "adjust" });
+        expect(
+            (await measuresNow(db, 20)).every(
+                ([, meter, grouping]) => meter === null && grouping === null,
+            ),
+        ).toBe(true);
+    });
+
+    it("says where the cues on the removed counts went", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const rows = await db
+            .select()
+            .from(schema.beats)
+            .orderBy(asc(schema.beats.position))
+            .all();
+        await createCues({
+            db,
+            newCues: [
+                {
+                    channel: "horn_equipment",
+                    kind: "state",
+                    target: { kind: "band" },
+                    beatId: rows[18]!.id,
+                    value: "builtin:horn_equipment.horn.up",
+                },
+            ],
+        });
+        const result = await deleteCounts({
+            from: 17,
+            to: 21,
+            drill: "adjust",
+        });
+        expect(result.cues?.moved).toHaveLength(1);
+        expect(result.cues?.moved[0]!.toBeatId).toBe(rows[21]!.id);
     });
 });

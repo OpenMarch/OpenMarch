@@ -1,8 +1,8 @@
 /**
- * Tempo mode. The writes tempo mode makes, each one undo
- * step: new count lengths, counts added or removed (with the drill choice), measures regrouped
- * for a time signature, rehearsal marks. Locks and measure-number overrides live in the
- * workspace settings, which have no undo (a prototype shortcut).
+ * Tempo mode. The writes tempo mode makes, each one undo step: new count lengths, pins, holds
+ * and tempo points (beat flags), counts added or removed (with the drill choice), measure
+ * numbers and rehearsal marks. They live in the show, with undo (ADR 0007); time signatures are
+ * written by `meterWrites.ts`.
  */
 import { setAudioOffsetInTransaction } from "./audioOffset";
 import { and, asc, eq, gt, gte, inArray, lt } from "drizzle-orm";
@@ -19,15 +19,11 @@ import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import { ensureCountsInTransaction } from "@/db-functions/endlessCounts";
 import { resizeTimelineInTransaction } from "@/db-functions/timelineResize";
 import {
-    createMeasuresInTransaction,
     deleteMeasuresInTransaction,
     updateMeasuresInTransaction,
 } from "@/db-functions/measures";
-import {
-    getWorkspaceSettingsParsed,
-    updateWorkspaceSettingsParsed,
-} from "@/db-functions/workspaceSettings";
-import type { WorkspaceSettings } from "@/settings/workspaceSettings";
+import type { CueCarryResult } from "@/db-functions/cues";
+import { readMeters, sameMeter, storedMeterOf } from "./meters";
 
 /** Beat flags tempo mode writes, as sets of spec beats; a missing set is left as it is */
 export interface TempoMarks {
@@ -238,6 +234,8 @@ export interface CountEditResult {
     kept: number;
     /** Moves that couldn't keep their counts and changed length after all */
     couldNotKeep: number;
+    /** Removed counts only: where the cues on them went (`afterCountEdit` says so) */
+    cues?: CueCarryResult;
 }
 
 /**
@@ -371,6 +369,124 @@ export async function insertCounts({
     });
 }
 
+type MeasureRow = typeof schema.measures.$inferSelect;
+type MeasureFacts = Partial<
+    Pick<
+        MeasureRow,
+        "meter" | "grouping" | "number_override" | "rehearsal_mark" | "notes"
+    >
+>;
+
+/**
+ * What the measure left starting on the survivor (`holder`) takes from the measures that go, when
+ * counts are removed. `group` is every measure starting on a removed count or the survivor, in
+ * order. Facts the holder has itself stay; it takes the time signature written last before the
+ * survivor (the one in effect there), and the latest number and the first rehearsal mark and notes
+ * of the measures that go.
+ */
+function carriedFacts(
+    holder: MeasureRow,
+    group: readonly MeasureRow[],
+): MeasureFacts {
+    const gone = group.filter((m) => m.id !== holder.id);
+    const out: MeasureFacts = {};
+    // The holder starts at the survivor, so the time signature in effect there is the last one
+    // written in the group (the holder's own, when it is on the survivor already)
+    const written = [...group].reverse().find((m) => m.meter);
+    if (written && written.id !== holder.id) {
+        out.meter = written.meter;
+        out.grouping = written.grouping;
+    }
+    if (holder.number_override === null) {
+        const numbered = [...gone]
+            .reverse()
+            .find((m) => m.number_override !== null);
+        if (numbered) out.number_override = numbered.number_override;
+    }
+    const marked = gone.find((m) => m.rehearsal_mark);
+    if (!holder.rehearsal_mark && marked)
+        out.rehearsal_mark = marked.rehearsal_mark;
+    const noted = gone.find((m) => m.notes);
+    if (!holder.notes && noted) out.notes = noted.notes;
+    return out;
+}
+
+/**
+ * A time signature is written only where it changes (ADR 0007): after counts were removed, clear
+ * the one on `measureId` when it is the same as the one the measure before carries on.
+ */
+async function clearRepeatedMeterInTransaction(
+    tx: DbTransaction,
+    measureId: number,
+): Promise<void> {
+    const ids = await beatIdsInTransaction(tx);
+    const ordinalOf = new Map(ids.map((id, i) => [id, i]));
+    const rows = (await tx.select().from(schema.measures))
+        .flatMap((m) => {
+            const start = ordinalOf.get(m.start_beat);
+            return start === undefined ? [] : [{ ...m, start }];
+        })
+        .sort((a, b) => a.start - b.start);
+    const i = rows.findIndex((m) => m.id === measureId);
+    if (i < 1 || !rows[i]!.meter) return;
+    const meters = readMeters(
+        rows.map((m, j) => ({
+            ...m,
+            counts: (rows[j + 1]?.start ?? ids.length) - m.start,
+        })),
+    );
+    if (sameMeter(meters[i - 1]!.meter, storedMeterOf(rows[i]!)))
+        await updateMeasuresInTransaction({
+            tx,
+            modifiedItems: [{ id: measureId, meter: null, grouping: null }],
+        });
+}
+
+/**
+ * Measures starting on removed counts (`doomed`) move to the survivor, the next count left, or go
+ * when one already starts there. Returns the measure starting on the survivor afterwards.
+ */
+async function moveMeasuresOffInTransaction(
+    tx: DbTransaction,
+    ids: readonly number[],
+    doomed: readonly number[],
+    survivor: number,
+): Promise<number | undefined> {
+    const ordinalOf = new Map(ids.map((id, i) => [id, i]));
+    const measures = (
+        await tx
+            .select()
+            .from(schema.measures)
+            .where(inArray(schema.measures.start_beat, [...doomed, survivor]))
+    ).sort(
+        (a, b) => ordinalOf.get(a.start_beat)! - ordinalOf.get(b.start_beat)!,
+    );
+    const onSurvivor = measures.find((m) => m.start_beat === survivor);
+    const moving = measures.filter((m) => m.start_beat !== survivor);
+    const keep = onSurvivor ? [] : moving.slice(0, 1);
+    const drop = moving.filter((m) => !keep.includes(m));
+    // The measure starting on the survivor afterwards takes what was written on the
+    // measures that go (as `writeMeasuresInTransaction` does): the time signature in
+    // effect at the survivor, the measure number, the rehearsal mark and notes
+    const holder = onSurvivor ?? keep[0];
+    if (holder) {
+        const carry = carriedFacts(holder, measures);
+        if (keep.length || Object.keys(carry).length)
+            await updateMeasuresInTransaction({
+                tx,
+                modifiedItems: [
+                    { id: holder.id, start_beat: survivor, ...carry },
+                ],
+            });
+    }
+    if (drop.length)
+        await deleteMeasuresInTransaction({
+            tx,
+            itemIds: new Set(drop.map((m) => m.id)),
+        });
+    return holder?.id;
+}
+
 /**
  * Remove spec beats `from`..`to - 1`. A measure or page starting on a removed count starts on the
  * next one left (or goes, when that one already starts one). With `keep`, a move that lost counts
@@ -397,31 +513,16 @@ export async function deleteCounts({
         const around = new Map<number, typeof schema.timelines.$inferSelect>();
         for (let b = from; b < to; b++)
             for (const m of await movesAround(tx, b)) around.set(m.id, m);
+        let cues: CueCarryResult = { moved: [], dropped: [] };
+        let holderId: number | undefined;
         await withTimelinePageRipple(tx, async () => {
             // Measures and pages on the removed counts move to the next count left
-            const measures = await tx
-                .select()
-                .from(schema.measures)
-                .where(
-                    inArray(schema.measures.start_beat, [...doomed, survivor]),
-                );
-            const onSurvivor = measures.find((m) => m.start_beat === survivor);
-            const moving = measures.filter((m) => m.start_beat !== survivor);
-            const keep = onSurvivor ? [] : moving.slice(0, 1);
-            const drop = moving.filter((m) => !keep.includes(m));
-            if (keep.length)
-                await updateMeasuresInTransaction({
-                    tx,
-                    modifiedItems: keep.map((m) => ({
-                        id: m.id,
-                        start_beat: survivor,
-                    })),
-                });
-            if (drop.length)
-                await deleteMeasuresInTransaction({
-                    tx,
-                    itemIds: new Set(drop.map((m) => m.id)),
-                });
+            holderId = await moveMeasuresOffInTransaction(
+                tx,
+                ids,
+                doomed,
+                survivor,
+            );
             const pages = await tx
                 .select()
                 .from(schema.pages)
@@ -438,13 +539,15 @@ export async function deleteCounts({
                     .update(schema.pages)
                     .set({ start_beat: survivor })
                     .where(eq(schema.pages.id, p.id));
-            await deleteBeatsCarryingCuesInTransaction({
+            ({ cues } = await deleteBeatsCarryingCuesInTransaction({
                 tx,
                 beatIds: new Set(doomed),
-            });
+            }));
         });
+        if (holderId !== undefined)
+            await clearRepeatedMeterInTransaction(tx, holderId);
         await writeLengthsInTransaction(tx, respaced);
-        const result: CountEditResult = { kept: 0, couldNotKeep: 0 };
+        const result: CountEditResult = { kept: 0, couldNotKeep: 0, cues };
         if (drill === "keep")
             for (const move of around.values()) {
                 const now = await tx
@@ -472,108 +575,6 @@ export async function deleteCounts({
             }
         return result;
     });
-}
-
-/**
- * Regroup the stretch `[from, to)` (spec beats) into measures starting at `starts`: a time
- * signature change. Rehearsal marks stay on their measure's first count, or move to the new
- * measure that holds it.
- */
-export async function regroupMeasuresWrite(args: {
-    from: number;
-    to: number;
-    starts: readonly number[];
-}): Promise<void> {
-    await transactionWithHistory(db, "tempoTimeSignature", (tx) =>
-        regroupMeasuresInTransaction(tx, args),
-    );
-}
-
-/**
- * `regroupMeasuresWrite` inside an edit. With `meter`, every measure of the stretch gets that meter
- * and grouping (null clears them: counts per measure / 4).
- */
-export async function regroupMeasuresInTransaction(
-    tx: DbTransaction,
-    {
-        from,
-        to,
-        starts,
-        meter,
-    }: {
-        from: number;
-        to: number;
-        starts: readonly number[];
-        meter?: { meter: string | null; grouping: string | null };
-    },
-): Promise<void> {
-    await ensureCountsInTransaction({ tx, through: to });
-    const ids = await beatIdsInTransaction(tx);
-    const ordinalOf = new Map(ids.map((id, i) => [id, i]));
-    const all = await tx.select().from(schema.measures);
-    const inside = all.filter((m) => {
-        const o = ordinalOf.get(m.start_beat);
-        return o !== undefined && o >= from && o < to;
-    });
-    const wanted = new Set(starts.map((s) => ids[s]!));
-    const marks = new Map<
-        number,
-        { mark: string | null; notes: string | null }
-    >();
-    for (const m of inside)
-        if (!wanted.has(m.start_beat) && (m.rehearsal_mark || m.notes)) {
-            // the new measure holding this count
-            const o = ordinalOf.get(m.start_beat)!;
-            const holder = [...starts].reverse().find((s) => s <= o) ?? from;
-            marks.set(ids[holder]!, {
-                mark: m.rehearsal_mark,
-                notes: m.notes,
-            });
-        }
-    const drop = inside.filter((m) => !wanted.has(m.start_beat));
-    if (drop.length)
-        await deleteMeasuresInTransaction({
-            tx,
-            itemIds: new Set(drop.map((m) => m.id)),
-        });
-    const have = new Set(inside.map((m) => m.start_beat));
-    const add = starts.map((s) => ids[s]!).filter((id) => !have.has(id));
-    if (add.length)
-        await createMeasuresInTransaction({
-            tx,
-            newItems: add.map((id) => ({
-                start_beat: id,
-                rehearsal_mark: marks.get(id)?.mark ?? null,
-                notes: marks.get(id)?.notes ?? null,
-            })),
-        });
-    const keptWithMark = inside.filter(
-        (m) => wanted.has(m.start_beat) && marks.has(m.start_beat),
-    );
-    if (keptWithMark.length)
-        await updateMeasuresInTransaction({
-            tx,
-            modifiedItems: keptWithMark.map((m) => ({
-                id: m.id,
-                rehearsal_mark:
-                    m.rehearsal_mark ?? marks.get(m.start_beat)!.mark,
-            })),
-        });
-    if (meter) {
-        const ids2 = new Set(starts.map((s) => ids[s]!));
-        const now = (await tx.select().from(schema.measures)).filter((m) =>
-            ids2.has(m.start_beat),
-        );
-        if (now.length)
-            await updateMeasuresInTransaction({
-                tx,
-                modifiedItems: now.map((m) => ({
-                    id: m.id,
-                    meter: meter.meter,
-                    grouping: meter.grouping,
-                })),
-            });
-    }
 }
 
 /** Move a rehearsal mark from one measure to another: one undo step */
@@ -610,16 +611,5 @@ export async function setRehearsalMark({
             tx,
             modifiedItems: [{ id: measureId, rehearsal_mark: mark }],
         });
-    });
-}
-
-/** Read-modify-write the workspace settings (the audio offset) */
-export async function patchWorkspaceSettings(
-    patch: (s: WorkspaceSettings) => Partial<WorkspaceSettings>,
-): Promise<void> {
-    const current = await getWorkspaceSettingsParsed({ db });
-    await updateWorkspaceSettingsParsed({
-        db,
-        settings: { ...current, ...patch(current) },
     });
 }

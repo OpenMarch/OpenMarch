@@ -24,7 +24,10 @@ export const eighthsOf = (meter: Pick<Meter, "top" | "bottom">): number =>
 /**
  * How a meter is counted when no grouping is given: in quarters (x/4, x/2), in dotted quarters for
  * compound meters (6/8, 9/8, 12/8), and odd eighths as twos with a three at the end (5/8: 2+3,
- * 7/8: 2+2+3). Sixteenths count in eighths.
+ * 7/8: 2+2+3; 1/8 is one count of one eighth). Sixteenths count in eighths.
+ *
+ * Only for meters of whole eighths (`parseMeter` refuses 5/16 and the like): their grouping
+ * couldn't add up to the measure.
  */
 export function defaultGrouping(top: number, bottom: number): number[] {
     const eighths = eighthsOf({ top, bottom });
@@ -34,14 +37,15 @@ export function defaultGrouping(top: number, bottom: number): number[] {
         return Array<number>(Math.max(1, Math.round(eighths))).fill(1);
     if (Number.isInteger(eighths / 2))
         return Array<number>(eighths / 2).fill(2);
+    if (eighths === 1) return [1];
     // odd eighths: twos, then a three
     const twos = Math.floor((eighths - 3) / 2);
     return [...Array<number>(twos).fill(2), 3];
 }
 
 /**
- * Read "7/8", "7/8 2+2+3", "5/8 3+2", "3/2" or "12/8". Null when it isn't a meter, or the
- * grouping doesn't add up to the measure.
+ * Read "7/8", "7/8 2+2+3", "5/8 3+2", "3/2" or "12/8". Null when it isn't a meter, the grouping
+ * doesn't add up to the measure, or the measure isn't whole eighths (5/16).
  */
 export function parseMeter(text: string): Meter | null {
     const m = text
@@ -51,6 +55,8 @@ export function parseMeter(text: string): Meter | null {
     const top = Number(m[1]);
     const bottom = Number(m[2]);
     if (top < 1 || ![2, 4, 8, 16].includes(bottom)) return null;
+    // counts are whole eighths: odd sixteenths (5/16, 7/16) aren't supported yet
+    if (!Number.isInteger(eighthsOf({ top, bottom }))) return null;
     const grouping = m[3]
         ? m[3]
               .split("+")

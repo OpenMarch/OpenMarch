@@ -6,6 +6,11 @@ import { writeDurations, writeMarks } from "../tempoWrites";
 import { writeMeter, planMeter } from "../meterWrites";
 import { parseMeter } from "../meters";
 import { readAudioOffsetSeconds, writeAudioOffset } from "../audioOffset";
+import {
+    getWorkspaceSettingsParsed,
+    updateWorkspaceSettingsParsed,
+} from "@/db-functions/workspaceSettings";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 
 /**
  * ADR 0007 asks for these before it's accepted: pins, holds, meters and the music offset are in
@@ -209,5 +214,28 @@ describeDbTests("tempo mode undo and redo", (it) => {
         await performRedo(db);
         expect(await offset()).toBe(0.75);
         expect((await lengths(db))[1]).toBe(0.45);
+    });
+
+    it("undoing a show's first offset goes back to the workspace setting", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        // Settings saves the offset to the show only; the workspace setting stays the fallback
+        const workspace = workspaceSettingsSchema.parse({
+            audioOffsetSeconds: 0.5,
+        });
+        await updateWorkspaceSettingsParsed({ db, settings: workspace });
+        const offset = async () =>
+            readAudioOffsetSeconds(
+                db,
+                (await getWorkspaceSettingsParsed({ db })).audioOffsetSeconds,
+            );
+        expect(await offset()).toBe(0.5);
+        await writeAudioOffset(2);
+        expect(await offset()).toBe(2);
+        await performUndo(db);
+        expect(await offset()).toBe(0.5);
+        await performRedo(db);
+        expect(await offset()).toBe(2);
     });
 });

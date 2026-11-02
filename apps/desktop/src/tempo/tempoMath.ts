@@ -68,7 +68,32 @@ export interface PinEffect {
     at: number;
     held: boolean;
     from: number;
+    /**
+     * Seconds the pin moved (later when positive) because keeping its time would have pushed the
+     * counts before it past the limits (a time signature change, `planMeter`); it stays a pin.
+     * Only with `held`.
+     */
+    moved?: number;
     free: () => TempoEditResult;
+}
+
+/**
+ * Whether scaling a count from `before` to `after` seconds takes it past the 400/20 BPM limits
+ * (`perEighth`: per eighth note, for counts of `eighthsBefore` and `eighthsAfter` eighths). A count
+ * already outside them (an old show's unflagged fermata) may stay there.
+ */
+export function pastLimits(
+    before: number,
+    after: number,
+    eighthsBefore = 2,
+    eighthsAfter = eighthsBefore,
+): boolean {
+    const min = MIN_COUNT_SECONDS / 2;
+    const max = MAX_COUNT_SECONDS / 2;
+    const was = before / eighthsBefore;
+    const now = after / eighthsAfter;
+    const inside = (x: number) => x >= min - 1e-12 && x <= max + 1e-12;
+    return inside(was) && !inside(now);
 }
 
 const scaleRange = (
@@ -131,13 +156,15 @@ export function retime(
     const next = [...durations];
     const nextLocks = new Set([...locks].filter((l) => l <= from || l >= to));
     const isFixed = (b: number) => fixed?.has(b) ?? false;
+    // a lock past the last count isn't anywhere to keep (moveBeatTo ignores it too)
+    const known = new Set([...nextLocks].filter((l) => l <= durations.length));
     for (let i = 0; i < lengths.length; i++) {
         if (isFixed(from + i)) continue;
         next[from + i] = hold
             ? Math.max(MIN_COUNT_SECONDS, lengths[i]!)
             : clampCount(lengths[i]!);
     }
-    const lock = lockAfter(nextLocks, to - 1);
+    const lock = lockAfter(known, to - 1);
     if (lock === null) return { durations: next, locks: nextLocks };
     const starts = startsOf(durations);
     const target = starts[lock]!; // where the lock is now
@@ -154,10 +181,17 @@ export function retime(
         }
     }
     const tailWanted = target - editedEnd - tailFixed;
-    const fits =
+    let fits =
         tailCounts > 0 &&
         tailWanted >= tailCounts * MIN_COUNT_SECONDS &&
         tailWanted <= tailCounts * MAX_COUNT_SECONDS;
+    // and no single count of an uneven stretch goes past the limits
+    for (let b = to; fits && b < lock; b++)
+        if (
+            !isFixed(b) &&
+            pastLimits(durations[b]!, (durations[b]! * tailWanted) / tailNow)
+        )
+            fits = false;
     const pin = (held: boolean): PinEffect => ({
         at: lock,
         held,
@@ -203,43 +237,78 @@ export function retime(
 /**
  * Move the start of `beat` to `seconds` (dragging a count onto the music, or a tap) and lock it.
  * The counts between the lock before and `beat` stretch to reach it; the counts after it, up to
- * the next lock, stretch to keep that lock; with no lock after, the rest slides. Returns null when
- * the move would squeeze a count past 400 BPM or stretch it past 20 BPM.
+ * the next lock, stretch to keep that lock; with no lock after, the rest slides. Holds keep their
+ * length: only the other counts re-space. Returns null when the move would squeeze the counts past
+ * 400 BPM or stretch them past 20 BPM.
  */
 export function moveBeatTo(
     durations: readonly number[],
     locks: ReadonlySet<number>,
     beat: number,
     seconds: number,
+    /** Held counts (fermatas): they keep their length */
+    holds?: ReadonlySet<number>,
 ): TempoEditResult | null {
     if (beat <= 1) return null;
     const starts = startsOf(durations);
     const prev = lockBefore(locks, beat);
     const nextLock = lockAfter(locks, beat);
-    const leftNow = starts[beat]! - starts[prev]!;
-    const leftWanted = seconds - starts[prev]!;
-    const leftCounts = beat - prev;
-    if (
-        leftWanted < leftCounts * MIN_COUNT_SECONDS ||
-        leftWanted > leftCounts * MAX_COUNT_SECONDS
-    )
-        return null;
     const next = [...durations];
-    scaleRange(next, prev, beat, leftWanted / leftNow);
+    if (!spreadOver(next, prev, beat, seconds - starts[prev]!, holds))
+        return null;
     if (nextLock !== null && nextLock <= durations.length) {
-        const rightNow = starts[nextLock]! - starts[beat]!;
-        const rightWanted = starts[nextLock]! - seconds;
-        const rightCounts = nextLock - beat;
         if (
-            rightWanted < rightCounts * MIN_COUNT_SECONDS ||
-            rightWanted > rightCounts * MAX_COUNT_SECONDS
+            !spreadOver(
+                next,
+                beat,
+                nextLock,
+                starts[nextLock]! - seconds,
+                holds,
+            )
         )
             return null;
-        scaleRange(next, beat, nextLock, rightWanted / rightNow);
     }
     const nextLocks = new Set(locks);
     nextLocks.add(beat);
     return { durations: next, locks: nextLocks };
+}
+
+/** The total length of the holds in `from`..`to - 1`, and how many other counts there are */
+function holdsIn(
+    durations: readonly number[],
+    from: number,
+    to: number,
+    holds: ReadonlySet<number> | undefined,
+) {
+    let held = 0;
+    let counts = 0;
+    for (let b = from; b < to; b++)
+        if (holds?.has(b)) held += durations[b]!;
+        else counts++;
+    return { held, counts };
+}
+
+/**
+ * Make beats `from`..`to - 1` of `next` last `wanted` seconds, the holds keeping theirs and the
+ * other counts scaling together. False (and `next` untouched) when they'd go past 400 or 20 BPM.
+ */
+function spreadOver(
+    next: number[],
+    from: number,
+    to: number,
+    wanted: number,
+    holds: ReadonlySet<number> | undefined,
+): boolean {
+    const { held, counts } = holdsIn(next, from, to, holds);
+    const want = wanted - held;
+    if (counts === 0) return Math.abs(want) < 1e-9;
+    if (want < counts * MIN_COUNT_SECONDS || want > counts * MAX_COUNT_SECONDS)
+        return false;
+    let now = 0;
+    for (let b = from; b < to; b++) if (!holds?.has(b)) now += next[b]!;
+    for (let b = from; b < to; b++)
+        if (!holds?.has(b)) next[b] = next[b]! * (want / now);
+    return true;
 }
 
 /** Beats `from`..`to - 1` at a steady tempo, or gradually from one tempo to another (linear in BPM) */
@@ -366,6 +435,8 @@ export function regroupMeasures(
     start: number,
     counts: number,
 ): { from: number; to: number; starts: number[]; leftover: number } {
+    if (!(counts >= 1))
+        throw new RangeError(`regroupMeasures: ${counts} counts a measure`);
     const sorted = [...measureStarts].sort((a, b) => a - b);
     const i = sorted.indexOf(start);
     const lengthAt = (j: number) => (sorted[j + 1] ?? beatCount) - sorted[j]!;
@@ -381,7 +452,8 @@ export function regroupMeasures(
 /**
  * Where the start of `beat` may go (Logic's "scale left, move right"): far enough from the lock
  * before for its counts to stay under 400 BPM and over 20, and the same against the lock after.
- * `reason` names what stops it at each end.
+ * Holds keep their length, so they add to the room without taking any. `reason` names what stops
+ * it at each end.
  */
 export function moveLimits(
     durations: readonly number[],
@@ -393,12 +465,14 @@ export function moveLimits(
     const starts = startsOf(durations);
     const prev = lockBefore(locks, beat);
     const next = lockAfter(locks, beat);
-    const left = beat - prev;
+    const left = holdsIn(durations, prev, beat, holds);
     const afterHold = holds?.has(beat - 1) ?? false;
     let min = afterHold
         ? starts[beat - 1]! + MIN_COUNT_SECONDS
-        : starts[prev]! + left * MIN_COUNT_SECONDS;
-    let max = afterHold ? Infinity : starts[prev]! + left * MAX_COUNT_SECONDS;
+        : starts[prev]! + left.held + left.counts * MIN_COUNT_SECONDS;
+    let max = afterHold
+        ? Infinity
+        : starts[prev]! + left.held + left.counts * MAX_COUNT_SECONDS;
     const pinned = prev > 1 ? { count: String(prev) } : null;
     let minReason = afterHold
         ? tolgee.t("tempoMode.errors.holdTooShort")
@@ -409,9 +483,10 @@ export function moveLimits(
         ? tolgee.t("tempoMode.errors.tooSlowAfterPin", pinned)
         : tolgee.t("tempoMode.errors.tooSlowFromStart");
     if (next !== null && next < starts.length) {
-        const right = next - beat;
-        const nMax = starts[next]! - right * MIN_COUNT_SECONDS;
-        const nMin = starts[next]! - right * MAX_COUNT_SECONDS;
+        const right = holdsIn(durations, beat, next, holds);
+        const room = starts[next]! - right.held;
+        const nMax = room - right.counts * MIN_COUNT_SECONDS;
+        const nMin = room - right.counts * MAX_COUNT_SECONDS;
         if (nMax < max) {
             max = nMax;
             maxReason = tolgee.t("tempoMode.errors.countPinned", {

@@ -1,6 +1,6 @@
 import { describeDbTests } from "@/test/base";
 import { expect } from "vitest";
-import type { DB } from "@/global/database/db";
+import { schema, type DB } from "@/global/database/db";
 import { toOpenMarchSchema } from "../dots-to-om";
 import { safeValidateOpenMarchData, SCHEMA_VERSION } from "@openmarch/schema";
 import { generatePageNames } from "@/global/classes/Page";
@@ -146,6 +146,30 @@ describeDbTests("dots-to-om", (it) => {
         const result = await toOpenMarchSchema(db as unknown as DB);
 
         expect(result.metadata.audioOffsetSeconds).toBe(1.25);
+    });
+
+    it("prefers the show's own audio offset (tempo mode), even with no workspace settings", async ({
+        db,
+    }) => {
+        await updateWorkspaceSettingsParsed({
+            db,
+            settings: workspaceSettingsSchema.parse({
+                audioOffsetSeconds: 1.25,
+            }),
+        });
+        await db
+            .insert(schema.tempo_settings)
+            .values({ id: 0, audio_offset_seconds: 2.5 });
+        expect(
+            (await toOpenMarchSchema(db as unknown as DB)).metadata
+                .audioOffsetSeconds,
+        ).toBe(2.5);
+
+        await db.delete(schema.workspace_settings);
+        expect(
+            (await toOpenMarchSchema(db as unknown as DB)).metadata
+                .audioOffsetSeconds,
+        ).toBe(2.5);
     });
 
     it("applies pageNumberOffset from workspace settings to page names", async ({

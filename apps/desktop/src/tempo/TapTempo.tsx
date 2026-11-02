@@ -152,45 +152,50 @@ export function TapTempo(props: {
                                 "A steady tempo on the selected counts, or else on the tempo stretch under the playhead",
                             )}
                         >
-                            <button
-                                type="button"
-                                data-testid="tap-tempo-use"
-                                className={`${toolButton(true)} flex-1 justify-center`}
-                                disabled={rounded === null || !props.target}
-                                onClick={(e) => {
-                                    e.currentTarget.blur();
-                                    if (rounded !== null) props.onUse(rounded);
-                                }}
-                            >
-                                {rounded === null && !props.target ? (
-                                    tolgee.t("tempoMode.tap.use", "Use")
-                                ) : rounded === null ? (
-                                    <T
-                                        keyName="tempoMode.tap.useOn"
-                                        defaultValue="Use <muted>on {target}</muted>"
-                                        params={{
-                                            target: props.target,
-                                            muted,
-                                        }}
-                                    />
-                                ) : !props.target ? (
-                                    tolgee.t(
-                                        "tempoMode.tap.useBpm",
-                                        "Use ♩{bpm}",
-                                        { bpm: rounded },
-                                    )
-                                ) : (
-                                    <T
-                                        keyName="tempoMode.tap.useBpmOn"
-                                        defaultValue="Use ♩{bpm} <muted>on {target}</muted>"
-                                        params={{
-                                            bpm: rounded,
-                                            target: props.target,
-                                            muted,
-                                        }}
-                                    />
-                                )}
-                            </button>
+                            {/* a disabled button gets no hover, so the box around it takes the
+                                tooltip: "Select some counts first" still shows */}
+                            <span className="flex flex-1">
+                                <button
+                                    type="button"
+                                    data-testid="tap-tempo-use"
+                                    className={`${toolButton(true)} flex-1 justify-center disabled:pointer-events-none`}
+                                    disabled={rounded === null || !props.target}
+                                    onClick={(e) => {
+                                        e.currentTarget.blur();
+                                        if (rounded !== null)
+                                            props.onUse(rounded);
+                                    }}
+                                >
+                                    {rounded === null && !props.target ? (
+                                        tolgee.t("tempoMode.tap.use", "Use")
+                                    ) : rounded === null ? (
+                                        <T
+                                            keyName="tempoMode.tap.useOn"
+                                            defaultValue="Use <muted>on {target}</muted>"
+                                            params={{
+                                                target: props.target,
+                                                muted,
+                                            }}
+                                        />
+                                    ) : !props.target ? (
+                                        tolgee.t(
+                                            "tempoMode.tap.useBpm",
+                                            "Use ♩{bpm}",
+                                            { bpm: rounded },
+                                        )
+                                    ) : (
+                                        <T
+                                            keyName="tempoMode.tap.useBpmOn"
+                                            defaultValue="Use ♩{bpm} <muted>on {target}</muted>"
+                                            params={{
+                                                bpm: rounded,
+                                                target: props.target,
+                                                muted,
+                                            }}
+                                        />
+                                    )}
+                                </button>
+                            </span>
                         </ShortcutTooltip>
                     </div>
                 </Popover.Content>

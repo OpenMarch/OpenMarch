@@ -25,11 +25,7 @@ import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
 import { MusicNotesIcon } from "@phosphor-icons/react";
 import { T, useTolgee, useTranslate } from "@tolgee/react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-    workspaceSettingsQueryOptions,
-    updateWorkspaceSettingsMutationOptions,
-} from "@/hooks/queries/useWorkspaceSettings";
+import { useQueryClient } from "@tanstack/react-query";
 import { StaticFormField } from "../ui/FormField";
 
 export default function MusicModal({
@@ -193,10 +189,6 @@ function MusicModalContents() {
 function AudioOffsetInput() {
     const queryClient = useQueryClient();
     const { t } = useTranslate();
-    const { data: settings } = useQuery(workspaceSettingsQueryOptions());
-    const { mutate: updateSettings } = useMutation(
-        updateWorkspaceSettingsMutationOptions(queryClient),
-    );
     const [audioOffsetValue, setAudioOffsetValue] = useState("");
     // Tempo mode: the offset lives in the show's history (tempo/audioOffset.ts)
     const effectiveOffset = useAudioOffsetSeconds();
@@ -222,10 +214,8 @@ function AudioOffsetInput() {
                         queryKey: tempoSettingsKey,
                     }),
                 );
-            void settings;
-            void updateSettings;
         },
-        [settings, updateSettings, effectiveOffset, queryClient],
+        [effectiveOffset, queryClient],
     );
 
     const handleChange = useCallback(

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+    MAX_COUNT_SECONDS,
     moveBeatTo,
+    moveLimits,
     movePinsWithMusic,
     rampLengths,
     regroupMeasures,
@@ -136,5 +138,71 @@ describe("movePinsWithMusic", () => {
 
     it("does nothing without pins", () => {
         expect(movePinsWithMusic(even(8), new Set(), 0.4)).toBeNull();
+    });
+});
+
+describe("holds while dragging a count", () => {
+    it("moveBeatTo keeps a hold between the pin before and the dragged count", () => {
+        const d = even(8);
+        d[3] = 6; // a hold
+        const r = moveBeatTo(d, new Set(), 5, 9, new Set([3]))!;
+        expect(r.durations[3]).toBe(6);
+        expect(startsOf(r.durations)[5]).toBeCloseTo(9);
+        expect(r.durations[1]).toBeCloseTo(1);
+        expect(r.durations[4]).toBeCloseTo(1);
+    });
+    it("moveBeatTo keeps a hold between the dragged count and the pin after", () => {
+        const d = even(10);
+        d[7] = 5; // a hold
+        const r = moveBeatTo(d, new Set([9]), 5, 2.4, new Set([7]))!;
+        expect(r.durations[7]).toBe(5);
+        expect(startsOf(r.durations)[9]).toBeCloseTo(startsOf(d)[9]!);
+        expect(startsOf(r.durations)[5]).toBeCloseTo(2.4);
+    });
+    it("a 12 s hold doesn't stop a count after it from staying where it is", () => {
+        const d = even(8);
+        d[3] = 12;
+        const holds = new Set([3]);
+        const now = startsOf(d)[5]!; // 13.5
+        const r = moveBeatTo(d, new Set(), 5, now, holds);
+        expect(r).not.toBeNull();
+        expect(r!.durations).toEqual(d);
+        const lim = moveLimits(d, new Set(), 5, holds);
+        expect(lim.min).toBeLessThanOrEqual(now);
+        expect(lim.max).toBeGreaterThanOrEqual(now);
+        expect(lim.min).toBeCloseTo(12 + 3 * 0.15);
+        expect(lim.max).toBeCloseTo(12 + 3 * MAX_COUNT_SECONDS);
+    });
+    it("moveLimits leaves a hold before the pin after out of the room", () => {
+        const d = even(10);
+        d[7] = 5;
+        const lim = moveLimits(d, new Set([9]), 5, new Set([7]));
+        // counts 5, 6 and 8 may each go down to 0.15 s: the hold keeps its 5 s
+        expect(lim.max).toBeCloseTo(startsOf(d)[9]! - 5 - 3 * 0.15);
+    });
+});
+
+describe("guards", () => {
+    it("retime ignores a lock past the last count", () => {
+        const r = retime(even(8), new Set([20]), 1, 3, rampLengths(2, 100));
+        expect(r.durations.every((x) => Number.isFinite(x))).toBe(true);
+        expect(r.pin).toBeUndefined();
+        expect(r.durations[1]).toBeCloseTo(0.6);
+    });
+    it("regroupMeasures refuses measures of no counts instead of looping", () => {
+        expect(() => regroupMeasures([1, 5], 9, 1, 0)).toThrow(RangeError);
+    });
+    it("retime doesn't squeeze one count of an uneven stretch past the limits to keep a pin", () => {
+        // count 4 is near the 20 BPM limit; stretching the counts to the pin would push it past
+        const d = even(8);
+        d[4] = 2.9;
+        const r = retime(d, new Set([6]), 1, 3, rampLengths(2, 150));
+        r.durations
+            .slice(1)
+            .forEach((x) =>
+                expect(x).toBeLessThanOrEqual(MAX_COUNT_SECONDS + 1e-9),
+            );
+        expect(startsOf(r.durations)[6]).toBeCloseTo(startsOf(d)[6]!);
+        expect(r.pin).toMatchObject({ at: 6, held: true });
     });
 });

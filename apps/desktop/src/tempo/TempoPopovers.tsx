@@ -18,6 +18,20 @@ import { useOnScreen } from "./bandLayout";
 import { CountAsk, CountRange, Editor, Menu } from "./tempoBandTypes";
 import { CountAnswer, useTempoUi } from "./tempoUi";
 
+/**
+ * The popovers are portals, so React hands their events on to the band they open from: stopped
+ * here, a right-click in one doesn't open the band's menu and a pointer over one doesn't
+ * hit-test the lanes under it. A right-click still gets its own menu (paste in a field).
+ */
+const keepEventsIn = {
+    onPointerDown: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+    onPointerMove: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+    onPointerUp: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+    onClick: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+    onDoubleClick: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+    onContextMenu: (e: { stopPropagation: () => void }) => e.stopPropagation(),
+};
+
 export function CountAskPopover({
     ask,
     onClose,
@@ -65,17 +79,25 @@ export function CountAskPopover({
     useEffect(() => ref.current?.focus(), []);
     const boxRef = useRef<HTMLDivElement>(null);
     const position = useOnScreen(boxRef, ask.x, ask.y, "above", ask);
-    // Esc cancels wherever the focus is, and only cancels (tempo mode stays on)
+    // Esc cancels wherever the focus is, and only cancels (tempo mode stays on); so does a press
+    // outside the box (one inside stops before it reaches the window)
+    const close = useRef(onClose);
+    close.current = onClose;
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== "Escape") return;
             e.preventDefault();
             e.stopPropagation();
-            onClose();
+            close.current();
         };
+        const onOutside = () => close.current();
         window.addEventListener("keydown", onKey, true);
-        return () => window.removeEventListener("keydown", onKey, true);
-    }, [onClose]);
+        window.addEventListener("pointerdown", onOutside);
+        return () => {
+            window.removeEventListener("keydown", onKey, true);
+            window.removeEventListener("pointerdown", onOutside);
+        };
+    }, []);
     // Each choice is an action, done on click (owner, 2026-11-01: they read as radios). The one
     // Enter takes shows the key instead of a radio dot
     const icons: Record<CountAnswer, ReactNode> = {
@@ -132,9 +154,11 @@ export function CountAskPopover({
         <div
             ref={boxRef}
             data-testid="tempo-count-ask"
+            role="dialog"
+            aria-label={ask.title}
             className="bg-modal shadow-modal text-text border-stroke rounded-6 fixed z-[100] flex max-h-[calc(100vh-16px)] w-[380px] max-w-[calc(100vw-16px)] flex-col gap-6 overflow-y-auto border p-8 shadow-lg backdrop-blur-md"
             style={position}
-            onPointerDown={(e) => e.stopPropagation()}
+            {...keepEventsIn}
             onKeyDown={(e) => {
                 e.stopPropagation();
                 if (e.key === "Escape") onClose();
@@ -212,8 +236,7 @@ export function InlineEditor({
             ref={boxRef}
             className="bg-modal shadow-modal text-text border-stroke rounded-6 fixed z-[100] flex max-w-[280px] flex-col gap-4 border p-6 shadow-lg backdrop-blur-md"
             style={position}
-            onPointerDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
+            {...keepEventsIn}
         >
             <span className="text-text-subtitle text-[11px]">
                 {editor.hint}
@@ -372,8 +395,11 @@ export function ContextMenu({
             data-testid="tempo-menu"
             className="bg-modal shadow-modal text-text border-stroke rounded-6 fixed z-[100] flex max-h-[calc(100vh-16px)] w-max max-w-[min(440px,calc(100vw-16px))] min-w-[220px] flex-col overflow-y-auto border py-4 shadow-lg backdrop-blur-md"
             style={position}
-            onPointerDown={(e) => e.stopPropagation()}
-            onContextMenu={(e) => e.preventDefault()}
+            {...keepEventsIn}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }}
             onPointerLeave={() => onHover(null)}
         >
             {menu.title && (

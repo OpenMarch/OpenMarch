@@ -10,7 +10,7 @@ import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTempoModeStore } from "./tempoModeStore";
-import { installTempoKeyGuard } from "./tempoShortcuts";
+import { dialogHasKeys, installTempoKeyGuard } from "./tempoShortcuts";
 
 export function TempoModeButton() {
     const on = useTempoModeStore((s) => s.on);
@@ -24,7 +24,10 @@ export function TempoModeButton() {
             const target = e.target as HTMLElement | null;
             if (target?.closest("input, textarea, [contenteditable=true]"))
                 return;
+            // not behind a dialog, nor from a held key flicking it on and off
+            if (dialogHasKeys(target)) return;
             e.preventDefault();
+            if (e.repeat) return;
             useTempoModeStore.getState().toggle();
         };
         window.addEventListener("keydown", onKey);

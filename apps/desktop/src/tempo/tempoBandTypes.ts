@@ -12,7 +12,10 @@ export type Gesture =
           kind: "grab";
           seconds: number;
           pointerX: number;
+          /** The count it would pin to; null before it moves, or while over a spot it can't go */
           beat: number | null;
+          /** It has left the press spot: a release with no `beat` then does nothing */
+          moved?: boolean;
           one: boolean;
       }
     | {

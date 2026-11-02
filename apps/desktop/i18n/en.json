@@ -4433,13 +4433,13 @@
             },
             "toast": {
                 "addCountsFirst": "Add pages or counts out here first",
+                "changedFirst": "{action}: not applied, since the show changed just before. Try again.",
                 "failed": "{action}: {error}",
                 "holdInvalid": "A hold is a length in seconds, such as 2.5",
                 "holdMade": "{where} is a hold. Drag the next count line (or its hit) to where the music goes on.",
                 "markAlreadyThere": "m. {measure} already has rehearsal mark {mark}",
                 "markDropped": "Rehearsal mark {mark} at measure {measure}",
                 "markMoved": "Moved {mark} from m. {from} to m. {to}",
-                "meterPinsNote": "Unpinned {count, plural, one {# count} other {# counts}} inside, since their lengths changed",
                 "meterSetFrom": "{meter} from {where}, {count, plural, one {# count} other {# counts}} a measure; the tempo is as it was",
                 "meterSetOnly": "{meter} for m. {measure} only; the tempo is as it was",
                 "meterShiftNote": "The measures after it start {count, plural, one {# count} other {# counts}} {direction, select, earlier {earlier} other {later}}",
@@ -4459,8 +4459,10 @@
             "pin": {
                 "tag": "{tempo} · {note}",
                 "tagHeld": "{pin} is pinned",
+                "tagMoved": "{pin} moved {seconds} s {direction, select, earlier {earlier} other {later}}",
                 "tagSqueezed": "{range} → ♩{after} for the pin at {pin}",
                 "held": "{pin} is pinned to the music, so your tempo change was scaled down to keep it there",
+                "moved": "{pin} is still pinned but moved {seconds} s {direction, select, earlier {earlier} other {later}}: keeping it in place would make the counts before it too fast or too slow",
                 "squeezed": "{range} went from ♩{before} to ♩{after} to keep {pin} on its hit",
                 "unpinAndApply": "Unpin and apply"
             }
@@ -4561,7 +4563,7 @@
             },
             "tempo": {
                 "name": "Tempo",
-                "title": "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change or type a tempo. Drag off the line to select counts"
+                "title": "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change; right-click > Set tempo… to type one. Drag off the line to select counts"
             }
         },
         "popovers": {

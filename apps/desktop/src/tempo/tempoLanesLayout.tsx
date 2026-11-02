@@ -52,7 +52,7 @@ export const LANES = [
         get title() {
             return tolgee.t(
                 "tempoMode.lanes.tempo.title",
-                "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change or type a tempo. Drag off the line to select counts",
+                "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change; right-click > Set tempo… to type one. Drag off the line to select counts",
             );
         },
     },

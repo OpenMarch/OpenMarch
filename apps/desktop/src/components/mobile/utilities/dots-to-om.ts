@@ -3,7 +3,7 @@
  * Uses getOrmConnection() — throws "Db is not open" if no show is open.
  */
 
-import { readAudioOffsetSeconds } from "@/tempo/audioOffset";
+import { readShowAudioOffsetSeconds } from "@/tempo/audioOffset";
 import { asc } from "drizzle-orm";
 import {
     formatValidationErrors,
@@ -291,6 +291,8 @@ async function readShowRows(db: DB) {
 
 type DotsData = Awaited<ReturnType<typeof readShowRows>> & {
     positionRows: readonly PagePositionRow[];
+    /** The music offset in effect (tempo/audioOffset.ts), undefined when nothing sets one */
+    audioOffsetSeconds: number | undefined;
 };
 
 /**
@@ -304,21 +306,22 @@ type DotsData = Awaited<ReturnType<typeof readShowRows>> & {
  * is released, on the private resolver.
  */
 async function fetchDotsData(db: DB): Promise<DotsData> {
-    const { rows, snapshot } = await withTimelineWriteLock(async () => ({
-        rows: await readShowRows(db),
-        snapshot: await readTimelinePageSnapshot(db),
-    }));
-    // Tempo mode: the offset in the show's history, else the workspace setting
-    if (rows.workspaceSettings)
-        rows.workspaceSettings = {
-            ...rows.workspaceSettings,
-            audioOffsetSeconds: await readAudioOffsetSeconds(
-                db as never,
-                rows.workspaceSettings.audioOffsetSeconds,
-            ),
-        };
+    const { rows, snapshot, showAudioOffset } = await withTimelineWriteLock(
+        async () => ({
+            rows: await readShowRows(db),
+            snapshot: await readTimelinePageSnapshot(db),
+            // Tempo mode: the offset in the show's history, read with the rows it lines up
+            showAudioOffset: await readShowAudioOffsetSeconds(db as never),
+        }),
+    );
     const positionRows = await sampleTimelinePagePositions(snapshot);
-    return { ...rows, positionRows };
+    return {
+        ...rows,
+        positionRows,
+        // The show's own offset, else the workspace setting; none of either leaves it out
+        audioOffsetSeconds:
+            showAudioOffset ?? rows.workspaceSettings?.audioOffsetSeconds,
+    };
 }
 
 function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
@@ -355,8 +358,8 @@ function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
             timingRows.length > 0
                 ? new Date(timingRows[0].timestamp * 1000).toISOString()
                 : new Date().toISOString(),
-        ...(workspaceSettings && {
-            audioOffsetSeconds: workspaceSettings.audioOffsetSeconds,
+        ...(data.audioOffsetSeconds !== undefined && {
+            audioOffsetSeconds: data.audioOffsetSeconds,
         }),
     };
 

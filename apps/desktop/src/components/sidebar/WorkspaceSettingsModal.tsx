@@ -24,6 +24,7 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
 import { T, useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
+import { conToastError } from "@/utilities/utils";
 
 const inputClassname = clsx("col-span-6 self-center");
 
@@ -63,12 +64,16 @@ function WorkspaceSettingsModalContents() {
     const { data: settings, isLoading } = useQuery(
         workspaceSettingsQueryOptions(),
     );
-    const { mutate: updateSettings, isPending } = useMutation(
+    const { mutateAsync: updateSettings, isPending } = useMutation(
         updateWorkspaceSettingsMutationOptions(queryClient),
     );
 
     const [localSettings, setLocalSettings] =
         useState<WorkspaceSettings | null>(null);
+    // Tempo mode: the music offset is the show's (tempo_settings, with undo), not a workspace
+    // setting. The field starts from the offset in effect and Save writes it to the show only
+    // when it was changed (tempo/audioOffset.ts).
+    const [localOffset, setLocalOffset] = useState<number>(effectiveOffset);
     const [inputValues, setInputValues] = useState<{
         defaultTempo: string;
         defaultBeatsPerMeasure: string;
@@ -91,6 +96,7 @@ function WorkspaceSettingsModalContents() {
     React.useEffect(() => {
         if (settings) {
             setLocalSettings(settings);
+            setLocalOffset(effectiveOffset);
             setInputValues({
                 defaultTempo: settings.defaultTempo.toString(),
                 defaultBeatsPerMeasure:
@@ -105,6 +111,10 @@ function WorkspaceSettingsModalContents() {
 
     const handleFieldChange = useCallback(
         (field: keyof WorkspaceSettings, value: number) => {
+            if (field === "audioOffsetSeconds") {
+                setLocalOffset(value);
+                return;
+            }
             if (!localSettings) return;
 
             setLocalSettings({
@@ -115,30 +125,56 @@ function WorkspaceSettingsModalContents() {
         [localSettings],
     );
 
-    const handleSave = useCallback(() => {
+    const settingsChanged =
+        !!localSettings &&
+        JSON.stringify(localSettings) !== JSON.stringify(settings);
+    const offsetChanged = localOffset !== effectiveOffset;
+
+    const handleSave = useCallback(async () => {
         if (!localSettings) return;
-        updateSettings(localSettings, {
-            onSuccess: () => {
-                toast.success(t("workspaceSettings.saved"));
-                toggleOpen();
-            },
-        });
-        // Tempo mode: the offset lives in the show's history (tempo/audioOffset.ts)
-        if (localSettings.audioOffsetSeconds !== effectiveOffset)
-            void writeAudioOffset(localSettings.audioOffsetSeconds).then(() =>
-                queryClient.invalidateQueries({ queryKey: tempoSettingsKey }),
-            );
+        try {
+            await Promise.all([
+                settingsChanged ? updateSettings(localSettings) : null,
+                // One undo step in the show; the workspace setting stays as it is (the fallback
+                // for a show that never set its own offset)
+                offsetChanged
+                    ? writeAudioOffset(localOffset).then(() =>
+                          queryClient.invalidateQueries({
+                              queryKey: tempoSettingsKey,
+                          }),
+                      )
+                    : null,
+            ]);
+        } catch (error) {
+            // A failed settings write was already reported by its mutation
+            if (offsetChanged)
+                conToastError(t("workspaceSettings.updateFailed"), error);
+            return;
+        }
+        toast.success(t("workspaceSettings.saved"));
+        toggleOpen();
     }, [
         localSettings,
+        settingsChanged,
+        offsetChanged,
+        localOffset,
         updateSettings,
         t,
         toggleOpen,
-        effectiveOffset,
         queryClient,
     ]);
 
     const handleReset = useCallback(() => {
-        setLocalSettings(defaultWorkspaceSettings);
+        // The workspace's own offset (the fallback) is left alone; the show's offset goes back to
+        // the default as an undo step of its own
+        const reset = {
+            ...defaultWorkspaceSettings,
+            audioOffsetSeconds:
+                settings?.audioOffsetSeconds ??
+                defaultWorkspaceSettings.audioOffsetSeconds,
+        };
+        setLocalSettings(reset);
+        setLocalOffset(defaultWorkspaceSettings.audioOffsetSeconds);
         setInputValues({
             defaultTempo: defaultWorkspaceSettings.defaultTempo.toString(),
             defaultBeatsPerMeasure:
@@ -152,12 +188,25 @@ function WorkspaceSettingsModalContents() {
             measurementOffset:
                 defaultWorkspaceSettings.measurementOffset.toString(),
         });
-        updateSettings(defaultWorkspaceSettings);
-    }, [updateSettings]);
+        updateSettings(reset).catch(() => {
+            // reported by the mutation
+        });
+        if (effectiveOffset !== defaultWorkspaceSettings.audioOffsetSeconds)
+            writeAudioOffset(defaultWorkspaceSettings.audioOffsetSeconds)
+                .then(() =>
+                    queryClient.invalidateQueries({
+                        queryKey: tempoSettingsKey,
+                    }),
+                )
+                .catch((error: unknown) =>
+                    conToastError(t("workspaceSettings.updateFailed"), error),
+                );
+    }, [settings, effectiveOffset, updateSettings, queryClient, t]);
 
     const handleCancel = useCallback(() => {
         if (settings) {
             setLocalSettings(settings);
+            setLocalOffset(effectiveOffset);
             setInputValues({
                 defaultTempo: settings.defaultTempo.toString(),
                 defaultBeatsPerMeasure:
@@ -246,8 +295,7 @@ function WorkspaceSettingsModalContents() {
         },
     ];
 
-    const hasChanges =
-        JSON.stringify(localSettings) !== JSON.stringify(settings);
+    const hasChanges = settingsChanged || offsetChanged;
 
     return (
         <div className="animate-scale-in text-text flex h-full min-h-0 w-fit flex-col gap-16">
@@ -389,7 +437,7 @@ function WorkspaceSettingsModalContents() {
             <div className="flex w-[30rem] max-w-full shrink-0 flex-col gap-8">
                 <div className="touch:gap-8 flex flex-wrap gap-2">
                     <Button
-                        onClick={handleSave}
+                        onClick={() => void handleSave()}
                         disabled={isPending || !hasChanges}
                         size="compact"
                     >

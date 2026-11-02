@@ -4,7 +4,8 @@
  * and that has to undo with the counts it lined up, so the offset lives in `tempo_settings`, a
  * table with history triggers. A show that never set it there uses its workspace setting.
  *
- * Every reader of the offset goes through `useAudioOffsetSeconds` / `readAudioOffsetSeconds`.
+ * Every reader of the offset goes through `useAudioOffsetSeconds` / `readAudioOffsetSeconds` (or
+ * `readShowAudioOffsetSeconds`, for a reader that falls back on its own copy of the workspace setting).
  */
 import { useQuery } from "@tanstack/react-query";
 import { eq } from "drizzle-orm";
@@ -58,6 +59,13 @@ export async function readAudioOffsetSeconds(
     workspaceOffset: number | undefined,
 ): Promise<number> {
     return effectiveAudioOffset(await readRow(conn), workspaceOffset);
+}
+
+/** The offset the show itself stores (`tempo_settings`), or null when it never set one */
+export async function readShowAudioOffsetSeconds(
+    conn: DbConnection | DbTransaction,
+): Promise<number | null> {
+    return (await readRow(conn))?.audio_offset_seconds ?? null;
 }
 
 /** Set the offset inside an edit, so it undoes with it */

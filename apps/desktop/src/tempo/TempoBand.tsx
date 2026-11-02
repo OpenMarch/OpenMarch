@@ -120,6 +120,8 @@ import {
 import { planMeter, writeMeter } from "./meterWrites";
 import { createLabelPlacer, textWidth, type LabelBox } from "./bandLayout";
 import { useTempoModeStore } from "./tempoModeStore";
+import { dialogHasKeys } from "./tempoShortcuts";
+import { afterCountEdit } from "./countEditEffects";
 import {
     ContextMenu,
     CountAskPopover,
@@ -218,14 +220,38 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const commitRef = useRef<(label: string, result: Edit | null) => void>(
         () => {},
     );
-    const sayPinRef = useRef<(label: string, result: Edit) => () => void>(
-        () => () => {},
-    );
+    const sayPinRef = useRef<
+        (
+            label: string,
+            result: Edit,
+            options?: { lead?: string; canFree?: boolean },
+        ) => () => boolean
+    >(() => () => false);
     /** The counts the menu item under the pointer would change */
     const [menuRange, setMenuRange] = useState<CountRange | null>(null);
     useEffect(() => {
         if (!menu) setMenuRange(null);
     }, [menu]);
+    /**
+     * The show's timing as the lanes read it, as text: it changes when an edit, an undo or a redo
+     * lands (not when the view only scrolls or zooms)
+     */
+    const dataKey = useMemo(
+        () =>
+            [
+                data.storedCount,
+                data.durations.slice(0, data.storedCount + 1).join(),
+                [...data.locks].join(),
+                [...data.holds].join(),
+                data.measures
+                    .map((m) => `${m.id}:${m.start}:${m.mark}:${m.meter}`)
+                    .join(),
+            ].join("|"),
+        [data],
+    );
+    // The add/remove box's choices were worked out from the counts as they were: a change
+    // closes it rather than leave them to undo it
+    useEffect(() => setAsk(null), [dataKey]);
     /** What a menu item, an open editor or the add/remove box is about to change */
     const highlight = menuRange ?? editor?.range ?? ask?.range ?? null;
     /** A hover explanation (a red dot) */
@@ -239,10 +265,20 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     // It explains what was under the pointer: scrolling or zooming moves that away
     useEffect(() => setTip(null), [win.left, ppb]);
 
+    /** Counts every change to the show's history (an edit, an undo, a redo) */
+    const historyVersion = useRef(0);
+    /** The history version a note's "Unpin and apply" was offered at, while it's on screen */
+    const noteOffer = useRef<number | null>(null);
     // Tempo edits aren't mutations, so the title bar's undo and redo don't hear of them otherwise
     useEffect(
         () =>
             subscribeHistoryChanges(() => {
+                historyVersion.current++;
+                // the show changed since the note's edit: its offer would undo that
+                if (noteOffer.current !== null) {
+                    noteOffer.current = null;
+                    toast.dismiss(NOTE_TOAST);
+                }
                 void queryClient.invalidateQueries({
                     queryKey: historyKeys.all(),
                 });
@@ -511,25 +547,48 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         return out;
     }, [data.holds, data.storedCount, firstBeat, lastBeat, qBpm]);
 
+    /** Edits waiting for, or being, written: one at a time, in order */
+    const queue = useRef<Promise<void>>(Promise.resolve());
+    const pending = useRef(0);
+    /**
+     * Write an edit after any still being written. Each edit was worked out from the show as it
+     * was when it was made, so one made before the show changed (an edit still saving, an undo)
+     * isn't written: it would undo that change. It says so instead.
+     */
     const run = useCallback(
-        async (label: string, work: () => Promise<unknown>) => {
-            if (busy) return;
+        (label: string, work: () => Promise<unknown>): Promise<void> => {
+            const madeAt = historyVersion.current;
+            pending.current++;
             setBusy(true);
-            try {
-                await work();
-            } catch (e) {
-                toast.error(
-                    t("tempoMode.band.toast.failed", {
-                        action: label,
-                        error: e instanceof Error ? e.message : String(e),
-                    }),
-                );
-            } finally {
-                setBusy(false);
-                setPreview(null);
-            }
+            const job = queue.current.then(async () => {
+                try {
+                    if (historyVersion.current !== madeAt) {
+                        toast.error(
+                            t("tempoMode.band.toast.changedFirst", {
+                                action: label,
+                            }),
+                        );
+                        return;
+                    }
+                    await work();
+                } catch (e) {
+                    toast.error(
+                        t("tempoMode.band.toast.failed", {
+                            action: label,
+                            error: e instanceof Error ? e.message : String(e),
+                        }),
+                    );
+                } finally {
+                    if (--pending.current === 0) {
+                        setBusy(false);
+                        setPreview(null);
+                    }
+                }
+            });
+            queue.current = job;
+            return job;
         },
-        [busy, t],
+        [t],
     );
     const commit = useCallback(
         (
@@ -1009,6 +1068,20 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const p = result?.pin;
         if (!p) return null;
         const pin = measureLabel(p.at);
+        if (p.moved !== undefined) {
+            // still a pin, at a new time: there's no edit to offer without it
+            const params = {
+                pin,
+                seconds: Math.abs(p.moved).toFixed(2),
+                direction: p.moved < 0 ? "earlier" : "later",
+            };
+            return {
+                pin,
+                moved: true,
+                tag: t("tempoMode.band.pin.tagMoved", params),
+                toast: t("tempoMode.band.pin.moved", params),
+            };
+        }
         if (p.held)
             return {
                 pin,
@@ -1034,23 +1107,51 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
      * For an edit a pin worked around, before it's written: a way to say what the pin did, and
      * offer the edit without it, once it is
      */
-    const sayPin = (label: string, result: Edit) => {
+    const sayPin = (
+        label: string,
+        result: Edit,
+        {
+            lead,
+            canFree = true,
+        }: {
+            /** What the edit did, said first in the same note */
+            lead?: string;
+            /** Offer the edit without the pin (only a plain tempo edit can write it) */
+            canFree?: boolean;
+        } = {},
+    ) => {
         const effect = pinEffect(result);
         const p = result.pin;
-        if (!effect || !p) return () => {};
-        return () =>
-            toast.info(effect.toast, {
+        if (!effect || !p) return () => false;
+        const text = lead ? `${lead}. ${effect.toast}` : effect.toast;
+        return () => {
+            // offered only while the show is as this edit left it: computed from the counts
+            // before it, it would undo whatever changed since (another edit, an undo or a redo)
+            const offer = canFree && !("moved" in effect);
+            const version = historyVersion.current;
+            noteOffer.current = offer ? version : null;
+            toast.info(text, {
                 id: NOTE_TOAST,
                 duration: 10000,
-                action: {
-                    label: t("tempoMode.band.pin.unpinAndApply"),
-                    onClick: () =>
-                        commitRef.current(label, {
-                            ...p.free(),
-                            changes: result.changes,
-                        }),
-                },
+                ...(offer
+                    ? {
+                          action: {
+                              label: t("tempoMode.band.pin.unpinAndApply"),
+                              onClick: () => {
+                                  if (historyVersion.current !== version)
+                                      return;
+                                  noteOffer.current = null;
+                                  commitRef.current(label, {
+                                      ...p.free(),
+                                      changes: result.changes,
+                                  });
+                              },
+                          },
+                      }
+                    : {}),
             });
+            return true;
+        };
     };
     sayPinRef.current = sayPin;
     /** The same, shorter, in measures: "m. 11–12" */
@@ -1172,21 +1273,27 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         one: boolean,
         base = data,
     ): TempoEditResult | null => {
-        if (data.holds.has(beat - 1)) {
+        if (base.holds.has(beat - 1)) {
             const r = retime(
                 base.durations,
                 base.locks,
                 beat - 1,
                 beat,
                 [seconds - startsOf(base.durations)[beat - 1]!],
-                { hold: true },
+                {
+                    hold: true,
+                    // the other holds keep their length while the counts after this one stretch
+                    fixed: new Set(
+                        [...base.holds].filter((h) => h !== beat - 1),
+                    ),
+                },
             );
             r.locks.add(beat);
             return r;
         }
         return one
             ? moveOneCount(base.durations, base.locks, beat, seconds)
-            : moveBeatTo(base.durations, base.locks, beat, seconds);
+            : moveBeatTo(base.durations, base.locks, beat, seconds, base.holds);
     };
     /**
      * Move the music so `seconds` of it is on count 1. Pinned counts are on their hits, so they
@@ -1370,6 +1477,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         void run(label, async () => {
             const result = await work();
             await refetch();
+            afterCountEdit(result, queryClient);
             const parts = [label];
             if (result.kept)
                 parts.push(
@@ -2032,6 +2140,24 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     gestureRef.current = gesture;
     /** Set by Escape: the release that ends the cancelled drag does nothing */
     const cancelGesture = useRef(false);
+    /**
+     * Drop the drag in progress, as if it never happened: Escape, a cancelled pointer, lost
+     * pointer capture, the window losing focus. The release that ends it (if any) does nothing.
+     */
+    const cancelDrag = useCallback(() => {
+        if (!gestureRef.current) return false;
+        gestureRef.current = null;
+        cancelGesture.current = true;
+        setGesture(null);
+        setPreview(null);
+        setBlocked(null);
+        return true;
+    }, []);
+    useEffect(() => {
+        const onBlur = () => cancelDrag();
+        window.addEventListener("blur", onBlur);
+        return () => window.removeEventListener("blur", onBlur);
+    }, [cancelDrag]);
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
@@ -2043,15 +2169,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             )
                 return;
             const key = e.key.toLowerCase();
-            if (e.key === "Escape" && gestureRef.current) {
+            if (e.key === "Escape" && cancelDrag()) {
                 e.preventDefault();
                 e.stopPropagation();
-                cancelGesture.current = true;
-                setGesture(null);
-                setPreview(null);
-                setBlocked(null);
                 return;
             }
+            // T and M are letters a dialog may want (or that would act behind it)
+            if ((key === "t" || key === "m") && dialogHasKeys(target)) return;
             if (key === "t") {
                 e.preventDefault();
                 e.stopPropagation();
@@ -2061,6 +2185,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             } else if (key === "m" && isPlaying) {
                 e.preventDefault();
                 e.stopPropagation();
+                if (e.repeat) return;
                 const heard = audible();
                 let best: TempoMeasure | null = null;
                 for (const m of data.measures)
@@ -2073,17 +2198,22 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         best = m;
                 if (!best) return;
                 const name = nextMarkName();
+                // every letter A to Z is taken: no name to give it
+                if (!name) return;
                 const measure = best;
-                void setRehearsalMark({ measureId: measure.id!, mark: name })
-                    .then(refetch)
-                    .then(() =>
-                        toast.success(
-                            t("tempoMode.band.toast.markDropped", {
-                                mark: name,
-                                measure: String(measure.number),
-                            }),
-                        ),
+                void run(t("tempoMode.band.action.rehearsalMark"), async () => {
+                    await setRehearsalMark({
+                        measureId: measure.id!,
+                        mark: name,
+                    });
+                    await refetch();
+                    toast.success(
+                        t("tempoMode.band.toast.markDropped", {
+                            mark: name,
+                            measure: String(measure.number),
+                        }),
                     );
+                });
             }
         };
         window.addEventListener("keydown", onKey, true);
@@ -2297,6 +2427,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         e.stopPropagation();
         cancelGesture.current = false;
         if (e.button !== 0 || busy) return;
+        // nothing left over from a drag that ended without a release
+        setPreview(null);
+        setBlocked(null);
         setMenu(null);
         setTip(null);
         const x = localX(e);
@@ -2454,11 +2587,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             return;
         }
         if (gesture.kind === "grab") {
-            if (Math.abs(x - gesture.pointerX) < 3 && gesture.beat === null)
-                return;
+            if (Math.abs(x - gesture.pointerX) < 3 && !gesture.moved) return;
             const beat = Math.max(1, Math.round(beatAtX(x, ppb)));
             if (beat === 1) {
-                setGesture({ ...gesture, beat });
+                setGesture({ ...gesture, beat, moved: true });
+                setPreview(null);
                 setBlocked({
                     x: xOf(1, ppb),
                     text: t("tempoMode.band.drag.hitToCountOne"),
@@ -2467,10 +2600,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }
             const result = placement(beat, gesture.seconds, gesture.one);
             if (result) {
-                setGesture({ ...gesture, beat });
+                setGesture({ ...gesture, beat, moved: true });
                 setPreview(result);
                 setBlocked(null);
             } else {
+                // released here, it does nothing: not the last spot it could go
+                setGesture({ ...gesture, beat: null, moved: true });
+                setPreview(null);
                 const lim = moveLimits(
                     data.durations,
                     data.locks,
@@ -2645,6 +2781,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     };
     const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
         const g = gesture;
+        // ended: the lost capture that follows a release isn't a cancel
+        gestureRef.current = null;
         setGesture(null);
         setBlocked(null);
         if (cancelGesture.current) {
@@ -2691,6 +2829,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         }
         if (g.kind === "grab" || (g.kind === "line" && !g.moved)) {
             const beat = g.kind === "grab" ? g.beat : null;
+            if (beat === null && g.kind === "grab" && g.moved) {
+                // let go over a spot it can't go
+                setPreview(null);
+                return;
+            }
             if (beat === null) {
                 useTimelineSelectionStore
                     .getState()
@@ -3205,11 +3348,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             meter,
             only,
         });
-        // a time signature that changes count lengths re-times the counts, which lets go of the
-        // pins inside; say so (4/4 to 2/4 keeps them all)
-        const dropped = [...data.locks].filter(
-            (l) => !plan.result.locks.has(l),
-        );
         const by = plan.shift;
         // Each note is a sentence of its own, after what was set
         const notes = [
@@ -3232,16 +3370,19 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     count: Math.abs(by),
                     direction: by < 0 ? "earlier" : "later",
                 }),
-            dropped.length &&
-                t("tempoMode.band.toast.meterPinsNote", {
-                    count: dropped.length,
-                }),
         ].filter((note): note is string => typeof note === "string");
+        const action = t("tempoMode.band.action.timeSignature");
+        // every pin stays a pin; say what keeping one did, as tempo edits do. Its edit without
+        // the pin isn't offered: that would leave the time signature out.
+        const sayPin = sayPinRef.current(action, plan.result, {
+            lead: notes.join(". "),
+            canFree: false,
+        });
         setPreview(plan.result);
-        void run(t("tempoMode.band.action.timeSignature"), async () => {
+        void run(action, async () => {
             await writeMeter({ plan, before: data.durations });
             await refetch();
-            toast.success(notes.join(". "), { id: NOTE_TOAST });
+            if (!sayPin()) toast.success(notes.join(". "), { id: NOTE_TOAST });
         });
     };
     /**
@@ -3855,11 +3996,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 onPointerUp(e);
             }}
             onClick={(e) => e.stopPropagation()}
-            onPointerCancel={() => {
-                setGesture(null);
-                setPreview(null);
-                setBlocked(null);
-            }}
+            onPointerCancel={cancelDrag}
+            onLostPointerCapture={cancelDrag}
             onPointerLeave={() => {
                 setTip(null);
                 setHover(null);
