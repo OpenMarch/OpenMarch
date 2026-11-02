@@ -111,8 +111,9 @@ import {
     meterOfMeasure,
     parseMeter,
     quarterBpmOf,
+    type Meter,
 } from "./meters";
-import { planMeter, writeMeter } from "./meterWrites";
+import { planMeter, planMeterOnly, writeMeter } from "./meterWrites";
 import { createLabelPlacer, textWidth, type LabelBox } from "./bandLayout";
 import { useTempoModeStore } from "./tempoModeStore";
 import {
@@ -448,13 +449,16 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
      */
     const endHandleOf = useCallback(
         (s: TempoSegment) => {
-            if (s.uneven || s.to - s.from < 3) return null;
+            // not where it can't change anything (a hold keeps its length), nor zoomed out so far
+            // it would sit on the next change's point
+            if (s.uneven || s.to - s.from < 3 || ppb < 12) return null;
+            if (data.holds.has(s.to - 1)) return null;
             return {
                 x: xOf(s.to - 1, ppb) + ppb / 2,
                 y: yOfBpm(s.bpmTo),
             };
         },
-        [ppb, yOfBpm],
+        [ppb, yOfBpm, data.holds],
     );
 
     // A count whose tempo jumps one way and back is probably one misplaced count line
@@ -1883,21 +1887,22 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             (s) => beatAtX(x, ppb) >= s.from && beatAtX(x, ppb) < s.to,
         );
         // a handle or point can sit just past its stretch's end: look at the neighbours too
-        for (const j of [i, i - 1, i + 1]) {
-            const s = segments[j];
-            if (!s) continue;
-            const end = endHandleOf(s);
-            if (end && Math.hypot(end.x - x, end.y - y) <= 7)
-                return { kind: "end", stretch: s };
-            const h = curveHandleOf(s);
-            if (h && Math.hypot(h.x - x, h.y - y) <= 7)
-                return { kind: "curve", stretch: s };
-        }
+        // a change's point first: an end dot or handle beside it never takes its press
         for (const j of [i, i + 1]) {
             const s = segments[j];
             if (!s || s.from <= 1) continue;
             if (Math.hypot(xOf(s.from, ppb) - x, yOfBpm(s.bpmFrom) - y) <= 7)
                 return { kind: "point", stretch: s };
+        }
+        for (const j of [i, i - 1, i + 1]) {
+            const s = segments[j];
+            if (!s) continue;
+            const end = endHandleOf(s);
+            if (end && Math.hypot(end.x - x, end.y - y) <= 6)
+                return { kind: "end", stretch: s };
+            const h = curveHandleOf(s);
+            if (h && Math.hypot(h.x - x, h.y - y) <= 7)
+                return { kind: "curve", stretch: s };
         }
         const line = tempoLineAt(x, y);
         const at = line === null ? null : segmentAt(line);
@@ -2477,6 +2482,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             // it; a handle goes back to a jump
             const target = tempoTargetAt(x, y);
             if (!target) return;
+            // a hold isn't tempo: double-clicking it is about its length
+            const held = Math.floor(beat);
+            if (target.kind !== "point" && data.holds.has(held)) {
+                editHold(e, held);
+                return;
+            }
             if (target.kind === "lane") {
                 addChange(Math.round(beat));
                 return;
@@ -2487,6 +2498,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }
             if (target.kind === "curve" || target.kind === "end") {
                 const st = segmentAt(target.stretch.from);
+                // a steady stretch's end dot sits on the line: as on the line, add a change
+                if (target.kind === "end" && !st?.ramp) {
+                    addChange(Math.round(beat));
+                    return;
+                }
                 if (st?.ramp)
                     commit(
                         "Tempo jump",
@@ -2499,11 +2515,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 return;
             }
             // The line too adds a change (owner, 2026-11-01: double-clicking the line never did
-            // what was expected); typing a tempo is right-click > Set tempo…. On a hold, its length
+            // what was expected); typing a tempo is right-click > Set tempo…
             const b = tempoLineAt(x, y);
             if (b === null) return;
-            if (data.holds.has(b)) editHold(e, b);
-            else addChange(Math.round(beat));
+            addChange(Math.round(beat));
         } else if (y >= MEASURES.top) {
             const m = laneMeasureAt(x, y);
             if (m && m.id !== null) renumber(e, m);
@@ -2740,7 +2755,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         icon: <ArrowUUpLeftIcon size={I} aria-hidden />,
                         aside: `back to ${bpmText(back.bpm)}`,
                         onSelect: () => aTempo(beat),
-                        hint: `From ${measureLabel(back.from)}, back to the tempo before the gradual change. The counts before it keep their tempo.`,
+                        hint: `From ${measureLabel(back.from)}, back to the tempo the gradual change started at. The counts before it keep their tempo.`,
                         range: { from: back.from, to: back.to },
                     });
             }
@@ -2824,7 +2839,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const measureStarts = data.measures
             .filter((m) => m.id !== null)
             .map((m) => m.start);
-        const plan = planMeter({
+        const label = meterLabel(meter, true);
+        const was = measureAt(start);
+        const old = was ? meterOfMeasure(was) : null;
+        const common = {
             durations: data.durations,
             locks: data.locks,
             measureStarts,
@@ -2833,64 +2851,46 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             meter,
             units,
             holds: data.holds,
+        };
+        // This measure only: the old meter again from the next count, in the same edit (a 2/4
+        // bar in a 4/4 piece moves the downbeats after it, as in the score). Where the run is
+        // that one measure, it's an ordinary change
+        const onlyPlan = only && old ? planMeterOnly({ ...common, old }) : null;
+        const plan = onlyPlan?.first ?? planMeter(common);
+        const last = onlyPlan?.then ?? plan;
+        const fmt = (m: Meter) => ({
+            meter: `${m.top}/${m.bottom}`,
+            grouping: m.grouping.join("+"),
         });
-        const label = meterLabel(meter, true);
-        // This measure only: the old meter again from the next measure, in the same edit (a 2/4
-        // bar in a 4/4 piece moves the downbeats after it, as in the score)
-        const was = measureAt(start);
-        const old = was ? meterOfMeasure(was) : null;
-        const next = start + meter.grouping.length;
-        let then: Parameters<typeof writeMeter>[0]["then"];
-        if (only && old && next < plan.to) {
-            const nextUnits = [...units];
-            for (let b = plan.from; b < plan.to; b++)
-                nextUnits[b] =
-                    meter.grouping[(b - plan.from) % meter.grouping.length];
-            then = {
-                plan: planMeter({
-                    durations: plan.result.durations,
-                    locks: plan.result.locks,
-                    measureStarts: [
-                        ...measureStarts.filter((b) => b < plan.from),
-                        ...plan.starts,
-                        ...measureStarts.filter((b) => b >= plan.to),
-                    ],
-                    beatCount: data.storedCount,
-                    start: next,
-                    meter: old,
-                    units: nextUnits,
-                    holds: data.holds,
-                }),
-                meter: {
-                    meter: `${old.top}/${old.bottom}`,
-                    grouping: old.grouping.join("+"),
-                },
-            };
-        }
-        setPreview(then?.plan.result ?? plan.result);
+        // a meter that changes count lengths re-times the counts, which lets go of the pins
+        // inside; say so (4/4 to 2/4 keeps them all)
+        const dropped = [...data.locks].filter(
+            (l) => !last.result.locks.has(l),
+        );
+        const pinsNote = dropped.length
+            ? `. Unpinned ${dropped.length} count(s) inside, since their lengths changed`
+            : "";
+        const shortNote = last.leftover
+            ? `. The last measure before the next change is short: ${last.leftover} count(s) (marked *)`
+            : "";
+        setPreview(last.result);
         void run("Time signature", async () => {
             await writeMeter({
                 plan,
                 before: data.durations,
-                meter: {
-                    meter: `${meter.top}/${meter.bottom}`,
-                    grouping: meter.grouping.join("+"),
-                },
-                then,
+                meter: fmt(meter),
+                then:
+                    onlyPlan && old
+                        ? { plan: onlyPlan.then, meter: fmt(old) }
+                        : undefined,
             });
             await refetch();
-            if (then && old) {
-                toast.success(
-                    `${label} for m. ${was!.number} only, then ${meterLabel(old, true)} again; the tempo is as it was`,
-                    { id: NOTE_TOAST },
-                );
-                return;
-            }
             toast.success(
-                `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was` +
-                    (plan.leftover
-                        ? `. The last measure before the next change is short: ${plan.leftover} count(s) (marked *)`
-                        : ""),
+                (onlyPlan && old
+                    ? `${label} for m. ${was!.number} only, then ${meterLabel(old, true)} again; the tempo is as it was`
+                    : `${label} from ${measureLabel(plan.from)}, ${meter.grouping.length} counts a measure; the tempo is as it was`) +
+                    shortNote +
+                    pinsNote,
                 { id: NOTE_TOAST },
             );
         });
@@ -3003,8 +3003,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const changed = !prev || m.counts !== prev.counts;
         // A short measure (marked *) is one cut short, not one with its own time signature: a
         // single 2/4 bar set for that measure only shows its chip
-        const ownMeter =
-            !!m.meter && meterOfMeasure(m).grouping.length === m.counts;
+        const stored = m.meter
+            ? parseMeter(m.grouping ? `${m.meter} ${m.grouping}` : m.meter)
+            : null;
+        const ownMeter = !!stored && stored.grouping.length === m.counts;
         const partial =
             !ownMeter &&
             !!prev &&

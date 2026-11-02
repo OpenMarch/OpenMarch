@@ -38,11 +38,11 @@ export function TempoHelp() {
         ],
         [
             "Drag a stretch's square end dot",
-            "sets the tempo it ends on, so a rit. can jump back (a tempo)",
+            "sets the tempo it ends on, so a rit. can jump back (a tempo); with a pinned count after it, the counts up to the pin make room",
         ],
         [
             "Right-click in a gradual change",
-            "A tempo: back to the tempo before it",
+            "A tempo: back to the tempo it started at",
         ],
         ["Drag along Measures", "selects counts to edit"],
         [

@@ -16,7 +16,7 @@ import {
 } from "./tempoWrites";
 import type { MeterPlan } from "./meterPlan";
 
-export { planMeter, type MeterPlan } from "./meterPlan";
+export { planMeter, planMeterOnly, type MeterPlan } from "./meterPlan";
 
 /**
  * Write a meter plan: measures, their meter, the count lengths and the pins, as one edit. `then`

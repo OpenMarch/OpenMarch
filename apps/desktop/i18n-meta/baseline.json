@@ -79,7 +79,7 @@
         "src/stores/AlertModalStore.tsx": 1,
         "src/stores/SidebarModalStore.tsx": 1,
         "src/tempo/TapTempo.tsx": 16,
-        "src/tempo/TempoBand.tsx": 24,
+        "src/tempo/TempoBand.tsx": 23,
         "src/tempo/TempoHelp.tsx": 3,
         "src/tempo/TempoModeButton.tsx": 4,
         "src/tempo/TempoPopovers.tsx": 3,
