@@ -20,7 +20,8 @@
  *   otherwise the rest slides. Shift moves only that count line. A drag stops at a pin and says
  *   why. Dropping a spot on count 1 moves the music instead. Nothing is detected in the music:
  *   lining up is by ear and eye (detection is a later spike).
- * - **T** taps along while playing; stopping shows the taps as drafts to apply or discard.
+ * - **T** taps tempo: a panel shows how fast you tap, and Use puts that tempo on the selected
+ *   counts or the tempo stretch under the playhead (TapTempo.tsx).
  */
 import {
     useCallback,
@@ -59,23 +60,17 @@ import {
     getLivePlaybackRate,
     LIVE_LEAD,
 } from "@/components/timeline/audio/AudioPlayer";
-import {
-    startTimelinePlayOn,
-    stopTimelinePlayback,
-} from "@/timeline/timelineTransport";
 import type {
     TimelineBand,
     TimelineBandGeometry,
 } from "@/components/timeline/TimelineBand";
 import {
-    assignTaps,
     lockAfter,
     lockBefore,
     moveBeatTo,
     moveLimits,
     moveOneCount,
     movePinsWithMusic,
-    pinBeats,
     rampLengths,
     respace,
     retime,
@@ -115,7 +110,6 @@ import {
     quarterBpmOf,
 } from "./meters";
 import { planMeter, writeMeter } from "./meterWrites";
-import { readTapCheck, TapCheckPanel, type TapCheckResult } from "./TapCheck";
 import { createLabelPlacer, textWidth, type LabelBox } from "./bandLayout";
 import { useTempoModeStore } from "./tempoModeStore";
 import {
@@ -160,7 +154,6 @@ import {
 import { CountChoice, useHeaderSlot, useTempoUi } from "./tempoUi";
 import {
     NOTE_TOAST,
-    TAPS_TOAST,
     TempoMeasure,
     commitEdit,
     saveMarks,
@@ -180,12 +173,6 @@ export const TEMPO_BAND: TimelineBand = {
 // ---------------------------------------------------------------------------------------------
 // The lanes. Their state (tempoUi.ts), layout (tempoLanesLayout.tsx), data (useTempoData.ts),
 // types (tempoBandTypes.ts), toolbar, help and popovers live beside this file.
-
-/**
- * The tapping check is offered once a session, after a tap pass, as a toast with a button (never a
- * dialog in the way: jo); it's only ever opened from its button
- */
-let tapCheckOffered = false;
 
 // eslint-disable-next-line max-lines-per-function
 function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
@@ -246,10 +233,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             }),
         [],
     );
-    // leaving tempo mode clears the selection and the last note
+    // leaving tempo mode clears the selection, tap tempo and the last note
     useEffect(
         () => () => {
-            useTempoUi.getState().setRange(null);
+            const state = useTempoUi.getState();
+            state.setRange(null);
+            state.setTapOpen(false);
+            state.resetTaps();
             toast.dismiss(NOTE_TOAST);
         },
         [],
@@ -887,27 +877,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             ctx.lineTo(x, MUSIC.top + MUSIC.height);
             ctx.stroke();
         }
-
-        // taps: live, then as drafts
-        ctx.fillStyle = accent;
-        for (const t of ui.taps ?? []) {
-            const x = xAtSeconds(t);
-            ctx.fillRect(x - 1, MUSIC.top, 2, MUSIC.height);
-        }
-        if (ui.draft) {
-            ctx.save();
-            ctx.strokeStyle = accent;
-            ctx.setLineDash([4, 3]);
-            ctx.lineWidth = 2;
-            for (const d of ui.draft) {
-                const x = xAtSeconds(d.seconds);
-                ctx.beginPath();
-                ctx.moveTo(x, MUSIC.top);
-                ctx.lineTo(x, MUSIC.top + MUSIC.height);
-                ctx.stroke();
-            }
-            ctx.restore();
-        }
     }, [
         qBpm,
         units,
@@ -931,8 +900,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         outliers,
         highlight,
         ui.range,
-        ui.taps,
-        ui.draft,
     ]);
 
     // ---- helpers -------------------------------------------------------------------------
@@ -1059,12 +1026,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         }
         return out;
     };
-    /** The music heard now; for a tap, less how late this person's taps land (the tapping check) */
-    const audible = (tap = false) =>
+    /** The music heard now */
+    const audible = () =>
         getLivePlaybackPosition() -
-        (LIVE_LEAD +
-            (audioContextRef?.outputLatency ?? 0) +
-            (tap ? (readTapCheck()?.latency ?? 0) : 0)) *
+        (LIVE_LEAD + (audioContextRef?.outputLatency ?? 0)) *
             getLivePlaybackRate();
 
     /**
@@ -1755,65 +1720,31 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             },
         });
 
-    // ---- keys while playing: T taps, M drops a rehearsal mark ----------------------------
+    // Tap tempo's Use: a steady tempo on the selected counts, or on the stretch under the playhead
+    const tapCounts = (() => {
+        if (ui.range) return ui.range;
+        const s = segmentAt(Math.max(1, Math.floor(playheadBeat)));
+        return s ? { from: s.from, to: s.to } : null;
+    })();
+    const tapTarget = tapCounts
+        ? measuresLabel(tapCounts.from, tapCounts.to)
+        : null;
+    // The taps are counts, not quarter notes: in 6/8 counted in 2 a count is three eighths. The
+    // quarter-note tempo written makes the counts average the tapped length (2+2+3 included)
+    const applyTapTempo = (bpm: number) => {
+        if (!tapCounts) return;
+        const { from, to } = tapCounts;
+        let eighths = 0;
+        for (let b = from; b < to; b++) eighths += units[b] ?? 2;
+        const quarter = (bpm * eighths) / (2 * (to - from));
+        setTempo(from, to, quarter, quarter);
+    };
+
+    // ---- keys: T taps tempo, M drops a rehearsal mark while playing ----------------------
     const gestureRef = useRef<Gesture | null>(null);
     gestureRef.current = gesture;
     /** Set by Escape: the release that ends the cancelled drag does nothing */
     const cancelGesture = useRef(false);
-    const tapsRef = useRef<number[] | null>(null);
-    tapsRef.current = ui.taps;
-    const [tapCheck, setTapCheck] = useState<null | { thenTap: boolean }>(null);
-    const tapCheckRef = useRef(tapCheck);
-    tapCheckRef.current = tapCheck;
-    /** The count the tap pass's taps count from (where it started playing), while tapping */
-    const [tapFrom, setTapFrom] = useState<number | null>(null);
-    /** Enter while tapping: stopping applies the taps at once, with no review */
-    const applyOnStop = useRef(false);
-    /** The view's left and right edges (band px, right of the lane names), set as it's drawn */
-    const viewRef = useRef({ left: 0, right: 0 });
-    const startTapping = useCallback(() => {
-        if (!playing) return;
-        // From a measure before the selection's measure, else the playhead's: taps in it count
-        // too. A playhead out of view would scroll the view away from what's being looked at
-        // (jo: it jumped back to the start from the drum break), so then the pass starts from
-        // what's in view: its first whole measure is the measure before
-        const view = viewRef.current;
-        const px = xOf(playheadBeat, ppb);
-        const firstInView = data.measures.findIndex(
-            (m) => xOf(m.start, ppb) >= view.left,
-        );
-        const range = useTempoUi.getState().range;
-        const playheadInView = px >= view.left && px <= view.right;
-        const at =
-            range?.from ??
-            (playheadInView || firstInView < 0
-                ? playheadBeat
-                : (data.measures[firstInView + 1]?.start ??
-                  data.measures[firstInView]!.start));
-        const m = measureAt(at);
-        const before = m ? measureAt(m.start - 1) : null;
-        const from = Math.max(
-            0,
-            before && before !== m
-                ? before.start
-                : (m?.start ?? at) - (m?.counts ?? 4),
-        );
-        useTempoUi.getState().setDraft(null);
-        useTempoUi.getState().setTaps([]);
-        applyOnStop.current = false;
-        setTapFrom(Math.max(1, from));
-        // Stopping a pass goes back to the playhead: one out of view moves to where the pass
-        // starts, so stopping doesn't scroll the view back to it either
-        if (!playheadInView) useTimelineSelectionStore.getState().seek(from);
-        startTimelinePlayOn(playing.setIsPlaying, from);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [playing, playheadBeat, data.measures, ppb]);
-    /** Ends the tap pass and goes back to where it started, ready to tap it again */
-    const stopTapping = (apply: boolean) => {
-        if (!playing) return;
-        applyOnStop.current = apply;
-        stopTimelinePlayback(playing.setIsPlaying, "stop");
-    };
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
@@ -1824,17 +1755,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 )
             )
                 return;
-            // While the tapping check is open, its keys (T, Space, Enter) are its own
-            if (tapCheckRef.current) return;
             const key = e.key.toLowerCase();
-            const tapping = isPlaying && tapsRef.current !== null;
-            // Enter during a tap pass stops it and applies the taps; Space stops it for review
-            if (tapping && (e.key === "Enter" || e.key === " ")) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!e.repeat) stopTapping(e.key === "Enter");
-                return;
-            }
             if (e.key === "Escape" && gestureRef.current) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1844,36 +1765,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 setBlocked(null);
                 return;
             }
-            const draft = useTempoUi.getState().draft;
-            if (
-                draft &&
-                !isPlaying &&
-                (e.key === "Enter" || e.key === "Escape")
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.key === "Enter") applyDraft();
-                else discardDraft();
-                return;
-            }
             if (key === "t") {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat) return;
-                if (!isPlaying) startTapping();
-                else {
-                    const t = audible(true);
-                    // T during ordinary playback starts a pass there
-                    if (tapsRef.current === null) {
-                        let b = 1;
-                        while (b + 1 < starts.length - 1 && starts[b + 1]! <= t)
-                            b++;
-                        setTapFrom(measureAt(b)?.start ?? b);
-                    }
-                    useTempoUi
-                        .getState()
-                        .setTaps([...(tapsRef.current ?? []), t]);
-                }
+                // when the key went down (same clock as performance.now), not when this runs
+                useTempoUi.getState().tap(e.timeStamp);
             } else if (key === "m" && isPlaying) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -1902,16 +1799,15 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         window.addEventListener("keydown", onKey, true);
         return () => window.removeEventListener("keydown", onKey, true);
     });
-    // Esc leaves tempo mode once nothing else takes it: a drag or taps waiting, a popover of the
+    // Esc leaves tempo mode once nothing else takes it: a drag, a popover of the
     // band's, a dialog or menu, a text field, or selected counts (cleared first)
-    const popoverOpen = !!(editor || menu || ask || tapCheck);
+    const popoverOpen = !!(editor || menu || ask || ui.tapOpen);
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key !== "Escape" || e.defaultPrevented || e.repeat) return;
             if (e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
             if (popoverOpen || gestureRef.current) return;
             const state = useTempoUi.getState();
-            if (state.draft || state.taps) return;
             const target = e.target as HTMLElement | null;
             if (
                 target?.closest(
@@ -1932,105 +1828,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             useTempoModeStore.getState().setOn(false);
         };
         // Before the app's shortcuts, which give Esc to the canvas; the checks above leave a
-        // drag, taps and popovers their own Esc
+        // drag and popovers their own Esc
         window.addEventListener("keydown", onKey, true);
         return () => window.removeEventListener("keydown", onKey, true);
     }, [popoverOpen]);
-    // Stopping turns the pass into drafts (taps that don't fit the counts are dropped)
-    const wasPlaying = useRef(isPlaying);
-    useEffect(() => {
-        const stopped = wasPlaying.current && !isPlaying;
-        wasPlaying.current = isPlaying;
-        if (!stopped) return;
-        const taps = useTempoUi.getState().taps;
-        useTempoUi.getState().setTaps(null);
-        const apply = applyOnStop.current;
-        applyOnStop.current = false;
-        const from = tapFrom ?? 1;
-        setTapFrom(null);
-        if (!taps || taps.length === 0) return;
-        const s = startsOf(data.durations);
-        let pins = assignTaps(s, taps);
-        // a tap far from where the counts say the next one is (more than 40% off) is a stray
-        let strays = 0;
-        pins = pins.filter((p, i) => {
-            const prev = pins[i - 1];
-            if (!prev) return true;
-            const expected = s[p.beat]! - s[prev.beat]!;
-            const ok =
-                Math.abs(p.seconds - prev.seconds - expected) <=
-                    0.4 * expected || pins.length < 3;
-            if (!ok) strays++;
-            return ok;
-        });
-        // Taps count from where the pass started playing (the measure before the playhead's
-        // included), or only on the selected counts when some are selected
-        const range = useTempoUi.getState().range;
-        const kept = pins.filter((p) =>
-            range ? p.beat >= range.from && p.beat <= range.to : p.beat >= from,
-        );
-        const outside = pins.length - kept.length;
-        const left = [
-            strays ? `${strays} tap(s) that didn't fit the counts` : "",
-            outside
-                ? range
-                    ? `${outside} tap(s) outside the selected counts`
-                    : `${outside} tap(s) before ${measureLabel(from)}`
-                : "",
-        ].filter(Boolean);
-        // In its own toast, so discarding the taps can take it away (jo: after Discard it read as
-        // if something had been applied)
-        if (left.length)
-            toast.info(`Left out ${left.join(" and ")}`, { id: TAPS_TOAST });
-        // Taps land a little late on most computers: offer the check, once, out of the way
-        if (!readTapCheck() && !tapCheckOffered && kept.length) {
-            tapCheckOffered = true;
-            toast.info(
-                "Taps land a bit late on most computers: check yours once and later taps make up for it.",
-                {
-                    id: "tempo-tap-check-offer",
-                    duration: 10000,
-                    action: {
-                        label: "Check tapping",
-                        onClick: () => setTapCheck({ thenTap: false }),
-                    },
-                },
-            );
-        }
-        if (kept.length === 0) return;
-        if (apply) applyPins(kept);
-        else useTempoUi.getState().setDraft(kept);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isPlaying]);
-    /** Throw the taps away: nothing is applied, and the note about taps left out goes too */
-    const discardDraft = () => {
-        if (!useTempoUi.getState().draft) return;
-        useTempoUi.getState().setDraft(null);
-        toast.info("Taps discarded: nothing changed", { id: TAPS_TOAST });
-    };
-    const applyDraft = () => {
-        const draft = useTempoUi.getState().draft;
-        useTempoUi.getState().setDraft(null);
-        if (draft?.length) applyPins(draft);
-    };
-    const applyPins = (draft: { beat: number; seconds: number }[]) => {
-        const result = pinBeats(data.durations, data.locks, draft);
-        commit(`Tapped ${draft.length} count(s)`, {
-            ...result,
-            note:
-                result.note ??
-                `Pinned ${draft.length} tapped count(s) to the music`,
-        });
-    };
-    /** While tapping: which counts the taps go to, how many so far, and how to finish */
-    const tapCue = (() => {
-        if (!ui.taps) return null;
-        const counted = ui.range
-            ? `Taps count on ${rangeLabel(ui.range.from, ui.range.to)} (the selection)`
-            : `Taps count from ${measuresLabel(tapFrom ?? 1, (tapFrom ?? 1) + 1)}`;
-        const n = ui.taps.length;
-        return `${counted} · ${n === 0 ? "tap T on each count" : `${n} tap(s)`} · Space stops to review, Enter applies`;
-    })();
 
     // ---- pointer -------------------------------------------------------------------------
     const nearLine = (x: number) => {
@@ -2167,18 +1968,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const y = localY(e);
         const beat = beatAtX(x, ppb);
         if (y >= MUSIC.top) {
-            if (ui.draft) {
-                // a click on a draft tap takes it out
-                const hit = ui.draft.findIndex(
-                    (d) => Math.abs(xOfSeconds(d.seconds) - x) < 5,
-                );
-                if (hit >= 0) {
-                    useTempoUi
-                        .getState()
-                        .setDraft(ui.draft.filter((_, i) => i !== hit));
-                    return;
-                }
-            }
             const line = y < MUSIC.top + HANDLE_STRIP ? nearLine(x) : null;
             if (line !== null)
                 setGesture({
@@ -2278,11 +2067,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 };
         }
         return null;
-    };
-    const xOfSeconds = (t: number) => {
-        let b = 1;
-        while (b + 1 < starts.length - 1 && starts[b + 1]! <= t) b++;
-        return xOf(b, ppb) + ((t - starts[b]!) / (durations[b] || 1)) * ppb;
     };
     const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
         if (!gesture) {
@@ -2991,7 +2775,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const viewLeft = win.left - geometry.leadingInset;
     const viewRight = viewLeft + win.width;
     const gutterRight = viewLeft + LANE_GUTTER;
-    viewRef.current = { left: gutterRight, right: viewRight };
     const labelGap = 4;
     const placer = createLabelPlacer(
         [
@@ -3346,33 +3129,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             </button>,
         );
     }
-    // A tap pass: where its taps start counting, in the lanes as well as the status line (jo)
-    if (ui.taps !== null && !ui.range && tapFrom !== null) {
-        labels.push(
-            <span
-                key="tap-from"
-                data-testid="tempo-tap-from"
-                className="border-accent text-accent bg-modal pointer-events-none absolute z-[5] rounded-[3px] border px-4 text-[11px] leading-[14px] whitespace-nowrap"
-                style={{
-                    left: Math.max(gutterRight + 2, xOf(tapFrom, ppb) + 4),
-                    // under the Music lane's handles: clear of the rehearsal letters and the
-                    // tempo label
-                    top: MUSIC.top + 20,
-                }}
-            >
-                Taps count from {measuresLabel(tapFrom, tapFrom + 1)}
-            </span>,
-            <div
-                key="tap-from-line"
-                className="bg-accent pointer-events-none absolute w-[2px]"
-                style={{
-                    left: xOf(tapFrom, ppb) - 1,
-                    top: MARKS.top,
-                    height: TEMPO_BAND_HEIGHT - MARKS.top,
-                }}
-            />,
-        );
-    }
     // While the tempo line is dragged: the tempo it's at, over the stretch (Logic's help tag)
     if (gesture?.kind === "tempo") {
         const { from, to, bpmFrom, bpmTo } = gesture.segment;
@@ -3439,8 +3195,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             </span>,
         );
     }
-
-    const status = tapCue;
 
     return (
         <div
@@ -3552,19 +3306,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             {headerSlot &&
                 createPortal(
                     <TempoToolbar
-                        status={status}
-                        busy={busy}
-                        tapping={ui.taps !== null}
-                        draftCount={ui.draft?.length ?? 0}
                         lockCount={data.locks.size}
-                        onTap={() => {
-                            if (!playing) return;
-                            if (isPlaying) stopTapping(false);
-                            else startTapping();
-                        }}
-                        onCheckTapping={() => setTapCheck({ thenTap: false })}
-                        onApplyDraft={applyDraft}
-                        onDiscardDraft={discardDraft}
+                        tapTarget={tapTarget}
+                        onUseTap={applyTapTempo}
                         onClearPins={() =>
                             void run("Pins", () =>
                                 saveMarks({ locks: new Set() }),
@@ -3590,22 +3334,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         menu={menu}
                         onClose={() => setMenu(null)}
                         onHover={setMenuRange}
-                    />,
-                    document.body,
-                )}
-            {tapCheck &&
-                createPortal(
-                    <TapCheckPanel
-                        beforeTapping={tapCheck.thenTap}
-                        onClose={(
-                            result: TapCheckResult | null,
-                            tapAnyway?: boolean,
-                        ) => {
-                            const thenTap = tapCheck.thenTap;
-                            setTapCheck(null);
-                            if (thenTap && (result || tapAnyway))
-                                setTimeout(startTapping, 300);
-                        }}
                     />,
                     document.body,
                 )}

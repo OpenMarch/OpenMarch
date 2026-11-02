@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-    assignTaps,
     moveBeatTo,
     movePinsWithMusic,
-    pinBeats,
     rampLengths,
     regroupMeasures,
     retime,
@@ -71,27 +69,6 @@ describe("retime", () => {
         expect(r.durations[2]).toBe(4);
         expect(startsOf(r.durations)[3]).toBeCloseTo(4.5);
         expect(r.note).toBeDefined();
-    });
-});
-
-describe("taps", () => {
-    it("assigns taps to consecutive counts and to every other count", () => {
-        const s = startsOf(even(16));
-        expect(assignTaps(s, [1.02, 1.5, 2.01]).map((p) => p.beat)).toEqual([
-            3, 4, 5,
-        ]);
-        expect(assignTaps(s, [0.02, 1.0, 2.0]).map((p) => p.beat)).toEqual([
-            1, 3, 5,
-        ]);
-    });
-    it("pins tapped counts", () => {
-        const r = pinBeats(even(16), new Set(), [
-            { beat: 3, seconds: 1.1 },
-            { beat: 4, seconds: 1.7 },
-        ]);
-        const s = startsOf(r.durations);
-        expect(s[3]).toBeCloseTo(1.1);
-        expect(s[4]).toBeCloseTo(1.7);
     });
 });
 

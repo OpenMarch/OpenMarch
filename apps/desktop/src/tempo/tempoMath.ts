@@ -208,32 +208,6 @@ export function moveBeatTo(
     return { durations: next, locks: nextLocks };
 }
 
-/** Lock each of `pins` (beat, seconds) in turn: what a tap pass or a fit to the music writes */
-export function pinBeats(
-    durations: readonly number[],
-    locks: ReadonlySet<number>,
-    pins: readonly { beat: number; seconds: number }[],
-): TempoEditResult {
-    let result: TempoEditResult = {
-        durations: [...durations],
-        locks: new Set(locks),
-    };
-    let skipped = 0;
-    for (const pin of [...pins].sort((a, b) => a.beat - b.beat)) {
-        const moved = moveBeatTo(
-            result.durations,
-            result.locks,
-            pin.beat,
-            pin.seconds,
-        );
-        if (moved) result = moved;
-        else skipped++;
-    }
-    return skipped > 0
-        ? { ...result, note: `Skipped ${skipped} tap(s) that didn't fit` }
-        : result;
-}
-
 /** Beats `from`..`to - 1` at a steady tempo, or gradually from one tempo to another (linear in BPM) */
 export function rampLengths(
     counts: number,
@@ -345,50 +319,6 @@ const average = (values: readonly number[], from: number, to: number) => {
     for (let i = from; i < to; i++) sum += values[i]!;
     return sum / Math.max(1, to - from);
 };
-
-/**
- * Which beat each tap lands on. The first tap takes the count start nearest to it; each later tap
- * takes the next count, or, when the taps come about two or four counts apart (tapping half notes
- * or downbeats), that many counts on. A long pause starts over from the nearest count.
- *
- * @param starts beat start times (`startsOf`)
- * @param taps tap times in show seconds, ascending
- */
-export function assignTaps(
-    starts: readonly number[],
-    taps: readonly number[],
-): { beat: number; seconds: number }[] {
-    const pins: { beat: number; seconds: number }[] = [];
-    const nearest = (seconds: number) => {
-        let best = 1;
-        for (let b = 1; b < starts.length; b++)
-            if (
-                Math.abs(starts[b]! - seconds) <
-                Math.abs(starts[best]! - seconds)
-            )
-                best = b;
-        return best;
-    };
-    let prev: { beat: number; seconds: number } | null = null;
-    for (const tap of taps) {
-        let beat: number;
-        if (prev === null) beat = nearest(tap);
-        else {
-            const gap = tap - prev.seconds;
-            const countLength =
-                starts[Math.min(prev.beat + 1, starts.length - 1)]! -
-                    starts[prev.beat]! || 0.5;
-            const step = gap / countLength;
-            const steps = step > 6 ? null : step > 3 ? 4 : step > 1.5 ? 2 : 1;
-            beat = steps === null ? nearest(tap) : prev.beat + steps;
-        }
-        if (beat >= starts.length) break;
-        if (prev && beat <= prev.beat) continue;
-        prev = { beat, seconds: tap };
-        pins.push(prev);
-    }
-    return pins;
-}
 
 /**
  * Regroup the measures from the one starting at `start` (a beat ordinal) into measures of
