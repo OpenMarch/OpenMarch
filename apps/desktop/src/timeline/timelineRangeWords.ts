@@ -1,11 +1,18 @@
 import { getPageCountAt } from "@/components/timeline/TimelineGeometry";
 import { moveLabels } from "./timelineViewModel";
+import {
+    text,
+    textList,
+    type TimelineText,
+    type TimelineTextArg,
+} from "./timelineText";
 
 /**
  * Where things are on the timeline, in pages and counts as the field line counts them (UI-12,
  * UI-13), and what a move is called (UI-14), for toasts and refusals. Never beats. Pure, with no
- * React, store or database imports, so the write path (db-functions) words its refusals the same
- * way the renderer words its toasts.
+ * React, store, database or Tolgee imports, so the write path (db-functions) words its refusals
+ * the same way the renderer words its toasts. Each phrase is a `TimelineText`, translated where it
+ * is shown (`translateTimelineText`).
  */
 
 /** A page box, previous flag to flag (UI-9), as `[start, end)` spec beats, with its page's name. */
@@ -30,12 +37,6 @@ export interface WordsRange {
     readonly end: number;
 }
 
-/** "A", "A and B", "A, B and C". */
-export const joinList = (items: readonly string[]): string =>
-    items.length <= 1
-        ? (items[0] ?? "")
-        : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
-
 const countModel = (boxes: readonly NamedPageBox[]) => ({
     pages: boxes.map((b) => ({
         id: b.start,
@@ -50,10 +51,16 @@ type CountAt = ReturnType<typeof getPageCountAt>;
 
 const named = (c: CountAt) => !c.home && !!c.pageLabel;
 
-const countText = (c: CountAt) =>
+const countText = (c: CountAt): TimelineText =>
     c.after
-        ? `count ${c.count} after Page ${c.pageLabel}`
-        : `Page ${c.pageLabel} count ${c.count}`;
+        ? text.t("timeline.where.countAfterPage", {
+              count: c.count,
+              page: c.pageLabel,
+          })
+        : text.t("timeline.where.pageCount", {
+              page: c.pageLabel,
+              count: c.count,
+          });
 
 /**
  * Where the moment at `beat` is (the end of the count that ends there): "Page 2 count 8", or
@@ -62,10 +69,68 @@ const countText = (c: CountAt) =>
 export function beatWhere(
     beat: number,
     boxes: readonly NamedPageBox[],
-): string | null {
+): TimelineText | null {
     const at = getPageCountAt(countModel(boxes), beat);
     return named(at) ? countText(at) : null;
 }
+
+/** Where a range is (`rangeWhere`): the phrase, and the counts at its two ends. */
+interface RangeAt {
+    readonly where: TimelineText;
+    readonly span: "page" | "after" | "flag";
+    readonly from: TimelineText;
+    readonly to: TimelineText;
+}
+
+const rangeAt = (
+    range: WordsRange,
+    boxes: readonly NamedPageBox[],
+): RangeAt | null => {
+    const model = countModel(boxes);
+    // A move's first count is the beat after its start
+    const from = getPageCountAt(model, range.start + 1);
+    const to = getPageCountAt(model, range.end);
+    if (!named(from) || !named(to)) return null;
+    const ends = { from: countText(from), to: countText(to) };
+    if (from.pageLabel === to.pageLabel && !!from.after === !!to.after) {
+        const page = from.pageLabel;
+        const one = from.count === to.count;
+        if (from.after)
+            return {
+                ...ends,
+                span: "after",
+                where: one
+                    ? text.t("timeline.where.afterPageCount", {
+                          page,
+                          count: from.count,
+                      })
+                    : text.t("timeline.where.afterPageCounts", {
+                          page,
+                          from: from.count,
+                          to: to.count,
+                      }),
+            };
+        return {
+            ...ends,
+            span: "page",
+            where: one
+                ? text.t("timeline.where.inPageCount", {
+                      page,
+                      count: from.count,
+                  })
+                : text.t("timeline.where.inPageCounts", {
+                      page,
+                      from: from.count,
+                      to: to.count,
+                  }),
+        };
+    }
+    return {
+        ...ends,
+        span: "flag",
+        where: text.t("timeline.where.countToCount", ends),
+    };
+};
 
 /**
  * Where `range` is, from the page boxes: "Page 2, counts 1–4" (or "count 3") inside one page,
@@ -75,24 +140,12 @@ export function beatWhere(
 export function rangeWhere(
     range: WordsRange,
     boxes: readonly NamedPageBox[],
-): { readonly where: string; readonly span: "page" | "after" | "flag" } | null {
-    const model = countModel(boxes);
-    // A move's first count is the beat after its start
-    const from = getPageCountAt(model, range.start + 1);
-    const to = getPageCountAt(model, range.end);
-    if (!named(from) || !named(to)) return null;
-    const counts =
-        from.count === to.count
-            ? `count ${from.count}`
-            : `counts ${from.count}–${to.count}`;
-    if (from.pageLabel === to.pageLabel && !!from.after === !!to.after)
-        return from.after
-            ? {
-                  where: `after Page ${from.pageLabel}, ${counts}`,
-                  span: "after",
-              }
-            : { where: `Page ${from.pageLabel}, ${counts}`, span: "page" };
-    return { where: `${countText(from)} to ${countText(to)}`, span: "flag" };
+): {
+    readonly where: TimelineText;
+    readonly span: "page" | "after" | "flag";
+} | null {
+    const at = rangeAt(range, boxes);
+    return at && { where: at.where, span: at.span };
 }
 
 /**
@@ -102,10 +155,12 @@ export function rangeWhere(
 export function countsText(
     range: WordsRange,
     boxes: readonly NamedPageBox[],
-): string {
-    const at = rangeWhere(range, boxes);
-    if (!at) return "these counts";
-    return at.span === "flag" ? `the counts from ${at.where}` : at.where;
+): TimelineText {
+    const at = rangeAt(range, boxes);
+    if (!at) return text.t("timeline.where.theseCounts");
+    return at.span === "flag"
+        ? text.t("timeline.where.countsFromTo", { from: at.from, to: at.to })
+        : at.where;
 }
 
 /**
@@ -116,16 +171,24 @@ export function moveInSentence(
     range: WordsRange,
     boxes: readonly NamedPageBox[],
     moves: readonly NamedMove[] = [],
-): string {
-    const name = moveName(range, boxes, moves);
-    const isPage = boxes.some(
-        (b) =>
+): TimelineTextArg {
+    const box = pageBoxOf(range, boxes);
+    return box
+        ? text.t("timeline.where.pageMove", { page: box.name })
+        : moveName(range, boxes, moves);
+}
+
+/** The named page box that is exactly `range`. */
+const pageBoxOf = (
+    range: WordsRange,
+    boxes: readonly NamedPageBox[],
+): (NamedPageBox & { readonly name: string }) | undefined =>
+    boxes.find(
+        (b): b is NamedPageBox & { readonly name: string } =>
             b.name !== undefined &&
             b.start === range.start &&
             b.end === range.end,
     );
-    return isPage ? `${name}'s move` : name;
-}
 
 /**
  * How a message names the move over `range`: "Page 2" for a page's box; else the move's label
@@ -137,11 +200,9 @@ export function moveName(
     range: WordsRange,
     boxes: readonly NamedPageBox[],
     moves: readonly NamedMove[] = [],
-): string {
-    const box = boxes.find(
-        (b) => b.start === range.start && b.end === range.end,
-    );
-    if (box?.name !== undefined) return `Page ${box.name}`;
+): TimelineTextArg {
+    const box = pageBoxOf(range, boxes);
+    if (box) return text.t("timeline.where.page", { page: box.name });
     const labels = moveLabels(moves, boxes);
     const names = [
         ...new Set(
@@ -150,13 +211,18 @@ export function moveName(
                 .flatMap((m) => labels.get(m.id) ?? []),
         ),
     ];
-    const at = rangeWhere(range, boxes);
+    const at = rangeAt(range, boxes);
     if (names.length > 0)
-        return at ? `${joinList(names)} (${at.where})` : joinList(names);
-    if (!at) return "another move";
+        return at
+            ? text.t("timeline.where.movesAt", {
+                  names: textList(names),
+                  where: at.where,
+              })
+            : textList(names);
+    if (!at) return text.t("timeline.where.anotherMove");
     return at.span === "after"
-        ? `the move ${at.where}`
+        ? text.t("timeline.where.moveAfter", { where: at.where })
         : at.span === "flag"
-          ? `the move from ${at.where}`
-          : `the move on ${at.where}`;
+          ? text.t("timeline.where.moveFromTo", { from: at.from, to: at.to })
+          : text.t("timeline.where.moveOn", { where: at.where });
 }

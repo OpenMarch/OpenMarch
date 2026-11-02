@@ -37,6 +37,7 @@ jobs:
           - format:check
           - lint
           - spellcheck
+          - check:i18n
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -247,7 +248,7 @@ jobs:
       - name: Run browser scenarios
         working-directory: apps/desktop
         run: |
-          specs=$(ls e2e/browser/tests/box-tool.spec.mts e2e/browser/tests/*circle*.spec.mts e2e/browser/tests/*shape*.spec.mts e2e/browser/tests/timeline-interactions.spec.mts e2e/browser/tests/field-actions.spec.mts 2>/dev/null | sort -u)
+          specs=$(ls e2e/browser/tests/box-tool.spec.mts e2e/browser/tests/line-tool.spec.mts e2e/browser/tests/hide-marchers.spec.mts e2e/browser/tests/*circle*.spec.mts e2e/browser/tests/*shape*.spec.mts e2e/browser/tests/timeline-interactions.spec.mts e2e/browser/tests/field-actions.spec.mts 2>/dev/null | sort -u)
           echo "Specs: $specs"
           pnpm run e2e:browser $specs
 

@@ -18,8 +18,12 @@ import {
     marchersInInheritingFollowTheLeader,
     removeAssignmentRowsInTransaction,
 } from "./timelineMembership";
-import { joinList } from "@/timeline/timelineRangeWords";
-import { english, type KeepTranslate } from "@/timeline/timelineKeepLater";
+import {
+    text,
+    textList,
+    type TimelineText,
+    type TimelineTextArg,
+} from "@/timeline/timelineText";
 import { nextMoveNameInTransaction, readMoveWords } from "./timelineMoveNames";
 import type { TimelinePathParams } from "./timelineTransitionsInTransaction";
 import {
@@ -58,12 +62,21 @@ import {
 
 /** "T1, T2 and T3", or "T1, T2, T3 and 4 more", in marcher id order. */
 const labelList = (labels: Map<number, string>, ids: readonly number[]) => {
-    const names = [...ids]
+    const names: TimelineTextArg[] = [...ids]
         .sort((a, b) => a - b)
-        .map((id) => labels.get(id) ?? `marcher ${id}`);
-    return joinList(
+        .map(
+            (id) =>
+                labels.get(id) ??
+                text.t("timeline.where.marcher", { marcher: id }),
+        );
+    return textList(
         names.length > 3
-            ? [...names.slice(0, 3), `${names.length - 3} more`]
+            ? [
+                  ...names.slice(0, 3),
+                  text.t("timeline.where.moreMarchers", {
+                      count: names.length - 3,
+                  }),
+              ]
             : names,
     );
 };
@@ -75,7 +88,7 @@ const labelList = (labels: Map<number, string>, ids: readonly number[]) => {
 const timelineWords = async (
     tx: DbTransaction,
 ): Promise<{
-    nameOf: (timelineId: number) => string;
+    nameOf: (timelineId: number) => TimelineTextArg;
     pageTimelineIds: Set<number>;
 }> => {
     const { boxes, moves } = await readMoveWords(tx);
@@ -93,7 +106,9 @@ const timelineWords = async (
         pageTimelineIds: pages,
         nameOf: (id) =>
             labels.get(id) ??
-            (pageName.has(id) ? `Page ${pageName.get(id)}` : "this move"),
+            (pageName.has(id)
+                ? text.t("timeline.where.page", { page: pageName.get(id)! })
+                : text.t("timeline.where.thisMove")),
     };
 };
 
@@ -138,31 +153,24 @@ export interface SplitMoveResult {
  * move that isn't a page's own (that would only rename it). A page's own move can be split off
  * whole (#581): its marchers get a move of their own, and the page box keeps its timeline, empty.
  * The timeline menu, the Move card and the command palette show the same reason on a disabled
- * item, worded by `t` (Tolgee's in the app; English for the write's refusal).
+ * item, as text translated where it is shown (the write path's refusal too).
  */
 export function splitMembershipBlocker(
     members: ReadonlySet<number>,
     marcherIds: Iterable<number>,
-    moveName: string,
-    {
-        pageMove = false,
-        t = english,
-    }: { pageMove?: boolean; t?: KeepTranslate } = {},
-): string | null {
+    moveName: TimelineTextArg,
+    { pageMove = false }: { pageMove?: boolean } = {},
+): TimelineText | null {
     let chosen = 0;
     for (const id of new Set(marcherIds)) if (members.has(id)) chosen++;
     if (chosen === 0)
-        return t(
-            "timeline.split.selectMembers",
-            "Select marchers in {name} to split them into a new move.",
-            { name: moveName },
-        );
+        return text.t("timeline.refusals.split.noneSelected", {
+            move: moveName,
+        });
     if (chosen === members.size && !pageMove)
-        return t(
-            "timeline.split.everyMarcher",
-            "Every marcher in {name} is selected. Select only the ones to split off.",
-            { name: moveName },
-        );
+        return text.t("timeline.refusals.split.allSelected", {
+            move: moveName,
+        });
     return null;
 }
 
@@ -264,7 +272,8 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
 }): Promise<SplitMoveResult> => {
     const from = await readTimeline(tx, timelineId);
     if (!from) refuse(`timeline ${timelineId} does not exist`);
-    if (marcherIds.length === 0) refuse("select the marchers to split off");
+    if (marcherIds.length === 0)
+        refuse(text.t("timeline.refusals.split.selectToSplit"));
     const rows = await memberRows(tx, timelineId);
     const members = new Set(rows.map((r) => r.assignment.marcher_id));
     const { nameOf, pageTimelineIds } = await timelineWords(tx);
@@ -293,15 +302,15 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
             ...refusal.leaving,
             ...refusal.staying,
         ]);
-        const why =
-            refusal.reason === "shape"
-                ? "move into one shape together"
-                : "follow the leader together";
+        const params = {
+            count: refusal.leaving.length,
+            marchers: labelList(labels, refusal.leaving),
+            others: labelList(labels, refusal.staying),
+        };
         refuse(
-            `${labelList(labels, refusal.leaving)} ${why} with ${labelList(
-                labels,
-                refusal.staying,
-            )}, so they can't be split apart. Select them all, or none of them.`,
+            refusal.reason === "shape"
+                ? text.t("timeline.refusals.split.sharedShape", params)
+                : text.t("timeline.refusals.split.followTogether", params),
         );
     }
     for (const [transitionId, list] of byTransition) {
@@ -465,7 +474,7 @@ export const mergeMovesInTransaction = async ({
     sourceId: number;
     targetId: number;
 }): Promise<MergeMovesResult> => {
-    if (sourceId === targetId) refuse("a move can't be merged with itself");
+    if (sourceId === targetId) refuse(text.t("timeline.refusals.merge.itself"));
     const source = await readTimeline(tx, sourceId);
     if (!source) refuse(`timeline ${sourceId} does not exist`);
     const target = await readTimeline(tx, targetId);
@@ -473,7 +482,10 @@ export const mergeMovesInTransaction = async ({
     const { nameOf, pageTimelineIds } = await timelineWords(tx);
     if (pageTimelineIds.has(sourceId))
         refuse(
-            `${nameOf(sourceId)} is a page's own move. Merge ${nameOf(targetId)} into it instead.`,
+            text.t("timeline.refusals.merge.pageMove", {
+                source: nameOf(sourceId),
+                target: nameOf(targetId),
+            }),
         );
     const sourceRows = await memberRows(tx, sourceId);
     const targetMembers = new Set(
@@ -488,11 +500,12 @@ export const mergeMovesInTransaction = async ({
     ];
     if (both.length > 0)
         refuse(
-            `${labelList(await marcherLabels(tx, both), both)} ${
-                both.length === 1 ? "is" : "are"
-            } in both ${nameOf(sourceId)} and ${nameOf(targetId)}, so merging would give ${
-                both.length === 1 ? "it" : "them"
-            } two moves at once.`,
+            text.t("timeline.refusals.merge.inBoth", {
+                count: both.length,
+                marchers: labelList(await marcherLabels(tx, both), both),
+                source: nameOf(sourceId),
+                target: nameOf(targetId),
+            }),
         );
     if (
         mergeFits(
@@ -680,27 +693,34 @@ async function mergeRefusalMessage(
     why: FitRefusal,
     sourceId: number,
     targetId: number,
-    nameOf: (timelineId: number) => string,
-): Promise<string> {
+    nameOf: (timelineId: number) => TimelineTextArg,
+): Promise<TimelineText> {
     const ids = why.marcherIds;
-    const who = labelList(await marcherLabels(tx, ids), ids);
+    const marchers = labelList(await marcherLabels(tx, ids), ids);
     const source = nameOf(sourceId);
     const target = nameOf(targetId);
     switch (why.kind) {
         case "partway":
-            return `${who} ${
-                ids.length === 1 ? "joins or leaves" : "join or leave"
-            } ${source} partway, outside ${target}'s counts. Resize ${source} to ${target}'s counts first.`;
+            return text.t("timeline.refusals.merge.partway", {
+                count: ids.length,
+                marchers,
+                source,
+                target,
+            });
         case "overlap":
-            return `Fitting ${source} to ${target}'s counts would run ${who} into ${nameOf(
-                why.timelineId,
-            )}. Resize ${source} to ${target}'s counts first.`;
+            return text.t("timeline.refusals.merge.fitCollides", {
+                marchers,
+                source,
+                target,
+                other: nameOf(why.timelineId),
+            });
         case "secondMove":
-            return `${who} ${ids.length === 1 ? "is" : "are"} already in ${nameOf(
-                why.timelineId,
-            )}, over ${target}'s counts, so merging would give ${
-                ids.length === 1 ? "it" : "them"
-            } two moves over the same counts.`;
+            return text.t("timeline.refusals.merge.sameCounts", {
+                count: ids.length,
+                marchers,
+                other: nameOf(why.timelineId),
+                target,
+            });
     }
 }
 

@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTolgee } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import {
     pageFlagMoveLimits,
     type AddedPageFlag,
@@ -125,7 +125,10 @@ function useBasicTimelineExtras(pages: readonly Page[]) {
         return {
             basicPoints: points.map((point) => ({
                 beat: point.beat,
-                label: `count ${point.beat - point.box.start} of page ${names.get(`${point.box.start}:${point.box.end}`)?.name ?? ""}`,
+                count: point.beat - point.box.start,
+                page:
+                    names.get(`${point.box.start}:${point.box.end}`)?.name ??
+                    "",
             })),
             onRemoveBasicPoint: (beat: number) => {
                 const point = points.find((p) => p.beat === beat);
@@ -240,6 +243,8 @@ export default function TimelineModePanel() {
     const keepNameOf = useMarcherNameOf(selectedMarchers);
     // #303: where the selected marchers are Set, as keyframes on the timeline, each naming who
     const selectionKeyframes = useSelectionKeyframes(selectedIdList);
+    // Words built here with tolgee.t are built again when the language changes
+    const language = useTolgee(["language"]).getLanguage();
     const keyframes = useMemo<readonly TimelineKeyframe[]>(
         () =>
             selectionKeyframes.map((keyframe) => ({
@@ -251,7 +256,8 @@ export default function TimelineModePanel() {
                         tolgee.t(key, defaultValue, params),
                 ),
             })),
-        [selectionKeyframes, keepNameOf],
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- language: the words are tolgee.t's
+        [selectionKeyframes, keepNameOf, language],
     );
     // #472: the selected marchers' Held holds, as solid bars from their arrivals' diamonds
     const heldBars = useSelectionHeldBars(selectedIdList);
@@ -313,7 +319,8 @@ export default function TimelineModePanel() {
                 pageBoxes,
                 pages,
             }),
-        [clipTimelines, pages, storedTimelines, pageBoxes],
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- language: the words are tolgee.t's
+        [clipTimelines, pages, storedTimelines, pageBoxes, language],
     );
     // The Move card says it too
     useEffect(() => {
@@ -586,7 +593,9 @@ export default function TimelineModePanel() {
                                       );
                                   else
                                       toast.info(
-                                          "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it.",
+                                          tolgee.t(
+                                              "timeline.isolation.nothingToIsolate",
+                                          ),
                                       );
                               }
                     }
@@ -757,7 +766,7 @@ export function PlayingTimeline({
         enabled: addPageFlag.insertion !== null,
     });
     // Past the last page, the playhead offers **+ Add N-Count Page**: a page from the last flag to it
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { insertion, add: addPage, addSubset } = addPageFlag;
     const appendAtPlayhead = useMemo(() => {
         if (insertion?.kind !== "append") return undefined;
@@ -941,7 +950,7 @@ export function describePageFlagBlock(
     pages: readonly (FlagPage & { readonly name: string })[],
     timelines: readonly Pick<
         TimelineInput,
-        "linkId" | "label" | "startBeatIndex" | "endBeatIndex"
+        "linkId" | "label" | "unnamed" | "startBeatIndex" | "endBeatIndex"
     >[],
 ): string {
     // Nothing stops the last flag past every move (endless counts); never shown
@@ -949,7 +958,9 @@ export function describePageFlagBlock(
     const flags = pageFlags(pages);
     if (block.kind === "flag") {
         const flag = flags.find((f) => f.page.id === block.pageId);
-        return !flag || !flag.range ? "Home" : `Page ${flag.page.name}'s flag`;
+        return !flag || !flag.range
+            ? tolgee.t("timeline.pageFlagBlock.home")
+            : tolgee.t("timeline.rangeName.flag", { page: flag.page.name });
     }
     const track =
         block.timelineId === undefined
@@ -963,15 +974,18 @@ export function describePageFlagBlock(
           )
         : undefined;
     const who = page
-        ? `Page ${page.page.name}'s move`
-        : track && !/^Timeline \d+$/.test(track.label)
-          ? `"${track.label}"`
-          : "A move";
-    if (block.message.includes("share"))
-        return `${who} already has these counts`;
-    if (block.message.includes("left behind"))
-        return `${who} starts or ends on this flag`;
-    return `${who} is in the way`;
+        ? { who: "page", page: page.page.name, name: "" }
+        : track && !track.unnamed
+          ? { who: "named", page: "", name: track.label }
+          : { who: "other", page: "", name: "" };
+    switch (block.reason) {
+        case "sharesRange":
+            return tolgee.t("timeline.pageFlagBlock.sharesCounts", who);
+        case "leftBehind":
+            return tolgee.t("timeline.pageFlagBlock.startsOrEnds", who);
+        default:
+            return tolgee.t("timeline.pageFlagBlock.inTheWay", who);
+    }
 }
 
 /** `value` as it was the last time `current` was true, or as it is now while `current` is. */

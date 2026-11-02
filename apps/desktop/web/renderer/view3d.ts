@@ -391,6 +391,12 @@ export function installView3dApi() {
         requestCamerasChange: (cameras) => post({ type: "cameras", cameras }),
         // No Library on the web: profiles stay in this browser.
         cameraProfiles: localCameraProfiles,
+        // A browser blocks a window opened without a click: the web editor never opens it by
+        // itself, so the window never asks
+        autoOpen: {
+            get: () => Promise.resolve(null),
+            set: () => Promise.resolve(),
+        },
         requestPlayback: (action, release = false) =>
             post({ type: "playback", action, release }),
         requestPlaybackSpeed: (speed) =>

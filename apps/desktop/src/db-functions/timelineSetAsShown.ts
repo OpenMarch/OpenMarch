@@ -7,6 +7,7 @@ import {
     type PageBoxState,
 } from "@/timeline/timelinePageBoxState";
 import { countsText } from "@/timeline/timelineRangeWords";
+import { text } from "@/timeline/timelineText";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { NothingToDo, refuse } from "./timelineErrors";
@@ -148,7 +149,10 @@ export async function setAsShownOnPageInTransaction({
     // Worded in pages and counts like the other refusals; home has no box
     if (!isPageBox(grid, pageBox))
         refuse(
-            `Set as shown works on a whole page, not ${countsText(pageBox, grid.pages.slice(1))}`,
+            text.t("timeline.refusals.defineAsShown.wholePage", {
+                defineAsShown: text.t("timeline.terms.defineAsShown"),
+                counts: countsText(pageBox, grid.pages.slice(1)),
+            }),
         );
     if (marcherIds.length === 0) return { changed: [], skipped: [] };
     const { states } = (

@@ -4,8 +4,9 @@
  * (`visualsLanes.ts`), the result row, the counts and what each focused
  * marcher carries. Null with no focus, or while the show loads.
  */
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     compileCues,
     type CompiledCues,
@@ -98,6 +99,8 @@ export function useVisualsBandData(enabled = true): VisualsBandData | null {
     // who focused doesn't redo the lanes and the result row
     const selection = focus?.kind === "selection" ? selectedMarchers : null;
 
+    // Lane and result labels are worded in the app's language (`cueValueText`)
+    const language = useSyncExternalStore(subscribeLanguage, currentLanguage);
     const counts = useMemo(() => countIndex(beats), [beats]);
     const compiled = useMemo(
         () =>
@@ -145,6 +148,8 @@ export function useVisualsBandData(enabled = true): VisualsBandData | null {
             ],
             marcherCount: focused.length,
         };
+        // `language` redoes the labels, which `cueValueText` words in the app's language
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
         focus,
         focusIds,
@@ -155,5 +160,16 @@ export function useVisualsBandData(enabled = true): VisualsBandData | null {
         channel,
         byTag,
         counts,
+        language,
     ]);
+}
+
+/** The app's language, from the Tolgee singleton, so this works without a provider */
+function subscribeLanguage(onChange: () => void): () => void {
+    const listener = tolgee.on("language", onChange);
+    return () => listener.unsubscribe();
+}
+
+function currentLanguage(): string | undefined {
+    return tolgee.getLanguage();
 }

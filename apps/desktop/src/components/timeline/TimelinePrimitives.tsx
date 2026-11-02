@@ -21,6 +21,9 @@ import {
     TransportPlayButton,
 } from "./TransportButtons";
 import { ShortcutTooltip, TransportTooltipProvider } from "./ShortcutTooltip";
+import Shortcut from "@/components/ui/Shortcut";
+import { T, useTranslate } from "@tolgee/react";
+import { formatBinding } from "@/shortcuts/bindings";
 import {
     isPlainNudgeKey,
     overlayOpen,
@@ -154,7 +157,7 @@ const TRANSPORT_TIGHT_PX = 500;
  * The transport (UI-12): the timeline panel's one header row, as animation tools do it (Figma's
  * Motion timeline, Rive, Blender). Previous, Play, Next (UI-17); the caller's pinned accessories
  * and secondary ones (Sound); the clock and the readout,
- * which is also the go-to box (click it or press G or Mod+G, then type a page, "m23" or a rehearsal mark);
+ * which is also the go-to box (click it or press G, then type a page, "m23" or a rehearsal mark);
  * then Fit and the caller's view controls (Compact). The play and page buttons, the accessories
  * and the readout never leave: on a narrow panel the rest folds into "⋯". Shift+click on Previous
  * or Next steps a beat and Alt+click goes to the start or end of the show, as Shift+Q/E and
@@ -208,6 +211,7 @@ export const TimelineTransport = memo(function TimelineTransport({
     /** The go-to box selects a page, as clicking its box does */
     onSelectionChange?: (selection: TimelineSelection) => void;
 }) {
+    const { t } = useTranslate();
     const rowRef = useRef<HTMLDivElement>(null);
     const width = useElementWidth(rowRef);
     const folded = width > 0 && width < TRANSPORT_FOLD_PX;
@@ -219,7 +223,7 @@ export const TimelineTransport = memo(function TimelineTransport({
         model,
         isPlaying ? Math.min(positionBeat + 1, model.beatCount) : positionBeat,
     );
-    const mod = isMac() ? "⌘" : "Ctrl";
+    const goToMod = formatBinding("$mod+G", isMac());
     const [goTo, setGoTo] = useState<string | null>(null);
     const [goToFailed, setGoToFailed] = useState(false);
     const canGoTo = onSeek != null || onSelectionChange != null;
@@ -228,7 +232,7 @@ export const TimelineTransport = memo(function TimelineTransport({
         setGoTo("");
         setGoToFailed(false);
     }, [canGoTo]);
-    // G or Mod+G (the timelineGoTo action) opens the go-to box. The dispatcher skips it in a text
+    // G (the timelineGoTo action) opens the go-to box. The dispatcher skips it in a text
     // field or modal layer; an open popover or menu keeps its keys too (its typeahead takes G)
     useActionHandler(
         "timelineGoTo",
@@ -266,9 +270,9 @@ export const TimelineTransport = memo(function TimelineTransport({
             <input
                 autoFocus
                 data-testid="timeline-go-to"
-                aria-label="Go to a page, measure or rehearsal mark"
+                aria-label={t("timeline.goTo.label")}
                 aria-invalid={goToFailed || undefined}
-                placeholder="Page, m23 or C"
+                placeholder={t("timeline.goTo.placeholder")}
                 value={goTo}
                 onChange={(event) => {
                     setGoTo(event.target.value);
@@ -291,8 +295,14 @@ export const TimelineTransport = memo(function TimelineTransport({
                 data-testid="timeline-readout"
                 disabled={!canGoTo}
                 onClick={openGoTo}
-                aria-label={`${readoutText.spoken}. Go to a page, measure or rehearsal mark`}
-                title={`${readoutText.spoken}. Click or press G or ${mod}+G to go to a page, measure or rehearsal mark`}
+                aria-label={t("timeline.goTo.readoutLabel", {
+                    position: readoutText.spoken,
+                })}
+                title={t("timeline.goTo.readoutTooltip", {
+                    position: readoutText.spoken,
+                    key: "G",
+                    modKey: goToMod,
+                })}
                 className="text-text rounded-4 enabled:hover:bg-fg-2 flex h-22 min-w-0 items-baseline gap-8 overflow-hidden px-4 font-mono text-[11px] leading-[22px] whitespace-nowrap"
             >
                 {/* UI-13: a minimum width, so the transport doesn't shift as the count changes */}
@@ -308,9 +318,18 @@ export const TimelineTransport = memo(function TimelineTransport({
         );
     const fit = onFit && (
         <TransportButton
-            label="Fit the show"
+            label={t("timeline.fit.label")}
             shortcut="Shift + Z"
-            hint={`Press again to go back. Pinch or ${mod}+scroll to zoom`}
+            hint={
+                <span className="text-text-subtitle flex items-center gap-4 text-[11px]">
+                    <T
+                        keyName="timeline.fit.hint"
+                        params={{
+                            keys: () => <Shortcut binding="Mod+scroll" />,
+                        }}
+                    />
+                </span>
+            }
             pressed={fitted}
             onClick={onFit}
         >
@@ -325,7 +344,7 @@ export const TimelineTransport = memo(function TimelineTransport({
             <div
                 ref={rowRef}
                 role="group"
-                aria-label="Transport"
+                aria-label={t("timeline.transport.label")}
                 data-testid="timeline-transport"
                 className="border-stroke flex h-32 min-w-0 shrink-0 items-center gap-6 border-b px-6"
             >
@@ -366,8 +385,8 @@ export const TimelineTransport = memo(function TimelineTransport({
                             <Popover.Trigger asChild>
                                 <button
                                     type="button"
-                                    aria-label="More controls"
-                                    title="More: sound, the clock, Fit and the view controls"
+                                    aria-label={t("timeline.transport.more")}
+                                    title={t("timeline.transport.moreTooltip")}
                                     className="rounded-4 text-text enabled:hover:bg-fg-2 focus-visible:ring-accent flex size-24 items-center justify-center outline-hidden focus-visible:ring-2"
                                 >
                                     <DotsThreeIcon size={18} weight="bold" />
@@ -419,36 +438,39 @@ export const TimelineShell = ({
     pinnedHeight?: number;
     /** Drawn over the viewport, where it doesn't scroll (the playhead chip) */
     overlay?: ReactNode;
-}) => (
-    <div
-        className={clsx(
-            "border-stroke bg-fg-1 text-text rounded-6 flex h-full min-h-0 min-w-0 flex-col overflow-visible border font-sans",
-            className,
-        )}
-    >
-        {transport}
-        {/* Its own stacking context: nothing on the timeline (+, the playhead) paints over a menu */}
-        <section className="relative isolate flex min-h-0 min-w-0 flex-1 flex-col px-6 pt-4">
-            <div
-                ref={viewportRef}
-                data-testid="timeline-viewport"
-                // Where focus goes when the clip it was on is deleted (UI-14 review)
-                tabIndex={-1}
-                aria-label="Timeline"
-                // The scrollbar's track is always there, so zooming never changes the height
-                className="focus-visible:ring-accent rounded-4 min-h-0 min-w-0 flex-1 overflow-x-scroll overflow-y-auto outline-hidden focus-visible:ring-2"
-                style={
-                    pinnedHeight > 0
-                        ? { scrollPaddingTop: pinnedHeight }
-                        : undefined
-                }
-            >
-                {children}
-            </div>
-            {overlay}
-        </section>
-    </div>
-);
+}) => {
+    const { t } = useTranslate();
+    return (
+        <div
+            className={clsx(
+                "border-stroke bg-fg-1 text-text rounded-6 flex h-full min-h-0 min-w-0 flex-col overflow-visible border font-sans",
+                className,
+            )}
+        >
+            {transport}
+            {/* Its own stacking context: nothing on the timeline (+, the playhead) paints over a menu */}
+            <section className="relative isolate flex min-h-0 min-w-0 flex-1 flex-col px-6 pt-4">
+                <div
+                    ref={viewportRef}
+                    data-testid="timeline-viewport"
+                    // Where focus goes when the clip it was on is deleted (UI-14 review)
+                    tabIndex={-1}
+                    aria-label={t("timeline.label")}
+                    // The scrollbar's track is always there, so zooming never changes the height
+                    className="focus-visible:ring-accent rounded-4 min-h-0 min-w-0 flex-1 overflow-x-scroll overflow-y-auto outline-hidden focus-visible:ring-2"
+                    style={
+                        pinnedHeight > 0
+                            ? { scrollPaddingTop: pinnedHeight }
+                            : undefined
+                    }
+                >
+                    {children}
+                </div>
+                {overlay}
+            </section>
+        </div>
+    );
+};
 
 /** How far past the viewport's edge, in pixels, a scrub scrolls fastest */
 const SCRUB_EDGE_SCROLL_MAX_PX = 80;
@@ -980,6 +1002,7 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
     /** The chains on the page boxes (UI-18 keep later pages), by page id */
     keepChains?: PageKeepChains;
 }) {
+    const { t } = useTranslate();
     const selectedIds = new Set(selectedBoxIds.split("\n"));
     return (
         <TransportTooltipProvider disableHoverableContent>
@@ -999,8 +1022,12 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
                         type="button"
                         data-timeline-interactive="true"
                         data-testid="timeline-initial-page"
-                        aria-label={`Page ${initialPage.label}`}
-                        title={`Home: the start of the show (page ${initialPage.label}'s set)`}
+                        aria-label={t("timeline.page.label", {
+                            pageName: initialPage.label,
+                        })}
+                        title={t("timeline.page.homeTooltip", {
+                            page: initialPage.label,
+                        })}
                         aria-pressed={homeSelected}
                         {...scrub.handlers}
                         onClick={(event) => {
@@ -1059,6 +1086,7 @@ const TimelinePageBox = memo(function TimelinePageBox({
     /** The box's chain for the selected marchers (UI-18 keep later pages) */
     chain?: PageKeepChain;
 }) {
+    const { t } = useTranslate();
     const boxWidth =
         (range.endBeatIndex - range.startBeatIndex) * pixelsPerBeat;
     const boxLeft =
@@ -1087,7 +1115,7 @@ const TimelinePageBox = memo(function TimelinePageBox({
                 type="button"
                 data-timeline-interactive="true"
                 {...timelineRangeTargetProps(range, undefined, page.id)}
-                aria-label={`Page ${page.label}`}
+                aria-label={t("timeline.page.label", { pageName: page.label })}
                 aria-describedby={words ? descriptionId : undefined}
                 aria-pressed={selected}
                 {...scrub.handlers}
@@ -1274,7 +1302,7 @@ export function TimelineMoveNameField({
     onDone,
     className,
     style,
-    ariaLabel = "Move name",
+    ariaLabel,
 }: {
     initial: string;
     onDone: (name: string | null, byKey: boolean) => void;
@@ -1282,6 +1310,7 @@ export function TimelineMoveNameField({
     style?: CSSProperties;
     ariaLabel?: string;
 }) {
+    const { t } = useTranslate();
     const ref = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState(initial);
     const done = useRef(false);
@@ -1319,7 +1348,7 @@ export function TimelineMoveNameField({
                 data-testid="timeline-move-name-field"
                 data-timeline-interactive="true"
                 data-timeline-own-keys="true"
-                aria-label={ariaLabel}
+                aria-label={ariaLabel ?? t("timeline.move.nameField")}
                 maxLength={MOVE_NAME_MAX_LENGTH}
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
@@ -1360,7 +1389,9 @@ export function TimelineMoveNameField({
                                 : undefined,
                     }}
                 >
-                    {MOVE_NAME_MAX_LENGTH} characters at most
+                    {t("timeline.move.nameLimit", {
+                        count: MOVE_NAME_MAX_LENGTH,
+                    })}
                 </span>
             )}
         </>
@@ -1484,6 +1515,7 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
     /** UI-25: dragging the clip down splits the selected marchers off; onto a move, merges */
     peel?: TimelineClipPeel;
 }) {
+    const { t } = useTranslate();
     const range = getTrackRange(track);
     // Where a move drag draws the clip, on the view axis. It's where it's drawn, not an offset
     // from the range, so the moved range arriving can't shift it again, even for the frame before
@@ -1500,17 +1532,18 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
     const clipRef = useRef<HTMLButtonElement>(null);
     // More about the clip for screen readers (UI-14 round-2 review): why it is dashed, its keys
     const descriptionId = useId();
+    const keysText = moveCommands
+        ? selected || !onSelect
+            ? t("timeline.clip.keysSelected")
+            : t("timeline.clip.keys")
+        : undefined;
     const description =
-        [
-            track.description,
-            moveCommands
-                ? selected || !onSelect
-                    ? "Enter or F2 to rename, Shift+F10 for options, Delete to delete"
-                    : "Enter to select, F2 to rename, Shift+F10 for options, Delete to delete"
-                : undefined,
-        ]
-            .filter(Boolean)
-            .join(". ") || undefined;
+        track.description && keysText
+            ? t("timeline.clip.descriptionWithKeys", {
+                  description: track.description,
+                  keys: keysText,
+              })
+            : track.description || keysText || undefined;
     const moveMenu = useMemo<TimelineMoveMenuActions | undefined>(
         () =>
             moveCommands && {
@@ -1701,7 +1734,18 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                 ref={clipRef}
                 {...timelineRangeTargetProps(range, track.id)}
                 // UI-14 review: a move is named as one, in counts (`describeMoveClips`)
-                aria-label={`${track.accessibleName ?? `${track.label} timeline, beats ${range.startBeatIndex + 1} through ${range.endBeatIndex}`}${moveMenu && selected ? ", selected" : ""}`}
+                aria-label={(() => {
+                    const name =
+                        track.accessibleName ??
+                        t("timeline.clip.fallbackName", {
+                            label: track.label,
+                            from: range.startBeatIndex + 1,
+                            to: range.endBeatIndex,
+                        });
+                    return moveMenu && selected
+                        ? t("timeline.clip.selectedName", { name })
+                        : name;
+                })()}
                 // A move says "selected" in its name (UI-14 round-2 review: "pressed" read as a
                 // toggle); other clips keep the pressed state
                 aria-pressed={moveMenu ? undefined : selected}
@@ -2030,8 +2074,10 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                                 // Space stays Play (UI-14 round-2 review): it doesn't open the menu
                                 onKeyDown={spaceStaysPlay}
                                 onKeyUp={spaceStaysPlay}
-                                aria-label={`${track.label} options`}
-                                title="Move options"
+                                aria-label={t("timeline.clip.optionsLabel", {
+                                    label: track.label,
+                                })}
+                                title={t("timeline.clip.options")}
                                 onPointerDown={(event) =>
                                     event.stopPropagation()
                                 }
@@ -2085,7 +2131,9 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                 <TimelineMoveNameField
                     initial={track.label}
                     onDone={onRenameDone}
-                    ariaLabel={`Rename ${track.label}`}
+                    ariaLabel={t("timeline.clip.renameField", {
+                        label: track.label,
+                    })}
                     className="absolute z-[46]"
                     style={{
                         left,
@@ -2136,6 +2184,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
     positionBeat?: number;
     scrubLine?: TimelineLiveValue<number | null>;
 }) {
+    const { t } = useTranslate();
     const [preview, setPreview] = useState(range);
     const tintRef = useRef<HTMLSpanElement>(null);
     const previewRef = useRef(range);
@@ -2327,8 +2376,8 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
 
     const flagTitle = (kind: "start" | "end", beatIndex: number) =>
         kind === "start"
-            ? "Start flag: dragged marchers leave from here. Drag to move it."
-            : `Selection ${kind}: beat boundary ${beatIndex}`;
+            ? t("timeline.startFlag.dragTooltip")
+            : t("timeline.selection.endTooltip", { beat: beatIndex });
     const live = (kind: "start" | "end") =>
         kind === "start" && onLineDrag !== undefined;
     const flagHandlers = (kind: "start" | "end", beatIndex: number) => ({
@@ -2454,7 +2503,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 <button
                     type="button"
                     data-timeline-interactive="true"
-                    aria-label={`Selection ${kind}`}
+                    aria-label={t("timeline.selection.end")}
                     title={flagTitle(kind, beatIndex)}
                     {...flagHandlers(kind, beatIndex)}
                     className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize! disabled:cursor-default!"
@@ -2474,7 +2523,9 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 <button
                     type="button"
                     data-timeline-interactive="true"
-                    aria-label={`Start flag, beat ${beatIndex}`}
+                    aria-label={t("timeline.startFlag.label", {
+                        beat: beatIndex,
+                    })}
                     title={flagTitle(kind, beatIndex)}
                     {...flagHandlers(kind, beatIndex)}
                     className="focus-visible:ring-accent pointer-events-auto absolute top-0 z-40 w-12 -translate-x-1/2 touch-none border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2 enabled:cursor-ew-resize! disabled:cursor-default!"
@@ -2585,6 +2636,7 @@ export const TimelineStartFlagMark = memo(function TimelineStartFlagMark({
     pixelsPerBeat: number;
     height: number;
 }) {
+    const { t } = useTranslate();
     // Whole pixels, so the stem and the pennant blur on the same pixels
     const x = Math.round(beatToX(beat, pixelsPerBeat));
     return (
@@ -2592,7 +2644,7 @@ export const TimelineStartFlagMark = memo(function TimelineStartFlagMark({
         <div
             data-testid="timeline-start-flag-mark"
             data-beat={beat}
-            title="Start flag: Play starts here"
+            title={t("timeline.startFlag.markTooltip")}
             className={clsx(
                 "pointer-events-none absolute top-0 z-40 w-[2px] -translate-x-1/2",
                 START_INK.bg,
@@ -2630,6 +2682,7 @@ export const TimelineRehearsalMarkers = memo(function TimelineRehearsalMarkers({
     compact?: boolean;
     onSeek?: (beat: BeatPosition) => void;
 }) {
+    const { t } = useTranslate();
     return (
         <div className="pointer-events-none absolute inset-0 z-20">
             {model.measures.flatMap((measure) => {
@@ -2641,8 +2694,14 @@ export const TimelineRehearsalMarkers = memo(function TimelineRehearsalMarkers({
                         key={measure.id}
                         type="button"
                         data-timeline-interactive="true"
-                        aria-label={`Rehearsal ${label}, measure ${number}`}
-                        title={`Rehearsal ${label}, measure ${number}`}
+                        aria-label={t("timeline.rehearsalMark", {
+                            mark: label,
+                            measure: number,
+                        })}
+                        title={t("timeline.rehearsalMark", {
+                            mark: label,
+                            measure: number,
+                        })}
                         onClick={() => onSeek?.(measure.atBeat)}
                         className={clsx(
                             "border-text-subtitle bg-bg-1 text-text rounded-r-4 pointer-events-auto absolute flex h-16 min-w-16 items-center justify-center border border-l-2 px-3 font-mono leading-none font-semibold",
@@ -2817,6 +2876,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
     /** The new page's names, after the menu's entries */
     addPageNames?: { page: string; subset: string };
 }) {
+    const { t } = useTranslate();
     const keySteps = useArrowKeySteps(onSeek);
     // Whole pixels at rest, like the start flag, so the head and the line land on the same pixels
     const left = Math.round(beatToX(positionBeat, pixelsPerBeat));
@@ -2878,7 +2938,9 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 type="button"
                 data-testid="timeline-playhead"
                 data-timeline-scrub="true"
-                aria-label={`Playback position: ${getPlayheadReadout(model, positionBeat).spoken}`}
+                aria-label={t("timeline.playhead.label", {
+                    position: getPlayheadReadout(model, positionBeat).spoken,
+                })}
                 onPointerDown={(event) => event.preventDefault()}
                 onKeyDown={(event) => {
                     const delta =

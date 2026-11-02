@@ -38,7 +38,7 @@ import {
     wizardStateToFormState,
 } from "./newShowTypes";
 import { invalidateDatabaseReadyQueries } from "@/hooks/useDatabaseReady";
-import { completeNewShow } from "./newShowCompletion";
+import { completeNewShow, NewShowError } from "./newShowCompletion";
 import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { DEFAULT_ACTIVITY } from "@/global/classes/Activities";
@@ -389,8 +389,10 @@ export default function NewShowDialog({
             onCreated();
             onOpenChange(false);
         } catch (error) {
+            // Only NewShowError messages are written for people; anything else is internal
+            // detail ("Missing beat at position…"), logged by conToastError
             const message =
-                error instanceof Error && error.message
+                error instanceof NewShowError && error.message
                     ? error.message
                     : t("launchpage.newShow.errors.createFailed");
             conToastError(message, error);

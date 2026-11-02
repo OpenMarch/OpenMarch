@@ -1,5 +1,5 @@
 import { FileDottedIcon } from "@phosphor-icons/react";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import { webExampleShows } from "@/utilities/webBuild";
 import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
@@ -10,7 +10,7 @@ import { OPEN_STOPPED_STATUS } from "@om-electron/database/convertOnOpenGate";
  * in other builds.
  */
 export default function ExampleShows() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     if (webExampleShows.length === 0) return null;
 
     const open = async (file: string) => {
@@ -34,6 +34,7 @@ export default function ExampleShows() {
                         className="bg-fg-1 border-stroke rounded-16 hover:border-accent text-body flex cursor-pointer items-center gap-8 border px-16 py-12 transition-colors"
                     >
                         <FileDottedIcon size={20} className="text-accent" />
+                        {/* A real show's title (web/demos.ts), like a file name: not translated */}
                         {show.name}
                     </button>
                 ))}

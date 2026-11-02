@@ -25,7 +25,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 import { getClerkSignUpUrl, isSignInEnabled } from "@/global/auth/constants";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -87,7 +87,7 @@ export default function MobileExportModal({
         useSidebarModalStore();
     const queryClient = useQueryClient();
     const productionId = useOtmProductionId();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     useEffect(() => {
         if (productionId == null) return;
@@ -161,7 +161,7 @@ export default function MobileExportModal({
 export function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { data: currentProduction } = useCurrentProduction();
     const validationState = useMobileExportValidation();
     const productionId = useOtmProductionId();
@@ -169,17 +169,11 @@ export function MobileExportModalContents() {
 
     const heading = currentProduction ? (
         <div className="">
-            <h4
-                className="text-h4 mb-8 leading-none"
-                aria-label={"current production name"}
-            >
+            <h4 className="text-h4 mb-8 leading-none">
                 {currentProduction.name}
             </h4>
             <div className="text-body text-text-subtitle flex flex-wrap items-center gap-8">
-                <h5
-                    className="leading-none"
-                    aria-label={"current ensemble name"}
-                >
+                <h5 className="leading-none">
                     {currentProduction.ensemble.name}
                 </h5>
                 <span aria-hidden="true">|</span>
@@ -279,7 +273,7 @@ function MobileExportAccessError() {
 }
 
 function SignedOutMobileExportContent() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const signUpUrl = isSignInEnabled ? getClerkSignUpUrl() : null;
     const handleSetupAccount = useCallback(() => {
         if (!signUpUrl) return;

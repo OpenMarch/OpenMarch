@@ -28,7 +28,8 @@ describe("direction marks", () => {
     it("every kind's parameter marks are ones drawn as icons", () => {
         for (const { kind } of SHAPE_TOOLS)
             for (const param of kind.params) {
-                if (!param.glyph) continue;
+                // A mark that follows the shape (a Line's Measured) is tested with its kind
+                if (typeof param.glyph !== "string") continue;
                 const { container } = render(<GlyphText text={param.glyph} />);
                 expect(container.textContent).not.toMatch(PICTOGRAPHIC);
                 expect(container.querySelectorAll("svg")).toHaveLength(1);

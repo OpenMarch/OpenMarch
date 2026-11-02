@@ -13,6 +13,7 @@ import {
 import type { FieldEditor, FieldPoint } from "@/field/editor/fieldEditor";
 import type { FieldRect } from "@/field/editor/selectionArea";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+import { useTranslate } from "@tolgee/react";
 
 /** Around the selection's box's center unless `around` picks another point of it */
 type Around = (box: FieldRect) => FieldPoint;
@@ -42,6 +43,7 @@ function RotationDragInput(
         | "onDragEnd"
     >,
 ) {
+    const { t } = useTranslate();
     return (
         <div className="flex flex-col gap-8">
             <DragInput
@@ -50,7 +52,7 @@ function RotationDragInput(
                 roundToNearest={15}
                 roundToNearestWithShift={1}
                 icon={ArrowClockwiseIcon}
-                aria-label="Rotation"
+                aria-label={t("inspector.marcher.rotation")}
                 {...props}
             />
         </div>

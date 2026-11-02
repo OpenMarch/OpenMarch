@@ -156,6 +156,11 @@ class WebHost {
         requestVenueChange: (settings) => this.writeVenue(settings),
         requestCamerasChange: (cameras) => this.writeCameras(cameras),
         cameraProfiles: localCameraProfiles,
+        // The demo has no app settings: never asks to open on launch
+        autoOpen: {
+            get: () => Promise.resolve(null),
+            set: () => Promise.resolve(),
+        },
         requestPlayback: (action) => this.runPlayback(action),
     };
 

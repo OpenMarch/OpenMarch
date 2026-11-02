@@ -28,10 +28,13 @@ export default function WebVersionsDialog() {
     const now = Date.now();
     const versions = [...(show?.versions ?? [])].reverse();
     const when = (at: number) =>
-        `${new Date(at).toLocaleString(locale, {
-            dateStyle: "medium",
-            timeStyle: "short",
-        })} (${formatAgo(at, now, locale)})`;
+        t("web.versionsWhen", {
+            date: new Date(at).toLocaleString(locale, {
+                dateStyle: "medium",
+                timeStyle: "short",
+            }),
+            ago: formatAgo(at, now, locale),
+        });
 
     return (
         <Dialog

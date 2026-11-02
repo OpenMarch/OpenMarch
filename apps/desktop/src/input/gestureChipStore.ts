@@ -8,7 +8,8 @@ export type ConstrainWord =
     | "oneAxis"
     | "equalSpacings"
     | "freeRatio"
-    | "keepRatio";
+    | "keepRatio"
+    | "keepDirection";
 
 /** What `fine` does in one gesture, as the chip names it */
 export type FineWord = "fine" | "wholeDegrees";

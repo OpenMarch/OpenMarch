@@ -8,6 +8,7 @@ import { FormatIcu } from "@tolgee/format-icu";
 import { toast } from "sonner";
 import { TimelineCommitViolationError } from "@/db-functions/timelineChanges";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
+import { text } from "@/timeline/timelineText";
 import { TIMELINE_INSPECTOR_STRINGS } from "@/components/inspector/timelineInspectorStrings";
 import { conToastError } from "@/utilities/utils";
 import { TimelineEditRefusedError } from "../timelineEditRefusals";
@@ -207,12 +208,59 @@ describe("timelineErrorMessage", () => {
         );
     });
 
-    it("E-ARGS shows the error's own message, without the code", () => {
+    it("E-ARGS shows the refusal's own text, translated when shown, without the code", () => {
+        const error = new TimelineWriteError(
+            "E-ARGS",
+            text.t("timeline.refusals.casting.alreadyInSlot", { slot: 3 }),
+        );
+        // The message is for logs: the key and its arguments, built without Tolgee
+        expect(error.message).toBe(
+            'E-ARGS: timeline.refusals.casting.alreadyInSlot {"slot":3}',
+        );
+        expect(timelineErrorMessage(error)).toBe(
+            "the marcher is already in slot 3",
+        );
+        // Each key goes through the translator, nested pieces first
+        const nested = new TimelineWriteError(
+            "E-ARGS",
+            text.t("timeline.refusals.keep.wholePage", {
+                counts: text.t("timeline.where.theseCounts"),
+            }),
+        );
+        const translate = vi.fn(
+            (key: string, _default?: string, params?: object) =>
+                `<${key}${params ? ` ${JSON.stringify(params)}` : ""}>`,
+        );
+        expect(timelineErrorMessage(nested, { translate })).toBe(
+            '<timeline.refusals.keep.wholePage {"counts":"<timeline.where.theseCounts {}>"}>',
+        );
+    });
+
+    it("E-ARGS with only a developer's message gets the fallback, or the generic message", () => {
+        const error = new TimelineWriteError(
+            "E-ARGS",
+            "timeline 7 does not exist",
+        );
+        expect(timelineErrorMessage(error)).toBe(
+            TIMELINE_UNKNOWN_ERROR_MESSAGE.defaultMessage,
+        );
+        expect(
+            timelineErrorMessage(error, {
+                fallback: "Couldn't split the move",
+            }),
+        ).toBe("Couldn't split the move");
+        // A refusal with text for the user shows that, not the fallback
         expect(
             timelineErrorMessage(
-                new TimelineWriteError("E-ARGS", "slot 3 is already taken"),
+                new TimelineWriteError(
+                    "E-ARGS",
+                    text.t("timeline.refusals.casting.alreadyInSlot", {
+                        slot: 3,
+                    }),
+                ),
+                { fallback: "Couldn't split the move" },
             ),
-        ).toBe("slot 3 is already taken");
+        ).toBe("the marcher is already in slot 3");
     });
 
     it("E-DB is generic and never shows the database's text", () => {
@@ -385,10 +433,8 @@ describe("en.json", () => {
             "timeline.rangeMenu.deleteWithMoves": "Delete page and its moves",
             "timeline.keep.chain.ariaLabel": "Page {page}: {label}. {hint}",
             "timeline.moveDeleted.message": "Deleted {label}",
-            "timeline.moveDeleted.withPage":
-                "Deleted {label} · Page {pages} changed",
             "timeline.moveDeleted.withPages":
-                "Deleted {label} · Pages {pages} changed",
+                "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}",
             "timeline.keyframes.title": "Keyframe · Page {page}, count {count}",
             "timeline.keyframes.detail": "{set} of {total} selected",
             "timeline.keyframes.detailNames":

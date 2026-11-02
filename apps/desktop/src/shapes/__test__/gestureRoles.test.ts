@@ -29,6 +29,8 @@ import {
     type BoxParams,
 } from "../box/boxGeometry";
 import { boxTool } from "../box/boxTool";
+import { lineTool } from "../line/lineTool";
+import type { LineParams } from "../line/lineGeometry";
 import { circleTool } from "../circle/circleTool";
 import type { DistributionMode } from "../distribute/distribution";
 import { withMode } from "../distribute/modes";
@@ -329,6 +331,38 @@ describe("the press rule, through the tool", () => {
         const row = openRow();
         shapeToolMode.press(pointer(rowTool.frameOf(row, N).center), OFF_MAC);
         expect(gestureType()).toBe("center");
+    });
+});
+
+describe("the next segment between a line's clicked points", () => {
+    /** A line with one point clicked at {@link FROM}, open, the next segment following the pointer */
+    function oneClicked(): void {
+        const env = toolEnvFor(field());
+        let t = openTool(lineTool, marchers);
+        t = pointerMove(t, FROM, env);
+        t = press(t, FROM, env);
+        t = release(t, shapeContextFor(field()), { double: false });
+        expect(t.gesture?.type).toBe("points");
+        openShapeTool(t, null, null);
+    }
+    const previewEnd = () =>
+        (useShapeToolStore.getState().tool?.params as LineParams).points.at(
+            -1,
+        )!;
+    const off = { x: FROM.x + 20 * STEP, y: FROM.y + 6 * STEP };
+
+    it("follows the pointer freely with no role held", () => {
+        oneClicked();
+        shapeToolMode.cursorAt(pointer(off));
+        expect(Math.abs(previewEnd().y - FROM.y)).toBeGreaterThan(STEP);
+    });
+
+    it("keeps to 45° with constrain held, as a click there would", () => {
+        oneClicked();
+        shapeToolMode.cursorAt(pointer(off, { ctrl: true }));
+        const first = (useShapeToolStore.getState().tool?.params as LineParams)
+            .points[0]!;
+        expect(previewEnd().y).toBeCloseTo(first.y, 6);
     });
 });
 

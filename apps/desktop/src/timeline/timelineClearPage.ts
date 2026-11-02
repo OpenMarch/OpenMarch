@@ -40,7 +40,7 @@ import type { HoldEntryState } from "./holdMenuState";
 type Translate = (
     key: string,
     defaultValue: string,
-    params?: Record<string, string>,
+    params?: Record<string, string | number>,
 ) => string;
 
 const tolgeeTranslate: Translate = (key, defaultValue, params) =>
@@ -199,17 +199,11 @@ export function clearPageFollowingLabel(
 ): string {
     const first = following[0] ?? "";
     const last = following[following.length - 1] ?? first;
-    return first === last
-        ? translate(
-              "actions.batchEdit.clearPageAndPage",
-              "Clear Page {page}, Page {next} moves back too",
-              { page, next: first },
-          )
-        : translate(
-              "actions.batchEdit.clearPageAndPages",
-              "Clear Page {page}, Pages {first}–{last} move back too",
-              { page, first, last },
-          );
+    return translate(
+        "actions.batchEdit.clearPageAndLater",
+        "{count, plural, =1 {Clear Page {page}, Page {first} moves back too} other {Clear Page {page}, Pages {first}–{last} move back too}}",
+        { page, first, last, count: first === last ? 1 : following.length },
+    );
 }
 
 /** A menu label for the command palette, saying who it acts on: "Clear Page 3 (selected)". */

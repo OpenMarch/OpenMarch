@@ -125,13 +125,21 @@ export default function ShowAssets({
         void queryClient.invalidateQueries({ queryKey: showLibraryKeys.all() });
         if (replacedWith) void invalidateCueQueries(queryClient);
         const params = { name: item.name, replacement: replacedWith?.name };
-        const message = [
+        toast.success(
             replacedWith
-                ? t("assets.show.delete.replaced", params)
-                : !keptForUndo && t("assets.show.delete.deleted", params),
-            keptForUndo && t("assets.show.delete.keptForUndo", params),
-        ];
-        toast.success(message.filter(Boolean).join(" "));
+                ? t(
+                      keptForUndo
+                          ? "assets.show.delete.replacedKeptForUndo"
+                          : "assets.show.delete.replaced",
+                      params,
+                  )
+                : t(
+                      keptForUndo
+                          ? "assets.show.delete.keptForUndo"
+                          : "assets.show.delete.deleted",
+                      params,
+                  ),
+        );
     };
 
     if (!show) return null;

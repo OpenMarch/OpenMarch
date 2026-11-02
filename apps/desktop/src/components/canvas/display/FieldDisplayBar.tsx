@@ -132,7 +132,14 @@ function ChoiceButton<K extends "marcherLabels" | "shapes">({
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        aria-label={current ? `${label}: ${current}` : label}
+                        aria-label={
+                            current
+                                ? t("fieldDisplay.valueLabel", {
+                                      label,
+                                      value: current,
+                                  })
+                                : label
+                        }
                         data-testid={testId}
                         className={clsx(
                             DISPLAY_BUTTON_CLASS,
@@ -212,7 +219,7 @@ function PlaceholderButton({
         >
             <button
                 type="button"
-                aria-label={`${label}: ${t("fieldDisplay.comingSoon")}`}
+                aria-label={t("fieldDisplay.comingSoonLabel", { label })}
                 aria-disabled
                 data-testid={testId}
                 className={clsx(

@@ -20,7 +20,8 @@ import {
     scrubDistance,
     type ScrubAxis,
 } from "./scrub";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
+import type { ActionId } from "@/shortcuts/definitions";
 
 /** How long a press is held before it repeats, and how often it repeats then, in ms */
 const HOLD_MS = 400;
@@ -66,15 +67,11 @@ export const ScaleButtons = memo(function ScaleButtons({
     envFor,
     canShrink,
     canExpand,
-    shrinkKey,
-    expandKey,
 }: {
     live: ShapeEditTarget;
     envFor: EnvFor;
     canShrink: boolean;
     canExpand: boolean;
-    shrinkKey?: string;
-    expandKey?: string;
 }) {
     return (
         <>
@@ -94,7 +91,7 @@ export const ScaleButtons = memo(function ScaleButtons({
                               "Shrink: no spacing can go under half a step",
                           )
                 }
-                shortcut={shrinkKey}
+                action="shapeShrink"
                 testId="shape-editor-shrink"
             >
                 <ArrowsInSimpleIcon size={14} />
@@ -108,7 +105,7 @@ export const ScaleButtons = memo(function ScaleButtons({
                     "shapes.edit.expand",
                     "Expand, keeping the proportions",
                 )}
-                shortcut={expandKey}
+                action="shapeExpand"
                 testId="shape-editor-expand"
             >
                 <ArrowsOutSimpleIcon size={14} />
@@ -138,7 +135,7 @@ function ScaleButton({
     by,
     disabled,
     label,
-    shortcut,
+    action,
     testId,
     children,
 }: {
@@ -147,7 +144,8 @@ function ScaleButton({
     by: -1 | 1;
     disabled: boolean;
     label: string;
-    shortcut?: string;
+    /** The action the button does, whose shortcut the tooltip shows */
+    action: ActionId;
     testId: string;
     children: ReactNode;
 }) {
@@ -259,7 +257,7 @@ function ScaleButton({
     return (
         <Tip
             label={label}
-            shortcut={shortcut}
+            action={action}
             hint={tolgee.t(
                 "shapes.edit.scaleHint",
                 "Click, hold to repeat, or drag",

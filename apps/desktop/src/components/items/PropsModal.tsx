@@ -492,7 +492,7 @@ function PropEditor({ itemId }: { itemId: number }) {
                     <div className="grid grid-cols-2 gap-12">
                         <CommitNumber
                             label={t("props.width")}
-                            unit="m"
+                            unit={t("props.units.meters")}
                             min={0.01}
                             step={0.1}
                             value={shown.width}
@@ -500,7 +500,7 @@ function PropEditor({ itemId }: { itemId: number }) {
                         />
                         <CommitNumber
                             label={t("props.depth")}
-                            unit="m"
+                            unit={t("props.units.meters")}
                             min={0.01}
                             step={0.1}
                             value={shown.depth}
@@ -508,7 +508,7 @@ function PropEditor({ itemId }: { itemId: number }) {
                         />
                         <CommitNumber
                             label={t("props.height")}
-                            unit="m"
+                            unit={t("props.units.meters")}
                             min={0}
                             step={0.1}
                             value={shown.height}

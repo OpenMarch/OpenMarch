@@ -3,6 +3,7 @@ import Store from "electron-store";
 import { randomUUID } from "node:crypto";
 import * as fs from "fs";
 import * as path from "path";
+import { t } from "../i18n";
 
 const store = new Store();
 
@@ -56,12 +57,17 @@ export class VideoExportService {
                 : app.getPath("documents");
 
             const result = await dialog.showSaveDialog({
-                title: "Export Video",
+                title: t("exportCoordinates.saveDialog.videoTitle"),
                 defaultPath: path.join(
                     baseDir,
                     `${currentFileName}-${date}.${fileExtension}`,
                 ),
-                filters: [{ name: "Video", extensions: [fileExtension] }],
+                filters: [
+                    {
+                        name: t("fileDialog.filters.video"),
+                        extensions: [fileExtension],
+                    },
+                ],
                 properties: ["showOverwriteConfirmation", "createDirectory"],
             });
 

@@ -10,7 +10,11 @@ export const MENU_ACTION_CHANNEL = "menu:action";
 export interface MenuAction {
     /** An action id (`shortcuts/definitions.ts`) */
     readonly action: string;
-    readonly label: string;
+    /**
+     * The item's text, as a key in `i18n/en.json`. The main process translates it (with
+     * `electron/main/i18n.ts`) when it builds the menu
+     */
+    readonly labelKey: string;
     /**
      * The shortcut, in Electron's accelerator form. The menu only shows it: the renderer's own
      * keyboard handler owns the key, so text fields keep Space and letters
@@ -19,24 +23,32 @@ export interface MenuAction {
 }
 
 export const PLAYBACK_MENU_ACTIONS: readonly MenuAction[] = [
-    { action: "playPause", label: "Play / Stop", accelerator: "Space" },
+    {
+        action: "playPause",
+        labelKey: "menu.playback.playPause",
+        accelerator: "Space",
+    },
     {
         action: "playPage",
-        label: "Play from Playhead / Pause",
+        labelKey: "menu.playback.playPage",
         accelerator: "Shift+Space",
     },
     {
         action: "playOn",
-        label: "Play On from Start Flag",
+        labelKey: "menu.playback.playOn",
         accelerator: "Alt+Space",
     },
-    { action: "toggleLoop", label: "Loop On / Off", accelerator: "C" },
+    {
+        action: "toggleLoop",
+        labelKey: "menu.playback.toggleLoop",
+        accelerator: "C",
+    },
 ];
 
 export const HELP_MENU_ACTIONS: readonly MenuAction[] = [
     {
         action: "showShortcuts",
-        label: "Keyboard Shortcuts",
+        labelKey: "menu.help.showShortcuts",
         accelerator: "Shift+/",
     },
 ];

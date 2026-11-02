@@ -1,5 +1,5 @@
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { useMemo } from "react";
@@ -35,7 +35,7 @@ export function CollisionsTab() {
 }
 
 function CollisionsToolbar({ collisionInfo }: { collisionInfo: any[] }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
 
     return (
@@ -43,33 +43,35 @@ function CollisionsToolbar({ collisionInfo }: { collisionInfo: any[] }) {
             <div className="flex items-center gap-6">
                 <WarningIcon size={18} className="text-yellow" />
                 <span className="font-medium">
-                    {collisionInfo.length} Collision
-                    {collisionInfo.length !== 1 ? "s" : ""} Found
+                    {t("toolbar.collisions.found", {
+                        count: collisionInfo.length,
+                    })}
                 </span>
             </div>
             <Popover.Root>
                 <Popover.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    Review
+                    {t("toolbar.collisions.review")}
                     <CaretDownIcon size={18} />
                 </Popover.Trigger>
                 <Popover.Portal>
                     <Popover.Content className="bg-modal text-text rounded-6 shadow-modal backdrop-blur-32 border-stroke z-50 m-8 flex max-w-sm flex-col items-start gap-0 border p-8 select-text">
                         <div className="flex flex-col gap-8">
                             <h4 className="text-h5 leading-none">
-                                {collisionInfo.length} Collision
-                                {collisionInfo.length !== 1 ? "s" : ""}
+                                {t("toolbar.collisions.title", {
+                                    count: collisionInfo.length,
+                                })}
                             </h4>
                             <p className="text-body text-text-subtitle">
-                                Found {collisionInfo.length} collision
-                                {collisionInfo.length !== 1 ? "s" : ""} on the
-                                next page
+                                {t("toolbar.collisions.foundOnNextPage", {
+                                    count: collisionInfo.length,
+                                })}
                             </p>
 
                             <Button
                                 size="compact"
                                 onClick={() => zoomToCollisions(isPlaying)}
                             >
-                                Review
+                                {t("toolbar.collisions.zoomToReview")}
                             </Button>
 
                             <div className="flex max-h-[50vh] flex-col gap-4 overflow-y-auto">
@@ -84,13 +86,20 @@ function CollisionsToolbar({ collisionInfo }: { collisionInfo: any[] }) {
                                                 {collision.marcher2Label}
                                             </div>
                                             <div className="text-text-subtitle font-mono text-sm">
-                                                {collision.distance.toFixed(1)}{" "}
-                                                steps
+                                                {t(
+                                                    "toolbar.collisions.distance",
+                                                    {
+                                                        distance:
+                                                            collision.distance,
+                                                    },
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-text-subtitle text-sm">
-                                            Position: ({collision.x.toFixed(1)},{" "}
-                                            {collision.y.toFixed(1)})
+                                            {t("toolbar.collisions.position", {
+                                                x: collision.x,
+                                                y: collision.y,
+                                            })}
                                         </div>
                                     </div>
                                 ))}

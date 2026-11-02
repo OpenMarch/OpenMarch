@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import {
     CaretRightIcon,
@@ -33,7 +33,7 @@ import {
     type PaletteItem,
 } from "./sources";
 import { getPaletteUsageScores, recordPaletteUsage } from "./usage";
-import Keycaps from "@/components/ui/Keycaps";
+import Shortcut from "@/components/ui/Shortcut";
 import "./CommandPalette.css";
 
 interface Section {
@@ -148,7 +148,7 @@ function arrange(
 /** Opens with the openCommandPalette action (⌘K / Ctrl+K). Mount once, app-wide. */
 // eslint-disable-next-line max-lines-per-function
 export default function CommandPalette() {
-    const { t: tolgeeT } = useTolgee();
+    const { t: tolgeeT } = useTranslate();
     const t: Translate = (key, params) => tolgeeT(key, params as never);
     const overrides = useShortcutOverridesStore((s) => s.overrides);
     const palette = useCommandBarStore((s) => s.palette);
@@ -494,10 +494,11 @@ export default function CommandPalette() {
                                                     )}
                                                     {showHints &&
                                                         item.shortcut && (
-                                                            <Keycaps
+                                                            <Shortcut
                                                                 keys={
                                                                     item.shortcut
                                                                 }
+                                                                size="md"
                                                             />
                                                         )}
                                                 </div>
@@ -511,16 +512,16 @@ export default function CommandPalette() {
                         {!isTouch && (
                             <div className="palette-footer" aria-hidden>
                                 <span className="palette-footer-hint">
-                                    <kbd className="keycap">↑</kbd>
-                                    <kbd className="keycap">↓</kbd>
+                                    <Shortcut binding="ArrowUp" />
+                                    <Shortcut binding="ArrowDown" />
                                     {t("commandPalette.navigate")}
                                 </span>
                                 <span className="palette-footer-hint">
-                                    <kbd className="keycap">↵</kbd>
+                                    <Shortcut binding="Enter" />
                                     {t("commandPalette.run")}
                                 </span>
                                 <span className="palette-footer-hint">
-                                    <kbd className="keycap">Esc</kbd>
+                                    <Shortcut binding="Escape" />
                                     {t("commandPalette.close")}
                                 </span>
                             </div>

@@ -1,6 +1,6 @@
 import { Checkpoint, FieldProperties } from "@openmarch/core";
 import { TabContent, Button, Switch } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import FormField from "@/components/ui/FormField";
 import { CheckpointEditor } from "./CheckpointEditor";
 import { inputClassname } from "./utils";
@@ -26,7 +26,7 @@ export function CheckpointsTab({
     addCheckpoint,
     sorter,
 }: CheckpointsTabProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     return (
         <TabContent value="checkpoints" className="flex flex-col gap-32">

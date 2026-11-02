@@ -4,9 +4,10 @@
  * or length (a phrase), the value's own settings, its ripple and notes.
  * Each change is one undoable edit. No popovers: everything is here.
  */
+import Shortcut from "@/components/ui/Shortcut";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import {
     Button,
     Input,
@@ -36,6 +37,7 @@ import { useVisualsStore } from "@/stores/VisualsStore";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { useVisualsData } from "./VisualsProvider";
 import { countWords } from "./countWhere";
+import { cueValueName } from "./cueValueText";
 import { useTargetLabel } from "./useTargetLabel";
 import FacingWheel from "./FacingWheel";
 import {
@@ -116,7 +118,7 @@ function Field({
 
 /** A setting's or option's label, falling back to its id for one the app doesn't name. */
 function useSettingLabel() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (group: "settings" | "options", id: string) => {
         const key = `visuals.${group}.${id}`;
         const label = t(key);
@@ -171,7 +173,7 @@ function SettingField({
 }
 
 export default function VisualsCuePanel() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     // the panel shows one picked cue; several picked (for copying) show none
     const picked = useVisualsStore((s) => s.selectedCueIds);
@@ -195,8 +197,9 @@ export default function VisualsCuePanel() {
         () =>
             data
                 ? countWords(beats, pages, data.counts)
-                : (count: number) => `count ${count + 1}`,
-        [data, beats, pages],
+                : (count: number) =>
+                      t("visuals.cue.count", { count: count + 1 }),
+        [data, beats, pages, t],
     );
     if (!cue || !data) return null;
 
@@ -243,16 +246,18 @@ export default function VisualsCuePanel() {
                     onValueChange={(v) => update({ value: v })}
                 >
                     <SelectTriggerButton
-                        label={value?.name ?? cue.value}
+                        label={cueValueName(cue.value) ?? cue.value}
                         data-testid="visuals-cue-value"
                     />
                     <SelectContent>
                         {choices.map((choice) => (
                             <SelectItem key={choice.id} value={choice.id}>
                                 {fitsAll(choice.fits)
-                                    ? choice.name
+                                    ? (cueValueName(choice.id) ?? choice.name)
                                     : t("visuals.cue.notForEveryone", {
-                                          value: choice.name,
+                                          value:
+                                              cueValueName(choice.id) ??
+                                              choice.name,
                                       })}
                             </SelectItem>
                         ))}
@@ -405,7 +410,7 @@ function NotesField({
     notes: string | null;
     onCommit: (notes: string | null) => void;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [text, setText] = useState(notes ?? "");
     useEffect(() => setText(notes ?? ""), [notes]);
     return (
@@ -460,13 +465,14 @@ function PickPointButton({
                       )
             }
         >
-            <T
-                keyName={
-                    picking
-                        ? "visuals.cue.pickingPoint"
-                        : "visuals.cue.pickPoint"
-                }
-            />
+            {picking ? (
+                <T
+                    keyName="visuals.cue.pickingPoint"
+                    params={{ keys: () => <Shortcut binding="Escape" /> }}
+                />
+            ) : (
+                <T keyName="visuals.cue.pickPoint" />
+            )}
         </Button>
     );
 }

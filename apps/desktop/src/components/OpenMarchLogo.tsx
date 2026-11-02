@@ -23,7 +23,7 @@ export default function OpenMarchLogo({
             xmlns="http://www.w3.org/2000/svg"
             className={className}
             role="img"
-            aria-label="OpenMarch"
+            aria-label="OpenMarch" // i18n-ignore: product name, the same in every language
             dangerouslySetInnerHTML={{ __html: logoPaths }}
         />
     );

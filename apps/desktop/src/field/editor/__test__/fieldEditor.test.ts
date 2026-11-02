@@ -27,6 +27,7 @@ function setup({
     pressSelection = undefined as FieldEditorPorts["pressSelection"],
     doubleClickMarcher = undefined as FieldEditorPorts["doubleClickMarcher"],
     reachesInside = undefined as FieldEditorPorts["reachesInside"],
+    marcherHidden = undefined as FieldEditorPorts["marcherHidden"],
     positions = [100, 100, 200, 100, 300, 100, 400, 100],
     ratioLocked = undefined as (() => boolean) | undefined,
 } = {}) {
@@ -61,6 +62,7 @@ function setup({
         pressSelection,
         doubleClickMarcher,
         reachesInside,
+        marcherHidden,
         selectionBoxPadding: () => 10,
         openMenu: vi.fn(),
         showPositions: vi.fn((positions) => {
@@ -166,6 +168,67 @@ describe("FieldEditor click selection", () => {
         editor.pointerDown(at(100, 100));
         expect(state.selected).toEqual([]);
         editor.pointerUp(at(100, 100));
+        expect(state.selected).toEqual([1]);
+    });
+});
+
+describe("FieldEditor with a shape's marchers hidden (#558, a shape seen on its own)", () => {
+    const slop = CLICK_SLOP / ZOOM;
+    // Marchers 1 and 2 are the shape's, hidden; 3 and 4 aren't
+    const shapes = (id: number) => id === 1 || id === 2;
+    const hiddenSetup = (selected: number[] = []) =>
+        setup({ selected, marcherHidden: shapes });
+
+    it("a click on a hidden marcher is a click on empty field", () => {
+        const { editor, state } = hiddenSetup([2]);
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([]);
+    });
+
+    it("a drag from a hidden marcher moves nothing: it's a marquee", () => {
+        const { editor, state } = hiddenSetup();
+        editor.pointerDown(at(100, 100));
+        editor.pointerMove(at(100 + slop * 3, 100 + slop * 3));
+        expect(editor.activeGesture()).toBe("marquee");
+        editor.pointerUp(at(100 + slop * 3, 100 + slop * 3));
+        expect(state.drops).toEqual([]);
+    });
+
+    it("hovering a hidden marcher shows no pointer", () => {
+        const { editor } = hiddenSetup();
+        editor.pointerMove(at(100, 100));
+        expect(editor.cursor()).toBe("default");
+    });
+
+    it("hits the marchers the shape doesn't move as usual", () => {
+        const { editor, state } = hiddenSetup();
+        editor.pointerMove(at(300, 100));
+        expect(editor.cursor()).toBe("pointer");
+        click(editor, 300, 100);
+        expect(state.selected).toEqual([3]);
+    });
+
+    it("a marquee and select-all leave the hidden marchers out", () => {
+        const marquee = hiddenSetup();
+        dragThrough(marquee.editor, [
+            [50, 50],
+            [450, 150],
+        ]);
+        expect(marquee.state.selected).toEqual([3, 4]);
+        const all = hiddenSetup();
+        all.editor.selectAll();
+        expect(all.state.selected).toEqual([3, 4]);
+    });
+
+    it("hits them again once they show", () => {
+        let hidden = true;
+        const { editor, state } = setup({
+            marcherHidden: (id) => hidden && shapes(id),
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([]);
+        hidden = false;
+        click(editor, 100, 100);
         expect(state.selected).toEqual([1]);
     });
 });
@@ -361,6 +424,56 @@ describe("FieldEditor right-click menu (#315)", () => {
         rightUp(editor, 300, 100);
         expect(ports.openMenu).not.toHaveBeenCalled();
         expect(state.selected).toEqual([1]);
+    });
+
+    it("opens the mode's own menu first, where it has one (a Line's point, #569)", () => {
+        const { editor, ports } = setup({ selected: [1] });
+        const openMenu = vi.fn(() => true);
+        editor.setMode({
+            ...fakeMode().mode,
+            blocksFieldMenu: true,
+            openMenu,
+        });
+        rightDown(editor, 300, 100);
+        rightUp(editor, 300, 100);
+        expect(openMenu).toHaveBeenCalledTimes(1);
+        expect(ports.openMenu).not.toHaveBeenCalled();
+    });
+
+    it("opens the field's menu where the mode has none of its own", () => {
+        const { editor, ports } = setup({ selected: [1] });
+        const openMenu = vi.fn(() => false);
+        editor.setMode({ ...fakeMode().mode, openMenu });
+        rightDown(editor, 300, 100);
+        rightUp(editor, 300, 100);
+        expect(openMenu).toHaveBeenCalledTimes(1);
+        expect(ports.openMenu).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens only the mode's menu on a Mac's Ctrl-click, which still pans (#194, #569)", () => {
+        const { editor, ports } = setup({ isMac: true });
+        const openMenu = vi.fn(() => false);
+        editor.setMode({ ...fakeMode().mode, openMenu });
+        expect(
+            editor.pointerDown(at(100, 100, { ctrl: true, button: 0 })),
+        ).toBe(false);
+        editor.pointerUp(at(100, 100, { ctrl: true, button: 0 }));
+        expect(openMenu).toHaveBeenCalledTimes(1);
+        expect(ports.openMenu).not.toHaveBeenCalled();
+        // A Ctrl-drag panned: no menu
+        editor.pointerDown(at(100, 100, { ctrl: true, button: 0 }));
+        editor.pointerMove(at(160, 100, { ctrl: true, button: 0 }));
+        editor.pointerUp(at(160, 100, { ctrl: true, button: 0 }));
+        expect(openMenu).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the mode's menu on a long press, not the field's", () => {
+        const { editor, ports } = setup({ selected: [1] });
+        const openMenu = vi.fn(() => false);
+        editor.setMode({ ...fakeMode().mode, openMenu });
+        editor.longPress(at(300, 100));
+        expect(openMenu).toHaveBeenCalledTimes(1);
+        expect(ports.openMenu).not.toHaveBeenCalled();
     });
 
     it("opens the menu for a selected placed box's marchers, keeping the selection", () => {
@@ -1881,7 +1994,13 @@ function fakeMode({
         release: (p, click) =>
             calls.push(
                 `release ${p.field.x},${p.field.y} ${
-                    click ? (click.double ? "double" : "click") : "drag"
+                    click
+                        ? click.double
+                            ? click.ownFirst
+                                ? "double"
+                                : "double after the editor's click"
+                            : "click"
+                        : "drag"
                 }`,
             ),
         cancel: () => calls.push("cancel"),
@@ -1935,6 +2054,33 @@ describe("FieldEditor modes (#204)", () => {
             // A double-click's second click starts no third
             "release 101,100 click",
         ]);
+    });
+
+    it("tells the mode when a double-click's first click was the editor's, not its own", () => {
+        const { editor, state, clock } = setup();
+        let claiming = false;
+        const { mode, calls } = fakeMode({ claims: () => claiming });
+        editor.setMode(mode);
+        // The editor's click selects the marcher (which turns a placed box's mode on)
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1]);
+        claiming = true;
+        clock.now += DOUBLE_CLICK_MS - 1;
+        click(editor, 101, 100);
+        expect(calls.filter((c) => c.startsWith("release"))).toEqual([
+            "release 101,100 double after the editor's click",
+        ]);
+    });
+
+    it("tells the mode a drag, not a click, when the press went past the slop and came back", () => {
+        const { editor } = setup();
+        const { mode, calls } = fakeMode();
+        editor.setMode(mode);
+        editor.pointerDown(at(100, 100));
+        editor.pointerMove(at(140, 100));
+        editor.pointerMove(at(100, 100));
+        editor.pointerUp(at(100, 100));
+        expect(calls.at(-1)).toBe("release 100,100 drag");
     });
 
     it("leaves a press it doesn't claim to the editor's rules", () => {

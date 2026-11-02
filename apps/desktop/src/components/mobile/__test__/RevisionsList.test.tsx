@@ -51,7 +51,7 @@ describe("RevisionsList", () => {
             );
 
             expect(
-                screen.getByLabelText("No revisions message"),
+                screen.getByTestId("no-revisions-message"),
             ).toBeInTheDocument();
         });
 
@@ -159,7 +159,7 @@ describe("RevisionsList", () => {
             );
 
             // The date should be formatted and displayed (7+ days ago uses long format)
-            // Format: "January 15th, 2020 2:30PM" (timezone dependent)
+            // Format: "January 15, 2020 - 2:30 PM" (timezone dependent)
             const dateText = screen.getByText(/January.*2020/i);
             expect(dateText).toBeInTheDocument();
         });
@@ -583,7 +583,7 @@ describe("RevisionsList", () => {
                         );
 
                         expect(
-                            screen.getByLabelText("No revisions message"),
+                            screen.getByTestId("no-revisions-message"),
                         ).toBeInTheDocument();
 
                         unmount();

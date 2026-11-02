@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { db, schema } from "@/global/database/db";
 import tolgee from "@/global/singletons/Tolgee";
 import { subscribeHistoryChanges } from "@/db-functions/history";
+import { joinList } from "@/timeline/translateTimelineText";
 
 /**
  * **Move them too** (defined-coordinates 09, G4): after an edit splits the marchers it moved at a
@@ -45,7 +46,7 @@ export const MOVE_THEM_TOO_TOAST_MS = 10000;
 export type MoveThemTooTranslate = (
     key: string,
     defaultMessage: string,
-    params?: Record<string, string>,
+    params?: Record<string, string | number>,
 ) => string;
 
 const defaultTranslate: MoveThemTooTranslate = (key, defaultMessage, params) =>
@@ -65,18 +66,16 @@ export function marcherNamesList(
     labels: readonly string[],
     translate: MoveThemTooTranslate = defaultTranslate,
 ): string {
-    if (labels.length <= 1) return labels[0] ?? "";
-    if (labels.length <= 3)
-        return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
-    return translate(
-        "marcherPages.moveThemToo.namesAndOthers",
-        "{first}, {second} and {count} others",
-        {
-            first: labels[0]!,
-            second: labels[1]!,
-            count: String(labels.length - 2),
-        },
-    );
+    if (labels.length <= 3) return joinList(labels);
+    return joinList([
+        labels[0]!,
+        labels[1]!,
+        translate(
+            "marcherPages.moveThemToo.namesOthers",
+            "{count, plural, one {# other} other {# others}}",
+            { count: labels.length - 2 },
+        ),
+    ]);
 }
 
 /**
@@ -107,18 +106,11 @@ export function moveThemTooMessage(
         };
     const page = pages[0] ?? "";
     return {
-        message:
-            kept.length === 1
-                ? translate(
-                      "marcherPages.moveThemToo.oneMarcher",
-                      "{names} has its own move on Page {page}, so it kept its spot",
-                      { names, page },
-                  )
-                : translate(
-                      "marcherPages.moveThemToo.onePage",
-                      "{names} have their own move on Page {page}, so they kept their spot",
-                      { names, page },
-                  ),
+        message: translate(
+            "marcherPages.moveThemToo.ownMove",
+            "{count, plural, =1 {{names} has its own move on Page {page}, so it kept its spot} other {{names} have their own move on Page {page}, so they kept their spot}}",
+            { names, page, count: kept.length },
+        ),
         actionLabel,
     };
 }

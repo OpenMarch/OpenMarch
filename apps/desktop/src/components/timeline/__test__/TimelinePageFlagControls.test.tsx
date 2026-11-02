@@ -122,6 +122,13 @@ const show = (props: Parameters<typeof view>[0]) => render(view(props));
 const playhead = () => screen.getByTestId("timeline-playhead");
 const addPageMenu = () => screen.queryByTestId("timeline-add-page-flag-menu");
 
+/** The text a sighted person sees: without the words a screen reader hears for a shortcut */
+const shownText = (el: Element) => {
+    const copy = el.cloneNode(true) as Element;
+    copy.querySelectorAll(".sr-only").forEach((node) => node.remove());
+    return copy.textContent;
+};
+
 describe("Create page at playhead on the paused playhead's right-click menu (UI-9)", () => {
     it("has no **+** beside the playhead: adding a page doesn't act on the range", () => {
         show({ onAddPageFlag: vi.fn(), onAddSubsetPage: vi.fn() });
@@ -135,10 +142,8 @@ describe("Create page at playhead on the paused playhead's right-click menu (UI-
         const names = screen.getAllByTestId("timeline-add-page-name");
         expect(names.map((n) => n.textContent)).toEqual(["3", "2A"]);
         const item = screen.getByTestId("timeline-add-page");
-        // The action's label (its key here: tests don't load en.json), name and shortcut
-        expect(item.textContent).toBe(
-            "actions.timeline.createPageAtPlayhead3F",
-        );
+        // The action's label, name and shortcut
+        expect(shownText(item)).toBe("Create page at playhead3F");
         fireEvent.click(item);
         expect(onAddPageFlag).toHaveBeenCalledTimes(1);
     });
@@ -149,9 +154,7 @@ describe("Create page at playhead on the paused playhead's right-click menu (UI-
         show({ onAddPageFlag, onAddSubsetPage });
         fireEvent.contextMenu(playhead());
         const item = screen.getByTestId("timeline-add-subset-page");
-        expect(item.textContent).toBe(
-            "actions.timeline.createSubsetAtPlayhead2AShift+F",
-        );
+        expect(shownText(item)).toBe("Create subset at playhead2AShift+F");
         fireEvent.click(item);
         expect(onAddSubsetPage).toHaveBeenCalledTimes(1);
         expect(onAddPageFlag).not.toHaveBeenCalled();
@@ -167,10 +170,7 @@ describe("Create page at playhead on the paused playhead's right-click menu (UI-
             const shortcuts = screen.getAllByTestId(
                 "timeline-add-page-shortcut",
             );
-            expect(shortcuts.map((s) => s.textContent)).toEqual([
-                "Alt+N",
-                "Shift+F",
-            ]);
+            expect(shortcuts.map(shownText)).toEqual(["Alt+N", "Shift+F"]);
         } finally {
             useShortcutOverridesStore.setState({ overrides: {} });
         }

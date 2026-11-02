@@ -5,6 +5,7 @@ import {
     QueryClient,
 } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     DbConnection,
     DatabaseSectionAppearance,
@@ -97,7 +98,11 @@ export const createSectionAppearancesMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error creating section appearances`, e, variables);
+            conToastError(
+                tolgee.t("section.appearances.errors.create"),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -115,7 +120,11 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating section appearances`, e, variables);
+            conToastError(
+                tolgee.t("section.appearances.errors.update"),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -131,7 +140,11 @@ export const deleteSectionAppearancesMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting section appearances`, e, variables);
+            conToastError(
+                tolgee.t("section.appearances.errors.delete"),
+                e,
+                variables,
+            );
         },
     });
 };

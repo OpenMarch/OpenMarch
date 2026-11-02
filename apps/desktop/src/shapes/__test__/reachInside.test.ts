@@ -8,6 +8,7 @@ import {
     type FieldPoint,
     type FieldPointer,
 } from "@/field/editor/fieldEditor";
+import { setActiveFieldEditor } from "@/field/editor/activeFieldEditor";
 import type { MarcherPosition } from "@/field/editor/moveGesture";
 import { ruledMove } from "@/field/editor/moveRules";
 import { NO_KEYS, type HeldKeys } from "@/input/modifierRoles";
@@ -251,6 +252,48 @@ describe("the selected box's field mode and reach inside", () => {
     });
 });
 
+/**
+ * A double-click on a member of the selected box goes inside it at that marcher, whatever handle
+ * is drawn over it: a Box has no handle double-click (only a Line's points do, #557). Its first
+ * click is the box's (`ownFirst`) when the box was selected already, the editor's when that click
+ * selected it.
+ */
+describe("a double-click on a member of the selected box", () => {
+    beforeEach(() => {
+        useBoxSelectionStore.setState({ enabled: true, inside: null });
+        vi.mocked(commitBox).mockClear();
+    });
+
+    function doubleClick(on: PlacedBox, id: number, ownFirst: boolean) {
+        members = membersOf(on);
+        vi.spyOn(placedBoxStore, "placedBoxesAt").mockReturnValue([on]);
+        const live = new LiveBoxMode(on, new QueryClient());
+        const at = pointer(members.get(id)!);
+        expect(live.claims(at, editorSays(false))).toBe(true);
+        live.press(at, editorSays(false));
+        live.release(at, { double: true, ownFirst });
+    }
+
+    it.each([true, false])(
+        "goes inside on a marcher under a corner handle (ownFirst %s)",
+        (ownFirst) => {
+            // Marcher 2 is the back-right corner: the ne handle sits on it
+            doubleClick(box, 2, ownFirst);
+            expect(useBoxSelectionStore.getState().inside).toBe(7);
+            expect(commitBox).not.toHaveBeenCalled();
+        },
+    );
+
+    it.each([
+        [7, "on no handle"],
+        [8, "on the center dot"],
+    ])("goes inside on marcher %i, %s", (id) => {
+        doubleClick(placed(15), id, true);
+        expect(useBoxSelectionStore.getState().inside).toBe(8);
+        expect(commitBox).not.toHaveBeenCalled();
+    });
+});
+
 describe("canReachInside", () => {
     beforeEach(() => {
         vi.spyOn(placedBoxStore, "placedBoxesAt").mockReturnValue([box]);
@@ -303,7 +346,12 @@ describe("reaching inside through the field editor", () => {
 
     afterEach(() => running?.pointerCancel());
 
-    function app({ selected = [] as number[], on = box, isMac = false } = {}) {
+    function app({
+        selected = [] as number[],
+        on = box,
+        isMac = false,
+        now = undefined as (() => number) | undefined,
+    } = {}) {
         members = membersOf(on);
         vi.spyOn(placedBoxStore, "placedBoxesAt").mockReturnValue([on]);
         const state = {
@@ -346,7 +394,7 @@ describe("reaching inside through the field editor", () => {
                     return new Promise<DropResult>(() => {});
                 },
             },
-            { isMac, moveTransform: ruledMove(() => RULES) },
+            { isMac, moveTransform: ruledMove(() => RULES), now },
         );
         const whole = new LiveBoxMode(on, new QueryClient());
         function syncMode() {
@@ -394,6 +442,22 @@ describe("reaching inside through the field editor", () => {
     };
     const BY = { x: 37, y: 21 };
     const m = (id: number) => members.get(id)!;
+
+    it("goes inside on a double-click of a member under a handle once a click selected the box", () => {
+        let time = 0;
+        const { editor, state } = app({ now: () => time });
+        setActiveFieldEditor(editor);
+        click(editor, m(2), {});
+        expect(state.selected).toEqual([1, 2, 3, 4]);
+        time = 1000;
+        click(editor, m(2), {});
+        time += 100;
+        click(editor, m(2), {});
+        setActiveFieldEditor(null);
+        expect(state.selected).toEqual([2]);
+        expect(useBoxSelectionStore.getState().inside).toBe(7);
+        expect(commitBox).not.toHaveBeenCalled();
+    });
 
     it("picks just the marcher a $mod-click lands on and goes inside its box", () => {
         const { editor, state } = app();

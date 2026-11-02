@@ -20,7 +20,12 @@ export function getActionLabel(id: ActionId, t: Translate): string {
         ? { ...holdTerms(), ...def.labelParams }
         : def.labelParams;
     const base = params ? t(def.labelKey, { ...params }) : t(def.labelKey);
-    return def.labelSuffixKey ? `${base} (${t(def.labelSuffixKey)})` : base;
+    return def.labelSuffixKey
+        ? t("actions.labelWithVariant", {
+              label: base,
+              variant: t(def.labelSuffixKey),
+          })
+        : base;
 }
 
 export function getActionShortcutLabel(
@@ -52,25 +57,4 @@ export function getModifierLabel(
     isMac: boolean = isMacPlatform(),
 ): string {
     return formatModifier(modifier, isMac);
-}
-
-export function getActionTooltip(
-    id: ActionId,
-    t: Translate,
-    options: {
-        toggleState?: "on" | "off";
-        overrides?: ShortcutOverrides;
-        isMac?: boolean;
-    } = {},
-): string {
-    const def = getActionDefinition(id);
-    const toggleKey =
-        options.toggleState === "on"
-            ? def.toggleOnKey
-            : options.toggleState === "off"
-              ? def.toggleOffKey
-              : undefined;
-    const label = toggleKey ? t(toggleKey) : getActionLabel(id, t);
-    const shortcut = getActionShortcutLabel(id, options);
-    return shortcut ? `${label} [${shortcut}]` : label;
 }

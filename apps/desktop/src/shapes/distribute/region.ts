@@ -36,6 +36,11 @@ export interface Region {
 
 /** What a closed kind declares so the host can fill it (spec #385, story 38) */
 export interface ClosedShape<P> {
+    /**
+     * For a kind closed only sometimes (a Line, #529): whether this shape is closed now. Read
+     * through `closedOf` (`modes.ts`); always closed when absent.
+     */
+    when?(params: P, n: number): boolean;
     /** The modes it can be filled in, in the mode switch's order; the switch hides with one */
     readonly modes: readonly DistributionMode[];
     /** Its region as it stands, for `n` spots */
@@ -182,7 +187,10 @@ export function polygonRegion(
     const xs = outline.map((p) => p.x);
     const ys = outline.map((p) => p.y);
     return {
-        contains: (p) => contains(p) || toEdge(p) <= 1e-9,
+        // On the edge counts as inside, to a hair of the outline's size, so a spot on the
+        // boundary counts the same on every side whatever the float error
+        contains: (p) =>
+            contains(p) || toEdge(p) <= 1e-9 * Math.max(1, perimeter),
         edgeDistance: (p) => (contains(p) ? toEdge(p) : -toEdge(p)),
         area: Math.abs(twiceArea) / 2,
         perimeter,

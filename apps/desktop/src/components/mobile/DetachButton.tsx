@@ -8,10 +8,10 @@ import {
     workspaceSettingsQueryOptions,
 } from "@/hooks/queries/useWorkspaceSettings";
 import { conToastError } from "@/utilities/utils";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function DetachButton(props: ButtonProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [open, setOpen] = useState(false);
     const { onClick, ...restProps } = props;
     const queryClient = useQueryClient();

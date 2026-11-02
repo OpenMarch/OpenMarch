@@ -126,9 +126,8 @@ export function useCameraList(): CameraList {
         const pose = useCameraStore.getState().currentPose();
         if (!list || !pose || list.length >= MAX_CAMERAS) return null;
         const id = newCameraId(list);
-        const name = newCameraName(
-            cameras.map(label),
-            t("view3d.cameras.newName"),
+        const name = newCameraName(cameras.map(label), (n) =>
+            t("view3d.cameras.newName", { n }),
         );
         saveList(editCameraList(list, { kind: "add", id, name, pose }));
         useCameraStore.getState().markActive(id);

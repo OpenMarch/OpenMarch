@@ -16,6 +16,7 @@ import {
     type QualitySettings,
 } from "@/field/fieldQuality";
 import { planFieldImage } from "@/field/fieldPlan";
+import tolgee from "@/global/singletons/Tolgee";
 import type { FieldImageSize } from "@/db-functions/fieldFloor";
 import type { PositionSource } from "@/timeline/positionBuffer";
 import type { AppearanceStepsByMarcherId } from "@/services/appearance/appearanceSteps";
@@ -174,7 +175,11 @@ export async function createOffscreenField(
             new Promise<never>((_, reject) => {
                 timer = setTimeout(
                     () =>
-                        reject(new Error("The field didn't start off screen")),
+                        reject(
+                            new Error(
+                                tolgee.t("field.errors.offscreenTimeout"),
+                            ),
+                        ),
                     MOUNT_TIMEOUT_MS,
                 );
             }),

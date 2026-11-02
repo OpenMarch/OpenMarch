@@ -159,7 +159,9 @@ export default function PluginsContents() {
                                                 {plugin.name}
                                             </h5>
                                             <Badge variant="secondary">
-                                                v{plugin.version}
+                                                {t("settings.plugins.version", {
+                                                    version: plugin.version,
+                                                })}
                                             </Badge>
                                         </div>
                                         <div className="text-text">
@@ -256,7 +258,9 @@ export default function PluginsContents() {
                                                 {plugin.name}
                                             </h5>
                                             <Badge variant="secondary">
-                                                v{plugin.version}
+                                                {t("settings.plugins.version", {
+                                                    version: plugin.version,
+                                                })}
                                             </Badge>
                                         </div>
                                         <div className="text-text">
@@ -371,7 +375,9 @@ export default function PluginsContents() {
                                                 {plugin.name}
                                             </h5>
                                             <Badge variant="secondary">
-                                                v{plugin.version}
+                                                {t("settings.plugins.version", {
+                                                    version: plugin.version,
+                                                })}
                                             </Badge>
                                         </div>
                                         <div className="text-text">

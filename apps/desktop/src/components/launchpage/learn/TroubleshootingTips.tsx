@@ -1,4 +1,12 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { T } from "@tolgee/react";
+
+/** Where each system keeps OpenMarch's cache; the system names are the same in every language. */
+const CACHE_FOLDERS = [
+    { system: "Windows", folder: "%APPDATA%\\OpenMarch" },
+    { system: "macOS", folder: "~/Library/Application Support/OpenMarch" },
+    { system: "Linux", folder: "~/.config/OpenMarch" },
+] as const;
 
 export default function TroubleshootingTips() {
     return (
@@ -14,7 +22,10 @@ export default function TroubleshootingTips() {
                     <T keyName="launchpage.learn.troubleshooting.refresh" />
                 </h5>
                 <p className="text-body leading-[180%]">
-                    <T keyName="launchpage.learn.troubleshooting.refresh.description" />
+                    <T
+                        keyName="launchpage.learn.troubleshooting.refreshHint"
+                        params={{ keys: () => <Shortcut binding="$mod+R" /> }}
+                    />
                 </p>
                 <h5 className="text-h5">
                     <T keyName="launchpage.learn.troubleshooting.clearCache" />
@@ -23,24 +34,21 @@ export default function TroubleshootingTips() {
                     <T keyName="launchpage.learn.troubleshooting.clearCache.description" />
                 </p>
                 <ul className="text-body ml-20 w-full list-disc leading-[180%]">
-                    <li>
-                        Windows:
-                        <code className="bg-fg-2 rounded-6 ml-6 p-2 px-6 font-mono">
-                            %APPDATA%\OpenMarch
-                        </code>
-                    </li>
-                    <li>
-                        macOS:
-                        <code className="bg-fg-2 rounded-6 ml-6 p-2 px-6 font-mono">
-                            ~/Library/Application Support/OpenMarch
-                        </code>
-                    </li>
-                    <li>
-                        Linux:
-                        <code className="bg-fg-2 rounded-6 ml-6 p-2 px-6 font-mono">
-                            ~/.config/OpenMarch
-                        </code>
-                    </li>
+                    {CACHE_FOLDERS.map(({ system, folder }) => (
+                        <li key={system}>
+                            <T
+                                keyName="launchpage.learn.troubleshooting.cacheFolder"
+                                params={{
+                                    system,
+                                    folder: () => (
+                                        <code className="bg-fg-2 rounded-6 ml-6 p-2 px-6 font-mono">
+                                            {folder}
+                                        </code>
+                                    ),
+                                }}
+                            />
+                        </li>
+                    ))}
                 </ul>
             </div>
         </div>

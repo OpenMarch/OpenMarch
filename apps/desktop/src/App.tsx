@@ -225,10 +225,10 @@ function App() {
         localStorage.setItem("openmarch:lastVersion", currentVersion);
 
         if (shouldShowUpdateNotification(previousVersion, currentVersion)) {
-            toast.info(`OpenMarch updated to v${currentVersion}`, {
+            toast.info(tolgee.t("app.updated", { version: currentVersion }), {
                 duration: 10_000,
                 action: {
-                    label: "Release notes",
+                    label: tolgee.t("app.releaseNotes"),
                     onClick: () =>
                         window.electron.openExternal(
                             "https://openmarch.com/download/#releases",
@@ -343,7 +343,7 @@ function App() {
                     {/* Codegen mode indicator */}
                     {isCodegen && (
                         <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
-                            🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
+                            {tolgee.t("app.codegenBanner")}
                         </div>
                     )}
                     <AlertModal />

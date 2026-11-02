@@ -83,11 +83,14 @@ const spots = async (show: Show, pageId: number) =>
     );
 
 const menu = (page: Page) => page.getByTestId("field-menu");
-/** The entry named `name`, followed by its shortcut if it has one ("Align horizontally Alt+H"). */
+/**
+ * The entry named `name`, followed by its shortcut if it has one, which a screen reader hears as
+ * words ("Align horizontally Alt H").
+ */
 const entry = (page: Page, name: string) =>
     menu(page).getByRole("menuitem", {
         name: new RegExp(
-            `^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}( \\S+)?$`,
+            `^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}( .+)?$`,
         ),
     });
 

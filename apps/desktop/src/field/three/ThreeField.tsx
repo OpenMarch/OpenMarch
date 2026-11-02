@@ -72,6 +72,7 @@ import {
     PlacedBoxesOverlay,
 } from "@/shapes/placed/PlacedBoxesOverlay";
 import { ShapeEditor } from "@/shapes/editor/ShapeEditorBar";
+import HandleMenu from "@/shapes/editor/HandleMenu";
 import { useShapeEditorStore } from "@/shapes/frame/shapeEditorStore";
 import FavoritesRing from "@/shapes/tool/FavoritesRing";
 import DockedCommandBar from "@/shortcuts/palette/DockedCommandBar";
@@ -111,6 +112,10 @@ import ItemsLayer from "./layers/ItemsLayer";
 import LabelsLayer, { type LabelStyle } from "./layers/LabelsLayer";
 import OverlayLayer from "./layers/OverlayLayer";
 import StartFlagLayers from "./StartFlagLayers";
+import {
+    drawnSelection,
+    useShapeMarchersHidden,
+} from "@/shapes/field/marchersHidden";
 import { useTimelineVisuals } from "./useTimelineVisuals";
 import { drawnFollowing } from "./fieldFollowing";
 import {
@@ -309,12 +314,15 @@ function ThreeFieldView() {
         () => marcherRows?.map((marcher) => marcher.id),
         [marcherRows],
     );
+    // #558: the edited shape's marchers, while it's seen on its own
+    const hiddenIds = useShapeMarchersHidden();
     const timeline = useTimelineVisuals({
         isPlaying,
         selectedPage,
         pages,
         marcherIds,
         fieldProperties,
+        hiddenIds,
     });
     const { dimming, following } = timeline;
     useShapeFocus(dimming);
@@ -390,6 +398,8 @@ function ThreeFieldView() {
                             useTimelineSelectionStore.getState(),
                             id,
                         ),
+                    // #558: the shape's hidden marchers aren't there to press while it's seen alone
+                    marcherHidden: (id) => dimming.isHidden(id),
                     takePress: () => menuShown.current || takeFieldPress(),
                     selectionBoxPadding: () =>
                         selectionBoxPadding(useFieldViewStore.getState().zoom),
@@ -445,7 +455,7 @@ function ThreeFieldView() {
                         useShapeEditorStore.getState().ratioLocked,
                 },
             ),
-        [marchers, items],
+        [marchers, items, dimming],
     );
     useEffect(() => {
         setActiveFieldEditor(editor);
@@ -614,6 +624,7 @@ function ThreeFieldView() {
                             editor={editor}
                             marchers={marchers}
                             selectedIds={selectedIds}
+                            hiddenIds={hiddenIds}
                         />
                         <PlayheadDriver
                             marchers={marchers}
@@ -698,6 +709,8 @@ function ThreeFieldView() {
                 <FavoritesRing />
                 {/* A command asking its parameters docks here, over the field's top (#354) */}
                 <DockedCommandBar />
+                {/* A Line's point and segment menus (#569) */}
+                <HandleMenu />
                 <FieldContextMenu
                     at={menu.at}
                     onClose={menu.close}
@@ -868,10 +881,12 @@ function EditorInput({
     editor,
     marchers,
     selectedIds,
+    hiddenIds,
 }: {
     editor: FieldEditor;
     marchers: FieldMarchers;
     selectedIds: readonly number[];
+    hiddenIds: ReadonlySet<number> | null;
 }) {
     const canvas = useThree((s) => s.gl.domElement);
     const invalidate = useThree((s) => s.invalidate);
@@ -885,10 +900,15 @@ function EditorInput({
     // A drag moves marchers outside the playhead's fills: draw them
     useEffect(() => marchers.subscribe(invalidate), [marchers, invalidate]);
 
+    // A marcher hidden with its shape (#558) hides its selection ring too, so no ring follows the line
+    const ringIds = useMemo(
+        () => drawnSelection(selectedIds, hiddenIds),
+        [selectedIds, hiddenIds],
+    );
     useEffect(() => {
-        marchers.setSelection(selectedIds);
+        marchers.setSelection(ringIds);
         invalidate();
-    }, [marchers, selectedIds, invalidate]);
+    }, [marchers, ringIds, invalidate]);
 
     return null;
 }

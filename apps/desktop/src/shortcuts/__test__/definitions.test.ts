@@ -32,6 +32,9 @@ const NOT_IN_PALETTE: Partial<Record<ActionId, string>> = {
         "the keyboard's right-click: opens the field's menu at the selection, which the palette would cover",
     shapeBlock: "listed as Shape › Box, which asks the box's numbers",
     shapeCircle: "listed as Shape › Circle, which asks the circle's numbers",
+    shapeLine: "listed as Shape › Line, which asks the line's numbers",
+    shapeRemoveLastPoint:
+        "works only between clicks while drawing a line point by point",
 };
 
 function lookup(key: string): unknown {

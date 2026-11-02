@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import MarcherForm from "@/components/marcher/MarcherForm";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import Marcher from "@/global/classes/Marcher";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { CaretDownIcon, CaretUpIcon, TrashIcon } from "@phosphor-icons/react";
@@ -24,7 +24,7 @@ export default function PerformersStep({
     onChange,
 }: PerformersStepProps) {
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const marchersList = performers?.marchers ?? [];
 
     const marchers = useMemo<WizardMarcher[]>(() => {
@@ -137,8 +137,13 @@ export default function PerformersStep({
                                     >
                                         <RadixCollapsible.Trigger className="border-stroke rounded-8 bg-fg-1 hover:bg-fg-2 flex w-full items-center justify-between border px-12 py-8">
                                             <span className="text-body font-medium">
-                                                {sectionLabel} (
-                                                {sectionMarchers.length})
+                                                {t(
+                                                    "launchpage.newShow.steps.performers.sectionCount",
+                                                    {
+                                                        section: sectionLabel,
+                                                        count: sectionMarchers.length,
+                                                    },
+                                                )}
                                             </span>
                                             {isOpen ? (
                                                 <CaretUpIcon size={18} />
@@ -168,6 +173,13 @@ export default function PerformersStep({
                                                         variant="secondary"
                                                         size="compact"
                                                         content="icon"
+                                                        aria-label={t(
+                                                            "launchpage.newShow.steps.performers.removeMarcher",
+                                                            {
+                                                                marcher:
+                                                                    marcher.drill_number,
+                                                            },
+                                                        )}
                                                         onClick={() =>
                                                             handleDeleteMarcher(
                                                                 marcher.tempId,

@@ -22,6 +22,7 @@ import { db } from "@/global/database/db";
 import { QueryClient, mutationOptions } from "@tanstack/react-query";
 import { tagKeys, invalidateTagQueries } from "./queries";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import { invalidateCueQueries } from "../useCues";
 
 // ============================================================================
@@ -38,7 +39,7 @@ export const createTagsMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error creating tags", e, variables);
+            conToastError(tolgee.t("tags.errors.createTags"), e, variables);
         },
     });
 };
@@ -62,7 +63,7 @@ export const updateTagsMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error updating tags", e, variables);
+            conToastError(tolgee.t("tags.errors.updateTags"), e, variables);
         },
     });
 };
@@ -82,7 +83,7 @@ export const deleteTagsMutationOptions = (qc: QueryClient) => {
             void invalidateCueQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error deleting tags", e, variables);
+            conToastError(tolgee.t("tags.errors.deleteTags"), e, variables);
         },
     });
 };
@@ -102,7 +103,11 @@ export const createTagAppearancesMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error creating tag appearances", e, variables);
+            conToastError(
+                tolgee.t("tags.errors.createAppearances"),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -153,7 +158,11 @@ export const updateTagAppearancesMutationOptions = (qc: QueryClient) => {
             if (context?.previousData && context?.queryKey) {
                 qc.setQueryData(context.queryKey, context.previousData);
             }
-            conToastError("Error updating tag appearances", e, variables);
+            conToastError(
+                tolgee.t("tags.errors.updateAppearances"),
+                e,
+                variables,
+            );
         },
         onSettled: async () => {
             invalidateTagQueries(qc);
@@ -172,7 +181,11 @@ export const deleteTagAppearancesMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error deleting tag appearances", e, variables);
+            conToastError(
+                tolgee.t("tags.errors.deleteAppearances"),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -192,7 +205,7 @@ export const createNewTagFromMarcherIdsMutationOptions = (qc: QueryClient) => {
         },
         onError: (e, variables) => {
             conToastError(
-                "Error creating new tag from marcher ids",
+                tolgee.t("tags.errors.createFromMarchers"),
                 e,
                 variables,
             );
@@ -211,7 +224,11 @@ export const createMarcherTagsMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error creating marcher tags", e, variables);
+            conToastError(
+                tolgee.t("tags.errors.createMarcherTags"),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -227,7 +244,11 @@ export const updateMarcherTagsMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error updating marcher tags", e, variables);
+            conToastError(
+                tolgee.t("tags.errors.updateMarcherTags"),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -243,7 +264,11 @@ export const deleteMarcherTagsMutationOptions = (qc: QueryClient) => {
             invalidateTagQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError("Error deleting marcher tags", e, variables);
+            conToastError(
+                tolgee.t("tags.errors.deleteMarcherTags"),
+                e,
+                variables,
+            );
         },
     });
 };

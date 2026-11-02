@@ -16,6 +16,7 @@ import {
     type ConvertProgress,
     type ConvertRequest,
 } from "../database/convertOnOpen";
+import type { BackupResult } from "../database/backup";
 
 /** What the step shows the person. `convertOnOpenDialogs.ts` implements it. */
 export interface ConvertOnOpenDialogs {
@@ -26,7 +27,11 @@ export interface ConvertOnOpenDialogs {
     whilePreparing<T>(
         work: (onProgress?: (progress: ConvertProgress) => void) => Promise<T>,
     ): Promise<T>;
-    backupFailed(fileName: string, message: string): Promise<void>;
+    /** `failure` says why, as English and as a translation key. */
+    backupFailed(
+        fileName: string,
+        failure: Extract<BackupResult, { ok: false }>,
+    ): Promise<void>;
     conversionFailed(
         fileName: string,
         error: Error,
@@ -105,7 +110,7 @@ export async function convertOnOpenInMain(
             console.error(
                 `convert on open: backup of ${filePath} failed (${outcome.backup.code}); not converted`,
             );
-            await dialogs.backupFailed(fileName, outcome.backup.message);
+            await dialogs.backupFailed(fileName, outcome.backup);
             return { next: "stop" };
         case "conversion-failed":
             console.error(

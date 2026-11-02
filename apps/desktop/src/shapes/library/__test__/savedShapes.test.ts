@@ -9,7 +9,10 @@ import {
     savedToolKind,
     suggestedName,
     intervalsOf,
+    whyNotSavable,
 } from "../savedShapes";
+import { curveTool, lineTool } from "../../line/lineTool";
+import { offsetOf, type LineParams } from "../../line/lineGeometry";
 import { placementOf } from "../../tool/shapePlacement";
 import { shapeSteps, startingParams } from "../../command/shapeSteps";
 import type { AnyToolKind, ToolEnv } from "../../tool/toolKind";
@@ -122,6 +125,70 @@ describe("saving a shape", () => {
         });
         expect(again.kind).toBe(rowTool.shape.id);
         expect(again.intervals).toEqual({ gap: 3 });
+    });
+});
+
+describe("a line with mixed intervals (#526)", () => {
+    const lineTyped = (n: number, list: string) => {
+        const t = drawn(lineTool, n, { x: 100, y: 100 }, { x: 150, y: 100 });
+        const interval = lineTool.params.find((p) => p.key === "interval")!;
+        return interval.type(t.params, n, list, env())!;
+    };
+
+    it("can't be saved yet, saying why, as saving would keep only one interval", () => {
+        expect(whyNotSavable(lineTool, lineTyped(6, "2*3+4*2"), 6, STEP)).toBe(
+            "Lines with mixed intervals can't be saved yet",
+        );
+    });
+
+    it("can be saved with one interval, or groups all at the same one", () => {
+        expect(whyNotSavable(lineTool, lineTyped(6, "2"), 6, STEP)).toBeNull();
+        expect(
+            whyNotSavable(lineTool, lineTyped(6, "2*2+4*2"), 6, STEP),
+        ).toBeNull();
+        expect(whyNotSavable(boxTool, wideBox().params, 6, STEP)).toBeNull();
+    });
+});
+
+describe("a saved Line and its Offset (#596)", () => {
+    const measure = lineTool.choices!.find((c) => c.key === "measured")!;
+    const offsetX = lineTool.params.find((p) => p.key === "offsetX")!;
+    const offsetY = lineTool.params.find((p) => p.key === "offsetY")!;
+    const save = (params: unknown) =>
+        savedToolKind(
+            lineTool,
+            savedShapeOf(lineTool, params, 5, STEP, { ...SAVED, name: "L" }),
+        );
+    const drawAgain = (params: unknown) =>
+        save(params).draw(
+            { x: 100, y: 200 },
+            { x: 140, y: 230 },
+            5,
+            env(),
+        ) as LineParams;
+
+    it("a plain Line saves only its interval and draws again plain", () => {
+        const t = drawn(lineTool, 5, { x: 100, y: 100 }, { x: 160, y: 100 });
+        expect(Object.keys(intervalsOf(lineTool, t.params, 5, STEP))).toEqual([
+            "interval",
+        ]);
+        const again = drawAgain(t.params);
+        expect(again.measured).toBeUndefined();
+        expect(offsetOf(again)).toBeNull();
+    });
+
+    it("an Offset Line saves its offset and draws again as that Offset", () => {
+        const t = drawn(lineTool, 5, { x: 100, y: 100 }, { x: 140, y: 120 });
+        let params = measure.pick(t.params, 5, "offset", env());
+        params = offsetX.type(params, 5, "1", env())!;
+        params = offsetY.type(params, 5, "-0.5", env())!;
+        const kept = intervalsOf(lineTool, params, 5, STEP);
+        expect(kept.offsetX).toBe(1);
+        expect(kept.offsetY).toBe(-0.5);
+        const again = drawAgain(params);
+        expect(again.measured).toBe("offset");
+        expect(offsetX.value!(again, 5, STEP)).toBeCloseTo(1, 9);
+        expect(offsetY.value!(again, 5, STEP)).toBeCloseTo(-0.5, 9);
     });
 });
 
@@ -298,6 +365,26 @@ describe("the library's Saved group", () => {
             ),
         ).toEqual([]);
         expect(savedShapeRows([box], [], tools)).toHaveLength(1);
+    });
+
+    it("reads a saved line as the Line, not its Curve preset listed first", () => {
+        const withCurve = [
+            { kind: curveTool, action: "shapeCurve" as const },
+            { kind: lineTool, action: "shapeLine" as const },
+        ];
+        const line = {
+            id: "l",
+            name: "Company front",
+            kind: lineTool.shape.id,
+            kindVersion: lineTool.shape.version,
+            intervals: { interval: 2 },
+        };
+        const [row] = savedShapeRows([line], [], withCurve);
+        expect(row!.note).toMatch(/^Line/);
+        expect(row!.kind.preset).toBeUndefined();
+        // Only the Curve: the line needs the Line, which this app would have
+        expect(savedShapeRows([line], [], withCurve.slice(0, 1))).toEqual([]);
+        expect(newerSavedShapes([line], [], withCurve.slice(0, 1))).toBe(1);
     });
 });
 

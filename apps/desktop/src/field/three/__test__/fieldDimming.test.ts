@@ -73,4 +73,36 @@ describe("FieldDimming", () => {
         dimming.setFocus(new Set([1]), { hideMembers: true });
         expect(listener).toHaveBeenCalledTimes(2);
     });
+
+    it("hides only the shape's marchers while it's seen on its own; the faded rest keep their look (#558)", () => {
+        const dimming = new FieldDimming();
+        dimming.setFocus(new Set([1, 2]));
+        const listener = vi.fn();
+        dimming.subscribe(listener);
+        dimming.setHidden(new Set([1, 2]));
+        dimming.setHidden(new Set([2, 1]));
+        expect(listener).toHaveBeenCalledTimes(1);
+        expect([1, 2, 3].map((id) => dimming.opacityOf(id))).toEqual([
+            0,
+            0,
+            SHAPE_FADED_OPACITY,
+        ]);
+        expect([1, 2, 3].map((id) => dimming.isHidden(id))).toEqual([
+            true,
+            true,
+            false,
+        ]);
+        expect(dimming.labelShown(1)).toBe(false);
+        expect(dimming.labelShown(3)).toBe(true);
+        // Unrelated marchers stay as dimmed (for selection) as they were
+        expect(dimming.isDimmed(3)).toBe(true);
+
+        dimming.setHidden(null);
+        expect([1, 2, 3].map((id) => dimming.opacityOf(id))).toEqual([
+            1,
+            1,
+            SHAPE_FADED_OPACITY,
+        ]);
+        expect(listener).toHaveBeenCalledTimes(2);
+    });
 });

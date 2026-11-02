@@ -1,16 +1,23 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { ClockIcon } from "@phosphor-icons/react";
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import { useTolgee } from "@tolgee/react";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 
-/** A time in MM:SS.mmm */
-const formatTime = (seconds: number) => {
+/** The language's decimal separator ("." in English, "," in French) */
+export const decimalSeparator = (language: string | undefined): string =>
+    new Intl.NumberFormat(language ?? "en")
+        .formatToParts(1.5)
+        .find((part) => part.type === "decimal")?.value ?? ".";
+
+/** A time in MM:SS.mmm, with `decimal` before the milliseconds */
+export const formatTime = (seconds: number, decimal = ".") => {
     const ms = Math.floor((seconds % 1) * 1000);
     const totalSeconds = Math.floor(seconds);
     const minutes = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}.${ms.toString().padStart(3, "0")}`;
+    return `${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}${decimal}${ms.toString().padStart(3, "0")}`;
 };
 
 /**
@@ -25,6 +32,8 @@ export function AudioClock({ pausedSeconds }: { pausedSeconds?: number }) {
         pausedSeconds ??
         (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
     const textRef = useRef<HTMLSpanElement>(null);
+    const language = useTolgee(["language"]).getLanguage();
+    const decimal = useMemo(() => decimalSeparator(language), [language]);
 
     // The text is written here, before paint: while playing, every animation frame, without
     // re-rendering the clock or the transport around it
@@ -32,18 +41,18 @@ export function AudioClock({ pausedSeconds }: { pausedSeconds?: number }) {
         const text = textRef.current;
         if (!text) return;
         if (!isPlaying) {
-            text.textContent = formatTime(pausedTime);
+            text.textContent = formatTime(pausedTime, decimal);
             return;
         }
         let rafId = 0;
         const update = () => {
-            const next = formatTime(getLivePlaybackPosition());
+            const next = formatTime(getLivePlaybackPosition(), decimal);
             if (text.textContent !== next) text.textContent = next;
             rafId = requestAnimationFrame(update);
         };
         update();
         return () => cancelAnimationFrame(rafId);
-    }, [isPlaying, pausedTime]);
+    }, [isPlaying, pausedTime, decimal]);
 
     return (
         <div className="text-text flex items-center gap-6">

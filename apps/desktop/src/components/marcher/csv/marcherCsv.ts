@@ -1,4 +1,5 @@
 import { SECTIONS } from "@/global/classes/Sections";
+import tolgee from "@/global/singletons/Tolgee";
 import type { NewMarcherArgs } from "@/db-functions";
 
 /**
@@ -92,13 +93,18 @@ export function sectionsForPrefix(prefix: string) {
     );
 }
 
-/** Finds a section by its name, ignoring case and spaces (e.g. "bass drum") or, failing that, a unique prefix. */
+/**
+ * Finds a section by its name, ignoring case and spaces (e.g. "bass drum"), in English or as the
+ * import's section table shows it in the app's language, or, failing that, a unique prefix.
+ */
 export function findSection(value: string) {
-    const v = normalize(value).replace(/[\s_-]+/g, "");
+    const squash = (name: string) => normalize(name).replace(/[\s_-]+/g, "");
+    const v = squash(value);
     if (!v) return undefined;
-    const byName = Object.values(SECTIONS).find(
-        (s) => normalize(s.name).replace(/[\s_-]+/g, "") === v,
-    );
+    const sections = Object.values(SECTIONS);
+    const byName =
+        sections.find((s) => squash(s.name) === v) ??
+        sections.find((s) => squash(tolgee.t(s.tName)) === v);
     if (byName) return byName;
     const byPrefix = sectionsForPrefix(value);
     return byPrefix.length === 1 ? byPrefix[0] : undefined;

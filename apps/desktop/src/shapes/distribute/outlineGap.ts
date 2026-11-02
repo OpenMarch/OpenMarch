@@ -2,6 +2,7 @@ import { fieldToFrame, frameToField, type ShapeFrame } from "../frame/frame";
 import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
 import type { XY } from "../types";
 import { regionSides } from "./distribute";
+import { closedOf } from "./modes";
 import type { OddGap, OutlineDistribution } from "./distribution";
 import {
     gapOf,
@@ -31,7 +32,7 @@ function outlineOnField(
     params: unknown,
     n: number,
 ): OutlineOnField | null {
-    const closed = kind.closed;
+    const closed = closedOf(kind, params, n);
     if (!closed?.intervals || params === null || n < OUTLINE_MIN) return null;
     const d = closed.distribution(params, n);
     if (d.mode !== "outline") return null;
@@ -142,7 +143,7 @@ export function withOddGap(
     oddGap: OddGap,
     env: ToolEnv,
 ): unknown {
-    const closed = kind.closed;
+    const closed = closedOf(kind, params, n);
     if (!closed) return params;
     const d = closed.distribution(params, n);
     if (d.mode !== "outline") return params;

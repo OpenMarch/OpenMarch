@@ -128,7 +128,11 @@ const snapRotation = (angle: number, stepRad: number) => {
 
 const ROTATE_OFFSET = Math.PI / 2;
 
-const trim = (v: number) => String(Math.round(v * 100) / 100);
+/**
+ * Steps to two decimals. Kept a number so the readout's `{x, number}` writes it with the app
+ * language's decimal separator.
+ */
+const trim = (v: number) => Math.round(v * 100) / 100;
 
 /** The block's pattern group: how its ranks sit, and where a short rank goes */
 function patternGroup(): ParamGroup<BlockParams> {
@@ -430,7 +434,11 @@ export const blockKind: ShapeKind<BlockParams> = {
                     "shapes.kinds.block.readout.ranksFiles",
                     "Ranks × files",
                 ),
-                value: `${ranksOf(p, n)} × ${filesOf(p)}`,
+                value: tolgee.t(
+                    "shapes.kinds.block.readout.ranksFilesValue",
+                    "{ranks} × {files}",
+                    { ranks: ranksOf(p, n), files: filesOf(p) },
+                ),
             },
             {
                 label: tolgee.t(
@@ -439,7 +447,7 @@ export const blockKind: ShapeKind<BlockParams> = {
                 ),
                 value: tolgee.t(
                     "shapes.kinds.block.readout.intervalValue",
-                    "{across} × {deep} steps",
+                    "{across, number} × {deep, number} steps",
                     {
                         across: trim(p.across / ctx.stepPx),
                         deep: trim(p.deep / ctx.stepPx),

@@ -84,9 +84,13 @@
             "quarterTurn": "Forme : Tourner de 90° dans le sens horaire",
             "recalculate": "Forme : Recalculer qui va où",
             "evenOut": "Forme : égaliser le contour",
+            "hideMarchers": "Forme : masquer les marcheurs (maintenir pour voir, toucher pour garder masqué)",
+            "hideMarchersKeywords": "masquer afficher marcheurs points trajets seule aperçu œil",
             "expand": "Forme : agrandir, en gardant les proportions",
             "shrink": "Forme : réduire, en gardant les proportions",
             "ring": "Anneau des favoris : maintenez pour choisir une forme, touchez pour le garder ouvert",
+            "group": "Grouper la sélection",
+            "groupKeywords": "grouper forme figer tel quel ensemble combiner",
             "ungroup": "Forme : Dégrouper",
             "ungroupKeywords": "dégrouper forme séparer détacher"
         },
@@ -379,6 +383,7 @@
             "fine": "fin",
             "freeRatio": "proportions libres",
             "fromCenter": "depuis le centre",
+            "keepDirection": "garder la direction",
             "keepRatio": "garder les proportions",
             "oneAxis": "un axe",
             "snapOff": "Sans magnétisme",
@@ -1303,6 +1308,10 @@
                 "locked": "Espacements liés : cliquez pour les délier",
                 "unlocked": "Lier les deux espacements"
             },
+            "hideMarchers": {
+                "hide": "Masquer les marcheurs",
+                "show": "Afficher les marcheurs"
+            },
             "evenOut": {
                 "label": "Égaliser",
                 "tip": "Répartir les marcheurs aussi régulièrement que le bloc le permet",
@@ -1438,6 +1447,12 @@
                     "noSize": "La forme n'a pas de taille"
                 }
             },
+            "group": {
+                "label": "Groupe",
+                "params": {
+                    "interval": "Plus petit écart entre voisins, en pas"
+                }
+            },
             "line": {
                 "label": "Ligne",
                 "validate": {
@@ -1502,6 +1517,7 @@
                 "empty": "{count, plural, one {# vide} other {# vides}}",
                 "steps": "{interval} pas"
             },
+            "groupError": "Erreur lors du groupement des marcheurs",
             "ungroupError": "Erreur lors du dégroupement de la forme",
             "ungroupIsolated": "Dégroupez cette forme hors de l'isolement : elle vient d'une page précédente"
         },

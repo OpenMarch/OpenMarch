@@ -1,4 +1,4 @@
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { Button, WarningNote } from "@openmarch/ui";
 import { useTimingObjects } from "@/hooks";
 import { usePagesToEnd } from "@/hooks/queries/useAppendPages";
@@ -13,7 +13,7 @@ import { pageEndBeat } from "@/timeline/pageEndBeat";
  * Nothing shows when every move ends by the show's end.
  */
 export default function MovesPastEndWarning() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { pages } = useTimingObjects();
     const storedTimelines = useTimelineSelectionStore((s) => s.storedTimelines);
     const { counts, addPagesToEnd, isPending } = usePagesToEnd();

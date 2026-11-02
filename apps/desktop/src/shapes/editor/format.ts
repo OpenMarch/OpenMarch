@@ -88,3 +88,12 @@ export function formatSteps(steps: number): string {
         fractionText(steps, [2, 3, 4]) ?? String(Math.round(steps * 100) / 100)
     );
 }
+
+/**
+ * Steps that can go below 0 (a Line's offset, owner on #596): {@link formatSteps} with a minus sign
+ * before it ("−1½"); never "−0"
+ */
+export function formatSignedSteps(steps: number): string {
+    const text = formatSteps(Math.abs(steps));
+    return steps < 0 && text !== "0" ? `−${text}` : text;
+}

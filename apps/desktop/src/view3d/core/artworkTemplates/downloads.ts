@@ -57,6 +57,8 @@ export interface TemplateDownload {
     readonly surface: TemplateSurface;
     /** The size catalog entry's name, when the size comes from one. */
     readonly catalogName?: string;
+    /** That catalog entry's id, which the UI words its name from. */
+    readonly catalogId?: string;
     /** A silk Cut drawn with this sag. */
     readonly sag?: Length;
     /** A silk Cut's alternative shape, such as `sagging-bottom`. */
@@ -68,7 +70,11 @@ export interface TemplateDownload {
 }
 
 function silkDownloads(entry: CatalogEntryOf<"silk">): TemplateDownload[] {
-    const base = { group: "silk" as const, catalogName: entry.name };
+    const base = {
+        group: "silk" as const,
+        catalogName: entry.name,
+        catalogId: entry.id,
+    };
     const downloads: TemplateDownload[] = [
         { ...base, surface: silkSurface(entry) },
     ];
@@ -104,6 +110,7 @@ function floorPropDownloads(): TemplateDownload[] {
         {
             group: "floorProp",
             catalogName: sheet.name,
+            catalogId: sheet.id,
             surface: floorPropSurface(
                 width,
                 height,
@@ -119,6 +126,7 @@ function propDownloads(): TemplateDownload[] {
     const top: TemplateDownload = {
         group: "prop",
         catalogName: sheet.name,
+        catalogId: sheet.id,
         face: "top",
         surface: propSurface(
             "top",
@@ -132,6 +140,7 @@ function propDownloads(): TemplateDownload[] {
             (surface): TemplateDownload => ({
                 group: "prop",
                 catalogName: entry.name,
+                catalogId: entry.id,
                 face: surface.kind === "propFront" ? "front" : "back",
                 surface,
             }),
@@ -147,6 +156,7 @@ export const TEMPLATE_DOWNLOADS: readonly TemplateDownload[] = [
         (entry): TemplateDownload => ({
             group: "floor",
             catalogName: entry.name,
+            catalogId: entry.id,
             surface: baseFloorSurface(entry),
         }),
     ),

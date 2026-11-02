@@ -226,7 +226,7 @@ export const createPagesMutationOptions = (qc: QueryClient) => {
         },
         onError: (e, variables) => {
             conToastError(
-                tolgee.t("pages.createFailed", { error: e.message }),
+                tolgee.t("pages.createError", { error: e.message }),
                 e,
                 variables,
             );
@@ -243,7 +243,7 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
         },
         onError: (e, variables) => {
             conToastError(
-                tolgee.t("pages.updateFailed", { error: e.message }),
+                tolgee.t("pages.updateError", { error: e.message }),
                 e,
                 variables,
             );

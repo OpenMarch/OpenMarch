@@ -1,7 +1,12 @@
 import { and, eq, gt, inArray, lt } from "drizzle-orm";
 import { schema } from "@/global/database/db";
 import { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
-import { joinList } from "@/timeline/timelineRangeWords";
+import {
+    text,
+    textList,
+    timelineTextForLog,
+    type TimelineTextArg,
+} from "@/timeline/timelineText";
 import type { DbTransaction } from "./types";
 import type { DatabaseTimelineAssignment } from "./timelineAssignments";
 import { marcherLabels, type BeatRange } from "./timelineMembership";
@@ -776,15 +781,24 @@ export async function skippedRefusal(
     const ids = ascending(skipped.map((s) => s.marcherId));
     const labels = await marcherLabels(tx, ids);
     const named = (reason: MoveMemberSkipReason) => {
-        const names = skipped
+        const names: TimelineTextArg[] = skipped
             .filter((s) => s.reason === reason)
             .sort((a, b) => a.marcherId - b.marcherId)
-            .map((s) => labels.get(s.marcherId) ?? `Marcher ${s.marcherId}`);
+            .map(
+                (s) =>
+                    labels.get(s.marcherId) ??
+                    text.t("timeline.where.marcher", { marcher: s.marcherId }),
+            );
         const shown =
             names.length > 3
-                ? [...names.slice(0, 3), `${names.length - 3} more`]
+                ? [
+                      ...names.slice(0, 3),
+                      text.t("timeline.where.moreMarchers", {
+                          count: names.length - 3,
+                      }),
+                  ]
                 : names;
-        return { count: names.length, names: joinList(shown) };
+        return { count: names.length, names: textList(shown) };
     };
     const shape = named("shape");
     const leader = named("followTheLeader");
@@ -798,7 +812,9 @@ export async function skippedRefusal(
     ).flatMap(([reason, { count, names }]) =>
         count === 0
             ? []
-            : [`${names} ${REASON_WORDS[reason][count === 1 ? 0 : 1]}`],
+            : [
+                  `${timelineTextForLog(names)} ${REASON_WORDS[reason][count === 1 ? 0 : 1]}`,
+              ],
     );
     const them = ids.length === 1 ? "it keeps its" : "they keep their";
     return new TimelineEditRefusedError("inShapeOrFollowTheLeader", {

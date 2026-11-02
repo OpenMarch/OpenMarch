@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import AudioFile from "@/global/classes/AudioFile";
@@ -11,7 +11,7 @@ import { useActionHandler } from "../useActionHandler";
 
 // eslint-disable-next-line max-lines-per-function
 export function useFileActionHandlers() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const {
         setTitle: setAlertModalTitle,
         setContent: setAlertModalContent,
@@ -33,13 +33,13 @@ export function useFileActionHandlers() {
     useActionHandler("launchSaveFileDialogue", () => {
         if (isWebBuild) {
             // On the web, saving is downloading: there is no copy to explain.
-            window.electron
-                .databaseSave()
-                .catch((err: Error) =>
-                    toast.error(
-                        `${t("fileTab.toasts.error")}. Error ${err.message}`,
-                    ),
-                );
+            window.electron.databaseSave().catch((err: Error) =>
+                toast.error(
+                    t("fileTab.toasts.errorWithDetails", {
+                        error: err.message,
+                    }),
+                ),
+            );
             return;
         }
         // Set alert modal with help text to confirm the user wants to save a copy
@@ -87,7 +87,9 @@ export function useFileActionHandlers() {
                                 .catch((err: Error) => {
                                     setAlertModalOpen(false);
                                     toast.error(
-                                        `${t("fileTab.toasts.error")}. Error ${err.message}`,
+                                        t("fileTab.toasts.errorWithDetails", {
+                                            error: err.message,
+                                        }),
                                     );
                                 });
                         }}
@@ -117,9 +119,7 @@ export function useFileActionHandlers() {
             .databaseIsReady()
             .then(async (dbReady) => {
                 if (!dbReady) {
-                    toast.error(
-                        "No file is open. Create or open a show first.",
-                    );
+                    toast.error(t("fileTab.toasts.noFileOpen"));
                     return;
                 }
 
@@ -134,11 +134,11 @@ export function useFileActionHandlers() {
                         setSelectedAudioFile(selectedAudioFileWithoutAudio);
                     });
                     window.dispatchEvent(new CustomEvent("audioFilesUpdated"));
-                    toast.success("Audio file uploaded successfully");
+                    toast.success(t("fileTab.toasts.audioUploaded"));
                 } else {
                     const errorMessage =
                         response?.error?.message ||
-                        "Failed to upload audio file";
+                        t("fileTab.toasts.audioUploadFailed");
                     toast.error(errorMessage);
                     console.error(
                         "Error uploading audio file:",
@@ -154,7 +154,7 @@ export function useFileActionHandlers() {
                 toast.error(
                     error instanceof Error
                         ? error.message
-                        : "Failed to upload audio file",
+                        : t("fileTab.toasts.audioUploadFailed"),
                 );
             });
     });

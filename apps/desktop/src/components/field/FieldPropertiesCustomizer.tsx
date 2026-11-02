@@ -11,7 +11,7 @@ import * as Form from "@radix-ui/react-form";
 import { Button, Tabs, TabsList, TabItem } from "@openmarch/ui";
 import { toast } from "sonner";
 import { RgbaColor } from "@uiw/react-color";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import {
     fieldPropertiesQueryOptions,
     updateFieldPropertiesMutationOptions,
@@ -27,7 +27,7 @@ const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
 
 export default function FieldPropertiesCustomizer() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { mutate: updateFieldProperties } = useMutation(

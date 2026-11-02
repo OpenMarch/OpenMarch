@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { create } from "zustand";
+import { T } from "@tolgee/react";
 
 type AlertModalStore = {
     isOpen: boolean;
@@ -16,7 +17,11 @@ type AlertModalStore = {
 export const useAlertModalStore = create<AlertModalStore>((set) => ({
     isOpen: false,
     title: "fileAccessDialogError.renderFail.title",
-    content: <p>Alert Dialog Modal failed to render</p>, // default
+    content: (
+        <p>
+            <T keyName="fileAccessDialogError.renderFail.description" />
+        </p>
+    ), // default
     actions: undefined,
     toggleOpen: () =>
         set((state) => ({

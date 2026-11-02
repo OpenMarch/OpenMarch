@@ -12,14 +12,14 @@ import {
 } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { isWebBuild } from "@/utilities/webBuild";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 
 /** Icon buttons; a finger-sized hit area in touch mode, unchanged with a mouse. */
 const buttonClassName =
     "hover:text-accent focus-visible:text-accent flex items-center justify-center outline-hidden duration-150 ease-out disabled:opacity-50 touch:size-44 touch:[&>svg]:size-24";
 
 export default function FileControls() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     // Preview edits nothing, so it has nothing to undo
     const preview = useIsPreviewMode();
     const databaseReady = useDatabaseReady();

@@ -1,7 +1,7 @@
 import tolgee from "@/global/singletons/Tolgee";
 import { formatSteps } from "../editor/format";
 import { SPACING_FINE_RATE, SPACING_RATE } from "../editor/scrub";
-import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
+import { paramGlyph, type AnyToolKind, type ToolEnv } from "../tool/toolKind";
 import { pivotPoint, samePivot, type Pivot } from "./frame";
 import { settled } from "./gestures";
 import { carryPivot, pivotOf } from "./pivot";
@@ -313,7 +313,7 @@ export function scaleReadout(
     const shown = kind.params
         .filter((p) => p.interval && (p.shown?.(params, n) ?? true))
         .map((p) =>
-            [p.glyph, p.display(params, n, env.stepPx)]
+            [paramGlyph(p, params, n), p.display(params, n, env.stepPx)]
                 .filter(Boolean)
                 .join(" "),
         );
@@ -332,13 +332,19 @@ function sizeText(
     env: Pick<ToolEnv, "stepPx">,
 ): string {
     const frame = kind.frameOf(params, n);
-    const sizes = [frame.halfWidth, frame.halfDepth]
+    const values = [frame.halfWidth, frame.halfDepth]
         .filter((h) => h > 1e-9)
-        .map((h) => formatSteps((2 * h) / env.stepPx));
-    return sizes.length > 0
-        ? tolgee.t("shapes.frame.scale.size", "{sizes} steps", {
-              sizes: sizes.join(" × "),
-          })
+        .map((h) => (2 * h) / env.stepPx);
+    // "steps" agrees with the last number (ICU plural)
+    return values.length > 0
+        ? tolgee.t(
+              "shapes.frame.scale.size",
+              "{count, plural, one {{sizes} step} other {{sizes} steps}}",
+              {
+                  sizes: values.map((v) => formatSteps(v)).join(" × "),
+                  count: values[values.length - 1]!,
+              },
+          )
         : "";
 }
 

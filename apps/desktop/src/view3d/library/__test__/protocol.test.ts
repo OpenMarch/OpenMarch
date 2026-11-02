@@ -67,6 +67,9 @@ describe("library protocol", () => {
             // calls, checked in main)
             "requestCamerasChange",
             "cameraProfiles",
+            // ADR 0002 amendment 2026-11-01 (#600): read and answer the
+            // "open on launch" question, checked in main
+            "autoOpen",
             "requestPlayback",
             // ADR 0002 D-4 extension 2026-10-16 (#216)
             "requestPlaybackSpeed",

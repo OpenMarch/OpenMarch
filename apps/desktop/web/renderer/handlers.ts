@@ -11,6 +11,7 @@
 import { PAGE_CHANNELS, WEB_CHANNELS, type FlushResult } from "../protocol";
 import { rasterizeImage } from "./rasterize";
 import { leaveDecision, leaveQuestion } from "./leave";
+import { workerErrorText } from "./workerErrors";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
 import { storageKey } from "./channel";
 import { handOffShow } from "./handoff";
@@ -558,11 +559,21 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
                         "insertAudioFile: Operation was cancelled or no audio file was provided",
                 },
             };
-        return invokeWorker(
-            WEB_CHANNELS.insertAudio,
-            await file.arrayBuffer(),
-            file.name,
-        );
+        const response = await invokeWorker<{
+            success: boolean;
+            error?: { message?: string };
+        }>(WEB_CHANNELS.insertAudio, await file.arrayBuffer(), file.name);
+        // The worker sends a key for the page to word (`WORKER_ERRORS`)
+        const message = response.error?.message;
+        return message === undefined
+            ? response
+            : {
+                  ...response,
+                  error: {
+                      ...response.error,
+                      message: workerErrorText(message),
+                  },
+              };
     });
     // Video export: the renderer encodes, the file goes to browser storage
     // and is saved from a tap (see ./videoExport.ts).
@@ -593,6 +604,6 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     );
 
     handleInPage("database:repair", () => {
-        throw new Error("Repairing a file isn't available on the web yet");
+        throw new Error(tolgee.t("web.repairUnavailable"));
     });
 }

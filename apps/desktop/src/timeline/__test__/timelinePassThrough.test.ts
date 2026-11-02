@@ -7,10 +7,17 @@ import {
     rangeWhere,
     type PassThroughTranslate,
 } from "../timelinePassThrough";
+import tolgee from "@/global/singletons/Tolgee";
+import { translateTimelineText } from "../translateTimelineText";
+import type { TimelineTextArg } from "../timelineText";
 
-/** Fills `{name}` placeholders in the English default, as Tolgee does without a translation. */
-const english: PassThroughTranslate = (_key, defaultMessage, params = {}) =>
-    defaultMessage.replace(/\{(\w+)\}/g, (_, name: string) => params[name]!);
+/** A phrase in English, through the app's Tolgee (English in tests); `undefined` stays. */
+const say = (value: TimelineTextArg | undefined) =>
+    value === undefined ? undefined : translateTimelineText(value);
+
+/** The app's Tolgee, English in tests, with ICU plurals as in the app. */
+const english: PassThroughTranslate = (key, defaultMessage, params) =>
+    tolgee.t(key, defaultMessage, params);
 
 // Each box is named after the page whose flag ends it (`pageFlags`); page 1 is home
 const boxes = [
@@ -31,25 +38,25 @@ const pass = (flags: number[], extra = {}) => ({
 
 describe("timeline pass-through messages (research/ownership/10, defined-coordinates 08)", () => {
     it("names a page's box by its page, and any other move by its pages and counts", () => {
-        expect(moveName({ start: 16, end: 32 }, boxes)).toBe("Page 3");
+        expect(say(moveName({ start: 16, end: 32 }, boxes))).toBe("Page 3");
         // No stored move with the range: where it is, never beats
-        expect(moveName({ start: 20, end: 32 }, boxes)).toBe(
+        expect(say(moveName({ start: 20, end: 32 }, boxes))).toBe(
             "the move on Page 3, counts 5–16",
         );
-        expect(moveName({ start: 8, end: 12 }, boxes)).toBe(
+        expect(say(moveName({ start: 8, end: 12 }, boxes))).toBe(
             "the move on Page 2, counts 9–12",
         );
-        expect(moveName({ start: 8, end: 9 }, boxes)).toBe(
+        expect(say(moveName({ start: 8, end: 9 }, boxes))).toBe(
             "the move on Page 2, count 9",
         );
-        expect(moveName({ start: 12, end: 20 }, boxes)).toBe(
+        expect(say(moveName({ start: 12, end: 20 }, boxes))).toBe(
             "the move from Page 2 count 13 to Page 3 count 4",
         );
         // Past the last flag, where the next page gets written (UI-12)
-        expect(moveName({ start: 48, end: 52 }, boxes)).toBe(
+        expect(say(moveName({ start: 48, end: 52 }, boxes))).toBe(
             "the move after Page 4, counts 1–4",
         );
-        expect(moveName({ start: 44, end: 52 }, boxes)).toBe(
+        expect(say(moveName({ start: 44, end: 52 }, boxes))).toBe(
             "the move from Page 4 count 13 to count 4 after Page 4",
         );
     });
@@ -61,35 +68,41 @@ describe("timeline pass-through messages (research/ownership/10, defined-coordin
             { id: 9, start: 20, end: 24, name: "Move 2" },
             { id: 10, start: 36, end: 40, name: null },
         ];
-        expect(moveName({ start: 8, end: 12 }, boxes, moves)).toBe(
+        expect(say(moveName({ start: 8, end: 12 }, boxes, moves))).toBe(
             "Company front (Page 2, counts 9–12)",
         );
-        expect(moveName({ start: 20, end: 24 }, boxes, moves)).toBe(
+        expect(say(moveName({ start: 20, end: 24 }, boxes, moves))).toBe(
             "Move 2 (Page 3, counts 5–8)",
         );
         // Stored without a name: numbered after the highest "Move N"
-        expect(moveName({ start: 36, end: 40 }, boxes, moves)).toBe(
+        expect(say(moveName({ start: 36, end: 40 }, boxes, moves))).toBe(
             "Move 3 (Page 4, counts 5–8)",
         );
         // A page's box stays "Page 3", even with its own stored move
-        expect(moveName({ start: 16, end: 32 }, boxes, moves)).toBe("Page 3");
+        expect(say(moveName({ start: 16, end: 32 }, boxes, moves))).toBe(
+            "Page 3",
+        );
         // No stored move has this range
-        expect(moveName({ start: 24, end: 28 }, boxes, moves)).toBe(
+        expect(say(moveName({ start: 24, end: 28 }, boxes, moves))).toBe(
             "the move on Page 3, counts 9–12",
         );
     });
 
     it("says where without beats, or nothing where a page has no name", () => {
-        expect(rangeWhere({ start: 20, end: 32 }, boxes)?.where).toBe(
+        expect(say(rangeWhere({ start: 20, end: 32 }, boxes)?.where)).toBe(
             "Page 3, counts 5–16",
         );
         const unnamed = [{ start: 0, end: 16 }, ...boxes.slice(1)];
         expect(rangeWhere({ start: 4, end: 8 }, unnamed)).toBeNull();
-        expect(moveName({ start: 4, end: 8 }, unnamed)).toBe("another move");
+        expect(say(moveName({ start: 4, end: 8 }, unnamed))).toBe(
+            "another move",
+        );
         expect(
-            moveName({ start: 4, end: 8 }, unnamed, [
-                { id: 1, start: 4, end: 8, name: "Opener" },
-            ]),
+            say(
+                moveName({ start: 4, end: 8 }, unnamed, [
+                    { id: 1, start: 4, end: 8, name: "Opener" },
+                ]),
+            ),
         ).toBe("Opener");
         expect(rangeWhere({ start: 4, end: 8 }, [])).toBeNull();
     });

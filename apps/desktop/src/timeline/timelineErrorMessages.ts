@@ -5,7 +5,7 @@ import { conToastError } from "@/utilities/utils";
 import { toast } from "sonner";
 import { toastBasicLock } from "./basicLockToast";
 import type { NotJoined } from "@/db-functions/timelineJoinAtBeat";
-import { joinList } from "./timelineRangeWords";
+import { joinList } from "./translateTimelineText";
 import { holdTerms } from "./holdTerms";
 import type { HeldConflict } from "@/db-functions/timelineHeldConflict";
 import {
@@ -13,6 +13,8 @@ import {
     type KeepTranslate,
     type MarcherNameOf,
 } from "./timelineKeepLater";
+import { translateTimelineText } from "./translateTimelineText";
+import type { TimelineTextArg } from "./timelineText";
 
 /**
  * User-facing messages for the timeline's refusals (spec section 6, P8.6). One place maps every
@@ -22,8 +24,9 @@ import {
  * - The spec's codes (`E-S1`, `E-P1`, `E-T1` to `E-T6`, `E-A1` to `E-A3`), the app's `E-D2` and
  *   `E-N2`, and the Held marks' `E-H1` and `E-H3` each have a message. The combined codes the database reports when one trigger checks
  *   two invariants (`E-A1/E-A2`, `E-T3/E-T4`) have their own, which name both halves.
- * - `E-ARGS` is a refusal the write path words itself ("slot 3 is already taken"): its own message
- *   is shown, without the code prefix.
+ * - `E-ARGS` is a refusal the write path words itself ("select the marchers to add"): its `text`
+ *   (a key and arguments) is translated and shown. One without `text` is a developer-only message
+ *   (a call the app never makes) and gets the generic message.
  * - `E-DB` is any other database rejection. The user gets a generic message; the original error
  *   (kept as the `cause`) goes to the log.
  * - Commit-time violations (`TimelineCommitViolationError`) map by their code, like row errors.
@@ -172,21 +175,29 @@ export function isLegacyConversionViolation(error: unknown): boolean {
 
 /**
  * An E-H1 refusal that knows who (`TimelineCommitViolationError.held`): it names the marchers and
- * the page they are Held on, and the way out. `.one` for one marcher, `.many` for several.
+ * the page they are Held on, and the way out. `{count}` is how many marchers it names.
  */
-export const HELD_CONFLICT_MESSAGES: Readonly<
-    Record<"one" | "many", TimelineErrorMessage>
-> = {
-    one: {
-        key: "timeline.errors.heldConflict.one",
-        defaultMessage:
-            "{names} is {held} on {pages}. {clearThisPage} to remove the hold, or drag inside it to move it.",
-    },
-    many: {
-        key: "timeline.errors.heldConflict.many",
-        defaultMessage:
-            "{names} are {held} on {pages}. {clearThisPage} to remove the holds, or drag inside them to move them.",
-    },
+export const HELD_CONFLICT_MESSAGE: TimelineErrorMessage = {
+    key: "timeline.errors.heldConflict",
+    defaultMessage:
+        "{count, plural, =1 {{names} is {held} on {pages}. {clearThisPage} to remove the hold, or drag inside it to move it.} other {{names} are {held} on {pages}. {clearThisPage} to remove the holds, or drag inside them to move them.}}",
+};
+
+/** The marchers and pages a hold message names, as its arguments. */
+const heldParams = (held: HeldConflict, translate: TimelineTranslate) => {
+    const names = held.names;
+    return {
+        ...holdTerms(),
+        count: names.length,
+        names:
+            marcherNamesText(
+                names.map((_, i) => i),
+                (i) => names[i],
+                (key, defaultValue, params) =>
+                    translate(key, defaultValue, params),
+            ) ?? joinList(names),
+        pages: heldPagesText(held.pages, translate),
+    };
 };
 
 /** An E-H1's message naming who and where, or null when the error doesn't say. */
@@ -198,32 +209,17 @@ function heldConflictMessage(
     const held = error.held;
     if (!held || held.names.length === 0 || held.pages.length === 0)
         return null;
-    const names = held.names;
-    const message = HELD_CONFLICT_MESSAGES[names.length === 1 ? "one" : "many"];
-    return translate(message.key, message.defaultMessage, {
-        ...holdTerms(),
-        names:
-            marcherNamesText(
-                names.map((_, i) => i),
-                (i) => names[i],
-                (key, defaultValue, params) =>
-                    translate(key, defaultValue, params),
-            ) ?? names.join(", "),
-        pages: heldPagesText(held.pages),
-    });
+    return translate(
+        HELD_CONFLICT_MESSAGE.key,
+        HELD_CONFLICT_MESSAGE.defaultMessage,
+        heldParams(held, translate),
+    );
 }
 
-const HELD_DROPPED_MESSAGES = {
-    one: {
-        key: "timeline.errors.heldDropped.one",
-        defaultMessage:
-            "{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.",
-    },
-    many: {
-        key: "timeline.errors.heldDropped.many",
-        defaultMessage:
-            "{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.",
-    },
+export const HELD_DROPPED_MESSAGE: TimelineErrorMessage = {
+    key: "timeline.errors.heldDropped",
+    defaultMessage:
+        "{count, plural, =1 {{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.} other {{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.}}",
 };
 
 /**
@@ -236,19 +232,11 @@ export function heldDroppedMessage(
 ): string | null {
     if (!held || held.names.length === 0 || held.pages.length === 0)
         return null;
-    const names = held.names;
-    const message = HELD_DROPPED_MESSAGES[names.length === 1 ? "one" : "many"];
-    return translate(message.key, message.defaultMessage, {
-        ...holdTerms(),
-        names:
-            marcherNamesText(
-                names.map((_, i) => i),
-                (i) => names[i],
-                (key, defaultValue, params) =>
-                    translate(key, defaultValue, params),
-            ) ?? names.join(", "),
-        pages: heldPagesText(held.pages),
-    });
+    return translate(
+        HELD_DROPPED_MESSAGE.key,
+        HELD_DROPPED_MESSAGE.defaultMessage,
+        heldParams(held, translate),
+    );
 }
 
 /** A warning naming the holds an edit dropped (`heldDroppedMessage`), if it dropped any. */
@@ -258,8 +246,15 @@ export function toastDroppedHolds(held: HeldConflict | undefined): void {
 }
 
 /** Held pages by name, as the hold messages say them: "Page 3", "Pages 3 and 4". */
-export const heldPagesText = (pages: readonly string[]): string =>
-    pages.length === 1 ? `Page ${pages[0]}` : `Pages ${joinList(pages)}`;
+export const heldPagesText = (
+    pages: readonly string[],
+    translate: TimelineTranslate = defaultTranslate,
+): string =>
+    translate(
+        "timeline.errors.heldPages",
+        "{count, plural, =1 {Page {pages}} other {Pages {pages}}}",
+        { count: pages.length, pages: joinList(pages) },
+    );
 
 export const TIMELINE_NOT_READY_MESSAGE: TimelineErrorMessage = {
     key: "timeline.errors.notReady",
@@ -294,12 +289,6 @@ export const NOT_JOINED_REASONS: Readonly<
     },
 };
 
-const englishWithParams: KeepTranslate = (_key, defaultValue, params) =>
-    defaultValue.replace(
-        /\{(\w+)\}/g,
-        (_, name: string) => params?.[name] ?? "",
-    );
-
 /**
  * One toast's text for the refused joins `groups`: a sentence per group, naming its marchers
  * (`marcherNamesText`, or a count when a name isn't known) and the reason.
@@ -307,13 +296,18 @@ const englishWithParams: KeepTranslate = (_key, defaultValue, params) =>
 export function notJoinedMessage(
     groups: readonly NotJoined[],
     nameOf: MarcherNameOf,
-    t: KeepTranslate = englishWithParams,
+    t: KeepTranslate = (key, defaultValue, params) =>
+        tolgee.t(key, defaultValue, params ?? {}),
 ): string {
     return groups
         .map(({ marcherIds, reason }) => {
             const names =
                 marcherNamesText(marcherIds, nameOf, t) ??
-                `${marcherIds.length} marchers`;
+                t(
+                    "timeline.errors.notJoined.marcherCount",
+                    "{count, plural, one {# marcher} other {# marchers}}",
+                    { count: marcherIds.length },
+                );
             const why = NOT_JOINED_REASONS[reason];
             return t(
                 NOT_JOINED_MESSAGE.key,
@@ -328,19 +322,19 @@ export function notJoinedMessage(
 }
 
 /**
- * Looks a message up by key and default, filling in `params`; the Tolgee singleton by default,
- * anything in tests.
+ * Looks a message up by key, default and arguments; the Tolgee singleton by default, anything in
+ * tests. A refusal's own text (`E-ARGS`) has no default.
  */
 export type TimelineTranslate = (
     key: string,
-    defaultMessage: string,
+    defaultMessage: string | undefined,
     params?: Readonly<Record<string, string | number>>,
 ) => string;
 
 const defaultTranslate: TimelineTranslate = (key, defaultMessage, params) =>
-    params
-        ? tolgee.t(key, defaultMessage, params)
-        : tolgee.t(key, defaultMessage);
+    defaultMessage === undefined
+        ? tolgee.t(key, { ...params })
+        : tolgee.t(key, defaultMessage, { ...params });
 
 /** The spec error code of a timeline refusal, or null for an error that isn't one. */
 export function timelineErrorCode(error: unknown): string | null {
@@ -352,13 +346,10 @@ export function timelineErrorCode(error: unknown): string | null {
     return null;
 }
 
-/** An `E-ARGS` error's own message, without its `E-ARGS: ` prefix. */
-const argsMessage = (message: string): string =>
-    message.replace(/^E-ARGS:\s*/, "").trim();
-
 /**
  * The message to show for `error`, or `fallback` (when given) for an error that isn't a timeline
- * refusal. An error that isn't a refusal and has no fallback gets the generic message.
+ * refusal or is an `E-ARGS` refusal without text for the user (a developer-only message). Either
+ * without a fallback gets the generic message.
  */
 export function timelineErrorMessage(
     error: unknown,
@@ -382,9 +373,22 @@ export function timelineErrorMessage(
     ) {
         const { key, params } = error as Error & {
             key: string;
-            params?: Readonly<Record<string, string | number>>;
+            params?: Readonly<Record<string, TimelineTextArg>>;
         };
-        return translate(key, error.message, params);
+        // A name list in the parameters is text, translated here as the message is
+        const translated =
+            params &&
+            Object.fromEntries(
+                Object.entries(params).map(([name, arg]) => [
+                    name,
+                    typeof arg === "string" || typeof arg === "number"
+                        ? arg
+                        : translateTimelineText(arg, (k, p) =>
+                              translate(k, undefined, p),
+                          ),
+                ]),
+            );
+        return translate(key, error.message, translated);
     }
     if (code === null)
         return (
@@ -394,9 +398,13 @@ export function timelineErrorMessage(
                 TIMELINE_UNKNOWN_ERROR_MESSAGE.defaultMessage,
             )
         );
-    if (code === "E-ARGS") {
-        const own = argsMessage((error as Error).message);
-        if (own) return own;
+    if (code === "E-ARGS" && error instanceof TimelineWriteError) {
+        if (error.text)
+            return translateTimelineText(error.text, (key, params) =>
+                translate(key, undefined, params),
+            );
+        // A developer-only refusal (a plain string): the caller's words for what failed, if any
+        if (fallback !== undefined) return fallback;
     }
     if (code === "E-H1") {
         const held = heldConflictMessage(error, translate);

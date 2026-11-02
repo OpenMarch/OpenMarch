@@ -2,6 +2,7 @@ import Measure from "./Measure";
 import Beat from "./Beat";
 import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import { DatabasePage, ModifiedPageArgs, NewPageArgs } from "@/db-functions";
 import { ModifyPagesRequest } from "@/hooks/queries/usePages";
 import { generatePageNames, getLastPageNumber } from "@openmarch/core";
@@ -144,7 +145,7 @@ export const getNextPage = (
     if (!nextPage) {
         const now = Date.now();
         if (now - lastNextPageToastTime > TOAST_COOLDOWN_MS) {
-            toast.info("No next page");
+            toast.info(tolgee.t("pages.noNextPage"));
             lastNextPageToastTime = now;
         }
         return null;
@@ -169,7 +170,7 @@ export const getPreviousPage = (
     if (!prevPage) {
         const now = Date.now();
         if (now - lastPrevPageToastTime > TOAST_COOLDOWN_MS) {
-            toast.info("No previous page");
+            toast.info(tolgee.t("pages.noPreviousPage"));
             lastPrevPageToastTime = now;
         }
         return null;
@@ -225,10 +226,10 @@ export const updatePageCountRequest = ({
 
     // If we couldn't find a suitable beat, don't update
     if (targetBeatIndex === -1 || targetBeatIndex >= beats.length) {
-        const message =
-            "Failed to update page duration. No suitable beat found.";
-        toast.error(message);
-        console.error(message);
+        toast.error(tolgee.t("pages.durationNoBeat"));
+        console.error(
+            "Failed to update page duration. No suitable beat found.",
+        );
         return output;
     }
 
@@ -263,7 +264,7 @@ export const updatePageCountRequest = ({
             };
         }
     } catch (error) {
-        toast.error("Failed to update page duration");
+        toast.error(tolgee.t("pages.durationFailed"));
         console.error("Failed to update page duration:", error);
     }
     return output;
@@ -309,11 +310,11 @@ export const yankOrPushPagesAfterIndex = ({
     const pageAtIndex = allPages[index];
 
     if (pageAtIndex.counts + offset < 0) {
-        conToastError("Cannot yank pages that would result in negative counts");
+        conToastError(tolgee.t("pages.yankNegativeCounts"));
         return;
     }
     if (!areEnoughBeatsForPages({ pages: allPages, beats: allBeats })) {
-        conToastError("Cannot push pages further than the end of the show");
+        conToastError(tolgee.t("pages.pushPastEnd"));
         return;
     }
 
@@ -323,7 +324,7 @@ export const yankOrPushPagesAfterIndex = ({
     // validate that all pages have at least one beat
     for (const page of pagesToYankOrPush) {
         if (page.beats.length === 0) {
-            conToastError("Cannot yank pages that have no beats", page);
+            conToastError(tolgee.t("pages.yankEmptyPages"), page);
             return;
         }
     }
@@ -333,7 +334,7 @@ export const yankOrPushPagesAfterIndex = ({
         const newBeatIndex = pageStartBeat.index + offset;
 
         if (newBeatIndex < 0 || newBeatIndex >= allBeats.length) {
-            conToastError("Beat yank would result in out of bounds beats", {
+            conToastError(tolgee.t("pages.yankOutOfBounds"), {
                 allBeatsLength: allBeats.length,
                 newBeatIndex,
                 pageIndex: index,
@@ -363,7 +364,7 @@ export const splitPage = (
     | { newPageArgs: NewPageArgs; modifyPageRequest?: ModifyPagesRequest }
     | undefined => {
     if (page.beats.length <= 1) {
-        conToastError("Cannot split page that has less than 2 beats", page);
+        conToastError(tolgee.t("pages.splitTooShort"), page);
         return;
     }
 
@@ -371,7 +372,7 @@ export const splitPage = (
     const newStartBeat = page.beats[beatIndex];
 
     if (!newStartBeat) {
-        conToastError("Failed to find a new start beat", {
+        conToastError(tolgee.t("pages.splitNoStartBeat"), {
             page,
             newBeatIndex: Math.floor(page.beats.length / 2),
         });

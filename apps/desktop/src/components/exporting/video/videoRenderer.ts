@@ -1,3 +1,4 @@
+import tolgee from "@/global/singletons/Tolgee";
 import type { FieldImageSize } from "@/db-functions/fieldFloor";
 import {
     AudioBufferSource,
@@ -151,12 +152,22 @@ export async function exportVideo(
     } = args;
 
     if (sortedPages.length === 0)
-        throw new Error("The show has no pages to export");
+        throw new Error(
+            tolgee.t(
+                "exportCoordinates.videoNoPages",
+                "The show has no pages to export",
+            ),
+        );
 
     const lastPage = sortedPages[sortedPages.length - 1];
     const durationSeconds = lastPage.timestamp + lastPage.duration;
     if (durationSeconds <= 0)
-        throw new Error("The show has no duration to export");
+        throw new Error(
+            tolgee.t(
+                "exportCoordinates.videoNoDuration",
+                "The show has no duration to export",
+            ),
+        );
 
     const encodingTarget = await chooseEncodingTarget(width, height, {
         web: isWebBuild,
@@ -200,7 +211,13 @@ export async function exportVideo(
         frameCanvas.width = width;
         frameCanvas.height = height;
         const frameContext = frameCanvas.getContext("2d");
-        if (!frameContext) throw new Error("Could not create export canvas");
+        if (!frameContext)
+            throw new Error(
+                tolgee.t(
+                    "exportCoordinates.videoNoCanvas",
+                    "Could not create export canvas",
+                ),
+            );
 
         const videoSource = new CanvasSource(frameCanvas, {
             codec: encodingTarget.videoCodec,

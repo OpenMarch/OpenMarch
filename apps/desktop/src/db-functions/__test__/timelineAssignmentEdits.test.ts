@@ -1,4 +1,5 @@
 import { afterEach, describe, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { asc, eq, getTableName } from "drizzle-orm";
 import { createResolver, type Resolver, type XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
@@ -288,7 +289,7 @@ describeDbTests("timeline assignment edits (P8.4)", (it) => {
                     marcherIds: [m[2], m[3], 999_999],
                 }),
             );
-            expect(error.message).toMatch(/does not exist/);
+            expect(refusalText(error)).toMatch(/does not exist/);
             // Three marchers for the two vacant slots
             const [extra] = (
                 await db
@@ -305,7 +306,7 @@ describeDbTests("timeline assignment edits (P8.4)", (it) => {
                     marcherIds: [m[2], m[3], extra!.id],
                 }),
             );
-            expect(full.message).toMatch(/2 vacant slots for 3 marchers/);
+            expect(refusalText(full)).toMatch(/2 vacant slots for 3 marchers/);
         });
     });
 
@@ -341,7 +342,7 @@ describeDbTests("timeline assignment edits (P8.4)", (it) => {
             const error = await expectRefused(db, "E-ARGS", () =>
                 recastTransition({ db, transitionId: t }),
             );
-            expect(error.message).toMatch(/already in its nearest slot/);
+            expect(refusalText(error)).toMatch(/already in its nearest slot/);
         });
     });
 
@@ -610,7 +611,7 @@ describeDbTests("timeline assignment edits, review cases (P8.4)", (it) => {
             const error = await expectRefused(db, "E-ARGS", () =>
                 recastTransition({ db, transitionId: t }),
             );
-            expect(error.message).toMatch(/follow the leader/);
+            expect(refusalText(error)).toMatch(/follow the leader/);
         });
 
     it("recasts from where a marcher is when its row first wins, not from the row's start (a breakaway at the start)", async ({
@@ -690,7 +691,7 @@ describeDbTests("timeline assignment edits, review cases (P8.4)", (it) => {
                 marcherIds: [m[1]],
             }),
         );
-        expect(cast.message).toMatch(`up to ${MAX_CAST_SLOTS}`);
+        expect(refusalText(cast)).toMatch(`up to ${MAX_CAST_SLOTS}`);
         await expectRefused(db, "E-ARGS", () =>
             recastTransition({ db, transitionId: t }),
         );

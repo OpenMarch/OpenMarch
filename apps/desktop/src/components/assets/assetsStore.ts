@@ -9,6 +9,7 @@
  */
 import { create } from "zustand";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     createImportReview,
     type ImportReviewClient,
@@ -79,7 +80,10 @@ export const useAssetsStore = create<AssetsState>((set, get) => ({
                     try {
                         await onEmbedded?.(saved);
                     } catch (error) {
-                        conToastError("Couldn't finish the import", error);
+                        conToastError(
+                            tolgee.t("library.import.finishFailed"),
+                            error,
+                        );
                     }
                 })();
             },

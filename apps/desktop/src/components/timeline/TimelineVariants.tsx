@@ -1,3 +1,4 @@
+import { useTranslate } from "@tolgee/react";
 import { wheelScrollsSideways } from "./timelineWheel";
 import {
     memo,
@@ -518,6 +519,7 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
     createTrackTarget: TimelineTarget | null | undefined;
     onCreateTrack: TimelineCommonProps["onCreateTrack"];
 }) {
+    const { t } = useTranslate();
     const current = useLiveValue(interaction);
     const displayedRange = current?.range ?? range;
     const dragging = current?.dragging ?? false;
@@ -574,7 +576,7 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
                     }
                     className="bg-accent text-text-invert rounded-full px-8 py-3 text-[11px] leading-none whitespace-nowrap"
                 >
-                    Create Track
+                    {t("timeline.createTrack")}
                 </button>
             )}
         </div>
@@ -594,14 +596,15 @@ const TimelinePlayheadChip = memo(function TimelinePlayheadChip({
     top: number;
     onClick: () => void;
 }) {
+    const { t } = useTranslate();
     const Caret = side === "left" ? CaretLeftIcon : CaretRightIcon;
     return (
         <button
             type="button"
             data-testid="timeline-playhead-chip"
             data-side={side}
-            aria-label="Show the playhead"
-            title="Show the playhead"
+            aria-label={t("timeline.playheadChip.label")}
+            title={t("timeline.playheadChip.label")}
             // As the transport's buttons: a click doesn't take keyboard focus, so Space after it
             // is still the app's Play, not a second press of the chip
             onMouseDown={(event) => event.preventDefault()}
@@ -615,7 +618,7 @@ const TimelinePlayheadChip = memo(function TimelinePlayheadChip({
             style={{ top }}
         >
             <Caret size={10} weight="bold" />
-            Playhead
+            {t("timeline.playheadChip.text")}
         </button>
     );
 });

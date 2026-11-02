@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useTimingObjects } from "@/hooks";
 import {
     allMarchersQueryOptions,
@@ -37,7 +37,7 @@ const clearPageNotify = {
  * the first page it still runs and says there's no previous page.
  */
 export function useBatchEditActionHandlers() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { selectedPage, ready, selectedMarchers } = useEditorReadiness();
     const { pages } = useTimingObjects()!;
     // "All" means the performers: props and equipment stay put

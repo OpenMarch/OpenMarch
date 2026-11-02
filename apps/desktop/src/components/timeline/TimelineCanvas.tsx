@@ -7,6 +7,7 @@ import {
     useRef,
     type RefObject,
 } from "react";
+import { useTranslate } from "@tolgee/react";
 import {
     beatToX,
     canvasWindowCovers,
@@ -409,6 +410,7 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
     waveformStyle,
     tone,
 }: TimelineWaveformCanvasProps) {
+    const { t } = useTranslate();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     /** The beat the audio ends on: the baseline runs to it */
     const audioEnd = useMemo(() => {
@@ -478,7 +480,9 @@ export const TimelineWaveformCanvas = memo(function TimelineWaveformCanvas({
                     : "timeline-waveform-played"
             }
             role={tone === "rest" ? "img" : undefined}
-            aria-label={tone === "rest" ? "Audio waveform" : undefined}
+            aria-label={
+                tone === "rest" ? t("timeline.waveform.label") : undefined
+            }
             aria-hidden={tone === "played" || undefined}
             className="absolute top-0"
         />

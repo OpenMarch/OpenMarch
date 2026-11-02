@@ -1,4 +1,5 @@
 import { afterEach, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { and, eq, getTableName, inArray } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
@@ -79,7 +80,7 @@ const expectRefused = async (
     const error = await write().catch((e: unknown) => e);
     expect(error).toBeInstanceOf(TimelineWriteError);
     expect((error as TimelineWriteError).code).toBe("E-ARGS");
-    expect((error as Error).message).toMatch(message);
+    expect(refusalText(error)).toMatch(message);
     expect(await snapshot(db)).toEqual(before);
 };
 

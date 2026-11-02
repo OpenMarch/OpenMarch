@@ -18,6 +18,13 @@ import { dotSizes, SELECTION_COLOR } from "./selectionRing";
 import { DOT_RADIUS } from "@/field/editor/hitTest";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 import { GUIDE_INK, GUIDE_INK_TEXT } from "./guideInk";
+import { shapeAlone, useMarchersHidden } from "@/shapes/field/marchersHidden";
+import {
+    GROUP_LABEL_HEIGHT,
+    GROUP_LABEL_PX,
+    groupLabelWidth,
+    placeGroupLabels,
+} from "@/shapes/field/groupDrawing";
 import HeldRolesChip, { HeldRolesChipBelowTip } from "./HeldRolesChip";
 
 /** The selection border width, in CSS px. */
@@ -43,7 +50,27 @@ const SPOT_RADIUS = 4;
 const SPOT_WIDTH = 1.5;
 const WALK_WIDTH = 1;
 const SHAPE_HANDLE_SIZE = 9;
+/** A handle that adds a point (a line's midpoint, #524): a small ring, over the center dot */
+const ADD_HANDLE_RADIUS = 3;
+/** An end of a selected point's tangent bar (#557): a round knob on a thin line from the point */
+const BAR_HANDLE_RADIUS = 4;
+const BAR_LINE_WIDTH = 1;
 const SHAPE_HANDLE_WIDTH = 1.5;
+
+/**
+ * A Line's interval groups while the editor's group menu is open (#526 follow-up): a ring round
+ * each spot in its group's color, in field units like the spot; faint with no group pointed at,
+ * then the group pointed at drawn thick with a soft fill and the others nearly gone. Its gaps'
+ * labels are small pills in CSS px.
+ */
+const GROUP_RING_RADIUS = SPOT_RADIUS + 2.5;
+/** A seam's label: the rule between two groups, in a neutral ink */
+const GROUP_SEAM_INK = "#4b5563";
+const GROUP_RING_LOOK = {
+    faint: { width: 1.25, opacity: 0.6, fill: 0 },
+    lit: { width: 2, opacity: 1, fill: 0.3 },
+    dim: { width: 1, opacity: 0.2, fill: 0 },
+} as const;
 
 /** The prop tool's line while drawing, in CSS px. */
 const PROP_PREVIEW_WIDTH = 2;
@@ -132,8 +159,14 @@ export default function FieldOverlay({
     const area = useSyncExternalStore(subscribeEditor, () =>
         editor.areaShape(),
     );
-    const modeDrawing = useSyncExternalStore(subscribeEditor, () =>
+    const drawn = useSyncExternalStore(subscribeEditor, () =>
         editor.modeDrawing(),
+    );
+    // Held or latched H shows the shape on its own (#558)
+    const hideMarchers = useMarchersHidden();
+    const modeDrawing = useMemo(
+        () => (drawn && hideMarchers ? shapeAlone(drawn) : drawn),
+        [drawn, hideMarchers],
     );
     const propTool = useSyncExternalStore(subscribeEditor, () =>
         editor.propToolShape(),
@@ -494,19 +527,32 @@ const ShapeBody = memo(function ShapeBody({
     const dots = drawing.stage === "drawing";
     return (
         <>
-            {drawing.outline && (
-                <polygon
-                    points={drawing.outline
-                        .map((p) => `${p.x},${p.y}`)
-                        .join(" ")}
-                    // The faint fill shows with the controls, on hover (#403)
-                    fill={open && !drawing.calm ? fill : "none"}
-                    stroke={shape}
-                    strokeWidth={SHAPE_OUTLINE_WIDTH}
-                    strokeDasharray={open ? undefined : SHAPE_OUTLINE_DASH}
-                    vectorEffect="non-scaling-stroke"
-                />
-            )}
+            {drawing.outline &&
+                (drawing.openOutline ? (
+                    // A line has no inside to fill (#524)
+                    <polyline
+                        points={drawing.outline
+                            .map((p) => `${p.x},${p.y}`)
+                            .join(" ")}
+                        fill="none"
+                        stroke={shape}
+                        strokeWidth={SHAPE_OUTLINE_WIDTH}
+                        strokeDasharray={open ? undefined : SHAPE_OUTLINE_DASH}
+                        vectorEffect="non-scaling-stroke"
+                    />
+                ) : (
+                    <polygon
+                        points={drawing.outline
+                            .map((p) => `${p.x},${p.y}`)
+                            .join(" ")}
+                        // The faint fill shows with the controls, on hover (#403)
+                        fill={open && !drawing.calm ? fill : "none"}
+                        stroke={shape}
+                        strokeWidth={SHAPE_OUTLINE_WIDTH}
+                        strokeDasharray={open ? undefined : SHAPE_OUTLINE_DASH}
+                        vectorEffect="non-scaling-stroke"
+                    />
+                ))}
             <StartMarks
                 drawing={drawing}
                 theme={theme}
@@ -587,9 +633,156 @@ const ShapeOnGuides = memo(function ShapeOnGuides({
                     />
                 );
             })}
+            {drawing.groupMarks?.map(({ at, color, shade, group }, i) => {
+                const look = GROUP_RING_LOOK[shade];
+                return (
+                    <circle
+                        key={`group-${i}`}
+                        cx={at.x}
+                        cy={at.y}
+                        r={GROUP_RING_RADIUS}
+                        fill={color}
+                        fillOpacity={look.fill}
+                        stroke={color}
+                        strokeOpacity={look.opacity}
+                        strokeWidth={look.width}
+                        data-testid="fieldShapeGroupMark"
+                        data-shade={shade}
+                        data-group={group}
+                    />
+                );
+            })}
         </>
     );
 });
+
+/**
+ * A gap of the group pointed at, labeled with its interval (#526 follow-up): a small pill in its
+ * group's color. A seam, the rule between two groups, is a neutral pill with a dashed edge.
+ */
+function GroupGapLabel({
+    text,
+    at,
+    color,
+    seam,
+}: {
+    text: string;
+    at: { x: number; y: number };
+    color: string;
+    seam: boolean;
+}) {
+    const w = groupLabelWidth(text);
+    const h = GROUP_LABEL_HEIGHT;
+    return (
+        <g data-testid="fieldShapeGroupLabel" data-seam={seam || undefined}>
+            <rect
+                x={at.x - w / 2}
+                y={at.y - h / 2}
+                width={w}
+                height={h}
+                rx={h / 2}
+                fill={seam ? "white" : color}
+                stroke={seam ? GROUP_SEAM_INK : "white"}
+                strokeWidth={1}
+                strokeDasharray={seam ? "2 2" : undefined}
+            />
+            <text
+                x={at.x}
+                y={at.y}
+                fontSize={GROUP_LABEL_PX}
+                fontWeight={600}
+                fontFamily="DM Sans, sans-serif"
+                fill={seam ? GROUP_SEAM_INK : "white"}
+                textAnchor="middle"
+                dominantBaseline="central"
+            >
+                {text}
+            </text>
+        </g>
+    );
+}
+
+/**
+ * A Line's step from its first marcher to the next (owner on #596): a dashed right angle in the
+ * pivot's yellow on a dark edge, across then up or down, each leg's number in a pill beside it on
+ * the side away from the step, so it reads where the next marcher comes from
+ */
+function OffsetStep({
+    step,
+    at,
+    abovePx,
+}: {
+    step: NonNullable<FieldModeDrawing["offsetStep"]>;
+    at: (point: { x: number; y: number }) => { x: number; y: number };
+    /** What stands above each spot (its name), which a pill above the across leg clears */
+    abovePx: number;
+}) {
+    const a = at(step.from);
+    const c = at(step.corner);
+    const b = at(step.to);
+    const d = `M ${a.x} ${a.y} L ${c.x} ${c.y} L ${b.x} ${b.y}`;
+    const h = GROUP_LABEL_HEIGHT;
+    // The across leg's pill on the side away from the up-or-down leg, and that one's away from the
+    // first marcher
+    const below = b.y <= c.y ? 1 : -1;
+    const outward = c.x >= a.x ? 1 : -1;
+    const pill = (text: string, x: number, y: number, testId: string) => {
+        const w = groupLabelWidth(text);
+        return (
+            <g data-testid={testId}>
+                <rect
+                    x={x - w / 2}
+                    y={y - h / 2}
+                    width={w}
+                    height={h}
+                    rx={h / 2}
+                    fill={PIVOT_COLOR}
+                    stroke="black"
+                    strokeWidth={1}
+                />
+                <text
+                    x={x}
+                    y={y}
+                    fontSize={GROUP_LABEL_PX}
+                    fontWeight={600}
+                    fontFamily="DM Sans, sans-serif"
+                    fill="black"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                >
+                    {text}
+                </text>
+            </g>
+        );
+    };
+    const deepW = groupLabelWidth(step.deep);
+    return (
+        <g data-testid="fieldShapeOffsetStep" pointerEvents="none">
+            <path d={d} fill="none" stroke="black" strokeWidth={3.5} />
+            <path
+                d={d}
+                fill="none"
+                stroke={PIVOT_COLOR}
+                strokeWidth={1.5}
+                strokeDasharray="5 3"
+            />
+            {pill(
+                step.across,
+                (a.x + c.x) / 2,
+                (a.y + c.y) / 2 +
+                    below * (h / 2 + 4) -
+                    (below < 0 ? abovePx : 0),
+                "fieldShapeOffsetAcross",
+            )}
+            {pill(
+                step.deep,
+                (c.x + b.x) / 2 + outward * (deepW / 2 + 4),
+                (c.y + b.y) / 2,
+                "fieldShapeOffsetDeep",
+            )}
+        </g>
+    );
+}
 
 function ModeDrawing({
     drawing,
@@ -686,6 +879,30 @@ function ModeDrawing({
             <g transform={transform}>
                 <ShapeOnGuides drawing={drawing} theme={theme} />
             </g>
+            {drawing.groupLabels &&
+                placeGroupLabels(
+                    drawing.groupLabels,
+                    at,
+                    GROUP_RING_RADIUS * z,
+                    // Clear of the spots' names, drawn above them
+                    drawing.labels?.length ? SPOT_LABEL_PX + 1 : 0,
+                ).map(({ at: p, text, color, seam }, i) => (
+                    <GroupGapLabel
+                        key={`group-${i}`}
+                        text={text}
+                        at={p}
+                        color={color}
+                        seam={seam}
+                    />
+                ))}
+            {drawing.offsetStep && (
+                <OffsetStep
+                    step={drawing.offsetStep}
+                    at={at}
+                    // Clear of the spots' names, drawn above them
+                    abovePx={drawing.labels?.length ? SPOT_LABEL_PX + 1 : 0}
+                />
+            )}
             {drawing.labels?.map(({ at: point, text }, i) => {
                 const p = at(point);
                 return (
@@ -746,6 +963,51 @@ function ModeDrawing({
                     />
                 );
             })}
+            {drawing.selectedHandles?.map((point, i) => {
+                const p = at(point);
+                return (
+                    <rect
+                        key={i}
+                        x={p.x - half}
+                        y={p.y - half}
+                        width={SHAPE_HANDLE_SIZE}
+                        height={SHAPE_HANDLE_SIZE}
+                        fill={shape}
+                        stroke={shape}
+                        strokeWidth={SHAPE_HANDLE_WIDTH}
+                        style={controls}
+                        data-testid="fieldShapeSelectedHandle"
+                    />
+                );
+            })}
+            {drawing.barHandles?.map(({ at: point, from }, i) => {
+                const p = at(point);
+                const a = at(from);
+                return (
+                    <g
+                        key={i}
+                        style={controls}
+                        data-testid="fieldShapeBarHandle"
+                    >
+                        <line
+                            x1={a.x}
+                            y1={a.y}
+                            x2={p.x}
+                            y2={p.y}
+                            stroke={shape}
+                            strokeWidth={BAR_LINE_WIDTH}
+                        />
+                        <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r={BAR_HANDLE_RADIUS}
+                            fill={shape}
+                            stroke="white"
+                            strokeWidth={SHAPE_HANDLE_WIDTH}
+                        />
+                    </g>
+                );
+            })}
             {drawing.centerDot &&
                 (() => {
                     const p = at(drawing.centerDot);
@@ -762,6 +1024,22 @@ function ModeDrawing({
                         />
                     );
                 })()}
+            {drawing.addHandles?.map((point, i) => {
+                const p = at(point);
+                return (
+                    <circle
+                        key={i}
+                        cx={p.x}
+                        cy={p.y}
+                        r={ADD_HANDLE_RADIUS}
+                        fill="white"
+                        stroke={shape}
+                        strokeWidth={SHAPE_HANDLE_WIDTH}
+                        style={controls}
+                        data-testid="fieldShapeAddHandle"
+                    />
+                );
+            })}
             {drawing.pivotMark &&
                 (() => {
                     const p = at(drawing.pivotMark);

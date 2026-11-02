@@ -86,9 +86,12 @@ function heldBarLabel(
                   },
               );
     if (bar.total === 1) return title;
-    return `${title}. ${tolgee.t(
-        "timeline.heldBar.detail",
-        "{held} of {total} selected",
-        { held: bar.marcherIds.length, total: bar.total },
-    )}`;
+    return tolgee.t("timeline.heldBar.titleWithDetail", "{title}. {detail}", {
+        title,
+        detail: tolgee.t(
+            "timeline.heldBar.detail",
+            "{held} of {total} selected",
+            { held: bar.marcherIds.length, total: bar.total },
+        ),
+    });
 }

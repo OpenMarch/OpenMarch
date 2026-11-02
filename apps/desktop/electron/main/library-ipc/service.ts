@@ -90,6 +90,7 @@ import {
     type SessionFile,
 } from "./sessions";
 import { ThumbnailCache } from "./thumbnails";
+import { t } from "../i18n";
 import { WorkerJobError, type ImportWorkerClient } from "./worker-client";
 
 /** Who called: the editor's `webContents`, reduced to what handlers need. */
@@ -931,7 +932,7 @@ export function createLibraryIpcService(
         const filename = `${path.basename(surface.id)}.${request.format}`;
         const folder = deps.getLastFolder();
         const target = await deps.showSaveDialog({
-            title: "Save template",
+            title: t("library.fileDialog.saveTemplateTitle"),
             defaultPath: folder ? path.join(folder, filename) : filename,
             filters: [templateSaveFilter(request.format)],
         });

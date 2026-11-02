@@ -12,27 +12,34 @@ import type {
 } from "../../../src/view3d/library/protocol";
 import { sniffArtworkFormat } from "../artwork-import/formats";
 import { isGlb } from "../model-import/container";
+import { t } from "../i18n";
 
 interface FileFilter {
     name: string;
     extensions: string[];
 }
 
-const MODEL_FILTER: FileFilter = {
-    name: "3D model (glb, gltf)",
-    extensions: ["glb", "gltf"],
-};
-const ARTWORK_FILTER: FileFilter = {
-    name: "Artwork (png, jpg, svg, pdf)",
-    extensions: ["png", "jpg", "jpeg", "svg", "pdf"],
-};
+// The filters are built when a dialog opens, so their names follow the app language.
+const MODEL_EXTENSIONS = ["glb", "gltf"];
+const ARTWORK_EXTENSIONS = ["png", "jpg", "jpeg", "svg", "pdf"];
+const modelFilter = (): FileFilter => ({
+    name: t("library.fileDialog.models"),
+    extensions: MODEL_EXTENSIONS,
+});
+const artworkFilter = (): FileFilter => ({
+    name: t("library.fileDialog.artwork"),
+    extensions: ARTWORK_EXTENSIONS,
+});
 // Library Import… takes either, so its first (selected) filter must show
 // both; otherwise macOS greys out every image until the format is switched.
-const IMPORTABLE_FILTER: FileFilter = {
-    name: "Models and artwork",
-    extensions: [...MODEL_FILTER.extensions, ...ARTWORK_FILTER.extensions],
-};
-const ALL_FILES: FileFilter = { name: "All Files", extensions: ["*"] };
+const importableFilter = (): FileFilter => ({
+    name: t("library.fileDialog.modelsAndArtwork"),
+    extensions: [...MODEL_EXTENSIONS, ...ARTWORK_EXTENSIONS],
+});
+const allFiles = (): FileFilter => ({
+    name: t("fileDialog.filters.allFiles"),
+    extensions: ["*"],
+});
 
 export interface OpenDialogSpec {
     title: string;
@@ -48,12 +55,17 @@ export function openDialogSpec(
 ): OpenDialogSpec {
     const filters =
         purpose === "model"
-            ? [MODEL_FILTER, ALL_FILES]
+            ? [modelFilter(), allFiles()]
             : purpose === "artwork"
-              ? [ARTWORK_FILTER, ALL_FILES]
-              : [IMPORTABLE_FILTER, MODEL_FILTER, ARTWORK_FILTER, ALL_FILES];
+              ? [artworkFilter(), allFiles()]
+              : [
+                    importableFilter(),
+                    modelFilter(),
+                    artworkFilter(),
+                    allFiles(),
+                ];
     return {
-        title: "Import",
+        title: t("library.fileDialog.importTitle"),
         ...(lastFolder ? { defaultPath: lastFolder } : {}),
         filters,
         properties:
@@ -63,14 +75,18 @@ export function openDialogSpec(
     };
 }
 
-const TEMPLATE_FILTERS: Record<TemplateFormat, FileFilter> = {
-    svg: { name: "SVG", extensions: ["svg"] },
-    pdf: { name: "PDF", extensions: ["pdf"] },
-    png: { name: "PNG image", extensions: ["png"] },
-};
-
 export function templateSaveFilter(format: TemplateFormat): FileFilter {
-    return TEMPLATE_FILTERS[format];
+    switch (format) {
+        case "svg":
+            return { name: "SVG", extensions: ["svg"] }; // i18n-ignore: a file format's name
+        case "pdf":
+            return { name: "PDF", extensions: ["pdf"] }; // i18n-ignore: a file format's name
+        case "png":
+            return {
+                name: t("library.fileDialog.pngImage"),
+                extensions: ["png"],
+            };
+    }
 }
 
 /** Bytes read to sniff a file's type (an SVG root may follow a long prolog). */

@@ -8,6 +8,7 @@
  * note is for Unknown items only.
  */
 import type { ShowLibraryItem } from "@/db-functions/showLibrary";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     LICENSE_PROPRIETARY,
     LICENSE_UNKNOWN,
@@ -117,5 +118,9 @@ export function creditText(line: CreditLine, license: string): string {
     const text = [line.name, line.author, license, line.sourceUrl]
         .filter((part): part is string => !!part)
         .join(" — ");
-    return line.modified ? `${text} (modified)` : text;
+    return line.modified
+        ? tolgee.t("assets.credits.modified", "{credit} (modified)", {
+              credit: text,
+          })
+        : text;
 }

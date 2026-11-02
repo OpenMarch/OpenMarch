@@ -6,6 +6,7 @@ import {
 } from "../distribute/distribution";
 import {
     layoutOrientations,
+    layoutVersionName,
     parseLayout,
     shapeKey,
     shownFamily,
@@ -19,6 +20,7 @@ import {
     withMode,
 } from "../distribute/modes";
 import { formatSteps } from "../editor/format";
+import { formatList } from "@/utilities/formatList";
 import type { AnyToolKind, ToolEnv, ToolParam } from "../tool/toolKind";
 import type { XY } from "../types";
 
@@ -123,7 +125,7 @@ export function modeStep(kind: AnyToolKind): ToolParam<unknown> | null {
     return {
         key: "mode",
         label: tolgee.t("shapes.command.fill", "Fill: {modes}", {
-            modes: modes.map((m) => MODE_LABELS[m]).join(", "),
+            modes: formatList(modes.map((m) => MODE_LABELS[m])),
         }),
         unit: "choice",
         primary: false,
@@ -159,14 +161,22 @@ export function layoutStep(kind: AnyToolKind): ToolParam<unknown> | null {
         for (const row of kind.closed!.layouts!.catalogue(n))
             for (const v of layoutOrientations(n, row.family))
                 if (shapeKey(v.lines, v.layout.byFile) === key)
-                    return `${row.label} ${v.label}`;
+                    return layoutVersionName(row.label, v.label);
         // Outside the catalogue (past 3:1, say): its block, a full one called Full
-        return `${LAYOUT_LABELS[shownFamily(now)]} ${now.across} × ${now.deep}`;
+        return tolgee.t(
+            "shapes.distribute.blockName",
+            "{layout} {across} × {deep}",
+            {
+                layout: LAYOUT_LABELS[shownFamily(now)],
+                across: now.across,
+                deep: now.deep,
+            },
+        );
     };
     return {
         key: "layout",
         label: tolgee.t("shapes.command.layout", "Layout: {layouts}", {
-            layouts: LAYOUT_FAMILIES.map((f) => LAYOUT_LABELS[f]).join(", "),
+            layouts: formatList(LAYOUT_FAMILIES.map((f) => LAYOUT_LABELS[f])),
         }),
         unit: "choice",
         primary: false,

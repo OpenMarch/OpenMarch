@@ -7,6 +7,7 @@
  */
 import { traceCue, type CompiledCues, type CueTrace } from "@openmarch/core";
 import type { VisualsChannel } from "./visualsWho";
+import { cueValueLabel } from "./cueValueText";
 
 /** One value the focused marchers have at the count, and its trace. */
 export interface WhyGroup {
@@ -41,7 +42,9 @@ export function whyAt({
         const seg = compiled
             .segments(id, channel)
             .find((s) => s.from <= count && count < s.to);
-        const label = seg?.label ?? null;
+        const label = seg
+            ? cueValueLabel(seg.value, seg.settings, seg.label)
+            : null;
         const value = seg?.value ?? null;
         const key = `${label}|${seg?.cueId ?? "default"}`;
         const group = groups.get(key);

@@ -86,9 +86,11 @@ export function holdFromPreviousMessage(
         tolgee.t(key, defaultValue, { ...holdTerms(), ...params });
     const names = (ids: readonly number[]) =>
         marcherNamesText(ids, nameOf, t) ??
-        t("timeline.holdFromPrevious.count", "{count} marchers", {
-            count: ids.length,
-        });
+        t(
+            "timeline.holdFromPrevious.count",
+            "{count, plural, one {# marcher} other {# marchers}}",
+            { count: ids.length },
+        );
     const reasons = (
         Object.keys(SKIP_WORDS) as HoldFromPreviousSkipReason[]
     ).flatMap((reason) => {
@@ -114,7 +116,11 @@ export function holdFromPreviousMessage(
         description:
             reasons.length === 0
                 ? null
-                : `${t("timeline.holdFromPrevious.notHeld", "Not {heldLower}:")} ${reasons.join("; ")}`,
+                : t(
+                      "timeline.holdFromPrevious.notHeldReasons",
+                      "Not {heldLower}: {reasons}",
+                      { reasons: reasons.join("; ") },
+                  ),
     };
 }
 

@@ -1,8 +1,8 @@
 import { BugBeetleIcon } from "@phosphor-icons/react/dist/ssr";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 
 export default function BugReport() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const handleClick = () => {
         const url = "https://openmarch.com/guides/submitting-feedback/";
         if (window.electron?.openExternal) {

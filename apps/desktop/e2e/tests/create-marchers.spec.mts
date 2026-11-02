@@ -9,7 +9,7 @@ test.skip("Create multiple types of marchers", async ({ electronApp }) => {
     await page.getByRole("spinbutton", { name: "Quantity" }).fill("75");
     await page.getByRole("combobox", { name: "Section" }).click();
     await page.getByLabel("Baritone").getByText("Baritone").click();
-    await page.getByRole("button", { name: "Create Marcher Button" }).click();
+    await page.getByTestId("create-marcher-button").click();
     // await expect(page.getByText('B1', { exact: true })).toBeVisible();
     await page.getByText("B75").click();
     await expect(page.locator("#marcherListForm")).toMatchAriaSnapshot(`
@@ -249,7 +249,7 @@ test.skip("Create multiple types of marchers", async ({ electronApp }) => {
     await page.getByLabel("Piccolo").getByText("Piccolo").click();
     await page.getByRole("spinbutton", { name: "Quantity" }).click();
     await page.getByRole("spinbutton", { name: "Quantity" }).fill("2");
-    await page.getByRole("button", { name: "Create Marcher Button" }).click();
+    await page.getByTestId("create-marcher-button").click();
     await expect(page.locator("#table")).toMatchAriaSnapshot(`
       - paragraph: "#"
       - paragraph: Section
@@ -502,7 +502,7 @@ test.skip("Create multiple types of marchers", async ({ electronApp }) => {
 //     await page.getByLabel("Trumpet").getByText("Trumpet").click();
 //     await page.getByRole("combobox", { name: "Section" }).click();
 //     await page.getByLabel("Baritone").getByText("Baritone").click();
-//     await page.getByRole("button", { name: "Create Marcher Button" }).click();
+//     await page.getByTestId("create-marcher-button").click();
 //     // await expect(page.getByText('B1', { exact: true })).toBeVisible();
 //     await page.getByText("B75").click();
 //     await expect(page.locator("#marcherListForm")).toMatchAriaSnapshot(`
@@ -742,7 +742,7 @@ test.skip("Create multiple types of marchers", async ({ electronApp }) => {
 //     await page.getByLabel("Piccolo").getByText("Piccolo").click();
 //     await page.getByRole("spinbutton", { name: "Quantity" }).click();
 //     await page.getByRole("spinbutton", { name: "Quantity" }).fill("2");
-//     await page.getByRole("button", { name: "Create Marcher Button" }).click();
+//     await page.getByTestId("create-marcher-button").click();
 //     await expect(page.locator("#table")).toMatchAriaSnapshot(`
 //       - paragraph: "#"
 //       - paragraph: Section

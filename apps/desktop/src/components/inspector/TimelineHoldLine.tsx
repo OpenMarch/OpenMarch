@@ -148,39 +148,14 @@ function FollowingPagesLine({
     const { t } = useTranslate();
     if (!following) return null;
     const { names, all } = following;
-    const terms = holdTerms();
-    const first = names[0]!;
-    const last = names[names.length - 1]!;
-    const one = names.length === 1;
+    const pages = {
+        count: names.length,
+        first: names[0]!,
+        last: names[names.length - 1]!,
+    };
     const text = all
-        ? one
-            ? t("inspector.marcher.timeline.pageFollows", {
-                  defaultValue:
-                      "Page {page} shows these marchers where this page leaves them",
-                  ...terms,
-                  page: first,
-              })
-            : t("inspector.marcher.timeline.pagesFollow", {
-                  defaultValue:
-                      "Pages {first}–{last} show these marchers where this page leaves them",
-                  ...terms,
-                  first,
-                  last,
-              })
-        : one
-          ? t("inspector.marcher.timeline.pageFollowsSome", {
-                defaultValue:
-                    "Page {page} shows some of these marchers where this page leaves them",
-                ...terms,
-                page: first,
-            })
-          : t("inspector.marcher.timeline.pagesFollowSome", {
-                defaultValue:
-                    "Pages {first}–{last} show some of these marchers where this page leaves them",
-                ...terms,
-                first,
-                last,
-            });
+        ? t("inspector.marcher.timeline.pagesShowFromHere", pages)
+        : t("inspector.marcher.timeline.pagesShowSomeFromHere", pages);
     return (
         <p
             className="text-sub text-text-subtitle px-6 leading-none"
@@ -209,32 +184,20 @@ function TimelineHoldLineContent({
     const translate: KeepTranslate = (key, defaultValue, params) =>
         t(key, { defaultValue, ...params });
     /**
-     * Whom a button changes, for its tooltip: by name up to three ("OT1 and OT8"), and when it's
-     * not everyone selected, how many of them ("OT1 (1 of the 2 selected)")
+     * Whom a button changes, as arguments of its tooltip: `who` picks the sentence's wording, by
+     * name up to three ("OT1 and OT8", `named`), and when it's not everyone selected, how many of
+     * them ("OT1 (1 of the 2 selected)", `someNamed`; `some` without names); otherwise "these
+     * marchers"
      */
     const who = (ids: readonly number[]) => {
-        const names = marcherNamesText(ids, nameOf, translate);
-        if (ids.length === selected)
-            return (
-                names ??
-                t("inspector.marcher.timeline.theseMarchers", {
-                    defaultValue: "these marchers",
-                })
-            );
-        const counts = {
-            count: String(ids.length),
-            total: String(selected),
+        const names = marcherNamesText(ids, nameOf, translate) ?? "";
+        const all = ids.length === selected;
+        return {
+            who: all ? (names ? "named" : "all") : names ? "someNamed" : "some",
+            names,
+            count: ids.length,
+            total: selected,
         };
-        return names
-            ? t("inspector.marcher.timeline.namesOfSelected", {
-                  defaultValue: "{names} ({count} of the {total} selected)",
-                  names,
-                  ...counts,
-              })
-            : t("inspector.marcher.timeline.countOfSelected", {
-                  defaultValue: "{count} of the {total} selected",
-                  ...counts,
-              });
     };
 
     const setButton = here && follows.length > 0 && (
@@ -247,18 +210,14 @@ function TimelineHoldLineContent({
             tooltip={
                 from
                     ? t("inspector.marcher.timeline.setAsShownHint", {
-                          defaultValue:
-                              "Make {who} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here",
                           ...terms,
-                          who: who(follows),
+                          ...who(follows),
                           page,
                           from,
                       })
                     : t("inspector.marcher.timeline.setAsShownHintEarlier", {
-                          defaultValue:
-                              "Make {who} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here",
                           ...terms,
-                          who: who(follows),
+                          ...who(follows),
                           page,
                       })
             }

@@ -65,6 +65,12 @@ describe("SettingsWindow", () => {
         ]);
     });
 
+    it("titles the window in the app language", async () => {
+        renderWindow();
+        await screen.findByRole("navigation");
+        expect(document.title).toBe("Settings");
+    });
+
     it("keeps the language in General and the theme in Appearance", async () => {
         renderWindow();
         expect(await screen.findByRole("combobox")).toBeVisible();

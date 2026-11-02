@@ -15,8 +15,10 @@ import { basename, extname } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { isReadOnlySql, isView3dSqlReadMethod } from "./view3dSql";
 import { createCameraProfileHandlers } from "./view3dCameraProfiles";
+import { t } from "./i18n";
 import type { LibraryStore } from "./library/store";
 import {
+    VIEW3D_AUTO_OPEN_CHANNELS,
     VIEW3D_CAMERA_PROFILE_CHANNELS,
     VIEW3D_HELLO_CHANNEL,
     VIEW3D_IS_OPEN_CHANNEL,
@@ -42,6 +44,13 @@ export interface View3dWindowConfig {
     getEditorWindow: () => BrowserWindow | null;
     /** The Library, for the window's camera profile calls only (D-12). */
     getLibraryStore: () => Promise<LibraryStore>;
+    /**
+     * The "open with the show" setting, for the window's question: undefined while never answered,
+     * null where the window shouldn't ask (Playwright sessions).
+     */
+    getAutoOpen: () => unknown;
+    /** Saves the window's answer; `sender` is the 3D View, which other windows hear it from */
+    setAutoOpen: (autoOpen: boolean, sender: Electron.WebContents) => void;
 }
 
 /** Height of the app's TitleBar, so native window controls line up with it. */
@@ -128,6 +137,29 @@ export function initView3dWindow(windowConfig: View3dWindowConfig) {
         (event) => isEditorSender(event.sender) && getView3dWindow() !== null,
     );
     ipcMain.handle("view3d:sql-read", handleSqlRead);
+    ipcMain.handle(VIEW3D_AUTO_OPEN_CHANNELS.get, (event) => {
+        if (!isView3dSender(event.sender)) {
+            throw new Error(
+                `${VIEW3D_AUTO_OPEN_CHANNELS.get} is only available to the 3D View`,
+            );
+        }
+        // Undefined (never answered) stays undefined: the window asks
+        return config ? config.getAutoOpen() : null;
+    });
+    ipcMain.handle(
+        VIEW3D_AUTO_OPEN_CHANNELS.set,
+        (event, autoOpen: unknown) => {
+            if (!isView3dSender(event.sender)) {
+                throw new Error(
+                    `${VIEW3D_AUTO_OPEN_CHANNELS.set} is only available to the 3D View`,
+                );
+            }
+            if (typeof autoOpen !== "boolean") {
+                throw new Error("3D View: auto-open must be true or false");
+            }
+            config?.setAutoOpen(autoOpen, event.sender);
+        },
+    );
     ipcMain.handle("view3d:sql-read-batch", (event, queries: unknown) => {
         if (!isView3dSender(event.sender))
             throw new Error(
@@ -228,7 +260,7 @@ export function openView3dWindow({
     const colors = TITLE_BAR_COLORS[query.theme === "light" ? "light" : "dark"];
 
     const created = new BrowserWindow({
-        title: `3D View — ${query.show}`,
+        title: t("view3d.window.title", { showName: query.show }),
         icon: config.icon,
         width: 1280,
         height: 800,

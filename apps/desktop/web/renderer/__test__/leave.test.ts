@@ -30,13 +30,13 @@ describe("leaveDecision", () => {
         expect(leaveQuestion(decision)).toMatch(/QuotaExceededError/);
     });
     it("asks when the worker didn't answer", () => {
-        expect(
-            leaveDecision({
-                storedInBrowser: true,
-                changedInPage: false,
-                flush: null,
-            }).ask,
-        ).toBe(true);
+        const decision = leaveDecision({
+            storedInBrowser: true,
+            changedInPage: false,
+            flush: null,
+        });
+        expect(decision).toEqual({ ask: true, reason: "unsaved", error: null });
+        expect(leaveQuestion(decision)).toMatch(/didn't answer/);
     });
     it("asks in a memory-only tab with changes, and only then", () => {
         expect(

@@ -10,7 +10,7 @@ import { Form, FormField, Label } from "@radix-ui/react-form";
 import clsx from "clsx";
 import React, { useMemo } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { isValidTempoBpm, MIN_TEMPO_BPM } from "@/global/classes/Beat";
 import { toast } from "sonner";
 export const maxMixedMeterBeats = 30;
@@ -45,7 +45,7 @@ const NewTempoGroupForm = React.forwardRef<
     const [name, setName] = React.useState("");
     const [endTempo, setEndTempo] = React.useState("");
     const [repeats, setRepeats] = React.useState("4");
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const isDisabled = useMemo(() => {
         return (
@@ -158,7 +158,7 @@ const NewTempoGroupForm = React.forwardRef<
                         id="start-tempo-input"
                         name="tempo"
                         type="number"
-                        unit="bpm"
+                        unit={t("music.bpmUnit")}
                         min={MIN_TEMPO_BPM}
                         value={tempo}
                         onChange={(e) => setTempo(e.target.value)}
@@ -215,7 +215,7 @@ const NewTempoGroupForm = React.forwardRef<
                             name="endTempo"
                             type="number"
                             min={MIN_TEMPO_BPM}
-                            unit="bpm"
+                            unit={t("music.bpmUnit")}
                             placeholder={t("music.endTempoPlaceholder")}
                             value={endTempo}
                             onChange={(e) => setEndTempo(e.target.value)}

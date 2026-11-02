@@ -3,7 +3,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
 import { toast } from "sonner";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { getTranslatedSectionName } from "@/global/classes/Sections";
 import { NewSectionAppearanceArgs } from "@/db-functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +19,7 @@ import { useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
 export default function SectionAppearanceList() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
@@ -84,7 +84,7 @@ export default function SectionAppearanceList() {
         try {
             await createSectionAppearances([newAppearance]);
         } catch (error) {
-            toast.error("Failed to create section appearance");
+            toast.error(t("marchers.sectionAppearances.createError"));
             console.error("Error creating section appearance:", error);
         }
     }
@@ -115,10 +115,12 @@ export default function SectionAppearanceList() {
                                 <TabsList>
                                     {allSectionsInShow.length > 0 && (
                                         <TabItem value="inShow">
-                                            In show
+                                            <T keyName="marchers.sectionAppearances.inShowTab" />
                                         </TabItem>
                                     )}
-                                    <TabItem value="all">All</TabItem>
+                                    <TabItem value="all">
+                                        <T keyName="marchers.sectionAppearances.allTab" />
+                                    </TabItem>
                                 </TabsList>
 
                                 <TabContent

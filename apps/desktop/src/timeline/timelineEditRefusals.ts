@@ -1,3 +1,5 @@
+import type { TimelineTextArg } from "./timelineText";
+
 /**
  * Why a canvas move can't run in timeline mode (UI-10, UI-19). Each has a Tolgee key with the
  * English text as its default; `timelineErrorMessage` shows it. Kept apart from
@@ -48,8 +50,11 @@ export class TimelineEditRefusedError extends Error {
     readonly key: string;
     /** `notSimple` and `inShapeOrFollowTheLeader`: the refused marchers, by id, in id order */
     readonly marcherIds: readonly number[];
-    /** The key's parameters (the marcher names), when its text has any */
-    readonly params: Readonly<Record<string, string | number>> | undefined;
+    /**
+     * The key's parameters (the marcher names), when its text has any; a name list is text
+     * translated where it is shown (`TimelineTextArg`), since db-functions can't use Tolgee
+     */
+    readonly params: Readonly<Record<string, TimelineTextArg>> | undefined;
     constructor(
         readonly refusal: CanvasEditRefusal,
         {
@@ -59,7 +64,7 @@ export class TimelineEditRefusedError extends Error {
         }: {
             marcherIds?: readonly number[];
             message?: string;
-            params?: Record<string, string | number>;
+            params?: Record<string, TimelineTextArg>;
         } = {},
     ) {
         super(message ?? CANVAS_EDIT_REFUSALS[refusal].defaultMessage);
