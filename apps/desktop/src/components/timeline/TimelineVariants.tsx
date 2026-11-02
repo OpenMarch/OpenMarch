@@ -1245,6 +1245,7 @@ const TimelineSurface = memo(function TimelineSurface({
                             }
                             pixelsPerBeat={pixelsPerBeat}
                             height={pinnedHeight}
+                            grabHeight={bandFocus ? trackTop : undefined}
                             beatCount={model.beatCount}
                             anchorRef={playheadRef}
                             onSeek={props.onSeek}
