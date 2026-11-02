@@ -1,5 +1,6 @@
 import type { SpanInfo } from "@openmarch/core";
 import { pageBoxStateOf, type PageBoxRange } from "./timelinePageBoxState";
+import { holdTerms } from "./holdTerms";
 
 /**
  * Keep later pages in timeline mode (docs/timeline/ui.md UI-18; defined-coordinates 10, owner
@@ -38,6 +39,11 @@ export interface PageKeepState {
      * order. Empty when they hold from the start.
      */
     readonly from: string[];
+    /**
+     * The selected marchers partway through a move at the box (a move of theirs runs across one of
+     * its flags), ascending. The others not in `follows` have a move of their own ending there
+     */
+    readonly midMove: number[];
     /** How many marchers are selected */
     readonly selected: number;
 }
@@ -159,9 +165,12 @@ export function pageKeepStates({
         const follows: number[] = [];
         const fromStart: number[] = [];
         const fromPages = new Set<number>();
+        const midMove: number[] = [];
         for (const id of ids) {
             const indexed = moves.get(id)!;
-            if (pageBoxStateOf(indexed.over(box), box) !== "follows") continue;
+            const state = pageBoxStateOf(indexed.over(box), box);
+            if (state === "midMove") midMove.push(id);
+            if (state !== "follows") continue;
             const before = indexed.before(box);
             follows.push(id);
             if (!before) fromStart.push(id);
@@ -177,6 +186,7 @@ export function pageKeepStates({
             from: [...fromPages]
                 .sort((a, b) => a - b)
                 .map((i) => pages[i]!.name),
+            midMove,
             selected: ids.length,
         });
     }
@@ -335,6 +345,7 @@ const followsWords = (
     nameOf: MarcherNameOf | undefined,
 ): ChainText => {
     const one = follows.length === 1;
+    const terms = holdTerms();
     const names = marcherNamesText(follows, nameOf, t);
     const where = fromPage
         ? t("timeline.keep.chain.wherePage", "where Page {from} left", {
@@ -345,22 +356,27 @@ const followsWords = (
         ? one
             ? t(
                   "timeline.keep.chain.followsNamedOne",
-                  "{names} holds {where} it",
-                  { names, where },
+                  "{names} has no position of its own here, shown {where} it",
+                  { ...terms, names, where },
               )
             : t(
                   "timeline.keep.chain.followsNamed",
-                  "{names} hold {where} them",
-                  { names, where },
+                  "{names} have no position of their own here, shown {where} them",
+                  { ...terms, names, where },
               )
         : one
-          ? t("timeline.keep.chain.followsOne", "1 marcher holds {where} it", {
-                where,
-            })
+          ? t(
+                "timeline.keep.chain.followsOne",
+                "1 marcher has no position of its own here, shown {where} it",
+                {
+                    ...terms,
+                    where,
+                },
+            )
           : t(
                 "timeline.keep.chain.follows",
-                "{count} marchers hold {where} them",
-                { count: String(follows.length), where },
+                "{count} marchers have no position of their own here, shown {where} them",
+                { ...terms, count: String(follows.length), where },
             );
     const changes = fromPage
         ? t("timeline.keep.chain.changesPage", "Changes to Page {from}", {
@@ -372,24 +388,24 @@ const followsWords = (
         hint: one
             ? t(
                   "timeline.keep.chain.followsHintOne",
-                  "{changes} carry onto Page {page}. Click to set it as shown here instead",
-                  { changes, page },
+                  "{changes} carry onto Page {page}. Click to make it {definedLower} here, where it's shown",
+                  { ...terms, changes, page },
               )
             : t(
                   "timeline.keep.chain.followsHint",
-                  "{changes} carry onto Page {page}. Click to set them as shown here instead",
-                  { changes, page },
+                  "{changes} carry onto Page {page}. Click to make them {definedLower} here, where they're shown",
+                  { ...terms, changes, page },
               ),
         menuHint: one
             ? t(
                   "timeline.keep.chain.followsMenuHintOne",
-                  "{changes} carry onto Page {page}. Right-click the page to set it as shown instead",
-                  { changes, page },
+                  "{changes} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep it here",
+                  { ...terms, changes, page },
               )
             : t(
                   "timeline.keep.chain.followsMenuHint",
-                  "{changes} carry onto Page {page}. Right-click the page to set them as shown instead",
-                  { changes, page },
+                  "{changes} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep them here",
+                  { ...terms, changes, page },
               ),
     };
 };

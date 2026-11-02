@@ -84,13 +84,9 @@ import { marcherNamesText } from "@/timeline/timelineKeepLater";
 import tolgee from "@/global/singletons/Tolgee";
 import type { TimelineKeyframe } from "./TimelineKeyframes";
 import { useKeyframeUnsetMenu } from "@/timeline/timelineUnset";
-import {
-    useMarcherNameOf,
-    usePageKeepStates,
-} from "@/timeline/useKeepLaterPages";
+import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 import { usePageKeepChains } from "./PageKeepChain";
-import { setAsShownMenu } from "@/timeline/timelineSetAsShown";
-import { holdFromPreviousMenu } from "@/timeline/timelineHoldFromPrevious";
+import { useHoldCommands } from "@/timeline/useHoldCommands";
 import { describeMoveClips } from "./moveClipText";
 import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
@@ -260,15 +256,14 @@ export default function TimelineModePanel() {
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
     // UI-18 keep later pages: the chains on the page boxes (named up to three)
-    const keepStates = usePageKeepStates(pages, selectedIdList);
+    // Holds: Define as shown (#466) and Hold from previous page (#472) on a page box, the same
+    // commands the timelineDefineAsShown and timelineHoldFromPrevious actions run on the current page
+    const {
+        keepStates,
+        defineAsShown: setAsShown,
+        holdFromPrevious,
+    } = useHoldCommands(pages, selectedIdList, keepNameOf);
     const keepChains = usePageKeepChains(keepStates, keepNameOf);
-    // Holds (#466): Set as shown on a page box, for the selected marchers Not set there
-    const setAsShown = useMemo(() => setAsShownMenu(keepStates), [keepStates]);
-    // #472: Hold from previous page, for every selected marcher it can hold
-    const holdFromPrevious = useMemo(
-        () => holdFromPreviousMenu(keepStates, selectedIdList, keepNameOf),
-        [keepStates, selectedIdList, keepNameOf],
-    );
     const { tracks: timelines, current: tracksCurrent } =
         useTimelineTracksState({
             database: db,

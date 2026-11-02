@@ -27,6 +27,7 @@ import {
 import { keepPagesOfBoxes } from "./timelineOnlyThisPage";
 import { isSetAt, marcherSetBeats } from "./timelineSetFollowing";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
+import { holdTerms } from "./holdTerms";
 
 /**
  * **Unset here** as the UI runs it (Set vs Following, #300 and #304): the selected marchers that
@@ -170,13 +171,13 @@ export function unsetFollowingLabel(
     return first === last
         ? translate(
               "actions.timeline.unsetHereAndPage",
-              "Remove keyframe, Page {page} follows back",
-              { page: first },
+              "{removeKeyframe}, Page {page} moves back too",
+              { ...holdTerms(), page: first },
           )
         : translate(
               "actions.timeline.unsetHereAndPages",
-              "Remove keyframe, Pages {first}–{last} follow back",
-              { first, last },
+              "{removeKeyframe}, Pages {first}–{last} move back too",
+              { ...holdTerms(), first, last },
           );
 }
 

@@ -176,23 +176,23 @@ describe("pageChainWords", () => {
     it("a linked chain says who holds where a page left them, then that a click sets them as shown", () => {
         const [, , p4] = states([1, 2, 3]);
         expect(pageChainWords(p4!)).toMatchObject({
-            label: "2 marchers hold where earlier pages left them",
-            hint: "Changes to earlier pages carry onto Page 4. Click to set them as shown here instead",
+            label: "2 marchers have no position of their own here, shown where earlier pages left them",
+            hint: "Changes to earlier pages carry onto Page 4. Click to make them defined here, where they're shown",
             menuHint:
-                "Changes to earlier pages carry onto Page 4. Right-click the page to set them as shown instead",
+                "Changes to earlier pages carry onto Page 4. Right-click the page and choose Define as shown to keep them here",
             marcherIds: [1, 2],
         });
         const [, one] = states([1]);
         expect(pageChainWords(one!)).toMatchObject({
-            label: "1 marcher holds where Page 2 left it",
-            hint: "Changes to Page 2 carry onto Page 3. Click to set it as shown here instead",
+            label: "1 marcher has no position of its own here, shown where Page 2 left it",
+            hint: "Changes to Page 2 carry onto Page 3. Click to make it defined here, where it's shown",
             menuHint:
-                "Changes to Page 2 carry onto Page 3. Right-click the page to set it as shown instead",
+                "Changes to Page 2 carry onto Page 3. Right-click the page and choose Define as shown to keep it here",
         });
         const [, two] = states([1, 3]);
         expect(pageChainWords(two!)).toMatchObject({
-            label: "2 marchers hold where Page 2 left them",
-            hint: "Changes to Page 2 carry onto Page 3. Click to set them as shown here instead",
+            label: "2 marchers have no position of their own here, shown where Page 2 left them",
+            hint: "Changes to Page 2 carry onto Page 3. Click to make them defined here, where they're shown",
         });
     });
 
@@ -207,7 +207,7 @@ describe("pageChainWords", () => {
         const name = (id: number) => `OT${id}`;
         const [, , p4] = states([1, 2, 3]);
         expect(pageChainWords(p4!, undefined, name)?.label).toBe(
-            "OT1 and OT2 hold where earlier pages left them",
+            "OT1 and OT2 have no position of their own here, shown where earlier pages left them",
         );
     });
 
@@ -217,7 +217,7 @@ describe("pageChainWords", () => {
         const [, , p4] = states([1, 4]);
         expect(pageChainWords(p4!, undefined, (id) => `OT${id}`)).toMatchObject(
             {
-                label: "OT1 holds where Page 2 left it",
+                label: "OT1 has no position of its own here, shown where Page 2 left it",
                 marcherIds: [1],
             },
         );
@@ -268,6 +268,7 @@ describe("pageKeepStates at scale (pre-merge review U4)", () => {
             const follows: number[] = [];
             const fromStart: number[] = [];
             const from = new Set<number>();
+            const midMove: number[] = [];
             for (const id of [...new Set(marcherIds)].sort((a, b) => a - b)) {
                 const rows = spansOf(id)
                     .filter((s) => s.kind !== "hold" && s.assignmentId !== null)
@@ -275,6 +276,8 @@ describe("pageKeepStates at scale (pre-merge review U4)", () => {
                 const over = rows.filter(
                     (r) => r.start < box.end && r.end > box.start,
                 );
+                if (over.some((r) => r.start < box.start || r.end > box.end))
+                    midMove.push(id);
                 if (over.length > 0) continue;
                 const before = rows
                     .filter((r) => r.end <= box.start)
@@ -303,6 +306,7 @@ describe("pageKeepStates at scale (pre-merge review U4)", () => {
                     from: [...from]
                         .sort((a, b) => a - b)
                         .map((i) => pages[i]!.name),
+                    midMove,
                     selected: new Set(marcherIds).size,
                 },
             ];
