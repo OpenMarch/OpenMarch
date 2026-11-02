@@ -91,6 +91,8 @@
             "expand": "Forme : agrandir, en gardant les proportions",
             "shrink": "Forme : réduire, en gardant les proportions",
             "ring": "Anneau des favoris : maintenez pour choisir une forme, touchez pour le garder ouvert",
+            "group": "Grouper la sélection",
+            "groupKeywords": "grouper forme figer tel quel ensemble combiner",
             "ungroup": "Forme : Dégrouper",
             "ungroupKeywords": "dégrouper forme séparer détacher"
         },
@@ -1442,6 +1444,12 @@
                     "noSize": "La forme n'a pas de taille"
                 }
             },
+            "group": {
+                "label": "Groupe",
+                "params": {
+                    "interval": "Plus petit écart entre voisins, en pas"
+                }
+            },
             "line": {
                 "label": "Ligne",
                 "validate": {
@@ -1506,6 +1514,7 @@
                 "empty": "{count, plural, one {# vide} other {# vides}}",
                 "steps": "{interval} pas"
             },
+            "groupError": "Erreur lors du groupement des marcheurs",
             "ungroupError": "Erreur lors du dégroupement de la forme",
             "ungroupIsolated": "Dégroupez cette forme hors de l'isolement : elle vient d'une page précédente"
         },

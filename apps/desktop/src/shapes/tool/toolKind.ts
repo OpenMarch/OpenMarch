@@ -271,6 +271,11 @@ export interface ToolKind<P> {
      * Absent for open kinds (a line, an arc).
      */
     readonly closed?: ClosedShape<P>;
+    /**
+     * Its spots are where its marchers stood, who stands where included (a group, #603): the host
+     * offers no Recalculate, and it isn't saved to the library, which keeps no spots
+     */
+    readonly asIs?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

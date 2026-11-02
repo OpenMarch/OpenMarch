@@ -1,4 +1,6 @@
 {
+    "actions.shape.group": "Name of the Group selection action: the first item in the field's right-click menu while two or more marchers are selected, and its name in the command palette and shortcut settings. It makes the selected marchers one shape where they stand: nobody moves, and from then on they move, turn and scale together.",
+    "actions.shape.groupKeywords": "Search words for the Group action in the command palette, separated by spaces. Not shown; translate as words people might type to find it.",
     "actions.shape.ungroup": "Name of the Ungroup action in the command palette and shortcut settings. Ungroup turns a placed shape (a box of marchers) back into plain marchers: they stay where they are and stop moving as one shape from that page on.",
     "actions.shape.ungroupKeywords": "Search words for the Ungroup action in the command palette, separated by spaces. Not shown; translate as words people might type to find it.",
     "audio.contextMenu.beat.errorCreatingMeasure": "Error toast when \"Mark as Measure\" in a beat's right-click menu on the timeline fails to start a new measure at that beat.",
@@ -18,6 +20,9 @@
     "settings.shortcuts.recording": "Status shown in a row of the keyboard shortcuts settings while the app waits for the person to press the new shortcut. <keys></keys> is replaced by the Escape key, shown as a key.",
     "shapes.edit.drawHint": "Hint shown over the field after picking a shape kind on the Shapes tab, before drawing it. {shape} is the shape's name in lowercase (for example box or circle). <keys></keys> is replaced by the Escape key, shown as a key.",
     "shapes.edit.ungroup": "Tooltip of the Ungroup button in the floating bar shown over a selected shape on the field. Clicking it turns the shape back into plain marchers who keep their spots.",
+    "shapes.kinds.group.label": "Name of a kind of shape, shown on a placed shape's label and in its floating editor bar: a group of marchers kept as they stood, with no regular form such as a box or circle.",
+    "shapes.kinds.group.params.interval": "Tooltip of the one number in a group's floating editor bar: the smallest distance between two neighboring marchers in the group, in steps. Changing it scales the whole group.",
+    "shapes.placed.groupError": "Error toast when grouping the selected marchers into a shape fails.",
     "shapes.placed.ungroupError": "Error toast when ungrouping a placed shape (turning it back into plain marchers) fails.",
     "shapes.placed.ungroupIsolated": "Error toast when Ungroup is used while one move on the timeline is isolated, on a shape that was made on an earlier page. The user has to leave isolation first.",
     "shapes.tool.tab.ringHint": "Hint beside the shape buttons on the Shapes toolbar tab. <keys></keys> is replaced by the keyboard shortcut (shown as a key) that opens the shape ring, a round menu of shapes; the person holds that key with the pointer over the field. {key} is the same shortcut as plain text, kept for older translations.",

@@ -18,6 +18,7 @@ ordinary positions it writes.
   `placeShape`; `shapeMoment.ts` ties an open shape to its edit window; `selectionGate.ts` is the
   one home of "Select marchers first"; `ShapesTab.tsx` and `FavoritesRing.tsx` are ways in.
 - `box/`, `circle/`: the two drawable kinds (`boxTool`, `circleTool`) and their geometry.
+  `group/`: marchers grouped where they stand (`groupTool`, #603), read back but never drawn.
   `box/edgePull.ts` lands edges and corners on yard lines and hashes; `box/modeMemory.ts`
   remembers each fill mode's numbers.
 - `kinds/`: the older shape-model kinds (`ShapeKind` in `types.ts`) that generate spots. The box
@@ -32,8 +33,8 @@ ordinary positions it writes.
 - `field/`: how the shape code reads the three.js field (`shapeField.ts`, registered by the
   field, never `window.canvas`), pointer routing and the field modes it installs.
 - `placed/`: placed shapes read back from recipes, their membership (a marcher that moves away
-  leaves the shape), selecting and editing them (`commitBox.ts`), ungrouping them
-  (`ungroupShape.ts`), and their overlay.
+  leaves the shape), selecting and editing them (`commitBox.ts`), grouping marchers
+  (`groupMarchers.ts`) and ungrouping them (`ungroupShape.ts`), and their overlay.
 - `library/`: saved shapes and stars. `command/`: the command bar's shape steps.
   `preview/`: a shape's small picture, drawn from its own geometry. `transform/`: turning and
   flipping a plain selection, with no recipe. `draw/`: conversions between fills.

@@ -91,6 +91,8 @@
             "expand": "Forma: ampliar, mantendo as proporções",
             "shrink": "Forma: reduzir, mantendo as proporções",
             "ring": "Anel de favoritos: segure para escolher uma forma, toque para mantê-lo aberto",
+            "group": "Agrupar seleção",
+            "groupKeywords": "agrupar forma congelar como está juntar combinar",
             "ungroup": "Forma: Desagrupar",
             "ungroupKeywords": "desagrupar forma separar soltar"
         },
@@ -1442,6 +1444,12 @@
                     "noSize": "A forma não tem tamanho"
                 }
             },
+            "group": {
+                "label": "Grupo",
+                "params": {
+                    "interval": "Menor espaçamento entre vizinhos, em passos"
+                }
+            },
             "line": {
                 "label": "Linha",
                 "validate": {
@@ -1506,6 +1514,7 @@
                 "empty": "{count, plural, one {# vazio} other {# vazios}}",
                 "steps": "{interval} passos"
             },
+            "groupError": "Erro ao agrupar os integrantes",
             "ungroupError": "Erro ao desagrupar a forma",
             "ungroupIsolated": "Desagrupe esta forma fora do isolamento: ela vem de uma página anterior"
         },

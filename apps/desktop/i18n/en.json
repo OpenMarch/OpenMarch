@@ -112,6 +112,8 @@
             "expand": "Shape: Expand, keeping the proportions",
             "shrink": "Shape: Shrink, keeping the proportions",
             "keywords": "shape form formation set place",
+            "group": "Group selection",
+            "groupKeywords": "group shape freeze as is keep together combine",
             "ungroup": "Shape: Ungroup",
             "ungroupKeywords": "ungroup shape break apart release separate"
         },
@@ -2103,6 +2105,7 @@
                 "empty": "{count, plural, other {# empty}}",
                 "steps": "{interval} steps"
             },
+            "groupError": "Error grouping the marchers",
             "ungroupError": "Error ungrouping the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page"
         },
@@ -2249,6 +2252,12 @@
                 },
                 "validate": {
                     "noSize": "The shape has no size"
+                }
+            },
+            "group": {
+                "label": "Group",
+                "params": {
+                    "interval": "Smallest gap between neighbors, in steps"
                 }
             },
             "line": {

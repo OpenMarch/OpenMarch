@@ -769,6 +769,19 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
 
+    // Group the selected marchers into a shape as they stand (#603): nobody moves. ⌘G / Ctrl+G, as
+    // in design tools, paired with Ungroup; Go to keeps plain G (owner, 2026-11-02)
+    // (shapes/placed/groupMarchers)
+    shapeGroup: {
+        labelKey: "actions.shape.group",
+        keywordsKey: "actions.shape.groupKeywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["$mod+G", "Control+G"],
+        ignoreRepeat: true,
+    },
+
     // Ungroup the selected placed shape: its marchers stay put and stop being a shape. On a later
     // page it's that page's change, as an edit there is (shapes/placed/ungroupShape)
     shapeUngroup: {
@@ -839,7 +852,7 @@ const STATIC_ACTIONS = {
         category: "timeline",
         editsDrill: false,
         scope: "global",
-        defaultBindings: ["G", "$mod+G", "Control+G"],
+        defaultBindings: ["G"],
         ignoreRepeat: true,
     },
 

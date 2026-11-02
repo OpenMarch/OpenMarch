@@ -285,6 +285,8 @@ const placedCanRecalculate = (box: PlacedBox) => {
     const field = currentShapeField();
     return (
         !!field &&
+        // A group's marchers stand where they were grouped, each on their own spot (#603)
+        !box.kind.asIs &&
         recalculatedTargets(box, shapeContextFor(field), originsOf(box)) !==
             null
     );

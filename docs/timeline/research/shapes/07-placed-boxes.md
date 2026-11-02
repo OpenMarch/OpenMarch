@@ -44,6 +44,10 @@ it back.
   where they are and ends the box, by the same rule: on the box's own page it ends there and on
   the pages holding it, and on a later page that page takes the change and the box ends there,
   earlier pages keeping it (ADR 0006, 2026-11-01).
+- **Group** (the field's menu, the command palette) makes the selected marchers a shape where they
+  stand, by the rules placing a shape follows: that page's change, later pages holding the form
+  follow, marchers leave the shapes they were in. It then behaves as a placed shape that turns,
+  flips and scales by its smallest gap (ADR 0006, 2026-11-01 groups).
 
 ## Seeing it
 

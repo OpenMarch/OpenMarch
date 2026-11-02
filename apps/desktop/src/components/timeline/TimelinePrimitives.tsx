@@ -159,7 +159,7 @@ const TRANSPORT_TIGHT_PX = 500;
  * The transport (UI-12): the timeline panel's one header row, as animation tools do it (Figma's
  * Motion timeline, Rive, Blender). Previous, Play, Next (UI-17); the caller's pinned accessories
  * and secondary ones (Sound); the clock and the readout,
- * which is also the go-to box (click it or press G or Mod+G, then type a page, "m23" or a rehearsal mark);
+ * which is also the go-to box (click it or press G, then type a page, "m23" or a rehearsal mark);
  * then Fit and the caller's view controls (Compact). The play and page buttons, the accessories
  * and the readout never leave: on a narrow panel the rest folds into "⋯". Shift+click on Previous
  * or Next steps a beat and Alt+click goes to the start or end of the show, as Shift+Q/E and
@@ -233,7 +233,7 @@ export const TimelineTransport = memo(function TimelineTransport({
         setGoTo("");
         setGoToFailed(false);
     }, [canGoTo]);
-    // G or Mod+G (the timelineGoTo action) opens the go-to box. The dispatcher skips it in a text
+    // G (the timelineGoTo action) opens the go-to box. The dispatcher skips it in a text
     // field or modal layer; an open popover or menu keeps its keys too (its typeahead takes G)
     useActionHandler(
         "timelineGoTo",
