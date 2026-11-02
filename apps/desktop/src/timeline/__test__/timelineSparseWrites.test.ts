@@ -914,7 +914,14 @@ describeDbTests(
                     await db.select().from(schema.timeline_shape_recipes).all()
                 ).map((r) => r.timeline_id);
 
-            // Follow back makes only the cut at the cleared page's flag (holds decision 16)
+            const original = {
+                rows: await theirMoves(),
+                recipes: await recipes(),
+                motion: others(),
+            };
+            // Follow back: cutting the shared arc would restart the others' curve, so Marcher 1 is
+            // taken into a move of its own first and only that is cut (#584, holds decision 16).
+            // The others keep their whole move, recipe and motion
             await run(db, pages, pages[3]!, "previous", [1], true);
             const afterPageCut = {
                 rows: await theirMoves(),
@@ -923,15 +930,14 @@ describeDbTests(
             };
             expect(
                 afterPageCut.rows.map((r) => [r.marcher, r.start, r.end]),
-            ).toEqual(
-                expect.arrayContaining([
-                    [2, page3.start, page3.end],
-                    [2, page3.end, page5.end],
-                    [3, page3.start, page3.end],
-                    [3, page3.end, page5.end],
-                ]),
-            );
-            expect(afterPageCut.rows).toHaveLength(4);
+            ).toEqual([
+                [2, page3.start, page5.end],
+                [3, page3.start, page5.end],
+            ]);
+            expect(
+                afterPageCut.rows.every((r) => r.timeline === shared.id),
+            ).toBe(true);
+            expect(afterPageCut).toEqual(original);
             const undo = await performUndo(db);
             expect(undo.success, undo.error?.message).toBe(true);
             await timelineResolverSettled();
