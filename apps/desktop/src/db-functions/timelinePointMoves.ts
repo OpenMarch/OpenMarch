@@ -399,7 +399,11 @@ const writePlan = async (
                 ),
             )
             .all();
-        await clearOwnPageMoves(tx, removed, { tidyShared: true });
+        // Only marchers cleared off the page leave its Ungroup; a mid-page point only re-cuts
+        await clearOwnPageMoves(tx, removed, {
+            tidyShared: true,
+            dropUngrouped: plan.cleared,
+        });
     }
 
     // Parts of a move after the rest, so each range's oldest timeline is never one of them

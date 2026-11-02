@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { toastBasicLock } from "./basicLockToast";
 import type { NotJoined } from "@/db-functions/timelineJoinAtBeat";
 import { joinList } from "./timelineRangeWords";
+import type { HeldConflict } from "@/db-functions/timelineHeldConflict";
 import {
     marcherNamesText,
     type KeepTranslate,
@@ -208,6 +209,49 @@ function heldConflictMessage(
             ) ?? names.join(", "),
         pages: heldPagesText(held.pages),
     });
+}
+
+const HELD_DROPPED_MESSAGES = {
+    one: {
+        key: "timeline.errors.heldDropped.one",
+        defaultMessage:
+            "{names} is no longer Held on {pages}: it held from the starting spot, and now a move before it ends somewhere else.",
+    },
+    many: {
+        key: "timeline.errors.heldDropped.many",
+        defaultMessage:
+            "{names} are no longer Held on {pages}: they held from the starting spot, and now a move before it ends somewhere else.",
+    },
+};
+
+/**
+ * What an edit says when it dropped holds from the starting spots on later pages
+ * (`droppedHolds`, #619): who and where. `null` when it dropped none.
+ */
+export function heldDroppedMessage(
+    held: HeldConflict | undefined,
+    translate: TimelineTranslate = defaultTranslate,
+): string | null {
+    if (!held || held.names.length === 0 || held.pages.length === 0)
+        return null;
+    const names = held.names;
+    const message = HELD_DROPPED_MESSAGES[names.length === 1 ? "one" : "many"];
+    return translate(message.key, message.defaultMessage, {
+        names:
+            marcherNamesText(
+                names.map((_, i) => i),
+                (i) => names[i],
+                (key, defaultValue, params) =>
+                    translate(key, defaultValue, params),
+            ) ?? names.join(", "),
+        pages: heldPagesText(held.pages),
+    });
+}
+
+/** A warning naming the holds an edit dropped (`heldDroppedMessage`), if it dropped any. */
+export function toastDroppedHolds(held: HeldConflict | undefined): void {
+    const message = heldDroppedMessage(held);
+    if (message) toast.warning(message, { id: "timeline-held-dropped" });
 }
 
 /** Held pages by name, as the hold messages say them: "Page 3", "Pages 3 and 4". */
