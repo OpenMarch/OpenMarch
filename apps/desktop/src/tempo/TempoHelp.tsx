@@ -45,13 +45,12 @@ export function TempoHelp() {
         ["Drag a rehearsal mark", "to another measure"],
     ];
     const keys: [string, string][] = [
-        ["T", "Tap along (plays from a measure back; taps there count)"],
+        ["T", "Tap tempo: tap on each beat to see how fast it is"],
         ["M", "Drop a rehearsal mark while playing"],
         ["Space", "Play from the playhead, or stop where it is"],
-        ["Enter", "Apply taps (while tapping: stop and apply)"],
         [
             "Esc",
-            "Clear the selection, or cancel a drag or taps; with nothing to clear, leave tempo mode",
+            "Clear the selection, or cancel a drag; with nothing to clear, leave tempo mode",
         ],
         ["Shift + T", "Tempo mode on and off"],
     ];

@@ -1,16 +1,14 @@
 // cspell:ignore priya
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): tempo mode's header row: Tap, the
- * metronome, the status line and Done.
+ * PROTOTYPE (tempo mode, branch tempo/track-proto): tempo mode's header row: Tap tempo, the
+ * metronome, a hint and Done.
  */
 import clsx from "clsx";
 import {
     CheckIcon,
-    HandTapIcon,
     GaugeIcon,
     MetronomeIcon,
     PushPinSlashIcon,
-    TimerIcon,
 } from "@phosphor-icons/react";
 import {
     ShortcutTooltip,
@@ -19,7 +17,7 @@ import {
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { getActionShortcutKeys } from "@/shortcuts/labels";
-import { readTapCheck } from "./TapCheck";
+import { TapTempo } from "./TapTempo";
 import { useTempoModeStore } from "./tempoModeStore";
 import { TempoHelp } from "./TempoHelp";
 
@@ -36,15 +34,10 @@ export const toolButton = (on = false, iconOnly = false) =>
  * tools drop their words for their icons (the full name is the tooltip) and the status shortens.
  */
 export function TempoToolbar(props: {
-    status: string | null;
-    busy: boolean;
-    tapping: boolean;
-    draftCount: number;
     lockCount: number;
-    onTap: () => void;
-    onCheckTapping: () => void;
-    onApplyDraft: () => void;
-    onDiscardDraft: () => void;
+    /** What Tap tempo's "Use" sets, in words, or null */
+    tapTarget: string | null;
+    onUseTap: (bpm: number) => void;
     onClearPins: () => void;
 }) {
     const click = useMetronomeStore((s) => s.isMetronomeOn);
@@ -71,82 +64,7 @@ export function TempoToolbar(props: {
                     <span className="@max-[640px]:hidden">Tempo mode</span>
                 </span>
                 <span className="bg-stroke h-16 w-px shrink-0" aria-hidden />
-                {props.draftCount > 0 ? (
-                    <>
-                        <span
-                            className="min-w-0 truncate text-[11px]"
-                            title="Click a tap in the music to drop it"
-                        >
-                            {props.draftCount} taps to check
-                            <span className="text-text-subtitle @max-[720px]:hidden">
-                                {" "}
-                                · click one to drop it
-                            </span>
-                        </span>
-                        <ShortcutTooltip
-                            closeOnPress
-                            label="Apply the taps"
-                            shortcut="Enter"
-                        >
-                            <button
-                                type="button"
-                                className={toolButton(true)}
-                                onClick={props.onApplyDraft}
-                            >
-                                <CheckIcon
-                                    size={12}
-                                    weight="bold"
-                                    aria-hidden
-                                />
-                                Apply
-                            </button>
-                        </ShortcutTooltip>
-                        <ShortcutTooltip
-                            closeOnPress
-                            label="Discard the taps"
-                            shortcut="Esc"
-                        >
-                            <button
-                                type="button"
-                                className={toolButton()}
-                                onClick={props.onDiscardDraft}
-                            >
-                                Discard
-                            </button>
-                        </ShortcutTooltip>
-                    </>
-                ) : (
-                    <>
-                        <ShortcutTooltip
-                            closeOnPress
-                            label={
-                                props.tapping
-                                    ? "Tapping: stop to review"
-                                    : "Tap along"
-                            }
-                            shortcut="T"
-                            hint={
-                                props.tapping
-                                    ? "Space stops to review the taps; Enter applies them"
-                                    : `Plays from a measure before the playhead; taps there count too. Tap T on each count, then Space to review or Enter to apply.${readTapCheck() ? "" : " Check tapping (on the right) measures how late your taps land, so they can be moved to match."}`
-                            }
-                        >
-                            <button
-                                type="button"
-                                aria-label={
-                                    props.tapping ? "Stop tapping" : "Tap (T)"
-                                }
-                                className={toolButton(props.tapping)}
-                                onClick={props.onTap}
-                            >
-                                <HandTapIcon size={12} aria-hidden />
-                                <span className="@max-[860px]:hidden">
-                                    {props.tapping ? "Stop" : "Tap"}
-                                </span>
-                            </button>
-                        </ShortcutTooltip>
-                    </>
-                )}
+                <TapTempo target={props.tapTarget} onUse={props.onUseTap} />
                 {/* The metronome, up front: editing tempo is listening to the counts against the
                     music (owner, 2026-11-01: not hidden in the audio menu). Its label stays on
                     narrow windows too */}
@@ -195,27 +113,10 @@ export function TempoToolbar(props: {
                 )}
                 <span
                     className="text-text-subtitle min-w-0 flex-1 truncate text-[11px]"
-                    title={props.status ?? DRAG_HINT}
+                    title={DRAG_HINT}
                 >
-                    {props.status ?? DRAG_HINT}
+                    {DRAG_HINT}
                 </span>
-                <ShortcutTooltip
-                    closeOnPress
-                    label="Check tapping"
-                    hint="Tap along to a click for 10 seconds: measures how late your taps land on this computer, and how even they are"
-                >
-                    <button
-                        type="button"
-                        aria-label="Check tapping"
-                        className={toolButton()}
-                        onClick={props.onCheckTapping}
-                    >
-                        <TimerIcon size={12} aria-hidden />
-                        <span className="@max-[1100px]:hidden">
-                            Check tapping
-                        </span>
-                    </button>
-                </ShortcutTooltip>
                 <TempoHelp />
                 <ShortcutTooltip
                     closeOnPress

@@ -13,8 +13,6 @@ import { tempoSettingsKey, useAudioOffsetSeconds } from "./audioOffset";
 
 /** The toast a tempo edit's note goes in (one at a time; undo and leaving the mode clear it) */
 export const NOTE_TOAST = "tempo-note";
-/** The toast about a tap pass's taps (the ones left out, or that they were discarded) */
-export const TAPS_TOAST = "tempo-taps";
 
 export interface TempoMeasure {
     start: number;
