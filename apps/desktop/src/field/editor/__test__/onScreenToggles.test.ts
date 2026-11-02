@@ -205,6 +205,32 @@ describe("Equal on the pill", () => {
     });
 });
 
+describe("From center on the pill", () => {
+    // Marchers 1 and 4 span 100 to 400; the box's east handle is 10 out, at (410, 100)
+    const scaleEast = (keys?: Parameters<typeof at>[2]) => {
+        const { editor, state } = setup({ selected: [1, 4] });
+        drag(editor, { x: 410, y: 100 }, { x: 440, y: 100 }, keys);
+        return state;
+    };
+
+    it("latched, scales a selection about its center, as Alt held at the press does (#545)", () => {
+        expect(scaleEast().drops[0]).toEqual([
+            { id: 1, x: 100, y: 100 },
+            { id: 4, x: 430, y: 100 },
+        ]);
+        const alt = scaleEast({ alt: true });
+        // Alt on a handle is from center, not a subtract: the selection stays
+        expect(alt.selected).toEqual([1, 4]);
+        expect(alt.drops[0]).toEqual([
+            { id: 1, x: 70, y: 100 },
+            { id: 4, x: 430, y: 100 },
+        ]);
+
+        store().toggleLatched("fromCenter");
+        expect(scaleEast().drops[0]).toEqual(alt.drops[0]);
+    });
+});
+
 describe("Add on the pill, as Shift at the press", () => {
     it("a click adds a marcher, and removes a selected one", () => {
         store().toggleLatched("add");

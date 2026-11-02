@@ -86,7 +86,9 @@
             "evenOut": "形状: 輪郭を均等にする",
             "expand": "形状：比率を保って拡大",
             "shrink": "形状：比率を保って縮小",
-            "ring": "お気に入りリング：長押しで形状を選択、タップで開いたままにする"
+            "ring": "お気に入りリング：長押しで形状を選択、タップで開いたままにする",
+            "ungroup": "形状: グループ解除",
+            "ungroupKeywords": "グループ解除 形状 分解 解除"
         },
         "swap": {
             "error": "スワップできませんでした マーチャーズ {marcher1} と {marcher2}",
@@ -654,8 +656,7 @@
             "shapesTab": "形状",
             "successfullyCopied": "ページ {pageName} に形状 が正常にコピーされました",
             "ungroupShapeButton": "グループ解除",
-            "ungroupShapeTooltip": "このページのこのシェイプを削除します。 マーチャーの現在の位置は移動されません",
-            "viewTab": "ビュー"
+            "ungroupShapeTooltip": "このページのこのシェイプを削除します。 マーチャーの現在の位置は移動されません"
         },
         "title": "インスペクター"
     },
@@ -739,8 +740,6 @@
                     "title": "フィールド セット アップ"
                 },
                 "performers": {
-                    "added": "出演者 を追加済み",
-                    "addNew": "出演者 を追加",
                     "description": "今すぐ マーチャーズ を追加するか、スキップして後でエディター に追加します。",
                     "noneAdded": "まだ出演者 は 追加されていません。",
                     "title": "出演者"
@@ -1332,7 +1331,8 @@
                 "label": "シード"
             },
             "steps": "ステップ",
-            "turn": "回転（時計回りの角度）"
+            "turn": "回転（時計回りの角度）",
+            "ungroup": "グループ解除：マーチャーはその場に残ります"
         },
         "field": {
             "stepLimit": "{steps}対5"
@@ -1501,7 +1501,9 @@
             "summary": {
                 "empty": "{count, plural, other {空き#}}",
                 "steps": "{interval}ステップ"
-            }
+            },
+            "ungroupError": "形状のグループ解除中にエラーが発生しました",
+            "ungroupIsolated": "このフォームは前のページのものです。分離表示の外でグループ解除してください"
         },
         "save": {
             "ariaLabel": "この形状をライブラリに保存",
@@ -1681,8 +1683,7 @@
             "shapes": "形状",
             "shapesAlways": "常に",
             "shapesOff": "オフ",
-            "shapesSelected": "選択時",
-            "uiSettingsToolbar": "UI 設定 ツールバー"
+            "shapesSelected": "選択時"
         }
     },
     "touch": {

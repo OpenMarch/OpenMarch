@@ -117,7 +117,9 @@
             "evenOut": "Shape: Even out the outline",
             "expand": "Shape: Expand, keeping the proportions",
             "shrink": "Shape: Shrink, keeping the proportions",
-            "keywords": "shape form formation set place"
+            "keywords": "shape form formation set place",
+            "ungroup": "Shape: Ungroup",
+            "ungroupKeywords": "ungroup shape break apart release separate"
         },
         "swap": {
             "error": "Could not swap marchers {marcher1} and {marcher2}",
@@ -578,6 +580,16 @@
         },
         "title": "Field"
     },
+    "fieldDisplay": {
+        "caption": {
+            "direction": "Direction",
+            "sections": "Sections"
+        },
+        "comingSoon": "Coming soon",
+        "direction": "Field direction",
+        "label": "Field display",
+        "sections": "Visible sections"
+    },
     "fieldProperties": {
         "applyFieldType": "Apply Field Type",
         "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
@@ -901,8 +913,7 @@
             "shapesTab": "Shapes",
             "successfullyCopied": "Shape successfully copied to page",
             "ungroupShapeButton": "Un-group",
-            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
-            "viewTab": "View"
+            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
         },
         "timeline": {
             "move": {
@@ -1003,8 +1014,6 @@
                     "title": "Field setup"
                 },
                 "performers": {
-                    "added": "Added performers",
-                    "addNew": "Add performers",
                     "description": "Add marchers now or skip and add them later in the editor.",
                     "noneAdded": "No performers added yet.",
                     "title": "Performers"
@@ -1375,8 +1384,7 @@
         "addMarcher": "Add",
         "addMarchers": "Add Marchers",
         "addMethod": {
-            "manual": "Add manually",
-            "or": "or"
+            "manual": "Add manually"
         },
         "cancelDeleteButton": "Cancel",
         "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",
@@ -2078,7 +2086,8 @@
                 "label": "Seed"
             },
             "steps": "steps",
-            "turn": "Turn, in degrees clockwise"
+            "turn": "Turn, in degrees clockwise",
+            "ungroup": "Ungroup: the marchers stay where they are"
         },
         "placed": {
             "label": "{name} · {interval} steps",
@@ -2092,7 +2101,9 @@
             "summary": {
                 "empty": "{count, plural, other {# empty}}",
                 "steps": "{interval} steps"
-            }
+            },
+            "ungroupError": "Error ungrouping the shape",
+            "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page"
         },
         "save": {
             "descriptionLabel": "Description of the saved shape (optional)",
@@ -2382,7 +2393,7 @@
             "label": "Playback Controls"
         },
         "edit": {
-            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
                 "catchUp": "Now catches up to the set at the end of {caughtUp}",
                 "keepStops": {
@@ -2651,8 +2662,7 @@
             "shapes": "Shapes",
             "shapesAlways": "Always",
             "shapesOff": "Off",
-            "shapesSelected": "When selected",
-            "uiSettingsToolbar": "Ui Settings Toolbar"
+            "shapesSelected": "When selected"
         },
         "hideToolbar": "Hide toolbar",
         "showToolbar": "Show toolbar"

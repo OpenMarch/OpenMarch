@@ -786,6 +786,18 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
 
+    // Ungroup the selected placed shape: its marchers stay put and stop being a shape. On a later
+    // page it's that page's change, as an edit there is (shapes/placed/ungroupShape)
+    shapeUngroup: {
+        labelKey: "actions.shape.ungroup",
+        keywordsKey: "actions.shape.ungroupKeywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["$mod+Shift+G", "Control+Shift+G"],
+        ignoreRepeat: true,
+    },
+
     // Cursor mode
     cancelAlignmentUpdates: {
         labelKey: "actions.alignment.cancelUpdates",

@@ -747,9 +747,12 @@ export const ownPageMoves = async (
  *   box starts is taken out of every move over the box instead of keeping one that goes nowhere
  *   (holds decision 16, storage M6): its own page move is deleted, and a shared or longer move is
  *   cut in time at the box's flags and the marcher removed from that part, its slot compacted
- *   (`takeMarchersOutOfRangeInTransaction`). So the page is Not set and follows earlier pages
- *   again; a timeline left empty goes. A zero-motion ending in a window that isn't a page's box is
- *   kept. A shape's write (`keepUnchanged`) only deletes a marcher's own page move this way
+ *   (`takeMarchersOutOfRangeInTransaction`). Where others share a move whose path a cut would
+ *   change (one that isn't direct), the marcher is first taken into a move of its own and only
+ *   that is cut, so the others keep their motion; where split by marcher refuses (an inheriting
+ *   follow-the-leader order), it keeps its moves and is named. So the page is Not set and follows
+ *   earlier pages again; a timeline left empty goes. A zero-motion ending in a window that isn't a
+ *   page's box is kept. A shape's write (`keepUnchanged`) only deletes a marcher's own page move this way
  *   (`ownPageMoves`), so a shape placed where its members start stays in a shared move (#485).
  * - **`clearPage`** (Clear this page, which was Set to previous page): every moved marcher is
  *   taken out of every move over the box the same way, whatever the move says, and nothing else

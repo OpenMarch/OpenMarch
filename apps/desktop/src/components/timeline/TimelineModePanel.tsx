@@ -1,4 +1,3 @@
-import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -151,8 +150,6 @@ const LOOP_BUTTONS = (
     </>
 );
 const SPEED_BUTTON = <TimelineSpeedButton />;
-/** First on the transport's right in both modes, before Fit: start flag positions (fork #331) */
-const LEADING_VIEW_CONTROLS = <StartFlagPositionsButton />;
 const EXPERT_VIEW_CONTROLS = <TimelineCompactButton />;
 
 /** The store's selection as the timeline draws it (spec beats; `Timeline` maps them to its axis) */
@@ -548,7 +545,6 @@ export default function TimelineModePanel() {
                     pageMoves={pageMoves}
                     transportAccessories={basic ? SPEED_BUTTON : LOOP_BUTTONS}
                     transportSecondary={SOUND_BUTTON}
-                    transportLeadingViewControls={LEADING_VIEW_CONTROLS}
                     transportViewControls={
                         basic ? undefined : EXPERT_VIEW_CONTROLS
                     }

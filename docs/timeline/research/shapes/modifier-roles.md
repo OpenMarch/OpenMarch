@@ -171,6 +171,11 @@ Two rules hold for every held role:
    and each gesture states its default. Rotation then reads cleanly: default 15° steps, `fine` =
    whole degrees, Snap off = free.
 
+   Update (owner on #545, 2026-11-01): scaling now has one default everywhere. A marcher
+   selection's corners scale freely, as a box shape's do, and constrain keeps the ratio (on a box's
+   corner it gives equal spacings instead); the box's ratio lock is the selection's too, so on
+   side handles, and for a selection's corners, the lock and the key are one concept.
+
 ### No snap is a toggle, not a key
 
 `noSnap` stops being a held role. The **Snap toggle** sits with Lock X / Lock Y and turns off the

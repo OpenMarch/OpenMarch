@@ -16,6 +16,10 @@ import {
 } from "../groupTransform";
 import type { MarcherPosition } from "../moveGesture";
 import { RotateGesture, ScaleGesture } from "../transformGestures";
+import {
+    onScreenToggles,
+    useTouchModifierStore,
+} from "@/stores/TouchModifierStore";
 
 // A formation 100 wide and 50 tall, from (100, 200) to (200, 250).
 const FORMATION: MarcherPosition[] = [
@@ -91,9 +95,9 @@ describe("handlePoints and handleAt", () => {
 });
 
 describe("scaleFor: corners (user story 48)", () => {
-    it("scales uniformly from the opposite corner by the pointer's progress along the diagonal", () => {
+    it("keeping the ratio, scales uniformly from the opposite corner by the pointer's progress along the diagonal", () => {
         // The diagonal is (100, 50): 50 across and 25 down is half again
-        const scale = scaleFor("se", BOX, { x: 50, y: 25 }, false);
+        const scale = scaleFor("se", BOX, { x: 50, y: 25 }, true);
         expect(scale).toEqual({ anchor: { x: 100, y: 200 }, x: 1.5, y: 1.5 });
         expect(scalePositions(FORMATION, scale)).toEqual([
             { id: 1, x: 100, y: 200 },
@@ -102,35 +106,35 @@ describe("scaleFor: corners (user story 48)", () => {
         ]);
     });
 
-    it("still scales both ways when dragged straight across", () => {
-        const scale = scaleFor("se", BOX, { x: 50, y: 0 }, false);
+    it("keeping the ratio, still scales both ways when dragged straight across", () => {
+        const scale = scaleFor("se", BOX, { x: 50, y: 0 }, true);
         expect(scale.x).toBe(scale.y);
         expect(scale.x).toBeCloseTo(1.4);
     });
 
     it("anchors each corner on its opposite", () => {
-        expect(scaleFor("nw", BOX, { x: -100, y: -50 }, false)).toEqual({
+        expect(scaleFor("nw", BOX, { x: -100, y: -50 }, true)).toEqual({
             anchor: { x: 200, y: 250 },
             x: 2,
             y: 2,
         });
-        expect(scaleFor("ne", BOX, { x: 0, y: 0 }, false).anchor).toEqual({
+        expect(scaleFor("ne", BOX, { x: 0, y: 0 }, true).anchor).toEqual({
             x: 100,
             y: 250,
         });
-        expect(scaleFor("sw", BOX, { x: 0, y: 0 }, false).anchor).toEqual({
+        expect(scaleFor("sw", BOX, { x: 0, y: 0 }, true).anchor).toEqual({
             x: 200,
             y: 200,
         });
     });
 
-    it("scales each axis with the pointer when free (constrain flips proportional)", () => {
-        expect(scaleFor("se", BOX, { x: 50, y: 0 }, true)).toEqual({
+    it("scales each axis with the pointer by default, as a box shape's corner does (#545)", () => {
+        expect(scaleFor("se", BOX, { x: 50, y: 0 }, false)).toEqual({
             anchor: { x: 100, y: 200 },
             x: 1.5,
             y: 1,
         });
-        expect(scaleFor("nw", BOX, { x: 50, y: -50 }, true)).toEqual({
+        expect(scaleFor("nw", BOX, { x: 50, y: -50 }, false)).toEqual({
             anchor: { x: 200, y: 250 },
             x: 0.5,
             y: 2,
@@ -139,14 +143,14 @@ describe("scaleFor: corners (user story 48)", () => {
 
     it("scales a formation in one row along its row only", () => {
         const row = { left: 100, top: 200, right: 200, bottom: 200 };
-        expect(scaleFor("se", row, { x: 50, y: 80 }, false)).toEqual({
+        expect(scaleFor("se", row, { x: 50, y: 80 }, true)).toEqual({
             anchor: { x: 100, y: 200 },
             x: 1.5,
             y: 1.5,
         });
-        expect(scaleFor("se", row, { x: 50, y: 80 }, true).y).toBe(1);
+        expect(scaleFor("se", row, { x: 50, y: 80 }, false).y).toBe(1);
         const point = { left: 5, top: 5, right: 5, bottom: 5 };
-        expect(scaleFor("se", point, { x: 50, y: 80 }, false)).toMatchObject({
+        expect(scaleFor("se", point, { x: 50, y: 80 }, true)).toMatchObject({
             x: 1,
             y: 1,
         });
@@ -168,10 +172,17 @@ describe("scaleFor: middle handles (user story 49)", () => {
         expect(scaleFor("w", BOX, { x: 50, y: 0 }, false).x).toBe(0.5);
     });
 
-    it("ignores free (constrain)", () => {
-        expect(scaleFor("e", BOX, { x: 50, y: 30 }, true)).toEqual(
-            scaleFor("e", BOX, { x: 50, y: 30 }, false),
-        );
+    it("scales the other axis by the same amount with constrain, about the center line (#545)", () => {
+        expect(scaleFor("e", BOX, { x: 50, y: 30 }, true)).toEqual({
+            anchor: { x: 100, y: 225 },
+            x: 1.5,
+            y: 1.5,
+        });
+        expect(scaleFor("n", BOX, { x: 30, y: -25 }, true)).toEqual({
+            anchor: { x: 150, y: 250 },
+            x: 1.5,
+            y: 1.5,
+        });
     });
 
     it("can't scale an axis the formation has no extent along", () => {
@@ -180,13 +191,68 @@ describe("scaleFor: middle handles (user story 49)", () => {
     });
 });
 
+describe("scaleFor: from center (Alt, #545)", () => {
+    // The box's center is (150, 225)
+    it("scales a corner proportionally about the center, the corner following the pointer", () => {
+        const scale = scaleFor("se", BOX, { x: 25, y: 12.5 }, true, true);
+        expect(scale).toEqual({ anchor: { x: 150, y: 225 }, x: 1.5, y: 1.5 });
+        const [nw, , se] = scalePositions(
+            [
+                { id: 1, x: BOX.left, y: BOX.top },
+                { id: 2, x: 150, y: 225 },
+                { id: 3, x: BOX.right, y: BOX.bottom },
+            ],
+            scale,
+        );
+        // The dragged corner is where the pointer took it; the opposite one mirrors it
+        expect(se).toEqual({ id: 3, x: 225, y: 262.5 });
+        expect(nw).toEqual({ id: 1, x: 75, y: 187.5 });
+    });
+
+    it("scales a middle handle's axis only, both sides moving", () => {
+        expect(scaleFor("e", BOX, { x: 25, y: 30 }, false, true)).toEqual({
+            anchor: { x: 150, y: 225 },
+            x: 1.5,
+            y: 1,
+        });
+        expect(scaleFor("w", BOX, { x: 25, y: 0 }, false, true).x).toBe(0.5);
+    });
+
+    it("adds up with either default: a free corner, or a side keeping the ratio, about the center", () => {
+        expect(scaleFor("se", BOX, { x: 25, y: 0 }, false, true)).toEqual({
+            anchor: { x: 150, y: 225 },
+            x: 1.5,
+            y: 1,
+        });
+        expect(scaleFor("e", BOX, { x: 25, y: 0 }, true, true)).toEqual({
+            anchor: { x: 150, y: 225 },
+            x: 1.5,
+            y: 1.5,
+        });
+    });
+
+    it("stops at the smallest scale when dragged past the center", () => {
+        expect(scaleFor("e", BOX, { x: -80, y: 0 }, false, true).x).toBe(
+            MIN_SCALE,
+        );
+        expect(scaleFor("nw", BOX, { x: 80, y: 80 }, true, true).y).toBe(
+            MIN_SCALE,
+        );
+    });
+
+    it("still can't scale an axis the formation has no extent along", () => {
+        const column = { left: 100, top: 200, right: 100, bottom: 300 };
+        expect(scaleFor("e", column, { x: 50, y: 0 }, false, true).x).toBe(1);
+    });
+});
+
 describe("scaleFor: no flipping (user story 52)", () => {
     it("stops at the smallest scale when dragged past the opposite side", () => {
         expect(scaleFor("e", BOX, { x: -300, y: 0 }, false).x).toBe(MIN_SCALE);
-        expect(scaleFor("se", BOX, { x: -300, y: -300 }, false).x).toBe(
+        expect(scaleFor("se", BOX, { x: -300, y: -300 }, true).x).toBe(
             MIN_SCALE,
         );
-        expect(scaleFor("nw", BOX, { x: 50, y: 300 }, true)).toMatchObject({
+        expect(scaleFor("nw", BOX, { x: 50, y: 300 }, false)).toMatchObject({
             x: 0.5,
             y: MIN_SCALE,
         });
@@ -220,7 +286,7 @@ describe("transforms that change nothing (user story 54)", () => {
         );
         expect(scaled.map((p) => p.y)).toEqual(loose.map((p) => p.y));
         expect(
-            scalePositions(loose, scaleFor("se", box, { x: 0, y: 0 }, false)),
+            scalePositions(loose, scaleFor("se", box, { x: 0, y: 0 }, true)),
         ).toEqual(loose);
     });
 });
@@ -279,6 +345,10 @@ const key = (type: "keydown" | "keyup", init: KeyboardEventInit) =>
 const keysAt = (origin: FieldPointer) => fieldKeys(origin, { isMac: false });
 
 describe("ScaleGesture", () => {
+    /** Each marcher's position, by id, as the last show drew it. */
+    const at = (positions: MarcherPosition[]) =>
+        positions.map(({ x, y }) => [x, y]);
+
     it("shows and drops the scaled formation", () => {
         const h = host();
         const gesture = new ScaleGesture(
@@ -327,7 +397,7 @@ describe("ScaleGesture", () => {
         expect(last(h.drop)).toEqual(shown);
     });
 
-    it("scales a corner proportionally, and each axis on its own with constrain ($mod)", () => {
+    it("scales a corner's axes on their own, and proportionally with constrain ($mod; #545)", () => {
         const scaled = (modifiers: Partial<FieldPointer>, isMac = false) => {
             const h = host();
             const origin = pointer(200, 250);
@@ -342,19 +412,125 @@ describe("ScaleGesture", () => {
             gesture.move(pointer(250, 250, modifiers));
             return scaleOf(last(h.show));
         };
-        expect(scaled({})).toEqual({ x: 1.4, y: 1.4 });
-        expect(scaled({ ctrl: true })).toEqual({ x: 1.5, y: 1 });
-        expect(scaled({ meta: true }, true)).toEqual({ x: 1.5, y: 1 });
-        // Mac Ctrl is a right-click, never $mod; Shift is fine, not free
-        expect(scaled({ ctrl: true }, true)).toEqual({ x: 1.4, y: 1.4 });
-        expect(scaled({ shift: true })).toEqual({ x: 1.1, y: 1.1 });
+        expect(scaled({})).toEqual({ x: 1.5, y: 1 });
+        expect(scaled({ ctrl: true })).toEqual({ x: 1.4, y: 1.4 });
+        expect(scaled({ meta: true }, true)).toEqual({ x: 1.4, y: 1.4 });
+        // Mac Ctrl is a right-click, never $mod; Shift is fine, not proportional
+        expect(scaled({ ctrl: true }, true)).toEqual({ x: 1.5, y: 1 });
+        expect(scaled({ shift: true })).toEqual({ x: 1.13, y: 1 });
+    });
+
+    it("keeps the ratio by default with the ratio lock on, and constrain frees it (#545)", () => {
+        const scaled = (
+            handle: "se" | "e",
+            modifiers: Partial<FieldPointer> = {},
+        ) => {
+            const h = host();
+            const origin = pointer(200, handle === "se" ? 250 : 225);
+            const gesture = new ScaleGesture(
+                origin,
+                FORMATION,
+                h,
+                handle,
+                BOX,
+                keysAt(origin),
+                true,
+            );
+            gesture.move(pointer(250, origin.field.y, modifiers));
+            gesture.cancel();
+            return last(h.show);
+        };
+        expect(scaleOf(scaled("se"))).toEqual({ x: 1.4, y: 1.4 });
+        expect(scaleOf(scaled("se", { ctrl: true }))).toEqual({ x: 1.5, y: 1 });
+        // A side scales both ways, about the center line, and one axis with constrain
+        expect(at(scaled("e"))).toEqual([
+            [100, 187.5],
+            [250, 217.5],
+            [175, 262.5],
+        ]);
+        expect(scaled("e", { ctrl: true }).map((p) => p.y)).toEqual([
+            200, 220, 250,
+        ]);
+    });
+
+    it("scales about the box's center with from center (Alt; #545)", () => {
+        const scaled = (
+            handle: "se" | "e",
+            to: FieldPointer,
+            origin = pointer(200, 250),
+        ) => {
+            const h = host();
+            const gesture = new ScaleGesture(
+                origin,
+                FORMATION,
+                h,
+                handle,
+                BOX,
+                keysAt(origin),
+            );
+            gesture.move(to);
+            gesture.cancel();
+            return at(last(h.show));
+        };
+        // The center is (150, 225); a corner 25 across and 12.5 down is half again
+        expect(scaled("se", pointer(225, 262.5, { alt: true }))).toEqual([
+            [75, 187.5],
+            [225, 217.5],
+            [150, 262.5],
+        ]);
+        // A side scales its own axis only, both sides moving
+        const east = pointer(200, 225);
+        expect(scaled("e", pointer(225, 225, { alt: true }), east)).toEqual([
+            [75, 200],
+            [225, 220],
+            [150, 250],
+        ]);
+        // Keys add up: with constrain the side scales both ways, about the center
+        expect(
+            scaled("e", pointer(225, 225, { alt: true, ctrl: true }), east),
+        ).toEqual([
+            [75, 187.5],
+            [225, 217.5],
+            [150, 262.5],
+        ]);
+        // With fine as well, at a quarter of the speed
+        expect(
+            scaled("e", pointer(300, 225, { alt: true, shift: true }), east),
+        ).toEqual([
+            [75, 200],
+            [225, 220],
+            [150, 250],
+        ]);
+    });
+
+    it("scales a side both ways with constrain, the opposite side fixed and centered across ($mod; #545)", () => {
+        const h = host();
+        const origin = pointer(200, 225);
+        const gesture = new ScaleGesture(
+            origin,
+            FORMATION,
+            h,
+            "e",
+            BOX,
+            keysAt(origin),
+        );
+        gesture.move(pointer(250, 225, { ctrl: true }));
+        gesture.cancel();
+        expect(at(last(h.show))).toEqual([
+            [100, 187.5],
+            [250, 217.5],
+            [175, 262.5],
+        ]);
     });
 
     describe("keys pressed or released mid-drag, with no pointer move", () => {
         let gesture: ScaleGesture | undefined;
-        afterEach(() => gesture?.cancel());
+        afterEach(() => {
+            gesture?.cancel();
+            useTouchModifierStore.getState().clear();
+        });
 
-        it("flips a corner's proportional scaling while Ctrl is down, and back when it's up", () => {
+        it("keeps a corner's ratio while Ctrl is down, and frees it when it's up", () => {
             const h = host();
             const origin = pointer(200, 250);
             gesture = new ScaleGesture(
@@ -366,12 +542,54 @@ describe("ScaleGesture", () => {
                 keysAt(origin),
             );
             gesture.move(pointer(250, 250));
-            expect(scaleOf(last(h.show))).toEqual({ x: 1.4, y: 1.4 });
-            key("keydown", { key: "Control", ctrlKey: true });
             expect(scaleOf(last(h.show))).toEqual({ x: 1.5, y: 1 });
-            key("keyup", { key: "Control" });
+            key("keydown", { key: "Control", ctrlKey: true });
             expect(scaleOf(last(h.show))).toEqual({ x: 1.4, y: 1.4 });
+            key("keyup", { key: "Control" });
+            expect(scaleOf(last(h.show))).toEqual({ x: 1.5, y: 1 });
             expect(h.show).toHaveBeenCalledTimes(3);
+        });
+
+        it("scales from the center while Alt is down, and from the opposite side when it's up", () => {
+            const h = host();
+            const origin = pointer(200, 225);
+            gesture = new ScaleGesture(
+                origin,
+                FORMATION,
+                h,
+                "e",
+                BOX,
+                keysAt(origin),
+            );
+            gesture.move(pointer(225, 225));
+            expect(last(h.show).map((p) => p.x)).toEqual([100, 225, 162.5]);
+            key("keydown", { key: "Alt", altKey: true });
+            expect(last(h.show).map((p) => p.x)).toEqual([75, 225, 150]);
+            key("keyup", { key: "Alt" });
+            expect(last(h.show).map((p) => p.x)).toEqual([100, 225, 162.5]);
+            expect(h.show).toHaveBeenCalledTimes(3);
+        });
+
+        it("follows the pill's From center and Equal toggles as it does the keys", () => {
+            const h = host();
+            const origin = pointer(200, 225);
+            gesture = new ScaleGesture(
+                origin,
+                FORMATION,
+                h,
+                "e",
+                BOX,
+                fieldKeys(origin, { isMac: false, onScreen: onScreenToggles }),
+            );
+            gesture.move(pointer(225, 225));
+            useTouchModifierStore.getState().toggleLatched("fromCenter");
+            expect(last(h.show).map((p) => p.x)).toEqual([75, 225, 150]);
+            useTouchModifierStore.getState().setHeld("constrain", true);
+            expect(at(last(h.show))).toEqual([
+                [75, 187.5],
+                [225, 217.5],
+                [150, 262.5],
+            ]);
         });
     });
 });

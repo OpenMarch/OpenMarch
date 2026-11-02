@@ -36,9 +36,7 @@ describe("PerformersStep CSV import", () => {
             wrapper: Providers,
         });
 
-        await user.click(
-            screen.getByRole("button", { name: /Import from CSV/ }),
-        );
+        await user.click(screen.getByRole("tab", { name: /Import from CSV/ }));
         await user.upload(
             screen.getByLabelText("Marcher CSV file"),
             csvFile("section,name,year,notes\nFlute,Ada,12,Lead\n"),
@@ -85,9 +83,7 @@ describe("PerformersStep CSV import", () => {
             { wrapper: Providers },
         );
 
-        await user.click(
-            screen.getByRole("button", { name: /Import from CSV/ }),
-        );
+        await user.click(screen.getByRole("tab", { name: /Import from CSV/ }));
         await user.click(
             screen.getByRole("radio", { name: /By drill number/ }),
         );
