@@ -10,7 +10,7 @@ import {
     type SplitIdKeeper,
     type SplitTimelineResult,
 } from "./timelineSplitAtBeat";
-import { hasShapeRecipes } from "./shapeRecipes";
+import { hasShapeRecipes, shapeRecipesOnly } from "./shapeRecipes";
 import { setTimelineTransitionDestinationInTransaction } from "./timelineTransitionsInTransaction";
 import { timelinesWithRange } from "./timelines";
 import { clearOwnPageMoves, sampleShape } from "./timelineMoveHelpers";
@@ -28,8 +28,9 @@ import {
  * Joining moves back together is #470's `timelineJoinAtBeat.ts`.
  *
  * 1. **Cut a move in time at a count** (`cutMoveAtBeatInTransaction`): Split at playhead's split
- *    (`splitTimelineAtBeatInTransaction`, UI-27), the whole membership in both parts, with motion
- *    unchanged for direct paths. A part may land on a range another move already has, as a split
+ *    (`splitTimelineAtBeatInTransaction`, UI-27), the whole membership in both parts. Motion
+ *    before the count is unchanged on a direct or arc path (an arc's first part is an arc of the
+ *    same circle, #591), and after it on a direct path; a curved path starts a new curve there. A part may land on a range another move already has, as a split
  *    by marcher may (UI-25), so a cut at a page's flags can make a move over exactly the page box.
  *    The original move keeps its id as the part after the count, unless that part would take over
  *    a page's move (it would be the oldest over a range a newer move has: a page's own move is the
@@ -42,16 +43,17 @@ import {
  *    of the marchers' rows crosses them, then the marchers leave the piece over the range. Their
  *    slots in a shared transition are compacted, a transition they empty is deleted, and so is a
  *    move they empty (`clearOwnPageMoves` with `tidyShared`, as Basic's Set to previous page).
- *    On a direct path their motion before the range is unchanged; after it, they walk from wherever
- *    they now are. A path that isn't direct is sampled by the cut, so before the range they walk
- *    straight lines instead (a known gap, tracked in #591).
- *    A cut changes the motion of everyone on a path that isn't direct, so where others share the
- *    move and one of them has such a row before the last cut, the move isn't cut for everyone: the
- *    marchers are taken into a move of their own first (below), and only that is cut, so the
- *    others keep their rows, move, shape recipe and motion (holds decision 16: other pages keep
- *    their motion). Where split by marcher refuses to take them out (`splitRefusal`: a shared
- *    transition in an inheriting follow-the-leader order), they stay in all their moves and are
- *    named (`followTheLeaderOrder`). A direct path is cut for everyone, as no one's motion changes.
+ *    On a direct or arc path their motion before the range is unchanged, at every count (holds
+ *    decision 16, #591); after it, they walk from wherever they now are. Follow-the-leader members
+ *    stay (below), so no cut of theirs is sampled into straight lines.
+ *    A cut restarts the curve after it for everyone on a path that isn't direct, so where others
+ *    share the move and one of them has such a row before the last cut, the move isn't cut for
+ *    everyone: the marchers are taken into a move of their own first (below), and only that is
+ *    cut, so the others keep their rows, move, shape recipe and motion (holds decision 16: other
+ *    pages keep their motion). Where split by marcher refuses to take them out (`splitRefusal`: a
+ *    shared transition in an inheriting follow-the-leader order), they stay in all their moves and
+ *    are named (`followTheLeaderOrder`). A direct path is cut for everyone, as no one's motion
+ *    changes.
  *
  * **Shape and follow-the-leader members stay** (owner, 2026-10-30, holds README decisions 6–14,
  * interim until fork #504): a marcher in a shape recipe of the move (#363), or whose row is in a
@@ -404,6 +406,7 @@ async function membersThatStay(
                     recipes.timeline_id,
                     ascending(rows.map((r) => r.timelineId)),
                 ),
+                shapeRecipesOnly(),
             ),
         )
         .all();
@@ -506,8 +509,8 @@ export async function planRemovalFromRange({
  * Plans `removed` (their rows over the range, `theirs`) leaving move `id` over `range`, noting its
  * writes in `ranges`, or returns split by marcher's refusal when they'd have to be taken into a
  * move of their own and can't be. They are taken into one only when cutting the move would change
- * someone else's motion: a marcher who stays has a row on a path that isn't direct, which a cut
- * samples (`splitTimelineAtBeatInTransaction`), starting before the last cut. A direct path is cut
+ * someone else's motion: a marcher who stays has a row on a path that isn't direct, whose curve a
+ * cut restarts (`splitTimelineAtBeatInTransaction`), starting before the last cut. A direct path is cut
  * for everyone, which changes nobody's motion.
  */
 async function planMove(
@@ -598,7 +601,7 @@ async function removeFromMove(
     await clearOwnPageMoves(
         tx,
         removed.map((r) => r.row),
-        { tidyShared: true },
+        { tidyShared: true, dropUngrouped: plan.removed },
     );
     const deleted = !(await readTimeline(tx, pieceId));
     return {
@@ -767,7 +770,7 @@ const REASON_WORDS: Record<MoveMemberSkipReason, [string, string]> = {
  */
 export async function skippedRefusal(
     tx: DbTransaction,
-    skipped: readonly MoveMemberSkip[],
+    skipped: readonly Pick<MoveMemberSkip, "marcherId" | "reason">[],
 ): Promise<TimelineEditRefusedError | null> {
     if (skipped.length === 0) return null;
     const ids = ascending(skipped.map((s) => s.marcherId));
