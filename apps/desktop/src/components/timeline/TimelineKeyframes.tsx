@@ -149,7 +149,11 @@ const KeyframeDiamond = memo(function KeyframeDiamond({
             type="button"
             data-testid={`timeline-keyframe-${keyframe.beat}-${filled ? "filled" : "hollow"}`}
             data-timeline-interactive="true"
-            aria-label={detail ? `${title}. ${detail}` : title}
+            aria-label={
+                detail
+                    ? tolgee.t("timeline.keyframes.spoken", { title, detail })
+                    : title
+            }
             aria-haspopup={menu ? "menu" : undefined}
             // Under the start flag (z-40) and the playhead (z-50), over the flag grips (z-35)
             className="group/keyframe focus-visible:ring-accent pointer-events-auto absolute z-[36] flex -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 outline-hidden focus-visible:ring-2"

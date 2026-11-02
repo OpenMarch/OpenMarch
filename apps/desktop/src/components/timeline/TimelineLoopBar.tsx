@@ -7,6 +7,7 @@ import {
     type PointerEvent as ReactPointerEvent,
 } from "react";
 import clsx from "clsx";
+import { useTranslate } from "@tolgee/react";
 import { START_INK } from "./startFlagInk";
 import { beatToX, TIMELINE_HEADROOM_HEIGHT } from "./TimelineGeometry";
 import type { TimelineBeatRange } from "./TimelineViewModel";
@@ -43,6 +44,7 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
     onChange?: (loop: TimelineBeatRange) => void;
 }) {
     // The loop while an end is dragged, drawn before it's committed
+    const { t } = useTranslate();
     const [preview, setPreview] = useState<TimelineBeatRange | null>(null);
     const drag = useRef<{
         edge: "start" | "end";
@@ -99,8 +101,13 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                 type="button"
                 data-timeline-interactive="true"
                 data-testid={`timeline-loop-${edge}`}
-                aria-label={`Loop ${edge}, beat ${beat}`}
-                title="Drag to move this end of the loop"
+                aria-label={t(
+                    edge === "start"
+                        ? "timeline.loop.startHandle"
+                        : "timeline.loop.endHandle",
+                    { beat },
+                )}
+                title={t("timeline.loop.handleTooltip")}
                 disabled={!onChange}
                 onPointerDown={(
                     event: ReactPointerEvent<HTMLButtonElement>,

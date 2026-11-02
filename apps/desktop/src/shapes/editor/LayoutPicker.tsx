@@ -8,6 +8,7 @@ import { LAYOUT_LABELS, type LayoutFamily } from "../distribute/distribution";
 import {
     hintText,
     isVersionAnyTurn,
+    layoutVersionName,
     nearestVersion,
     shownFamily,
     versionDots,
@@ -345,7 +346,10 @@ function LayoutMenuBody({
                     {shownRow?.versions.map((version, i) => (
                         <VersionButton
                             key={i}
-                            name={`${shownRow.label} ${version.label}`}
+                            name={layoutVersionName(
+                                shownRow.label,
+                                version.label,
+                            )}
                             version={version}
                             on={isOwn(version, now)}
                             onPick={() => choose(version)}

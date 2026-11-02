@@ -13,7 +13,9 @@ import {
     type PageBox,
     type StoredTimelineMembership,
 } from "@/stores/TimelineSelectionStore";
-import { joinList, moveName } from "./timelineRangeWords";
+import { moveName } from "./timelineRangeWords";
+import { textList } from "./timelineText";
+import { translateTimelineText } from "./translateTimelineText";
 import { editSurpriseToastId } from "@/utilities/moveThemToo";
 import { toastTimelineError } from "./timelineErrorMessages";
 
@@ -34,7 +36,7 @@ import { toastTimelineError } from "./timelineErrorMessages";
 export type PassThroughTranslate = (
     key: string,
     defaultMessage: string,
-    params?: Record<string, string>,
+    params?: Record<string, string | number>,
 ) => string;
 
 const defaultTranslate: PassThroughTranslate = (key, defaultMessage, params) =>
@@ -71,12 +73,16 @@ export function narrowingFlag(
 export function passedPages(
     pass: Pick<TimelinePassThrough, "flags">,
     boxes: readonly PageBox[],
-): { first: string; last: string } | null {
+): { first: string; last: string; count: number } | null {
     const names = pass.flags.map(
         (beat) => boxes.find((b) => b.end === beat)?.name,
     );
     if (names.length === 0 || names.some((n) => n === undefined)) return null;
-    return { first: names[0]!, last: names[names.length - 1]! };
+    return {
+        first: names[0]!,
+        last: names[names.length - 1]!,
+        count: names.length,
+    };
 }
 
 /**
@@ -92,27 +98,22 @@ export function passThroughMessage(
 ): string {
     const pages = passedPages(pass, boxes);
     if (pages)
-        return pages.first === pages.last
-            ? translate(
-                  "timeline.edit.passThrough.noLongerStop.one",
-                  "Page {page} is no longer a keyframe",
-                  { page: pages.first },
-              )
-            : translate(
-                  "timeline.edit.passThrough.noLongerStop.many",
-                  "Pages {first}–{last} are no longer keyframes",
-                  pages,
-              );
+        return translate(
+            "timeline.edit.passThrough.noLongerStop.pages",
+            "{count, plural, =1 {Page {first} is no longer a keyframe} other {Pages {first}–{last} are no longer keyframes}}",
+            pages,
+        );
     if (pass.flags.length > 0)
         return translate(
             "timeline.edit.passThrough.noLongerStop.unnamed",
             "The pages inside this move are no longer keyframes",
         );
-    const through = joinList(
-        pass.overridden.map((r) => moveName(r, boxes, moves)),
+    // The moves' names in the app's language, joined as its lists are
+    const through = translateTimelineText(
+        textList(pass.overridden.map((r) => moveName(r, boxes, moves))),
     );
-    const caughtUp = joinList(
-        pass.caughtUp.map((r) => moveName(r, boxes, moves)),
+    const caughtUp = translateTimelineText(
+        textList(pass.caughtUp.map((r) => moveName(r, boxes, moves))),
     );
     const params = { through, caughtUp };
     if (through && caughtUp)
@@ -149,17 +150,11 @@ export function keepStopsLabel(
             "timeline.edit.passThrough.keepStops.unnamed",
             "Keep them as keyframes",
         );
-    return pages.first === pages.last
-        ? translate(
-              "timeline.edit.passThrough.keepStops.one",
-              "Keep Page {page} as a keyframe",
-              { page: pages.first },
-          )
-        : translate(
-              "timeline.edit.passThrough.keepStops.many",
-              "Keep Pages {first}–{last} as keyframes",
-              pages,
-          );
+    return translate(
+        "timeline.edit.passThrough.keepStops.pages",
+        "{count, plural, =1 {Keep Page {first} as a keyframe} other {Keep Pages {first}–{last} as keyframes}}",
+        pages,
+    );
 }
 
 /**
@@ -216,7 +211,10 @@ export function toastPassThrough(
                                   .catch((e: unknown) =>
                                       toastTimelineError(
                                           e,
-                                          "Error moving marchers",
+                                          tolgee.t(
+                                              "timeline.edit.passThrough.keepStopsError",
+                                              "Couldn't keep those pages as keyframes",
+                                          ),
                                       ),
                                   );
                           },

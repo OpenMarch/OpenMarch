@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { runAction } from "@/shortcuts/registry";
 import FilesContent from "./files/FilesContent";
 import WebShowLibrary from "../web/WebShowLibrary";
@@ -163,6 +163,7 @@ function Sidebar({
     onCreateNew: () => void;
     selectedTab: string;
 }) {
+    const { t } = useTranslate();
     async function handleOpenExisting() {
         console.log("Opening existing file...");
         try {
@@ -236,6 +237,10 @@ function Sidebar({
                             href="https://discord.gg/eTsQ98uZzq"
                             target="_blank"
                             rel="noreferrer"
+                            aria-label={t("launchpage.social.link", {
+                                // i18n-ignore: service name, the same in every language
+                                service: "Discord",
+                            })}
                             className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex h-[2.5rem] w-full items-center justify-center gap-8 overflow-clip border px-12 duration-150 ease-out`}
                         >
                             <DiscordLogoIcon size={24} />
@@ -244,6 +249,10 @@ function Sidebar({
                             href="https://github.com/OpenMarch/OpenMarch"
                             target="_blank"
                             rel="noreferrer"
+                            aria-label={t("launchpage.social.link", {
+                                // i18n-ignore: service name, the same in every language
+                                service: "GitHub",
+                            })}
                             className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex h-[2.5rem] w-full items-center justify-center gap-8 overflow-clip border px-12 duration-150 ease-out`}
                         >
                             <GithubLogoIcon size={24} />
@@ -252,6 +261,10 @@ function Sidebar({
                             href="https://www.patreon.com/openmarch"
                             target="_blank"
                             rel="noreferrer"
+                            aria-label={t("launchpage.social.link", {
+                                // i18n-ignore: service name, the same in every language
+                                service: "Patreon",
+                            })}
                             className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex h-[2.5rem] w-full items-center justify-center gap-8 overflow-clip border px-12 duration-150 ease-out`}
                         >
                             <PatreonLogoIcon size={24} />
@@ -267,9 +280,11 @@ function Sidebar({
                         <span className="min-w-0 break-words">
                             <T keyName="launchpage.merch" />
                         </span>
-                        <div className="bg-accent absolute right-[5%] bottom-[-15%] -z-10 h-[1rem] w-[6rem] rounded-full opacity-75 blur-xl">
-                            a
-                        </div>
+                        {/* A decorative glow behind the button, sized by its classes */}
+                        <div
+                            aria-hidden="true"
+                            className="bg-accent absolute right-[5%] bottom-[-15%] -z-10 h-[1rem] w-[6rem] rounded-full opacity-75 blur-xl"
+                        />
                     </a>
                 </div>
                 <hr className="border-stroke w-full border" />

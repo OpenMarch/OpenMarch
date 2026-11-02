@@ -371,13 +371,23 @@ export async function deletePageFlags({
  * - `open`: nothing, for the last flag past every move: the counts never end
  *   (docs/timeline/endless-counts.md), so its `max` is `Infinity`.
  * - `move`: a timeline in the way. `timelineId` is set when one timeline is to blame: one with an
- *   edge on the flag that the flag would leave behind, or one whose range the page timeline would
- *   take (C-12). `message` is the ripple's own refusal otherwise.
+ *   edge on the flag that the flag would leave behind (`reason` "leftBehind"), or one whose range
+ *   the page timeline would take (C-12, "sharesRange"). Otherwise the ripple refused
+ *   ("inTheWay"). `reason` is what the screen words; `message` is the refusal for logs only,
+ *   in English.
  */
 export type PageFlagMoveBlock =
     | { kind: "flag"; pageId: number }
     | { kind: "open" }
-    | { kind: "move"; timelineId?: number; message: string };
+    | {
+          kind: "move";
+          timelineId?: number;
+          reason: PageFlagMoveBlockReason;
+          message: string;
+      };
+
+/** Why a timeline stops a page flag (`PageFlagMoveBlock`'s `move`). */
+export type PageFlagMoveBlockReason = "leftBehind" | "sharesRange" | "inTheWay";
 
 /** Where page `pageId`'s flag can go: any beat in `[min, max]`, and what stops it at each end. */
 export interface PageFlagMoveLimits {
@@ -431,7 +441,11 @@ export function pageFlagMoveBlock(
         plan = planTimelineRipple(before, after, rows);
     } catch (error) {
         if (error instanceof TimelineWriteError)
-            return { kind: "move", message: error.message };
+            return {
+                kind: "move",
+                reason: "inTheWay",
+                message: error.message,
+            };
         throw error;
     }
     const left = (
@@ -446,6 +460,7 @@ export function pageFlagMoveBlock(
             return {
                 kind: "move",
                 timelineId: l.id,
+                reason: "leftBehind",
                 message: "a move on the flag would be left behind",
             };
     for (const t of rows.transitions)
@@ -453,6 +468,7 @@ export function pageFlagMoveBlock(
             return {
                 kind: "move",
                 timelineId: t.timeline_id,
+                reason: "leftBehind",
                 message: "a move on the flag would be left behind",
             };
     const timelineOf = new Map(
@@ -463,6 +479,7 @@ export function pageFlagMoveBlock(
             return {
                 kind: "move",
                 timelineId: timelineOf.get(a.transition_id),
+                reason: "leftBehind",
                 message: "a move on the flag would be left behind",
             };
     // C-12: one timeline per range. Only a timeline that changed can newly share a range. Moves
@@ -485,6 +502,7 @@ export function pageFlagMoveBlock(
             return {
                 kind: "move",
                 timelineId: other[0],
+                reason: "sharesRange",
                 message: `two moves would share beats [${r[0]}, ${r[1]})`,
             };
     }

@@ -75,6 +75,7 @@ import { HANDLE_REACH_PX, toolEnvFor } from "../tool/toolEnv";
 import type { Roles } from "@/input/modifierRoles";
 import {
     paramGlyph,
+    toolId,
     type AnyToolKind,
     type ParamGlyph,
     type ToolEnv,
@@ -188,19 +189,17 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
                     <RemovePointHint />
                 ) : armed!.clickPoints ? (
                     <T
-                        keyName="shapes.edit.drawPointsHint"
-                        defaultValue="Drag on the field to draw a {shape}, or click point after point · <keys></keys> to cancel"
+                        keyName="shapes.edit.drawPointsHintFor"
                         params={{
-                            shape: armed!.shape.label.toLowerCase(),
+                            shape: toolId(armed!),
                             keys: () => <Shortcut binding="Escape" />,
                         }}
                     />
                 ) : (
                     <T
-                        keyName="shapes.edit.drawHint"
-                        defaultValue="Drag on the field to draw a {shape} · <keys></keys> to cancel"
+                        keyName="shapes.edit.drawHintFor"
                         params={{
-                            shape: armed!.shape.label.toLowerCase(),
+                            shape: toolId(armed!),
                             keys: () => <Shortcut binding="Escape" />,
                         }}
                     />

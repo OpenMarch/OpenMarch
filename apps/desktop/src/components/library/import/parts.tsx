@@ -17,6 +17,7 @@ import {
     SealWarningIcon,
 } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 import type {
     ImportFileRef,
     ImportProgress,
@@ -25,6 +26,7 @@ import type {
 import { formatLength, fromMeters, type Length } from "@/view3d/core/sizes";
 import type { ReviewError } from "./importReview";
 import type { RowText } from "./reportText";
+import { formatLocale } from "@/utilities/formatLocale";
 
 export function Label({
     children,
@@ -62,8 +64,17 @@ export function FileTypeIcon({
 }
 
 export function formatBytes(bytes: number): string {
-    if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
-    return `${Math.max(1, Math.round(bytes / 1e3))} KB`;
+    const language = formatLocale();
+    if (bytes >= 1e6)
+        return tolgee.t("library.import.fileSizeMb", "{size} MB", {
+            size: (bytes / 1e6).toLocaleString(language, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+            }),
+        });
+    return tolgee.t("library.import.fileSizeKb", "{size} KB", {
+        size: Math.max(1, Math.round(bytes / 1e3)).toLocaleString(language),
+    });
 }
 
 export function Row({ title, detail, muted }: RowText & { muted?: boolean }) {
@@ -346,10 +357,24 @@ export function sizeText(width: Length, height: Length): string {
     );
     const inches = eighths.map((e) => e / 8);
     if (inches.every((i) => i % 12 === 0 && i >= 48)) {
-        return `${inches[0] / 12} × ${inches[1] / 12} ft`;
+        return tolgee.t(
+            "library.import.size.feetSize",
+            "{width} × {height} ft",
+            {
+                width: String(inches[0] / 12),
+                height: String(inches[1] / 12),
+            },
+        );
     }
     if (inches.every((i) => i < 120)) {
-        return `${inches[0]} × ${inches[1]} in`;
+        return tolgee.t(
+            "library.import.size.inchesSize",
+            "{width} × {height} in",
+            { width: String(inches[0]), height: String(inches[1]) },
+        );
     }
-    return `${formatLength(width, "imperial")} × ${formatLength(height, "imperial")}`;
+    return tolgee.t("library.import.size.lengthSize", "{width} × {height}", {
+        width: formatLength(width, "imperial"),
+        height: formatLength(height, "imperial"),
+    });
 }

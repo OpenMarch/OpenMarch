@@ -17,20 +17,27 @@ import { getDisplayBindings, type ShortcutOverrides } from "@/shortcuts/keymap";
 import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import { isMacPlatform } from "@/shortcuts/platform";
 
-/** The order and names of the groups, by each action's category (`shortcuts/definitions.ts`) */
-const GROUPS: readonly (readonly [category: string, title: string])[] = [
-    ["playback", "Playback"],
-    ["navigation", "Pages"],
-    ["timeline", "Timeline"],
-    ["edit", "Edit"],
-    ["select", "Selection"],
-    ["movement", "Move marchers"],
-    ["alignment", "Alignment"],
-    ["shape", "Shapes"],
-    ["batchEdit", "Batch editing"],
-    ["cursor", "Tools"],
-    ["ui", "View"],
-    ["file", "File"],
+/**
+ * The order and names of the groups, by each action's category (`shortcuts/definitions.ts`). The
+ * title is an i18n key with its English default, resolved when the list is built.
+ */
+const GROUPS: readonly (readonly [
+    category: string,
+    titleKey: string,
+    title: string,
+])[] = [
+    ["playback", "shortcutsDialog.group.playback", "Playback"],
+    ["navigation", "shortcutsDialog.group.navigation", "Pages"],
+    ["timeline", "shortcutsDialog.group.timeline", "Timeline"],
+    ["edit", "shortcutsDialog.group.edit", "Edit"],
+    ["select", "shortcutsDialog.group.select", "Selection"],
+    ["movement", "shortcutsDialog.group.movement", "Move marchers"],
+    ["alignment", "shortcutsDialog.group.alignment", "Alignment"],
+    ["shape", "shortcutsDialog.group.shape", "Shapes"],
+    ["batchEdit", "shortcutsDialog.group.batchEdit", "Batch editing"],
+    ["cursor", "shortcutsDialog.group.cursor", "Tools"],
+    ["ui", "shortcutsDialog.group.ui", "View"],
+    ["file", "shortcutsDialog.group.file", "File"],
 ];
 
 interface Row {
@@ -40,24 +47,51 @@ interface Row {
      * " / " ("W / A / S / D"); shown as `Shortcut`s for this platform
      */
     readonly keys: string;
+}
+
+interface ExtraRow extends Row {
     /** i18n key for `label`, which is its English default */
-    readonly labelKey?: string;
+    readonly labelKey: string;
 }
 
 /**
  * Keys outside the shortcut actions: the timeline's own listeners and gestures (UI-12, UI-14),
  * and the nudge, whose many actions (one per direction and step) show as one row
  */
-const EXTRA_ROWS: Readonly<Record<string, readonly Row[]>> = {
+const EXTRA_ROWS: Readonly<Record<string, readonly ExtraRow[]>> = {
     timeline: [
-        { label: "Fit the show, or back", keys: "Shift + Z" },
-        { label: "Leave an isolated move", keys: "Escape" },
-        { label: "Draw a range (drag)", keys: "Mod + Drag" },
-        { label: "Zoom the timeline", keys: "Mod + Scroll" },
-        { label: "Drag without snapping", keys: "Alt + Drag" },
+        {
+            label: "Fit the show, or back",
+            labelKey: "shortcutsDialog.timeline.fitShow",
+            keys: "Shift + Z",
+        },
+        {
+            label: "Leave an isolated move",
+            labelKey: "shortcutsDialog.timeline.leaveIsolatedMove",
+            keys: "Escape",
+        },
+        {
+            label: "Draw a range (drag)",
+            labelKey: "shortcutsDialog.timeline.drawRange",
+            keys: "Mod + Drag",
+        },
+        {
+            label: "Zoom the timeline",
+            labelKey: "shortcutsDialog.timeline.zoom",
+            keys: "Mod + Scroll",
+        },
+        {
+            label: "Drag without snapping",
+            labelKey: "shortcutsDialog.timeline.dragWithoutSnapping",
+            keys: "Alt + Drag",
+        },
     ],
     movement: [
-        { label: "Nudge the selected marchers", keys: "W / A / S / D" },
+        {
+            label: "Nudge the selected marchers",
+            labelKey: "shortcutsDialog.movement.nudge",
+            keys: "W / A / S / D",
+        },
         {
             label: "Fine control while dragging marchers",
             labelKey: "shortcutsDialog.movement.fineControl",
@@ -125,27 +159,27 @@ export function shortcutGroups(
         byCategory.set(action.category, rows);
     }
     const groups: { title: string; rows: Row[] }[] = [];
-    for (const [category, title] of GROUPS) {
+    for (const [category, titleKey, englishTitle] of GROUPS) {
         const rows = [
             ...(byCategory.get(category) ?? []),
             ...(EXTRA_ROWS[category] ?? []).map((row) => ({
-                label: row.labelKey
-                    ? tolgee.t(row.labelKey, row.label)
-                    : row.label,
+                label: tolgee.t(row.labelKey, row.label),
                 keys: row.keys,
             })),
         ];
         byCategory.delete(category);
         if (rows.length === 0) continue;
+        const title = tolgee.t(titleKey, englishTitle);
         const same = groups.find((g) => g.title === title);
         if (same) same.rows.push(...rows);
         else groups.push({ title, rows });
     }
     // A category added later still shows, at the end
+    const otherTitle = tolgee.t("shortcutsDialog.group.other", "Other");
     for (const rows of byCategory.values()) {
-        const other = groups.find((g) => g.title === "Other");
+        const other = groups.find((g) => g.title === otherTitle);
         if (other) other.rows.push(...rows);
-        else groups.push({ title: "Other", rows });
+        else groups.push({ title: otherTitle, rows });
     }
     return groups;
 }
@@ -189,7 +223,7 @@ export default function ShortcutsDialog() {
                 className="max-h-[80vh] w-[min(56rem,90vw)] overflow-y-auto"
                 aria-describedby={undefined}
             >
-                <DialogTitle>Keyboard shortcuts</DialogTitle>
+                <DialogTitle>{t("shortcutsDialog.title")}</DialogTitle>
                 <div
                     data-testid="shortcuts-dialog"
                     className="columns-1 gap-24 md:columns-2"

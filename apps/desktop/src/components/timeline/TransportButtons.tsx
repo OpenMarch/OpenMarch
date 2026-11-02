@@ -23,6 +23,7 @@ import {
     StopIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
+import { T, useTranslate } from "@tolgee/react";
 import { ShortcutTooltip } from "./ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
 import { isMac } from "./platform";
@@ -281,15 +282,26 @@ interface TransportGuideRow<Mode extends string = string> {
     readonly shortcut: string;
 }
 
+/**
+ * Tolgee's `t` from `useTranslate`, passed into the guides so the buttons that build them re-render
+ * when the language changes (they're memoized)
+ */
+type Translate = (key: string) => string;
+
 /** What Previous (or Next) does with each modifier, in the order the tooltip lists them */
 const navigationGuide = (
     back: boolean,
+    t: Translate,
 ): readonly TransportGuideRow<TransportNavigationMode>[] => {
     return [
         {
             mode: "page",
             icon: back ? SKIP_BACK_ICON : SKIP_FORWARD_ICON,
-            label: back ? "Previous page" : "Next page",
+            label: t(
+                back
+                    ? "timeline.transport.previousPage"
+                    : "timeline.transport.nextPage",
+            ),
             shortcut: back
                 ? TRANSPORT_SHORTCUTS.previousPage
                 : TRANSPORT_SHORTCUTS.nextPage,
@@ -297,7 +309,11 @@ const navigationGuide = (
         {
             mode: "beat",
             icon: back ? BEAT_BACK_ICON : BEAT_FORWARD_ICON,
-            label: back ? "Previous beat" : "Next beat",
+            label: t(
+                back
+                    ? "timeline.transport.previousBeat"
+                    : "timeline.transport.nextBeat",
+            ),
             shortcut: back
                 ? TRANSPORT_SHORTCUTS.previousBeat
                 : TRANSPORT_SHORTCUTS.nextBeat,
@@ -305,7 +321,11 @@ const navigationGuide = (
         {
             mode: "edge",
             icon: back ? START_ICON : END_ICON,
-            label: back ? "Start of the show" : "End of the show",
+            label: t(
+                back
+                    ? "timeline.transport.showStart"
+                    : "timeline.transport.showEnd",
+            ),
             // Shortcut writes Alt as ⌥ on a Mac
             shortcut: back
                 ? TRANSPORT_SHORTCUTS.firstPage
@@ -371,6 +391,7 @@ export const TransportNavigationButton = memo(
         /** "timeline" in the editor, "view3d" in the 3D View window */
         testIdPrefix?: string;
     }) {
+        const { t } = useTranslate();
         const mode = useHeldNavigationMode(onNavigate != null);
         const back = direction === "previous";
         const onClick = useCallback(
@@ -380,7 +401,7 @@ export const TransportNavigationButton = memo(
                 ),
             [back, onNavigate],
         );
-        const guide = navigationGuide(back);
+        const guide = navigationGuide(back, t);
         const row = guide.find((r) => r.mode === mode)!;
         return (
             <TransportButton
@@ -434,23 +455,36 @@ const PLAYHEAD_MARK = (
     </svg>
 );
 
+/** The lines' marks, for the tags in the play guide's words */
+const PLAY_MARKS = {
+    start: () => START_FLAG_MARK,
+    playhead: () => PLAYHEAD_MARK,
+};
+
 /** "Play from start flag ⚑ and continue", with the lines' marks after their names (owner) */
 const playWords = (
     from: "start" | "playhead",
     stopAtPlayhead: boolean,
+    t: Translate,
 ): { label: string; content: ReactNode } => {
-    const name = from === "start" ? "start flag" : "playhead";
-    const end = stopAtPlayhead ? "stop at playhead" : "continue";
+    const [label, marked] =
+        from === "start"
+            ? stopAtPlayhead
+                ? ([
+                      "timeline.transport.playFromStartAndStop",
+                      "timeline.transport.playFromStartAndStopMarked",
+                  ] as const)
+                : ([
+                      "timeline.transport.playFromStartAndContinue",
+                      "timeline.transport.playFromStartAndContinueMarked",
+                  ] as const)
+            : ([
+                  "timeline.transport.playFromPlayheadAndContinue",
+                  "timeline.transport.playFromPlayheadAndContinueMarked",
+              ] as const);
     return {
-        label: `Play from ${name} and ${end}`,
-        content: (
-            <>
-                Play from {name}
-                {from === "start" ? START_FLAG_MARK : PLAYHEAD_MARK}
-                and {end}
-                {stopAtPlayhead && PLAYHEAD_MARK}
-            </>
-        ),
+        label: t(label),
+        content: <T keyName={marked} params={PLAY_MARKS} />,
     };
 };
 
@@ -463,11 +497,14 @@ const playWords = (
 const playGuide = (
     loops: boolean,
     playsOn: boolean,
+    t: Translate,
 ): readonly TransportGuideRow<TransportPlayMode>[] => [
     {
         mode: "play",
         icon: PLAY_ICON,
-        ...(loops ? { label: "Play the loop" } : playWords("start", playsOn)),
+        ...(loops
+            ? { label: t("timeline.transport.playLoop") }
+            : playWords("start", playsOn, t)),
         shortcut: TRANSPORT_SHORTCUTS.play,
     },
     ...(playsOn
@@ -475,7 +512,7 @@ const playGuide = (
               {
                   mode: "alt" as const,
                   icon: PLAY_ON_ICON,
-                  ...playWords("start", false),
+                  ...playWords("start", false, t),
                   // Shortcut writes Alt as ⌥ on a Mac
                   shortcut: TRANSPORT_SHORTCUTS.playOn,
               },
@@ -485,24 +522,26 @@ const playGuide = (
         mode: "shift",
         icon: PLAY_FROM_PLAYHEAD_ICON,
         ...(loops
-            ? { label: "Play the loop once" }
-            : playWords("playhead", false)),
+            ? { label: t("timeline.transport.playLoopOnce") }
+            : playWords("playhead", false, t)),
         shortcut: TRANSPORT_SHORTCUTS.playPage,
     },
 ];
 
 /** What Stop (Space) and Pause (Shift+Space) do while playing (UI-24) */
-const stopGuide: readonly TransportGuideRow<TransportPlayMode>[] = [
+const stopGuide = (
+    t: Translate,
+): readonly TransportGuideRow<TransportPlayMode>[] => [
     {
         mode: "play",
         icon: STOP_ICON,
-        label: "Stop and go back",
+        label: t("timeline.transport.stopAndGoBack"),
         shortcut: TRANSPORT_SHORTCUTS.play,
     },
     {
         mode: "shift",
         icon: PAUSE_ICON,
-        label: "Pause here",
+        label: t("timeline.transport.pauseHere"),
         shortcut: TRANSPORT_SHORTCUTS.playPage,
     },
 ];
@@ -530,6 +569,7 @@ export const TransportPlayButton = memo(function TransportPlayButton({
     /** "timeline" in the editor, "view3d" in the 3D View window */
     testIdPrefix?: string;
 }) {
+    const { t } = useTranslate();
     const playsOn = onPlayOn != null;
     const held = useHeldPlayMode(onPlayingChange != null, playsOn);
     const togglePlaying = useCallback(
@@ -543,7 +583,7 @@ export const TransportPlayButton = memo(function TransportPlayButton({
         [isPlaying, onPlayingChange, onPlayFromPlayhead, onPlayOn, playsOn],
     );
     const onClick = onPlayingChange ? togglePlaying : undefined;
-    const guide = isPlaying ? stopGuide : playGuide(playLoops, playsOn);
+    const guide = isPlaying ? stopGuide(t) : playGuide(playLoops, playsOn, t);
     const mode =
         held === "shift" && !onPlayFromPlayhead
             ? "play"

@@ -58,8 +58,8 @@ export interface SetMarchersToNeighborPageArgs {
 const MESSAGES = {
     previous: {
         none: "actions.batchEdit.noPreviousPage",
-        all: "actions.batchEdit.setAllToPreviousSuccess",
-        selected: "actions.batchEdit.setSelectedToPreviousSuccess",
+        all: "actions.batchEdit.setAllToPreviousDone",
+        selected: "actions.batchEdit.setSelectedToPreviousDone",
         param: "previousPage",
     },
     next: {

@@ -15,6 +15,7 @@ import { basename, extname } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { isReadOnlySql, isView3dSqlReadMethod } from "./view3dSql";
 import { createCameraProfileHandlers } from "./view3dCameraProfiles";
+import { t } from "./i18n";
 import type { LibraryStore } from "./library/store";
 import {
     VIEW3D_AUTO_OPEN_CHANNELS,
@@ -259,7 +260,7 @@ export function openView3dWindow({
     const colors = TITLE_BAR_COLORS[query.theme === "light" ? "light" : "dark"];
 
     const created = new BrowserWindow({
-        title: `3D View — ${query.show}`,
+        title: t("view3d.window.title", { showName: query.show }),
         icon: config.icon,
         width: 1280,
         height: 800,

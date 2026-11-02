@@ -20,7 +20,7 @@ import {
     type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import type { CueFlagKind, CueTarget } from "@openmarch/core";
 import {
@@ -157,6 +157,7 @@ function GreyRow({
     flags: ReadonlyMap<number, readonly CueFlagKind[]>;
     onGo: (target: CueTarget) => void;
 }) {
+    const { t } = useTranslate();
     return (
         <div
             className="relative"
@@ -182,7 +183,7 @@ function GreyRow({
                         if (!isTimelinePress(e)) onGo(row.target);
                     }}
                 >
-                    {label}: {cue.label}
+                    {t("visuals.band.rowCue", { who: label, value: cue.label })}
                 </CueBlock>
             ))}
         </div>
@@ -224,7 +225,7 @@ function EditableLane({
     /** Pastes the clipboard at the playhead onto the focused who. */
     pasteAt: () => void;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const { data: cues } = useQuery(allCuesQueryOptions());
     const { mutate: createCues } = useMutation(
@@ -422,7 +423,13 @@ function EditableLane({
     const flagTitle = (cue: LaneCue) => {
         const kinds = flags.get(cue.id);
         return kinds
-            ? `${cue.label}: ${kinds.map((k) => t(`visuals.flags.${k}`)).join(", ")}`
+            ? t("visuals.band.flaggedCue", {
+                  value: cue.label,
+                  // each problem is a sentence of its own, one per line
+                  problems: kinds
+                      .map((k) => t(`visuals.flags.${k}`))
+                      .join("\n"),
+              })
             : cue.label;
     };
 
@@ -542,7 +549,7 @@ function ResultRow({
     spans: ResultSpan[];
     pixelsPerBeat: number;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <div
             className="relative"
@@ -582,7 +589,7 @@ function BandBody({
     data: VisualsBandData | null;
     geometry: TimelineBandGeometry;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const toggleFocus = useVisualsStore((s) => s.toggleFocus);
     const label = useTargetLabel();
     const { pixelsPerBeat, top, width, snapBeats } = geometry;

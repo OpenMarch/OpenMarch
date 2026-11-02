@@ -6,7 +6,7 @@ import {
     DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
 import { ListIcon } from "@phosphor-icons/react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useSyncExternalStore } from "react";
 import type { ActionId } from "@/shortcuts/definitions";
 import { getActionLabel } from "@/shortcuts/labels";
@@ -36,7 +36,7 @@ const FILE_ACTIONS: ActionId[] = [
  * saved in the browser) and the show's Versions.
  */
 export default function WebFileMenu() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     // No ⌘O / Ctrl+, on a tablet until a keyboard has been used
     const showHints = useShowShortcutHints();
     const openId = useWebLibraryStore((state) => state.library?.openId ?? null);

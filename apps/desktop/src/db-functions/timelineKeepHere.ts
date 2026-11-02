@@ -13,6 +13,7 @@ import { refuse } from "./timelineErrors";
 import { addMarchersToTimelineInTransaction } from "./timelineMembership";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitionsInTransaction";
 import { countsText } from "@/timeline/timelineRangeWords";
+import { text } from "@/timeline/timelineText";
 import { readPageGrid } from "./timelineRipple";
 import { clearOwnPageMoves, isPageBox, ownPageMoves } from "./timelineMoves";
 import {
@@ -70,7 +71,9 @@ const refuseUnlessPageBox = async (tx: DbTransaction, box: KeptPageBox) => {
     // Worded in pages and counts like the other refusals; home has no box
     if (!isPageBox(grid, box))
         refuse(
-            `Keep works on a whole page, not ${countsText(box, grid.pages.slice(1))}`,
+            text.t("timeline.refusals.keep.wholePage", {
+                counts: countsText(box, grid.pages.slice(1)),
+            }),
         );
 };
 

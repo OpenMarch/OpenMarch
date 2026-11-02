@@ -16,6 +16,7 @@ import {
 import { afterHistoryCommit } from "./history";
 import { readPageGrid, withTimelinePageRipple } from "./timelineRipple";
 import { refuse } from "./timelineErrors";
+import { text } from "@/timeline/timelineText";
 import type { DbTransaction } from "./types";
 
 /**
@@ -184,7 +185,10 @@ export async function ensureCountsInTransaction({
     if (need <= beatCount) return beatCount;
     if (need - beatCount > MAX_COUNTS_PER_EDIT)
         refuse(
-            `that is ${need - beatCount} counts past the end; one edit stores at most ${MAX_COUNTS_PER_EDIT}`,
+            text.t("timeline.refusals.tooFarPastEnd", {
+                count: need - beatCount,
+                max: MAX_COUNTS_PER_EDIT,
+            }),
         );
     return await appendCountsInTransaction({ tx, counts: need - beatCount });
 }

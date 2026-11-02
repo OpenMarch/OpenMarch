@@ -31,7 +31,13 @@ export async function setAsShownOn(
             marcherIds,
         });
     } catch (error) {
-        toastTimelineError(error, "Error setting marchers as shown");
+        toastTimelineError(
+            error,
+            tolgee.t(
+                "timeline.rangeMenu.setAsShownError",
+                "Error setting marchers as shown",
+            ),
+        );
         return NOTHING;
     }
 }

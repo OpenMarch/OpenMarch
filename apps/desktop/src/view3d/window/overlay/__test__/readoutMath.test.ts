@@ -153,6 +153,11 @@ describe("formatLength", () => {
         });
     });
 
+    it("writes the given locale's decimal mark", () => {
+        expect(formatLength(12.25, "metric", "fr").value).toBe("12,3");
+        expect(formatLength(1234.5, "metric", "en").value).toBe("1235");
+    });
+
     it("clamps bad values to zero", () => {
         expect(formatLength(Number.NaN, "metric").value).toBe("0.0");
         expect(formatLength(-3, "imperial").value).toBe("0");

@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useTranslate } from "@tolgee/react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import * as ToolTip from "@radix-ui/react-tooltip";
 import { TooltipClassName } from "@openmarch/ui";
@@ -53,6 +54,7 @@ export const TimelineBasicExpertMarks = memo(function TimelineBasicExpertMarks({
     marks: ReadonlyMap<string | number, number>;
     pixelsPerBeat: number;
 }) {
+    const { t } = useTranslate();
     if (marks.size === 0) return null;
     return (
         <>
@@ -61,7 +63,10 @@ export const TimelineBasicExpertMarks = memo(function TimelineBasicExpertMarks({
                 if (page.isInitial || count === 0) return null;
                 // A page marker is at its box's start (its flag is the next page's start)
                 const start = page.atBeat;
-                const text = `${count === 1 ? "One marcher uses" : `${count} marchers use`} Expert moves on page ${page.label}. Basic can't edit ${count === 1 ? "it" : "them"} here.`;
+                const text = t("timeline.basic.expertMark.tooltip", {
+                    count,
+                    page: page.label,
+                });
                 return (
                     <ToolTip.Root key={page.id} delayDuration={300}>
                         <ToolTip.Trigger asChild>
@@ -74,7 +79,7 @@ export const TimelineBasicExpertMarks = memo(function TimelineBasicExpertMarks({
                                     left: beatToX(start, pixelsPerBeat) + 4,
                                 }}
                             >
-                                E
+                                {t("timeline.basic.expertMark.letter")}
                             </span>
                         </ToolTip.Trigger>
                         <ToolTip.Portal>
@@ -111,6 +116,7 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
     onSeek?: (beat: number) => void;
     onRemove?: (beat: number) => void;
 }) {
+    const { t } = useTranslate();
     return (
         <>
             {points.map((point) => (
@@ -120,8 +126,14 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
                             type="button"
                             data-testid="basic-point-tick"
                             data-timeline-interactive="true"
-                            aria-label={`Position at ${point.label}`}
-                            title={`Position at ${point.label}. Right-click to remove it.`}
+                            aria-label={t("timeline.basic.point.label", {
+                                count: point.count,
+                                page: point.page,
+                            })}
+                            title={t("timeline.basic.point.tooltip", {
+                                count: point.count,
+                                page: point.page,
+                            })}
                             className="group/tick pointer-events-auto absolute z-20 flex w-8 -translate-x-1/2 cursor-pointer justify-center"
                             style={{
                                 top,
@@ -147,7 +159,7 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
                                     className="text-body hover:text-red rounded-4 cursor-pointer px-8 py-4 outline-none"
                                     onSelect={() => onRemove(point.beat)}
                                 >
-                                    Remove this count&apos;s position
+                                    {t("timeline.basic.point.remove")}
                                 </ContextMenu.Item>
                             </ContextMenu.Content>
                         </ContextMenu.Portal>

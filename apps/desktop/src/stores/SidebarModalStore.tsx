@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ReactNode } from "react";
+import { T } from "@tolgee/react";
 
 type SidebarModalStore = {
     isOpen: boolean;
@@ -19,7 +20,7 @@ export const useSidebarModalStore = create<SidebarModalStore>((set) => ({
     highlightSelection: false,
     content: (
         <h4 className="text-h4 text-red">
-            Sidebar modal content failed to render
+            <T keyName="sidebar.renderFail" />
         </h4>
     ), // default
     contentId: "",

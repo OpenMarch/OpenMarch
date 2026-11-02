@@ -137,6 +137,12 @@ describe("display", () => {
         expect(formatMeters(0.004)).toBe("0.00 m");
     });
 
+    it("writes meters with the given locale's decimal mark", () => {
+        expect(formatMeters(1.8288, "fr")).toBe("1,83 m");
+        expect(formatMeters(1234.5, "de")).toBe("1234,50 m");
+        expect(formatMeters(-0.001)).toBe("0.00 m");
+    });
+
     it("rounds per the measurement system", () => {
         expect(formatLength(1.8288, "imperial")).toBe(`6' 0"`);
         expect(formatLength(1.8288, "metric")).toBe("1.83 m");

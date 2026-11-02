@@ -372,11 +372,13 @@ export interface TimelineCommonProps
     readonly expertMarks?: ReadonlyMap<string | number, number>;
 }
 
-/** A mid-page position on a Basic page box (UI-19): its beat and its count in words */
+/** A mid-page position on a Basic page box (UI-19): its beat, and its count on its page */
 export interface TimelineBasicPoint {
     readonly beat: number;
-    /** "count 4 of page 2" */
-    readonly label: string;
+    /** Its count on its page, from 1 */
+    readonly count: number;
+    /** Its page's name, "2" */
+    readonly page: string;
 }
 
 export interface TimelineRangeChange extends TimelineBeatRange {

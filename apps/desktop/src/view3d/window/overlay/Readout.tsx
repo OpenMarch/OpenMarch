@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { formatLocale } from "@/utilities/formatLocale";
 import clsx from "clsx";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
@@ -142,7 +143,7 @@ export function Readout({ large }: { large: boolean }) {
     });
 
     const length = (meters: number) => {
-        const { value, unit } = formatLength(meters, system);
+        const { value, unit } = formatLength(meters, system, formatLocale());
         return t(unit === "ft" ? "view3d.unit.feet" : "view3d.unit.meters", {
             value,
         });

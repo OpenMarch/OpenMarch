@@ -4,6 +4,19 @@
 
 import { OPENMARCH_API_ENDPOINT } from "@/global/Constants";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import tolgee from "@/global/singletons/Tolgee";
+
+// The app's own fallbacks; a message the server sends back is shown as it comes
+const statusFailure = (status: number, statusText: string | undefined) =>
+    tolgee
+        .t("auth.api.requestFailedStatus", {
+            status,
+            statusText: statusText ?? "",
+        })
+        .trim();
+const reasonFailure = (reason: string) =>
+    tolgee.t("auth.api.requestFailed", { reason });
+const tokenRequired = () => tolgee.t("auth.api.tokenRequired");
 
 function getApiEndpoint(): string {
     return OPENMARCH_API_ENDPOINT.endsWith("/")
@@ -30,7 +43,7 @@ async function authenticatedFetch<T>(
 ): Promise<T> {
     const token = await getAccessToken();
     if (!token) {
-        throw new Error("Authentication token is required");
+        throw new Error(tokenRequired());
     }
 
     const endpoint = getApiEndpoint();
@@ -57,7 +70,7 @@ async function authenticatedFetch<T>(
             return response.data;
         }
 
-        let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+        let errorMessage = statusFailure(response.status, response.statusText);
         if (response.data) {
             const errorData = response.data as {
                 error?: string;
@@ -81,7 +94,7 @@ async function authenticatedFetch<T>(
                 message: axiosError.message,
             });
 
-            let errorMessage = `API request failed: ${axiosError.message}`;
+            let errorMessage = reasonFailure(axiosError.message);
             if (axiosError.response?.data) {
                 const errorData = axiosError.response.data as {
                     error?: string;
@@ -94,7 +107,10 @@ async function authenticatedFetch<T>(
                     errorMessage = axiosError.response.data;
                 }
             } else if (axiosError.response?.status) {
-                errorMessage = `API request failed: ${axiosError.response.status} ${axiosError.response.statusText || ""}`;
+                errorMessage = statusFailure(
+                    axiosError.response.status,
+                    axiosError.response.statusText,
+                );
             }
             throw new Error(errorMessage);
         } else {
@@ -152,7 +168,7 @@ export async function apiPostFormData<T>(
 ): Promise<T> {
     const token = await getAccessToken();
     if (!token) {
-        throw new Error("Authentication token is required");
+        throw new Error(tokenRequired());
     }
 
     const endpoint = getApiEndpoint();
@@ -177,7 +193,7 @@ export async function apiPostFormData<T>(
             return response.data;
         }
 
-        let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+        let errorMessage = statusFailure(response.status, response.statusText);
         if (response.data) {
             const errorData = response.data as {
                 error?: string;
@@ -201,7 +217,7 @@ export async function apiPostFormData<T>(
                 message: axiosError.message,
             });
 
-            let errorMessage = `API request failed: ${axiosError.message}`;
+            let errorMessage = reasonFailure(axiosError.message);
             if (axiosError.response?.data) {
                 const errorData = axiosError.response.data as {
                     error?: string;
@@ -214,7 +230,10 @@ export async function apiPostFormData<T>(
                     errorMessage = axiosError.response.data;
                 }
             } else if (axiosError.response?.status) {
-                errorMessage = `API request failed: ${axiosError.response.status} ${axiosError.response.statusText || ""}`;
+                errorMessage = statusFailure(
+                    axiosError.response.status,
+                    axiosError.response.statusText,
+                );
             }
             throw new Error(errorMessage);
         } else {

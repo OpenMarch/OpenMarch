@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import Shortcut from "@/components/ui/Shortcut";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import type { Translate } from "../labels";
 import {
@@ -55,7 +55,7 @@ function DockedSteps({
 }) {
     // The one-liner's answers on the steps they answer
     const [prefill] = useState(() => run.fillAhead?.(typed) ?? typed);
-    const { t: tolgeeT } = useTolgee();
+    const { t: tolgeeT } = useTranslate();
     const t: Translate = (key, params) => tolgeeT(key, params as never);
     // A one-liner opens at the first step it didn't fill, or the last one, so one Enter finishes
     // it (sims B354); Backspace still goes back over what it filled

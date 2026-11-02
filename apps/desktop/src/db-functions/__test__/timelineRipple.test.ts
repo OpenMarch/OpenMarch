@@ -1,4 +1,5 @@
 import { afterEach, describe, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { asc, eq, getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
@@ -419,7 +420,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             expect(error).toBeInstanceOf(TimelineWriteError);
             expect((error as TimelineWriteError).code).toBe("E-ARGS");
             // Named in pages and counts, never beats (wp18)
-            expect((error as Error).message).toBe(
+            expect(refusalText(error)).toBe(
                 "E-ARGS: this change would leave Move 1 (Page 2, counts 3–4) with no counts; delete or shorten it first",
             );
             expect(await snapshot(db)).toEqual(before);
@@ -867,7 +868,7 @@ describeDbTests("page and beat ripple in timeline mode", (it) => {
             );
             expect(error).toBeInstanceOf(TimelineWriteError);
             expect((error as TimelineWriteError).code).toBe("E-ARGS");
-            expect((error as Error).message).toMatch(
+            expect(refusalText(error)).toMatch(
                 /^E-ARGS: this change would leave Move 1 \(Page 3, counts 2–5\) with no counts; delete or shorten it first$/,
             );
             expect(await snapshot(db)).toEqual(before);

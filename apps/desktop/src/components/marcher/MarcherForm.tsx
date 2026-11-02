@@ -23,7 +23,7 @@ import {
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
 import FormField from "../ui/FormField";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     allMarcherRowsQueryOptions,
@@ -49,8 +49,8 @@ export interface MarcherFormProps {
     initialAddMethod?: MarcherAddMethod;
 }
 
-const defaultSection = (t: (key: string) => string) =>
-    getTranslatedSectionName("Other", t) || "Other";
+/** The stored section name (never the translated one: it's saved with each marcher) */
+const defaultSection = () => SECTIONS.Other.name;
 
 const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
@@ -117,16 +117,16 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     const isEditMode = marcherIdToEdit !== undefined;
     const isEditReady = !isEditMode || !!existingMarcher;
 
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     useEffect(() => {
-        setSection(defaultSection(t));
-    }, [t]);
+        setSection(defaultSection());
+    }, []);
 
     const resetForm = (preserveSection = false) => {
         setQuantityInput(String(defaultQuantity));
         if (!preserveSection) {
-            setSection(defaultSection(t));
+            setSection(defaultSection());
             setDrillPrefix(defaultDrillPrefix);
             setDrillPrefixTouched(false);
         }
@@ -206,7 +206,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
             setSectionError("");
         } else {
             console.error("Section not found");
-            setSection(defaultSection(t));
+            setSection(defaultSection());
             setSectionError(t("marchers.sectionError.chooseSection"));
         }
     };
@@ -372,7 +372,11 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                         required
                     >
                         <SelectTriggerButton
-                            label={section || t("marchers.section")}
+                            label={
+                                section
+                                    ? getTranslatedSectionName(section, t)
+                                    : t("marchers.section")
+                            }
                         />
                         <SelectContent>
                             {Object.values(SECTIONS).map((section) => {
@@ -397,8 +401,8 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                             <Input
                                 type="text"
                                 placeholder="-"
-                                aria-label="Marcher name input"
-                                title="Marcher name input"
+                                aria-label={t("marchers.nameInput")}
+                                title={t("marchers.nameInput")}
                                 onChange={(event) =>
                                     setName(event.target.value)
                                 }
@@ -409,8 +413,8 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                             <Input
                                 type="text"
                                 placeholder="-"
-                                aria-label="Marcher year input"
-                                title="Marcher year input"
+                                aria-label={t("marchers.yearInput")}
+                                title={t("marchers.yearInput")}
                                 onChange={(event) =>
                                     setYear(event.target.value)
                                 }
@@ -445,8 +449,8 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                             className="max-w-[60%]"
                             rows={5}
                             placeholder={t("marchers.notesPlaceholder")}
-                            aria-label="Marcher notes input"
-                            title="Marcher notes input"
+                            aria-label={t("marchers.notesInput")}
+                            title={t("marchers.notesInput")}
                             onChange={(event) => setNotes(event.target.value)}
                             value={notes}
                         />
@@ -458,7 +462,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                 <Button
                     type="submit"
                     className="w-full"
-                    aria-label="Create Marcher Button"
+                    data-testid="create-marcher-button"
                     disabled={submitIsDisabled || disabledProp || !isEditReady}
                 >
                     {makeButtonString(

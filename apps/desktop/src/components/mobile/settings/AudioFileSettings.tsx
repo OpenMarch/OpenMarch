@@ -38,17 +38,22 @@ import {
 import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { getAudioDuration, getAudioSizeMegabytes } from "../audio-files/utils";
 import clsx from "clsx";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
+import { formatLocale } from "@/utilities/formatLocale";
 
 function formatDuration(seconds: number): string {
     const roundedSeconds = Math.round(seconds);
     const m = Math.floor(roundedSeconds / 60);
     const s = roundedSeconds % 60;
-    return `${m}m ${s}s`;
+    return tolgee.t("mobileExport.audio.duration", {
+        minutes: m,
+        seconds: s,
+    });
 }
 
 function formatDate(date: Date): string {
-    return date.toLocaleString(undefined, {
+    return date.toLocaleString(formatLocale(), {
         month: "numeric",
         day: "numeric",
         year: "numeric",
@@ -82,7 +87,7 @@ function AddAudioDialog({
     isPending: boolean;
     errorMessage: string | null;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <Dialog
             open={open}
@@ -189,7 +194,7 @@ function EditNicknameDialog({
     isPending: boolean;
     errorMessage: string | null;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <Dialog
             open={open}
@@ -256,7 +261,7 @@ export function AudioFileSettings({
     production: { id: number; default_audio_file_id: number | null };
     setDefaultAudioFileId: (audioFileId: number) => void;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const productionId = production.id;
     const queryClient = useQueryClient();
     const setActiveMutation = useSetActiveAudioFileMutation(queryClient);
@@ -449,10 +454,17 @@ export function AudioFileSettings({
                                             )}
                                         </span>
                                         <span>
-                                            {Number(file.sizeMb ?? 0).toFixed(
-                                                2,
-                                            )}{" "}
-                                            MB
+                                            {t("mobileExport.audio.sizeMb", {
+                                                size: Number(
+                                                    file.sizeMb ?? 0,
+                                                ).toLocaleString(
+                                                    formatLocale(),
+                                                    {
+                                                        minimumFractionDigits: 2,
+                                                        maximumFractionDigits: 2,
+                                                    },
+                                                ),
+                                            })}
                                         </span>
                                         <span>
                                             {formatDate(file.createdAt)}

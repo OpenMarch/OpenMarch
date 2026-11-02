@@ -6,6 +6,7 @@ import {
     waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { eq } from "drizzle-orm";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
@@ -334,7 +335,7 @@ describeDbTests("the right-click menu on a converted show", (it) => {
         );
         const refusal = vi.mocked(toastTimelineError).mock.calls[0]![0];
         expect(refusal).toBeInstanceOf(TimelineWriteError);
-        expect((refusal as Error).message).toMatch(/already in this timeline/);
+        expect(refusalText(refusal)).toMatch(/already in this timeline/);
 
         // The first page's clip (from beat 1, drawn at view 0) finds its own timeline
         fireEvent.contextMenu(
@@ -345,7 +346,7 @@ describeDbTests("the right-click menu on a converted show", (it) => {
             expect(toastTimelineError).toHaveBeenCalledTimes(2),
         );
         expect(
-            (vi.mocked(toastTimelineError).mock.calls[1]![0] as Error).message,
+            refusalText(vi.mocked(toastTimelineError).mock.calls[1]![0]),
         ).toMatch(/already in this timeline/);
 
         // Nothing was written

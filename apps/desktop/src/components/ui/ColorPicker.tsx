@@ -14,7 +14,7 @@ import {
 } from "@uiw/react-color";
 import * as Popover from "@radix-ui/react-popover";
 import FormField, { StaticFormField } from "./FormField";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 interface ColorPickerProps {
     initialColor: RgbaColor;
@@ -55,6 +55,7 @@ export default function ColorPicker({
     className,
     doNotUseForm = false,
 }: ColorPickerProps) {
+    const { t } = useTranslate();
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
     const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -148,6 +149,7 @@ export default function ColorPicker({
                             tabIndex={0}
                         >
                             {rgbaToHex(currentColor).toUpperCase()}
+                            {/* i18n-ignore: color code notation (hex, then -a and the alpha value), not prose */}
                             {"-a"}
                             {currentColor.a === 1
                                 ? 1
@@ -194,9 +196,10 @@ export default function ColorPicker({
                     </Popover.Root>
 
                     <Button
+                        aria-label={t("colorPicker.resetToDefault")}
                         tooltipSide="right"
                         size="compact"
-                        tooltipText={"Reset to default"}
+                        tooltipText={t("colorPicker.resetToDefault")}
                         variant="secondary"
                         onClick={resetToDefault}
                         className="rounded-6 h-full"
@@ -230,6 +233,7 @@ function DefaultColorPicker({
     resetToDefault,
     handleChange,
 }: InternalPickerProps) {
+    const { t } = useTranslate();
     return (
         <div className="flex items-center gap-8">
             <Popover.Root>
@@ -242,6 +246,7 @@ function DefaultColorPicker({
                     tabIndex={0}
                 >
                     {rgbaToHex(currentColor).toUpperCase()}
+                    {/* i18n-ignore: color code notation (hex, then -a and the alpha value), not prose */}
                     {"-a"}
                     {currentColor.a === 1
                         ? 1
@@ -288,9 +293,10 @@ function DefaultColorPicker({
             </Popover.Root>
 
             <Button
+                aria-label={t("colorPicker.resetToDefault")}
                 tooltipSide="right"
                 size="compact"
-                tooltipText={"Reset to default"}
+                tooltipText={t("colorPicker.resetToDefault")}
                 variant="secondary"
                 onClick={resetToDefault}
                 className="rounded-6 h-full"

@@ -328,8 +328,20 @@ describe("describePageFlagBlock", () => {
         { id: 3, name: "2", beats: [5, 6, 7, 8].map((index) => ({ index })) },
     ];
     const tracks = [
-        { linkId: 4, label: "Timeline 4", startBeatIndex: 1, endBeatIndex: 5 },
-        { linkId: 5, label: "Timeline 5", startBeatIndex: 2, endBeatIndex: 7 },
+        {
+            linkId: 4,
+            label: "Timeline 4",
+            unnamed: true,
+            startBeatIndex: 1,
+            endBeatIndex: 5,
+        },
+        {
+            linkId: 5,
+            label: "Timeline 5",
+            unnamed: true,
+            startBeatIndex: 2,
+            endBeatIndex: 7,
+        },
         { linkId: 6, label: "Breakaway", startBeatIndex: 3, endBeatIndex: 7 },
     ];
     it("names the flag or the move", () => {
@@ -343,7 +355,12 @@ describe("describePageFlagBlock", () => {
         expect(describePageFlagBlock({ kind: "open" }, pages, tracks)).toBe("");
         expect(
             describePageFlagBlock(
-                { kind: "move", timelineId: 4, message: "E-A3 …" },
+                {
+                    kind: "move",
+                    timelineId: 4,
+                    reason: "inTheWay",
+                    message: "E-A3 …",
+                },
                 pages,
                 tracks,
             ),
@@ -353,6 +370,7 @@ describe("describePageFlagBlock", () => {
                 {
                     kind: "move",
                     timelineId: 6,
+                    reason: "sharesRange",
                     message: "two moves would share beats [3, 7)",
                 },
                 pages,
@@ -364,6 +382,7 @@ describe("describePageFlagBlock", () => {
                 {
                     kind: "move",
                     timelineId: 5,
+                    reason: "leftBehind",
                     message: "a move on the flag would be left behind",
                 },
                 pages,

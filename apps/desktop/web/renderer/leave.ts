@@ -3,6 +3,7 @@
  * New): only when its latest changes aren't safely kept.
  */
 import type { FlushResult } from "../protocol";
+import { workerErrorText } from "./workerErrors";
 import tolgee from "../../src/global/singletons/Tolgee";
 
 export type LeaveDecision =
@@ -10,8 +11,8 @@ export type LeaveDecision =
     | { ask: false }
     /** A memory-only tab with changes since the last download. */
     | { ask: true; reason: "memory" }
-    /** The latest changes couldn't be stored in the browser. */
-    | { ask: true; reason: "unsaved"; error: string };
+    /** The latest changes couldn't be stored in the browser: why, or null if the browser didn't answer. */
+    | { ask: true; reason: "unsaved"; error: string | null };
 
 export function leaveDecision({
     storedInBrowser,
@@ -29,12 +30,16 @@ export function leaveDecision({
     return {
         ask: true,
         reason: "unsaved",
-        error: flush?.error ?? tolgee.t("web.leave.noAnswer"),
+        error: flush?.error ?? null,
     };
 }
 
 export function leaveQuestion(decision: LeaveDecision): string | null {
     if (!decision.ask) return null;
     if (decision.reason === "memory") return tolgee.t("web.leave.memory");
-    return tolgee.t("web.leave.unsaved", { error: decision.error });
+    return decision.error === null
+        ? tolgee.t("web.leave.noAnswer")
+        : tolgee.t("web.leave.unsaved", {
+              error: workerErrorText(decision.error),
+          });
 }

@@ -75,6 +75,12 @@ export type BackupResult =
           code: BackupErrorCode;
           /** English text safe to show to a person. The conversion must not proceed. */
           message: string;
+          /**
+           * `message` as a key in `i18n/en.json`, with its arguments. The main process shows
+           * it translated; this module loads no translations, since the web build runs it too.
+           */
+          messageKey: string;
+          messageParams?: Record<string, string>;
       };
 
 /** Hooks that let tests act at exact points. Production callers pass nothing. */
@@ -155,11 +161,11 @@ export function nextBackupPath(
 
 type BackupFailure = Extract<BackupResult, { ok: false }>;
 
-const fail = (code: BackupErrorCode, message: string): BackupFailure => ({
-    ok: false,
-    code,
-    message,
-});
+const fail = (
+    code: BackupErrorCode,
+    message: string,
+    text: Pick<BackupFailure, "messageKey" | "messageParams">,
+): BackupFailure => ({ ok: false, code, message, ...text });
 
 const errnoOf = (e: unknown): string | undefined => {
     const code = (e as NodeJS.ErrnoException | undefined)?.code;
@@ -186,16 +192,25 @@ function classify(e: unknown, dir: string): BackupFailure {
         fail(
             "directory-not-writable",
             `OpenMarch can't write a backup in "${dir}" (the folder is read-only or you don't have permission). Your file was not changed. Move it to a folder you can write to, then try again.`,
+            {
+                messageKey: "convertShow.backupError.notWritable",
+                messageParams: { folder: dir },
+            },
         );
     const diskFull = () =>
         fail(
             "disk-full",
             `There isn't enough free disk space to back up your file in "${dir}". Your file was not changed. Free some space, then try again.`,
+            {
+                messageKey: "convertShow.backupError.diskFull",
+                messageParams: { folder: dir },
+            },
         );
     const busy = () =>
         fail(
             "file-busy",
             `Your file is in use by another program, so it can't be backed up right now. Your file was not changed. Close other programs that use it, then try again.`,
+            { messageKey: "convertShow.backupError.busy" },
         );
 
     if (errno === "EACCES" || errno === "EPERM" || errno === "EROFS") {
@@ -206,6 +221,10 @@ function classify(e: unknown, dir: string): BackupFailure {
         return fail(
             "name-too-long",
             `The backup's file name is too long for the file system in "${dir}". Your file was not changed. Shorten the file's name, then try again.`,
+            {
+                messageKey: "convertShow.backupError.nameTooLong",
+                messageParams: { folder: dir },
+            },
         );
     }
     if (sqliteCode !== undefined) {
@@ -217,12 +236,20 @@ function classify(e: unknown, dir: string): BackupFailure {
             return fail(
                 "source-unreadable",
                 `Your file isn't a readable OpenMarch file (${text}). Your file was not changed.`,
+                {
+                    messageKey: "convertShow.backupError.unreadable",
+                    messageParams: { error: text },
+                },
             );
         }
     }
     return fail(
         "unknown",
         `The backup could not be made: ${text}. Your file was not changed.`,
+        {
+            messageKey: "convertShow.backupError.unknown",
+            messageParams: { error: text },
+        },
     );
 }
 
@@ -392,6 +419,14 @@ function publishBackup(
             return fail(
                 "unknown",
                 `No free name for a backup was found in "${dir}". Your file was not changed. Remove old ".${BACKUP_NAME_SUFFIX}" backups, then try again. (${e instanceof Error ? e.message : String(e)})`,
+                {
+                    messageKey: "convertShow.backupError.noFreeNameRemoveOld",
+                    messageParams: {
+                        folder: dir,
+                        suffix: BACKUP_NAME_SUFFIX,
+                        error: e instanceof Error ? e.message : String(e),
+                    },
+                },
             );
         }
         try {
@@ -406,6 +441,10 @@ function publishBackup(
     return fail(
         "unknown",
         `No free name for a backup was found in "${dir}". Your file was not changed.`,
+        {
+            messageKey: "convertShow.backupError.noFreeName",
+            messageParams: { folder: dir },
+        },
     );
 }
 
@@ -440,6 +479,10 @@ export function backupBeforeConversion(
         return fail(
             "source-missing",
             `The file "${absolute}" doesn't exist, so it can't be backed up.`,
+            {
+                messageKey: "convertShow.backupError.sourceMissing",
+                messageParams: { file: absolute },
+            },
         );
     }
 
@@ -469,6 +512,12 @@ export function backupBeforeConversion(
             return fail(
                 "verification-failed",
                 `The backup was made but didn't match your file (${e instanceof Error ? e.message : String(e)}), so it was deleted. Your file was not changed.`,
+                {
+                    messageKey: "convertShow.backupError.verificationFailed",
+                    messageParams: {
+                        error: e instanceof Error ? e.message : String(e),
+                    },
+                },
             );
         }
 

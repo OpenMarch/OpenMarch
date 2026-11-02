@@ -1,5 +1,8 @@
+import tolgee from "@/global/singletons/Tolgee";
 import type { SpanInfo } from "@openmarch/core";
 import { keptStateOf, type KeptPageBox } from "./timelineKept";
+import { formatList } from "@/utilities/formatList";
+import { joinList } from "./translateTimelineText";
 
 /**
  * Keep later pages in timeline mode (docs/timeline/ui.md UI-18; defined-coordinates 10, owner
@@ -257,7 +260,7 @@ export function keptMarchersOnPage({
 export function keptMarkText(
     page: string,
     from: string | null,
-    t: KeepTranslate = english,
+    t: KeepTranslate = appTranslate,
 ): string {
     return from
         ? t(
@@ -318,22 +321,24 @@ export function followingPages(
 /** "Page 3" or "Pages 3–4" (first to last of `names`, in page order). */
 export function pagesText(names: readonly string[]): string {
     if (names.length === 0) return "";
-    if (names.length === 1) return `Page ${names[0]}`;
-    return `Pages ${names[0]}–${names[names.length - 1]}`;
+    if (names.length === 1)
+        return tolgee.t("timeline.pagesText.one", { page: names[0]! });
+    return tolgee.t("timeline.pagesText.range", {
+        first: names[0]!,
+        last: names[names.length - 1]!,
+    });
 }
 
-/** A translate function, as Tolgee's `t` with a default value. */
+/** A translate function, as Tolgee's `t` with a default value and ICU arguments. */
 export type KeepTranslate = (
     key: string,
     defaultValue: string,
-    params?: Record<string, string>,
+    params?: Record<string, string | number>,
 ) => string;
 
-const english: KeepTranslate = (_key, defaultValue, params) =>
-    defaultValue.replace(
-        /\{(\w+)\}/g,
-        (_, name: string) => params?.[name] ?? "",
-    );
+/** The Tolgee singleton, in the app's language now. */
+const appTranslate: KeepTranslate = (key, defaultValue, params) =>
+    tolgee.t(key, defaultValue, params);
 
 /** A marcher's name as the app shows it (its drill number), or undefined when unknown. */
 export type MarcherNameOf = (marcherId: number) => string | undefined;
@@ -356,38 +361,26 @@ const namesOf = (
 
 /**
  * The marchers by name for the keep words (wp19, after the final study): "OT1", "OT1 and OT8",
- * "OT1, OT2 and OT3", then "OT1, OT2 and 4 others". Null when a name isn't known, so the words
- * fall back to a count.
+ * "OT1, OT2 and OT3", then "OT1, OT2 and 4 others", joined as the app's language joins a list.
+ * Null when a name isn't known, so the words fall back to a count.
  */
 export function marcherNamesText(
     ids: readonly number[],
     nameOf: MarcherNameOf | undefined,
-    t: KeepTranslate = english,
+    t: KeepTranslate = appTranslate,
 ): string | null {
     const names = namesOf(ids, nameOf);
     if (!names) return null;
-    const [first, second, third] = names;
-    if (names.length === 1) return first!;
-    if (names.length === 2)
-        return t("timeline.keep.names.two", "{first} and {second}", {
-            first: first!,
-            second: second!,
-        });
-    if (names.length === NAMES_SHOWN)
-        return t("timeline.keep.names.three", "{first}, {second} and {third}", {
-            first: first!,
-            second: second!,
-            third: third!,
-        });
-    return t(
-        "timeline.keep.names.many",
-        "{first}, {second} and {count} others",
-        {
-            first: first!,
-            second: second!,
-            count: String(names.length - 2),
-        },
-    );
+    if (names.length <= NAMES_SHOWN) return joinList(names);
+    return joinList([
+        names[0]!,
+        names[1]!,
+        t(
+            "timeline.keep.names.others",
+            "{count, plural, one {# other} other {# others}}",
+            { count: names.length - 2 },
+        ),
+    ]);
 }
 
 /** The names as a list for after a count ("OT1, OT8"); past three, as `marcherNamesText`. */
@@ -399,7 +392,7 @@ const namesList = (
     const names = namesOf(ids, nameOf);
     if (!names) return null;
     return names.length <= NAMES_SHOWN
-        ? names.join(", ")
+        ? formatList(names)
         : marcherNamesText(ids, nameOf, t);
 };
 
@@ -442,62 +435,54 @@ const followsWords = (
     t: KeepTranslate,
     nameOf: MarcherNameOf | undefined,
 ): ChainText => {
-    const one = follows.length === 1;
+    const count = follows.length;
     const names = marcherNamesText(follows, nameOf, t);
-    const where = fromPage
-        ? t("timeline.keep.chain.wherePage", "where Page {from} left", {
-              from: fromPage,
-          })
-        : t("timeline.keep.chain.whereEarlier", "where earlier pages left");
-    const label = names
-        ? one
+    const label = fromPage
+        ? names
             ? t(
-                  "timeline.keep.chain.followsNamedOne",
-                  "{names} holds {where} it",
-                  { names, where },
+                  "timeline.keep.chain.followsNamed",
+                  "{count, plural, =1 {{names} holds where Page {from} left it} other {{names} hold where Page {from} left them}}",
+                  { count, names, from: fromPage },
               )
             : t(
-                  "timeline.keep.chain.followsNamed",
-                  "{names} hold {where} them",
-                  { names, where },
+                  "timeline.keep.chain.follows",
+                  "{count, plural, one {# marcher holds where Page {from} left it} other {# marchers hold where Page {from} left them}}",
+                  { count, from: fromPage },
               )
-        : one
-          ? t("timeline.keep.chain.followsOne", "1 marcher holds {where} it", {
-                where,
-            })
+        : names
+          ? t(
+                "timeline.keep.chain.followsNamedEarlier",
+                "{count, plural, =1 {{names} holds where earlier pages left it} other {{names} hold where earlier pages left them}}",
+                { count, names },
+            )
           : t(
-                "timeline.keep.chain.follows",
-                "{count} marchers hold {where} them",
-                { count: String(follows.length), where },
+                "timeline.keep.chain.followsEarlier",
+                "{count, plural, one {# marcher holds where earlier pages left it} other {# marchers hold where earlier pages left them}}",
+                { count },
             );
-    const changes = fromPage
-        ? t("timeline.keep.chain.changesPage", "Changes to Page {from}", {
-              from: fromPage,
-          })
-        : t("timeline.keep.chain.changesEarlier", "Changes to earlier pages");
     return {
         label,
-        hint: one
+        hint: fromPage
             ? t(
-                  "timeline.keep.chain.followsHintOne",
-                  "{changes} carry onto Page {page}. Click to keep it here instead",
-                  { changes, page },
-              )
-            : t(
                   "timeline.keep.chain.followsHint",
-                  "{changes} carry onto Page {page}. Click to keep them here instead",
-                  { changes, page },
-              ),
-        menuHint: one
-            ? t(
-                  "timeline.keep.chain.followsMenuHintOne",
-                  "{changes} carry onto Page {page}. Right-click the page to keep it here instead",
-                  { changes, page },
+                  "Changes to Page {from} carry onto Page {page}. Click to keep {count, plural, =1 {it} other {them}} here instead",
+                  { count, page, from: fromPage },
               )
             : t(
+                  "timeline.keep.chain.followsHintEarlier",
+                  "Changes to earlier pages carry onto Page {page}. Click to keep {count, plural, =1 {it} other {them}} here instead",
+                  { count, page },
+              ),
+        menuHint: fromPage
+            ? t(
                   "timeline.keep.chain.followsMenuHint",
-                  "{changes} carry onto Page {page}. Right-click the page to keep them here instead",
-                  { changes, page },
+                  "Changes to Page {from} carry onto Page {page}. Right-click the page to keep {count, plural, =1 {it} other {them}} here instead",
+                  { count, page, from: fromPage },
+              )
+            : t(
+                  "timeline.keep.chain.followsMenuHintEarlier",
+                  "Changes to earlier pages carry onto Page {page}. Right-click the page to keep {count, plural, =1 {it} other {them}} here instead",
+                  { count, page },
               ),
     };
 };
@@ -516,22 +501,13 @@ const keptWords = (
             ? t(
                   "timeline.keep.chain.keptNamed",
                   "{names} kept on Page {page}",
-                  {
-                      names,
-                      page,
-                  },
+                  { names, page },
               )
-            : kept.length === 1
-              ? t(
-                    "timeline.keep.chain.keptOne",
-                    "1 marcher kept on Page {page}",
-                    { page },
-                )
-              : t(
-                    "timeline.keep.chain.kept",
-                    "{count} marchers kept on Page {page}",
-                    { page, count: String(kept.length) },
-                ),
+            : t(
+                  "timeline.keep.chain.kept",
+                  "{count, plural, one {# marcher kept on Page {page}} other {# marchers kept on Page {page}}}",
+                  { page, count: kept.length },
+              ),
         hint: fromPage
             ? t(
                   "timeline.keep.chain.keptHint",
@@ -568,58 +544,34 @@ const mixedWords = (
 ): ChainText => {
     const counts = {
         page,
-        kept: String(kept.length),
-        total: String(kept.length + follows.length),
+        kept: kept.length,
+        total: kept.length + follows.length,
     };
-    const one = kept.length === 1;
     const names = namesList(kept, nameOf, t);
     const label = names
-        ? one
-            ? t(
-                  "timeline.keep.chain.mixedNamedOne",
-                  "1 of the {total} selected is kept on Page {page} ({names})",
-                  { ...counts, names },
-              )
-            : t(
-                  "timeline.keep.chain.mixedNamed",
-                  "{kept} of the {total} selected are kept on Page {page} ({names})",
-                  { ...counts, names },
-              )
-        : one
-          ? t(
-                "timeline.keep.chain.mixedOne",
-                "1 of the {total} selected is kept on Page {page}",
-                counts,
-            )
-          : t(
-                "timeline.keep.chain.mixed",
-                "{kept} of the {total} selected are kept on Page {page}",
-                counts,
-            );
+        ? t(
+              "timeline.keep.chain.mixedNamed",
+              "{kept, plural, one {# of the {total} selected is kept on Page {page} ({names})} other {# of the {total} selected are kept on Page {page} ({names})}}",
+              { ...counts, names },
+          )
+        : t(
+              "timeline.keep.chain.mixed",
+              "{kept, plural, one {# of the {total} selected is kept on Page {page}} other {# of the {total} selected are kept on Page {page}}}",
+              counts,
+          );
+    const rest = { count: follows.length };
     return {
         label,
-        hint:
-            follows.length === 1
-                ? t(
-                      "timeline.keep.chain.mixedRestHintOne",
-                      "The other one follows earlier pages. Click to keep it here too",
-                  )
-                : t(
-                      "timeline.keep.chain.mixedRestHint",
-                      "The other {count} follow earlier pages. Click to keep them here too",
-                      { count: String(follows.length) },
-                  ),
-        menuHint:
-            follows.length === 1
-                ? t(
-                      "timeline.keep.chain.mixedRestMenuHintOne",
-                      "The other one follows earlier pages. Right-click the page to keep it here too",
-                  )
-                : t(
-                      "timeline.keep.chain.mixedRestMenuHint",
-                      "The other {count} follow earlier pages. Right-click the page to keep them here too",
-                      { count: String(follows.length) },
-                  ),
+        hint: t(
+            "timeline.keep.chain.mixedRestHint",
+            "{count, plural, =1 {The other one follows earlier pages. Click to keep it here too} other {The other # follow earlier pages. Click to keep them here too}}",
+            rest,
+        ),
+        menuHint: t(
+            "timeline.keep.chain.mixedRestMenuHint",
+            "{count, plural, =1 {The other one follows earlier pages. Right-click the page to keep it here too} other {The other # follow earlier pages. Right-click the page to keep them here too}}",
+            rest,
+        ),
     };
 };
 
@@ -633,7 +585,7 @@ const mixedWords = (
  */
 export function pageChainWords(
     state: PageKeepState,
-    t: KeepTranslate = english,
+    t: KeepTranslate = appTranslate,
     nameOf?: MarcherNameOf,
 ): PageChainWords | null {
     const { kept, pageName: page, from } = state;

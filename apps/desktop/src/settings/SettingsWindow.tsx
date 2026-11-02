@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import Toaster from "@/components/ui/Toaster";
 import TitleBar from "@/components/titlebar/TitleBar";
 import {
@@ -12,6 +12,13 @@ import SettingsSidebar from "./SettingsSidebar";
 
 /** Root of the #settings window: sidebar of sections, selected section on the right. */
 export default function SettingsWindow() {
+    // The window's title follows the app language (main sets it once, when the window opens)
+    const { t } = useTranslate();
+    const title = t("settings.title");
+    useEffect(() => {
+        document.title = title;
+    }, [title]);
+
     // The settings window has no app menu close role, so handle Cmd/Ctrl+W here.
     // Bubble phase and defaultPrevented check leave the shortcut recorder alone.
     useEffect(() => {

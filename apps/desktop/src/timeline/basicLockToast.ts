@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
 
 /** Switches to Expert (the Basic lock toast's action). */
@@ -13,6 +14,9 @@ export const switchToExpert = () =>
 export function toastBasicLock(message: string): void {
     toast.warning(message, {
         id: "basic-locked-marchers",
-        action: { label: "Switch to Expert", onClick: switchToExpert },
+        action: {
+            label: tolgee.t("timeline.basic.switchToExpert"),
+            onClick: switchToExpert,
+        },
     });
 }

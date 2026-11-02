@@ -138,7 +138,12 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
         const result = await window.electron.showSaveDialog({
             buttonLabel: t("launchpage.newShow.browse"),
             defaultPath: fileLocation || defaultDirectory,
-            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+            filters: [
+                {
+                    name: t("launchpage.newShow.steps.project.fileType"),
+                    extensions: ["dots"],
+                },
+            ],
         });
         if (!result.canceled && result.filePath) {
             fileLocationManuallyEdited.current = true;

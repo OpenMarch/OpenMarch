@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import {
     CaretRightIcon,
@@ -148,7 +148,7 @@ function arrange(
 /** Opens with the openCommandPalette action (⌘K / Ctrl+K). Mount once, app-wide. */
 // eslint-disable-next-line max-lines-per-function
 export default function CommandPalette() {
-    const { t: tolgeeT } = useTolgee();
+    const { t: tolgeeT } = useTranslate();
     const t: Translate = (key, params) => tolgeeT(key, params as never);
     const overrides = useShortcutOverridesStore((s) => s.overrides);
     const palette = useCommandBarStore((s) => s.palette);

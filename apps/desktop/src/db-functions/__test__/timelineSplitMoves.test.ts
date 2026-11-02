@@ -1,8 +1,11 @@
-import { afterEach, describe, expect } from "vitest";
+import { afterEach, describe, expect, beforeAll } from "vitest";
+import { refusalText } from "@/test/refusalText";
+import tolgee from "@/global/singletons/Tolgee";
 import { asc, eq, getTableName, sql } from "drizzle-orm";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import type Page from "@/global/classes/Page";
 import { convertPagesToTimeline } from "@/test/convertPages";
+import { translateTimelineText } from "@/timeline/translateTimelineText";
 import { readShowTiming } from "@/timeline/showTiming";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import {
@@ -27,6 +30,11 @@ import {
 } from "../timelineSplitMoves";
 import { readTimelineResizeLimits, resizeTimeline } from "../timelineResize";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
+
+// Refusals and toasts are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 // These tests convert the show themselves, so a page's timeline is one shared transition
 keepFixturesInPageMode("its tests convert the show themselves");
@@ -171,7 +179,7 @@ const expectRefused = async (
     );
     expect(error).toBeInstanceOf(TimelineWriteError);
     expect((error as TimelineWriteError).code).toBe("E-ARGS");
-    if (message) expect((error as Error).message).toMatch(message);
+    if (message) expect(refusalText(error)).toMatch(message);
     expect(await snapshot(db)).toEqual(before);
 };
 
@@ -427,7 +435,7 @@ describeDbTests("splitting and merging moves (UI-25)", (it) => {
                         timelineId: track.timelineId,
                         marcherIds: [a!],
                     }),
-                /move into one shape together/,
+                /moves into one shape together/,
             );
             const positionsBefore = await everyBeat(pages);
             const result = await splitMarchersIntoNewMove({
@@ -1005,12 +1013,18 @@ describeDbTests("splitting and merging moves (UI-25)", (it) => {
         it("say why a split or a merge can't run", () => {
             const members = new Set([1, 2, 3]);
             expect(splitMembershipBlocker(members, [1], "Move 1")).toBeNull();
-            expect(splitMembershipBlocker(members, [4], "Move 1")).toMatch(
-                /Select marchers in Move 1/,
+            const blocker = (marcherIds: number[], move: string) => {
+                const reason = splitMembershipBlocker(
+                    members,
+                    marcherIds,
+                    move,
+                );
+                return reason && translateTimelineText(reason);
+            };
+            expect(blocker([4], "Move 1")).toMatch(/Select marchers in Move 1/);
+            expect(blocker([1, 2, 3, 4], "Page 2")).toMatch(
+                /Every marcher in Page 2/,
             );
-            expect(
-                splitMembershipBlocker(members, [1, 2, 3, 4], "Page 2"),
-            ).toMatch(/Every marcher in Page 2/);
             expect(mergeFits({ start: 1, end: 5 }, { start: 1, end: 5 })).toBe(
                 false,
             );

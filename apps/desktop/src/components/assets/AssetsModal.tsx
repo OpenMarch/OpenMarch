@@ -58,6 +58,7 @@ export function AssetsPanelContents({
     importClient?: ImportReviewClient;
     templatesClient?: Pick<ImportClient, "saveTemplate">;
 }) {
+    const { t } = useTranslate();
     const { setOpen } = useSidebarModalStore();
     const highlight = useAssetsStore((s) => s.highlight);
     const clearHighlight = useAssetsStore((s) => s.clearHighlight);
@@ -78,6 +79,7 @@ export function AssetsPanelContents({
                     <T keyName="assets.title" />
                 </h4>
                 <button
+                    aria-label={t("sidebar.close")}
                     onClick={() => setOpen(false)}
                     className="hover:text-red duration-150 ease-out"
                 >

@@ -7,7 +7,7 @@ import { ShapesIcon } from "@phosphor-icons/react";
 import { performersOnly } from "@/global/classes/Marcher";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import ActionButton from "@/shortcuts/ActionButton";
-import { getActionShortcutLabel } from "@/shortcuts/labels";
+import { getEffectiveBindings } from "@/shortcuts/keymap";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { showShapeLibrary } from "../library/ShapeLibraryPanel";
@@ -44,7 +44,8 @@ export default function ShapesTab() {
     const armed = shown ? openKind : null;
     const gate = kindPickGate(shown, performers);
     const overrides = useShortcutOverridesStore((s) => s.overrides);
-    const ringKey = getActionShortcutLabel("openShapeRing", { overrides });
+    const hasRingKey =
+        getEffectiveBindings("openShapeRing", overrides).length > 0;
     const starred = useStarredShapes();
     /** A greyed-out shape's tooltip: its name, then why it can't be picked */
     const greyedTitle = (label: string) =>
@@ -161,16 +162,14 @@ export default function ShapesTab() {
                 </Tip>
             </ToolbarSection>
             {/* The ring has no button, so the tab says how to open it (sims, ring round 1) */}
-            {ringKey && (
+            {hasRingKey && (
                 <span
-                    className="text-sub text-text-subtitle"
+                    className="text-sub text-text-subtitle flex items-center gap-4"
                     data-testid="shapes-tab-ring-hint"
                 >
                     <T
-                        keyName="shapes.tool.tab.ringHint"
-                        defaultValue="Hold <keys></keys> on the field for the shape ring"
+                        keyName="shapes.tool.tab.ringHintKeys"
                         params={{
-                            key: ringKey,
                             keys: () => <Shortcut action="openShapeRing" />,
                         }}
                     />

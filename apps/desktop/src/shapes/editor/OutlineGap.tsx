@@ -82,7 +82,13 @@ export function OutlineGap({
         const changed = withOddGap(target.kind, now, target.spots, next, env);
         if (changed !== now) target.apply(changed);
     };
-    const side = `${tolgee.t("shapes.edit.gap.menu", "Leftover")}: ${sideLabel(seen.side)}`;
+    const side = tolgee.t(
+        "shapes.edit.gap.menuLabel",
+        "Leftover: {side, select, back {Back} front {Front} left {Left} other {Right}}",
+        {
+            side: seen.side,
+        },
+    );
     // The leftover side's own spacing, when it spreads wider than the full sides' (owner on
     // #459): the chip shows the full sides', which can hide a clean 4 here
     const spread = leftoverSpacing(kind, params, spots);
@@ -112,10 +118,10 @@ export function OutlineGap({
         : "";
     const sentence = differs
         ? tolgee.t(
-              "shapes.edit.gap.spacingTip",
-              "The {side} has one fewer marcher, so its marchers are {spacing} apart.",
+              "shapes.edit.gap.spacingHint",
+              "The {side, select, back {back} front {front} left {left} other {right}} has one fewer marcher, so its marchers are {spacing} apart.",
               {
-                  side: sideLabel(seen.side).toLowerCase(),
+                  side: seen.side,
                   spacing: spacingText,
               },
           )
@@ -127,7 +133,11 @@ export function OutlineGap({
             <Tip
                 label={
                     sentence ??
-                    `${title}, ${styleLabel(gap.style).toLowerCase()}`
+                    tolgee.t(
+                        "shapes.edit.gap.tip",
+                        "Leftover: {side, select, back {Back} front {Front} left {Left} other {Right}}, {style, select, gap {leaves a gap} other {spreads evenly}}",
+                        { side: seen.side, style: gap.style },
+                    )
                 }
             >
                 <Popover.Trigger asChild>

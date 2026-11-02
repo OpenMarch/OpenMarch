@@ -1,6 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 import type { PageDeleteWithMovesResult } from "@/db-functions/pageDelete";
 import {
     deletePageYankWithMovesMutationOptions,
@@ -11,6 +12,10 @@ import {
  * The toast after **Delete page and its moves** (defined-coordinates 08): what happened in set and
  * count terms, with **Undo**, which runs the app's normal undo.
  */
+
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 afterEach(() => vi.restoreAllMocks());
 

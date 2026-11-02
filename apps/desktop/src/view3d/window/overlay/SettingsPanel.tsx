@@ -14,8 +14,8 @@
  * It floats at the right and doesn't block the scene, so the viewer can
  * orbit while trying a look.
  */
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
-import { useTranslate } from "@tolgee/react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { T, useTranslate } from "@tolgee/react";
 import { XIcon } from "@phosphor-icons/react";
 import { Input, Switch } from "@openmarch/ui";
 import clsx from "clsx";
@@ -443,7 +443,7 @@ function StepOffFootRow() {
             onChange={setOverride}
             testId="view3d-step-off-foot-picker"
             hint={t("view3d.settings.stepOffFootHint", {
-                foot: t(`view3d.settings.stepOffFootMode.${showFoot}`),
+                foot: showFoot,
             })}
         />
     );
@@ -451,24 +451,41 @@ function StepOffFootRow() {
 
 /**
  * The window's keyboard and mouse controls (ui.md UI-3, UI-4), in display
- * order: `view3d.keys.<name>` says what each does, and its keys are bindings
- * (or display keys) shown as `Shortcut`s, alternatives joined by "/".
+ * order. Each has `view3d.keys.<name>` for what it does; its keys are a
+ * binding or display keys shown as a `Shortcut` (mouse gestures are words in
+ * the cap), or two of them as a pair (`view3d.keyNames.pair`).
  */
-const SHORTCUTS: readonly (readonly [
-    name: string,
-    keys: readonly ({ binding: string } | { keys: readonly string[] })[],
-])[] = [
-    ["playPause", [{ binding: "Space" }]],
-    ["previousNext", [{ binding: "Q" }, { binding: "E" }]],
-    ["firstLast", [{ binding: "Alt+Q" }, { binding: "Alt+E" }]],
-    ["cameras", [{ keys: ["1–9"] }]],
-    ["fullscreen", [{ binding: "F" }]],
-    ["crowd", [{ binding: "C" }]],
-    ["escape", [{ binding: "Escape" }]],
-    ["orbit", [{ binding: "drag" }]],
-    ["pan", [{ binding: "Shift+drag" }]],
-    ["zoom", [{ binding: "scroll" }]],
+type ShortcutKeys =
+    | { readonly binding: string }
+    | { readonly keys: readonly string[] }
+    | { readonly pair: readonly [first: string, second: string] };
+
+const SHORTCUTS: readonly (readonly [string, ShortcutKeys])[] = [
+    ["playPause", { binding: "Space" }],
+    ["previousNext", { pair: ["Q", "E"] }],
+    ["firstLast", { pair: ["Alt+Q", "Alt+E"] }],
+    ["cameras", { keys: ["1–9"] }],
+    ["fullscreen", { binding: "F" }],
+    ["crowd", { binding: "C" }],
+    ["escape", { binding: "Escape" }],
+    ["orbit", { binding: "drag" }],
+    ["pan", { binding: "Shift+drag" }],
+    ["zoom", { binding: "scroll" }],
 ];
+
+function ShortcutKeysCell({ keys }: { keys: ShortcutKeys }) {
+    if (!("pair" in keys)) return <Shortcut {...keys} />;
+    const [first, second] = keys.pair;
+    return (
+        <T
+            keyName="view3d.keyNames.pair"
+            params={{
+                first: () => <Shortcut binding={first} />,
+                second: () => <Shortcut binding={second} />,
+            }}
+        />
+    );
+}
 
 function ShortcutList() {
     const { t } = useTranslate();
@@ -477,19 +494,7 @@ function ShortcutList() {
             {SHORTCUTS.map(([name, keys]) => (
                 <div key={name} className="contents">
                     <dt className="flex items-center gap-4 whitespace-nowrap">
-                        {keys.map((source, i) => (
-                            <Fragment key={i}>
-                                {i > 0 && (
-                                    <span
-                                        aria-hidden="true"
-                                        className="text-text-subtitle"
-                                    >
-                                        /
-                                    </span>
-                                )}
-                                <Shortcut {...source} />
-                            </Fragment>
-                        ))}
+                        <ShortcutKeysCell keys={keys} />
                     </dt>
                     <dd className="text-text/80">{t(`view3d.keys.${name}`)}</dd>
                 </div>

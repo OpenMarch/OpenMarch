@@ -236,10 +236,15 @@ describe("the chains on the page boxes", () => {
         expect(here).toHaveAttribute("aria-keyshortcuts", "K");
         expect(next).not.toHaveAttribute("aria-keyshortcuts");
         fireEvent.focus(here!);
+        // The label, then K as a keycap
         expect(
-            (await screen.findAllByText("Keep 2 marchers on Page 3 (K)"))
-                .length,
+            (await screen.findAllByText("Keep 2 marchers on Page 3")).length,
         ).toBeGreaterThan(0);
+        expect(
+            screen
+                .getAllByRole("tooltip")
+                .some((tip) => tip.querySelector("kbd")?.textContent === "K"),
+        ).toBe(true);
     });
 
     it("a mixed chain shows the kept count", () => {
@@ -510,13 +515,19 @@ describe("the chains on the page boxes", () => {
             screen.getByRole("button", { name: "Page 4" }),
         ).not.toHaveAttribute("aria-keyshortcuts");
         fireEvent.focus(box);
+        // The words, then K as a keycap
         expect(
             (
                 await screen.findAllByText(
-                    "OT1 and OT4 hold where earlier pages left them (K)",
+                    "OT1 and OT4 hold where earlier pages left them",
                 )
             ).length,
         ).toBeGreaterThan(0);
+        expect(
+            screen
+                .getAllByRole("tooltip")
+                .some((tip) => tip.querySelector("kbd")?.textContent === "K"),
+        ).toBe(true);
     });
 
     it("a wide box's chain says (K) only by withK, not by the menu's K", () => {

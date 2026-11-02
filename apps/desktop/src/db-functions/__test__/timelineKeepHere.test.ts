@@ -1,4 +1,5 @@
 import { afterEach, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { countDistinct, getTableName } from "drizzle-orm";
 import type { XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
@@ -243,7 +244,7 @@ describeDbTests("Keep later pages: storage and commands", (it) => {
         }).catch((e: unknown) => e);
         expect(timelineErrorCode(notABox)).toBe("E-ARGS");
         // Worded in pages and counts, never beats (pre-merge review D2)
-        expect((notABox as Error).message).toContain(
+        expect(refusalText(notABox)).toContain(
             "Keep works on a whole page, not Page 3, counts 1–4",
         );
         expect(await snapshot(db)).toEqual(rows);

@@ -165,7 +165,7 @@ const CHIP_KINDS = [
 ] as const;
 
 /** `36 × 54 in` when both sides share a unit, else `4 ft × 30 in`. */
-function chipDims(width: Length, height: Length): string {
+export function chipDims(width: Length, height: Length): string {
     const [wv, wu] = (width.typed ?? `${width.m} m`).split(" ");
     const [hv, hu] = (height.typed ?? `${height.m} m`).split(" ");
     return wu === hu ? `${wv} × ${hv} ${hu}` : `${wv} ${wu} × ${hv} ${hu}`;

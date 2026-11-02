@@ -16,6 +16,7 @@ import clsx from "clsx";
 import { Button, Input } from "@openmarch/ui";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { db } from "@/global/database/db";
+import tolgee from "@/global/singletons/Tolgee";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import {
     autoMoveNumber,
@@ -126,11 +127,10 @@ export function TimelineMoveCard({
     // The stored name changed (a rename here or on the clip, an undo): show it
     useEffect(() => setName(stored), [stored, timeline.id]);
     // Its label ("Move 2"), shown while the field is empty
-    const defaultLabel = useTimelineSelectionStore(
-        (s) =>
-            moveLabels(s.storedTimelines ?? [], s.pageBoxes).get(timeline.id) ??
-            "Move",
-    );
+    const defaultLabel =
+        useTimelineSelectionStore((s) =>
+            moveLabels(s.storedTimelines ?? [], s.pageBoxes).get(timeline.id),
+        ) ?? tolgee.t("timeline.moveName.unnamed");
     // Why the clip is dashed, when it is (UI-14 review)
     const overridden = useMoveNotesStore((s) => s.overridden.get(timeline.id));
     // Only whether P is at the move's end, so the card doesn't render on every beat played

@@ -6,12 +6,18 @@ import Page, {
     yankOrPushPagesAfterIndex,
 } from "../Page";
 import Measure from "../Measure";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import Beat from "../Beat";
 import { conToastError } from "@/utilities/utils";
 import { DatabasePage, FIRST_BEAT_ID, FIRST_PAGE_ID } from "@/db-functions";
+import tolgee from "@/global/singletons/Tolgee";
 
 describe("Page", () => {
+    // The toasts are translated: load English so they read as written
+    beforeAll(async () => {
+        await tolgee.run();
+    });
+
     describe("generatePageNames", () => {
         it('should generate a list with just "0" when input is empty', () => {
             const result = generatePageNames([]);

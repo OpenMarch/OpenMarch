@@ -3,6 +3,7 @@ import { createResolver, type Resolver, type XY } from "@openmarch/core";
 import { schema } from "@/global/database/db";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { beatWhere, countsText, moveName } from "@/timeline/timelineRangeWords";
+import { text, timelineTextForLog } from "@/timeline/timelineText";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { mapDbErrors, refuse } from "./timelineErrors";
@@ -290,12 +291,15 @@ async function refuseUnlessSplitAllowed(
     const e0 = timeline.end_beat;
     const words = await readMoveWords(tx);
     const name = moveName({ start: s0, end: e0 }, words.boxes, words.moves);
-    const where = beatWhere(beat, words.boxes) ?? `beat ${beat}`;
+    const where =
+        beatWhere(beat, words.boxes) ?? text.t("timeline.where.beat", { beat });
     if (!Number.isInteger(beat))
-        refuse(`${name} can only be split on a whole count, not ${beat}`);
+        refuse(
+            `${timelineTextForLog(name)} can only be split on a whole count, not ${beat}`,
+        );
     if (!(s0 < beat && beat < e0))
         refuse(
-            `${where} isn't inside ${name}. Put the playhead inside the move to split it.`,
+            text.t("timeline.refusals.splitAt.outside", { where, move: name }),
         );
     for (const half of [
         { start: s0, end: beat },
@@ -303,7 +307,10 @@ async function refuseUnlessSplitAllowed(
     ]) {
         if (await findTimelineByRange(tx, half))
             refuse(
-                `${moveName(half, words.boxes, words.moves)} already runs over ${countsText(half, words.boxes)}, so a half can't go there`,
+                text.t("timeline.refusals.splitAt.halfTaken", {
+                    move: moveName(half, words.boxes, words.moves),
+                    counts: countsText(half, words.boxes),
+                }),
             );
     }
 
@@ -325,11 +332,17 @@ async function refuseUnlessSplitAllowed(
                   .all();
     if (!rows.some((r) => r.start_beat < beat))
         refuse(
-            `No one in ${name} moves before ${where}, so there is nothing to split off.`,
+            text.t("timeline.refusals.splitAt.nothingBefore", {
+                move: name,
+                where,
+            }),
         );
     if (!rows.some((r) => r.end_beat > beat))
         refuse(
-            `No one in ${name} moves after ${where}, so there is nothing to split off.`,
+            text.t("timeline.refusals.splitAt.nothingAfter", {
+                move: name,
+                where,
+            }),
         );
     return { transitions, rows };
 }

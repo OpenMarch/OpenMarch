@@ -8,6 +8,7 @@
  * says the item will be gone for good and offers to add it to the Library first.
  */
 import { useEffect, useState } from "react";
+import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
 import { T, useTranslate } from "@tolgee/react";
 import {
     AlertDialog,
@@ -30,6 +31,7 @@ import {
 } from "@/db-functions/showLibraryDelete";
 import type { LibraryRef } from "@/view3d/library/showLibraryPrune";
 import type { ShowAssetItem } from "./showAssetGroups";
+import { formatList } from "@/utilities/formatList";
 
 /** What the dialog does to the show; the open show's database by default. */
 export interface ShowAssetDeletion {
@@ -295,7 +297,7 @@ function InUse({
                     <T
                         keyName="assets.show.delete.pinnedBy"
                         params={{
-                            names: uses.pinnedBy.map((p) => p.name).join(", "),
+                            names: formatList(uses.pinnedBy.map((p) => p.name)),
                         }}
                     />
                 </span>
@@ -366,15 +368,15 @@ export function describeUse(
         target.kind === "band"
             ? t("assets.show.delete.targets.band")
             : target.kind === "section"
-              ? target.section
+              ? sectionDisplayName(target.section, t)
               : target.kind === "tag"
                 ? (use.tagName ?? t("assets.show.delete.targets.tag"))
                 : t("assets.show.delete.targets.set", {
                       count: target.marcherIds.length,
                   });
-    return [
-        t(`assets.show.delete.channels.${cue.channel}`),
+    return t("assets.show.delete.useLine", {
+        channel: t(`assets.show.delete.channels.${cue.channel}`),
         who,
-        t("assets.show.delete.atCount", { count: use.beatIndex }),
-    ].join(" · ");
+        count: use.beatIndex,
+    });
 }

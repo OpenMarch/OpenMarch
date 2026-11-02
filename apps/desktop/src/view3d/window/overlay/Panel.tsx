@@ -4,6 +4,7 @@
 import type { ReactNode } from "react";
 import { Button, ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
 import clsx from "clsx";
+import { Tip } from "@/components/ui/Tip";
 
 /** A floating panel in the editor's overlay style. */
 export function Panel({
@@ -49,6 +50,7 @@ export function ToggleButton({
     icon,
     label,
     tooltip,
+    shortcut,
     tooltipSide = "bottom",
     iconOnly = false,
     disabled,
@@ -60,19 +62,22 @@ export function ToggleButton({
     icon: ReactNode;
     label: string;
     tooltip?: string;
+    /** A binding ("F") the tooltip shows after `tooltip`, as a `Shortcut` */
+    shortcut?: string;
     tooltipSide?: "top" | "bottom" | "left" | "right";
     iconOnly?: boolean;
     disabled?: boolean;
     testId?: string;
 }) {
-    return (
+    const button = (
         <Button
             variant="ghost"
             size="compact"
             content={iconOnly ? "icon" : "text"}
             aria-pressed={pressed}
             aria-label={label}
-            tooltipText={tooltip}
+            // A tooltip with a shortcut is the app's own (`Tip`), which can show it as a key
+            tooltipText={shortcut === undefined ? tooltip : undefined}
             tooltipSide={tooltipSide}
             disabled={disabled}
             onClick={onClick}
@@ -87,6 +92,13 @@ export function ToggleButton({
             {icon}
             {!iconOnly && label}
         </Button>
+    );
+    return shortcut === undefined ? (
+        button
+    ) : (
+        <Tip label={tooltip} shortcut={shortcut} side={tooltipSide}>
+            {button}
+        </Tip>
     );
 }
 

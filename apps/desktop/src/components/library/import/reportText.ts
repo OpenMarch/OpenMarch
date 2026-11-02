@@ -7,6 +7,7 @@
  */
 import { formatLength } from "@/view3d/core/sizes/units";
 import type { ModelImportReport, ModelKind } from "@/view3d/library/protocol";
+import { formatLocale } from "@/utilities/formatLocale";
 
 export type Translate = (
     key: string,
@@ -22,12 +23,12 @@ export interface RowText {
     detail?: string;
 }
 
-const n = (value: number) => Math.round(value).toLocaleString("en-US");
+const n = (value: number) => Math.round(value).toLocaleString(formatLocale());
 const list = (items: readonly string[], max = 4) =>
     items.length > max
         ? `${items.slice(0, max).join(", ")} +${items.length - max}`
         : items.join(", ");
-const meters = (m: number) => formatLength(m, "metric");
+const meters = (m: number) => formatLength(m, "metric", formatLocale());
 
 export function kindName(kind: ModelKind, t: Translate): string {
     return t(`library.import.kinds.${kind}`);

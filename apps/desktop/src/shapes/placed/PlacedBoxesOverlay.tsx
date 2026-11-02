@@ -45,16 +45,20 @@ const LABEL_GAP_PX = 30;
  * kind and the numbers it declares, as the field shows them
  */
 export function boxLabel(box: PlacedBox, stepPx: number): string {
-    const { counts, intervals } = placedNumbers(box, stepPx);
+    const { counts, intervals, intervalCount } = placedNumbers(box, stepPx);
     const name = counts
-        ? `${box.kind.shape.label} ${counts}`
+        ? tolgee.t("shapes.placed.name", "{shape} {size}", {
+              shape: box.kind.shape.label,
+              size: counts,
+          })
         : box.kind.shape.label;
     return intervals === null
         ? name
-        : tolgee.t("shapes.placed.label", "{name} · {interval} steps", {
-              name,
-              interval: intervals,
-          });
+        : tolgee.t(
+              "shapes.placed.label",
+              "{name} · {count, plural, one {{interval} step} other {{interval} steps}}",
+              { name, interval: intervals, count: intervalCount },
+          );
 }
 
 /**

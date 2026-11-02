@@ -6,6 +6,8 @@
 import { pageFlags, type FlagPage } from "@/timeline/timelinePlayhead";
 import { beatWhere, type NamedPageBox } from "@/timeline/timelineRangeWords";
 import type { TimelineEditSelection } from "@/stores/TimelineSelectionStore";
+import tolgee from "@/global/singletons/Tolgee";
+import { translateTimelineText } from "@/timeline/translateTimelineText";
 import type { CountIndex } from "./visualsLanes";
 
 type CountPage = FlagPage & { readonly name: string };
@@ -37,15 +39,18 @@ export function countWords(
             .map((b, i) => [b.id, i]),
     );
     const firstFlag = boxes[0]?.start ?? 0;
+    const showCount = (count: number) =>
+        tolgee.t("visuals.cue.count", "count {count}", { count: count + 1 });
     return (count) => {
         const beatId = counts.beatIdOfCount[count];
         const index = beatId === undefined ? undefined : indexOf.get(beatId);
-        if (index === undefined) return `count ${count + 1}`;
+        if (index === undefined) return showCount(count);
+        const where = beatWhere(index, boxes);
+        if (where) return translateTimelineText(where);
         // At or before the first page's start the transport says Home: nothing has stepped yet
-        return (
-            beatWhere(index, boxes) ??
-            (index <= firstFlag ? "the start" : `count ${count + 1}`)
-        );
+        return index <= firstFlag
+            ? tolgee.t("visuals.cue.start", "the start")
+            : showCount(count);
     };
 }
 

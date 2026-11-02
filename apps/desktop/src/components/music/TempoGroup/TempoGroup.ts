@@ -157,9 +157,14 @@ export const measureIsMixedMeter = (measure: Measure) => {
 
 const measureRangeString = (startMeasure: Measure, endMeasure?: Measure) => {
     if (!endMeasure || startMeasure.number === endMeasure.number) {
-        return `m ${startMeasure.number}`;
+        return tolgee.t("music.tempoGroupCard.measure", "m {measure}", {
+            measure: String(startMeasure.number),
+        });
     }
-    return `m ${startMeasure.number}-${endMeasure.number}`;
+    return tolgee.t("music.tempoGroupCard.measureRange", "m {start}-{end}", {
+        start: String(startMeasure.number),
+        end: String(endMeasure.number),
+    });
 };
 
 /**

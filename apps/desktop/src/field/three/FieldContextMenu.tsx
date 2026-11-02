@@ -6,7 +6,7 @@ import {
     useSyncExternalStore,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
@@ -86,7 +86,7 @@ export default function FieldContextMenu({
     /** Whether the show's timeline is loaded (Unset needs it). */
     timelineMode: boolean;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     useSyncExternalStore(subscribeToActionHandlers, handlerSnapshot);
     const open = at !== null;
     // The context-menu key and Shift+F10 also fire the browser's own menu

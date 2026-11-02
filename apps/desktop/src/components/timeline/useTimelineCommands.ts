@@ -13,19 +13,18 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { allMarcherRowsQueryOptions } from "@/hooks/queries/useMarchers";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
-import {
-    isPageTimeline,
-    moveLabel,
-    moveLabels,
-} from "@/timeline/timelineViewModel";
+import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { timelineExists } from "@/db-functions/timelines";
-import { pageRunsLabel, type NamedPage } from "@/db-functions/pageDelete";
+import { pageRuns, type NamedPage } from "@/db-functions/pageDelete";
+import { formatList } from "@/utilities/formatList";
 import {
     splitTimelineAtBeat,
     type MotionChange,
 } from "@/db-functions/timelineSplitAtBeat";
 import { beatWhere } from "@/timeline/timelineRangeWords";
+import type { TimelineText } from "@/timeline/timelineText";
+import { translateTimelineText } from "@/timeline/translateTimelineText";
 import { useMoveCardRevealStore } from "@/stores/MoveCardRevealStore";
 import { useMoveMemberSelectionStore } from "@/stores/MoveMemberSelectionStore";
 import {
@@ -68,7 +67,7 @@ export function addSelectedMarchersBlocker(
     selectedMarcherIds: ReadonlySet<number>,
 ): string | null {
     return selectedMarcherIds.size === 0
-        ? "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
+        ? tolgee.t("timeline.rangeMenu.addSelectedNone")
         : null;
 }
 
@@ -159,7 +158,7 @@ function useAddSelectedMarchers(
 
 /** Why **Edit move** and **Delete move** are unavailable (UI-14), or null when they can run. */
 export function moveCommandBlocker(isPlaying: boolean): string | null {
-    return isPlaying ? "Pause to edit or delete a move." : null;
+    return isPlaying ? tolgee.t("timeline.moveMenu.paused") : null;
 }
 
 /**
@@ -205,18 +204,12 @@ export function moveDeletedMessage(
         return tolgee.t("timeline.moveDeleted.message", "Deleted {label}", {
             label,
         });
-    const pages = pageRunsLabel(changedPages);
-    return changedPages.length === 1
-        ? tolgee.t(
-              "timeline.moveDeleted.withPage",
-              "Deleted {label} · Page {pages} changed",
-              { label, pages },
-          )
-        : tolgee.t(
-              "timeline.moveDeleted.withPages",
-              "Deleted {label} · Pages {pages} changed",
-              { label, pages },
-          );
+    const pages = formatList(pageRuns(changedPages));
+    return tolgee.t(
+        "timeline.moveDeleted.withPages",
+        "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}",
+        { label, pages, count: changedPages.length },
+    );
 }
 
 /**
@@ -237,7 +230,7 @@ function toastMoveEdit(message: string, undo: () => void): void {
     let unsubscribe = () => {};
     const id = toast.success(message, {
         duration: DELETE_TOAST_MS,
-        action: { label: "Undo", onClick: undo },
+        action: { label: tolgee.t("actions.edit.undo", "Undo"), onClick: undo },
         onDismiss: () => unsubscribe(),
         onAutoClose: () => unsubscribe(),
     });
@@ -291,7 +284,7 @@ export function moveAtPlayhead(
             (t) => t.id === state.isolation!.timelineId,
         );
         if (isolated && inside(isolated)) return isolated;
-        return "Put the playhead inside the move you're editing to split it.";
+        return tolgee.t("timeline.moveSplit.isolatedOutside");
     }
     const current = windowMove(state);
     if (current && inside(current)) return current;
@@ -302,40 +295,48 @@ export function moveAtPlayhead(
         (t) => inside(t) && !isPageTimeline(t, stored, state.pageBoxes),
     );
     if (crossing.length === 1) return crossing[0]!;
-    const where = beatWhere(beat, state.pageBoxes) ?? "the playhead";
-    return crossing.length === 0
-        ? `No move crosses ${where}. Put the playhead inside a move to split it.`
-        : `Several moves cross ${where}. Right-click the one to split.`;
+    const where = beatWhere(beat, state.pageBoxes);
+    if (where === null)
+        return tolgee.t(
+            crossing.length === 0
+                ? "timeline.moveSplit.noneAtPlayhead"
+                : "timeline.moveSplit.severalAtPlayhead",
+        );
+    return tolgee.t(
+        crossing.length === 0
+            ? "timeline.moveSplit.noneAt"
+            : "timeline.moveSplit.severalAt",
+        { where: translateTimelineText(where) },
+    );
 }
 
 /**
- * "Split Move 2 at Page 3 count 4", and when paths changed (a path that wasn't a straight line
- * before the split, UI-27), "… · 3 marchers' paths are redrawn: straight before it, restarted
- * after".
+ * "Split Move 2 at Page 3 count 4" ("… at the playhead" where the moment has no page to say it
+ * by), and when paths changed (a path that wasn't a straight line before the split, UI-27), "… · 3
+ * marchers' paths are redrawn: straight before it, restarted after".
  */
 export function moveSplitMessage(
     label: string,
-    where: string,
+    where: TimelineText | null,
     changed: readonly MotionChange[],
 ): string {
-    const base = tolgee.t(
-        "timeline.moveSplit.message",
-        "Split {label} at {where}",
-        { label, where },
-    );
+    const base = where
+        ? tolgee.t("timeline.moveSplit.message", "Split {label} at {where}", {
+              label,
+              where: translateTimelineText(where),
+          })
+        : tolgee.t(
+              "timeline.moveSplit.messageAtPlayhead",
+              "Split {label} at the playhead",
+              { label },
+          );
     if (changed.length === 0) return base;
-    const note =
-        changed.length === 1
-            ? tolgee.t(
-                  "timeline.moveSplit.oneChanged",
-                  "1 marcher's path is redrawn: straight before it, restarted after",
-              )
-            : tolgee.t(
-                  "timeline.moveSplit.changed",
-                  "{count} marchers' paths are redrawn: straight before it, restarted after",
-                  { count: changed.length },
-              );
-    return `${base} · ${note}`;
+    const note = tolgee.t(
+        "timeline.moveSplit.changed",
+        "{count, plural, one {# marcher's path is redrawn: straight before it, restarted after} other {# marchers' paths are redrawn: straight before it, restarted after}}",
+        { count: changed.length },
+    );
+    return tolgee.t("timeline.moveSplit.withNote", { message: base, note });
 }
 
 /**
@@ -384,6 +385,16 @@ export function useMoveCommands(database: DbConnection) {
     );
 }
 
+/** A stored move's label (UI-14), for its toasts. */
+const storedMoveLabel = (timelineId: number) => {
+    const s = useTimelineSelectionStore.getState();
+    return (
+        moveLabels(s.storedTimelines ?? [], s.pageBoxes).get(timelineId) ??
+        s.storedTimelines?.find((t) => t.id === timelineId)?.name ??
+        tolgee.t("timeline.moveName.unnamed")
+    );
+};
+
 /** `useMoveCommands` without React: the app's undo and marcher selection are passed in. */
 export function createMoveCommands({
     database,
@@ -398,13 +409,7 @@ export function createMoveCommands({
         useTimelineSelectionStore
             .getState()
             .storedTimelines?.find((t) => t.id === timelineId);
-    const labelOf = (timelineId: number) => {
-        const s = useTimelineSelectionStore.getState();
-        return (
-            moveLabels(s.storedTimelines ?? [], s.pageBoxes).get(timelineId) ??
-            moveLabel({ name: stored(timelineId)?.name })
-        );
-    };
+    const labelOf = storedMoveLabel;
     /** A refusal is shown, unless the move is gone by now (then there's nothing to say) */
     const report = async (timelineId: number, error: unknown) => {
         if (!(await timelineExists(database, timelineId).catch(() => true)))
@@ -519,7 +524,7 @@ async function splitMoveAtPlayhead({
         toastMoveEdit(
             moveSplitMessage(
                 label,
-                beatWhere(playheadBeat, pageBoxes) ?? "the playhead",
+                beatWhere(playheadBeat, pageBoxes),
                 motionChanged,
             ),
             undo,

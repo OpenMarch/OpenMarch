@@ -148,3 +148,23 @@ export const WEB_EVENTS = {
     /** (status: SaveStatus): saving the open show started, finished or failed */
     saveStatus: "web:saveStatus",
 } as const;
+
+/**
+ * Errors the worker words for the person. The worker doesn't load Tolgee, so it sends the key as
+ * the error's message, and the page translates it when it arrives (`../renderer/workerErrors.ts`).
+ */
+export const WORKER_ERRORS = {
+    midChange: { messageKey: "web.workerError.midChange" },
+    notSaved: { messageKey: "web.workerError.notSaved" },
+    noLibrary: { messageKey: "web.workerError.noLibrary" },
+    noShow: { messageKey: "web.workerError.noShow" },
+    readOnly: { messageKey: "web.workerError.readOnly" },
+    noFileOpen: { messageKey: "web.workerError.noFileOpen" },
+} as const;
+
+export type WorkerErrorKey =
+    (typeof WORKER_ERRORS)[keyof typeof WORKER_ERRORS]["messageKey"];
+
+/** Whether `message` is one of `WORKER_ERRORS`' keys. */
+export const isWorkerErrorKey = (message: unknown): message is WorkerErrorKey =>
+    Object.values(WORKER_ERRORS).some((e) => e.messageKey === message);

@@ -61,7 +61,11 @@ export function ModeMenu({
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        aria-label={`${label}: ${modeLabel(current.mode)}`}
+                        aria-label={tolgee.t(
+                            "shapes.edit.mode.current",
+                            "Fill: {mode, select, files {Grid} outline {Outline} other {Spread}}",
+                            { mode: current.mode },
+                        )}
                         {...focus.trigger}
                         data-testid="shape-mode-menu"
                         data-mode={current.mode}

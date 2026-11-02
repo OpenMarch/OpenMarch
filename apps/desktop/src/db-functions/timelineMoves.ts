@@ -35,6 +35,11 @@ import {
     moveName,
 } from "@/timeline/timelineRangeWords";
 import { readMoveWords } from "./timelineMoveNames";
+import {
+    text,
+    type TimelineTextArg,
+    timelineTextForLog,
+} from "@/timeline/timelineText";
 import { FIRST_PAGE_ID } from "./rowMappers";
 import type { DatabaseTimelineAssignment } from "./timelineAssignments";
 import {
@@ -147,7 +152,9 @@ export const samePosition = (a: XY, b: XY): boolean =>
     Math.abs(a[1] - b[1]) <= SAME_POSITION_TOLERANCE;
 
 const pageLabel = (page: TimelineMovePage) =>
-    page.name !== undefined ? `page ${page.name}` : "this page";
+    page.name !== undefined
+        ? text.t("timeline.where.page", { page: page.name })
+        : text.t("timeline.where.thisPage");
 
 /**
  * The exact sample points of `shapeId` for `slotCount` slots (R-13), through the public resolver:
@@ -256,7 +263,9 @@ export const moveMarchersOnPageInTransaction = async ({
     }
 
     if (page.beats.length === 0)
-        refuse(`${pageLabel(page)} has no beats, so it has no end beat`);
+        refuse(
+            `${timelineTextForLog(pageLabel(page))} has no beats, so it has no end beat`,
+        );
     const endBeat = pageEndBeat(page);
 
     // Every row of the moved marchers that covers the last moment before the end beat
@@ -301,9 +310,10 @@ export const moveMarchersOnPageInTransaction = async ({
         const row = winners.get(move.marcherId);
         if (!row || row.end !== endBeat || row.transitionEnd !== endBeat)
             refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)} has no move that ends at the end of ${pageLabel(
-                    page,
-                )}, so there is no destination to change there`,
+                text.t("timeline.refusals.positions.noMoveEndsAtPage", {
+                    marcher: await marcherLabel(tx, move.marcherId),
+                    page: pageLabel(page),
+                }),
             );
         plans.push({ move, row });
     }
@@ -338,14 +348,14 @@ const writeSlotMoves = async ({
     tx: DbTransaction;
     plans: readonly SlotMovePlan[];
     /** Names the page or move in refusals; a function when naming it needs a read */
-    where: string | (() => Promise<string>);
+    where: TimelineTextArg | (() => Promise<TimelineTextArg>);
     result: TimelineMoveResult;
 }): Promise<void> => {
     for (const { move, row } of plans)
         if (row.shapeId !== null && row.pathStyle === "follow_the_leader")
             throw new TimelineWriteError(
                 "E-T5",
-                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${typeof where === "string" ? where : await where()}; move the shape instead`,
+                `marcher ${await marcherLabel(tx, move.marcherId)} follows the leader into a shape on ${timelineTextForLog(typeof where === "function" ? await where() : where)}; move the shape instead`,
             );
 
     // Shape-backed transitions switch to individual points (Q-14), copying the shape's samples.
@@ -610,22 +620,31 @@ export const moveMarchersInTimelineInTransaction = async ({
     let words: Awaited<ReturnType<typeof readMoveWords>> | undefined;
     const moveWords = async () => (words ??= await readMoveWords(tx));
     const at = async (beat: number) =>
-        beatWhere(beat, (await moveWords()).boxes) ?? "home";
+        beatWhere(beat, (await moveWords()).boxes) ??
+        text.t("timeline.where.home");
     const plans: SlotMovePlan[] = [];
     for (const move of moves) {
         const own = byMarcher.get(move.marcherId) ?? [];
         if (own.length === 0)
             refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)} isn't in this timeline.`,
+                text.t("timeline.refusals.positions.notInMove", {
+                    marcher: await marcherLabel(tx, move.marcherId),
+                }),
             );
         if (own.length > 1)
             refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)} has more than one move in this timeline. Edit its moves in the inspector.`,
+                text.t("timeline.refusals.positions.severalMoves", {
+                    marcher: await marcherLabel(tx, move.marcherId),
+                }),
             );
         const row = own[0]!;
         if (row.end !== endBeat)
             refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)} stops at ${await at(row.end)}, before this move ends (${await at(endBeat)}). Edit it in the inspector.`,
+                text.t("timeline.refusals.positions.stopsEarly", {
+                    marcher: await marcherLabel(tx, move.marcherId),
+                    stop: await at(row.end),
+                    end: await at(endBeat),
+                }),
             );
         const winner = top.get(move.marcherId);
         if (!ghosts && winner && winner.layer > row.layer) {
@@ -636,7 +655,11 @@ export const moveMarchersInTimelineInTransaction = async ({
                 stored,
             );
             refuse(
-                `marcher ${await marcherLabel(tx, move.marcherId)}'s position at ${await at(endBeat)} comes from ${other}, not this move. Put the start flag and playhead on that move's edges to edit it.`,
+                text.t("timeline.refusals.positions.fromOtherMove", {
+                    marcher: await marcherLabel(tx, move.marcherId),
+                    end: await at(endBeat),
+                    move: other,
+                }),
             );
         }
         plans.push({ move, row });
@@ -1080,9 +1103,7 @@ export const moveMarchersFromFlagInstead = async ({
             );
             const kept = marcherIds.filter((id) => timelineOf.has(id));
             if (kept.length === 0)
-                refuse(
-                    "the marchers aren't in that move any more, so there's nothing to change",
-                );
+                refuse(text.t("timeline.refusals.positions.leftMove"));
             // Where they are at the range's end now, before they leave the long move
             const { snapshot } = await readTimelineTables(tx);
             const resolver = createResolver(snapshot);

@@ -2,7 +2,13 @@
 import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
 import { FieldProperties } from "@openmarch/core";
 import { StepSize } from "../StepSize";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeAll } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
+
+// Step sizes are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 describe("StepSize", () => {
     it("should be able to create a step size object", () => {

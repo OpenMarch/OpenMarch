@@ -2,14 +2,18 @@
 /**
  * The native dialogs of convert on open, and the progress it sends the
  * renderer. Asking before a conversion is the renderer's (`ConvertShowDialog`).
- * The text here is English only, like the other main-process dialogs.
+ * The text is in the app language (`./i18n`).
  */
 import { BrowserWindow, dialog } from "electron";
 import { captureException } from "@sentry/electron/main";
 import type { ConvertOnOpenDialogs } from "./convertOnOpenFlow";
 import { showConversionProgress, throttleProgress } from "./conversionProgress";
-import { conversionWorkersStopped } from "./convertWorkerHost";
+import {
+    CONVERSION_STOPPED_CODE,
+    conversionWorkersStopped,
+} from "./convertWorkerHost";
 import { NO_PAGES_TO_CONVERT_MESSAGE } from "../database/convertOnOpenGate";
+import { t } from "./i18n";
 
 function messageBox(
     win: BrowserWindow | null,
@@ -18,6 +22,21 @@ function messageBox(
     return win && !win.isDestroyed()
         ? dialog.showMessageBox(win, options)
         : dialog.showMessageBox(options);
+}
+
+/**
+ * Why a conversion failed, for the dialog. The expected failures are translated; anything
+ * else is a technical error's own message.
+ */
+function conversionErrorText(error: Error): string {
+    if (error.message === NO_PAGES_TO_CONVERT_MESSAGE)
+        return t("convertShow.openFailed.noPages");
+    const { code, reason } = error as { code?: unknown; reason?: unknown };
+    if (code === CONVERSION_STOPPED_CODE)
+        return t("convertShow.openFailed.conversionStopped", {
+            reason: String(reason),
+        });
+    return error.message;
 }
 
 /** Native dialogs over `win` (or app-modal when there is no window yet, at startup). */
@@ -37,15 +56,19 @@ export function electronConvertOnOpenDialogs(
             }
         },
 
-        async backupFailed(fileName, message) {
+        async backupFailed(fileName, failure) {
             // The app is quitting and stopped the worker: nothing to tell.
             if (conversionWorkersStopped()) return;
             await messageBox(win, {
                 type: "error",
-                title: "Couldn't back up your file",
-                message: `"${fileName}" wasn't opened, because it couldn't be backed up before converting it to timelines.`,
-                detail: `${message}\n\nYour file was not changed.`,
-                buttons: ["OK"],
+                title: t("convertShow.openFailed.backupTitle"),
+                message: t("convertShow.openFailed.backupMessage", {
+                    fileName,
+                }),
+                detail: t("convertShow.openFailed.backupDetail", {
+                    error: t(failure.messageKey, failure.messageParams),
+                }),
+                buttons: [t("convertShow.openFailed.ok")],
             });
         },
 
@@ -56,10 +79,15 @@ export function electronConvertOnOpenDialogs(
                 captureException(error);
             await messageBox(win, {
                 type: "error",
-                title: "Couldn't convert your file",
-                message: `"${fileName}" wasn't opened, because converting it to timelines failed.`,
-                detail: `${error.message}\n\nYour file wasn't converted, and wasn't changed. A copy of it from before is at:\n${backupPath}`,
-                buttons: ["OK"],
+                title: t("convertShow.openFailed.convertTitle"),
+                message: t("convertShow.openFailed.convertMessage", {
+                    fileName,
+                }),
+                detail: t("convertShow.openFailed.convertDetail", {
+                    error: conversionErrorText(error),
+                    backupPath,
+                }),
+                buttons: [t("convertShow.openFailed.ok")],
             });
         },
     };

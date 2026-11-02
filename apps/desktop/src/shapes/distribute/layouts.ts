@@ -172,7 +172,11 @@ export function versionOf(
                           "{across} × {deep} straight",
                           { across, deep },
                       );
-            return `${across} × ${deep}`;
+            return tolgee.t(
+                "shapes.distribute.version.size",
+                "{across} × {deep}",
+                { across, deep },
+            );
         },
         get tooltip() {
             return layout.byFile
@@ -376,6 +380,14 @@ export function familyHint(family: LayoutFamily, n: number): LayoutHint {
     return { more, fewer };
 }
 
+/** A version's full name, its layout then its version, as the picker reads it: "Short back 6 × 4, 1 short" */
+export function layoutVersionName(layout: string, version: string): string {
+    return tolgee.t("shapes.distribute.versionName", "{layout} {version}", {
+        layout,
+        version,
+    });
+}
+
 /**
  * The layout picker for `n` marchers: every layout in the fixed order Full · Stagger · Rounded ·
  * Short back · Notched, each with its versions wide to deep, or the nearest counts it makes
@@ -421,20 +433,28 @@ export function layoutCatalogue(n: number): readonly LayoutRow[] {
     return rows;
 }
 
-/** "add 1 / remove 2" */
+/** "add 1 / remove 2": one message for each case, so a language can word it whole */
 export function hintText(hint: LayoutHint): string {
-    return [
-        hint.more !== null &&
-            tolgee.t("shapes.distribute.hint.add", "add {count}", {
-                count: hint.more,
-            }),
-        hint.fewer !== null &&
-            tolgee.t("shapes.distribute.hint.remove", "remove {count}", {
-                count: hint.fewer,
-            }),
-    ]
-        .filter(Boolean)
-        .join(" / ");
+    const { more, fewer } = hint;
+    if (more !== null && fewer !== null)
+        return tolgee.t(
+            "shapes.distribute.hint.addOrRemove",
+            "{more, plural, one {add #} other {add #}} / {fewer, plural, one {remove #} other {remove #}}",
+            { more, fewer },
+        );
+    if (more !== null)
+        return tolgee.t(
+            "shapes.distribute.hint.add",
+            "{count, plural, one {add #} other {add #}}",
+            { count: more },
+        );
+    if (fewer !== null)
+        return tolgee.t(
+            "shapes.distribute.hint.remove",
+            "{count, plural, one {remove #} other {remove #}}",
+            { count: fewer },
+        );
+    return "";
 }
 
 /** A count's listed versions of `family`, without its own hint (which would recurse) */

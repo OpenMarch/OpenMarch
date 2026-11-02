@@ -52,7 +52,7 @@ import {
 } from "./EditableAudioPlayerUtils";
 import { useTheme } from "@/context/ThemeContext";
 import Measure from "@/global/classes/Measure";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { normalizeVolume } from "./volume";
 
 /**
@@ -92,7 +92,7 @@ export default function EditableAudioPlayer() {
     const [temporaryMeasures, setTemporaryMeasures] = useState<Measure[]>([]);
     const replaceAllBeatObjectsMutation = useReplaceAllBeatObjects();
     const isTouchMode = useIsTouchMode();
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     // Beats added per press of the on-screen Tap button (keys 1-9 pick their own)
     const [beatsPerTap, setBeatsPerTap] = useState(1);
     const tapBeats = useCallback(
@@ -334,6 +334,7 @@ export default function EditableAudioPlayer() {
                 </p>
                 <div className="flex items-center gap-6">
                     <button
+                        aria-label={t("audio.player.toStart")}
                         onClick={() => waveSurfer?.seekTo(0)}
                         className={clsx(
                             "hover:text-accent text-text transition-colors",
@@ -344,6 +345,11 @@ export default function EditableAudioPlayer() {
                         <RewindIcon size={24} />
                     </button>
                     <button
+                        aria-label={t(
+                            isAudioPlaying
+                                ? "audio.player.pause"
+                                : "audio.player.play",
+                        )}
                         onClick={togglePlayPause}
                         className={clsx(
                             "hover:text-accent text-text transition-colors",

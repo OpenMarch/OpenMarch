@@ -1,5 +1,5 @@
 import { useState, useSyncExternalStore } from "react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 import clsx from "clsx";
 import {
@@ -106,16 +106,25 @@ function PadButton({
  * Touch mode only; with a mouse the arrow-key nudges do this already.
  */
 export default function MovePad({ disabled = false }: { disabled?: boolean }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const isTouch = useIsTouchMode();
     const [step, setStep] = useState<MovePadStep>("one");
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
 
     if (!isTouch) return null;
 
+    // The field's own side names, as the user wrote them; else the app's words, whole
     const sides = fieldProperties?.sideDescriptions;
     const sideLeft = sides?.verboseLeft ?? t("inspector.marcher.move.side1");
     const sideRight = sides?.verboseRight ?? t("inspector.marcher.move.side2");
+    const towardLeft =
+        sides?.verboseLeft !== undefined
+            ? t("inspector.marcher.move.towardSide", { side: sideLeft })
+            : t("inspector.marcher.move.towardSide1");
+    const towardRight =
+        sides?.verboseRight !== undefined
+            ? t("inspector.marcher.move.towardSide", { side: sideRight })
+            : t("inspector.marcher.move.towardSide2");
 
     return (
         <div className="flex flex-col gap-8" data-testid="move-pad">
@@ -156,9 +165,7 @@ export default function MovePad({ disabled = false }: { disabled?: boolean }) {
                     step={step}
                     disabled={disabled}
                     className="col-start-1 row-start-2"
-                    label={t("inspector.marcher.move.towardSide", {
-                        side: sideLeft,
-                    })}
+                    label={towardLeft}
                     caption={sideLeft}
                 >
                     <ArrowLeftIcon size={20} weight="bold" />
@@ -168,9 +175,7 @@ export default function MovePad({ disabled = false }: { disabled?: boolean }) {
                     step={step}
                     disabled={disabled}
                     className="col-start-3 row-start-2"
-                    label={t("inspector.marcher.move.towardSide", {
-                        side: sideRight,
-                    })}
+                    label={towardRight}
                     caption={sideRight}
                 >
                     <ArrowRightIcon size={20} weight="bold" />

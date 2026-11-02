@@ -1,9 +1,15 @@
-import { useTranslate } from "@tolgee/react";
+import { Fragment } from "react";
+import { T, useTranslate } from "@tolgee/react";
+import Shortcut from "@/components/ui/Shortcut";
 import { isMacPlatform } from "@/shortcuts/platform";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useGestureChipStore } from "@/input/gestureChipStore";
-import { gestureChipSegments } from "./heldRoleChipText";
+import {
+    gestureChipSegments,
+    WITH_KEY_I18N,
+    type ChipSegment,
+} from "./heldRoleChipText";
 
 const OFFSET_X = 16;
 const OFFSET_Y = 18;
@@ -26,13 +32,13 @@ export default function HeldRolesChip({
     /** A drag readout (the tip) is showing; the chip sits under it there instead */
     belowTip?: boolean;
 }) {
-    const text = useHeldRolesChipText();
-    if (belowTip || text === null) return null;
-    return <ChipAtPointer text={text} />;
+    const segments = useHeldRolesChipSegments();
+    if (belowTip || segments === null) return null;
+    return <ChipAtPointer segments={segments} />;
 }
 
-/** The chip's text for the running drag, or null when there's nothing to show */
-export function useHeldRolesChipText(): string | null {
+/** The chip's segments for the running drag, or null when there's nothing to show */
+export function useHeldRolesChipSegments(): ChipSegment[] | null {
     const { t } = useTranslate();
     const active = useGestureChipStore((state) => state.active);
     const honored = useGestureChipStore((state) => state.honored);
@@ -47,26 +53,50 @@ export function useHeldRolesChipText(): string | null {
         isMacPlatform(),
         t,
     );
-    return segments.length === 0 ? null : segments.join(" · ");
+    return segments.length === 0 ? null : segments;
+}
+
+/** The segments in a row, each held key as a `Shortcut`, apart by dots */
+function ChipText({ segments }: { segments: readonly ChipSegment[] }) {
+    return (
+        <>
+            {segments.map((segment, i) => (
+                <Fragment key={`${segment.key}-${segment.word}`}>
+                    {i > 0 && <span aria-hidden="true"> · </span>}
+                    {segment.key === null ? (
+                        segment.word
+                    ) : (
+                        <T
+                            keyName={WITH_KEY_I18N}
+                            params={{
+                                word: segment.word,
+                                keys: () => <Shortcut keys={[segment.key!]} />,
+                            }}
+                        />
+                    )}
+                </Fragment>
+            ))}
+        </>
+    );
 }
 
 /** The chip under a drag readout, so the two stack instead of overlapping */
 export function HeldRolesChipBelowTip() {
-    const text = useHeldRolesChipText();
-    if (text === null) return null;
+    const segments = useHeldRolesChipSegments();
+    if (segments === null) return null;
     return (
         <div
             className={CHIP_CLASS}
             style={{ fontSize: CHIP_PX }}
             data-testid="heldRolesChip"
         >
-            {text}
+            <ChipText segments={segments} />
         </div>
     );
 }
 
 /** The chip itself, the only part that follows the pointer */
-function ChipAtPointer({ text }: { text: string }) {
+function ChipAtPointer({ segments }: { segments: readonly ChipSegment[] }) {
     const screen = useGestureChipStore((state) => state.screen);
     if (!screen) return null;
     return (
@@ -79,7 +109,7 @@ function ChipAtPointer({ text }: { text: string }) {
             }}
             data-testid="heldRolesChip"
         >
-            {text}
+            <ChipText segments={segments} />
         </div>
     );
 }

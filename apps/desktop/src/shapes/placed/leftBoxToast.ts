@@ -101,18 +101,25 @@ function showOne(leave: BoxLeave, rewrite: BoxRewrite): void {
             ? tolgee.t("shapes.box.left.one", "{name} left the box", {
                   name: names[0]!,
               })
-            : tolgee.t("shapes.box.left.many", "{count} left the box", {
-                  count: names.length,
-              })
+            : tolgee.t(
+                  "shapes.box.left.many",
+                  "{count, plural, one {# left the box} other {# left the box}}",
+                  { count: names.length },
+              )
         : names.length === 1
-          ? tolgee.t("shapes.placed.left.one", "{name} left the {shape}", {
-                name: names[0]!,
-                shape: box.kind.shape.label.toLowerCase(),
-            })
-          : tolgee.t("shapes.placed.left.many", "{count} left the {shape}", {
-                count: names.length,
-                shape: box.kind.shape.label.toLowerCase(),
-            });
+          ? tolgee.t(
+                "shapes.placed.leftShape.one",
+                "{name} left the {shape, select, block {box} circle {circle} other {shape}}",
+                {
+                    name: names[0]!,
+                    shape: box.kind.shape.id,
+                },
+            )
+          : tolgee.t(
+                "shapes.placed.leftShape.many",
+                "{count, plural, one {# left the {shape, select, block {box} circle {circle} other {shape}}} other {# left the {shape, select, block {box} circle {circle} other {shape}}}}",
+                { count: names.length, shape: box.kind.shape.id },
+            );
     // Every closed kind closes up (#392); an open one (a line, an arc) keeps its holes
     const closesUp =
         closedOf(box.kind, box.params, box.spots) !== undefined &&

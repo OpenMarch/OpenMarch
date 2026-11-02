@@ -15,7 +15,8 @@ interface SegmentedTextSwitchProps {
     setSelected: (value: string) => void;
     className?: string;
     itemClassName?: string;
-    ariaLabel?: string;
+    /** The switch's name for screen readers, already translated (the package has no translations). */
+    ariaLabel: string;
     testId?: string;
 }
 
@@ -25,7 +26,7 @@ export function SegmentedTextSwitch({
     setSelected,
     className,
     itemClassName,
-    ariaLabel = "Segmented text switch",
+    ariaLabel,
     testId,
 }: SegmentedTextSwitchProps) {
     return (

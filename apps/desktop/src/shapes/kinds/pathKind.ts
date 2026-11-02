@@ -26,7 +26,11 @@ export const FIT: Spacing = { mode: "fit" };
 /** Steps to the hundredth, the same precision the panel's fields show */
 export const formatSteps = (fieldUnits: number, ctx: ShapeContext): string => {
     const steps = Math.round((fieldUnits / ctx.stepPx) * 100) / 100;
-    return `${steps} ${Math.abs(steps) === 1 ? "step" : "steps"}`;
+    return tolgee.t(
+        "shapes.kinds.path.readout.steps",
+        "{steps, plural, one {# step} other {# steps}}",
+        { steps },
+    );
 };
 
 /** Points along `path` from `from` to `to`, about every half step */

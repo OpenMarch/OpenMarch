@@ -5,7 +5,7 @@ import {
     useQuery,
     useQueryClient,
 } from "@tanstack/react-query";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import { db } from "@/global/database/db";
 import {
@@ -80,7 +80,7 @@ export function usePagesToEnd(): {
     ) => void;
     readonly isPending: boolean;
 } {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const counts =
         useQuery(workspaceSettingsQueryOptions()).data?.defaultNewPageCounts ??

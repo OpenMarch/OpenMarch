@@ -6,7 +6,7 @@ import {
     AlertDialogTrigger,
     AlertDialogDescription,
 } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 interface FormButtonsProps extends ButtonProps {
     isEditingProp?: boolean;
@@ -20,6 +20,7 @@ interface FormButtonsProps extends ButtonProps {
     handleSubmit?: () => void;
     isDangerButton?: boolean;
     alertDialogTitle?: string;
+    /** Text, or translated text with elements in it (a `<T>` with a `Shortcut`) */
     alertDialogDescription?: React.ReactNode;
     alertDialogActions?: React.ReactNode;
 }
@@ -45,17 +46,15 @@ export default function FormButtons({
     handleSubmit = undefined,
     isEditingProp = true,
     setIsEditingProp = undefined,
-    editButton = "Edit",
+    editButton,
     isDangerButton,
     alertDialogTitle,
     alertDialogDescription,
     alertDialogActions,
     ...rest
 }: FormButtonsProps) {
-    const { t } = useTolgee();
-    if (editButton === "Edit") {
-        editButton = t("formButtons.editButton") || "Edit";
-    }
+    const { t } = useTranslate();
+    editButton ??= t("formButtons.editButton");
     return (
         <>
             {!isEditingProp ? (
@@ -73,7 +72,9 @@ export default function FormButtons({
                             {isDangerButton ? (
                                 <AlertDialog>
                                     <AlertDialogTrigger>
-                                        <Button {...rest}>Save Changes</Button>
+                                        <Button {...rest}>
+                                            <T keyName="formButtons.saveChanges" />
+                                        </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogTitle>

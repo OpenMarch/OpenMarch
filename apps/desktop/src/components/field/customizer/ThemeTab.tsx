@@ -13,7 +13,7 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { RgbaColor } from "@uiw/react-color";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateFieldPropertiesMutationOptions } from "@/hooks/queries";
 import ColorPicker from "../../ui/ColorPicker";
@@ -33,7 +33,7 @@ export function ThemeTab({
     currentFieldProperties,
     validateIsRgbaColor,
 }: ThemeTabProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const { mutate: updateFieldProperties, isPending } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
@@ -393,6 +393,9 @@ export function ThemeTab({
                             </SelectContent>
                         </Select>
                         <Button
+                            aria-label={t(
+                                "fieldProperties.tooltips.resetToDefault",
+                            )}
                             tooltipSide="right"
                             size="compact"
                             tooltipText={t(

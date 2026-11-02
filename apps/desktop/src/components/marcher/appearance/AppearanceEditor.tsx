@@ -17,7 +17,7 @@ import {
     TextTSlashIcon,
     MinusIcon,
 } from "@phosphor-icons/react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { RgbaColor } from "@uiw/react-color";
 import ColorPickerMini from "@/components/ui/ColorPickerMini";
 import {
@@ -51,7 +51,7 @@ export function AppearanceEditor({
     ) => void;
     handleDeleteAppearance: () => void;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     async function handleChange(changes: Partial<AppearanceComponentOptional>) {
         await handleUpdateAppearance({

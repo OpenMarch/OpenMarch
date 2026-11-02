@@ -25,6 +25,7 @@ import {
     QuestionIcon,
 } from "@phosphor-icons/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { useTranslate } from "@tolgee/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
@@ -288,6 +289,7 @@ export function TimelineMoveMenuItems({
 }: {
     actions: TimelineMoveMenuActions;
 }) {
+    const { t } = useTranslate();
     const reason = actions.disabledReason ?? null;
     // Read as the menu renders: the playhead may have moved since the clip's actions were made.
     // Its own reason first, so playing says "Pause to split a move."
@@ -304,7 +306,7 @@ export function TimelineMoveMenuItems({
                 onSelect={actions.onEdit}
             >
                 <PencilSimpleIcon size={14} />
-                Edit move
+                {t("timeline.moveMenu.edit")}
             </MenuItemWithReason>
             <DropdownMenu.Item
                 data-testid="timeline-move-menu-rename"
@@ -312,7 +314,7 @@ export function TimelineMoveMenuItems({
                 className={TIMELINE_MENU_ITEM_CLASS}
             >
                 <CursorTextIcon size={14} />
-                Rename move…
+                {t("timeline.moveMenu.rename")}
             </DropdownMenu.Item>
             {actions.onSplit && (
                 <MenuItemWithReason
@@ -322,7 +324,7 @@ export function TimelineMoveMenuItems({
                     onSelect={actions.onSplit}
                 >
                     <ScissorsIcon size={14} />
-                    Split at playhead
+                    {t("timeline.moveMenu.splitAtPlayhead")}
                 </MenuItemWithReason>
             )}
             {extra.length > 0 && (
@@ -340,7 +342,7 @@ export function TimelineMoveMenuItems({
                 className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
             >
                 <TrashIcon size={14} />
-                Delete move
+                {t("timeline.moveMenu.delete")}
             </MenuItemWithReason>
         </>
     );
@@ -563,7 +565,7 @@ export function useTimelineRangeMenu({
                                 onSelect={() => menu.onAdd?.(open.target)}
                             >
                                 <UserPlusIcon size={14} />
-                                Add selected marchers
+                                {tolgee.t("timeline.rangeMenu.addSelected")}
                             </MenuItemWithReason>
                         )}
                         {pageExtra.length > 0 && (
@@ -674,7 +676,7 @@ export function useTimelineRangeMenu({
                                     className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
                                 >
                                     <FlagIcon size={14} />
-                                    Delete page
+                                    {tolgee.t("timeline.rangeMenu.deletePage")}
                                 </DropdownMenu.Item>
                             )}
                         {menu?.onDeleteWithMoves &&

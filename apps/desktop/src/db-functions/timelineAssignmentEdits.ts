@@ -24,6 +24,7 @@ import {
     type DatabaseTimelineAssignment,
 } from "./timelineAssignments";
 import { stealLayer } from "./timelineCommands";
+import { text } from "@/timeline/timelineText";
 
 /**
  * The inspector's assignment edits (docs/timeline/phases/08-authoring-ui.md P8.4): casting
@@ -37,8 +38,6 @@ import { stealLayer } from "./timelineCommands";
 
 /** The largest layer a row may hold (spec I-N2). */
 const MAX_LAYER = 1000;
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 const getAssignment = async (tx: DbTransaction, id: number) => {
     const row = await tx
@@ -64,7 +63,10 @@ const getTransition = async (tx: DbTransaction, id: number) => {
 const refuseTooManySlots = (slots: number) => {
     if (slots > MAX_CAST_SLOTS)
         refuse(
-            `this transition has ${slots} slots; automatic casting handles up to ${MAX_CAST_SLOTS}. Assign its slots one at a time instead`,
+            text.t("timeline.refusals.casting.tooManySlots", {
+                slots,
+                max: MAX_CAST_SLOTS,
+            }),
         );
 };
 
@@ -139,7 +141,8 @@ export const castMarchersIntoTransitionInTransaction = async ({
     transitionId: number;
     marcherIds: readonly number[];
 }): Promise<CastResult> => {
-    if (marcherIds.length === 0) refuse("select the marchers to cast");
+    if (marcherIds.length === 0)
+        refuse(text.t("timeline.refusals.casting.selectToCast"));
     if (new Set(marcherIds).size !== marcherIds.length)
         refuse("a marcher appears more than once");
     const { snapshot } = await readTimelineTables(tx);
@@ -156,7 +159,9 @@ export const castMarchersIntoTransitionInTransaction = async ({
     );
     if (already.length > 0)
         refuse(
-            `${already.length === 1 ? "a selected marcher is" : "some selected marchers are"} already in this transition`,
+            text.t("timeline.refusals.casting.alreadyIn", {
+                count: already.length,
+            }),
         );
     const nearest = castsByNearestSlot(transition.style);
     if (nearest) refuseTooManySlots(transition.slots);
@@ -166,7 +171,10 @@ export const castMarchersIntoTransitionInTransaction = async ({
         if (!taken.has(slot)) vacant.push(slot);
     if (vacant.length < marcherIds.length)
         refuse(
-            `the transition has ${plural(vacant.length, "vacant slot")} for ${plural(marcherIds.length, "marcher")}. Raise its slot count first`,
+            text.t("timeline.refusals.casting.notEnoughSlots", {
+                vacant: vacant.length,
+                marchers: marcherIds.length,
+            }),
         );
 
     const ids = [...marcherIds].sort((a, b) => a - b);
@@ -285,13 +293,12 @@ export const recastTransitionInTransaction = async ({
     const transition = snapshot.transitions[transitionId];
     if (!transition) refuse(`transition ${transitionId} does not exist`);
     if (!castsByNearestSlot(transition.style))
-        refuse(
-            "follow the leader places its marchers by their order on the trail, not by slot, so it can't be recast by nearest slot",
-        );
+        refuse(text.t("timeline.refusals.casting.followTheLeader"));
     const members: AssignmentRow[] = snapshot.assignments
         .filter((a) => a.transition === transitionId)
         .sort((a, b) => a.marcher - b.marcher);
-    if (members.length === 0) refuse("this transition has no marchers to cast");
+    if (members.length === 0)
+        refuse(text.t("timeline.refusals.casting.noMarchers"));
     refuseTooManySlots(transition.slots);
 
     const resolver = createResolver(snapshot);
@@ -309,7 +316,7 @@ export const recastTransitionInTransaction = async ({
     const before = castDistance(marchers, points, current);
     const after = castDistance(marchers, points, cast);
     if (after >= before - 1e-9 * Math.max(1, before))
-        refuse("every marcher is already in its nearest slot");
+        refuse(text.t("timeline.refusals.casting.alreadyNearest"));
 
     const changed = new Set(
         members.filter((a) => cast.get(a.marcher) !== a.slot).map((a) => a.id),
@@ -363,7 +370,7 @@ export const setAssignmentSlotInTransaction = async ({
             `slot ${slot} doesn't exist; the transition has slots 0 to ${transition.slot_count - 1}`,
         );
     if (slot === row.slot_index)
-        refuse(`the marcher is already in slot ${slot}`);
+        refuse(text.t("timeline.refusals.casting.alreadyInSlot", { slot }));
     const occupant = await tx
         .select()
         .from(schema.timeline_assignments)
@@ -450,7 +457,7 @@ export const updateAssignmentInTransaction = async ({
             `the move [${start}, ${end}) must stay inside its transition [${transition.start_beat}, ${transition.end_beat})`,
         );
     if (layer === row.layer && start === row.start_beat && end === row.end_beat)
-        refuse("that changes nothing");
+        refuse(text.t("timeline.refusals.changesNothing"));
     return await mapDbErrors(() =>
         tx
             .update(schema.timeline_assignments)

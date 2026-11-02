@@ -113,7 +113,7 @@ export async function createMarchers(
     await form
         .getByRole("spinbutton", { name: "Quantity" })
         .fill(`${quantity}`);
-    await page.getByRole("button", { name: "Create Marcher Button" }).click();
+    await page.getByTestId("create-marcher-button").click();
     await page.locator("#sidebar-launcher-marchers").click();
 
     await expect

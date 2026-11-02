@@ -9,11 +9,11 @@ import { version as currentVersion } from "../../package.json";
 import { Button } from "@openmarch/ui";
 import StyledMarkdown from "./StyledMarkdown";
 import { Skeleton } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 // eslint-disable-next-line max-lines-per-function
 export default function VersionChecker() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [isOpen, setIsOpen] = useState(false);
     const [latestVersion, setLatestVersion] = useState<string | null>(null);
     const [changelog, setChangelog] = useState<string | null>(null);
@@ -134,7 +134,11 @@ export default function VersionChecker() {
                 <div className="flex flex-col">
                     <div className="flex w-full items-center justify-between gap-16">
                         {error ? (
-                            <p className="text-body text-red">{`Error: ${error}`}</p>
+                            <p className="text-body text-red">
+                                {t("versionCheck.error.message", {
+                                    message: error,
+                                })}
+                            </p>
                         ) : latestVersion ? (
                             <h1 className="text-h2 text-accent font-mono">
                                 {latestVersion}

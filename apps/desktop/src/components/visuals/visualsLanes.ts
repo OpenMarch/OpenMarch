@@ -25,6 +25,7 @@ import {
     type VisualsWho,
     type WhoMarcher,
 } from "./visualsWho";
+import { cueValueLabel } from "./cueValueText";
 
 /** Where a cue sits on its lane, in counts. */
 export interface LaneCue {
@@ -166,8 +167,11 @@ export function laneCue(cue: DatabaseCue, counts: CountIndex): LaneCue | null {
     const count = counts.countOfBeatId.get(cue.beatId);
     if (count === undefined) return null;
     const value = cueLibraryValue(cue.value);
-    const label =
-        cueLabel(cue.value, cue.settings) ?? value?.label ?? cue.value;
+    const label = cueValueLabel(
+        cue.value,
+        cue.settings,
+        value?.label ?? cue.value,
+    );
     if (cue.kind === "phrase") {
         // as compile plays it: held to the value's range, never under 2
         const min = Math.max(2, value?.minLength ?? 2);
@@ -324,7 +328,14 @@ export function resultRow({
             const seg = segments[s];
             const here =
                 seg && seg.from <= k
-                    ? { label: seg.label, cue: seg.cueId }
+                    ? {
+                          label: cueValueLabel(
+                              seg.value,
+                              seg.settings,
+                              seg.label,
+                          ),
+                          cue: seg.cueId,
+                      }
                     : { label: null, cue: null };
             if (here.cue !== null && flagged.has(here.cue)) flaggedAt[k] = true;
             if (!seen[k]) {
@@ -392,22 +403,6 @@ export function newCueValue(
 }
 
 const FEET_STEP = "builtin:feet.step";
-
-/**
- * A cue's label where its settings name it, as compile labels its segments: Feet's one value,
- * Step, reads by its pace and what it does on holds ("½", "2×", "MT"). Null for the value's own.
- */
-function cueLabel(
-    value: string,
-    settings: Readonly<Record<string, unknown>> | undefined,
-): string | null {
-    if (value !== FEET_STEP || !settings) return null;
-    if (settings.pace === "half") return "½";
-    if (settings.pace === "double") return "2×";
-    if (settings.onHolds === "markTime" || settings.onHolds === "highMarkTime")
-        return "MT";
-    return null;
-}
 
 /**
  * Settings that make a value differ from the default, for a channel whose only state is the

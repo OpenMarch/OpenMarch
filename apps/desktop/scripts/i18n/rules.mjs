@@ -288,8 +288,16 @@ function jsxString(attribute) {
 }
 
 /**
- * Every literal key passed to Tolgee exists in `en.json`, and an inline default matches the
- * English there. Option: `{ english: Record<flatKey, string> }`.
+ * Properties that hold a translation key for code elsewhere to translate (`labelKey:
+ * "menu.file.open"`), so their literal values are checked like `t()` keys.
+ */
+const KEY_PROP =
+    /^(label|title|message|description|detail|tooltip|placeholder)Key$/;
+
+/**
+ * Every literal key passed to Tolgee, or written in a `labelKey`-style property, exists in
+ * `en.json`, and an inline default matches the English there. Option:
+ * `{ english: Record<flatKey, string> }`.
  */
 export const knownTranslationKey = {
     meta: {
@@ -328,6 +336,20 @@ export const knownTranslationKey = {
                 const call = translationCall(node);
                 if (call) check(call.keyNode, call.key, call.fallback);
             },
+            Property(node) {
+                if (node.computed || node.parent.type !== "ObjectExpression")
+                    return;
+                const name =
+                    node.key.type === "Identifier"
+                        ? node.key.name
+                        : node.key.type === "Literal"
+                          ? node.key.value
+                          : undefined;
+                if (typeof name !== "string" || !KEY_PROP.test(name)) return;
+                const key = staticString(node.value);
+                // An empty key means "no key" (the text comes from elsewhere)
+                if (key) check(node.value, key, undefined);
+            },
             JSXOpeningElement(node) {
                 if (
                     node.name.type !== "JSXIdentifier" ||
@@ -338,6 +360,156 @@ export const knownTranslationKey = {
                 if (!key) return;
                 const fallback = jsxString(jsxAttribute(node, "defaultValue"));
                 check(key.node, key.value, fallback?.value);
+            },
+        };
+    },
+};
+
+/** Options of Electron's native dialogs that are shown as text. */
+const DIALOG_TEXT_OPTIONS = new Set([
+    "title",
+    "message",
+    "detail",
+    "buttonLabel",
+    "checkboxLabel",
+    "nameFieldLabel",
+    "prompt",
+]);
+
+/** `dialog.showMessageBox` and the other `dialog.show*` calls. */
+const isDialogCall = (name) => /^dialog\.show[A-Z]\w*$/.test(name ?? "");
+
+/** An object literal shaped like an Electron menu item. */
+const isMenuItem = (object) =>
+    object.properties.some(
+        (p) =>
+            p.type === "Property" &&
+            !p.computed &&
+            p.key.type === "Identifier" &&
+            ["click", "role", "submenu", "accelerator"].includes(p.key.name),
+    );
+
+function propertyName(property) {
+    if (property.type !== "Property" || property.computed) return undefined;
+    if (property.key.type === "Identifier") return property.key.name;
+    if (property.key.type === "Literal") return String(property.key.value);
+    return undefined;
+}
+
+/**
+ * Reports the `role` of a menu item that has no `label`. A role item shows
+ * Electron's own label, which is English in every language, so it needs a label of its own. No
+ * role is exempt: Electron localizes none of them, and every role that makes a menu item shows
+ * text. A spread may bring the label, so an item with one isn't flagged.
+ */
+function reportUnlabelledRole(context, object, ignored) {
+    const role = object.properties.find((p) => propertyName(p) === "role");
+    if (!role || ignored(role)) return;
+    const labelled = object.properties.some(
+        (p) => p.type === "SpreadElement" || propertyName(p) === "label",
+    );
+    if (labelled) return;
+    const sourceCode = context.sourceCode ?? context.getSourceCode();
+    context.report({
+        node: role,
+        messageId: "roleLabel",
+        data: { role: sourceCode.getText(role.value).replace(/\s+/g, " ") },
+    });
+}
+
+/**
+ * The main process's literal UI text (`apps/desktop/electron`): native dialogs' text options,
+ * their button labels and file-filter names, menu item labels, and window titles. JSX text
+ * doesn't exist there, so `no-untranslated-text` would find nothing.
+ */
+export const noUntranslatedMainText = {
+    meta: {
+        type: "problem",
+        messages: {
+            text: "Untranslated UI text: {{text}}",
+            roleLabel:
+                "Untranslated UI text: menu item {{role}} has no label. Electron's role labels are English only; add label: t(…)",
+        },
+        schema: [],
+    },
+    create(context) {
+        const sourceCode = context.sourceCode ?? context.getSourceCode();
+        const ignored = ignoreScope(sourceCode);
+
+        const report = (node) => {
+            if (ignored(node)) return;
+            const raw = sourceCode.getText(node).trim().replace(/\s+/g, " ");
+            const text = raw.length > 60 ? `${raw.slice(0, 57)}...` : raw;
+            context.report({ node, messageId: "text", data: { text } });
+        };
+
+        /** The text options of a dialog's options object. */
+        const dialogOptions = (object) => {
+            if (object?.type !== "ObjectExpression") return;
+            for (const property of object.properties) {
+                const name = propertyName(property);
+                if (DIALOG_TEXT_OPTIONS.has(name)) {
+                    literalText(property.value).forEach(report);
+                } else if (
+                    name === "buttons" &&
+                    property.value.type === "ArrayExpression"
+                ) {
+                    property.value.elements.forEach((e) =>
+                        literalText(e).forEach(report),
+                    );
+                } else if (
+                    name === "filters" &&
+                    property.value.type === "ArrayExpression"
+                ) {
+                    for (const filter of property.value.elements) {
+                        if (filter?.type !== "ObjectExpression") continue;
+                        for (const p of filter.properties) {
+                            if (propertyName(p) === "name")
+                                literalText(p.value).forEach(report);
+                        }
+                    }
+                }
+            }
+        };
+
+        return {
+            CallExpression(node) {
+                const name = calleeName(node.callee);
+                if (name === "dialog.showErrorBox") {
+                    node.arguments.forEach((a) =>
+                        literalText(a).forEach(report),
+                    );
+                } else if (isDialogCall(name)) {
+                    node.arguments.forEach(dialogOptions);
+                } else if (
+                    node.callee.type === "MemberExpression" &&
+                    !node.callee.computed &&
+                    node.callee.property.type === "Identifier" &&
+                    node.callee.property.name === "setTitle"
+                ) {
+                    literalText(node.arguments[0]).forEach(report);
+                }
+            },
+            NewExpression(node) {
+                if (
+                    node.callee.type !== "Identifier" ||
+                    node.callee.name !== "BrowserWindow"
+                )
+                    return;
+                const options = node.arguments[0];
+                if (options?.type !== "ObjectExpression") return;
+                for (const property of options.properties) {
+                    if (propertyName(property) === "title")
+                        literalText(property.value).forEach(report);
+                }
+            },
+            ObjectExpression(node) {
+                if (!isMenuItem(node)) return;
+                for (const property of node.properties) {
+                    if (propertyName(property) === "label")
+                        literalText(property.value).forEach(report);
+                }
+                reportUnlabelledRole(context, node, ignored);
             },
         };
     },
