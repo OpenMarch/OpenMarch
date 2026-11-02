@@ -313,7 +313,7 @@ function App() {
         void injectTolgeeApiKey();
     }, []);
 
-    // PROTOTYPE (tempo mode): the tempo lanes are the only thing in focus; the rest steps back and
+    // Tempo mode: the tempo lanes are the only thing in focus; the rest steps back and
     // takes no input until tempo mode is done
     const tempoMode = useTempoModeStore((s) => s.on);
     const timelineFocussedClass = clsx(

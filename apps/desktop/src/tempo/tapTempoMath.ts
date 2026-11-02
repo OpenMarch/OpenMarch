@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/tap-widget): tap tempo, the way a tap-tempo pedal works.
+ * Tempo mode: tap tempo, the way a tap-tempo pedal works.
  * Taps are times in milliseconds; a pause longer than `TAP_RESET_MS` starts a new count. The tempo
  * is the average over every tap since then, so one early or late tap barely moves it.
  */

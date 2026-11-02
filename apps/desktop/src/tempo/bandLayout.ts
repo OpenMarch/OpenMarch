@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): keeping the tempo lanes' text readable. Labels
+ * Tempo mode: keeping the tempo lanes' text readable. Labels
  * are placed in order of importance and one that would overlap another is left out (or shortened),
  * and popovers are kept on the screen.
  */

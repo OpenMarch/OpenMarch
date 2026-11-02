@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): the tempo lanes' UI state, shared by the lanes,
+ * Tempo mode: the tempo lanes' UI state, shared by the lanes,
  * their toolbar and the shortcuts: the selected counts, tap tempo, the add/remove answer, and
  * where the mode's header row is.
  */
@@ -14,7 +14,7 @@ export type CountAnswer = CountChoice | "hold";
 /** The last answer to the add/remove box, or null when there's none yet */
 export const readChoice = (): CountAnswer | null => {
     try {
-        const v = localStorage.getItem("tempoProto.countChoice");
+        const v = localStorage.getItem("tempoMode.countChoice");
         return v === "keep" || v === "shift" || v === "hold" ? v : null;
     } catch {
         return null;
@@ -45,7 +45,7 @@ export const useTempoUi = create<TempoUiState>((set) => ({
     tapTimes: [],
     setChoice: (choice) => {
         try {
-            localStorage.setItem("tempoProto.countChoice", choice);
+            localStorage.setItem("tempoMode.countChoice", choice);
         } catch {
             /* a per-viewer convenience only */
         }

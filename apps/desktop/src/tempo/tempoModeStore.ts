@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): whether the timeline is in tempo mode. Its
+ * Tempo mode: whether the timeline is in tempo mode. Its
  * own module, so the app's layout can read it without loading the tempo lanes.
  *
  * Tempo mode has one playhead and one Play (owner, 2026-10-30): the start flag is hidden and

@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): the tempo lanes' layout: lane rows and their
+ * Tempo mode: the tempo lanes' layout: lane rows and their
  * names, counts to x and back, grab distances, the header slot and the visible scroll window.
  */
 import { useLayoutEffect, useState } from "react";

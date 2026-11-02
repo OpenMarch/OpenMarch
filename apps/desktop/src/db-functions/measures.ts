@@ -17,11 +17,11 @@ export interface DatabaseMeasure {
     start_beat: number;
     rehearsal_mark: string | null;
     notes: string | null;
-    /** PROTOTYPE (tempo mode): this measure's number set by hand; the ones after count on */
+    /** Tempo mode: this measure's number set by hand; the ones after count on */
     number_override?: number | null;
-    /** PROTOTYPE (tempo mode): "7/8" */
+    /** Tempo mode: the time signature written here, "7/8"; null = the one before carries on */
     meter?: string | null;
-    /** PROTOTYPE (tempo mode): "2+2+3" in beat units */
+    /** Tempo mode: how it is counted, in eighths, "2+2+3"; null = its usual counting */
     grouping?: string | null;
     created_at: string;
     updated_at: string;

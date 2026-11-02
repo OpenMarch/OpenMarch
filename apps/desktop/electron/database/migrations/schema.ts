@@ -90,11 +90,11 @@ export const beats = sqliteTable(
         include_in_measure: integer().default(1).notNull(),
         /** Human readable notes. */
         notes: text(),
-        /** PROTOTYPE (tempo mode): 1 when this beat's start is pinned to the music */
+        /** Tempo mode: 1 when this beat's start is pinned to the music */
         tempo_pin: integer().default(0).notNull(),
-        /** PROTOTYPE (tempo mode): 1 when this beat is a hold (a fermata: one count, its own length) */
+        /** Tempo mode: 1 when this beat is a hold (a fermata: one count, its own length) */
         tempo_hold: integer().default(0).notNull(),
-        /** PROTOTYPE (tempo mode): 1 when a tempo change starts on this beat (the tempo lane's points) */
+        /** Tempo mode: 1 when a tempo change starts on this beat (the tempo lane's points) */
         tempo_change: integer().default(0).notNull(),
         ...timestamps,
     },
@@ -112,11 +112,11 @@ export const measures = sqliteTable("measures", {
         .references(() => beats.id),
     rehearsal_mark: text(),
     notes: text(),
-    /** PROTOTYPE (tempo mode): the number this measure gets; the ones after count on from it */
+    /** Tempo mode: the number this measure gets; the ones after count on from it */
     number_override: integer(),
-    /** PROTOTYPE (tempo mode): the time signature written here, as "7/8"; null = counts per measure /4 */
+    /** Tempo mode: the time signature written here, as "7/8"; null = the one before carries on (ADR 0007) */
     meter: text(),
-    /** PROTOTYPE (tempo mode): how the measure is counted, in beat units, as "2+2+3"; null = even */
+    /** Tempo mode: how the time signature is counted, in eighths, as "2+2+3"; null = its usual counting */
     grouping: text(),
     created_at: text()
         .default(sql`(CURRENT_TIMESTAMP)`)
@@ -288,7 +288,7 @@ export const utility = sqliteTable(
 );
 
 /**
- * PROTOTYPE (tempo mode): show settings that are part of the show's history, so tempo edits that
+ * Tempo mode: show settings that are part of the show's history, so tempo edits that
  * change them undo with the rest. One row (id 0).
  */
 export const tempo_settings = sqliteTable(

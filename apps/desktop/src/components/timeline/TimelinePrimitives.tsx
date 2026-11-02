@@ -199,7 +199,7 @@ export const TimelineTransport = memo(function TimelineTransport({
     onPlayFromPlayhead?: () => void;
     /** Alt+click on Play (Alt+Space): plays on from the start flag (Expert, UI-26) */
     onPlayOn?: () => void;
-    /** PROTOTYPE (tempo mode): Play's one action, as its tooltip names it */
+    /** Tempo mode: Play's one action, as its tooltip names it */
     playOnly?: string;
     onNavigate?: (direction: TimelineNavigation) => void;
     /** Fit the show in view, or back to the zoom from before fitting */

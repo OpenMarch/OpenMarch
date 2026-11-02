@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode): while tempo mode is on, only navigation works besides tempo editing
+ * Tempo mode: while tempo mode is on, only navigation works besides tempo editing
  * (owner, 2026-10-21): moving around the show, playback, go-to, undo and redo, and saving. Every
  * other action is off, from a key, the palette or a button (`isActionOffInWorkspace`), and keys
  * that would reach the field's or the timeline's own key handlers are stopped here first.

@@ -1310,7 +1310,7 @@ const TimelineSurface = memo(function TimelineSurface({
                                 beatCount={model.beatCount}
                                 pixelsPerBeat={pixelsPerBeat}
                                 height={pinnedHeight}
-                                // PROTOTYPE (tempo mode): the band's count handles win over the flag
+                                // Tempo mode: the band's count handles win over the flag
                                 grabHeight={bandFocus ? trackTop : undefined}
                                 snapBeats={snapBeats}
                                 onCommit={commitSelection}

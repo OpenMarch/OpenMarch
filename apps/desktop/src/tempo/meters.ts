@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode): time signatures with groupings (owner, 2026-10-21). A measure's meter is
+ * Tempo mode: time signatures with groupings (owner, 2026-10-21). A measure's meter is
  * written as in a score ("7/8") and how it is counted as a grouping in eighth notes ("2+2+3"): one
  * count per group, each as long as its eighths. The quarter-note tempo stays as it is, so a 7/8 bar
  * at ♩=176 has counts of 2, 2 and 3 eighths, and the tempo line keeps reading 176.

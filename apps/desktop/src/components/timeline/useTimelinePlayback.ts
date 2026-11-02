@@ -146,7 +146,7 @@ export function useTimelinePlayback({
     // has no loop and pauses where it is (`timelineTransport`), so nothing marks a way back
     const basic = useIsBasicMode();
     const preview = useIsPreviewMode();
-    // PROTOTYPE (tempo mode, owner 2026-10-30): one playhead, one Play. It loops the selected
+    // Tempo mode (owner, 2026-10-30): one playhead, one Play. It loops the selected
     // measures or plays on from the playhead, and Stop stays where it stopped: nothing to go back to
     const tempoMode = useTempoModeStore((s) => s.on);
     const tempoLoop = useTempoModeStore((s) => s.loop?.label ?? null);

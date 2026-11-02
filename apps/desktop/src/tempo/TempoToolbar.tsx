@@ -1,6 +1,6 @@
 // cspell:ignore priya
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): tempo mode's header row: Tap tempo, the
+ * Tempo mode: tempo mode's header row: Tap tempo, the
  * metronome, a hint and Done.
  */
 import clsx from "clsx";

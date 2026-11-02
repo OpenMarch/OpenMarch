@@ -123,7 +123,7 @@ function WorkspaceSettingsModalContents() {
                 toggleOpen();
             },
         });
-        // PROTOTYPE (tempo mode): the offset lives in the show's history (tempo/audioOffset.ts)
+        // Tempo mode: the offset lives in the show's history (tempo/audioOffset.ts)
         if (localSettings.audioOffsetSeconds !== effectiveOffset)
             void writeAudioOffset(localSettings.audioOffsetSeconds).then(() =>
                 queryClient.invalidateQueries({ queryKey: tempoSettingsKey }),

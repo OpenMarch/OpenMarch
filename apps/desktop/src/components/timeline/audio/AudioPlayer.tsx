@@ -175,7 +175,7 @@ export default function AudioPlayer() {
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
-    // PROTOTYPE (tempo mode): the offset in the show's history, else the workspace setting
+    // Tempo mode: the offset in the show's history, else the workspace setting
     const audioOffsetSeconds = useAudioOffsetSeconds();
     void workspaceSettings;
     const contextsReady =

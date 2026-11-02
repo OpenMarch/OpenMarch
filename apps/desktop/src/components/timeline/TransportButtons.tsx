@@ -553,7 +553,7 @@ export const TransportPlayButton = memo(function TransportPlayButton({
     /** Alt+click (Alt+Space): plays on from the start flag past the playhead (Expert, UI-26) */
     onPlayOn?: () => void;
     /**
-     * PROTOTYPE (tempo mode): Play is the only play action, named like this in its tooltip; Shift
+     * Tempo mode: Play is the only play action, named like this in its tooltip; Shift
      * and Alt clicks play the same way
      */
     playOnly?: string;

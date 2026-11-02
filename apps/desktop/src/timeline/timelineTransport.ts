@@ -20,11 +20,11 @@ import {
     restartLivePlaybackAt,
 } from "@/components/timeline/audio/AudioPlayer";
 import { isPreviewMode } from "@/stores/PreviewModeStore";
-// PROTOTYPE (tempo mode): its own tiny store, so the transport doesn't load the tempo lanes
+// Tempo mode: its own tiny store, so the transport doesn't load the tempo lanes
 import { useTempoModeStore } from "@/tempo/tempoModeStore";
 
 /**
- * PROTOTYPE (tempo mode, owner 2026-10-21): while tempo mode is on, Play plays on from the
+ * Tempo mode (owner, 2026-10-21): while tempo mode is on, Play plays on from the
  * playhead and Stop leaves the playhead where playback stopped, as a DAW does
  */
 const tempoModeOn = (): boolean => useTempoModeStore.getState().on;

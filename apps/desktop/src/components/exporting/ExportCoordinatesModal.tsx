@@ -1157,7 +1157,7 @@ function VideoExport() {
     // Each marcher's appearance over the show, as the field draws it (#207)
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const fieldImage = useFieldImage();
-    // PROTOTYPE (tempo mode): the offset in the show's history, else the workspace setting
+    // Tempo mode: the offset in the show's history, else the workspace setting
     const audioOffsetSeconds = useAudioOffsetSeconds();
     const { data: selectedAudioFile } = useQuery({
         queryKey: ["selectedAudioFileDetails"],

@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto). The writes tempo mode makes, each one undo
+ * Tempo mode. The writes tempo mode makes, each one undo
  * step: new count lengths, counts added or removed (with the drill choice), measures regrouped
  * for a time signature, rehearsal marks. Locks and measure-number overrides live in the
  * workspace settings, which have no undo (a prototype shortcut).

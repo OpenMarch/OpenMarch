@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): turns tempo mode on and off (Shift+T). Lit
+ * Tempo mode: turns tempo mode on and off (Shift+T). Lit
  * while on.
  */
 import { GaugeIcon } from "@phosphor-icons/react";

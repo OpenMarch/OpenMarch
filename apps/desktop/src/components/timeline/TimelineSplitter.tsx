@@ -30,7 +30,7 @@ import {
 export function TimelineSplitter({ children }: { children: ReactNode }) {
     const basicMode = useIsBasicMode();
     const preview = useIsPreviewMode();
-    // Tempo mode fits the pane to its lanes, so they are never cut off (PROTOTYPE, tempo mode)
+    // Tempo mode fits the pane to its lanes, so they are never cut off (tempo mode)
     const tempoMode = useTempoModeStore((s) => s.on);
     const basic = basicMode || preview || tempoMode;
     const savedHeight = useUiSettingsStore((s) => s.uiSettings.timelineHeight);

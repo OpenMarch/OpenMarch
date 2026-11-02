@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode): the plan for setting a time signature (pure; written by
+ * Tempo mode: the plan for setting a time signature (pure; written by
  * `meterWrites.ts`).
  *
  * Time signatures are written as in a score (owner, 2026-11-02): on the measure where one starts,

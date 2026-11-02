@@ -127,7 +127,7 @@ export interface TimelineSelectionState {
      */
     readonly startStays: boolean;
     /**
-     * PROTOTYPE (tempo mode, owner 2026-10-30): the start flag is hidden and parked, and there is
+     * Tempo mode (owner, 2026-10-30): the start flag is hidden and parked, and there is
      * one playhead. Seeks, scrubs, pauses and playhead drags move only the playhead; turning it
      * off (`setStartHidden`) puts S back where it was, or at the start of the playhead's page
      * when the playhead is now on or before it.

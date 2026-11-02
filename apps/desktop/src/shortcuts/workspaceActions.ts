@@ -57,7 +57,7 @@ const PREVIEW_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
  */
 export function isActionOffInWorkspace(id: ActionId): boolean {
     if (isPreviewMode()) return !PREVIEW_ACTIONS.has(id);
-    // PROTOTYPE: tempo mode leaves only navigation on (`TEMPO_MODE_ACTIONS`)
+    // Tempo mode leaves only navigation on (`TEMPO_MODE_ACTIONS`)
     if (isTempoModeOn()) return !TEMPO_MODE_ACTIONS.has(id);
     return isVisualsView() && isDrillEditingAction(id);
 }

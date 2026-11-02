@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/tap-widget): the Tap tempo button in tempo mode's header and
+ * Tempo mode: the Tap tempo button in tempo mode's header and
  * its panel. Tap along to music you know to see roughly what tempo it is (owner, 2026-11-01), then
  * put that tempo on the selected counts or the stretch under the playhead.
  */

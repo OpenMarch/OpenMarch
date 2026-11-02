@@ -1,6 +1,6 @@
 // cspell:ignore priya
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): the lanes the timeline shows in place of its
+ * Tempo mode: the lanes the timeline shows in place of its
  * clip rows while tempo mode is on (docs/tempo/daw-research.md). The axis stays counts, so drill
  * doesn't move while you edit tempo; the music slides and stretches under the counts. The audio is
  * never changed: every edit only re-times counts (the grid follows the audio).

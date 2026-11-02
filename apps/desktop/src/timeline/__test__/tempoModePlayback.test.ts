@@ -11,7 +11,7 @@ import {
 } from "../timelineTransport";
 
 /**
- * PROTOTYPE (tempo mode, owner 2026-10-30): one playhead and one Play. The start flag is hidden
+ * Tempo mode (owner, 2026-10-30): one playhead and one Play. The start flag is hidden
  * and parked; Play loops the selected measures, or plays on from the playhead; Stop stays where
  * playback stopped. Outside tempo mode the editor's rules stand.
  */

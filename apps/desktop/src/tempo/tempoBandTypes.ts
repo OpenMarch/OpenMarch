@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): types the tempo lanes share: gestures, what's
+ * Tempo mode: types the tempo lanes share: gestures, what's
  * under the pointer, the inline editor, the right-click menu and the add/remove box.
  */
 import { type ReactNode } from "react";

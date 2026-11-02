@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): how tempo mode works, behind the "?" in its
+ * Tempo mode: how tempo mode works, behind the "?" in its
  * header.
  */
 import { Fragment } from "react";

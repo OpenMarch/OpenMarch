@@ -152,7 +152,7 @@ const LOOP_BUTTONS = (
 );
 const SPEED_BUTTON = <TimelineSpeedButton />;
 /**
- * PROTOTYPE (tempo mode): the Tempo button leads the transport's view controls. In tempo mode
+ * Tempo mode: the Tempo button leads the transport's view controls. In tempo mode
  * it's the only one: Play loops the selected measures, so no Loop button
  */
 const TEMPO_VIEW_CONTROLS = <TempoModeButton />;
@@ -207,7 +207,7 @@ export default function TimelineModePanel() {
     const { beats, pages, measures, countGrid } = useTimingObjects()!;
     // UI-19: Basic is this timeline with its page boxes holding the music, and none of the
     // Expert parts (clips, the loop, isolation, moves): docs/timeline/research/basic-mode
-    // PROTOTYPE (tempo mode): the timeline shows the tempo lanes in place of the clips, in Basic too
+    // Tempo mode: the timeline shows the tempo lanes in place of the clips, in Basic too
     const tempoMode = useTempoModeStore((s) => s.on);
     const basic = useIsBasicMode() && !tempoMode;
     const basicExtras = useBasicTimelineExtras(pages);

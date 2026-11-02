@@ -97,7 +97,7 @@ export const fromDatabaseMeasures = (args: {
     });
     const createdMeasures = sortedDbMeasures.map((measure, i) => {
         const startBeat = beatMap.get(measure.start_beat) ?? tempBeat;
-        // PROTOTYPE (tempo mode): a number set by hand; the measures after count on from it
+        // Tempo mode: a number set by hand; the measures after count on from it
         const override = measure.number_override;
         if (override !== undefined && override !== null)
             currentMeasureNumber = override;

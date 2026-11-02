@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode): where the music sits against the counts (the audio offset), as part of
+ * Tempo mode: where the music sits against the counts (the audio offset), as part of
  * the show's history. Tempo mode moves the music (the first hit onto count 1, owner 2026-10-21)
  * and that has to undo with the counts it lined up, so the offset lives in `tempo_settings`, a
  * table with history triggers. A show that never set it there uses its workspace setting.

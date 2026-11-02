@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto). The pure arithmetic behind tempo mode.
+ * Tempo mode. The pure arithmetic behind tempo mode.
  *
  * The counts are `durations`: `durations[b]` is how long spec beat `b` lasts, in seconds, so beat
  * `b` starts at the sum of the ones before it (beat 0 is the fixed zero-length beat). A **lock**

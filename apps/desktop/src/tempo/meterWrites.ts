@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode): writing a time signature plan (`planMeter`): the measures, the time
+ * Tempo mode: writing a time signature plan (`planMeter`): the measures, the time
  * signatures written on them, the count lengths and the pins, as one edit (one undo step).
  */
 import { db, schema } from "@/global/database/db";

@@ -28,11 +28,11 @@ export interface DatabaseBeat {
     notes: string | null;
     /** Position of the beat in the sequence */
     position: number;
-    /** PROTOTYPE (tempo mode): 1 when pinned to the music */
+    /** Tempo mode: 1 when pinned to the music */
     tempo_pin?: number;
-    /** PROTOTYPE (tempo mode): 1 when a hold (fermata) */
+    /** Tempo mode: 1 when a hold (fermata) */
     tempo_hold?: number;
-    /** PROTOTYPE (tempo mode): 1 when a tempo change starts here */
+    /** Tempo mode: 1 when a tempo change starts here */
     tempo_change?: number;
     /** Timestamp when the beat was created */
     created_at: string;

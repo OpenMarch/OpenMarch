@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): what the tempo lanes read from the show (count
+ * Tempo mode: what the tempo lanes read from the show (count
  * lengths, pins, holds, tempo changes, measures, the music offset) and how an edit is written back.
  */
 import { useMemo } from "react";

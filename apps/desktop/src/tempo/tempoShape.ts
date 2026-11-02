@@ -1,5 +1,5 @@
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): the tempo lane's shapes, Logic-style
+ * Tempo mode: the tempo lane's shapes, Logic-style
  * (docs/tempo/logic-analysis.md). The show stores where a tempo change starts (a flag on the
  * count, `beats.tempo_change`); the count lengths stay the only tempo data. Between two changes
  * the lane reads the shape back from the lengths: steady, a ramp (straight or curved), or uneven

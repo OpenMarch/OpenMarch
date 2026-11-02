@@ -140,7 +140,7 @@ export interface TimelinePlayback {
     /** Alt+click on Play (Alt+Space): plays on from the start flag (Expert, UI-26) */
     readonly onPlayOn?: () => void;
     /**
-     * PROTOTYPE (tempo mode): Play is the only play action, and its tooltip names it like this
+     * Tempo mode: Play is the only play action, and its tooltip names it like this
      * ("Play from the playhead", "Loop m. 11–12"): no Shift or Alt variants
      */
     readonly playOnly?: string;

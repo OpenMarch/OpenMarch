@@ -1,6 +1,6 @@
 // cspell:ignore priya
 /**
- * PROTOTYPE (tempo mode, branch tempo/track-proto): the tempo lanes' popovers: the add/remove box,
+ * Tempo mode: the tempo lanes' popovers: the add/remove box,
  * the inline editor, and the right-click menu with its icons.
  */
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";

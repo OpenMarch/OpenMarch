@@ -193,7 +193,7 @@ function AudioOffsetInput() {
         updateWorkspaceSettingsMutationOptions(queryClient),
     );
     const [audioOffsetValue, setAudioOffsetValue] = useState("");
-    // PROTOTYPE (tempo mode): the offset lives in the show's history (tempo/audioOffset.ts)
+    // Tempo mode: the offset lives in the show's history (tempo/audioOffset.ts)
     const effectiveOffset = useAudioOffsetSeconds();
 
     // Update local state when the offset changes
