@@ -72,14 +72,16 @@ export const TimelineMenuClose = createContext<(() => void) | null>(null);
  * menu's arrow-key order, as menus keep disabled entries, but does nothing: its words dim and a
  * **?** at its end opens the reason beside it while the entry is highlighted (hover or keys) or
  * pressed (touch). Screen readers hear the reason as the entry's description. Escape closes the
- * tip and the menu together (`TimelineMenuClose`).
+ * tip and the menu together (`TimelineMenuClose`). With `checked`, it's one of a set of answers
+ * (`menuitemradio`), and says whether it's the one chosen whether or not it's available.
  */
-function MenuItemWithReason({
+export function MenuItemWithReason({
     testId,
     reason,
     reasonTestId,
     onSelect,
     className = TIMELINE_MENU_ITEM_CLASS,
+    checked,
     children,
 }: {
     testId: string;
@@ -87,6 +89,7 @@ function MenuItemWithReason({
     reasonTestId: string;
     onSelect: () => void;
     className?: string;
+    checked?: boolean;
     children: ReactNode;
 }) {
     const reasonId = useId();
@@ -100,6 +103,9 @@ function MenuItemWithReason({
         <>
             <DropdownMenu.Item
                 data-testid={testId}
+                {...(checked === undefined
+                    ? {}
+                    : { role: "menuitemradio", "aria-checked": checked })}
                 aria-disabled={unavailable ? "true" : undefined}
                 aria-describedby={unavailable ? reasonId : undefined}
                 onSelect={(event) => {

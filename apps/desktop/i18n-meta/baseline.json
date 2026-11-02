@@ -1833,7 +1833,6 @@
         "shapes.saved.deleteFailed",
         "shapes.spacing.empty",
         "shapes.spacing.noGaps",
-        "shapes.spacing.notInterval",
         "shapes.spacing.notPositive",
         "shapes.spacing.repeating",
         "shapes.spacing.unused",

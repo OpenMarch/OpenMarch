@@ -13,6 +13,7 @@ import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { showShapeLibrary } from "../library/ShapeLibraryPanel";
 import { clickPickedKind, kindPickGate, pickShapeKind } from "./pickKind";
 import { SHAPE_TOOLS } from "./shapeTools";
+import { toolId } from "./toolKind";
 import { useShapeShown, useShapeToolStore } from "./shapeToolStore";
 import { useStarredShapes } from "./starredShapes";
 import ShapePreviewIcon from "../preview/ShapePreviewIcon";
@@ -64,7 +65,7 @@ export default function ShapesTab() {
                         // A disabled button gets no hover, so the tooltip sits on the wrapper: the
                         // name and key, or why it can't be picked
                         <Tip
-                            key={kind.shape.id}
+                            key={toolId(kind)}
                             label={
                                 greyedTitle(kind.shape.label) ??
                                 kind.shape.label
@@ -85,7 +86,7 @@ export default function ShapesTab() {
                                     }}
                                     aria-pressed={on}
                                     aria-label={kind.shape.label}
-                                    data-testid={`shapes-tab-${kind.shape.id}`}
+                                    data-testid={`shapes-tab-${toolId(kind)}`}
                                     className={clsx(
                                         "flex items-center",
                                         on ? "text-accent" : "text-text",

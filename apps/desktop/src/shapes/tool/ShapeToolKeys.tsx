@@ -12,9 +12,9 @@ import {
 } from "@/shortcuts/useActionHandler";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import { nudgeEnvFor } from "./toolEnv";
-import { edit, redo } from "./toolMachine";
+import { clearSelection, edit, finishPoints, redo } from "./toolMachine";
 import { updateTool, useShapeToolStore } from "./shapeToolStore";
-import { cancelShapeGesture } from "./shapeToolMode";
+import { cancelShapeGesture, removeLastShapePoint } from "./shapeToolMode";
 
 const NUDGE_DIRECTIONS = {
     up: { x: 0, y: -1 },
@@ -27,9 +27,13 @@ const NUDGE_DIRECTIONS = {
  * The keys the open shape tool takes over. Mounted only while it's open, after the editor's own
  * handlers, so these sit on top of them and the keys go back once the tool closes.
  *
- * - Escape: a gesture goes back to where it started; otherwise the tool closes, placing nothing.
+ * - Escape: a gesture goes back to where it started; a selected point (#557) is cleared;
+ *   otherwise the tool closes, placing nothing.
+ * - Enter while clicking a line's points finishes the line (#524); otherwise it's Place.
  *   That is an undo step: undo right after it brings the shape back ({@link DiscardedShapeKeys}).
- * - Undo and Redo step through the shape's own edits; the show is untouched until Place.
+ * - Backspace or Delete while clicking a line's points takes the last one back, as a right-click
+ *   does (owner, option A on #522), and so does undo; otherwise undo and redo step through the
+ *   shape's own edits. The show is untouched until Place.
  * - The nudge keys move the whole shape, as one undo step each (08), not the marchers under it.
  */
 export function ShapeToolKeys(): null {
@@ -37,9 +41,37 @@ export function ShapeToolKeys(): null {
     useActionHandler("cancelAlignmentUpdates", () => {
         const { tool } = useShapeToolStore.getState();
         if (tool?.gesture) cancelShapeGesture();
+        // A selected point first (#557), then the shape
+        else if (tool?.selected) updateTool(clearSelection);
         else discardShapeTool();
     });
-    useActionHandler("performUndo", undoOpenShape);
+    // Enter while clicking points finishes the line rather than placing it (#524). Registered
+    // only then: a handler on top that can't run doesn't let Enter through to Place.
+    const clicking = useShapeToolStore(
+        (s) => s.tool?.gesture?.type === "points",
+    );
+    useActionHandler(
+        "applyShape",
+        () => {
+            const field = currentShapeField();
+            if (field)
+                updateTool((t) => finishPoints(t, shapeContextFor(field)));
+        },
+        {},
+        clicking,
+    );
+    // Registered only while clicking points, so Backspace and Delete reach nothing else then
+    useActionHandler(
+        "shapeRemoveLastPoint",
+        () => {
+            removeLastShapePoint();
+        },
+        {},
+        clicking,
+    );
+    useActionHandler("performUndo", () => {
+        if (!removeLastShapePoint()) undoOpenShape();
+    });
     useActionHandler("performRedo", () => updateTool(redo));
     useActionHandlerGroup(NUDGE_ACTION_IDS, (_id, args) => {
         const field = currentShapeField();

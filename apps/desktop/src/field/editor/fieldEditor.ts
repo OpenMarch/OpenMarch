@@ -93,6 +93,11 @@ export type FieldEditorPorts = {
     /** False for a marcher that can't be selected or hit (one dimmed outside the isolated move). */
     canSelect(id: number): boolean;
     /**
+     * True for a marcher hidden so the shape it's in is seen on its own (#558): no press or hover
+     * lands on it, as if it weren't there. Everyone else, and items, are hit as usual.
+     */
+    marcherHidden?(id: number): boolean;
+    /**
      * Called once at the start of every edit press, before the editor does
      * anything with it. The app may act on the press here (story 60: the
      * first press after a paused preview clears the preview) and returns
@@ -274,6 +279,17 @@ export type FieldModeDrawing = {
     spots: readonly FieldPoint[];
     walks: readonly { from: FieldPoint; to: FieldPoint }[];
     handles: readonly FieldPoint[];
+    /** Handles that add a point (a line's segment midpoints, #524), drawn smaller and round */
+    addHandles?: readonly FieldPoint[];
+    /** Handles selected by a click (a line's point, #557), drawn filled over `handles` */
+    selectedHandles?: readonly FieldPoint[];
+    /**
+     * Handles on the ends of a selected point's bar (its tangent, #557): each drawn round at `at`,
+     * at the end of a line from `from`
+     */
+    barHandles?: readonly { at: FieldPoint; from: FieldPoint }[];
+    /** The outline is open: drawn without joining its last point to its first (a line, #524) */
+    openOutline?: boolean;
     /**
      * Where the shape's marchers start the move (08-shape-system-ux.md, "Marcher styling"), drawn
      * as faint ghosts of them (#417): at the start flag, the same points the walks leave from
@@ -339,6 +355,43 @@ export type FieldModeDrawing = {
     guideMarks?: readonly FieldPoint[];
     /** The spots standing on a guide, tinted */
     onGuides?: readonly FieldPoint[];
+    /**
+     * While the floating editor's menu of a Line's interval groups is open: each spot ringed in
+     * its group's color (a CSS color), faint, or with a group pointed at that group lit and the
+     * others dim
+     */
+    groupMarks?: readonly {
+        at: FieldPoint;
+        color: string;
+        shade: "faint" | "lit" | "dim";
+        group: number;
+    }[];
+    /**
+     * Each gap of the group pointed at, labeled with its interval at its middle ("3", "↔ 2½"), and
+     * each `seam` where it meets a neighbor with the interval there; the overlay sets them beside
+     * the line, one label (`whole`, "2 at 3") for the group when its gaps are too short for one each
+     */
+    groupLabels?: readonly {
+        at: FieldPoint;
+        text: string;
+        color: string;
+        from: FieldPoint;
+        to: FieldPoint;
+        seam: boolean;
+        whole: string;
+    }[];
+    /**
+     * While a Line's Offset numbers are pointed at, focused or dragged, or an end is dragged
+     * (owner on #596): the step from the first marcher to the next as a dashed right angle, across
+     * to `corner` then up or down to `to`, each leg labeled ("↔ 2", "↕ −1")
+     */
+    offsetStep?: {
+        from: FieldPoint;
+        corner: FieldPoint;
+        to: FieldPoint;
+        across: string;
+        deep: string;
+    };
 };
 
 /** What the editor knows of a press it asks a {@link FieldMode} to claim. */
@@ -371,9 +424,14 @@ export interface FieldMode {
     move(pointer: FieldPointer): void;
     /**
      * The press it claimed ended. `click` when it moved less than the click
-     * slop; `double` when that click came soon after another click it took.
+     * slop; `double` when that click came soon after another click, and
+     * `ownFirst` when that first click was the mode's too, not the editor's
+     * (the click on a member that turned a placed box's mode on).
      */
-    release(pointer: FieldPointer, click: { double: boolean } | null): void;
+    release(
+        pointer: FieldPointer,
+        click: { double: boolean; ownFirst: boolean } | null,
+    ): void;
     /** The press it claimed was lost: nothing is saved. */
     cancel(): void;
     /** The cursor over `pointer` with no button down, or null for the editor's. */
@@ -396,6 +454,12 @@ export interface FieldMode {
      * what the field is about. A selected placed box leaves it open, for its marchers.
      */
     readonly blocksFieldMenu?: boolean;
+    /**
+     * A right-click (a Mac's Ctrl-click, a long press on touch) at `pointer`, with no press held:
+     * the mode opens its own menu there (a Line's point, #569) and returns true, or returns false
+     * for the field's rules. Absent: always the field's.
+     */
+    openMenu?(pointer: FieldPointer): boolean;
     /** What `activeGesture` reports while one of its presses is held, and while it's on when `always`. */
     readonly gesture: { kind: FieldTestGesture; always: boolean };
 }
@@ -432,15 +496,24 @@ export class FieldEditor {
     /** The mode taking presses first, while one is on. */
     private mode: FieldMode | null = null;
     private unsubscribeMode: (() => void) | null = null;
-    /** A press the mode claimed, until its release. */
-    private modePress: { start: FieldPointer; double: boolean } | null = null;
+    /**
+     * A press the mode claimed, until its release. `dragged` once it went past
+     * the slop: dragged out and back, it's no click.
+     */
+    private modePress: {
+        start: FieldPointer;
+        /** What its release tells the mode if it's a click */
+        click: { double: boolean; ownFirst: boolean };
+        dragged: boolean;
+    } | null = null;
     /** The prop tool, while it's on (C2.1). */
     private propTool: PropTool | null = null;
     /** The prop tool's last press, for telling its double-clicks. */
     private lastToolPress: { time: number; screen: FieldPoint } | null = null;
     /**
      * A right press, until its release: navigation pans with it, and a click
-     * (one that never moved past the slop) opens the field's menu (#315).
+     * (one that never moved past the slop) opens the field's menu (#315). A
+     * Mac's Ctrl-press too, whose click opens only a mode's menu (#569).
      */
     private rightPress: { start: FieldPointer; dragged: boolean } | null = null;
     private readonly listeners = new Set<() => void>();
@@ -455,7 +528,9 @@ export class FieldEditor {
         this.areaPorts = {
             marchers: () => ports.marchers(),
             zoom: () => ports.zoom(),
-            canSelect: (id) => ports.canSelect(id),
+            // A marcher hidden with its shape (#558) is out of reach, as it is for a click
+            canSelect: (id) =>
+                ports.canSelect(id) && !ports.marcherHidden?.(id),
             isItem: (id) => ports.isItem?.(id) ?? false,
             selection: () => ports.selection.get(),
             select: (ids) => this.write(ids),
@@ -471,9 +546,10 @@ export class FieldEditor {
     pointerDown(pointer: FieldPointer): boolean {
         if (!this.isEditButton(pointer)) {
             // Navigation pans with it; a right-click (no drag) opens the
-            // menu. A Mac's Ctrl-click only pans (#194)
+            // menu. A Mac's Ctrl-click pans (#194), and opens only a mode's
+            // menu (a Line's point, #569)
             this.rightPress =
-                pointer.button === 2
+                pointer.button === 2 || this.isMacCtrl(pointer)
                     ? { start: pointer, dragged: false }
                     : null;
             return false;
@@ -516,7 +592,11 @@ export class FieldEditor {
                 start: pointer,
                 // The first click may have been the editor's: the click
                 // on a box's member that turned the mode on
-                double: last !== null && this.isSoonAfter(last, pointer),
+                click: {
+                    double: last !== null && this.isSoonAfter(last, pointer),
+                    ownFirst: last?.mode === true,
+                },
+                dragged: false,
             };
             this.mode.press(pointer, modePress);
             this.emit();
@@ -545,6 +625,8 @@ export class FieldEditor {
             return;
         }
         if (this.modePress) {
+            if (isPastSlop(this.modePress.start, pointer))
+                this.modePress.dragged = true;
             this.mode?.move(pointer);
             return;
         }
@@ -585,33 +667,34 @@ export class FieldEditor {
     }
 
     pointerUp(pointer: FieldPointer): void {
-        if (pointer.button === 2) {
+        const macCtrl =
+            this.rightPress !== null &&
+            this.rightPress.start.button === 0 &&
+            pointer.button === 0;
+        if (pointer.button === 2 || macCtrl) {
             const right = this.rightPress;
             this.rightPress = null;
             // A right-drag panned, and no menu opens
             if (!right || right.dragged || isPastSlop(right.start, pointer))
                 return;
             // Mid-press or mid-drag of the left button, the right one does
-            // nothing more; nor while the prop tool draws, a mode's press is
-            // held or the open shape is being edited
-            if (
-                !this.gesture &&
-                !this.press &&
-                !this.propTool &&
-                !this.modePress &&
-                !this.blocksFieldMenu()
-            )
-                this.openMenu(pointer);
+            // nothing more; nor while the prop tool draws or a mode's press
+            // is held. A mode's own menu first; then the field's, unless the
+            // open shape is being edited (a Mac's Ctrl-click has none)
+            if (!this.menuFree()) return;
+            if (this.mode?.openMenu?.(pointer)) return;
+            if (!macCtrl && !this.blocksFieldMenu()) this.openMenu(pointer);
             return;
         }
         const modePress = this.modePress;
         if (modePress) {
             if (pointer.button !== modePress.start.button) return;
             this.modePress = null;
-            const click = !isPastSlop(modePress.start, pointer);
+            const click =
+                !modePress.dragged && !isPastSlop(modePress.start, pointer);
             // A double-click's second click starts no third
             this.lastClick =
-                click && !modePress.double
+                click && !modePress.click.double
                     ? {
                           time: this.now(),
                           screen: modePress.start.screen,
@@ -619,10 +702,7 @@ export class FieldEditor {
                           mode: true,
                       }
                     : null;
-            this.mode?.release(
-                pointer,
-                click ? { double: modePress.double } : null,
-            );
+            this.mode?.release(pointer, click ? modePress.click : null);
             this.emit();
             return;
         }
@@ -673,6 +753,30 @@ export class FieldEditor {
             this.ports.doubleClickMarcher?.(press.hit);
     }
 
+    /**
+     * A long press on touch at `pointer` (#569): a mode's menu, as a right-click opens it. Touch
+     * is otherwise navigation's, so the field's own menu doesn't open this way.
+     */
+    longPress(pointer: FieldPointer): void {
+        if (this.menuFree()) this.mode?.openMenu?.(pointer);
+    }
+
+    /** No press, drag or prop tool that a menu would cut into */
+    private menuFree(): boolean {
+        return (
+            !this.gesture && !this.press && !this.propTool && !this.modePress
+        );
+    }
+
+    /** A Mac's Ctrl+press: a right-click there, which pans (#194) */
+    private isMacCtrl(pointer: FieldPointer): boolean {
+        return (
+            (this.options.isMac ?? false) &&
+            pointer.button === 0 &&
+            pointer.ctrl
+        );
+    }
+
     /** The pointer was lost (capture lost, the window lost focus): nothing is clicked or dropped. */
     pointerCancel(): void {
         // The last click stays: the renderer also cancels after every release
@@ -699,7 +803,10 @@ export class FieldEditor {
         this.write(
             ids.filter(
                 (id, i) =>
-                    !hidden?.[i] && !isItem(id) && this.ports.canSelect(id),
+                    !hidden?.[i] &&
+                    !isItem(id) &&
+                    this.ports.canSelect(id) &&
+                    !this.ports.marcherHidden?.(id),
             ),
         );
     }
@@ -1343,15 +1450,17 @@ export class FieldEditor {
     /**
      * The marcher a press at `point` lands on: a performer's dot, else an
      * item whose Outline holds it, so a performer on a platform is still
-     * pressed.
+     * pressed. Every press, drag, menu and hover finds performers here, so
+     * hidden ones (#558) are passed over in this one place.
      */
     private marcherAt(point: FieldPoint) {
         const isItem = this.ports.isItem ?? (() => false);
+        const hidden = this.ports.marcherHidden ?? (() => false);
         const performer = marcherAt(
             this.ports.marchers(),
             point,
             hitRadius(this.ports.zoom()),
-            (id) => !isItem(id) && this.ports.canSelect(id),
+            (id) => !isItem(id) && !hidden(id) && this.ports.canSelect(id),
         );
         if (performer !== null) return performer;
         const item = this.ports.itemAt?.(point) ?? null;

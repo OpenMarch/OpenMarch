@@ -88,6 +88,8 @@
             "quarterTurn": "Forma: Girar 90° en sentido horario",
             "recalculate": "Forma: Recalcular quién va a dónde",
             "evenOut": "Forma: igualar el contorno",
+            "hideMarchers": "Forma: ocultar a los marchantes (mantén para ver, toca para mantener oculto)",
+            "hideMarchersKeywords": "ocultar mostrar marchantes puntos recorridos sola vistazo ojo",
             "expand": "Forma: ampliar, manteniendo las proporciones",
             "shrink": "Forma: reducir, manteniendo las proporciones",
             "ring": "Anillo de favoritos: mantén pulsado para elegir una forma, toca para dejarlo abierto",
@@ -385,6 +387,7 @@
             "fine": "fino",
             "freeRatio": "proporción libre",
             "fromCenter": "desde el centro",
+            "keepDirection": "mantener dirección",
             "keepRatio": "mantener proporción",
             "oneAxis": "un eje",
             "snapOff": "Sin alineación",
@@ -1308,6 +1311,10 @@
             "ratioLock": {
                 "locked": "Espaciados vinculados: haz clic para desvincular",
                 "unlocked": "Vincular los dos espaciados"
+            },
+            "hideMarchers": {
+                "hide": "Ocultar a los marchantes",
+                "show": "Mostrar a los marchantes"
             },
             "evenOut": {
                 "label": "Igualar",

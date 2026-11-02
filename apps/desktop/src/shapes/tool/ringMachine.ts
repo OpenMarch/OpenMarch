@@ -1,4 +1,4 @@
-import type { AnyToolKind } from "./toolKind";
+import { toolId, type AnyToolKind } from "./toolKind";
 import type { ShapeToolEntry } from "./shapeTools";
 
 /** How many shapes the favorites ring holds, so it stays fast to aim at (#344) */
@@ -23,9 +23,9 @@ export function ringSlots(
     const slots = starred.slice(0, RING_SLOTS);
     for (const { kind } of basics) {
         if (slots.length >= RING_SLOTS) break;
-        if (slots.some((s) => s.id === kind.shape.id)) continue;
+        if (slots.some((s) => s.id === toolId(kind))) continue;
         slots.push({
-            id: kind.shape.id,
+            id: toolId(kind),
             // A getter, so a kept slot follows the app's language
             get label() {
                 return kind.shape.label;

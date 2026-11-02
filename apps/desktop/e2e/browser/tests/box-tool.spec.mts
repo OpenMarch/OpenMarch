@@ -2377,9 +2377,9 @@ test("change: a press that makes the editor too wide for one row keeps its rows 
     show,
 }) => {
     const { page } = show;
-    // One row only just fits here (with the Snap button), and a + that leaves marchers short widens
-    // it past the field
-    await page.setViewportSize({ width: 1030, height: 1000 });
+    // One row only just fits here (with the Snap and eye buttons), and a + that leaves marchers short
+    // widens it past the field
+    await page.setViewportSize({ width: 1060, height: 1000 });
     await drawBox(show);
     const bar = page.getByTestId("shape-tool-readout-bar");
     await expect(bar).toHaveAttribute("data-rows", "1");

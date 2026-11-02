@@ -40,6 +40,7 @@ export function ScrubNumber({
     onScrubEnd,
     onType,
     onSnap,
+    onTyping,
 }: {
     /** What the number shows */
     display: string;
@@ -60,6 +61,8 @@ export function ScrubNumber({
      * nearest half step (owner on #459). The number itself types and drags as any other.
      */
     onSnap?: () => void;
+    /** It opened for typing (true) or closed (false); false too if it goes while open */
+    onTyping?: (typing: boolean) => void;
 }) {
     const press = useRef<{
         x: number;
@@ -76,6 +79,14 @@ export function ScrubNumber({
     const idle = typing === null;
     // Unmounted mid-drag: stop following the keyboard
     useEffect(() => () => press.current?.held.end(), []);
+    const typingNow = typing !== null;
+    const heard = useRef(onTyping);
+    heard.current = onTyping;
+    useEffect(() => {
+        if (!typingNow) return;
+        heard.current?.(true);
+        return () => heard.current?.(false);
+    }, [typingNow]);
     useEffect(() => {
         const el = wrapper.current;
         if (!el || !idle) return;
@@ -112,6 +123,8 @@ export function ScrubNumber({
                     autoFocus
                     aria-label={label}
                     data-testid={testId && `${testId}-input`}
+                    // Being typed: a menu round it leaves Esc to it
+                    data-editing
                     className="rounded-4 border-accent bg-fg-1 text-sub text-text w-[5ch] border px-2 text-center tabular-nums outline-none"
                     style={{ width: `${Math.max(typing.length, 3) + 1}ch` }}
                     value={typing}
@@ -239,6 +252,7 @@ export function ScrubNumber({
                             : label
                     }
                     data-testid={testId}
+                    data-scrub-number
                     className={clsx(
                         "rounded-4 min-h-24 px-4 tabular-nums select-none",
                         dragging

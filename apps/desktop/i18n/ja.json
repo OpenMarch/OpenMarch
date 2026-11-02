@@ -88,6 +88,8 @@
             "quarterTurn": "形状：時計回りに90°回転",
             "recalculate": "形状：誰がどこに行くかを再計算",
             "evenOut": "形状: 輪郭を均等にする",
+            "hideMarchers": "図形: マーチャーを隠す（長押しで一時表示、タップで隠したまま）",
+            "hideMarchersKeywords": "隠す 表示 マーチャー 点 経路 図形のみ のぞく 目",
             "expand": "形状：比率を保って拡大",
             "shrink": "形状：比率を保って縮小",
             "ring": "お気に入りリング：長押しで形状を選択、タップで開いたままにする",
@@ -385,6 +387,7 @@
             "fine": "微調整",
             "freeRatio": "比率フリー",
             "fromCenter": "中心から",
+            "keepDirection": "方向を保持",
             "keepRatio": "比率を保持",
             "oneAxis": "1軸",
             "snapOff": "スナップオフ",
@@ -1308,6 +1311,10 @@
             "ratioLock": {
                 "locked": "間隔は連動中：クリックで解除",
                 "unlocked": "2つの間隔を連動させる"
+            },
+            "hideMarchers": {
+                "hide": "マーチャーを隠す",
+                "show": "マーチャーを表示"
             },
             "evenOut": {
                 "label": "均等にする",

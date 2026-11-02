@@ -20,6 +20,7 @@ const WORD_I18N: Record<ConstrainWord | FineWord | "fromCenter", string> = {
     equalSpacings: "field.gestureChip.equalSpacings",
     freeRatio: "field.gestureChip.freeRatio",
     keepRatio: "field.gestureChip.keepRatio",
+    keepDirection: "field.gestureChip.keepDirection",
 };
 
 const SNAP_OFF_I18N = "field.gestureChip.snapOff";

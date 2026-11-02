@@ -41,7 +41,9 @@ import { FieldFollowing } from "./fieldFollowing";
  * (`useTimelinePathSamples`), an isolated move's focus scene
  * (`useTimelineFocusScene`, which also publishes the isolation plan the
  * playhead driver draws members at), collision markers (`useCollisionStore`),
- * who's dimmed, and who's Following (#300). Plans change on page changes,
+ * who's dimmed, and who's Following (#300). `hiddenIds`, the edited shape's
+ * marchers while it's seen on its own (#558), drop out of all of it: no dot,
+ * label, path or collision mark. Plans change on page changes,
  * edits and setting changes, never per frame; dimming and the Following look
  * go to the layers through {@link FieldDimming} and {@link FieldFollowing},
  * outside React.
@@ -53,12 +55,14 @@ export function useTimelineVisuals({
     pages,
     marcherIds,
     fieldProperties,
+    hiddenIds = null,
 }: {
     isPlaying: boolean;
     selectedPage: Page | null;
     pages: readonly Page[];
     marcherIds: readonly number[] | undefined;
     fieldProperties: FieldProperties | undefined;
+    hiddenIds?: ReadonlySet<number> | null;
 }): {
     paths: OverlayPlan | null;
     focus: OverlayPlan | null;
@@ -95,7 +99,9 @@ export function useTimelineVisuals({
         () =>
             ready && marcherIds && fieldProperties
                 ? planPathOverlay({
-                      marcherIds,
+                      marcherIds: hiddenIds
+                          ? marcherIds.filter((id) => !hiddenIds.has(id))
+                          : marcherIds,
                       nextPaths,
                       nextPathsEnabled,
                       stepSizeWarningsEnabled,
@@ -109,6 +115,7 @@ export function useTimelineVisuals({
             nextPathsEnabled,
             stepSizeWarningsEnabled,
             fieldProperties,
+            hiddenIds,
         ],
     );
 
@@ -130,15 +137,21 @@ export function useTimelineVisuals({
     useEffect(() => {
         setCurrentCollision(selectedPage);
     }, [selectedPage, setCurrentCollision]);
-    const collisions = useMemo(
-        () =>
-            !isPlaying && settings.showCollisions && currentCollisions.length
-                ? planCollisionOverlay(currentCollisions)
-                : null,
-        [isPlaying, settings.showCollisions, currentCollisions],
-    );
+    const collisions = useMemo(() => {
+        const shown = hiddenIds
+            ? currentCollisions.filter(
+                  (c) =>
+                      !hiddenIds.has(c.marcher1Id) &&
+                      !hiddenIds.has(c.marcher2Id),
+              )
+            : currentCollisions;
+        return !isPlaying && settings.showCollisions && shown.length
+            ? planCollisionOverlay(shown)
+            : null;
+    }, [isPlaying, settings.showCollisions, currentCollisions, hiddenIds]);
 
     const dimming = useFieldDimming(ready);
+    useEffect(() => dimming.setHidden(hiddenIds), [dimming, hiddenIds]);
     const following = useFieldFollowing(ready, isPlaying);
     return { paths, focus, collisions, dimming, following, ready };
 }

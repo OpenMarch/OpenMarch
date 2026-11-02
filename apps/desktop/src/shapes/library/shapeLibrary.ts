@@ -8,6 +8,7 @@ import {
 import { FRACTIONS, formatSteps } from "../editor/format";
 import { RING_SLOTS, type RingShape } from "../tool/ringMachine";
 import type { ShapeToolEntry } from "../tool/shapeTools";
+import { toolId } from "../tool/toolKind";
 import type { SavedShape } from "./savedShapes";
 
 /** The most shapes that can be starred: one star puts a shape in the ring, which holds this many */
@@ -94,7 +95,7 @@ export function basicShapeRows(
 ): ShapeLibraryRow[] {
     // Getters: the rows are made once, and the words follow the app's language
     return tools.map(({ kind }) => ({
-        id: kind.shape.id,
+        id: toolId(kind),
         group: "basic",
         get label() {
             return kind.shape.label;

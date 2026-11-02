@@ -20,6 +20,7 @@ import { useEditorMenu, useMenuFocus } from "./menuFocus";
 import { Tip } from "@/components/ui/Tip";
 import { GlyphText } from "./GlyphText";
 import { useId } from "react";
+import { closedOf } from "../distribute/modes";
 
 const SIDE_LABELS: Readonly<Record<GapSide, string>> = {
     back: "Back",
@@ -88,8 +89,8 @@ export function OutlineGap({
     const stepPx = envFor()?.stepPx;
     const fullSpacing =
         gap.side === "back" || gap.side === "front"
-            ? kind.closed?.intervals?.(params).across
-            : kind.closed?.intervals?.(params).deep;
+            ? closedOf(kind, params, spots)?.intervals?.(params).across
+            : closedOf(kind, params, spots)?.intervals?.(params).deep;
     const differs =
         spread !== null &&
         stepPx !== undefined &&

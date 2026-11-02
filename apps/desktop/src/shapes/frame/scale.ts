@@ -1,7 +1,7 @@
 import tolgee from "@/global/singletons/Tolgee";
 import { formatSteps } from "../editor/format";
 import { SPACING_FINE_RATE, SPACING_RATE } from "../editor/scrub";
-import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
+import { paramGlyph, type AnyToolKind, type ToolEnv } from "../tool/toolKind";
 import { pivotPoint, samePivot, type Pivot } from "./frame";
 import { settled } from "./gestures";
 import { carryPivot, pivotOf } from "./pivot";
@@ -313,7 +313,7 @@ export function scaleReadout(
     const shown = kind.params
         .filter((p) => p.interval && (p.shown?.(params, n) ?? true))
         .map((p) =>
-            [p.glyph, p.display(params, n, env.stepPx)]
+            [paramGlyph(p, params, n), p.display(params, n, env.stepPx)]
                 .filter(Boolean)
                 .join(" "),
         );

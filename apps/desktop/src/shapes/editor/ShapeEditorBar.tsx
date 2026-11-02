@@ -18,11 +18,17 @@ import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { editorPlacement } from "./editorPlacement";
 import { keepInView } from "./keepInView";
 import { glideTo, isGliding } from "@/field/three/fieldNavigation";
-import { setShapeScrubbing, useShapePointerStore } from "../field/shapePointer";
+import {
+    engageStep,
+    setShapeScrubbing,
+    useShapePointerStore,
+} from "../field/shapePointer";
 import { keepFocus } from "./keepFocus";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { runAction } from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
+import type { OrderChoice } from "../assign";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { RichTips, Tip } from "@/components/ui/Tip";
 import {
     ActionFace,
@@ -33,12 +39,16 @@ import {
     FlipHorizontalIcon,
     FlipVerticalIcon,
     LinkSimpleIcon,
+    LockSimpleIcon,
+    LockSimpleOpenIcon,
     MinusIcon,
     PlusIcon,
     ArrowClockwiseIcon,
     EqualsIcon,
     MagnetIcon,
     PathIcon,
+    EyeIcon,
+    EyeSlashIcon,
     SelectionSlashIcon,
 } from "@phosphor-icons/react";
 import {
@@ -53,6 +63,7 @@ import {
     frameControls,
     scrubTurn,
     shapeOutline,
+    shapeTurn,
     turnShape,
 } from "../frame/gestures";
 import { currentShapeField } from "../field/shapeFieldContext";
@@ -62,7 +73,12 @@ import {
 } from "../frame/shapeEditorStore";
 import { HANDLE_REACH_PX, toolEnvFor } from "../tool/toolEnv";
 import type { Roles } from "@/input/modifierRoles";
-import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
+import {
+    paramGlyph,
+    type AnyToolKind,
+    type ParamGlyph,
+    type ToolEnv,
+} from "../tool/toolKind";
 import { useShapeHidden, useShapeToolStore } from "../tool/shapeToolStore";
 import { ShapeAwayChip } from "./ShapeAwayChip";
 import { GlyphText } from "./GlyphText";
@@ -88,15 +104,33 @@ import { LayoutMenu } from "./LayoutPicker";
 import { ReshuffleButton } from "./ReshuffleButton";
 import { EdgeToggle } from "./EdgeToggle";
 import { ModeMenu } from "./ModeMenu";
+import { ChoiceMenus } from "./ChoiceMenu";
+import { GroupChips } from "./GroupChips";
+import { GROUP_MENU_ATTRIBUTE, GroupMenu } from "./GroupMenu";
+import { useFocusCarry } from "./focusCarry";
+import { OrderMenu } from "./OrderMenu";
 import { OutlineGap } from "./OutlineGap";
 import { PivotMenu } from "./PivotGrid";
 import { CloseUpButton } from "./CloseUpButton";
 import { ScaleButtons, scaledOnce, scaleOnce } from "./ScaleButtons";
-import { distributionOf, edgeSplitOf, layoutOf } from "../distribute/modes";
+import {
+    closedOf,
+    distributionOf,
+    edgeSplitOf,
+    layoutOf,
+} from "../distribute/modes";
 import { outlineGapOf } from "../distribute/outlineGap";
 import type { XY } from "../types";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import tolgee from "@/global/singletons/Tolgee";
+import { getActionShortcutKeys } from "@/shortcuts/labels";
+import {
+    isHiding,
+    pressHideMarchers,
+    releaseHideMarchers,
+    toggleHideMarchers,
+    useMarchersHiddenStore,
+} from "../field/marchersHidden";
 
 /** How long the editor stays still after a press on it ends, so a second click lands */
 const PRESS_HOLD_MS = 450;
@@ -120,9 +154,9 @@ const EDIT_WINDOW_MS = 1000;
  * typed or dragged, and follows the field: across is side to side however the box is turned. ↻
  * adds a quarter turn to the degrees beside it, and ⌖▾ opens the pivot grid (#435). After the
  * flips, Shrink and Expand scale the shape keeping its proportions (#489, `ScaleButtons`).
- * Recalculate works out who goes where again by least travel, which moving and turning keep until
- * it's pressed, and shows its word only when it would change something; Close up shows for a
- * placed shape with holes (#392). Pathways and ☆ Save, which leave the shape as it is, come last
+ * Recalculate works out who goes where again by least travel (a Line in Keep order or Reverse: in
+ * that order), which moving and turning keep until it's pressed, and shows its word only when it
+ * would change something; Close up shows for a placed shape with holes (#392). Pathways and ☆ Save, which leave the shape as it is, come last
  * before Place. Its controls show the app's tooltips (`RichTips`). Under the editor, a pill of
  * its own says how the shape is filled (#435): the mode menu (Grid, Outline, Spread, each with a
  * picture of this shape in it), then after a divider the box's layout menu in Grid, the leftover
@@ -135,25 +169,42 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
     const armed = useShapeToolStore((s) =>
         s.tool !== null && s.tool.params === null ? s.tool.kind : null,
     );
+    // Clicking a line's points (#524): how to go on, even once two make a line
+    const clicking = useShapeToolStore(
+        (s) => s.tool?.gesture?.type === "points",
+    );
     const toolOpen = useShapeToolStore((s) => s.tool !== null);
     const hidden = useShapeHidden();
     const tool = useToolEditTarget();
     const placed = usePlacedEditTarget();
     if (hidden) return <ShapeAwayChip />;
-    if (armed)
+    if (armed || clicking)
         return (
             <div
                 className="rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal pointer-events-none absolute top-12 left-1/2 z-10 -translate-x-1/2 border px-12 py-6"
                 data-testid="shape-tool-hint"
             >
-                <T
-                    keyName="shapes.edit.drawHint"
-                    defaultValue="Drag on the field to draw a {shape} · <keys></keys> to cancel"
-                    params={{
-                        shape: armed.shape.label.toLowerCase(),
-                        keys: () => <Shortcut binding="Escape" />,
-                    }}
-                />
+                {clicking ? (
+                    <RemovePointHint />
+                ) : armed!.clickPoints ? (
+                    <T
+                        keyName="shapes.edit.drawPointsHint"
+                        defaultValue="Drag on the field to draw a {shape}, or click point after point · <keys></keys> to cancel"
+                        params={{
+                            shape: armed!.shape.label.toLowerCase(),
+                            keys: () => <Shortcut binding="Escape" />,
+                        }}
+                    />
+                ) : (
+                    <T
+                        keyName="shapes.edit.drawHint"
+                        defaultValue="Drag on the field to draw a {shape} · <keys></keys> to cancel"
+                        params={{
+                            shape: armed!.shape.label.toLowerCase(),
+                            keys: () => <Shortcut binding="Escape" />,
+                        }}
+                    />
+                )}
             </div>
         );
     const target = toolOpen ? tool : placed;
@@ -166,6 +217,35 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
                 testId={toolOpen ? "shape-tool-readout" : "placed-box-readout"}
             />
         </RichTips>
+    );
+}
+
+/**
+ * While clicking a line's points (owner, option A on #522): how to take the last one back and
+ * finish, the key as keycaps
+ */
+function RemovePointHint() {
+    const overrides = useShortcutOverridesStore((s) => s.overrides);
+    const keys = getActionShortcutKeys("shapeRemoveLastPoint", { overrides });
+    const esc = () => <Shortcut binding="Escape" />;
+    // With the key unbound, only the right-click is said
+    if (!keys)
+        return (
+            <T
+                keyName="shapes.edit.removePointHintClick"
+                defaultValue="Right-click removes the last point · Double-click to finish · <esc></esc> to cancel"
+                params={{ esc }}
+            />
+        );
+    return (
+        <T
+            keyName="shapes.edit.removePointHint"
+            defaultValue="Right-click or <keys></keys> removes the last point · Double-click to finish · <esc></esc> to cancel"
+            params={{
+                keys: () => <Shortcut action="shapeRemoveLastPoint" />,
+                esc,
+            }}
+        />
     );
 }
 
@@ -205,7 +285,13 @@ function ShapeEditorBar({
     const env = envFor();
     const layout = env
         ? chipLayout(kind, params, spots, { ...env, stepPx, anchor })
-        : { values: [], intervals: [], ratioLock: false };
+        : {
+              values: [],
+              intervals: [],
+              groups: null,
+              ratioLock: false,
+              lock: null,
+          };
     const chips = useRef({ layout, anchor });
     // What the − and + presses act on: what this render shows
     chips.current = { layout, anchor };
@@ -249,6 +335,24 @@ function ShapeEditorBar({
         enabled: evenState === "uneven",
         ignoreRepeat: true,
     });
+
+    // The shape on its own (#558): hold H to hide the marchers, tap to keep them hidden. The
+    // button and the palette turn the latch over. A key still down when the editor goes (the show
+    // plays) is let go, so it doesn't stay hidden once the editor is back
+    useActionHandler("shapeHideMarchers", () => toggleHideMarchers(), {
+        onPress: () => pressHideMarchers(),
+        onRelease: (reason) =>
+            releaseHideMarchers(Date.now(), reason === "lost"),
+    });
+    useEffect(() => () => releaseHideMarchers(Date.now(), true), []);
+
+    // One interval number, a single counted group's chips, or the group menu: focus stays there
+    // as one becomes another (owner feedback on #526)
+    const groupCount = layout.groups?.length ?? 0;
+    const intervalsCarry = useFocusCarry<HTMLSpanElement>(
+        groupCount > 1 ? "menu" : groupCount === 1 ? "chips" : "number",
+        (el) => el.closest(`[${GROUP_MENU_ATTRIBUTE}]`) !== null,
+    );
 
     const whatRow = useRef<HTMLSpanElement>(null);
     const doRow = useRef<HTMLSpanElement>(null);
@@ -294,7 +398,7 @@ function ShapeEditorBar({
                                 note={x.note}
                                 canLess={x.less !== null}
                                 canMore={x.more !== null}
-                                glyph={false}
+                                glyph={null}
                                 actions={numbers}
                             />
                         ))}
@@ -311,30 +415,82 @@ function ShapeEditorBar({
                             </span>
                         )}
                     </span>
-                    {layout.intervals.length > 0 && (
-                        <>
-                            <Divider />
-                            <span className="flex items-center gap-2">
-                                {layout.intervals.map((x) => (
-                                    <NumberChip
-                                        key={x.param.key}
-                                        param={x.param}
-                                        display={x.display}
-                                        note={null}
-                                        canLess={false}
-                                        canMore={false}
-                                        glyph
-                                        derived={x.derived}
-                                        actions={numbers}
+                    <span className="contents" {...intervalsCarry}>
+                        {layout.groups && layout.groups.length > 1 && (
+                            <>
+                                <Divider />
+                                <GroupMenu
+                                    target={live}
+                                    groups={layout.groups}
+                                    envFor={envFor}
+                                    onScrubbing={setShapeScrubbing}
+                                />
+                                {layout.lock !== null && (
+                                    <IntervalLockButton
+                                        live={live}
+                                        locked={layout.lock}
                                     />
-                                ))}
+                                )}
+                            </>
+                        )}
+                        {layout.groups?.length === 1 && (
+                            <>
+                                <Divider />
+                                <GroupChips
+                                    target={live}
+                                    groups={layout.groups}
+                                    envFor={envFor}
+                                    onScrubbing={setShapeScrubbing}
+                                />
                                 <span className="text-text/60">
                                     {tolgee.t("shapes.edit.steps", "steps")}
                                 </span>
-                                {layout.ratioLock && <RatioLockButton />}
-                            </span>
-                        </>
-                    )}
+                                {layout.lock !== null && (
+                                    <IntervalLockButton
+                                        live={live}
+                                        locked={layout.lock}
+                                    />
+                                )}
+                            </>
+                        )}
+                        {layout.intervals.length > 0 && (
+                            <>
+                                <Divider />
+                                <span className="flex items-center gap-2">
+                                    {layout.intervals.map((x) => (
+                                        <NumberChip
+                                            key={x.param.key}
+                                            param={x.param}
+                                            display={x.display}
+                                            note={null}
+                                            canLess={false}
+                                            canMore={false}
+                                            glyph={paramGlyph(
+                                                x.param,
+                                                params,
+                                                spots,
+                                            )}
+                                            glyphAfter={
+                                                x.param.glyphAfter === true
+                                            }
+                                            derived={x.derived}
+                                            actions={numbers}
+                                        />
+                                    ))}
+                                    <span className="text-text/60">
+                                        {tolgee.t("shapes.edit.steps", "steps")}
+                                    </span>
+                                    {layout.ratioLock && <RatioLockButton />}
+                                    {layout.lock !== null && (
+                                        <IntervalLockButton
+                                            live={live}
+                                            locked={layout.lock}
+                                        />
+                                    )}
+                                </span>
+                            </>
+                        )}
+                    </span>
                     {target.drawnOn && (
                         <span className="text-text/50">
                             {tolgee.t("shapes.edit.drawnOn", "from {page}", {
@@ -351,10 +507,16 @@ function ShapeEditorBar({
                 >
                     <TurnControls
                         live={live}
-                        degrees={rotationDegrees(frame.rotation)}
+                        degrees={rotationDegrees(
+                            shapeTurn(kind, params, spots),
+                        )}
                         rotation={frame.rotation}
                         pivot={pivotOf(params)}
                         canRecalculate={target.recalculate !== null}
+                        inOrder={
+                            target.order !== undefined &&
+                            target.order.current !== "nearest"
+                        }
                         empty={target.empty}
                         canCloseUp={target.closeUp !== undefined}
                         evenState={evenState}
@@ -378,6 +540,8 @@ function ShapeEditorBar({
                 kind={kind}
                 shown={fillShown(kind, params, spots)}
                 canPlace={target.place !== undefined}
+                order={target.order?.current}
+                keepOffered={target.order?.keepOffered}
                 testId={testId}
             />
         </animated.div>
@@ -418,6 +582,9 @@ function useLiveTarget(target: ShapeEditTarget): ShapeEditTarget {
             get closeUp() {
                 return latest.current.closeUp;
             },
+            get order() {
+                return latest.current.order;
+            },
             begin: () => latest.current.begin(),
             preview: (params) => latest.current.preview(params),
             end: (keep) => latest.current.end(keep),
@@ -437,7 +604,8 @@ function evenStateOf(
     spots: number,
 ): EvenState {
     const env = envFor();
-    const evened = env && kind.closed?.evenOut?.(params, spots, env);
+    const evened =
+        env && closedOf(kind, params, spots)?.evenOut?.(params, spots, env);
     if (evened === undefined || evened === null) return "none";
     return evened === params ? "even" : "uneven";
 }
@@ -445,11 +613,11 @@ function evenStateOf(
 /** "Even out": the shape as even as its frame allows, as one undo step (owner on #459) */
 const evenOut = (target: ShapeEditTarget) =>
     applyWith(target, (env) => {
-        const evened = target.kind.closed?.evenOut?.(
+        const evened = closedOf(
+            target.kind,
             target.params,
             target.spots,
-            env,
-        );
+        )?.evenOut?.(target.params, target.spots, env);
         return evened ?? target.params;
     });
 
@@ -556,6 +724,7 @@ const NumberChip = memo(function NumberChip({
     canLess,
     canMore,
     glyph,
+    glyphAfter = false,
     derived = false,
     actions,
 }: {
@@ -564,18 +733,69 @@ const NumberChip = memo(function NumberChip({
     note: string | null;
     canLess: boolean;
     canMore: boolean;
-    /** The spacings show their glyph */
-    glyph: boolean;
+    /** The mark the spacings show before them, if any */
+    glyph: ParamGlyph | null;
+    /** The mark goes after the number (a Line's offset, `2 ↔ 1 ↕`) */
+    glyphAfter?: boolean;
     /** Shown as about so much: pressing it snaps it to a half step (owner on #459) */
     derived?: boolean;
     actions: ReturnType<typeof numberActions>;
 }) {
-    const scrub = useMemo(() => actions.scrub(param), [actions, param]);
+    const plain = useMemo(() => actions.scrub(param), [actions, param]);
+    const showsStep = param.showsStep === true;
+    const key = param.key;
+    // A number setting the kind's step: the field draws it while it's pointed at, focused (typing
+    // too) or dragged (owner on #596)
+    const scrub = useMemo(
+        () =>
+            showsStep
+                ? {
+                      ...plain,
+                      onScrubStart: () => {
+                          engageStep(`${key}:drag`, true);
+                          plain.onScrubStart();
+                      },
+                      onScrubEnd: (keep: boolean) => {
+                          engageStep(`${key}:drag`, false);
+                          plain.onScrubEnd(keep);
+                      },
+                  }
+                : plain,
+        [plain, showsStep, key],
+    );
+    useEffect(
+        () => () => {
+            for (const how of ["hover", "focus", "typing", "drag"])
+                engageStep(`${key}:${how}`, false);
+        },
+        [key],
+    );
+    // Focused is the number itself (Tab reaches it) or typing into it: the button gives way to
+    // the input and back without a blur, so a change of one clears the other
+    const engage = showsStep
+        ? {
+              onPointerEnter: () => engageStep(`${key}:hover`, true),
+              onPointerLeave: () => engageStep(`${key}:hover`, false),
+              onFocus: () => engageStep(`${key}:focus`, true),
+              onBlur: () => engageStep(`${key}:focus`, false),
+          }
+        : {};
+    const onTyping = useCallback(
+        (typing: boolean) => {
+            engageStep(`${key}:focus`, false);
+            engageStep(`${key}:typing`, typing);
+        },
+        [key],
+    );
     return (
-        <span className="flex items-center gap-2">
-            {glyph && param.glyph && (
+        <span
+            className="flex items-center gap-2"
+            data-shows-step={showsStep || undefined}
+            {...engage}
+        >
+            {glyph && !glyphAfter && (
                 <span className="text-text/60" aria-hidden>
-                    <GlyphText text={param.glyph} />
+                    <GlyphText text={glyph} />
                 </span>
             )}
             {param.stepper && (
@@ -594,6 +814,7 @@ const NumberChip = memo(function NumberChip({
                 testId={`shape-editor-${param.key}`}
                 {...scrub}
                 onType={(text) => actions.type(param, text)}
+                onTyping={showsStep ? onTyping : undefined}
                 onSnap={
                     derived && param.snap
                         ? () => actions.snap(param)
@@ -610,8 +831,47 @@ const NumberChip = memo(function NumberChip({
                     <PlusIcon size={12} />
                 </IconButton>
             )}
+            {glyph && glyphAfter && (
+                <span className="text-text/60" aria-hidden>
+                    <GlyphText text={glyph} />
+                </span>
+            )}
             {note && <span className="text-text/60">· {note}</span>}
         </span>
+    );
+});
+
+/**
+ * The kind's interval lock (a Line's, owner decision on #522): locked, dragging an end keeps the
+ * interval; unlocked, it changes it. A press is one change of the shape (one undo step).
+ */
+const IntervalLockButton = memo(function IntervalLockButton({
+    live,
+    locked,
+}: {
+    live: ShapeEditTarget;
+    locked: boolean;
+}) {
+    const lock = live.kind.lock;
+    if (!lock) return null;
+    return (
+        <IconButton
+            label={lock.label(locked)}
+            pressed={locked}
+            onClick={() => {
+                const env = envFor();
+                if (!env) return;
+                const next = lock.toggle(live.params, live.spots, env);
+                if (next !== live.params) live.apply(next);
+            }}
+            testId="shape-editor-interval-lock"
+        >
+            {locked ? (
+                <LockSimpleIcon size={14} />
+            ) : (
+                <LockSimpleOpenIcon size={14} />
+            )}
+        </IconButton>
     );
 });
 
@@ -649,6 +909,7 @@ const TurnControls = memo(function TurnControls({
     rotation,
     pivot,
     canRecalculate,
+    inOrder,
     empty,
     evenState,
     canShrink,
@@ -660,6 +921,8 @@ const TurnControls = memo(function TurnControls({
     rotation: number;
     pivot: Pivot;
     canRecalculate: boolean;
+    /** Who goes where follows a Line's order (Keep order or Reverse, #528), not least travel */
+    inOrder: boolean;
     empty: number;
     /** Whether "Even out" applies, and whether there's anything to even (#459) */
     evenState: EvenState;
@@ -732,7 +995,9 @@ const TurnControls = memo(function TurnControls({
                 pivot={pivot}
                 rotation={rotation}
                 onPick={(key) =>
-                    updateWith(target, (now) => withPivot(now, key))
+                    target.pickPivot
+                        ? target.pickPivot(key)
+                        : updateWith(target, (now) => withPivot(now, key))
                 }
                 testId="shape-editor-pivot"
             />
@@ -762,19 +1027,29 @@ const TurnControls = memo(function TurnControls({
                 <IconButton
                     label={
                         canRecalculate
-                            ? tolgee.t(
-                                  "shapes.edit.recalculate.title",
-                                  "Recalculate who goes where, by least travel",
-                              )
+                            ? inOrder
+                                ? tolgee.t(
+                                      "shapes.edit.recalculate.titleInOrder",
+                                      "Recalculate who goes where, in order along the line",
+                                  )
+                                : tolgee.t(
+                                      "shapes.edit.recalculate.title",
+                                      "Recalculate who goes where, by least travel",
+                                  )
                             : empty > 0
                               ? tolgee.t(
                                     "shapes.edit.recalculate.closeUpFirst",
                                     "Recalculate who goes where: close up the empty spots first",
                                 )
-                              : tolgee.t(
-                                    "shapes.edit.recalculate.already",
-                                    "Who goes where is already least travel",
-                                )
+                              : inOrder
+                                ? tolgee.t(
+                                      "shapes.edit.recalculate.alreadyInOrder",
+                                      "Who goes where is already in order along the line",
+                                  )
+                                : tolgee.t(
+                                      "shapes.edit.recalculate.already",
+                                      "Who goes where is already least travel",
+                                  )
                     }
                     disabled={!canRecalculate}
                     action="shapeRecalculate"
@@ -845,6 +1120,7 @@ const EndControls = memo(function EndControls({
     return (
         <>
             <span className="flex items-center gap-2">
+                <HideMarchersButton />
                 <SnapButton />
                 {canPlace && <PathwaysButton />}
                 {canSave && (
@@ -906,14 +1182,20 @@ const fillShown = (kind: AnyToolKind, params: unknown, spots: number) => {
         outlineGapOf(kind, params, spots),
         // Edge's tip says how many stand on the edge, which the proportions change (#450)
         edgeSplitOf(kind, params, spots),
+        // The kind's own menus show the answer the shape has (#523), and only while they apply
+        // (a Line's Open or closed from its third point, #529)
+        kind.choices?.map((c) => [
+            c.current(params, spots),
+            c.shown?.(params, spots) ?? true,
+        ]),
         flipX,
         flipY,
     ]);
 };
 
 /**
- * How it's filled: a pill of its own under the editor (owner, #435), the mode switch first, then
- * what that mode has (a box's layout in Grid, the gap in Outline, Reshuffle and Edge in Spread). Hidden
+ * How it's filled: a pill of its own under the editor (owner, #435), the kind's own menus (a
+ * Line's spacing, #523), who goes where on a Line (#528) and the mode switch first, then what that mode has (a box's layout in Grid, the gap in Outline, Reshuffle and Edge in Spread). Hidden
  * when the kind has none of them. Only the bar and the pill take the pointer, not the empty
  * space beside the pill
  */
@@ -927,6 +1209,9 @@ const FillPill = memo(function FillPill({
     kind: AnyToolKind;
     shown: string;
     canPlace: boolean;
+    /** Only redraw it: who goes where, and whether Keep order is offered */
+    order: OrderChoice | undefined;
+    keepOffered: boolean | undefined;
     testId: string;
 }) {
     const env = () => envFor();
@@ -935,6 +1220,10 @@ const FillPill = memo(function FillPill({
             className="rounded-6 border-stroke bg-bg-1 bg-modal shadow-modal flex items-center gap-6 border px-6 py-2 empty:hidden"
             data-testid={`${testId}-fill`}
         >
+            {/* The kind's own menus (a Line's spacing, #523) */}
+            <ChoiceMenus target={target} envFor={env} />
+            {/* Who goes where on a Line (#528) */}
+            <OrderMenu target={target} />
             <ModeMenu target={target} envFor={env} />
             {/* What the mode has, after a divider (owner); nothing, and no divider, when it
                 has none */}
@@ -1327,6 +1616,35 @@ function useTwoRows(
 
 function Divider() {
     return <span className="bg-stroke h-16 w-px" aria-hidden />;
+}
+
+/**
+ * The eye (#558): shows whether the marchers, the shape's spots and its walks are hidden, held or
+ * latched, and turns the latch over. Its tooltip shows the key, which is held to peek.
+ */
+function HideMarchersButton() {
+    const hidden = useMarchersHiddenStore(isHiding);
+    return (
+        <IconButton
+            label={
+                hidden
+                    ? tolgee.t(
+                          "shapes.edit.hideMarchers.show",
+                          "Show the marchers",
+                      )
+                    : tolgee.t(
+                          "shapes.edit.hideMarchers.hide",
+                          "Hide the marchers",
+                      )
+            }
+            action="shapeHideMarchers"
+            pressed={hidden}
+            onClick={toggleHideMarchers}
+            testId="shape-editor-hide-marchers"
+        >
+            {hidden ? <EyeSlashIcon size={14} /> : <EyeIcon size={14} />}
+        </IconButton>
+    );
 }
 
 /**

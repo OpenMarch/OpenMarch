@@ -264,6 +264,8 @@ describe("the circle and the host", () => {
         expect(SHAPE_TOOLS.map((e) => e.kind.shape.label)).toEqual([
             "Box",
             "Circle",
+            "Line",
+            "Curve",
         ]);
     });
 

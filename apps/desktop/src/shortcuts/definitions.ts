@@ -697,6 +697,28 @@ const STATIC_ACTIONS = {
         // The command bar lists Shape › Circle instead, which asks the circle's numbers
         hiddenFromPalette: true,
     },
+    shapeLine: {
+        labelKey: "actions.shape.line",
+        keywordsKey: "actions.shape.keywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["L"],
+        args: { kind: "line" },
+        // The command bar lists Shape › Line instead, which asks the line's numbers
+        hiddenFromPalette: true,
+    },
+    // The Curve (#525): a Line whose points start smooth. No key of its own yet
+    shapeCurve: {
+        labelKey: "actions.shape.curve",
+        keywordsKey: "actions.shape.keywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+        args: { kind: "curve" },
+        hiddenFromPalette: true,
+    },
     // The favorites ring (#351): hold to aim and let go to pick a shape, tap to keep it open.
     // The ring takes the key's release, so a held key doesn't repeat it. From the palette it opens
     // latched, as a tap does (#411).
@@ -716,6 +738,18 @@ const STATIC_ACTIONS = {
         editsDrill: true,
         scope: "canvas",
         defaultBindings: ["Enter"],
+    },
+    // While drawing a line point by point, the last point taken back (owner, option A on #522).
+    // Handled only then (shapes/tool/ShapeToolKeys), so the keys do nothing else meanwhile
+    shapeRemoveLastPoint: {
+        labelKey: "actions.shape.removeLastPoint",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["Backspace", "Delete"],
+        // One point a press: a held key doesn't run the line back to its start
+        ignoreRepeat: true,
+        hiddenFromPalette: true,
     },
     // The floating editor's turn and Recalculate (#429), for the open or selected shape only. While
     // one is shown, Alt+F and Alt+Shift+F (flipHorizontal/flipVertical) flip the shape instead of
@@ -766,6 +800,18 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Shift+R"],
         // One press, one turn or recalculation: a held key doesn't repeat it (review)
+        ignoreRepeat: true,
+    },
+    // The shape on its own (#558): hold H to hide the marchers, its spots and walks, tap to keep
+    // them hidden; the editor's eye button and the palette turn the latch over. Drawing only, but
+    // filed with the shape's keys, which Visuals turns off: no shape is edited there
+    shapeHideMarchers: {
+        labelKey: "actions.shape.hideMarchers",
+        keywordsKey: "actions.shape.hideMarchersKeywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["H"],
         ignoreRepeat: true,
     },
 

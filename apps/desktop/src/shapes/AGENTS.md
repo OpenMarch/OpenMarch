@@ -17,7 +17,17 @@ ordinary positions it writes.
   that can be drawn; `shapeToolStore.ts` holds the open shape; `useShapeToolActions.ts` has
   `placeShape`; `shapeMoment.ts` ties an open shape to its edit window; `selectionGate.ts` is the
   one home of "Select marchers first"; `ShapesTab.tsx` and `FavoritesRing.tsx` are ways in.
-- `box/`, `circle/`: the two drawable kinds (`boxTool`, `circleTool`) and their geometry.
+- `box/`, `circle/`, `line/`: the drawable kinds (`boxTool`, `circleTool`, `lineTool`) and their
+  geometry. The Line's frame follows from its points, so it checks its own recipes (`readable`)
+  and declares its spacing menu as a kind choice (`ToolChoice`, shown by `editor/ChoiceMenu.tsx`).
+  A closed Line is filled through `line/lineFill.ts`, its region the outline as drawn
+  (`closedOutline`, curves in short pieces); a kind closed only sometimes declares
+  `closed.when`, so host code reads a shape's fill through `closedOf` (`distribute/modes.ts`),
+  never `kind.closed` directly.
+  The Curve (`curveTool`) is a preset of the Line (`ToolKind.preset`): its points start smooth, it
+  saves Line recipes, and pickers know it by `toolId`. A picker that arms or highlights a kind
+  threads `toolId(kind)`, never `kind.shape.id`, which a preset shares with its kind; code that
+  reads recipes or saved shapes back skips presets (`PLACED_KINDS`, `savedShapes.ts`).
   `group/`: marchers grouped where they stand (`groupTool`, #603), read back but never drawn.
   `box/edgePull.ts` lands edges and corners on yard lines and hashes; `box/modeMemory.ts`
   remembers each fill mode's numbers.
@@ -28,7 +38,11 @@ ordinary positions it writes.
 - `distribute/`: how a closed shape is filled (Grid, Outline, Spread, Edge), owned by the host;
   a kind only describes its region.
 - `editor/`: the floating editor (`ShapeEditorBar.tsx`) and its controls: numbers you type or
-  drag (`ScrubNumber`, `scrub.ts`, `format.ts` for exact fractions), the mode, layout and pivot
+  drag (`ScrubNumber`, `scrub.ts`, `format.ts` for exact fractions), a Line's interval groups
+  (one group's chips in `GroupChips`, two or more in `GroupMenu`, whose rows light their group
+  on the field through `field/groupDrawing.ts`; the list syntax and groups-to-gaps layout are
+  `spacing.ts`; a kind's `step` numbers, a Line's Offset, draw their step and light the pivot
+  through `field/stepDrawing.ts` while engaged), the mode, layout and pivot
   menus, Recalculate, Reshuffle, Close up, and keeping the shape in view (`keepInView.ts`).
 - `field/`: how the shape code reads the three.js field (`shapeField.ts`, registered by the
   field, never `window.canvas`), pointer routing and the field modes it installs.
@@ -47,7 +61,21 @@ ordinary positions it writes.
   pointer event or the selection.
 - A kind implements `ToolKind<P>` (`tool/toolKind.ts`): its params (declared once, with primary,
   drag direction and interval flags), handles, `dragHandle`, `move`, `frameOf` / `withFrame` /
-  `fromFrame`, and optionally `closed` for the host's distributor. Everything is pure.
+  `fromFrame`, and optionally `closed` for the host's distributor and `choices` for menus of its
+  own, and `groups` for mixed intervals (#526). Everything is pure.
+- The host keeps which handle a click selected (`selects` on a `ToolHandle`, #557) and hands its
+  key back to `handles`, so a kind shows more around it (a Line's tangent bar, handles with
+  `bar`); `selectionAfter` in `frame/gestures.ts` is the rule both the open and placed shape
+  follow. `clickHandle` is a click, `doubleClickHandle` a double-click's second click.
+- A kind's `menu` (`ToolHandleMenu`, #569) is a handle's right-click menu (a Line's point or
+  segment): the modes' `openMenu` opens it through `field/handleMenu.ts` on a right-click, a Mac's
+  Ctrl-click or a long press, `editor/HandleMenu.tsx` shows it, and a pick is `pickMenu` on the
+  open shape (one undo step) or `pickLive` on a placed one (one save). A `segmented` (Corner |
+  Smooth) or `follow` (Follow line's marchers) section
+  is picked with the menu kept open: the mode's pick returns the shape after it
+  and `openHandleMenu` rebuilds the sections. An undo or
+  redo clears the selection (a key names a point by index); a placed shape keeps it only through
+  its own save (`reopenLive`).
 - The spot count comes from the host. Spots and who goes where are separate steps.
 - Every placement goes through `writePlacement` (`tool/shapePlacement.ts`): `placeShape` for an
   open shape, `commitBox` for an edit of a placed one. Members move through the canvas-drag path

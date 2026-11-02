@@ -15,7 +15,7 @@ import {
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { invalidatePlacedBoxes } from "../placed/placedBoxStore";
 import type { ShapeContext } from "../types";
-import { targetsOf, type ToolState } from "./toolMachine";
+import { orderOf, targetsOf, type ToolState } from "./toolMachine";
 
 /**
  * What placing a shape writes: its recipe, and where each member stands in it (ADR 0006). Spots
@@ -56,9 +56,8 @@ export function placementOf(
             kindVersion: kind.version,
             // The spot count keeps holes when members leave later
             params: { ...(tool.params as object), spots: tool.spots },
-            // Drill order is gone (#429); the column stays for older files
-            orderMode: "nearest",
-            reverse: false,
+            // Least travel, or a Line's order (#528); drill order is gone (#429)
+            ...orderOf(tool),
         },
         members: targets.map((t) => ({
             marcherId: t.id,

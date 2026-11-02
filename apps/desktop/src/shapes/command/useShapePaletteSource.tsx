@@ -10,7 +10,7 @@ import { isActionOffInWorkspace } from "@/shortcuts/workspaceActions";
 import { isPreviewMode } from "@/stores/PreviewModeStore";
 import { kindPickGate } from "../tool/pickKind";
 import { shapeSelectionGate } from "../tool/selectionGate";
-import type { AnyToolKind } from "../tool/toolKind";
+import { toolId, type AnyToolKind } from "../tool/toolKind";
 import { SHAPE_TOOLS } from "../tool/shapeTools";
 import { isShapeShown } from "../tool/shapeToolStore";
 import { beginShapeCommand } from "./shapeCommand";
@@ -100,15 +100,11 @@ function kindItem(
     const offHere = isActionOffInWorkspace("shapeBlock");
     const label = named?.label ?? kind.shape.label;
     return {
-        id: `${SHAPE_BRANCH}:${named?.id ?? kind.shape.id}`,
+        id: `${SHAPE_BRANCH}:${named?.id ?? toolId(kind)}`,
         label,
         group: t("commandPalette.shape"),
         icon: <ShapePreviewIcon kind={kind} size={18} />,
-        keywords: [
-            ...(named ? [kind.shape.id, kind.shape.label] : [kind.shape.id]),
-            // "stagger" finds Box, whose layout step takes it (#387)
-            ...layoutKeywords(kind),
-        ],
+        keywords: shapeKeywords(kind, named),
         shortcut: action
             ? getActionShortcutKeys(action, {
                   overrides: useShortcutOverridesStore.getState().overrides,
@@ -134,6 +130,24 @@ function kindItem(
                 ),
         },
     };
+}
+
+/**
+ * The words the command bar finds a shape by besides its name: its kind's id (and name, for a
+ * saved shape), a preset's own words instead (the Curve isn't found by "line", #525), and its
+ * layouts
+ */
+export function shapeKeywords(
+    kind: AnyToolKind,
+    named?: { readonly id: string; readonly label: string },
+): string[] {
+    const own = named
+        ? [kind.shape.id, kind.shape.label]
+        : kind.preset
+          ? [...(kind.keywords ?? [kind.preset])]
+          : [kind.shape.id];
+    // "stagger" finds Box, whose layout step takes it (#387)
+    return [...own, ...layoutKeywords(kind)];
 }
 
 /** The names of a kind's layouts, to find it by (the box's Stagger, Rounded …) */

@@ -185,6 +185,22 @@ describe("Close up, a box in Files", () => {
         expect(live.spots).toBe(22);
         expect(live.members).toHaveLength(22);
     });
+
+    it("is least travel when asked for, even on a kind with an order saved as Reverse", () => {
+        const ordered: AnyToolKind = { ...boxTool, ordered: true };
+        const placed = placedWithout(full(), [1, 2], [ordered]);
+        const box: PlacedBox = {
+            ...placed,
+            recipe: { ...placed.recipe, orderMode: "keep", reverse: true },
+        };
+        expect(box.kind.ordered).toBe(true);
+        const params = closedUpParams(box, 22, env);
+        const live = liveTargets(box, params, ctx, true, undefined, "nearest");
+        const out = closeUp(placed, membersOf(placed), env, ctx)!;
+        expect(live.members.map((m) => m.slot)).toEqual(
+            out.members.map((m) => m.slot),
+        );
+    });
 });
 
 describe("Close up, a box in Outline", () => {

@@ -12,6 +12,8 @@ export interface ShapePreview {
     readonly spots: readonly XY[];
     /** The kind's outline, closed, in the same units; null when the kind has none */
     readonly outline: readonly XY[] | null;
+    /** When true, {@link outline} is open (a line or curve), not a closed region */
+    readonly openOutline?: boolean;
 }
 
 /** How many spots the picture shows: a 3 × 3 box, enough to read as the shape and stay small */
@@ -54,23 +56,33 @@ export function shapePreview(kind: AnyToolKind): ShapePreview {
     if (known) return known;
     const n = PREVIEW_SPOTS;
     // A saved shape's kind sets the saved intervals as it fills the frame
-    const params = kind.fromFrame(
-        {
-            center: { x: 0, y: 0 },
-            halfWidth: HALF,
-            halfDepth: HALF,
-            rotation: 0,
-            flipX: false,
-            flipY: false,
-        },
-        n,
-        ENV,
-    );
+    const params =
+        kind.pictureParams?.(n, ENV) ??
+        kind.fromFrame(
+            {
+                center: { x: 0, y: 0 },
+                halfWidth: HALF,
+                halfDepth: HALF,
+                rotation: 0,
+                flipX: false,
+                flipY: false,
+            },
+            n,
+            ENV,
+        );
     const spots = kind.shape
         .generate(params, n, CTX)
         .map(({ x, y }): XY => ({ x, y }));
     const outline = kind.outline?.(params, n) ?? null;
-    const preview = fitToView(spots, outline && standOff(outline, spots));
+    const openOutline =
+        outline !== null && (kind.outlineOpen?.(params, n) ?? false);
+    const preview = {
+        ...fitToView(
+            spots,
+            outline && (openOutline ? outline : standOff(outline, spots)),
+        ),
+        ...(openOutline ? { openOutline: true as const } : {}),
+    };
     PREVIEWS.set(kind, preview);
     return preview;
 }

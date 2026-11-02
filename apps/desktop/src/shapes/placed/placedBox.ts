@@ -19,6 +19,7 @@ import { SHAPE_TOOLS } from "../tool/shapeTools";
 import type { ShapeContext, XY } from "../types";
 import { frameToField, pivotPoint } from "../frame/frame";
 import { pivotOf } from "../frame/pivot";
+import { closedOf } from "../distribute/modes";
 
 /**
  * Placed shapes (docs/timeline/research/shapes/07-placed-boxes.md): a shape's recipe, read back.
@@ -56,11 +57,11 @@ export const isPlacedBox = (
 ): placed is PlacedBox<BoxParams> => placed.kind === boxTool;
 
 /**
- * The kinds a recipe can be read back as: every kind the shape tool draws, and groups (#603),
- * which are made from the selection rather than drawn
+ * The kinds a recipe can be read back as: every kind the shape tool draws, presets as their kind,
+ * and groups (#603), which are made from the selection rather than drawn
  */
 export const PLACED_KINDS: readonly AnyToolKind[] = [
-    ...SHAPE_TOOLS.map((entry) => entry.kind),
+    ...SHAPE_TOOLS.flatMap((entry) => (entry.kind.preset ? [] : [entry.kind])),
     groupTool,
 ];
 
@@ -98,9 +99,11 @@ function placedOf(
     );
     if (!kind) return null;
     const stored = recipe.params as StoredParams<{ center?: XY }> | null;
-    // Every shape's frame has a center, which recipes store (ADR 0006)
-    if (!stored || typeof stored !== "object" || !stored.center) return null;
+    if (!stored || typeof stored !== "object") return null;
     const { spots, ...params } = stored;
+    // Every shape's frame has a center, which recipes store (ADR 0006), unless the kind's frame
+    // follows from its own numbers (a Line's points), which it checks
+    if (kind.readable ? !kind.readable(params) : !stored.center) return null;
     // A spread from a generator this app doesn't have can't be laid out again
     if (!canLayOut(params)) return null;
     // Nor can a box whose numbers were edited into something else (B4)
@@ -287,7 +290,7 @@ function placeOn<P>(
  * 2026-10-14 revision). An open kind (a line, an arc) keeps its holes.
  */
 export const canCloseUp = (box: PlacedBox): boolean =>
-    box.kind.closed !== undefined &&
+    closedOf(box.kind, box.params, box.spots) !== undefined &&
     box.recipe.members.length > 0 &&
     box.recipe.members.length < box.spots;
 
@@ -304,7 +307,7 @@ export function closedUpParams(
     env: ToolEnv,
 ): unknown {
     const { kind, params, spots } = box;
-    const closed = kind.closed;
+    const closed = closedOf(kind, params, spots);
     if (!closed || n <= 0 || n >= spots) return null;
     const d = closed.distribution(params, spots);
     const kept: Distribution =

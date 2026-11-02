@@ -19,6 +19,7 @@ import {
     usePlacedBoxStore,
     usePlacedBoxBeat,
 } from "./placedBoxStore";
+import { closedOf } from "../distribute/modes";
 
 /** One placed shape as the field outlines it, in field units */
 export interface PlacedBoxDrawing {
@@ -65,7 +66,8 @@ function outlineOut(box: PlacedBox, pad: number): XY[] {
     const frame = kind.frameOf(params, spots);
     const round =
         kind.outline !== undefined &&
-        kind.closed?.region(params, spots).corners.length === 0;
+        closedOf(kind, params, spots)?.region(params, spots).corners.length ===
+            0;
     if (!round)
         return frameCorners({
             ...frame,

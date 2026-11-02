@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useQueryClient } from "@tanstack/react-query";
+import type { OrderChoice } from "../assign";
+import type { Pivot } from "../frame/frame";
 import { carryPivot } from "../frame/pivot";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import {
@@ -12,6 +14,7 @@ import {
 import { originsAtStart } from "../field/previewContext";
 import { commitBox } from "../placed/commitBox";
 import { recalculatedTargets } from "../placed/liveBox";
+import { placedOrderChoice } from "../placed/placedOrder";
 import {
     canCloseUp,
     closedUpParams,
@@ -25,7 +28,10 @@ import {
     cancelGesture,
     edit,
     canRecalculate,
+    keepOrderOffered,
+    setOrder,
     previewEdit,
+    pickPivot,
     recalculate,
     release,
 } from "../tool/toolMachine";
@@ -67,6 +73,11 @@ export interface ShapeEditTarget {
      */
     update(change: (params: unknown) => unknown): void;
     /**
+     * The pivot picked in the pivot menu, as one change: the open shape keeps that it was moved
+     * by hand (`pivotMoved`). Absent: an {@link update} setting it.
+     */
+    readonly pickPivot?: (pivot: Pivot) => void;
+    /**
      * Recalculate who goes where (#429): the marchers on the shape's spots by least travel from
      * where they come from, as one change. Null when that changes nothing, so the button is
      * disabled; moving and turning keep who goes where until it's pressed.
@@ -77,6 +88,16 @@ export interface ShapeEditTarget {
      * change. Absent for a new shape, and for a placed one with no holes or an open kind.
      */
     readonly closeUp?: () => void;
+    /**
+     * Who goes where on a kind with an order along it (a Line, #528): the choice, whether Keep
+     * order is offered (every marcher from one placed Line), and picking another, as one change.
+     * Absent for a kind without.
+     */
+    readonly order?: {
+        readonly current: OrderChoice;
+        readonly keepOffered: boolean;
+        pick(choice: OrderChoice): void;
+    };
 }
 
 const withField = (run: (ctx: ReturnType<typeof shapeContextFor>) => void) => {
@@ -122,10 +143,22 @@ export function useToolEditTarget(): ShapeEditTarget | null {
                             : edit(t, change(t.params), ctx),
                     ),
                 ),
+            pickPivot: (pivot) =>
+                withField((ctx) => updateTool((t) => pickPivot(t, pivot, ctx))),
             recalculate: can
                 ? () =>
                       withField((ctx) => updateTool((t) => recalculate(t, ctx)))
                 : null,
+            ...(tool.kind.ordered && {
+                order: {
+                    current: tool.order,
+                    keepOffered: keepOrderOffered(tool),
+                    pick: (choice: OrderChoice) =>
+                        withField((ctx) =>
+                            updateTool((t) => setOrder(t, choice, ctx)),
+                        ),
+                },
+            }),
         };
     }, [tool, away, place]);
 }
@@ -249,19 +282,9 @@ export function usePlacedEditTarget(): ShapeEditTarget | null {
                               ),
                           )
                     : null,
+            order: placedOrder(box, queryClient, write),
             ...(canCloseUp(box) && {
-                closeUp: () => {
-                    const field = currentShapeField();
-                    if (!field) return;
-                    const params = closedUpParams(
-                        box,
-                        box.recipe.members.length,
-                        toolEnvFor(field),
-                    );
-                    // Least travel, whatever order it was laid out in (spec #385)
-                    if (params !== null)
-                        write(() => commitBox(box, params, queryClient, true));
-                },
+                closeUp: () => closeUpPlaced(box, queryClient, write),
             }),
         };
         // `resolverVersion` changes whenever the resolver's answers may have: where members come
@@ -271,6 +294,52 @@ export function usePlacedEditTarget(): ShapeEditTarget | null {
     useWaitingChanges(target, queued);
     return target;
 }
+
+/** Close up (#392): the members left laid out again by least travel, whatever order it was laid out in (spec #385) */
+const closeUpPlaced = (
+    box: PlacedBox,
+    queryClient: ReturnType<typeof useQueryClient>,
+    write: ReturnType<typeof oneWriteAtATime>,
+) => {
+    const field = currentShapeField();
+    if (!field) return;
+    const params = closedUpParams(
+        box,
+        box.recipe.members.length,
+        toolEnvFor(field),
+    );
+    if (params !== null)
+        write(() =>
+            commitBox(box, params, queryClient, true, undefined, "nearest"),
+        );
+};
+
+/**
+ * Who goes where on a placed Line, whose members are all on it, so its order can be kept: picking
+ * another lays it out again, saved at once (#528). None for a kind without an order.
+ */
+const placedOrder = (
+    box: PlacedBox,
+    queryClient: ReturnType<typeof useQueryClient>,
+    write: ReturnType<typeof oneWriteAtATime>,
+): ShapeEditTarget["order"] =>
+    box.kind.ordered
+        ? {
+              current: placedOrderChoice(box),
+              keepOffered: true,
+              pick: (choice) =>
+                  write(() =>
+                      commitBox(
+                          box,
+                          box.params,
+                          queryClient,
+                          true,
+                          originsOf(box),
+                          choice,
+                      ),
+                  ),
+          }
+        : undefined;
 
 const toolCanRecalculate = (tool: Parameters<typeof canRecalculate>[0]) => {
     const field = currentShapeField();

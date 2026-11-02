@@ -145,6 +145,22 @@ describe("a placed circle", () => {
             expect(dist(bySlot[i]!, bySlot[(i + 1) % N]!)).toBeCloseTo(30, 9);
     });
 
+    it("goes inside on a double-click of its radius handle, which takes no double-click", () => {
+        const { placed } = placedCircle();
+        const handle = circleTool.handles(placed.params, N)[0]!;
+        for (const ownFirst of [true, false]) {
+            const out = releaseLive(
+                pressLive(openLive(placed), handle.at, env)!,
+                {
+                    double: true,
+                    ownFirst,
+                },
+            );
+            expect(out.changed).toBe(false);
+            expect(out.enter).toBe(true);
+        }
+    });
+
     it("moves from inside, and a press without a drag changes nothing", () => {
         const { placed } = placedCircle();
         // Off the center dot, which drags the center to the pointer

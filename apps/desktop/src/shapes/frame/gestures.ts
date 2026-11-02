@@ -92,6 +92,16 @@ export function frameControls(
 const near = (a: XY, b: XY, r: number) => Math.hypot(a.x - b.x, a.y - b.y) <= r;
 
 /**
+ * Whether a placed shape's pivot looks moved by hand, with nothing saying: not one its kind
+ * could have put there ({@link ToolKind.ownPivot}), or else not where it starts one now
+ */
+export function pivotByHand(kind: AnyToolKind, params: unknown): boolean {
+    const pivot = pivotOf(params);
+    if (kind.ownPivot) return !kind.ownPivot(params, pivot);
+    return !samePivot(pivot, kind.startPivot?.(params) ?? DEFAULT_PIVOT);
+}
+
+/**
  * What a press at `at` grabs on the shape, nearest the front of what's drawn first: the pivot's
  * crosshair, a handle, the knob, the center dot (the pivot with reach inside), the ring just outside
  * a corner, then the body. Null when it misses.
@@ -102,17 +112,32 @@ export function shapeTargetAt(
     n: number,
     at: XY,
     env: ToolEnv,
+    /** The handle selected by a click (#557), whose own handles show around it */
+    selected?: string | null,
+    /**
+     * Whether the pivot has been moved by hand (the open shape's `pivotMoved`); unknown for a
+     * placed shape, which goes by whether the kind could have put it there ({@link pivotByHand})
+     */
+    pivotMoved?: boolean,
 ): ShapeTarget | null {
     const controls = frameControls(kind, params, n, env);
-    // Drawn over everything, so it wins over a handle on the marcher it sits on
-    if (controls.pivot && near(controls.pivot, at, env.hitRadius))
-        return { type: "pivot" };
     let best: { key: string; d: number } | undefined;
-    for (const h of kind.handles(params, n)) {
+    for (const h of kind.handles(params, n, selected)) {
         const d = Math.hypot(h.at.x - at.x, h.at.y - at.y);
         if (d <= env.hitRadius && (!best || d < best.d))
             best = { key: h.key, d };
     }
+    // Drawn over everything, so it wins over a handle on the marcher it sits on; one the kind put
+    // there and nobody has moved (a Line's left end, owner on #596, however it's been turned or
+    // flipped since) leaves the handle to a plain press, and reaching inside takes it
+    if (controls.pivot && near(controls.pivot, at, env.hitRadius)) {
+        const byHand = pivotMoved ?? pivotByHand(kind, params);
+        if (!best || byHand || env.reachInside) return { type: "pivot" };
+    }
+    // Reaching inside the center dot pulls the pivot out, even from under a handle there (a
+    // straight line's midpoint, #524)
+    if (env.reachInside && near(controls.center, at, env.hitRadius))
+        return { type: "pivot", pulled: true };
     if (best) return { type: "handle", key: best.key };
     if (near(controls.knob, at, env.hitRadius))
         return { type: "rotate", from: "knob" };
@@ -133,7 +158,7 @@ export function shapeTargetAt(
         )
     )
         return { type: "rotate", from: "corner" };
-    if (kind.contains(params, n, at)) return { type: "move" };
+    if (kind.contains(params, n, at, env)) return { type: "move" };
     return null;
 }
 
@@ -147,8 +172,19 @@ export function startShapeGesture(
     n: number,
     at: XY,
     env: ToolEnv,
+    selected?: string | null,
+    /** Whether the pivot has been moved by hand, as {@link shapeTargetAt} takes it */
+    pivotMoved?: boolean,
 ): ShapeGesture | null {
-    const target = shapeTargetAt(kind, params, n, at, env);
+    const target = shapeTargetAt(
+        kind,
+        params,
+        n,
+        at,
+        env,
+        selected,
+        pivotMoved,
+    );
     if (!target) return null;
     switch (target.type) {
         case "handle":
@@ -170,6 +206,65 @@ export function startShapeGesture(
             };
         }
     }
+}
+
+/**
+ * Which handle is selected once `gesture` ends (#557), from `selected` at its press and `after`, the
+ * shape it left. A click on a handle that selects selects it (a double-click's first click already
+ * did); a click or drag on a handle on the selection's bar keeps it, as does a drag of the selected
+ * handle, a move or a turn, which keep every handle where it is in the shape. A drag of the
+ * selected handle that changes which handles select (an end dropped on the other closes a Line,
+ * one point fewer) clears it, as do any other click and a drag of another handle (which can add or
+ * reorder a kind's points).
+ */
+export function selectionAfter(
+    kind: AnyToolKind,
+    n: number,
+    gesture: ShapeGesture,
+    click: { readonly double: boolean } | null | undefined,
+    selected: string | null | undefined,
+    after: unknown,
+): string | null {
+    const was = selected ?? null;
+    if (gesture.type !== "handle") return click ? null : was;
+    if (gesture.key === was)
+        return selectableKeys(kind, gesture.base, n, was) ===
+            selectableKeys(kind, after, n, was)
+            ? was
+            : null;
+    const handle = kind
+        .handles(gesture.base, n, was)
+        .find((h) => h.key === gesture.key);
+    if (handle?.bar) return was;
+    return click && handle?.selects ? handle.key : null;
+}
+
+/** The keys of the handles a click selects on `params`, as text to compare */
+const selectableKeys = (
+    kind: AnyToolKind,
+    params: unknown,
+    n: number,
+    selected: string | null,
+) =>
+    params === null
+        ? ""
+        : kind
+              .handles(params, n, selected)
+              .filter((h) => h.selects)
+              .map((h) => h.key)
+              .join(" ");
+
+/** `selected` if `params` still has that handle, else null: an undo or edit can take it away */
+export function selectionIn(
+    kind: AnyToolKind,
+    params: unknown,
+    n: number,
+    selected: string | null | undefined,
+): string | null {
+    if (!selected || params === null) return null;
+    return kind.handles(params, n, selected).some((h) => h.key === selected)
+        ? selected
+        : null;
 }
 
 /** The shape as `gesture` has it with the pointer at `at`, its pivot kept */
@@ -219,7 +314,10 @@ function dragged(
             const frame = kind.frameOf(base, n);
             if (near(at, gesture.pivot, 1e-9)) return base;
             const turn = angleFrom(gesture.pivot, at) - gesture.startAngle;
-            const rotation = snapRotation(frame.rotation + turn, env);
+            // Stepped as the shape's turn reads, which for a Line counts from how it was drawn
+            const was = shapeTurn(kind, base, n);
+            const rotation =
+                frame.rotation + snapRotation(was + turn, env) - was;
             const turned = carryPivot(
                 base,
                 kind.withFrame(
@@ -311,7 +409,24 @@ export function centerPivot(gesture: ShapeGesture): unknown {
         : null;
 }
 
-/** The shape turned to `rotation` (radians) about `pivot` (the shape's own, normally) */
+/**
+ * How far the shape is turned as the editor reads it, in radians: the kind's own turn (a Line's,
+ * from how it was drawn), else its frame's
+ */
+export function shapeTurn(
+    kind: AnyToolKind,
+    params: unknown,
+    n: number,
+): number {
+    return normalizeAngle(
+        kind.turnOf?.(params, n) ?? kind.frameOf(params, n).rotation,
+    );
+}
+
+/**
+ * The shape turned to `rotation` (radians, as {@link shapeTurn} reads it) about `pivot` (the
+ * shape's own, normally)
+ */
 export function turnShape(
     kind: AnyToolKind,
     params: unknown,
@@ -321,6 +436,7 @@ export function turnShape(
     env: ToolEnv,
 ): unknown {
     const frame = kind.frameOf(params, n);
+    const by = rotation - shapeTurn(kind, params, n);
     const turned = carryPivot(
         params,
         kind.withFrame(
@@ -328,7 +444,7 @@ export function turnShape(
             n,
             rotateFrame(
                 frame,
-                normalizeAngle(rotation),
+                normalizeAngle(frame.rotation + by),
                 pivotPoint(frame, pivot),
             ),
         ),
@@ -399,7 +515,8 @@ export const ROTATION_PX_PER_DEGREE = 2;
 
 /**
  * The shape's rotation dragged `distance` px clockwise, 1° per 2 px from where it started: in 15°
- * steps as the knob turns (#403), whole degrees with `fine`, free with the Snap toggle off
+ * steps of its turn as the knob turns (#403), whole degrees with `fine`, free with the Snap toggle
+ * off
  */
 export function scrubTurn(
     kind: AnyToolKind,
@@ -412,7 +529,7 @@ export function scrubTurn(
     const turn = distance / ROTATION_PX_PER_DEGREE;
     const stepped = env.pull !== false;
     if (Math.trunc(turn) === 0 && stepped) return base;
-    const degrees = rotationDegrees(kind.frameOf(base, n).rotation) + turn;
+    const degrees = rotationDegrees(shapeTurn(kind, base, n)) + turn;
     const step = env.fine ? 1 : ROTATION_SNAP_DEGREES;
     const snapped = stepped ? Math.round(degrees / step) * step : degrees;
     return turnShape(kind, base, n, snapped * DEGREE, pivot, env);

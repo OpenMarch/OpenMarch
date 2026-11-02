@@ -106,12 +106,17 @@
             "circle": "Shape: Circle",
             "ring": "Favorites ring: hold to pick a shape, tap to keep it open",
             "apply": "Place marchers on the shape",
+            "removeLastPoint": "Shape: Remove the last point while drawing",
             "quarterTurn": "Shape: Turn 90° clockwise",
             "recalculate": "Shape: Recalculate who goes where",
             "evenOut": "Shape: Even out the outline",
+            "hideMarchers": "Shape: Hide the marchers (hold to peek, tap to keep hidden)",
+            "hideMarchersKeywords": "hide show marchers spots walks alone peek eye",
             "expand": "Shape: Expand, keeping the proportions",
             "shrink": "Shape: Shrink, keeping the proportions",
             "keywords": "shape form formation set place",
+            "line": "Shape: Line",
+            "curve": "Shape: Curve",
             "group": "Group selection",
             "groupKeywords": "group shape freeze as is keep together combine",
             "ungroup": "Shape: Ungroup",
@@ -554,6 +559,7 @@
             "fine": "fine",
             "freeRatio": "free ratio",
             "fromCenter": "from center",
+            "keepDirection": "keep direction",
             "keepRatio": "keep ratio",
             "oneAxis": "one axis",
             "snapOff": "Snap off",
@@ -2013,6 +2019,9 @@
                 "text": "Shape open at {moment}"
             },
             "drawHint": "Drag on the field to draw a {shape} · <keys></keys> to cancel",
+            "drawPointsHint": "Drag on the field to draw a {shape}, or click point after point · <keys></keys> to cancel",
+            "removePointHint": "Right-click or <keys></keys> removes the last point · Double-click to finish · <esc></esc> to cancel",
+            "removePointHintClick": "Right-click removes the last point · Double-click to finish · <esc></esc> to cancel",
             "drawnOn": "from {page}",
             "edge": {
                 "label": "Edge",
@@ -2065,6 +2074,10 @@
                 "locked": "Spacings locked together: click to unlock",
                 "unlocked": "Lock the two spacings together"
             },
+            "hideMarchers": {
+                "hide": "Hide the marchers",
+                "show": "Show the marchers"
+            },
             "evenOut": {
                 "label": "Even out",
                 "tip": "Spread the marchers as evenly as the box allows",
@@ -2074,7 +2087,9 @@
                 "already": "Who goes where is already least travel",
                 "closeUpFirst": "Recalculate who goes where: close up the empty spots first",
                 "label": "Recalculate",
-                "title": "Recalculate who goes where, by least travel"
+                "title": "Recalculate who goes where, by least travel",
+                "titleInOrder": "Recalculate who goes where, in order along the line",
+                "alreadyInOrder": "Who goes where is already in order along the line"
             },
             "scrubTip": "{label}: click to type, drag to change",
             "snapTip": "Snap to the nearest half step",
@@ -2090,7 +2105,13 @@
             },
             "steps": "steps",
             "turn": "Turn, in degrees clockwise",
-            "ungroup": "Ungroup: the marchers stay where they are"
+            "ungroup": "Ungroup: the marchers stay where they are",
+            "order": {
+                "nearest": "Least travel",
+                "keep": "Keep order",
+                "reverse": "Reverse order",
+                "label": "Who goes where"
+            }
         },
         "placed": {
             "label": "{name} · {interval} steps",
@@ -2117,7 +2138,8 @@
             "cancel": "Cancel",
             "nameLabel": "Name of the saved shape",
             "savedAs": "Saved as {name}",
-            "tip": "Save this shape to your library, starred"
+            "tip": "Save this shape to your library, starred",
+            "mixedIntervals": "Lines with mixed intervals can't be saved yet"
         },
         "saved": {
             "copyFailed": "Couldn't copy the saved shape into the show",
@@ -2264,6 +2286,81 @@
                 "label": "Line",
                 "validate": {
                     "sameSpot": "The line's ends are on the same spot"
+                },
+                "params": {
+                    "interval": "Spacing between neighbors, in steps",
+                    "cornerOff": "corner off its interval",
+                    "offsetWaits": "along the path until it's one segment (Offset)",
+                    "offsetSide": "Side to side from each marcher to the next, in steps: right is more, left below 0",
+                    "offsetUp": "Front to back from each marcher to the next, in steps: up the screen (toward the back) is more, down below 0"
+                },
+                "spacing": {
+                    "label": "Spacing",
+                    "fit": "Fit",
+                    "keep": "Keep interval",
+                    "pathStart": "Interval on the path, from the start",
+                    "pathCenter": "Interval on the path, centered",
+                    "pathEnd": "Interval on the path, from the end",
+                    "pathOffset": "Offset sets the line's length"
+                },
+                "corners": {
+                    "label": "Corners",
+                    "on": "Marcher on every corner",
+                    "off": "Intervals run around corners"
+                },
+                "lock": {
+                    "locked": "Interval locked: dragging an end keeps it. Click to unlock",
+                    "unlocked": "Lock the interval, so dragging an end keeps it"
+                },
+                "ends": {
+                    "label": "Open or closed",
+                    "open": "Open",
+                    "closed": "Closed"
+                },
+                "measured": {
+                    "offsetSegments": "Only on a one-segment line",
+                    "offsetGroups": "Only with one interval for everyone",
+                    "offsetPath": "Not with Interval on the path",
+                    "noX": "The line doesn't go side to side",
+                    "squareX": "Part of the line runs straight front to back",
+                    "turnsX": "The line turns back side to side",
+                    "noY": "The line doesn't go front to back",
+                    "squareY": "Part of the line runs straight side to side",
+                    "turnsY": "The line turns back front to back",
+                    "label": "Measured",
+                    "along": "Along the path",
+                    "straight": "Straight across",
+                    "x": "↔ Side to side",
+                    "y": "↕ Front to back",
+                    "offset": "Offset"
+                },
+                "menu": {
+                    "marcherPath": "Interval on the path runs past every point",
+                    "marcherFilled": "A filled line's spots follow its fill",
+                    "marcherTooFew": "Too few marchers for one on every point",
+                    "linePuts": "Line puts a marcher here",
+                    "lineKeeps": "Line keeps spacing even here",
+                    "lineWouldPut": "Line would put a marcher here",
+                    "lineWouldKeep": "Line would keep spacing even here",
+                    "marcher": "Marcher on this point",
+                    "marcherFollow": "Follow line's marchers",
+                    "marcherAlways": "Marcher",
+                    "marcherEven": "Even spacing",
+                    "cornerType": "Corner type",
+                    "swapHint": "Double-click a point to swap",
+                    "corner": "Corner",
+                    "smooth": "Smooth",
+                    "roundness": "Roundness",
+                    "delete": "Delete point",
+                    "fewestClosed": "A closed line needs at least three points",
+                    "fewestOpen": "A line needs at least two points",
+                    "open": "Open here",
+                    "close": "Close line",
+                    "closeFew": "A line needs three points to close",
+                    "add": "Add point here",
+                    "straight": "Straight",
+                    "curved": "Curved",
+                    "noCurve": "The line runs straight through here"
                 }
             },
             "measure": {
@@ -2314,10 +2411,15 @@
         "spacing": {
             "empty": "Enter an interval in steps",
             "noGaps": "A run needs at least 1 gap",
-            "notInterval": "\"{part}\" isn't an interval. Type steps (2), a list (4,4,2) or steps x gaps (4x3)",
+            "notInterval": "\"{part}\" isn't an interval. Type steps (2), or a count and steps for each group (2*3+4*2)",
             "notPositive": "An interval must be more than 0 steps",
             "repeating": "{needed, plural, one {# gap} other {# gaps}} needed, {given} typed: repeating from the first",
-            "unused": "{needed, plural, one {# gap} other {# gaps}} needed, {given} typed: the last {unused} unused"
+            "unused": "{needed, plural, one {# gap} other {# gaps}} needed, {given} typed: the last {unused} unused",
+            "emptyGroup": "There's an empty group in the list. Type a group between each +: 2*3+4*2",
+            "notCount": "\"{count}\" isn't a number of marchers. Type a whole count before the interval: 2*3",
+            "noMarchers": "A group needs at least 1 marcher",
+            "tooManyMarchers": "A group can have at most {max} marchers",
+            "twoRests": "Only one group can go without a count (the rest). Type a count before the others: 2*3"
         },
         "tool": {
             "moment": {
@@ -2355,6 +2457,30 @@
             "sameSpot": "{count, plural, one {# marcher would stand} other {# marchers would stand}} on the same spot",
             "stepsTooLong": "{count, plural, one {# marcher needs steps longer than the {limit} limit ({longest}, drawn in orange).} other {# marchers need steps longer than the {limit} limit (longest {longest}, drawn in orange).}} Set the limit in Field › Customize.",
             "tooClose": "{count, plural, one {# marcher is} other {# marchers are}} closer than {min, plural, one {# step} other {# steps}}"
+        },
+        "groups": {
+            "restShort": "rest",
+            "noMarchers": "No marchers left",
+            "all": "All {count}",
+            "first": "First {count}",
+            "last": "Last {count}",
+            "next": "Next {count}",
+            "grown": "Grew by {count} to take the marchers no group has",
+            "interval": "Group {n} spacing, in steps",
+            "remove": "Remove group {n}",
+            "add": "Add a group",
+            "countRest": "Group {n}: the rest of the marchers. Type a count to fix it",
+            "countDropped": "Group {n} marchers: none left for it",
+            "count": "Group {n} marchers",
+            "multiple": "Multiple intervals",
+            "menuTip": "Groups of marchers at their own intervals",
+            "menuLabel": "Multiple intervals: {groups}",
+            "menuName": "Interval groups",
+            "theRest": "the rest,",
+            "at": "at",
+            "addGroup": "Add group",
+            "list": "All groups as a list: count * steps, + between groups",
+            "countAt": "{count} at {interval}"
         }
     },
     "showChecks": {

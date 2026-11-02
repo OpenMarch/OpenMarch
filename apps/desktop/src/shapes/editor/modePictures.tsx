@@ -55,7 +55,13 @@ const DOTS: Record<DistributionMode, readonly Dot[]> = {
 };
 
 /** A mode's example: its dots in the shared frame */
-export function ModePicture({ mode }: { mode: DistributionMode }) {
+export function ModePicture({
+    mode,
+    testId = `shape-mode-preview-${mode}`,
+}: {
+    mode: DistributionMode;
+    testId?: string;
+}) {
     const { width, height } = MODE_PICTURE;
     return (
         <svg
@@ -65,7 +71,7 @@ export function ModePicture({ mode }: { mode: DistributionMode }) {
             aria-hidden
             focusable={false}
             className="shrink-0"
-            data-testid={`shape-mode-preview-${mode}`}
+            data-testid={testId}
             data-spots={DOTS[mode].length}
         >
             <rect
