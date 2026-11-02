@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 import ActionButton from "@/shortcuts/ActionButton";
+import { holdTerms } from "@/timeline/holdTerms";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { allMarchersQueryOptions } from "@/hooks/queries";
@@ -11,8 +12,8 @@ import {
 } from "@/timeline/timelineClearPage";
 
 /**
- * **Clear Page N** and, when a later page would follow back, **Clear Page N, Pages N–M follow
- * back** (#573), for all marchers (the Alignment tab's "Place all marchers ▾") or the selected ones
+ * **Clear Page N** and, when later pages would move back, **Clear Page N, Pages N–M move back
+ * too** (#573), for all marchers (the Alignment tab's "Place all marchers ▾") or the selected ones
  * (the inspector's "Place selected marchers ▾"). Mounted inside the open menu, so the follow-back
  * check runs only while it shows; the command palette reads the follow-back label only when it
  * opens (`clearPageFollowBackReader`).
@@ -54,7 +55,10 @@ export default function ClearPageMenuItems({
                 {labels ? (
                     labels.clear
                 ) : (
-                    <T keyName="toolbar.alignment.clearThisPage" />
+                    <T
+                        keyName="toolbar.alignment.clearThisPage"
+                        params={holdTerms()}
+                    />
                 )}
             </ActionButton>
             {labels?.followBack && (

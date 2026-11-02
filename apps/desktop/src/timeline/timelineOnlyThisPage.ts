@@ -31,6 +31,7 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "./timelineStore";
+import { holdTerms } from "./holdTerms";
 
 /**
  * **Only Page N** in timeline mode (UI-18 keep later pages; defined-coordinates 10, the C
@@ -167,8 +168,8 @@ export function onlyThisPageMessage(
         ? {
               message: translate(
                   "timeline.keep.followed.onePage",
-                  "Page {page} was holding this form, so it changed too",
-                  { page: first },
+                  "Page {page} had no positions of its own for these marchers, so it changed too",
+                  { ...holdTerms(), page: first },
               ),
               actionLabel: translate(
                   "timeline.keep.followed.keepOne",
@@ -179,8 +180,8 @@ export function onlyThisPageMessage(
         : {
               message: translate(
                   "timeline.keep.followed.pages",
-                  "Pages {first}–{last} were holding this form, so they changed too",
-                  { first, last },
+                  "Pages {first}–{last} had no positions of their own for these marchers, so they changed too",
+                  { ...holdTerms(), first, last },
               ),
               actionLabel: translate(
                   "timeline.keep.followed.keepPages",

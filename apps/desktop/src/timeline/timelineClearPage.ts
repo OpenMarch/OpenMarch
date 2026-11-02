@@ -25,11 +25,12 @@ import type { PageBoxRange } from "./timelinePageBoxState";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
 import { moveMarchersAndOfferFollowUp } from "./timelineMoveThemToo";
 import { toastTimelineError } from "./timelineErrorMessages";
+import type { HoldEntryState } from "./holdMenuState";
 
 /**
- * **Clear Page N** and **Clear Page N, Pages N–M follow back** (#573), worded as Remove keyframe's
+ * **Clear Page N** and **Clear Page N, Pages N–M move back too** (#573), worded as Remove keyframe's
  * pair (`timelineUnset.ts`). Clear this page takes the marchers out of every move over the page,
- * so it is Not set; the later pages that showed its spot either keep where they were (the first
+ * so it is Not defined; the later pages that showed its spot either keep where they were (the first
  * item: the next page gets a move of its own) or follow back to the page before (the second). The
  * second is offered only when some later page really takes the page's spot
  * (`clearFollowingPages`); otherwise the two would do the same.
@@ -190,7 +191,7 @@ export function clearPageLabel(
     });
 }
 
-/** "Clear Page 3, Page 4 follows back" or "Clear Page 3, Pages 4–6 follow back" */
+/** "Clear Page 3, Page 4 moves back too" or "Clear Page 3, Pages 4–6 move back too" */
 export function clearPageFollowingLabel(
     page: string,
     following: readonly string[],
@@ -201,12 +202,12 @@ export function clearPageFollowingLabel(
     return first === last
         ? translate(
               "actions.batchEdit.clearPageAndPage",
-              "Clear Page {page}, Page {next} follows back",
+              "Clear Page {page}, Page {next} moves back too",
               { page, next: first },
           )
         : translate(
               "actions.batchEdit.clearPageAndPages",
-              "Clear Page {page}, Pages {first}–{last} follow back",
+              "Clear Page {page}, Pages {first}–{last} move back too",
               { page, first, last },
           );
 }
@@ -234,7 +235,7 @@ export function clearPageScopedLabel(
 export interface ClearPageLabels {
     /** "Clear Page 3" */
     readonly clear: string;
-    /** "Clear Page 3, Pages 4–6 follow back", or null when no later page would follow back */
+    /** "Clear Page 3, Pages 4–6 move back too", or null when no later page would follow back */
     readonly followBack: string | null;
 }
 
@@ -407,7 +408,7 @@ export function useClearPagePage(
 }
 
 /**
- * The page box menu's **Clear Page N** entries (#573), next to Set as shown and Hold from previous
+ * The page box menu's **Clear Page N** entries (#573), next to Define as shown and Hold from previous
  * page: for the selected marchers, or every performer when none is selected (then the label says
  * so). The labels are read when the menu opens, from the resolver as it is then. Each runs the
  * same command as the Alignment tab and inspector items, on the right-clicked page.
@@ -418,11 +419,17 @@ export function clearPageMenu({
     pages,
     selectedIds,
     performerIds,
+    entryOn,
     run = clearPageOn,
 }: {
     pages: readonly Page[];
     selectedIds: readonly number[];
     performerIds: readonly number[];
+    /**
+     * Clear this page's entry for the selection on a page (`useHoldCommands`'s `entriesOn`): when
+     * it's checked, the entry shows ticked and off. Read only for the selected marchers
+     */
+    entryOn?: (pageId: string | number) => HoldEntryState | null | undefined;
     run?: (args: ClearPageArgs) => Promise<unknown>;
 }): TimelineClearPageMenu {
     const scope = selectedIds.length > 0 ? "selected" : "all";
@@ -447,6 +454,9 @@ export function clearPageMenu({
             return {
                 clear: say(labels.clear),
                 followBack: labels.followBack ? say(labels.followBack) : null,
+                checked:
+                    scope === "selected" &&
+                    (entryOn?.(pageId)?.checked ?? false),
             };
         },
         onClear: (pageId, followBack) => {

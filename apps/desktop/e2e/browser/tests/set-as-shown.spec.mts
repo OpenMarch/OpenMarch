@@ -107,7 +107,7 @@ async function openWith(show: Show, drillNumbers: string[]) {
     await waitForIdle(page);
 }
 
-/** Right-clicks the page box at `startBeat` and picks Set as shown. */
+/** Right-clicks the page box at `startBeat` and picks Define as shown. */
 async function setAsShown(page: Page, startBeat: number) {
     // The selection's page states settle after the field shows the selection
     await expect(async () => {
@@ -162,20 +162,20 @@ test("Set as shown on page 4, then an edit of page 2: page 3 follows, page 4 kee
     await expectCanvasMatchesShow(show);
 });
 
-test("Set as shown says why when every selected marcher is already set on the page", async ({
+test("Set as shown is checked and does nothing when every selected marcher is already Defined on the page", async ({
     show,
 }) => {
     const { page } = show;
     await openWith(show, ["T1"]);
     const before = await rows(show);
+    const entry = page.getByTestId("timeline-range-menu-set-as-shown");
     await expect(async () => {
         await pageBox(page, PAGE_4_BOX).click({ button: "right" });
-        await expect(
-            page.getByTestId("timeline-range-menu-set-as-shown"),
-        ).toHaveAttribute("aria-disabled", "true", { timeout: 1000 });
+        await expect(entry).toHaveAttribute("aria-checked", "true", {
+            timeout: 1000,
+        });
     }).toPass();
-    await expect(
-        page.getByTestId("timeline-range-menu-set-as-shown-reason"),
-    ).toContainText("Page 4");
+    await expect(entry).toHaveAttribute("data-disabled", "");
+    await entry.click({ force: true });
     expect(await rows(show)).toEqual(before);
 });

@@ -1901,7 +1901,7 @@ describeDbTests(
                 pages: ["3"],
             });
             expect(heldDroppedMessage(result.droppedHolds, fill)).toBe(
-                `${await nameOf(db, c)} is no longer Held on Page 3: it held from the starting spot, and now a move before it ends somewhere else.`,
+                `${await nameOf(db, c)} is no longer Held on Page 3: it was held from the starting spot, and now a move before it ends somewhere else.`,
             );
             await roundTrip(db, before, await snapshot(db));
         });

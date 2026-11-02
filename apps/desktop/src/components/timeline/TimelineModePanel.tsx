@@ -85,13 +85,9 @@ import { marcherNamesText } from "@/timeline/timelineKeepLater";
 import tolgee from "@/global/singletons/Tolgee";
 import type { TimelineKeyframe } from "./TimelineKeyframes";
 import { useKeyframeUnsetMenu } from "@/timeline/timelineUnset";
-import {
-    useMarcherNameOf,
-    usePageKeepStates,
-} from "@/timeline/useKeepLaterPages";
+import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 import { usePageKeepChains } from "./PageKeepChain";
-import { setAsShownMenu } from "@/timeline/timelineSetAsShown";
-import { holdFromPreviousMenu } from "@/timeline/timelineHoldFromPrevious";
+import { useHoldCommands } from "@/timeline/useHoldCommands";
 import { clearPageMenu } from "@/timeline/timelineClearPage";
 import { describeMoveClips } from "./moveClipText";
 import { useMoveNotesStore } from "@/stores/MoveNotesStore";
@@ -262,16 +258,17 @@ export default function TimelineModePanel() {
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
     // UI-18 keep later pages: the chains on the page boxes (named up to three)
-    const keepStates = usePageKeepStates(pages, selectedIdList);
+    // Holds: Define as shown (#466) and Hold from previous page (#472) on a page box, the same
+    // commands the timelineDefineAsShown and timelineHoldFromPrevious actions run on the current page
+    const {
+        keepStates,
+        defineAsShown: setAsShown,
+        holdFromPrevious,
+        entriesOn,
+    } = useHoldCommands(pages, selectedIdList, keepNameOf);
     const keepChains = usePageKeepChains(keepStates, keepNameOf);
-    // Holds (#466): Set as shown on a page box, for the selected marchers Not set there
-    const setAsShown = useMemo(() => setAsShownMenu(keepStates), [keepStates]);
-    // #472: Hold from previous page, for every selected marcher it can hold
-    const holdFromPrevious = useMemo(
-        () => holdFromPreviousMenu(keepStates, selectedIdList, keepNameOf),
-        [keepStates, selectedIdList, keepNameOf],
-    );
-    // #573: Clear Page N, for the selected marchers or every performer when none is selected
+    // #573: Clear Page N, for the selected marchers or every performer when none is selected;
+    // ticked when every selected marcher is already Not defined on the page (`entriesOn`)
     const { data: performers } = useQuery(allMarchersQueryOptions());
     const clearPage = useMemo(
         () =>
@@ -279,8 +276,9 @@ export default function TimelineModePanel() {
                 pages,
                 selectedIds: selectedIdList,
                 performerIds: (performers ?? []).map((m) => m.id),
+                entryOn: (pageId) => entriesOn(pageId)?.clearThisPage,
             }),
-        [pages, selectedIdList, performers],
+        [pages, selectedIdList, performers, entriesOn],
     );
     const { tracks: timelines, current: tracksCurrent } =
         useTimelineTracksState({

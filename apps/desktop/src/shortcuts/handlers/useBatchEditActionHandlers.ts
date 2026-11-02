@@ -18,6 +18,8 @@ import {
     clearPageScopedLabel,
     useClearPagePage,
 } from "@/timeline/timelineClearPage";
+import { holdActionOptions, useHoldCommands } from "@/timeline/useHoldCommands";
+import type { HoldEntryState } from "@/timeline/holdMenuState";
 import { useActionHandler } from "../useActionHandler";
 import { useEditorReadiness } from "./useEditorReadiness";
 
@@ -28,7 +30,12 @@ const clearPageNotify = {
     note: (message: string) => toast.message(message),
 };
 
-/** "Set all or selected marchers to the previous or next page" (`setMarchersToNeighborPage`, P7.6). */
+/**
+ * "Set all or selected marchers to the previous or next page" (`setMarchersToNeighborPage`, P7.6).
+ * Previous page is **Clear this page**: for the selection, it's off where every selected marcher
+ * is already Not defined, when it shows checked, as the hold commands are (`useHoldCommands`). On
+ * the first page it still runs and says there's no previous page.
+ */
 export function useBatchEditActionHandlers() {
     const { t } = useTolgee();
     const { selectedPage, ready, selectedMarchers } = useEditorReadiness();
@@ -41,6 +48,14 @@ export function useBatchEditActionHandlers() {
     );
     const enabled = ready && !!pages && pages.length > 0;
     const hasSelection = enabled && selectedMarchers.length > 0;
+    const idsKey = selectedMarchers.map((m) => m.id).join(",");
+    const marcherIds = useMemo(
+        () => (idsKey === "" ? [] : idsKey.split(",").map(Number)),
+        [idsKey],
+    );
+    const clearEntry = useHoldCommands(pages, marcherIds, undefined).entriesOn(
+        selectedPage?.id,
+    )?.clearThisPage;
 
     const run = (
         direction: NeighborPageDirection,
@@ -65,8 +80,9 @@ export function useBatchEditActionHandlers() {
         enabled,
         hasSelection,
         selectedPage,
-        selectedMarchers,
+        selectedIds: marcherIds,
         performers,
+        clearEntry,
     });
     useActionHandler("setAllMarchersToNextPage", () => run("next", "all"), {
         enabled,
@@ -89,20 +105,20 @@ function useClearPageActionHandlers({
     enabled,
     hasSelection,
     selectedPage,
-    selectedMarchers,
+    selectedIds,
     performers,
+    clearEntry,
 }: {
     run: (scope: NeighborPageScope, followBack: boolean) => void;
     enabled: boolean;
     hasSelection: boolean;
     selectedPage: Parameters<typeof useClearPagePage>[0];
-    selectedMarchers: readonly { readonly id: number }[];
+    /** The selected marchers, stable while the selection is */
+    selectedIds: readonly number[];
     performers: readonly { readonly id: number }[] | undefined;
+    /** Clear this page's entry for the selection on the selected page (`useHoldCommands`) */
+    clearEntry: HoldEntryState | undefined;
 }) {
-    const selectedIds = useMemo(
-        () => selectedMarchers.map((m) => m.id),
-        [selectedMarchers],
-    );
     const performerIds = useMemo(
         () => (performers ?? []).map((m) => m.id),
         [performers],
@@ -124,7 +140,13 @@ function useClearPageActionHandlers({
     useActionHandler(
         "setSelectedMarchersToPreviousPage",
         () => run("selected", false),
-        { enabled: hasSelection, label: () => plain("selected") },
+        {
+            enabled:
+                hasSelection &&
+                (clearEntry === undefined || clearEntry.changes > 0),
+            ...holdActionOptions(clearEntry),
+            label: () => plain("selected"),
+        },
     );
     useActionHandler(
         "setAllMarchersToPreviousPageAndFollowing",

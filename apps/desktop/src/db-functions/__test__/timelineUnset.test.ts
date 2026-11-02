@@ -542,7 +542,7 @@ describeDbTests(
                 });
             expect(at(PAGE2.end)).toEqual({
                 canUnset: true,
-                followingLabel: "Remove keyframe, Pages 3–4 follow back",
+                followingLabel: "Remove keyframe, Pages 3–4 move back too",
             });
             expect(at(PAGE3.end)).toEqual({
                 canUnset: false,

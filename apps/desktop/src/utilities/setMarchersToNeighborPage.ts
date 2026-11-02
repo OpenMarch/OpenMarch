@@ -15,6 +15,7 @@ import {
 import type { TimelineMoveResult } from "@/db-functions/timelineMoves";
 import type { HeldConflict } from "@/db-functions/timelineHeldMarks";
 import { joinList } from "@/timeline/timelineRangeWords";
+import { holdTerms } from "@/timeline/holdTerms";
 
 /**
  * "Set all or selected marchers to the previous or next page", the four batch-edit actions in
@@ -125,6 +126,7 @@ export async function setMarchersToNeighborPage({
         if (key)
             notify.success(
                 t(key, {
+                    ...holdTerms(),
                     count,
                     currentPage: selectedPage.name,
                     [messages.param]: neighbor!.name,

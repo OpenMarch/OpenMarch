@@ -1044,8 +1044,8 @@ describeDbTests(
                 clearPageFollowingLabel(pages[3]!.name, later, english),
             ).toBe(
                 later.length === 1
-                    ? `Clear Page ${pages[3]!.name}, Page ${later[0]} follows back`
-                    : `Clear Page ${pages[3]!.name}, Pages ${later[0]}–${later.at(-1)} follow back`,
+                    ? `Clear Page ${pages[3]!.name}, Page ${later[0]} moves back too`
+                    : `Clear Page ${pages[3]!.name}, Pages ${later[0]}–${later.at(-1)} move back too`,
             );
             expect(clearPageLabel(pages[3]!.name, english)).toBe(
                 `Clear Page ${pages[3]!.name}`,

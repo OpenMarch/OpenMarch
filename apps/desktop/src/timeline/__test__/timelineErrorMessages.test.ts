@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { holdTerms } from "../holdTerms";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -110,8 +111,13 @@ describe("timelineErrorMessage", () => {
             expect(error.message).toBe(
                 `${code}: marcher 3 is Held over [17, 25)`,
             );
+            // The hold words come from the terms block (`holdTerms`)
+            const terms: Record<string, string> = holdTerms();
             expect(timelineErrorMessage(error)).toBe(
-                TIMELINE_ERROR_MESSAGES[code]!.defaultMessage,
+                TIMELINE_ERROR_MESSAGES[code]!.defaultMessage.replace(
+                    /\{(\w+)\}/g,
+                    (_, name: string) => terms[name]!,
+                ),
             );
         },
     );
@@ -373,9 +379,9 @@ describe("en.json", () => {
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });
 
-    it("carries the Set as shown entry, the chain's name and the Delete-move toast (pre-merge review U8)", () => {
+    it("carries the Define as shown entry, the chain's name and the Delete-move toast (pre-merge review U8)", () => {
         for (const [key, text] of Object.entries({
-            "timeline.rangeMenu.setAsShown": "Set as shown",
+            "timeline.rangeMenu.setAsShown": "{defineAsShown}",
             "timeline.rangeMenu.deleteWithMoves": "Delete page and its moves",
             "timeline.keep.chain.ariaLabel": "Page {page}: {label}. {hint}",
             "timeline.moveDeleted.message": "Deleted {label}",

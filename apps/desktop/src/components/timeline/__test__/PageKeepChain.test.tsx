@@ -80,10 +80,11 @@ const PAGES = [
     page(4, "4", BEATS.slice(17, 25)),
 ];
 
-const LABEL = "2 marchers hold where Page 2 left them";
+const LABEL =
+    "2 marchers have no position of their own here, shown where Page 2 left them";
 const chain = (extra: Partial<PageKeepChain> = {}): PageKeepChain => ({
     label: LABEL,
-    hint: "Click to set them as shown here instead",
+    hint: "Click to make them defined here, where they're shown",
     menuLabel: LABEL,
     menuHint: "Right-click the page to change this",
     marcherIds: [1, 2],
@@ -157,7 +158,7 @@ describe("the chains on the page boxes", () => {
         const [button] = chains();
         expect(button).toHaveAttribute("data-chain", "follows");
         expect(button).toHaveAccessibleName(
-            `Page 3: ${LABEL}. Click to set them as shown here instead`,
+            `Page 3: ${LABEL}. Click to make them defined here, where they're shown`,
         );
         // Full size in a wide box
         expect(button!.style.width).toBe("16px");
@@ -384,7 +385,7 @@ describe("the chains on the page boxes", () => {
                     3,
                     chain({
                         menuLabel:
-                            "OT1 and OT4 hold where earlier pages left them",
+                            "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
                     }),
                 ],
             ]),
@@ -393,13 +394,13 @@ describe("the chains on the page boxes", () => {
         const box = screen.getByRole("button", { name: "Page 3" });
         expect(box).not.toHaveAttribute("aria-keyshortcuts");
         expect(box).toHaveAccessibleDescription(
-            "OT1 and OT4 hold where earlier pages left them. Right-click the page to change this",
+            "OT1 and OT4 have no position of their own here, shown where earlier pages left them. Right-click the page to change this",
         );
         fireEvent.focus(box);
         expect(
             (
                 await screen.findAllByText(
-                    "OT1 and OT4 hold where earlier pages left them",
+                    "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
                 )
             ).length,
         ).toBeGreaterThan(0);
@@ -465,12 +466,12 @@ describe("the page box menu", () => {
         expect(plain.onClear).toHaveBeenCalledExactlyOnceWith("3", false);
         cleanup();
 
-        const both = clearPage("Clear Page 3, Page 4 follows back");
+        const both = clearPage("Clear Page 3, Page 4 moves back too");
         show({ clearPage: both });
         fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
         const followBack = item("timeline-range-menu-clear-page-follow-back");
         expect(followBack?.textContent).toBe(
-            "Clear Page 3, Page 4 follows back",
+            "Clear Page 3, Page 4 moves back too",
         );
         fireEvent.click(followBack!);
         expect(both.onClear).toHaveBeenCalledExactlyOnceWith("3", true);
@@ -501,12 +502,14 @@ describe("a narrow box's words and its menu change the same marchers", () => {
     it("a linked chain sets only OT1; the box's words name the menu's OT1 and OT4", () => {
         const words = pageChainWords(state(), undefined, nameOf)!;
         expect(words.marcherIds).toEqual([1]);
-        expect(words.label).toBe("OT1 holds where Page 2 left it");
+        expect(words.label).toBe(
+            "OT1 has no position of its own here, shown where Page 2 left it",
+        );
         expect(words.menuLabel).toBe(
-            "OT1 and OT4 hold where earlier pages left them",
+            "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
         );
         expect(words.menuHint).toBe(
-            "Changes to earlier pages carry onto Page 3. Right-click the page to set them as shown instead",
+            "Changes to earlier pages carry onto Page 3. Right-click the page and choose Define as shown to keep them here",
         );
         const run = vi.fn();
         setAsShownMenu([state()], run).onSet(3);

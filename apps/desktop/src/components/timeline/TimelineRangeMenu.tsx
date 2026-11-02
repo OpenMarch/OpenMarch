@@ -22,8 +22,14 @@ import {
     UserPlusIcon,
     ScissorsIcon,
     QuestionIcon,
+    CheckIcon,
 } from "@phosphor-icons/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { holdTerms } from "@/timeline/holdTerms";
+import {
+    type HoldCommand,
+    type HoldEntryState,
+} from "@/timeline/holdMenuState";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
@@ -156,6 +162,58 @@ function MenuItemWithReason({
                 </span>
             )}
         </>
+    );
+}
+
+/**
+ * A hold command's page box entry (holds), by its name. When every selected
+ * marcher is already in the state it sets, it's checked and does nothing (a disabled checkbox
+ * entry with a check in place of its icon); otherwise it's unavailable with its reason, or runs.
+ */
+function HoldCommandItem({
+    command,
+    testId,
+    menu,
+    pageId,
+    reason,
+    icon,
+    name,
+}: {
+    command: HoldCommand;
+    testId: string;
+    menu: TimelinePageCommandMenu;
+    pageId: string | number;
+    reason: string | null;
+    icon: ReactNode;
+    /** The entry's name */
+    name: string;
+}) {
+    const entry = menu.entryOn?.(pageId);
+    const label = name;
+    if (entry?.checked)
+        return (
+            <DropdownMenu.CheckboxItem
+                data-testid={testId}
+                checked
+                disabled
+                className={TIMELINE_MENU_ITEM_CLASS}
+            >
+                <DropdownMenu.ItemIndicator className="flex">
+                    <CheckIcon size={14} />
+                </DropdownMenu.ItemIndicator>
+                {label}
+            </DropdownMenu.CheckboxItem>
+        );
+    return (
+        <MenuItemWithReason
+            testId={testId}
+            reason={reason}
+            reasonTestId={`${testId}-reason`}
+            onSelect={() => menu.onSet(pageId)}
+        >
+            {icon}
+            {label}
+        </MenuItemWithReason>
     );
 }
 
@@ -357,8 +415,8 @@ export interface TimelineAddMarchersMenu<T = TimelineBeatRange> {
      */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
     /**
-     * **Clear Page N** on a page box, and **Clear Page N, Pages N–M follow back** where a later
-     * page would (#573). Without it, the menu has no such entries.
+     * **Clear Page N** on a page box, and **Clear Page N, Pages N–M move back too** where later
+     * pages would (#573). Without it, the menu has no such entries.
      */
     readonly clearPage?: TimelineClearPageMenu;
     /**
@@ -383,14 +441,28 @@ export interface TimelinePageCommandMenu {
      */
     readonly reasonFor: (pageId: string | number) => string | null | undefined;
     readonly onSet: (pageId: string | number) => void;
+    /**
+     * What the entry would do for the selection on the page (`holdEntryStates`): checked when it
+     * would change nobody because every selected marcher is already in its state, and how many it
+     * would change for its label
+     */
+    readonly entryOn?: (pageId: string | number) => HoldEntryState | undefined;
 }
 
 /** The page box menu's **Clear Page N** entries (#573), by page id. */
 export interface TimelineClearPageMenu {
-    /** The entries' labels on the page, read when its menu opens; undefined for none (home) */
-    readonly labelsFor: (
-        pageId: string | number,
-    ) => { clear: string; followBack: string | null } | undefined;
+    /**
+     * The entries' labels on the page, read when its menu opens; undefined for none (home).
+     * `checked` when every selected marcher is already Not defined there (`holdEntryStates`): the
+     * Clear Page N entry shows ticked and off, and the follow-back entry doesn't show.
+     */
+    readonly labelsFor: (pageId: string | number) =>
+        | {
+              clear: string;
+              followBack: string | null;
+              checked?: boolean;
+          }
+        | undefined;
     readonly onClear: (pageId: string | number, followBack: boolean) => void;
 }
 
@@ -564,22 +636,19 @@ export function useTimelineRangeMenu({
                         )}
                         {setAsShownReason !== undefined && (
                             <>
-                                <MenuItemWithReason
+                                <HoldCommandItem
+                                    command="defineAsShown"
                                     testId="timeline-range-menu-set-as-shown"
+                                    menu={menu!.setAsShown!}
+                                    pageId={open.target.pageId!}
                                     reason={setAsShownReason}
-                                    reasonTestId="timeline-range-menu-set-as-shown-reason"
-                                    onSelect={() =>
-                                        menu?.setAsShown?.onSet(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                >
-                                    <DiamondIcon size={14} />
-                                    {tolgee.t(
+                                    icon={<DiamondIcon size={14} />}
+                                    name={tolgee.t(
                                         "timeline.rangeMenu.setAsShown",
-                                        "Set as shown",
+                                        "{defineAsShown}",
+                                        holdTerms(),
                                     )}
-                                </MenuItemWithReason>
+                                />
                                 {holdReason === undefined && (
                                     <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                                 )}
@@ -587,22 +656,19 @@ export function useTimelineRangeMenu({
                         )}
                         {holdReason !== undefined && (
                             <>
-                                <MenuItemWithReason
+                                <HoldCommandItem
+                                    command="holdFromPrevious"
                                     testId="timeline-range-menu-hold-from-previous"
+                                    menu={menu!.holdFromPrevious!}
+                                    pageId={open.target.pageId!}
                                     reason={holdReason}
-                                    reasonTestId="timeline-range-menu-hold-from-previous-reason"
-                                    onSelect={() =>
-                                        menu?.holdFromPrevious?.onSet(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                >
-                                    <PauseIcon size={14} />
-                                    {tolgee.t(
+                                    icon={<PauseIcon size={14} />}
+                                    name={tolgee.t(
                                         "timeline.rangeMenu.holdFromPrevious",
-                                        "Hold from previous page",
+                                        "{holdFromPrevious}",
+                                        holdTerms(),
                                     )}
-                                </MenuItemWithReason>
+                                />
                                 {clearLabels === undefined && (
                                     <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                                 )}
@@ -610,34 +676,49 @@ export function useTimelineRangeMenu({
                         )}
                         {clearLabels !== undefined && (
                             <>
-                                <DropdownMenu.Item
-                                    data-testid="timeline-range-menu-clear-page"
-                                    className={TIMELINE_MENU_ITEM_CLASS}
-                                    onSelect={() =>
-                                        menu?.clearPage?.onClear(
-                                            open.target.pageId!,
-                                            false,
-                                        )
-                                    }
-                                >
-                                    <EraserIcon size={14} />
-                                    {clearLabels.clear}
-                                </DropdownMenu.Item>
-                                {clearLabels.followBack !== null && (
+                                {clearLabels.checked ? (
+                                    <DropdownMenu.CheckboxItem
+                                        data-testid="timeline-range-menu-clear-page"
+                                        checked
+                                        disabled
+                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                    >
+                                        <DropdownMenu.ItemIndicator className="flex">
+                                            <CheckIcon size={14} />
+                                        </DropdownMenu.ItemIndicator>
+                                        {clearLabels.clear}
+                                    </DropdownMenu.CheckboxItem>
+                                ) : (
                                     <DropdownMenu.Item
-                                        data-testid="timeline-range-menu-clear-page-follow-back"
+                                        data-testid="timeline-range-menu-clear-page"
                                         className={TIMELINE_MENU_ITEM_CLASS}
                                         onSelect={() =>
                                             menu?.clearPage?.onClear(
                                                 open.target.pageId!,
-                                                true,
+                                                false,
                                             )
                                         }
                                     >
                                         <EraserIcon size={14} />
-                                        {clearLabels.followBack}
+                                        {clearLabels.clear}
                                     </DropdownMenu.Item>
                                 )}
+                                {!clearLabels.checked &&
+                                    clearLabels.followBack !== null && (
+                                        <DropdownMenu.Item
+                                            data-testid="timeline-range-menu-clear-page-follow-back"
+                                            className={TIMELINE_MENU_ITEM_CLASS}
+                                            onSelect={() =>
+                                                menu?.clearPage?.onClear(
+                                                    open.target.pageId!,
+                                                    true,
+                                                )
+                                            }
+                                        >
+                                            <EraserIcon size={14} />
+                                            {clearLabels.followBack}
+                                        </DropdownMenu.Item>
+                                    )}
                                 <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                             </>
                         )}
