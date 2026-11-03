@@ -825,7 +825,6 @@
         "exitFile": "关闭文件",
         "newFile": "新建文件",
         "openFile": "打开文件",
-        "redo": "重做",
         "saveCopyDialogDescription": "OpenMarch会自动将更改保存到当前文件。如需创建当前文件的完整副本，请使用此功能。",
         "saveFile": "保存副本",
         "saveFileCancel": "取消",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "中",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "编辑形状时",
-        "field.shapeFocus.drawing": "仅绘制时淡化",
-        "field.shapeFocus.drawing.description": "仅在绘制打开的形状时，淡化形状外的队员。",
-        "field.shapeFocus.rest": "淡化其余队员",
-        "field.shapeFocus.rest.description": "形状打开期间，一直淡化形状外的队员。",
         "field.stepSizeWarnings": "步幅警告",
         "field.stepSizeWarnings.description": "标记步幅过大、无法行进的动作，并始终显示其路径。",
         "general": "通用",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "Tolgee 上下文内翻译",
         "view3d": "3D 视图",
         "view3d.description": "3D 视图在这台电脑上的绘制方式。不会保存在表演中。",
-        "view3d.pauseWhenIdle": "画面静止时暂停绘制",
-        "view3d.pauseWhenIdle.description": "当表演暂停且镜头静止时停止绘制。",
         "view3d.quality": "画质",
         "view3d.quality.auto": "自动",
         "view3d.quality.auto.description": "从“高”开始，如果画面卡顿则切换为“低”。",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "最柔和，工作量约减半。适合较旧的电脑。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高分辨率屏幕上显示全部细节。",
-        "view3d.saveOnBattery": "使用电池时节省电量",
-        "view3d.saveOnBattery.description": "使用电池时，以标准分辨率绘制，每秒最多 30 帧。",
         "input": "触控与输入",
         "input.description": "选择平板布局（适用于手指和触控笔）或桌面布局（适用于鼠标和触控板）。",
         "input.interface": "布局",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "时间轴",
-        "masterVolume": "主音量",
         "moveDeleted": {
             "message": "已删除{label}",
             "withPages": "{count, plural, other {已删除{label} · 第{pages}页已更改}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "设为当前显示位置",
             "setAsShownNone": "所选队员均已在{page}上设定位置，或正处于动作中途",
             "setAsShownError": "将队员设为当前显示位置时出错",
-            "addSelected": "添加所选队员",
-            "deletePage": "删除此页",
-            "addSelectedNone": "请先选择队员：可在起点、尚无动作的区段，或其所在动作的轨道中选择。"
+            "deletePage": "删除此页"
         },
         "startFlagPositions": {
             "always": "始终",
@@ -2769,7 +2756,6 @@
             "label": "紧凑时间轴",
             "onTooltip": "紧凑时间轴：开。点击显示完整时间轴"
         },
-        "volumeSlider": "时间轴音量滑块",
         "zoomReset": "重置时间轴缩放",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, other {此页有#名队员使用专家模式动作，因此未被移动。请切换到专家模式进行编辑。}}",
             "switchToExpert": "切换到专家模式"
         },
-        "volume": "时间轴音量",
         "percent": "{percent}%",
         "loop": {
             "label": "循环",
@@ -3000,7 +2985,6 @@
             "range": "第{from}–{to}拍",
             "length": "{count, plural, other {#拍}}"
         },
-        "createTrack": "创建轨道",
         "playheadChip": {
             "label": "显示播放头",
             "text": "播放头"

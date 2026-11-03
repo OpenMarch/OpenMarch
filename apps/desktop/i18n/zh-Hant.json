@@ -825,7 +825,6 @@
         "exitFile": "關閉檔案",
         "newFile": "新增檔案",
         "openFile": "開啟檔案",
-        "redo": "重做",
         "saveCopyDialogDescription": "OpenMarch 會自動將你的變更儲存至目前的檔案。如果想建立目前檔案的完整副本，請使用此功能。",
         "saveFile": "儲存副本",
         "saveFileCancel": "取消",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "標準",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "編輯圖形時",
-        "field.shapeFocus.drawing": "僅在繪製時淡化",
-        "field.shapeFocus.drawing.description": "只有在你繪製開啟中的圖形時，圖形外的隊員才會淡化。",
-        "field.shapeFocus.rest": "淡化其餘隊員",
-        "field.shapeFocus.rest.description": "圖形開啟期間，圖形外的隊員會一直淡化。",
         "field.stepSizeWarnings": "步幅警告",
         "field.stepSizeWarnings.description": "標示步幅過大而無法行進的動作，並一律顯示其路徑。",
         "general": "一般",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "Tolgee 情境內翻譯",
         "view3d": "3D 檢視",
         "view3d.description": "3D 檢視在這台電腦上的繪製方式。不會儲存在表演中。",
-        "view3d.pauseWhenIdle": "畫面靜止時暫停繪製",
-        "view3d.pauseWhenIdle.description": "當表演暫停且鏡頭靜止時停止繪製。",
         "view3d.quality": "品質",
         "view3d.quality.auto": "自動",
         "view3d.quality.auto.description": "從「高」開始，若畫面不順暢則切換為「低」。",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "最柔和，負擔約減半。適合較舊的電腦。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高解析度螢幕上呈現完整細節。",
-        "view3d.saveOnBattery": "使用電池時省電",
-        "view3d.saveOnBattery.description": "使用電池時，以標準解析度每秒最多繪製 30 個畫面。",
         "input": "觸控與輸入",
         "input.description": "選擇平板版面（適用手指與觸控筆）或桌面版面（適用滑鼠與觸控板）。",
         "input.interface": "版面配置",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "時間軸",
-        "masterVolume": "主音量",
         "moveDeleted": {
             "message": "已刪除{label}",
             "withPages": "{count, plural, =1 {已刪除{label} · 第{pages}頁已變更} other {已刪除{label} · 第{pages}頁已變更}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "設為目前顯示的位置",
             "setAsShownNone": "所有選取的隊員在{page}都已設定位置，或正處於動作途中",
             "setAsShownError": "將隊員設為目前顯示的位置時發生錯誤",
-            "addSelected": "加入選取的隊員",
-            "deletePage": "刪除頁面",
-            "addSelectedNone": "請先選取隊員：在起點、在尚無動作的區段，或在他們所屬的動作中選取。"
+            "deletePage": "刪除頁面"
         },
         "startFlagPositions": {
             "always": "一律",
@@ -2769,7 +2756,6 @@
             "label": "精簡時間軸",
             "onTooltip": "精簡時間軸：開啟。按一下以顯示完整時間軸"
         },
-        "volumeSlider": "時間軸音量滑桿",
         "zoomReset": "重設時間軸縮放",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, =1 {有1名隊員在此頁使用專家模式的動作，因此未移動。請切換至專家模式以編輯。} other {有#名隊員在此頁使用專家模式的動作，因此未移動。請切換至專家模式以編輯。}}",
             "switchToExpert": "切換至專家模式"
         },
-        "volume": "時間軸音量",
         "percent": "{percent}%",
         "loop": {
             "label": "循環",
@@ -3000,7 +2985,6 @@
             "range": "第{from}–{to}拍",
             "length": "{count, plural, other {#拍}}"
         },
-        "createTrack": "建立軌道",
         "playheadChip": {
             "label": "顯示播放指示器",
             "text": "播放指示器"

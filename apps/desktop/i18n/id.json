@@ -825,7 +825,6 @@
         "exitFile": "Tutup file",
         "newFile": "File baru",
         "openFile": "Buka file",
-        "redo": "Ulangi",
         "saveCopyDialogDescription": "OpenMarch otomatis menyimpan perubahan Anda ke file saat ini. Gunakan fungsi ini jika Anda ingin membuat salinan lengkap dari file saat ini.",
         "saveFile": "Simpan salinan",
         "saveFileCancel": "Batal",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "Besar",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Kecil",
-        "field.shapeFocus": "Saat membentuk",
-        "field.shapeFocus.drawing": "Pudar hanya saat menggambar",
-        "field.shapeFocus.drawing.description": "Pemain di luar bentuk yang terbuka memudar hanya saat Anda menggambarnya.",
-        "field.shapeFocus.rest": "Pudarkan lainnya",
-        "field.shapeFocus.rest.description": "Pemain di luar bentuk yang terbuka memudar selama bentuk itu terbuka.",
         "field.stepSizeWarnings": "Peringatan ukuran langkah",
         "field.stepSizeWarnings.description": "Tandai gerakan dengan langkah yang terlalu besar untuk dimarching, dan selalu tampilkan jalurnya.",
         "general": "Umum",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "Penerjemahan dalam konteks Tolgee",
         "view3d": "Tampilan 3D",
         "view3d.description": "Cara Tampilan 3D digambar di komputer ini. Tidak disimpan dalam pertunjukan.",
-        "view3d.pauseWhenIdle": "Jeda penggambaran saat tidak ada yang bergerak",
-        "view3d.pauseWhenIdle.description": "Berhenti menggambar saat pertunjukan dijeda dan kamera diam.",
         "view3d.quality": "Kualitas",
         "view3d.quality.auto": "Otomatis",
         "view3d.quality.auto.description": "Dimulai dengan Tinggi dan beralih ke Rendah jika tampilan tersendat.",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "Paling lembut, dengan beban sekitar setengahnya. Untuk komputer lama.",
         "view3d.resolution.sharp": "Tajam",
         "view3d.resolution.sharp.description": "Detail penuh pada layar beresolusi tinggi.",
-        "view3d.saveOnBattery": "Hemat daya saat memakai baterai",
-        "view3d.saveOnBattery.description": "Saat memakai baterai, menggambar paling banyak 30 bingkai per detik pada resolusi standar.",
         "input": "Sentuh & Input",
         "input.description": "Pilih tata letak tablet (untuk jari dan pena) atau tata letak desktop (untuk mouse dan trackpad).",
         "input.interface": "Tata letak",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Linimasa",
-        "masterVolume": "Volume utama",
         "moveDeleted": {
             "message": "{label} dihapus",
             "withPages": "{count, plural, =1 {{label} dihapus · Halaman {pages} berubah} other {{label} dihapus · Halaman {pages} berubah}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "Tetapkan sesuai tampilan",
             "setAsShownNone": "Semua pemain terpilih sudah ditetapkan di {page}, atau sedang di tengah gerakan",
             "setAsShownError": "Gagal menetapkan pemain sesuai tampilan",
-            "addSelected": "Tambahkan pemain terpilih",
-            "deletePage": "Hapus halaman",
-            "addSelectedNone": "Pilih pemain terlebih dahulu: di home, di rentang yang belum memiliki linimasa, atau di linimasa tempat mereka berada."
+            "deletePage": "Hapus halaman"
         },
         "startFlagPositions": {
             "always": "Selalu",
@@ -2769,7 +2756,6 @@
             "label": "Linimasa ringkas",
             "onTooltip": "Linimasa ringkas: aktif. Klik untuk menampilkan linimasa penuh"
         },
-        "volumeSlider": "Penggeser volume linimasa",
         "zoomReset": "Atur ulang zoom linimasa",
         "playbackSpeed": {
             "current": "Kecepatan putar: {speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, =1 {Satu pemain menggunakan gerakan Expert di halaman ini, jadi tidak dipindahkan. Beralih ke Expert untuk mengeditnya.} other {# pemain menggunakan gerakan Expert di halaman ini, jadi tidak dipindahkan. Beralih ke Expert untuk mengeditnya.}}",
             "switchToExpert": "Beralih ke Expert"
         },
-        "volume": "Volume linimasa",
         "percent": "{percent}%",
         "loop": {
             "label": "Pengulangan",
@@ -3000,7 +2985,6 @@
             "range": "hitungan {from}–{to}",
             "length": "{count, plural, other {# hitungan}}"
         },
-        "createTrack": "Buat trek",
         "playheadChip": {
             "label": "Tampilkan playhead",
             "text": "Playhead"

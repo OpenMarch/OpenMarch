@@ -825,7 +825,6 @@
         "exitFile": "Isara ang file",
         "newFile": "Bagong file",
         "openFile": "Buksan ang file",
-        "redo": "I-redo",
         "saveCopyDialogDescription": "Awtomatikong sine-save ng OpenMarch ang mga pagbabago mo sa kasalukuyang file. Gamitin ito kung gusto mong gumawa ng buong kopya ng kasalukuyang file.",
         "saveFile": "I-save ang kopya",
         "saveFileCancel": "Kanselahin",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "Malaki",
         "field.labelSize.normal": "Karaniwan",
         "field.labelSize.small": "Maliit",
-        "field.shapeFocus": "Habang ine-edit ang hugis",
-        "field.shapeFocus.drawing": "Palabuin lang habang gumuguhit",
-        "field.shapeFocus.drawing.description": "Lumalabo ang mga miyembro sa labas ng bukas na hugis habang iginuguhit mo lang ito.",
-        "field.shapeFocus.rest": "Palabuin ang iba",
-        "field.shapeFocus.rest.description": "Lumalabo ang mga miyembro sa labas ng bukas na hugis hangga't bukas ito.",
         "field.stepSizeWarnings": "Babala sa laki ng hakbang",
         "field.stepSizeWarnings.description": "Markahan ang mga galaw na masyadong malaki ang hakbang para i-march, at laging ipakita ang mga daanan nila.",
         "general": "Pangkalahatan",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "In-context na pagsasalin sa Tolgee",
         "view3d": "3D View",
         "view3d.description": "Kung paano gumuguhit ang 3D View sa computer na ito. Hindi naka-save sa palabas.",
-        "view3d.pauseWhenIdle": "I-pause ang pagguhit kapag walang gumagalaw",
-        "view3d.pauseWhenIdle.description": "Humihinto sa pagguhit habang naka-pause ang palabas at hindi gumagalaw ang camera.",
         "view3d.quality": "Kalidad",
         "view3d.quality.auto": "Awtomatiko",
         "view3d.quality.auto.description": "Nagsisimula sa Mataas at lumilipat sa Mababa kapag pumapalya ang view.",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "Pinakamalabo, pero mga kalahati lang ang trabaho. Para sa mas lumang computer.",
         "view3d.resolution.sharp": "Matalas",
         "view3d.resolution.sharp.description": "Buong detalye sa mga high-resolution na screen.",
-        "view3d.saveOnBattery": "Magtipid kapag naka-baterya",
-        "view3d.saveOnBattery.description": "Kapag naka-baterya, gumuguhit nang hanggang 30 frame bawat segundo sa standard na resolusyon.",
         "input": "Touch at Input",
         "input.description": "Piliin ang tablet layout (para sa daliri at pen) o ang desktop layout (para sa mouse at trackpad).",
         "input.interface": "Layout",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Timeline",
-        "masterVolume": "Pangunahing volume",
         "moveDeleted": {
             "message": "Binura ang {label}",
             "withPages": "{count, plural, =1 {Binura ang {label} · Nagbago ang Pahina {pages}} other {Binura ang {label} · Nagbago ang mga Pahina {pages}}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "I-set ayon sa nakikita",
             "setAsShownNone": "Naka-set na sa {page} ang bawat napiling miyembro, o nasa gitna sila ng isang galaw",
             "setAsShownError": "Nagka-error sa pag-set ng mga miyembro ayon sa nakikita",
-            "addSelected": "Idagdag ang mga napiling miyembro",
-            "deletePage": "Burahin ang pahina",
-            "addSelectedNone": "Pumili muna ng mga miyembro: sa home, sa bahaging wala pang timeline, o sa timeline na kinabibilangan nila."
+            "deletePage": "Burahin ang pahina"
         },
         "startFlagPositions": {
             "always": "Palagi",
@@ -2769,7 +2756,6 @@
             "label": "Compact na timeline",
             "onTooltip": "Compact na timeline: naka-on. I-click para ipakita ang buong timeline"
         },
-        "volumeSlider": "Slider ng volume ng timeline",
         "zoomReset": "I-reset ang zoom ng timeline",
         "playbackSpeed": {
             "current": "Bilis ng playback: {speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, =1 {Isang miyembro ang gumagamit ng Expert na galaw sa pahinang ito, kaya hindi ito inilipat. Lumipat sa Expert para i-edit ito.} other {# miyembro ang gumagamit ng Expert na galaw sa pahinang ito, kaya hindi sila inilipat. Lumipat sa Expert para i-edit sila.}}",
             "switchToExpert": "Lumipat sa Expert"
         },
-        "volume": "Volume ng timeline",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -3000,7 +2985,6 @@
             "range": "bilang {from}–{to}",
             "length": "{count, plural, one {# bilang} other {# bilang}}"
         },
-        "createTrack": "Gumawa ng track",
         "playheadChip": {
             "label": "Ipakita ang playhead",
             "text": "Playhead"

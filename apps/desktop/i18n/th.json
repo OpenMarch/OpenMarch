@@ -825,7 +825,6 @@
         "exitFile": "ออกจากไฟล์",
         "newFile": "ไฟล์ใหม่",
         "openFile": "เปิดไฟล์",
-        "redo": "ทำซ้ำ",
         "saveCopyDialogDescription": "OpenMarch บันทึกการเปลี่ยนแปลงลงในไฟล์ปัจจุบันโดยอัตโนมัติ ใช้ฟังก์ชันนี้หากต้องการสร้างสำเนาเต็มของไฟล์ปัจจุบัน",
         "saveFile": "บันทึกสำเนา",
         "saveFileCancel": "ยกเลิก",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "ใหญ่",
         "field.labelSize.normal": "ปกติ",
         "field.labelSize.small": "เล็ก",
-        "field.shapeFocus": "ขณะจัดรูปทรง",
-        "field.shapeFocus.drawing": "จางเฉพาะขณะวาด",
-        "field.shapeFocus.drawing.description": "ผู้แสดงที่อยู่นอกรูปทรงที่เปิดอยู่จะจางลงเฉพาะขณะวาดรูปทรงนั้น",
-        "field.shapeFocus.rest": "จางส่วนที่เหลือ",
-        "field.shapeFocus.rest.description": "ผู้แสดงที่อยู่นอกรูปทรงที่เปิดอยู่จะจางลงตลอดเวลาที่รูปทรงนั้นเปิดอยู่",
         "field.stepSizeWarnings": "คำเตือนขนาดก้าว",
         "field.stepSizeWarnings.description": "ทำเครื่องหมายการเคลื่อนที่ที่มีก้าวใหญ่เกินกว่าจะเดินได้ และแสดงเส้นทางของการเคลื่อนที่นั้นเสมอ",
         "general": "ทั่วไป",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "การแปลในบริบทของ Tolgee",
         "view3d": "มุมมอง 3D",
         "view3d.description": "วิธีที่มุมมอง 3D วาดภาพบนคอมพิวเตอร์เครื่องนี้ ไม่ได้บันทึกไว้ในโชว์",
-        "view3d.pauseWhenIdle": "หยุดวาดเมื่อไม่มีสิ่งใดเคลื่อนไหว",
-        "view3d.pauseWhenIdle.description": "หยุดวาดขณะที่โชว์หยุดชั่วคราวและกล้องอยู่นิ่ง",
         "view3d.quality": "คุณภาพ",
         "view3d.quality.auto": "อัตโนมัติ",
         "view3d.quality.auto.description": "เริ่มที่ “สูง” และสลับเป็น “ต่ำ” หากภาพกระตุก",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "ภาพนุ่มที่สุด โดยทำงานน้อยลงประมาณครึ่งหนึ่ง สำหรับคอมพิวเตอร์รุ่นเก่า",
         "view3d.resolution.sharp": "คมชัด",
         "view3d.resolution.sharp.description": "รายละเอียดเต็มที่บนหน้าจอความละเอียดสูง",
-        "view3d.saveOnBattery": "ประหยัดพลังงานเมื่อใช้แบตเตอรี่",
-        "view3d.saveOnBattery.description": "เมื่อใช้แบตเตอรี่ จะวาดสูงสุด 30 เฟรมต่อวินาทีที่ความละเอียดมาตรฐาน",
         "input": "การสัมผัสและอินพุต",
         "input.description": "เลือกเลย์เอาต์แท็บเล็ต (สำหรับนิ้วและปากกา) หรือเลย์เอาต์เดสก์ท็อป (สำหรับเมาส์และแทร็กแพด)",
         "input.interface": "เลย์เอาต์",
@@ -2681,7 +2671,6 @@
             "spoken": "{title} {detail}"
         },
         "label": "ไทม์ไลน์",
-        "masterVolume": "ระดับเสียงหลัก",
         "moveDeleted": {
             "message": "ลบ {label} แล้ว",
             "withPages": "{count, plural, other {ลบ {label} แล้ว · หน้า {pages} เปลี่ยนไป}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "กำหนดตำแหน่งตามที่แสดง",
             "setAsShownNone": "ผู้แสดงที่เลือกทุกคนมีตำแหน่งกำหนดไว้ที่ {page} แล้ว หรืออยู่ระหว่างการเคลื่อนที่",
             "setAsShownError": "เกิดข้อผิดพลาดในการกำหนดตำแหน่งผู้แสดงตามที่แสดง",
-            "addSelected": "เพิ่มผู้แสดงที่เลือก",
-            "deletePage": "ลบหน้า",
-            "addSelectedNone": "เลือกผู้แสดงก่อน: ที่ตำแหน่งเริ่มต้น ในช่วงที่ยังไม่มีการเคลื่อนที่ หรือในการเคลื่อนที่ที่ผู้แสดงอยู่"
+            "deletePage": "ลบหน้า"
         },
         "startFlagPositions": {
             "always": "เสมอ",
@@ -2769,7 +2756,6 @@
             "label": "ไทม์ไลน์แบบย่อ",
             "onTooltip": "ไทม์ไลน์แบบย่อ: เปิด คลิกเพื่อแสดงไทม์ไลน์แบบเต็ม"
         },
-        "volumeSlider": "แถบเลื่อนระดับเสียงไทม์ไลน์",
         "zoomReset": "รีเซ็ตการซูมไทม์ไลน์",
         "playbackSpeed": {
             "current": "ความเร็วในการเล่น: {speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, other {ผู้แสดง # คนใช้การเคลื่อนที่แบบขั้นสูงในหน้านี้ จึงไม่ได้ถูกย้าย สลับไปโหมดขั้นสูงเพื่อแก้ไข}}",
             "switchToExpert": "สลับไปโหมดขั้นสูง"
         },
-        "volume": "ระดับเสียงไทม์ไลน์",
         "percent": "{percent}%",
         "loop": {
             "label": "วนซ้ำ",
@@ -3000,7 +2985,6 @@
             "range": "จังหวะที่ {from}–{to}",
             "length": "{count, plural, other {# จังหวะ}}"
         },
-        "createTrack": "สร้างแทร็ก",
         "playheadChip": {
             "label": "แสดงหัวเล่น",
             "text": "หัวเล่น"

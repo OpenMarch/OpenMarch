@@ -838,7 +838,6 @@
         "exitFile": "Exit File",
         "newFile": "New File",
         "openFile": "Open File",
-        "redo": "Redo",
         "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "saveFile": "Save Copy",
         "saveFileCancel": "Cancel",
@@ -1946,11 +1945,6 @@
         "field.labelSize.large": "Large",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Small",
-        "field.shapeFocus": "While shaping",
-        "field.shapeFocus.drawing": "Fade only while drawing",
-        "field.shapeFocus.drawing.description": "Marchers outside an open shape fade only while you draw it.",
-        "field.shapeFocus.rest": "Fade the rest",
-        "field.shapeFocus.rest.description": "Marchers outside an open shape fade for as long as it is open.",
         "field.stepSizeWarnings": "Step size warnings",
         "field.stepSizeWarnings.description": "Mark moves with steps too large to march, and always show their paths.",
         "general": "General",
@@ -2036,8 +2030,6 @@
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
         "view3d": "3D View",
         "view3d.description": "How the 3D View draws on this computer. Not saved in the show.",
-        "view3d.pauseWhenIdle": "Pause drawing when nothing moves",
-        "view3d.pauseWhenIdle.description": "Stops drawing while the show is paused and the camera is still.",
         "view3d.quality": "Quality",
         "view3d.quality.auto": "Automatic",
         "view3d.quality.auto.description": "Starts on High and switches to Low if the view stutters.",
@@ -2052,8 +2044,6 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
-        "view3d.saveOnBattery": "Save power on battery",
-        "view3d.saveOnBattery.description": "On battery, draws at most 30 frames a second at standard resolution.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -2737,7 +2727,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Timeline",
-        "masterVolume": "Master Volume",
         "moveDeleted": {
             "message": "Deleted {label}",
             "withPages": "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}"
@@ -2769,9 +2758,7 @@
             "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
             "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
             "setAsShownError": "Error setting marchers as shown",
-            "addSelected": "Add selected marchers",
-            "deletePage": "Delete page",
-            "addSelectedNone": "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
+            "deletePage": "Delete page"
         },
         "terms": {
             "clearThisPage": "Clear this page",
@@ -2841,7 +2828,6 @@
             "label": "Compact timeline",
             "onTooltip": "Compact timeline: on. Click to show the full timeline"
         },
-        "volumeSlider": "Timeline volume slider",
         "zoomReset": "Reset timeline zoom",
         "playbackSpeed": {
             "current": "Playback speed: {speed}",
@@ -2866,7 +2852,6 @@
             "lockedNotMoved": "{count, plural, =1 {One marcher uses Expert moves on this page, so it wasn't moved. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so they weren't moved. Switch to Expert to edit them.}}",
             "switchToExpert": "Switch to Expert"
         },
-        "volume": "Timeline volume",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -3073,7 +3058,6 @@
             "range": "counts {from}–{to}",
             "length": "{count, plural, one {# count} other {# counts}}"
         },
-        "createTrack": "Create Track",
         "playheadChip": {
             "label": "Show the playhead",
             "text": "Playhead"

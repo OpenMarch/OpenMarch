@@ -69,12 +69,6 @@ export function useBasicLocksHost(enabled: boolean): void {
     }, [on, rows, boxes]);
 }
 
-/** "Page 4", "Pages 4 and 6", "Pages 4, 5 and 9" (names as the boxes have them) */
-export function describePages(names: readonly string[]): string {
-    if (names.length === 1) return `Page ${names[0]}`;
-    return `Pages ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-}
-
 /** The index of `box` in the store's boxes, or -1 */
 const boxIndexOf = (
     state: Pick<BasicLocksState, "boxes">,

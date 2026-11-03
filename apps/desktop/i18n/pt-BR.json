@@ -825,7 +825,6 @@
         "exitFile": "Fechar arquivo",
         "newFile": "Novo arquivo",
         "openFile": "Abrir arquivo",
-        "redo": "Refazer",
         "saveCopyDialogDescription": "O OpenMarch salva automaticamente suas alterações no arquivo atual. Use esta função se quiser criar uma cópia completa do arquivo atual.",
         "saveFile": "Salvar cópia",
         "saveFileCancel": "Cancelar",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "Grande",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Pequeno",
-        "field.shapeFocus": "Ao editar formas",
-        "field.shapeFocus.drawing": "Esmaecer só ao desenhar",
-        "field.shapeFocus.drawing.description": "Os integrantes fora de uma forma aberta esmaecem só enquanto você a desenha.",
-        "field.shapeFocus.rest": "Esmaecer o resto",
-        "field.shapeFocus.rest.description": "Os integrantes fora de uma forma aberta esmaecem enquanto ela estiver aberta.",
         "field.stepSizeWarnings": "Avisos de tamanho de passo",
         "field.stepSizeWarnings.description": "Marca movimentos com passos grandes demais para marchar e sempre mostra seus caminhos.",
         "general": "Geral",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "Tradução no contexto com Tolgee",
         "view3d": "Visualização 3D",
         "view3d.description": "Como a Visualização 3D é desenhada neste computador. Não fica salvo no show.",
-        "view3d.pauseWhenIdle": "Pausar o desenho quando nada se move",
-        "view3d.pauseWhenIdle.description": "Para de desenhar enquanto o show está pausado e a câmera está parada.",
         "view3d.quality": "Qualidade",
         "view3d.quality.auto": "Automática",
         "view3d.quality.auto.description": "Começa em Alta e muda para Baixa se a visualização travar.",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "A menos nítida, com cerca de metade do trabalho. Para computadores mais antigos.",
         "view3d.resolution.sharp": "Nítida",
         "view3d.resolution.sharp.description": "Detalhe máximo em telas de alta resolução.",
-        "view3d.saveOnBattery": "Economizar energia na bateria",
-        "view3d.saveOnBattery.description": "Na bateria, desenha no máximo 30 quadros por segundo em resolução padrão.",
         "input": "Toque e entrada",
         "input.description": "Escolha o layout de tablet (para dedos e caneta) ou o layout de desktop (para mouse e trackpad).",
         "input.interface": "Layout",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Linha do tempo",
-        "masterVolume": "Volume geral",
         "moveDeleted": {
             "message": "Excluído: {label}",
             "withPages": "{count, plural, =1 {Excluído: {label} · Página {pages} alterada} other {Excluído: {label} · Páginas {pages} alteradas}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "Fixar como exibido",
             "setAsShownNone": "Todos os integrantes selecionados já estão fixados em {page} ou no meio de um movimento",
             "setAsShownError": "Erro ao fixar integrantes como exibidos",
-            "addSelected": "Adicionar integrantes selecionados",
-            "deletePage": "Excluir página",
-            "addSelectedNone": "Selecione integrantes primeiro: no início, em um trecho ainda sem linha do tempo ou em uma linha do tempo da qual eles façam parte."
+            "deletePage": "Excluir página"
         },
         "startFlagPositions": {
             "always": "Sempre",
@@ -2769,7 +2756,6 @@
             "label": "Linha do tempo compacta",
             "onTooltip": "Linha do tempo compacta: ativada. Clique para mostrar a linha do tempo completa"
         },
-        "volumeSlider": "Controle de volume da linha do tempo",
         "zoomReset": "Redefinir zoom da linha do tempo",
         "playbackSpeed": {
             "current": "Velocidade de reprodução: {speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, =1 {Um integrante usa movimentos do modo Avançado nesta página, então não foi movido. Mude para o Avançado para editá-lo.} other {# integrantes usam movimentos do modo Avançado nesta página, então não foram movidos. Mude para o Avançado para editá-los.}}",
             "switchToExpert": "Mudar para Avançado"
         },
-        "volume": "Volume da linha do tempo",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -3000,7 +2985,6 @@
             "range": "tempos {from}–{to}",
             "length": "{count, plural, one {# tempo} other {# tempos}}"
         },
-        "createTrack": "Criar faixa",
         "playheadChip": {
             "label": "Mostrar o indicador de reprodução",
             "text": "Indicador"

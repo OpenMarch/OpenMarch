@@ -825,7 +825,6 @@
         "exitFile": "ファイルを閉じる",
         "newFile": "新規ファイル",
         "openFile": "ファイルを開く",
-        "redo": "やり直し",
         "saveCopyDialogDescription": "OpenMarchは現在のファイルへの変更を自動的に保存します。現在のファイルの完全なコピーを作成したい場合は、この機能を使用してください。",
         "saveFile": "コピーを保存",
         "saveFileCancel": "キャンセル",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "標準",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "形状の編集中",
-        "field.shapeFocus.drawing": "描画中のみ薄くする",
-        "field.shapeFocus.drawing.description": "開いている形状の外にいるメンバーは、描画中のみ薄く表示されます。",
-        "field.shapeFocus.rest": "他を薄くする",
-        "field.shapeFocus.rest.description": "開いている形状の外にいるメンバーは、形状を開いている間ずっと薄く表示されます。",
         "field.stepSizeWarnings": "歩幅の警告",
         "field.stepSizeWarnings.description": "歩幅が大きすぎて行進できない動きに印を付け、その経路を常に表示します。",
         "general": "一般",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "Tolgeeインコンテキスト翻訳",
         "view3d": "3Dビュー",
         "view3d.description": "このコンピューターでの3Dビューの描画方法です。ショーには保存されません。",
-        "view3d.pauseWhenIdle": "動きがないときは描画を停止",
-        "view3d.pauseWhenIdle.description": "ショーが一時停止中でカメラが動いていないときは、描画を停止します。",
         "view3d.quality": "品質",
         "view3d.quality.auto": "自動",
         "view3d.quality.auto.description": "「高」で開始し、表示がカクつく場合は「低」に切り替えます。",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "最もぼやけますが、負荷は約半分です。古いコンピューター向けです。",
         "view3d.resolution.sharp": "高精細",
         "view3d.resolution.sharp.description": "高解像度の画面でも細部まで表示します。",
-        "view3d.saveOnBattery": "バッテリー使用時は省電力",
-        "view3d.saveOnBattery.description": "バッテリー使用時は、標準解像度で毎秒最大30フレームで描画します。",
         "input": "タッチと入力",
         "input.description": "タブレットレイアウト（指とペン用）またはデスクトップレイアウト（マウスとトラックパッド用）を選択します。",
         "input.interface": "レイアウト",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "タイムライン",
-        "masterVolume": "マスター音量",
         "moveDeleted": {
             "message": "{label}を削除しました",
             "withPages": "{count, plural, other {{label}を削除しました · ページ{pages}が変わりました}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "表示どおりにセット",
             "setAsShownNone": "選択したメンバーは全員、{page}ですでにセット済みか、動きの途中です",
             "setAsShownError": "メンバーを表示どおりにセットする際にエラーが発生しました",
-            "addSelected": "選択したメンバーを追加",
-            "deletePage": "ページを削除",
-            "addSelectedNone": "先にメンバーを選択してください（ホーム、まだ動きのない範囲、またはメンバーが属する動きで選択できます）。"
+            "deletePage": "ページを削除"
         },
         "startFlagPositions": {
             "always": "常時",
@@ -2769,7 +2756,6 @@
             "label": "タイムラインをコンパクト表示",
             "onTooltip": "タイムラインのコンパクト表示：オン。クリックするとタイムライン全体を表示します"
         },
-        "volumeSlider": "タイムラインの音量スライダー",
         "zoomReset": "タイムラインのズームをリセット",
         "playbackSpeed": {
             "current": "再生速度：{speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, other {このページでは#人のメンバーがエキスパートの動きを使用しているため、移動しませんでした。編集するにはエキスパートに切り替えてください。}}",
             "switchToExpert": "エキスパートに切り替え"
         },
-        "volume": "タイムラインの音量",
         "percent": "{percent}%",
         "loop": {
             "label": "ループ",
@@ -3000,7 +2985,6 @@
             "range": "カウント{from}–{to}",
             "length": "{count, plural, other {#カウント}}"
         },
-        "createTrack": "トラックを作成",
         "playheadChip": {
             "label": "再生ヘッドを表示",
             "text": "再生ヘッド"

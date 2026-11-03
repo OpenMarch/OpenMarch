@@ -141,7 +141,6 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.field.labelSize",
             "settings.field.labelPosition",
             "settings.field.stepSizeWarnings",
-            "settings.field.shapeFocus",
         ],
     },
     {
@@ -150,12 +149,7 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         Icon: CubeIcon,
         Component: View3dSettings,
         descriptionKey: "settings.view3d.description",
-        searchKeys: [
-            "settings.view3d.quality",
-            "settings.view3d.resolution",
-            "settings.view3d.pauseWhenIdle",
-            "settings.view3d.saveOnBattery",
-        ],
+        searchKeys: ["settings.view3d.quality", "settings.view3d.resolution"],
     },
     {
         id: "shortcuts",

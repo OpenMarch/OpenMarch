@@ -47,11 +47,12 @@ const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
 
 /**
  * The application menu in the app language (`./i18n`). Built again whenever the language
- * changes, since Electron can't relabel a menu in place. Role items get their labels here too:
- * Electron's own role labels are English only.
+ * changes, since Electron can't relabel a menu in place, and when the editor mode changes: in
+ * Basic the Playback menu leaves out the items whose actions Basic turns off. Role items get their
+ * labels here too: Electron's own role labels are English only.
  */
 // eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
-export function buildApplicationMenu(): Menu {
+export function buildApplicationMenu({ basic = false } = {}): Menu {
     const appName = app.name;
     const template: MenuItemConstructorOptions[] = [];
 
@@ -184,7 +185,9 @@ export function buildApplicationMenu(): Menu {
         },
         {
             label: t("menu.playback.title"),
-            submenu: PLAYBACK_MENU_ACTIONS.map(rendererActionItem),
+            submenu: PLAYBACK_MENU_ACTIONS.filter(
+                (item) => !(basic && item.expertOnly),
+            ).map(rendererActionItem),
         },
         isMacOS
             ? {

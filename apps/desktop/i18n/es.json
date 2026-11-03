@@ -825,7 +825,6 @@
         "exitFile": "Cerrar archivo",
         "newFile": "Nuevo archivo",
         "openFile": "Abrir archivo",
-        "redo": "Rehacer",
         "saveCopyDialogDescription": "OpenMarch guarda automáticamente tus cambios en el archivo actual. Usa esta función si deseas crear una copia completa de tu archivo actual.",
         "saveFile": "Guardar copia",
         "saveFileCancel": "Cancelar",
@@ -1933,11 +1932,6 @@
         "field.labelSize.large": "Grande",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Pequeño",
-        "field.shapeFocus": "Al editar formas",
-        "field.shapeFocus.drawing": "Atenuar solo al dibujar",
-        "field.shapeFocus.drawing.description": "Los integrantes fuera de una forma abierta se atenúan solo mientras la dibujas.",
-        "field.shapeFocus.rest": "Atenuar el resto",
-        "field.shapeFocus.rest.description": "Los integrantes fuera de una forma abierta se atenúan mientras siga abierta.",
         "field.stepSizeWarnings": "Avisos de tamaño de paso",
         "field.stepSizeWarnings.description": "Marca los movimientos con pasos demasiado grandes para marchar y muestra siempre sus rutas.",
         "general": "General",
@@ -2023,8 +2017,6 @@
         "tolgeeDevToolsToggle": "Traducción en contexto de Tolgee",
         "view3d": "Vista 3D",
         "view3d.description": "Cómo se dibuja la Vista 3D en esta computadora. No se guarda en el show.",
-        "view3d.pauseWhenIdle": "Pausar el dibujo si nada se mueve",
-        "view3d.pauseWhenIdle.description": "Deja de dibujar mientras el show está en pausa y la cámara está quieta.",
         "view3d.quality": "Calidad",
         "view3d.quality.auto": "Automática",
         "view3d.quality.auto.description": "Empieza en Alta y cambia a Baja si la vista se traba.",
@@ -2039,8 +2031,6 @@
         "view3d.resolution.fast.description": "La menos nítida, con alrededor de la mitad del trabajo. Para computadoras antiguas.",
         "view3d.resolution.sharp": "Nítida",
         "view3d.resolution.sharp.description": "Máximo detalle en pantallas de alta resolución.",
-        "view3d.saveOnBattery": "Ahorrar energía con batería",
-        "view3d.saveOnBattery.description": "Con batería, dibuja como máximo 30 fotogramas por segundo a resolución estándar.",
         "input": "Táctil y entrada",
         "input.description": "Elige el diseño para tableta (dedos y lápiz) o el diseño de escritorio (mouse y trackpad).",
         "input.interface": "Diseño",
@@ -2681,7 +2671,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Línea de tiempo",
-        "masterVolume": "Volumen principal",
         "moveDeleted": {
             "message": "Se eliminó {label}",
             "withPages": "{count, plural, =1 {Se eliminó {label} · Cambió la página {pages}} other {Se eliminó {label} · Cambiaron las páginas {pages}}}"
@@ -2710,9 +2699,7 @@
             "setAsShown": "Fijar como se muestra",
             "setAsShownNone": "Todos los integrantes seleccionados ya están fijos en {page} o están a mitad de un movimiento",
             "setAsShownError": "Error al fijar los integrantes como se muestran",
-            "addSelected": "Agregar integrantes seleccionados",
-            "deletePage": "Eliminar página",
-            "addSelectedNone": "Primero selecciona integrantes: en el inicio, en un tramo que aún no tiene movimiento o en un movimiento al que pertenezcan."
+            "deletePage": "Eliminar página"
         },
         "startFlagPositions": {
             "always": "Siempre",
@@ -2769,7 +2756,6 @@
             "label": "Línea de tiempo compacta",
             "onTooltip": "Línea de tiempo compacta: activada. Haz clic para mostrar la línea de tiempo completa"
         },
-        "volumeSlider": "Control deslizante de volumen de la línea de tiempo",
         "zoomReset": "Restablecer zoom de la línea de tiempo",
         "playbackSpeed": {
             "current": "Velocidad de reproducción: {speed}",
@@ -2794,7 +2780,6 @@
             "lockedNotMoved": "{count, plural, =1 {Un integrante usa movimientos de Experto en esta página, así que no se movió. Cambia a Experto para editarlo.} other {# integrantes usan movimientos de Experto en esta página, así que no se movieron. Cambia a Experto para editarlos.}}",
             "switchToExpert": "Cambiar a Experto"
         },
-        "volume": "Volumen de la línea de tiempo",
         "percent": "{percent}%",
         "loop": {
             "label": "Bucle",
@@ -3000,7 +2985,6 @@
             "range": "tiempos {from}–{to}",
             "length": "{count, plural, one {# tiempo} other {# tiempos}}"
         },
-        "createTrack": "Crear pista",
         "playheadChip": {
             "label": "Mostrar el cabezal de reproducción",
             "text": "Cabezal"
