@@ -3,6 +3,7 @@ import { CheckCircleIcon, CircleIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import { APP_LANGUAGES } from "@/utilities/languages";
+import TranslationHelpNote from "@/components/i18n/TranslationHelpNote";
 
 /**
  * The app's languages, each named in itself. Choosing one switches the app
@@ -60,9 +61,14 @@ export default function LanguageStep({
                     );
                 })}
             </RadioGroup.Root>
-            <p className="text-sub text-text-subtitle text-center">
-                <T keyName="welcomeFlow.changeLater" />
-            </p>
+            <div className="text-sub text-text-subtitle flex flex-col gap-4 text-center">
+                <p>
+                    <TranslationHelpNote language={value} />
+                </p>
+                <p>
+                    <T keyName="welcomeFlow.changeLater" />
+                </p>
+            </div>
         </div>
     );
 }

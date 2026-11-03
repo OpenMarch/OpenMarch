@@ -15,9 +15,27 @@ import es from "../../i18n/es.json";
 import fr from "../../i18n/fr.json";
 import ja from "../../i18n/ja.json";
 import ptBR from "../../i18n/pt-BR.json";
+import id from "../../i18n/id.json";
+import ms from "../../i18n/ms.json";
+import fil from "../../i18n/fil.json";
+import zhHans from "../../i18n/zh-Hans.json";
+import zhHant from "../../i18n/zh-Hant.json";
+import th from "../../i18n/th.json";
 
 /** The app's languages; the same codes as `src/utilities/languages.ts`. */
-export const MAIN_LANGUAGES = ["en", "es", "fr", "pt-BR", "ja"] as const;
+export const MAIN_LANGUAGES = [
+    "en",
+    "es",
+    "fr",
+    "pt-BR",
+    "id",
+    "ms",
+    "fil",
+    "ja",
+    "zh-Hans",
+    "zh-Hant",
+    "th",
+] as const;
 export type MainLanguage = (typeof MAIN_LANGUAGES)[number];
 
 const FALLBACK: MainLanguage = "en";
@@ -27,7 +45,19 @@ const tolgee = TolgeeCore()
     .init({
         language: FALLBACK,
         fallbackLanguage: FALLBACK,
-        staticData: { en, es, fr, ja, "pt-BR": ptBR },
+        staticData: {
+            en,
+            es,
+            fr,
+            ja,
+            "pt-BR": ptBR,
+            id,
+            ms,
+            fil,
+            "zh-Hans": zhHans,
+            "zh-Hant": zhHant,
+            th,
+        },
     });
 
 let current: MainLanguage = FALLBACK;
