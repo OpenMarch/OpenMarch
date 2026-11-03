@@ -3050,7 +3050,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
               ? [`♩${from}→${Math.round(s.bpmTo)}`, `♩${from}`]
               : [`♩${Math.round(s.bpmFrom * 10) / 10}`, `♩${from}`];
         const y = yOfBpm(uneven ? hi : s.bpmFrom);
-        const top = y < TEMPO.top + 16 ? y + 3 : y - 14;
+        const below = y < TEMPO.top + 16;
+        const top = below ? y + 3 : y - 14;
         const boxes = texts
             .map((text) => ({
                 x: left,
@@ -3069,8 +3070,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     key={`t-${s.from}`}
                     type="button"
                     data-testid="tempo-label"
-                    className="text-accent absolute cursor-text rounded-[2px] text-[10px] leading-[12px] font-medium whitespace-nowrap hover:underline focus-visible:underline"
-                    style={{ left: box.x, top: box.y }}
+                    // the text is tiny, so the button reaches past it: to the right, and away
+                    // from the line, leaving the line and the point's dot their own grab
+                    // (owner, 2026-11-03: clicking the number didn't seem to work)
+                    className={clsx(
+                        "text-accent hover:bg-accent/15 focus-visible:bg-accent/15 absolute cursor-text rounded-[3px] pr-6 text-[10px] leading-[12px] font-medium whitespace-nowrap",
+                        below ? "pb-4" : "pt-4",
+                    )}
+                    style={{ left: box.x, top: below ? box.y : box.y - 4 }}
                     title={t("tempoMode.band.lane.tempoLabelTitle", {
                         range: rangeLabel(s.from, s.to),
                     })}
