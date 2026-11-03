@@ -147,8 +147,6 @@
             "openSettings": "設定…",
             "openView3d": "開啟3D檢視",
             "openView3dKeywords": "3d 三維 立體 體育場 球場 場館 視窗 three dimensional stadium venue window",
-            "runFieldBenchmark": "執行場地效能測試",
-            "runFieldBenchmarkKeywords": "效能 fps 速度 測試 影格速率 幀率 performance speed test frame rate",
             "showShortcuts": "鍵盤快速鍵",
             "hideStartFlagPositions": "隱藏起始標記位置",
             "showStartFlagPositions": "顯示起始標記位置",
@@ -578,14 +576,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "已複製",
-            "copy": "複製為 Markdown",
-            "devBuild": "這是開發版本。只有正式版本測得的數值才有參考價值。",
-            "intro": "對開啟的表演依序進行播放、拖曳瀏覽、縮放與平移各數秒，並測量每一個影格。執行期間請讓此視窗保持在最前方，且不要進行任何操作。",
-            "run": "執行",
-            "running": "執行中：{kind}…",
-            "softwareGl": "此處以軟體執行圖形運算，因此這些數值僅為下限。",
-            "title": "場地效能測試"
+            "running": "執行中：{kind}…"
         },
         "gestureChip": {
             "equalSpacings": "等距",
@@ -624,15 +615,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "方向",
-            "sections": "聲部"
-        },
-        "comingSoon": "即將推出",
-        "direction": "場地方向",
         "label": "場地顯示",
-        "sections": "顯示的聲部",
-        "comingSoonLabel": "{label}：即將推出",
         "valueLabel": "{label}：{value}"
     },
     "fieldProperties": {
@@ -3298,16 +3281,11 @@
             "freeCamera": "自由視角"
         },
         "readout": {
-            "camera": "視線高 {eye} · 距中心 {distance}",
             "count": "第 {count} 拍，共 {total} 拍",
             "noPages": "沒有頁",
             "page": "第 {page} 頁",
             "pastEnd": "結束 +{count}",
             "showTime": "表演時間"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D 檢視 — {showName}",
@@ -3627,9 +3605,7 @@
             "in": "放大",
             "out": "縮小",
             "reset": "縮放{zoom}%，重設縮放並置中",
-            "resetAndCenter": "重設縮放並置中",
-            "perspective": "透視",
-            "perspectiveComingSoon": "透視（即將推出）"
+            "resetAndCenter": "重設縮放並置中"
         }
     },
     "errorBoundary": {

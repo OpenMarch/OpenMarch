@@ -147,8 +147,6 @@
             "openSettings": "Configuración…",
             "openView3d": "Abrir vista 3D",
             "openView3dKeywords": "3d tres dimensiones tridimensional estadio sede recinto ventana three dimensional stadium venue window",
-            "runFieldBenchmark": "Ejecutar prueba de rendimiento del campo",
-            "runFieldBenchmarkKeywords": "rendimiento fps velocidad prueba fotogramas por segundo tasa de fotogramas performance speed test frame rate",
             "showShortcuts": "Atajos de teclado",
             "hideStartFlagPositions": "Ocultar posiciones del marcador de inicio",
             "showStartFlagPositions": "Mostrar posiciones del marcador de inicio",
@@ -578,14 +576,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copiado",
-            "copy": "Copiar como Markdown",
-            "devBuild": "Esta es una compilación de desarrollo. Solo cuentan los números de una compilación de producción.",
-            "intro": "Reproduce, recorre, hace zoom y desplaza el show abierto durante unos segundos cada uno y mide cada fotograma. Mantén esta ventana al frente y no toques nada mientras se ejecuta.",
-            "run": "Ejecutar",
-            "running": "Ejecutando: {kind}…",
-            "softwareGl": "Aquí los gráficos se procesan por software, así que estos números son un límite inferior.",
-            "title": "Prueba de rendimiento del campo"
+            "running": "Ejecutando: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "espaciado uniforme",
@@ -624,15 +615,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Dirección",
-            "sections": "Secciones"
-        },
-        "comingSoon": "Próximamente",
-        "direction": "Dirección del campo",
         "label": "Visualización del campo",
-        "sections": "Secciones visibles",
-        "comingSoonLabel": "{label}: Próximamente",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -3298,16 +3281,11 @@
             "freeCamera": "Vista libre"
         },
         "readout": {
-            "camera": "Altura de ojos {eye} · {distance} al centro",
             "count": "Tiempo {count} de {total}",
             "noPages": "Sin páginas",
             "page": "Página {page}",
             "pastEnd": "FIN +{count}",
             "showTime": "Tiempo del show"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Vista 3D — {showName}",
@@ -3627,9 +3605,7 @@
             "in": "Acercar",
             "out": "Alejar",
             "reset": "Zoom {zoom}%, restablecer zoom y centrar",
-            "resetAndCenter": "Restablecer zoom y centrar",
-            "perspective": "Perspectiva",
-            "perspectiveComingSoon": "Perspectiva (próximamente)"
+            "resetAndCenter": "Restablecer zoom y centrar"
         }
     },
     "errorBoundary": {

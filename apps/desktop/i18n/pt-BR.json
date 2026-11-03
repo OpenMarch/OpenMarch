@@ -147,8 +147,6 @@
             "openSettings": "Configurações…",
             "openView3d": "Abrir Visualização 3D",
             "openView3dKeywords": "3d tridimensional três dimensões estádio arena local janela three dimensional stadium venue window",
-            "runFieldBenchmark": "Testar desempenho do campo",
-            "runFieldBenchmarkKeywords": "desempenho fps velocidade teste taxa de quadros quadros por segundo benchmark performance speed test frame rate",
             "showShortcuts": "Atalhos de teclado",
             "hideStartFlagPositions": "Ocultar posições do marcador de início",
             "showStartFlagPositions": "Mostrar posições do marcador de início",
@@ -578,14 +576,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copiado",
-            "copy": "Copiar como Markdown",
-            "devBuild": "Esta é uma versão de desenvolvimento. Só valem os números de uma versão de produção.",
-            "intro": "Reproduz, percorre, aplica zoom e desloca o show aberto por alguns segundos cada e mede cada quadro. Mantenha esta janela em primeiro plano e não toque em nada durante a execução.",
-            "run": "Executar",
-            "running": "Executando: {kind}…",
-            "softwareGl": "Aqui os gráficos são processados por software, então estes números são um limite inferior.",
-            "title": "Benchmark do campo"
+            "running": "Executando: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "espaçamentos iguais",
@@ -624,15 +615,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direção",
-            "sections": "Naipes"
-        },
-        "comingSoon": "Em breve",
-        "direction": "Direção do campo",
         "label": "Exibição do campo",
-        "sections": "Naipes visíveis",
-        "comingSoonLabel": "{label}: em breve",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -3298,16 +3281,11 @@
             "freeCamera": "Vista livre"
         },
         "readout": {
-            "camera": "Olhos a {eye} · {distance} do centro",
             "count": "Tempo {count} de {total}",
             "noPages": "Nenhuma página",
             "page": "Página {page}",
             "pastEnd": "FIM +{count}",
             "showTime": "Tempo decorrido do show"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Visualização 3D — {showName}",
@@ -3627,9 +3605,7 @@
             "in": "Aumentar zoom",
             "out": "Diminuir zoom",
             "reset": "Zoom {zoom}%, redefinir zoom e centralizar",
-            "resetAndCenter": "Redefinir zoom e centralizar",
-            "perspective": "Perspectiva",
-            "perspectiveComingSoon": "Perspectiva (em breve)"
+            "resetAndCenter": "Redefinir zoom e centralizar"
         }
     },
     "errorBoundary": {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import clsx from "clsx";
-import { PlusIcon, MinusIcon, PerspectiveIcon } from "@phosphor-icons/react";
+import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import { Slider } from "@openmarch/ui";
 import { useTranslate } from "@tolgee/react";
 import { MAX_ZOOM, MIN_ZOOM } from "@/field/editor/view";
@@ -156,14 +156,6 @@ export default function CanvasZoomControls({
     const getMaxZoom = () => MAX_ZOOM * 100;
     const getMinZoom = () => MIN_ZOOM * 100;
 
-    // Tooltip for the hamburger icon (placeholder)
-    // const NavigationTooltip = () => (
-    //     <div className="bg-bg-1 pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded-md px-3 py-1.5 text-sm whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-    //         Zoom and navigation
-    //         <div className="border-t-bg-1 absolute top-full left-1/2 -translate-x-1/2 transform border-x-4 border-t-4 border-x-transparent" />
-    //     </div>
-    // );
-
     return (
         <div
             className={clsx(
@@ -185,28 +177,6 @@ export default function CanvasZoomControls({
                 />
             </div>
             <div className="flex items-stretch justify-between">
-                {/* Hamburger Icon (placeholder for future menu) */}
-                {/* <button
-                className="text-text hover:bg-fg-2 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
-                title="Zoom and navigation"
-                disabled={!canvas}
-            >
-                <List size={20} />
-                <NavigationTooltip />
-            </button> */}
-
-                {/* Perspective: a placeholder until the field can tilt again */}
-                <button
-                    type="button"
-                    data-testid="field-perspective"
-                    disabled
-                    aria-label={t("canvas.zoom.perspective")}
-                    title={t("canvas.zoom.perspectiveComingSoon")}
-                    className="border-stroke text-text flex items-center justify-center border-r px-8 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    <PerspectiveIcon size={16} />
-                </button>
-
                 {/* Zoom Out Button */}
                 <button
                     onClick={handleZoomOut}

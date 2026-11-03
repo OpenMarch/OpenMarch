@@ -147,8 +147,6 @@
             "openSettings": "Mga setting…",
             "openView3d": "Buksan ang 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window tatlong dimensyon istadyum lugar bintana",
-            "runFieldBenchmark": "Patakbuhin ang field benchmark",
-            "runFieldBenchmarkKeywords": "performance fps speed test frame rate bilis pagganap pagsubok",
             "showShortcuts": "Mga keyboard shortcut",
             "hideStartFlagPositions": "Itago ang mga posisyon sa panimulang marka",
             "showStartFlagPositions": "Ipakita ang mga posisyon sa panimulang marka",
@@ -578,14 +576,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Nakopya",
-            "copy": "Kopyahin bilang Markdown",
-            "devBuild": "Isa itong development build. Ang mga numero lang mula sa production build ang may saysay.",
-            "intro": "Pine-play, sini-scrub, ini-zoom at pina-pan ang nakabukas na palabas nang ilang segundo bawat isa, at sinusukat ang bawat frame. Panatilihing nasa harap ang window na ito at huwag galawin ang kahit ano habang tumatakbo ito.",
-            "run": "Patakbuhin",
-            "running": "Tumatakbo: {kind}…",
-            "softwareGl": "Sa software tumatakbo ang graphics dito, kaya pinakamababang halaga lang ang mga numerong ito.",
-            "title": "Benchmark ng field"
+            "running": "Tumatakbo: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "pantay na pagitan",
@@ -624,15 +615,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direksyon",
-            "sections": "Seksyon"
-        },
-        "comingSoon": "Malapit na",
-        "direction": "Direksyon ng field",
         "label": "Display ng field",
-        "sections": "Mga nakikitang seksyon",
-        "comingSoonLabel": "{label}: Malapit na",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -3298,16 +3281,11 @@
             "freeCamera": "Malayang view"
         },
         "readout": {
-            "camera": "Taas ng mata {eye} · {distance} mula sa gitna",
             "count": "Bilang {count} ng {total}",
             "noPages": "Walang pahina",
             "page": "Pahina {page}",
             "pastEnd": "WAKAS +{count}",
             "showTime": "Oras ng palabas"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D View — {showName}",
@@ -3627,9 +3605,7 @@
             "in": "Mag-zoom in",
             "out": "Mag-zoom out",
             "reset": "Zoom {zoom}%, i-reset ang zoom at igitna",
-            "resetAndCenter": "I-reset ang zoom at igitna",
-            "perspective": "Perspektiba",
-            "perspectiveComingSoon": "Perspektiba (malapit na)"
+            "resetAndCenter": "I-reset ang zoom at igitna"
         }
     },
     "errorBoundary": {

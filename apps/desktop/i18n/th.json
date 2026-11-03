@@ -147,8 +147,6 @@
             "openSettings": "การตั้งค่า…",
             "openView3d": "เปิดมุมมอง 3 มิติ",
             "openView3dKeywords": "3d 3มิติ สามมิติ สนามกีฬา สเตเดียม สถานที่ หน้าต่าง three dimensional stadium venue window",
-            "runFieldBenchmark": "ทดสอบประสิทธิภาพสนาม",
-            "runFieldBenchmarkKeywords": "ประสิทธิภาพ fps ความเร็ว ทดสอบ อัตราเฟรม เฟรมเรต เบนช์มาร์ก performance speed test frame rate benchmark",
             "showShortcuts": "แป้นพิมพ์ลัด",
             "hideStartFlagPositions": "ซ่อนตำแหน่งที่ธงเริ่มต้น",
             "showStartFlagPositions": "แสดงตำแหน่งที่ธงเริ่มต้น",
@@ -578,14 +576,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "คัดลอกแล้ว",
-            "copy": "คัดลอกเป็น Markdown",
-            "devBuild": "นี่คือบิลด์สำหรับการพัฒนา ใช้ได้เฉพาะตัวเลขจากบิลด์ที่เผยแพร่จริงเท่านั้น",
-            "intro": "เล่น เลื่อนดู ซูม และแพนโชว์ที่เปิดอยู่อย่างละไม่กี่วินาที และวัดผลทุกเฟรม ให้หน้าต่างนี้อยู่ด้านหน้าและอย่าแตะต้องสิ่งใดระหว่างที่กำลังทำงาน",
-            "run": "เรียกใช้",
-            "running": "กำลังทดสอบ: {kind}…",
-            "softwareGl": "เครื่องนี้ประมวลผลกราฟิกด้วยซอฟต์แวร์ ตัวเลขเหล่านี้จึงเป็นเพียงค่าขั้นต่ำ",
-            "title": "ทดสอบประสิทธิภาพสนาม"
+            "running": "กำลังทดสอบ: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "ระยะเท่ากัน",
@@ -624,15 +615,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "ทิศทาง",
-            "sections": "กลุ่มเครื่อง"
-        },
-        "comingSoon": "เร็วๆ นี้",
-        "direction": "ทิศทางสนาม",
         "label": "การแสดงผลสนาม",
-        "sections": "กลุ่มเครื่องที่แสดง",
-        "comingSoonLabel": "{label}: เร็วๆ นี้",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -3298,16 +3281,11 @@
             "freeCamera": "มุมมองอิสระ"
         },
         "readout": {
-            "camera": "ระดับสายตา {eye} · ห่างจากกึ่งกลาง {distance}",
             "count": "จังหวะ {count} จาก {total}",
             "noPages": "ไม่มีหน้า",
             "page": "หน้า {page}",
             "pastEnd": "จบ +{count}",
             "showTime": "เวลาโชว์"
-        },
-        "unit": {
-            "feet": "{value} ฟุต",
-            "meters": "{value} m"
         },
         "window": {
             "title": "มุมมอง 3D — {showName}",
@@ -3627,9 +3605,7 @@
             "in": "ซูมเข้า",
             "out": "ซูมออก",
             "reset": "ซูม {zoom}% รีเซ็ตการซูมและจัดกึ่งกลาง",
-            "resetAndCenter": "รีเซ็ตการซูมและจัดกึ่งกลาง",
-            "perspective": "มุมมองเปอร์สเปกทีฟ",
-            "perspectiveComingSoon": "มุมมองเปอร์สเปกทีฟ (เร็วๆ นี้)"
+            "resetAndCenter": "รีเซ็ตการซูมและจัดกึ่งกลาง"
         }
     },
     "errorBoundary": {

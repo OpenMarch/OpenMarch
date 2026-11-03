@@ -147,8 +147,6 @@
             "openSettings": "Paramètres…",
             "openView3d": "Ouvrir la vue 3D",
             "openView3dKeywords": "3d trois dimensions tridimensionnel stade salle lieu fenêtre vue three dimensional stadium venue window",
-            "runFieldBenchmark": "Lancer le test de performance du terrain",
-            "runFieldBenchmarkKeywords": "performance performances fps vitesse test images par seconde fréquence d’images benchmark speed frame rate",
             "showShortcuts": "Raccourcis clavier",
             "hideStartFlagPositions": "Masquer les positions au repère de début",
             "showStartFlagPositions": "Afficher les positions au repère de début",
@@ -578,14 +576,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copié",
-            "copy": "Copier en Markdown",
-            "devBuild": "Ceci est une version de développement. Seules les valeurs d’une version de production comptent.",
-            "intro": "Lance la lecture, déplace la tête de lecture, zoome et fait défiler le spectacle ouvert, quelques secondes chacun, en mesurant chaque image. Gardez cette fenêtre au premier plan et ne touchez à rien pendant le test.",
-            "run": "Lancer",
-            "running": "En cours : {kind}…",
-            "softwareGl": "Le rendu graphique est logiciel ici, ces valeurs sont donc un minimum.",
-            "title": "Benchmark du terrain"
+            "running": "En cours : {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "espacements égaux",
@@ -624,15 +615,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Orientation",
-            "sections": "Pupitres"
-        },
-        "comingSoon": "Bientôt disponible",
-        "direction": "Orientation du terrain",
         "label": "Affichage du terrain",
-        "sections": "Pupitres visibles",
-        "comingSoonLabel": "{label} : bientôt disponible",
         "valueLabel": "{label} : {value}"
     },
     "fieldProperties": {
@@ -3298,16 +3281,11 @@
             "freeCamera": "Vue libre"
         },
         "readout": {
-            "camera": "Œil à {eye} · {distance} du centre",
             "count": "Temps {count} sur {total}",
             "noPages": "Aucune page",
             "page": "Page {page}",
             "pastEnd": "FIN +{count}",
             "showTime": "Temps écoulé"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Vue 3D — {showName}",
@@ -3627,9 +3605,7 @@
             "in": "Zoom avant",
             "out": "Zoom arrière",
             "reset": "Zoom {zoom} %, réinitialiser le zoom et centrer",
-            "resetAndCenter": "Réinitialiser le zoom et centrer",
-            "perspective": "Perspective",
-            "perspectiveComingSoon": "Perspective (bientôt disponible)"
+            "resetAndCenter": "Réinitialiser le zoom et centrer"
         }
     },
     "errorBoundary": {

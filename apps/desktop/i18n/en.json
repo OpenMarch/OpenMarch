@@ -160,8 +160,6 @@
             "openSettings": "Settings…",
             "openView3d": "Open 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window",
-            "runFieldBenchmark": "Run field benchmark",
-            "runFieldBenchmarkKeywords": "performance fps speed test frame rate",
             "showShortcuts": "Keyboard shortcuts",
             "hideStartFlagPositions": "Hide start flag positions",
             "showStartFlagPositions": "Show start flag positions",
@@ -591,14 +589,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copied",
-            "copy": "Copy as Markdown",
-            "devBuild": "This is a development build. Only numbers from a production build count.",
-            "intro": "Plays, scrubs, zooms and pans the open show for a few seconds each and measures every frame. Keep this window in front and don't touch anything while it runs.",
-            "run": "Run",
-            "running": "Running: {kind}…",
-            "softwareGl": "Graphics run in software here, so these numbers are a lower bound.",
-            "title": "Field benchmark"
+            "running": "Running: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "equal spacings",
@@ -637,15 +628,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direction",
-            "sections": "Sections"
-        },
-        "comingSoon": "Coming soon",
-        "direction": "Field direction",
         "label": "Field display",
-        "sections": "Visible sections",
-        "comingSoonLabel": "{label}: Coming soon",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -3384,16 +3367,11 @@
             "freeCamera": "Free view"
         },
         "readout": {
-            "camera": "Eye {eye} up · {distance} to center",
             "count": "Count {count} of {total}",
             "noPages": "No pages",
             "page": "Page {page}",
             "pastEnd": "END +{count}",
             "showTime": "Show time"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D View — {showName}",
@@ -3713,9 +3691,7 @@
             "in": "Zoom in",
             "out": "Zoom out",
             "reset": "Zoom {zoom}%, reset zoom and center",
-            "resetAndCenter": "Reset Zoom and Center",
-            "perspective": "Perspective",
-            "perspectiveComingSoon": "Perspective (coming soon)"
+            "resetAndCenter": "Reset Zoom and Center"
         }
     },
     "errorBoundary": {
