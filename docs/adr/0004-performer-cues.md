@@ -5,6 +5,13 @@
   per-channel bake, GPU compose pass, prop bones and in-repo renderer were
   accepted on 2026-10-16 with the layered renderer (#120), merged ahead of the
   integrated-GPU run (C4.7), which now confirms or tunes them.
+- Convergence (2026-11-03): the compiler (`packages/core/src/cues`) shipped
+  and drives the 3D View's marcher motion with show defaults only, including
+  automatic mark time while the band moves (a Feet show default,
+  `CueShowDefaults.holdWhileBandMoves`). Cue storage (D-1 to D-5's tables),
+  Visuals mode and item placement (holders, artwork slots, put-down) are
+  parked: the code is on branch `archive/pre-convergence`, and their
+  migrations stay until the fork's migrations are collapsed.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
   channels, and item tables beside cues; 2026-10-15: timelines only, and
