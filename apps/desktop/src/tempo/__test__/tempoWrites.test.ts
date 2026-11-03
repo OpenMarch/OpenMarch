@@ -131,10 +131,7 @@ describeDbTests("tempo mode count edits", (it) => {
 });
 
 /** The spec beats whose flag `column` is set */
-const flagged = async (
-    db: DbConnection,
-    column: "tempo_change" | "tempo_pin",
-) => {
+const flagged = async (db: DbConnection, column: "tempo_change") => {
     const beats = await db
         .select()
         .from(schema.beats)

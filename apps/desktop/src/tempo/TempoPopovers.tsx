@@ -40,7 +40,7 @@ export function CountAskPopover({
     onClose: () => void;
 }) {
     const ui = useTempoUi();
-    const keepOk = "run" in ask.keep;
+    const keepOk = !!ask.keep;
     const holdOk = !!ask.hold && "run" in ask.hold;
     // The last answer when it's on offer here. With none yet, a spot where a page or a move ends
     // starts on holding the drill (a breath before a new page is the usual reason to add a count
@@ -66,10 +66,10 @@ export function CountAskPopover({
             ask.hold.run();
             return;
         }
-        if (choice === "keep" && !("run" in ask.keep)) return;
+        if (choice === "keep" && !ask.keep) return;
         ui.setChoice(choice);
         onClose();
-        if (choice === "keep" && "run" in ask.keep) ask.keep.run();
+        if (choice === "keep" && ask.keep) ask.keep.run();
         else ask.shift.run();
     };
     // The picked card is the one Enter takes: it starts on the preferred answer and follows the
@@ -166,15 +166,15 @@ export function CountAskPopover({
         >
             <div className="text-[12px] font-bold">{ask.title}</div>
             <div className="text-text-subtitle text-[11px]">{ask.intro}</div>
-            {option(
-                "keep",
-                tolgee.t(
-                    "tempoMode.popovers.countAsk.keep",
-                    "Keep everything else in place",
-                ),
-                ask.keep.text,
-                "disabled" in ask.keep ? ask.keep.disabled : undefined,
-            )}
+            {ask.keep &&
+                option(
+                    "keep",
+                    tolgee.t(
+                        "tempoMode.popovers.countAsk.keep",
+                        "Keep everything else in place",
+                    ),
+                    ask.keep.text,
+                )}
             {option(
                 "shift",
                 tolgee.t(
@@ -307,15 +307,6 @@ export function NumberGlyph({ n }: { n: number }) {
             {tolgee.t("tempoMode.popovers.measureGlyph", "m{number}", {
                 number: String(n),
             })}
-        </span>
-    );
-}
-
-/** Text as a menu icon: ×2 */
-export function TextGlyph({ children }: { children: ReactNode }) {
-    return (
-        <span className="text-[11px] leading-none font-bold" aria-hidden>
-            {children}
         </span>
     );
 }

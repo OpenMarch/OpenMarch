@@ -4262,10 +4262,7 @@
     "tempoMode": {
         "band": {
             "action": {
-                "aTempo": "A tempo at {where}",
                 "addedChange": "Added a tempo change at {where}",
-                "countsHalfAsFast": "Counts half as fast",
-                "countsTwiceAsFast": "Counts twice as fast",
                 "curve": "Tempo curve",
                 "endsOn": "Ends on {tempo}",
                 "endsOnThen": "Ends on {tempo}, then {next}",
@@ -4277,9 +4274,6 @@
                 "measureNumber": "Measure number",
                 "movedChange": "Moved the tempo change to {where}",
                 "musicStart": "Music start",
-                "pin": "Pin",
-                "pinned": "Pinned {where} to the music",
-                "pins": "Pins",
                 "rehearsalMark": "Rehearsal mark",
                 "removedChange": "Removed the tempo change at {where}",
                 "tempo": "Tempo",
@@ -4289,10 +4283,8 @@
                 "add": {
                     "intro": "For when the music has an extra beat here that the counts miss. The recording doesn't change: only the counts do.",
                     "keepMeasure": "{measure} gets {count, plural, one {# count} other {# counts}} in the same time ({tempo}).",
-                    "keepWhole": "{range} make room for it in the same time ({tempo}).",
                     "manyKeep": "{moves, plural, other {The # moves over it keep their counts}}; their marchers hold {count, plural, one {# count} other {# counts}} at each one's end.",
                     "manyShift": "{moves, plural, other {The # moves over it each get}} {count, plural, one {# count} other {# counts}} longer.",
-                    "needPin": "Pin a count after it first, so there's a stretch of music to fit it into",
                     "noMove": "No move runs over it, so the marchers hold through it.",
                     "oneKeep": "{move} stays {moveCounts, plural, one {# count} other {# counts}} and its marchers hold {count, plural, one {# count} other {# counts}} at its end.",
                     "oneShift": "{move} stretches from {from} to {to, plural, one {# count} other {# counts}}.",
@@ -4314,7 +4306,6 @@
                 "countsMore": "{count, plural, one {# count more} other {# counts more}}",
                 "laterCountsStay": "Later counts stay on the music: for when they already are.",
                 "noMoveHere": "no move here",
-                "noPinAfter": "no pin after",
                 "pageCounts": "Page {page}: {from} → {to, plural, one {# count} other {# counts}}",
                 "pagesSentence": "{pages}.",
                 "remove": {
@@ -4322,7 +4313,6 @@
                     "keep": "The counts around it fill the same time ({where}: {from} → {to, plural, one {# count} other {# counts}}, {tempo}).",
                     "manyKeep": "{moves, plural, other {The # moves over it keep their counts by ending later}}, if nothing is in the way there.",
                     "manyShift": "{moves, plural, other {The # moves over it get shorter.}}",
-                    "needPin": "Pin a count after it first, so the counts around it have a stretch of music to fill",
                     "noMove": "No move runs over it.",
                     "oneKeep": "{move} keeps its {moveCounts, plural, one {# count} other {# counts}} by ending {count, plural, one {# count} other {# counts}} later, if nothing is in the way there.",
                     "oneShift": "{move} gets {count, plural, one {# count} other {# counts}} shorter.",
@@ -4330,12 +4320,6 @@
                     "title": "Remove {where}"
                 },
                 "removed": "Removed {where}"
-            },
-            "drag": {
-                "cantPut": "Can't put it on count {count}: {reason}",
-                "hitToCountOne": "Drop to move the music so this hit is on count 1",
-                "spotToCountOne": "Drop to move the music so this spot is on count 1",
-                "stops": "Stops here: {reason}"
             },
             "editor": {
                 "holdHint": "How long {where} is held, in seconds",
@@ -4348,15 +4332,12 @@
                 "wholeStretch": "Whole stretch {range} (now ♩{tempo}) instead"
             },
             "label": {
-                "aHold": "a hold",
                 "beforeMark": "{where}, before {mark}",
                 "count": "count {count}",
                 "measure": "m. {measure}",
                 "measureCount": "m. {measure} count {count}",
                 "measures": "m. {from}–{to}",
-                "range": "{from} to {to}",
-                "respacedShort": "now {now} (was {was})",
-                "respacedStretch": "{range}: now {now} (was {was})"
+                "range": "{from} to {to}"
             },
             "lane": {
                 "clearSelection": "Clear the selection",
@@ -4371,9 +4352,6 @@
                 "timeSignatureTitle": "Time signature {meter}: click to change it from here to the next time signature"
             },
             "menu": {
-                "aTempo": "A tempo",
-                "aTempoAside": "back to {tempo}",
-                "aTempoHint": "From {where}, back to the tempo the gradual change started at. The counts before it keep their tempo.",
                 "addChange": "Add a tempo change here",
                 "addCountAfter": "Add a count after…",
                 "addCountBefore": "Add a count before…",
@@ -4385,10 +4363,9 @@
                 "countTitleNoMeasure": "Count {count}",
                 "editMark": "Rehearsal mark…",
                 "gradual": "Gradual change",
-                "gradualHint": "Ends on the tempo after it ({tempo}); holds and pins outside stay as they are",
+                "gradualHint": "Ends on the tempo after it ({tempo}); holds outside stay as they are",
                 "gradualNothingHint": "Nothing to change to: the tempo after it is the same, or it's one count",
                 "gradualTo": "Gradual change to {tempo}",
-                "halfAsFast": "Half as fast",
                 "holdLength": "Hold length…",
                 "holdSubtitle": "hold {seconds} s",
                 "makeHold": "Make a hold (fermata)",
@@ -4398,7 +4375,6 @@
                 "measureSubtitleMark": "{meter} · mark {mark}",
                 "measureTitle": "Measure {measure}",
                 "notAHold": "Not a hold",
-                "pin": "Pin to the music",
                 "removeChange": "Remove this tempo change",
                 "removeCount": "Remove this count…",
                 "removeCounts": "Remove these counts…",
@@ -4409,8 +4385,8 @@
                 "setTempo": "Set tempo…",
                 "timeSignature": "Time signature…",
                 "toMeasure": "to m. {measure}",
-                "twiceAsFast": "Twice as fast",
-                "unpin": "Unpin"
+                "musicStart": "Start the music here",
+                "musicStartHint": "Moves the music so this spot is on count 1 (the lead-in). The counts stay as they are."
             },
             "meterMenu": {
                 "counted": "{meter} counted {grouping}",
@@ -4430,14 +4406,14 @@
                 "pagesMove": "Page {page}'s move"
             },
             "tip": {
-                "outlier": "{where} is much {direction, select, faster {faster} other {slower}} ({tempo}) than its neighbours ({before}, {after}): a count line may be on the wrong hit. Drag its handle onto the right hit, or leave it if the music really does that."
+                "outlier": "{where} is much {direction, select, faster {faster} other {slower}} ({tempo}) than its neighbours ({before}, {after}): it may be off the music. Right-click it > Set tempo… to fix it, or leave it if the music really does that."
             },
             "toast": {
                 "addCountsFirst": "Add pages or counts out here first",
                 "changedFirst": "{action}: not applied, since the show changed just before. Try again.",
                 "failed": "{action}: {error}",
                 "holdInvalid": "A hold is a length in seconds, such as 2.5",
-                "holdMade": "{where} is a hold. Drag the next count line (or its hit) to where the music goes on.",
+                "holdMade": "{where} is a hold. Right-click it > Hold length… to set how long it lasts.",
                 "markAlreadyThere": "m. {measure} already has rehearsal mark {mark}",
                 "markDropped": "Rehearsal mark {mark} at measure {measure}",
                 "markMoved": "Moved {mark} from m. {from} to m. {to}",
@@ -4448,35 +4424,15 @@
                 "movesCouldNotKeep": "{count, plural, one {# move couldn't keep its counts and changed length} other {# moves couldn't keep their counts and changed length}}",
                 "movesKept": "{count, plural, one {# move kept its counts} other {# moves kept their counts}}",
                 "movesKeptHold": "{kept, plural, one {The move over it kept its counts: its marchers hold} other {# moves kept their counts: their marchers hold}} {count, plural, one {# count} other {# counts}} at the end",
-                "musicCantMove": "Can't move the music that far: {where} is pinned to its hit, and the counts before it would get too fast. Unpin it first, or drag a hit closer to count 1.",
-                "musicMoved": "Moved the music {seconds} s {direction, select, earlier {earlier} other {later}}, so that hit is on count 1",
-                "musicMovedWithPins": "Moved the music {seconds} s {direction, select, earlier {earlier} other {later}}, so that hit is on count 1. The pinned counts moved with the music, so they're still on their hits.",
+                "musicMoved": "Moved the music {seconds} s {direction, select, earlier {earlier} other {later}}, so that spot is on count 1",
                 "notATimeSignature": "\"{text}\" isn't a time signature: try 7/8, or 7/8 2+2+3 (the grouping in eighths)",
                 "notMeasureNumber": "\"{value}\" isn't a measure number",
-                "pinsInSelection": "There are pinned counts in the selection; unpin them first",
-                "respaced": "Pinned {where}. Re-spaced {stretches}",
                 "tooFastOrSlow": "{action}: that would make a count too fast or too slow"
-            },
-            "pin": {
-                "tag": "{tempo} · {note}",
-                "tagHeld": "{pin} is pinned",
-                "tagMoved": "{pin} moved {seconds} s {direction, select, earlier {earlier} other {later}}",
-                "tagSqueezed": "{range} → ♩{after} for the pin at {pin}",
-                "held": "{pin} is pinned to the music, so your tempo change was scaled down to keep it there",
-                "moved": "{pin} is still pinned but moved {seconds} s {direction, select, earlier {earlier} other {later}}: keeping it in place would make the counts before it too fast or too slow",
-                "squeezed": "{range} went from ♩{before} to ♩{after} to keep {pin} on its hit",
-                "unpinAndApply": "Unpin and apply"
             }
         },
         "errors": {
             "cantRemoveLastCount": "Can't remove the last count",
-            "countPinned": "count {count} is pinned",
-            "holdTooShort": "a hold can't be shorter than a count at 400 BPM",
             "moveOneCountLong": "That move is only one count long",
-            "tooFastAfterPin": "count {count} is pinned: the counts between would pass 400 BPM",
-            "tooFastFromStart": "the show starts here: the counts between would pass 400 BPM",
-            "tooSlowAfterPin": "count {count} is pinned: the counts between would drop under 20 BPM",
-            "tooSlowFromStart": "the show starts here: the counts between would drop under 20 BPM",
             "wouldRemovePage": "That would remove a page. Remove fewer counts, or delete the page first."
         },
         "button": {
@@ -4496,12 +4452,8 @@
                 "gesture": "Drag a tempo change's dot"
             },
             "dragEndDot": {
-                "effect": "sets the tempo it ends on, so a rit. can jump back (a tempo); with a pinned count after it, the counts up to the pin make room",
+                "effect": "sets the tempo it ends on, so a rit. can jump back (a tempo)",
                 "gesture": "Drag a stretch's square end dot"
-            },
-            "dragHandle": {
-                "effect": "(the triangle atop the music) onto the music",
-                "gesture": "Drag a count's handle"
             },
             "dragLine": {
                 "effect": "up or down; right-click > Set tempo… to type one",
@@ -4513,11 +4465,7 @@
             },
             "dragMeasures": {
                 "effect": "selects counts to edit",
-                "gesture": "Drag along Measures"
-            },
-            "dragMusic": {
-                "effect": "onto its count",
-                "gesture": "Drag a spot in the music"
+                "gesture": "Drag along Measures or the music"
             },
             "dragRoundHandle": {
                 "effect": "makes a gradual change, straight or curved; double-click it for a jump again",
@@ -4532,22 +4480,18 @@
             },
             "label": "How tempo mode works",
             "rightClick": {
-                "effect": "pins, holds, tempo changes, adding and removing counts",
+                "effect": "holds, tempo changes, adding and removing counts",
                 "gesture": "Right-click"
-            },
-            "rightClickGradual": {
-                "effect": "A tempo: back to the tempo it started at",
-                "gesture": "Right-click in a gradual change"
             },
             "rightClickMeasure": {
                 "effect": "renumber from there (or double-click its number), rehearsal mark, time signature",
                 "gesture": "Right-click a measure"
             },
-            "shiftDrag": {
-                "effect": "moves just that count",
-                "gesture": "Shift while dragging"
-            },
-            "title": "Line the counts up with the music"
+            "title": "Line the counts up with the music",
+            "rightClickMusic": {
+                "gesture": "Right-click the music",
+                "effect": "Start the music here: puts that spot on count 1"
+            }
         },
         "lanes": {
             "marks": {
@@ -4560,7 +4504,7 @@
             },
             "music": {
                 "name": "Music",
-                "title": "The music: drag a hit onto its count, or a count's handle (the triangle at the top) onto the music"
+                "title": "The music: drag along it to select counts, click to move the playhead, or right-click a spot to start the music there (on count 1)"
             },
             "tempo": {
                 "name": "Tempo",
@@ -4601,16 +4545,11 @@
         "toolbar": {
             "done": "Done",
             "doneLabel": "Done: leave tempo mode",
-            "dragHint": "Drag a hit in the music onto its count",
             "metronome": "Metronome",
             "metronomeHint": "A click on every count, to hear whether the counts sit on the music",
             "metronomeOff": "Metronome: off",
             "metronomeOn": "Metronome: on",
-            "title": "Tempo mode",
-            "unpinAll": "Unpin all",
-            "unpinAllAria": "Unpin all ({count})",
-            "unpinAllHint": "Pinned counts stay where they are when you drag or tap",
-            "unpinAllLabel": "{count, plural, one {Unpin the # pinned count} other {Unpin all # pinned counts}}"
+            "title": "Tempo mode"
         }
     }
 }

@@ -105,14 +105,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "tempo_pin": {
-                    "name": "tempo_pin",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
-                },
                 "tempo_hold": {
                     "name": "tempo_hold",
                     "type": "integer",

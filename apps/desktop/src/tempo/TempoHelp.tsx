@@ -15,36 +15,6 @@ export function TempoHelp() {
     // Each row: a gesture, then what it does (a two-column list)
     const rows: [id: string, what: string, how: string][] = [
         [
-            "dragMusic",
-            tolgee.t(
-                "tempoMode.help.dragMusic.gesture",
-                "Drag a spot in the music",
-            ),
-            tolgee.t("tempoMode.help.dragMusic.effect", "onto its count"),
-        ],
-        [
-            "dragHandle",
-            tolgee.t(
-                "tempoMode.help.dragHandle.gesture",
-                "Drag a count's handle",
-            ),
-            tolgee.t(
-                "tempoMode.help.dragHandle.effect",
-                "(the triangle atop the music) onto the music",
-            ),
-        ],
-        [
-            "shiftDrag",
-            tolgee.t(
-                "tempoMode.help.shiftDrag.gesture",
-                "Shift while dragging",
-            ),
-            tolgee.t(
-                "tempoMode.help.shiftDrag.effect",
-                "moves just that count",
-            ),
-        ],
-        [
             "dragLine",
             tolgee.t("tempoMode.help.dragLine.gesture", "Drag the tempo line"),
             tolgee.t(
@@ -93,25 +63,14 @@ export function TempoHelp() {
             ),
             tolgee.t(
                 "tempoMode.help.dragEndDot.effect",
-                "sets the tempo it ends on, so a rit. can jump back (a tempo); with a pinned count after it, the counts up to the pin make room",
-            ),
-        ],
-        [
-            "rightClickGradual",
-            tolgee.t(
-                "tempoMode.help.rightClickGradual.gesture",
-                "Right-click in a gradual change",
-            ),
-            tolgee.t(
-                "tempoMode.help.rightClickGradual.effect",
-                "A tempo: back to the tempo it started at",
+                "sets the tempo it ends on, so a rit. can jump back (a tempo)",
             ),
         ],
         [
             "dragMeasures",
             tolgee.t(
                 "tempoMode.help.dragMeasures.gesture",
-                "Drag along Measures",
+                "Drag along Measures or the music",
             ),
             tolgee.t(
                 "tempoMode.help.dragMeasures.effect",
@@ -123,7 +82,18 @@ export function TempoHelp() {
             tolgee.t("tempoMode.help.rightClick.gesture", "Right-click"),
             tolgee.t(
                 "tempoMode.help.rightClick.effect",
-                "pins, holds, tempo changes, adding and removing counts",
+                "holds, tempo changes, adding and removing counts",
+            ),
+        ],
+        [
+            "rightClickMusic",
+            tolgee.t(
+                "tempoMode.help.rightClickMusic.gesture",
+                "Right-click the music",
+            ),
+            tolgee.t(
+                "tempoMode.help.rightClickMusic.effect",
+                "Start the music here: puts that spot on count 1",
             ),
         ],
         [

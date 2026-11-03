@@ -90,8 +90,6 @@ export const beats = sqliteTable(
         include_in_measure: integer().default(1).notNull(),
         /** Human readable notes. */
         notes: text(),
-        /** Tempo mode: 1 when this beat's start is pinned to the music */
-        tempo_pin: integer().default(0).notNull(),
         /** Tempo mode: 1 when this beat is a hold (a fermata: one count, its own length) */
         tempo_hold: integer().default(0).notNull(),
         /** Tempo mode: 1 when a tempo change starts on this beat (the tempo lane's points) */

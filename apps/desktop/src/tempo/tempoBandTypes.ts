@@ -8,26 +8,6 @@ import { TempoMeasure } from "./useTempoData";
 
 export type Gesture =
     | {
-          /** Holding a hit in the music: it lands on the count under the pointer */
-          kind: "grab";
-          seconds: number;
-          pointerX: number;
-          /** The count it would pin to; null before it moves, or while over a spot it can't go */
-          beat: number | null;
-          /** It has left the press spot: a release with no `beat` then does nothing */
-          moved?: boolean;
-          one: boolean;
-      }
-    | {
-          /** Holding a count line: it lands on the music under the pointer */
-          kind: "line";
-          beat: number;
-          seconds: number;
-          pointerX: number;
-          moved: boolean;
-          one: boolean;
-      }
-    | {
           kind: "tempo";
           segment: TempoSegment;
           startY: number;
@@ -42,6 +22,8 @@ export type Gesture =
           kind: "range";
           anchor: number;
           to: number;
+          /** Pressed in the music lane: a click without a drag moves the playhead there */
+          music?: boolean;
           /** Pressed on a time signature chip: a click without a drag opens its menu */
           meterStart?: number;
           /** Where a press on a chip was (band px): it's a drag once it moves from there */
@@ -146,7 +128,11 @@ export interface CountAsk {
     title: string;
     /** What adding or removing a count is for, and that the recording stays as it is */
     intro: string;
-    keep: AskOption;
+    /**
+     * Keep the counts after on the music: the measure re-divides to fit. Absent for a whole
+     * measure, which has no stretch of music to fit into
+     */
+    keep?: { text: string; run: () => void };
     shift: { text: string; run: () => void };
     /** Adding only: hold the drill there instead, with no count added */
     hold?: AskOption;

@@ -1,17 +1,16 @@
-# 0007: Tempo mode stores pins, holds, tempo changes, time signatures, measure numbers and the music offset in the show
+# 0007: Tempo mode stores holds, tempo changes, time signatures, measure numbers and the music offset in the show
 
 - Status: accepted
-- Date: 2026-10-30, revised and accepted 2026-11-02
+- Date: 2026-10-30, revised and accepted 2026-11-02; pins dropped 2026-11-03
 
 ## Context
 
 Tempo mode (`apps/desktop/src/tempo/`) lines the counts up with the music in the timeline itself,
-the way a DAW's tempo track does (research in docs/tempo/). Lining up is done by hand: dragging
-counts onto the music, tap tempo, and Logic-style tempo points and ramps. Automatic beat detection
-was tried and removed (fork issue #611). Tempo mode needs facts the show could not hold before:
+the way a DAW's tempo track does (research in docs/tempo/). Lining up is done by hand: a
+Logic-style tempo lane (tempo points, steady stretches, straight and curved gradual changes, typed
+tempos), tap tempo and the metronome. Automatic beat detection was tried and removed (fork issue
+#611). Tempo mode needs facts the show could not hold before:
 
-- **Pins.** A count dragged onto a hit in the music is pinned automatically. Later tempo edits
-  re-space the counts between pins and never move a pin.
 - **Holds.** A fermata is one held count of its own length, not a fake slow tempo. The tempo lane
   and the uneven-measure checks skip it, and it may be any length.
 - **Tempo changes.** The tempo lane shows points where the tempo changes, with steady stretches,
@@ -22,11 +21,18 @@ was tried and removed (fork issue #611). Tempo mode needs facts the show could n
   measure and set back exactly (owner, 2026-11-02).
 - **Measure numbers.** A measure can be renumbered (rehearsal C = m. 101), and the measures after
   it count on from there.
-- **The music offset.** Dragging the first hit onto count 1 moves the music, and that has to undo
-  with the counts it lined up.
+- **The music offset.** Putting the first hit on count 1 (right-click the music > Start the music
+  here) moves the music, and that has to undo like any other tempo edit.
 
 The prototype first kept these in workspace settings, which are outside undo. When the owner asked
-why pins didn't undo, they moved into the database.
+why its marks didn't undo, they moved into the database.
+
+The prototype also let you drag counts onto the music (a count line onto its hit, or a hit onto its
+count), and pinned every count dragged that way: a pin locked a count to its time, and later tempo
+edits re-spaced the counts between pins instead of moving it. The owner found that too much
+(2026-11-03), so dragging counts and pins were removed before merging, with Twice as fast, Half as
+fast and A tempo. Every tempo edit now re-times the counts it changes, and the counts after it move
+with them.
 
 ## Decision
 
@@ -34,14 +40,13 @@ why pins didn't undo, they moved into the database.
    playback, the resolver, exports and older readers use. Everything below only steers how tempo
    mode edits durations. A reader that ignores it still plays the show at the right times.
 2. **Beat facts are flags on `beats`**, integers `0`/`1`, default `0`, not null:
-   - `tempo_pin`: the count is locked to its time in the music.
    - `tempo_hold`: the count is a hold (fermata) of its own length.
    - `tempo_change`: a tempo point starts here. Between two points, the lane reads the shape back
      from the durations: steady, a ramp (straight or curved) or uneven (`tempo/tempoShape.ts`).
      Editing a shape writes the durations of its counts.
    - We didn't store tempo as BPM or as a tempo graph. Durations would still be needed by every
-     reader, so either would be a second source of truth to keep in step. Pins (a count at a time
-     in the music) and holds (a length, not a tempo) are natural in seconds.
+     reader, so either would be a second source of truth to keep in step. Holds (a length, not a
+     tempo) are natural in seconds.
    - A show with no tempo points gets them read from its durations. The first tempo edit stores
      them, so opening a show writes nothing. Durations changed outside tempo mode leave the points
      where they are, and the shape between them is read again.
@@ -63,14 +68,14 @@ why pins didn't undo, they moved into the database.
 5. **Every tempo edit is one undo step.** Columns and the table are written through
    `transactionWithHistory`; the existing history triggers on `beats` and `measures` cover the new
    columns.
-6. **Two migrations.** `0029` adds `tempo_settings`, `tempo_pin`, `tempo_hold`, `number_override`,
-   `meter` and `grouping`; `0030` adds `tempo_change`. The rollbacks in `migrationRollback.ts` drop
+6. **Two migrations.** `0029` adds `tempo_settings`, `tempo_hold`, `number_override`, `meter` and
+   `grouping`; `0030` adds `tempo_change`. The rollbacks in `migrationRollback.ts` drop
    them, and drop the triggers on those tables so the migration service can recreate them.
 
 ## Consequences
 
 - Shows from released versions (v0.1.7) open with every new column at its default and no
-  `tempo_settings` row: no pins, holds or stored points, time signatures read from measure lengths,
+  `tempo_settings` row: no holds or stored points, time signatures read from measure lengths,
   the offset from the workspace setting. Their timing is unchanged, and opening one writes nothing.
 - Older app versions opening a show saved by this one see ordinary beats and measures. Timing is
   unchanged, but they don't show renumbered measures or time signatures, and they ignore the offset
@@ -97,10 +102,10 @@ why pins didn't undo, they moved into the database.
   groupings (every common time signature set and set back on several measures, singly and nested),
   and the writes.
 - `tempoUndo.test.ts` covers undo and redo of:
-  - pins, and a hold with its length;
+  - a hold with its length;
   - a time signature with its measures and count lengths;
   - one 2/4 bar moving the measures after it, and 4/4 putting them back exactly;
-  - the music offset, alone and with the counts it lined up.
+  - the music offset, alone and in one step with count lengths.
 - `tempoWrites.test.ts` covers the tempo-change flags.
 - Open a v0.1.7 `.dots` file and a page-era demo in the desktop app after the migrations
   (apps/desktop/AGENTS.md).

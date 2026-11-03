@@ -8,12 +8,7 @@
  * length so everything after it moves, as in the score. Setting a measure back to the time
  * signature before it clears it again, so any change can be changed back exactly.
  */
-import {
-    pastLimits,
-    startsOf,
-    type PinEffect,
-    type TempoEditResult,
-} from "./tempoMath";
+import { type TempoEditResult } from "./tempoMath";
 import { readMeters, sameMeter, type Meter } from "./meters";
 
 /** A stored measure: its first count, and the time signature written there (null: none) */
@@ -36,7 +31,7 @@ export interface MeterPlan {
     short: { start: number; counts: number } | null;
     /** Counts the measures after moved ("just this measure"; later when positive) */
     shift: number;
-    /** The new count lengths, and the pins after */
+    /** The new count lengths */
     result: TempoEditResult;
 }
 
@@ -91,8 +86,7 @@ function unitsOf(
  *
  * A time signature never changes the tempo: each count keeps its quarter-note tempo, and only a
  * count that now holds a different number of eighths changes length (the 3 of 7/8 2+2+3 is half
- * as long again). Holds keep theirs. Every pin stays a pin, on its time (owner, 2026-11-02): the
- * counts between two pins re-space to keep the later one there (see `keepTempo`).
+ * as long again). Holds keep theirs, and the counts after move with the edit (see `keepTempo`).
  *
  * @param measures the stored measures, in order, with the time signatures written on them
  *   (`readMeters` reads older shows' measure lengths as written ones; the plan writes them in)
@@ -100,7 +94,6 @@ function unitsOf(
  */
 export function planMeter({
     durations,
-    locks,
     holds,
     measures,
     beatCount,
@@ -109,7 +102,6 @@ export function planMeter({
     only = false,
 }: {
     durations: readonly number[];
-    locks: ReadonlySet<number>;
     holds?: ReadonlySet<number>;
     measures: readonly {
         start: number;
@@ -217,109 +209,27 @@ export function planMeter({
         measures: after,
         short,
         shift,
-        result: keepTempo(durations, locks, start, oldUnits, newUnits, holds),
+        result: keepTempo(durations, start, oldUnits, newUnits, holds),
     };
 }
 
 /**
  * The counts from `from` on at their own tempo, each scaled by its new eighths over its old (holds
- * keep their length), and every pin kept on its time: the counts from the edit (or a pin) to the
- * next pin re-space together, so the tempo between two pins changes but their ratios don't. After
- * the last pin the rest slides. Counts the meter doesn't change keep their exact length unless
- * they are re-spaced, and nothing is clamped, so setting the old time signature back is exact.
- *
- * When re-spacing would push a count past 400 or 20 BPM (per eighth), that pin moves instead and
- * stays a pin; the pins after it keep their times where they can. `result.pin` names the pin the
- * edit affected most (one that moved, else the one whose counts changed tempo most).
+ * keep their length); the counts after move with them. Counts the meter doesn't change keep their
+ * exact length, and nothing is clamped, so setting the old time signature back is exact.
  */
 function keepTempo(
     durations: readonly number[],
-    locks: ReadonlySet<number>,
     from: number,
     oldUnits: readonly (number | undefined)[],
     newUnits: readonly (number | undefined)[],
     holds: ReadonlySet<number> | undefined,
 ): TempoEditResult {
-    const isHold = (b: number) => holds?.has(b) ?? false;
     const was = (b: number) => oldUnits[b] ?? 2;
     const now = (b: number) => newUnits[b] ?? 2;
     const next = [...durations];
-    const changed = new Set<number>();
     for (let b = from; b < durations.length; b++)
-        if (!isHold(b) && was(b) !== now(b)) {
+        if (!holds?.has(b) && was(b) !== now(b))
             next[b] = (durations[b]! * now(b)) / was(b);
-            changed.add(b);
-        }
-    const starts = startsOf(durations);
-    const pins = [...locks]
-        .filter((l) => l > from && l <= durations.length)
-        .sort((a, b) => a - b);
-    let worst: { effect: Omit<PinEffect, "free">; size: number } | null = null;
-    let a = from;
-    let shift = 0; // how far the start of this stretch moved (a pin before it couldn't stay)
-    for (const p of pins) {
-        let free = 0;
-        let held = 0;
-        let touched = shift !== 0;
-        for (let b = a; b < p; b++) {
-            if (isHold(b)) held += next[b]!;
-            else free += next[b]!;
-            if (changed.has(b)) touched = true;
-        }
-        if (touched) {
-            const wanted = starts[p]! - (starts[a]! + shift) - held;
-            const c = wanted / free;
-            let fits = free > 0 && wanted > 0;
-            for (let b = a; fits && b < p; b++)
-                if (
-                    !isHold(b) &&
-                    pastLimits(durations[b]!, next[b]! * c, was(b), now(b))
-                )
-                    fits = false;
-            if (fits) {
-                for (let b = a; b < p; b++)
-                    if (!isHold(b)) next[b] = next[b]! * c;
-                const size = Math.abs(Math.log(c));
-                if (
-                    size > 1e-9 &&
-                    !worst?.effect.held &&
-                    size > (worst?.size ?? 0)
-                )
-                    worst = { effect: { at: p, held: false, from: a }, size };
-                shift = 0;
-            } else {
-                // the pin can't stay: it moves with the counts before it (they keep their tempo)
-                shift = starts[a]! + shift + held + free - starts[p]!;
-                if (!worst?.effect.held)
-                    worst = {
-                        effect: { at: p, held: true, from: a, moved: shift },
-                        size: Infinity,
-                    };
-            }
-        }
-        a = p;
-    }
-    const effect = worst?.effect;
-    return {
-        durations: next,
-        locks: new Set(locks),
-        ...(effect
-            ? {
-                  pin: {
-                      ...effect,
-                      free: () =>
-                          keepTempo(
-                              durations,
-                              new Set(
-                                  [...locks].filter((l) => l !== effect.at),
-                              ),
-                              from,
-                              oldUnits,
-                              newUnits,
-                              holds,
-                          ),
-                  },
-              }
-            : {}),
-    };
+    return { durations: next };
 }

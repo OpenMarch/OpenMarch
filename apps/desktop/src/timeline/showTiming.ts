@@ -20,7 +20,7 @@ export async function readShowTiming(
     tx: DbTransaction | DbConnection,
 ): Promise<{ beats: Beat[]; pages: Page[] }> {
     // The columns a page-era file has: the converter reads it before the timeline-only
-    // migrations add any (tempo mode's tempo_pin and tempo_hold, say)
+    // migrations add any (tempo mode's tempo_hold and tempo_change, say)
     const beatRows = await tx
         .select({
             id: schema.beats.id,
@@ -39,7 +39,6 @@ export async function readShowTiming(
             fromDatabaseBeat(
                 realDatabaseBeatToDatabaseBeat({
                     ...b,
-                    tempo_pin: 0,
                     tempo_hold: 0,
                     tempo_change: 0,
                 }),

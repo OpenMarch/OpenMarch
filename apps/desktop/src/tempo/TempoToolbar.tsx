@@ -1,15 +1,10 @@
 // cspell:ignore priya
 /**
  * Tempo mode: tempo mode's header row: Tap tempo, the
- * metronome, a hint and Done.
+ * metronome, help and Done.
  */
 import clsx from "clsx";
-import {
-    CheckIcon,
-    GaugeIcon,
-    MetronomeIcon,
-    PushPinSlashIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, GaugeIcon, MetronomeIcon } from "@phosphor-icons/react";
 import {
     ShortcutTooltip,
     TransportTooltipProvider,
@@ -31,15 +26,13 @@ export const toolButton = (on = false, iconOnly = false) =>
     );
 
 /**
- * Tempo mode's header row: the mode's name, its tools, a hint, help and Done. Narrow, the tools
- * drop their words for their icons (the full name is the tooltip) and the hint shortens.
+ * Tempo mode's header row: the mode's name, its tools, help and Done. Narrow, the tools drop
+ * their words for their icons (the full name is the tooltip).
  */
 export function TempoToolbar(props: {
-    lockCount: number;
     /** What Tap tempo's "Use" sets, in words, or null */
     tapTarget: string | null;
     onUseTap: (bpm: number) => void;
-    onClearPins: () => void;
 }) {
     const click = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleClick = useMetronomeStore((s) => s.toggleMetronome);
@@ -48,11 +41,6 @@ export function TempoToolbar(props: {
         overrides,
     })?.join(" + ");
     const metronome = tolgee.t("tempoMode.toolbar.metronome", "Metronome");
-    const unpinAll = tolgee.t("tempoMode.toolbar.unpinAll", "Unpin all");
-    const dragHint = tolgee.t(
-        "tempoMode.toolbar.dragHint",
-        "Drag a hit in the music onto its count",
-    );
     return (
         // A tooltip closes as soon as the pointer leaves its button or presses it, so none stays
         // up over a menu or the help card opened next (dana, priya)
@@ -111,45 +99,7 @@ export function TempoToolbar(props: {
                         <span>{metronome}</span>
                     </button>
                 </ShortcutTooltip>
-                {props.lockCount > 0 && (
-                    <ShortcutTooltip
-                        closeOnPress
-                        label={tolgee.t(
-                            "tempoMode.toolbar.unpinAllLabel",
-                            "{count, plural, one {Unpin the # pinned count} other {Unpin all # pinned counts}}",
-                            { count: props.lockCount },
-                        )}
-                        hint={tolgee.t(
-                            "tempoMode.toolbar.unpinAllHint",
-                            "Pinned counts stay where they are when you drag or tap",
-                        )}
-                    >
-                        <button
-                            type="button"
-                            aria-label={tolgee.t(
-                                "tempoMode.toolbar.unpinAllAria",
-                                "Unpin all ({count})",
-                                { count: props.lockCount },
-                            )}
-                            className={toolButton()}
-                            onClick={props.onClearPins}
-                        >
-                            <PushPinSlashIcon size={12} aria-hidden />
-                            <span className="@max-[860px]:hidden">
-                                {unpinAll}
-                            </span>
-                            <span className="text-text-subtitle tabular-nums">
-                                {props.lockCount}
-                            </span>
-                        </button>
-                    </ShortcutTooltip>
-                )}
-                <span
-                    className="text-text-subtitle min-w-0 flex-1 truncate text-[11px]"
-                    title={dragHint}
-                >
-                    {dragHint}
-                </span>
+                <span className="min-w-0 flex-1" aria-hidden />
                 <TempoHelp />
                 <ShortcutTooltip
                     closeOnPress

@@ -13,7 +13,7 @@ import {
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 
 /**
- * ADR 0007 asks for these before it's accepted: pins, holds, meters and the music offset are in
+ * ADR 0007 asks for these before it's accepted: holds, meters and the music offset are in
  * the show's history, so undo and redo put them back with the counts they belong to. On the
  * `marchersAndPages` show: beat 0, then 48 counts.
  */
@@ -26,22 +26,13 @@ const beats = async (db: DbConnection) =>
         .all();
 
 /** The spec beats whose flag `column` is set */
-const flagged = async (db: DbConnection, column: "tempo_pin" | "tempo_hold") =>
+const flagged = async (db: DbConnection, column: "tempo_hold") =>
     (await beats(db)).flatMap((b, i) => (b[column] === 1 ? [i] : []));
 
 const lengths = async (db: DbConnection) =>
     (await beats(db)).map((b) => b.duration);
 
 describeDbTests("tempo mode undo and redo", (it) => {
-    it("pins undo and redo", async ({ db, marchersAndPages: _ }) => {
-        await writeMarks({ pins: new Set([5, 9]) });
-        expect(await flagged(db, "tempo_pin")).toEqual([5, 9]);
-        await performUndo(db);
-        expect(await flagged(db, "tempo_pin")).toEqual([]);
-        await performRedo(db);
-        expect(await flagged(db, "tempo_pin")).toEqual([5, 9]);
-    });
-
     it("a hold undoes with the length it was given", async ({
         db,
         marchersAndPages: _,
@@ -93,7 +84,6 @@ describeDbTests("tempo mode undo and redo", (it) => {
         const meter = parseMeter("7/8")!;
         const plan = planMeter({
             durations: before,
-            locks: new Set(),
             measures: [1, 5, 9, 13, 17, 21].map((start) => ({ start })),
             beatCount: rows.length,
             start: 5,
@@ -160,7 +150,6 @@ describeDbTests("tempo mode undo and redo", (it) => {
             await writeMeter({
                 plan: planMeter({
                     durations: await lengths(db),
-                    locks: new Set(),
                     measures: await stored(),
                     beatCount: rows.length,
                     start: 5,

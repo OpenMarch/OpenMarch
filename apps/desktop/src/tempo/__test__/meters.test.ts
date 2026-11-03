@@ -138,7 +138,6 @@ describe("planMeter", () => {
         const durations = bpm.map((b) => (b ? 60 / b : 0));
         const plan = planMeter({
             durations,
-            locks: new Set(),
             measures: stored([
                 [1, "4/4"],
                 [5, ""],
@@ -159,7 +158,6 @@ describe("planMeter", () => {
         const durations = [0, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75];
         const plan = planMeter({
             durations,
-            locks: new Set(),
             measures: stored([
                 [1, "3/4"],
                 [4, ""],
@@ -177,12 +175,11 @@ describe("planMeter", () => {
             0.75 * 1.5,
         ]);
     });
-    it("7/8 2+2+3 on a 3/4 section keeps the pin at the next time signature", () => {
+    it("7/8 2+2+3 on a 3/4 section stops at the next time signature", () => {
         // 4/4 (1, 5), 3/4 (9, 12), 4/4 again at 15
         const durations = [0, ...Array<number>(18).fill(0.5)];
         const plan = planMeter({
             durations,
-            locks: new Set([15]),
             measures: stored([
                 [1, "4/4"],
                 [5, ""],
@@ -197,26 +194,6 @@ describe("planMeter", () => {
         expect(show(asStored(plan))).toBe("1:4/4 5:- 9:7/8 12:- 15:4/4");
         const d = plan.result.durations.slice(9, 15);
         expect(d[2]! / d[0]!).toBeCloseTo(1.5);
-        expect(startsOf(plan.result.durations)[15]).toBeCloseTo(
-            startsOf(durations)[15]!,
-        );
-    });
-    it("4/4 to 2/4 lets go of no pin", () => {
-        const durations = [0, ...Array<number>(16).fill(0.5)];
-        const plan = planMeter({
-            durations,
-            locks: new Set([7, 11]),
-            measures: stored([
-                [1, ""],
-                [5, ""],
-                [9, ""],
-                [13, ""],
-            ]),
-            beatCount: durations.length,
-            start: 5,
-            meter: parse("2/4")!,
-        });
-        expect([...plan.result.locks].sort((a, b) => a - b)).toEqual([7, 11]);
     });
 });
 
@@ -246,7 +223,6 @@ describe("planMeter: written time signatures (owner, 2026-11-02)", () => {
     ) =>
         planMeter({
             durations: lengths,
-            locks: new Set(),
             measures,
             beatCount: 45,
             start: at,
@@ -367,7 +343,6 @@ describe("planMeter: written time signatures (owner, 2026-11-02)", () => {
     it("older shows get their time signatures written in", () => {
         const plan = planMeter({
             durations: durations.slice(0, 19),
-            locks: new Set(),
             measures: stored([
                 [1, ""],
                 [5, ""],
@@ -398,7 +373,7 @@ describe("parseMeter edge cases", () => {
     });
 });
 
-describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
+describe("planMeter: holds, exactness and errors", () => {
     /** 4/4 measures from 1, `n` counts of `len` */
     const fourFour = (n: number) =>
         stored(
@@ -407,33 +382,23 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
                 i === 0 ? "4/4" : "",
             ]),
         );
-    const sortedLocks = (r: { locks: ReadonlySet<number> }) =>
-        [...r.locks].sort((a, b) => a - b);
     const round = (d: readonly number[]) => d.map((x) => +x.toFixed(9));
 
-    it("7/8 from count 9 keeps the pins at 13 and 23 on their times, and 4/4 back restores all", () => {
+    it("7/8 from count 9, and 4/4 back restores all", () => {
         const durations = [0, ...Array<number>(24).fill(0.5)];
         const measures = fourFour(24);
-        const locks = new Set([13, 23]);
         const there = planMeter({
             durations,
-            locks,
             measures,
             beatCount: 25,
             start: 9,
             meter: parse("7/8 2+2+3")!,
         });
-        expect(sortedLocks(there.result)).toEqual([13, 23]);
-        const s0 = startsOf(durations);
-        const s1 = startsOf(there.result.durations);
-        expect(s1[13]).toBeCloseTo(s0[13]!, 9);
-        expect(s1[23]).toBeCloseTo(s0[23]!, 9);
         // the 3 of 2+2+3 is still half as long again as the 2s around it
         const d = there.result.durations;
         expect(d[11]! / d[10]!).toBeCloseTo(1.5);
         const back = planMeter({
             durations: there.result.durations,
-            locks: there.result.locks,
             measures: asStored(there),
             beatCount: 25,
             start: 9,
@@ -441,10 +406,9 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         });
         expect(show(asStored(back))).toBe(show(measures));
         expect(round(back.result.durations)).toEqual(round(durations));
-        expect(sortedLocks(back.result)).toEqual([13, 23]);
     });
 
-    it("a 2/4 bar (just this one) before a 6/8 section keeps the pins at 12 and 30", () => {
+    it("a 2/4 bar (just this one) before a 6/8 section, and 4/4 back restores all", () => {
         // 4/4 (1, 5), 6/8 at ♩=80 (9, 11, 13, 15), 4/4 again from 17 to 36
         const durations = [
             0,
@@ -467,21 +431,14 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         ]);
         const there = planMeter({
             durations,
-            locks: new Set([12, 30]),
             measures,
             beatCount: 37,
             start: 1,
             meter: parse("2/4")!,
             only: true,
         });
-        expect(sortedLocks(there.result)).toEqual([12, 30]);
-        const s0 = startsOf(durations);
-        const s1 = startsOf(there.result.durations);
-        expect(s1[12]).toBeCloseTo(s0[12]!, 9);
-        expect(s1[30]).toBeCloseTo(s0[30]!, 9);
         const back = planMeter({
             durations: there.result.durations,
-            locks: there.result.locks,
             measures: asStored(there),
             beatCount: 37,
             start: 1,
@@ -490,15 +447,13 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         });
         expect(show(asStored(back))).toBe(show(measures));
         expect(round(back.result.durations)).toEqual(round(durations));
-        expect(sortedLocks(back.result)).toEqual([12, 30]);
     });
 
-    it("a hold inside the change keeps its length, and the pins keep their times", () => {
+    it("a hold inside the change keeps its length", () => {
         const durations = [0, ...Array<number>(24).fill(0.5)];
         durations[10] = 4;
         const there = planMeter({
             durations,
-            locks: new Set([13, 23]),
             holds: new Set([10]),
             measures: fourFour(24),
             beatCount: 25,
@@ -506,57 +461,6 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
             meter: parse("7/8 2+2+3")!,
         });
         expect(there.result.durations[10]).toBe(4);
-        expect(startsOf(there.result.durations)[13]).toBeCloseTo(
-            startsOf(durations)[13]!,
-            9,
-        );
-    });
-
-    it("says which pin it re-spaced the counts for", () => {
-        const durations = [0, ...Array<number>(24).fill(0.5)];
-        const there = planMeter({
-            durations,
-            locks: new Set([13]),
-            measures: fourFour(24),
-            beatCount: 25,
-            start: 9,
-            meter: parse("7/8 2+2+3")!,
-        });
-        expect(there.result.pin).toMatchObject({
-            at: 13,
-            held: false,
-            from: 9,
-        });
-        // released, the 7/8 keeps the tempo and the pin goes
-        const free = there.result.pin!.free();
-        expect(sortedLocks(free)).toEqual([]);
-        expect(free.durations[11]).toBeCloseTo(0.75);
-    });
-
-    it("a pin that can't keep its time stays a pin and says it moved", () => {
-        // ♩=30: an eighth is 1 s. A 1/8 bar (just this one) before a pin on count 2 would have
-        // to stretch its one eighth to 2 s (slower than 20 BPM) to keep the pin, so the pin moves
-        const durations = [0, ...Array<number>(8).fill(2)];
-        const there = planMeter({
-            durations,
-            locks: new Set([2, 6]),
-            measures: stored([
-                [1, "2/4"],
-                [3, ""],
-                [5, ""],
-                [7, ""],
-            ]),
-            beatCount: 9,
-            start: 1,
-            meter: parse("1/8")!,
-            only: true,
-        });
-        expect(sortedLocks(there.result)).toEqual([2, 6]);
-        expect(there.result.durations[1]).toBeCloseTo(1);
-        expect(there.result.pin).toMatchObject({ at: 2, held: true, from: 1 });
-        expect(there.result.pin!.moved).toBeCloseTo(-1);
-        // the pin after it still keeps its time
-        expect(startsOf(there.result.durations)[6]).toBeCloseTo(10);
     });
 
     it("leaves a long count it doesn't change exactly as it is (no clamping)", () => {
@@ -577,7 +481,6 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         ]);
         const there = planMeter({
             durations,
-            locks: new Set(),
             measures,
             beatCount: 29,
             start: 1,
@@ -587,7 +490,6 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         expect(there.result.durations[7]).toBe(0.1);
         const back = planMeter({
             durations: there.result.durations,
-            locks: new Set(),
             measures: asStored(there),
             beatCount: 29,
             start: 1,
@@ -601,7 +503,6 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         const measures = fourFour(16);
         const there = planMeter({
             durations,
-            locks: new Set(),
             measures,
             beatCount: 17,
             start: 9,
@@ -611,7 +512,6 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         expect(there.result.durations[9]).toBeCloseTo(3.6);
         const back = planMeter({
             durations: there.result.durations,
-            locks: new Set(),
             measures: asStored(there),
             beatCount: 17,
             start: 9,
@@ -625,7 +525,6 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
         expect(() =>
             planMeter({
                 durations: [0, ...Array<number>(8).fill(0.5)],
-                locks: new Set(),
                 measures: fourFour(8),
                 beatCount: 9,
                 start: 3,
@@ -635,7 +534,7 @@ describe("planMeter keeps every pin (owner, 2026-11-02)", () => {
     });
 });
 
-describe("planMeter with pins: any time signature set and set back", () => {
+describe("planMeter: any time signature set and set back", () => {
     // the written fixture: 4/4 1–20, 3/4 21–32, 4/4 33–44
     const durations = [0, ...Array<number>(44).fill(0.5)];
     const start = stored([
@@ -662,42 +561,30 @@ describe("planMeter with pins: any time signature set and set back", () => {
         const o = read[start.findIndex((m) => m.start === at)]!.meter;
         return `${o.top}/${o.bottom} ${o.grouping.join("+")}`;
     };
-    const cases: [number, string, boolean, number[]][] = [];
+    const cases: [number, string, boolean][] = [];
     for (const at of [1, 9, 21, 33])
         for (const text of ["2/4", "6/8", "7/8 2+2+3", "5/4"])
-            for (const only of [false, true])
-                for (const pins of [[11], [22, 26], [6, 30, 43], [2, 45]])
-                    cases.push([at, text, only, pins]);
-    it.each(cases)(
-        "at %i, %s (only: %s), pins %j: pins keep their times, and back is exact",
-        (at, text, only, pins) => {
-            const there = planMeter({
-                durations,
-                locks: new Set(pins),
-                measures: start,
-                beatCount: 45,
-                start: at,
-                meter: parse(text)!,
-                only,
-            });
-            expect([...there.result.locks].sort((a, b) => a - b)).toEqual(pins);
-            const s0 = startsOf(durations);
-            const s1 = startsOf(there.result.durations);
-            for (const p of pins) expect(s1[p]).toBeCloseTo(s0[p]!, 9);
-            const back = planMeter({
-                durations: there.result.durations,
-                locks: there.result.locks,
-                measures: asStored(there),
-                beatCount: 45,
-                start: at,
-                meter: parse(oldText(at))!,
-                only,
-            });
-            expect(show(asStored(back))).toBe(show(start));
-            expect(back.result.durations.map((d) => +d.toFixed(9))).toEqual(
-                durations,
-            );
-            expect([...back.result.locks].sort((a, b) => a - b)).toEqual(pins);
-        },
-    );
+            for (const only of [false, true]) cases.push([at, text, only]);
+    it.each(cases)("at %i, %s (only: %s): back is exact", (at, text, only) => {
+        const there = planMeter({
+            durations,
+            measures: start,
+            beatCount: 45,
+            start: at,
+            meter: parse(text)!,
+            only,
+        });
+        const back = planMeter({
+            durations: there.result.durations,
+            measures: asStored(there),
+            beatCount: 45,
+            start: at,
+            meter: parse(oldText(at))!,
+            only,
+        });
+        expect(show(asStored(back))).toBe(show(start));
+        expect(back.result.durations.map((d) => +d.toFixed(9))).toEqual(
+            durations,
+        );
+    });
 });

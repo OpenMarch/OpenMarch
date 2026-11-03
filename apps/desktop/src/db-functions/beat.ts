@@ -28,8 +28,6 @@ export interface DatabaseBeat {
     notes: string | null;
     /** Position of the beat in the sequence */
     position: number;
-    /** Tempo mode: 1 when pinned to the music */
-    tempo_pin?: number;
     /** Tempo mode: 1 when a hold (fermata) */
     tempo_hold?: number;
     /** Tempo mode: 1 when a tempo change starts here */

@@ -1,6 +1,6 @@
 /**
- * Tempo mode. The writes tempo mode makes, each one undo step: new count lengths, pins, holds
- * and tempo points (beat flags), counts added or removed (with the drill choice), measure
+ * Tempo mode. The writes tempo mode makes, each one undo step: new count lengths, holds and
+ * tempo points (beat flags), counts added or removed (with the drill choice), measure
  * numbers and rehearsal marks. They live in the show, with undo (ADR 0007); time signatures are
  * written by `meterWrites.ts`.
  */
@@ -27,7 +27,6 @@ import { readMeters, sameMeter, storedMeterOf } from "./meters";
 
 /** Beat flags tempo mode writes, as sets of spec beats; a missing set is left as it is */
 export interface TempoMarks {
-    pins?: ReadonlySet<number>;
     holds?: ReadonlySet<number>;
     /** Where tempo changes start: the tempo lane's points */
     changes?: ReadonlySet<number>;
@@ -51,16 +50,13 @@ export async function beatIdsInTransaction(
 export async function writeDurations({
     before,
     after,
-    pins,
     holds,
     changes,
     audioOffset,
 }: {
     before: readonly number[];
     after: readonly number[];
-    /** The pinned spec beats after the edit, written in the same undo step */
-    pins?: ReadonlySet<number>;
-    /** The held spec beats after the edit */
+    /** The held spec beats after the edit, written in the same undo step */
     holds?: ReadonlySet<number>;
     /** Where tempo changes start after the edit */
     changes?: ReadonlySet<number>;
@@ -74,12 +70,12 @@ export async function writeDurations({
             b >= before.length
         )
             changed.push(b);
-    const marks = [...(pins ?? []), ...(holds ?? []), ...(changes ?? [])];
+    const marks = [...(holds ?? []), ...(changes ?? [])];
     // An edit that changes nothing writes nothing: history refuses an empty step
     if (
         changed.length === 0 &&
         audioOffset === undefined &&
-        !(await marksWouldChange({ pins, holds, changes }))
+        !(await marksWouldChange({ holds, changes }))
     )
         return;
     const last = Math.max(changed[changed.length - 1] ?? 0, ...marks);
@@ -93,20 +89,20 @@ export async function writeDurations({
                     .filter((b) => ids[b] !== undefined)
                     .map((b) => ({ id: ids[b]!, duration: after[b]! })),
             });
-        await writeMarksInTransaction(tx, ids, { pins, holds, changes });
+        await writeMarksInTransaction(tx, ids, { holds, changes });
         if (audioOffset !== undefined)
             await setAudioOffsetInTransaction(tx, audioOffset);
     });
 }
 
-/** Pins, holds and changes, as beat flags: the beats that change get the new value, in one statement each */
+/** Holds and changes, as beat flags: the beats that change get the new value, in one statement each */
 export async function writeMarksInTransaction(
     tx: DbTransaction,
     ids: readonly number[],
-    { pins, holds, changes }: TempoMarks,
+    { holds, changes }: TempoMarks,
 ) {
     const write = async (
-        column: "tempo_pin" | "tempo_hold" | "tempo_change",
+        column: "tempo_hold" | "tempo_change",
         set: ReadonlySet<number> | undefined,
     ) => {
         if (!set) return;
@@ -132,22 +128,19 @@ export async function writeMarksInTransaction(
                 .set({ [column]: 1 })
                 .where(inArray(schema.beats.id, on));
     };
-    await write("tempo_pin", pins);
     await write("tempo_hold", holds);
     await write("tempo_change", changes);
 }
 
 /** Whether writing these flags (spec beats) would change any beat's flags */
 async function marksWouldChange({
-    pins,
     holds,
     changes,
 }: TempoMarks): Promise<boolean> {
-    if (!pins && !holds && !changes) return false;
+    if (!holds && !changes) return false;
     const rows = await db
         .select({
             id: schema.beats.id,
-            pin: schema.beats.tempo_pin,
             hold: schema.beats.tempo_hold,
             change: schema.beats.tempo_change,
         })
@@ -163,20 +156,15 @@ async function marksWouldChange({
         const count = rows.filter((r) => flag(r) === 1).length;
         return count !== [...set].filter((b) => b < rows.length).length;
     };
-    return (
-        differs(pins, (r) => r.pin) ||
-        differs(holds, (r) => r.hold) ||
-        differs(changes, (r) => r.change)
-    );
+    return differs(holds, (r) => r.hold) || differs(changes, (r) => r.change);
 }
 
-/** Pin, hold or tempo-change flags (spec beats) on their own: one undo step */
+/** Hold or tempo-change flags (spec beats) on their own: one undo step */
 export async function writeMarks(marks: TempoMarks): Promise<void> {
     if (!(await marksWouldChange(marks))) return;
     await transactionWithHistory(db, "tempoMarks", async (tx) => {
         const last = Math.max(
             0,
-            ...(marks.pins ?? []),
             ...(marks.holds ?? []),
             ...(marks.changes ?? []),
         );

@@ -117,11 +117,6 @@ export const LATER_COLUMNS = [
     },
     {
         table: "beats",
-        name: "tempo_pin",
-        sql: "ALTER TABLE `beats` ADD `tempo_pin` integer DEFAULT 0 NOT NULL",
-    },
-    {
-        table: "beats",
         name: "tempo_hold",
         sql: "ALTER TABLE `beats` ADD `tempo_hold` integer DEFAULT 0 NOT NULL",
     },

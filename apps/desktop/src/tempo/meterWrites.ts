@@ -1,6 +1,6 @@
 /**
  * Tempo mode: writing a time signature plan (`planMeter`): the measures, the time
- * signatures written on them, the count lengths and the pins, as one edit (one undo step).
+ * signatures written on them and the count lengths, as one edit (one undo step).
  */
 import { db, schema } from "@/global/database/db";
 import { transactionWithHistory } from "@/db-functions/history";
@@ -12,7 +12,7 @@ import {
     deleteMeasuresInTransaction,
     updateMeasuresInTransaction,
 } from "@/db-functions/measures";
-import { beatIdsInTransaction, writeMarksInTransaction } from "./tempoWrites";
+import { beatIdsInTransaction } from "./tempoWrites";
 import type { MeterPlan, NewMeasure } from "./meterPlan";
 import type { Meter } from "./meters";
 
@@ -42,7 +42,6 @@ export async function writeMeter({
                 changed.push({ id: ids[b]!, duration: after[b]! });
         if (changed.length)
             await updateBeatsInTransaction({ tx, modifiedBeats: changed });
-        await writeMarksInTransaction(tx, ids, { pins: plan.result.locks });
     });
 }
 

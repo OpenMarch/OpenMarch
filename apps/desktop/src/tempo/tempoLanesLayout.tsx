@@ -64,7 +64,7 @@ export const LANES = [
         get title() {
             return tolgee.t(
                 "tempoMode.lanes.music.title",
-                "The music: drag a hit onto its count, or a count's handle (the triangle at the top) onto the music",
+                "The music: drag along it to select counts, click to move the playhead, or right-click a spot to start the music there (on count 1)",
             );
         },
     },
@@ -84,11 +84,6 @@ export function TempoHeaderSlot() {
 /** x of spec beat `b`'s start: the band's x 0 is spec beat 1 (the timeline hides beat 0) */
 export const xOf = (b: number, ppb: number) => (b - 1) * ppb;
 export const beatAtX = (x: number, ppb: number) => x / ppb + 1;
-
-/** How close (px) a press must be to a count line's handle to grab the line */
-export const LINE_GRAB_PX = 6;
-/** The strip at the top of the music lane holding the count lines' handles (Logic's beat markers) */
-export const HANDLE_STRIP = 16;
 
 /** The surface's visible horizontal window, from its scroll container */
 export function useScrollWindow(ref: React.RefObject<HTMLElement | null>) {

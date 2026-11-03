@@ -1,15 +1,14 @@
 /**
  * Tempo mode: what the tempo lanes read from the show (count
- * lengths, pins, holds, tempo changes, measures, the music offset) and how an edit is written back.
+ * lengths, holds, tempo changes, measures, the music offset) and how an edit is written back.
  */
 import { useMemo } from "react";
-import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { type TempoEditResult } from "./tempoMath";
 import { writeMarks, writeDurations } from "./tempoWrites";
-import { tempoSettingsKey, useAudioOffsetSeconds } from "./audioOffset";
+import { useAudioOffsetSeconds } from "./audioOffset";
 
 /** The toast a tempo edit's note goes in (one at a time; undo and leaving the mode clear it) */
 export const NOTE_TOAST = "tempo-note";
@@ -29,8 +28,6 @@ export interface TempoMeasure {
 export interface TempoData {
     /** Count lengths by spec beat, out to the axis end (endless counts included) */
     durations: number[];
-    /** Pinned spec beats */
-    locks: Set<number>;
     /** Held spec beats (fermatas) */
     holds: Set<number>;
     /** Where tempo changes start, as stored; empty for a show that has none yet (see `changesOf`) */
@@ -42,7 +39,7 @@ export interface TempoData {
     audioOffset: number;
 }
 
-/** Pinned and held beats (flags on the beats rows, so they're in undo with the edits) */
+/** Held beats and tempo changes (flags on the beats rows, so they're in undo with the edits) */
 export const tempoMarksQuery = () => ({
     // under "beats", so whatever refreshes the beats (an edit, undo) refreshes these too
     queryKey: ["beats", "tempoMarks"] as const,
@@ -52,14 +49,12 @@ export const tempoMarksQuery = () => ({
         return await db
             .select({
                 id: schema.beats.id,
-                pin: schema.beats.tempo_pin,
                 hold: schema.beats.tempo_hold,
                 change: schema.beats.tempo_change,
             })
             .from(schema.beats)
             .where(
                 or(
-                    eq(schema.beats.tempo_pin, 1),
                     eq(schema.beats.tempo_hold, 1),
                     eq(schema.beats.tempo_change, 1),
                 ),
@@ -86,10 +81,6 @@ export function useTempoData(beatCount: number): TempoData {
             }
             return out;
         };
-        const locks = toOrdinals(
-            (marks ?? []).filter((m) => m.pin === 1).map((m) => m.id),
-        );
-        locks.delete(1);
         const holds = toOrdinals(
             (marks ?? []).filter((m) => m.hold === 1).map((m) => m.id),
         );
@@ -134,7 +125,6 @@ export function useTempoData(beatCount: number): TempoData {
         }
         return {
             durations,
-            locks,
             holds,
             changes,
             ids,
@@ -145,22 +135,17 @@ export function useTempoData(beatCount: number): TempoData {
     }, [beats, measures, countGrid, marks, beatCount, audioOffset]);
 }
 
-/** Save pins and holds (spec beats) as beat flags: one undo step */
-export async function saveMarks(sets: {
-    locks?: ReadonlySet<number>;
-    holds?: ReadonlySet<number>;
-}) {
-    await writeMarks({ pins: sets.locks, holds: sets.holds });
+/** Save holds (spec beats) as beat flags: one undo step */
+export async function saveHolds(holds: ReadonlySet<number>) {
+    await writeMarks({ holds });
     await queryClient.invalidateQueries({ queryKey: ["beats"] });
 }
 
-/** Write a tempo edit: the new lengths, then the pins by beat id (the counts may be new) */
+/** Write a tempo edit: the new lengths and the tempo changes, in one undo step */
 export async function commitEdit(
     before: TempoData,
     result: TempoEditResult & { changes?: ReadonlySet<number> },
     refetch: () => Promise<unknown>,
-    /** The music offset to set in the same edit (a fit that moved the music) */
-    audioOffset?: number,
     /**
      * Where tempo changes start, when the edit doesn't say: the lane's points as they were. A show
      * with none stored gets the ones the lane read from its counts, so its points stay put from
@@ -168,19 +153,10 @@ export async function commitEdit(
      */
     changes?: ReadonlySet<number>,
 ) {
-    const maxLock = Math.max(0, ...result.locks);
-    const after = [...result.durations];
-    // a pin past the stored counts needs its count stored
-    while (after.length <= maxLock) after.push(after[after.length - 1]!);
-    // the lengths and the pins in one undo step
     await writeDurations({
         before: before.durations,
-        after,
-        pins: result.locks,
+        after: result.durations,
         changes: result.changes ?? changes,
-        audioOffset,
     });
-    await queryClient.invalidateQueries({ queryKey: tempoSettingsKey });
     await refetch();
-    if (result.note) toast.info(result.note, { id: NOTE_TOAST });
 }
