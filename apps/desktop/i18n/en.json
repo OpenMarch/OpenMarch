@@ -1727,6 +1727,9 @@
             "validatingAccess": "Validating On the Move access..."
         },
         "logoAlt": "OTM Logo",
+        "pageLines": {
+            "note": "The phone shows where marchers are at each page, so moves between pages appear as straight lines."
+        },
         "revision": {
             "audioSyncFailed": "Revision uploaded, but audio sync failed: {msg}",
             "backgroundSyncFailed": "Revision uploaded, but background image sync failed: {msg}",
