@@ -149,8 +149,8 @@ function guideParam(way: "width" | "depth"): ToolParam<LineParams> {
                       "How far the arc reaches side to side, in steps",
                   )
                 : tolgee.t(
-                      "shapes.kinds.arc.params.depth",
-                      "How deep the arc is, from its ends to its far edge, in steps",
+                      "shapes.kinds.arc.params.height",
+                      "How tall the arc is, from its ends to its far edge, in steps",
                   );
         },
         unit: "steps",

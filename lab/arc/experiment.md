@@ -37,7 +37,7 @@ Select some marchers, open the **Shapes** tab and pick **Arc** (after Curve).
   steps apart side to side, which is easy to read off the yard lines. Their
   side-to-side spots stay put as you change the degrees (up to 180°).
 - The editor also shows the room the arc takes ("60 × 30 steps": how far it
-  reaches side to side, and how deep it is from its ends to its far edge).
+  reaches side to side, and how tall it is from its ends to its far edge).
   Up to a half circle the first number is the distance between the two end
   marchers. Both change as you change the degrees; drag or type either. The
   lock after them keeps the two in proportion, for the handles too (Cmd/Ctrl

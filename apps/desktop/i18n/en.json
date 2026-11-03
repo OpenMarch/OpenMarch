@@ -2286,8 +2286,8 @@
             "ratioLock": {
                 "locked": "Spacings locked together: click to unlock",
                 "unlocked": "Lock the two spacings together",
-                "sizesLocked": "Width and depth locked together: click to unlock",
-                "sizesUnlocked": "Lock the width and depth together"
+                "sizesLocked": "Width and height locked together: click to unlock",
+                "sizesUnlocked": "Lock the width and height together"
             },
             "hideMarchers": {
                 "hide": "Hide the marchers",
@@ -2414,7 +2414,7 @@
                 "params": {
                     "bend": "How far the arc turns",
                     "width": "How far the arc reaches side to side, in steps",
-                    "depth": "How deep the arc is, from its ends to its far edge, in steps",
+                    "height": "How tall the arc is, from its ends to its far edge, in steps",
                     "stretch": "How stretched the ellipse the arc is on is: how many times taller than wide, or wider than tall"
                 },
                 "ends": {

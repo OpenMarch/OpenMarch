@@ -921,7 +921,7 @@ const IntervalLockButton = memo(function IntervalLockButton({
 const RatioLockButton = memo(function RatioLockButton({
     sizes = false,
 }: {
-    /** It locks two sizes rather than spacings: an Arc's width and depth (#634) */
+    /** It locks two sizes rather than spacings: an Arc's width and height (#634) */
     sizes?: boolean;
 }) {
     // Each its own: an Arc's width-and-depth lock doesn't lock a box's spacings (owner on #634)
@@ -935,11 +935,11 @@ const RatioLockButton = memo(function RatioLockButton({
                     ? ratioLocked
                         ? tolgee.t(
                               "shapes.edit.ratioLock.sizesLocked",
-                              "Width and depth locked together: click to unlock",
+                              "Width and height locked together: click to unlock",
                           )
                         : tolgee.t(
                               "shapes.edit.ratioLock.sizesUnlocked",
-                              "Lock the width and depth together",
+                              "Lock the width and height together",
                           )
                     : ratioLocked
                       ? tolgee.t(
