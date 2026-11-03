@@ -46,7 +46,6 @@ import {
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
 import TimelineHoldLine from "./TimelineHoldLine";
-import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 import MovePad from "./marcher/MovePad";
 import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
 import { formatList } from "@/utilities/formatList";
@@ -520,8 +519,6 @@ function MarcherEditor() {
         () => selectedMarchers.map((marcher) => marcher.id),
         [selectedMarchers],
     );
-    // UI-18 keep later pages: the keep tooltips name the selected marchers
-    const selectedNameOf = useMarcherNameOf(selectedMarchers);
     const previousPage = useMemo(
         () => pages.find((p) => p.id === selectedPage?.previousPageId) ?? null,
         [pages, selectedPage?.previousPageId],
@@ -722,7 +719,6 @@ function MarcherEditor() {
                                     {/* Under the step sizes: hold or move on this page (UI-18) */}
                                     <TimelineHoldLine
                                         marcherIds={selectedMarcherIdList}
-                                        nameOf={selectedNameOf}
                                     />
                                     {selectedMarchers.length === 2 && (
                                         <ActionButton
@@ -989,7 +985,6 @@ function MarcherEditor() {
                                                     marcherIds={
                                                         selectedMarcherIdList
                                                     }
-                                                    nameOf={selectedNameOf}
                                                 />
                                             </div>
                                             {/* Hidden, so the form submits when Enter is pressed */}

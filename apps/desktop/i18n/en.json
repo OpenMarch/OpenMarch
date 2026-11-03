@@ -885,14 +885,7 @@
                 "goToStart": "Go to the start",
                 "holdFrom": "Last moved on Page {page}",
                 "holdFromStart": "No moves since the start",
-                "holdHere": "These marchers have no position of their own here",
-                "movesOnThisPage": "Moves on this page",
-                "pagesShowFromHere": "{count, plural, =1 {Page {first} shows these marchers where this page leaves them} other {Pages {first}–{last} show these marchers where this page leaves them}}",
-                "pagesShowSomeFromHere": "{count, plural, =1 {Page {first} shows some of these marchers where this page leaves them} other {Pages {first}–{last} show some of these marchers where this page leaves them}}",
-                "setAsShown": "{defineAsShown}",
-                "setAsShownHint": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here}}",
-                "setAsShownHintEarlier": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here}}",
-                "someHoldHere": "Some of these marchers have no position of their own here"
+                "movesOnThisPage": "Moves on this page"
             },
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}",
@@ -955,18 +948,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Counts",
-                "delete": "Delete move",
-                "endHelp": "To change where they end up, drag marchers on the field at the move's end.",
-                "goToEnd": "Go to end",
-                "marchers": "{count, plural, one {# marcher} other {# marchers}}",
-                "name": "Name",
-                "nameLimit": "{max} characters at most.",
-                "paused": "Pause to delete a move.",
-                "selectMarchers": "Select them",
-                "split": "Split at playhead",
-                "splitHelp": "Put the playhead inside the move to split it there.",
-                "title": "Move"
+                "splitHelp": "Put the playhead inside the move to split it there."
             }
         },
         "title": "Inspector"
@@ -2565,7 +2547,6 @@
                 "starred": "Starred"
             },
             "section": {
-                "box": "Box",
                 "title": "Shapes"
             },
             "selectMarchersFirst": "Select marchers first",
@@ -2578,10 +2559,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Flip ↔",
-            "flipAcrossTip": "Flip side to side around the pivot",
-            "flipDeep": "Flip ↕",
-            "flipDeepTip": "Flip front to back around the pivot",
             "title": "Transform"
         },
         "validate": {
@@ -3082,6 +3059,7 @@
         },
         "moveMenu": {
             "edit": "Edit move",
+            "selectMarchers": "Select marchers",
             "rename": "Rename move…",
             "splitAtPlayhead": "Split at playhead",
             "delete": "Delete move",

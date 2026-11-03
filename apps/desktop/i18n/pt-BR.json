@@ -872,9 +872,7 @@
                 "goToStart": "Ir para o início",
                 "holdFrom": "Parados desde a página {page}",
                 "holdFromStart": "Parados desde o início",
-                "holdHere": "Estes integrantes ficam parados aqui",
-                "movesOnThisPage": "Movem-se nesta página",
-                "someHoldHere": "Alguns destes integrantes ficam parados aqui"
+                "movesOnThisPage": "Movem-se nesta página"
             },
             "title": "{count} integrantes",
             "titleSingle": "Integrante {drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Tempos",
-                "delete": "Excluir movimento",
-                "endHelp": "Para mudar onde eles terminam, arraste os integrantes no campo no fim do movimento.",
-                "goToEnd": "Ir para o fim",
-                "marchers": "{count, plural, one {# integrante} other {# integrantes}}",
-                "name": "Nome",
-                "nameLimit": "No máximo {max} caracteres.",
-                "paused": "Pause para excluir um movimento.",
-                "selectMarchers": "Selecioná-los",
-                "split": "Dividir no indicador",
-                "splitHelp": "Coloque o indicador de reprodução dentro do movimento para dividi-lo ali.",
-                "title": "Movimento"
+                "splitHelp": "Coloque o indicador de reprodução dentro do movimento para dividi-lo ali."
             }
         },
         "title": "Inspetor"
@@ -2547,7 +2534,6 @@
                 "starred": "Favoritada"
             },
             "section": {
-                "box": "Bloco",
                 "title": "Formas"
             },
             "selectMarchersFirst": "Selecione integrantes primeiro",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Espelhar ↔",
-            "flipAcrossTip": "Espelhar de lado a lado em torno do pivô",
-            "flipDeep": "Espelhar ↕",
-            "flipDeepTip": "Espelhar de frente para trás em torno do pivô",
             "title": "Transformação"
         },
         "validate": {

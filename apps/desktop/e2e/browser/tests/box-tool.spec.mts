@@ -831,7 +831,6 @@ test("change: the chip and the plain selection's Transform section draw their di
     const transform = page.getByTestId("transform-section");
     await expect(transform).toBeVisible();
     expect(await transform.innerText()).not.toMatch(PICTOGRAPHIC);
-    await expect(transform.locator("[data-glyph]")).not.toHaveCount(0);
 });
 
 test("change: start positions show as faint dots in the marchers' own color", async ({
@@ -2033,32 +2032,22 @@ async function spacings(page: Page): Promise<[number, number]> {
     ];
 }
 
-test("change: the Transform section flips and turns a plain selection around the pivot, writing positions only", async ({
+test("change: the Transform section turns a plain selection around the pivot, writing positions only", async ({
     show,
 }) => {
     const { page } = show;
     await selectAll(page);
     const section = page.getByTestId("transform-section");
     await expect(section).toBeVisible();
-    // A plain selection has no scale
+    // A plain selection has no scale, and the Align row has the flips
     await expect(section.getByTestId("transform-scale-more")).toHaveCount(0);
     const steps = await undoSteps(show);
 
-    // Around the left edge: everyone mirrors to the left of the leftmost marcher
-    const left = Math.min(...HOME.map(([, x]) => x));
-    await section.getByTestId("transform-pivot-w").click();
-    await section.getByTestId("transform-flip-across").click();
-    await expect
-        .poll(() => savedPositions(show, 0))
-        .toEqual(asPositions(HOME.map(([id, x, y]) => [id, 2 * left - x, y])));
-    expect(await undoSteps(show)).toBe(steps + 1);
-    expect(await recipeCount(show)).toBe(0);
-
     // A quarter turn clockwise around the back-left corner of their box
-    const flipped = await savedPositions(show, 0);
+    const before = await savedPositions(show, 0);
     const corner = {
-        x: Math.min(...flipped.map((p) => p.x)),
-        y: Math.min(...flipped.map((p) => p.y)),
+        x: Math.min(...before.map((p) => p.x)),
+        y: Math.min(...before.map((p) => p.y)),
     };
     await section.getByTestId("transform-pivot-nw").click();
     const rotation = section.getByRole("textbox", { name: "Rotation" });
@@ -2067,7 +2056,7 @@ test("change: the Transform section flips and turns a plain selection around the
     await expect
         .poll(async () =>
             (await savedPositions(show, 0)).every((p) => {
-                const was = flipped.find((f) => f.id === p.id)!;
+                const was = before.find((f) => f.id === p.id)!;
                 const want = {
                     x: corner.x - (was.y - corner.y),
                     y: corner.y + (was.x - corner.x),
@@ -2076,7 +2065,7 @@ test("change: the Transform section flips and turns a plain selection around the
             }),
         )
         .toBe(true);
-    expect(await undoSteps(show)).toBe(steps + 2);
+    expect(await undoSteps(show)).toBe(steps + 1);
     expect(await recipeCount(show)).toBe(0);
     await expectCanvasMatchesShow(show);
 });
@@ -2093,7 +2082,6 @@ test("change: with a kind armed and nothing drawn yet, the Transform section sho
     await expect(
         section.getByRole("textbox", { name: "Rotation" }),
     ).toBeVisible();
-    await expect(section.getByTestId("transform-flip-across")).toBeVisible();
     await expect(section.getByTestId("transform-scale-more")).toHaveCount(0);
 });
 

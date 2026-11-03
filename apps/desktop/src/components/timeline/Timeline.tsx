@@ -817,6 +817,14 @@ export function Timeline(props: TimelineProps) {
               }
             : undefined,
     );
+    const selectMoveMarchers = useLatestCallback(
+        moveCommands?.onSelectMarchers
+            ? (trackId: string | number) => {
+                  const id = storedIdOf(trackId);
+                  if (id !== null) moveCommands.onSelectMarchers!(id);
+              }
+            : undefined,
+    );
     // UI-27: Split at playhead, by stored id too; its reason is read as the menu opens
     const splitMove = useLatestCallback(
         moveCommands?.onSplit
@@ -854,6 +862,9 @@ export function Timeline(props: TimelineProps) {
                       onEdit: editMove,
                       onDelete: deleteMove,
                       onRename: renameMove,
+                      ...(selectMoveMarchers
+                          ? { onSelectMarchers: selectMoveMarchers }
+                          : {}),
                       ...(splitMove ? { onSplit: splitMove } : {}),
                       ...(splitMoveReason
                           ? { splitDisabledReason: splitMoveReason }
@@ -866,6 +877,7 @@ export function Timeline(props: TimelineProps) {
             editMove,
             moveDisabledReason,
             renameMove,
+            selectMoveMarchers,
             splitMove,
             splitMoveReason,
             moveExtraFor,

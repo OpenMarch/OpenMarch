@@ -872,9 +872,7 @@
                 "goToStart": "Aller au début",
                 "holdFrom": "Immobiles depuis la page {page}",
                 "holdFromStart": "Immobiles depuis le début",
-                "holdHere": "Ces marcheurs restent immobiles ici",
-                "movesOnThisPage": "Se déplacent sur cette page",
-                "someHoldHere": "Certains de ces marcheurs restent immobiles ici"
+                "movesOnThisPage": "Se déplacent sur cette page"
             },
             "title": "{count} marcheurs",
             "titleSingle": "Marcheur {drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Temps",
-                "delete": "Supprimer le mouvement",
-                "endHelp": "Pour changer leur position d’arrivée, faites glisser les marcheurs sur le terrain à la fin du mouvement.",
-                "goToEnd": "Aller à la fin",
-                "marchers": "{count, plural, one {# marcheur} other {# marcheurs}}",
-                "name": "Nom",
-                "nameLimit": "{max} caractères maximum.",
-                "paused": "Mettez en pause pour supprimer un mouvement.",
-                "selectMarchers": "Les sélectionner",
-                "split": "Scinder à la tête de lecture",
-                "splitHelp": "Placez la tête de lecture dans le mouvement pour le scinder à cet endroit.",
-                "title": "Mouvement"
+                "splitHelp": "Placez la tête de lecture dans le mouvement pour le scinder à cet endroit."
             }
         },
         "title": "Inspecteur"
@@ -2547,7 +2534,6 @@
                 "starred": "En favori"
             },
             "section": {
-                "box": "Bloc",
                 "title": "Formes"
             },
             "selectMarchersFirst": "Sélectionnez d'abord des marcheurs",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Retourner ↔",
-            "flipAcrossTip": "Retourner latéralement autour du pivot",
-            "flipDeep": "Retourner ↕",
-            "flipDeepTip": "Retourner d'avant en arrière autour du pivot",
             "title": "Transformation"
         },
         "validate": {

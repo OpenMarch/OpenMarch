@@ -20,6 +20,7 @@ import {
     PencilSimpleIcon,
     TrashIcon,
     UserPlusIcon,
+    UsersThreeIcon,
     ScissorsIcon,
     QuestionIcon,
     CheckIcon,
@@ -296,6 +297,8 @@ export interface TimelineMoveMenuActions {
     readonly onEdit: () => void;
     readonly onRename: () => void;
     readonly onDelete: () => void;
+    /** **Select marchers**: selects the move's marchers; without it the entry isn't offered */
+    readonly onSelectMarchers?: () => void;
     /** **Split at playhead** (UI-27); without it the entry isn't offered */
     readonly onSplit?: () => void;
     /** Why **Split at playhead** is unavailable now (read when the menu renders), or null */
@@ -315,6 +318,8 @@ export interface TimelineMoveCommands<Id = number> {
     readonly onEdit: (id: Id) => void;
     readonly onRename: (id: Id, name: string) => void;
     readonly onDelete: (id: Id) => void;
+    /** **Select marchers**; without it the entry isn't offered */
+    readonly onSelectMarchers?: (id: Id) => void;
     /** **Split at playhead** (UI-27); without it the entry isn't offered */
     readonly onSplit?: (id: Id) => void;
     /** Why **Split at playhead** is unavailable for the move now, or null */
@@ -327,7 +332,7 @@ export interface TimelineMoveCommands<Id = number> {
 
 /**
  * A move's entries (UI-14), for the clip's right-click menu and its ⋯ button: **Edit move**,
- * **Rename move…**, then **Delete move**, red and last. Editing and deleting wait while playing,
+ * **Select marchers**, **Rename move…**, then **Delete move**, red and last. Editing and deleting wait while playing,
  * each with the reason behind a **?**; renaming only changes a label, so it doesn't.
  */
 export function TimelineMoveMenuItems({
@@ -354,6 +359,16 @@ export function TimelineMoveMenuItems({
                 <PencilSimpleIcon size={14} />
                 {t("timeline.moveMenu.edit")}
             </MenuItemWithReason>
+            {actions.onSelectMarchers && (
+                <DropdownMenu.Item
+                    data-testid="timeline-move-menu-select-marchers"
+                    onSelect={actions.onSelectMarchers}
+                    className={TIMELINE_MENU_ITEM_CLASS}
+                >
+                    <UsersThreeIcon size={14} />
+                    {t("timeline.moveMenu.selectMarchers")}
+                </DropdownMenu.Item>
+            )}
             <DropdownMenu.Item
                 data-testid="timeline-move-menu-rename"
                 onSelect={actions.onRename}

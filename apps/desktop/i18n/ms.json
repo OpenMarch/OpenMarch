@@ -872,9 +872,7 @@
                 "goToStart": "Pergi ke permulaan",
                 "holdFrom": "Kekal sejak Halaman {page}",
                 "holdFromStart": "Kekal sejak permulaan",
-                "holdHere": "Pemain ini kekal di sini",
-                "movesOnThisPage": "Bergerak pada halaman ini",
-                "someHoldHere": "Sebahagian pemain ini kekal di sini"
+                "movesOnThisPage": "Bergerak pada halaman ini"
             },
             "title": "{count} pemain",
             "titleSingle": "Pemain {drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Kiraan",
-                "delete": "Padam gerakan",
-                "endHelp": "Untuk menukar kedudukan akhir mereka, seret pemain di padang pada penghujung gerakan.",
-                "goToEnd": "Pergi ke akhir",
-                "marchers": "{count, plural, other {# pemain}}",
-                "name": "Nama",
-                "nameLimit": "Maksimum {max} aksara.",
-                "paused": "Jeda untuk memadam gerakan.",
-                "selectMarchers": "Pilih mereka",
-                "split": "Pisah pada kepala main",
-                "splitHelp": "Letakkan kepala main di dalam gerakan untuk memisahkannya di situ.",
-                "title": "Gerakan"
+                "splitHelp": "Letakkan kepala main di dalam gerakan untuk memisahkannya di situ."
             }
         },
         "title": "Pemeriksa"
@@ -2547,7 +2534,6 @@
                 "starred": "Dibintangkan"
             },
             "section": {
-                "box": "Blok",
                 "title": "Bentuk"
             },
             "selectMarchersFirst": "Pilih pemain dahulu",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Balik ↔",
-            "flipAcrossTip": "Balikkan dari sisi ke sisi pada titik pangsi",
-            "flipDeep": "Balik ↕",
-            "flipDeepTip": "Balikkan dari depan ke belakang pada titik pangsi",
             "title": "Transformasi"
         },
         "validate": {

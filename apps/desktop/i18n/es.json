@@ -872,9 +872,7 @@
                 "goToStart": "Ir al inicio",
                 "holdFrom": "Sin moverse desde la página {page}",
                 "holdFromStart": "Sin moverse desde el inicio",
-                "holdHere": "Estos integrantes se mantienen en su lugar aquí",
-                "movesOnThisPage": "Se mueven en esta página",
-                "someHoldHere": "Algunos de estos integrantes se mantienen en su lugar aquí"
+                "movesOnThisPage": "Se mueven en esta página"
             },
             "title": "{count} integrantes",
             "titleSingle": "Integrante {drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Tiempos",
-                "delete": "Eliminar movimiento",
-                "endHelp": "Para cambiar dónde terminan, arrastra a los integrantes en el campo al final del movimiento.",
-                "goToEnd": "Ir al final",
-                "marchers": "{count, plural, one {# integrante} other {# integrantes}}",
-                "name": "Nombre",
-                "nameLimit": "{max} caracteres como máximo.",
-                "paused": "Pausa la reproducción para eliminar un movimiento.",
-                "selectMarchers": "Seleccionarlos",
-                "split": "Dividir en el cabezal",
-                "splitHelp": "Coloca el cabezal de reproducción dentro del movimiento para dividirlo ahí.",
-                "title": "Movimiento"
+                "splitHelp": "Coloca el cabezal de reproducción dentro del movimiento para dividirlo ahí."
             }
         },
         "title": "Inspector"
@@ -2547,7 +2534,6 @@
                 "starred": "Destacada"
             },
             "section": {
-                "box": "Bloque",
                 "title": "Formas"
             },
             "selectMarchersFirst": "Primero selecciona integrantes",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Voltear ↔",
-            "flipAcrossTip": "Voltear de lado a lado alrededor del pivote",
-            "flipDeep": "Voltear ↕",
-            "flipDeepTip": "Voltear de adelante hacia atrás alrededor del pivote",
             "title": "Transformar"
         },
         "validate": {

@@ -90,7 +90,6 @@ import { usePageKeepChains } from "./PageKeepChain";
 import { useHoldCommands } from "@/timeline/useHoldCommands";
 import { clearPageMenu } from "@/timeline/timelineClearPage";
 import { describeMoveClips } from "./moveClipText";
-import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useBasicLocksStore } from "@/timeline/basicLocks";
@@ -311,7 +310,7 @@ export default function TimelineModePanel() {
             timelines.flatMap((t) => (clipped.has(t) ? [] : [t.id])),
         );
     }, [timelines, clipTimelines]);
-    const { clips: offPage, overridden } = useMemo(
+    const { clips: offPage } = useMemo(
         () =>
             describeMoveClips({
                 clips: clipTimelines,
@@ -322,11 +321,7 @@ export default function TimelineModePanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- language: the words are tolgee.t's
         [clipTimelines, pages, storedTimelines, pageBoxes, language],
     );
-    // The Move card says it too
-    useEffect(() => {
-        useMoveNotesStore.getState().setOverridden(overridden);
-    }, [overridden]);
-    // UI-14 round-2 review: a "Select them" selection doesn't follow you to another move
+    // UI-14 round-2 review: a "Select marchers" selection doesn't follow you to another move
     useClearLeftoverMoveSelection();
     const commands = useTimelineCommands({
         database: db,
@@ -355,6 +350,7 @@ export default function TimelineModePanel() {
             onDelete: (id: number) => {
                 if (!isPlaying) void moves.deleteMove(id);
             },
+            onSelectMarchers: (id: number) => void moves.selectMarchers(id),
             // UI-27: two moves that meet at the playhead
             onSplit: (id: number) =>
                 void moves.splitMoveAtPlayhead(id, isPlaying),

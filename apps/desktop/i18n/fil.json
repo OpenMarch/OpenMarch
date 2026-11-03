@@ -872,9 +872,7 @@
                 "goToStart": "Pumunta sa simula",
                 "holdFrom": "Nakatigil mula sa Pahina {page}",
                 "holdFromStart": "Nakatigil mula sa simula",
-                "holdHere": "Nakatigil dito ang mga miyembrong ito",
-                "movesOnThisPage": "Gumagalaw sa pahinang ito",
-                "someHoldHere": "Nakatigil dito ang ilan sa mga miyembrong ito"
+                "movesOnThisPage": "Gumagalaw sa pahinang ito"
             },
             "title": "{count} miyembro",
             "titleSingle": "Miyembro {drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Bilang",
-                "delete": "Burahin ang galaw",
-                "endHelp": "Para baguhin kung saan sila hihinto, i-drag ang mga miyembro sa field sa dulo ng galaw.",
-                "goToEnd": "Pumunta sa dulo",
-                "marchers": "{count, plural, one {# miyembro} other {# miyembro}}",
-                "name": "Pangalan",
-                "nameLimit": "Hanggang {max} na character lamang.",
-                "paused": "I-pause para makapagbura ng galaw.",
-                "selectMarchers": "Piliin sila",
-                "split": "Hatiin sa playhead",
-                "splitHelp": "Ilagay ang playhead sa loob ng galaw para hatiin ito roon.",
-                "title": "Galaw"
+                "splitHelp": "Ilagay ang playhead sa loob ng galaw para hatiin ito roon."
             }
         },
         "title": "Inspector"
@@ -2547,7 +2534,6 @@
                 "starred": "Naka-star"
             },
             "section": {
-                "box": "Bloke",
                 "title": "Mga hugis"
             },
             "selectMarchersFirst": "Pumili muna ng mga miyembro",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "I-flip ↔",
-            "flipAcrossTip": "I-flip pakaliwa't pakanan sa paligid ng pivot",
-            "flipDeep": "I-flip ↕",
-            "flipDeepTip": "I-flip harap-likod sa paligid ng pivot",
             "title": "Transform"
         },
         "validate": {

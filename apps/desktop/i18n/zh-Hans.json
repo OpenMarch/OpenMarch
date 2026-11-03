@@ -872,9 +872,7 @@
                 "goToStart": "转到开头",
                 "holdFrom": "从第{page}页起保持不动",
                 "holdFromStart": "从开头起保持不动",
-                "holdHere": "这些队员在此保持不动",
-                "movesOnThisPage": "在本页移动",
-                "someHoldHere": "部分队员在此保持不动"
+                "movesOnThisPage": "在本页移动"
             },
             "title": "{count}名队员",
             "titleSingle": "队员{drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "拍",
-                "delete": "删除动作",
-                "endHelp": "要更改队员的终点位置，请在动作结束处拖动场地上的队员。",
-                "goToEnd": "转到结尾",
-                "marchers": "{count, plural, other {#名队员}}",
-                "name": "名称",
-                "nameLimit": "最多{max}个字符。",
-                "paused": "暂停播放后才能删除动作。",
-                "selectMarchers": "选中这些队员",
-                "split": "在播放头处拆分",
-                "splitHelp": "将播放头置于动作内部，即可在该处拆分。",
-                "title": "动作"
+                "splitHelp": "将播放头置于动作内部，即可在该处拆分。"
             }
         },
         "title": "检查器"
@@ -2547,7 +2534,6 @@
                 "starred": "已加星标"
             },
             "section": {
-                "box": "方阵",
                 "title": "形状"
             },
             "selectMarchersFirst": "请先选择队员",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "翻转 ↔",
-            "flipAcrossTip": "围绕支点左右翻转",
-            "flipDeep": "翻转 ↕",
-            "flipDeepTip": "围绕支点前后翻转",
             "title": "变换"
         },
         "validate": {

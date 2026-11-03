@@ -872,9 +872,7 @@
                 "goToStart": "先頭へ移動",
                 "holdFrom": "ページ{page}から静止",
                 "holdFromStart": "最初から静止",
-                "holdHere": "これらのメンバーはここで静止しています",
-                "movesOnThisPage": "このページで移動",
-                "someHoldHere": "これらのメンバーの一部はここで静止しています"
+                "movesOnThisPage": "このページで移動"
             },
             "title": "{count}人のメンバー",
             "titleSingle": "メンバー {drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "カウント",
-                "delete": "動きを削除",
-                "endHelp": "終了位置を変更するには、動きの終わりでフィールド上のメンバーをドラッグしてください。",
-                "goToEnd": "終わりへ移動",
-                "marchers": "{count, plural, other {#人のメンバー}}",
-                "name": "名前",
-                "nameLimit": "最大{max}文字です。",
-                "paused": "動きを削除するには、再生を一時停止してください。",
-                "selectMarchers": "メンバーを選択",
-                "split": "再生ヘッドで分割",
-                "splitHelp": "分割するには、再生ヘッドを動きの範囲内に置いてください。",
-                "title": "動き"
+                "splitHelp": "分割するには、再生ヘッドを動きの範囲内に置いてください。"
             }
         },
         "title": "インスペクター"
@@ -2547,7 +2534,6 @@
                 "starred": "スター付き"
             },
             "section": {
-                "box": "ブロック",
                 "title": "形状"
             },
             "selectMarchersFirst": "先にメンバーを選択してください",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "反転 ↔",
-            "flipAcrossTip": "ピボットを中心に左右反転",
-            "flipDeep": "反転 ↕",
-            "flipDeepTip": "ピボットを中心に前後反転",
             "title": "変形"
         },
         "validate": {

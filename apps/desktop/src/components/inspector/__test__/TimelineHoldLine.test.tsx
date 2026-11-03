@@ -13,7 +13,6 @@ import type { Resolver, SpanInfo } from "@openmarch/core";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
-import { setAsShownOn } from "@/timeline/timelineSetAsShown";
 import { isTimelineOwnKey } from "@/components/timeline/timelineHotkeys";
 import TimelineHoldLine from "../TimelineHoldLine";
 
@@ -51,9 +50,6 @@ vi.mock("@/hooks", () => ({
     useTimingObjects: () => ({ pages: mocks.pages }),
 }));
 // Set as shown writes through the real API (tested on a database elsewhere); here, who asks
-vi.mock("@/timeline/timelineSetAsShown", () => ({
-    setAsShownOn: vi.fn(() => Promise.resolve({ changed: [], skipped: [] })),
-}));
 
 let nextAssignment = 1;
 
@@ -112,24 +108,16 @@ beforeEach(() => {
     mocks.selectedPage = PAGES[2];
     useTimelineResolverStore.setState({ resolver, version: 1 });
     useTimelineSelectionStore.getState().reset();
-    vi.mocked(setAsShownOn).mockClear();
 });
 
-const show = (
-    marcherIds: number[],
-    nameOf?: (id: number) => string | undefined,
-) =>
+const show = (marcherIds: number[]) =>
     render(
         <TolgeeProvider tolgee={tolgee} fallback="Loading...">
-            <TimelineHoldLine marcherIds={marcherIds} nameOf={nameOf} />
+            <TimelineHoldLine marcherIds={marcherIds} />
         </TolgeeProvider>,
     );
 
-const otName = (id: number) => `OT${id}`;
-
 const line = () => screen.queryByTestId("timeline-hold-line");
-const setAsShown = () => screen.queryByTestId("timeline-set-as-shown");
-const following = () => screen.queryByTestId("timeline-following-pages");
 
 describe("TimelineHoldLine", () => {
     it("says a marcher holding on the page has held since its last move, and jumps there", async () => {
@@ -185,149 +173,34 @@ describe("TimelineHoldLine", () => {
         expect(line()?.className).not.toMatch(/text-text\/60/);
     });
 
-    it("names the page held from only where every marcher agrees; otherwise says they hold here, with Set as shown", () => {
+    it("names the page held from only where every marcher agrees, and says nothing otherwise", () => {
         mocks.selectedPage = PAGES[3];
         show([1, 2]);
-        // Marcher 1 holds since page 2, marcher 2 since page 3: both follow here
-        expect(line()?.textContent).toBe(
-            "These marchers have no position of their own here",
-        );
-        expect(setAsShown()).not.toBeNull();
+        // Marcher 1 holds since page 2, marcher 2 since page 3
+        expect(line()).toBeNull();
+        expect(screen.queryByTestId("timeline-set-as-shown")).toBeNull();
+        expect(screen.queryByTestId("timeline-following-pages")).toBeNull();
         cleanup();
         mocks.selectedPage = PAGES[2];
-        show([1, 3]);
-        // Marcher 1 holds since page 2, marcher 3 since the start: both can be set
-        expect(line()?.textContent).toBe(
-            "These marchers have no position of their own here",
-        );
-        expect(setAsShown()).not.toBeNull();
-        cleanup();
         show([1, 2]);
         // Marcher 2 moves on page 3
-        expect(line()?.textContent).toBe(
-            "Some of these marchers have no position of their own here",
-        );
-        expect(setAsShown()).toHaveAccessibleDescription(
-            "Make 1 of the 2 selected defined on Page 3 where they are shown, so editing Page 2 won't move them here",
-        );
+        expect(line()).toBeNull();
         cleanup();
         show([1]);
         expect(line()?.textContent).toBe("Last moved on Page 2");
+        expect(screen.queryByTestId("timeline-set-as-shown")).toBeNull();
     });
 
-    describe("keep later pages (UI-18)", () => {
-        it("on a page they hold on: Set as shown, with a tooltip, sets them there", () => {
-            show([1]);
-            expect(line()?.textContent).toBe("Last moved on Page 2");
-            const button = setAsShown()!;
-            expect(button.tagName).toBe("BUTTON");
-            expect(button.textContent).toBe("Define as shown");
-            expect(button).toHaveAccessibleDescription(
-                "Make these marchers defined on Page 3 where they are shown, so editing Page 2 won't move them here",
+    it("Enter and Space press the hold link, not the app's shortcuts (pre-merge review U3)", () => {
+        const owns = (el: Element) =>
+            ["Enter", " "].every((k) =>
+                isTimelineOwnKey(
+                    { key: k, code: k, ctrlKey: false, metaKey: false },
+                    el,
+                ),
             );
-            expect(button).not.toHaveAttribute("aria-keyshortcuts");
-            expect(screen.queryByTestId("timeline-follow-again")).toBeNull();
-            fireEvent.click(button);
-            expect(setAsShownOn).toHaveBeenCalledWith(
-                { start: 9, end: 17 },
-                [1],
-            );
-            // The line still links to page 2
-            fireEvent.click(line()!);
-            expect(useTimelineSelectionStore.getState().playheadBeat).toBe(9);
-        });
-
-        it("Enter and Space press Set as shown and the hold link, not the app's shortcuts (pre-merge review U3)", () => {
-            const owns = (el: Element) =>
-                ["Enter", " "].every((k) =>
-                    isTimelineOwnKey(
-                        { key: k, code: k, ctrlKey: false, metaKey: false },
-                        el,
-                    ),
-                );
-            show([1, 4]);
-            expect(owns(setAsShown()!)).toBe(true);
-            cleanup();
-            show([1]);
-            expect(owns(line()!)).toBe(true);
-        });
-
-        it("a page set as shown is the marcher's own move: no kept line, no Follow again", () => {
-            show([4]);
-            expect(line()?.textContent).toBe("Moves on this page");
-            expect(setAsShown()).toBeNull();
-            expect(screen.queryByTestId("timeline-follow-again")).toBeNull();
-            expect(screen.queryByText("Kept on this page")).toBeNull();
-        });
-
-        it("a mix of set and following: says some hold here, and Set as shown names its count", () => {
-            show([1, 4]);
-            expect(line()?.textContent).toBe(
-                "Some of these marchers have no position of their own here",
-            );
-            expect(setAsShown()).toHaveAccessibleDescription(
-                "Make 1 of the 2 selected defined on Page 3 where they are shown, so editing Page 2 won't move them here",
-            );
-            fireEvent.click(setAsShown()!);
-            expect(setAsShownOn).toHaveBeenCalledWith(
-                { start: 9, end: 17 },
-                [1],
-            );
-        });
-
-        it("on the page they move: the quiet line names the later pages that follow", () => {
-            mocks.selectedPage = PAGES[1];
-            show([1]);
-            expect(line()?.textContent).toBe("Moves on this page");
-            expect(setAsShown()).toBeNull();
-            expect(following()?.textContent).toBe(
-                "Pages 3–4 show these marchers where this page leaves them",
-            );
-            expect(following()?.className).toMatch(/text-text-subtitle/);
-            cleanup();
-            // Marcher 2 moves again on page 3
-            show([1, 2]);
-            expect(following()?.textContent).toBe(
-                "Pages 3–4 show some of these marchers where this page leaves them",
-            );
-            cleanup();
-            // Marcher 4 is set on page 3
-            show([4]);
-            expect(following()).toBeNull();
-            cleanup();
-            mocks.selectedPage = PAGES[2];
-            show([1]);
-            expect(following()?.textContent).toBe(
-                "Page 4 shows these marchers where this page leaves them",
-            );
-        });
-
-        it("offers Set as shown for marchers that never moved, ahead of any move", () => {
-            show([3]);
-            expect(line()?.textContent).toBe("No moves since the start");
-            expect(setAsShown()).toHaveAccessibleDescription(
-                "Make these marchers defined on Page 3 where they are shown, so editing earlier pages won't move them here",
-            );
-            fireEvent.click(setAsShown()!);
-            expect(setAsShownOn).toHaveBeenCalledWith(
-                { start: 9, end: 17 },
-                [3],
-            );
-            // Every later page follows them: the quiet line doesn't say so
-            expect(following()).toBeNull();
-        });
-
-        it("names the marchers in the tooltips, up to three", () => {
-            show([1], otName);
-            expect(setAsShown()).toHaveAccessibleDescription(
-                "Make OT1 defined on Page 3 where they are shown, so editing Page 2 won't move them here",
-            );
-            cleanup();
-            show([1, 4], otName);
-            expect(setAsShown()).toHaveAccessibleDescription(
-                "Make OT1 (1 of the 2 selected) defined on Page 3 where they are shown, so editing Page 2 won't move them here",
-            );
-        });
+        show([1]);
+        expect(owns(line()!)).toBe(true);
     });
 
     it("renders nothing on the first page, or with nothing selected", () => {

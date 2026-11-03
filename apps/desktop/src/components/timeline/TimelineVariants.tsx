@@ -858,6 +858,12 @@ const TimelineSurface = memo(function TimelineSurface({
             onEdit: () => moveCommands.onEdit(trackId),
             onRename: () => setRenaming(String(trackId)),
             onDelete: () => moveCommands.onDelete(trackId),
+            ...(moveCommands.onSelectMarchers
+                ? {
+                      onSelectMarchers: () =>
+                          moveCommands.onSelectMarchers!(trackId),
+                  }
+                : {}),
             // UI-27
             ...(moveCommands.onSplit
                 ? { onSplit: () => moveCommands.onSplit!(trackId) }

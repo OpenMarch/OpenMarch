@@ -28,7 +28,6 @@ import {
 import { beatWhere } from "@/timeline/timelineRangeWords";
 import type { TimelineText } from "@/timeline/timelineText";
 import { translateTimelineText } from "@/timeline/translateTimelineText";
-import { useMoveCardRevealStore } from "@/stores/MoveCardRevealStore";
 import { useMoveMemberSelectionStore } from "@/stores/MoveMemberSelectionStore";
 import {
     useTimelineSelectionStore,
@@ -370,7 +369,7 @@ export function moveSplitMessage(
 }
 
 /**
- * A move's commands (ui.md UI-14), for the timeline's clips and the inspector's Move card. Each
+ * A move's commands (ui.md UI-14), for the timeline's clips and their menu. Each
  * write is one undoable edit, and a refusal is a toast (P8.6).
  *
  * - **Delete move** deletes the timeline, its transitions and assignments; moves it passed through
@@ -380,11 +379,10 @@ export function moveSplitMessage(
  *   stale button), is ignored without an error.
  * - **Rename** stores the name as `renameTimeline` normalizes it; an unchanged name writes nothing,
  *   and a move that is gone (its field left open while it was deleted) is skipped.
- * - **Select its marchers** selects the marchers with an assignment in it on the canvas, and
+ * - **Select marchers** selects the marchers with an assignment in it on the canvas, and
  *   records them, so going to another move clears them (`useClearLeftoverMoveSelection`).
  * - **Edit move** isolates the move (09-isolation.md), so its paths show and canvas drags edit
- *   where it ends; on a move already isolated it stays so. It selects nobody (one Esc leaves),
- *   and brings the inspector's Move card into view, with focus on it.
+ *   where it ends; on a move already isolated it stays so. It selects nobody (one Esc leaves).
  * - Deleting moves focus to the next clip, else the previous one, else the timeline.
  */
 export function useMoveCommands(database: DbConnection) {
@@ -488,8 +486,8 @@ export function createMoveCommands({
         selectMarchers,
         /**
          * **Split at playhead** (UI-27): the move becomes two that meet at the playhead, the one
-         * before it new. That new move becomes the window (its clip selected, the Move card on
-         * it), ending any isolation. Resolves once the split has settled.
+         * before it new. That new move becomes the window (its clip selected), ending any
+         * isolation. Resolves once the split has settled.
          */
         splitMoveAtPlayhead: (timelineId: number, isPlaying = false) =>
             splitMoveAtPlayhead({
@@ -504,9 +502,8 @@ export function createMoveCommands({
         editMove: (timelineId: number) => {
             if (!stored(timelineId)) return;
             // UI-14 review: isolation shows who is in it, so nobody is selected (one Esc
-            // leaves); **Select them** on the card selects them
+            // leaves); the clip menu's **Select marchers** selects them
             useTimelineSelectionStore.getState().isolate(timelineId);
-            useMoveCardRevealStore.getState().reveal(timelineId);
         },
     };
 }

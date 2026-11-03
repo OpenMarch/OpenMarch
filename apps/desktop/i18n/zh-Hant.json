@@ -872,9 +872,7 @@
                 "goToStart": "前往開頭",
                 "holdFrom": "從第{page}頁起保持不動",
                 "holdFromStart": "從開頭起保持不動",
-                "holdHere": "這些隊員在此保持不動",
-                "movesOnThisPage": "在此頁移動",
-                "someHoldHere": "部分隊員在此保持不動"
+                "movesOnThisPage": "在此頁移動"
             },
             "title": "{count}位隊員",
             "titleSingle": "隊員{drillNumber}",
@@ -937,18 +935,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "拍",
-                "delete": "刪除動作",
-                "endHelp": "若要變更他們最後的位置，請在動作結尾時於場地上拖曳隊員。",
-                "goToEnd": "前往結尾",
-                "marchers": "{count, plural, other {#位隊員}}",
-                "name": "名稱",
-                "nameLimit": "最多{max}個字元。",
-                "paused": "暫停播放後才能刪除動作。",
-                "selectMarchers": "選取這些隊員",
-                "split": "在播放指示器處分割",
-                "splitHelp": "將播放指示器移到動作內，即可在該處分割。",
-                "title": "動作"
+                "splitHelp": "將播放指示器移到動作內，即可在該處分割。"
             }
         },
         "title": "檢閱器"
@@ -2547,7 +2534,6 @@
                 "starred": "已加星號"
             },
             "section": {
-                "box": "方陣",
                 "title": "圖形"
             },
             "selectMarchersFirst": "請先選取隊員",
@@ -2560,10 +2546,6 @@
             }
         },
         "transform": {
-            "flipAcross": "翻轉 ↔",
-            "flipAcrossTip": "以軸心點為中心左右翻轉",
-            "flipDeep": "翻轉 ↕",
-            "flipDeepTip": "以軸心點為中心前後翻轉",
             "title": "變形"
         },
         "validate": {
