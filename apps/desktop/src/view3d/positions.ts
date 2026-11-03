@@ -64,6 +64,14 @@ export class ShowPositions {
         });
     }
 
+    /**
+     * The beat position at show time `ms`, as positions are sampled there:
+     * what the 2D field draws at (props' Outlines are keyed by it).
+     */
+    beatAt(ms: number): number {
+        return playbackBeat(this.clock, ms);
+    }
+
     /** Whether the resolver knows `marcherId`. */
     has(marcherId: number): boolean {
         return this.known.has(marcherId);
