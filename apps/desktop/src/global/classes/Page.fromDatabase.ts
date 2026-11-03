@@ -51,7 +51,12 @@ export function fromDatabasePages({
     });
     const isSubsetArr = sortedDbPages.map((page) => page.is_subset);
     const pageNames = generatePageNames(isSubsetArr, pageNumberOffset);
-    const sortedMeasures = allMeasures.sort((a, b) => a.number - b.number);
+    // In playing order, on a copy: `allMeasures` is the show's one measure list, and numbers set
+    // by hand in tempo mode can go down (a pickup renumbered -2), so sorting by number in place
+    // reordered it for everyone (the Music panel's tempo groups, the count grid)
+    const sortedMeasures = [...allMeasures].sort(
+        (a, b) => a.startBeat.position - b.startBeat.position,
+    );
 
     let curTimestamp = 0;
     const createdPages = (

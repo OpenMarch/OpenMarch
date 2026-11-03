@@ -2899,7 +2899,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const measureWidth = ppb * m.counts;
         const numberText = `${m.number}${partial ? "*" : ""}`;
         const marked = partial || m.overridden;
-        const onStride = (m.number - 1) % numberStride === 0;
+        // (a true modulo: a renumbered pickup can be negative)
+        const onStride =
+            (((m.number - 1) % numberStride) + numberStride) % numberStride ===
+            0;
         const numbered = marked || onStride;
         const numberWidth = textWidth(
             numberText,
