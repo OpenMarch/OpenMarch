@@ -29,7 +29,7 @@ const resolverFor = (name: string): Resolver =>
 const fieldProperties =
     FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES;
 
-/** The shared keyframe computation the timeline's diamonds use, with nothing kept. */
+/** The shared keyframe computation the timeline's diamonds use. */
 const setBeatsOf = (resolver: Resolver) => (id: number) =>
     marcherSetBeats(resolverSpans(resolver, id));
 

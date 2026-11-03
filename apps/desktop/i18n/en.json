@@ -21,14 +21,24 @@
             "toggleSnapKeywords": "snap magnet grid free"
         },
         "batchEdit": {
+            "clearPage": "Clear Page {page}",
+            "clearPageAndLater": "{count, plural, =1 {Clear Page {page}, Page {first} moves back too} other {Clear Page {page}, Pages {first}–{last} move back too}}",
+            "clearThisPageAll": "{clearThisPage} (all marchers)",
+            "clearThisPageAllAndFollowing": "{clearThisPage} (all marchers), later pages move back too",
+            "clearThisPageHoldsToo": "{count, plural, one {{names}'s hold on {pages} was cleared too} other {{names}'s holds on {pages} were cleared too}}.",
+            "clearThisPageSelected": "{clearThisPage} (selected)",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage} (selected), later pages move back too",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label} (all marchers)",
+            "forSelected": "{label} (selected)",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "hold held defined not defined keep stay set keyframe page state previous",
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
             "setAllToNext": "Copy positions from next page (all marchers)",
             "setAllToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
-            "setAllToPrevious": "Copy positions from previous page (all marchers)",
             "setSelectedToNext": "Copy positions from next page (selected)",
             "setSelectedToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
-            "setSelectedToPrevious": "Copy positions from previous page (selected)",
             "setAllToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}",
             "setSelectedToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}"
         },
@@ -136,11 +146,10 @@
             "previousPage": "Previous page (timeline)",
             "splitMoveAtPlayhead": "Split the move at the playhead",
             "tapBeats": "Add {count} temporary beats",
-            "toggleKeepOnPage": "Keep the selected marchers where they hold on this page (on the next page if they move here), or let them follow again",
-            "unsetHere": "Remove keyframe",
-            "unsetHereAndFollowing": "Remove keyframe, later pages follow back",
-            "unsetHereAndPages": "{count, plural, =1 {Remove keyframe, Page {first} follows back} other {Remove keyframe, Pages {first}–{last} follow back}}",
-            "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete",
+            "unsetHere": "{removeKeyframe}",
+            "unsetHereAndFollowing": "{removeKeyframe}, later pages move back too",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, Page {first} moves back too} other {{removeKeyframe}, Pages {first}–{last} move back too}}",
+            "unsetHereKeywords": "keyframe diamond unset set defined not defined following remove clear take back coordinate position delete",
             "splitSelectedIntoNewMove": "Split selected marchers into a new move",
             "mergeMoveIntoPage": "Merge this move into its page"
         },
@@ -928,28 +937,23 @@
             "swapMarchers": "Swap marchers",
             "timeline": {
                 "buttonWithHint": "{label}. {hint}",
-                "followAgain": "Follow again",
-                "followAgainHint": "{who, select, named {Let {names} follow Page {from} again, so editing Page {from} moves them here too} someNamed {Let {names} ({count} of the {total} selected) follow Page {from} again, so editing Page {from} moves them here too} some {Let {count} of the {total} selected follow Page {from} again, so editing Page {from} moves them here too} other {Let these marchers follow Page {from} again, so editing Page {from} moves them here too}}",
-                "followAgainHintEarlier": "{who, select, named {Let {names} follow earlier pages again} someNamed {Let {names} ({count} of the {total} selected) follow earlier pages again} some {Let {count} of the {total} selected follow earlier pages again} other {Let these marchers follow earlier pages again}}",
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
-                "holdFrom": "Hold from Page {page}",
-                "holdFromStart": "Hold from the start",
-                "holdHere": "These marchers hold here",
-                "keepHere": "Keep here",
-                "keepHereHint": "{who, select, named {Keep {names} on Page {page}, so editing Page {from} won't move them here} someNamed {Keep {names} ({count} of the {total} selected) on Page {page}, so editing Page {from} won't move them here} some {Keep {count} of the {total} selected on Page {page}, so editing Page {from} won't move them here} other {Keep these marchers on Page {page}, so editing Page {from} won't move them here}}",
-                "keepHereHintEarlier": "{who, select, named {Keep {names} on Page {page}, so editing earlier pages won't move them here} someNamed {Keep {names} ({count} of the {total} selected) on Page {page}, so editing earlier pages won't move them here} some {Keep {count} of the {total} selected on Page {page}, so editing earlier pages won't move them here} other {Keep these marchers on Page {page}, so editing earlier pages won't move them here}}",
-                "keptOnThisPage": "Kept on this page",
+                "holdFrom": "Last moved on Page {page}",
+                "holdFromStart": "No moves since the start",
+                "holdHere": "These marchers have no position of their own here",
                 "movesOnThisPage": "Moves on this page",
-                "pagesFollow": "{count, plural, =1 {Page {first} follows these marchers} other {Pages {first}–{last} follow these marchers}}",
-                "pagesFollowSome": "{count, plural, =1 {Page {first} follows some of these marchers} other {Pages {first}–{last} follow some of these marchers}}",
-                "someHoldHere": "Some of these marchers hold here",
-                "someKeptOnThisPage": "Some of these marchers are kept on this page",
-                "unsetHere": "Remove keyframe",
-                "unsetHereAndFollowingHint": "Remove their keyframe on this count, and {pageCount, plural, =1 {Page {first} follows} other {Pages {first}–{last} follow}} back to the keyframe before it",
-                "unsetHereAndFollowingHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pageCount, plural, =1 {Page {first} follows} other {Pages {first}–{last} follow}} back to the keyframe before it",
-                "unsetHereHint": "Remove their keyframe on this count, so they follow from earlier. Later pages stay where they are",
-                "unsetHereHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they follow from earlier. Later pages stay where they are",
+                "pagesShowFromHere": "{count, plural, =1 {Page {first} shows these marchers where this page leaves them} other {Pages {first}–{last} show these marchers where this page leaves them}}",
+                "pagesShowSomeFromHere": "{count, plural, =1 {Page {first} shows some of these marchers where this page leaves them} other {Pages {first}–{last} show some of these marchers where this page leaves them}}",
+                "setAsShown": "{defineAsShown}",
+                "setAsShownHint": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here}}",
+                "setAsShownHintEarlier": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here}}",
+                "someHoldHere": "Some of these marchers have no position of their own here",
+                "unsetHere": "{removeKeyframe}",
+                "unsetHereAndLaterHint": "Remove their keyframe on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
+                "unsetHereAndLaterHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
+                "unsetHereHint": "Remove their keyframe on this count, so they go back to the keyframe before it. Later pages stay where they are",
+                "unsetHereHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they go back to the keyframe before it. Later pages stay where they are",
                 "unsetHereNone": "None of the selected marchers has a keyframe on this count"
             },
             "title": "{count} Marchers",
@@ -1169,6 +1173,12 @@
         "title": "Launch Page",
         "social": {
             "link": "OpenMarch on {service}"
+        }
+    },
+    "languages": {
+        "help": {
+            "addYours": "Don't see your language? <link>Help us add it</link>",
+            "madeWithAi": "This translation was made with AI, so some words may be wrong. <link>Help us check it</link>"
         }
     },
     "library": {
@@ -2751,6 +2761,7 @@
     "timeline": {
         "audio": "Audio",
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
                 "catchUp": "Now catches up to the set at the end of {caughtUp}",
                 "keepStops": {
@@ -2779,7 +2790,19 @@
             "destinationShapeUnsuitable": "That destination doesn't fit the transition. A follow-the-leader transition can't end on a block, and a block needs at least as many places as the transition has slots.",
             "followLeaderBlock": "A follow-the-leader transition can't end on a block. Choose a line, curve, circle or box instead.",
             "followLeaderNeedsShape": "A follow-the-leader transition needs a shape to follow.",
+            "heldConflict": "{count, plural, =1 {{names} is {held} on {pages}. {clearThisPage} to remove the hold, or drag inside it to move it.} other {{names} are {held} on {pages}. {clearThisPage} to remove the holds, or drag inside them to move them.}}",
+            "heldDropped": "{count, plural, =1 {{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.} other {{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.}}",
+            "heldHoldsOverlap": "A marcher can't have two {held} holds over the same counts.",
+            "heldPages": "{count, plural, =1 {Page {pages}} other {Pages {pages}}}",
             "legacyConvertedTimeline": "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion).",
+            "moveInHeldHold": "That would put a move inside a {held} hold. {clearThisPage} to remove the hold, or drag inside it to move it.",
+            "notJoined": {
+                "marcherCount": "{count, plural, one {# marcher} other {# marchers}}",
+                "message": "{names} couldn't join their moves: {reason}.",
+                "overlap": "the joined move would run into another of their moves on the same layer",
+                "partway": "a marcher joins or leaves the next move partway",
+                "secondMove": "they'd have two moves over the same counts"
+            },
             "notReady": "The timeline is still loading. Try again in a moment.",
             "numberOutOfRange": "A number is out of range. Beats, layers, slot counts and positions must be whole or finite numbers within the allowed limits.",
             "pathParamsInvalid": "That path setting isn't valid. An arc's bulge can be at most half the distance between its ends, and waypoints must be points on the field.",
@@ -2789,34 +2812,41 @@
             "transitionSpansTimeline": "A transition must span its whole timeline, starting and ending with it. Change the timeline's range instead, and its transitions move with it.",
             "unknown": "The timeline couldn't make that change."
         },
+        "heldBar": {
+            "detail": "{held} of {total} selected",
+            "title": "{held} · Page {page}",
+            "titleRange": "{held} · Pages {first}–{last}",
+            "titleWithDetail": "{title}. {detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}: the move before {page} follows the leader",
+            "arrivalShape": "{names}: the move before {page} ends in a shape",
+            "count": "{count, plural, one {# marcher} other {# marchers}}",
+            "crossesFlag": "{names}: a move runs across one of the page's flags",
+            "done": "{names} {held} on {page}",
+            "expertMoves": "{names}: Expert moves on this page",
+            "followLeader": "{names}: follows the leader on this page",
+            "held": "{names}: already {held} here",
+            "homeShape": "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
+            "noArrival": "{names}: no move ends where {page} starts",
+            "none": "Nobody {held} on {page}",
+            "notHeldReasons": "Not {heldLower}: {reasons}",
+            "shape": "{names}: in a shape on this page"
+        },
         "keep": {
             "chain": {
                 "ariaLabel": "Page {page}: {label}. {hint}",
-                "follows": "{count, plural, one {# marcher holds where Page {from} left it} other {# marchers hold where Page {from} left them}}",
-                "followsEarlier": "{count, plural, one {# marcher holds where earlier pages left it} other {# marchers hold where earlier pages left them}}",
-                "followsHint": "Changes to Page {from} carry onto Page {page}. Click to keep {count, plural, =1 {it} other {them}} here instead",
-                "followsHintEarlier": "Changes to earlier pages carry onto Page {page}. Click to keep {count, plural, =1 {it} other {them}} here instead",
-                "followsMenuHint": "Changes to Page {from} carry onto Page {page}. Right-click the page to keep {count, plural, =1 {it} other {them}} here instead",
-                "followsMenuHintEarlier": "Changes to earlier pages carry onto Page {page}. Right-click the page to keep {count, plural, =1 {it} other {them}} here instead",
-                "followsNamed": "{count, plural, =1 {{names} holds where Page {from} left it} other {{names} hold where Page {from} left them}}",
-                "followsNamedEarlier": "{count, plural, =1 {{names} holds where earlier pages left it} other {{names} hold where earlier pages left them}}",
-                "kept": "{count, plural, one {# marcher kept on Page {page}} other {# marchers kept on Page {page}}}",
-                "keptHint": "Changes to Page {from} stop here. Click to follow Page {from} again",
-                "keptHintEarlier": "Changes to earlier pages stop here. Click to follow them again",
-                "keptMenuHint": "Changes to Page {from} stop here. Right-click the page to follow Page {from} again",
-                "keptMenuHintEarlier": "Changes to earlier pages stop here. Right-click the page to follow them again",
-                "keptNamed": "{names} kept on Page {page}",
-                "mixed": "{kept, plural, one {# of the {total} selected is kept on Page {page}} other {# of the {total} selected are kept on Page {page}}}",
-                "mixedNamed": "{kept, plural, one {# of the {total} selected is kept on Page {page} ({names})} other {# of the {total} selected are kept on Page {page} ({names})}}",
-                "mixedRestHint": "{count, plural, =1 {The other one follows earlier pages. Click to keep it here too} other {The other # follow earlier pages. Click to keep them here too}}",
-                "mixedRestMenuHint": "{count, plural, =1 {The other one follows earlier pages. Right-click the page to keep it here too} other {The other # follow earlier pages. Right-click the page to keep them here too}}"
-            },
-            "field": {
-                "kept": "Kept on Page {page} · won't follow Page {from}",
-                "keptEarlier": "Kept on Page {page} · won't follow earlier pages"
+                "notOwn": "{count, plural, one {# marcher has no position of its own here, shown where Page {from} left it} other {# marchers have no position of their own here, shown where Page {from} left them}}",
+                "notOwnEarlier": "{count, plural, one {# marcher has no position of its own here, shown where earlier pages left it} other {# marchers have no position of their own here, shown where earlier pages left them}}",
+                "notOwnHint": "Changes to Page {from} carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
+                "notOwnHintEarlier": "Changes to earlier pages carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
+                "notOwnMenuHint": "Changes to Page {from} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
+                "notOwnMenuHintEarlier": "Changes to earlier pages carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
+                "notOwnNamed": "{count, plural, =1 {{names} has no position of its own here, shown where Page {from} left it} other {{names} have no position of their own here, shown where Page {from} left them}}",
+                "notOwnNamedEarlier": "{count, plural, =1 {{names} has no position of its own here, shown where earlier pages left it} other {{names} have no position of their own here, shown where earlier pages left them}}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {Page {first} was holding this form, so it changed too} other {Pages {first}–{last} were holding this form, so they changed too}}",
+                "hadNoPositions": "{count, plural, =1 {Page {first} had no positions of its own for these marchers, so it changed too} other {Pages {first}–{last} had no positions of their own for these marchers, so they changed too}}",
                 "keepAsBefore": "{count, plural, =1 {Keep Page {first} as before} other {Keep Pages {first}–{last} as before}}",
                 "keepError": "Error keeping the later pages"
             },
@@ -2825,7 +2855,6 @@
             },
             "errors": {
                 "keep": "Error keeping marchers on the page",
-                "followAgain": "Error letting marchers follow again",
                 "readKept": "Error reading the kept spots"
             }
         },
@@ -2848,6 +2877,7 @@
             "message": "Split {label} at {where}",
             "messageAtPlayhead": "Split {label} at the playhead",
             "changed": "{count, plural, one {# marcher's path is redrawn: straight before it, restarted after} other {# marchers' paths are redrawn: straight before it, restarted after}}",
+            "restarted": "{count, plural, one {# marcher's curved path restarts after it} other {# marchers' curved paths restart after it}}",
             "paused": "Pause to split a move.",
             "isolatedOutside": "Put the playhead inside the move you're editing to split it.",
             "noneAt": "No move crosses {where}. Put the playhead inside a move to split it.",
@@ -2865,14 +2895,26 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "Delete page and its moves",
-            "followAgain": "Let selected marchers follow again",
-            "keepHere": "Keep selected marchers here",
-            "setAsShown": "Set as shown",
-            "setAsShownNone": "Every selected marcher is already set on {page}, or partway through a move",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "setAsShown": "{defineAsShown}",
+            "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
+            "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
             "setAsShownError": "Error setting marchers as shown",
             "addSelected": "Add selected marchers",
             "deletePage": "Delete page",
             "addSelectedNone": "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
+        },
+        "terms": {
+            "clearThisPage": "Clear this page",
+            "defineAsShown": "Define as shown",
+            "defined": "Defined",
+            "definedLower": "defined",
+            "held": "Held",
+            "heldLower": "held",
+            "holdFromPrevious": "Hold from previous page",
+            "notDefined": "Not defined",
+            "notDefinedLower": "not defined",
+            "removeKeyframe": "Remove keyframe"
         },
         "startFlagPositions": {
             "always": "Always",
@@ -2900,7 +2942,8 @@
             "drag": "Split {count, plural, one {# marcher} other {# marchers}}",
             "done": "Split {count, plural, one {# marcher} other {# marchers}} into {label}",
             "paused": "Pause to split or merge moves.",
-            "nothingOnPage": "Nothing moves on this page yet, so there is nothing to split."
+            "nothingOnPage": "Nothing moves on this page yet, so there is nothing to split.",
+            "pageSplitOff": "This page has no move of its own. To split a move over it, use the move's clip."
         },
         "merge": {
             "menuPair": "Merge {source} into {target}",
@@ -3246,6 +3289,12 @@
                 "alreadyInSlot": "the marcher is already in slot {slot}"
             },
             "changesNothing": "that changes nothing",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown} works on a whole page, not {counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious} works on a whole page, not {counts}"
+            },
             "moveTimeline": {
                 "tooEarly": "the timeline starts at beat {start}, so it can't move {count, plural, one {# beat} other {# beats}} earlier",
                 "tooLate": "the timeline can't move past beat {max}"
@@ -3259,9 +3308,6 @@
             },
             "keep": {
                 "wholePage": "Keep works on a whole page, not {counts}"
-            },
-            "setAsShown": {
-                "wholePage": "Set as shown works on a whole page, not {counts}"
             },
             "tooFarPastEnd": "that is {count, plural, one {# count} other {# counts}} past the end; one edit stores at most {max}"
         }
@@ -3289,9 +3335,9 @@
             "lockMarchersAriaLabel": "Cursor movement and marcher snap",
             "placeAllMarchers": "Place all marchers",
             "placeSelectedMarchers": "Place selected marchers",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
             "toNextPagePositions": "...to next page positions",
-            "toPreviousPagePositions": "...to previous page positions",
             "setMarcherPositionsAriaLabel": "Set marcher positions"
         },
         "collisions": {

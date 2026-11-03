@@ -13,16 +13,11 @@ import {
     type BeatRange,
 } from "./timelineMembership";
 import { createRangeTimelineInTransaction } from "./timelineMoveNames";
-import { findTimelineByRange } from "./timelines";
+import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { readPageGrid } from "./timelineRipple";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitions";
+import { clearOwnPageMoves } from "./timelineMoveHelpers";
 import {
-    clearKeptMarkersInTransaction,
-    keptAmong,
-    markAssignmentsKeptInTransaction,
-} from "./timelineKeptMarkers";
-import {
-    clearOwnPageMoves,
     isPageBox,
     marcherLabel,
     refuseDuplicateMarchers,
@@ -50,18 +45,14 @@ import {
  * **Drag back:** on a move's end, a position equal to where that move starts removes the point:
  * the move merges with the next move starting at P (`[r.start, next.end)` → next's destination),
  * or, with none (a hold or the flag follows), the move is deleted, as UI-18's "back onto the start
- * clears the move". A kept spot (`timeline_kept_assignments`) is never cleared or merged that way;
- * its new ending is written instead, as on the range path. A merged move arrives where the next
- * move did, and is kept when either of the two was (a designer's spot survives the merge).
+ * clears the move". A merged move arrives where the next move did.
  *
  * **A merge that goes nowhere** (drag back or **Remove this count's position**, arriving where the
  * first move starts) is deleted instead of written: a point set in a hold and then removed leaves
  * the hold as it was, with no move ending at the hold's end (no tick there), and a page it held
- * through follows earlier pages again; moves right after it that go nowhere either (not kept) go
- * with it, since their only tick was its end. A kept spot among the two moves is merged as above.
- * A point set inside a move writes both halves even when the second goes nowhere: it is the
- * user's point, with a tick that Remove takes out. Splitting a kept move keeps the second half
- * kept (it arrives where the kept spot did); the new point before it isn't.
+ * through follows earlier pages again; moves right after it that go nowhere either go with it,
+ * since their only tick was its end. A point set inside a move writes both halves even when the
+ * second goes nowhere: it is the user's point, with a tick that Remove takes out.
  *
  * Positions ("r's end", "the held position", "where r starts") are the resolver's, read once
  * from the rows the edit sees before anything is written, and only when an edit reads one. New
@@ -89,8 +80,11 @@ interface NewMove {
     end: number;
     point: XY;
     layer: number;
-    /** Marked kept once written: a kept spot split in two stays kept (`splitMovesAtBeat…`) */
-    kept?: boolean;
+    /**
+     * The move (not a page's, UI-25) this is a part of: it goes into a move of its own over its
+     * range, never into the timeline a page box there stands for (`splitMovesAtBeatInTransaction`)
+     */
+    moveOf?: number;
 }
 
 /** What one edit writes, decided before the first write. */
@@ -100,7 +94,7 @@ interface PointPlan {
     /** Rows deleted, with their transitions and any timeline they leave empty */
     removed: BasicRow[];
     added: NewMove[];
-    /** Marchers whose moves were deleted and not replaced (a drag back, or `clearOwn`) */
+    /** Marchers whose moves were deleted and not replaced (a drag back, or `clearPage`) */
     cleared: number[];
 }
 
@@ -118,8 +112,6 @@ interface BoxState {
     positionAt: (marcherId: number, beat: number) => Promise<XY>;
     /** Each timeline's range, for the rows' timelines */
     timelineRange: Map<number, BeatRange>;
-    /** The kept rows among the marchers' rows */
-    kept: Set<number>;
     /** Marchers that aren't simple on the box, when they weren't refused (`refuseLocked` off) */
     locked: Set<number>;
 }
@@ -189,10 +181,6 @@ const readBoxState = async (
                       .all()
               ).map((t) => [t.id, { start: t.start_beat, end: t.end_beat }]),
     );
-    const kept = await keptAmong(
-        tx,
-        [...inBox.values()].flat().map((r) => r.assignmentId),
-    );
     // Where the marchers are now, from the rows this edit sees: read once and only when needed,
     // always before the plan writes anything
     let resolver: ReturnType<typeof createResolver> | undefined;
@@ -206,7 +194,6 @@ const readBoxState = async (
             return resolver.positionAt(id, beat);
         },
         timelineRange,
-        kept,
         locked: new Set(locked),
     };
 };
@@ -244,13 +231,11 @@ const setEnding = (
 
 /**
  * Plans `first` and `second` (meeting at `first.end`) as one move arriving where `second` did, on
- * `first`'s layer. The arrival is `second`'s, so it stays kept when `second` was (a kept spot split
- * in two and merged again is kept, as `splitMovesAtBeatInTransaction` left it).
+ * `first`'s layer.
  *
  * A merge that would go nowhere (arriving where `first` starts) is deleted instead, so the marcher
  * holds there as it did before the point was set, and the hold's end isn't left as a tick. Moves
- * right after it that go nowhere either (not kept) are deleted with it: their start was that tick.
- * Unless either move is a kept spot: those merge as above.
+ * right after it that go nowhere either are deleted with it: their start was that tick.
  */
 const planMerge = async (
     plan: PointPlan,
@@ -260,13 +245,9 @@ const planMerge = async (
 ): Promise<void> => {
     const { marcherId } = first;
     const point = await state.positionAt(marcherId, second.end);
-    // A kept spot among the two is the designer's: the merge keeps it (lead default)
-    const kept =
-        state.kept.has(first.assignmentId) ||
-        state.kept.has(second.assignmentId);
     plan.removed.push(first, second);
     const from = await state.positionAt(marcherId, first.start);
-    if (!kept && samePosition(point, from)) {
+    if (samePosition(point, from)) {
         // Moves right after it that go nowhere either had their only tick at its end: they go
         // too, so the marcher holds until its next real move (or the flag)
         let end = second.end;
@@ -275,7 +256,6 @@ const planMerge = async (
             if (next.start < end) continue;
             if (
                 next.start > end ||
-                state.kept.has(next.assignmentId) ||
                 !samePosition(await state.positionAt(marcherId, next.end), from)
             )
                 break;
@@ -291,7 +271,6 @@ const planMerge = async (
         end: second.end,
         point,
         layer: first.layer,
-        kept,
     });
 };
 
@@ -302,7 +281,7 @@ const planPoint = async (
     box: Box,
     beat: number,
     move: TimelineMarcherMove,
-    clearOwn: boolean,
+    clearPage: boolean,
     keepUnchanged: boolean,
 ): Promise<void> => {
     const { marcherId } = move;
@@ -311,7 +290,7 @@ const planPoint = async (
     const at = (b: number) => state.positionAt(marcherId, b);
 
     // Set to previous page: the marcher's moves in the box go, so it holds from the page before
-    if (clearOwn && beat === box.end) {
+    if (clearPage && beat === box.end) {
         if (rows.length === 0) return;
         plan.removed.push(...rows);
         plan.cleared.push(marcherId);
@@ -331,14 +310,12 @@ const planPoint = async (
                 point,
                 layer: inside.layer,
             },
-            // It arrives where a kept spot did, so it stays kept; the new point isn't
             {
                 marcherId,
                 start: beat,
                 end: inside.end,
                 point: await at(inside.end),
                 layer: inside.layer,
-                kept: state.kept.has(inside.assignmentId),
             },
         );
         return;
@@ -349,11 +326,8 @@ const planPoint = async (
     // would take for a move back onto its start
     if (ending && still) return;
     if (ending) {
-        // Back onto where the move starts: the point goes, unless it is a kept spot
-        if (
-            !state.kept.has(ending.assignmentId) &&
-            samePosition(point, await at(ending.start))
-        ) {
+        // Back onto where the move starts: the point goes
+        if (samePosition(point, await at(ending.start))) {
             const next = rows.find((r) => r.start === beat);
             if (next) {
                 await planMerge(plan, state, ending, next);
@@ -386,7 +360,7 @@ const planPoint = async (
 };
 
 /**
- * Writes `plan`: slot destinations first, then the deleted rows (with their kept markers,
+ * Writes `plan`: slot destinations first, then the deleted rows (with their
  * one-slot transitions and emptied timelines, as `clearOwnPageMoves`), then the new moves, each
  * in the timeline over its range (one per range, C-12). Deleting before adding keeps every layer
  * free of overlaps at each statement (I-A3).
@@ -413,12 +387,6 @@ const writePlan = async (
             slotIndex: row.slotIndex,
         });
     }
-    // An edited kept spot is the marcher's own move from now on (as `writeSlotMoves`)
-    await clearKeptMarkersInTransaction(
-        tx,
-        plan.setDestinations.map((s) => s.row.assignmentId),
-    );
-
     if (plan.removed.length > 0) {
         const a = schema.timeline_assignments;
         const removed = await tx
@@ -431,30 +399,36 @@ const writePlan = async (
                 ),
             )
             .all();
-        await clearOwnPageMoves(tx, removed, { tidyShared: true });
+        // Only marchers cleared off the page leave its Ungroup; a mid-page point only re-cuts
+        await clearOwnPageMoves(tx, removed, {
+            tidyShared: true,
+            dropUngrouped: plan.cleared,
+        });
     }
 
+    // Parts of a move after the rest, so each range's oldest timeline is never one of them
     const byRange = new Map<string, NewMove[]>();
-    for (const added of plan.added) {
-        const key = `${added.start}:${added.end}`;
+    for (const added of [
+        ...plan.added.filter((a) => a.moveOf === undefined),
+        ...plan.added.filter((a) => a.moveOf !== undefined),
+    ]) {
+        const key = `${added.start}:${added.end}:${added.moveOf ?? ""}`;
         byRange.set(key, [...(byRange.get(key) ?? []), added]);
     }
     for (const members of byRange.values()) {
-        const { start, end } = members[0]!;
+        const { start, end, moveOf } = members[0]!;
         const timeline =
-            (await findTimelineByRange(tx, { start, end })) ??
-            (await createRangeTimelineInTransaction(tx, {
-                startBeat: start,
-                endBeat: end,
-            }));
+            moveOf === undefined
+                ? ((await findTimelineByRange(tx, { start, end })) ??
+                  (await createRangeTimelineInTransaction(tx, {
+                      startBeat: start,
+                      endBeat: end,
+                  })))
+                : await movePartTimeline(tx, { start, end });
         const own = await createOwnTransitionsInTransaction(
             tx,
             timeline,
             members,
-        );
-        await markAssignmentsKeptInTransaction(
-            tx,
-            own.filter((_, i) => members[i]!.kept).map((t) => t.assignmentId),
         );
         for (const t of own)
             result.slots.push({
@@ -469,12 +443,32 @@ const writePlan = async (
 };
 
 /**
+ * A new move over `range` for part of a move (`NewMove.moveOf`). Its range keeps an older
+ * timeline, empty if none is stored yet, so the move stays a move (a clip) and the page box there
+ * stands for the older one (ADR 0001, UI-25 amendment).
+ */
+const movePartTimeline = async (tx: DbTransaction, range: BeatRange) => {
+    if (!(await findTimelineByRange(tx, range)))
+        await createTimelinesInTransaction({
+            tx,
+            newTimelines: [
+                { name: null, startBeat: range.start, endBeat: range.end },
+            ],
+        });
+    return await createRangeTimelineInTransaction(tx, {
+        startBeat: range.start,
+        endBeat: range.end,
+        allowSharedRanges: true,
+    });
+};
+
+/**
  * Basic's edit: each moved marcher is at its x/y at `beat` on the page box `box` (see the module
  * comment). Run it inside `transactionWithHistory`; `moveMarchersInTarget` does for
  * `{kind: "point"}`.
  *
- * With `clearOwn` (set to previous page) and `beat` on the flag, each marcher's moves in the box
- * are deleted instead, whatever its x/y, so it holds from the page before. `clearOwn` with `beat`
+ * With `clearPage` (set to previous page) and `beat` on the flag, each marcher's moves in the box
+ * are deleted instead, whatever its x/y, so it holds from the page before. `clearPage` with `beat`
  * mid-page is ignored.
  */
 export async function setPositionsAtBeatInTransaction({
@@ -482,14 +476,14 @@ export async function setPositionsAtBeatInTransaction({
     beat,
     box,
     moves,
-    clearOwn = false,
+    clearPage = false,
     keepUnchanged = false,
 }: {
     tx: DbTransaction;
     beat: number;
     box: { start: number; end: number };
     moves: readonly TimelineMarcherMove[];
-    clearOwn?: boolean;
+    clearPage?: boolean;
     /**
      * Write a marcher left where it is too, as a stay, rather than nothing: a shape's members
      * are all set where it's edited, the one at the pivot included
@@ -509,7 +503,7 @@ export async function setPositionsAtBeatInTransaction({
     );
     const plan = emptyPlan();
     for (const move of moves)
-        await planPoint(plan, state, box, beat, move, clearOwn, keepUnchanged);
+        await planPoint(plan, state, box, beat, move, clearPage, keepUnchanged);
     return await writePlan(tx, plan);
 }
 
@@ -612,11 +606,14 @@ export interface SplitMovesResult {
  * `[r.start, beat)` → the marcher's position at `beat` and `[beat, r.end)` → its position at
  * r.end (r's destination), both on r's layer. Positions are the resolver's, read once before
  * anything is written. A direct move is a straight line at a constant speed per beat (R-7), so
- * the two halves give the same position at every beat as r did. A kept spot split in two stays
- * kept in both halves. Marchers that aren't simple on the box (moves across its flags,
+ * the two halves give the same position at every beat as r did. Marchers that aren't simple on the box (moves across its flags,
  * overlapping, shaped or not direct) are left alone and listed in `leftAlone`: they stay Expert
  * moves. Timelines are reused or created per range (C-12), and a timeline left empty is deleted,
- * as the point writer does.
+ * as the point writer does. The halves of a move over the box that isn't the page's (split off
+ * it, UI-25) stay moves: each goes into a new move over its half, which keeps an older timeline
+ * (empty if need be) for the new box to stand for, so neither becomes a new page's own move. The
+ * page edit then deletes the box's old page timeline if it was left empty across the new flag
+ * (`deleteStrayEmptyTimelinesInTransaction`).
  *
  * Refused (`E-ARGS`) before any write: a beat that isn't whole or strictly inside `box`, and a
  * box that isn't a page's.
@@ -647,6 +644,16 @@ export async function splitMovesAtBeatInTransaction({
     const state = await readBoxState(tx, box, across, {
         refuseLocked: false,
     });
+    // A move over the box that isn't the page's (split off it, UI-25) splits into two moves
+    const page = await findTimelineByRange(tx, box);
+    const moveOf = (timelineId: number) => {
+        const range = state.timelineRange.get(timelineId);
+        return range?.start === box.start &&
+            range.end === box.end &&
+            timelineId !== page?.id
+            ? { moveOf: timelineId }
+            : {};
+    };
     const plan = emptyPlan();
     const split: number[] = [];
     for (const marcherId of across) {
@@ -655,8 +662,8 @@ export async function splitMovesAtBeatInTransaction({
             .rowsOf(marcherId)
             .find((r) => r.start < beat && beat < r.end);
         if (!row) continue;
-        const kept = state.kept.has(row.assignmentId);
         plan.removed.push(row);
+        const part = moveOf(row.timelineId);
         plan.added.push(
             {
                 marcherId,
@@ -664,7 +671,7 @@ export async function splitMovesAtBeatInTransaction({
                 end: beat,
                 point: await state.positionAt(marcherId, beat),
                 layer: row.layer,
-                kept,
+                ...part,
             },
             {
                 marcherId,
@@ -672,7 +679,7 @@ export async function splitMovesAtBeatInTransaction({
                 end: row.end,
                 point: await state.positionAt(marcherId, row.end),
                 layer: row.layer,
-                kept,
+                ...part,
             },
         );
         split.push(marcherId);

@@ -66,6 +66,12 @@ const tolgee = tolgeeBuilder.init({
         fr: () => import("../../../i18n/fr.json"),
         "pt-BR": () => import("../../../i18n/pt-BR.json"),
         ja: () => import("../../../i18n/ja.json"),
+        id: () => import("../../../i18n/id.json"),
+        ms: () => import("../../../i18n/ms.json"),
+        fil: () => import("../../../i18n/fil.json"),
+        "zh-Hans": () => import("../../../i18n/zh-Hans.json"),
+        "zh-Hant": () => import("../../../i18n/zh-Hant.json"),
+        th: () => import("../../../i18n/th.json"),
     },
 });
 

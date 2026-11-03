@@ -68,9 +68,9 @@ with them.
 5. **Every tempo edit is one undo step.** Columns and the table are written through
    `transactionWithHistory`; the existing history triggers on `beats` and `measures` cover the new
    columns.
-6. **Two migrations.** `0029` adds `tempo_settings`, `tempo_hold`, `number_override`, `meter` and
-   `grouping`; `0030` adds `tempo_change`. The rollbacks in `migrationRollback.ts` drop
-   them, and drop the triggers on those tables so the migration service can recreate them.
+6. **One migration.** `0031` adds `tempo_settings`, `tempo_hold`, `tempo_change`,
+   `number_override`, `meter` and `grouping`. Its rollback in `migrationRollback.ts` drops
+   them, and drops the triggers on those tables so the migration service can recreate them.
 
 ## Consequences
 
@@ -96,8 +96,8 @@ with them.
 
 ## Verification
 
-- The migration rollback test (`electron/database/__test__/migrationRollback.ts`) runs 0030 and
-  0029 back.
+- The migration rollback test (`electron/database/__test__/migrationRollback.ts`) runs 0031
+  back.
 - Tempo unit tests (`src/tempo/__test__`) cover the math, tempo shapes, time signatures and
   groupings (every common time signature set and set back on several measures, singly and nested),
   and the writes.

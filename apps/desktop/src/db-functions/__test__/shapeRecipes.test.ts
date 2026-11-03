@@ -401,6 +401,29 @@ describeDbTests("Shape recipes", (it) => {
             };
         };
 
+        it("splitting every marcher off the page takes its shape along whole, and undo puts it back (#581)", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { a, b } = await show(db);
+            const arc = await place(db, [a, b], ARC);
+            const pageMove = (await recipeTimeline(db, arc))!;
+            const before = await readAllShapeRecipes(db);
+            const split = await splitMarchersIntoNewMove({
+                db,
+                timelineId: pageMove,
+                marcherIds: [a, b],
+            });
+            await timelineResolverSettled();
+            expect(await recipeTimeline(db, arc)).toBe(split.timeline.id);
+            expect(await readAllShapeRecipes(db)).toEqual(
+                before.map((r) => ({ ...r, timelineId: split.timeline.id })),
+            );
+            await performUndo(db);
+            await timelineResolverSettled();
+            expect(await readAllShapeRecipes(db)).toEqual(before);
+        });
+
         it("a shape placed in the selected split move belongs to it", async ({
             db,
             marchersAndPages: _,

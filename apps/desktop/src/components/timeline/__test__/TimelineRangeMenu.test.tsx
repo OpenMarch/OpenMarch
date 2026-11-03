@@ -19,6 +19,10 @@ import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { Timeline, type TimelineInput } from "../Timeline";
 import type { TimelineSelection } from "../TimelineViewModel";
 import type { TimelineAddMarchersMenu } from "../TimelineRangeMenu";
+import type { HeldMark } from "@/db-functions/timelineHeldMarks";
+import type { PageKeepState } from "@/timeline/timelineKeepLater";
+import { setAsShownMenu } from "@/timeline/timelineSetAsShown";
+import { holdFromPreviousMenu } from "@/timeline/timelineHoldFromPrevious";
 import {
     addSelectedMarchersBlocker,
     useTimelineCommands,
@@ -236,6 +240,132 @@ describe("the timeline's right-click menu (UI-9)", () => {
         ).toMatch(/Select marchers first/);
         fireEvent.click(item);
         expect(onAdd).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * The hold commands on a page box (holds): each says what it would do for the selection on the
+ * right-clicked page, from the keep states and the Held marks (`holdEntryStates`).
+ */
+describe("the page box menu's hold commands", () => {
+    // The box named "Page 2" is page 3, beats 9 to 17
+    const state = ({
+        follows = [],
+        selected,
+    }: {
+        follows?: number[];
+        selected: number;
+    }): PageKeepState => ({
+        pageId: 3,
+        pageName: "2",
+        box: { start: 9, end: 17 },
+        follows,
+        fromStart: [],
+        from: [],
+        midMove: [],
+        selected,
+    });
+    const mark = (marcherId: number) => ({
+        id: marcherId,
+        marcherId,
+        start: 9,
+        end: 17,
+    });
+    const openMenu = (
+        states: PageKeepState[],
+        marcherIds: number[],
+        marks: HeldMark[],
+    ) => {
+        const runHold = vi.fn(async () => ({ held: [], skipped: [] }));
+        const runDefine = vi.fn();
+        render(
+            <Timeline
+                mode="expanded"
+                beats={BEATS}
+                pages={PAGES}
+                measures={[]}
+                timelines={[]}
+                showTransport={false}
+                selection={null}
+                onSelectionChange={vi.fn()}
+                setAsShown={setAsShownMenu(states, runDefine, marks)}
+                holdFromPrevious={holdFromPreviousMenu(
+                    states,
+                    marcherIds,
+                    undefined,
+                    runHold,
+                    marks,
+                )}
+            />,
+        );
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
+        return {
+            runHold,
+            runDefine,
+            define: screen.getByTestId("timeline-range-menu-set-as-shown"),
+            hold: screen.getByTestId("timeline-range-menu-hold-from-previous"),
+        };
+    };
+
+    it("all Held: Hold from previous page is checked and does nothing", () => {
+        const { hold, define, runHold, runDefine } = openMenu(
+            [state({ follows: [1, 2], selected: 2 })],
+            [1, 2],
+            [mark(1), mark(2)],
+        );
+        expect(hold).toHaveAttribute("role", "menuitemcheckbox");
+        expect(hold).toHaveAttribute("aria-checked", "true");
+        expect(hold).toHaveAttribute("data-disabled");
+        expect(hold).toHaveTextContent(/^Hold from previous page$/);
+        fireEvent.click(hold);
+        expect(runHold).not.toHaveBeenCalled();
+        // Define as shown leaves Held marchers alone: unavailable, saying why, not checked
+        expect(define).not.toHaveAttribute("aria-checked");
+        expect(define).toHaveAttribute("aria-disabled", "true");
+        expect(
+            screen.getByTestId("timeline-range-menu-set-as-shown-reason"),
+        ).toHaveTextContent(
+            "Every selected marcher is already defined or held on Page 2, or partway through a move",
+        );
+        fireEvent.click(define);
+        expect(runDefine).not.toHaveBeenCalled();
+    });
+
+    it("mixed: both stay on, with no count, and run", () => {
+        // 1 Held, 2 and 3 Not defined, 4 and 5 Defined
+        const { hold, define, runDefine } = openMenu(
+            [state({ follows: [1, 2, 3], selected: 5 })],
+            [1, 2, 3, 4, 5],
+            [mark(1)],
+        );
+        expect(hold).toHaveTextContent(/^Hold from previous page$/);
+        expect(hold).not.toHaveAttribute("aria-disabled");
+        expect(define).toHaveTextContent(/^Define as shown$/);
+        expect(define).not.toHaveAttribute("aria-disabled");
+        fireEvent.click(define);
+        // Only the Not defined ones
+        expect(runDefine).toHaveBeenCalledExactlyOnceWith(
+            { start: 9, end: 17 },
+            [2, 3],
+        );
+    });
+
+    it("all Not defined: both run for everyone, with no count", () => {
+        const { hold, define } = openMenu(
+            [state({ follows: [1, 2], selected: 2 })],
+            [1, 2],
+            [],
+        );
+        expect(hold).toHaveTextContent(/^Hold from previous page$/);
+        expect(define).toHaveTextContent(/^Define as shown$/);
+        expect(hold).not.toHaveAttribute("aria-disabled");
+        expect(define).not.toHaveAttribute("aria-disabled");
+    });
+
+    it("all Defined: Define as shown is checked", () => {
+        const { define } = openMenu([state({ selected: 2 })], [1, 2], []);
+        expect(define).toHaveAttribute("aria-checked", "true");
+        expect(define).toHaveAttribute("data-disabled");
     });
 });
 

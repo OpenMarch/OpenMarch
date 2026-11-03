@@ -4,13 +4,12 @@ import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
 import { test, expect, type Show } from "../fixtures.mjs";
 import { waitForField } from "../app.mjs";
-import { pressKeep } from "../timeline.mjs";
 import { field, OUT, saveCapture, settle } from "./compare.mjs";
 
 /**
  * Render captures of the timeline's drawing on the field (#201; see README.md
  * here): pathways, midpoints, endpoints, step-size warnings, an isolated
- * move's scene with its dimmed marchers, kept marks and collision markers, on
+ * move's scene with its dimmed marchers, and collision markers, on
  * a converted demo show. Not a pass/fail suite: it writes screenshots, and
  * with `RENDER_BASE` side-by-sides and diffs against an earlier run, for a
  * person to review.
@@ -133,41 +132,6 @@ const CASES: Case[] = [
         },
     },
     {
-        // The move of the box at 53 has 4 marchers: the other 91 follow there, and K keeps them
-        name: "kept",
-        settings: {},
-        setup: async (page, { query }) => {
-            const box = page
-                .locator(
-                    '[data-timeline-range-page][data-timeline-range-start="53"]',
-                )
-                .first();
-            await box.scrollIntoViewIfNeeded();
-            await box.click();
-            await settledOnPage(page);
-            // An empty corner of the field: clicks there clear the selection
-            const field = (await page
-                .getByTestId("fieldCanvas")
-                .first()
-                .boundingBox())!;
-            const kept = async () =>
-                (
-                    await query<{ n: number }>(
-                        "SELECT count(*) AS n FROM timeline_kept_assignments",
-                    )
-                )[0]!.n;
-            // K toggles: keep only once, at the first size
-            if ((await kept()) === 0) {
-                await page.mouse.click(field.x + 12, field.y + 12);
-                await page.keyboard.press("ControlOrMeta+a");
-                await pressKeep(page);
-                await expect.poll(kept).toBe(91);
-                await page.mouse.click(field.x + 12, field.y + 12);
-            }
-            await page.waitForTimeout(500);
-        },
-    },
-    {
         name: "collisions",
         settings: { showCollisions: true },
         setup: async (page) => {
@@ -231,17 +195,15 @@ async function applySettings(page: Page, settings: Settings) {
 
 /**
  * Hides what the app draws over the field (toolbars, the isolation bar,
- * badges), but not the field's own overlays (its kept marks).
+ * badges).
  */
 async function hideChrome(page: Page) {
     await page.evaluate(() => {
         const canvas = document.querySelector('[data-testid="fieldCanvas"]')!;
         const box = canvas.getBoundingClientRect();
-        const keep = document.querySelector('[data-testid="field-kept-marks"]');
         for (const el of document.querySelectorAll<HTMLElement>("body *")) {
             if (el.contains(canvas) || canvas.contains(el)) continue;
             if (el.querySelector("canvas")) continue;
-            if (keep && (keep.contains(el) || el.contains(keep))) continue;
             const r = el.getBoundingClientRect();
             const overlaps =
                 r.right > box.left &&

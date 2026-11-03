@@ -5,8 +5,10 @@ import { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { refuse, TimelineWriteError } from "./timelineErrors";
 import {
+    deleteStrayEmptyTimelinesInTransaction,
     planTimelineRipple,
     readPageGrid,
+    readPageTimelinesInTransaction,
     readRippleRows,
     withTimelinePageRipple,
     type GridPage,
@@ -38,7 +40,9 @@ import { ensureCountsInTransaction } from "./endlessCounts";
  * **+** and Delete flag write only page rows, and `last_page_counts` when the last page changes.
  * They never run `withTimelinePageRipple` (P7.4): no timeline, transition or assignment is created,
  * moved or deleted, so motion is unchanged. The exception is **+** in Basic (`splitMoves`), which
- * also splits each marcher's move at the new flag, keeping motion unchanged. Timelines track flags only when a flag moves, so
+ * also splits each marcher's move at the new flag, keeping motion unchanged. Both delete an empty
+ * page timeline the edit leaves off its box (`deleteStrayEmptyTimelinesInTransaction`), which
+ * moves nothing either. Timelines track flags only when a flag moves, so
  * moving one does run it (`movePageFlagInTransaction`). Each is one undoable edit.
  *
  * Beats here are ordinals (resolver beats), the same as timeline rows and `readPageGrid`: page 0
@@ -203,6 +207,7 @@ export async function addPageFlagInTransaction({
     if (plan.kind === "split") {
         const { page } = plan;
         const lastPageCounts = plan.last ? await lastPageCountsIn(tx) : 0;
+        const pageTimelines = await readPageTimelinesInTransaction(tx, grid);
         // Before the page rows change, while the split page's box is still a page's
         const split = splitMoves
             ? await splitMovesAtBeatInTransaction({
@@ -231,6 +236,8 @@ export async function addPageFlagInTransaction({
                 tx,
                 lastPageCounts: page.start + lastPageCounts - beat,
             });
+        // An empty page timeline (everyone split off, #581) now crosses the new flag
+        await deleteStrayEmptyTimelinesInTransaction(tx, pageTimelines);
         return {
             page: created!,
             startBeat: page.start,
@@ -278,7 +285,9 @@ export async function addPageFlag({
  * covers N's too (the inverse of **+**). For the last page there is no page after it: its row is
  * deleted and the page before becomes the last one, ending at its own flag (`last_page_counts`).
  * N's per-page data goes with its row, except its tag appearances, which move to the page after it
- * (`moveTagAppearancesOffPagesInTransaction`). No timeline row is written, so motion is unchanged.
+ * (`moveTagAppearancesOffPagesInTransaction`). No timeline row is written, so motion is unchanged,
+ * except that an empty page timeline left off its box is deleted
+ * (`deleteStrayEmptyTimelinesInTransaction`).
  *
  * Returns the deleted pages.
  */
@@ -295,6 +304,7 @@ export async function deletePageFlagsInTransaction({
     const order = new Map(initial.pages.map((p, i) => [p.id, i]));
     for (const id of ids)
         if (!order.has(id)) refuse(`page ${id} doesn't exist`);
+    const pageTimelines = await readPageTimelinesInTransaction(tx, initial);
     // Latest first, re-reading the grid each time, so each delete sees the pages it leaves
     ids.sort((a, b) => order.get(b)! - order.get(a)!);
 
@@ -340,6 +350,8 @@ export async function deletePageFlagsInTransaction({
 
         if (row) deleted.push(realDatabasePageToDatabasePage(row));
     }
+    // An empty page timeline (everyone split off, #581) is no longer on a box
+    await deleteStrayEmptyTimelinesInTransaction(tx, pageTimelines);
     return deleted;
 }
 

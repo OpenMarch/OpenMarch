@@ -16,8 +16,8 @@ import { pageBox } from "../timeline.mjs";
 
 // Set as shown (holds, fork #466): the page box menu gives the selected
 // marchers that are Not set on a page a move of their own there, ending where
-// they show, so an edit of an earlier page stops carrying into it. Nothing
-// marks the page as kept.
+// they show, so an edit of an earlier page stops carrying into it. It is an
+// ordinary move: stored kept spots are gone (#467).
 //
 // Pages flag at beats 9, 17, 25 and 33 (measures 3, 5, 7 and 9), four beats a
 // measure. T1 moves on every page. T2 moves on pages 1 and 2 and has no move
@@ -107,7 +107,7 @@ async function openWith(show: Show, drillNumbers: string[]) {
     await waitForIdle(page);
 }
 
-/** Right-clicks the page box at `startBeat` and picks Set as shown. */
+/** Right-clicks the page box at `startBeat` and picks Define as shown. */
 async function setAsShown(page: Page, startBeat: number) {
     // The selection's page states settle after the field shows the selection
     await expect(async () => {
@@ -131,16 +131,16 @@ test("Set as shown on page 4, then an edit of page 2: page 3 follows, page 4 kee
     await expect.poll(async () => (await rows(show))[2]).toContain("25-33");
     expect((await rows(show))[1]).toEqual(before[1]);
     expect(await spot(show, 4, 2)).toBe("500,380");
-    // Nothing marks the page as kept: no stored kept spot, no kept chain
-    expect(await show.query("SELECT * FROM timeline_kept_assignments")).toEqual(
-        [],
-    );
+    // No kept table, no kept chain or dot (#467)
+    expect(
+        await show.query(
+            "SELECT name FROM sqlite_schema WHERE name = 'timeline_kept_assignments'",
+        ),
+    ).toEqual([]);
     await expect(
         page.locator('[data-testid="page-keep-chain"][data-chain="kept"]'),
     ).toHaveCount(0);
-    await expect(
-        page.locator('[data-testid="page-keep-dot"][data-chain="kept"]'),
-    ).toHaveCount(0);
+    await expect(page.getByTestId("page-keep-dot")).toHaveCount(0);
 
     // Edit page 2 (the playhead is on its flag): page 3 follows, page 4 doesn't
     await clickMarcher(page, "T2");
@@ -162,20 +162,20 @@ test("Set as shown on page 4, then an edit of page 2: page 3 follows, page 4 kee
     await expectCanvasMatchesShow(show);
 });
 
-test("Set as shown says why when every selected marcher is already set on the page", async ({
+test("Set as shown is checked and does nothing when every selected marcher is already Defined on the page", async ({
     show,
 }) => {
     const { page } = show;
     await openWith(show, ["T1"]);
     const before = await rows(show);
+    const entry = page.getByTestId("timeline-range-menu-set-as-shown");
     await expect(async () => {
         await pageBox(page, PAGE_4_BOX).click({ button: "right" });
-        await expect(
-            page.getByTestId("timeline-range-menu-set-as-shown"),
-        ).toHaveAttribute("aria-disabled", "true", { timeout: 1000 });
+        await expect(entry).toHaveAttribute("aria-checked", "true", {
+            timeout: 1000,
+        });
     }).toPass();
-    await expect(
-        page.getByTestId("timeline-range-menu-set-as-shown-reason"),
-    ).toContainText("Page 4");
+    await expect(entry).toHaveAttribute("data-disabled", "");
+    await entry.click({ force: true });
     expect(await rows(show)).toEqual(before);
 });

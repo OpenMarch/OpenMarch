@@ -152,7 +152,8 @@ selected page. Rules on stored data, enforced by the write functions
   exception to C-11's rule that deleting a timeline's last transition deletes
   the timeline.
 - Adding or deleting a page writes only page rows (and `last_page_counts`),
-  never timeline rows.
+  never timeline rows, except that it deletes a page's own timeline a split left empty once that
+  timeline no longer qualifies to stay (UI-25 amendment below, #581).
 
 **Amendment (2026-10-08, project owner): a page has a position only where a marcher was
 moved.** No path writes timeline rows on a page's behalf:
@@ -176,7 +177,10 @@ There is no schema or file-version change. Files converted by earlier developmen
 holding moves and are converted again by hand, as for C-11. Research and the decision record are in
 `docs/timeline/research/defined-coordinates/`; the interaction is UI-18 in `docs/timeline/ui.md`.
 
-**Amendment (2026-10-09, project owner): kept spots are stored.** A designer can keep selected
+**Amendment (2026-10-09, project owner): kept spots are stored.** _Reversed by the amendment of
+2026-10-29, "kept spots are removed" (holds, fork #467): the table below is dropped and Set as
+shown writes an ordinary move instead. Kept as the record of what fork builds stored._ A designer
+can keep selected
 marchers on a later page, so that editing an earlier page no longer carries into it. This is
 timeline mode only; page mode keeps its runtime comparison. A kept spot must survive reopening the
 file and be told apart from a move that happens to go nowhere, so it is stored:
@@ -223,6 +227,10 @@ merge it back. So the first rule above is relaxed:
   ("Move N") and a clip. A page flag drag moves timelines that already shared a range together.
   An edit that empties the page's timeline keeps its row while another timeline shares its range,
   so a split move never becomes the page's by accident.
+  Clarified with #581: a page's own timeline left empty by a split stays only while it sits on
+  its page's box and a move with marchers shares its counts; a page edit (adding, deleting or
+  moving a flag, deleting a page) deletes it otherwise. The check covers any empty timeline that
+  was a page's own before the edit; a move that isn't a page's, emptied with Remove (UI-9), stays.
 - A marcher is still in at most one of the timelines over one range: split and merge move whole
   transitions (or peel a slot of a shared shapeless one into its own one-slot transition), and
   merge refuses a marcher in both.
@@ -252,12 +260,14 @@ edit used to choose layers its own way, and the inspector let a designer type on
 - **A page's move is stored as such.** Which timeline a page's box stands for was inferred from
   its range (the oldest timeline over exactly the box), and the page delete used a different test
   (layer 0, shapeless, rows covering the box). Both are replaced by a stored mark, kept apart from
-  the motion tables the way kept spots are: a `timeline_page_moves` table with one row per page
+  the motion tables the way kept spots were (amendment 2026-10-09, since reversed): a
+  `timeline_page_moves` table with one row per page
   move, naming its timeline and its page. Proposed details, settled in the implementing change: the
   timeline id is the key and cascades on delete; a flag delete that merges pages re-points the
   marks to the merged page in the same edit; **Delete page and its moves** deletes the marked
   timelines; every path that creates a page's move writes its mark (the converter, a drag onto a
-  page box, kept spots, Split page, the simple defaults, and Basic point moves, which split a
+  page box, Set as shown (which replaces kept spots, amendment 2026-10-29), Split page, the simple
+  defaults, and Basic point moves, which split a
   page's move into sub-range timelines). The table is in
   `tablesWithHistory`, has no change-log triggers, and the resolver never reads it.
 - **Existing files.** The migration marks existing page moves once, then derives every marcher's
@@ -279,8 +289,8 @@ edit used to choose layers its own way, and the inspector let a designer type on
   change an FTL move's founders and targets (spec §6.2); the migration can too.
 
 **Amendment (2026-10-29, project owner): keyframes are stored move ends, and Set as shown.** Part
-of the holds design (`docs/timeline/research/holds/`, fork issues #466–#479); the rest of its part
-1 (kept spots removed, Clear this page) lands with #467 and #469.
+of the holds design (`docs/timeline/research/holds/`, fork issues #466–#479). Kept spots are
+removed by the next amendment (#467); Clear this page lands with #469.
 
 - **A keyframe is the end of one of the marcher's own moves, where that move is in charge as it
   ends** (spec §6.2), whether or not the marcher moved. A span cut short by a higher layer is not
@@ -290,8 +300,220 @@ of the holds design (`docs/timeline/research/holds/`, fork issues #466–#479); 
 - **Set as shown** is in the page box menu. For each selected marcher that is Not set on that page,
   it writes an ordinary one-slot move over the page box, ending at the spot the marcher shows there,
   so the page becomes Set and later edits of earlier pages no longer carry into it. Nothing is
-  marked kept (fork #466). Until #467 removes them, kept spots stay as the 2026-10-09 amendment
-  describes, and a kept span is still not a keyframe.
+  marked kept (fork #466).
+
+**Amendment (2026-10-29, project owner): kept spots are removed.** Part 1 of the holds design
+(`docs/timeline/research/holds/` README decisions 1, 12 and 15; fork #467). It reverses the
+2026-10-09 amendment.
+
+- **`timeline_kept_assignments` is dropped,** together with every reader and writer: Keep,
+  Follow again, **K**, the kept chip and mixed badge on page boxes, the kept mark beside a
+  marcher's dot on the field, and the inspector's "Kept on this page · Follow again". Edits no
+  longer clear or carry kept markers, a drag back treats every own move alike, and **Move them
+  too** may offer any later own move.
+- **Set as shown replaces them.** It is in the page box menu (and the chain on a Not-set page box,
+  and the inspector, until the Not-set bars of #477). It writes an ordinary one-slot move over the
+  page box, ending at the spot the marcher shows there, so the page becomes Set.
+- **The other writers of kept rows write the same ordinary move.** Remove keyframe's next-page
+  move (Unset here) and the after-edit **Only Page N** write it, ending where the marchers stood
+  before the edit (decision 15). Nothing else wrote kept rows: the split by marcher and Split at
+  playhead carried markers, and Basic's split page copied them; they now carry only the rows.
+- **In the 2026-10-16 amendment's list of writers of a page's move, Set as shown replaces "kept
+  spots".**
+- **Migration 0029** (`0029_drop_kept_assignments`, after the shape host's 0027 and 0028) drops
+  the table. Fork nightlies and the lab build already shipped migration 0018, so a file's stored
+  undo or redo history may name the table. Replaying such a step would fail with "no such
+  table", so in a file whose history names it (`instr(sql, 'timeline_kept_assignments')` in either
+  stack) the same migration clears **both** stacks and resets the history groups (owner,
+  2026-10-28). A file whose history doesn't name the table keeps it. The release notes in `docs/timeline/phases/09-flip.md` say so. A kept spot's move stays as
+  an ordinary move, so the show plays the same.
+  - It is a timeline-only migration: a page-era file converts first, and the conversion deletes
+    any kept rows with the timeline rows it replaces, if the table exists.
+  - The table leaves `tablesWithHistory` (dropping it drops its history triggers), the repair copy
+    list, `DISPLAY_TABLES` and the query invalidation map.
+  - An older build opening a migrated file errors on its kept queries.
+
+**Amendment (2026-10-30, project owner): Clear this page, and cut and remove.** _Accepted (owner,
+2026-10-30, with #469)._ Part 1 of the holds design (`docs/timeline/research/holds/` decision 16
+and `02-adr-amendment-draft.md`; fork #469).
+
+- **Clear this page** is Set to previous page in timeline mode, renamed. It leaves the page with no
+  move of the marcher's own, so the page is Not set. Re-linking a page is this command; there is no
+  separate control.
+  - For a marcher in a shared or longer move, the move is first **cut in time at the page's
+    flags**. This may create a timeline over exactly the page box, which is allowed in the same way
+    as a split by marcher (`allowSharedRanges`). The other members keep their stored layers, since
+    layer derivation isn't built. The marcher is then removed from that page's part, and the slot
+    is compacted.
+  - _Clarified (fork #584, 2026-11-01):_ where others share a move whose path a cut would change
+    (one that isn't direct, which a cut samples), the marcher is first taken into a move of its
+    own and only that move is cut, so the others keep their move, recipe and motion. A direct path
+    is still cut for everyone, since that changes no one's motion. Where split by marcher refuses
+    (an inheriting follow-the-leader order), the marcher keeps its moves and is named.
+  - The Expert drag back in a shared move does the same.
+  - **Shape and follow-the-leader members are skipped,** by the command and by the drag back. The
+    rest still applies, and the skipped marchers are named through `TimelineEditRefusedError` (its
+    `marcherIds`) in a warning. This is interim until fork #504.
+- **Holds rely on transitions only through two operations:** cut a move in time at a count, and
+  remove a marcher from a move for a range of counts (`db-functions/timelineMoveCuts.ts`). How
+  shapes and transitions provide them is left to the shape and transition ownership model (fork
+  #434, #436), a later amendment.
+- _Accepted (owner, 2026-10-30, with #471):_ **Part of a group (R4, fork #471):** Remove keyframe at
+  a split first **takes the selected marchers into a move of their own** over the same counts, in
+  each half (`takeMarchersIntoOwnMoveInTransaction`, a split by marcher as in UI-25, with a shared
+  transition into a stored shape switched to individual points first). Nobody's motion changes.
+  It skips the same shape and follow-the-leader members as a removal, and every refusal,
+  including split by marcher's own, is decided before anything is written. Clear this page and
+  the drag back use the same take for a shared move whose path a cut would change (above); these
+  are the only other ways holds change a move's membership.
+- **A part of a cut never takes over a page's move.** A page's move is the oldest timeline over its
+  box, so the cut move's id stays with a part that doesn't land on a range a newer move has; when
+  both parts would, neither keeps it.
+
+**Amendment (2026-10-30, project owner): Held holds are stored.** _Accepted (owner, 2026-10-30,
+with #472)._ Part 2 of the holds design
+(`docs/timeline/research/holds/`, fork issues #472–#476; the owner reviewed the draft on 2026-10-27
+and answered the validator's questions on 2026-10-28). On a given count a marcher is **Set** (a
+keyframe), **Held** or **Not set**. A designer can mark a stretch where a marcher stands still as
+**Held**. Editing any count inside it then moves the whole hold, by editing the move that arrives at
+its start. An unmarked stretch is **Not set**: an edit inside it starts a new move there. Both are
+holds to the resolver (spec R-6), so the mark is app data:
+
+- **A new table, `timeline_held_marks`,** created by migration 0030 (only `CREATE … IF NOT
+  EXISTS`, like 0027, so test files that get the table early can take the migration again):
+  - `id INTEGER PRIMARY KEY`, the rowid, so undo restores the same row (C-2);
+  - `marcher_id`, referencing `marchers` `ON DELETE CASCADE`;
+  - `start_beat` and `end_beat`, with `start_beat >= 0`, `end_beat > start_beat` (both
+    `typeof … = 'integer'`, C-3), and `UNIQUE (marcher_id, start_beat)`.
+  - A mark runs over `[start_beat, end_beat)`; a count `c` is inside it when
+    `start_beat < c <= end_beat`.
+- **How it's wired:**
+  - It isn't in `timeline_change_log`, and the resolver never reads it.
+  - It is in `tablesWithHistory`, the repair copy list and `DISPLAY_TABLES`. `DISPLAY_TABLES` is
+    what refreshes views after an edit that only writes marks (Hold from previous page on a page
+    where the marchers are Not set, and its undo). The query invalidation map gets an entry, as the
+    kept table had.
+- **Two kinds, which follow from the rows** (no stored anchor):
+  - An **arrival hold** has a row of the marcher ending at its start. It follows that row when the
+    row is retimed, and goes when the row goes.
+  - A **borrowed hold** has nothing ending at its start. It holds wherever the marcher is there.
+- **Invariants, checked at commit time.** They are plain SQL over `timeline_assignments`, so they
+  need no layer derivation:
+  - **H-1:** no row of the marcher overlaps the mark (`E-H1`).
+  - **H-3:** one marcher's marks don't overlap (`E-H3`).
+
+  They are a second view, `timeline_held_violations`, read beside `timeline_commit_violations`
+  only once the file has the table: convert on open commits a page-era file's timeline rows before
+  its timeline-only migrations, 0030 among them, have run. The view's rows are
+  `(code, transition_id, detail)` like the first view's; mark violations set `transition_id` to
+  NULL and name the marcher and counts in `detail`. `TimelineCommitViolationError` and the error
+  messages accept that.
+- **Holds are always explicit.** Only Hold from previous page (this page only), bar-end and
+  bar-start drags, hold over the window, and Make all selected Held write marks. Nothing infers a
+  hold from a selection or from positions.
+- **Hold from previous page** (page box menu): for each selected marcher, a mark over the page box,
+  from the previous page's flag, where a move of the marcher must end. The marcher's own moves
+  inside the box are removed first, as Basic's Set to previous page removes them (a converted
+  page's shared slot is compacted). Touching holds are one hold: a mark ending at the box's start
+  grows over the box, and a mark starting at its end is taken in, so holding Page 2 then Page 3
+  gives what Page 3 then Page 2 does. The arrival is found by the rule a drag inside the hold uses
+  (the marcher's highest-layer row ending at the flag, whose move ends there too), so every hold it
+  makes is one its drags can reach. Marchers it can't hold are left alone and named, with why:
+  nothing arrives at the previous flag (a borrowed hold, #474), already Held there, a move
+  crossing one of the box's flags, Expert moves in the box, a shape or placed shape's recipe on
+  the page, following the leader on the page, or an arrival that is a shape's move or a
+  follow-the-leader move, which a drag inside the hold would rewrite (shape and follow-the-leader
+  members are skipped and named until fork #504).
+- **Holds from the starting spots** (owner, 2026-11-01, fork #619). This amends "where a move of
+  the marcher must end" above: a marcher with no row starting before the box's start (Page 1, or a
+  later page it reaches only by standing on its starting spot) is Held from its starting spot
+  (`marchers.home_x`, `home_y`). That is its arrival, and a drag inside it sets the starting spot,
+  moving the whole hold. The mark stays while no row of the marcher starts before it, or once a
+  move arrives at its start (that move becomes its arrival). A mark whose arrival row an edit
+  deleted doesn't become one. An edit that gives the marcher a move starting before the mark
+  without ending at its start (a move on an earlier page, or Set as shown there) leaves it nothing
+  to grow out of, so the mark is deleted: holding from where that move ends is a borrowed hold
+  (#474). The edit names the holds it dropped in its warning ("T1 is no longer Held on Page 3"),
+  for point and range moves, Set as shown and Add to move. Placing a shape at the starting spots
+  drops its marchers' holds from the starting spots in the same edit. Starting spots a placed shape
+  sets (a recipe with no move, other than an ungrouped mark) are skipped and named: the shape
+  carried on is its hold, so
+  the way to hold its marchers one by one is to ungroup it at the start of the show (Ungroup on a
+  later page only marks that page's move). No schema change: the arrival follows from the rows.
+- **A drag on a count inside a Held hold** (a range edit whose end, or a Basic point edit whose
+  count, is inside it) sets the marcher's ending in the move that arrives at the hold's start, as
+  an edit of that move's timeline would. The arrival and the whole hold move together; earlier and
+  later pages behave as before. In a mixed selection each marcher is edited by its own kind. A
+  Basic drag respects Basic's lock: an arrival that isn't simple on the page it ends is refused
+  (`notSimple`), naming the marchers. A marcher whose arrival has since become a shape's move or a
+  follow-the-leader move (a shape placed on its page, say) is left alone and named, as Hold from
+  previous page skips it. A shape's after-write step gets the arrival's move when only
+  Held marchers were dragged, and `keepUnchanged` applies to Held marchers too. When everyone
+  dragged is Held from the starting spot, it gets the homes (`null`), so a shape placed there is
+  stored at the starting spots, and in the same edit those marchers' holds from the starting spot
+  go: a starting spot a shape sets can't be held.
+- **Set as shown** (with Only Page N's and Remove keyframe's stays, which share its write) treats a
+  Held marcher as decided: it is skipped and reported (`held`), and nothing is written inside the
+  hold.
+- **Clear this page clears a hold** on the page for the marchers it clears: the part of their marks
+  over the box goes, so the page is Not set. That is the way out of a hold. A part after the box
+  has nothing arriving at its start, so it goes too (below), and the toast says so ("Page 2 is Not
+  set for 1 marcher; T1's hold on Page 3 was cleared too"); a part before the box stays.
+- **`E-H1` names who and where:** "T1 is Held on Page 3. Clear this page to remove the hold, or
+  drag inside it to move it." (`TimelineCommitViolationError.held`). The page is the one where the
+  move first overlaps the hold, or, for an arrival moved away, where the hold starts.
+- **A mark goes when its arrival is deleted** (#472): `transactionWithHistory` reads each mark's
+  arrival row (by the rule above, one SQL fragment the ripple's plan uses too) before the edit's
+  function, and checks the marks right after it, in the same undo step; never during undo or redo
+  replay. A mark something still arrives at stays, whichever row that is (Basic rewrites a page's
+  move as a new row ending at the same flag). A mark nothing arrives at any more is deleted when
+  its arrival row was deleted, or it had none: a mark over counts nothing arrives at could never
+  be reached by a drag, and only blocks edits. When its arrival row is still there but ends
+  somewhere else, the edit is refused with `E-H1` (below). This is steps 2 and 4 below, in the
+  small form #472 needs while every mark is an arrival hold; #473 grows it into the full upkeep.
+- **Upkeep, in `transactionWithHistory`** (fork #473; until it lands, an edit other than a page or
+  beat edit that moves an arrival in time, a clip drag, resize or merge refit, into the hold or
+  away from it, is refused with `E-H1`):
+  - **When:** the step snapshots, before the edit's function runs, the ids of the rows ending at
+    each mark's start. It runs **right after the function**, before the history group is read, so
+    its writes belong to the same undo step. It never runs during undo or redo replay (C-6).
+  - **In order:**
+    1. Trim the parts of marks that rows now cover.
+    2. Keep a mark that a row still ends at.
+    3. Move a mark's start to the new end of a row that ended there before (a retime), then trim
+       again.
+    4. Delete a mark whose row ended there before and is gone (Remove keyframe, Delete move).
+    5. Otherwise leave it as a borrowed hold.
+    6. Merge marks that touch.
+  - **Writers that delete and re-insert a row with a new end** pass an explicit old→new row map,
+    which step 3 uses. Basic's set-ending is the known case.
+  - **Basic's sweep** of following moves that go nowhere stops at a mark's start.
+  - Opening a file runs the upkeep trim once, so a file edited by a build without marks support
+    can't fail every later edit.
+- **Page and beat edits** (`planTimelineRipple`, so previews match commits; #472):
+  - An arrival hold's start takes its row's planned new end.
+  - Any other mark edge that sits on a page flag follows that flag. That covers a borrowed hold's
+    start and any hold's end.
+  - An edge in the middle of a page stays on its beat, as a row edge does.
+  - A deleted flag leaves an edge on its count.
+  - The end of the last page counts as a flag, when the same page is last before and after.
+  - A mark whose arrival is a page move that goes with a removed page goes too; a mark left with
+    no counts (its page deleted) is deleted.
+- **Removing the keyframe a hold grows out of** removes the hold, and writes no next-page move
+  inside it. The pages become Not set (fork #473).
+- **Hold over the window** removes the selected marchers' moves inside the window, cuts a move that
+  crosses its start flag there, and starts a move that crosses the playhead at the playhead, with
+  the same destination (fork #476).
+- **The converter writes no marks.**
+- **Display:** the selected marchers' Held holds are solid bars at exact counts on the keyframe
+  diamonds' row, each from its start (an arrival's diamond) to its end.
+- **The rules per write path** are in `docs/timeline/research/holds/01-edit-rules.md`. The rules
+  for arrival and borrowed holds are in `04-anchors.md`.
+
+**Scope.** Holds rely on transitions only through two operations: cut a move in time at a count,
+and remove a marcher from a move for a range of counts. How shapes and transitions provide them is
+left to the shape and transition ownership model (fork #434, #436), a later amendment. Until then,
+shape and follow-the-leader members are skipped and named.
 
 Cases, a simulator and animations: `docs/timeline/research/layer-priority/README.md`.
 
@@ -627,6 +849,16 @@ file under `docs/timeline/phases/`.
 - File format: opening a version-8 file in an app that supports only 7 is
   refused with a clear message; a real-file corpus of older `.dots` files opens
   and converts (Phase 9).
+- Kept spots removed (2026-10-29 amendment): a migration test opens a file with a kept row and
+  undo and redo steps naming the kept table; after migrating, the table is gone, both history
+  stacks are empty, every resolved position is unchanged, and a new edit undoes and redoes. A file
+  whose history doesn't name the table keeps its history.
 - Layer priority (2026-10-16 amendment): spec QA-LP-1 to -10 pass, and a test after every
   timeline command checks that stored layers equal the derived ones (I-L1). The only function that
   writes assignment rows takes a layer type that only the layer module can produce.
+- Held holds (2026-10-30 amendment): H-1 and H-3 are rejected at commit (fork #472); a test
+  after every timeline command checks them (fork #473). Undo and redo round-trips cover mark-only
+  edits and edits that remove moves with the mark (#472), and edits that run the upkeep step
+  (#473). A migration test covers the empty marks table on older files (0030). App scenarios cover
+  Hold from previous page and a drag inside the hold (`e2e/browser/tests/held-hold.spec.mts`), the
+  repros of questions 14 and 15 and the demo's scenarios for holds (`docs/timeline/research/holds/`).

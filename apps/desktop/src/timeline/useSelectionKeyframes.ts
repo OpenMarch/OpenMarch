@@ -5,15 +5,13 @@ import {
     type SelectionKeyframe,
 } from "./timelineSetFollowing";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
-import { useKeptAssignmentsStore } from "./useKeepLaterPages";
 
 export const NO_KEYFRAMES: readonly SelectionKeyframe[] = [];
 
 /**
  * The selection's keyframes on the timeline (#303, `selectionKeyframes`), from the resolver's
- * spans and the kept markers (a kept spot is Following). Worked out once per selection, kept
- * markers and resolver version (a committed edit, undo or redo), so playback and scrubbing never
- * recompute them.
+ * spans. Worked out once per selection and resolver version (a committed edit, undo or redo), so
+ * playback and scrubbing never recompute them.
  *
  * @param marcherIds the selected marchers; keep the array stable while the selection is
  */
@@ -22,15 +20,14 @@ export function useSelectionKeyframes(
 ): readonly SelectionKeyframe[] {
     const resolver = useTimelineResolverStore((s) => s.resolver);
     const version = useTimelineResolverStore((s) => s.version);
-    const kept = useKeptAssignmentsStore((s) => s.ids);
     return useMemo(() => {
         void version; // a new version means new spans
         if (!resolver || marcherIds.length === 0) return NO_KEYFRAMES;
         return selectionKeyframes(
             marcherIds.map((id) =>
-                marcherSetBeats(resolverSpans(resolver, id), kept),
+                marcherSetBeats(resolverSpans(resolver, id)),
             ),
             marcherIds,
         );
-    }, [resolver, version, kept, marcherIds]);
+    }, [resolver, version, marcherIds]);
 }

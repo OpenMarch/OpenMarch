@@ -1,9 +1,9 @@
 # Localization
 
 The desktop app's text is translated with [Tolgee](https://tolgee.io). Write every
-piece of user-facing text through Tolgee as you build, even though only English
-ships at first. Translators fill in the other languages later, from the English
-text and the context you leave for them.
+piece of user-facing text through Tolgee as you build. The other languages are
+translated by AI from the English text and the context you leave for them (see
+[Translating](#translating)), and volunteers who speak the language check them.
 
 `pnpm check:i18n` enforces this for the renderer (`apps/desktop/src`), the Electron
 main process and preload (`apps/desktop/electron`), and the web build's page and worker
@@ -53,7 +53,8 @@ translate are checked like `t()` keys.
 ## How to add text
 
 1. Add the key and its English text to `apps/desktop/i18n/en.json`. Don't edit the
-   other language files; they come from Tolgee.
+   other language files by hand; they come from the translation step
+   ([Translating](#translating)).
 2. Add translator context for the key to `apps/desktop/i18n-meta/context.json` (see
    below).
 3. Show it with Tolgee:
@@ -149,7 +150,7 @@ is welcome.
 
 ## Changing a key
 
-The other languages keep their translation of a key until Tolgee retranslates it,
+The other languages keep their translation of a key until it's retranslated,
 so a translation made for the old English stays on screen after you change it:
 
 - A change that keeps the meaning, arguments and tags (a typo, `one {` to `=1 {`,
@@ -161,8 +162,50 @@ so a translation made for the old English stays on screen after you change it:
 
 `pnpm check:i18n` checks every language file against English: a translation may
 only use the arguments and tags its English has, can't print a `select` argument
-as is, and must parse. If a pulled translation fails, fix it in Tolgee, or rename
-the key when the English changed.
+as is, and must parse. If a translation fails, retranslate the key, or rename it
+when the English changed.
+
+## Translating
+
+Every language the app lists (`APP_LANGUAGES` in `src/utilities/languages.ts`) is
+translated by AI, and the app says so: the language picker in Settings and the
+first-run setup shows a note in any language but English that the text was made with AI,
+with a link asking native speakers to help check it (`TranslationHelpNote`). In English the
+note asks people to help add their language.
+
+The translator gets three things, all in `apps/desktop/i18n-meta/`:
+
+- `context.json`: the note for each key (see [Translator context](#translator-context)).
+- `glossary.json`: one agreed word per language for each OpenMarch and marching-band term
+  ("marcher", "count", "drill chart"), so 3,000 strings use the same words. A wrong term
+  here is wrong everywhere, so a reviewer's first job in a new language is this list.
+- `style.md`: how each language sounds (formal or informal address, regional variant,
+  punctuation, how buttons are worded).
+
+`scripts/i18n/ai-translate.mjs` turns this into batches and checks the results:
+
+```sh
+cd apps/desktop
+# Batch of the keys a language lacks (add --all to revisit every key)
+node scripts/i18n/ai-translate.mjs prepare ja --out /tmp/ja.in.json
+# Translate the batch into a { key: text } JSON file, then:
+node scripts/i18n/ai-translate.mjs check ja /tmp/ja.in.json /tmp/ja.out.json
+node scripts/i18n/ai-translate.mjs merge ja /tmp/ja.out.json
+# Warnings across a whole language, for a reviewer
+node scripts/i18n/ai-translate.mjs lint ja
+```
+
+`check` fails on a missing key or a translation whose arguments, tags or plurals don't fit
+the English (the same check `pnpm check:i18n` runs). Its warnings don't fail: a glossary
+term the translation doesn't use, spaces between Japanese words, French punctuation
+spacing, text left in English. Read them, fix the ones that are real, and leave the rest.
+
+Translate in small batches (about 100 keys) with the batch, the style guide and the
+glossary in the prompt; long sessions drift from the glossary. Translate the meaning
+in that place, using the note, rather than word for word.
+
+When a reviewer corrects a term, change it in `glossary.json` as well as the strings,
+so the next batch uses it.
 
 ## Source of truth and syncing
 

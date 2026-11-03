@@ -1,1 +1,0 @@
-ALTER TABLE `beats` ADD `tempo_change` integer DEFAULT 0 NOT NULL;

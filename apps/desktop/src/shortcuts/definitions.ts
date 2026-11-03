@@ -41,6 +41,8 @@ export interface ActionDefinition {
     /** i18n key appended in parentheses, e.g. "(fine)" */
     labelSuffixKey?: string;
     labelParams?: Readonly<Record<string, string | number>>;
+    /** The label names a page state or a hold command, filled from `holdTerms` */
+    labelHoldTerms?: true;
     toggleOnKey?: string;
     toggleOffKey?: string;
     category: ActionCategory;
@@ -422,18 +424,63 @@ const STATIC_ACTIONS = {
 
     // Batch editing
     setAllMarchersToPreviousPage: {
-        labelKey: "actions.batchEdit.setAllToPrevious",
+        labelKey: "actions.batchEdit.clearThisPageAll",
+        labelHoldTerms: true,
         category: "batchEdit",
         editsDrill: true,
         scope: "canvas",
         defaultBindings: ["$mod+Shift+P", "Control+Shift+P"],
     },
     setSelectedMarchersToPreviousPage: {
-        labelKey: "actions.batchEdit.setSelectedToPrevious",
+        labelKey: "actions.batchEdit.clearThisPageSelected",
+        labelHoldTerms: true,
         category: "batchEdit",
         editsDrill: true,
         scope: "canvas",
         defaultBindings: ["Shift+P"],
+    },
+    // #573: as Clear this page, but the later pages that showed the page's spot move back to the
+    // page before instead of keeping where they were. Its handler names the pages ("Clear Page 3,
+    // Pages 4–6 move back too"). Unbound
+    setAllMarchersToPreviousPageAndFollowing: {
+        labelKey: "actions.batchEdit.clearThisPageAllAndFollowing",
+        labelHoldTerms: true,
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    setSelectedMarchersToPreviousPageAndFollowing: {
+        labelKey: "actions.batchEdit.clearThisPageSelectedAndFollowing",
+        labelHoldTerms: true,
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    // Holds: the selected marchers on the current page box become Defined where they are shown
+    // (the page box menu's entry and the inspector's button run this). Unbound
+    timelineDefineAsShown: {
+        labelKey: "actions.batchEdit.defineAsShown",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    // Holds (#472): the selected marchers on the current page box are Held where the previous
+    // page leaves them, as the page box menu's entry. ⌘H / Ctrl+H for hold (owner, 2026-11-02); plain
+    // H is the shape editor's hide-marchers. On macOS the app menu's Hide takes ⌘H, so Control+H is
+    // listed as well, as Metronome does with ⌘M
+    timelineHoldFromPrevious: {
+        labelKey: "actions.batchEdit.holdFromPrevious",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["$mod+H", "Control+H"],
     },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.setAllToNext",
@@ -859,21 +906,11 @@ const STATIC_ACTIONS = {
         defaultBindings: ["$mod+A", "Control+A"],
     },
 
-    // UI-18 keep later pages: K keeps the selection where it holds on this page, or lets it
-    // follow again (timeline mode)
-    toggleKeepOnPage: {
-        labelKey: "actions.timeline.toggleKeepOnPage",
-        category: "timeline",
-        editsDrill: true,
-        scope: "canvas",
-        defaultBindings: ["K"],
-        ignoreRepeat: true,
-    },
-
     // Set vs Following (#304): the selected marchers Set on the count shown lose that
     // coordinate and follow from earlier; later pages keep their spots. Unbound
     timelineUnsetHere: {
         labelKey: "actions.timeline.unsetHere",
+        labelHoldTerms: true,
         keywordsKey: "actions.timeline.unsetHereKeywords",
         category: "timeline",
         editsDrill: true,
@@ -885,6 +922,7 @@ const STATIC_ACTIONS = {
     // back to the earlier one. Its handler names the pages ("Unset here and on Pages 3–5"). Unbound
     timelineUnsetHereAndFollowing: {
         labelKey: "actions.timeline.unsetHereAndFollowing",
+        labelHoldTerms: true,
         keywordsKey: "actions.timeline.unsetHereKeywords",
         category: "timeline",
         editsDrill: true,

@@ -415,8 +415,8 @@ describeDbTests("timeline schema and triggers", (it) => {
             )) as [string, string][];
             // The app's undo/redo triggers (`<table>_it/_ut/_dt`, P3.5) write only to the
             // history bookkeeping tables, which U-1 allows. (`timelines_*` doesn't match the
-            // `timeline_` prefix, so seven tables' worth, with `timeline_kept_assignments` and the
-            // two shape recipe tables, ADR 0006.)
+            // `timeline_` prefix, so seven tables' worth, with the two shape recipe tables, ADR 0006,
+            // and `timeline_held_marks`.)
             const isHistoryTrigger = (name: string) =>
                 /_(it|ut|dt)$/.test(name);
             const historyTriggers = allTriggers.filter(([name]) =>

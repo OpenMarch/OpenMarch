@@ -137,3 +137,5 @@ docs/3d/ref/
 # Timeline spec and reference suite: external documents, kept verbatim
 docs/timeline/spec.md
 docs/timeline/ref/
+# What OpenMarch v0.1.7 shows for its test files, written by v0.1.7 (v017-files/generate.sh)
+**/__test__/v017-files/*.v017.json

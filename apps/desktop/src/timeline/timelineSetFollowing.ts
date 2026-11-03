@@ -3,7 +3,7 @@ import type { CarrySpan } from "./timelineCarryForward";
 /**
  * Set vs Following (#300): on the playhead's exact count, a marcher is **Set** when one of its own
  * moves ends there, and on the first page (beat 0), always. Everywhere else it's **Following**:
- * holding from an earlier count, partway through a move, or on a kept spot (keep later pages).
+ * holding from an earlier count or partway through a move.
  * Read from the marcher's resolver spans, as the inspector's hold line is.
  *
  * A move's end is a keyframe whether or not the marcher moved (holds decision 13, #468): a stored
@@ -19,31 +19,23 @@ import type { CarrySpan } from "./timelineCarryForward";
  */
 
 /**
- * A resolver span, with its assignment for telling kept spots apart and its assignment's end for
- * telling a move's end from the count a later move cuts in (`SpanInfo.assignmentEnd`).
+ * A resolver span, with its assignment's end for telling a move's end from the count a later move
+ * cuts in (`SpanInfo.assignmentEnd`).
  */
 export type SetSpan = CarrySpan & {
-    readonly assignmentId?: number | null;
     readonly assignmentEnd?: number | null;
 };
-
-const NO_KEPT: ReadonlySet<number> = new Set();
 
 /**
  * The beats one marcher is Set on, ascending, without the first page's (always Set): where each of
  * its own moves ends while in charge, moved or not.
  *
  * @param spans the marcher's spans (`resolverSpans`)
- * @param kept the kept assignments' ids (`useKeptAssignmentsStore`): a kept spot follows
  */
-export function marcherSetBeats(
-    spans: readonly SetSpan[],
-    kept: ReadonlySet<number> = NO_KEPT,
-): number[] {
+export function marcherSetBeats(spans: readonly SetSpan[]): number[] {
     const beats = new Set<number>();
     for (const span of spans) {
         if (span.kind === "hold" || !Number.isFinite(span.end)) continue;
-        if (span.assignmentId != null && kept.has(span.assignmentId)) continue;
         if (span.assignmentEnd != null && span.assignmentEnd !== span.end)
             continue;
         beats.add(span.end);

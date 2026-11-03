@@ -31,8 +31,8 @@ clears). Both runs open at the field's own view, so a change to the view
 rules shows up as a difference.
 
 `timeline-render.spec.mts` does the same for the timeline's drawing on a
-converted demo show (#201): pathways, warnings, isolation, kept marks and
-collision markers, plus a baseline with none of them:
+converted demo show (#201): pathways, warnings, isolation and collision
+markers, plus a baseline with none of them:
 
 ```bash
 RENDER_LABEL=before pnpm exec playwright test --project=render timeline-render

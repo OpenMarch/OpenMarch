@@ -93,9 +93,18 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         ]),
     // Saved shapes, the show's copies (ADR 0006, saved shapes)
     28: (db) => dropTables(db, ["saved_shapes"]),
-    // Tempo mode (ADR 0007): holds, measure numbers, meters and the music offset.
+    // Kept spots removed (holds, #467): the table comes back empty, as 0018 made it
+    29: (db) =>
+        db.exec(`CREATE TABLE \`timeline_kept_assignments\` (
+	\`assignment_id\` integer PRIMARY KEY NOT NULL,
+	\`created_at\` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	FOREIGN KEY (\`assignment_id\`) REFERENCES \`timeline_assignments\`(\`id\`) ON UPDATE no action ON DELETE cascade
+)`),
+    // Held marks (ADR 0001 amendment 2026-10-30)
+    30: (db) => dropTables(db, ["timeline_held_marks"]),
+    // Tempo mode (ADR 0007): holds, tempo points, measure numbers, meters and the music offset.
     // The history triggers name the columns; the migration service recreates every trigger
-    29: (db) => {
+    31: (db) => {
         const triggers = db
             .prepare(
                 "SELECT name FROM sqlite_schema WHERE type = 'trigger' AND tbl_name IN ('beats', 'measures', 'tempo_settings')",
@@ -104,19 +113,10 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         for (const { name } of triggers) db.exec(`DROP TRIGGER \`${name}\``);
         dropTables(db, ["tempo_settings"]);
         db.exec("ALTER TABLE beats DROP COLUMN tempo_hold");
+        db.exec("ALTER TABLE beats DROP COLUMN tempo_change");
         db.exec("ALTER TABLE measures DROP COLUMN number_override");
         db.exec("ALTER TABLE measures DROP COLUMN meter");
         db.exec("ALTER TABLE measures DROP COLUMN grouping");
-    },
-    // Tempo mode: where tempo changes start (the tempo lane's points)
-    30: (db) => {
-        const triggers = db
-            .prepare(
-                "SELECT name FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = 'beats'",
-            )
-            .all() as { name: string }[];
-        for (const { name } of triggers) db.exec(`DROP TRIGGER \`${name}\``);
-        db.exec("ALTER TABLE beats DROP COLUMN tempo_change");
     },
 };
 

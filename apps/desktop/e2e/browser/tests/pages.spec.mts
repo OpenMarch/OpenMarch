@@ -134,7 +134,7 @@ test("choosing where to place all marchers closes the menu", async ({
     await page.getByRole("tab", { name: "Alignment" }).click();
     await page.getByRole("button", { name: "Place all marchers" }).click();
     const choice = page.getByRole("button", {
-        name: "...to previous page positions",
+        name: "Clear this page",
     });
     await expect(choice).toBeEnabled();
     await choice.click();

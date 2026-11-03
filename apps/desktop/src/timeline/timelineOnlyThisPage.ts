@@ -7,8 +7,7 @@ import type {
     TimelineEditTarget,
     TimelineMoveResult,
 } from "@/db-functions/timelineMoves";
-import { keepMarchersOnPage } from "@/db-functions/timelineKeepHere";
-import { readKeptAssignmentIds } from "@/db-functions/timelineKeptMarkers";
+import { setAsShownOnPage } from "@/db-functions/timelineSetAsShown";
 import {
     useTimelineSelectionStore,
     type PageBox,
@@ -18,7 +17,7 @@ import {
     continueEditRun,
     editSurpriseToastId,
 } from "@/utilities/moveThemToo";
-import type { KeptPageBox } from "./timelineKept";
+import type { PageBoxRange } from "./timelinePageBoxState";
 import {
     followingPages,
     pageKeepStates,
@@ -27,7 +26,6 @@ import {
 } from "./timelineKeepLater";
 import { editedMarcherEnds } from "./timelineCarryForward";
 import { toastTimelineError } from "./timelineErrorMessages";
-import { applyKeptChange } from "./useKeepLaterPages";
 import {
     resolverSpans,
     timelineResolverSettled,
@@ -39,8 +37,8 @@ import {
  * prototype's rule, owner decision 2026-10-09): after an edit that changed an existing own move on
  * page N and carried into the later pages that follow it, one surprise toast, "Pages 3–4
  * followed", with **Only Page 2**. The action, its own undo step, keeps the moved marchers on the
- * next page at their spots from before the edit (`keepMarchersOnPage` with `at`), so the later
- * pages look as they did. A page's first move stays silent: its later pages following is what the
+ * next page at their spots from before the edit, as ordinary moves (`setAsShownOnPage` with `at`,
+ * holds decision 1), so the later pages look as they did. A page's first move stays silent: its later pages following is what the
  * designer meant. Nudges in a row (`continueEditRun`) keep one toast, whose action goes back to
  * the spots before the first nudge. The pass-through and **Move them too** toasts win: the caller
  * asks only when neither shows.
@@ -95,7 +93,7 @@ export interface FollowedAfterEdit {
     /** The pages they followed into, in page order */
     pages: string[];
     /** The next page box after the edited page */
-    next: KeptPageBox;
+    next: PageBoxRange;
     /** The edited page's name */
     editedName: string;
 }
@@ -111,7 +109,6 @@ export function followedAfterEdit({
     start,
     owned,
     resolver,
-    kept,
     pages,
 }: {
     target: TimelineEditTarget;
@@ -119,7 +116,6 @@ export function followedAfterEdit({
     start: { positions: ReadonlyMap<number, XY> };
     owned: ReadonlySet<number>;
     resolver: Resolver;
-    kept: ReadonlySet<number>;
     pages: readonly KeepPage[];
 }): FollowedAfterEdit | null {
     if (target.kind !== "range") return null;
@@ -142,7 +138,6 @@ export function followedAfterEdit({
         pages,
         marcherIds: moved,
         spansOf,
-        kept,
     });
     const nextIndex = states.findIndex((s) => s.pageId === edited.id) + 1;
     const next = states[nextIndex];
@@ -175,8 +170,8 @@ export function onlyThisPageMessage(
     };
     return {
         message: translate(
-            "timeline.keep.followed.changed",
-            "{count, plural, =1 {Page {first} was holding this form, so it changed too} other {Pages {first}–{last} were holding this form, so they changed too}}",
+            "timeline.keep.followed.hadNoPositions",
+            "{count, plural, =1 {Page {first} had no positions of its own for these marchers, so it changed too} other {Pages {first}–{last} had no positions of their own for these marchers, so they changed too}}",
             pages,
         ),
         actionLabel: translate(
@@ -232,22 +227,20 @@ function showOnlyThisPageToast({
             label: actionLabel,
             onClick: () => {
                 forget();
-                keepMarchersOnPage({
+                setAsShownOnPage({
                     db: database,
                     pageBox: found.next,
                     marcherIds: found.marcherIds,
                     at,
-                })
-                    .then((kept) => applyKeptChange(kept.markers))
-                    .catch((e: unknown) =>
-                        toastTimelineError(
-                            e,
-                            tolgee.t(
-                                "timeline.keep.followed.keepError",
-                                "Error keeping the later pages",
-                            ),
+                }).catch((e: unknown) =>
+                    toastTimelineError(
+                        e,
+                        tolgee.t(
+                            "timeline.keep.followed.keepError",
+                            "Error keeping the later pages",
                         ),
-                    );
+                    ),
+                );
             },
         },
         onDismiss: forget,
@@ -258,8 +251,7 @@ function showOnlyThisPageToast({
 
 /**
  * Once the edit has reached the resolver, shows the **Only Page N** toast when it carried into
- * later pages for some of the `owned` marchers it moved (`followedAfterEdit`). Errors reading
- * the kept spots are logged: the edit itself has committed.
+ * later pages for some of the `owned` marchers it moved (`followedAfterEdit`).
  *
  * @returns whether it said anything
  */
@@ -295,7 +287,6 @@ export async function offerOnlyThisPage({
         start,
         owned,
         resolver,
-        kept: await readKeptAssignmentIds(database),
         pages: keepPagesOfBoxes(boxes),
     });
     if (!found) return false;

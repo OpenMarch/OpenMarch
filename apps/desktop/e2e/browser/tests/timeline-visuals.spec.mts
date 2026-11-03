@@ -3,11 +3,10 @@ import { fileURLToPath } from "node:url";
 import type { Page } from "@playwright/test";
 import { test, expect } from "../fixtures.mjs";
 import { drawnMarchers, readField, waitForField } from "../app.mjs";
-import { emptyField, goToPage, isolate, pressKeep } from "../timeline.mjs";
+import { goToPage, isolate } from "../timeline.mjs";
 
 // The timeline's drawing on the field (#201; #189 user stories 18, 19, 20):
-// dimmed marchers while a move is isolated, kept marks' tooltip, and "Zoom to
-// collisions". Pathways and the isolation scene are pinned by the render
+// dimmed marchers while a move is isolated, and "Zoom to collisions". Pathways and the isolation scene are pinned by the render
 // comparisons (e2e/browser/render/timeline-render.spec.mts).
 
 const desktop = path.resolve(
@@ -76,49 +75,6 @@ test("isolating a move dims the marchers outside it, and they can't be selected"
     await expect
         .poll(async () => (await drawnMarchers(page)).some((m) => m.dimmed))
         .toBe(false);
-});
-
-test("a kept marcher's mark shows its tooltip on hover", async ({ show }) => {
-    const { page, query } = show;
-    await waitForField(page);
-    await goToPage(page, 53);
-    const empty = await emptyField(page);
-    await page.mouse.click(empty.x, empty.y);
-    await page.keyboard.press("ControlOrMeta+a");
-    await expect
-        .poll(async () => (await readField(page)).selection.length)
-        .toBe(95);
-    await pressKeep(page);
-    // The 91 marchers who follow on this page are kept
-    await expect
-        .poll(
-            async () =>
-                (
-                    await query<{ n: number }>(
-                        "SELECT count(*) AS n FROM timeline_kept_assignments",
-                    )
-                )[0]!.n,
-        )
-        .toBe(91);
-    await page.mouse.click(empty.x, empty.y);
-    await expect
-        .poll(async () => (await readField(page)).selection)
-        .toEqual([]);
-
-    const [{ marcher_id: keptId }] = await query<{ marcher_id: number }>(
-        `SELECT a.marcher_id FROM timeline_kept_assignments k
-         JOIN timeline_assignments a ON a.id = k.assignment_id
-         ORDER BY a.marcher_id LIMIT 1`,
-    );
-    const kept = (await drawnMarchers(page)).find((m) => m.id === keptId)!;
-    const tooltip = page.getByTestId("timeline-kept-mark-tooltip");
-    await page.mouse.move(kept.screen.x, kept.screen.y);
-    await expect(tooltip).toBeVisible();
-    await expect(tooltip).toContainText("Kept on");
-
-    // Off the mark, it goes
-    await page.mouse.move(empty.x, empty.y);
-    await expect(tooltip).toBeHidden();
 });
 
 test("zoom to collisions frames the collisions", async ({ show }) => {

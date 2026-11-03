@@ -6,6 +6,7 @@ import type {
     TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
 import type { TimelineClipPeel } from "./TimelineClipPeel";
+import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
 import type { ReactNode } from "react";
 import type {
     TimelineAddMarchersMenu,
@@ -360,6 +361,8 @@ export interface TimelineCommonProps
     readonly keyframes?: readonly TimelineKeyframe[];
     /** #306: a keyframe diamond's right-click Unset actions, by view beat; without it, no menu */
     readonly keyframeMenu?: TimelineKeyframeMenu;
+    /** #472: the selected marchers' Held holds, view beats; none without a selection */
+    readonly heldBars?: readonly SelectionHeldBar[];
     /** The chains on the page boxes (UI-18 keep later pages); none without a selection */
     readonly keepChains?: PageKeepChains;
     /**

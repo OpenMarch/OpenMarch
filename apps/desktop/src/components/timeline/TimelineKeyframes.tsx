@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
+import { holdTerms } from "@/timeline/holdTerms";
 import type { SelectionKeyframe } from "@/timeline/timelineSetFollowing";
 import type { TimelinePageMarker } from "./TimelineViewModel";
 import {
@@ -239,7 +240,11 @@ function KeyframeMenuItems({
                 disabled={!canUnset}
                 onSelect={() => menu.onUnset(beat)}
             >
-                {tolgee.t("actions.timeline.unsetHere", "Remove keyframe")}
+                {tolgee.t(
+                    "actions.timeline.unsetHere",
+                    "{removeKeyframe}",
+                    holdTerms(),
+                )}
             </ContextMenu.Item>
             {followingLabel && (
                 <ContextMenu.Item

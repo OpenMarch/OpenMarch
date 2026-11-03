@@ -11,7 +11,13 @@ import en from "../../../../i18n/en.json";
 import es from "../../../../i18n/es.json";
 import fr from "../../../../i18n/fr.json";
 import ja from "../../../../i18n/ja.json";
+import fil from "../../../../i18n/fil.json";
+import id from "../../../../i18n/id.json";
+import ms from "../../../../i18n/ms.json";
 import ptBR from "../../../../i18n/pt-BR.json";
+import th from "../../../../i18n/th.json";
+import zhHans from "../../../../i18n/zh-Hans.json";
+import zhHant from "../../../../i18n/zh-Hant.json";
 import { GESTURE_CHIP_KEYS, gestureChipSegments } from "../heldRoleChipText";
 import HeldRolesChip, { HeldRolesChipBelowTip } from "../HeldRolesChip";
 
@@ -136,6 +142,12 @@ describe("the chip's words", () => {
         ["fr", fr],
         ["ja", ja],
         ["pt-BR", ptBR],
+        ["id", id],
+        ["ms", ms],
+        ["fil", fil],
+        ["zh-Hans", zhHans],
+        ["zh-Hant", zhHant],
+        ["th", th],
     ])("are all in %s", (_, locale) => {
         for (const key of GESTURE_CHIP_KEYS)
             expect(typeof lookup(locale, key), key).toBe("string");
@@ -147,6 +159,12 @@ describe("the chip's words", () => {
         ["fr", fr],
         ["ja", ja],
         ["pt-BR", ptBR],
+        ["id", id],
+        ["ms", ms],
+        ["fil", fil],
+        ["zh-Hans", zhHans],
+        ["zh-Hant", zhHant],
+        ["th", th],
     ])("say Snap off in %s with the Snap toggle's term", (_, locale) => {
         const caption = lookup(
             locale,

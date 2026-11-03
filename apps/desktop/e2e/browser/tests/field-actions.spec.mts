@@ -2,7 +2,6 @@ import type { Page } from "@playwright/test";
 import { test, expect, type Show } from "../fixtures.mjs";
 import {
     clickMarcher,
-    dragMarcher,
     expectCanvasMatchesShow,
     selectedDrillNumbers,
     selectPage,
@@ -191,31 +190,4 @@ test("set the selected marcher to the next page", async ({ show }) => {
     const others = (await savedPositions(show, 1)).filter((p) => p.id !== 2);
     expect(others).toEqual(asPositions(PAGE_1).filter((p) => p.id !== 2));
     await expectCanvasMatchesShow(show);
-});
-
-test("keep a marcher on a page, then drag it on the page before", async ({
-    show,
-}) => {
-    const { page } = show;
-    // T3 holds on page 2: K keeps it there
-    await selectPage(show, "Page 2");
-    await clickMarcher(page, "T3");
-    await expect.poll(() => selectedDrillNumbers(page)).toEqual(["T3"]);
-    await press(page, "k");
-    await waitForIdle(page);
-    const keptAt = await savedPosition(show, 3, 2);
-
-    // Moving T3 on page 1 no longer carries it on page 2; T4, not kept, follows
-    await selectPage(show, "Page 1");
-    await clickMarcher(page, "T3");
-    await clickMarcher(page, "T4", { add: true });
-    await dragMarcher(page, "T3", { x: 60, y: -50 });
-    await expect
-        .poll(async () => (await savedPosition(show, 3, 1)).x)
-        .not.toBe(PAGE_1[2][1]);
-    await waitForIdle(page);
-    expect(await savedPosition(show, 3, 2)).toEqual(keptAt);
-    expect(await savedPosition(show, 4, 2)).toEqual(
-        await savedPosition(show, 4, 1),
-    );
 });

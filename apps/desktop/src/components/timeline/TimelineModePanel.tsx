@@ -3,7 +3,7 @@ import { TEMPO_BAND, useTempoModeStore } from "@/tempo/TempoBand";
 import { TempoModeButton } from "@/tempo/TempoModeButton";
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import {
     pageFlagMoveLimits,
@@ -16,6 +16,7 @@ import {
     movePageFlagMutationOptions,
     useAddPageFlag,
 } from "@/hooks/queries/usePageFlags";
+import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { updatePagesMutationOptions } from "@/hooks/queries/usePages";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { useTimingObjects } from "@/hooks";
@@ -82,18 +83,15 @@ import { useSplitMergeActions, useSplitMergeMoves } from "./useSplitMergeMoves";
 import { useTimelinePlayback } from "./useTimelinePlayback";
 import { jumpTimelinePlayback } from "@/timeline/timelineTransport";
 import { useSelectionKeyframes } from "@/timeline/useSelectionKeyframes";
+import { useSelectionHeldBars } from "@/timeline/useHeldMarks";
 import { marcherNamesText } from "@/timeline/timelineKeepLater";
 import tolgee from "@/global/singletons/Tolgee";
 import type { TimelineKeyframe } from "./TimelineKeyframes";
 import { useKeyframeUnsetMenu } from "@/timeline/timelineUnset";
-import {
-    useKeepToggle,
-    useMarcherNameOf,
-    usePageKeepStates,
-} from "@/timeline/useKeepLaterPages";
-import { useSelectedPage } from "@/context/SelectedPageContext";
-import { keepHereMenu, usePageKeepChains } from "./PageKeepChain";
-import { setAsShownMenu } from "@/timeline/timelineSetAsShown";
+import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
+import { usePageKeepChains } from "./PageKeepChain";
+import { useHoldCommands } from "@/timeline/useHoldCommands";
+import { clearPageMenu } from "@/timeline/timelineClearPage";
 import { describeMoveClips } from "./moveClipText";
 import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
@@ -286,23 +284,33 @@ export default function TimelineModePanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- language: the words are tolgee.t's
         [selectionKeyframes, keepNameOf, language],
     );
+    // #472: the selected marchers' Held holds, as solid bars from their arrivals' diamonds
+    const heldBars = useSelectionHeldBars(selectedIdList);
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
-    // UI-18 keep later pages: the chains on the page boxes, and the page box menu's entries
-    // (named up to three; K's target says so, from the current page)
-    const keepStates = usePageKeepStates(pages, selectedIdList);
-    const keepK = useKeepToggle(
+    // UI-18 keep later pages: the chains on the page boxes (named up to three)
+    // Holds: Define as shown (#466) and Hold from previous page (#472) on a page box, the same
+    // commands the timelineDefineAsShown and timelineHoldFromPrevious actions run on the current page
+    const {
         keepStates,
-        pages,
-        useSelectedPage()?.selectedPage?.id,
+        defineAsShown: setAsShown,
+        holdFromPrevious,
+        entriesOn,
+    } = useHoldCommands(pages, selectedIdList, keepNameOf);
+    const keepChains = usePageKeepChains(keepStates, keepNameOf);
+    // #573: Clear Page N, for the selected marchers or every performer when none is selected;
+    // ticked when every selected marcher is already Not defined on the page (`entriesOn`)
+    const { data: performers } = useQuery(allMarchersQueryOptions());
+    const clearPage = useMemo(
+        () =>
+            clearPageMenu({
+                pages,
+                selectedIds: selectedIdList,
+                performerIds: (performers ?? []).map((m) => m.id),
+                entryOn: (pageId) => entriesOn(pageId)?.clearThisPage,
+            }),
+        [pages, selectedIdList, performers, entriesOn],
     );
-    const keepChains = usePageKeepChains(keepStates, keepNameOf, keepK);
-    const keepHere = useMemo(
-        () => keepHereMenu(keepStates, keepK),
-        [keepStates, keepK],
-    );
-    // Holds (#466): Set as shown on a page box, for the selected marchers Not set there
-    const setAsShown = useMemo(() => setAsShownMenu(keepStates), [keepStates]);
     const { tracks: timelines, current: tracksCurrent } =
         useTimelineTracksState({
             database: db,
@@ -584,9 +592,11 @@ export default function TimelineModePanel() {
                     }
                     keyframes={keyframes}
                     keyframeMenu={keyframeMenu}
+                    heldBars={heldBars}
                     keepChains={keepChains}
-                    keepHere={keepHere}
                     setAsShown={setAsShown}
+                    holdFromPrevious={holdFromPrevious}
+                    clearPage={clearPage}
                     onSelectionChange={changeSelection}
                     onTimelineRangeCommit={
                         basic ? undefined : commands.commitTimelineRange

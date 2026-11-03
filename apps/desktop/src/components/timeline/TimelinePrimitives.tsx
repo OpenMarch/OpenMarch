@@ -109,14 +109,12 @@ import {
     type TimelineKeyframe,
     type TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
+import { TimelineHeldBars } from "./TimelineHeldBars";
+import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
 import {
     chainFit,
-    KEEP_DOT_SIZE,
-    KEEP_SHORTCUT,
-    keepDotFit,
     labelPaddingBeside,
     PageKeepChainButton,
-    PageKeepDot,
     type PageKeepChain,
     type PageKeepChains,
 } from "./PageKeepChain";
@@ -777,7 +775,7 @@ type RulerScrub = ReturnType<typeof useRulerScrub>;
  * scrolled out of view, so a long page always shows its name. Set heavier than the counts and
  * measure numbers under it, so the box and the weight tell them apart. Hidden when the box is too
  * narrow to read it, when zoomed far out (UI-12). It slides no further left than its box's
- * padding, which ends before a keep chain or dot (`labelPaddingBeside`).
+ * padding, which ends before a keep chain (`labelPaddingBeside`).
  */
 const PageBoxLabel = memo(function PageBoxLabel({
     label,
@@ -823,6 +821,7 @@ export const TimelineRuler = memo(function TimelineRuler({
     positionBeat,
     keyframes,
     keyframeMenu,
+    heldBars,
     keepChains,
     scrubLine,
     pageFlagMove,
@@ -856,6 +855,8 @@ export const TimelineRuler = memo(function TimelineRuler({
     keyframes?: readonly TimelineKeyframe[];
     /** A diamond's right-click Unset actions (#306), by view beat; without it, no menu */
     keyframeMenu?: TimelineKeyframeMenu;
+    /** The selected marchers' Held holds (#472), view beats; none without a selection */
+    heldBars?: readonly SelectionHeldBar[];
     /** The chains on the page boxes (UI-18 keep later pages), by page id */
     keepChains?: PageKeepChains;
 }) {
@@ -1014,6 +1015,13 @@ export const TimelineRuler = memo(function TimelineRuler({
                     onSelectPage={selectPage}
                 />
             )}
+            {heldBars && (
+                <TimelineHeldBars
+                    bars={heldBars}
+                    pages={pages}
+                    pixelsPerBeat={pixelsPerBeat}
+                />
+            )}
             {keyframes && (
                 <TimelineKeyframes
                     keyframes={keyframes}
@@ -1159,20 +1167,12 @@ const TimelinePageBox = memo(function TimelinePageBox({
     const labelShown = pageLabelFits(page.label, boxWidth);
     const labelChars = labelShown ? page.label.length : 0;
     const fit = chain ? chainFit(boxWidth, labelChars) : null;
-    const dot =
-        chain && !fit && chain.kind !== "follows"
-            ? keepDotFit(boxWidth, labelChars)
-            : null;
-    // The sticky label stops before the chain or dot (`labelPaddingBeside`)
+    // The sticky label stops before the chain (`labelPaddingBeside`)
     const labelPadding = fit
         ? labelPaddingBeside(fit.offset, fit.size)
-        : dot?.clear
-          ? labelPaddingBeside(dot.offset, KEEP_DOT_SIZE)
-          : undefined;
+        : undefined;
     // A chain with no room for its button: its words go on the box, as its tooltip and accessible
-    // description, naming whom the box's menu changes, with (K) where K does the same, as the
-    // chain's button shows it
-    const menuK = !!chain && !fit && !!chain.menuWithK;
+    // description, naming whom the box's menu changes
     const words =
         chain && !fit
             ? { label: chain.menuLabel, hint: chain.menuHint }
@@ -1180,7 +1180,6 @@ const TimelinePageBox = memo(function TimelinePageBox({
     const box = (
         <ShortcutTooltip
             label={words?.label}
-            shortcut={words && menuK ? KEEP_SHORTCUT : undefined}
             hint={words?.hint}
             side="top"
             closeOnPress
@@ -1191,7 +1190,6 @@ const TimelinePageBox = memo(function TimelinePageBox({
                 {...timelineRangeTargetProps(range, undefined, page.id)}
                 aria-label={t("timeline.page.label", { pageName: page.label })}
                 aria-describedby={words ? descriptionId : undefined}
-                aria-keyshortcuts={menuK ? KEEP_SHORTCUT : undefined}
                 aria-pressed={selected}
                 {...scrub.handlers}
                 onClick={(event) => {
@@ -1212,9 +1210,6 @@ const TimelinePageBox = memo(function TimelinePageBox({
                         {words.label}. {words.hint}
                     </span>
                 )}
-                {chain && dot && (
-                    <PageKeepDot kind={chain.kind} left={dot.offset} />
-                )}
             </button>
         </ShortcutTooltip>
     );
@@ -1231,7 +1226,7 @@ const TimelinePageBox = memo(function TimelinePageBox({
                 range={range}
                 left={boxLeft + fit.offset}
                 size={fit.size}
-                always={selected || !!chain.withK}
+                always={selected}
             />
         </>
     );

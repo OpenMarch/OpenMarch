@@ -16,7 +16,6 @@ import {
     updateTimelineTransitionsInTransaction,
 } from "../timelineTransitionsInTransaction";
 import { createTimelineAssignmentsInTransaction } from "../timelineAssignments";
-import { markAssignmentsKeptInTransaction } from "../timelineKeptMarkers";
 import { splitTimelineAtBeat } from "../timelineSplitAtBeat";
 import { splitMarchersIntoNewMove } from "../timelineSplitMoves";
 
@@ -34,7 +33,6 @@ const TABLES = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
-    schema.timeline_kept_assignments,
 ];
 
 const dataOf = async (db: DbConnection) => {
@@ -444,31 +442,106 @@ describeDbTests("Split at playhead (UI-27)", (it) => {
         });
     });
 
-    it("a kept row split in two is kept in both halves", async ({
+    it("an arc keeps every count before the beat, pieces and short rows too; the curves across the beat are said to change from it (#591)", async ({
         db,
         marchersAndPages: _,
     }) => {
         await convertPagesToTimeline(db);
         const { timeline, transition } = await page2(db);
-        const rows = await rowsOf(db, transition.id);
-        await transactionWithHistory(db, "keep", (tx) =>
-            markAssignmentsKeptInTransaction(tx, [rows[0]!.id]),
+        await transactionWithHistory(db, "arc", (tx) =>
+            updateTimelineTransitionsInTransaction({
+                tx,
+                modifiedTransitions: [
+                    {
+                        id: transition.id,
+                        pathStyle: "arc",
+                        pathParams: { bulge: 0.45 },
+                    },
+                ],
+            }),
         );
+        const rows = await rowsOf(db, transition.id);
+        expect(rows.length).toBeGreaterThanOrEqual(4);
+        const [pieced, short, late, ...plain] = rows;
+        // Pieces [9, 10), [11, 12) and [13, 17), each starting where another move left it
+        await overlay(db, pieced!.marcher_id, 10, 11, [123, 456]);
+        await overlay(db, pieced!.marcher_id, 12, 13, [-200, 80]);
+        // Ends at 11, short of the move's end
+        await transactionWithHistory(db, "short row", (tx) =>
+            tx
+                .update(schema.timeline_assignments)
+                .set({ end_beat: 11 })
+                .where(eq(schema.timeline_assignments.id, short!.id)),
+        );
+        // Hidden until 10, so its span starts there
+        await overlay(db, late!.marcher_id, 9, 10, [60, 60]);
+        const r0 = await resolverOf(db);
+        const original = await snapshot(db);
+
         const result = await splitTimelineAtBeat({
             db,
             timelineId: timeline.id,
-            beat: 12,
+            beat: 15,
         });
-        const kept = await db
-            .select()
-            .from(schema.timeline_kept_assignments)
-            .all();
-        const [made] = await transitionsOf(db, result.before.id);
-        const firstRow = (await rowsOf(db, made!.id)).find(
-            (r) => r.marcher_id === rows[0]!.marcher_id,
-        )!;
-        expect(kept.map((k) => k.assignment_id).sort((a, b) => a - b)).toEqual(
-            [rows[0]!.id, firstRow.id].sort((a, b) => a - b),
+        const r1 = await resolverOf(db);
+        expectSamePositions(positions(r0, 15), positions(r1, 15), 1e-6);
+        // Everyone still arrives where they did
+        expectSamePositions(
+            r0.marcherIds().map((id) => [r0.positionAt(id, 17)]),
+            r1.marcherIds().map((id) => [r1.positionAt(id, 17)]),
+            1e-6,
+        );
+        // The rows showing across 15 start a new curve there; the short row ended before it
+        const across = [pieced, late, ...plain]
+            .map((r) => r!.marcher_id)
+            .sort((a, b) => a - b);
+        expect(result.motionChanged).toEqual(
+            across.map((marcherId) => ({ marcherId, fromBeat: 15 })),
+        );
+        // The first half is arcs, one transition per span start in the counterpart (9, 10 and 13)
+        // and one per earlier piece (9 and 11)
+        const made = await transitionsOf(db, result.before.id);
+        expect(made.every((t) => t.path_style === "arc")).toBe(true);
+        expect(made.length).toBe(5);
+        for (const t of made) {
+            const { bulge } = JSON.parse(t.path_params!) as { bulge: number };
+            expect(Math.abs(bulge)).toBeLessThan(0.45);
+            expect(bulge).toBeGreaterThan(0);
+        }
+
+        await performUndo(db);
+        expect((await snapshot(db)).data).toEqual(original.data);
+    });
+
+    it("an arc of bulge 0 gives a direct first half, which Basic can edit (#621 review)", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await convertPagesToTimeline(db);
+        const { timeline, transition } = await page2(db);
+        await transactionWithHistory(db, "flat arc", (tx) =>
+            updateTimelineTransitionsInTransaction({
+                tx,
+                modifiedTransitions: [
+                    {
+                        id: transition.id,
+                        pathStyle: "arc",
+                        pathParams: { bulge: 0 },
+                    },
+                ],
+            }),
+        );
+        const r0 = await resolverOf(db);
+        const result = await splitTimelineAtBeat({
+            db,
+            timelineId: timeline.id,
+            beat: 13,
+        });
+        const r1 = await resolverOf(db);
+        expectSamePositions(positions(r0, 13), positions(r1, 13), 1e-6);
+        const made = await transitionsOf(db, result.before.id);
+        expect(made.map((t) => [t.path_style, t.path_params])).toEqual(
+            made.map(() => ["direct", null]),
         );
     });
 

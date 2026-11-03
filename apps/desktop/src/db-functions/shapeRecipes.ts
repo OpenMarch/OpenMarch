@@ -1,5 +1,5 @@
-import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
-import { schema } from "@/global/database/db";
+import { and, eq, inArray, isNull, ne, notInArray, sql } from "drizzle-orm";
+import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection, DbTransaction } from "./types";
 
 /**
@@ -41,6 +41,10 @@ export interface StoredShapeRecipe extends ShapeRecipeRecord {
 
 const recipes = schema.timeline_shape_recipes;
 const members = schema.timeline_shape_recipe_marchers;
+
+/** Where-clause for the recipes nobody is in */
+const noMembers = () =>
+    sql`NOT EXISTS (SELECT 1 FROM ${members} WHERE ${members.recipe_id} = ${recipes.id})`;
 
 const sameMove = (timelineId: number | null) =>
     timelineId === null
@@ -309,6 +313,69 @@ export async function splitShapeRecipesInTransaction({
     await deleteEmptyRecipes(tx, from);
 }
 
+/**
+ * The kind of a recipe that marks its members **ungrouped** (`ungroupShape`, `UNGROUPED_KIND` in
+ * `shapes/placed/placedBox.ts`). It stores no shape, so code asking whether a marcher is in a
+ * shape skips it (`shapeRecipesOnly`).
+ */
+export const UNGROUPED_RECIPE_KIND = "ungrouped";
+
+/** Where-clause for the recipes that describe a shape: every kind but an ungrouped mark */
+export const shapeRecipesOnly = () => ne(recipes.kind, UNGROUPED_RECIPE_KIND);
+
+/**
+ * After `marcherIds` are cleared off moves `timelineIds`, takes those no longer in a move out of
+ * its ungrouped marks, and deletes a mark left with nobody. Only cleared marchers: a marcher whose
+ * rows are only re-cut into other moves over the same page (Basic's mid-page points) stays in. A mark lists only marchers in its move, as every recipe does:
+ * one still naming a marcher cleared off its page would keep hiding the earlier shape that marcher
+ * now stands in (Clear this page reverts the page, its Ungroup included). Real shapes' recipes are
+ * left to their writers.
+ */
+export async function dropUngroupedLeavers(
+    tx: DbTransaction,
+    timelineIds: readonly number[],
+    marcherIds: readonly number[],
+): Promise<void> {
+    if (
+        timelineIds.length === 0 ||
+        marcherIds.length === 0 ||
+        !(await hasShapeRecipes(tx))
+    )
+        return;
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const marks = tx
+        .select({ id: recipes.id })
+        .from(recipes)
+        .where(
+            and(
+                inArray(recipes.timeline_id, [...new Set(timelineIds)]),
+                eq(recipes.kind, UNGROUPED_RECIPE_KIND),
+            ),
+        );
+    const stillInMove = sql`EXISTS (SELECT 1 FROM ${a} INNER JOIN ${t} ON ${t.id} = ${a.transition_id} INNER JOIN ${recipes} r2 ON r2.id = ${members.recipe_id} WHERE ${a.marcher_id} = ${members.marcher_id} AND ${t.timeline_id} = r2.timeline_id)`;
+    await tx
+        .delete(members)
+        .where(
+            and(
+                inArray(members.recipe_id, marks),
+                inArray(members.marcher_id, [...new Set(marcherIds)]),
+                sql`NOT ${stillInMove}`,
+            ),
+        )
+        .run();
+    await tx
+        .delete(recipes)
+        .where(
+            and(
+                inArray(recipes.timeline_id, [...new Set(timelineIds)]),
+                eq(recipes.kind, UNGROUPED_RECIPE_KIND),
+                noMembers(),
+            ),
+        )
+        .run();
+}
+
 /** Whether the show stores shape recipes at all (a database from before them doesn't) */
 export async function hasShapeRecipes(
     tx: DbConnection | DbTransaction,
@@ -324,7 +391,7 @@ export async function deleteEmptyRecipes(
     tx: DbTransaction,
     timelineId?: number | null,
 ): Promise<void> {
-    const empty = sql`NOT EXISTS (SELECT 1 FROM ${members} WHERE ${members.recipe_id} = ${recipes.id})`;
+    const empty = noMembers();
     await tx
         .delete(recipes)
         .where(

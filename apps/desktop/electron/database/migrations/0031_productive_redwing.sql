@@ -5,6 +5,7 @@ CREATE TABLE `tempo_settings` (
 );
 --> statement-breakpoint
 ALTER TABLE `beats` ADD `tempo_hold` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE `beats` ADD `tempo_change` integer DEFAULT 0 NOT NULL;--> statement-breakpoint
 ALTER TABLE `measures` ADD `number_override` integer;--> statement-breakpoint
 ALTER TABLE `measures` ADD `meter` text;--> statement-breakpoint
 ALTER TABLE `measures` ADD `grouping` text;

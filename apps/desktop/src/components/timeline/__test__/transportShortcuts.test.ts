@@ -147,11 +147,8 @@ describe("the shortcuts list (UI-17 follow-up)", () => {
             label: "actions.timeline.goTo",
             keys: "G",
         });
-        // K keeps the selection on this page, or lets it follow again (UI-18)
-        expect(timeline?.rows).toContainEqual({
-            label: "actions.timeline.toggleKeepOnPage",
-            keys: "K",
-        });
+        // K kept the selection on a page until kept spots were removed (holds, #467)
+        expect(timeline?.rows.map((row) => row.keys)).not.toContain("K");
         const view = groups.find((g) => g.title === "View");
         expect(view?.rows.map((row) => row.keys)).toContain("?");
         // Nothing without a key, such as the nudge's own actions

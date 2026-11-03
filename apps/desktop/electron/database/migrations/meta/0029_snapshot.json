@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "c1c75497-fbbb-44af-8a1b-76912bcf9793",
+    "id": "a6425f8f-84dc-4380-978f-ee777099ce5b",
     "prevId": "c55ab10f-0704-40aa-bf30-386bbb608d66",
     "tables": {
         "audio_files": {
@@ -104,14 +104,6 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
-                },
-                "tempo_hold": {
-                    "name": "tempo_hold",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1523,27 +1515,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "number_override": {
-                    "name": "number_override",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "meter": {
-                    "name": "meter",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "grouping": {
-                    "name": "grouping",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
                 "created_at": {
                     "name": "created_at",
                     "type": "text",
@@ -2151,35 +2122,6 @@
             "uniqueConstraints": {},
             "checkConstraints": {}
         },
-        "tempo_settings": {
-            "name": "tempo_settings",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "audio_offset_seconds": {
-                    "name": "audio_offset_seconds",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "tempo_settings_id_check": {
-                    "name": "tempo_settings_id_check",
-                    "value": "id = 0"
-                }
-            }
-        },
         "timeline_assignments": {
             "name": "timeline_assignments",
             "columns": {
@@ -2361,41 +2303,6 @@
             },
             "indexes": {},
             "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
-        },
-        "timeline_kept_assignments": {
-            "name": "timeline_kept_assignments",
-            "columns": {
-                "assignment_id": {
-                    "name": "assignment_id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {
-                "timeline_kept_assignments_assignment_id_timeline_assignments_id_fk": {
-                    "name": "timeline_kept_assignments_assignment_id_timeline_assignments_id_fk",
-                    "tableFrom": "timeline_kept_assignments",
-                    "tableTo": "timeline_assignments",
-                    "columnsFrom": ["assignment_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                }
-            },
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}

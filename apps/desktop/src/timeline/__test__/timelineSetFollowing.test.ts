@@ -19,11 +19,10 @@ const hold = (start: number, end: number): SetSpan => ({
     end,
     kind: "hold",
 });
-const own = (start: number, end: number, assignmentId = 1): SetSpan => ({
+const own = (start: number, end: number): SetSpan => ({
     start,
     end,
     kind: "join",
-    assignmentId,
 });
 
 describe("one marcher's Set counts", () => {
@@ -72,24 +71,12 @@ describe("one marcher's Set counts", () => {
         const stay = [hold(-Infinity, 1), own(1, 9), hold(9, Infinity)];
         expect(isSetAt(marcherSetBeats(stay), 9)).toBe(true);
     });
-
-    it("follows on a kept assignment, even when an earlier edit gave it motion", () => {
-        const kept = [
-            hold(-Infinity, 1),
-            own(1, 9, 1),
-            own(9, 17, 7),
-            hold(17, Infinity),
-        ];
-        const beats = marcherSetBeats(kept, new Set([7]));
-        expect(isSetAt(beats, 9)).toBe(true);
-        expect(isSetAt(beats, 17)).toBe(false);
-    });
 });
 
 describe("a count where a later move cuts in", () => {
     // Row 1 runs over [1, 17); row 2 starts inside it at 9, so row 1's first span stops at 9
-    const cut = (start: number, end: number, id: number, rowEnd: number) => ({
-        ...own(start, end, id),
+    const cut = (start: number, end: number, _row: number, rowEnd: number) => ({
+        ...own(start, end),
         assignmentEnd: rowEnd,
     });
     it("is not Set where the cut stops a span: no move of the marcher's ends there", () => {

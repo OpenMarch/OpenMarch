@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import ActionButton from "@/shortcuts/ActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
+import ClearPageMenuItems from "@/components/toolbar/ClearPageMenuItems";
 import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
@@ -92,13 +93,11 @@ function SetMarcherPositionsDropdown() {
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
                     <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                        <ActionButton
-                            action="setAllMarchersToPreviousPage"
+                        <ClearPageMenuItems
+                            scope="all"
                             onRun={close}
                             className="text-text touch:min-h-44 px-6 py-4"
-                        >
-                            <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                        </ActionButton>
+                        />
                         <ActionButton
                             action="setAllMarchersToNextPage"
                             onRun={close}
