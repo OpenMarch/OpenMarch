@@ -335,7 +335,7 @@ function ShapeEditorBar({
         ignoreRepeat: true,
     });
 
-    // The shape on its own (#558): hold its key to hide the marchers, tap to keep them hidden. The
+    // The shape on its own (#558): hold H to hide the marchers, tap to keep them hidden. The
     // button and the palette turn the latch over. A key still down when the editor goes (the show
     // plays) is let go, so it doesn't stay hidden once the editor is back
     useActionHandler("shapeHideMarchers", () => toggleHideMarchers(), {
