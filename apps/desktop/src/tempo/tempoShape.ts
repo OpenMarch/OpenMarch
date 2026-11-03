@@ -7,6 +7,7 @@
  *
  * Tempos here are quarter notes per minute, one per count, indexed by spec beat (beat 0 unused).
  */
+import { quarterBpmOf } from "./meters";
 import { tempoSegments } from "./tempoMath";
 
 export type StretchShape =
@@ -186,4 +187,30 @@ export function endTempo(shape: StretchShape, own: readonly number[]): number {
     if (shape.kind === "steady") return shape.bpm;
     if (shape.kind === "ramp") return shape.to;
     return own[own.length - 1]!;
+}
+
+/**
+ * Each stored count's tempo as the lane reads it, in quarter notes (so groupings read as one
+ * tempo). A hold isn't tempo: it reads as the count before it, or, for holds at the very start,
+ * the first count after them. Index 0 (the spec beat) is unused and reads 0.
+ */
+export function laneTempos(
+    lengths: readonly number[],
+    units: readonly number[],
+    holds: ReadonlySet<number>,
+    storedCount: number,
+): number[] {
+    const q = (b: number) => quarterBpmOf(lengths[b] ?? 0, units[b] ?? 2);
+    const count = Math.min(lengths.length, storedCount);
+    let first = 1;
+    while (first < count && holds.has(first)) first++;
+    return lengths.slice(0, count).map((_, b) => {
+        if (b === 0) return 0;
+        if (!holds.has(b)) return q(b);
+        let n = b - 1;
+        while (n > 0 && holds.has(n)) n--;
+        if (n > 0) return q(n);
+        // a hold before any tempo: the tempo after it (or, with no counts but holds, its own)
+        return first < count ? q(first) : q(b);
+    });
 }

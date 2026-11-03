@@ -4,6 +4,7 @@ import {
     curveAt,
     curveThrough,
     endTempo,
+    laneTempos,
     rampMiddle,
     rampTempos,
     shapeOf,
@@ -138,5 +139,26 @@ describe("temposOf", () => {
             2,
         );
         expect(endTempo({ kind: "uneven" }, [1, 5, 3])).toBe(3);
+    });
+});
+
+describe("laneTempos", () => {
+    // index 0 is the unused spec beat; counts are 0.5 s quarter notes (♩120)
+    const units = [2, 2, 2, 2, 2];
+    it("reads a hold as the tempo before it", () => {
+        const t = laneTempos([0, 0.5, 4, 0.5, 0.5], units, new Set([2]), 5);
+        expect(t.slice(1)).toEqual([120, 120, 120, 120]);
+    });
+    it("reads a hold on the first count as the tempo after it, never Infinity", () => {
+        const t = laneTempos([0, 4, 0.5, 0.5, 0.5], units, new Set([1]), 5);
+        expect(t.slice(1)).toEqual([120, 120, 120, 120]);
+    });
+    it("reads several holds at the start as the first tempo after them", () => {
+        const t = laneTempos([0, 4, 3, 0.4, 0.4], units, new Set([1, 2]), 5);
+        expect(t.slice(1)).toEqual([150, 150, 150, 150]);
+    });
+    it("stays finite when every count is a hold", () => {
+        const t = laneTempos([0, 4, 3], [2, 2, 2], new Set([1, 2]), 3);
+        expect(t.slice(1).every(Number.isFinite)).toBe(true);
     });
 });

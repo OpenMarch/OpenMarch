@@ -90,6 +90,7 @@ import {
     curveAt,
     curveThrough,
     endTempo,
+    laneTempos,
     rampMiddle,
     rampTempos,
     shapeOf,
@@ -322,22 +323,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             quarterBpmOf(d[b]!, units[b] ?? 2),
         [durations, units],
     );
-    /**
-     * Each stored count's tempo as the lane reads it, in quarter notes (so groupings read as one
-     * tempo); a hold isn't tempo, so it reads as the count before it. Index 0 is unused.
-     */
+    /** Each stored count's tempo as the lane reads it (see laneTempos). Index 0 is unused. */
     const laneBpms = useCallback(
-        (lengths: readonly number[]) => {
-            const q = (b: number) =>
-                quarterBpmOf(lengths[b] ?? 0, units[b] ?? 2);
-            return lengths.slice(0, data.storedCount).map((_, b) => {
-                if (b === 0) return 0;
-                if (!data.holds.has(b)) return q(b);
-                let n = b - 1;
-                while (n > 0 && data.holds.has(n)) n--;
-                return q(n);
-            });
-        },
+        (lengths: readonly number[]) =>
+            laneTempos(lengths, units, data.holds, data.storedCount),
         [data.storedCount, data.holds, units],
     );
     /**
@@ -2368,10 +2357,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         if (!around) return;
         const { before, after } = around;
         const bpms = storedBpms();
-        const carry = endTempo(
-            shapeOf(bpms.slice(before.from, at)),
-            bpms.slice(before.from, at),
-        );
+        const own = bpms.slice(before.from, at);
+        const ended = endTempo(shapeOf(own), own);
+        // a stretch of nothing but holds has no tempo to carry: the tempo after goes on
+        const carry = Number.isFinite(ended) && ended > 0 ? ended : bpms[at]!;
+        if (!Number.isFinite(carry) || carry <= 0) return;
         const result = withTempos(
             at,
             after.to,
