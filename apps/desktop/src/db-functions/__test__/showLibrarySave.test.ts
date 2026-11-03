@@ -6,7 +6,6 @@ import {
     type EmbedLibraryVersion,
 } from "../showLibrary";
 import { createItems } from "../items";
-import { setItemArtworkSlot } from "../itemArtworkSlots";
 import { pruneShowLibraryOnSave } from "../showLibrarySave";
 
 const bytes = (text: string) => new TextEncoder().encode(text);
@@ -95,47 +94,5 @@ describeDbTests("pruneShowLibraryOnSave", (it) => {
             { itemId: SABRE, versionHash: sabre.versionHash },
         ]);
         expect(await embedded(db)).toEqual([RIFLE]);
-    });
-
-    it("keeps the Artwork an item's slot shows", async ({ db, beats }) => {
-        expect(beats).toBeDefined();
-        const banner = await model(SABRE, "banner");
-        await db.transaction((tx) =>
-            embedLibraryVersionInTransaction({
-                tx,
-                version: { ...banner, kind: "artwork" },
-            }),
-        );
-        const [beat] = await db
-            .select({ id: schema.beats.id })
-            .from(schema.beats)
-            .limit(1)
-            .all();
-        const [riser] = await createItems({
-            db,
-            newItems: [
-                {
-                    kind: "prop",
-                    surfaceType: "floor",
-                    home: [0, 0],
-                    beatId: beat!.id,
-                    geometry: { outlineType: "rectangle", width: 2, depth: 2 },
-                },
-            ],
-        });
-        await setItemArtworkSlot({
-            db,
-            itemId: riser!.id,
-            slot: "top",
-            beatId: beat!.id,
-            assignment: {
-                artwork: { itemId: SABRE, versionHash: banner.versionHash },
-            },
-        });
-
-        const plan = await pruneShowLibraryOnSave({ db });
-
-        expect(plan.items).toEqual([]);
-        expect(await embedded(db)).toEqual([SABRE]);
     });
 });

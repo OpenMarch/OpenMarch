@@ -1232,7 +1232,7 @@ test("change: Escape while typing a number cancels only the number", async ({
 // to the moment it was drawn at. Away from it the shape and its editor hide
 // behind a chip with Go back. Only Enter or Place places it (owner lab
 // feedback): Enter and Escape act only on a shape you can see, playback and
-// Visuals hide it until they end, and a new selection leaves it open.
+// Preview hide it until they end, and a new selection leaves it open.
 
 const awayChip = (page: Page) => page.getByTestId("shape-away-chip");
 

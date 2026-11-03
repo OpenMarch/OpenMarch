@@ -2,7 +2,7 @@
  * The Assets panel's This show tab (owner decision Q81): what the open show
  * embeds, which travels with the file, grouped like the Library. Items the
  * local Library lacks offer "Add to my Library"; Library updates are noted,
- * never applied silently. Deleting an item cues use offers "Replace with…".
+ * never applied silently.
  * The show's Credits sit below.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -26,7 +26,6 @@ import {
     showLibraryKeys,
     useShowLibrary,
 } from "@/hooks/queries/useShowLibrary";
-import { invalidateCueQueries } from "@/hooks/queries/useCues";
 import { buildAddFromShowRequest } from "@/view3d/library/showLibraryUpdates";
 import type { LibraryItemSummary } from "@/view3d/library/protocol";
 import type { LibraryApi } from "@/view3d/library/importClient";
@@ -69,8 +68,7 @@ function useLocalLibrary(api: ShowAssetsApi) {
 
 const showDeletion: ShowAssetDeletion = {
     uses: (itemId) => libraryItemUses({ db, itemId }),
-    remove: (itemId, replaceWith) =>
-        deleteShowLibraryItem({ db, itemId, replaceWith }),
+    remove: (itemId) => deleteShowLibraryItem({ db, itemId }),
 };
 
 export default function ShowAssets({
@@ -94,7 +92,6 @@ export default function ShowAssets({
     );
     const [adding, setAdding] = useState<string | null>(null);
     const [deleting, setDeleting] = useState<ShowAssetItem | null>(null);
-    const allItems = useMemo(() => groups.flatMap((g) => g.items), [groups]);
 
     const add = async (item: ShowAssetItem): Promise<boolean> => {
         setAdding(item.itemId);
@@ -116,29 +113,16 @@ export default function ShowAssets({
         }
     };
 
-    const onItemDeleted = ({
-        item,
-        replacedWith,
-        keptForUndo,
-    }: ShowAssetDeleted) => {
+    const onItemDeleted = ({ item, keptForUndo }: ShowAssetDeleted) => {
         setDeleting(null);
         void queryClient.invalidateQueries({ queryKey: showLibraryKeys.all() });
-        if (replacedWith) void invalidateCueQueries(queryClient);
-        const params = { name: item.name, replacement: replacedWith?.name };
         toast.success(
-            replacedWith
-                ? t(
-                      keptForUndo
-                          ? "assets.show.delete.replacedKeptForUndo"
-                          : "assets.show.delete.replaced",
-                      params,
-                  )
-                : t(
-                      keptForUndo
-                          ? "assets.show.delete.keptForUndo"
-                          : "assets.show.delete.deleted",
-                      params,
-                  ),
+            t(
+                keptForUndo
+                    ? "assets.show.delete.keptForUndo"
+                    : "assets.show.delete.deleted",
+                { name: item.name },
+            ),
         );
     };
 
@@ -187,7 +171,6 @@ export default function ShowAssets({
             <ShowCredits />
             <DeleteShowAssetDialog
                 item={deleting}
-                candidates={allItems}
                 deletion={deletion}
                 onAddToLibrary={add}
                 onClose={() => setDeleting(null)}

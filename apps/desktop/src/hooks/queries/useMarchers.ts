@@ -21,7 +21,6 @@ import {
 } from "@/db-functions";
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
-import { invalidateCueQueries } from "./useCues";
 
 const { marchers } = schema;
 
@@ -157,8 +156,6 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            // The marchers left hand-picked sets, and emptied sets' cues went (ADR 0004 D-2)
-            void invalidateCueQueries(qc);
         },
         onError: (e, variables) => {
             toastTimelineError(

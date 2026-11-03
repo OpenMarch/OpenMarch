@@ -196,14 +196,7 @@
             "addToLibrary": "Agregar a mi Biblioteca",
             "delete": {
                 "addFirst": "Agregar a mi Biblioteca antes",
-                "alsoUsedByCues": "{count, plural, =1 {Un cue también lo usa:} other {# cues también lo usan:}}",
-                "useLine": "{channel} · {who} · tiempo {count}",
                 "cancel": "Cancelar",
-                "channels": {
-                    "carry": "Objeto",
-                    "silk": "Tela",
-                    "uniform": "Uniforme"
-                },
                 "checking": "Verificando qué lo usa…",
                 "confirm": "Tu Biblioteca conserva su propia copia. Esta acción no se puede deshacer.",
                 "confirmNoCopy": "Tu Biblioteca no tiene una copia, así que se perderá para siempre. Esta acción no se puede deshacer.",
@@ -214,22 +207,10 @@
                 "inUseTitle": "{name} está en uso",
                 "isFloor": "Es el piso de este show, así que no se puede eliminar. Cambia el piso en Configuración del campo → Imagen.",
                 "itemModel": "modelo",
-                "itemSlot": "arte de {slot}",
                 "keptForUndo": "{name} se queda en este show mientras Deshacer pueda recuperarlo, y se eliminará cuando el show se cierre después de eso.",
                 "label": "Eliminar de este show",
-                "noReplacement": "Este show no tiene otro elemento de este tipo para reemplazarlo. Importa uno primero.",
                 "pinnedBy": "Forma parte de {names}, así que no se puede eliminar.",
-                "replaceAndDelete": "Reemplazar y eliminar",
-                "replaced": "Se reemplazó {name} por {replacement}.",
-                "replacedKeptForUndo": "Se reemplazó {name} por {replacement}. {name} se queda en este show mientras Deshacer pueda recuperarlo, y se eliminará cuando el show se cierre después de eso.",
-                "replaceWith": "Reemplazar por…",
-                "targets": {
-                    "band": "Banda",
-                    "set": "{count, plural, one {# integrante} other {# integrantes}}",
-                    "tag": "Una etiqueta"
-                },
                 "title": "¿Eliminar {name} de este show?",
-                "usedByCues": "{count, plural, =1 {Un cue lo usa. Reemplázalo para eliminarlo:} other {# cues lo usan. Reemplázalo en todos para eliminarlo:}}",
                 "usedByItems": "{count, plural, =1 {Un elemento de utilería lo usa, así que no se puede eliminar:} other {# elementos de utilería lo usan, así que no se puede eliminar:}}"
             },
             "empty": "Este show todavía no usa ningún recurso.",
@@ -433,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# cue se movió a un tiempo posterior} other {# cues se movieron a tiempos posteriores}}",
-            "movedTo": "{count, plural, one {# cue se movió al tiempo {at}} other {# cues se movieron al tiempo {at}}}",
-            "removed": "{count, plural, one {# cue eliminado} other {# cues eliminados}}"
-        },
-        "errors": {
-            "create": "Error al crear los cues",
-            "delete": "Error al eliminar los cues",
-            "update": "Error al actualizar los cues"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2672,32 +2641,7 @@
             "countAt": "{count} a {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Un cue Horn/Equipment no coincide con lo que llevan",
-        "crewDistance": "{item}: su cuadrilla está demasiado lejos",
-        "crewDistanceDetail": "Fuera de alcance: {who}",
-        "crewlessMove": "{item} se mueve sin cuadrilla",
-        "empty": "No hay nada que revisar.",
-        "forWho": "Para {who}",
-        "handConflict": "{item} no se muestra",
-        "handConflictDetail": "{count, plural, =1 {{other} ocupa {hand, select, left {la mano izquierda} right {la mano derecha} other {las manos}} de {who}} other {{other} ocupan {hand, select, left {la mano izquierda} right {la mano derecha} other {las manos}} de {who}}}",
-        "handConflictByCarry": "Un cue Carry ocupa {hand, select, left {la mano izquierda} right {la mano derecha} other {las manos}} de {who}",
-        "handConflictWithCarry": "{other} y un cue Carry ocupan {hand, select, left {la mano izquierda} right {la mano derecha} other {las manos}} de {who}",
-        "performers": "{count, plural, one {# integrante} other {# integrantes}}",
-        "pick": "Ir a este tiempo y seleccionar lo que indica",
-        "putDownDrift": "{item} quedó lejos de quien lo sostenía",
-        "putDownDriftDetail": "Su propio movimiento lo lleva ahí, no junto a {who}",
-        "shortHanded": "{item} se sostiene con menos manos de las necesarias",
-        "shortHandedDetail": "{who}: {held} de {needed} manos",
-        "silkAspect": "La imagen de un cue Silk se ajustó a una bandera de otra forma",
-        "snapToHolder": "Ajustar al portador",
-        "title": "Revisiones del show",
-        "titleCount": "Revisiones del show ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, al inicio"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# cue apunta a esta etiqueta y se eliminará} other {# cues apuntan a esta etiqueta y se eliminarán}}",
         "title": "Etiquetas",
         "rename": "Cambiar nombre de etiqueta",
         "namePlaceholder": "Escribe el nombre de la etiqueta...",
@@ -3355,7 +3299,6 @@
         },
         "readout": {
             "camera": "Altura de ojos {eye} · {distance} al centro",
-            "checks": "{count, plural, one {# verificación} other {# verificaciones}}",
             "count": "Tiempo {count} de {total}",
             "noPages": "Sin páginas",
             "page": "Página {page}",
@@ -3401,32 +3344,7 @@
             "endZoneColor": "Color",
             "graphicsSection": "Esta computadora",
             "graphicsHint": "No se guarda en el show, así que puede variar en cada computadora.",
-            "hornState": "Posición de instrumentos",
-            "hornStateMode": {
-                "up": "Arriba",
-                "carry": "Descanso",
-                "trail": "Al costado"
-            },
-            "hornStateHint": "Mantiene todos los instrumentos de metal y tambores en una sola posición durante todo el show, para revisar las poses. Seguir cues reproduce los cues de Instrumento/Equipo, con los instrumentos arriba donde no hay ninguno.",
-            "guardEquipment": "Equipo de color guard",
-            "guardEquipmentMode": {
-                "flag6": "Bandera de 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Doble swing",
-                "rifle": "Rifle",
-                "sabre": "Sable"
-            },
-            "guardEquipmentHint": "Pone una pieza en las manos de cada integrante del color guard, para verla. Seguir cues le da a cada sección la suya: a las banderas, la bandera de 6 ft; a los rifles, el rifle.",
-            "stepOffFoot": "Pie de salida",
-            "stepOffFootMode": {
-                "left": "Izquierdo del integrante",
-                "right": "Derecho del integrante"
-            },
-            "stepOffFootHint": "El pie propio del integrante, mire hacia donde mire. De frente a ti, su pie izquierdo queda a tu derecha. Seguir cues sale con el pie guardado en el show ({foot, select, left {izquierdo del integrante} other {derecho del integrante}}) o con el pie que fije un cue de Pies.",
             "keysSection": "Teclado y mouse",
-            "previewSection": "Solo vista previa",
-            "previewHint": "No se guarda. Esto solo cambia lo que dibuja esta ventana; en el show deciden los cues. Vuelve a ponerlos en Seguir cues para ver el show.",
-            "followCues": "Seguir cues",
             "uniforms": "Uniforme de banda",
             "guardUniforms": "Uniforme de color guard"
         },
@@ -3699,8 +3617,6 @@
             "seconds": "segundos"
         },
         "unsavedChanges": "Tienes cambios sin guardar",
-        "warnPropMovesWithoutCrew": "Avisar si un elemento de utilería se mueve sin equipo",
-        "warnPropMovesWithoutCrewHelp": "Revisiones del show señala cualquier elemento de utilería colocado que se mueva sin nadie en su equipo.",
         "close": "Cerrar",
         "saved": "Configuración del show guardada",
         "updateFailed": "No se pudo actualizar la configuración del show"
@@ -3917,9 +3833,6 @@
         "openFailed": {
             "title": "Error al cargar la base de datos"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Error al devolver un elemento a quien lo sostiene"
     },
     "coordinates": {
         "full": "{x} - {y}",

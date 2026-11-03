@@ -196,14 +196,7 @@
             "addToLibrary": "Idagdag sa aking Library",
             "delete": {
                 "addFirst": "Idagdag muna sa aking Library",
-                "alsoUsedByCues": "{count, plural, =1 {Ginagamit din ito ng isang cue:} other {Ginagamit din ito ng # cue:}}",
-                "useLine": "{channel} · {who} · bilang {count}",
                 "cancel": "Kanselahin",
-                "channels": {
-                    "carry": "Dala",
-                    "silk": "Silk",
-                    "uniform": "Uniporme"
-                },
                 "checking": "Tinitingnan kung ano ang gumagamit nito…",
                 "confirm": "May sariling kopya ang iyong Library. Hindi na ito maa-undo.",
                 "confirmNoCopy": "Walang kopya ang iyong Library, kaya tuluyan na itong mawawala. Hindi na ito maa-undo.",
@@ -214,22 +207,10 @@
                 "inUseTitle": "Ginagamit ang {name}",
                 "isFloor": "Ito ang sahig ng palabas na ito, kaya hindi ito mabubura. Palitan ang sahig sa Mga setting ng field → Larawan.",
                 "itemModel": "model",
-                "itemSlot": "artwork sa {slot}",
                 "keptForUndo": "Mananatili ang {name} sa palabas na ito habang maibabalik pa ito ng Undo, at aalisin ito kapag isinara ang palabas pagkatapos noon.",
                 "label": "Burahin sa palabas na ito",
-                "noReplacement": "Walang ibang item na ganitong uri sa palabas na ito na maipapalit dito. Mag-import muna ng isa.",
                 "pinnedBy": "Bahagi ito ng {names}, kaya hindi ito mabubura.",
-                "replaceAndDelete": "Palitan at burahin",
-                "replaced": "Pinalitan ang {name} ng {replacement}.",
-                "replacedKeptForUndo": "Pinalitan ang {name} ng {replacement}. Mananatili ang {name} sa palabas na ito habang maibabalik pa ito ng Undo, at aalisin ito kapag isinara ang palabas pagkatapos noon.",
-                "replaceWith": "Palitan ng…",
-                "targets": {
-                    "band": "Banda",
-                    "set": "{count, plural, one {# miyembro} other {# na miyembro}}",
-                    "tag": "Isang tag"
-                },
                 "title": "Burahin ang {name} sa palabas na ito?",
-                "usedByCues": "{count, plural, =1 {Ginagamit ito ng isang cue. Palitan ito para mabura:} other {Ginagamit ito ng # cue. Palitan ito sa lahat ng mga iyon para mabura:}}",
                 "usedByItems": "{count, plural, =1 {Ginagamit ito ng isang prop, kaya hindi ito mabubura:} other {Ginagamit ito ng # prop, kaya hindi ito mabubura:}}"
             },
             "empty": "Wala pang ginagamit na asset ang palabas na ito.",
@@ -433,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# cue ang nailipat sa mas huling bilang} other {# cue ang nailipat sa mas huling bilang}}",
-            "movedTo": "{count, plural, one {# cue ang nailipat sa bilang {at}} other {# cue ang nailipat sa bilang {at}}}",
-            "removed": "{count, plural, one {# cue ang inalis} other {# cue ang inalis}}"
-        },
-        "errors": {
-            "create": "Nagka-error sa paggawa ng mga cue",
-            "delete": "Nagka-error sa pagbura ng mga cue",
-            "update": "Nagka-error sa pag-update ng mga cue"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2672,32 +2641,7 @@
             "countAt": "{count} sa {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "May Horn/Equipment cue na hindi tugma sa dala nila",
-        "crewDistance": "Malayo sa {item} ang crew nito",
-        "crewDistanceDetail": "Masyadong malayo: {who}",
-        "crewlessMove": "Gumagalaw ang {item} nang walang crew",
-        "empty": "Walang susuriin.",
-        "forWho": "Para sa {who}",
-        "handConflict": "Hindi ipinapakita ang {item}",
-        "handConflictDetail": "{count, plural, =1 {Ginagamit ng {other} ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}} other {Ginagamit ng {other} ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}}}",
-        "handConflictByCarry": "Ginagamit ng isang Carry cue ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}",
-        "handConflictWithCarry": "Ginagamit ng {other} at ng isang Carry cue ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}",
-        "performers": "{count, plural, one {# miyembro} other {# miyembro}}",
-        "pick": "Pumunta sa count na ito at piliin ang tinutukoy nito",
-        "putDownDrift": "Naibaba ang {item} nang malayo sa may hawak nito",
-        "putDownDriftDetail": "Dinadala ito roon ng sarili nitong galaw, hindi sa puwesto ni {who}",
-        "shortHanded": "Kulang ang kamay na humahawak sa {item}",
-        "shortHandedDetail": "{who}: {held} sa {needed} kamay",
-        "silkAspect": "Ang Artwork ng isang Silk cue ay pinagkasya sa flag na iba ang hugis",
-        "snapToHolder": "I-snap sa may hawak",
-        "title": "Pagsusuri ng palabas",
-        "titleCount": "Pagsusuri ng palabas ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, sa simula"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {Buburahin ang # cue na nakatutok sa tag na ito} other {Buburahin ang # cue na nakatutok sa tag na ito}}",
         "title": "Mga tag",
         "rename": "Palitan ang pangalan ng tag",
         "namePlaceholder": "Ilagay ang pangalan ng tag...",
@@ -3355,7 +3299,6 @@
         },
         "readout": {
             "camera": "Taas ng mata {eye} · {distance} mula sa gitna",
-            "checks": "{count, plural, one {# check} other {# check}}",
             "count": "Bilang {count} ng {total}",
             "noPages": "Walang pahina",
             "page": "Pahina {page}",
@@ -3401,32 +3344,7 @@
             "endZoneColor": "Kulay",
             "graphicsSection": "Computer na ito",
             "graphicsHint": "Hindi naka-save sa palabas, kaya puwedeng magkaiba sa bawat computer.",
-            "hornState": "Posisyon ng horn",
-            "hornStateMode": {
-                "up": "Up",
-                "carry": "Carry",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Pinapanatili ang bawat horn at drum sa iisang posisyon sa buong palabas, para masuri ang mga pose. Ang Sundin ang cue ay sumusunod sa mga Horn/Equipment cue, at naka-up ang horn kung walang cue.",
-            "guardEquipment": "Equipment ng guard",
-            "guardEquipmentMode": {
-                "flag6": "6 ft na flag",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Naglalagay ng iisang equipment sa kamay ng bawat miyembro ng guard, para makita ito. Ang Sundin ang cue ay nagbibigay sa bawat seksyon ng sarili nito: 6 ft na flag sa flags, rifle sa rifles.",
-            "stepOffFoot": "Step off",
-            "stepOffFootMode": {
-                "left": "Kaliwa ng miyembro",
-                "right": "Kanan ng miyembro"
-            },
-            "stepOffFootHint": "Ang sariling paa ng miyembro, saanman siya nakaharap. Kapag nakaharap siya sa iyo, nasa kanan mo ang kaliwang paa niya. Ang Sundin ang cue ay nag-i-step off sa naka-save na paa ng palabas ({foot, select, left {kaliwa ng miyembro} other {kanan ng miyembro}}), o sa paang itinakda ng Feet cue.",
             "keysSection": "Keyboard at mouse",
-            "previewSection": "Preview lang",
-            "previewHint": "Hindi naka-save. Binabago lang nito ang ipinapakita ng window na ito; sa palabas, ang mga cue ang nagpapasya. Ibalik sa Sundin ang cue para makita ang palabas.",
-            "followCues": "Sundin ang cue",
             "uniforms": "Uniporme ng banda",
             "guardUniforms": "Uniporme ng guard"
         },
@@ -3699,8 +3617,6 @@
             "seconds": "segundo"
         },
         "unsavedChanges": "May mga pagbabago kang hindi pa naka-save",
-        "warnPropMovesWithoutCrew": "Magbabala kapag gumalaw ang prop nang walang crew",
-        "warnPropMovesWithoutCrewHelp": "Ililista ng Show checks ang nakalagay na prop na gumagalaw nang walang miyembro sa crew nito.",
         "close": "Isara",
         "saved": "Na-save ang mga setting ng palabas",
         "updateFailed": "Hindi na-update ang mga setting ng workspace"
@@ -3917,9 +3833,6 @@
         "openFailed": {
             "title": "Error sa pag-load ng database"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Error sa pagbalik ng item sa may hawak nito"
     },
     "coordinates": {
         "full": "{x} - {y}",

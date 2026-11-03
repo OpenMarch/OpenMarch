@@ -196,14 +196,7 @@
             "addToLibrary": "Tambah ke Pustaka saya",
             "delete": {
                 "addFirst": "Tambah ke Pustaka saya dahulu",
-                "alsoUsedByCues": "{count, plural, =1 {Satu isyarat turut menggunakannya:} other {# isyarat turut menggunakannya:}}",
-                "useLine": "{channel} · {who} · kiraan {count}",
                 "cancel": "Batal",
-                "channels": {
-                    "carry": "Bawaan",
-                    "silk": "Sutera",
-                    "uniform": "Seragam"
-                },
                 "checking": "Menyemak apa yang menggunakannya…",
                 "confirm": "Pustaka anda menyimpan salinannya sendiri. Tindakan ini tidak boleh dibuat asal.",
                 "confirmNoCopy": "Pustaka anda tidak mempunyai salinan, jadi item ini akan hilang buat selamanya. Tindakan ini tidak boleh dibuat asal.",
@@ -214,22 +207,10 @@
                 "inUseTitle": "{name} sedang digunakan",
                 "isFloor": "Ini ialah lantai persembahan ini, jadi ia tidak boleh dipadam. Tukar lantai dalam Tetapan padang → Imej.",
                 "itemModel": "model",
-                "itemSlot": "karya seni {slot}",
                 "keptForUndo": "{name} kekal dalam persembahan ini selagi Buat Asal boleh mengembalikannya, dan akan dibuang apabila persembahan ditutup selepas itu.",
                 "label": "Padam daripada persembahan ini",
-                "noReplacement": "Persembahan ini tiada item lain yang sejenis untuk menggantikannya. Import satu dahulu.",
                 "pinnedBy": "Ia sebahagian daripada {names}, jadi ia tidak boleh dipadam.",
-                "replaceAndDelete": "Ganti dan padam",
-                "replaced": "{name} diganti dengan {replacement}.",
-                "replacedKeptForUndo": "{name} diganti dengan {replacement}. {name} kekal dalam persembahan ini selagi Buat Asal boleh mengembalikannya, dan akan dibuang apabila persembahan ditutup selepas itu.",
-                "replaceWith": "Ganti dengan…",
-                "targets": {
-                    "band": "Pancaragam",
-                    "set": "{count, plural, other {# pemain}}",
-                    "tag": "Satu tag"
-                },
                 "title": "Padam {name} daripada persembahan ini?",
-                "usedByCues": "{count, plural, =1 {Satu isyarat menggunakannya. Gantikannya untuk memadamkannya:} other {# isyarat menggunakannya. Gantikannya dalam semua isyarat itu untuk memadamkannya:}}",
                 "usedByItems": "{count, plural, =1 {Satu prop menggunakannya, jadi ia tidak boleh dipadam:} other {# prop menggunakannya, jadi ia tidak boleh dipadam:}}"
             },
             "empty": "Persembahan ini belum menggunakan sebarang aset.",
@@ -433,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {# isyarat dialihkan ke kiraan kemudian}}",
-            "movedTo": "{count, plural, other {# isyarat dialihkan ke kiraan {at}}}",
-            "removed": "{count, plural, other {# isyarat dibuang}}"
-        },
-        "errors": {
-            "create": "Ralat semasa mencipta isyarat",
-            "delete": "Ralat semasa memadam isyarat",
-            "update": "Ralat semasa mengemas kini isyarat"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2672,32 +2641,7 @@
             "countAt": "{count} pada {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Isyarat Horn/Equipment tidak sepadan dengan apa yang mereka bawa",
-        "crewDistance": "Krew {item} berada jauh daripadanya",
-        "crewDistanceDetail": "Di luar capaian: {who}",
-        "crewlessMove": "{item} bergerak tanpa krew",
-        "empty": "Tiada apa-apa untuk disemak.",
-        "forWho": "Untuk {who}",
-        "handConflict": "{item} tidak dipaparkan",
-        "handConflictDetail": "{count, plural, =1 {{other} menggunakan {hand, select, left {tangan kiri} right {tangan kanan} other {kedua-dua tangan}} {who}} other {{other} menggunakan {hand, select, left {tangan kiri} right {tangan kanan} other {kedua-dua tangan}} {who}}}",
-        "handConflictByCarry": "Isyarat Carry menggunakan {hand, select, left {tangan kiri} right {tangan kanan} other {kedua-dua tangan}} {who}",
-        "handConflictWithCarry": "{other} dan isyarat Carry menggunakan {hand, select, left {tangan kiri} right {tangan kanan} other {kedua-dua tangan}} {who}",
-        "performers": "{count, plural, other {# pemain}}",
-        "pick": "Pergi ke kiraan ini dan pilih item yang disebut",
-        "putDownDrift": "{item} diletakkan jauh daripada pemegangnya",
-        "putDownDriftDetail": "Gerakannya sendiri meletakkannya di situ, bukan di {who}",
-        "shortHanded": "{item} dipegang dengan tangan yang tidak mencukupi",
-        "shortHandedDetail": "{who}: {held} daripada {needed} tangan",
-        "silkAspect": "Karya seni isyarat Silk dipadankan dengan bendera yang berbentuk lain",
-        "snapToHolder": "Lekap ke pemegang",
-        "title": "Semakan persembahan",
-        "titleCount": "Semakan persembahan ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, pada permulaan"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {# isyarat menyasarkan tag ini dan akan dialih keluar}}",
         "title": "Tag",
         "rename": "Namakan semula tag",
         "namePlaceholder": "Masukkan nama tag...",
@@ -3355,7 +3299,6 @@
         },
         "readout": {
             "camera": "Paras mata {eye} · {distance} ke tengah",
-            "checks": "{count, plural, other {# semakan}}",
             "count": "Kiraan {count} daripada {total}",
             "noPages": "Tiada halaman",
             "page": "Halaman {page}",
@@ -3401,32 +3344,7 @@
             "endZoneColor": "Warna",
             "graphicsSection": "Komputer ini",
             "graphicsHint": "Tidak disimpan dalam persembahan, jadi boleh berbeza pada setiap komputer.",
-            "hornState": "Kedudukan alat tiup",
-            "hornStateMode": {
-                "up": "Angkat",
-                "carry": "Bawa",
-                "trail": "Jinjing"
-            },
-            "hornStateHint": "Memegang setiap alat tiup dan dram dalam satu kedudukan sepanjang persembahan, untuk menyemak postur. Ikut isyarat memainkan isyarat Alat tiup/Peralatan; alat tiup diangkat di tempat yang tiada isyarat.",
-            "guardEquipment": "Peralatan color guard",
-            "guardEquipmentMode": {
-                "flag6": "Bendera 6 ft",
-                "swingFlag": "Bendera hayun",
-                "doubleSwingFlag": "Hayun berkembar",
-                "rifle": "Senapang",
-                "sabre": "Pedang"
-            },
-            "guardEquipmentHint": "Meletakkan satu peralatan di tangan setiap ahli color guard, untuk melihatnya. Ikut isyarat memberi setiap seksyen peralatannya sendiri: seksyen bendera mendapat bendera 6 ft, seksyen senapang mendapat senapang.",
-            "stepOffFoot": "Langkah mula",
-            "stepOffFootMode": {
-                "left": "Kiri pemain",
-                "right": "Kanan pemain"
-            },
-            "stepOffFootHint": "Kaki pemain itu sendiri, ke mana pun mereka menghadap. Jika menghadap anda, kaki kiri mereka berada di sebelah kanan anda. Ikut isyarat memulakan langkah dengan kaki yang disimpan dalam persembahan ({foot, select, left {kiri pemain} other {kanan pemain}}), atau kaki yang ditetapkan oleh isyarat Kaki.",
             "keysSection": "Papan kekunci dan tetikus",
-            "previewSection": "Pratonton sahaja",
-            "previewHint": "Tidak disimpan. Ini hanya mengubah apa yang dilukis oleh tetingkap ini; dalam persembahan, isyarat yang menentukan. Tetapkan semula kepada Ikut isyarat untuk melihat persembahan.",
-            "followCues": "Ikut isyarat",
             "uniforms": "Seragam pancaragam",
             "guardUniforms": "Seragam color guard"
         },
@@ -3699,8 +3617,6 @@
             "seconds": "saat"
         },
         "unsavedChanges": "Anda mempunyai perubahan yang belum disimpan",
-        "warnPropMovesWithoutCrew": "Beri amaran apabila prop bergerak tanpa krew",
-        "warnPropMovesWithoutCrewHelp": "Semakan persembahan menamakan prop yang diletakkan dan bergerak tanpa sesiapa dalam krewnya.",
         "close": "Tutup",
         "saved": "Tetapan persembahan disimpan",
         "updateFailed": "Gagal mengemas kini tetapan ruang kerja"
@@ -3917,9 +3833,6 @@
         "openFailed": {
             "title": "Ralat memuatkan pangkalan data"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Ralat meletakkan semula item pada pemegangnya"
     },
     "coordinates": {
         "full": "{x} - {y}",

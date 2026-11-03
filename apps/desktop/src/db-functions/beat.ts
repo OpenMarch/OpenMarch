@@ -8,10 +8,6 @@ import {
 import { schema } from "@/global/database/db";
 import { withTimelinePageRipple } from "./timelineRipple";
 import { realDatabaseBeatToDatabaseBeat } from "./rowMappers";
-import {
-    carryCuesPastDeletedBeatsInTransaction,
-    type CueCarryResult,
-} from "./cues";
 import { carryItemChangesPastDeletedBeatsInTransaction } from "./itemBeatRemap";
 
 export const FIRST_BEAT_ID = 0;
@@ -498,32 +494,12 @@ export async function deleteBeats({
     db: DbConnection;
     beatIds: Set<number>;
 }): Promise<DatabaseBeat[]> {
-    return (await deleteBeatsCarryingCues({ db, beatIds })).beats;
-}
-
-/** What deleting beats did: the beats, and where their cues went. */
-export interface DeletedBeatsAndCues {
-    beats: DatabaseBeat[];
-    cues: CueCarryResult;
-}
-
-/**
- * Deletes beats as one undoable edit, carrying their cues forward first
- * (`carryCuesPastDeletedBeatsInTransaction`). The first beat is never deleted.
- */
-export async function deleteBeatsCarryingCues({
-    db,
-    beatIds,
-}: {
-    db: DbConnection;
-    beatIds: Set<number>;
-}): Promise<DeletedBeatsAndCues> {
     // Filter out the first beat
     beatIds.delete(FIRST_BEAT_ID);
 
     if (beatIds.size === 0) {
         console.debug("No beats to delete (first beat filtered out)");
-        return { beats: [], cues: { moved: [], dropped: [] } };
+        return [];
     }
 
     return await transactionWithHistory(
@@ -534,31 +510,31 @@ export async function deleteBeatsCarryingCues({
                 keepSecondBeatPageInTransaction({
                     tx,
                     operation: () =>
-                        deleteBeatsCarryingCuesInTransaction({ tx, beatIds }),
+                        deleteBeatsCarryingItemChangesInTransaction({
+                            tx,
+                            beatIds,
+                        }),
                 }),
             ),
     );
 }
 
 /**
- * Deletes beats the user chose to delete (a beat, a measure, a tempo group): their cues and item
- * Outline changes carry forward to the next beat first (ADR 0004 amendment of 2026-10-15), in
- * the same transaction.
- * Replacing every beat (an import, a tempo edit) uses {@link deleteBeatsInTransaction}, whose
- * cues go with their beats; item changes are first re-mapped onto the new beats by time
+ * Deletes beats the user chose to delete (a beat, a measure, a tempo group): their item Outline
+ * changes carry forward to the next beat first, in the same transaction.
+ * Replacing every beat (an import, a tempo edit) uses {@link deleteBeatsInTransaction}; item
+ * changes are first re-mapped onto the new beats by time
  * (`remapItemChangesOntoReplacementBeatsInTransaction`).
  */
-export const deleteBeatsCarryingCuesInTransaction = async ({
+export const deleteBeatsCarryingItemChangesInTransaction = async ({
     tx,
     beatIds,
 }: {
     tx: DbTransaction;
     beatIds: Set<number>;
-}): Promise<DeletedBeatsAndCues> => {
-    const cues = await carryCuesPastDeletedBeatsInTransaction({ tx, beatIds });
+}): Promise<DatabaseBeat[]> => {
     await carryItemChangesPastDeletedBeatsInTransaction({ tx, beatIds });
-    const beats = await deleteBeatsInTransaction({ tx, beatIds });
-    return { beats, cues };
+    return await deleteBeatsInTransaction({ tx, beatIds });
 };
 
 /**

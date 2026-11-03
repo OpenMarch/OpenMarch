@@ -4,7 +4,6 @@ import { create } from "zustand";
 import type {
     Beat,
     Explanation,
-    PutDownItem,
     Resolver,
     SpanInfo,
     XY,
@@ -94,24 +93,6 @@ let session: Session | null = null;
 let focusBeat = 1;
 
 let warmScheduler: WarmScheduler | null = null;
-
-/**
- * The items and their Placement the resolver puts down (`withPutDowns`, ADR 0002 D-9). Placement
- * isn't in the timeline change log: `useTimelinePutDownFeed` sets it from its queries.
- */
-let putDownItems: readonly PutDownItem[] = [];
-
-/**
- * Replaces the items the resolver puts down, and bumps the version so every view reads their
- * positions again. Kept for the next cold build too.
- */
-export function setTimelinePutDownItems(items: readonly PutDownItem[]): void {
-    putDownItems = items;
-    const host = session?.host;
-    if (!host) return;
-    host.resolver.setPutDownItems(items);
-    bumpVersion();
-}
 
 /** Replaces the idle-warming scheduler (null restores the default), for tests. */
 export function setTimelineWarmSchedulerForTesting(
@@ -246,7 +227,7 @@ async function runColdBuild(s: Session, build: number): Promise<void> {
         const host = await withTimelineWriteLock(async () => {
             const tables = await readTimelineTables(s.db);
             if (session !== s || build !== s.build) return null;
-            const built = createTimelineHost(tables, putDownItems);
+            const built = createTimelineHost(tables);
             // Installed before the lock is released, so no batch falls between the read and
             // the host that must apply it
             s.host = built;

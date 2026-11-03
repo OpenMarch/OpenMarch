@@ -209,14 +209,7 @@
             "addToLibrary": "Add to my Library",
             "delete": {
                 "addFirst": "Add to my Library first",
-                "alsoUsedByCues": "{count, plural, =1 {A cue uses it too:} other {# cues use it too:}}",
-                "useLine": "{channel} · {who} · count {count}",
                 "cancel": "Cancel",
-                "channels": {
-                    "carry": "Carry",
-                    "silk": "Silk",
-                    "uniform": "Uniform"
-                },
                 "checking": "Checking what uses it…",
                 "confirm": "Your Library keeps its own copy. This can't be undone.",
                 "confirmNoCopy": "Your Library doesn't have a copy, so it will be gone for good. This can't be undone.",
@@ -227,22 +220,10 @@
                 "inUseTitle": "{name} is in use",
                 "isFloor": "It's this show's floor, so it can't be deleted. Change the floor in Field settings → Image.",
                 "itemModel": "model",
-                "itemSlot": "{slot} artwork",
                 "keptForUndo": "{name} stays in this show while Undo can bring it back, and is removed when the show closes after that.",
                 "label": "Delete from this show",
-                "noReplacement": "This show has nothing else of this kind to replace it with. Import one first.",
                 "pinnedBy": "It's part of {names}, so it can't be deleted.",
-                "replaceAndDelete": "Replace and delete",
-                "replaced": "Replaced {name} with {replacement}.",
-                "replacedKeptForUndo": "Replaced {name} with {replacement}. {name} stays in this show while Undo can bring it back, and is removed when the show closes after that.",
-                "replaceWith": "Replace with…",
-                "targets": {
-                    "band": "Band",
-                    "set": "{count, plural, one {# performer} other {# performers}}",
-                    "tag": "A tag"
-                },
                 "title": "Delete {name} from this show?",
-                "usedByCues": "{count, plural, =1 {A cue uses it. Replace it to delete it:} other {# cues use it. Replace it in all of them to delete it:}}",
                 "usedByItems": "{count, plural, =1 {A prop uses it, so it can't be deleted:} other {# props use it, so it can't be deleted:}}"
             },
             "empty": "This show doesn't use any assets yet.",
@@ -446,18 +427,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# cue moved to a later count} other {# cues moved to later counts}}",
-            "movedTo": "{count, plural, one {# cue moved to count {at}} other {# cues moved to count {at}}}",
-            "removed": "{count, plural, one {# cue removed} other {# cues removed}}"
-        },
-        "errors": {
-            "create": "Error creating cues",
-            "delete": "Error deleting cues",
-            "update": "Error updating cues"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2692,32 +2661,7 @@
             "countAt": "{count} at {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "A Horn/Equipment cue doesn't fit what they carry",
-        "crewDistance": "{item}'s crew is away from it",
-        "crewDistanceDetail": "Out of reach: {who}",
-        "crewlessMove": "{item} moves without a crew",
-        "empty": "Nothing to check.",
-        "forWho": "For {who}",
-        "handConflict": "{item} isn't drawn",
-        "handConflictDetail": "{count, plural, =1 {{other} takes {who}'s {hand, select, left {left hand} right {right hand} other {hands}}} other {{other} take {who}'s {hand, select, left {left hand} right {right hand} other {hands}}}}",
-        "handConflictByCarry": "A Carry cue takes {who}'s {hand, select, left {left hand} right {right hand} other {hands}}",
-        "handConflictWithCarry": "{other} and a Carry cue take {who}'s {hand, select, left {left hand} right {right hand} other {hands}}",
-        "performers": "{count, plural, one {# performer} other {# performers}}",
-        "pick": "Go to this count and select what it names",
-        "putDownDrift": "{item} put down away from its holder",
-        "putDownDriftDetail": "Its own move puts it there, not at {who}",
-        "shortHanded": "{item} is held with too few hands",
-        "shortHandedDetail": "{who}: {held} of {needed} hands",
-        "silkAspect": "A Silk cue's Artwork is fitted to a flag of another shape",
-        "snapToHolder": "Snap to holder",
-        "title": "Show checks",
-        "titleCount": "Show checks ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, at the start"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# cue targets this tag and will be removed} other {# cues target this tag and will be removed}}",
         "title": "Tags",
         "rename": "Rename tag",
         "namePlaceholder": "Enter tag name...",
@@ -3441,7 +3385,6 @@
         },
         "readout": {
             "camera": "Eye {eye} up · {distance} to center",
-            "checks": "{count, plural, one {# check} other {# checks}}",
             "count": "Count {count} of {total}",
             "noPages": "No pages",
             "page": "Page {page}",
@@ -3487,32 +3430,7 @@
             "endZoneColor": "Color",
             "graphicsSection": "This computer",
             "graphicsHint": "Not saved in the show, so it can differ on each computer.",
-            "hornState": "Horn state",
-            "hornStateMode": {
-                "up": "Up",
-                "carry": "Carry",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Holds every horn and drum in one position for the whole show, to check the poses. Follow cues plays the Horn/Equipment cues, horns up where there are none.",
-            "guardEquipment": "Guard equipment",
-            "guardEquipmentMode": {
-                "flag6": "6 ft flag",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Puts one piece in every guard member's hands, to see it. Follow cues gives each section its own: flags the 6 ft flag, rifles the rifle.",
-            "stepOffFoot": "Step off",
-            "stepOffFootMode": {
-                "left": "Performer's left",
-                "right": "Performer's right"
-            },
-            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right. Follow cues steps off on the show's saved foot ({foot, select, left {performer's left} other {performer's right}}), or the foot a Feet cue sets.",
             "keysSection": "Keyboard and mouse",
-            "previewSection": "Preview only",
-            "previewHint": "Not saved. These change only what this window draws; in the show, cues decide. Set them back to Follow cues to see the show.",
-            "followCues": "Follow cues",
             "uniforms": "Band uniform",
             "guardUniforms": "Guard uniform"
         },
@@ -3785,8 +3703,6 @@
             "seconds": "seconds"
         },
         "unsavedChanges": "You have unsaved changes",
-        "warnPropMovesWithoutCrew": "Warn when a prop moves without a crew",
-        "warnPropMovesWithoutCrewHelp": "Show checks names a placed prop that moves with nobody on its crew.",
         "close": "Close",
         "saved": "Show settings saved",
         "updateFailed": "Failed to update workspace settings"
@@ -4003,9 +3919,6 @@
         "openFailed": {
             "title": "Error Loading Database"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Error snapping an item to its holder"
     },
     "coordinates": {
         "full": "{x} - {y}",

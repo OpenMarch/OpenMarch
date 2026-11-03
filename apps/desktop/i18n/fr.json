@@ -196,14 +196,7 @@
             "addToLibrary": "Ajouter à ma Bibliothèque",
             "delete": {
                 "addFirst": "Ajouter d’abord à ma Bibliothèque",
-                "alsoUsedByCues": "{count, plural, =1 {Un top l’utilise aussi :} other {# tops l’utilisent aussi :}}",
-                "useLine": "{channel} · {who} · temps {count}",
                 "cancel": "Annuler",
-                "channels": {
-                    "carry": "Objet porté",
-                    "silk": "Tissu",
-                    "uniform": "Uniforme"
-                },
                 "checking": "Recherche des utilisations…",
                 "confirm": "Votre Bibliothèque conserve sa propre copie. Cette action est irréversible.",
                 "confirmNoCopy": "Votre Bibliothèque n’en a pas de copie : l’élément sera définitivement perdu. Cette action est irréversible.",
@@ -214,22 +207,10 @@
                 "inUseTitle": "{name} est utilisé",
                 "isFloor": "C’est le sol de ce spectacle, il ne peut donc pas être supprimé. Changez le sol dans Paramètres du terrain → Image.",
                 "itemModel": "modèle",
-                "itemSlot": "illustration {slot}",
                 "keptForUndo": "{name} reste dans ce spectacle tant que la commande Annuler peut le récupérer, puis en est retiré à la fermeture du spectacle.",
                 "label": "Supprimer de ce spectacle",
-                "noReplacement": "Ce spectacle ne contient aucun autre élément de ce type pour le remplacer. Importez-en un d’abord.",
                 "pinnedBy": "Cet élément fait partie de {names}, il ne peut donc pas être supprimé.",
-                "replaceAndDelete": "Remplacer et supprimer",
-                "replaced": "{name} a été remplacé par {replacement}.",
-                "replacedKeptForUndo": "{name} a été remplacé par {replacement}. {name} reste dans ce spectacle tant que la commande Annuler peut le récupérer, puis en est retiré à la fermeture du spectacle.",
-                "replaceWith": "Remplacer par…",
-                "targets": {
-                    "band": "Orchestre",
-                    "set": "{count, plural, one {# marcheur} other {# marcheurs}}",
-                    "tag": "Une étiquette"
-                },
                 "title": "Supprimer {name} de ce spectacle ?",
-                "usedByCues": "{count, plural, =1 {Un top l’utilise. Remplacez-le pour pouvoir le supprimer :} other {# tops l’utilisent. Remplacez-le dans chacun d’eux pour pouvoir le supprimer :}}",
                 "usedByItems": "{count, plural, =1 {Un accessoire l’utilise, il ne peut donc pas être supprimé :} other {# accessoires l’utilisent, il ne peut donc pas être supprimé :}}"
             },
             "empty": "Ce spectacle n’utilise encore aucune ressource.",
@@ -433,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# top déplacé à un temps ultérieur} other {# tops déplacés à des temps ultérieurs}}",
-            "movedTo": "{count, plural, one {# top déplacé au temps {at}} other {# tops déplacés au temps {at}}}",
-            "removed": "{count, plural, one {# top supprimé} other {# tops supprimés}}"
-        },
-        "errors": {
-            "create": "Erreur lors de la création des tops",
-            "delete": "Erreur lors de la suppression des tops",
-            "update": "Erreur lors de la mise à jour des tops"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2672,32 +2641,7 @@
             "countAt": "{count} à {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Un top d'instrument/d'équipement ne correspond pas à ce que portent les marcheurs",
-        "crewDistance": "{item} est loin de son équipe",
-        "crewDistanceDetail": "Hors de portée : {who}",
-        "crewlessMove": "{item} se déplace sans équipe",
-        "empty": "Rien à vérifier.",
-        "forWho": "Pour {who}",
-        "handConflict": "{item} n'est pas affiché",
-        "handConflictDetail": "{count, plural, =1 {{other} occupe {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}} other {{other} occupent {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}}}",
-        "handConflictByCarry": "Un top de port occupe {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}",
-        "handConflictWithCarry": "{other} et un top de port occupent {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}",
-        "performers": "{count, plural, one {# marcheur} other {# marcheurs}}",
-        "pick": "Aller à ce temps et sélectionner les éléments concernés",
-        "putDownDrift": "{item} posé loin de son porteur",
-        "putDownDriftDetail": "Son propre mouvement le place là, et non auprès de {who}",
-        "shortHanded": "{item} est tenu avec trop peu de mains",
-        "shortHandedDetail": "{who} : {held} sur {needed} mains",
-        "silkAspect": "L'illustration d'un top de voile est adaptée à un drapeau d'une autre forme",
-        "snapToHolder": "Ramener au porteur",
-        "title": "Vérifications du spectacle",
-        "titleCount": "Vérifications du spectacle ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, au début"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# top cible cette étiquette et sera supprimé} other {# tops ciblent cette étiquette et seront supprimés}}",
         "title": "Étiquettes",
         "rename": "Renommer l'étiquette",
         "namePlaceholder": "Saisissez le nom de l'étiquette…",
@@ -3355,7 +3299,6 @@
         },
         "readout": {
             "camera": "Œil à {eye} · {distance} du centre",
-            "checks": "{count, plural, one {# vérification} other {# vérifications}}",
             "count": "Temps {count} sur {total}",
             "noPages": "Aucune page",
             "page": "Page {page}",
@@ -3401,32 +3344,7 @@
             "endZoneColor": "Couleur",
             "graphicsSection": "Cet ordinateur",
             "graphicsHint": "Non enregistré dans le spectacle, peut donc varier d'un ordinateur à l'autre.",
-            "hornState": "Position des instruments",
-            "hornStateMode": {
-                "up": "Levés",
-                "carry": "Port",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Maintient chaque instrument à vent et chaque tambour dans une même position pendant tout le spectacle, pour vérifier les postures. Suivre les tops applique les tops Instrument/Équipement, instruments levés là où il n'y en a pas.",
-            "guardEquipment": "Équipement de la color guard",
-            "guardEquipmentMode": {
-                "flag6": "Drapeau 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Fusil",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Place un même équipement dans les mains de chaque membre de la color guard, pour le visualiser. Suivre les tops donne à chaque pupitre le sien : le drapeau 6 ft aux drapeaux, le fusil aux fusils.",
-            "stepOffFoot": "Pied de départ",
-            "stepOffFootMode": {
-                "left": "Gauche du marcheur",
-                "right": "Droit du marcheur"
-            },
-            "stepOffFootHint": "Il s'agit du pied du marcheur, quelle que soit son orientation. S'il vous fait face, son pied gauche est à votre droite. Suivre les tops part du pied enregistré dans le spectacle ({foot, select, left {gauche du marcheur} other {droit du marcheur}}) ou du pied défini par un top Pieds.",
             "keysSection": "Clavier et souris",
-            "previewSection": "Aperçu seulement",
-            "previewHint": "Non enregistré. Ces choix modifient uniquement l'affichage de cette fenêtre ; dans le spectacle, ce sont les tops qui décident. Remettez-les sur Suivre les tops pour voir le spectacle.",
-            "followCues": "Suivre les tops",
             "uniforms": "Uniforme de l'orchestre",
             "guardUniforms": "Uniforme de la color guard"
         },
@@ -3699,8 +3617,6 @@
             "seconds": "secondes"
         },
         "unsavedChanges": "Vous avez des modifications non enregistrées",
-        "warnPropMovesWithoutCrew": "Avertir si un accessoire se déplace sans équipe",
-        "warnPropMovesWithoutCrewHelp": "Les vérifications du spectacle signalent tout accessoire placé qui se déplace alors que personne n'est dans son équipe.",
         "close": "Fermer",
         "saved": "Paramètres du spectacle enregistrés",
         "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail"
@@ -3917,9 +3833,6 @@
         "openFailed": {
             "title": "Erreur de chargement de la base de données"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Erreur lors du replacement d’un élément auprès de son porteur"
     },
     "coordinates": {
         "full": "{x} - {y}",

@@ -196,14 +196,7 @@
             "addToLibrary": "Adicionar à minha Biblioteca",
             "delete": {
                 "addFirst": "Adicionar à minha Biblioteca antes",
-                "alsoUsedByCues": "{count, plural, =1 {Uma deixa também usa este item:} other {# deixas também usam este item:}}",
-                "useLine": "{channel} · {who} · tempo {count}",
                 "cancel": "Cancelar",
-                "channels": {
-                    "carry": "Objeto",
-                    "silk": "Tecido",
-                    "uniform": "Uniforme"
-                },
                 "checking": "Verificando o que usa este item…",
                 "confirm": "Sua Biblioteca mantém uma cópia própria. Esta ação não pode ser desfeita.",
                 "confirmNoCopy": "Sua Biblioteca não tem uma cópia, então o item será perdido para sempre. Esta ação não pode ser desfeita.",
@@ -214,22 +207,10 @@
                 "inUseTitle": "{name} está em uso",
                 "isFloor": "É o piso deste show, então não pode ser excluído. Altere o piso em Configurações do campo → Imagem.",
                 "itemModel": "modelo",
-                "itemSlot": "arte de {slot}",
                 "keptForUndo": "{name} permanece neste show enquanto Desfazer puder restaurá-lo e será removido quando o show for fechado depois disso.",
                 "label": "Excluir deste show",
-                "noReplacement": "Este show não tem outro item deste tipo para substituí-lo. Importe um primeiro.",
                 "pinnedBy": "Faz parte de {names}, então não pode ser excluído.",
-                "replaceAndDelete": "Substituir e excluir",
-                "replaced": "Item {name} substituído por {replacement}.",
-                "replacedKeptForUndo": "Item {name} substituído por {replacement}. {name} permanece neste show enquanto Desfazer puder restaurá-lo e será removido quando o show for fechado depois disso.",
-                "replaceWith": "Substituir por…",
-                "targets": {
-                    "band": "Banda",
-                    "set": "{count, plural, one {# integrante} other {# integrantes}}",
-                    "tag": "Uma tag"
-                },
                 "title": "Excluir {name} deste show?",
-                "usedByCues": "{count, plural, =1 {Uma deixa usa este item. Substitua-o para excluí-lo:} other {# deixas usam este item. Substitua-o em todas para excluí-lo:}}",
                 "usedByItems": "{count, plural, =1 {Um adereço usa este item, então ele não pode ser excluído:} other {# adereços usam este item, então ele não pode ser excluído:}}"
             },
             "empty": "Este show ainda não usa nenhum recurso.",
@@ -433,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# deixa movida para um tempo posterior} other {# deixas movidas para tempos posteriores}}",
-            "movedTo": "{count, plural, one {# deixa movida para o tempo {at}} other {# deixas movidas para o tempo {at}}}",
-            "removed": "{count, plural, one {# deixa removida} other {# deixas removidas}}"
-        },
-        "errors": {
-            "create": "Erro ao criar deixas",
-            "delete": "Erro ao excluir deixas",
-            "update": "Erro ao atualizar deixas"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2672,32 +2641,7 @@
             "countAt": "{count} a {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Uma deixa de Instrumento/Equipamento não combina com o que os integrantes carregam",
-        "crewDistance": "A equipe de {item} está longe do objeto",
-        "crewDistanceDetail": "Fora de alcance: {who}",
-        "crewlessMove": "{item} se move sem equipe",
-        "empty": "Nada a verificar.",
-        "forWho": "Para {who}",
-        "handConflict": "{item} não aparece",
-        "handConflictDetail": "{count, plural, =1 {{other} ocupa {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}} other {{other} ocupam {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}}}",
-        "handConflictByCarry": "Uma deixa de Porte ocupa {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}",
-        "handConflictWithCarry": "{other} e uma deixa de Porte ocupam {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}",
-        "performers": "{count, plural, one {# integrante} other {# integrantes}}",
-        "pick": "Ir para este tempo e selecionar o que é indicado",
-        "putDownDrift": "{item} vai ao chão longe do portador",
-        "putDownDriftDetail": "O próprio movimento do item o leva até lá, e não até {who}",
-        "shortHanded": "Faltam mãos para segurar {item}",
-        "shortHandedDetail": "{who}: {held} de {needed} mãos",
-        "silkAspect": "A Arte de uma deixa de Tecido foi ajustada a uma bandeira de outro formato",
-        "snapToHolder": "Levar ao portador",
-        "title": "Verificações do show",
-        "titleCount": "Verificações do show ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, no início"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# deixa aponta para esta etiqueta e será removida} other {# deixas apontam para esta etiqueta e serão removidas}}",
         "title": "Etiquetas",
         "rename": "Renomear etiqueta",
         "namePlaceholder": "Digite o nome da etiqueta...",
@@ -3355,7 +3299,6 @@
         },
         "readout": {
             "camera": "Olhos a {eye} · {distance} do centro",
-            "checks": "{count, plural, one {# verificação} other {# verificações}}",
             "count": "Tempo {count} de {total}",
             "noPages": "Nenhuma página",
             "page": "Página {page}",
@@ -3401,32 +3344,7 @@
             "endZoneColor": "Cor",
             "graphicsSection": "Este computador",
             "graphicsHint": "Não é salvo no show, então pode ser diferente em cada computador.",
-            "hornState": "Posição dos instrumentos",
-            "hornStateMode": {
-                "up": "Para cima",
-                "carry": "Transporte",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Mantém todos os instrumentos de sopro e de percussão em uma só posição durante todo o show, para conferir as poses. Seguir deixas reproduz as deixas de Instrumento/Equipamento, com os instrumentos para cima onde não houver nenhuma.",
-            "guardEquipment": "Equipamento da color guard",
-            "guardEquipmentMode": {
-                "flag6": "Bandeira de 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Swing duplo",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Coloca um equipamento nas mãos de cada integrante da color guard, para visualizá-lo. Seguir deixas dá a cada naipe o seu: bandeiras recebem a bandeira de 6 ft, rifles recebem o rifle.",
-            "stepOffFoot": "Pé de saída",
-            "stepOffFootMode": {
-                "left": "Esquerdo do integrante",
-                "right": "Direito do integrante"
-            },
-            "stepOffFootHint": "O pé do próprio integrante, para onde quer que esteja virado. De frente para você, o pé esquerdo do integrante fica à sua direita. Seguir deixas sai com o pé salvo no show ({foot, select, left {esquerdo do integrante} other {direito do integrante}}) ou com o pé definido por uma deixa de Pés.",
             "keysSection": "Teclado e mouse",
-            "previewSection": "Só pré-visualização",
-            "previewHint": "Não é salvo. Estas opções mudam só o que esta janela desenha; no show, as deixas decidem. Volte para Seguir deixas para ver o show.",
-            "followCues": "Seguir deixas",
             "uniforms": "Uniforme da banda",
             "guardUniforms": "Uniforme da color guard"
         },
@@ -3699,8 +3617,6 @@
             "seconds": "segundos"
         },
         "unsavedChanges": "Você tem alterações não salvas",
-        "warnPropMovesWithoutCrew": "Avisar quando um adereço se mover sem equipe",
-        "warnPropMovesWithoutCrewHelp": "As Verificações do show apontam um adereço posicionado que se move sem ninguém na equipe dele.",
         "close": "Fechar",
         "saved": "Configurações do show salvas",
         "updateFailed": "Falha ao atualizar as configurações do show"
@@ -3917,9 +3833,6 @@
         "openFailed": {
             "title": "Erro ao carregar o banco de dados"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Erro ao devolver um item a quem o segura"
     },
     "coordinates": {
         "full": "{x} - {y}",

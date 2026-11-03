@@ -196,14 +196,7 @@
             "addToLibrary": "Tambahkan ke Pustaka saya",
             "delete": {
                 "addFirst": "Tambahkan ke Pustaka saya dulu",
-                "alsoUsedByCues": "{count, plural, =1 {Satu cue juga menggunakannya:} other {# cue juga menggunakannya:}}",
-                "useLine": "{channel} · {who} · hitungan {count}",
                 "cancel": "Batal",
-                "channels": {
-                    "carry": "Pegangan",
-                    "silk": "Kain bendera",
-                    "uniform": "Seragam"
-                },
                 "checking": "Memeriksa penggunaannya…",
                 "confirm": "Pustaka Anda menyimpan salinannya sendiri. Tindakan ini tidak dapat diurungkan.",
                 "confirmNoCopy": "Pustaka Anda tidak memiliki salinannya, jadi item ini akan hilang selamanya. Tindakan ini tidak dapat diurungkan.",
@@ -214,22 +207,10 @@
                 "inUseTitle": "{name} sedang digunakan",
                 "isFloor": "Item ini adalah lantai pertunjukan ini, jadi tidak dapat dihapus. Ubah lantai di Pengaturan lapangan → Gambar.",
                 "itemModel": "model",
-                "itemSlot": "gambar {slot}",
                 "keptForUndo": "{name} tetap ada di pertunjukan ini selama masih dapat dikembalikan dengan Urungkan, lalu dihapus saat pertunjukan ditutup setelahnya.",
                 "label": "Hapus dari pertunjukan ini",
-                "noReplacement": "Pertunjukan ini tidak memiliki item lain yang sejenis untuk menggantikannya. Impor satu terlebih dahulu.",
                 "pinnedBy": "Item ini bagian dari {names}, jadi tidak dapat dihapus.",
-                "replaceAndDelete": "Ganti dan hapus",
-                "replaced": "{name} diganti dengan {replacement}.",
-                "replacedKeptForUndo": "{name} diganti dengan {replacement}. {name} tetap ada di pertunjukan ini selama masih dapat dikembalikan dengan Urungkan, lalu dihapus saat pertunjukan ditutup setelahnya.",
-                "replaceWith": "Ganti dengan…",
-                "targets": {
-                    "band": "Band",
-                    "set": "{count, plural, other {# pemain}}",
-                    "tag": "Sebuah tag"
-                },
                 "title": "Hapus {name} dari pertunjukan ini?",
-                "usedByCues": "{count, plural, =1 {Satu cue menggunakannya. Ganti untuk menghapusnya:} other {# cue menggunakannya. Ganti di semuanya untuk menghapusnya:}}",
                 "usedByItems": "{count, plural, =1 {Satu properti menggunakannya, jadi tidak dapat dihapus:} other {# properti menggunakannya, jadi tidak dapat dihapus:}}"
             },
             "empty": "Pertunjukan ini belum menggunakan aset apa pun.",
@@ -433,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {# cue dipindahkan ke hitungan yang lebih akhir}}",
-            "movedTo": "{count, plural, other {# cue dipindahkan ke hitungan {at}}}",
-            "removed": "{count, plural, other {# cue dihapus}}"
-        },
-        "errors": {
-            "create": "Gagal membuat cue",
-            "delete": "Gagal menghapus cue",
-            "update": "Gagal memperbarui cue"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2672,32 +2641,7 @@
             "countAt": "{count} berjarak {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Cue Horn/Equipment tidak cocok dengan yang dibawa pemain",
-        "crewDistance": "Kru {item} berada jauh darinya",
-        "crewDistanceDetail": "Di luar jangkauan: {who}",
-        "crewlessMove": "{item} berpindah tanpa kru",
-        "empty": "Tidak ada yang perlu diperiksa.",
-        "forWho": "Untuk {who}",
-        "handConflict": "{item} tidak ditampilkan",
-        "handConflictDetail": "{count, plural, =1 {{other} memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}} other {{other} memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}}}",
-        "handConflictByCarry": "Cue Carry memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}",
-        "handConflictWithCarry": "{other} dan cue Carry memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}",
-        "performers": "{count, plural, other {# pemain}}",
-        "pick": "Lompat ke hitungan ini dan pilih yang disebutkan",
-        "putDownDrift": "{item} diletakkan jauh dari pemegangnya",
-        "putDownDriftDetail": "Gerakannya sendiri menempatkannya di sana, bukan di {who}",
-        "shortHanded": "{item} dipegang oleh terlalu sedikit tangan",
-        "shortHandedDetail": "{who}: {held} dari {needed} tangan",
-        "silkAspect": "Artwork cue Silk dipasang pada bendera yang bentuknya berbeda",
-        "snapToHolder": "Pindahkan ke pemegang",
-        "title": "Pemeriksaan pertunjukan",
-        "titleCount": "Pemeriksaan pertunjukan ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, di awal"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {# cue menargetkan tag ini dan akan dihapus}}",
         "title": "Tag",
         "rename": "Ganti nama tag",
         "namePlaceholder": "Masukkan nama tag...",
@@ -3355,7 +3299,6 @@
         },
         "readout": {
             "camera": "Tinggi mata {eye} · {distance} ke tengah",
-            "checks": "{count, plural, other {# pemeriksaan}}",
             "count": "Hitungan {count} dari {total}",
             "noPages": "Tidak ada halaman",
             "page": "Halaman {page}",
@@ -3401,32 +3344,7 @@
             "endZoneColor": "Warna",
             "graphicsSection": "Komputer ini",
             "graphicsHint": "Tidak disimpan dalam pertunjukan, jadi bisa berbeda di setiap komputer.",
-            "hornState": "Posisi instrumen",
-            "hornStateMode": {
-                "up": "Angkat",
-                "carry": "Carry",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Menahan setiap alat tiup dan drum dalam satu posisi selama seluruh pertunjukan, untuk memeriksa posenya. Ikuti cue memutar cue Horn/Perlengkapan, dengan alat tiup diangkat jika tidak ada cue.",
-            "guardEquipment": "Perlengkapan guard",
-            "guardEquipmentMode": {
-                "flag6": "Bendera 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Menempatkan satu perlengkapan di tangan setiap anggota guard, untuk melihatnya. Ikuti cue memberi setiap seksi perlengkapannya sendiri: seksi bendera dengan bendera 6 ft, seksi rifle dengan rifle.",
-            "stepOffFoot": "Langkah awal",
-            "stepOffFootMode": {
-                "left": "Kiri pemain",
-                "right": "Kanan pemain"
-            },
-            "stepOffFootHint": "Kaki pemain sendiri, ke mana pun ia menghadap. Saat menghadap Anda, kaki kirinya ada di sisi kanan Anda. Ikuti cue memulai langkah dengan kaki yang disimpan di pertunjukan ({foot, select, left {kiri pemain} other {kanan pemain}}), atau kaki yang ditetapkan oleh cue Kaki.",
             "keysSection": "Keyboard dan mouse",
-            "previewSection": "Hanya pratinjau",
-            "previewHint": "Tidak disimpan. Pilihan ini hanya mengubah apa yang digambar jendela ini; dalam pertunjukan, cue yang menentukan. Kembalikan ke Ikuti cue untuk melihat pertunjukan.",
-            "followCues": "Ikuti cue",
             "uniforms": "Seragam band",
             "guardUniforms": "Seragam guard"
         },
@@ -3699,8 +3617,6 @@
             "seconds": "detik"
         },
         "unsavedChanges": "Ada perubahan yang belum disimpan",
-        "warnPropMovesWithoutCrew": "Peringatkan saat properti bergerak tanpa kru",
-        "warnPropMovesWithoutCrewHelp": "Pemeriksaan pertunjukan menyebutkan properti yang ditempatkan dan bergerak tanpa ada anggota kru.",
         "close": "Tutup",
         "saved": "Pengaturan pertunjukan disimpan",
         "updateFailed": "Gagal memperbarui pengaturan pertunjukan"
@@ -3917,9 +3833,6 @@
         "openFailed": {
             "title": "Gagal memuat database"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Gagal memindahkan item ke pemegangnya"
     },
     "coordinates": {
         "full": "{x} - {y}",

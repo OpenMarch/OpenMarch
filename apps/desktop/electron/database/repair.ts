@@ -56,21 +56,9 @@ const DEPENDENT_TABLE_COPY_ORDER = [
     "timeline_assignments",
     // Held marks after the marchers they name (no trigger reads them)
     "timeline_held_marks",
-    // Performer cues after the beats, pages, marchers and tags they name (ADR 0004 D-5). No
-    // trigger reads them, so this is for order's sake: a cue after its phrase asset, set
-    // members after their cue.
-    "phrase_assets",
-    "cues",
-    "cue_marchers",
-    "page_performer_settings",
     // Items after the marchers that back them, Outline changes after their item (ADR 0002 D-10)
     "items",
     "item_geometry",
-    // Placement changes after their item and beat, holders and crew after their change
-    "item_placements",
-    "item_placement_marchers",
-    // Artwork slot assignments after their item and beat
-    "item_artwork_slots",
     // Shape recipes after their moves, then their members (ADR 0006)
     "timeline_shape_recipes",
     "timeline_shape_recipe_marchers",
