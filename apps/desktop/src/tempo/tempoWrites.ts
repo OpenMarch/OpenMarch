@@ -716,6 +716,171 @@ async function moveMeasuresOffInTransaction(
 }
 
 /**
+ * A move that removing counts would leave ending on the same count as a move it sits inside (one
+ * sharing marchers with it): where two moves end together the one on top wins, so the marchers
+ * would never stand on the other's set (the page's set, under a keyframe). The removal is refused
+ * unless the move ends a count earlier (`endEarly`).
+ */
+export interface HiddenSet {
+    /** The move inside (a keyframe) */
+    moveId: number;
+    /** The move it sits inside (usually a page's move), whose set it would hide */
+    underId: number;
+    /** The marchers they share */
+    marchers: number[];
+    /** Where both would end, as a count number after the removal */
+    end: number;
+    /** How many counts the move inside would have after the removal */
+    counts: number;
+}
+
+async function hiddenSetsIn(
+    q: DbTransaction,
+    from: number,
+    to: number,
+): Promise<HiddenSet[]> {
+    const removed = to - from;
+    const mapped = (o: number) => (o <= from ? o : Math.max(from, o - removed));
+    const moves = await q
+        .select({
+            id: schema.timelines.id,
+            start: schema.timelines.start_beat,
+            end: schema.timelines.end_beat,
+        })
+        .from(schema.timelines)
+        .where(
+            and(
+                gte(schema.timelines.end_beat, from),
+                lte(schema.timelines.start_beat, to),
+            ),
+        )
+        .all();
+    if (moves.length < 2) return [];
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const marchersOf = new Map<number, Set<number>>();
+    for (const r of await q
+        .select({ move: t.timeline_id, marcher: a.marcher_id })
+        .from(a)
+        .innerJoin(t, eq(a.transition_id, t.id))
+        .where(
+            inArray(
+                t.timeline_id,
+                moves.map((m) => m.id),
+            ),
+        )
+        .all()) {
+        const set = marchersOf.get(r.move) ?? new Set<number>();
+        set.add(r.marcher);
+        marchersOf.set(r.move, set);
+    }
+    const out: HiddenSet[] = [];
+    for (const inner of moves) {
+        if (inner.end < from || inner.end > to) continue;
+        const mine = marchersOf.get(inner.id);
+        if (!mine) continue;
+        for (const outer of moves) {
+            if (outer.id === inner.id) continue;
+            if (!(outer.start <= inner.start && inner.end < outer.end))
+                continue;
+            if (mapped(inner.end) !== mapped(outer.end)) continue;
+            const shared = [...(marchersOf.get(outer.id) ?? [])].filter((m) =>
+                mine.has(m),
+            );
+            if (!shared.length) continue;
+            out.push({
+                moveId: inner.id,
+                underId: outer.id,
+                marchers: shared.sort((x, y) => x - y),
+                end: mapped(inner.end),
+                counts: mapped(inner.end) - mapped(inner.start),
+            });
+        }
+    }
+    return out;
+}
+
+/** The sets removing counts `from`..`to - 1` would hide (see {@link HiddenSet}), for the box */
+export async function readHiddenSets({
+    from,
+    to,
+}: {
+    from: number;
+    to: number;
+}): Promise<HiddenSet[]> {
+    // a plain read, outside any edit: the connection reads like a transaction does
+    return await hiddenSetsIn(db as unknown as DbTransaction, from, to);
+}
+
+/** Refused: removing the counts would hide a set (the box offers the ways out) */
+export class HiddenSetError extends Error {
+    constructor(readonly hidden: HiddenSet[]) {
+        super(tolgee.t("tempoMode.errors.wouldHideSet"));
+    }
+}
+
+/** Each move that the removal left ending with the move it sits inside ends a count earlier */
+async function endHiddenMovesEarlyInTransaction(
+    tx: DbTransaction,
+    hidden: readonly HiddenSet[],
+): Promise<void> {
+    for (const h of hidden) {
+        const [inner, outer] = await Promise.all(
+            [h.moveId, h.underId].map((id) =>
+                tx
+                    .select()
+                    .from(schema.timelines)
+                    .where(eq(schema.timelines.id, id))
+                    .get(),
+            ),
+        );
+        if (!inner || !outer || inner.end_beat !== outer.end_beat) continue;
+        await resizeTimelineInTransaction({
+            tx,
+            timelineId: inner.id,
+            start: inner.start_beat,
+            end: inner.end_beat - 1,
+        });
+    }
+}
+
+/**
+ * What the removed counts (`doomed`) hand on to the next count left (`survivor`), as measures,
+ * pages and cues do: a tempo point (the change now starts there) and their notes, written before
+ * its own in playing order. A hold goes with its count: it was that count's length.
+ */
+async function carryCountFactsInTransaction(
+    tx: DbTransaction,
+    doomed: readonly number[],
+    survivor: number,
+): Promise<void> {
+    const b = schema.beats;
+    const gone = await tx
+        .select({ id: b.id, notes: b.notes, change: b.tempo_change })
+        .from(b)
+        .where(inArray(b.id, [...doomed]))
+        .all();
+    const order = new Map(doomed.map((id, i) => [id, i]));
+    gone.sort((x, y) => order.get(x.id)! - order.get(y.id)!);
+    const left = await tx
+        .select({ notes: b.notes, change: b.tempo_change })
+        .from(b)
+        .where(eq(b.id, survivor))
+        .get();
+    if (!left) return;
+    const notes = [...gone.map((g) => g.notes), left.notes]
+        .map((x) => x?.trim())
+        .filter((x): x is string => !!x);
+    const change = !!left.change || gone.some((g) => g.change);
+    const update: { notes?: string; tempo_change?: number } = {};
+    if (notes.length && notes.join("\n") !== (left.notes ?? ""))
+        update.notes = notes.join("\n");
+    if (change && !left.change) update.tempo_change = 1;
+    if (Object.keys(update).length)
+        await tx.update(b).set(update).where(eq(b.id, survivor)).run();
+}
+
+/**
  * Remove spec beats `from`..`to - 1`. A measure or page starting on a removed count starts on the
  * next one left (or goes, when that one already starts one). With `keep`, a move that lost counts
  * takes them back from a hold after it where it can.
@@ -725,14 +890,24 @@ export async function deleteCounts({
     to,
     drill,
     respaced,
+    endEarly = false,
 }: {
     from: number;
     to: number;
     drill: DrillChoice;
     respaced?: { from: number; lengths: readonly number[] };
+    /**
+     * A move the removal would leave ending with the move it sits inside ends a count earlier
+     * instead, so the set under it still shows. Without it such a removal is refused
+     * ({@link HiddenSetError}), writing nothing.
+     */
+    endEarly?: boolean;
 }): Promise<CountEditResult> {
     return await transactionWithHistory(db, "tempoDeleteCounts", async (tx) => {
         await ensureCountsInTransaction({ tx, through: to + 1 });
+        const hidden = await hiddenSetsIn(tx, from, to);
+        if (hidden.length && (!endEarly || hidden.some((h) => h.counts < 2)))
+            throw new HiddenSetError(hidden);
         const ids = await beatIdsInTransaction(tx);
         const doomed = ids.slice(Math.max(1, from), to);
         const survivor = ids[to];
@@ -752,6 +927,7 @@ export async function deleteCounts({
             around.set(m.id, m);
         let cues: CueCarryResult = { moved: [], dropped: [] };
         let holderId: number | undefined;
+        await carryCountFactsInTransaction(tx, doomed, survivor);
         // The last page gets shorter by the counts removed from it (see insertCounts)
         const last = await lastPageInTransaction(tx);
         const removed = to - from;
@@ -830,6 +1006,7 @@ export async function deleteCounts({
                     result.couldNotKeep++;
                 }
             }
+        await endHiddenMovesEarlyInTransaction(tx, hidden);
         return result;
     });
 }

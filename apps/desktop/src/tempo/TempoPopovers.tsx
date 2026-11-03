@@ -10,6 +10,7 @@ import {
     ArrowsInLineHorizontalIcon,
     CaretRightIcon,
     PauseIcon,
+    WarningIcon,
 } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import Shortcut from "@/components/ui/Shortcut";
@@ -165,54 +166,175 @@ export function CountAskPopover({
             }}
         >
             <div className="text-[12px] font-bold">{ask.title}</div>
-            <div className="text-text-subtitle text-[11px]">{ask.intro}</div>
-            {ask.keep &&
-                option(
-                    "keep",
-                    tolgee.t(
-                        "tempoMode.popovers.countAsk.keep",
-                        "Keep everything else in place",
-                    ),
-                    ask.keep.text,
-                )}
-            {option(
-                "shift",
-                tolgee.t(
-                    "tempoMode.popovers.countAsk.shift",
-                    "Shift everything after",
-                ),
-                ask.shift.text,
-            )}
-            {ask.hold && (
+            {ask.blocked ? (
+                <BlockedAsk blocked={ask.blocked} onClose={onClose} />
+            ) : (
                 <>
-                    <div className="text-text-subtitle pt-2 text-[11px]">
-                        {tolgee.t(
-                            "tempoMode.popovers.countAsk.holdIntro",
-                            "The music has no extra beat, but the marchers need a breath here?",
-                        )}
+                    <div className="text-text-subtitle text-[11px]">
+                        {ask.intro}
                     </div>
-                    {option(
-                        "hold",
-                        tolgee.t(
-                            "tempoMode.popovers.countAsk.hold",
-                            "Hold the drill here instead",
-                        ),
-                        ask.hold.text,
-                        "disabled" in ask.hold ? ask.hold.disabled : undefined,
+                    {ask.warning && (
+                        <div
+                            data-testid="tempo-count-ask-warning"
+                            className="text-red flex items-start gap-6 text-[11px]"
+                        >
+                            <WarningIcon
+                                size={13}
+                                className="mt-px shrink-0"
+                                aria-hidden
+                            />
+                            <span>{ask.warning}</span>
+                        </div>
                     )}
+                    {ask.keep &&
+                        option(
+                            "keep",
+                            tolgee.t(
+                                "tempoMode.popovers.countAsk.keep",
+                                "Keep everything else in place",
+                            ),
+                            ask.keep.text,
+                        )}
+                    {option(
+                        "shift",
+                        tolgee.t(
+                            "tempoMode.popovers.countAsk.shift",
+                            "Shift everything after",
+                        ),
+                        ask.shift.text,
+                    )}
+                    {ask.hold && (
+                        <>
+                            <div className="text-text-subtitle pt-2 text-[11px]">
+                                {tolgee.t(
+                                    "tempoMode.popovers.countAsk.holdIntro",
+                                    "The music has no extra beat, but the marchers need a breath here?",
+                                )}
+                            </div>
+                            {option(
+                                "hold",
+                                tolgee.t(
+                                    "tempoMode.popovers.countAsk.hold",
+                                    "Hold the drill here instead",
+                                ),
+                                ask.hold.text,
+                                "disabled" in ask.hold
+                                    ? ask.hold.disabled
+                                    : undefined,
+                            )}
+                        </>
+                    )}
+                    <div className="text-text-subtitle text-[10px]">
+                        <T
+                            keyName="tempoMode.popovers.countAsk.footer"
+                            defaultValue="Click one to do it. <enter></enter> does the one marked, your last choice; <escape></escape> cancels, and Undo takes any of them back."
+                            params={{
+                                enter: () => <Shortcut binding="Enter" />,
+                                escape: () => <Shortcut binding="Escape" />,
+                            }}
+                        />
+                    </div>
                 </>
             )}
-            <div className="text-text-subtitle text-[10px]">
-                <T
-                    keyName="tempoMode.popovers.countAsk.footer"
-                    defaultValue="Click one to do it. <enter></enter> does the one marked, your last choice; <escape></escape> cancels, and Undo takes any of them back."
-                    params={{
-                        enter: () => <Shortcut binding="Enter" />,
-                        escape: () => <Shortcut binding="Escape" />,
-                    }}
-                />
-            </div>
         </div>
+    );
+}
+
+/**
+ * The remove box when the removal would hide a set: what would go wrong, then the ways out as
+ * buttons (end the keyframe a count earlier and remove; remove fewer counts; cancel)
+ */
+function BlockedAsk({
+    blocked,
+    onClose,
+}: {
+    blocked: NonNullable<CountAsk["blocked"]>;
+    onClose: () => void;
+}) {
+    const ref = useRef<HTMLButtonElement>(null);
+    useEffect(() => ref.current?.focus(), []);
+    const fixOk = "run" in blocked.fix;
+    const fewer = blocked.fewer;
+    const fewerOk = !!fewer && "run" in fewer;
+    const action = (
+        label: string,
+        hint: string,
+        run: (() => void) | undefined,
+        disabled: string | undefined,
+        primary: boolean,
+        testId: string,
+    ) => (
+        <button
+            ref={primary && run ? ref : undefined}
+            type="button"
+            data-testid={testId}
+            disabled={!run}
+            className={clsx(
+                "rounded-6 flex flex-col items-start border p-8 text-left outline-hidden disabled:cursor-default disabled:opacity-50",
+                primary
+                    ? "border-accent bg-accent/10 hover:bg-accent/20 focus-visible:ring-accent focus-visible:ring-1"
+                    : "border-stroke hover:border-accent/60 hover:bg-fg-2 focus-visible:border-accent",
+            )}
+            onClick={() => {
+                if (!run) return;
+                onClose();
+                run();
+            }}
+        >
+            <span className="text-[12px] font-bold">{label}</span>
+            <span className="text-text-subtitle text-[11px]">
+                {disabled ?? hint}
+            </span>
+        </button>
+    );
+    return (
+        <>
+            <div
+                data-testid="tempo-count-ask-blocked"
+                className="flex items-start gap-6 text-[11px]"
+            >
+                <WarningIcon
+                    size={14}
+                    weight="fill"
+                    className="text-red mt-px shrink-0"
+                    aria-hidden
+                />
+                <span className="flex flex-col gap-2">
+                    <span className="font-bold">{blocked.title}</span>
+                    <span className="text-text-subtitle">{blocked.text}</span>
+                </span>
+            </div>
+            {action(
+                tolgee.t(
+                    "tempoMode.popovers.countAsk.blocked.fix",
+                    "End the keyframe a count earlier, then remove",
+                ),
+                blocked.fix.text,
+                fixOk ? (blocked.fix as { run: () => void }).run : undefined,
+                "disabled" in blocked.fix ? blocked.fix.disabled : undefined,
+                true,
+                "tempo-count-ask-fix",
+            )}
+            {fewer &&
+                action(
+                    fewer.label,
+                    fewer.text,
+                    fewerOk ? (fewer as { run: () => void }).run : undefined,
+                    "disabled" in fewer ? fewer.disabled : undefined,
+                    !fixOk,
+                    "tempo-count-ask-fewer",
+                )}
+            <button
+                type="button"
+                className="text-text-subtitle hover:text-text self-end px-4 text-[11px]"
+                onClick={onClose}
+            >
+                {tolgee.t(
+                    "tempoMode.popovers.countAsk.blocked.cancel",
+                    "Cancel",
+                )}
+            </button>
+        </>
     );
 }
 

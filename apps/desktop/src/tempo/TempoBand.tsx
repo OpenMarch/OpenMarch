@@ -51,6 +51,7 @@ import { formatBinding } from "@/shortcuts/bindings";
 import Shortcut from "@/components/ui/Shortcut";
 import { isMacPlatform } from "@/shortcuts/platform";
 import { queryClient } from "@/App";
+import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { historyKeys } from "@/hooks/queries/useHistory";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
@@ -70,7 +71,8 @@ import type {
 } from "@/components/timeline/TimelineBand";
 import {
     rampLengths,
-    respace,
+    keepInPlaceLengths,
+    newCountLength,
     retime,
     startsOf,
     type TempoEditResult,
@@ -94,6 +96,7 @@ import {
     endMovesEarly,
     insertCounts,
     moveRehearsalMark,
+    readHiddenSets,
     readMoves,
     type MoveSpan,
     setMeasureNumber as writeMeasureNumber,
@@ -1206,7 +1209,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     ) => {
         // a whole measure has no stretch of music to fit into: it can only shift what's after
         const span = count > 1 ? null : keepSpan(at === 1 ? 1 : at - 1);
-        const len = data.durations[Math.max(1, at - 1)] ?? 0.5;
+        const len = newCountLength(data.durations, data.holds, at);
         const moves = await readMovesSafely();
         const page = pageAt(Math.max(1, at - 1));
         const pageText = t("tempoMode.band.ask.pagesSentence", {
@@ -1306,15 +1309,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                               drill("keep"),
                           ].join(" "),
                           run: () => {
-                              const before = data.durations.slice(
-                                  span.a,
-                                  span.e,
-                              );
-                              const withNew = [
-                                  ...before.slice(0, at - span.a),
-                                  ...Array<number>(count).fill(len),
-                                  ...before.slice(at - span.a),
-                              ];
                               countEdit(
                                   what.done,
                                   () =>
@@ -1323,14 +1317,18 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                           count,
                                           duration: len,
                                           drill: "keep",
-                                          respaced: {
-                                              from: span.a,
-                                              lengths: respace(
-                                                  withNew,
-                                                  withNew.length,
-                                                  total,
-                                              ),
-                                          },
+                                          respaced: keepInPlaceLengths(
+                                              data.durations,
+                                              data.holds,
+                                              span,
+                                              {
+                                                  kind: "insert",
+                                                  at,
+                                                  count,
+                                                  len,
+                                              },
+                                          ),
+                                          measure: asMeasure,
                                       }),
                                   (kept) =>
                                       t("tempoMode.band.toast.movesKeptHold", {
@@ -1363,7 +1361,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     ),
             },
             hold:
-                count !== 1
+                count !== 1 || asMeasure
                     ? undefined
                     : breath.length
                       ? {
@@ -1398,6 +1396,117 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const removed = to - from;
         const span = whole ? null : keepSpan(from);
         const moves = await readMovesSafely();
+        const done = t("tempoMode.band.ask.removed", { where: what });
+        // Refused up front, with the ways out: a keyframe would end on the flag where the move
+        // under it ends, and win there over that move's set
+        const hidden = await readHiddenSets({ from, to }).catch(() => []);
+        if (hidden.length) {
+            const marchers = await queryClient
+                .fetchQuery(allMarchersQueryOptions())
+                .catch(() => []);
+            const nameOf = new Map(marchers.map((m) => [m.id, m.drill_number]));
+            const names = [...new Set(hidden.flatMap((h) => h.marchers))].map(
+                (id) => nameOf.get(id) ?? `#${id}`,
+            );
+            const shown = names.slice(0, 4).join(", ");
+            const who =
+                names.length > 4
+                    ? t("tempoMode.band.ask.hidden.marchersMore", {
+                          names: shown,
+                          count: names.length - 4,
+                      })
+                    : shown;
+            const under = moves.find((m) => m.id === hidden[0]!.underId);
+            const move = under
+                ? moveName(under)
+                : t("tempoMode.band.ask.hidden.theMove");
+            // Fewer: the most counts from `from` that hide nothing (one left after the keyframe)
+            let fewerTo: number | null = null;
+            for (let k = to - 1; k > from; k--) {
+                const still = await readHiddenSets({ from, to: k }).catch(
+                    () => hidden,
+                );
+                if (!still.length) {
+                    fewerTo = k;
+                    break;
+                }
+            }
+            const tooShort = hidden.some((h) => h.counts < 2);
+            setAsk({
+                x: e.clientX,
+                y: e.clientY,
+                title: t("tempoMode.band.ask.remove.title", { where: what }),
+                intro: "",
+                range: { from, to },
+                shift: { text: "", run: () => {} },
+                blocked: {
+                    title: t("tempoMode.band.ask.hidden.title", {
+                        marchers: who,
+                        move,
+                    }),
+                    text: t("tempoMode.band.ask.hidden.text", { move }),
+                    fix: tooShort
+                        ? {
+                              text: "",
+                              disabled: t(
+                                  "tempoMode.band.ask.hidden.fixTooShort",
+                              ),
+                          }
+                        : {
+                              text: t("tempoMode.band.ask.hidden.fixHint", {
+                                  move,
+                              }),
+                              run: () =>
+                                  countEdit(done, () =>
+                                      deleteCounts({
+                                          from,
+                                          to,
+                                          drill: "adjust",
+                                          endEarly: true,
+                                      }),
+                                  ),
+                          },
+                    fewer:
+                        fewerTo === null
+                            ? undefined
+                            : {
+                                  label: t("tempoMode.band.ask.hidden.fewer", {
+                                      where: rangeLabel(from, fewerTo),
+                                  }),
+                                  text: t(
+                                      "tempoMode.band.ask.hidden.fewerHint",
+                                  ),
+                                  run: () => {
+                                      const k = fewerTo!;
+                                      useTempoUi
+                                          .getState()
+                                          .setRange(
+                                              k - from > 1
+                                                  ? { from, to: k }
+                                                  : null,
+                                          );
+                                      void askRemove(e, from, k);
+                                  },
+                              },
+                },
+            });
+            return;
+        }
+        // A rehearsal mark that goes (as `carriedFacts` does): the measure left on the next count
+        // keeps its own mark and takes the first one of the measures that go only when it has none
+        const onSurvivor = data.measures.find((m) => m.start === to);
+        const moving = data.measures.filter(
+            (m) => m.start >= from && m.start < to,
+        );
+        const holder = onSurvivor ?? moving[0];
+        const goneMarked = moving.filter((m) => m !== holder && m.mark);
+        const lostMarks = holder?.mark ? goneMarked : goneMarked.slice(1);
+        const warning = lostMarks.length
+            ? t("tempoMode.band.ask.remove.marksGo", {
+                  count: lostMarks.length,
+                  marks: lostMarks.map((m) => m.mark).join(", "),
+              })
+            : undefined;
         const pagesHit = pages.filter((p) => {
             const start = p.beats[0]?.index;
             return (
@@ -1458,12 +1567,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                   });
         };
         const starts = startsOf(data.durations);
-        const done = t("tempoMode.band.ask.removed", { where: what });
         setAsk({
             x: e.clientX,
             y: e.clientY,
             title: t("tempoMode.band.ask.remove.title", { where: what }),
             intro: t("tempoMode.band.ask.remove.intro"),
+            warning,
             range: { from, to },
             keep:
                 span && span.e - span.a > removed
@@ -1484,27 +1593,17 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                   drill("keep"),
                               ].join(" "),
                               run: () => {
-                                  const before = data.durations.slice(
-                                      span.a,
-                                      span.e,
-                                  );
-                                  const left = [
-                                      ...before.slice(0, from - span.a),
-                                      ...before.slice(to - span.a),
-                                  ];
                                   countEdit(done, () =>
                                       deleteCounts({
                                           from,
                                           to,
                                           drill: "keep",
-                                          respaced: {
-                                              from: span.a,
-                                              lengths: respace(
-                                                  left,
-                                                  left.length,
-                                                  total,
-                                              ),
-                                          },
+                                          respaced: keepInPlaceLengths(
+                                              data.durations,
+                                              data.holds,
+                                              span,
+                                              { kind: "delete", from, to },
+                                          ),
                                       }),
                                   );
                               },

@@ -197,18 +197,61 @@ export function regroupMeasures(
 }
 
 /**
- * Count lengths for `counts` counts that fill `total` seconds, keeping the relative lengths of
- * `lengths` (stretched or squeezed), padding with their average when there are more counts than
- * lengths: what "keep everything else in place" writes after a count is added or removed.
+ * How long a count added before spec beat `at` is: the count before it, unless that is a hold
+ * (a fermata is not the tempo), then the nearest count that isn't one, before it or else after.
  */
-export function respace(
-    lengths: readonly number[],
-    counts: number,
-    total: number,
-): number[] {
-    const avg =
-        lengths.reduce((a, b) => a + b, 0) / Math.max(1, lengths.length) || 0.5;
-    const base = Array.from({ length: counts }, (_, i) => lengths[i] ?? avg);
-    const sum = base.reduce((a, b) => a + b, 0);
-    return base.map((l) => (l * total) / sum);
+export function newCountLength(
+    durations: readonly number[],
+    holds: ReadonlySet<number>,
+    at: number,
+): number {
+    const from = Math.min(Math.max(1, at - 1), durations.length - 1);
+    for (let b = from; b >= 1; b--)
+        if (!holds.has(b) && durations[b]) return durations[b]!;
+    for (let b = from + 1; b < durations.length; b++)
+        if (!holds.has(b) && durations[b]) return durations[b]!;
+    return durations[from] || 0.5;
+}
+
+/**
+ * "Keep everything else in place": the lengths to write over the measure `span` ([a, e) spec
+ * beats) after counts are added at `at` (each `len` long) or removed (`from`..`to - 1`), so the
+ * measure takes as long as it did and the music after it stays where it was. Holds keep their
+ * seconds; the other counts stretch or squeeze to fill the rest.
+ */
+export function keepInPlaceLengths(
+    durations: readonly number[],
+    holds: ReadonlySet<number>,
+    span: { a: number; e: number },
+    edit:
+        | { kind: "insert"; at: number; count: number; len: number }
+        | { kind: "delete"; from: number; to: number },
+): { from: number; lengths: number[] } {
+    let total = 0;
+    for (let b = span.a; b < span.e; b++) total += durations[b] ?? 0;
+    const counts: { len: number; hold: boolean }[] = [];
+    for (let b = span.a; b < span.e; b++) {
+        if (edit.kind === "insert" && b === edit.at)
+            for (let i = 0; i < edit.count; i++)
+                counts.push({ len: edit.len, hold: false });
+        if (edit.kind === "delete" && b >= edit.from && b < edit.to) continue;
+        counts.push({
+            len: durations[b] ?? 0.5,
+            hold: holds.has(b),
+        });
+    }
+    if (edit.kind === "insert" && edit.at >= span.e)
+        for (let i = 0; i < edit.count; i++)
+            counts.push({ len: edit.len, hold: false });
+    const held = counts.filter((c) => c.hold).reduce((a, c) => a + c.len, 0);
+    const free = counts.filter((c) => !c.hold).reduce((a, c) => a + c.len, 0);
+    // holds keep their seconds when the rest can make up the time; otherwise all scale together
+    const keepHolds = free > 0 && total - held > 0;
+    const scale = keepHolds ? (total - held) / free : total / (held + free);
+    return {
+        from: span.a,
+        lengths: counts.map((c) =>
+            keepHolds && c.hold ? c.len : c.len * scale,
+        ),
+    };
 }

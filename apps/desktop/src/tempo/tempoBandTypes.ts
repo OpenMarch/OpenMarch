@@ -140,4 +140,18 @@ export interface CountAsk {
     range: CountRange;
     /** The spot is where a page or a move ends: a breath there is likelier than an extra beat */
     boundary?: boolean;
+    /** Something the edit loses that the choices don't say (a rehearsal mark that goes) */
+    warning?: string;
+    /**
+     * Removing these counts would hide a set (a keyframe would end on the page's flag): instead of
+     * the choices, why, and the ways out
+     */
+    blocked?: {
+        title: string;
+        text: string;
+        /** End the keyframe a count earlier, then remove: or why it can't */
+        fix: AskOption;
+        /** Remove fewer counts, leaving one after the keyframe, when that works */
+        fewer?: AskOption & { label: string };
+    };
 }

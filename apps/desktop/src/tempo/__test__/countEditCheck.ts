@@ -8,7 +8,8 @@
  *   A row on a removed beat (a page, a measure, a cue, a prop change) is carried to the survivor
  *   (the first count left after the removed ones) or dropped only where the carry rules say so
  *   (`dropped` lists those, with why). Tables no count edit should touch are unchanged.
- * - **Counts.** Every count left keeps its length, notes, hold and tempo point, and shifts by the
+ * - **Counts.** Every count left keeps its length, notes, hold and tempo point (the count after
+ *   removed ones takes theirs too: their tempo point, and their notes before its own), and shifts by the
  *   counts added or removed when it is after the spot; new counts are plain counts of the given
  *   length; "keep everything else in place" writes exactly the lengths it was given.
  * - **Seconds.** Every count after the spot (so every page start, cue, measure and prop change on
@@ -26,6 +27,7 @@
  *   brings back exactly the edited state.
  */
 import { performRedo, performUndo } from "@/db-functions/history";
+import { keepInPlaceLengths } from "../tempoMath";
 import type { DbConnection } from "@/test/base";
 import {
     deleteCounts,
@@ -309,15 +311,25 @@ export async function applyAndCheck(
             problems.push(
                 `${where}: count ${o} (beat ${id}) is now count ${o2}, expected ${expectedOrdinal}`,
             );
+        // The count after removed ones takes their tempo point and notes (written first)
+        const want: Record<string, unknown> = { ...b };
+        if (edit.kind === "delete" && b === before.beats[edit.to]) {
+            const gone = before.beats.slice(Math.max(1, edit.from), edit.to);
+            const notes = [...gone.map((g) => g.notes), b.notes]
+                .map((x) => (typeof x === "string" ? x.trim() : ""))
+                .filter(Boolean);
+            if (notes.length) want.notes = notes.join("\n");
+            if (gone.some((g) => g.tempo_change)) want.tempo_change = 1;
+        }
         for (const k of [
             "notes",
             "tempo_hold",
             "tempo_change",
             "include_in_measure",
         ])
-            if (!same(b[k], now[k]))
+            if (!same(want[k], now[k]))
                 problems.push(
-                    `${where}: count ${o} ${k} ${JSON.stringify(b[k])} → ${JSON.stringify(now[k])}`,
+                    `${where}: count ${o} ${k} ${JSON.stringify(want[k])} → ${JSON.stringify(now[k])}`,
                 );
         if (!respacedOrdinals.has(o2) && !close(n(b.duration), n(now.duration)))
             problems.push(
@@ -854,23 +866,19 @@ export function respacedFor(
     edit:
         | { kind: "insert"; at: number; count: number; len: number }
         | { kind: "delete"; from: number; to: number },
+    holds: ReadonlySet<number> = new Set(),
 ): Respaced {
-    const before = durations.slice(span.a, span.e);
-    let total = 0;
-    for (let b = span.a; b < span.e; b++) total += durations[b]!;
-    const lengths =
-        edit.kind === "insert"
-            ? [
-                  ...before.slice(0, edit.at - span.a),
-                  ...Array<number>(edit.count).fill(edit.len),
-                  ...before.slice(edit.at - span.a),
-              ]
-            : [
-                  ...before.slice(0, edit.from - span.a),
-                  ...before.slice(edit.to - span.a),
-              ];
-    const sum = lengths.reduce((a, b) => a + b, 0);
-    return { from: span.a, lengths: lengths.map((l) => (l * total) / sum) };
+    return keepInPlaceLengths(durations, holds, span, edit);
+}
+
+/** The counts that are holds, by count number, from the database */
+export async function holdsOf(db: DbConnection): Promise<Set<number>> {
+    const s = await readState(db);
+    return new Set(
+        (await rows(db, "beats"))
+            .filter((b) => b.tempo_hold)
+            .map((b) => s.ordinal.get(n(b.id))!),
+    );
 }
 
 /** Durations by count number, from the database */

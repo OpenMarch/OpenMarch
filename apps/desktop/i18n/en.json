@@ -4355,6 +4355,16 @@
                 },
                 "countsFewer": "{count, plural, one {# count fewer} other {# counts fewer}}",
                 "countsMore": "{count, plural, one {# count more} other {# counts more}}",
+                "hidden": {
+                    "fewer": "Remove {where} instead",
+                    "fewerHint": "Leaves one count between the keyframe and the flag.",
+                    "fixHint": "They reach the set a count before {move} ends, and the counts are removed. One undo takes both back.",
+                    "fixTooShort": "Their keyframe would be only one count long, so it can't end any earlier.",
+                    "marchersMore": "{names} and {count, plural, one {# other} other {# others}}",
+                    "text": "Their keyframe would end on the same count as {move}. Where two moves end together the keyframe wins, so they'd never stand on that set.",
+                    "theMove": "the move under it",
+                    "title": "{marchers} would miss the set at the end of {move}"
+                },
                 "laterCountsStay": "Later counts stay on the music: for when they already are.",
                 "noMoveHere": "no move here",
                 "pageCounts": "Page {page}: {from} → {to, plural, one {# count} other {# counts}}",
@@ -4364,6 +4374,7 @@
                     "keep": "The counts around it fill the same time ({where}: {from} → {to, plural, one {# count} other {# counts}}, {tempo}).",
                     "manyKeep": "{moves, plural, other {The # moves over it keep their counts by ending later}}, if nothing is in the way there.",
                     "manyShift": "{moves, plural, other {The # moves over it get shorter.}}",
+                    "marksGo": "{count, plural, one {Rehearsal mark {marks} goes: the measure left there keeps its own.} other {Rehearsal marks {marks} go: the measure left there keeps its own.}}",
                     "noMove": "No move runs over it.",
                     "oneKeep": "{move} keeps its {moveCounts, plural, one {# count} other {# counts}} by ending {count, plural, one {# count} other {# counts}} later, if nothing is in the way there.",
                     "oneShift": "{move} gets {count, plural, one {# count} other {# counts}} shorter.",
@@ -4480,17 +4491,18 @@
                 "tooFastOrSlow": "{action}: that would make a count too fast or too slow"
             }
         },
-        "errors": {
-            "cantRemoveLastCount": "Can't remove the last count",
-            "moveOneCountLong": "That move is only one count long",
-            "wouldRemovePage": "That would remove a page. Remove fewer counts, or delete the page first."
-        },
         "button": {
             "hint": "Line the counts up with the music: tempo, time signatures, rehearsal marks",
             "hintOn": "Line the counts up with the music. <escape></escape> or <toggle></toggle> leaves.",
             "label": "Tempo mode",
             "labelOn": "Tempo mode: on",
             "text": "Tempo"
+        },
+        "errors": {
+            "cantRemoveLastCount": "Can't remove the last count",
+            "moveOneCountLong": "That move is only one count long",
+            "wouldHideSet": "That would leave a keyframe ending on the same count as the move under it, hiding that move's set. Remove fewer counts, or end the keyframe a count earlier.",
+            "wouldRemovePage": "That would remove a page. Remove fewer counts, or delete the page first."
         },
         "help": {
             "doubleClickLane": {
@@ -4563,6 +4575,10 @@
         },
         "popovers": {
             "countAsk": {
+                "blocked": {
+                    "cancel": "Cancel",
+                    "fix": "End the keyframe a count earlier, then remove"
+                },
                 "footer": "Click one to do it. <enter></enter> does the one marked, your last choice; <escape></escape> cancels, and Undo takes any of them back.",
                 "hold": "Hold the drill here instead",
                 "holdIntro": "The music has no extra beat, but the marchers need a breath here?",

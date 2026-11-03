@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+    keepInPlaceLengths,
     MAX_COUNT_SECONDS,
     MIN_COUNT_SECONDS,
+    newCountLength,
     rampLengths,
     regroupMeasures,
     retime,
@@ -70,5 +72,56 @@ describe("regroupMeasures", () => {
 describe("guards", () => {
     it("regroupMeasures refuses measures of no counts instead of looping", () => {
         expect(() => regroupMeasures([1, 5], 9, 1, 0)).toThrow(RangeError);
+    });
+});
+
+describe("newCountLength", () => {
+    // counts 1–4 at 0.5 s, count 3 a 2 s hold
+    const durations = [0, 0.5, 0.5, 2, 0.5];
+    it("is the count before's length", () => {
+        expect(newCountLength(durations, new Set(), 3)).toBe(0.5);
+    });
+    it("skips a hold before it: a fermata isn't the tempo", () => {
+        expect(newCountLength(durations, new Set([3]), 4)).toBe(0.5);
+        expect(newCountLength([0, 0.6, 2], new Set([2]), 3)).toBe(0.6);
+    });
+    it("looks after it when every count before is a hold", () => {
+        expect(newCountLength([0, 2, 0.4], new Set([1]), 2)).toBe(0.4);
+    });
+});
+
+describe("keepInPlaceLengths", () => {
+    it("fills the measure's seconds with one more count", () => {
+        const r = keepInPlaceLengths(
+            [0, 0.5, 0.5, 0.5, 0.5],
+            new Set(),
+            { a: 1, e: 5 },
+            { kind: "insert", at: 3, count: 1, len: 0.5 },
+        );
+        expect(r.from).toBe(1);
+        expect(r.lengths).toHaveLength(5);
+        expect(r.lengths.reduce((a, b) => a + b, 0)).toBeCloseTo(2);
+    });
+    it("keeps a hold's seconds; the other counts make up the time", () => {
+        const r = keepInPlaceLengths(
+            [0, 0.5, 2, 0.5, 0.5],
+            new Set([2]),
+            { a: 1, e: 5 },
+            { kind: "delete", from: 4, to: 5 },
+        );
+        expect(r.lengths).toHaveLength(3);
+        expect(r.lengths[1]).toBe(2);
+        expect(r.lengths.reduce((a, b) => a + b, 0)).toBeCloseTo(3.5);
+        expect(r.lengths[0]).toBeCloseTo(0.75);
+    });
+    it("puts added counts at the end of the measure when added after its last count", () => {
+        const r = keepInPlaceLengths(
+            [0, 0.5, 0.5],
+            new Set(),
+            { a: 1, e: 3 },
+            { kind: "insert", at: 3, count: 1, len: 0.5 },
+        );
+        expect(r.lengths).toHaveLength(3);
+        expect(r.lengths.reduce((a, b) => a + b, 0)).toBeCloseTo(1);
     });
 });

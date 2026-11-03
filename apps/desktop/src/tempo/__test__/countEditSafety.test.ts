@@ -2,7 +2,12 @@ import { expect } from "vitest";
 import { asc, sql } from "drizzle-orm";
 import { describeDbTests, schema, type DbConnection } from "@/test/base";
 import { performUndo } from "@/db-functions/history";
-import { deleteCounts, insertCounts } from "../tempoWrites";
+import {
+    deleteCounts,
+    HiddenSetError,
+    insertCounts,
+    readHiddenSets,
+} from "../tempoWrites";
 import {
     beatIds,
     buildRichShow,
@@ -17,8 +22,10 @@ import {
     durations,
     measureSpan,
     respacedFor,
+    holdsOf,
     type CountEdit,
 } from "./countEditCheck";
+import { newCountLength } from "../tempoMath";
 
 /**
  * Adding and removing counts in tempo mode never loses data and never moves what the user didn't
@@ -172,7 +179,10 @@ const CASES: Case[] = [
         27,
         PAGE3,
     ),
-    remove("the whole m. 9 after a renumbered measure (31–34)", 31, 35),
+    // the shape (27–31) would end with page 4's move on page 5's flag and hide page 4's set
+    remove("the whole m. 9 after a renumbered measure (31–34)", 31, 35, {
+        refused: /keyframe ending on the same count/,
+    }),
     remove("the whole m. 10, numbered -3 (35–38)", 35, 39),
     remove("the whole m. 12 with mark C, in the last page (43–46)", 43, 47),
     remove(
@@ -188,15 +198,12 @@ const CASES: Case[] = [
         PAGE3,
     ),
     remove("a selection across page 6's flag (39–42)", 39, 43),
-    // marcher 1 holds the flag, so where it puts it down moves with its path too
+    // the keyframe would end with page 2's move on page 3's flag and hide page 2's set
     remove(
         "every count between a keyframe's end and the page's end (14–16)",
         14,
         17,
-        {
-            layerTie: true,
-            propMoves: true,
-        },
+        { refused: /keyframe ending on the same count/ },
     ),
     // ---- refused
     remove("a shape's whole animation (27–30)", 27, 31, {
@@ -220,9 +227,10 @@ async function editFor(
     choice: Choice,
 ): Promise<CountEdit> {
     const d = await durations(db);
+    const holds = await holdsOf(db);
     if (c.kind === "add") {
         // the new counts get the length of the count before (TempoBand `len`)
-        const len = d[Math.max(1, c.at - 1)] ?? 0.5;
+        const len = newCountLength(d, holds, c.at);
         const edit: CountEdit = {
             kind: "insert",
             at: c.at,
@@ -232,12 +240,17 @@ async function editFor(
         };
         if (choice === "keepInPlace") {
             const span = await measureSpan(db, c.at === 1 ? 1 : c.at - 1);
-            edit.respaced = respacedFor(d, span, {
-                kind: "insert",
-                at: c.at,
-                count: c.count,
-                len,
-            });
+            edit.respaced = respacedFor(
+                d,
+                span,
+                {
+                    kind: "insert",
+                    at: c.at,
+                    count: c.count,
+                    len,
+                },
+                holds,
+            );
         }
         return edit;
     }
@@ -249,11 +262,16 @@ async function editFor(
     };
     if (choice === "keepInPlace") {
         const span = await measureSpan(db, c.at);
-        edit.respaced = respacedFor(d, span, {
-            kind: "delete",
-            from: c.at,
-            to: c.count,
-        });
+        edit.respaced = respacedFor(
+            d,
+            span,
+            {
+                kind: "delete",
+                from: c.at,
+                to: c.count,
+            },
+            holds,
+        );
     }
     return edit;
 }
@@ -647,7 +665,7 @@ describeDbTests("bugs found by these tests (regressions)", (it) => {
 describeDbTests(
     "behavior the owner should know about (passing, by design today)",
     (it) => {
-        it("removing the count a tempo point is on removes the point; the count after doesn't take it", async ({
+        it("removing the count a tempo point is on moves the point to the count after", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -657,19 +675,23 @@ describeDbTests(
             const points = s.beats.flatMap((b, i) =>
                 b.tempo_change ? [i] : [],
             );
-            expect(points).toEqual([9]);
+            expect(points).toEqual([9, 29]);
         });
 
-        it("removing a count removes the notes written on it", async ({
+        it("removing a count hands its notes to the count after", async ({
             db,
             marchersAndPages: _,
         }) => {
             await buildRichShow(db);
+            const noted = (await readState(db)).beats.findIndex(
+                (b, i) => i === 44 && b.notes,
+            );
+            expect(noted).toBe(44);
+            const note = (await readState(db)).beats[44]!.notes;
             await deleteCounts({ from: 44, to: 45, drill: "adjust" });
             const s = await readState(db);
-            expect(s.beats.filter((b) => b.notes).map((b) => b.notes)).toEqual([
-                "breath",
-            ]);
+            expect(s.beats[44]!.notes).toBe(note);
+            expect(s.beats.filter((b) => b.notes)).toHaveLength(2);
         });
 
         it("removing a measure drops its rehearsal mark when the measure after has its own", async ({
@@ -742,19 +764,61 @@ describeDbTests(
             expect(starts.slice(4, 6)).toEqual([17, 22]);
         });
 
-        it("removing the counts between a keyframe's end and its page's end hides that page's set for the keyframe's marchers", async ({
+        it("removing the counts between a keyframe's end and its page's end is refused, writing nothing", async ({
             db,
             marchersAndPages: _,
         }) => {
             await buildRichShow(db);
             // marchers 1–3: a keyframe over counts 11–14 on top of page 2's move (counts 9–17)
+            const hidden = await readHiddenSets({ from: 14, to: 17 });
+            expect(hidden).toHaveLength(1);
+            expect(hidden[0]!.marchers.length).toBeGreaterThan(0);
+            expect(hidden[0]!.end).toBe(14);
+            const before = await dumpAll(db);
+            await expect(
+                deleteCounts({ from: 14, to: 17, drill: "adjust" }),
+            ).rejects.toBeInstanceOf(HiddenSetError);
+            expect(await dumpAll(db)).toEqual(before);
+            // leaving one count after the keyframe hides nothing
+            expect(await readHiddenSets({ from: 14, to: 16 })).toEqual([]);
+        });
+
+        it("ending the keyframe a count earlier keeps the page's set, in one undo step", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            await buildRichShow(db);
             const set = (await positionsAt(db, [17])).get(17)!.get(1)!;
-            await deleteCounts({ from: 14, to: 17, drill: "adjust" });
-            // both moves end on count 14 (page 3's flag) now, and the keyframe, on top, wins there:
-            // marcher 1 stands on the keyframe's spot at page 3's flag, never on page 2's set
+            const before = await dumpAll(db);
+            await deleteCounts({
+                from: 14,
+                to: 17,
+                drill: "adjust",
+                endEarly: true,
+            });
+            // page 3's flag is count 14 now: marcher 1 stands on page 2's set there
             const atFlag = (await positionsAt(db, [14])).get(14)!.get(1)!;
-            expect(atFlag).toEqual([300, 120]);
-            expect(atFlag).not.toEqual(set);
+            expect(atFlag).toEqual(set);
+            await performUndo(db);
+            expect(await dumpAll(db)).toEqual(before);
+        });
+
+        it("with keep too, the keyframe ends a count earlier and the set shows", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            await buildRichShow(db);
+            const set = (await positionsAt(db, [17])).get(17)!.get(1)!;
+            await deleteCounts({
+                from: 14,
+                to: 17,
+                drill: "keep",
+                endEarly: true,
+            });
+            // page 3's flag is still count 14 (page 2's move can't take its counts back: page
+            // 3's move is in the way), and marcher 1 stands on page 2's set there
+            const atFlag = (await positionsAt(db, [14])).get(14)!.get(1)!;
+            expect(atFlag).toEqual(set);
         });
 
         it("removing a selection that holds a whole keyframe or shape is refused, writing nothing", async ({

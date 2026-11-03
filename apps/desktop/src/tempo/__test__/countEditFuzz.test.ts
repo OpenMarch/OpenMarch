@@ -9,8 +9,10 @@ import {
     durations,
     measureSpan,
     respacedFor,
+    holdsOf,
     type CountEdit,
 } from "./countEditCheck";
+import { newCountLength } from "../tempoMath";
 
 /**
  * Random sequences of count edits on the rich show (`countEditShow.ts`), each checked by
@@ -65,12 +67,13 @@ async function editOf(
     d: Draw,
 ): Promise<CountEdit> {
     const lengths = await durations(db);
+    const holds = await holdsOf(db);
     // keep everything else in place is offered for one count only
     const choice =
         d.count > 1 && d.choice === "keepInPlace" ? "keepOnly" : d.choice;
     const drill = choice === "shift" ? "adjust" : "keep";
     if (d.kind === "add") {
-        const len = lengths[Math.max(1, d.at - 1)] ?? 0.5;
+        const len = newCountLength(lengths, holds, d.at);
         const edit: CountEdit = {
             kind: "insert",
             at: d.at,
@@ -83,6 +86,7 @@ async function editOf(
                 lengths,
                 await measureSpan(db, d.at === 1 ? 1 : d.at - 1),
                 { kind: "insert", at: d.at, count: 1, len },
+                holds,
             );
         return edit;
     }
@@ -95,11 +99,16 @@ async function editOf(
     if (choice === "keepInPlace" && d.at + 1 < lengths.length) {
         const span = await measureSpan(db, d.at);
         if (span.e - span.a > 1)
-            edit.respaced = respacedFor(lengths, span, {
-                kind: "delete",
-                from: d.at,
-                to: d.at + 1,
-            });
+            edit.respaced = respacedFor(
+                lengths,
+                span,
+                {
+                    kind: "delete",
+                    from: d.at,
+                    to: d.at + 1,
+                },
+                holds,
+            );
     }
     return edit;
 }
