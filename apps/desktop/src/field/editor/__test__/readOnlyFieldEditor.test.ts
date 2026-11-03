@@ -7,8 +7,7 @@ import {
     type FieldPointer,
 } from "../fieldEditor";
 import type { MarcherPosition } from "../moveGesture";
-import { VisualsFieldEditor } from "../visualsFieldEditor";
-import { cancelFieldPoint, requestFieldPoint } from "../../fieldPointPick";
+import { ReadOnlyFieldEditor } from "../readOnlyFieldEditor";
 import { useGestureChipStore } from "@/input/gestureChipStore";
 import { watchKeyListeners } from "@/shapes/__test__/keyListeners";
 
@@ -57,7 +56,7 @@ function setup({
                 }),
         ),
     };
-    const editor = new VisualsFieldEditor(ports, { now: () => clock.now });
+    const editor = new ReadOnlyFieldEditor(ports, { now: () => clock.now });
     return { editor, state, ports, clock };
 }
 
@@ -77,7 +76,7 @@ const at = (
 });
 
 const click = (
-    editor: VisualsFieldEditor,
+    editor: ReadOnlyFieldEditor,
     x: number,
     y: number,
     modifiers?: Parameters<typeof at>[2],
@@ -87,7 +86,7 @@ const click = (
 };
 
 const drag = (
-    editor: VisualsFieldEditor,
+    editor: ReadOnlyFieldEditor,
     from: { x: number; y: number },
     to: { x: number; y: number },
 ) => {
@@ -98,7 +97,7 @@ const drag = (
 };
 
 /** A click, then a double-click-and-drag around marchers 2 and 3. */
-const lassoAround2And3 = (editor: VisualsFieldEditor) => {
+const lassoAround2And3 = (editor: ReadOnlyFieldEditor) => {
     const points = [
         [150, 50],
         [350, 50],
@@ -112,7 +111,7 @@ const lassoAround2And3 = (editor: VisualsFieldEditor) => {
     editor.pointerUp(at(150, 60));
 };
 
-describe("VisualsFieldEditor read-only (Visuals mode)", () => {
+describe("ReadOnlyFieldEditor read-only", () => {
     const ALL = [1, 2, 3, 4];
 
     it("still selects by click, marquee and lasso", () => {
@@ -203,33 +202,9 @@ describe("VisualsFieldEditor read-only (Visuals mode)", () => {
     });
 });
 
-describe("VisualsFieldEditor picking a field point", () => {
-    afterEach(() => cancelFieldPoint());
-
-    it("gives the press to the asker: it selects and moves nothing", () => {
-        const { editor, state } = setup({ selected: [2] });
-        const onPoint = vi.fn();
-        requestFieldPoint(onPoint);
-        click(editor, 100, 100);
-        expect(onPoint).toHaveBeenCalledWith({ x: 100, y: 100 });
-        expect(state.selected).toEqual([2]);
-        // the next press is the editor's again
-        click(editor, 100, 100);
-        expect(state.selected).toEqual([1]);
-    });
-
-    it("leaves other presses to the app's own takePress", () => {
-        const takePress = vi.fn(() => true);
-        const { editor, state } = setup({ takePress });
-        click(editor, 100, 100);
-        expect(takePress).toHaveBeenCalledOnce();
-        expect(state.selected).toEqual([]);
-    });
-});
-
 // Field modes (the shape tool, a selected placed box) come with #181's `FieldEditor.setMode`;
 // stood in for here, so the hold works whichever lands first
-describe("VisualsFieldEditor and field modes", () => {
+describe("ReadOnlyFieldEditor and field modes", () => {
     const proto = FieldEditor.prototype as { setMode?(mode: unknown): void };
     afterEach(() => {
         delete proto.setMode;

@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Walang aksyong ire-redo",
             "noUndoAvailable": "Walang aksyong ia-undo",
-            "redidCueEdit": "Na-redo ang isang pag-edit ng cue (Visuals)",
-            "redidDrillEdit": "Na-redo ang isang pag-edit ng drill (Editor)",
             "redo": "I-redo",
             "redoFailed": "Hindi nailapat ang redo, kaya walang nagbago.",
             "undo": "I-undo",
-            "undidCueEdit": "Na-undo ang isang pag-edit ng cue (Visuals)",
-            "undidDrillEdit": "Na-undo ang isang pag-edit ng drill (Editor)",
             "undoFailed": "Hindi nailapat ang undo, kaya walang nagbago."
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "Ipakita ang mga posisyon sa panimulang marka",
             "toggleStartFlagPositions": "I-toggle ang mga posisyon sa panimulang marka",
             "toggleStartFlagPositionsKeywords": "previous paths dots where marchers were came from hold peek latch nakaraan landas tuldok miyembro pinanggalingan pindutin silip",
-            "toggleWorkspace": "Lumipat ng workspace (Editor o Visuals)",
-            "toggleWorkspaceKeywords": "visuals editor workspace cues mode lumipat",
             "showNextPaths": "Ipakita ang mga path sa susunod na pahina",
             "toggleNextPaths": "I-toggle ang mga path sa susunod na pahina",
             "togglePreview": "I-preview ang palabas",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "Isara",
-        "editsDrill": "Binabago nito ang drill — lumipat sa Editor",
         "empty": "Walang tugmang command.",
         "navigate": "Mag-navigate",
         "placeholder": "Maghanap ng command…",
@@ -3712,258 +3705,6 @@
         "saved": "Na-save ang mga setting ng palabas",
         "updateFailed": "Hindi na-update ang mga setting ng workspace"
     },
-    "visuals": {
-        "workspace": {
-            "label": "Workspace",
-            "editor": "Editor",
-            "visuals": "Visuals",
-            "preview": "Preview"
-        },
-        "channels": {
-            "feet": "Paa",
-            "horn": "Horn",
-            "equipment": "Kagamitan",
-            "hornEquipment": "Horn / Kagamitan",
-            "facing": "Harap",
-            "body": "Katawan"
-        },
-        "inspector": {
-            "title": "Visuals",
-            "who": "Sino",
-            "band": "Banda",
-            "selection": "Napili",
-            "selectionCount": "{count, plural, =0 {Walang napili} one {# ang napili} other {# ang napili}}",
-            "sections": "Mga seksyon",
-            "tags": "Mga tag",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Alisin ang focus",
-            "focusHint": "I-click ang isang grupo para i-focus ito. Lalabo ang lahat ng iba sa field."
-        },
-        "band": {
-            "editing": "Ine-edit: {channel} para sa {who}",
-            "focusFirst": "Visuals: mag-focus ng grupo sa inspector para ma-edit ang mga cue nito",
-            "selectFirst": "Pumili ng mga miyembro sa field para gumawa ng mga cue para sa napili",
-            "marchers": "{count, plural, one {# miyembro} other {# miyembro}}",
-            "mixed": "Halo-halo",
-            "rowCue": "{who}: {value}",
-            "lane": "Lane ng cue",
-            "paste": "{count, plural, one {I-paste ang # cue sa playhead} other {I-paste ang # cue sa playhead}}",
-            "flagged": "{count, plural, one {# cue na may problema} other {# cue na may problema}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Burahin",
-            "where": "{who}, {where}",
-            "count": "bilang {count}",
-            "start": "simula",
-            "value": "Halaga",
-            "notForEveryone": "{value} (hindi bagay sa lahat)",
-            "transition": "Transisyon (bilang)",
-            "length": "Haba (bilang)",
-            "ripple": "Ripple",
-            "rippleSpan": "Haba ng ripple (bilang)",
-            "rippleOrder": "Pagkakasunod",
-            "order": {
-                "drill": "Pagkakasunod sa drill",
-                "left_right": "Kaliwa pakanan",
-                "right_left": "Kanan pakaliwa",
-                "down_form": "Pababa sa formation"
-            },
-            "notes": "Mga tala",
-            "facingWheel": "Anggulo ng pagharap",
-            "pickPoint": "Pumili ng punto sa field",
-            "pickingPoint": "Mag-click ng punto sa field (<keys></keys> para kanselahin)"
-        },
-        "why": {
-            "title": "Bakit, sa {where}",
-            "value": "{value}: {n} sa {total}",
-            "setBy": "Itinakda ng <cue></cue>",
-            "setByTakenOver": "Itinakda ng <cue></cue> (mula sa {channel}, na pumalit dito)",
-            "beat": "Tinalo ang <cues></cues>",
-            "cue": "{value} para sa {who} sa {where}",
-            "default": {
-                "library": "Ang default",
-                "carry": "Ang default para sa dala nila",
-                "section_equipment": "Ang karaniwang gamit ng seksyon",
-                "equipment_fallback": "Ang karaniwang gamit para sa pangalan ng seksyon",
-                "marcher_carries": "Ang karaniwan nilang dala",
-                "section_color": "Ang 2D na kulay ng seksyon",
-                "band_uniform": "Ang uniporme ng banda",
-                "guard_uniform": "Ang uniporme ng color guard"
-            }
-        },
-        "settings": {
-            "pace": "Bilis",
-            "moving": "Habang gumagalaw",
-            "onHolds": "Sa mga hold",
-            "stepOffFoot": "Unang hakbang",
-            "angle": "Anggulo ng horn",
-            "degrees": "Anggulo (digri)",
-            "x": "Punto x",
-            "y": "Punto y",
-            "energy": "Enerhiya"
-        },
-        "options": {
-            "single": "Single",
-            "half": "Half time",
-            "double": "Double time",
-            "straightLeg": "Tuwid na binti",
-            "bentLeg": "Baluktot na binti",
-            "highStep": "Mataas na hakbang",
-            "stand": "Nakatayo",
-            "markTime": "Mark time",
-            "highMarkTime": "High mark time",
-            "left": "Kaliwa",
-            "right": "Kanan",
-            "box": "Ang box",
-            "plus10": "10° sa itaas ng box",
-            "low": "Mababa",
-            "medium": "Katamtaman",
-            "high": "Mataas"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Hakbang",
-                    "label": "Hakbang",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Horns up",
-                    "label": "HU"
-                },
-                "down": {
-                    "name": "Horns down",
-                    "label": "HD"
-                },
-                "trail": {
-                    "name": "Trail",
-                    "label": "Trail"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Tumutugtog",
-                    "label": "Tugtog"
-                },
-                "sticksIn": {
-                    "name": "Sticks in",
-                    "label": "In"
-                },
-                "sticksDown": {
-                    "name": "Sticks down",
-                    "label": "Down"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Flag set",
-                    "label": "Set"
-                },
-                "port": {
-                    "name": "Flag port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Flag drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Flag single toss",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Present",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Rifle drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Rifle single toss",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Rifle double toss",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre set",
-                    "label": "Set"
-                },
-                "toss1": {
-                    "name": "Sabre single toss",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Harap",
-                    "label": "Harap"
-                },
-                "back": {
-                    "name": "Likod",
-                    "label": "Likod"
-                },
-                "side1": {
-                    "name": "Side 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Side 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Direksyon ng paggalaw",
-                    "label": "Direksyon"
-                },
-                "angle": {
-                    "name": "Anggulo",
-                    "label": "Anggulo"
-                },
-                "point": {
-                    "name": "Paharap sa isang punto",
-                    "label": "Punto"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Lumuhod",
-                    "label": "Luhod"
-                },
-                "choreo": {
-                    "name": "Koreograpiya",
-                    "label": "Choreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Sumasalungat sa ibang cue sa parehong bilang.",
-            "phrase_overlap": "Sumasapaw sa ibang phrase.",
-            "takeover_while_moving": "Kinokontrol ang mga paa habang gumagalaw ang dot.",
-            "fits_nobody": "Hindi angkop sa alinman sa mga miyembro nito.",
-            "kind_not_allowed": "Isa itong phrase sa channel na tumatanggap lang ng mga state.",
-            "transition_cut": "Nagsisimula ang transition nito bago pa makarating ang naunang cue."
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "Zoom",
@@ -4218,5 +3959,10 @@
         "tiny": "Napakaliit",
         "toFive": "{steps, number} to 5",
         "undefined": "Hindi matukoy"
+    },
+    "workspace": {
+        "label": "Workspace",
+        "editor": "Editor",
+        "preview": "Preview"
     }
 }

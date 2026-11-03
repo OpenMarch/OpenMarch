@@ -45,13 +45,9 @@
         "edit": {
             "noRedoAvailable": "No action to redo",
             "noUndoAvailable": "No action to undo",
-            "redidCueEdit": "Redid a cue edit (Visuals)",
-            "redidDrillEdit": "Redid a drill edit (Editor)",
             "redo": "Redo",
             "redoFailed": "The redo couldn't be applied, so nothing changed.",
             "undo": "Undo",
-            "undidCueEdit": "Undid a cue edit (Visuals)",
-            "undidDrillEdit": "Undid a drill edit (Editor)",
             "undoFailed": "The undo couldn't be applied, so nothing changed."
         },
         "file": {
@@ -171,8 +167,6 @@
             "showStartFlagPositions": "Show start flag positions",
             "toggleStartFlagPositions": "Toggle start flag positions",
             "toggleStartFlagPositionsKeywords": "previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Switch workspace (Editor or Visuals)",
-            "toggleWorkspaceKeywords": "visuals editor workspace cues mode",
             "showNextPaths": "Show next page paths",
             "toggleNextPaths": "Toggle next page paths",
             "togglePreview": "Preview the show",
@@ -369,7 +363,6 @@
     },
     "commandPalette": {
         "close": "Close",
-        "editsDrill": "Edits the drill — switch to Editor",
         "empty": "No matching commands.",
         "navigate": "Navigate",
         "placeholder": "Search commands…",
@@ -3798,258 +3791,6 @@
         "saved": "Show settings saved",
         "updateFailed": "Failed to update workspace settings"
     },
-    "visuals": {
-        "workspace": {
-            "label": "Workspace",
-            "editor": "Editor",
-            "visuals": "Visuals",
-            "preview": "Preview"
-        },
-        "channels": {
-            "feet": "Feet",
-            "horn": "Horn",
-            "equipment": "Equipment",
-            "hornEquipment": "Horn / Equipment",
-            "facing": "Facing",
-            "body": "Body"
-        },
-        "inspector": {
-            "title": "Visuals",
-            "who": "Who",
-            "band": "Band",
-            "selection": "Selection",
-            "selectionCount": "{count, plural, =0 {Nothing selected} one {# selected} other {# selected}}",
-            "sections": "Sections",
-            "tags": "Tags",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Clear focus",
-            "focusHint": "Click a who to focus it. Everyone else dims on the field."
-        },
-        "band": {
-            "editing": "Editing: {channel} for {who}",
-            "focusFirst": "Visuals: focus a who in the inspector to edit its cues",
-            "selectFirst": "Select marchers on the field to make cues for the selection",
-            "marchers": "{count, plural, one {# marcher} other {# marchers}}",
-            "mixed": "Mixed",
-            "rowCue": "{who}: {value}",
-            "lane": "Cue lane",
-            "paste": "{count, plural, one {Paste # cue at the playhead} other {Paste # cues at the playhead}}",
-            "flagged": "{count, plural, one {# flagged cue} other {# flagged cues}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Delete",
-            "where": "{who}, {where}",
-            "count": "count {count}",
-            "start": "the start",
-            "value": "Value",
-            "notForEveryone": "{value} (doesn't fit everyone)",
-            "transition": "Transition (counts)",
-            "length": "Length (counts)",
-            "ripple": "Ripple",
-            "rippleSpan": "Ripple over (counts)",
-            "rippleOrder": "Order",
-            "order": {
-                "drill": "Drill order",
-                "left_right": "Left to right",
-                "right_left": "Right to left",
-                "down_form": "Down the form"
-            },
-            "notes": "Notes",
-            "facingWheel": "Facing angle",
-            "pickPoint": "Pick the point on the field",
-            "pickingPoint": "Click a point on the field (<keys></keys> cancels)"
-        },
-        "why": {
-            "title": "Why, at {where}",
-            "value": "{value}: {n} of {total}",
-            "setBy": "Set by <cue></cue>",
-            "setByTakenOver": "Set by <cue></cue> (taken over from {channel})",
-            "beat": "Beat <cues></cues>",
-            "cue": "{value} for {who} on {where}",
-            "default": {
-                "library": "The default",
-                "carry": "The default for what they carry",
-                "section_equipment": "The section's usual equipment",
-                "equipment_fallback": "The usual equipment for the section's name",
-                "marcher_carries": "What they usually carry",
-                "section_color": "The section's 2D color",
-                "band_uniform": "The band uniform",
-                "guard_uniform": "The guard uniform"
-            }
-        },
-        "settings": {
-            "pace": "Pace",
-            "moving": "Moving",
-            "onHolds": "On holds",
-            "stepOffFoot": "Step off",
-            "angle": "Horn angle",
-            "degrees": "Angle (degrees)",
-            "x": "Point x",
-            "y": "Point y",
-            "energy": "Energy"
-        },
-        "options": {
-            "single": "Single",
-            "half": "Half time",
-            "double": "Double time",
-            "straightLeg": "Straight leg",
-            "bentLeg": "Bent leg",
-            "highStep": "High step",
-            "stand": "Stand",
-            "markTime": "Mark time",
-            "highMarkTime": "High mark time",
-            "left": "Left",
-            "right": "Right",
-            "box": "The box",
-            "plus10": "10° above the box",
-            "low": "Low",
-            "medium": "Medium",
-            "high": "High"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Step",
-                    "label": "Step",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Horns up",
-                    "label": "HU"
-                },
-                "down": {
-                    "name": "Horns down",
-                    "label": "HD"
-                },
-                "trail": {
-                    "name": "Trail",
-                    "label": "Trail"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Playing",
-                    "label": "Play"
-                },
-                "sticksIn": {
-                    "name": "Sticks in",
-                    "label": "In"
-                },
-                "sticksDown": {
-                    "name": "Sticks down",
-                    "label": "Down"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Flag set",
-                    "label": "Set"
-                },
-                "port": {
-                    "name": "Flag port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Flag drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Flag single toss",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Present",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Rifle drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Rifle single toss",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Rifle double toss",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre set",
-                    "label": "Set"
-                },
-                "toss1": {
-                    "name": "Sabre single toss",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Front",
-                    "label": "Front"
-                },
-                "back": {
-                    "name": "Back",
-                    "label": "Back"
-                },
-                "side1": {
-                    "name": "Side 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Side 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Direction of travel",
-                    "label": "Travel"
-                },
-                "angle": {
-                    "name": "Angle",
-                    "label": "Angle"
-                },
-                "point": {
-                    "name": "Toward a point",
-                    "label": "Point"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Kneel",
-                    "label": "Kneel"
-                },
-                "choreo": {
-                    "name": "Choreography",
-                    "label": "Choreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Clashes with another cue on the same count.",
-            "phrase_overlap": "Overlaps another phrase.",
-            "takeover_while_moving": "Takes over the feet while the dot moves.",
-            "fits_nobody": "Fits none of its marchers.",
-            "kind_not_allowed": "Is a phrase on a channel that takes states only.",
-            "transition_cut": "Its transition starts before the cue before it lands."
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "Zoom",
@@ -4304,5 +4045,10 @@
         "tiny": "Tiny",
         "toFive": "{steps, number} to 5",
         "undefined": "Undefined"
+    },
+    "workspace": {
+        "label": "Workspace",
+        "editor": "Editor",
+        "preview": "Preview"
     }
 }

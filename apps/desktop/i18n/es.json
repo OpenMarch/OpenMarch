@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "No hay ninguna acción para rehacer",
             "noUndoAvailable": "No hay ninguna acción para deshacer",
-            "redidCueEdit": "Se rehízo una edición de cue (Visuales)",
-            "redidDrillEdit": "Se rehízo una edición del drill (Editor)",
             "redo": "Rehacer",
             "redoFailed": "No se pudo rehacer, así que no cambió nada.",
             "undo": "Deshacer",
-            "undidCueEdit": "Se deshizo una edición de cue (Visuales)",
-            "undidDrillEdit": "Se deshizo una edición del drill (Editor)",
             "undoFailed": "No se pudo deshacer, así que no cambió nada."
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "Mostrar posiciones del marcador de inicio",
             "toggleStartFlagPositions": "Alternar posiciones del marcador de inicio",
             "toggleStartFlagPositionsKeywords": "trayectorias anteriores puntos donde estaban integrantes de donde venian mantener vistazo fijar previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Cambiar espacio de trabajo (Editor o Visuales)",
-            "toggleWorkspaceKeywords": "visuales editor espacio de trabajo cues señales modo visuals workspace mode",
             "showNextPaths": "Mostrar trayectorias de la página siguiente",
             "toggleNextPaths": "Alternar trayectorias de la página siguiente",
             "togglePreview": "Previsualizar el show",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "Cerrar",
-        "editsDrill": "Edita el drill — cambia a Editor",
         "empty": "Ningún comando coincide.",
         "navigate": "Navegar",
         "placeholder": "Buscar comandos…",
@@ -3712,258 +3705,6 @@
         "saved": "Configuración del show guardada",
         "updateFailed": "No se pudo actualizar la configuración del show"
     },
-    "visuals": {
-        "workspace": {
-            "label": "Espacio de trabajo",
-            "editor": "Editor",
-            "visuals": "Visuales",
-            "preview": "Vista previa"
-        },
-        "channels": {
-            "feet": "Pies",
-            "horn": "Instrumento",
-            "equipment": "Implementos",
-            "hornEquipment": "Instrumento / Implementos",
-            "facing": "Orientación",
-            "body": "Cuerpo"
-        },
-        "inspector": {
-            "title": "Visuales",
-            "who": "Quién",
-            "band": "Banda",
-            "selection": "Selección",
-            "selectionCount": "{count, plural, =0 {Nada seleccionado} one {# seleccionado} other {# seleccionados}}",
-            "sections": "Secciones",
-            "tags": "Etiquetas",
-            "unnamedTag": "etiqueta-{id}",
-            "clearFocus": "Quitar enfoque",
-            "focusHint": "Haz clic en un grupo para enfocarlo. Los demás se atenúan en el campo."
-        },
-        "band": {
-            "editing": "Editando: {channel} para {who}",
-            "focusFirst": "Visuales: enfoca un grupo en el inspector para editar sus cues",
-            "selectFirst": "Selecciona integrantes en el campo para crear cues para la selección",
-            "marchers": "{count, plural, one {# integrante} other {# integrantes}}",
-            "mixed": "Mixto",
-            "rowCue": "{who}: {value}",
-            "lane": "Carril de cues",
-            "paste": "{count, plural, one {Pegar # cue en el cabezal de reproducción} other {Pegar # cues en el cabezal de reproducción}}",
-            "flagged": "{count, plural, one {# cue marcado} other {# cues marcados}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Eliminar",
-            "where": "{who}, {where}",
-            "count": "tiempo {count}",
-            "start": "el inicio",
-            "value": "Valor",
-            "notForEveryone": "{value} (no aplica a todos)",
-            "transition": "Transición (tiempos)",
-            "length": "Duración (tiempos)",
-            "ripple": "Onda",
-            "rippleSpan": "Duración de la onda (tiempos)",
-            "rippleOrder": "Orden",
-            "order": {
-                "drill": "Orden del drill",
-                "left_right": "De izquierda a derecha",
-                "right_left": "De derecha a izquierda",
-                "down_form": "A lo largo de la formación"
-            },
-            "notes": "Notas",
-            "facingWheel": "Ángulo de orientación",
-            "pickPoint": "Elegir el punto en el campo",
-            "pickingPoint": "Haz clic en un punto del campo (<keys></keys> para cancelar)"
-        },
-        "why": {
-            "title": "Por qué, en {where}",
-            "value": "{value}: {n} de {total}",
-            "setBy": "Definido por <cue></cue>",
-            "setByTakenOver": "Definido por <cue></cue> (de {channel}, que tiene prioridad)",
-            "beat": "Prevaleció sobre <cues></cues>",
-            "cue": "{value} para {who} en {where}",
-            "default": {
-                "library": "El valor predeterminado",
-                "carry": "El valor predeterminado según lo que llevan",
-                "section_equipment": "El equipo habitual de la sección",
-                "equipment_fallback": "El equipo habitual según el nombre de la sección",
-                "marcher_carries": "Lo que lleva habitualmente",
-                "section_color": "El color 2D de la sección",
-                "band_uniform": "El uniforme de la banda",
-                "guard_uniform": "El uniforme del color guard"
-            }
-        },
-        "settings": {
-            "pace": "Ritmo",
-            "moving": "En movimiento",
-            "onHolds": "En pausas",
-            "stepOffFoot": "Pie de salida",
-            "angle": "Ángulo del instrumento",
-            "degrees": "Ángulo (grados)",
-            "x": "Punto x",
-            "y": "Punto y",
-            "energy": "Energía"
-        },
-        "options": {
-            "single": "Tiempo simple",
-            "half": "Medio tiempo",
-            "double": "Doble tiempo",
-            "straightLeg": "Pierna recta",
-            "bentLeg": "Pierna flexionada",
-            "highStep": "Paso alto",
-            "stand": "Quieto",
-            "markTime": "Marcar el paso",
-            "highMarkTime": "Marcar el paso alto",
-            "left": "Izquierdo",
-            "right": "Derecho",
-            "box": "Posición base",
-            "plus10": "10° sobre la posición base",
-            "low": "Baja",
-            "medium": "Media",
-            "high": "Alta"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Paso",
-                    "label": "Paso",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MP"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Instrumentos arriba",
-                    "label": "Arriba"
-                },
-                "down": {
-                    "name": "Instrumentos abajo",
-                    "label": "Abajo"
-                },
-                "trail": {
-                    "name": "Instrumento al costado",
-                    "label": "Costado"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Tocando",
-                    "label": "Toca"
-                },
-                "sticksIn": {
-                    "name": "Baquetas sobre el tambor",
-                    "label": "Sobre"
-                },
-                "sticksDown": {
-                    "name": "Baquetas abajo",
-                    "label": "Abajo"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Bandera en posición",
-                    "label": "Pos"
-                },
-                "port": {
-                    "name": "Bandera en diagonal",
-                    "label": "Diag"
-                },
-                "dropSpin": {
-                    "name": "Giro bajo de bandera",
-                    "label": "Giro"
-                },
-                "toss1": {
-                    "name": "Lanzamiento simple de bandera",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Rifle en diagonal",
-                    "label": "Diag"
-                },
-                "present": {
-                    "name": "Presentar armas",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Giro bajo de rifle",
-                    "label": "Giro"
-                },
-                "toss1": {
-                    "name": "Lanzamiento simple de rifle",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lanzamiento doble de rifle",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sable en posición",
-                    "label": "Pos"
-                },
-                "toss1": {
-                    "name": "Lanzamiento simple de sable",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Frente",
-                    "label": "Frente"
-                },
-                "back": {
-                    "name": "Atrás",
-                    "label": "Atrás"
-                },
-                "side1": {
-                    "name": "Lado 1",
-                    "label": "L1"
-                },
-                "side2": {
-                    "name": "Lado 2",
-                    "label": "L2"
-                },
-                "travel": {
-                    "name": "Dirección de avance",
-                    "label": "Avance"
-                },
-                "angle": {
-                    "name": "Ángulo",
-                    "label": "Ángulo"
-                },
-                "point": {
-                    "name": "Hacia un punto",
-                    "label": "Punto"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "De rodillas",
-                    "label": "Rodilla"
-                },
-                "choreo": {
-                    "name": "Coreografía",
-                    "label": "Coreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Entra en conflicto con otro cue en el mismo tiempo.",
-            "phrase_overlap": "Se superpone con otra frase.",
-            "takeover_while_moving": "Toma el control de los pies mientras el punto se desplaza.",
-            "fits_nobody": "No es adecuado para ninguno de sus integrantes.",
-            "kind_not_allowed": "Es una frase en un canal que solo admite estados.",
-            "transition_cut": "Su transición empieza antes de que termine de llegar el cue anterior."
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "Zoom",
@@ -4218,5 +3959,10 @@
         "tiny": "Mínimo",
         "toFive": "{steps, number} a 5",
         "undefined": "Sin definir"
+    },
+    "workspace": {
+        "label": "Espacio de trabajo",
+        "editor": "Editor",
+        "preview": "Vista previa"
     }
 }

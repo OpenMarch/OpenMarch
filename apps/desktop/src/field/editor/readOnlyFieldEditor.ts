@@ -1,4 +1,3 @@
-import { takeFieldPoint } from "../fieldPointPick";
 import {
     FieldEditor,
     type DropResult,
@@ -10,31 +9,20 @@ import {
 } from "./fieldEditor";
 
 /**
- * The field editor with what Visuals mode needs (performer-behavior.md
- * section 7.1), built on the editor's ports and public methods only:
- *
- * - A press while something asks for a field point (`requestFieldPoint`, a
- *   Facing cue toward a point) is that point, and nothing more.
- * - Read-only ({@link setReadOnly}): clicks, the marquee and the lasso still
- *   select, as the selection is who a cue is for, but no drag, scale, rotation
- *   or typed rotation moves a marcher: no move starts, nothing is drawn moved
- *   and nothing drops, and no field mode (a shape tool) is on.
+ * The field editor that can turn read-only (Preview), built on the editor's
+ * ports and public methods only. Read-only ({@link setReadOnly}): clicks, the
+ * marquee and the lasso still select, but no drag, scale, rotation or typed
+ * rotation moves a marcher: no move starts, nothing is drawn moved and nothing
+ * drops, and no field mode (a shape tool) is on.
  */
-export class VisualsFieldEditor extends FieldEditor {
+export class ReadOnlyFieldEditor extends FieldEditor {
     private readOnly = false;
-    /** The press being handed to the editor, for the field point's port. */
-    private pressing: FieldPointer | null = null;
 
     constructor(ports: FieldEditorPorts, options?: FieldEditorOptions) {
-        const self: { editor?: VisualsFieldEditor } = {};
+        const self: { editor?: ReadOnlyFieldEditor } = {};
         super(
             {
                 ...ports,
-                takePress: () => {
-                    const pointer = self.editor?.pressing;
-                    if (pointer && takeFieldPoint(pointer.field)) return true;
-                    return ports.takePress?.() ?? false;
-                },
                 // Read-only draws nothing moved; clearing still goes through
                 showPositions: (positions) => {
                     if (positions === null || !self.editor?.readOnly)
@@ -69,15 +57,6 @@ export class VisualsFieldEditor extends FieldEditor {
             this.wantedMode = mode;
             setMode(this.readOnly ? null : mode);
         };
-    }
-
-    override pointerDown(pointer: FieldPointer): boolean {
-        this.pressing = pointer;
-        try {
-            return super.pointerDown(pointer);
-        } finally {
-            this.pressing = null;
-        }
     }
 
     /**

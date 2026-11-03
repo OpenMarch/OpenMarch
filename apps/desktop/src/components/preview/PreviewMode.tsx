@@ -10,8 +10,8 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 /**
- * Runs Preview (`PreviewModeStore`), the workspace switch's third mode: **Alt+P** turns it on and
- * off and **Esc** leaves it, back to the Editor or Visuals as before. Going in
+ * Runs Preview (`PreviewModeStore`), the workspace switch's other mode: **Alt+P** turns it on and
+ * off and **Esc** leaves it, back to the Editor. Going in
  * leaves anything mid-edit: an isolated move, a line drag, and the beat editor, which edits too
  * (and comes back on leaving). Playback that loops or plays a window once plays on instead, as
  * Preview always does. Mount once, in the editor.

@@ -22,7 +22,6 @@ import { pageFlags, type FlagPage } from "@/timeline/timelinePlayhead";
 import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
 import { joinList } from "@/timeline/translateTimelineText";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import {
     basicPageBox,
     planCanvasEdit,
@@ -289,8 +288,6 @@ export function TimelineFromStartBadge() {
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
     const { pages } = useTimingObjects()!;
     const basic = useIsBasicMode();
-    // What a drop edits: nothing drops in Visuals mode (performer-behavior.md 7.1)
-    const visuals = useIsVisualsView();
     const range = selection.kind === "range" ? selection : null;
     // UI-17: with looping on, the loop's name when it isn't the window being edited
     const loop = useTimelineSelectionStore((s) => s.loop);
@@ -418,7 +415,7 @@ export function TimelineFromStartBadge() {
     }, [flashKey]);
     // Announced once the window settles, not on every beat of a scrub; and at once when the line
     // comes back (leaving isolation, UI-14 round-2 review), not with what it said while hidden
-    const hidden = isolated || visuals || selection.kind === "none";
+    const hidden = isolated || selection.kind === "none";
     const [announced, setAnnounced] = useState(sentence);
     const wasHidden = useRef(hidden);
     // Before paint, so the live region never shows the stale sentence

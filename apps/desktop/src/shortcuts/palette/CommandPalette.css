@@ -148,7 +148,7 @@
     color: var(--color-text-subtitle);
     font-size: 12px;
 }
-/* Why a greyed-out row can't run (Visuals mode's drill edits) */
+/* Why a greyed-out row can't run (Preview turns edits off) */
 .palette-item-reason {
     flex-shrink: 0;
     color: var(--color-text-subtitle);

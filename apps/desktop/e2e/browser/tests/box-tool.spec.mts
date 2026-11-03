@@ -1394,7 +1394,7 @@ for (const [how, start] of [
         await expect.poll(onNewSpots).toBe(true);
     });
 
-test("change: playing hides an open box until it stops, and Visuals until the Editor is back; neither places it", async ({
+test("change: playing hides an open box until it stops, and Preview until the Editor is back; neither places it", async ({
     show,
 }) => {
     const { page } = show;
@@ -1410,7 +1410,7 @@ test("change: playing hides an open box until it stops, and Visuals until the Ed
     await expect(page.getByTestId("shape-tool-readout")).toBeVisible();
     expect(await openBox(page)).toEqual(before);
 
-    await page.getByTestId("workspace-view-visuals").click();
+    await page.getByTestId("workspace-view-preview").click();
     await expect(page.getByTestId("shape-tool-readout")).toBeHidden();
     await expect(awayChip(page)).toBeHidden();
     await page.getByTestId("workspace-view-editor").click();

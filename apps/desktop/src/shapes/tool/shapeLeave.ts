@@ -9,7 +9,7 @@ import {
 /**
  * How an open shape ends without Enter (spec #344, "Leaving"; #416):
  *
- * - Nothing else places it. Moving around the timeline, playing, Visuals and a new selection
+ * - Nothing else places it. Moving around the timeline, playing and a new selection
  *   leave it open; while it can't be seen it waits (`isShapeHidden`) and nothing acts on it.
  * - Escape: the shape is discarded, and that is an undo step of its own: undo right after it
  *   brings the shape back with its numbers, who goes where and its own history. The away chip's

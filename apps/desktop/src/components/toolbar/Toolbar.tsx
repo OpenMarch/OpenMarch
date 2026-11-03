@@ -11,16 +11,13 @@ import { useCollisionStore } from "@/stores/CollisionStore";
 import SelectTab from "./tabs/SelectTab";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
-import VisualsToolbar from "@/components/visuals/VisualsToolbar";
-import WorkspaceViewSwitch from "@/components/visuals/WorkspaceViewSwitch";
-import View3dButton from "@/components/visuals/View3dButton";
+import WorkspaceViewSwitch from "./WorkspaceViewSwitch";
+import View3dButton from "./View3dButton";
 
 export default function Topbar() {
     const [activeTab, setActiveTab] = useState("alignment");
     const { selectedPage } = useSelectedPage()!;
     const { currentCollisions } = useCollisionStore();
-    const visuals = useIsVisualsView();
 
     // Switch from collisions tab to alignment when page changes and no collisions exist. Not while
     // playing or scrubbing, when the selected page follows the playhead (#226): the tab waits for
@@ -51,66 +48,59 @@ export default function Topbar() {
                 />
                 <WorkspaceViewSwitch />
             </div>
-            {visuals ? (
-                <VisualsToolbar />
-            ) : (
-                <Tabs
-                    value={activeTab}
-                    onValueChange={setActiveTab}
-                    className="flex flex-col gap-0 overflow-hidden"
-                >
-                    <TabsList className="gap-0 border-none">
-                        <TabItem value="file">
-                            <T keyName="inspector.shape.fileTab" />
+            <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="flex flex-col gap-0 overflow-hidden"
+            >
+                <TabsList className="gap-0 border-none">
+                    <TabItem value="file">
+                        <T keyName="inspector.shape.fileTab" />
+                    </TabItem>
+                    <TabItem value="alignment">
+                        <T keyName="inspector.shape.alignmentTab" />
+                    </TabItem>
+                    <TabItem value="shapes" data-testid="toolbar-shapes-tab">
+                        <T keyName="inspector.shape.shapesTab" />
+                    </TabItem>
+
+                    <TabItem value="select">
+                        <T keyName="inspector.shape.selectTab" />
+                    </TabItem>
+                    {selectedPage && currentCollisions.length > 0 && (
+                        <TabItem value="collisions">
+                            <div className="flex items-center gap-4">
+                                <WarningIcon
+                                    width={18}
+                                    height={18}
+                                    className="text-yellow size-20"
+                                />
+                                <T keyName="toolbar.collisions.tab" />
+                            </div>
                         </TabItem>
-                        <TabItem value="alignment">
-                            <T keyName="inspector.shape.alignmentTab" />
-                        </TabItem>
-                        <TabItem
-                            value="shapes"
-                            data-testid="toolbar-shapes-tab"
-                        >
-                            <T keyName="inspector.shape.shapesTab" />
-                        </TabItem>
+                    )}
+                </TabsList>
 
-                        <TabItem value="select">
-                            <T keyName="inspector.shape.selectTab" />
-                        </TabItem>
-                        {selectedPage && currentCollisions.length > 0 && (
-                            <TabItem value="collisions">
-                                <div className="flex items-center gap-4">
-                                    <WarningIcon
-                                        width={18}
-                                        height={18}
-                                        className="text-yellow size-20"
-                                    />
-                                    <T keyName="toolbar.collisions.tab" />
-                                </div>
-                            </TabItem>
-                        )}
-                    </TabsList>
+                <TabContent value="file">
+                    <FileTab />
+                </TabContent>
 
-                    <TabContent value="file">
-                        <FileTab />
-                    </TabContent>
+                <TabContent value="alignment">
+                    <AlignmentTab />
+                </TabContent>
 
-                    <TabContent value="alignment">
-                        <AlignmentTab />
-                    </TabContent>
+                <TabContent value="shapes">
+                    <ShapesTab />
+                </TabContent>
 
-                    <TabContent value="shapes">
-                        <ShapesTab />
-                    </TabContent>
+                <TabContent value="select">
+                    <SelectTab />
+                </TabContent>
 
-                    <TabContent value="select">
-                        <SelectTab />
-                    </TabContent>
-
-                    <TabContent value="collisions">
-                        <CollisionsTab />
-                    </TabContent>
-                </Tabs>
-            )}
+                <TabContent value="collisions">
+                    <CollisionsTab />
+                </TabContent>
+            </Tabs>
         </div>
     );
 }

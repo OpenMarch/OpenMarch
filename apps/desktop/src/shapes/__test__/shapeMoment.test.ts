@@ -1,8 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
-import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import { boxTool } from "../box/boxTool";
 import { openTool } from "../tool/toolMachine";
@@ -144,7 +142,7 @@ describe("an open shape's moment (#416)", () => {
         expect(useShapeToolStore.getState().moment).toBeNull();
     });
 
-    it("an open shape waits hidden while the show plays, in Visuals and in Preview", () => {
+    it("an open shape waits hidden while the show plays and in Preview", () => {
         store().selectRange(9, 12);
         openShapeTool(drawn(), null);
         expect(isShapeHidden()).toBe(false);
@@ -153,12 +151,6 @@ describe("an open shape's moment (#416)", () => {
         expect(isShapeHidden()).toBe(true);
         expect(isShapeAway()).toBe(false);
         store().setPlayback(null);
-        expect(isShapeHidden()).toBe(false);
-
-        useEditorModeStore.setState({ mode: "expert" });
-        useWorkspaceViewStore.getState().setView("visuals");
-        expect(isShapeHidden()).toBe(true);
-        useWorkspaceViewStore.getState().setView("editor");
         expect(isShapeHidden()).toBe(false);
 
         usePreviewModeStore.setState({ isPreview: true });

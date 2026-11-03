@@ -56,8 +56,7 @@ import {
 } from "@/field/fieldQuality";
 import { FieldEditor } from "@/field/editor/fieldEditor";
 import { settingsMoveOptions } from "@/field/editor/settingsMoveOptions";
-import { VisualsFieldEditor } from "@/field/editor/visualsFieldEditor";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
+import { ReadOnlyFieldEditor } from "@/field/editor/readOnlyFieldEditor";
 import { setActiveFieldEditor } from "@/field/editor/activeFieldEditor";
 import { takeFieldPress } from "@/field/takeFieldPress";
 import { setShapeField } from "@/shapes/field/shapeField";
@@ -372,7 +371,7 @@ function ThreeFieldView() {
 
     const editor = useMemo(
         () =>
-            new VisualsFieldEditor(
+            new ReadOnlyFieldEditor(
                 {
                     selection: {
                         get: () => selection.current,
@@ -461,14 +460,10 @@ function ThreeFieldView() {
         setActiveFieldEditor(editor);
         return () => setActiveFieldEditor(null);
     }, [editor]);
-    // Visuals mode edits cues: the field only selects there (performer-behavior.md 7.1). Preview
-    // edits nothing: the editor hears no presses there at all (`EditorInput`), only navigation
-    const visuals = useIsVisualsView();
+    // Preview edits nothing: the editor hears no presses there at all (`EditorInput`), only
+    // navigation
     const previewing = useIsPreviewMode();
-    useEffect(
-        () => editor.setReadOnly(visuals || previewing),
-        [editor, visuals, previewing],
-    );
+    useEffect(() => editor.setReadOnly(previewing), [editor, previewing]);
     // A rotation typed into the inspector belongs to its selection and page:
     // when either changes before it's saved, it's dropped (#198)
     useEffect(() => editor.selectionChanged(), [editor, selectedIds]);

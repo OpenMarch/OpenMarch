@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Tiada tindakan untuk dibuat semula",
             "noUndoAvailable": "Tiada tindakan untuk dibuat asal",
-            "redidCueEdit": "Suntingan isyarat dibuat semula (Visual)",
-            "redidDrillEdit": "Suntingan drill dibuat semula (Penyunting)",
             "redo": "Buat semula",
             "redoFailed": "Buat semula tidak dapat dilaksanakan, jadi tiada apa-apa yang berubah.",
             "undo": "Buat asal",
-            "undidCueEdit": "Suntingan isyarat dibuat asal (Visual)",
-            "undidDrillEdit": "Suntingan drill dibuat asal (Penyunting)",
             "undoFailed": "Buat asal tidak dapat dilaksanakan, jadi tiada apa-apa yang berubah."
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "Tunjukkan kedudukan penanda mula",
             "toggleStartFlagPositions": "Togol kedudukan penanda mula",
             "toggleStartFlagPositionsKeywords": "previous paths dots where marchers were came from hold peek latch laluan sebelumnya titik kedudukan pemain asal dari tahan intai kunci",
-            "toggleWorkspace": "Tukar ruang kerja (Editor atau Visual)",
-            "toggleWorkspaceKeywords": "visuals editor workspace cues mode visual penyunting ruang kerja isyarat mod",
             "showNextPaths": "Tunjukkan laluan halaman seterusnya",
             "toggleNextPaths": "Togol laluan halaman seterusnya",
             "togglePreview": "Pratonton persembahan",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "Tutup",
-        "editsDrill": "Mengedit drill — tukar ke Editor",
         "empty": "Tiada arahan yang sepadan.",
         "navigate": "Navigasi",
         "placeholder": "Cari arahan…",
@@ -3712,258 +3705,6 @@
         "saved": "Tetapan persembahan disimpan",
         "updateFailed": "Gagal mengemas kini tetapan ruang kerja"
     },
-    "visuals": {
-        "workspace": {
-            "label": "Ruang kerja",
-            "editor": "Editor",
-            "visuals": "Visual",
-            "preview": "Pratonton"
-        },
-        "channels": {
-            "feet": "Kaki",
-            "horn": "Hon",
-            "equipment": "Peralatan",
-            "hornEquipment": "Hon / Peralatan",
-            "facing": "Arah hadap",
-            "body": "Badan"
-        },
-        "inspector": {
-            "title": "Visual",
-            "who": "Siapa",
-            "band": "Band",
-            "selection": "Pilihan",
-            "selectionCount": "{count, plural, =0 {Tiada yang dipilih} other {# dipilih}}",
-            "sections": "Seksyen",
-            "tags": "Tag",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Kosongkan fokus",
-            "focusHint": "Klik satu kumpulan untuk memfokuskannya. Pemain lain menjadi malap di padang."
-        },
-        "band": {
-            "editing": "Mengedit: {channel} untuk {who}",
-            "focusFirst": "Visual: fokuskan satu kumpulan dalam pemeriksa untuk mengedit isyaratnya",
-            "selectFirst": "Pilih pemain di padang untuk membuat isyarat bagi pilihan itu",
-            "marchers": "{count, plural, other {# pemain}}",
-            "mixed": "Campur",
-            "rowCue": "{who}: {value}",
-            "lane": "Lorong isyarat",
-            "paste": "{count, plural, other {Tampal # isyarat pada kepala main}}",
-            "flagged": "{count, plural, other {# isyarat bermasalah}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Isyarat",
-            "delete": "Padam",
-            "where": "{who}, {where}",
-            "count": "kiraan {count}",
-            "start": "permulaan",
-            "value": "Nilai",
-            "notForEveryone": "{value} (tidak sesuai untuk semua)",
-            "transition": "Peralihan (kiraan)",
-            "length": "Panjang (kiraan)",
-            "ripple": "Riak",
-            "rippleSpan": "Riak sepanjang (kiraan)",
-            "rippleOrder": "Urutan",
-            "order": {
-                "drill": "Urutan drill",
-                "left_right": "Kiri ke kanan",
-                "right_left": "Kanan ke kiri",
-                "down_form": "Menyusuri formasi"
-            },
-            "notes": "Nota",
-            "facingWheel": "Sudut arah hadap",
-            "pickPoint": "Pilih titik di padang",
-            "pickingPoint": "Klik satu titik di padang (<keys></keys> untuk batal)"
-        },
-        "why": {
-            "title": "Mengapa, pada {where}",
-            "value": "{value}: {n} daripada {total}",
-            "setBy": "Ditetapkan oleh <cue></cue>",
-            "setByTakenOver": "Ditetapkan oleh <cue></cue> (diambil alih daripada {channel})",
-            "beat": "Mengatasi <cues></cues>",
-            "cue": "{value} untuk {who} pada {where}",
-            "default": {
-                "library": "Lalai",
-                "carry": "Lalai untuk apa yang mereka bawa",
-                "section_equipment": "Peralatan biasa seksyen",
-                "equipment_fallback": "Peralatan biasa bagi nama seksyen",
-                "marcher_carries": "Apa yang biasanya mereka bawa",
-                "section_color": "Warna 2D seksyen",
-                "band_uniform": "Pakaian seragam band",
-                "guard_uniform": "Pakaian seragam color guard"
-            }
-        },
-        "settings": {
-            "pace": "Kadar",
-            "moving": "Semasa bergerak",
-            "onHolds": "Semasa berhenti",
-            "stepOffFoot": "Kaki mula",
-            "angle": "Sudut hon",
-            "degrees": "Sudut (darjah)",
-            "x": "Titik x",
-            "y": "Titik y",
-            "energy": "Tenaga"
-        },
-        "options": {
-            "single": "Tunggal",
-            "half": "Tempo separuh",
-            "double": "Tempo berganda",
-            "straightLeg": "Kaki lurus",
-            "bentLeg": "Kaki bengkok",
-            "highStep": "Langkah tinggi",
-            "stand": "Berdiri",
-            "markTime": "Langkah setempat",
-            "highMarkTime": "Langkah setempat tinggi",
-            "left": "Kiri",
-            "right": "Kanan",
-            "box": "Paras box",
-            "plus10": "10° di atas box",
-            "low": "Rendah",
-            "medium": "Sederhana",
-            "high": "Tinggi"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Langkah",
-                    "label": "Lgk",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "LS"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Hon naik",
-                    "label": "HN"
-                },
-                "down": {
-                    "name": "Hon turun",
-                    "label": "HT"
-                },
-                "trail": {
-                    "name": "Di sisi",
-                    "label": "Sisi"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Bermain",
-                    "label": "Main"
-                },
-                "sticksIn": {
-                    "name": "Kayu bersilang",
-                    "label": "Silang"
-                },
-                "sticksDown": {
-                    "name": "Kayu ke bawah",
-                    "label": "Bawah"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Bendera sedia",
-                    "label": "Sedia"
-                },
-                "port": {
-                    "name": "Bendera port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Bendera pusing rendah",
-                    "label": "Pusing"
-                },
-                "toss1": {
-                    "name": "Lambungan tunggal bendera",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Hormat senjata",
-                    "label": "Hrmt"
-                },
-                "dropSpin": {
-                    "name": "Senapang pusing rendah",
-                    "label": "Pusing"
-                },
-                "toss1": {
-                    "name": "Lambungan tunggal senapang",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lambungan berganda senapang",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Pedang sedia",
-                    "label": "Sedia"
-                },
-                "toss1": {
-                    "name": "Lambungan tunggal pedang",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Hadapan",
-                    "label": "Depan"
-                },
-                "back": {
-                    "name": "Belakang",
-                    "label": "Blkg"
-                },
-                "side1": {
-                    "name": "Sisi 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Sisi 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Arah pergerakan",
-                    "label": "Arah"
-                },
-                "angle": {
-                    "name": "Sudut",
-                    "label": "Sudut"
-                },
-                "point": {
-                    "name": "Ke arah titik",
-                    "label": "Titik"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Melutut",
-                    "label": "Lutut"
-                },
-                "choreo": {
-                    "name": "Koreografi",
-                    "label": "Koreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Bertembung dengan isyarat lain pada kiraan yang sama.",
-            "phrase_overlap": "Bertindih dengan frasa lain.",
-            "takeover_while_moving": "Mengambil alih kawalan kaki semasa titik sedang bergerak.",
-            "fits_nobody": "Tidak sesuai untuk mana-mana pemainnya.",
-            "kind_not_allowed": "Merupakan frasa pada saluran yang hanya menerima keadaan.",
-            "transition_cut": "Peralihannya bermula sebelum isyarat sebelumnya selesai."
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "Zum",
@@ -4218,5 +3959,10 @@
         "tiny": "Sangat kecil",
         "toFive": "{steps, number} ke 5",
         "undefined": "Tidak ditentukan"
+    },
+    "workspace": {
+        "label": "Ruang kerja",
+        "editor": "Editor",
+        "preview": "Pratonton"
     }
 }

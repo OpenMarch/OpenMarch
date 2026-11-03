@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Aucune action à rétablir",
             "noUndoAvailable": "Aucune action à annuler",
-            "redidCueEdit": "Modification d'un top rétablie (Visuels)",
-            "redidDrillEdit": "Modification du drill rétablie (Éditeur)",
             "redo": "Rétablir",
             "redoFailed": "Impossible de rétablir la modification : rien n'a changé.",
             "undo": "Annuler",
-            "undidCueEdit": "Modification d'un top annulée (Visuels)",
-            "undidDrillEdit": "Modification du drill annulée (Éditeur)",
             "undoFailed": "Impossible d'annuler la dernière modification : rien n'a changé."
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "Afficher les positions au repère de début",
             "toggleStartFlagPositions": "Afficher/masquer les positions au repère de début",
             "toggleStartFlagPositionsKeywords": "trajectoires précédentes points où étaient les marcheurs d’où venaient maintenir aperçu coup d’œil verrouiller previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Changer d’espace de travail (Éditeur ou Visuels)",
-            "toggleWorkspaceKeywords": "visuels éditeur espace de travail tops mode visuals editor workspace cues",
             "showNextPaths": "Afficher les trajectoires de la page suivante",
             "toggleNextPaths": "Afficher/masquer les trajectoires de la page suivante",
             "togglePreview": "Prévisualiser le spectacle",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "Fermer",
-        "editsDrill": "Modifie le drill — passez à l'Éditeur",
         "empty": "Aucune commande ne correspond.",
         "navigate": "Naviguer",
         "placeholder": "Rechercher des commandes…",
@@ -3712,258 +3705,6 @@
         "saved": "Paramètres du spectacle enregistrés",
         "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail"
     },
-    "visuals": {
-        "workspace": {
-            "label": "Espace de travail",
-            "editor": "Éditeur",
-            "visuals": "Visuels",
-            "preview": "Aperçu"
-        },
-        "channels": {
-            "feet": "Pieds",
-            "horn": "Instrument",
-            "equipment": "Équipement",
-            "hornEquipment": "Instrument / Équipement",
-            "facing": "Orientation",
-            "body": "Corps"
-        },
-        "inspector": {
-            "title": "Visuels",
-            "who": "Qui",
-            "band": "Orchestre",
-            "selection": "Sélection",
-            "selectionCount": "{count, plural, =0 {Aucune sélection} one {# sélectionné} other {# sélectionnés}}",
-            "sections": "Pupitres",
-            "tags": "Étiquettes",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Retirer le focus",
-            "focusHint": "Cliquez sur un groupe pour lui donner le focus. Tous les autres sont estompés sur le terrain."
-        },
-        "band": {
-            "editing": "Modification : {channel} pour {who}",
-            "focusFirst": "Visuels : donnez le focus à un groupe dans l'inspecteur pour modifier ses tops",
-            "selectFirst": "Sélectionnez des marcheurs sur le terrain pour créer des tops pour la sélection",
-            "marchers": "{count, plural, one {# marcheur} many {# de marcheurs} other {# marcheurs}}",
-            "mixed": "Mixte",
-            "rowCue": "{who} : {value}",
-            "lane": "Piste de tops",
-            "paste": "{count, plural, one {Coller # top à la tête de lecture} many {Coller # de tops à la tête de lecture} other {Coller # tops à la tête de lecture}}",
-            "flagged": "{count, plural, one {# top signalé} many {# de tops signalés} other {# tops signalés}}",
-            "flaggedCue": "{value} : {problems}"
-        },
-        "cue": {
-            "title": "Top",
-            "delete": "Supprimer",
-            "where": "{who}, {where}",
-            "count": "temps {count}",
-            "start": "au début",
-            "value": "Valeur",
-            "notForEveryone": "{value} (ne convient pas à tous)",
-            "transition": "Transition (temps)",
-            "length": "Durée (temps)",
-            "ripple": "Cascade",
-            "rippleSpan": "Durée de la cascade (temps)",
-            "rippleOrder": "Ordre",
-            "order": {
-                "drill": "Ordre du drill",
-                "left_right": "De gauche à droite",
-                "right_left": "De droite à gauche",
-                "down_form": "Le long de la formation"
-            },
-            "notes": "Notes",
-            "facingWheel": "Angle d'orientation",
-            "pickPoint": "Choisir le point sur le terrain",
-            "pickingPoint": "Cliquez sur un point du terrain (<keys></keys> pour annuler)"
-        },
-        "why": {
-            "title": "Pourquoi : {where}",
-            "value": "{value} : {n} sur {total}",
-            "setBy": "Défini par <cue></cue>",
-            "setByTakenOver": "Défini par <cue></cue> (imposé par l'onglet {channel})",
-            "beat": "L'emporte sur <cues></cues>",
-            "cue": "{value} pour {who}, {where}",
-            "default": {
-                "library": "La valeur par défaut",
-                "carry": "La valeur par défaut selon l'équipement porté",
-                "section_equipment": "L'équipement habituel du pupitre",
-                "equipment_fallback": "L'équipement habituel associé au nom du pupitre",
-                "marcher_carries": "L'équipement porté habituellement",
-                "section_color": "La couleur 2D du pupitre",
-                "band_uniform": "L'uniforme de l'orchestre",
-                "guard_uniform": "L'uniforme de la color guard"
-            }
-        },
-        "settings": {
-            "pace": "Cadence",
-            "moving": "En déplacement",
-            "onHolds": "À l'arrêt",
-            "stepOffFoot": "Pied de départ",
-            "angle": "Angle de l'instrument",
-            "degrees": "Angle (degrés)",
-            "x": "Point x",
-            "y": "Point y",
-            "energy": "Énergie"
-        },
-        "options": {
-            "single": "Temps simple",
-            "half": "Demi-temps",
-            "double": "Double temps",
-            "straightLeg": "Jambe tendue",
-            "bentLeg": "Jambe fléchie",
-            "highStep": "Genoux levés",
-            "stand": "Immobile",
-            "markTime": "Marquer le pas",
-            "highMarkTime": "Marquer le pas, genoux levés",
-            "left": "Gauche",
-            "right": "Droite",
-            "box": "Position standard",
-            "plus10": "10° au-dessus de la position standard",
-            "low": "Faible",
-            "medium": "Moyenne",
-            "high": "Élevée"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Pas",
-                    "label": "Pas",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MP"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Instruments levés",
-                    "label": "IL"
-                },
-                "down": {
-                    "name": "Instruments baissés",
-                    "label": "IB"
-                },
-                "trail": {
-                    "name": "Le long du corps",
-                    "label": "Long"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "En jeu",
-                    "label": "Jeu"
-                },
-                "sticksIn": {
-                    "name": "Baguettes croisées",
-                    "label": "Crois."
-                },
-                "sticksDown": {
-                    "name": "Baguettes baissées",
-                    "label": "Bas"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Drapeau prêt",
-                    "label": "Prêt"
-                },
-                "port": {
-                    "name": "Drapeau au port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Rotation basse du drapeau",
-                    "label": "Rot."
-                },
-                "toss1": {
-                    "name": "Lancer simple du drapeau",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port d'armes",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Présenter arme",
-                    "label": "Prés"
-                },
-                "dropSpin": {
-                    "name": "Rotation basse du fusil",
-                    "label": "Rot."
-                },
-                "toss1": {
-                    "name": "Lancer simple du fusil",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lancer double du fusil",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre prêt",
-                    "label": "Prêt"
-                },
-                "toss1": {
-                    "name": "Lancer simple du sabre",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Face",
-                    "label": "Face"
-                },
-                "back": {
-                    "name": "Dos",
-                    "label": "Dos"
-                },
-                "side1": {
-                    "name": "Côté 1",
-                    "label": "C1"
-                },
-                "side2": {
-                    "name": "Côté 2",
-                    "label": "C2"
-                },
-                "travel": {
-                    "name": "Sens du déplacement",
-                    "label": "Dépl."
-                },
-                "angle": {
-                    "name": "Angle",
-                    "label": "Angle"
-                },
-                "point": {
-                    "name": "Vers un point",
-                    "label": "Point"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutre",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "À genoux",
-                    "label": "À genoux"
-                },
-                "choreo": {
-                    "name": "Chorégraphie",
-                    "label": "Choré"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Entre en conflit avec un autre top sur le même temps.",
-            "phrase_overlap": "Chevauche une autre phrase.",
-            "takeover_while_moving": "Prend le contrôle des pieds pendant que le point se déplace.",
-            "fits_nobody": "Ne convient à aucun de ses marcheurs.",
-            "kind_not_allowed": "Est une phrase sur un canal qui n'accepte que des états.",
-            "transition_cut": "Sa transition commence avant que le top précédent ne soit arrivé."
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "Zoom",
@@ -4218,5 +3959,10 @@
         "tiny": "Minuscule",
         "toFive": "{steps, number} pour 5",
         "undefined": "Non défini"
+    },
+    "workspace": {
+        "label": "Espace de travail",
+        "editor": "Éditeur",
+        "preview": "Aperçu"
     }
 }

@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "沒有可重做的操作",
             "noUndoAvailable": "沒有可復原的操作",
-            "redidCueEdit": "已重做一項提示點編輯（視覺）",
-            "redidDrillEdit": "已重做一項隊形編輯（編輯器）",
             "redo": "重做",
             "redoFailed": "無法重做，未進行任何變更。",
             "undo": "復原",
-            "undidCueEdit": "已復原一項提示點編輯（視覺）",
-            "undidDrillEdit": "已復原一項隊形編輯（編輯器）",
             "undoFailed": "無法復原，未進行任何變更。"
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "顯示起始標記位置",
             "toggleStartFlagPositions": "切換起始標記位置",
             "toggleStartFlagPositionsKeywords": "先前 路徑 點 隊員 原本位置 來自 按住 預覽 偷看 鎖定 previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "切換工作區（編輯器或視覺）",
-            "toggleWorkspaceKeywords": "視覺 編輯器 工作區 提示點 模式 visuals editor workspace cues mode",
             "showNextPaths": "顯示下一頁路徑",
             "toggleNextPaths": "切換下一頁路徑",
             "togglePreview": "預覽表演",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "關閉",
-        "editsDrill": "此指令會編輯隊形：請切換至「編輯器」",
         "empty": "沒有符合的指令。",
         "navigate": "瀏覽",
         "placeholder": "搜尋指令…",
@@ -3712,258 +3705,6 @@
         "saved": "表演設定已儲存",
         "updateFailed": "無法更新表演設定"
     },
-    "visuals": {
-        "workspace": {
-            "label": "工作區",
-            "editor": "編輯器",
-            "visuals": "視覺",
-            "preview": "預覽"
-        },
-        "channels": {
-            "feet": "步伐",
-            "horn": "管樂器",
-            "equipment": "器材",
-            "hornEquipment": "管樂器/器材",
-            "facing": "朝向",
-            "body": "身體"
-        },
-        "inspector": {
-            "title": "視覺",
-            "who": "對象",
-            "band": "全體樂團",
-            "selection": "選取範圍",
-            "selectionCount": "{count, plural, =0 {未選取任何隊員} other {已選取#位}}",
-            "sections": "聲部",
-            "tags": "標籤",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "清除焦點",
-            "focusHint": "按一下對象即可聚焦，場地上的其他人會變暗。"
-        },
-        "band": {
-            "editing": "編輯中：{who}的{channel}",
-            "focusFirst": "視覺：在檢閱器中聚焦對象，即可編輯其提示點",
-            "selectFirst": "在場地上選取隊員，即可為選取的隊員建立提示點",
-            "marchers": "{count, plural, other {#位隊員}}",
-            "mixed": "混合",
-            "rowCue": "{who}：{value}",
-            "lane": "提示點軌道",
-            "paste": "{count, plural, other {在播放指示器處貼上#個提示點}}",
-            "flagged": "{count, plural, other {#個提示點有問題}}",
-            "flaggedCue": "{value}：{problems}"
-        },
-        "cue": {
-            "title": "提示點",
-            "delete": "刪除",
-            "where": "{who}，{where}",
-            "count": "第{count}拍",
-            "start": "開頭",
-            "value": "內容",
-            "notForEveryone": "{value}（不適用於所有人）",
-            "transition": "過渡（拍數）",
-            "length": "長度（拍數）",
-            "ripple": "漣漪",
-            "rippleSpan": "漣漪歷時（拍數）",
-            "rippleOrder": "順序",
-            "order": {
-                "drill": "隊形編號順序",
-                "left_right": "由左至右",
-                "right_left": "由右至左",
-                "down_form": "沿隊形依序"
-            },
-            "notes": "備註",
-            "facingWheel": "面向角度",
-            "pickPoint": "在場地上選取點",
-            "pickingPoint": "按一下場地上的點（按<keys></keys>取消）"
-        },
-        "why": {
-            "title": "{where}的原因",
-            "value": "{value}：{n}/{total}",
-            "setBy": "由<cue></cue>設定",
-            "setByTakenOver": "由<cue></cue>設定（由{channel}接管）",
-            "beat": "勝過<cues></cues>",
-            "cue": "{who}在{where}{value}",
-            "default": {
-                "library": "預設值",
-                "carry": "所持器材的預設值",
-                "section_equipment": "聲部的常用器材",
-                "equipment_fallback": "聲部名稱對應的常用器材",
-                "marcher_carries": "平常所持的器材",
-                "section_color": "聲部的2D顏色",
-                "band_uniform": "樂隊制服",
-                "guard_uniform": "旗隊制服"
-            }
-        },
-        "settings": {
-            "pace": "步速",
-            "moving": "行進中",
-            "onHolds": "停駐時",
-            "stepOffFoot": "起步腳",
-            "angle": "樂器角度",
-            "degrees": "角度（度）",
-            "x": "點x",
-            "y": "點y",
-            "energy": "能量"
-        },
-        "options": {
-            "single": "單倍速",
-            "half": "半速",
-            "double": "雙倍速",
-            "straightLeg": "直膝",
-            "bentLeg": "曲膝",
-            "highStep": "高抬腿",
-            "stand": "站立",
-            "markTime": "原地踏步",
-            "highMarkTime": "高抬腿原地踏步",
-            "left": "左腳",
-            "right": "右腳",
-            "box": "標準位置",
-            "plus10": "高於標準位置10°",
-            "low": "低",
-            "medium": "中",
-            "high": "高"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "踏步",
-                    "label": "踏步",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "原踏"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "舉號",
-                    "label": "舉"
-                },
-                "down": {
-                    "name": "放下樂器",
-                    "label": "放"
-                },
-                "trail": {
-                    "name": "側提",
-                    "label": "側提"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "演奏中",
-                    "label": "奏"
-                },
-                "sticksIn": {
-                    "name": "鼓棒收起",
-                    "label": "收"
-                },
-                "sticksDown": {
-                    "name": "鼓棒放下",
-                    "label": "下"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "旗預備",
-                    "label": "預備"
-                },
-                "port": {
-                    "name": "旗斜持",
-                    "label": "斜持"
-                },
-                "dropSpin": {
-                    "name": "旗低轉",
-                    "label": "低轉"
-                },
-                "toss1": {
-                    "name": "旗單圈拋",
-                    "label": "1圈"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "槍斜持",
-                    "label": "斜持"
-                },
-                "present": {
-                    "name": "舉槍",
-                    "label": "舉槍"
-                },
-                "dropSpin": {
-                    "name": "槍低轉",
-                    "label": "低轉"
-                },
-                "toss1": {
-                    "name": "槍單圈拋",
-                    "label": "1圈"
-                },
-                "toss2": {
-                    "name": "槍雙圈拋",
-                    "label": "2圈"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "軍刀預備",
-                    "label": "預備"
-                },
-                "toss1": {
-                    "name": "軍刀單圈拋",
-                    "label": "1圈"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "前方",
-                    "label": "前"
-                },
-                "back": {
-                    "name": "後方",
-                    "label": "後"
-                },
-                "side1": {
-                    "name": "第1側",
-                    "label": "1側"
-                },
-                "side2": {
-                    "name": "第2側",
-                    "label": "2側"
-                },
-                "travel": {
-                    "name": "行進方向",
-                    "label": "行進"
-                },
-                "angle": {
-                    "name": "角度",
-                    "label": "角度"
-                },
-                "point": {
-                    "name": "朝向定點",
-                    "label": "定點"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "自然站姿",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "跪姿",
-                    "label": "跪"
-                },
-                "choreo": {
-                    "name": "編舞",
-                    "label": "編舞"
-                }
-            }
-        },
-        "flags": {
-            "clash": "與同一拍上的另一個提示點衝突。",
-            "phrase_overlap": "與另一個段落重疊。",
-            "takeover_while_moving": "在點位移動時接管腳步。",
-            "fits_nobody": "不適用於任何目標隊員。",
-            "kind_not_allowed": "是段落，但所在通道只接受狀態。",
-            "transition_cut": "轉換在前一個提示點完成前就開始。"
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "縮放",
@@ -4218,5 +3959,10 @@
         "tiny": "極小",
         "toFive": "{steps, number}步5碼",
         "undefined": "未定義"
+    },
+    "workspace": {
+        "label": "工作區",
+        "editor": "編輯器",
+        "preview": "預覽"
     }
 }

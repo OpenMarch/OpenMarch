@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Tidak ada tindakan untuk diulangi",
             "noUndoAvailable": "Tidak ada tindakan untuk diurungkan",
-            "redidCueEdit": "Pengeditan cue diulangi (Visual)",
-            "redidDrillEdit": "Pengeditan drill diulangi (Editor)",
             "redo": "Ulangi",
             "redoFailed": "Tindakan tidak dapat diulangi, jadi tidak ada yang berubah.",
             "undo": "Urungkan",
-            "undidCueEdit": "Pengeditan cue diurungkan (Visual)",
-            "undidDrillEdit": "Pengeditan drill diurungkan (Editor)",
             "undoFailed": "Tindakan tidak dapat diurungkan, jadi tidak ada yang berubah."
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "Tampilkan posisi penanda awal",
             "toggleStartFlagPositions": "Alihkan posisi penanda awal",
             "toggleStartFlagPositionsKeywords": "jalur sebelumnya titik posisi pemain sebelumnya asal tahan intip kunci previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Ganti ruang kerja (Editor atau Visual)",
-            "toggleWorkspaceKeywords": "visual editor ruang kerja cue mode visuals workspace cues",
             "showNextPaths": "Tampilkan jalur halaman berikutnya",
             "toggleNextPaths": "Alihkan jalur halaman berikutnya",
             "togglePreview": "Pratinjau pertunjukan",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "Tutup",
-        "editsDrill": "Mengedit drill — beralih ke Editor",
         "empty": "Tidak ada perintah yang cocok.",
         "navigate": "Navigasi",
         "placeholder": "Cari perintah…",
@@ -3712,258 +3705,6 @@
         "saved": "Pengaturan pertunjukan disimpan",
         "updateFailed": "Gagal memperbarui pengaturan pertunjukan"
     },
-    "visuals": {
-        "workspace": {
-            "label": "Ruang kerja",
-            "editor": "Editor",
-            "visuals": "Visual",
-            "preview": "Pratinjau"
-        },
-        "channels": {
-            "feet": "Kaki",
-            "horn": "Horn",
-            "equipment": "Peralatan",
-            "hornEquipment": "Horn / Peralatan",
-            "facing": "Arah hadap",
-            "body": "Tubuh"
-        },
-        "inspector": {
-            "title": "Visual",
-            "who": "Siapa",
-            "band": "Band",
-            "selection": "Pilihan",
-            "selectionCount": "{count, plural, =0 {Tidak ada yang dipilih} other {# dipilih}}",
-            "sections": "Seksi",
-            "tags": "Tag",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Hapus fokus",
-            "focusHint": "Klik sebuah grup untuk memfokuskannya. Pemain lainnya diredupkan di lapangan."
-        },
-        "band": {
-            "editing": "Mengedit: {channel} untuk {who}",
-            "focusFirst": "Visual: fokuskan sebuah grup di inspector untuk mengedit cue-nya",
-            "selectFirst": "Pilih pemain di lapangan untuk membuat cue bagi pilihan tersebut",
-            "marchers": "{count, plural, other {# pemain}}",
-            "mixed": "Campuran",
-            "rowCue": "{who}: {value}",
-            "lane": "Jalur cue",
-            "paste": "{count, plural, other {Tempel # cue di playhead}}",
-            "flagged": "{count, plural, other {# cue bermasalah}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Hapus",
-            "where": "{who}, {where}",
-            "count": "hitungan {count}",
-            "start": "awal pertunjukan",
-            "value": "Nilai",
-            "notForEveryone": "{value} (tidak cocok untuk semua)",
-            "transition": "Transisi (hitungan)",
-            "length": "Durasi (hitungan)",
-            "ripple": "Ripple",
-            "rippleSpan": "Ripple selama (hitungan)",
-            "rippleOrder": "Urutan",
-            "order": {
-                "drill": "Urutan drill",
-                "left_right": "Kiri ke kanan",
-                "right_left": "Kanan ke kiri",
-                "down_form": "Sepanjang formasi"
-            },
-            "notes": "Catatan",
-            "facingWheel": "Sudut hadap",
-            "pickPoint": "Pilih titik di lapangan",
-            "pickingPoint": "Klik sebuah titik di lapangan (<keys></keys> untuk batal)"
-        },
-        "why": {
-            "title": "Mengapa, pada {where}",
-            "value": "{value}: {n} dari {total}",
-            "setBy": "Diatur oleh <cue></cue>",
-            "setByTakenOver": "Diatur oleh <cue></cue> (diambil alih dari {channel})",
-            "beat": "Mengalahkan <cues></cues>",
-            "cue": "{value} untuk {who} pada {where}",
-            "default": {
-                "library": "Nilai bawaan",
-                "carry": "Bawaan sesuai yang mereka bawa",
-                "section_equipment": "Peralatan biasa seksi tersebut",
-                "equipment_fallback": "Peralatan biasa sesuai nama seksi",
-                "marcher_carries": "Yang biasa mereka bawa",
-                "section_color": "Warna 2D seksi",
-                "band_uniform": "Seragam band",
-                "guard_uniform": "Seragam color guard"
-            }
-        },
-        "settings": {
-            "pace": "Tempo",
-            "moving": "Saat bergerak",
-            "onHolds": "Saat diam",
-            "stepOffFoot": "Kaki awal",
-            "angle": "Sudut horn",
-            "degrees": "Sudut (derajat)",
-            "x": "Titik x",
-            "y": "Titik y",
-            "energy": "Energi"
-        },
-        "options": {
-            "single": "Normal",
-            "half": "Setengah tempo",
-            "double": "Tempo ganda",
-            "straightLeg": "Kaki lurus",
-            "bentLeg": "Kaki ditekuk",
-            "highStep": "Langkah tinggi",
-            "stand": "Berdiri",
-            "markTime": "Jalan di tempat",
-            "highMarkTime": "Jalan di tempat lutut tinggi",
-            "left": "Kiri",
-            "right": "Kanan",
-            "box": "Posisi box",
-            "plus10": "10° di atas box",
-            "low": "Rendah",
-            "medium": "Sedang",
-            "high": "Tinggi"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Melangkah",
-                    "label": "Langkah",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "JDT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Horn naik",
-                    "label": "HN"
-                },
-                "down": {
-                    "name": "Horn turun",
-                    "label": "HT"
-                },
-                "trail": {
-                    "name": "Trail",
-                    "label": "Trail"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Bermain",
-                    "label": "Main"
-                },
-                "sticksIn": {
-                    "name": "Stik bersilang",
-                    "label": "Silang"
-                },
-                "sticksDown": {
-                    "name": "Stik turun",
-                    "label": "Turun"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Set bendera",
-                    "label": "Set"
-                },
-                "port": {
-                    "name": "Port bendera",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Drop spin bendera",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Lemparan tunggal bendera",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Present",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Drop spin rifle",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Lemparan tunggal rifle",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lemparan ganda rifle",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Set sabre",
-                    "label": "Set"
-                },
-                "toss1": {
-                    "name": "Lemparan tunggal sabre",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Depan",
-                    "label": "Depan"
-                },
-                "back": {
-                    "name": "Belakang",
-                    "label": "Blkg"
-                },
-                "side1": {
-                    "name": "Sisi 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Sisi 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Arah gerak",
-                    "label": "Arah"
-                },
-                "angle": {
-                    "name": "Sudut",
-                    "label": "Sudut"
-                },
-                "point": {
-                    "name": "Ke arah titik",
-                    "label": "Titik"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Netral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Berlutut",
-                    "label": "Berlutut"
-                },
-                "choreo": {
-                    "name": "Koreografi",
-                    "label": "Koreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Bentrok dengan cue lain pada hitungan yang sama.",
-            "phrase_overlap": "Tumpang tindih dengan frasa lain.",
-            "takeover_while_moving": "Mengambil alih kaki saat titik sedang bergerak.",
-            "fits_nobody": "Tidak cocok untuk satu pun pemainnya.",
-            "kind_not_allowed": "Berupa frasa pada kanal yang hanya menerima keadaan.",
-            "transition_cut": "Transisinya dimulai sebelum cue sebelumnya selesai tiba."
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "Zoom",
@@ -4218,5 +3959,10 @@
         "tiny": "Sangat kecil",
         "toFive": "{steps, number} to 5",
         "undefined": "Tidak dapat ditentukan"
+    },
+    "workspace": {
+        "label": "Ruang kerja",
+        "editor": "Editor",
+        "preview": "Pratinjau"
     }
 }

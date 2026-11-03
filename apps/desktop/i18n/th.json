@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "ไม่มีการกระทำให้ทำซ้ำ",
             "noUndoAvailable": "ไม่มีการกระทำให้เลิกทำ",
-            "redidCueEdit": "ทำซ้ำการแก้ไขคิวแล้ว (วิชวล)",
-            "redidDrillEdit": "ทำซ้ำการแก้ไขดริลแล้ว (ตัวแก้ไข)",
             "redo": "ทำซ้ำ",
             "redoFailed": "ไม่สามารถทำซ้ำได้ จึงไม่มีการเปลี่ยนแปลงใด ๆ",
             "undo": "เลิกทำ",
-            "undidCueEdit": "เลิกทำการแก้ไขคิวแล้ว (วิชวล)",
-            "undidDrillEdit": "เลิกทำการแก้ไขดริลแล้ว (ตัวแก้ไข)",
             "undoFailed": "ไม่สามารถเลิกทำได้ จึงไม่มีการเปลี่ยนแปลงใด ๆ"
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "แสดงตำแหน่งที่ธงเริ่มต้น",
             "toggleStartFlagPositions": "เปิด/ปิดตำแหน่งที่ธงเริ่มต้น",
             "toggleStartFlagPositionsKeywords": "เส้นทางก่อนหน้า จุด ตำแหน่งเดิม ผู้แสดงมาจากไหน กดค้าง แอบดู ล็อก previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "สลับพื้นที่ทำงาน (ตัวแก้ไขหรือวิชวล)",
-            "toggleWorkspaceKeywords": "วิชวล ตัวแก้ไข พื้นที่ทำงาน คิว โหมด visuals editor workspace cues mode",
             "showNextPaths": "แสดงเส้นทางหน้าถัดไป",
             "toggleNextPaths": "เปิด/ปิดเส้นทางหน้าถัดไป",
             "togglePreview": "ดูตัวอย่างโชว์",
@@ -356,7 +350,6 @@
     },
     "commandPalette": {
         "close": "ปิด",
-        "editsDrill": "แก้ไขดริล — สลับไปที่ตัวแก้ไข",
         "empty": "ไม่พบคำสั่งที่ตรงกัน",
         "navigate": "นำทาง",
         "placeholder": "ค้นหาคำสั่ง…",
@@ -3712,258 +3705,6 @@
         "saved": "บันทึกการตั้งค่าโชว์แล้ว",
         "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ"
     },
-    "visuals": {
-        "workspace": {
-            "label": "พื้นที่ทำงาน",
-            "editor": "ตัวแก้ไข",
-            "visuals": "วิชวล",
-            "preview": "แสดงตัวอย่าง"
-        },
-        "channels": {
-            "feet": "เท้า",
-            "horn": "เครื่องเป่า",
-            "equipment": "อุปกรณ์",
-            "hornEquipment": "เครื่องเป่า / อุปกรณ์",
-            "facing": "ทิศทางการหัน",
-            "body": "ร่างกาย"
-        },
-        "inspector": {
-            "title": "วิชวล",
-            "who": "ใคร",
-            "band": "วง",
-            "selection": "ที่เลือกไว้",
-            "selectionCount": "{count, plural, =0 {ไม่ได้เลือก} other {เลือกแล้ว # คน}}",
-            "sections": "กลุ่มเครื่อง",
-            "tags": "แท็ก",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "ล้างโฟกัส",
-            "focusHint": "คลิกกลุ่มเพื่อโฟกัส ผู้แสดงคนอื่นจะจางลงบนสนาม"
-        },
-        "band": {
-            "editing": "กำลังแก้ไข: {channel} ของ {who}",
-            "focusFirst": "วิชวล: โฟกัสกลุ่มในตัวตรวจสอบเพื่อแก้ไขคิวของกลุ่มนั้น",
-            "selectFirst": "เลือกผู้แสดงบนสนามเพื่อสร้างคิวสำหรับผู้แสดงที่เลือกไว้",
-            "marchers": "{count, plural, other {ผู้แสดง # คน}}",
-            "mixed": "ผสม",
-            "rowCue": "{who}: {value}",
-            "lane": "เลนคิว",
-            "paste": "{count, plural, other {วางคิว # รายการที่หัวเล่น}}",
-            "flagged": "{count, plural, other {คิวที่มีปัญหา # รายการ}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "คิว",
-            "delete": "ลบ",
-            "where": "{who}, {where}",
-            "count": "จังหวะที่ {count}",
-            "start": "จุดเริ่มต้น",
-            "value": "ค่า",
-            "notForEveryone": "{value} (ไม่เหมาะกับทุกคน)",
-            "transition": "การเปลี่ยน (จังหวะ)",
-            "length": "ความยาว (จังหวะ)",
-            "ripple": "ระลอกคลื่น",
-            "rippleSpan": "ระยะระลอก (จังหวะ)",
-            "rippleOrder": "ลำดับ",
-            "order": {
-                "drill": "ลำดับดริล",
-                "left_right": "ซ้ายไปขวา",
-                "right_left": "ขวาไปซ้าย",
-                "down_form": "ไล่ตามแนวรูปขบวน"
-            },
-            "notes": "หมายเหตุ",
-            "facingWheel": "มุมการหัน",
-            "pickPoint": "เลือกจุดบนสนาม",
-            "pickingPoint": "คลิกจุดบนสนาม (กด <keys></keys> เพื่อยกเลิก)"
-        },
-        "why": {
-            "title": "เหตุผล ณ {where}",
-            "value": "{value}: {n} จาก {total}",
-            "setBy": "กำหนดโดย <cue></cue>",
-            "setByTakenOver": "กำหนดโดย <cue></cue> (แทนที่โดย {channel})",
-            "beat": "มีผลเหนือ <cues></cues>",
-            "cue": "{value} สำหรับ {who} ที่ {where}",
-            "default": {
-                "library": "ค่าเริ่มต้น",
-                "carry": "ค่าเริ่มต้นตามสิ่งที่ถือ",
-                "section_equipment": "อุปกรณ์ปกติของกลุ่มเครื่อง",
-                "equipment_fallback": "อุปกรณ์ปกติตามชื่อกลุ่มเครื่อง",
-                "marcher_carries": "สิ่งที่ถือตามปกติ",
-                "section_color": "สี 2D ของกลุ่มเครื่อง",
-                "band_uniform": "เครื่องแบบของวง",
-                "guard_uniform": "เครื่องแบบคัลเลอร์การ์ด"
-            }
-        },
-        "settings": {
-            "pace": "อัตราก้าว",
-            "moving": "ขณะเคลื่อนที่",
-            "onHolds": "ขณะหยุดนิ่ง",
-            "stepOffFoot": "เท้าออกก้าว",
-            "angle": "มุมเครื่องเป่า",
-            "degrees": "มุม (องศา)",
-            "x": "จุด x",
-            "y": "จุด y",
-            "energy": "พลัง"
-        },
-        "options": {
-            "single": "ปกติ",
-            "half": "ครึ่งจังหวะ",
-            "double": "สองเท่า",
-            "straightLeg": "ขาตรง",
-            "bentLeg": "งอขา",
-            "highStep": "ยกเข่าสูง",
-            "stand": "ยืนนิ่ง",
-            "markTime": "ย่ำเท้า",
-            "highMarkTime": "ย่ำเท้ายกเข่าสูง",
-            "left": "ซ้าย",
-            "right": "ขวา",
-            "box": "ระดับบ็อกซ์",
-            "plus10": "สูงกว่าบ็อกซ์ 10°",
-            "low": "ต่ำ",
-            "medium": "ปานกลาง",
-            "high": "สูง"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "ก้าว",
-                    "label": "ก้าว",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "ย่ำ"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "ยกเครื่องขึ้น",
-                    "label": "ยก"
-                },
-                "down": {
-                    "name": "ลดเครื่องลง",
-                    "label": "ลด"
-                },
-                "trail": {
-                    "name": "ถือข้างลำตัว",
-                    "label": "ข้าง"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "กำลังเล่น",
-                    "label": "เล่น"
-                },
-                "sticksIn": {
-                    "name": "ไม้ไขว้บนกลอง",
-                    "label": "ไขว้"
-                },
-                "sticksDown": {
-                    "name": "ไม้ลงข้างลำตัว",
-                    "label": "ลง"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "ธงท่าเตรียม",
-                    "label": "เตรียม"
-                },
-                "port": {
-                    "name": "ธงท่าพอร์ต",
-                    "label": "พอร์ต"
-                },
-                "dropSpin": {
-                    "name": "ธงดรอปสปิน",
-                    "label": "ดรอป"
-                },
-                "toss1": {
-                    "name": "โยนธง 1 รอบ",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "เฉียงอาวุธ",
-                    "label": "เฉียง"
-                },
-                "present": {
-                    "name": "วันทยาวุธ",
-                    "label": "วันทยา"
-                },
-                "dropSpin": {
-                    "name": "ไรเฟิลดรอปสปิน",
-                    "label": "ดรอป"
-                },
-                "toss1": {
-                    "name": "โยนไรเฟิล 1 รอบ",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "โยนไรเฟิล 2 รอบ",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "เซเบอร์ท่าเตรียม",
-                    "label": "เตรียม"
-                },
-                "toss1": {
-                    "name": "โยนเซเบอร์ 1 รอบ",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "ด้านหน้า",
-                    "label": "หน้า"
-                },
-                "back": {
-                    "name": "ด้านหลัง",
-                    "label": "หลัง"
-                },
-                "side1": {
-                    "name": "ด้าน 1",
-                    "label": "ฝ.1"
-                },
-                "side2": {
-                    "name": "ฝั่ง 2",
-                    "label": "ฝ.2"
-                },
-                "travel": {
-                    "name": "ทิศทางการเคลื่อนที่",
-                    "label": "ทิศเดิน"
-                },
-                "angle": {
-                    "name": "มุม",
-                    "label": "มุม"
-                },
-                "point": {
-                    "name": "หันไปยังจุด",
-                    "label": "จุด"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "ปกติ",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "คุกเข่า",
-                    "label": "คุกเข่า"
-                },
-                "choreo": {
-                    "name": "ท่าประกอบ",
-                    "label": "ท่า"
-                }
-            }
-        },
-        "flags": {
-            "clash": "คิวนี้ชนกับคิวอื่นในจังหวะเดียวกัน",
-            "phrase_overlap": "คิวนี้ซ้อนทับกับวลีอื่น",
-            "takeover_while_moving": "คิวนี้เข้าควบคุมเท้าขณะที่จุดกำลังเคลื่อนที่",
-            "fits_nobody": "คิวนี้ไม่เหมาะกับผู้แสดงคนใดของคิวเลย",
-            "kind_not_allowed": "คิวนี้เป็นวลีที่อยู่บนช่องที่รับเฉพาะสถานะ",
-            "transition_cut": "ช่วงเปลี่ยนของคิวนี้เริ่มก่อนที่คิวก่อนหน้าจะเสร็จสิ้น"
-        }
-    },
     "canvas": {
         "zoom": {
             "group": "ซูม",
@@ -4218,5 +3959,10 @@
         "tiny": "เล็กมาก",
         "toFive": "{steps, number} ต่อ 5",
         "undefined": "ไม่ระบุ"
+    },
+    "workspace": {
+        "label": "พื้นที่ทำงาน",
+        "editor": "ตัวแก้ไข",
+        "preview": "แสดงตัวอย่าง"
     }
 }
