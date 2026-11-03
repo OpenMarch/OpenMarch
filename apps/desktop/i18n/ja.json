@@ -174,53 +174,6 @@
         "releaseNotes": "リリースノート",
         "updated": "OpenMarchをv{version}に更新しました"
     },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "著作権所有",
-                "unknown": "ライセンス不明"
-            },
-            "modified": "{credit}（改変）",
-            "none": "このショーにはクレジット表記が必要なものはありません。",
-            "shareNote": {
-                "badge": "共有注意",
-                "detail": "ライセンスが不明なアイテムがあります。このショーと一緒に共有する権利がない可能性があります。",
-                "export": "このショーにはライセンスが不明なアイテムが含まれています。共有する権利がない可能性があります。"
-            },
-            "title": "クレジット",
-            "uncredited": "{count, plural, other {ほか#件のアイテムはCC0または組み込みのため、クレジットは不要です。}}"
-        },
-        "show": {
-            "addFailed": "{name}をライブラリに追加できませんでした。",
-            "added": "{name}をライブラリに追加しました。",
-            "addToLibrary": "マイライブラリに追加",
-            "delete": {
-                "addFirst": "先にマイライブラリに追加",
-                "cancel": "キャンセル",
-                "checking": "使用箇所を確認中…",
-                "confirm": "ライブラリには別のコピーが残ります。この操作は取り消せません。",
-                "confirmNoCopy": "ライブラリにコピーがないため、完全に失われます。この操作は取り消せません。",
-                "confirmUnknownCopy": "この操作は取り消せません。",
-                "delete": "削除",
-                "deleted": "このショーから{name}を削除しました。",
-                "failed": "削除できませんでした。",
-                "inUseTitle": "{name}は使用中です",
-                "isFloor": "このショーのフロアのため、削除できません。フロアは「フィールド設定 → 画像」で変更できます。",
-                "itemModel": "モデル",
-                "keptForUndo": "{name}は、取り消しで元に戻せる間はこのショーに残り、その後ショーを閉じると削除されます。",
-                "label": "このショーから削除",
-                "pinnedBy": "{names}の一部のため、削除できません。",
-                "title": "このショーから{name}を削除しますか？",
-                "usedByItems": "{count, plural, =1 {プロップで使用されているため、削除できません：} other {#個のプロップで使用されているため、削除できません：}}"
-            },
-            "empty": "このショーではまだアセットを使用していません。",
-            "emptyHint": "インポートしたものは、開いているショーにコピーされます。",
-            "title": "このショー",
-            "updateDetails": "ライブラリで詳細が変更されています。",
-            "updateVersion": "ライブラリに新しいバージョンがあります。"
-        },
-        "title": "アセット"
-    },
     "audio": {
         "beats": {
             "create": {
@@ -639,6 +592,7 @@
         "applyFieldType": "フィールドタイプを適用",
         "applyFieldTypeWarning": "メンバーは新しいフィールドタイプのサイズに合わせて移動せず、キャンバス上の現在の位置に留まります。フィールドタイプはいつでも元に戻せます。",
         "buttons": {
+            "importImage": "画像 インポート",
             "newXCheckpoint": "X基準線を追加",
             "newYCheckpoint": "Y基準線を追加",
             "resetTheme": "テーマをデフォルトに戻す",
@@ -742,7 +696,8 @@
             "fieldRatio": "{ratio}または{decimal}",
             "measurementModificationNote": "これらの値は、X座標とY座標、歩幅、背景画像を調整すると変更できます。",
             "noFloor": "フロアなし",
-            "floorUnnamed": "フロア"
+            "floorUnnamed": "フロア",
+            "refreshAfterImporting": "[Ctrl + R] インポート 後に 更新"
         },
         "options": {
             "fill": "埋める",
@@ -774,6 +729,7 @@
             "pathways": "経路"
         },
         "tooltips": {
+            "importImage": "フィールドに表示する 画像 を インポート する",
             "conformMethod": "背景画像をフィールド内に収めるか、フィールド全体を埋めるかを指定します。縦横比は常に維持されます。",
             "directorsLeft": "例：「サイド1」、「客席から見て左」、「下手」",
             "directorsRight": "例：「サイド2」、「客席から見て右」、「上手」",
@@ -1036,7 +992,6 @@
                 "audioNotSaved": "オーディオが保存されていない可能性があります。オーディオは後でエディターから追加できます。",
                 "createFailed": "ショーを作成できませんでした",
                 "databaseNotReady": "データベースの準備ができていません。先にプロジェクトのステップを完了してください。",
-                "fieldImageNotCopied": "以前のショーのフィールド画像をコピーできませんでした",
                 "filePathRequired": "ファイルパスを指定してください",
                 "importFailed": "以前の.dotsファイルをインポートできませんでした",
                 "saveFailed": "{path}にショーを保存できませんでした",
@@ -1121,360 +1076,6 @@
         "help": {
             "addYours": "お使いの言語が見つかりませんか？<link>追加にご協力ください</link>",
             "madeWithAi": "この翻訳はAIで作成されたため、誤りが含まれている可能性があります。<link>確認にご協力ください</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "ライブラリ",
-            "search": "名前で検索",
-            "empty": "ライブラリは空です。",
-            "emptyHint": "「インポート…」でモデルやアートワークを追加できます。",
-            "noMatches": "「{query}」に一致する項目はライブラリにありません。",
-            "loadFailed": "ライブラリを読み込めませんでした（{code}）。",
-            "groups": {
-                "silks": "シルク",
-                "floors": "フロア",
-                "props": "プロップ",
-                "equipment": "用具",
-                "uniforms": "ユニフォーム",
-                "other": "その他"
-            }
-        },
-        "templates": {
-            "menu": "アートワークテンプレート",
-            "menuHint": "原寸大、1クリックで1ファイル",
-            "groups": {
-                "silk": "シルクのカット",
-                "floor": "ベースフロア",
-                "floorProp": "フロアプロップ",
-                "prop": "プロップパネル",
-                "uniform": "ユニフォームパネル"
-            },
-            "withSag": "{name}、たるみ{sag}",
-            "saggingBottom": "{name}、下端たるみあり",
-            "propFace": {
-                "top": "上面、{name}",
-                "front": "前面、{name}",
-                "back": "背面、{name}"
-            },
-            "download": "{name}を{format}でダウンロード",
-            "saved": "{filename}を保存しました",
-            "saveFailed": "テンプレートを保存できませんでした",
-            "uniformPanel": {
-                "top": {
-                    "front": "トップ、前面",
-                    "back": "トップ、背面"
-                },
-                "bottoms": {
-                    "front": "ボトムス、前面",
-                    "back": "ボトムス、背面"
-                },
-                "overlay": {
-                    "front": "オーバーレイ（ケープ）、前面",
-                    "back": "オーバーレイ（ケープ）、背面"
-                }
-            }
-        },
-        "import": {
-            "entry": "インポート…",
-            "library": "ライブラリ",
-            "title": "インポート",
-            "back": "ライブラリに戻る",
-            "picking": "ダイアログでファイルを選択してください…",
-            "fileCount": "{count, plural, other {#個のファイル}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "{kind}の選択画面から",
-            "fromSlot": "{surface}スロット用",
-            "pageN": "ページ{n}",
-            "pageOf": "{index}/{count}ページ",
-            "showPage": "{label}を表示",
-            "cancel": "キャンセル",
-            "close": "完了",
-            "importMore": "さらにインポート…",
-            "tryAgain": "再試行",
-            "chooseAgain": "ファイルを選び直す",
-            "cancelKeeps": "キャンセルしても、追加済みのページはライブラリに残ります。",
-            "cancelled": "キャンセルしました。追加済みの項目はライブラリに残ります。",
-            "clean": "追加できます。選択が必要な項目はありません。",
-            "starterKit": "OpenMarch Blenderスターターキットで書き出したモデルは問題なくインポートできます。",
-            "groups": {
-                "cantImport": "インポート不可",
-                "needsChoice": "選択が必要",
-                "fixed": "自動修正済み",
-                "notes": "情報"
-            },
-            "kind": {
-                "title": "何のモデルですか？",
-                "hint": "必須です。サイズ範囲と三角形の上限は選択後に確認されます。",
-                "from": {
-                    "picker": "ピッカーで設定済み",
-                    "stamp": "スターターキットのスタンプから"
-                }
-            },
-            "kinds": {
-                "prop": "プロップ",
-                "equipment": "用具",
-                "garment": "衣装",
-                "floorProp": "フロアプロップ",
-                "baseFloor": "ベースフロア"
-            },
-            "surfaces": {
-                "silk": "シルク",
-                "baseFloor": "ベースフロア",
-                "floorProp": "フロアプロップ",
-                "propSlot": "プロップ",
-                "uniformPart": "ユニフォーム"
-            },
-            "stages": {
-                "reading": "ファイルを読み込み中…",
-                "validating": "ファイルを確認中…",
-                "decoding": "デコード中…",
-                "checking": "サイズと上限を確認中…",
-                "converting": "変換中…",
-                "writing": "書き込み中…",
-                "rendering-pdf": "PDFページをレンダリング中…",
-                "saving": "ライブラリに追加中…"
-            },
-            "refused": {
-                "unsupported": "OpenMarchで読み込めない形式です。モデルにはGLBまたはglTF、アートワークにはPNG、JPG、SVG、PDFを使用してください。",
-                "tooLarge": {
-                    "model": "関連ファイルを含むモデルの上限200 MBを超えています。",
-                    "artwork": "アートワークファイルの上限300 MBを超えています。"
-                }
-            },
-            "match": {
-                "kitTitle": "{name}の新しいバージョン",
-                "filenameTitle": "{name}としてライブラリに登録済み",
-                "detail": "これを使用しているショーには「アップデートあり」と表示されます。承認するまで何も変更されません。",
-                "builtInDetail": "{name}は組み込みアイテムのため、自分用のコピーとして追加されます。",
-                "newVersionOf": "{name}の新しいバージョン",
-                "update": "{name}を更新",
-                "copyOf": "{name}の自分用コピー",
-                "addNew": "新規として追加"
-            },
-            "choices": {
-                "suggested": "推奨",
-                "units": {
-                    "title": "単位",
-                    "detail": "書き出し時の最大寸法は{largest}で、この種類のサイズ範囲外です。",
-                    "none": "書き出し時のまま",
-                    "cm": "センチメートル（{factor}）",
-                    "in": "インチ（{factor}）",
-                    "ft": "フィート（{factor}）"
-                },
-                "rotate": {
-                    "title": "Y軸上向きに回転",
-                    "detail": "Z軸上向きで書き出されているため、横倒しになります。"
-                },
-                "simplify": {
-                    "title": "三角形を{cap}個に削減",
-                    "detail": "三角形{triangles}個で、{kind}の上限{cap}個を超えています。"
-                },
-                "before": "変更前（{triangles}）",
-                "after": "変更後（{triangles}）",
-                "grip": {
-                    "title": "グリップを設定",
-                    "detail": "ファイルにOM_grip_Rがないため、最長辺の4分の1の位置が仮設定されています。モデルをクリックして移動できます。",
-                    "misnamed": "{names}が見つかりましたが、OM_grip_Rと一致しません。最長辺上に仮設定されています。モデルをクリックして移動できます。",
-                    "manual": "モデル上のクリック位置で設定されました。",
-                    "pick": "モデル上の点をクリック",
-                    "picking": "クリック待ち…（<keys></keys>で中止）"
-                },
-                "surface": {
-                    "title": "アートワーク面",
-                    "detail": "ファイルにアートワーク用の面が指定されていません。アートワークを印刷する面を選ぶか、「なし」を選択してください。ポインターを合わせるとモデル上で確認できます。",
-                    "none": "なし",
-                    "unnamed": "マテリアル{index}",
-                    "size": "約{width} × {height}",
-                    "noUVs": "UVがないため、アートワークを割り当てられません"
-                }
-            },
-            "rows": {
-                "unreadable": "ファイルを読み込めません",
-                "missingResource": "必要なファイルが見つかりません",
-                "externalUri": "インターネットからファイルを読み込もうとしています",
-                "resourceOutsideFolder": "フォルダー外のファイルを参照しています",
-                "validatorErrors": "{count, plural, other {glTFエラー#件}}",
-                "requiredExtension": "OpenMarchで読み込めない拡張機能が必要です",
-                "noGeometry": "ジオメトリが含まれていません",
-                "overTriangleCap": "三角形{triangles}個：上限の{limit}個を超えています",
-                "overTriangleCapDetail": "{kind}の上限{cap}個の4倍を超えています。書き出す前に削減してください。",
-                "rigNotAllowed": "{kind}にはリグを含められません",
-                "garmentNotRigged": "衣装にはv4リグが必要です",
-                "garmentJointsNotV4": "リグがv4スケルトンではありません",
-                "missingJoints": "不足：{names}",
-                "unexpectedJoints": "余分：{names}",
-                "garmentRestPoseMismatch": "リグのレストポーズがv4と一致しません",
-                "garmentQuantized": "スキンメッシュが量子化されています",
-                "garmentTransformsNotApplied": "トランスフォームが適用されていません",
-                "garmentNoPartPaint": "_PARTペイントがないため、肌として描画されます",
-                "garmentNoMedianFit": "標準体型用のフィットがありません",
-                "garmentUnknownFit": "不明な体型を指定したフィットがあります",
-                "texturesDownsized": "{count, plural, other {テクスチャ#個}}を{cap} pxに縮小",
-                "dracoDecoded": "Draco圧縮を展開",
-                "meshOptimizerDecoded": "メッシュオプティマイザー圧縮を展開",
-                "instancesExpanded": "インスタンスを展開",
-                "extensionsStripped": "未使用の拡張機能を削除",
-                "extrasStripped": "未使用の追加データを削除",
-                "contentStripped": "OpenMarchで使用しないコンテンツを削除",
-                "contentStrippedDetail": "アニメーション{animations} · カメラ{cameras} · モーフターゲット{morphTargets} · 追加シーン{scenes}",
-                "influencesRenormalized": "{vertices}個の頂点のボーンウェイトを再正規化",
-                "validatorWarnings": "{count, plural, other {glTF警告#件}}",
-                "sizeOutOfRange": "最大寸法{size}",
-                "sizeOutOfRangeDetail": "この種類の通常範囲（{min}～{max}）外です。単位を確認してください。",
-                "noStretchZones": "ストレッチゾーンなし",
-                "noStretchZonesDetail": "モデリング時のサイズのまま、または均等に拡大縮小されます。",
-                "customPropertiesOff": "カスタムプロパティがオフだった可能性があります",
-                "customPropertiesOffDetail": "グリップとスロットを保持するには、OpenMarchプリセットで再度書き出してください。",
-                "stillOverTriangleCap": "まだ三角形{triangles}個で、上限の{cap}個を超えています",
-                "slotWithoutUVs": "アートワークスロット{slot}にUVがありません",
-                "slotDropped": "アートワークスロット{slot}は除外されました",
-                "invalidOpenMarchData": "{where}のOpenMarchデータは無視されました",
-                "unknownStampKind": "スタンプに不明な種類が指定されています：{value}",
-                "missingFits": "不足しているフィット",
-                "duplicateFits": "同じフィットのメッシュが複数あります",
-                "wgiEquipmentUnderMinimum": "WGI：用具が24 in未満",
-                "wgiFloorOverMaximum": "WGI：フロアが78 × 106 ftを超過"
-            },
-            "size": {
-                "title": "どのくらいの大きさですか？",
-                "members": "{count}ページ中{selected}ページ",
-                "fromFile": "ファイルから：{size}",
-                "width": "幅",
-                "height": "高さ",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label}（ft）",
-                "inchesLabel": "{label}（in）",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "縦横比を固定：アートワークは引き伸ばされません",
-                "needed": "サイズを選択してください。このファイルには印刷サイズが指定されていません。",
-                "printsOn": "印刷面",
-                "fitted": "画像の形に合わせました。標準の{surface}は{size}です。"
-            },
-            "details": {
-                "name": "名前",
-                "namesFromFiles": "各項目にはそれぞれのファイル名が付きます。",
-                "tags": "タグ（カンマ区切り）",
-                "toggle": "作者、ライセンス、出典",
-                "unknown": "不明",
-                "author": "作者",
-                "license": "ライセンス",
-                "licensePlaceholder": "ライセンス（例：CC-BY-4.0）",
-                "source": "出典URL",
-                "emptyIsUnknown": "空欄の場合は「不明」となり、共有してよいものとはみなされません。",
-                "rights": "使用する権利を持つアートワークとモデルのみをインポートしてください。"
-            },
-            "add": {
-                "one": "ライブラリに追加",
-                "many": "{count}件をライブラリに追加",
-                "newVersion": "新しいバージョンを追加",
-                "cantImport": "インポート不可"
-            },
-            "done": {
-                "added": "{count, plural, other {#件をライブラリに追加しました}}",
-                "newVersion": "{name}の新しいバージョンを追加しました",
-                "notImported": "インポートされなかった項目"
-            },
-            "stage": {
-                "label": "インポートのプレビュー・3Dビューは変更なし",
-                "loading": "プレビューを読み込み中…",
-                "empty": "プレビューするものがありません",
-                "needsKind": "プレビューを表示するには、種類を選択してください。",
-                "rejected": "インポートできないため、プレビューはありません。",
-                "previewFailed": "プレビューを読み込めませんでした。",
-                "noArtwork": "プレビューするページがありません。",
-                "triangles": "三角形{triangles}個",
-                "trianglesCap": "三角形{triangles}個・上限{cap}",
-                "tall": "高さ{height}",
-                "before": "簡略化前",
-                "after": "簡略化後",
-                "vector": "ベクター",
-                "pixels": "{width} × {height} px",
-                "views": "ビュー",
-                "view": {
-                    "front": "正面",
-                    "side": "側面",
-                    "top": "上面"
-                },
-                "pickGrip": "モデル上の点をクリックしてグリップを設定・<keys></keys>で終了",
-                "surface": "アートワーク面：{name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "モデルとアートワークは別々にインポートしてください",
-                    "body": "一度に選択できるのは、モデル1つ、または任意の数のアートワークファイルです。"
-                },
-                "session-expired": {
-                    "title": "このインポートはタイムアウトしました",
-                    "body": "インポートは30分間使用されないと終了します。ファイルをもう一度選択してください。"
-                },
-                "unknown-file": {
-                    "title": "そのファイルはこのインポートに含まれていません",
-                    "body": "ファイルをもう一度選択してください。"
-                },
-                "too-large": {
-                    "title": "ファイルが多すぎます",
-                    "body": "一度に選択できるファイルは50個までです。"
-                },
-                "unreadable": {
-                    "title": "ファイルを読み込めませんでした",
-                    "body": "ファイルが移動されたか、別のアプリで開かれている可能性があります。"
-                },
-                "busy": {
-                    "title": "別のインポート処理がまだ実行中です",
-                    "body": "完了するまで待ってから、もう一度お試しください。"
-                },
-                "timeout": {
-                    "title": "インポーターの処理に時間がかかりすぎました",
-                    "body": "大きいファイルや複雑なファイルはタイムアウトすることがあります。もう一度試すか、エクスポートする前にファイルを簡略化してください。"
-                },
-                "worker-crashed": {
-                    "title": "ファイルの読み込み中にインポーターが停止しました",
-                    "body": "ファイルは変更されていません。もう一度お試しください。再び起きる場合は、ファイルが破損している可能性があります。"
-                },
-                "pdf-unavailable": {
-                    "title": "PDFのページをレンダリングできませんでした",
-                    "body": "もう一度お試しください。繰り返し起きる場合は、アートワークをPNGまたはSVGでエクスポートしてください。"
-                },
-                "write-failed": {
-                    "title": "ライブラリに保存できませんでした",
-                    "body": "ディスクの空き容量を確認してから、もう一度お試しください。"
-                },
-                "read-only": {
-                    "title": "その項目は変更できません",
-                    "body": "組み込みの項目は読み取り専用です。代わりに新規として追加してください。"
-                },
-                "corrupt": {
-                    "title": "ライブラリに破損した項目があります",
-                    "body": "もう一度お試しください。ライブラリのほかの項目には影響ありません。"
-                },
-                "cancelled": {
-                    "title": "キャンセルしました",
-                    "body": "それ以降のインポートは行われていません。"
-                },
-                "other": {
-                    "title": "問題が発生しました",
-                    "body": "もう一度お試しください。"
-                }
-            },
-            "finishFailed": "インポートを完了できませんでした",
-            "copyIntoShowFailed": "インポートした項目をショーにコピーできませんでした"
-        },
-        "fileDialog": {
-            "importTitle": "インポート",
-            "saveTemplateTitle": "テンプレートを保存",
-            "models": "3Dモデル（glb、gltf）",
-            "artwork": "アートワーク（png、jpg、svg、pdf）",
-            "modelsAndArtwork": "モデルとアートワーク",
-            "pngImage": "PNG画像"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Blenderスターターキットを保存",
-            "saveFailed": "Blenderスターターキットを保存できませんでした"
         }
     },
     "marchers": {
@@ -1698,7 +1299,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "プロダクションの背景",
-                "drawFailed": "背景画像を描画できませんでした",
                 "empty": "背景画像なし",
                 "help": "背景画像は、新しいリビジョンをアップロードすると自動的に同期されます。変更するには、フィールドエディターで背景画像を変更してから、新しいリビジョンをアップロードしてください。",
                 "title": "背景画像"
@@ -3376,7 +2976,6 @@
             "title": "カメラ",
             "close": "カメラを閉じる",
             "edit": "カメラを編集…",
-            "saveView": "現在のビューを保存",
             "none": "カメラなし",
             "empty": "カメラがありません。ビューを目的の位置まで動かしてから追加してください。",
             "addView": "現在のビューを追加",
@@ -3399,68 +2998,7 @@
             "removed": "「{name}」を削除しました",
             "undo": "元に戻す",
             "replace": "置き換え",
-            "replaceWithProfile": "現在のカメラを「{name}」に置き換えますか？現在のリストはほかの場所には保存されていません。",
-            "profile": "プロファイル",
-            "source": {
-                "defaults": "会場のデフォルト",
-                "custom": "このショーのカメラ"
-            },
-            "edited": "編集済み",
-            "myProfiles": "このコンピューター",
-            "saveAsProfile": "カメラプロファイルとして保存…",
-            "saveAsProfileShort": "プロファイルとして保存…",
-            "manageProfiles": "プロファイルを管理…",
-            "notice": {
-                "defaults": "会場のデフォルトのカメラです。変更すると、このショー専用のカメラになります。",
-                "custom": "このショーにのみ保存されています。",
-                "profile": "このショーとプロファイルの両方に保存されています。",
-                "edited": "プロファイルの保存後に変更されています。",
-                "newer": "このプロファイルはこのコンピューター上で変更されています。",
-                "missing": "このショーのプロファイルはこのコンピューターにありません。"
-            },
-            "updateProfile": "プロファイルを更新",
-            "saveAsNew": "新規として保存…",
-            "useNewVersion": "新しいバージョンを使用",
-            "addToMyProfiles": "マイプロファイルに追加",
-            "profileName": "プロファイル名",
-            "save": "保存",
-            "defaultProfileName": "{venue}のカメラ",
-            "copyName": "{name}のコピー",
-            "profilesTitle": "カメラプロファイル",
-            "profilesHint": "このコンピューターのライブラリに保存され、どのショーでも使えます。各ショーは、使用しているプロファイルのコピーを保持します。",
-            "noProfiles": "カメラプロファイルはまだありません。「カメラプロファイルとして保存…」を選択して作成してください。",
-            "cameraCount": "{count, plural, other {カメラ#台}}",
-            "use": "使用",
-            "otherVenue": "このプロファイルは別の会場用です",
-            "deleteProfile": "削除",
-            "deleteProfileConfirm": "「{name}」をこのコンピューターから削除しますか？このプロファイルを使用しているショーには、それぞれのコピーが残ります。",
             "saveFailed": "3Dビューのカメラを保存できませんでした"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "5 ftポール用シルク",
-                "silk5_5ftPole": "5.5 ftポール用シルク",
-                "silk6ftPole": "6 ftポール用シルク",
-                "silk7ftPole": "7 ftポール用シルク",
-                "silkStandard": "スタンダード",
-                "silkOversized": "オーバーサイズ",
-                "silkTeardrop": "ティアドロップ",
-                "silkSwing": "スイング",
-                "silkSuperSwing": "カーブ／スーパースイング",
-                "silkOversizedSwing": "オーバーサイズスイング",
-                "silkArc": "レギュラーアーク",
-                "silkNarrowArc": "ナローアーク",
-                "silkSuperArc": "スーパーアーク",
-                "floorWgiMinimum": "WGI競技エリア（最小）",
-                "floorWgiMaximum": "WGI競技エリア（最大）",
-                "flatProp4x8ft": "4 x 8 ft合板"
-            },
-            "kind": {
-                "silk": "シルク",
-                "floor": "フロア",
-                "flatProp": "平面プロップ"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "3Dビューの会場を更新できませんでした"
@@ -3810,7 +3348,6 @@
         "help": {
             "title": "ヘルプ",
             "showShortcuts": "キーボードショートカット",
-            "starterKit": "Blenderスターターキットを入手…",
             "website": "Webサイト",
             "guides": "ドキュメント/ガイド"
         },
@@ -3821,7 +3358,6 @@
             "openMarchFile": "OpenMarchファイル",
             "allFiles": "すべてのファイル",
             "audioFile": "オーディオファイル",
-            "zipArchive": "ZIPアーカイブ",
             "video": "ビデオ"
         },
         "newShow": {

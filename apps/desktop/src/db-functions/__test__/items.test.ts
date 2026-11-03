@@ -3,7 +3,6 @@ import { count, eq } from "drizzle-orm";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { describeDbTests, schema, type DbConnection } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { libraryReferences } from "../libraryReferences";
 import { performUndo } from "../history";
 import { deleteBeats } from "../beat";
 import {
@@ -147,19 +146,6 @@ describeDbTests("items", (it) => {
                     library_item_id: LIBRARY_ITEM,
                     library_version_hash: "a".repeat(64),
                 });
-                // The show Library's prune keeps the Version it pins
-                expect(
-                    (await libraryReferences({ db })).filter(
-                        (r) => r.source === "itemModels",
-                    ),
-                ).toEqual([
-                    {
-                        source: "itemModels",
-                        itemId: LIBRARY_ITEM,
-                        versionHash: "a".repeat(64),
-                        marcherId: created[1]!.marcher_id,
-                    },
-                ]);
             },
         );
 

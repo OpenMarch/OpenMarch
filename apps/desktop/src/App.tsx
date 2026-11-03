@@ -7,7 +7,6 @@ import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import { View3dPublisher } from "@/view3d/sync/useView3dPublisher";
-import { AssetsHost } from "@/components/assets/AssetsModal";
 import TimelineResolverHost from "@/timeline/TimelineResolverHost";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import {
@@ -369,7 +368,6 @@ function App() {
                                             <ExportCoordinatesModal />
                                             <TimelineResolverHost />
                                             <View3dPublisher />
-                                            <AssetsHost />
                                             <SvgPreviewHandler />
                                             <PreviewModeHost />
                                             <TitleBar showControls />

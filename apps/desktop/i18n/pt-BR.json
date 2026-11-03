@@ -174,53 +174,6 @@
         "releaseNotes": "Notas da versão",
         "updated": "OpenMarch atualizado para a v{version}"
     },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "Todos os direitos reservados",
-                "unknown": "Licença desconhecida"
-            },
-            "modified": "{credit} (modificado)",
-            "none": "Nada neste show precisa de crédito.",
-            "shareNote": {
-                "badge": "Aviso",
-                "detail": "Alguns itens têm licença desconhecida. Talvez você não tenha o direito de compartilhá-los com este show.",
-                "export": "Este show tem itens com licença desconhecida. Talvez você não tenha o direito de compartilhá-los."
-            },
-            "title": "Créditos",
-            "uncredited": "{count, plural, one {Mais # item é CC0 ou integrado e não precisa de crédito.} other {Mais # itens são CC0 ou integrados e não precisam de crédito.}}"
-        },
-        "show": {
-            "addFailed": "Não foi possível adicionar {name} à sua Biblioteca.",
-            "added": "Item {name} adicionado à sua Biblioteca.",
-            "addToLibrary": "Adicionar à minha Biblioteca",
-            "delete": {
-                "addFirst": "Adicionar à minha Biblioteca antes",
-                "cancel": "Cancelar",
-                "checking": "Verificando o que usa este item…",
-                "confirm": "Sua Biblioteca mantém uma cópia própria. Esta ação não pode ser desfeita.",
-                "confirmNoCopy": "Sua Biblioteca não tem uma cópia, então o item será perdido para sempre. Esta ação não pode ser desfeita.",
-                "confirmUnknownCopy": "Esta ação não pode ser desfeita.",
-                "delete": "Excluir",
-                "deleted": "Item {name} excluído deste show.",
-                "failed": "Não foi possível excluir.",
-                "inUseTitle": "{name} está em uso",
-                "isFloor": "É o piso deste show, então não pode ser excluído. Altere o piso em Configurações do campo → Imagem.",
-                "itemModel": "modelo",
-                "keptForUndo": "{name} permanece neste show enquanto Desfazer puder restaurá-lo e será removido quando o show for fechado depois disso.",
-                "label": "Excluir deste show",
-                "pinnedBy": "Faz parte de {names}, então não pode ser excluído.",
-                "title": "Excluir {name} deste show?",
-                "usedByItems": "{count, plural, =1 {Um adereço usa este item, então ele não pode ser excluído:} other {# adereços usam este item, então ele não pode ser excluído:}}"
-            },
-            "empty": "Este show ainda não usa nenhum recurso.",
-            "emptyHint": "Os itens importados são copiados para o show aberto.",
-            "title": "Este show",
-            "updateDetails": "Os detalhes mudaram na sua Biblioteca.",
-            "updateVersion": "Há uma versão mais recente na sua Biblioteca."
-        },
-        "title": "Recursos"
-    },
     "audio": {
         "beats": {
             "create": {
@@ -639,6 +592,7 @@
         "applyFieldType": "Aplicar tipo de campo",
         "applyFieldTypeWarning": "Os integrantes não serão movidos para o tamanho do novo tipo de campo; eles permanecerão onde estão na tela. Você pode voltar ao tipo de campo anterior a qualquer momento.",
         "buttons": {
+            "importImage": "Importar Imagem",
             "newXCheckpoint": "Nova linha de referência X",
             "newYCheckpoint": "Nova linha de referência Y",
             "resetTheme": "Restaurar tema padrão",
@@ -742,7 +696,8 @@
             "fieldRatio": "{ratio} ou {decimal}",
             "measurementModificationNote": "Esses valores podem ser alterados ajustando as coordenadas X e Y, o tamanho do passo e a imagem de fundo",
             "noFloor": "Sem piso",
-            "floorUnnamed": "Piso"
+            "floorUnnamed": "Piso",
+            "refreshAfterImporting": "Atualizar após importar [Ctrl + R]"
         },
         "options": {
             "fill": "Preencher",
@@ -774,6 +729,7 @@
             "pathways": "Caminhos"
         },
         "tooltips": {
+            "importImage": "Importe uma imagem para mostrar no campo",
             "conformMethod": "Define se a imagem de fundo se ajusta dentro do campo ou o preenche. A proporção é sempre mantida",
             "directorsLeft": "Ex.: \"Lado 1\", \"Esquerda da plateia\" ou \"Direita do palco\"",
             "directorsRight": "Ex.: \"Lado 2\", \"Direita da plateia\" ou \"Esquerda do palco\"",
@@ -1036,7 +992,6 @@
                 "audioNotSaved": "O áudio pode não ter sido salvo. Você pode adicionar o áudio depois no editor.",
                 "createFailed": "Falha ao criar o show",
                 "databaseNotReady": "O banco de dados não está pronto. Conclua primeiro a etapa do projeto.",
-                "fieldImageNotCopied": "Não foi possível copiar a imagem do campo do show anterior",
                 "filePathRequired": "O caminho do arquivo é obrigatório",
                 "importFailed": "Falha ao importar o arquivo .dots anterior",
                 "saveFailed": "Falha ao salvar o show em {path}",
@@ -1121,360 +1076,6 @@
         "help": {
             "addYours": "Não encontrou seu idioma? <link>Ajude-nos a adicioná-lo</link>",
             "madeWithAi": "Esta tradução foi feita com IA, então algumas palavras podem estar erradas. <link>Ajude-nos a revisá-la</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Biblioteca",
-            "search": "Pesquisar por nome",
-            "empty": "Sua Biblioteca está vazia.",
-            "emptyHint": "Use Importar… para adicionar modelos e artes.",
-            "noMatches": "Nada na Biblioteca corresponde a “{query}”.",
-            "loadFailed": "Não foi possível carregar a Biblioteca ({code}).",
-            "groups": {
-                "silks": "Bandeiras",
-                "floors": "Pisos",
-                "props": "Adereços",
-                "equipment": "Equipamentos",
-                "uniforms": "Uniformes",
-                "other": "Outros"
-            }
-        },
-        "templates": {
-            "menu": "Modelos de arte",
-            "menuHint": "Tamanho real, um arquivo por clique",
-            "groups": {
-                "silk": "Cortes de bandeira",
-                "floor": "Pisos de base",
-                "floorProp": "Adereços de piso",
-                "prop": "Painéis de adereço",
-                "uniform": "Painéis de uniforme"
-            },
-            "withSag": "{name}, caimento de {sag}",
-            "saggingBottom": "{name}, base com caimento",
-            "propFace": {
-                "top": "Topo, {name}",
-                "front": "Frente, {name}",
-                "back": "Verso, {name}"
-            },
-            "download": "Baixar {name} como {format}",
-            "saved": "{filename} salvo",
-            "saveFailed": "Não foi possível salvar o modelo",
-            "uniformPanel": {
-                "top": {
-                    "front": "Parte superior, frente",
-                    "back": "Parte superior, costas"
-                },
-                "bottoms": {
-                    "front": "Parte inferior, frente",
-                    "back": "Parte inferior, costas"
-                },
-                "overlay": {
-                    "front": "Sobreposição (capa), frente",
-                    "back": "Sobreposição (capa), costas"
-                }
-            }
-        },
-        "import": {
-            "entry": "Importar…",
-            "library": "Biblioteca",
-            "title": "Importação",
-            "back": "Voltar à Biblioteca",
-            "picking": "Escolha os arquivos na janela…",
-            "fileCount": "{count, plural, one {# arquivo} other {# arquivos}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "Do seletor de {kind}",
-            "fromSlot": "Para um espaço de {surface}",
-            "pageN": "Página {n}",
-            "pageOf": "página {index} de {count}",
-            "showPage": "Mostrar {label}",
-            "cancel": "Cancelar",
-            "close": "Concluído",
-            "importMore": "Importar mais…",
-            "tryAgain": "Tentar novamente",
-            "chooseAgain": "Escolher arquivos novamente",
-            "cancelKeeps": "Se você cancelar, as páginas já adicionadas continuam na sua Biblioteca.",
-            "cancelled": "Cancelado. O que já foi adicionado continua na sua Biblioteca.",
-            "clean": "Pronto para adicionar. Nenhuma escolha necessária.",
-            "starterKit": "O kit inicial do OpenMarch para Blender exporta modelos que são importados sem problemas.",
-            "groups": {
-                "cantImport": "Impossível importar",
-                "needsChoice": "Requer sua escolha",
-                "fixed": "Corrigido automaticamente",
-                "notes": "Observações"
-            },
-            "kind": {
-                "title": "O que é?",
-                "hint": "Obrigatório. A faixa de tamanho e os limites de triângulos são verificados depois.",
-                "from": {
-                    "picker": "Definido pelo seletor",
-                    "stamp": "Pelo selo do kit inicial"
-                }
-            },
-            "kinds": {
-                "prop": "Adereço",
-                "equipment": "Equipamento",
-                "garment": "Vestimenta",
-                "floorProp": "Adereço de piso",
-                "baseFloor": "Piso base"
-            },
-            "surfaces": {
-                "silk": "Seda",
-                "baseFloor": "Piso base",
-                "floorProp": "Adereço de piso",
-                "propSlot": "Adereço",
-                "uniformPart": "Uniforme"
-            },
-            "stages": {
-                "reading": "Lendo o arquivo…",
-                "validating": "Verificando o arquivo…",
-                "decoding": "Decodificando…",
-                "checking": "Verificando tamanhos e limites…",
-                "converting": "Convertendo…",
-                "writing": "Gravando…",
-                "rendering-pdf": "Renderizando páginas do PDF…",
-                "saving": "Adicionando à sua Biblioteca…"
-            },
-            "refused": {
-                "unsupported": "Formato que o OpenMarch não importa. Use GLB ou glTF para modelos e PNG, JPG, SVG ou PDF para arte.",
-                "tooLarge": {
-                    "model": "Acima do limite de 200 MB para um modelo com seus arquivos.",
-                    "artwork": "Acima do limite de 300 MB para um arquivo de arte."
-                }
-            },
-            "match": {
-                "kitTitle": "Nova versão de {name}",
-                "filenameTitle": "Já está na sua Biblioteca como {name}",
-                "detail": "Os shows que o usam passam a mostrar “atualização disponível”; nada muda até que a aceitem.",
-                "builtInDetail": "{name} é nativo do OpenMarch, então isto se torna sua própria cópia.",
-                "newVersionOf": "Nova versão de {name}",
-                "update": "Atualizar {name}",
-                "copyOf": "Sua cópia de {name}",
-                "addNew": "Adicionar como novo"
-            },
-            "choices": {
-                "suggested": "sugerido",
-                "units": {
-                    "title": "Unidades",
-                    "detail": "Como exportado, mede {largest} no lado maior, fora da faixa de tamanho para o seu tipo.",
-                    "none": "Como exportado",
-                    "cm": "Centímetros ({factor})",
-                    "in": "Polegadas ({factor})",
-                    "ft": "Pés ({factor})"
-                },
-                "rotate": {
-                    "title": "Girar para Y para cima",
-                    "detail": "Exportado com Z para cima; ficaria deitado de lado."
-                },
-                "simplify": {
-                    "title": "Simplificar para {cap} triângulos",
-                    "detail": "{triangles} triângulos, acima do limite de {cap} para o tipo {kind}."
-                },
-                "before": "Antes: {triangles}",
-                "after": "Depois: {triangles}",
-                "grip": {
-                    "title": "Definir a empunhadura",
-                    "detail": "Não há OM_grip_R no arquivo: um ponto a um quarto do lado maior foi predefinido. Clique no modelo para movê-lo.",
-                    "misnamed": "Encontramos {names}, que não corresponde a OM_grip_R. Predefinida no lado maior; clique no modelo para movê-la.",
-                    "manual": "Definida pelo seu clique no modelo.",
-                    "pick": "Clicar em um ponto do modelo",
-                    "picking": "Clicando… (<keys></keys> para parar)"
-                },
-                "surface": {
-                    "title": "Superfície da arte",
-                    "detail": "O arquivo não marca nenhuma superfície para arte. Escolha aquela em que a arte é impressa, ou nenhuma; passe o mouse sobre uma para vê-la no modelo.",
-                    "none": "Nenhuma",
-                    "unnamed": "Material {index}",
-                    "size": "Cerca de {width} × {height}",
-                    "noUVs": "sem UVs, então a arte não pode ser mapeada nela"
-                }
-            },
-            "rows": {
-                "unreadable": "Não é possível ler o arquivo",
-                "missingResource": "Falta um arquivo necessário",
-                "externalUri": "Ele carrega um arquivo da internet",
-                "resourceOutsideFolder": "Ele aponta para um arquivo fora da sua pasta",
-                "validatorErrors": "{count, plural, one {# erro de glTF} other {# erros de glTF}}",
-                "requiredExtension": "Requer uma extensão que o OpenMarch não carrega",
-                "noGeometry": "Não há geometria nele",
-                "overTriangleCap": "{triangles} triângulos: acima do limite de {limit}",
-                "overTriangleCapDetail": "Mais de 4× o limite de {cap} para o tipo {kind}. Reduza-o antes de exportar.",
-                "rigNotAllowed": "O tipo {kind} não pode ter rig",
-                "garmentNotRigged": "Uma Vestimenta precisa do rig v4",
-                "garmentJointsNotV4": "O rig não é o esqueleto v4",
-                "missingJoints": "Faltando: {names}",
-                "unexpectedJoints": "Extras: {names}",
-                "garmentRestPoseMismatch": "A pose de repouso do rig não corresponde à v4",
-                "garmentQuantized": "As malhas com skinning estão quantizadas",
-                "garmentTransformsNotApplied": "As transformações não foram aplicadas",
-                "garmentNoPartPaint": "Sem pintura _PART: seria renderizada como pele",
-                "garmentNoMedianFit": "Sem ajuste para o corpo mediano",
-                "garmentUnknownFit": "Um ajuste indica um tipo de corpo desconhecido",
-                "texturesDownsized": "{count, plural, one {# textura reduzida} other {# texturas reduzidas}} para {cap} px",
-                "dracoDecoded": "Compressão Draco decodificada",
-                "meshOptimizerDecoded": "Compressão Mesh optimizer decodificada",
-                "instancesExpanded": "Instâncias expandidas",
-                "extensionsStripped": "Extensões não usadas removidas",
-                "extrasStripped": "Extras não usados removidos",
-                "contentStripped": "Conteúdo não usado pelo OpenMarch removido",
-                "contentStrippedDetail": "Animações {animations} · câmeras {cameras} · alvos de morph {morphTargets} · cenas extras {scenes}",
-                "influencesRenormalized": "Pesos dos ossos renormalizados em {vertices} vértices",
-                "validatorWarnings": "{count, plural, one {# aviso de glTF} other {# avisos de glTF}}",
-                "sizeOutOfRange": "{size} no lado maior",
-                "sizeOutOfRangeDetail": "Fora da faixa usual de {min} a {max} para o seu tipo. Verifique as unidades.",
-                "noStretchZones": "Sem zonas de estiramento",
-                "noStretchZonesDetail": "Ele mantém o tamanho em que foi modelado ou recebe uma escala uniforme.",
-                "customPropertiesOff": "Parece que as propriedades personalizadas estavam desativadas",
-                "customPropertiesOffDetail": "Exporte novamente com a predefinição do OpenMarch para manter empunhaduras e slots.",
-                "stillOverTriangleCap": "Ainda com {triangles} triângulos, acima do limite de {cap}",
-                "slotWithoutUVs": "O slot de arte {slot} não tem UVs",
-                "slotDropped": "O slot de arte {slot} foi descartado",
-                "invalidOpenMarchData": "Os dados do OpenMarch em {where} foram ignorados",
-                "unknownStampKind": "O selo indica um tipo desconhecido: {value}",
-                "missingFits": "Ajustes ausentes",
-                "duplicateFits": "Mais de uma malha tem o mesmo ajuste",
-                "wgiEquipmentUnderMinimum": "WGI: equipamento com menos de 24 in",
-                "wgiFloorOverMaximum": "WGI: piso maior que 78 × 106 ft"
-            },
-            "size": {
-                "title": "Qual é o tamanho?",
-                "members": "{selected} de {count} {count, plural, one {página} other {páginas}}",
-                "fromFile": "Do arquivo: {size}",
-                "width": "Largura",
-                "height": "Altura",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Proporção travada: a arte nunca é esticada",
-                "needed": "Escolha um tamanho: este arquivo não informa o tamanho de impressão.",
-                "printsOn": "Imprime em",
-                "fitted": "Ajustado ao formato da sua imagem; o tamanho padrão para {surface} é {size}."
-            },
-            "details": {
-                "name": "Nome",
-                "namesFromFiles": "Cada arquivo mantém o próprio nome.",
-                "tags": "Tags, separadas por vírgula",
-                "toggle": "Autor, licença e origem",
-                "unknown": "Desconhecido",
-                "author": "Autor",
-                "license": "Licença",
-                "licensePlaceholder": "Licença, como CC-BY-4.0",
-                "source": "URL de origem",
-                "emptyIsUnknown": "Em branco significa Desconhecido, nunca livre para compartilhar.",
-                "rights": "Importe apenas artes e modelos que você tem o direito de usar."
-            },
-            "add": {
-                "one": "Adicionar à Biblioteca",
-                "many": "Adicionar {count} à Biblioteca",
-                "newVersion": "Adicionar nova versão",
-                "cantImport": "Não é possível importar"
-            },
-            "done": {
-                "added": "{count, plural, one {# item adicionado à sua Biblioteca} other {# itens adicionados à sua Biblioteca}}",
-                "newVersion": "Nova versão de {name} adicionada",
-                "notImported": "Não importados"
-            },
-            "stage": {
-                "label": "Prévia da importação · Visualização 3D inalterada",
-                "loading": "Carregando a prévia…",
-                "empty": "Nada para pré-visualizar",
-                "needsKind": "Escolha o que é para ver a prévia.",
-                "rejected": "Não é possível importar, então não há prévia.",
-                "previewFailed": "Não foi possível carregar a prévia.",
-                "noArtwork": "Nenhuma página para pré-visualizar.",
-                "triangles": "{triangles} triângulos",
-                "trianglesCap": "{triangles} triângulos · limite {cap}",
-                "tall": "{height} de altura",
-                "before": "Antes",
-                "after": "Depois",
-                "vector": "vetorial",
-                "pixels": "{width} × {height} px",
-                "views": "Vistas",
-                "view": {
-                    "front": "Frontal",
-                    "side": "Lateral",
-                    "top": "Superior"
-                },
-                "pickGrip": "Clique em um ponto do modelo para definir a empunhadura · <keys></keys> para parar",
-                "surface": "Superfície da arte: {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Importe modelos e artes separadamente",
-                    "body": "Escolha um modelo ou qualquer número de arquivos de arte por vez."
-                },
-                "session-expired": {
-                    "title": "Esta importação expirou",
-                    "body": "As importações são fechadas após 30 minutos sem uso. Escolha os arquivos novamente."
-                },
-                "unknown-file": {
-                    "title": "Esse arquivo não faz parte desta importação",
-                    "body": "Escolha os arquivos novamente."
-                },
-                "too-large": {
-                    "title": "Arquivos demais",
-                    "body": "Escolha no máximo 50 arquivos por vez."
-                },
-                "unreadable": {
-                    "title": "Não foi possível ler o arquivo",
-                    "body": "Ele pode ter sido movido, ou outro aplicativo pode estar com ele aberto."
-                },
-                "busy": {
-                    "title": "Outra etapa da importação ainda está em andamento",
-                    "body": "Aguarde a conclusão e tente novamente."
-                },
-                "timeout": {
-                    "title": "O importador demorou demais",
-                    "body": "Arquivos grandes ou complexos podem exceder o tempo limite. Tente novamente ou simplifique o arquivo antes de exportar."
-                },
-                "worker-crashed": {
-                    "title": "O importador parou ao ler o arquivo",
-                    "body": "Seu arquivo não foi alterado. Tente novamente; se acontecer de novo, o arquivo pode estar danificado."
-                },
-                "pdf-unavailable": {
-                    "title": "Não foi possível renderizar as páginas do PDF",
-                    "body": "Tente novamente. Se continuar acontecendo, exporte a arte como PNG ou SVG."
-                },
-                "write-failed": {
-                    "title": "Não foi possível salvar na sua Biblioteca",
-                    "body": "Verifique se há espaço livre em disco e tente novamente."
-                },
-                "read-only": {
-                    "title": "Esse item não pode ser alterado",
-                    "body": "Itens integrados são somente leitura. Adicione-o como novo."
-                },
-                "corrupt": {
-                    "title": "Sua Biblioteca tem um item danificado",
-                    "body": "Tente novamente. O restante da sua Biblioteca não foi afetado."
-                },
-                "cancelled": {
-                    "title": "Cancelado",
-                    "body": "Nada mais foi importado."
-                },
-                "other": {
-                    "title": "Algo deu errado",
-                    "body": "Tente novamente."
-                }
-            },
-            "finishFailed": "Não foi possível concluir a importação",
-            "copyIntoShowFailed": "Não foi possível copiar a importação para o show"
-        },
-        "fileDialog": {
-            "importTitle": "Importar",
-            "saveTemplateTitle": "Salvar gabarito",
-            "models": "Modelo 3D (glb, gltf)",
-            "artwork": "Arte (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Modelos e artes",
-            "pngImage": "Imagem PNG"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Salvar o kit inicial do Blender",
-            "saveFailed": "Não foi possível salvar o kit inicial do Blender"
         }
     },
     "marchers": {
@@ -1698,7 +1299,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Fundo da produção",
-                "drawFailed": "Não foi possível desenhar a imagem de fundo",
                 "empty": "Nenhuma imagem de fundo",
                 "help": "A imagem de fundo é sincronizada automaticamente quando você envia uma nova revisão. Para alterá-la, altere a imagem de fundo no editor do campo e envie uma nova revisão.",
                 "title": "Imagem de fundo"
@@ -3376,7 +2976,6 @@
             "title": "Câmeras",
             "close": "Fechar câmeras",
             "edit": "Editar câmeras…",
-            "saveView": "Salvar visualização atual",
             "none": "Nenhuma câmera",
             "empty": "Nenhuma câmera. Mova a visualização para onde quiser e depois adicione-a.",
             "addView": "Adicionar visualização atual",
@@ -3399,68 +2998,7 @@
             "removed": "“{name}” removida",
             "undo": "Desfazer",
             "replace": "Substituir",
-            "replaceWithProfile": "Substituir suas câmeras por “{name}”? Sua lista atual não está salva em nenhum outro lugar.",
-            "profile": "Perfil",
-            "source": {
-                "defaults": "Padrões do local",
-                "custom": "Câmeras deste show"
-            },
-            "edited": "Editado",
-            "myProfiles": "Neste computador",
-            "saveAsProfile": "Salvar como perfil de câmera…",
-            "saveAsProfileShort": "Salvar como perfil…",
-            "manageProfiles": "Gerenciar perfis…",
-            "notice": {
-                "defaults": "As câmeras do próprio local. Qualquer alteração as torna deste show.",
-                "custom": "Salvas apenas com este show.",
-                "profile": "Salvas com este show e no seu perfil.",
-                "edited": "Alteradas desde que o perfil foi salvo.",
-                "newer": "Este perfil foi alterado neste computador.",
-                "missing": "O perfil deste show não está neste computador."
-            },
-            "updateProfile": "Atualizar perfil",
-            "saveAsNew": "Salvar como novo…",
-            "useNewVersion": "Usar a nova versão",
-            "addToMyProfiles": "Adicionar aos meus perfis",
-            "profileName": "Nome do perfil",
-            "save": "Salvar",
-            "defaultProfileName": "Câmeras de {venue}",
-            "copyName": "Cópia de {name}",
-            "profilesTitle": "Perfis de câmera",
-            "profilesHint": "Salvos na sua Biblioteca neste computador, para qualquer show. Cada show guarda a própria cópia do perfil que usa.",
-            "noProfiles": "Ainda não há perfis de câmera. Escolha Salvar como perfil de câmera… para criar um.",
-            "cameraCount": "{count, plural, one {# câmera} other {# câmeras}}",
-            "use": "Usar",
-            "otherVenue": "Este perfil é de outro local",
-            "deleteProfile": "Excluir",
-            "deleteProfileConfirm": "Excluir “{name}” deste computador? Os shows que o usam mantêm a própria cópia.",
             "saveFailed": "Falha ao salvar as câmeras da Visualização 3D"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "Bandeira para mastro de 5 ft",
-                "silk5_5ftPole": "Bandeira para mastro de 5,5 ft",
-                "silk6ftPole": "Bandeira para mastro de 6 ft",
-                "silk7ftPole": "Bandeira para mastro de 7 ft",
-                "silkStandard": "Padrão",
-                "silkOversized": "Extragrande",
-                "silkTeardrop": "Gota",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Swing curvo ou super swing",
-                "silkOversizedSwing": "Swing extragrande",
-                "silkArc": "Arco normal",
-                "silkNarrowArc": "Arco estreito",
-                "silkSuperArc": "Super arco",
-                "floorWgiMinimum": "Área de competição WGI, mínima",
-                "floorWgiMaximum": "Área de competição WGI, máxima",
-                "flatProp4x8ft": "Chapa de 4 x 8 ft"
-            },
-            "kind": {
-                "silk": "Bandeira",
-                "floor": "Piso",
-                "flatProp": "Adereço plano"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Falha ao atualizar o local da Visualização 3D"
@@ -3810,7 +3348,6 @@
         "help": {
             "title": "Ajuda",
             "showShortcuts": "Atalhos de teclado",
-            "starterKit": "Obter o kit inicial do Blender…",
             "website": "Site",
             "guides": "Documentação/guias"
         },
@@ -3821,7 +3358,6 @@
             "openMarchFile": "Arquivo do OpenMarch",
             "allFiles": "Todos os arquivos",
             "audioFile": "Arquivo de áudio",
-            "zipArchive": "Arquivo ZIP",
             "video": "Vídeo"
         },
         "newShow": {

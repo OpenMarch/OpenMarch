@@ -212,15 +212,6 @@ export function buildApplicationMenu(): Menu {
             submenu: [
                 ...HELP_MENU_ACTIONS.map(rendererActionItem),
                 { type: "separator" },
-                {
-                    label: t("menu.help.starterKit"),
-                    click: async () => {
-                        const { saveStarterKit } =
-                            await import("./starter-kit/save");
-                        await saveStarterKit();
-                    },
-                },
-                { type: "separator" },
                 linkItem(t("menu.help.website"), "https://openmarch.com"),
                 linkItem(t("menu.help.guides"), "https://openmarch.com/guides"),
                 // i18n-ignore: brand name, the same in every language

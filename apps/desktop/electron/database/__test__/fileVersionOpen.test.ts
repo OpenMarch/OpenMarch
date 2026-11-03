@@ -1,8 +1,9 @@
 /**
- * Opens real `.dots` files at versions 7, 8 and 9 through the same steps as the
+ * Opens real `.dots` files at versions 7 to 10 through the same steps as the
  * main process's `setActiveDb` (setDbPath, version decision, migrations), and
- * checks that 7 and 8 open and keep their version while 9 is refused without a
- * single byte of the file changing (ADR 0001 §6).
+ * checks that 7 and 8 open and keep their version, a parked fork-only floor
+ * file (9) opens and is written as 8, and 10 is refused without a single byte
+ * of the file changing (ADR 0001 §6).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseSync } from "node:sqlite";
@@ -108,9 +109,17 @@ describe("opening files by format version", () => {
         expect(userVersionOf(filePath)).toBe(v);
     });
 
-    it("refuses a file at 9 and leaves its bytes unchanged", async () => {
+    it("opens a parked floor-model file (9) and writes it as 8", async () => {
         const filePath = path.join(tempDir, "show-9.dots");
         await createShowFile(filePath, 9);
+
+        expect(await openLikeSetActiveDb(filePath)).toBe(200);
+        expect(userVersionOf(filePath)).toBe(8);
+    });
+
+    it("refuses a file at 10 and leaves its bytes unchanged", async () => {
+        const filePath = path.join(tempDir, "show-10.dots");
+        await createShowFile(filePath, 10);
         const hashBefore = sha256(filePath);
         const mtimeBefore = fs.statSync(filePath).mtimeMs;
         const filesBefore = siblings(filePath);
@@ -120,7 +129,7 @@ describe("opening files by format version", () => {
         expect(sha256(filePath)).toBe(hashBefore);
         expect(fs.statSync(filePath).mtimeMs).toBe(mtimeBefore);
         expect(siblings(filePath)).toEqual(filesBefore);
-        expect(userVersionOf(filePath)).toBe(9);
+        expect(userVersionOf(filePath)).toBe(10);
     });
 
     it("refuses a much newer file too", async () => {
@@ -175,10 +184,10 @@ describe("opening files by format version", () => {
             },
         );
 
-        it("refuses a file at 9 with a message to update, without migrating", async () => {
-            const db = new DatabaseSync(path.join(tempDir, "m-9.dots"));
+        it("refuses a file at 10 with a message to update, without migrating", async () => {
+            const db = new DatabaseSync(path.join(tempDir, "m-10.dots"));
             try {
-                db.prepare("PRAGMA user_version = 9").run();
+                db.prepare("PRAGMA user_version = 10").run();
                 const migrator = new DrizzleMigrationService(getOrm(db), db);
                 await expect(
                     migrator.applyPendingMigrations(migrationsFolder),
@@ -189,7 +198,7 @@ describe("opening files by format version", () => {
                     )
                     .all();
                 expect(tables).toEqual([]);
-                expect(readUserVersion(db)).toBe(9);
+                expect(readUserVersion(db)).toBe(10);
             } finally {
                 db.close();
             }

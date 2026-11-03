@@ -43,7 +43,17 @@ describe("file-format version", () => {
             },
         );
 
-        it.each([9, 10, 42, 2 ** 31 - 1])(
+        it.each([false, true])(
+            "opens a parked floor-model file (9) as a timeline file, written as 8 (new: %s)",
+            (isNewFile) => {
+                expect(decideFileVersion(9, isNewFile)).toEqual({
+                    action: "downgrade",
+                    version: 8,
+                });
+            },
+        );
+
+        it.each([10, 42, 2 ** 31 - 1])(
             "refuses a file at %i as too new, new or not",
             (version) => {
                 for (const isNewFile of [false, true]) {
@@ -108,13 +118,18 @@ describe("file-format version", () => {
             [7, false],
             [8, false],
             [8, true],
-            [9, false],
-            [9, true],
             [1000, false],
         ])("never writes the version of a file at %i (new: %s)", (v, isNew) => {
             withDb(v, (db) => {
                 applyFileVersionDecision(db, isNew);
                 expect(readUserVersion(db)).toBe(v);
+            });
+        });
+
+        it("writes a parked floor-model file (9) as 8", () => {
+            withDb(9, (db) => {
+                applyFileVersionDecision(db, false);
+                expect(readUserVersion(db)).toBe(8);
             });
         });
     });

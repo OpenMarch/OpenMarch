@@ -13,7 +13,6 @@ import {
 import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
-import { LIBRARY_LIMITS } from "../../src/view3d/library/protocol";
 import { VIEW3D_AUTO_OPEN_SETTING } from "../../src/view3d/sync/protocol";
 import { buildApplicationMenu } from "./application-menu";
 import { onMainLanguageChange, setMainLanguage, t } from "./i18n";
@@ -65,22 +64,7 @@ import {
     type OpenShowOptions,
 } from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
-import {
-    SHARP_SELF_TEST_ENV,
-    writeSharpSelfTest,
-} from "./services/sharp-self-test";
-import {
-    LIBRARY_IPC_SELF_TEST_ENV,
-    LIBRARY_IPC_SELF_TEST_FILES_ENV,
-    writeLibraryIpcSelfTest,
-} from "./services/library-ipc-self-test";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
-import {
-    getLibraryStore,
-    initLibraryIpc,
-    watchEditorWindow,
-} from "./library-ipc";
-import { isPdfRendererWindow } from "./artwork-import";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -251,7 +235,6 @@ async function createWindow(title?: string) {
         },
     });
     app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
-    watchEditorWindow(win);
     // Touch screens (Windows tablets) need nothing here: Chromium's touch
     // events are on whenever a touch screen is present ("touch-events" is
     // "automatic" by default), and Electron keeps pinch-to-zoom of the page
@@ -537,25 +520,6 @@ function initIpcHandlers() {
 }
 
 void app.whenReady().then(async () => {
-    const sharpSelfTestOut = process.env[SHARP_SELF_TEST_ENV];
-    if (sharpSelfTestOut) {
-        // Packaging check only: run sharp, write the result, open nothing.
-        app.exit(await writeSharpSelfTest(sharpSelfTestOut));
-        return;
-    }
-    const libraryIpcSelfTestOut = process.env[LIBRARY_IPC_SELF_TEST_ENV];
-    if (libraryIpcSelfTestOut) {
-        // Packaging check only: run the import IPC on given files, open nothing.
-        app.exit(
-            await writeLibraryIpcSelfTest(
-                libraryIpcSelfTestOut,
-                join(__dirname, "import-worker.js"),
-                process.env[LIBRARY_IPC_SELF_TEST_FILES_ENV] ?? "",
-            ),
-        );
-        return;
-    }
-
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
 
@@ -587,7 +551,6 @@ void app.whenReady().then(async () => {
         getTheme: () => store.get("theme", "light") as string,
         getLanguage: () => store.get("language", "en") as string,
         getEditorWindow: () => win,
-        getLibraryStore,
         // A Playwright session never asks, so the question doesn't sit over every test
         getAutoOpen: () =>
             process.env.PLAYWRIGHT_SESSION
@@ -600,12 +563,6 @@ void app.whenReady().then(async () => {
                 [VIEW3D_AUTO_OPEN_SETTING]: autoOpen,
             });
         },
-    });
-    initLibraryIpc({
-        getEditorWindow: () => win,
-        getSetting: (key) => store.get(key),
-        setSetting: (key, value) => store.set(key, value),
-        workerPath: join(__dirname, "import-worker.js"),
     });
 
     // i18n-ignore: the product name and a file path, the same in every language
@@ -900,10 +857,7 @@ ipcMain.handle(
 // Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
-    // Hidden PDF renderer windows (C1.8) are never shown or focused.
-    const allWindows = BrowserWindow.getAllWindows().filter(
-        (w) => !isPdfRendererWindow(w),
-    );
+    const allWindows = BrowserWindow.getAllWindows();
     if (win && !win.isDestroyed()) {
         win.focus();
     } else if (allWindows.length) {
@@ -1320,9 +1274,6 @@ export async function saveFile() {
         .then(async (path) => {
             if (path.canceled || !path.filePath) return 0;
 
-            // Save prunes the show Library (C2.1), so the copy carries only what the show uses
-            await pruneShowLibrary();
-
             // Make a copy into a temp file
             const tempPath = path.filePath + ".tmp";
             if (fs.existsSync(tempPath)) {
@@ -1425,21 +1376,6 @@ function requestSvgBeforeClose(win: BrowserWindow): Promise<string> {
 }
 
 /**
- * Prunes the open show's Library (C2.1). Loaded when first used: it runs the renderer's
- * db-functions, which stay out of the startup bundle.
- */
-async function pruneShowLibrary() {
-    try {
-        const { pruneShowLibraryAt } =
-            await import("../database/showLibraryPrune");
-        await pruneShowLibraryAt(DatabaseServices.getDbPath());
-    } catch (error) {
-        // Never stops the close or the copy
-        console.error("Couldn't load the show Library prune", error);
-    }
-}
-
-/**
  * Closes the current database file.
  *
  * @returns 200 for success, -1 for failure
@@ -1474,9 +1410,6 @@ async function closeCurrentFileNow(isAppQuitting: boolean) {
     } catch (error) {
         console.error("Error getting SVG on close:", error);
     }
-
-    // The app autosaves, so closing is when save prunes the show Library (C2.1)
-    await pruneShowLibrary();
 
     // Close the current file
     DatabaseServices.setDbPath("", false);

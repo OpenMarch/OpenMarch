@@ -255,11 +255,7 @@ async function openWithSuspension(
             };
         }
 
-        // A timeline file (or one just converted, which has nothing pending).
-        const migrator = new DrizzleMigrationService(getOrm(db), db);
-        if (migrator.hasPendingMigrations(deps.migrationsFolder))
-            deps.beforeMigrations?.(filePath);
-        await migrator.applyPendingMigrations(deps.migrationsFolder);
+        await migrateTimelineFile(filePath, db, deps);
         keepOpen = true;
         return { status: 200, db, sqlSuspension };
     } finally {
@@ -338,4 +334,16 @@ export function resumeSqlProxyAfterReload(
         const timer = setTimeout(resume, fallbackMs);
         webContents.once("did-navigate", resume);
     });
+}
+
+/** A timeline file (or one just converted, which has nothing pending): run its migrations. */
+async function migrateTimelineFile(
+    filePath: string,
+    db: DatabaseSync,
+    deps: OpenShowDeps,
+): Promise<void> {
+    const migrator = new DrizzleMigrationService(getOrm(db), db);
+    if (migrator.hasPendingMigrations(deps.migrationsFolder))
+        deps.beforeMigrations?.(filePath);
+    await migrator.applyPendingMigrations(deps.migrationsFolder);
 }

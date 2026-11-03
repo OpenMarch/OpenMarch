@@ -42,7 +42,6 @@ import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
-import { ShareNoteExportLine } from "@/components/assets/ShowCredits";
 import tolgee from "@/global/singletons/Tolgee";
 import { formatFixed } from "@/utilities/formatLocale";
 import { useQuery } from "@tanstack/react-query";
@@ -2102,7 +2101,6 @@ export default function ExportCoordinatesModal() {
                             <T keyName="exportCoordinates.title" />
                         )}
                     </DialogTitle>
-                    <ShareNoteExportLine />
                     <ExportModalContents
                         onMobileExportClick={handleMobileExportClick}
                     />

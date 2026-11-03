@@ -1,8 +1,8 @@
 /**
  * The built-in catalog's licenses (props-spec.md section 10, ADR 0002 D-21,
  * package C5.8). `assets/licenses.json` declares every built-in one of two
- * ways: a folder with its license, whose `LICENSE` file must say so
- * (OpenMarch-made content, the add-on, the om-pose assets), or a third-party
+ * ways: a folder with its license, whose `LICENSE` file must say so (the
+ * om-pose assets), or a third-party
  * entry with its SPDX license, author, source, attribution and retrieval
  * date. Third-party built-ins are CC0 or CC-BY 4.0 only. A desktop test runs
  * the check over the repository's tracked files, so CI fails on an entry
@@ -10,7 +10,7 @@
  */
 
 /** The folders, relative to `apps/desktop`, whose files ship as built-ins. */
-export const BUILTIN_ASSET_ROOTS = ["src/view3d/assets", "starter-kit"];
+export const BUILTIN_ASSET_ROOTS = ["src/view3d/assets"];
 
 /** The manifest itself, relative to `apps/desktop`. */
 export const LICENSES_MANIFEST = "src/view3d/assets/licenses.json";

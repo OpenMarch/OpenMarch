@@ -28,7 +28,7 @@ const trumpet: ThirdPartyEntry = {
 };
 
 const BODY = "src/view3d/assets/om-pose/bodies/neutral-average.glb";
-const TEMPLATE = "starter-kit/templates/silk.blend";
+const TEMPLATE = "src/view3d/assets/templates/silk.blend";
 
 /** A tree with the trumpet listed and two folders under their LICENSE. */
 const files = [
@@ -36,13 +36,14 @@ const files = [
     "src/view3d/assets/instruments/CREDITS.md",
     "src/view3d/assets/om-pose/LICENSE",
     BODY,
-    "starter-kit/templates/LICENSE",
+    "src/view3d/assets/templates/LICENSE",
     TEMPLATE,
 ];
 const texts: Record<string, string> = {
     "src/view3d/assets/om-pose/LICENSE":
         "These assets are in the counsel gate.",
-    "starter-kit/templates/LICENSE": "Creative Commons\n\nCC0 1.0 Universal\n",
+    "src/view3d/assets/templates/LICENSE":
+        "Creative Commons\n\nCC0 1.0 Universal\n",
 };
 const licenseText = (p: string) => texts[p] ?? null;
 
@@ -52,7 +53,7 @@ const good: BuiltinLicenses = {
             path: "src/view3d/assets/om-pose",
             license: "LicenseRef-Counsel-Gate",
         },
-        { path: "starter-kit/templates", license: "CC0-1.0" },
+        { path: "src/view3d/assets/templates", license: "CC0-1.0" },
     ],
     entries: [trumpet],
 };
@@ -137,14 +138,14 @@ describe("checkBuiltinLicenses", () => {
                 folders: [
                     { path: "src/view3d/assets/om-pose", license: "MIT" },
                     {
-                        path: "starter-kit/templates",
+                        path: "src/view3d/assets/templates",
                         license: "GPL-3.0-or-later",
                     },
                 ],
             }),
         ).toEqual([
             `src/view3d/assets/om-pose: license "MIT" isn't allowed (${Object.keys(FOLDER_LICENSES).join(", ")})`,
-            "starter-kit/templates: LICENSE doesn't say GPL-3.0-or-later",
+            "src/view3d/assets/templates: LICENSE doesn't say GPL-3.0-or-later",
         ]);
     });
 
@@ -152,9 +153,11 @@ describe("checkBuiltinLicenses", () => {
         expect(
             check(
                 good,
-                files.filter((f) => f !== "starter-kit/templates/LICENSE"),
-            ).filter((p) => p.startsWith("starter-kit")),
-        ).toEqual(["starter-kit/templates: LICENSE is missing"]);
+                files.filter(
+                    (f) => f !== "src/view3d/assets/templates/LICENSE",
+                ),
+            ).filter((p) => p.startsWith("src/view3d/assets/templates")),
+        ).toEqual(["src/view3d/assets/templates: LICENSE is missing"]);
     });
 
     it("refuses one license for a whole asset root", () => {
