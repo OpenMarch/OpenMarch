@@ -27,7 +27,7 @@ ordinary positions it writes.
   The Curve (`curveTool`) is a preset of the Line (`ToolKind.preset`): its points start smooth, it
   saves Line recipes, and pickers know it by `toolId`. A picker that arms or highlights a kind
   threads `toolId(kind)`, never `kind.shape.id`, which a preset shares with its kind; code that
-  reads recipes or saved shapes back skips presets (`PLACED_KINDS`, `savedShapes.ts`).
+  reads recipes back skips presets (`PLACED_KINDS`).
   `group/`: marchers grouped where they stand (`groupTool`, #603), read back but never drawn.
   `box/edgePull.ts` lands edges and corners on yard lines and hashes; `box/modeMemory.ts`
   remembers each fill mode's numbers.
@@ -49,7 +49,7 @@ ordinary positions it writes.
 - `placed/`: placed shapes read back from recipes, their membership (a marcher that moves away
   leaves the shape), selecting and editing them (`commitBox.ts`), grouping marchers
   (`groupMarchers.ts`) and ungrouping them (`ungroupShape.ts`), and their overlay.
-- `library/`: saved shapes and stars. `command/`: the command bar's shape steps.
+- `command/`: the command bar's shape steps.
   `preview/`: a shape's small picture, drawn from its own geometry. `transform/`: turning and
   flipping a plain selection, with no recipe. `draw/`: conversions between fills.
 - `assign.ts`, `leastTravel.ts`: who goes where. `leastTravel` is the one replaceable solver.

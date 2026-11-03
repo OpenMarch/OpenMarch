@@ -620,46 +620,6 @@ export const timeline_shape_recipe_marchers = sqliteTable(
 );
 
 /**
- * The show's copies of the saved shapes it uses (ADR 0006, saved shapes; #353): a shape kind and
- * its intervals, kept in the user's library across shows and copied here so the show opens with
- * them on a machine without that library entry. App data, outside undo history like
- * `library_items`: saving a shape isn't a drill edit.
- */
-export const saved_shapes = sqliteTable(
-    "saved_shapes",
-    {
-        /** The saved shape's id, the same as in the user's library */
-        id: text().primaryKey(),
-        name: text().notNull(),
-        /** The shape kind's id and generator version, as in `timeline_shape_recipes` */
-        kind: text().notNull(),
-        kind_version: integer().notNull(),
-        /** JSON object, each interval parameter's key to its value in steps */
-        intervals: text().notNull(),
-        /** What the user wrote about it; NULL for nothing */
-        description: text(),
-        /**
-         * JSON object, how a closed kind is filled, as in a recipe's `params.distribution` but
-         * without its size or seed (ADR 0006); NULL for an open kind
-         */
-        distribution: text(),
-        created_at: text()
-            .notNull()
-            .default(sql`(CURRENT_TIMESTAMP)`),
-        updated_at: text()
-            .notNull()
-            .default(sql`(CURRENT_TIMESTAMP)`),
-    },
-    (_table) => [
-        check("saved_shapes_intervals_check", sql`json_valid(intervals)`),
-        check(
-            "saved_shapes_distribution_check",
-            sql`distribution IS NULL OR json_valid(distribution)`,
-        ),
-    ],
-);
-
-/**
  * Bookkeeping, not data: one row per changed timeline row, written by triggers and drained by
  * the write wrapper inside each transaction (spec §10.2). Has no history triggers.
  */

@@ -100,7 +100,6 @@ import {
 } from "./editTargets";
 import { parseDegrees, scrubDistance } from "./scrub";
 import { ScrubNumber, type ScrubMove } from "./ScrubNumber";
-import { SaveShapeButton } from "../library/SaveShapeButton";
 import { LayoutMenu } from "./LayoutPicker";
 import { ReshuffleButton } from "./ReshuffleButton";
 import { EdgeToggle } from "./EdgeToggle";
@@ -523,14 +522,11 @@ function ShapeEditorBar({
                         canExpand={canExpand}
                         asIs={kind.asIs === true}
                     />
-                    {/* What doesn't change the shape itself, at the end (owner): its pathways
-                        and saving it to the library */}
+                    {/* What doesn't change the shape itself, at the end (owner): its pathways */}
                     <Divider />
                     <EndControls
                         live={live}
-                        stepPx={stepPx}
                         canPlace={target.place !== undefined}
-                        canSave={kind.asIs !== true}
                     />
                 </span>
             </div>
@@ -1102,19 +1098,14 @@ const TurnControls = memo(function TurnControls({
 });
 
 /**
- * Snap, Pathways and ☆ Save (not for a group, which the library can't keep), then Place for a new
- * shape or Ungroup for a placed one
+ * Snap and Pathways, then Place for a new shape or Ungroup for a placed one
  */
 const EndControls = memo(function EndControls({
     live: target,
-    stepPx,
     canPlace,
-    canSave,
 }: {
     live: ShapeEditTarget;
-    stepPx: number;
     canPlace: boolean;
-    canSave: boolean;
 }) {
     return (
         <>
@@ -1122,15 +1113,6 @@ const EndControls = memo(function EndControls({
                 <HideMarchersButton />
                 <SnapButton />
                 {canPlace && <PathwaysButton />}
-                {canSave && (
-                    <SaveShapeButton
-                        shape={target}
-                        stepPx={stepPx}
-                        compact
-                        className="rounded-4 hover:text-accent flex min-h-24 min-w-24 items-center justify-center p-4"
-                        testId="shape-editor-save"
-                    />
-                )}
             </span>
             {canPlace && (
                 <>

@@ -4,7 +4,6 @@ import { boxTool } from "../../box/boxTool";
 import { circleTool } from "../../circle/circleTool";
 import { rowTool } from "../../__test__/fakeRowKind";
 import { curveTool, lineTool } from "../../line/lineTool";
-import { savedToolKind } from "../../library/savedShapes";
 import {
     PREVIEW_SPOTS,
     PREVIEW_VIEW,
@@ -83,20 +82,6 @@ describe("a shape's preview (#378)", () => {
         expect(preview.spots[0].y).toBeCloseTo(PREVIEW_VIEW / 2);
     });
 
-    it("draws a saved shape at its own intervals, so a wide box looks wide", () => {
-        const wide = savedToolKind(boxTool, {
-            id: "wide",
-            name: "Wide box",
-            kind: "block",
-            kindVersion: 1,
-            intervals: { across: 4, deep: 1 },
-        });
-        const preview = shapePreview(wide);
-        expect(preview.spots).toHaveLength(PREVIEW_SPOTS);
-        const box = size(preview.spots);
-        expect(box.width).toBeGreaterThan(box.depth * 2);
-    });
-
     it("gives the same picture for the same kind, so pickers don't redraw it", () => {
         expect(shapePreview(boxTool)).toBe(shapePreview(boxTool));
     });
@@ -153,24 +138,15 @@ describe("a shape's preview (#378)", () => {
     });
 
     it("keeps the dots clear of the outline, so the line reads as the shape (#382)", () => {
-        const wide = savedToolKind(boxTool, {
-            id: "wide",
-            name: "Wide box",
-            kind: "block",
-            kindVersion: 1,
-            intervals: { across: 4, deep: 1 },
-        });
-        for (const kind of [boxTool, wide]) {
-            const { spots, outline } = shapePreview(kind);
-            const xs = outline!.map((p) => p.x);
-            const ys = outline!.map((p) => p.y);
-            for (const { x, y } of spots) {
-                // The box's outline is a rectangle: every dot is well inside it
-                expect(x - Math.min(...xs)).toBeGreaterThan(2);
-                expect(Math.max(...xs) - x).toBeGreaterThan(2);
-                expect(y - Math.min(...ys)).toBeGreaterThan(2);
-                expect(Math.max(...ys) - y).toBeGreaterThan(2);
-            }
+        const { spots, outline } = shapePreview(boxTool);
+        const xs = outline!.map((p) => p.x);
+        const ys = outline!.map((p) => p.y);
+        for (const { x, y } of spots) {
+            // The box's outline is a rectangle: every dot is well inside it
+            expect(x - Math.min(...xs)).toBeGreaterThan(2);
+            expect(Math.max(...xs) - x).toBeGreaterThan(2);
+            expect(y - Math.min(...ys)).toBeGreaterThan(2);
+            expect(Math.max(...ys) - y).toBeGreaterThan(2);
         }
     });
 });

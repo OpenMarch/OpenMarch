@@ -2321,21 +2321,6 @@
             },
             "selectWholeShape": "Seleccionar {shape, select, block {bloque} circle {círculo} other {forma}}"
         },
-        "save": {
-            "descriptionLabel": "Descripción de la forma guardada (opcional)",
-            "descriptionPlaceholder": "Descripción (opcional)",
-            "ariaLabel": "Guardar esta forma en tu biblioteca",
-            "button": "Guardar",
-            "cancel": "Cancelar",
-            "nameLabel": "Nombre de la forma guardada",
-            "savedAs": "Guardada como {name}",
-            "tip": "Guarda esta forma en tu biblioteca y márcala con estrella",
-            "mixedIntervals": "Las líneas con intervalos mixtos aún no se pueden guardar"
-        },
-        "saved": {
-            "copyFailed": "No se pudo copiar la forma guardada al show",
-            "deleteFailed": "No se pudo eliminar la forma guardada del show"
-        },
         "command": {
             "fill": "Relleno: {modes}",
             "layout": "Disposición: {layouts}"
@@ -2573,37 +2558,6 @@
                 "spacing": "Espaciado"
             }
         },
-        "library": {
-            "addNamed": "Agregar {name} a mi biblioteca",
-            "addTip": "Agregar a mi biblioteca, para todos los shows",
-            "close": "Cerrar",
-            "deleteNamed": "Eliminar {name}",
-            "deleteTip": "Eliminar esta forma guardada",
-            "dismiss": "Descartar",
-            "draw": "Dibujar: {name}",
-            "full": "Hay {max} formas destacadas, todas las que caben en el anillo. Quita el destacado de una primero para destacar {name}.",
-            "group": {
-                "basic": "Básicas",
-                "saved": "Guardadas"
-            },
-            "intro": "Destaca una forma para tenerla en la pestaña Formas y en el anillo de formas, hasta {max}.",
-            "note": {
-                "apart": "a {spacing} de distancia",
-                "modeApart": "{mode, select, outline {Contorno} other {Repartido}} a {spacing} de distancia",
-                "apartStagger": "a {spacing} de distancia, escalonado {fraction}",
-                "apartStaggerLeft": "a {spacing} de distancia, escalonado {fraction} a la izquierda",
-                "showOnly": "solo este show",
-                "stagger": "escalonado {fraction}",
-                "staggerLeft": "escalonado {fraction} a la izquierda"
-            },
-            "savedEmpty": "Guarda una forma desde su fila ⋯ o desde el inspector para tenerla aquí, en todos los shows.",
-            "savedNewer": "{count, plural, one {# forma guardada necesita} other {# formas guardadas necesitan}} una versión más reciente de OpenMarch.",
-            "star": "Destacar",
-            "starNamed": "Destacar {name}",
-            "title": "Formas",
-            "unstar": "Quitar destacado",
-            "unstarNamed": "Quitar destacado de {name}"
-        },
         "spacing": {
             "empty": "Escribe un intervalo en pasos",
             "noGaps": "Un tramo necesita al menos 1 hueco",
@@ -2624,8 +2578,7 @@
             },
             "placeError": "Error al colocar la forma",
             "ring": {
-                "hint": "Haz clic en una forma, o en cualquier otro lugar para cerrar",
-                "starred": "Destacada"
+                "hint": "Haz clic en una forma, o en cualquier otro lugar para cerrar"
             },
             "section": {
                 "box": "Bloque",
@@ -2635,8 +2588,6 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Tipos de forma",
-                "library": "Biblioteca",
-                "libraryTip": "Abrir la biblioteca de formas para destacar formas",
                 "ringHintKeys": "Mantén <keys></keys> en el campo para abrir el anillo de formas"
             }
         },

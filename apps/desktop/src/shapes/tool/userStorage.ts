@@ -2,8 +2,7 @@ import { syncFromStorage } from "@/stores/syncFromStorage";
 
 /**
  * A list the user keeps in localStorage with the app's other per-user settings (#344): it follows
- * them from show to show and across restarts, and other windows pick up its changes. Stars and
- * saved shapes are kept this way.
+ * them from show to show and across restarts, and other windows pick up its changes.
  */
 export interface UserList<T> {
     load(): T[];
