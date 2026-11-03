@@ -363,6 +363,9 @@ ignoreRegExpList:
 overrides:
   - filename:
       - "**/i18n/**"
+      # Words in every language: the glossary and the style guide for translators
+      - "**/i18n-meta/glossary.json"
+      - "**/i18n-meta/style.md"
     enabled: false
   - filename:
       - "**/i18n/en.json"

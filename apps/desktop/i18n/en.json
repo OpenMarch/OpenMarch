@@ -1175,6 +1175,12 @@
             "link": "OpenMarch on {service}"
         }
     },
+    "languages": {
+        "help": {
+            "addYours": "Don't see your language? <link>Help us add it</link>",
+            "madeWithAi": "This translation was made with AI, so some words may be wrong. <link>Help us check it</link>"
+        }
+    },
     "library": {
         "browser": {
             "title": "Library",

@@ -12,6 +12,7 @@ import { isWebBuild } from "@/utilities/webBuild";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
 import { APP_LANGUAGES } from "@/utilities/languages";
+import TranslationHelpNote from "@/components/i18n/TranslationHelpNote";
 
 export default function GeneralSettings() {
     const tolgee = useTolgee(["language"]);
@@ -82,6 +83,7 @@ export default function GeneralSettings() {
             <SettingRow
                 label={<T keyName="settings.general.language" />}
                 htmlFor="language"
+                description={<TranslationHelpNote language={currentLanguage} />}
             >
                 <Select
                     value={currentLanguage}
