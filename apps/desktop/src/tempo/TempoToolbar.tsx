@@ -11,8 +11,6 @@ import {
 } from "@/components/timeline/ShortcutTooltip";
 import tolgee from "@/global/singletons/Tolgee";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
-import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
-import { getActionShortcutKeys } from "@/shortcuts/labels";
 import { TapTempo } from "./TapTempo";
 import { useTempoModeStore } from "./tempoModeStore";
 import { TempoHelp } from "./TempoHelp";
@@ -36,10 +34,6 @@ export function TempoToolbar(props: {
 }) {
     const click = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleClick = useMetronomeStore((s) => s.toggleMetronome);
-    const overrides = useShortcutOverridesStore((s) => s.overrides);
-    const metronomeKey = getActionShortcutKeys("toggleMetronome", {
-        overrides,
-    })?.join(" + ");
     const metronome = tolgee.t("tempoMode.toolbar.metronome", "Metronome");
     return (
         // A tooltip closes as soon as the pointer leaves its button or presses it, so none stays
@@ -78,7 +72,7 @@ export function TempoToolbar(props: {
                                   "Metronome: off",
                               )
                     }
-                    shortcut={metronomeKey}
+                    action="toggleMetronome"
                     hint={tolgee.t(
                         "tempoMode.toolbar.metronomeHint",
                         "A click on every count, to hear whether the counts sit on the music",
