@@ -25,10 +25,8 @@
             "noPreviousPage": "Não é possível copiar as coordenadas dos integrantes da página anterior. Não há página anterior",
             "setAllToNext": "Copiar posições da próxima página (todos os integrantes)",
             "setAllToNextSuccess": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}} other {As coordenadas de todos os # integrantes na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}}}",
-            "setAllToPrevious": "Copiar posições da página anterior (todos os integrantes)",
             "setSelectedToNext": "Copiar posições da próxima página (seleção)",
             "setSelectedToNextSuccess": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}} other {As coordenadas de # integrantes na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}}}",
-            "setSelectedToPrevious": "Copiar posições da página anterior (seleção)",
             "setAllToPreviousDone": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}} other {As coordenadas de todos os # integrantes na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}}}",
             "setSelectedToPreviousDone": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}} other {As coordenadas de # integrantes na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}}}"
         },
@@ -136,10 +134,8 @@
             "previousPage": "Página anterior (linha do tempo)",
             "splitMoveAtPlayhead": "Dividir o movimento no indicador de reprodução",
             "tapBeats": "Adicionar {count} batidas temporárias",
-            "toggleKeepOnPage": "Manter os integrantes selecionados onde param nesta página (na próxima, se eles se moverem nesta) ou deixá-los acompanhar de novo",
             "unsetHere": "Remover quadro-chave",
             "unsetHereAndFollowing": "Remover quadro-chave, páginas seguintes voltam a acompanhar",
-            "unsetHereAndPages": "{count, plural, =1 {Remover quadro-chave, a página {first} volta a acompanhar} other {Remover quadro-chave, as páginas {first}–{last} voltam a acompanhar}}",
             "unsetHereKeywords": "quadro-chave losango remover desdefinir definir seguintes limpar desfazer coordenada posição excluir keyframe diamond unset set following remove clear take back coordinate position delete",
             "splitSelectedIntoNewMove": "Separar os integrantes selecionados em um novo movimento",
             "mergeMoveIntoPage": "Mesclar este movimento à sua página"
@@ -928,26 +924,14 @@
             "swapMarchers": "Trocar integrantes",
             "timeline": {
                 "buttonWithHint": "{label}. {hint}",
-                "followAgain": "Voltar a seguir",
-                "followAgainHint": "{who, select, named {Fazer {names} voltarem a seguir a página {from}, para que editar a página {from} também os mova para cá} someNamed {Fazer {names} ({count} dos {total} selecionados) voltarem a seguir a página {from}, para que editar a página {from} também os mova para cá} some {Fazer {count} dos {total} selecionados voltarem a seguir a página {from}, para que editar a página {from} também os mova para cá} other {Fazer estes integrantes voltarem a seguir a página {from}, para que editar a página {from} também os mova para cá}}",
-                "followAgainHintEarlier": "{who, select, named {Fazer {names} voltarem a seguir as páginas anteriores} someNamed {Fazer {names} ({count} dos {total} selecionados) voltarem a seguir as páginas anteriores} some {Fazer {count} dos {total} selecionados voltarem a seguir as páginas anteriores} other {Fazer estes integrantes voltarem a seguir as páginas anteriores}}",
                 "goToPage": "Ir para a página {page}, onde estes integrantes se moveram pela última vez",
                 "goToStart": "Ir para o início",
                 "holdFrom": "Parados desde a página {page}",
                 "holdFromStart": "Parados desde o início",
                 "holdHere": "Estes integrantes ficam parados aqui",
-                "keepHere": "Manter aqui",
-                "keepHereHint": "{who, select, named {Manter {names} na página {page}, para que editar a página {from} não os mova para cá} someNamed {Manter {names} ({count} dos {total} selecionados) na página {page}, para que editar a página {from} não os mova para cá} some {Manter {count} dos {total} selecionados na página {page}, para que editar a página {from} não os mova para cá} other {Manter estes integrantes na página {page}, para que editar a página {from} não os mova para cá}}",
-                "keepHereHintEarlier": "{who, select, named {Manter {names} na página {page}, para que editar páginas anteriores não os mova para cá} someNamed {Manter {names} ({count} dos {total} selecionados) na página {page}, para que editar páginas anteriores não os mova para cá} some {Manter {count} dos {total} selecionados na página {page}, para que editar páginas anteriores não os mova para cá} other {Manter estes integrantes na página {page}, para que editar páginas anteriores não os mova para cá}}",
-                "keptOnThisPage": "Mantidos nesta página",
                 "movesOnThisPage": "Movem-se nesta página",
-                "pagesFollow": "{count, plural, =1 {A página {first} segue estes integrantes} other {As páginas {first}–{last} seguem estes integrantes}}",
-                "pagesFollowSome": "{count, plural, =1 {A página {first} segue alguns destes integrantes} other {As páginas {first}–{last} seguem alguns destes integrantes}}",
                 "someHoldHere": "Alguns destes integrantes ficam parados aqui",
-                "someKeptOnThisPage": "Alguns destes integrantes são mantidos nesta página",
                 "unsetHere": "Remover quadro-chave",
-                "unsetHereAndFollowingHint": "Remover o quadro-chave deles neste tempo, e {pageCount, plural, =1 {a página {first} volta a seguir} other {as páginas {first}–{last} voltam a seguir}} o quadro-chave anterior",
-                "unsetHereAndFollowingHintSome": "Remover o quadro-chave dos {count} dos {total} selecionados que têm um neste tempo, e {pageCount, plural, =1 {a página {first} volta a seguir} other {as páginas {first}–{last} voltam a seguir}} o quadro-chave anterior",
                 "unsetHereHint": "Remover o quadro-chave deles neste tempo, para que sigam as posições anteriores. As páginas seguintes ficam como estão",
                 "unsetHereHintSome": "Remover o quadro-chave dos {count} dos {total} selecionados que têm um neste tempo, para que sigam as posições anteriores. As páginas seguintes ficam como estão",
                 "unsetHereNone": "Nenhum dos integrantes selecionados tem quadro-chave neste tempo"
@@ -2797,32 +2781,9 @@
         },
         "keep": {
             "chain": {
-                "ariaLabel": "Página {page}: {label}. {hint}",
-                "follows": "{count, plural, one {# integrante permanece onde a página {from} o deixou} other {# integrantes permanecem onde a página {from} os deixou}}",
-                "followsEarlier": "{count, plural, one {# integrante permanece onde páginas anteriores o deixaram} other {# integrantes permanecem onde páginas anteriores os deixaram}}",
-                "followsHint": "Alterações na página {from} passam para a página {page}. Clique para {count, plural, =1 {mantê-lo} other {mantê-los}} aqui em vez disso",
-                "followsHintEarlier": "Alterações em páginas anteriores passam para a página {page}. Clique para {count, plural, =1 {mantê-lo} other {mantê-los}} aqui em vez disso",
-                "followsMenuHint": "Alterações na página {from} passam para a página {page}. Clique com o botão direito na página para {count, plural, =1 {mantê-lo} other {mantê-los}} aqui em vez disso",
-                "followsMenuHintEarlier": "Alterações em páginas anteriores passam para a página {page}. Clique com o botão direito na página para {count, plural, =1 {mantê-lo} other {mantê-los}} aqui em vez disso",
-                "followsNamed": "{count, plural, =1 {{names} permanece onde a página {from} o deixou} other {{names} permanecem onde a página {from} os deixou}}",
-                "followsNamedEarlier": "{count, plural, =1 {{names} permanece onde páginas anteriores o deixaram} other {{names} permanecem onde páginas anteriores os deixaram}}",
-                "kept": "{count, plural, one {# integrante mantido na página {page}} other {# integrantes mantidos na página {page}}}",
-                "keptHint": "Alterações na página {from} param aqui. Clique para seguir a página {from} de novo",
-                "keptHintEarlier": "Alterações em páginas anteriores param aqui. Clique para segui-las de novo",
-                "keptMenuHint": "Alterações na página {from} param aqui. Clique com o botão direito na página para seguir a página {from} de novo",
-                "keptMenuHintEarlier": "Alterações em páginas anteriores param aqui. Clique com o botão direito na página para segui-las de novo",
-                "keptNamed": "A página {page} mantém {names}",
-                "mixed": "{kept, plural, one {# dos {total} selecionados está mantido na página {page}} other {# dos {total} selecionados estão mantidos na página {page}}}",
-                "mixedNamed": "{kept, plural, one {# dos {total} selecionados está mantido na página {page} ({names})} other {# dos {total} selecionados estão mantidos na página {page} ({names})}}",
-                "mixedRestHint": "{count, plural, =1 {O outro segue páginas anteriores. Clique para mantê-lo aqui também} other {Os outros # seguem páginas anteriores. Clique para mantê-los aqui também}}",
-                "mixedRestMenuHint": "{count, plural, =1 {O outro segue páginas anteriores. Clique com o botão direito na página para mantê-lo aqui também} other {Os outros # seguem páginas anteriores. Clique com o botão direito na página para mantê-los aqui também}}"
-            },
-            "field": {
-                "kept": "Mantido na página {page} · não segue a página {from}",
-                "keptEarlier": "Mantido na página {page} · não segue páginas anteriores"
+                "ariaLabel": "Página {page}: {label}. {hint}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {A página {first} mantinha esta formação, então também mudou} other {As páginas {first}–{last} mantinham esta formação, então também mudaram}}",
                 "keepAsBefore": "{count, plural, =1 {Manter a página {first} como antes} other {Manter as páginas {first}–{last} como antes}}",
                 "keepError": "Erro ao manter as páginas seguintes"
             },
@@ -2831,7 +2792,6 @@
             },
             "errors": {
                 "keep": "Erro ao manter os integrantes na página",
-                "followAgain": "Erro ao fazer os integrantes seguirem de novo",
                 "readKept": "Erro ao ler as posições mantidas"
             }
         },
@@ -2871,8 +2831,6 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "Excluir página e seus movimentos",
-            "followAgain": "Deixar integrantes selecionados acompanharem de novo",
-            "keepHere": "Manter integrantes selecionados aqui",
             "setAsShown": "Fixar como exibido",
             "setAsShownNone": "Todos os integrantes selecionados já estão fixados em {page} ou no meio de um movimento",
             "setAsShownError": "Erro ao fixar integrantes como exibidos",
@@ -3261,9 +3219,6 @@
             "keep": {
                 "wholePage": "Manter funciona em uma página inteira, não em {counts}"
             },
-            "setAsShown": {
-                "wholePage": "Definir como exibido funciona em uma página inteira, não em {counts}"
-            },
             "tooFarPastEnd": "isso fica {count, plural, one {# tempo} other {# tempos}} além do fim; uma edição armazena no máximo {max}"
         }
     },
@@ -3292,7 +3247,6 @@
             "placeSelectedMarchers": "Posicionar integrantes selecionados",
             "snapToggleCaption": "Ajuste",
             "toNextPagePositions": "...nas posições da próxima página",
-            "toPreviousPagePositions": "...nas posições da página anterior",
             "setMarcherPositionsAriaLabel": "Definir posições dos integrantes"
         },
         "collisions": {

@@ -5,14 +5,13 @@ import { useTimelineResolverStore } from "../timelineStore";
 import {
     keepStatesComputations,
     sharedPageKeepStates,
-    useKeptAssignmentsStore,
     usePageKeepStates,
 } from "../useKeepLaterPages";
 
 /**
- * Pre-merge review U4: the selection's keep states are computed once per resolver version, kept
- * markers, selection and pages, however many places ask (the timeline panel, the inspector line,
- * K), even with their own arrays.
+ * Pre-merge review U4: the selection's keep states are computed once per resolver version,
+ * selection and pages, however many places ask (the timeline panel, the inspector line), even
+ * with their own arrays.
  */
 
 const page = (id: number, name: string, first: number, last: number) => ({
@@ -39,6 +38,7 @@ const span = (
     assignmentId,
     transitionId: null,
     slot: null,
+    assignmentEnd: null,
 });
 
 /** Marchers 1 and 2 move on page 2 and hold after */
@@ -54,29 +54,26 @@ const fakeResolver = () =>
 
 afterEach(() => {
     useTimelineResolverStore.setState({ resolver: null });
-    useKeptAssignmentsStore.setState({ ids: new Set() });
 });
 
 describe("sharedPageKeepStates", () => {
     it("computes once for equal inputs, as other arrays; again when any changes", () => {
         const resolver = fakeResolver();
-        const ask = (kept: Set<number>, ids: number[], version = 1) =>
+        const ask = (ids: number[], version = 1) =>
             sharedPageKeepStates({
                 resolver,
                 version,
-                kept,
                 pages: [...PAGES],
                 marcherIds: ids,
             });
         const before = keepStatesComputations();
-        const first = ask(new Set(), [1, 2]);
-        expect(ask(new Set(), [2, 1])).toBe(first);
+        const first = ask([1, 2]);
+        expect(ask([2, 1])).toBe(first);
         expect(keepStatesComputations()).toBe(before + 1);
-        // New kept markers, a new version, another selection: computed again
-        ask(new Set([20]), [1, 2]);
-        ask(new Set([20]), [1, 2], 2);
-        ask(new Set([20]), [1], 2);
-        expect(keepStatesComputations()).toBe(before + 4);
+        // A new version, another selection: computed again
+        ask([1, 2], 2);
+        ask([1], 2);
+        expect(keepStatesComputations()).toBe(before + 3);
         expect(first.map((s) => s.follows)).toEqual([[], [1, 2]]);
     });
 

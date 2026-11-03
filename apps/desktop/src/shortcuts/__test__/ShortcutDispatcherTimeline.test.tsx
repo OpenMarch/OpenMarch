@@ -127,17 +127,6 @@ describe("UI-17 shortcuts", () => {
     });
 });
 
-describe("UI-18 keep", () => {
-    it("binds K, and a held K toggles once", () => {
-        const keep = handle("toggleKeepOnPage");
-        render(<ShortcutDispatcher />);
-        fireEvent.keyDown(window, { key: "k", code: "KeyK" });
-        fireEvent.keyDown(window, { key: "k", code: "KeyK", repeat: true });
-        fireEvent.keyDown(window, { key: "k", code: "KeyK", repeat: true });
-        expect(keep).toHaveBeenCalledTimes(1);
-    });
-});
-
 describe("navigation held while playing", () => {
     function Navigation({ playing }: { playing: boolean }) {
         useActionHandler("nextPage", next, { ignoreRepeat: playing });

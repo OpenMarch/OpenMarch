@@ -115,6 +115,40 @@ export const LATER_MARCHER_COLUMNS = [
     },
 ] as const;
 
+/**
+ * Tables the timeline-only migrations add that timeline edits read: the shape recipes (0027),
+ * which the holds commands check, and the Held marks (0030). A page-mode fixture, which tests write timeline rows into
+ * and call app functions on, gets them before its undo triggers are made. Their migrations create
+ * them `IF NOT EXISTS`, so `finishTestConversion` runs them again harmlessly.
+ */
+export const LATER_TABLES = [
+    "timeline_shape_recipes",
+    "timeline_shape_recipe_marchers",
+    "timeline_held_marks",
+] as const;
+
+/** The statements of the migrations that create {@link LATER_TABLES}, as the service splits them. */
+export function laterTableStatements(): string[] {
+    const files = fs
+        .readdirSync(migrationsFolder)
+        .filter((name) => name.endsWith(".sql"))
+        .sort()
+        .map((name) =>
+            fs.readFileSync(path.join(migrationsFolder, name), "utf-8"),
+        )
+        .filter((sql) =>
+            LATER_TABLES.some((table) =>
+                sql.includes(`CREATE TABLE IF NOT EXISTS \`${table}\``),
+            ),
+        );
+    return files.flatMap((sql) =>
+        sql
+            .split("--> statement-breakpoint")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0),
+    );
+}
+
 /** Adds {@link LATER_MARCHER_COLUMNS} to the page-era file at `dbPath`. */
 export function addLaterMarcherColumns(dbPath: string): void {
     const db = new DatabaseSync(dbPath);

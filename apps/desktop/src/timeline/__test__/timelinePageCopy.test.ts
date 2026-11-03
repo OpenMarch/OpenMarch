@@ -10,8 +10,11 @@ import {
 import {
     moveMarchersInTarget,
     moveMarchersOnPage,
+    type TimelineMoveResult,
 } from "@/db-functions/timelineMoves";
+import { TimelineEditRefusedError } from "../timelineEditRefusals";
 import { createTimelineShapesInTransaction } from "@/db-functions/timelineShapes";
+import { saveShapeRecipeInTransaction } from "@/db-functions/shapeRecipes";
 import {
     setTimelineTransitionDestinationInTransaction,
     updateTimelineTransitionsInTransaction,
@@ -128,6 +131,7 @@ const runTimeline = async (
         direction,
         scope,
         selected = [],
+        followBack = false,
         onSuccess,
     }: {
         page: Page;
@@ -135,6 +139,7 @@ const runTimeline = async (
         direction: NeighborPageDirection;
         scope: NeighborPageScope;
         selected?: number[];
+        followBack?: boolean;
         onSuccess?: () => void;
     },
 ) => {
@@ -144,6 +149,7 @@ const runTimeline = async (
     const notify = {
         success: vi.fn(() => onSuccess?.()),
         error: vi.fn(),
+        note: vi.fn(),
     };
     const reportError = vi.fn();
     const result = await setMarchersToNeighborPage({
@@ -152,6 +158,7 @@ const runTimeline = async (
         selectedPage: page,
         pages,
         selectedMarcherIds: selected,
+        followBack,
         writeTimeline,
         notify,
         t,
@@ -174,7 +181,7 @@ describe("copyPagePositions without a resolver", () => {
 });
 
 describeDbTests("set marchers to the previous or next page", (it) => {
-    it("all to previous: every marcher takes its previous-page position in one undoable edit; success only after the write", async ({
+    it("all to previous (Clear this page): every marcher takes its previous-page position in one undoable edit, with no message (#573)", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -191,28 +198,19 @@ describeDbTests("set marchers to the previous or next page", (it) => {
             .map((p) => [p, positionsAt(pageEndBeat(p))] as const);
         expect(before).not.toEqual(target);
 
-        // When the success message shows, the edit is already in the resolver
-        let atSuccess: unknown;
         const { result, writeTimeline, notify } = await runTimeline(db, {
             page,
             pages,
             direction: "previous",
             scope: "all",
-            onSuccess: () => (atSuccess = positionsAt(endBeat)),
         });
 
         const count = resolver().marcherIds().length;
         expect(result).toBe(count);
         expect(writeTimeline).toHaveBeenCalledTimes(1);
-        expect(notify.success).toHaveBeenCalledTimes(1);
-        expect(notify.success.mock.calls[0]).toEqual([
-            t("actions.batchEdit.setAllToPreviousDone", {
-                count,
-                currentPage: page.name,
-                previousPage: previous.name,
-            }),
-        ]);
-        expect(atSuccess).toEqual(target);
+        // Everyone cleared: nothing to say
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).not.toHaveBeenCalled();
         expect(positionsAt(endBeat)).toEqual(target);
         // Only the selected page changes
         for (const [p, positions] of otherPages)
@@ -278,10 +276,15 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         });
         expect(positionsAt(pageEndBeat(last))).toEqual(target);
 
-        // Next from the second-to-last page reads the last page (moved apart again first)
-        await moveMarchersOnPage({
+        // Next from the second-to-last page reads the last page (moved apart again first; the
+        // last page is Not set now, so the move is a new one over its box)
+        await moveMarchersInTarget({
             db,
-            page: last,
+            target: {
+                kind: "range",
+                start: last.beats[0]!.index,
+                end: pageEndBeat(last),
+            },
             moves: [{ marcherId: 3, x: 123, y: 456 }],
         });
         await timelineResolverSettled();
@@ -443,7 +446,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         expect(positionsAt(endBeat)).toEqual(target);
     });
 
-    it("nothing to move: no edit is written, and the action still succeeds", async ({
+    it("nothing to move: no edit is written, and the action still counts the marcher", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -465,7 +468,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         const again = await runTimeline(db, args);
         expect(again.result).toBe(1);
         expect(again.writeTimeline).toHaveBeenCalledTimes(1);
-        expect(again.notify.success).toHaveBeenCalledTimes(1);
+        expect(again.notify.success).not.toHaveBeenCalled();
         expect(await undoRows(db)).toEqual(history);
 
         // Next with every marcher already there doesn't write at all
@@ -549,7 +552,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         });
 
         expect(result).toBe(1);
-        expect(writeTimeline.mock.calls[0]![0].clearOwn).toBe(true);
+        expect(writeTimeline.mock.calls[0]![0].clearPage).toBe(true);
         for (let beat = box.start; beat <= box.end; beat++)
             expect(positionAt(1, beat), `beat ${beat}`).toEqual(held);
     });
@@ -611,7 +614,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
             );
     });
 
-    it("a follow-the-leader transition into a shape is refused (E-T5)", async ({
+    it("Clear this page leaves a follow-the-leader member in its move and names it; nothing else to do writes nothing", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -654,6 +657,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         });
         await timelineResolverSettled();
         const before = await timelineRows(db);
+        const undoBefore = (await undoRows(db)).length;
 
         const { result, writeTimeline, notify } = await runTimeline(db, {
             page,
@@ -664,11 +668,20 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         });
 
         expect(result).toBeNull();
-        await expect(
-            writeTimeline.mock.results[0]!.value as Promise<unknown>,
-        ).rejects.toMatchObject({ code: "E-T5" });
+        const written = (await writeTimeline.mock.results[0]!
+            .value) as TimelineMoveResult;
+        expect(written.skipped).toBeInstanceOf(TimelineEditRefusedError);
+        expect(written.skipped!.marcherIds).toEqual([2]);
+        expect(written.skipped!.message).toMatch(
+            /^\S+ follows the leader, so it keeps its move here\.$/,
+        );
         expect(notify.success).not.toHaveBeenCalled();
+        // The quiet message names who was skipped, and why
+        expect(notify.note).toHaveBeenCalledExactlyOnceWith(
+            expect.stringMatching(/follows the leader/),
+        );
         expect(await timelineRows(db)).toEqual(before);
+        expect(await undoRows(db)).toHaveLength(undoBefore);
     });
 
     it("no resolver yet: the planning error is reported and nothing is written", async ({
@@ -690,5 +703,143 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         expect(reportError).toHaveBeenCalledWith(
             expect.any(TimelineNotReadyError),
         );
+    });
+});
+
+describeDbTests("Clear this page on a converted show (holds 4, #469)", (it) => {
+    /** `marcherIds`' rows over any beat of `page`'s box. */
+    const rowsOverPage = async (
+        db: DbConnection,
+        page: Page,
+        marcherIds: readonly number[],
+    ) =>
+        (await db.select().from(schema.timeline_assignments).all()).filter(
+            (r) =>
+                marcherIds.includes(r.marcher_id) &&
+                r.start_beat < pageEndBeat(page) &&
+                r.end_beat > page.beats[0]!.index,
+        );
+
+    /** Every marcher's position at every beat from 0 to `end`. */
+    const everyBeat = (end: number) =>
+        Array.from({ length: end + 1 }, (_, beat) => positionsAt(beat));
+
+    it("makes the page Not set for the selected marchers in its shared move; other marchers and other pages keep their motion; one undo restores it", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await convertPagesToTimeline(db);
+        await startTimelineResolver(db);
+        const pages = await sortedPages(db);
+        const page = pages[3]!;
+        const previous = pages[2]!;
+        const start = page.beats[0]!.index;
+        const end = pageEndBeat(page);
+        const last = pageEndBeat(pages[pages.length - 1]!);
+        const all = resolver().marcherIds();
+        const selected = [all[1]!, all[2]!];
+        const beforeRows = await timelineRows(db);
+        const before = everyBeat(last);
+        const held = Object.fromEntries(
+            selected.map((id) => [id, positionAt(id, pageEndBeat(previous))]),
+        );
+        expect(await rowsOverPage(db, page, selected)).toHaveLength(2);
+
+        const { result, notify } = await runTimeline(db, {
+            page,
+            pages,
+            direction: "previous",
+            scope: "selected",
+            selected,
+        });
+
+        expect(result).toBe(2);
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).not.toHaveBeenCalled();
+        expect(await rowsOverPage(db, page, selected)).toEqual([]);
+        const after = everyBeat(last);
+        for (let beat = 0; beat <= last; beat++)
+            for (const id of all) {
+                const inBox = beat >= start && beat <= end;
+                if (!selected.includes(id))
+                    expect(after[beat]![id], `marcher ${id} @${beat}`).toEqual(
+                        before[beat]![id],
+                    );
+                else if (inBox)
+                    expect(after[beat]![id], `marcher ${id} @${beat}`).toEqual(
+                        held[id],
+                    );
+                else if (beat < start)
+                    expect(after[beat]![id], `marcher ${id} @${beat}`).toEqual(
+                        before[beat]![id],
+                    );
+            }
+        // Later pages still arrive where they did
+        for (const p of pages.slice(4))
+            for (const id of selected)
+                expect(positionAt(id, pageEndBeat(p))).toEqual(
+                    before[pageEndBeat(p)]![id],
+                );
+
+        const undo = await performUndo(db);
+        expect(undo.success, undo.error?.message).toBe(true);
+        await timelineResolverSettled();
+        expect(await timelineRows(db)).toEqual(beforeRows);
+        expect(everyBeat(last)).toEqual(before);
+    });
+
+    it("skips and names a shape member, and clears the others", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await convertPagesToTimeline(db);
+        await startTimelineResolver(db);
+        const pages = await sortedPages(db);
+        const page = pages[3]!;
+        const [, shapeMember, other] = resolver().marcherIds();
+        const pageMove = (await db
+            .select()
+            .from(schema.timelines)
+            .where(eq(schema.timelines.end_beat, pageEndBeat(page)))
+            .get())!;
+        await db.transaction((tx) =>
+            saveShapeRecipeInTransaction({
+                tx,
+                timelineId: pageMove.id,
+                recipe: {
+                    kind: "line",
+                    kindVersion: 1,
+                    params: {},
+                    orderMode: "slot",
+                    reverse: false,
+                },
+                members: [{ marcherId: shapeMember!, slot: 0, x: 1, y: 2 }],
+            }),
+        );
+
+        const { result, writeTimeline, notify } = await runTimeline(db, {
+            page,
+            pages,
+            direction: "previous",
+            scope: "selected",
+            selected: [shapeMember!, other!],
+        });
+
+        expect(result).toBe(1);
+        // Counts only the marcher it cleared; one quiet message names the one it skipped
+        expect(notify.success).not.toHaveBeenCalled();
+        expect(notify.note).toHaveBeenCalledExactlyOnceWith(
+            expect.stringMatching(/is in a shape, so it keeps its move here/),
+        );
+        const written = (await writeTimeline.mock.results[0]!
+            .value) as TimelineMoveResult;
+        expect(written.cleared).toEqual([other]);
+        expect(written.skipped!.refusal).toBe("inShapeOrFollowTheLeader");
+        expect(written.skipped!.marcherIds).toEqual([shapeMember]);
+        expect(written.skipped!.message).toMatch(
+            /^\S+ is in a shape, so it keeps its move here\.$/,
+        );
+        expect(await rowsOverPage(db, page, [other!])).toEqual([]);
+        expect(await rowsOverPage(db, page, [shapeMember!])).toHaveLength(1);
     });
 });

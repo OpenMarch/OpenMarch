@@ -3,6 +3,11 @@ import { asc, count, sql } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import { assert } from "../utilities/assert";
 import type { DbTransaction } from "./types";
+import { hasHeldMarksTable } from "./timelineHeldArrival";
+import {
+    heldConflictInTransaction,
+    type HeldConflict,
+} from "./timelineHeldConflict";
 
 /**
  * The timeline change-log listener contract (ADR 0001 §5, spec §6 and §10.2).
@@ -75,7 +80,8 @@ export function notifyTimelineBatch(batch: ChangeBatch | undefined): void {
 /** One row of the `timeline_commit_violations` view. */
 export interface TimelineCommitViolation {
     code: string;
-    transitionId: number;
+    /** The transition at fault; null for a Held mark's (`E-H1`, `E-H3`), whose detail says who */
+    transitionId: number | null;
     detail: string;
 }
 
@@ -86,20 +92,27 @@ export interface TimelineCommitViolation {
 export class TimelineCommitViolationError extends Error {
     readonly code: string;
     readonly violations: readonly TimelineCommitViolation[];
+    /** For an E-H1, who has a move inside their Held hold, and where, for the message */
+    readonly held: HeldConflict | undefined;
 
-    constructor(violations: readonly TimelineCommitViolation[]) {
+    constructor(
+        violations: readonly TimelineCommitViolation[],
+        held?: HeldConflict,
+    ) {
         const [first] = violations;
         super(
             violations
-                .map(
-                    (v) =>
-                        `${v.code}: transition ${v.transitionId}: ${v.detail}`,
+                .map((v) =>
+                    v.transitionId === null
+                        ? `${v.code}: ${v.detail}`
+                        : `${v.code}: transition ${v.transitionId}: ${v.detail}`,
                 )
                 .join("; "),
         );
         this.name = "TimelineCommitViolationError";
         this.code = first?.code ?? "E-T6";
         this.violations = violations;
+        this.held = held;
     }
 }
 
@@ -107,20 +120,40 @@ export class TimelineCommitViolationError extends Error {
 const rowValue = (row: unknown, index: number, key: string): unknown =>
     Array.isArray(row) ? row[index] : (row as Record<string, unknown>)[key];
 
-/** Throws `TimelineCommitViolationError` if `timeline_commit_violations` returns any row. */
+/**
+ * Throws `TimelineCommitViolationError` if `timeline_commit_violations`, or
+ * `timeline_held_violations` once the file has Held marks (a page-era file being converted
+ * doesn't yet), returns any row.
+ */
 export async function assertNoTimelineCommitViolationsInTransaction(
     tx: DbTransaction,
 ): Promise<void> {
     const rows = (await tx.all(
         sql`SELECT code, transition_id, detail FROM timeline_commit_violations`,
     )) as unknown[];
+    if (await hasHeldMarksTable(tx))
+        rows.push(
+            ...((await tx.all(
+                sql`SELECT code, transition_id, detail FROM timeline_held_violations`,
+            )) as unknown[]),
+        );
     if (rows.length === 0) return;
-    throw new TimelineCommitViolationError(
-        rows.map((row) => ({
+    const violations = rows.map((row): TimelineCommitViolation => {
+        const transitionId = rowValue(row, 1, "transition_id");
+        return {
             code: String(rowValue(row, 0, "code")),
-            transitionId: Number(rowValue(row, 1, "transition_id")),
+            transitionId:
+                transitionId === null || transitionId === undefined
+                    ? null
+                    : Number(transitionId),
             detail: String(rowValue(row, 2, "detail")),
-        })),
+        };
+    });
+    throw new TimelineCommitViolationError(
+        violations,
+        violations.some((v) => v.code === "E-H1")
+            ? await heldConflictInTransaction(tx)
+            : undefined,
     );
 }
 

@@ -1,16 +1,26 @@
-import { asc, eq } from "drizzle-orm";
-import { generatePageNames } from "@openmarch/core";
+import { eq, inArray } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
-import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { DbTransaction } from "./types";
 import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
 import { deleteTimelineTransitionsInTransaction } from "./timelineTransitions";
 import { moveInSentence } from "@/timeline/timelineRangeWords";
+import { readPageGrid, type GridPage, type PageGrid } from "./timelinePageGrid";
+import {
+    readHeldMarkArrivals,
+    type HeldMarkArrival,
+} from "./timelineHeldArrival";
 import {
     text,
     type TimelineTextArg,
     timelineTextForLog,
 } from "@/timeline/timelineText";
+
+export {
+    pageNumberOffsetInTransaction,
+    readPageGrid,
+    type GridPage,
+    type PageGrid,
+} from "./timelinePageGrid";
 
 /**
  * Page and beat ripple (docs/timeline/phases/07-page-parity.md P7.4, P7.5).
@@ -52,7 +62,26 @@ import {
  * coordinates are lost and the earlier page's move runs until the next page starts). A marcher's
  * row that would stretch into its next row at the same layer (a track, or a move crossing the
  * deleted page's flag) stops where that row starts instead.
- * A timeline left with no transition goes too (C-11: a timeline is the container for its moves).
+ * A timeline left with no transition goes too (C-11: a timeline is the container for its moves),
+ * and so does an empty page timeline that its page box no longer keeps
+ * (`deleteStrayEmptyTimelinesInTransaction`); any other empty timeline ripples as usual.
+ *
+ * **Held marks** (`timeline_held_marks`, ADR 0001 amendment 2026-10-30, part 2) move with the
+ * rows, by the owner's rules (2026-10-28):
+ *
+ * - a mark's start follows its **arrival** (the row it grows out of, `arrivalRowSql`): it takes
+ *   that row's planned new end, after the stop-at-the-next-row clip below. If the arrival is a page
+ *   move that goes with a removed page, the mark goes too (its arrival is gone);
+ * - any other mark edge on a page flag follows that flag (the start of the page that begins
+ *   there), and an end on the last page's end follows it;
+ * - an edge mid-page stays on its beat, mapped as a row's end (a start, which is an arrival) or
+ *   start (an end, from which the marcher moves again);
+ * - an edge on a flag that goes away stays on its count: it is mapped by its beat, not by the
+ *   page before (whose end moves to the deleted page's end);
+ * - a mark left with no counts (its page was deleted, or all its beats) is deleted.
+ *
+ * So inserting beats in the page before a hold moves the hold with its arrival, resizing a page
+ * moves the hold's edges on its flags, and deleting the held page deletes the hold.
  *
  * **When a page is added** (inserted, split off, or added at the end), nothing is written for it.
  * Page mode copies the previous page's coordinates onto a new page; here a marcher with no move over
@@ -83,82 +112,6 @@ import {
 const MAX_BEAT = 2147483647;
 
 /** `utility.last_page_counts` when the file has no utility row (the column's default). */
-const DEFAULT_LAST_PAGE_COUNTS = 8;
-
-/** A page's beats as ordinals: `[start, end)`, the same range `pageEndBeat` gives. */
-export interface GridPage {
-    id: number;
-    start: number;
-    end: number;
-    /** The page's name ("2", "2A"), for refusals; absent where only the range matters */
-    name?: string;
-}
-
-/** Where every beat and page sits, by ordinal. */
-export interface PageGrid {
-    /** Beat ids in position order: the ordinal of a beat is its index here */
-    beatIds: number[];
-    /** Pages in show order */
-    pages: GridPage[];
-}
-
-/**
- * Reads the page grid. It mirrors `fromDatabasePages` (`src/global/classes/Page.ts`): pages in
- * start-beat order; page 0 is its one beat; a page runs to the next page's start, and the last
- * page runs `last_page_counts` beats (fewer if the show ends first); a page with no room keeps its
- * start beat.
- */
-export async function readPageGrid(tx: DbTransaction): Promise<PageGrid> {
-    const beats = await tx
-        .select({ id: schema.beats.id })
-        .from(schema.beats)
-        .orderBy(asc(schema.beats.position), asc(schema.beats.id))
-        .all();
-    const beatIds = beats.map((b) => b.id);
-    const ordinal = new Map(beatIds.map((id, i) => [id, i]));
-    const pageRows = await tx
-        .select({
-            id: schema.pages.id,
-            start_beat: schema.pages.start_beat,
-            is_subset: schema.pages.is_subset,
-        })
-        .from(schema.pages)
-        .all();
-    const utility = await tx
-        .select({ lastPageCounts: schema.utility.last_page_counts })
-        .from(schema.utility)
-        .get();
-    const lastPageCounts = utility?.lastPageCounts ?? DEFAULT_LAST_PAGE_COUNTS;
-    const placed = pageRows
-        .filter((p) => ordinal.has(p.start_beat))
-        .map((p) => ({
-            id: p.id,
-            start: ordinal.get(p.start_beat)!,
-            isSubset: p.is_subset,
-        }))
-        .sort((a, b) => a.start - b.start);
-    // Named as `fromDatabasePages` names them, in show order
-    const names = generatePageNames(
-        placed.map((p) => !!p.isSubset),
-        await pageNumberOffsetInTransaction(tx),
-    );
-    const n = beatIds.length;
-    const pages = placed.map((p, i): GridPage => {
-        const next = placed[i + 1];
-        const name = names[i]!;
-        if (p.id === 0)
-            return { id: p.id, start: p.start, end: p.start + 1, name };
-        const last = next ? next.start : Math.min(p.start + lastPageCounts, n);
-        return {
-            id: p.id,
-            start: p.start,
-            end: last > p.start ? last : p.start + 1,
-            name,
-        };
-    });
-    return { beatIds, pages };
-}
-
 const sameGrid = (a: PageGrid, b: PageGrid) =>
     a.beatIds.length === b.beatIds.length &&
     a.beatIds.every((id, i) => b.beatIds[i] === id) &&
@@ -167,23 +120,6 @@ const sameGrid = (a: PageGrid, b: PageGrid) =>
         const q = b.pages[i]!;
         return p.id === q.id && p.start === q.start && p.end === q.end;
     });
-
-/** The file's first page number (`pageNumberOffset`), read inside `tx` from `workspace_settings`. */
-export async function pageNumberOffsetInTransaction(
-    tx: DbTransaction,
-): Promise<number> {
-    const row = await tx
-        .select({ json: schema.workspace_settings.json_data })
-        .from(schema.workspace_settings)
-        .get();
-    if (!row) return 0;
-    try {
-        const parsed = workspaceSettingsSchema.safeParse(JSON.parse(row.json));
-        return parsed.success ? parsed.data.pageNumberOffset : 0;
-    } catch {
-        return 0;
-    }
-}
 
 // ---------------------------------------------------------------------------
 // The edge maps
@@ -199,6 +135,8 @@ export class GridEdgeMap {
     private readonly tail: number;
     private readonly pageStart = new Map<number, number>();
     private readonly pageEnd = new Map<number, number>();
+    /** The last page's end, when the same page is last in both grids */
+    private readonly lastEnd: [number, number] | undefined;
 
     constructor(before: PageGrid, after: PageGrid) {
         const newOrdinal = new Map(after.beatIds.map((id, i) => [id, i]));
@@ -240,6 +178,27 @@ export class GridEdgeMap {
                 this.pageStart.set(p.start, q.start);
             if (!this.pageEnd.has(p.end)) this.pageEnd.set(p.end, q.end);
         }
+        const lastBefore = before.pages.at(-1);
+        const lastAfter = after.pages.at(-1);
+        this.lastEnd =
+            lastBefore && lastAfter && lastBefore.id === lastAfter.id
+                ? [lastBefore.end, lastAfter.end]
+                : undefined;
+    }
+
+    /**
+     * Where a Held mark's edge at `b` goes when it isn't an arrival: with the page flag it sits on
+     * (the start of a page in both grids, or the last page's end), else on its beat, mapped as a
+     * row's `end` or `start` edge. A flag that goes away leaves the edge on its count.
+     */
+    markEdge(b: number, as: "start" | "end"): number {
+        const flag =
+            this.pageStart.get(b) ??
+            (this.lastEnd && this.lastEnd[0] === b
+                ? this.lastEnd[1]
+                : undefined);
+        if (flag !== undefined) return flag;
+        return as === "end" ? this.beatEnd(b) : this.beatStart(b);
     }
 
     /** A start edge by its beat. */
@@ -322,6 +281,11 @@ export interface RippleRows {
     assignments: (typeof schema.timeline_assignments.$inferSelect)[];
     /** Each marcher's drill number ("T3") by id, for refusals; the id where absent */
     marcherLabels?: ReadonlyMap<number, string>;
+    /**
+     * The Held marks with their arrival rows; none in a file without the table (a page-era file
+     * being converted)
+     */
+    marks?: readonly HeldMarkArrival[];
 }
 
 /** Reads every timeline, transition and assignment row, and the marchers' labels (`RippleRows`). */
@@ -346,7 +310,8 @@ export async function readRippleRows(tx: DbTransaction): Promise<RippleRows> {
     const marcherLabels = new Map(
         marchers.map((m) => [m.id, `${m.prefix}${m.order}`]),
     );
-    return { timelines, transitions, assignments, marcherLabels };
+    const marks = await readHeldMarkArrivals(tx);
+    return { timelines, transitions, assignments, marcherLabels, marks };
 }
 
 /**
@@ -359,7 +324,13 @@ export async function readRippleRows(tx: DbTransaction): Promise<RippleRows> {
 export function planTimelineRipple(
     before: PageGrid,
     after: PageGrid,
-    { timelines, transitions, assignments, marcherLabels }: RippleRows,
+    {
+        timelines,
+        transitions,
+        assignments,
+        marcherLabels,
+        marks = [],
+    }: RippleRows,
 ) {
     const map = new GridEdgeMap(before, after);
 
@@ -405,14 +376,36 @@ export function planTimelineRipple(
     // The invariant refusals below show their code's own message; theirs is for the log
     const logged = (value: TimelineTextArg) => timelineTextForLog(value);
 
-    // A timeline whose transitions all go is deleted with them (C-11), so it isn't rippled
+    // A timeline whose transitions all go is deleted with them (C-11), so it isn't rippled. Nor is
+    // an empty page timeline (everyone split off it, #581) unless it stays on its own page's box:
+    // it's deleted, so it never lands on another page's box and outranks that page's move there.
+    // Any other empty timeline (a move emptied with Remove, UI-9) ripples as usual
+    const pageTimelines = pageTimelinesOf(
+        timelines.map((l) => ({
+            id: l.id,
+            start: l.start_beat,
+            end: l.end_beat,
+        })),
+        before.pages.slice(1),
+    );
+    const afterBox = new Map(after.pages.map((p) => [p.id, p]));
+    const staysOnItsBox = (l: (typeof timelines)[number]) => {
+        const page = before.pages.find(
+            (p) =>
+                p.id !== 0 && p.start === l.start_beat && p.end === l.end_beat,
+        );
+        const box = page && afterBox.get(page.id);
+        if (!box) return false;
+        const r = map.range(l.start_beat, l.end_beat);
+        return r[0] === box.start && r[1] === box.end;
+    };
     const emptied = new Set(
         timelines
             .filter((l) => {
                 const owned = transitions.filter((t) => t.timeline_id === l.id);
-                return (
-                    owned.length > 0 && owned.every((t) => removed.has(t.id))
-                );
+                return owned.length > 0
+                    ? owned.every((t) => removed.has(t.id))
+                    : pageTimelines.has(l.id) && !staysOnItsBox(l);
             })
             .map((l) => l.id),
     );
@@ -481,14 +474,63 @@ export function planTimelineRipple(
         }
     }
 
+    const { newMark, droppedMarks } = planHeldMarks(
+        map,
+        marks,
+        assignments,
+        removed,
+        newAssignment,
+    );
+
     return {
         removed,
+        emptied,
+        pageTimelines,
         rippled,
         newTimeline,
         newTransition,
         newAssignment,
         chains,
+        newMark,
+        droppedMarks,
     };
+}
+
+/**
+ * The Held marks' new ranges (see the module comment): `newMark` for each mark that changed and
+ * stays, `droppedMarks` for those whose arrival went with a removed page or that have no counts
+ * left.
+ */
+function planHeldMarks(
+    map: GridEdgeMap,
+    marks: readonly HeldMarkArrival[],
+    assignments: RippleRows["assignments"],
+    removed: ReadonlySet<number>,
+    newAssignment: ReadonlyMap<number, Range>,
+) {
+    const assignmentOf = new Map(assignments.map((a) => [a.id, a]));
+    const newMark = new Map<number, Range>();
+    const droppedMarks = new Set<number>();
+    for (const mark of marks) {
+        // The arrival, read by the one rule (`arrivalRowSql`, `readHeldMarkArrivals`)
+        const arrival =
+            mark.arrivalId === null
+                ? undefined
+                : assignmentOf.get(mark.arrivalId);
+        const arrives = arrival !== undefined;
+        if (arrives && removed.has(arrival.transition_id)) {
+            droppedMarks.add(mark.id);
+            continue;
+        }
+        const start = arrives
+            ? newAssignment.get(arrival.id)![1]
+            : map.markEdge(mark.start, "end");
+        const end = map.markEdge(mark.end, "start");
+        if (start >= end) droppedMarks.add(mark.id);
+        else if (start !== mark.start || end !== mark.end)
+            newMark.set(mark.id, [start, end]);
+    }
+    return { newMark, droppedMarks };
 }
 
 /**
@@ -507,14 +549,18 @@ export async function rippleTimelineToPageGridInTransaction({
     const after = await readPageGrid(tx);
     if (sameGrid(before, after)) return;
     const rows = await readRippleRows(tx);
-    const { transitions } = rows;
+    const { transitions, marks = [] } = rows;
     const {
         removed,
+        emptied,
+        pageTimelines,
         rippled,
         newTimeline,
         newTransition,
         newAssignment,
         chains,
+        newMark,
+        droppedMarks,
     } = planTimelineRipple(before, after, rows);
 
     const T = schema.timeline_transitions;
@@ -594,7 +640,140 @@ export async function rippleTimelineToPageGridInTransaction({
         // 5, 6. Shrink transitions, then timelines, to the target
         await shrink(T, transitions, newTransition);
         await shrink(L, rippled, newTimeline);
+
+        // 7. Held marks: the dropped ones, then each moved one. One marcher's starts keep their
+        // order, so moving the later ones first when they move later (the earlier ones first when
+        // earlier) never meets another mark's start (unique per marcher)
+        const H = schema.timeline_held_marks;
+        for (const id of droppedMarks) await tx.delete(H).where(eq(H.id, id));
+        const moved = marks.filter((m) => newMark.has(m.id));
+        const later = moved
+            .filter((m) => newMark.get(m.id)![0] > m.start)
+            .sort((x, y) => y.start - x.start);
+        const earlier = moved
+            .filter((m) => newMark.get(m.id)![0] <= m.start)
+            .sort((x, y) => x.start - y.start);
+        for (const m of [...later, ...earlier]) {
+            const [start, end] = newMark.get(m.id)!;
+            await tx
+                .update(H)
+                .set({ start_beat: start, end_beat: end })
+                .where(eq(H.id, m.id));
+        }
     });
+    // 8. Empty timelines off their page's box (the others went with their transitions in 1)
+    if (emptied.size > 0)
+        await mapDbErrors(() =>
+            tx.delete(L).where(inArray(L.id, [...emptied])),
+        );
+    await deleteStrayEmptyTimelinesInTransaction(tx, pageTimelines, after);
+}
+
+interface Span {
+    id: number;
+    start: number;
+    end: number;
+}
+
+type Box = { start: number; end: number };
+const sameSpan = (a: Box, b: Box) => a.start === b.start && a.end === b.end;
+
+/** `l` is a page's own timeline: the oldest over exactly a page box (UI-25). */
+const isPageTimeline = (
+    l: Span,
+    timelines: readonly Span[],
+    boxes: readonly Box[],
+) =>
+    boxes.some((b) => sameSpan(b, l)) &&
+    !timelines.some((o) => sameSpan(o, l) && o.id < l.id);
+
+/**
+ * The page timelines before a page edit, for `deleteStrayEmptyTimelinesInTransaction` to check
+ * after it (`isPageTimeline`). Pure: `boxes` are the page boxes.
+ */
+export function pageTimelinesOf(
+    timelines: readonly Span[],
+    boxes: readonly Box[],
+): Set<number> {
+    return new Set(
+        timelines
+            .filter((l) => isPageTimeline(l, timelines, boxes))
+            .map((l) => l.id),
+    );
+}
+
+const readSpans = async (tx: DbTransaction) => {
+    const L = schema.timelines;
+    const timelines = await tx
+        .select({ id: L.id, start: L.start_beat, end: L.end_beat })
+        .from(L)
+        .all();
+    const used = new Set(
+        (
+            await tx
+                .selectDistinct({
+                    id: schema.timeline_transitions.timeline_id,
+                })
+                .from(schema.timeline_transitions)
+                .all()
+        ).map((t) => t.id),
+    );
+    return { timelines, used };
+};
+
+/**
+ * `pageTimelinesOf` read from the database: call it before a page edit's first write, and pass
+ * the result to `deleteStrayEmptyTimelinesInTransaction` after its last. Pass `grid` when it was
+ * just read.
+ */
+export async function readPageTimelinesInTransaction(
+    tx: DbTransaction,
+    grid?: PageGrid,
+): Promise<Set<number>> {
+    const { timelines } = await readSpans(tx);
+    const boxes = (grid ?? (await readPageGrid(tx))).pages.slice(1);
+    return pageTimelinesOf(timelines, boxes);
+}
+
+/**
+ * Deletes each of `pageTimelines` (the page timelines before a page edit,
+ * `readPageTimelinesInTransaction`) that the edit left empty and the UI-25 rule no longer keeps
+ * (#581 review). Splitting every marcher off a page leaves the page's timeline empty, and it keeps
+ * its row while another timeline shares its range, so a split move never becomes the page's by
+ * accident (ADR 0001, UI-25 amendment). Once a page edit leaves it off its box (the page deleted,
+ * a flag deleted or added across it), or the box's oldest timeline isn't it, or no timeline with
+ * transitions shares its range, it would only draw as an empty clip, so it goes. Any other empty
+ * timeline, such as a move emptied with Remove (UI-9), is never touched. Pass `grid` when it was
+ * just read. Returns the deleted ids.
+ */
+export async function deleteStrayEmptyTimelinesInTransaction(
+    tx: DbTransaction,
+    pageTimelines: ReadonlySet<number>,
+    grid?: PageGrid,
+): Promise<number[]> {
+    if (pageTimelines.size === 0) return [];
+    const { timelines, used } = await readSpans(tx);
+    const candidates = timelines.filter(
+        (l) => pageTimelines.has(l.id) && !used.has(l.id),
+    );
+    if (candidates.length === 0) return [];
+    const boxes = (grid ?? (await readPageGrid(tx))).pages.slice(1);
+    const stray = candidates
+        .filter(
+            (l) =>
+                !isPageTimeline(l, timelines, boxes) ||
+                !timelines.some(
+                    (o) => o.id !== l.id && sameSpan(o, l) && used.has(o.id),
+                ),
+        )
+        .map((l) => l.id);
+    if (stray.length > 0)
+        await mapDbErrors(() =>
+            tx
+                .delete(schema.timelines)
+                .where(inArray(schema.timelines.id, stray)),
+        );
+    return stray;
 }
 
 // ---------------------------------------------------------------------------

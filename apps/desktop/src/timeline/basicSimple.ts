@@ -37,7 +37,7 @@ type Reason = Extract<SimpleVerdict, { simple: false }>["reason"];
 
 const SIMPLE: SimpleVerdict = { simple: true };
 
-const overlapsBox = (row: BasicRow, box: Box) =>
+export const overlapsBox = (row: Pick<BasicRow, "start" | "end">, box: Box) =>
     row.start < box.end && row.end > box.start;
 
 /**

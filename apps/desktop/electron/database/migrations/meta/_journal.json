@@ -204,6 +204,20 @@
             "when": 1792544991523,
             "tag": "0028_fast_polaris",
             "breakpoints": true
+        },
+        {
+            "idx": 29,
+            "version": "6",
+            "when": 1793378500584,
+            "tag": "0029_drop_kept_assignments",
+            "breakpoints": true
+        },
+        {
+            "idx": 30,
+            "version": "6",
+            "when": 1793384181922,
+            "tag": "0030_fresh_shocker",
+            "breakpoints": true
         }
     ]
 }

@@ -82,6 +82,32 @@ const views = {
               JOIN timelines l ON l.id = t.timeline_id
              WHERE t.start_beat <> l.start_beat OR t.end_beat <> l.end_beat;
     `,
+    /**
+     * The Held marks' commit-time invariants (ADR 0001 amendment 2026-10-30): no move of a
+     * marcher overlaps one of its marks (E-H1), and one marcher's marks don't overlap (E-H3).
+     * They name no transition (NULL); the detail names the marcher and the counts. Apart from
+     * `timeline_commit_violations` because the marks table comes with a timeline-only migration:
+     * a page-era file being converted commits timeline rows before it has the table, so the
+     * write wrapper reads this view only once the table exists.
+     */
+    timeline_held_violations: `
+        CREATE VIEW IF NOT EXISTS timeline_held_violations AS
+            SELECT 'E-H1' AS code, NULL AS transition_id,
+                   'marcher ' || h.marcher_id || ' is Held over [' || h.start_beat || ', '
+                       || h.end_beat || ') but has a move over [' || a.start_beat || ', '
+                       || a.end_beat || ')' AS detail
+              FROM timeline_held_marks h
+              JOIN timeline_assignments a ON a.marcher_id = h.marcher_id
+             WHERE a.start_beat < h.end_beat AND h.start_beat < a.end_beat
+            UNION ALL
+            SELECT 'E-H3' AS code, NULL AS transition_id,
+                   'marcher ' || h.marcher_id || ' is Held over [' || h.start_beat || ', '
+                       || h.end_beat || ') and over [' || o.start_beat || ', ' || o.end_beat
+                       || ')' AS detail
+              FROM timeline_held_marks h
+              JOIN timeline_held_marks o ON o.marcher_id = h.marcher_id AND o.id > h.id
+             WHERE o.start_beat < h.end_beat AND h.start_beat < o.end_beat;
+    `,
 };
 
 /**

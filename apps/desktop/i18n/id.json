@@ -25,10 +25,8 @@
             "noPreviousPage": "Tidak dapat menyalin koordinat pemain dari halaman sebelumnya. Tidak ada halaman sebelumnya",
             "setAllToNext": "Salin posisi dari halaman berikutnya (semua pemain)",
             "setAllToNextSuccess": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman berikutnya ({nextPage})}}",
-            "setAllToPrevious": "Salin posisi dari halaman sebelumnya (semua pemain)",
             "setSelectedToNext": "Salin posisi dari halaman berikutnya (yang dipilih)",
             "setSelectedToNextSuccess": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman berikutnya ({nextPage})}}",
-            "setSelectedToPrevious": "Salin posisi dari halaman sebelumnya (yang dipilih)",
             "setAllToPreviousDone": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman sebelumnya ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman sebelumnya ({previousPage})}}"
         },
@@ -136,10 +134,8 @@
             "previousPage": "Halaman sebelumnya (linimasa)",
             "splitMoveAtPlayhead": "Pisahkan gerakan di playhead",
             "tapBeats": "Tambahkan {count} ketukan sementara",
-            "toggleKeepOnPage": "Tahan pemain yang dipilih di posisinya pada halaman ini (pada halaman berikutnya jika mereka bergerak di sini), atau biarkan mengikuti lagi",
             "unsetHere": "Hapus keyframe",
             "unsetHereAndFollowing": "Hapus keyframe, halaman setelahnya kembali mengikuti",
-            "unsetHereAndPages": "{count, plural, =1 {Hapus keyframe, halaman {first} kembali mengikuti} other {Hapus keyframe, halaman {first}–{last} kembali mengikuti}}",
             "unsetHereKeywords": "keyframe berlian diamond hapus batalkan atur mengikuti unset set following remove clear take back koordinat posisi coordinate position delete",
             "splitSelectedIntoNewMove": "Pisahkan pemain yang dipilih ke gerakan baru",
             "mergeMoveIntoPage": "Gabungkan gerakan ini ke halamannya"
@@ -928,26 +924,14 @@
             "swapMarchers": "Tukar posisi pemain",
             "timeline": {
                 "buttonWithHint": "{label}. {hint}",
-                "followAgain": "Ikuti kembali",
-                "followAgainHint": "{who, select, named {Buat {names} kembali mengikuti Halaman {from}, agar perubahan pada Halaman {from} juga memindahkan mereka di sini} someNamed {Buat {names} ({count} dari {total} pemain terpilih) kembali mengikuti Halaman {from}, agar perubahan pada Halaman {from} juga memindahkan mereka di sini} some {Buat {count} dari {total} pemain terpilih kembali mengikuti Halaman {from}, agar perubahan pada Halaman {from} juga memindahkan mereka di sini} other {Buat pemain-pemain ini kembali mengikuti Halaman {from}, agar perubahan pada Halaman {from} juga memindahkan mereka di sini}}",
-                "followAgainHintEarlier": "{who, select, named {Buat {names} kembali mengikuti halaman sebelumnya} someNamed {Buat {names} ({count} dari {total} pemain terpilih) kembali mengikuti halaman sebelumnya} some {Buat {count} dari {total} pemain terpilih kembali mengikuti halaman sebelumnya} other {Buat pemain-pemain ini kembali mengikuti halaman sebelumnya}}",
                 "goToPage": "Lompat ke Halaman {page}, tempat pemain-pemain ini terakhir bergerak",
                 "goToStart": "Lompat ke awal",
                 "holdFrom": "Diam sejak Halaman {page}",
                 "holdFromStart": "Diam sejak awal",
                 "holdHere": "Pemain-pemain ini diam di sini",
-                "keepHere": "Pertahankan di sini",
-                "keepHereHint": "{who, select, named {Pertahankan {names} di Halaman {page}, agar perubahan pada Halaman {from} tidak memindahkan mereka di sini} someNamed {Pertahankan {names} ({count} dari {total} pemain terpilih) di Halaman {page}, agar perubahan pada Halaman {from} tidak memindahkan mereka di sini} some {Pertahankan {count} dari {total} pemain terpilih di Halaman {page}, agar perubahan pada Halaman {from} tidak memindahkan mereka di sini} other {Pertahankan pemain-pemain ini di Halaman {page}, agar perubahan pada Halaman {from} tidak memindahkan mereka di sini}}",
-                "keepHereHintEarlier": "{who, select, named {Pertahankan {names} di Halaman {page}, agar perubahan pada halaman sebelumnya tidak memindahkan mereka di sini} someNamed {Pertahankan {names} ({count} dari {total} pemain terpilih) di Halaman {page}, agar perubahan pada halaman sebelumnya tidak memindahkan mereka di sini} some {Pertahankan {count} dari {total} pemain terpilih di Halaman {page}, agar perubahan pada halaman sebelumnya tidak memindahkan mereka di sini} other {Pertahankan pemain-pemain ini di Halaman {page}, agar perubahan pada halaman sebelumnya tidak memindahkan mereka di sini}}",
-                "keptOnThisPage": "Dipertahankan di halaman ini",
                 "movesOnThisPage": "Bergerak di halaman ini",
-                "pagesFollow": "{count, plural, =1 {Halaman {first} mengikuti pemain-pemain ini} other {Halaman {first}–{last} mengikuti pemain-pemain ini}}",
-                "pagesFollowSome": "{count, plural, =1 {Halaman {first} mengikuti sebagian pemain ini} other {Halaman {first}–{last} mengikuti sebagian pemain ini}}",
                 "someHoldHere": "Sebagian pemain ini diam di sini",
-                "someKeptOnThisPage": "Sebagian pemain ini dipertahankan di halaman ini",
                 "unsetHere": "Hapus keyframe",
-                "unsetHereAndFollowingHint": "Hapus keyframe mereka pada hitungan ini, dan {pageCount, plural, =1 {Halaman {first} kembali mengikuti} other {Halaman {first}–{last} kembali mengikuti}} keyframe sebelumnya",
-                "unsetHereAndFollowingHintSome": "Hapus keyframe pada hitungan ini untuk {count} dari {total} pemain terpilih yang memilikinya, dan {pageCount, plural, =1 {Halaman {first} kembali mengikuti} other {Halaman {first}–{last} kembali mengikuti}} keyframe sebelumnya",
                 "unsetHereHint": "Hapus keyframe mereka pada hitungan ini agar mereka mengikuti posisi sebelumnya. Posisi di halaman berikutnya tidak berubah",
                 "unsetHereHintSome": "Hapus keyframe pada hitungan ini untuk {count} dari {total} pemain terpilih yang memilikinya, agar mereka mengikuti posisi sebelumnya. Posisi di halaman berikutnya tidak berubah",
                 "unsetHereNone": "Tidak ada pemain terpilih yang memiliki keyframe pada hitungan ini"
@@ -2797,32 +2781,9 @@
         },
         "keep": {
             "chain": {
-                "ariaLabel": "Halaman {page}: {label}. {hint}",
-                "follows": "{count, plural, other {# pemain tetap di posisi dari Halaman {from}}}",
-                "followsEarlier": "{count, plural, other {# pemain tetap di posisi dari halaman sebelumnya}}",
-                "followsHint": "Perubahan pada Halaman {from} terbawa ke Halaman {page}. Klik untuk mempertahankan {count, plural, =1 {pemain ini} other {mereka}} di sini saja",
-                "followsHintEarlier": "Perubahan pada halaman sebelumnya terbawa ke Halaman {page}. Klik untuk mempertahankan {count, plural, =1 {pemain ini} other {mereka}} di sini saja",
-                "followsMenuHint": "Perubahan pada Halaman {from} terbawa ke Halaman {page}. Klik kanan halaman untuk mempertahankan {count, plural, =1 {pemain ini} other {mereka}} di sini saja",
-                "followsMenuHintEarlier": "Perubahan pada halaman sebelumnya terbawa ke Halaman {page}. Klik kanan halaman untuk mempertahankan {count, plural, =1 {pemain ini} other {mereka}} di sini saja",
-                "followsNamed": "{count, plural, =1 {{names} tetap di posisi dari Halaman {from}} other {{names} tetap di posisi dari Halaman {from}}}",
-                "followsNamedEarlier": "{count, plural, =1 {{names} tetap di posisi dari halaman sebelumnya} other {{names} tetap di posisi dari halaman sebelumnya}}",
-                "kept": "{count, plural, other {# pemain dipertahankan di Halaman {page}}}",
-                "keptHint": "Perubahan pada Halaman {from} berhenti di sini. Klik untuk mengikuti Halaman {from} lagi",
-                "keptHintEarlier": "Perubahan pada halaman sebelumnya berhenti di sini. Klik untuk mengikutinya lagi",
-                "keptMenuHint": "Perubahan pada Halaman {from} berhenti di sini. Klik kanan halaman untuk mengikuti Halaman {from} lagi",
-                "keptMenuHintEarlier": "Perubahan pada halaman sebelumnya berhenti di sini. Klik kanan halaman untuk mengikutinya lagi",
-                "keptNamed": "{names} dipertahankan di Halaman {page}",
-                "mixed": "{kept, plural, other {# dari {total} yang dipilih dipertahankan di Halaman {page}}}",
-                "mixedNamed": "{kept, plural, other {# dari {total} yang dipilih dipertahankan di Halaman {page} ({names})}}",
-                "mixedRestHint": "{count, plural, =1 {Satu pemain lainnya mengikuti halaman sebelumnya. Klik untuk mempertahankannya di sini juga} other {# pemain lainnya mengikuti halaman sebelumnya. Klik untuk mempertahankan mereka di sini juga}}",
-                "mixedRestMenuHint": "{count, plural, =1 {Satu pemain lainnya mengikuti halaman sebelumnya. Klik kanan halaman untuk mempertahankannya di sini juga} other {# pemain lainnya mengikuti halaman sebelumnya. Klik kanan halaman untuk mempertahankan mereka di sini juga}}"
-            },
-            "field": {
-                "kept": "Dipertahankan di Halaman {page} · tidak mengikuti Halaman {from}",
-                "keptEarlier": "Dipertahankan di Halaman {page} · tidak mengikuti halaman sebelumnya"
+                "ariaLabel": "Halaman {page}: {label}. {hint}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {Halaman {first} memakai formasi ini, jadi ikut berubah} other {Halaman {first}–{last} memakai formasi ini, jadi ikut berubah}}",
                 "keepAsBefore": "{count, plural, =1 {Pertahankan Halaman {first} seperti semula} other {Pertahankan Halaman {first}–{last} seperti semula}}",
                 "keepError": "Gagal mempertahankan halaman berikutnya"
             },
@@ -2831,7 +2792,6 @@
             },
             "errors": {
                 "keep": "Gagal mempertahankan pemain di halaman",
-                "followAgain": "Gagal membuat pemain mengikuti lagi",
                 "readKept": "Gagal membaca posisi yang dipertahankan"
             }
         },
@@ -2871,8 +2831,6 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "Hapus halaman beserta gerakannya",
-            "followAgain": "Biarkan pemain terpilih mengikuti lagi",
-            "keepHere": "Tahan pemain terpilih di sini",
             "setAsShown": "Tetapkan sesuai tampilan",
             "setAsShownNone": "Semua pemain terpilih sudah ditetapkan di {page}, atau sedang di tengah gerakan",
             "setAsShownError": "Gagal menetapkan pemain sesuai tampilan",
@@ -3261,9 +3219,6 @@
             "keep": {
                 "wholePage": "Pertahankan hanya berlaku untuk satu halaman utuh, bukan {counts}"
             },
-            "setAsShown": {
-                "wholePage": "Tetapkan sesuai tampilan hanya berlaku untuk satu halaman utuh, bukan {counts}"
-            },
             "tooFarPastEnd": "itu {count, plural, other {# hitungan}} melewati akhir; satu pengeditan menyimpan paling banyak {max}"
         }
     },
@@ -3292,7 +3247,6 @@
             "placeSelectedMarchers": "Tempatkan pemain terpilih",
             "snapToggleCaption": "Snap",
             "toNextPagePositions": "...ke posisi halaman berikutnya",
-            "toPreviousPagePositions": "...ke posisi halaman sebelumnya",
             "setMarcherPositionsAriaLabel": "Atur posisi pemain"
         },
         "collisions": {

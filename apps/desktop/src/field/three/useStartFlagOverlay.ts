@@ -19,7 +19,6 @@ import {
     resolverSpans,
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
-import { useKeptAssignmentsStore } from "@/timeline/useKeepLaterPages";
 import {
     levelDraws,
     planStartFlagMarcher,
@@ -35,10 +34,10 @@ const sameDeps = (a: readonly unknown[], b: readonly unknown[] | null) =>
     a.every((d, i) => Object.is(d, b[i]));
 
 /**
- * Each marcher's dot (and route, with its squares) kept per resolver version, window, warnings
- * and kept markers, so changing the selection or the levels only samples the marchers that
- * weren't sampled yet. A marcher's Set beats (for its route squares) are kept per resolver
- * version and kept markers, so moving the window doesn't work them out again.
+ * Each marcher's dot (and route, with its squares) kept per resolver version, window and
+ * warnings, so changing the selection or the levels only samples the marchers that weren't
+ * sampled yet. A marcher's Set beats (for its route squares) are kept per resolver version, so
+ * moving the window doesn't work them out again.
  */
 class StartFlagPieces {
     private context: readonly unknown[] | null = null;
@@ -52,13 +51,11 @@ class StartFlagPieces {
         marcherIds: readonly number[];
         selectedIds: ReadonlySet<number>;
         levels: StartFlagLevels;
-        /** The kept assignments' ids: a kept spot isn't set (`marcherSetBeats`) */
-        kept: ReadonlySet<number>;
         /** Dots only: no route is sampled (a scrub or a line drag) */
         dotsOnly: boolean;
     }): StartFlagOverlay {
-        const { window, levels, selectedIds, kept } = input;
-        const setBeatsContext = [window.resolver, input.version, kept];
+        const { window, levels, selectedIds } = input;
+        const setBeatsContext = [window.resolver, input.version];
         if (!sameDeps(setBeatsContext, this.setBeatsContext)) {
             this.setBeats.clear();
             this.setBeatsContext = setBeatsContext;
@@ -90,7 +87,7 @@ class StartFlagPieces {
                     window,
                     marcherId,
                     withPath,
-                    squares ? this.setBeatsOf(window, marcherId, kept) : null,
+                    squares ? this.setBeatsOf(window, marcherId) : null,
                 );
                 this.pieces.set(key, piece);
             }
@@ -102,11 +99,10 @@ class StartFlagPieces {
     private setBeatsOf(
         { resolver }: { readonly resolver: Resolver },
         marcherId: number,
-        kept: ReadonlySet<number>,
     ): readonly number[] {
         let beats = this.setBeats.get(marcherId);
         if (!beats) {
-            beats = marcherSetBeats(resolverSpans(resolver, marcherId), kept);
+            beats = marcherSetBeats(resolverSpans(resolver, marcherId));
             this.setBeats.set(marcherId, beats);
         }
         return beats;
@@ -168,7 +164,6 @@ export function useStartFlagOverlay({
     const isolating = useTimelineSelectionStore((s) => s.isolation !== null);
     const visuals = useIsVisualsView();
     const levels = useStartFlagLevelsInEffect();
-    const kept = useKeptAssignmentsStore((s) => s.ids);
     const stepSizeWarnings = useUiSettingsStore(
         (s) => s.uiSettings.stepSizeWarnings,
     );
@@ -202,7 +197,6 @@ export function useStartFlagOverlay({
                       marcherIds: marcherIds!,
                       selectedIds: selected,
                       levels,
-                      kept,
                       dotsOnly: gesture,
                   })
                 : null,
@@ -217,7 +211,6 @@ export function useStartFlagOverlay({
             fromBeat,
             toBeat,
             levels,
-            kept,
             gesture,
             stepSizeWarnings,
             fieldProperties,

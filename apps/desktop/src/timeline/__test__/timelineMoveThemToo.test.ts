@@ -300,48 +300,6 @@ describeDbTests("timeline mode: Move them too", (it) => {
         ).toEqual([]);
     });
 
-    it("shifting a kept spot clears its kept marker, so it is an own move again (pre-merge review D1)", async ({
-        db,
-    }) => {
-        const { pages, marchers } = await studyShow(db);
-        const resolver = useTimelineResolverStore.getState().resolver!;
-        const ot8Move = resolverSpans(resolver, marchers[7]!).find(
-            (s) => s.kind !== "hold" && s.end === box(pages[2]!).end,
-        )!;
-        const a = schema.timeline_assignments;
-        const assignment = (await db.select().from(a).all()).find(
-            (r) =>
-                r.transition_id === ot8Move.transitionId &&
-                r.slot_index === ot8Move.slot,
-        )!;
-        await db
-            .insert(schema.timeline_kept_assignments)
-            .values({ assignment_id: assignment.id })
-            .run();
-        await shiftSlotDestinations({
-            db,
-            shifts: [
-                {
-                    marcherId: marchers[7]!,
-                    transitionId: ot8Move.transitionId!,
-                    slotIndex: ot8Move.slot!,
-                    dx: 0,
-                    dy: 50,
-                },
-            ],
-        });
-        expect(
-            await db.select().from(schema.timeline_kept_assignments).all(),
-        ).toEqual([]);
-        // Undo brings the marker back with the spot
-        await performUndo(db);
-        expect(
-            (
-                await db.select().from(schema.timeline_kept_assignments).all()
-            ).map((r) => r.assignment_id),
-        ).toEqual([assignment.id]);
-    });
-
     it("an older edit's check finishing after a newer one's shows no toast (pre-merge review U5)", async ({
         db,
     }) => {
@@ -391,7 +349,7 @@ describeDbTests("timeline mode: Move them too", (it) => {
         await timelineResolverSettled();
         await new Promise((r) => setTimeout(r, 200));
         expect(info.mock.calls.map((c) => c[0])).toEqual([
-            `Pages ${pages[2]!.name}–${pages[3]!.name} were holding this form, so they changed too`,
+            `Pages ${pages[2]!.name}–${pages[3]!.name} had no positions of their own for these marchers, so they changed too`,
         ]);
     });
 
@@ -449,7 +407,7 @@ describeDbTests("timeline mode: Move them too", (it) => {
         // Everyone followed
         expect(at(marchers[0]!, pages[3]!)).toEqual([100, 250]);
         expect(info.mock.calls.map((c) => c[0])).toEqual([
-            `Pages ${pages[2]!.name}–${pages[3]!.name} were holding this form, so they changed too`,
+            `Pages ${pages[2]!.name}–${pages[3]!.name} had no positions of their own for these marchers, so they changed too`,
         ]);
     });
 

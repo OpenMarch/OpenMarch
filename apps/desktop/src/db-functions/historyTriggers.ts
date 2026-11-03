@@ -32,8 +32,8 @@ export const tablesWithHistory = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
-    // App data beside them: which assignments are kept spots (ADR 0001 amendment 2026-10-09)
-    schema.timeline_kept_assignments,
+    // App data beside them: where marchers are Held (ADR 0001 amendment 2026-10-30)
+    schema.timeline_held_marks,
     // Performer cues (ADR 0004 D-5)
     schema.phrase_assets,
     schema.cues,

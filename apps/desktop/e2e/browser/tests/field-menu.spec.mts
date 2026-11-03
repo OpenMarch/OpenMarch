@@ -173,7 +173,7 @@ test("right-clicking a selected marcher or empty field keeps the selection; the 
     await expect(menu(page)).toBeVisible();
     expect(await selectedDrillNumbers(page)).toEqual(["T1", "T2"]);
     // T2 holds over page 3: that page follows its page 2 spot
-    await entry(page, "Remove keyframe, Page 3 follows back").click();
+    await entry(page, "Remove keyframe, Page 3 moves back too").click();
     await expect
         .poll(() => spots(show, 2))
         .toEqual({ ...PAGE_2_BEFORE, T1: "400,340", T2: "500,340" });

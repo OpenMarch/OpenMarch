@@ -96,6 +96,12 @@ Open a corpus of real older `.dots` files: positions at page boundaries match, a
 
 User-facing docs in `apps/website` and release notes.
 
+Release-note items collected so far:
+
+- Kept spots are removed (holds, fork #467; migration 0029): Keep, Follow again and K are gone,
+  and a page kept where it was is now an ordinary move (Set as shown). Undo history from before
+  this update was cleared in files whose undo history still included Keep steps.
+
 ### P9.8: Convert off the main process
 
 - Owner: timeline-worker (timeline/p9-8-convert-worker)

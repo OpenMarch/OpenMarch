@@ -25,10 +25,8 @@
             "noPreviousPage": "无法将队员坐标设为上一页的坐标：没有上一页",
             "setAllToNext": "从下一页复制位置（全部队员）",
             "setAllToNextSuccess": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为下一页（第{nextPage}页）的坐标}}",
-            "setAllToPrevious": "从上一页复制位置（全部队员）",
             "setSelectedToNext": "从下一页复制位置（所选队员）",
             "setSelectedToNextSuccess": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为下一页（第{nextPage}页）的坐标}}",
-            "setSelectedToPrevious": "从上一页复制位置（所选队员）",
             "setAllToPreviousDone": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为上一页（第{previousPage}页）的坐标}}",
             "setSelectedToPreviousDone": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为上一页（第{previousPage}页）的坐标}}"
         },
@@ -136,10 +134,8 @@
             "previousPage": "上一页（时间轴）",
             "splitMoveAtPlayhead": "在播放头处拆分动作",
             "tapBeats": "添加{count}个临时节拍",
-            "toggleKeepOnPage": "让所选队员在本页保持停留位置（若在本页移动，则在下一页保持），或让其重新跟随",
             "unsetHere": "删除关键帧",
             "unsetHereAndFollowing": "删除关键帧，后续页恢复跟随",
-            "unsetHereAndPages": "{count, plural, =1 {删除关键帧，第{first}页恢复跟随} other {删除关键帧，第{first}–{last}页恢复跟随}}",
             "unsetHereKeywords": "关键帧 菱形 取消设置 设置 后续 删除 清除 撤回 坐标 位置 keyframe diamond unset set following remove clear take back coordinate position delete",
             "splitSelectedIntoNewMove": "将所选队员拆分为新动作",
             "mergeMoveIntoPage": "将此动作合并回所属页"
@@ -928,26 +924,14 @@
             "swapMarchers": "交换队员位置",
             "timeline": {
                 "buttonWithHint": "{label}。{hint}",
-                "followAgain": "恢复跟随",
-                "followAgainHint": "{who, select, named {让{names}重新跟随第{from}页，这样编辑第{from}页时也会移动其在本页的位置} someNamed {让{names}（所选{total}名中的{count}名）重新跟随第{from}页，这样编辑第{from}页时也会移动其在本页的位置} some {让所选{total}名中的{count}名重新跟随第{from}页，这样编辑第{from}页时也会移动其在本页的位置} other {让这些队员重新跟随第{from}页，这样编辑第{from}页时也会移动其在本页的位置}}",
-                "followAgainHintEarlier": "{who, select, named {让{names}重新跟随之前的页} someNamed {让{names}（所选{total}名中的{count}名）重新跟随之前的页} some {让所选{total}名中的{count}名重新跟随之前的页} other {让这些队员重新跟随之前的页}}",
                 "goToPage": "转到第{page}页（这些队员最后一次移动的页）",
                 "goToStart": "转到开头",
                 "holdFrom": "从第{page}页起保持不动",
                 "holdFromStart": "从开头起保持不动",
                 "holdHere": "这些队员在此保持不动",
-                "keepHere": "固定在此",
-                "keepHereHint": "{who, select, named {将{names}固定在第{page}页，这样编辑第{from}页时不会移动其在本页的位置} someNamed {将{names}（所选{total}名中的{count}名）固定在第{page}页，这样编辑第{from}页时不会移动其在本页的位置} some {将所选{total}名中的{count}名固定在第{page}页，这样编辑第{from}页时不会移动其在本页的位置} other {将这些队员固定在第{page}页，这样编辑第{from}页时不会移动其在本页的位置}}",
-                "keepHereHintEarlier": "{who, select, named {将{names}固定在第{page}页，这样编辑之前的页时不会移动其在本页的位置} someNamed {将{names}（所选{total}名中的{count}名）固定在第{page}页，这样编辑之前的页时不会移动其在本页的位置} some {将所选{total}名中的{count}名固定在第{page}页，这样编辑之前的页时不会移动其在本页的位置} other {将这些队员固定在第{page}页，这样编辑之前的页时不会移动其在本页的位置}}",
-                "keptOnThisPage": "已固定在本页",
                 "movesOnThisPage": "在本页移动",
-                "pagesFollow": "{count, plural, =1 {第{first}页跟随这些队员的位置} other {第{first}–{last}页跟随这些队员的位置}}",
-                "pagesFollowSome": "{count, plural, =1 {第{first}页跟随其中部分队员的位置} other {第{first}–{last}页跟随其中部分队员的位置}}",
                 "someHoldHere": "部分队员在此保持不动",
-                "someKeptOnThisPage": "部分队员已固定在本页",
                 "unsetHere": "移除关键帧",
-                "unsetHereAndFollowingHint": "移除其在这一拍上的关键帧，{pageCount, plural, =1 {第{first}页} other {第{first}–{last}页}}将恢复跟随此前的关键帧",
-                "unsetHereAndFollowingHintSome": "移除所选{total}名中在这一拍上有关键帧的{count}名队员的关键帧，{pageCount, plural, =1 {第{first}页} other {第{first}–{last}页}}将恢复跟随此前的关键帧",
                 "unsetHereHint": "移除其在这一拍上的关键帧，使其跟随之前的位置。之后的页保持不变",
                 "unsetHereHintSome": "移除所选{total}名中在这一拍上有关键帧的{count}名队员的关键帧，使其跟随之前的位置。之后的页保持不变",
                 "unsetHereNone": "所选队员在这一拍上均没有关键帧"
@@ -2797,32 +2781,9 @@
         },
         "keep": {
             "chain": {
-                "ariaLabel": "第{page}页：{label}。{hint}",
-                "follows": "{count, plural, other {#名队员保持在第{from}页留下的位置}}",
-                "followsEarlier": "{count, plural, other {#名队员保持在之前各页留下的位置}}",
-                "followsHint": "对第{from}页的更改会延续到第{page}页。点击可改为将{count, plural, =1 {该队员} other {这些队员}}保留在此页",
-                "followsHintEarlier": "对之前各页的更改会延续到第{page}页。点击可改为将{count, plural, =1 {该队员} other {这些队员}}保留在此页",
-                "followsMenuHint": "对第{from}页的更改会延续到第{page}页。右键点击该页可改为将{count, plural, =1 {该队员} other {这些队员}}保留在此页",
-                "followsMenuHintEarlier": "对之前各页的更改会延续到第{page}页。右键点击该页可改为将{count, plural, =1 {该队员} other {这些队员}}保留在此页",
-                "followsNamed": "{count, plural, other {{names}保持在第{from}页留下的位置}}",
-                "followsNamedEarlier": "{count, plural, other {{names}保持在之前各页留下的位置}}",
-                "kept": "{count, plural, other {#名队员保留在第{page}页}}",
-                "keptHint": "对第{from}页的更改到此为止。点击可重新跟随第{from}页",
-                "keptHintEarlier": "对之前各页的更改到此为止。点击可重新跟随之前各页",
-                "keptMenuHint": "对第{from}页的更改到此为止。右键点击该页可重新跟随第{from}页",
-                "keptMenuHintEarlier": "对之前各页的更改到此为止。右键点击该页可重新跟随之前各页",
-                "keptNamed": "{names}保留在第{page}页",
-                "mixed": "{kept, plural, other {所选{total}名队员中有#名保留在第{page}页}}",
-                "mixedNamed": "{kept, plural, other {所选{total}名队员中有#名保留在第{page}页（{names}）}}",
-                "mixedRestHint": "{count, plural, =1 {另外一名队员跟随之前各页。点击可将其也保留在此页} other {另外#名队员跟随之前各页。点击可将他们也保留在此页}}",
-                "mixedRestMenuHint": "{count, plural, =1 {另外一名队员跟随之前各页。右键点击该页可将其也保留在此页} other {另外#名队员跟随之前各页。右键点击该页可将他们也保留在此页}}"
-            },
-            "field": {
-                "kept": "保留在第{page}页 · 不跟随第{from}页",
-                "keptEarlier": "保留在第{page}页 · 不跟随之前各页"
+                "ariaLabel": "第{page}页：{label}。{hint}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {第{first}页沿用了此队形，因此也已更改} other {第{first}–{last}页沿用了此队形，因此也已更改}}",
                 "keepAsBefore": "{count, plural, =1 {保持第{first}页原样} other {保持第{first}–{last}页原样}}",
                 "keepError": "保留后续页时出错"
             },
@@ -2831,7 +2792,6 @@
             },
             "errors": {
                 "keep": "将队员保留在此页时出错",
-                "followAgain": "让队员重新跟随时出错",
                 "readKept": "读取保留位置时出错"
             }
         },
@@ -2871,8 +2831,6 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "删除此页及其动作",
-            "followAgain": "让所选队员重新跟随",
-            "keepHere": "将所选队员保持在此处",
             "setAsShown": "设为当前显示位置",
             "setAsShownNone": "所选队员均已在{page}上设定位置，或正处于动作中途",
             "setAsShownError": "将队员设为当前显示位置时出错",
@@ -3261,9 +3219,6 @@
             "keep": {
                 "wholePage": "“保持”只能用于整页，而非{counts}"
             },
-            "setAsShown": {
-                "wholePage": "“按显示设定”只能用于整页，而非{counts}"
-            },
             "tooFarPastEnd": "已超出结尾{count, plural, other {#拍}}；单次编辑最多存储{max}拍"
         }
     },
@@ -3292,7 +3247,6 @@
             "placeSelectedMarchers": "放置所选队员",
             "snapToggleCaption": "吸附",
             "toNextPagePositions": "...到下一页的位置",
-            "toPreviousPagePositions": "...到上一页的位置",
             "setMarcherPositionsAriaLabel": "设置队员位置"
         },
         "collisions": {

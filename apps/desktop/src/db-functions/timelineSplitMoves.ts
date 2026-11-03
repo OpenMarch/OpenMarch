@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { schema } from "@/global/database/db";
 import { moveLabels, pageTimelineIds } from "@/timeline/timelineViewModel";
 import { DbConnection, DbTransaction } from "./types";
@@ -14,6 +14,7 @@ import { createTimelineTransitionsInTransaction } from "./timelineTransitionsInT
 import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
 import {
     marcherLabels,
+    type BeatRange,
     marchersInInheritingFollowTheLeader,
     removeAssignmentRowsInTransaction,
 } from "./timelineMembership";
@@ -25,6 +26,12 @@ import {
 } from "@/timeline/timelineText";
 import { nextMoveNameInTransaction, readMoveWords } from "./timelineMoveNames";
 import type { TimelinePathParams } from "./timelineTransitionsInTransaction";
+import {
+    memberRows,
+    memberRowsWhere,
+    readTimeline,
+    type MemberRow,
+} from "./timelineMemberRows";
 import {
     moveShapeRecipesInTransaction,
     splitShapeRecipesInTransaction,
@@ -42,7 +49,7 @@ import {
  * edit, and every refusal is decided before the first write.
  *
  * - A transition whose marchers are all being split moves whole (its row changes timeline), so
- *   its assignments, destinations, shape and any kept marker stay the same rows.
+ *   its assignments, destinations and shape stay the same rows.
  * - A shared shapeless `direct` or `arc` transition (a converted page's, P9.10) that also holds
  *   marchers who stay is split slot by slot: each leaving marcher gets its own one-slot transition
  *   with its slot's destination and the same path, and the old transition is compacted, so it
@@ -109,37 +116,6 @@ const timelineWords = async (
 const canPeelSlot = (style: string): style is "direct" | "arc" =>
     style === "direct" || style === "arc";
 
-/** One assignment row with its transition's columns. */
-interface MemberRow {
-    assignment: typeof schema.timeline_assignments.$inferSelect;
-    transition: typeof schema.timeline_transitions.$inferSelect;
-}
-
-const memberRows = async (
-    tx: DbTransaction,
-    timelineId: number,
-): Promise<MemberRow[]> => {
-    const a = schema.timeline_assignments;
-    const t = schema.timeline_transitions;
-    return await tx
-        .select({ assignment: a, transition: t })
-        .from(a)
-        .innerJoin(t, eq(t.id, a.transition_id))
-        .where(eq(t.timeline_id, timelineId))
-        .orderBy(asc(a.id))
-        .all();
-};
-
-const readTimeline = async (
-    tx: DbTransaction,
-    timelineId: number,
-): Promise<DatabaseTimeline | undefined> =>
-    await tx
-        .select()
-        .from(schema.timelines)
-        .where(eq(schema.timelines.id, timelineId))
-        .get();
-
 /** Moves transitions to timeline `timelineId`, as they are (same range, C-11). */
 const moveTransitionsTo = async (
     tx: DbTransaction,
@@ -173,22 +149,17 @@ export interface SplitMoveResult {
 
 /**
  * Why `marcherIds` can't be split out of a move whose members are `members`, or `null` when
- * they can, as far as membership goes (UI-25): none of them in it, or every member chosen. The
- * timeline menu, the Move card and the command palette show the same reason on a disabled item.
+ * they can, as far as membership goes (UI-25): none of them in it, or every member chosen of a
+ * move that isn't a page's own (that would only rename it). A page's own move can be split off
+ * whole (#581): its marchers get a move of their own, and the page box keeps its timeline, empty.
+ * The timeline menu, the Move card and the command palette show the same reason on a disabled
+ * item, as text translated where it is shown (the write path's refusal too).
  */
 export function splitMembershipBlocker(
     members: ReadonlySet<number>,
     marcherIds: Iterable<number>,
-    moveName: string,
-): TimelineText | null {
-    return splitMembershipBlockerText(members, marcherIds, moveName);
-}
-
-/** `splitMembershipBlocker`'s reason as text, translated where it is shown (the write path's). */
-function splitMembershipBlockerText(
-    members: ReadonlySet<number>,
-    marcherIds: Iterable<number>,
     moveName: TimelineTextArg,
+    { pageMove = false }: { pageMove?: boolean } = {},
 ): TimelineText | null {
     let chosen = 0;
     for (const id of new Set(marcherIds)) if (members.has(id)) chosen++;
@@ -196,10 +167,80 @@ function splitMembershipBlockerText(
         return text.t("timeline.refusals.split.noneSelected", {
             move: moveName,
         });
-    if (chosen === members.size)
+    if (chosen === members.size && !pageMove)
         return text.t("timeline.refusals.split.allSelected", {
             move: moveName,
         });
+    return null;
+}
+
+/** Why split by marcher can't break up a shared transition (`splitRefusal`). */
+export interface SplitRefusal {
+    /** Into a shape, or follow the leader (its own path, or an inheriting order elsewhere, R-12) */
+    reason: "shape" | "followTheLeader";
+    /** The transition's marchers that would leave, ascending */
+    leaving: number[];
+    /** Its marchers that would stay, ascending */
+    staying: number[];
+}
+
+/**
+ * **Preview** (changes nothing): why splitting `marcherIds` out of move `timelineId`
+ * (`splitMarchersIntoNewMoveInTransaction`) is refused for a transition they share with a marcher
+ * who stays, or `null` when it isn't: the transition goes into a shape, or follows the leader, or
+ * one of its marchers (who stay too) is in an inheriting follow-the-leader transition anywhere in
+ * the show, whose order R-12 reads from these slots. The first such transition, in row order. With
+ * `storedShapesSwitched`, a shared transition into a stored shape isn't refused, since the caller
+ * switches it to individual points first (`takeMarchersIntoOwnMoveInTransaction`).
+ */
+export async function splitRefusal(
+    tx: DbTransaction,
+    timelineId: number,
+    marcherIds: readonly number[],
+    { storedShapesSwitched = false }: { storedShapesSwitched?: boolean } = {},
+): Promise<SplitRefusal | null> {
+    const chosen = new Set(marcherIds);
+    const byTransition = new Map<number, MemberRow[]>();
+    for (const row of await memberRows(tx, timelineId)) {
+        const list = byTransition.get(row.transition.id) ?? [];
+        list.push(row);
+        byTransition.set(row.transition.id, list);
+    }
+    const shared = [...byTransition.values()].filter((list) => {
+        const n = list.filter((r) =>
+            chosen.has(r.assignment.marcher_id),
+        ).length;
+        return n > 0 && n < list.length;
+    });
+    if (shared.length === 0) return null;
+    // Read once, only when a shared transition has to be split slot by slot
+    const ftl = await marchersInInheritingFollowTheLeader(tx);
+    const ids = (list: MemberRow[], leaving: boolean) =>
+        [
+            ...new Set(
+                list
+                    .filter(
+                        (r) => chosen.has(r.assignment.marcher_id) === leaving,
+                    )
+                    .map((r) => r.assignment.marcher_id),
+            ),
+        ].sort((a, b) => a - b);
+    for (const list of shared) {
+        const tr = list[0]!.transition;
+        const reason =
+            tr.dest_shape_id !== null && !storedShapesSwitched
+                ? "shape"
+                : tr.path_style === "follow_the_leader" ||
+                    list.some((r) => ftl.has(r.assignment.marcher_id))
+                  ? "followTheLeader"
+                  : null;
+        if (reason)
+            return {
+                reason,
+                leaving: ids(list, true),
+                staying: ids(list, false),
+            };
+    }
     return null;
 }
 
@@ -209,10 +250,15 @@ function splitMembershipBlockerText(
  * transitions as they are (see the module comment). Selected marchers who aren't members are left
  * alone and reported.
  *
+ * Every member of a page's own move may be chosen (#581): every transition moves whole, and the
+ * page's timeline stays, empty, so the page box still stands for it and the new move is a move
+ * (ADR 0001, UI-25 amendment: an edit that empties the page's timeline keeps its row while
+ * another shares its range). Nothing moves on the field.
+ *
  * Refused (E-ARGS) before anything is written: a missing timeline, no marchers, none of them in
- * the move, every member chosen (that would only rename the move), and a marcher whose
- * transition is shared with a marcher who stays and can't be split slot by slot (into a shape,
- * follow the leader, or in an inheriting follow-the-leader order).
+ * the move, every member of a move that isn't a page's chosen (that would only rename it), and a
+ * marcher whose transition is shared with a marcher who stays and can't be split slot by slot
+ * (into a shape, follow the leader, or in an inheriting follow-the-leader order).
  */
 // eslint-disable-next-line max-lines-per-function
 export const splitMarchersIntoNewMoveInTransaction = async ({
@@ -230,9 +276,11 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
         refuse(text.t("timeline.refusals.split.selectToSplit"));
     const rows = await memberRows(tx, timelineId);
     const members = new Set(rows.map((r) => r.assignment.marcher_id));
-    const { nameOf } = await timelineWords(tx);
+    const { nameOf, pageTimelineIds } = await timelineWords(tx);
     const name = nameOf(timelineId);
-    const blocker = splitMembershipBlockerText(members, marcherIds, name);
+    const blocker = splitMembershipBlocker(members, marcherIds, name, {
+        pageMove: pageTimelineIds.has(timelineId),
+    });
     if (blocker) refuse(blocker);
     const chosen = new Set(marcherIds.filter((id) => members.has(id)));
     const notInMove = [...new Set(marcherIds)]
@@ -248,51 +296,29 @@ export const splitMarchersIntoNewMoveInTransaction = async ({
     }
     const whole: number[] = [];
     const peeled: MemberRow[] = [];
-    // Read once, only when a shared transition has to be split slot by slot
-    const shared = [...byTransition.values()].some((list) => {
-        const n = list.filter((r) =>
-            chosen.has(r.assignment.marcher_id),
-        ).length;
-        return n > 0 && n < list.length;
-    });
-    const ftl = shared
-        ? await marchersInInheritingFollowTheLeader(tx)
-        : new Set<number>();
+    const refusal = await splitRefusal(tx, timelineId, [...chosen]);
+    if (refusal) {
+        const labels = await marcherLabels(tx, [
+            ...refusal.leaving,
+            ...refusal.staying,
+        ]);
+        const params = {
+            count: refusal.leaving.length,
+            marchers: labelList(labels, refusal.leaving),
+            others: labelList(labels, refusal.staying),
+        };
+        refuse(
+            refusal.reason === "shape"
+                ? text.t("timeline.refusals.split.sharedShape", params)
+                : text.t("timeline.refusals.split.followTogether", params),
+        );
+    }
     for (const [transitionId, list] of byTransition) {
         const leaving = list.filter((r) => chosen.has(r.assignment.marcher_id));
         if (leaving.length === 0) continue;
         if (leaving.length === list.length) {
             whole.push(transitionId);
             continue;
-        }
-        const tr = list[0]!.transition;
-        const ordered = list.some((r) => ftl.has(r.assignment.marcher_id));
-        if (
-            tr.dest_shape_id !== null ||
-            tr.path_style === "follow_the_leader" ||
-            ordered
-        ) {
-            const labels = await marcherLabels(tx, [
-                ...new Set(list.map((r) => r.assignment.marcher_id)),
-            ]);
-            const params = {
-                count: leaving.length,
-                marchers: labelList(
-                    labels,
-                    leaving.map((r) => r.assignment.marcher_id),
-                ),
-                others: labelList(
-                    labels,
-                    list
-                        .filter((r) => !chosen.has(r.assignment.marcher_id))
-                        .map((r) => r.assignment.marcher_id),
-                ),
-            };
-            refuse(
-                tr.dest_shape_id !== null
-                    ? text.t("timeline.refusals.split.sharedShape", params)
-                    : text.t("timeline.refusals.split.followTogether", params),
-            );
         }
         peeled.push(...leaving);
     }
@@ -487,13 +513,16 @@ export const mergeMovesInTransaction = async ({
             { start: target.start_beat, end: target.end_beat },
         )
     ) {
-        await refuseBadFit(tx, source, target, sourceRows, nameOf);
-        await setTimelineRangeInTransaction({
+        const why = await fitInTransaction(
             tx,
-            timelineId: sourceId,
-            start: target.start_beat,
-            end: target.end_beat,
-        });
+            source,
+            { start: target.start_beat, end: target.end_beat },
+            sourceRows,
+        );
+        if (why)
+            refuse(
+                await mergeRefusalMessage(tx, why, sourceId, targetId, nameOf),
+            );
     }
     const transitions = await tx
         .select({ id: schema.timeline_transitions.id })
@@ -522,126 +551,177 @@ export const mergeMovesInTransaction = async ({
 };
 
 /**
- * Refuses (E-ARGS) fitting `source` to `target`'s counts when the range procedure would fail
- * (`setTimelineRangeInTransaction`), with a message that names the marchers: a row that doesn't
- * reach an edge stays where it is, so it must lie inside the target's counts; every fitted row
- * must stay clear of the same marcher's rows on its layer in other moves; and no marcher may
- * already have another move over exactly the target's counts (spec §6.2 L-4), as one split off
- * the target has.
+ * Why a move can't be fitted to some counts (`fitMoveInTransaction`), with the marchers it's
+ * about, ascending, and the move they'd run into. Each caller words it: merge as a refusal
+ * (`mergeRefusalMessage`), Remove keyframe's join as a toast (`notJoinedMessage`).
+ *
+ * - `partway`: they join or leave the move partway, at a count outside the new counts;
+ * - `overlap`: a fitted row would overlap another of their moves (`timelineId`) on its layer;
+ * - `secondMove`: they're already in another move (`timelineId`) over exactly the new counts
+ *   (spec §6.2 L-4).
  */
-async function refuseBadFit(
+export type FitRefusal =
+    | { readonly kind: "partway"; readonly marcherIds: number[] }
+    | {
+          readonly kind: "overlap" | "secondMove";
+          readonly marcherIds: number[];
+          readonly timelineId: number;
+      };
+
+/**
+ * Fits move `sourceId` to `counts` as a merge fits it to the target's (UI-25;
+ * `mergeMovesInTransaction`): rows from its start start at `counts.start`, rows to its end end at
+ * `counts.end`, and destinations and paths stay. Returns why it can't, having written nothing, or
+ * `null` once it's fitted. Remove keyframe's join (`timelineJoinAtBeat.ts`, holds decision 14)
+ * fits the move after a split back over the counts of the one before it this way.
+ *
+ * A missing `sourceId` is the caller's mistake, not a reason: refused (E-ARGS), as merge does.
+ */
+export async function fitMoveInTransaction({
+    tx,
+    sourceId,
+    counts,
+}: {
+    tx: DbTransaction;
+    sourceId: number;
+    counts: BeatRange;
+}): Promise<FitRefusal | null> {
+    const source = await readTimeline(tx, sourceId);
+    if (!source) refuse(`timeline ${sourceId} does not exist`);
+    return await fitInTransaction(
+        tx,
+        source,
+        counts,
+        await memberRows(tx, sourceId),
+    );
+}
+
+/** `fitMoveInTransaction` with the source and its rows already read. */
+async function fitInTransaction(
     tx: DbTransaction,
     source: DatabaseTimeline,
-    target: DatabaseTimeline,
+    counts: BeatRange,
     sourceRows: readonly MemberRow[],
-    nameOf: (timelineId: number) => TimelineTextArg,
-): Promise<void> {
-    const fitted = sourceRows.map(({ assignment: a }) => ({
-        row: a,
-        start:
-            a.start_beat === source.start_beat
-                ? target.start_beat
-                : a.start_beat,
-        end: a.end_beat === source.end_beat ? target.end_beat : a.end_beat,
-    }));
-    const partway = fitted.filter(
-        (f) =>
-            f.start >= f.end ||
-            f.start < target.start_beat ||
-            f.end > target.end_beat,
-    );
-    if (partway.length > 0) {
-        const ids = [...new Set(partway.map((f) => f.row.marcher_id))];
-        refuse(
-            text.t("timeline.refusals.merge.partway", {
-                count: ids.length,
-                marchers: labelList(await marcherLabels(tx, ids), ids),
-                source: nameOf(source.id),
-                target: nameOf(target.id),
-            }),
-        );
-    }
-    const marcherIds = [...new Set(fitted.map((f) => f.row.marcher_id))];
-    if (marcherIds.length === 0) return;
-    const A = schema.timeline_assignments;
-    const T = schema.timeline_transitions;
-    const L = schema.timelines;
-    const others = await tx
-        .select({
-            marcherId: A.marcher_id,
-            start: A.start_beat,
-            end: A.end_beat,
-            layer: A.layer,
-            timelineId: T.timeline_id,
-            timelineStart: L.start_beat,
-            timelineEnd: L.end_beat,
-        })
-        .from(A)
-        .innerJoin(T, eq(A.transition_id, T.id))
-        .innerJoin(L, eq(T.timeline_id, L.id))
-        .where(inArray(A.marcher_id, marcherIds))
-        .all();
-    const hits = fitted.flatMap((f) => {
-        const hit = others.find(
-            (o) =>
-                o.timelineId !== source.id &&
-                o.marcherId === f.row.marcher_id &&
-                o.layer === f.row.layer &&
-                o.start < f.end &&
-                f.start < o.end,
-        );
-        return hit
-            ? [{ marcherId: f.row.marcher_id, timelineId: hit.timelineId }]
-            : [];
+): Promise<FitRefusal | null> {
+    const why = await badFit(tx, source, counts, sourceRows);
+    if (why) return why;
+    await setTimelineRangeInTransaction({
+        tx,
+        timelineId: source.id,
+        start: counts.start,
+        end: counts.end,
     });
-    if (hits.length > 0) {
-        const ids = [...new Set(hits.map((h) => h.marcherId))];
-        refuse(
-            text.t("timeline.refusals.merge.fitCollides", {
-                marchers: labelList(await marcherLabels(tx, ids), ids),
-                source: nameOf(source.id),
-                target: nameOf(target.id),
-                other: nameOf(hits[0]!.timelineId),
-            }),
-        );
-    }
-    await refuseSecondMoveOverCounts(tx, others, source, target, nameOf);
+    return null;
 }
 
 /**
- * Refuses (E-ARGS) a fit that would give a marcher two moves over the same counts (spec §6.2
- * L-4): one of `rows` (the source's marchers' rows) is in another move over exactly `target`'s
- * counts, as a move split off the target is.
+ * Why fitting `source` to `counts` would make the range procedure fail
+ * (`setTimelineRangeInTransaction`), or `null`: a row that doesn't reach an edge stays where it
+ * is, so it must lie inside the counts; every fitted row must stay clear of the same marcher's
+ * rows on its layer in other moves; and no marcher may already have another move over exactly
+ * the counts (spec §6.2 L-4), as one split off a merge's target has. Reads no labels: the caller
+ * words the reason only when it shows it.
  */
-async function refuseSecondMoveOverCounts(
+async function badFit(
     tx: DbTransaction,
-    rows: readonly {
-        readonly marcherId: number;
-        readonly timelineId: number;
-        readonly timelineStart: number;
-        readonly timelineEnd: number;
-    }[],
     source: DatabaseTimeline,
-    target: DatabaseTimeline,
-    nameOf: (timelineId: number) => TimelineTextArg,
-): Promise<void> {
-    const sameCounts = rows.filter(
+    counts: BeatRange,
+    sourceRows: readonly MemberRow[],
+): Promise<FitRefusal | null> {
+    const ascendingIds = (ids: Iterable<number>) =>
+        [...new Set(ids)].sort((a, b) => a - b);
+    const fitted = sourceRows.map(({ assignment: a }) => ({
+        row: a,
+        start: a.start_beat === source.start_beat ? counts.start : a.start_beat,
+        end: a.end_beat === source.end_beat ? counts.end : a.end_beat,
+    }));
+    const partway = fitted.filter(
+        (f) => f.start >= f.end || f.start < counts.start || f.end > counts.end,
+    );
+    if (partway.length > 0)
+        return {
+            kind: "partway",
+            marcherIds: ascendingIds(partway.map((f) => f.row.marcher_id)),
+        };
+    const marcherIds = [...new Set(fitted.map((f) => f.row.marcher_id))];
+    if (marcherIds.length === 0) return null;
+    // The source's marchers have no rows in a merge's target (merge refuses a marcher in both
+    // first), so every other move counts
+    const others = (
+        await memberRowsWhere(
+            tx,
+            inArray(schema.timeline_assignments.marcher_id, marcherIds),
+        )
+    ).filter((o) => o.timeline.id !== source.id);
+    const hits = fitted.flatMap((f) => {
+        const hit = others.find(
+            ({ assignment: o }) =>
+                o.marcher_id === f.row.marcher_id &&
+                o.layer === f.row.layer &&
+                o.start_beat < f.end &&
+                f.start < o.end_beat,
+        );
+        return hit
+            ? [{ marcherId: f.row.marcher_id, timelineId: hit.timeline.id }]
+            : [];
+    });
+    if (hits.length > 0)
+        return {
+            kind: "overlap",
+            marcherIds: ascendingIds(hits.map((h) => h.marcherId)),
+            timelineId: hits[0]!.timelineId,
+        };
+    const sameCounts = others.filter(
         (o) =>
-            o.timelineId !== source.id &&
-            o.timelineId !== target.id &&
-            o.timelineStart === target.start_beat &&
-            o.timelineEnd === target.end_beat,
+            o.timeline.start_beat === counts.start &&
+            o.timeline.end_beat === counts.end,
     );
-    if (sameCounts.length === 0) return;
-    const ids = [...new Set(sameCounts.map((o) => o.marcherId))];
-    refuse(
-        text.t("timeline.refusals.merge.sameCounts", {
-            count: ids.length,
-            marchers: labelList(await marcherLabels(tx, ids), ids),
-            other: nameOf(sameCounts[0]!.timelineId),
-            target: nameOf(target.id),
-        }),
-    );
+    if (sameCounts.length > 0)
+        return {
+            kind: "secondMove",
+            marcherIds: ascendingIds(
+                sameCounts.map((o) => o.assignment.marcher_id),
+            ),
+            timelineId: sameCounts[0]!.timeline.id,
+        };
+    return null;
+}
+
+/** Merge's refusal for a fit of `sourceId` to `targetId`'s counts (`badFit`). */
+async function mergeRefusalMessage(
+    tx: DbTransaction,
+    why: FitRefusal,
+    sourceId: number,
+    targetId: number,
+    nameOf: (timelineId: number) => TimelineTextArg,
+): Promise<TimelineText> {
+    const ids = why.marcherIds;
+    const marchers = labelList(await marcherLabels(tx, ids), ids);
+    const source = nameOf(sourceId);
+    const target = nameOf(targetId);
+    switch (why.kind) {
+        case "partway":
+            return text.t("timeline.refusals.merge.partway", {
+                count: ids.length,
+                marchers,
+                source,
+                target,
+            });
+        case "overlap":
+            return text.t("timeline.refusals.merge.fitCollides", {
+                marchers,
+                source,
+                target,
+                other: nameOf(why.timelineId),
+            });
+        case "secondMove":
+            return text.t("timeline.refusals.merge.sameCounts", {
+                count: ids.length,
+                marchers,
+                other: nameOf(why.timelineId),
+                target,
+            });
+    }
 }
 
 /** `mergeMovesInTransaction` as one undoable edit. */

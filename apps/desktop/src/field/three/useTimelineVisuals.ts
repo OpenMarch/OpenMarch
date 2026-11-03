@@ -16,7 +16,6 @@ import {
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
 import { followingAt, marcherSetBeats } from "@/timeline/timelineSetFollowing";
-import { useKeptAssignmentsStore } from "@/timeline/useKeepLaterPages";
 import { useTimelineFocusScene } from "@/timeline/useTimelineFocusScene";
 import { ghostColorFor } from "@/timeline/useTimelineFocusScene";
 import { useTimelinePathSamples } from "@/timeline/useTimelinePathSamples";
@@ -205,8 +204,7 @@ function useFieldDimming(enabled: boolean): FieldDimming {
 /**
  * #300: while paused or scrubbing, the marchers with no coordinate of their
  * own on the count shown are Following, drawn with a dashed edge; playing, nobody is. Each
- * marcher's Set beats are worked out once per resolver version and kept
- * markers, so a playhead move only looks them up, and `FieldFollowing`
+ * marcher's Set beats are worked out once per resolver version, so a playhead move only looks them up, and `FieldFollowing`
  * redraws only when who's Following changes. Stopping eases the dashes in
  * (#302), unless the system asks for reduced motion. The count is the one the
  * field draws (`fieldBeat`), so a dragged start flag (UI-26) shows its own.
@@ -232,13 +230,12 @@ function useFieldFollowing(ready: boolean, isPlaying: boolean): FieldFollowing {
                 return;
             }
             if (!setBeats) {
-                const kept = useKeptAssignmentsStore.getState().ids;
                 setBeats = new Map(
                     resolver
                         .marcherIds()
                         .map((id) => [
                             id,
-                            marcherSetBeats(resolverSpans(resolver, id), kept),
+                            marcherSetBeats(resolverSpans(resolver, id)),
                         ]),
                 );
             }
@@ -268,9 +265,6 @@ function useFieldFollowing(ready: boolean, isPlaying: boolean): FieldFollowing {
                     state.resolver !== previous.resolver
                 )
                     safely(true);
-            }),
-            useKeptAssignmentsStore.subscribe((state, previous) => {
-                if (state.ids !== previous.ids) safely(true);
             }),
             useTimelineSelectionStore.subscribe((state, previous) => {
                 if (fieldBeat(state) !== fieldBeat(previous)) safely(false);

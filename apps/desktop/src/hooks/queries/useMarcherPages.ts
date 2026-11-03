@@ -30,9 +30,15 @@ export const moveMarchersToNeighborPageMutationOptions = () => {
         mutationFn: ({
             target,
             moves,
-            clearOwn,
+            clearPage,
+            keepLaterPages,
         }: TimelineNeighborPageRequest) =>
-            moveMarchersAndOfferFollowUp({ target, moves, clearOwn }),
+            moveMarchersAndOfferFollowUp({
+                target,
+                moves,
+                clearPage,
+                keepLaterPages,
+            }),
         onError: (e, variables) => {
             toastTimelineError(
                 e,

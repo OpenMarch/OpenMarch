@@ -803,11 +803,12 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
                 pageEraTables: [],
             });
             expect(destinationsOf(showPath)).toEqual(expected);
+            // Kept spots are gone: the timeline-only migrations drop their table (holds #467)
             expect(
                 withDb(showPath, (db) =>
                     db
                         .prepare(
-                            "SELECT count(*) AS n FROM timeline_kept_assignments",
+                            "SELECT count(*) AS n FROM sqlite_schema WHERE name = 'timeline_kept_assignments'",
                         )
                         .get(),
                 ),

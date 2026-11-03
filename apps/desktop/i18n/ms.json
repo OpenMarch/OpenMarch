@@ -25,10 +25,8 @@
             "noPreviousPage": "Tidak dapat menetapkan koordinat pemain mengikut halaman sebelumnya. Tiada halaman sebelumnya",
             "setAllToNext": "Salin kedudukan dari halaman seterusnya (semua pemain)",
             "setAllToNextSuccess": "{count, plural, =1 {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman seterusnya ({nextPage})} other {Berjaya menetapkan koordinat kesemua # pemain pada halaman {currentPage} kepada koordinat halaman seterusnya ({nextPage})}}",
-            "setAllToPrevious": "Salin kedudukan dari halaman sebelumnya (semua pemain)",
             "setSelectedToNext": "Salin kedudukan dari halaman seterusnya (dipilih)",
             "setSelectedToNextSuccess": "{count, plural, other {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman seterusnya ({nextPage})}}",
-            "setSelectedToPrevious": "Salin kedudukan dari halaman sebelumnya (dipilih)",
             "setAllToPreviousDone": "{count, plural, =1 {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})} other {Berjaya menetapkan koordinat kesemua # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, other {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}"
         },
@@ -136,10 +134,8 @@
             "previousPage": "Halaman sebelumnya (garis masa)",
             "splitMoveAtPlayhead": "Pisahkan gerakan di kepala main",
             "tapBeats": "Tambah {count} rentak sementara",
-            "toggleKeepOnPage": "Kekalkan pemain yang dipilih di kedudukan mereka pada halaman ini (pada halaman seterusnya jika mereka bergerak di sini), atau biarkan mereka mengikut semula",
             "unsetHere": "Buang kerangka kunci",
             "unsetHereAndFollowing": "Buang kerangka kunci, halaman kemudian mengikut semula",
-            "unsetHereAndPages": "{count, plural, =1 {Buang kerangka kunci, halaman {first} mengikut semula} other {Buang kerangka kunci, halaman {first}–{last} mengikut semula}}",
             "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete kerangka kunci berlian buang padam kosongkan tarik balik koordinat kedudukan",
             "splitSelectedIntoNewMove": "Pisahkan pemain yang dipilih ke gerakan baharu",
             "mergeMoveIntoPage": "Gabungkan gerakan ini ke dalam halamannya"
@@ -928,26 +924,14 @@
             "swapMarchers": "Tukar kedudukan pemain",
             "timeline": {
                 "buttonWithHint": "{label}. {hint}",
-                "followAgain": "Ikut semula",
-                "followAgainHint": "{who, select, named {Biarkan {names} mengikut Halaman {from} semula, supaya mengedit Halaman {from} turut mengalihkan mereka ke sini} someNamed {Biarkan {names} ({count} daripada {total} yang dipilih) mengikut Halaman {from} semula, supaya mengedit Halaman {from} turut mengalihkan mereka ke sini} some {Biarkan {count} daripada {total} yang dipilih mengikut Halaman {from} semula, supaya mengedit Halaman {from} turut mengalihkan mereka ke sini} other {Biarkan pemain ini mengikut Halaman {from} semula, supaya mengedit Halaman {from} turut mengalihkan mereka ke sini}}",
-                "followAgainHintEarlier": "{who, select, named {Biarkan {names} mengikut halaman sebelumnya semula} someNamed {Biarkan {names} ({count} daripada {total} yang dipilih) mengikut halaman sebelumnya semula} some {Biarkan {count} daripada {total} yang dipilih mengikut halaman sebelumnya semula} other {Biarkan pemain ini mengikut halaman sebelumnya semula}}",
                 "goToPage": "Pergi ke Halaman {page}, tempat pemain ini kali terakhir bergerak",
                 "goToStart": "Pergi ke permulaan",
                 "holdFrom": "Kekal sejak Halaman {page}",
                 "holdFromStart": "Kekal sejak permulaan",
                 "holdHere": "Pemain ini kekal di sini",
-                "keepHere": "Sematkan di sini",
-                "keepHereHint": "{who, select, named {Sematkan {names} pada Halaman {page}, supaya mengedit Halaman {from} tidak mengalihkan mereka ke sini} someNamed {Sematkan {names} ({count} daripada {total} yang dipilih) pada Halaman {page}, supaya mengedit Halaman {from} tidak mengalihkan mereka ke sini} some {Sematkan {count} daripada {total} yang dipilih pada Halaman {page}, supaya mengedit Halaman {from} tidak mengalihkan mereka ke sini} other {Sematkan pemain ini pada Halaman {page}, supaya mengedit Halaman {from} tidak mengalihkan mereka ke sini}}",
-                "keepHereHintEarlier": "{who, select, named {Sematkan {names} pada Halaman {page}, supaya mengedit halaman sebelumnya tidak mengalihkan mereka ke sini} someNamed {Sematkan {names} ({count} daripada {total} yang dipilih) pada Halaman {page}, supaya mengedit halaman sebelumnya tidak mengalihkan mereka ke sini} some {Sematkan {count} daripada {total} yang dipilih pada Halaman {page}, supaya mengedit halaman sebelumnya tidak mengalihkan mereka ke sini} other {Sematkan pemain ini pada Halaman {page}, supaya mengedit halaman sebelumnya tidak mengalihkan mereka ke sini}}",
-                "keptOnThisPage": "Disematkan pada halaman ini",
                 "movesOnThisPage": "Bergerak pada halaman ini",
-                "pagesFollow": "{count, plural, =1 {Halaman {first} mengikut pemain ini} other {Halaman {first}–{last} mengikut pemain ini}}",
-                "pagesFollowSome": "{count, plural, =1 {Halaman {first} mengikut sebahagian pemain ini} other {Halaman {first}–{last} mengikut sebahagian pemain ini}}",
                 "someHoldHere": "Sebahagian pemain ini kekal di sini",
-                "someKeptOnThisPage": "Sebahagian pemain ini disematkan pada halaman ini",
                 "unsetHere": "Alih keluar kerangka kunci",
-                "unsetHereAndFollowingHint": "Alih keluar kerangka kunci mereka pada kiraan ini, dan {pageCount, plural, =1 {Halaman {first} kembali mengikut} other {Halaman {first}–{last} kembali mengikut}} kerangka kunci sebelumnya",
-                "unsetHereAndFollowingHintSome": "Alih keluar kerangka kunci bagi {count} daripada {total} yang dipilih yang mempunyainya pada kiraan ini, dan {pageCount, plural, =1 {Halaman {first} kembali mengikut} other {Halaman {first}–{last} kembali mengikut}} kerangka kunci sebelumnya",
                 "unsetHereHint": "Alih keluar kerangka kunci mereka pada kiraan ini, supaya mereka mengikut kedudukan sebelumnya. Halaman seterusnya kekal di tempatnya",
                 "unsetHereHintSome": "Alih keluar kerangka kunci bagi {count} daripada {total} yang dipilih yang mempunyainya pada kiraan ini, supaya mereka mengikut kedudukan sebelumnya. Halaman seterusnya kekal di tempatnya",
                 "unsetHereNone": "Tiada pemain yang dipilih mempunyai kerangka kunci pada kiraan ini"
@@ -2797,32 +2781,9 @@
         },
         "keep": {
             "chain": {
-                "ariaLabel": "Halaman {page}: {label}. {hint}",
-                "follows": "{count, plural, other {# pemain kekal di kedudukan yang ditinggalkan oleh Halaman {from}}}",
-                "followsEarlier": "{count, plural, other {# pemain kekal di kedudukan yang ditinggalkan oleh halaman terdahulu}}",
-                "followsHint": "Perubahan pada Halaman {from} dibawa ke Halaman {page}. Klik untuk mengekalkan {count, plural, =1 {pemain itu} other {mereka}} di sini",
-                "followsHintEarlier": "Perubahan pada halaman terdahulu dibawa ke Halaman {page}. Klik untuk mengekalkan {count, plural, =1 {pemain itu} other {mereka}} di sini",
-                "followsMenuHint": "Perubahan pada Halaman {from} dibawa ke Halaman {page}. Klik kanan halaman untuk mengekalkan {count, plural, =1 {pemain itu} other {mereka}} di sini",
-                "followsMenuHintEarlier": "Perubahan pada halaman terdahulu dibawa ke Halaman {page}. Klik kanan halaman untuk mengekalkan {count, plural, =1 {pemain itu} other {mereka}} di sini",
-                "followsNamed": "{count, plural, =1 {{names} kekal di kedudukan yang ditinggalkan oleh Halaman {from}} other {{names} kekal di kedudukan yang ditinggalkan oleh Halaman {from}}}",
-                "followsNamedEarlier": "{count, plural, =1 {{names} kekal di kedudukan yang ditinggalkan oleh halaman terdahulu} other {{names} kekal di kedudukan yang ditinggalkan oleh halaman terdahulu}}",
-                "kept": "{count, plural, other {# pemain dikekalkan pada Halaman {page}}}",
-                "keptHint": "Perubahan pada Halaman {from} berhenti di sini. Klik untuk mengikut Halaman {from} semula",
-                "keptHintEarlier": "Perubahan pada halaman terdahulu berhenti di sini. Klik untuk mengikutnya semula",
-                "keptMenuHint": "Perubahan pada Halaman {from} berhenti di sini. Klik kanan halaman untuk mengikut Halaman {from} semula",
-                "keptMenuHintEarlier": "Perubahan pada halaman terdahulu berhenti di sini. Klik kanan halaman untuk mengikutnya semula",
-                "keptNamed": "{names} dikekalkan pada Halaman {page}",
-                "mixed": "{kept, plural, other {# daripada {total} yang dipilih dikekalkan pada Halaman {page}}}",
-                "mixedNamed": "{kept, plural, other {# daripada {total} yang dipilih dikekalkan pada Halaman {page} ({names})}}",
-                "mixedRestHint": "{count, plural, =1 {Yang seorang lagi mengikut halaman terdahulu. Klik untuk mengekalkannya di sini juga} other {# yang lain mengikut halaman terdahulu. Klik untuk mengekalkan mereka di sini juga}}",
-                "mixedRestMenuHint": "{count, plural, =1 {Yang seorang lagi mengikut halaman terdahulu. Klik kanan halaman untuk mengekalkannya di sini juga} other {# yang lain mengikut halaman terdahulu. Klik kanan halaman untuk mengekalkan mereka di sini juga}}"
-            },
-            "field": {
-                "kept": "Dikekalkan pada Halaman {page} · tidak akan mengikut Halaman {from}",
-                "keptEarlier": "Dikekalkan pada Halaman {page} · tidak akan mengikut halaman terdahulu"
+                "ariaLabel": "Halaman {page}: {label}. {hint}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {Halaman {first} sedang menggunakan formasi ini, jadi ia turut berubah} other {Halaman {first}–{last} sedang menggunakan formasi ini, jadi halaman tersebut turut berubah}}",
                 "keepAsBefore": "{count, plural, =1 {Kekalkan Halaman {first} seperti sebelum ini} other {Kekalkan Halaman {first}–{last} seperti sebelum ini}}",
                 "keepError": "Ralat semasa mengekalkan halaman berikutnya"
             },
@@ -2831,7 +2792,6 @@
             },
             "errors": {
                 "keep": "Ralat semasa mengekalkan pemain pada halaman",
-                "followAgain": "Ralat semasa membenarkan pemain mengikut semula",
                 "readKept": "Ralat semasa membaca tempat yang dikekalkan"
             }
         },
@@ -2871,8 +2831,6 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "Padam halaman dan gerakannya",
-            "followAgain": "Benarkan pemain terpilih mengikut semula",
-            "keepHere": "Kekalkan pemain terpilih di sini",
             "setAsShown": "Tetapkan seperti dipaparkan",
             "setAsShownNone": "Setiap pemain terpilih sudah ditetapkan pada {page}, atau berada di tengah-tengah gerakan",
             "setAsShownError": "Ralat semasa menetapkan pemain seperti dipaparkan",
@@ -3261,9 +3219,6 @@
             "keep": {
                 "wholePage": "Kekalkan berfungsi pada satu halaman penuh, bukan {counts}"
             },
-            "setAsShown": {
-                "wholePage": "Tetapkan seperti dipaparkan berfungsi pada satu halaman penuh, bukan {counts}"
-            },
             "tooFarPastEnd": "itu {count, plural, other {# kiraan}} melepasi penghujung; satu suntingan menyimpan paling banyak {max}"
         }
     },
@@ -3292,7 +3247,6 @@
             "placeSelectedMarchers": "Letakkan pemain dipilih",
             "snapToggleCaption": "Lekap",
             "toNextPagePositions": "...ke kedudukan halaman seterusnya",
-            "toPreviousPagePositions": "...ke kedudukan halaman sebelumnya",
             "setMarcherPositionsAriaLabel": "Tetapkan kedudukan pemain"
         },
         "collisions": {

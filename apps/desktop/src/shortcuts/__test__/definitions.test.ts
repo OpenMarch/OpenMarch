@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
+import { getActionLabel } from "../labels";
 import en from "../../../i18n/en.json";
 import { canonicalBinding } from "../bindings";
 import {
@@ -110,6 +112,51 @@ describe("ACTIONS", () => {
         expect(hidden.sort()).toEqual(
             (Object.keys(NOT_IN_PALETTE) as ActionId[]).sort(),
         );
+    });
+
+    it("registers the hold commands next to Clear this page, named from the hold terms", async () => {
+        await tolgee.run();
+        const t = (key: string, params?: Record<string, unknown>) =>
+            tolgee.t(key, params as never);
+        expect(getActionLabel("timelineDefineAsShown", t)).toBe(
+            "Define as shown",
+        );
+        expect(getActionLabel("timelineHoldFromPrevious", t)).toBe(
+            "Hold from previous page",
+        );
+        const clear = ACTIONS.setSelectedMarchersToPreviousPage;
+        for (const id of [
+            "timelineDefineAsShown",
+            "timelineHoldFromPrevious",
+        ] as const) {
+            const def = ACTIONS[id] as {
+                category: string;
+                scope: string;
+                editsDrill: boolean;
+                hiddenFromPalette?: boolean;
+            };
+            expect(def).toMatchObject({
+                category: clear.category,
+                scope: clear.scope,
+                editsDrill: clear.editsDrill,
+            });
+            expect(def.hiddenFromPalette).toBeUndefined();
+        }
+        expect(ACTIONS.timelineHoldFromPrevious.defaultBindings).toEqual([
+            "$mod+H",
+            "Control+H",
+        ]);
+        expect(ACTIONS.timelineDefineAsShown.defaultBindings).toEqual([]);
+        // ⌘H / Ctrl+H is no other action's key; plain H stays the shape editor's hide-marchers
+        const keys = ["$mod+H", "Control+H"].map(canonicalBinding);
+        expect(
+            ACTION_IDS.filter((id) =>
+                ACTIONS[id].defaultBindings.some((b) =>
+                    keys.includes(canonicalBinding(b)),
+                ),
+            ),
+        ).toEqual(["timelineHoldFromPrevious"]);
+        expect(ACTIONS.shapeHideMarchers.defaultBindings).toEqual(["H"]);
     });
 
     it("generates 24 nudge actions and 9 tap-beat actions", () => {

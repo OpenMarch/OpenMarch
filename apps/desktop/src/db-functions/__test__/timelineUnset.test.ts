@@ -12,10 +12,6 @@ import {
     selectionKeyframes,
 } from "@/timeline/timelineSetFollowing";
 import {
-    applyKeptChange,
-    useKeptAssignmentsStore,
-} from "@/timeline/useKeepLaterPages";
-import {
     resolverSpans,
     startTimelineResolver,
     stopTimelineResolver,
@@ -25,8 +21,10 @@ import {
 import { performRedo, performUndo } from "../history";
 import { createLastPage, deletePages } from "../page";
 import { moveMarchersInTarget } from "../timelineMoves";
-import { keptStatesOnPageBoxes } from "../timelineKeepHere";
-import { readKeptAssignmentIds } from "../timelineKeptMarkers";
+import {
+    pageBoxStatesOnPageBoxes,
+    setAsShownOnPage,
+} from "../timelineSetAsShown";
 import { unsetMarchersAt } from "../timelineUnset";
 import {
     unsetFollowingPages,
@@ -35,7 +33,6 @@ import {
     unsetMenuStateAt,
 } from "@/timeline/timelineUnset";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { keepMarchersOnPage } from "../timelineKeepHere";
 
 keepFixturesInPageMode(
     "its tests trim the show, write timeline rows and set the flag themselves",
@@ -45,17 +42,14 @@ keepFixturesInPageMode(
  * **Unset here** (Set vs Following, #300 and #304): the selected marchers' moves ending on the
  * playhead's count are deleted, so they follow from earlier there, and the later pages that
  * followed the deleted spot keep their spots with a move of the marcher's own where the first of
- * them begins (Only Page N's `keepMarchersOnPage` with `at`, unmarked), whose end is a keyframe in
- * turn. One undo step.
+ * them begins (Set as shown with `at`, as Only Page N writes it), an ordinary move whose end is a
+ * keyframe in turn. One undo step.
  *
  * The show: home, page 1 [1, 9), page 2 [9, 17), page 3 [17, 25), page 4 [25, 33); beat ids equal
  * their ordinals. Marchers `a` and `b` move on page 2 and hold on pages 3 and 4; `c` never moves.
  */
 
-afterEach(() => {
-    stopTimelineResolver();
-    useKeptAssignmentsStore.setState({ ids: new Set() });
-});
+afterEach(() => stopTimelineResolver());
 
 const UP: XY = [100, 100];
 const UP2: XY = [200, 100];
@@ -68,7 +62,6 @@ const TABLES = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
-    schema.timeline_kept_assignments,
 ];
 
 const snapshot = async (db: DbConnection) => {
@@ -136,7 +129,7 @@ const stateOn = async (
     marcherId: number,
 ) =>
     (
-        await keptStatesOnPageBoxes({
+        await pageBoxStatesOnPageBoxes({
             db,
             pageBoxes: [box],
             marcherIds: [marcherId],
@@ -184,14 +177,11 @@ describeDbTests("Remove keyframe", (it) => {
         // Page 2 follows page 1 (home) now; pages 3 and 4 stand where they did
         expect(await atFlags(db, a)).toEqual([homeA, homeA, homeA, UP, UP]);
         expect(await atFlags(db, b)).toEqual([homeB, homeB, homeB, UP2, UP2]);
-        // No move of theirs ends on page 2's flag; page 3 holds a move of their own, not kept
+        // No move of theirs ends on page 2's flag; page 3 holds an ordinary move of their own
         const rows = await db.select().from(schema.timeline_assignments).all();
         expect(rows.filter((r) => r.end_beat === PAGE2.end)).toEqual([]);
         expect(await stateOn(db, PAGE3, a)).toBe("own");
         expect(await stateOn(db, PAGE3, b)).toBe("own");
-        expect(result.markers.added).toEqual([]);
-        expect(result.markers.removed).toEqual([]);
-        expect((await readKeptAssignmentIds(db)).size).toBe(0);
     });
 
     it("the stay's end is a keyframe, and removing it moves the stay on a page", async ({
@@ -202,11 +192,7 @@ describeDbTests("Remove keyframe", (it) => {
         const [homeA] = await atFlags(db, a);
         await unset(db, PAGE2.end, [a]);
 
-        const setBeats = () =>
-            marcherSetBeats(
-                resolverSpans(resolver(), a),
-                useKeptAssignmentsStore.getState().ids,
-            );
+        const setBeats = () => marcherSetBeats(resolverSpans(resolver(), a));
         expect(setBeats()).toContain(PAGE3.end);
 
         expect((await unset(db, PAGE3.end, [a])).unset).toEqual([a]);
@@ -231,7 +217,6 @@ describeDbTests("Remove keyframe", (it) => {
                 following: followingAt(new Map([[a, setBeats]]), PAGE3.end),
                 canUnset: unsetMenuStateAt({
                     resolver: resolver(),
-                    kept: new Set(),
                     boxes: [],
                     marcherIds: [a],
                     beat: PAGE3.end,
@@ -313,7 +298,6 @@ describeDbTests("Remove keyframe", (it) => {
         ]);
         expect(await stateOn(db, PAGE3, b)).toBe("own");
         expect(await stateOn(db, PAGE3, a)).toBe("own");
-        expect((await readKeptAssignmentIds(db)).size).toBe(0);
     });
 
     it("is one undo step, and undo and redo restore it exactly", async ({
@@ -381,22 +365,13 @@ describeDbTests(
                 cursorBeat: null,
             });
 
-        it("takes back only the selected marchers Set on the count, and nobody on the first page or a stay", async ({
+        it("takes back only the selected marchers Set on the count, and nobody on the first page", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { a, b, c } = await show(db);
-            // b's spot on page 3 is a kept stay move: Following there, by its kept marker
+            // a moves on page 3; b and c hold there
             await move(db, PAGE3, [{ marcherId: a, xy: ELSEWHERE }]);
-            applyKeptChange(
-                (
-                    await keepMarchersOnPage({
-                        db,
-                        pageBox: PAGE3,
-                        marcherIds: [b],
-                    })
-                ).markers,
-            );
             await timelineResolverSettled();
             const rows = await snapshot(db);
 
@@ -448,8 +423,6 @@ describeDbTests("Unset here and on Pages N–M", (it) => {
             homeB,
             homeB,
         ]);
-        expect(result.markers.added).toEqual([]);
-        expect((await readKeptAssignmentIds(db)).size).toBe(0);
     });
 
     it("leaves pages from the next move of their own on", async ({
@@ -513,10 +486,9 @@ describeDbTests(
                 cursorBeat: null,
                 pageBoxes: BOXES,
             });
-        const following = async (db: DbConnection, marcherIds: number[]) =>
+        const following = (marcherIds: number[]) =>
             unsetFollowingPages({
                 resolver: resolver(),
-                kept: await readKeptAssignmentIds(db),
                 marcherIds,
                 beat: useTimelineSelectionStore.getState().playheadBeat,
                 boxes: BOXES,
@@ -528,16 +500,16 @@ describeDbTests(
         }) => {
             const { a, b, c } = await show(db);
             playheadAt(PAGE2.end);
-            expect(await following(db, [a, b, c])).toEqual(["3", "4"]);
+            expect(following([a, b, c])).toEqual(["3", "4"]);
             await move(db, PAGE3, [{ marcherId: b, xy: ELSEWHERE }]);
-            expect(await following(db, [b])).toBeNull();
-            expect(await following(db, [a, b])).toEqual(["3", "4"]);
+            expect(following([b])).toBeNull();
+            expect(following([a, b])).toEqual(["3", "4"]);
             await move(db, { start: 25, end: 33 }, [
                 { marcherId: a, xy: ELSEWHERE },
             ]);
-            expect(await following(db, [a])).toEqual(["3"]);
+            expect(following([a])).toEqual(["3"]);
             playheadAt(0);
-            expect(await following(db, [a, b, c])).toBeNull();
+            expect(following([a, b, c])).toBeNull();
         });
 
         it("names none mid-page when the marchers move again before the page's flag", async ({
@@ -550,9 +522,9 @@ describeDbTests(
                 { marcherId: a, xy: ELSEWHERE },
             ]);
             playheadAt(13);
-            expect(await following(db, [a])).toBeNull();
+            expect(following([a])).toBeNull();
             playheadAt(PAGE2.end);
-            expect(await following(db, [a])).toEqual(["3", "4"]);
+            expect(following([a])).toEqual(["3", "4"]);
         });
 
         it("a diamond's menu offers what applies at its count, and nothing while playing", async ({
@@ -560,38 +532,37 @@ describeDbTests(
             marchersAndPages: _,
         }) => {
             const { a, c } = await show(db);
-            const at = async (beat: number, isPlaying = false) =>
+            const at = (beat: number, isPlaying = false) =>
                 unsetMenuStateAt({
                     resolver: resolver(),
-                    kept: await readKeptAssignmentIds(db),
                     marcherIds: [a, c],
                     beat,
                     boxes: BOXES,
                     isPlaying,
                 });
-            expect(await at(PAGE2.end)).toEqual({
+            expect(at(PAGE2.end)).toEqual({
                 canUnset: true,
-                followingLabel: "Remove keyframe, Pages 3–4 follow back",
+                followingLabel: "Remove keyframe, Pages 3–4 move back too",
             });
-            expect(await at(PAGE3.end)).toEqual({
+            expect(at(PAGE3.end)).toEqual({
                 canUnset: false,
                 followingLabel: null,
             });
-            expect(await at(PAGE2.end, true)).toEqual({
+            expect(at(PAGE2.end, true)).toEqual({
                 canUnset: false,
                 followingLabel: null,
             });
         });
 
-        it("names none where the next page holds a kept spot", async ({
+        it("names none where the next page is set as shown", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { a } = await show(db);
-            await keepMarchersOnPage({ db, pageBox: PAGE3, marcherIds: [a] });
+            await setAsShownOnPage({ db, pageBox: PAGE3, marcherIds: [a] });
             await timelineResolverSettled();
             playheadAt(PAGE2.end);
-            expect(await following(db, [a])).toBeNull();
+            expect(following([a])).toBeNull();
         });
 
         it("takes back the Set marchers' spot and lets the following pages follow back", async ({
@@ -613,7 +584,6 @@ describeDbTests(
                 homeA,
             ]);
             expect((await atFlags(db, b)).slice(2)).toEqual([UP2, UP2, UP2]);
-            expect((await readKeptAssignmentIds(db)).size).toBe(0);
         });
     },
 );

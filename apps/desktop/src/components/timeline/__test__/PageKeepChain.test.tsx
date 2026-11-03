@@ -8,42 +8,35 @@ import {
     waitFor,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { keepOnPage } from "@/timeline/timelineKeepCommands";
 import {
-    keepToggle,
     pageChainWords,
     type PageKeepState,
 } from "@/timeline/timelineKeepLater";
+import { setAsShownMenu } from "@/timeline/timelineSetAsShown";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
 import { Timeline } from "../Timeline";
 import { isTimelineOwnKey } from "../timelineHotkeys";
 import type { TimelineSelection } from "../TimelineViewModel";
-import type { TimelineKeepHereMenu } from "../TimelineRangeMenu";
+import type {
+    TimelineClearPageMenu,
+    TimelineSetAsShownMenu,
+} from "../TimelineRangeMenu";
 import {
     CHAIN_INSET,
     chainFit,
-    keepDotFit,
-    keepHereMenu,
     REVEAL_PRESS_DELAY,
-    pageKeepChains,
     type PageKeepChain,
     type PageKeepChains,
 } from "../PageKeepChain";
 
 /**
- * UI-18 keep later pages: the chains on the page boxes for the selected marchers (linked, kept,
- * or a count for a mix), with tooltips that name whom a click changes; a click runs the command
- * and never selects, scrubs or drags the box; the page box menu has the same commands, enabled by
- * state. A chain sits at the bottom left of its box, clear of the page number, and gives way to a
- * dot (kept, mixed) or nothing (linked) where the box is too narrow.
+ * UI-18 keep later pages: the chains on the page boxes where the selected marchers follow (Not
+ * set), with tooltips that name whom a click sets as shown; a click runs the command and never
+ * selects, scrubs or drags the box; the page box menu has the same command. A chain sits at the
+ * bottom left of its box, clear of the page number, and gives way to nothing where the box is too
+ * narrow. Kept spots, with their chips, mixed badges, dots and K, are gone (holds, #467).
  */
-
-// The menu's commands write the show; these tests only check whom they'd change
-vi.mock("@/timeline/timelineKeepCommands", () => ({
-    keepOnPage: vi.fn(async () => {}),
-    followAgainOn: vi.fn(async () => {}),
-}));
 
 afterEach(cleanup);
 
@@ -87,38 +80,22 @@ const PAGES = [
     page(4, "4", BEATS.slice(17, 25)),
 ];
 
-const chain = (
-    kind: PageKeepChain["kind"],
-    extra: Partial<PageKeepChain> = {},
-): PageKeepChain => {
-    const label =
-        kind === "follows"
-            ? "Keep 2 marchers on Page 3"
-            : kind === "kept"
-              ? "2 marchers kept on Page 3"
-              : "2 of the 8 selected are kept on Page 3 (OT1, OT8)";
-    return {
-        kind,
-        label,
-        hint:
-            kind === "follows"
-                ? "They won't follow Page 2 any more"
-                : kind === "kept"
-                  ? "Click to follow Page 2 again"
-                  : "Click to keep the other 6 too",
-        menuLabel: label,
-        menuHint: "Right-click the page to change this",
-        action: kind === "kept" ? "follow" : "keep",
-        marcherIds: [1, 2],
-        keptCount: kind === "follows" ? 0 : 2,
-        onToggle: vi.fn(),
-        ...extra,
-    };
-};
+const LABEL =
+    "2 marchers have no position of their own here, shown where Page 2 left them";
+const chain = (extra: Partial<PageKeepChain> = {}): PageKeepChain => ({
+    label: LABEL,
+    hint: "Click to make them defined here, where they're shown",
+    menuLabel: LABEL,
+    menuHint: "Right-click the page to change this",
+    marcherIds: [1, 2],
+    onToggle: vi.fn(),
+    ...extra,
+});
 
 const show = ({
     keepChains,
-    keepHere,
+    setAsShown,
+    clearPage,
     selection = null,
     onSelectionChange = vi.fn(),
     pixelsPerBeat = 16,
@@ -130,12 +107,13 @@ const show = ({
     /** Seeks, with the playhead at beat 0 unless `positionBeat` says otherwise */
     onSeek?: (beat: number, options?: unknown) => void;
     keepChains?: PageKeepChains;
-    keepHere?: TimelineKeepHereMenu;
+    setAsShown?: TimelineSetAsShownMenu;
+    clearPage?: TimelineClearPageMenu;
     selection?: TimelineSelection;
     onSelectionChange?: (selection: TimelineSelection) => void;
     /**
-     * 16: 128px boxes; 5: 40px, the label and no room for a chain but room for a dot; 3: 24px, the
-     * label and no room for either; 2: 16px, no label; 1.5: 12px
+     * 16: 128px boxes; 5: 40px, the label and no room for a chain; 3: 24px; 2: 16px, no label;
+     * 1.5: 12px
      */
     pixelsPerBeat?: number;
 }) =>
@@ -150,7 +128,8 @@ const show = ({
             selection={selection}
             onSelectionChange={onSelectionChange}
             keepChains={keepChains}
-            keepHere={keepHere}
+            setAsShown={setAsShown}
+            clearPage={clearPage}
             pixelsPerBeat={pixelsPerBeat}
             playback={
                 positionBeat === undefined && !onSeek
@@ -172,14 +151,14 @@ describe("the chains on the page boxes", () => {
         expect(chains()).toEqual([]);
     });
 
-    it("a linked chain says whom a click keeps; the click keeps them and doesn't select the box", () => {
-        const linked = chain("follows");
+    it("a linked chain says whom a click sets as shown; the click runs it and doesn't select the box", () => {
+        const linked = chain();
         const onSelectionChange = vi.fn();
         show({ keepChains: new Map([[3, linked]]), onSelectionChange });
         const [button] = chains();
         expect(button).toHaveAttribute("data-chain", "follows");
         expect(button).toHaveAccessibleName(
-            "Page 3: Keep 2 marchers on Page 3. They won't follow Page 2 any more",
+            `Page 3: ${LABEL}. Click to make them defined here, where they're shown`,
         );
         // Full size in a wide box
         expect(button!.style.width).toBe("16px");
@@ -203,69 +182,19 @@ describe("the chains on the page boxes", () => {
             ).toBe(true);
     });
 
-    it("a kept chain is broken and filled in the accent, so it can't be read as linked", () => {
-        const kept = chain("kept");
-        show({ keepChains: new Map([[3, kept]]) });
-        const [button] = chains();
-        expect(button).toHaveAttribute("data-chain", "kept");
-        expect(button!.className).toMatch(/\bbg-accent\b/);
-        expect(button!.className).toMatch(/\btext-text-invert\b/);
-        expect(button!.className).not.toMatch(/\bborder\b/);
-        expect(button).toHaveAccessibleName(
-            "Page 3: 2 marchers kept on Page 3. Click to follow Page 2 again",
-        );
-        fireEvent.click(button!);
-        expect(kept.onToggle).toHaveBeenCalledTimes(1);
-    });
-
     it("a linked chain is only an outline, never filled", () => {
-        show({ keepChains: new Map([[3, chain("follows")]]) });
+        show({ keepChains: new Map([[3, chain()]]) });
         const [button] = chains();
         expect(button!.className).toMatch(/\bborder\b/);
         expect(button!.className).not.toMatch(/(^|\s)bg-accent(\s|$)/);
-    });
-
-    it("says (K) where K does what a click does, and nowhere else", async () => {
-        show({
-            keepChains: new Map([
-                [3, chain("follows", { withK: true })],
-                [4, chain("follows")],
-            ]),
-        });
-        const [here, next] = chains();
-        expect(here).toHaveAttribute("aria-keyshortcuts", "K");
-        expect(next).not.toHaveAttribute("aria-keyshortcuts");
-        fireEvent.focus(here!);
-        // The label, then K as a keycap
-        expect(
-            (await screen.findAllByText("Keep 2 marchers on Page 3")).length,
-        ).toBeGreaterThan(0);
-        expect(
-            screen
-                .getAllByRole("tooltip")
-                .some((tip) => tip.querySelector("kbd")?.textContent === "K"),
-        ).toBe(true);
-    });
-
-    it("a mixed chain shows the kept count", () => {
-        show({ keepChains: new Map([[3, chain("mixed")]]) });
-        const [button] = chains();
-        expect(button).toHaveAttribute("data-chain", "mixed");
-        expect(button!.className).toMatch(/\bborder-accent\b/);
-        expect(screen.getByTestId("page-keep-chain-count").textContent).toBe(
-            "2",
-        );
-        expect(button).toHaveAccessibleName(
-            "Page 3: 2 of the 8 selected are kept on Page 3 (OT1, OT8). Click to keep the other 6 too",
-        );
     });
 
     it("a linked chain shows on the selected page; elsewhere only while its box is hovered", () => {
         // Page 3 selected: its box from beat 9 to 17
         show({
             keepChains: new Map([
-                [3, chain("follows")],
-                [4, chain("follows")],
+                [3, chain()],
+                [4, chain()],
             ]),
             selection: {
                 kind: "range",
@@ -287,8 +216,8 @@ describe("the chains on the page boxes", () => {
     it("a hidden linked chain takes no pointer; its box's hover lets it, after a pause", () => {
         show({
             keepChains: new Map([
-                [3, chain("follows")],
-                [4, chain("follows")],
+                [3, chain()],
+                [4, chain()],
             ]),
             selection: {
                 kind: "range",
@@ -312,8 +241,8 @@ describe("the chains on the page boxes", () => {
         expect(here!.className).not.toMatch(/pointer-events-none/);
     });
 
-    it("a click keeps only after a press on the chain itself, or from the keyboard", () => {
-        const linked = chain("follows");
+    it("a click runs only after a press on the chain itself, or from the keyboard", () => {
+        const linked = chain();
         show({ keepChains: new Map([[3, linked]]) });
         const [button] = chains();
         const box = screen.getByRole("button", { name: "Page 3" });
@@ -329,26 +258,14 @@ describe("the chains on the page boxes", () => {
         expect(linked.onToggle).toHaveBeenCalledTimes(2);
     });
 
-    it("K's page shows its linked chain, and kept and mixed chains always show", () => {
-        show({
-            keepChains: new Map([
-                [2, chain("follows", { withK: true })],
-                [3, chain("kept")],
-                [4, chain("mixed")],
-            ]),
-        });
-        for (const button of chains())
-            expect(button).not.toHaveAttribute("data-reveal");
-    });
-
     it("sits at the bottom left, in from the flag before it", () => {
-        show({ keepChains: new Map([[3, chain("kept")]]) });
+        show({ keepChains: new Map([[3, chain()]]) });
         const [button] = chains();
         const box = screen.getByRole("button", { name: "Page 3" });
         expect(
             parseFloat(button!.style.left) - parseFloat(box.style.left),
         ).toBe(CHAIN_INSET);
-        // Its bottom 2px above the box's, as the dot's
+        // Its bottom 2px above the box's
         expect(button!.style.bottom).toBe("2px");
         expect(button!.style.top).toBe("");
     });
@@ -356,7 +273,7 @@ describe("the chains on the page boxes", () => {
     it("on the selected page, is clear of the start flag's pennant, the playhead and the flag's grip", () => {
         // Page 3 selected: its box from beat 9 to 17, the start flag on beat 9
         show({
-            keepChains: new Map([[3, chain("follows")]]),
+            keepChains: new Map([[3, chain()]]),
             selection: {
                 kind: "range",
                 range: { startBeatIndex: 9, endBeatIndex: 17 },
@@ -393,7 +310,7 @@ describe("the chains on the page boxes", () => {
     it("keeps the label from sliding onto it: the box's padding ends past the chain", () => {
         // The label is sticky to the viewport's right edge; a sticky element never leaves its
         // box's padding, so with the box running off the right edge it stops before the chain
-        show({ keepChains: new Map([[3, chain("kept")]]) });
+        show({ keepChains: new Map([[3, chain()]]) });
         const [button] = chains();
         const box = screen.getByRole("button", { name: "Page 3" });
         const label = box.querySelector(".sticky")!;
@@ -426,314 +343,209 @@ describe("the chains on the page boxes", () => {
             expect(chainFit(width, 0)).toBeNull();
     });
 
-    it("puts a dot as far in as a chain where the label leaves room, never nearer the flag than 3px", () => {
-        // As a chain would sit, clear of the label
-        expect(keepDotFit(128, 1)).toEqual({
-            offset: CHAIN_INSET,
-            clear: true,
-        });
-        // Nearer the flag where the label needs the room
-        expect(keepDotFit(40, 1)).toEqual({ offset: 13, clear: true });
-        // No room beside the label: at the minimum
-        expect(keepDotFit(24, 1)).toEqual({ offset: 3, clear: false });
-        // No label: in from the flag, or centered in a box too narrow for that
-        expect(keepDotFit(30, 0)).toEqual({ offset: 14, clear: true });
-        expect(keepDotFit(16, 0)).toEqual({ offset: 5, clear: true });
-        expect(keepDotFit(12, 0)).toEqual({ offset: 2, clear: true });
-    });
-
-    it("never covers the page number: a narrow box shows a dot for kept or mixed, nothing for linked", () => {
+    it("never covers the page number: a narrow box shows no chain, and no mark of its own", () => {
         show({
             keepChains: new Map([
-                [2, chain("follows")],
-                [3, chain("kept")],
-                [4, chain("mixed")],
+                [2, chain()],
+                [3, chain()],
+                [4, chain()],
             ]),
             pixelsPerBeat: 3,
         });
         expect(chains()).toEqual([]);
-        const dots = screen.getAllByTestId("page-keep-dot");
-        expect(dots.map((dot) => dot.getAttribute("data-chain"))).toEqual([
-            "kept",
-            "mixed",
-        ]);
-        // Beside the label, at the start of the bar
-        expect(dots[0]!.style.left).toBe("3px");
-        // Inside the box, which still selects on a click
-        const box = screen.getByRole("button", { name: "Page 3" });
-        expect(box.contains(dots[0]!)).toBe(true);
+        expect(screen.queryAllByTestId("page-keep-dot")).toEqual([]);
+        expect(screen.queryAllByTestId("page-keep-chain-count")).toEqual([]);
     });
 
     it("a narrow box takes on its chain's words, with the menu doing what the chain's click would", () => {
         show({
             keepChains: new Map([
-                [3, chain("kept")],
-                [4, chain("follows")],
+                [3, chain()],
+                [4, chain()],
             ]),
             pixelsPerBeat: 3,
         });
         expect(chains()).toEqual([]);
-        expect(
-            screen.getByRole("button", { name: "Page 3" }),
-        ).toHaveAccessibleDescription(
-            "2 marchers kept on Page 3. Right-click the page to change this",
-        );
-        // A linked chain gets no dot, but its words still reach the box
-        expect(
-            screen.getByRole("button", { name: "Page 4" }),
-        ).toHaveAccessibleDescription(
-            "Keep 2 marchers on Page 3. Right-click the page to change this",
-        );
+        for (const name of ["Page 3", "Page 4"])
+            expect(
+                screen.getByRole("button", { name }),
+            ).toHaveAccessibleDescription(
+                `${LABEL}. Right-click the page to change this`,
+            );
         // A box without a chain has no words
         expect(
             screen.getByRole("button", { name: "Page 2" }),
         ).not.toHaveAttribute("aria-describedby");
     });
 
-    it("a narrow box names whom the menu changes, and says (K) where K does the same", async () => {
+    it("a narrow box names whom the menu changes, with no K", async () => {
         show({
             keepChains: new Map([
                 [
                     3,
-                    chain("follows", {
-                        withK: false,
-                        menuWithK: true,
+                    chain({
                         menuLabel:
-                            "OT1 and OT4 hold where earlier pages left them",
+                            "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
                     }),
                 ],
-                [4, chain("follows")],
             ]),
             pixelsPerBeat: 3,
         });
         const box = screen.getByRole("button", { name: "Page 3" });
-        expect(box).toHaveAttribute("aria-keyshortcuts", "K");
+        expect(box).not.toHaveAttribute("aria-keyshortcuts");
         expect(box).toHaveAccessibleDescription(
-            "OT1 and OT4 hold where earlier pages left them. Right-click the page to change this",
+            "OT1 and OT4 have no position of their own here, shown where earlier pages left them. Right-click the page to change this",
         );
-        expect(
-            screen.getByRole("button", { name: "Page 4" }),
-        ).not.toHaveAttribute("aria-keyshortcuts");
         fireEvent.focus(box);
-        // The words, then K as a keycap
         expect(
             (
                 await screen.findAllByText(
-                    "OT1 and OT4 hold where earlier pages left them",
+                    "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
                 )
             ).length,
         ).toBeGreaterThan(0);
         expect(
             screen
                 .getAllByRole("tooltip")
-                .some((tip) => tip.querySelector("kbd")?.textContent === "K"),
-        ).toBe(true);
+                .some((tip) => tip.querySelector("kbd") !== null),
+        ).toBe(false);
     });
 
-    it("a wide box's chain says (K) only by withK, not by the menu's K", () => {
+    it("a box too narrow for its chain keeps its label's usual padding", () => {
         show({
-            keepChains: new Map([
-                [3, chain("follows", { withK: false, menuWithK: true })],
-            ]),
-        });
-        expect(chains()[0]).not.toHaveAttribute("aria-keyshortcuts");
-        expect(
-            screen.getByRole("button", { name: "Page 3" }),
-        ).not.toHaveAttribute("aria-keyshortcuts");
-    });
-
-    it("a dot sits in from the flag where the label leaves room, and the label stops before it", () => {
-        show({
-            keepChains: new Map([[3, chain("kept")]]),
+            keepChains: new Map([[3, chain()]]),
             pixelsPerBeat: 5,
         });
         expect(chains()).toEqual([]);
-        const dot = screen.getByTestId("page-keep-dot");
-        expect(dot.style.left).toBe("13px");
         expect(
             screen.getByRole("button", { name: "Page 3" }).style.paddingLeft,
-        ).toBe("23px");
+        ).toBe("");
     });
 
-    it("a box too narrow for its label shows a dot, not a chain over the flags' handles", () => {
+    it("a box too narrow for its label shows no chain over the flags' handles", () => {
         // 16px: before, a 12px chain was centered here, under the flags' handles
         show({
             keepChains: new Map([
-                [3, chain("kept")],
-                [4, chain("follows")],
+                [3, chain()],
+                [4, chain()],
             ]),
             pixelsPerBeat: 2,
         });
         expect(chains()).toEqual([]);
-        const dots = screen.getAllByTestId("page-keep-dot");
-        expect(dots).toHaveLength(1);
-        expect(dots[0]!.style.left).toBe("5px");
     });
 });
 
-describe("the page box menu's keep entries", () => {
-    const menu = (
-        state: {
-            canKeep: boolean;
-            canFollow: boolean;
-            keepShortcut?: string;
-            followShortcut?: string;
-        } | null,
-    ): TimelineKeepHereMenu => ({
-        stateFor: vi.fn(() => state),
-        onKeep: vi.fn(),
-        onFollow: vi.fn(),
+describe("the page box menu", () => {
+    const setAsShown = (): TimelineSetAsShownMenu => ({
+        reasonFor: vi.fn(() => null),
+        onSet: vi.fn(),
     });
     const item = (testId: string) => screen.queryByTestId(testId);
 
-    it("Keep selected marchers here, when some follow there", () => {
-        const keepHere = menu({ canKeep: true, canFollow: false });
-        show({ keepHere });
-        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
-        expect(keepHere.stateFor).toHaveBeenCalledWith("3");
-        const keep = item("timeline-range-menu-keep-here")!;
-        expect(keep.textContent).toBe("Keep selected marchers here");
-        expect(keep).not.toHaveAttribute("data-disabled");
-        expect(item("timeline-range-menu-follow-again")).toHaveAttribute(
-            "data-disabled",
-        );
-        fireEvent.click(keep);
-        expect(keepHere.onKeep).toHaveBeenCalledWith("3");
-    });
-
-    it("Let selected marchers follow again, when some were kept there", () => {
-        const keepHere = menu({ canKeep: false, canFollow: true });
-        show({ keepHere });
-        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
-        expect(item("timeline-range-menu-keep-here")).toHaveAttribute(
-            "data-disabled",
-        );
-        const follow = item("timeline-range-menu-follow-again")!;
-        expect(follow.textContent).toBe("Let selected marchers follow again");
-        fireEvent.click(follow);
-        expect(keepHere.onFollow).toHaveBeenCalledWith("3");
-    });
-
-    it("shows K after the entry K would run, quietly", () => {
-        const keepHere = menu({
-            canKeep: true,
-            canFollow: false,
-            keepShortcut: "K",
-        });
-        show({ keepHere });
-        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
-        const keep = item("timeline-range-menu-keep-here")!;
-        expect(keep.textContent).toBe("Keep selected marchers hereK");
-        expect(keep).toHaveAttribute("aria-keyshortcuts", "K");
-        const [shortcut] = screen.getAllByTestId("timeline-menu-shortcut");
-        expect(shortcut!.className).toMatch(/text-text-subtitle/);
-        expect(shortcut!.className).toMatch(/ml-auto/);
-        expect(item("timeline-range-menu-follow-again")!.textContent).toBe(
-            "Let selected marchers follow again",
-        );
-    });
-
-    it("names K only on the entry K would run from the current page", () => {
-        const state = (pageId: number, follows: number[], kept: number[]) => ({
-            pageId,
-            pageName: String(pageId),
-            box: { start: pageId * 8 - 15, end: pageId * 8 - 7 },
-            follows,
-            fromStart: [],
-            kept,
-            from: ["2"],
-            selected: 2,
-        });
-        const states = [state(3, [1], [2]), state(4, [1, 2], [])];
-        const menuFor = keepHereMenu(states, {
-            action: "keep",
-            pageId: 3,
-            box: states[0]!.box,
-            marcherIds: [1],
-        });
-        expect(menuFor.stateFor("3")).toEqual({
-            canKeep: true,
-            canFollow: true,
-            keepShortcut: "K",
-            followShortcut: undefined,
-        });
-        expect(menuFor.stateFor(4)?.keepShortcut).toBeUndefined();
-        expect(keepHereMenu(states).stateFor(3)?.keepShortcut).toBeUndefined();
-    });
-
-    it("has no keep entries with nothing selected", () => {
-        show({ keepHere: menu(null) });
+    it("has no Keep or Follow again entries, only Set as shown", () => {
+        const menu = setAsShown();
+        show({ setAsShown: menu, keepChains: new Map([[3, chain()]]) });
         fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
         expect(item("timeline-range-menu-keep-here")).toBeNull();
         expect(item("timeline-range-menu-follow-again")).toBeNull();
+        expect(item("timeline-range-menu-set-as-shown")).not.toBeNull();
+        expect(screen.queryAllByTestId("timeline-menu-shortcut")).toEqual([]);
+    });
+
+    it("offers Clear Page N, and the follow-back entry only where the menu gives one (#573)", () => {
+        const clearPage = (
+            followBack: string | null,
+        ): TimelineClearPageMenu => ({
+            labelsFor: vi.fn(() => ({ clear: "Clear Page 3", followBack })),
+            onClear: vi.fn(),
+        });
+        const plain = clearPage(null);
+        show({ setAsShown: setAsShown(), clearPage: plain });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        expect(plain.labelsFor).toHaveBeenCalledWith("3");
+        expect(item("timeline-range-menu-clear-page")?.textContent).toBe(
+            "Clear Page 3",
+        );
+        expect(item("timeline-range-menu-clear-page-follow-back")).toBeNull();
+        fireEvent.click(item("timeline-range-menu-clear-page")!);
+        expect(plain.onClear).toHaveBeenCalledExactlyOnceWith("3", false);
+        cleanup();
+
+        const both = clearPage("Clear Page 3, Page 4 moves back too");
+        show({ clearPage: both });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        const followBack = item("timeline-range-menu-clear-page-follow-back");
+        expect(followBack?.textContent).toBe(
+            "Clear Page 3, Page 4 moves back too",
+        );
+        fireEvent.click(followBack!);
+        expect(both.onClear).toHaveBeenCalledExactlyOnceWith("3", true);
+    });
+
+    it("ticks Clear Page N, still naming the page, when every selected marcher is already Not defined there", () => {
+        const ticked: TimelineClearPageMenu = {
+            labelsFor: vi.fn(() => ({
+                clear: "Clear Page 3",
+                followBack: "Clear Page 3, Page 4 moves back too",
+                checked: true,
+            })),
+            onClear: vi.fn(),
+        };
+        show({ clearPage: ticked });
+        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 3" }));
+        const clear = item("timeline-range-menu-clear-page")!;
+        expect(clear).toHaveAttribute("aria-checked", "true");
+        expect(clear).toHaveAttribute("data-disabled");
+        expect(clear.textContent).toBe("Clear Page 3");
+        // Nothing to clear, so nothing moves back either
+        expect(item("timeline-range-menu-clear-page-follow-back")).toBeNull();
+        fireEvent.click(clear);
+        expect(ticked.onClear).not.toHaveBeenCalled();
     });
 
     it("a right-click on a chain opens its box's menu", () => {
-        const keepHere = menu({ canKeep: true, canFollow: false });
-        show({ keepHere, keepChains: new Map([[3, chain("follows")]]) });
+        const menu = setAsShown();
+        show({ setAsShown: menu, keepChains: new Map([[3, chain()]]) });
         fireEvent.contextMenu(chains()[0]!);
-        expect(keepHere.stateFor).toHaveBeenCalledWith("3");
-        expect(item("timeline-range-menu-keep-here")).not.toBeNull();
+        expect(menu.reasonFor).toHaveBeenCalledWith("3");
+        expect(item("timeline-range-menu-set-as-shown")).not.toBeNull();
     });
 });
 
 describe("a narrow box's words and its menu change the same marchers", () => {
     // Page 3: OT1 follows page 2; OT4 hasn't moved yet, so it follows the start
-    const state = (kept: number[] = []): PageKeepState => ({
+    const state = (): PageKeepState => ({
         pageId: 3,
         pageName: "3",
         box: { start: 9, end: 17 },
         follows: [1, 4],
         fromStart: [4],
-        kept,
         from: ["2"],
-        selected: 2 + kept.length,
+        selected: 2,
     });
     const nameOf = (id: number) => `OT${id}`;
 
-    it("a linked chain keeps only OT1; the box's words name the menu's OT1 and OT4", () => {
+    it("a linked chain sets only OT1; the box's words name the menu's OT1 and OT4", () => {
         const words = pageChainWords(state(), undefined, nameOf)!;
         expect(words.marcherIds).toEqual([1]);
-        expect(words.label).toBe("OT1 holds where Page 2 left it");
+        expect(words.label).toBe(
+            "OT1 has no position of its own here, shown where Page 2 left it",
+        );
         expect(words.menuLabel).toBe(
-            "OT1 and OT4 hold where earlier pages left them",
+            "OT1 and OT4 have no position of their own here, shown where earlier pages left them",
         );
         expect(words.menuHint).toBe(
-            "Changes to earlier pages carry onto Page 3. Right-click the page to keep them here instead",
+            "Changes to earlier pages carry onto Page 3. Right-click the page and choose Define as shown to keep them here",
         );
-        keepHereMenu([state()]).onKeep(3);
-        expect(keepOnPage).toHaveBeenLastCalledWith(state().box, [1, 4]);
-    });
-
-    it("a mixed chain counts the menu's rest, not-yet-moved ones too", () => {
-        const words = pageChainWords(state([2]))!;
-        expect(words.kind).toBe("mixed");
-        expect(words.menuLabel).toBe("1 of the 3 selected is kept on Page 3");
-        expect(words.menuHint).toBe(
-            "The other 2 follow earlier pages. Right-click the page to keep them here too",
-        );
-        keepHereMenu([state([2])]).onKeep(3);
-        expect(keepOnPage).toHaveBeenLastCalledWith(state().box, [1, 4]);
+        const run = vi.fn();
+        setAsShownMenu([state()], run).onSet(3);
+        expect(run).toHaveBeenLastCalledWith(state().box, [1, 4]);
     });
 
     it("where all have moved, the box's words are the chain's", () => {
         const moved = { ...state(), follows: [1], fromStart: [] };
         const words = pageChainWords(moved)!;
         expect(words.menuLabel).toBe(words.label);
-    });
-
-    it("says (K) on the box where K keeps the menu's marchers, though not the chain's", () => {
-        const states = [state()];
-        const k = keepToggle(states, 3, 1);
-        expect(k?.marcherIds).toEqual([1, 4]);
-        expect(
-            pageKeepChains(states, undefined, nameOf, k).get(3),
-        ).toMatchObject({ withK: false, menuWithK: true });
-        // No (K) where K would do something else there
-        expect(pageKeepChains(states).get(3)).toMatchObject({
-            withK: false,
-            menuWithK: false,
-        });
     });
 });
 
@@ -746,7 +558,7 @@ const press = (target: Element, type: string, clientX: number, button = 0) =>
 
 /** Page 3 too narrow for its chain (24px boxes), so the box carries the chain's words */
 const NARROW = {
-    keepChains: new Map([[3, chain("kept")]]),
+    keepChains: new Map([[3, chain()]]),
     pixelsPerBeat: 3,
 };
 
@@ -759,7 +571,7 @@ describe("a narrow box's tooltip, with its chain's words", () => {
         expect(tooltip()).not.toBeInTheDocument();
         const shown = await screen.findByRole("tooltip", {}, { timeout: 2000 });
         expect(shown).toHaveTextContent(
-            "2 marchers kept on Page 3Right-click the page to change this",
+            `${LABEL}Right-click the page to change this`,
         );
         expect(
             document.querySelector('[data-side="top"]'),
@@ -775,9 +587,7 @@ describe("a narrow box's tooltip, with its chain's words", () => {
         show(NARROW);
         const box = screen.getByRole("button", { name: "Page 3" });
         act(() => box.focus());
-        expect(await screen.findByRole("tooltip")).toHaveTextContent(
-            "2 marchers kept on Page 3",
-        );
+        expect(await screen.findByRole("tooltip")).toHaveTextContent(LABEL);
         act(() => box.blur());
         await waitFor(() => expect(tooltip()).not.toBeInTheDocument());
     });

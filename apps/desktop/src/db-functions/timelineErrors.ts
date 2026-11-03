@@ -109,3 +109,13 @@ export async function mapDbErrors<T>(write: () => Promise<T>): Promise<T> {
         });
     }
 }
+
+/**
+ * Thrown inside an edit that turned out to write nothing, so it rolls back with no undo step; the
+ * caller catches it and returns `result` (what the command would report).
+ */
+export class NothingToDo<R> extends Error {
+    constructor(readonly result: R) {
+        super("nothing to do");
+    }
+}

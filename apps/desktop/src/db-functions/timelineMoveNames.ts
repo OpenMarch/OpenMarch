@@ -9,6 +9,7 @@ import type { DbConnection, DbTransaction } from "./types";
 import { readPageGrid } from "./timelineRipple";
 import {
     createTimelinesInTransaction,
+    findTimelineByRange,
     timelinesWithRange,
     type DatabaseTimeline,
 } from "./timelines";
@@ -59,7 +60,7 @@ export const pageMoveTakenOver = async (
 
 /** Each marcher's drill number ("T3"), for refusals. */
 export const marcherLabels = async (
-    tx: DbTransaction,
+    tx: DbConnection | DbTransaction,
     marcherIds: readonly number[],
 ): Promise<Map<number, string>> => {
     if (marcherIds.length === 0) return new Map();
@@ -150,23 +151,32 @@ export const nextMoveNameInTransaction = async (
 /**
  * Creates the timeline over `[startBeat, endBeat)`: a move gets its number
  * (`nextMoveNameInTransaction`), a page box's timeline stays unnamed.
+ *
+ * With `allowSharedRanges`, a range another timeline already has is allowed (as a split by
+ * marcher, UI-25), and the new one is always numbered, so it never reads as the page's own move.
  */
 export const createRangeTimelineInTransaction = async (
     tx: DbTransaction,
-    { startBeat, endBeat }: { startBeat: number; endBeat: number },
+    {
+        startBeat,
+        endBeat,
+        allowSharedRanges = false,
+    }: { startBeat: number; endBeat: number; allowSharedRanges?: boolean },
 ): Promise<DatabaseTimeline> => {
     // The beats and pages read once, for both
     const pageBoxes = await readPageBoxes(tx);
-    const name = (await isPageBoxRange(
-        tx,
-        { start: startBeat, end: endBeat },
-        pageBoxes,
-    ))
-        ? null
-        : await nextMoveNameInTransaction(tx, pageBoxes);
+    const range = { start: startBeat, end: endBeat };
+    const shared =
+        allowSharedRanges &&
+        (await findTimelineByRange(tx, range)) !== undefined;
+    const name =
+        !shared && (await isPageBoxRange(tx, range, pageBoxes))
+            ? null
+            : await nextMoveNameInTransaction(tx, pageBoxes);
     const [timeline] = await createTimelinesInTransaction({
         tx,
         newTimelines: [{ name, startBeat, endBeat }],
+        allowSharedRanges,
     });
     return timeline!;
 };

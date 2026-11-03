@@ -6,16 +6,15 @@ import {
     type MouseEvent,
     type ReactNode,
 } from "react";
-import Shortcut from "@/components/ui/Shortcut";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipClassName } from "@openmarch/ui";
 import {
     CursorTextIcon,
     DiamondIcon,
+    EraserIcon,
+    PauseIcon,
     FlagIcon,
-    LinkBreakIcon,
-    LinkSimpleIcon,
     ArrowsMergeIcon,
     ArrowsSplitIcon,
     PencilSimpleIcon,
@@ -23,8 +22,14 @@ import {
     UserPlusIcon,
     ScissorsIcon,
     QuestionIcon,
+    CheckIcon,
 } from "@phosphor-icons/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { holdTerms } from "@/timeline/holdTerms";
+import {
+    type HoldCommand,
+    type HoldEntryState,
+} from "@/timeline/holdMenuState";
 import { useTranslate } from "@tolgee/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
@@ -40,14 +45,11 @@ import type { TimelineBeatRange } from "./TimelineViewModel";
  */
 
 /**
- * The menus' entry style; `data-[disabled]` dims a Radix-disabled one (Keep here, Follow again).
+ * The menus' entry style; `data-[disabled]` dims a Radix-disabled one.
  * Entries with a reason dim themselves (`MenuItemWithReason`).
  */
 export const TIMELINE_MENU_ITEM_CLASS =
     "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50";
-
-/** Where a shortcut sits after an entry's words */
-const SHORTCUT_CLASS = "text-text-subtitle ml-auto pl-16";
 
 /**
  * A small switch in front of a checkbox entry's words, drawn from the entry's `data-state`. It's
@@ -170,13 +172,57 @@ export function MenuItemWithReason({
     );
 }
 
-/** The entry's key, right-aligned and quiet; nothing without one. */
-const MenuShortcut = ({ keys }: { keys?: string }) =>
-    keys ? (
-        <span className={SHORTCUT_CLASS} data-testid="timeline-menu-shortcut">
-            <Shortcut binding={keys} />
-        </span>
-    ) : null;
+/**
+ * A hold command's page box entry (holds), by its name. When every selected
+ * marcher is already in the state it sets, it's checked and does nothing (a disabled checkbox
+ * entry with a check in place of its icon); otherwise it's unavailable with its reason, or runs.
+ */
+function HoldCommandItem({
+    command,
+    testId,
+    menu,
+    pageId,
+    reason,
+    icon,
+    name,
+}: {
+    command: HoldCommand;
+    testId: string;
+    menu: TimelinePageCommandMenu;
+    pageId: string | number;
+    reason: string | null;
+    icon: ReactNode;
+    /** The entry's name */
+    name: string;
+}) {
+    const entry = menu.entryOn?.(pageId);
+    const label = name;
+    if (entry?.checked)
+        return (
+            <DropdownMenu.CheckboxItem
+                data-testid={testId}
+                checked
+                disabled
+                className={TIMELINE_MENU_ITEM_CLASS}
+            >
+                <DropdownMenu.ItemIndicator className="flex">
+                    <CheckIcon size={14} />
+                </DropdownMenu.ItemIndicator>
+                {label}
+            </DropdownMenu.CheckboxItem>
+        );
+    return (
+        <MenuItemWithReason
+            testId={testId}
+            reason={reason}
+            reasonTestId={`${testId}-reason`}
+            onSelect={() => menu.onSet(pageId)}
+        >
+            {icon}
+            {label}
+        </MenuItemWithReason>
+    );
+}
 
 /** The menus' panel style */
 export const TIMELINE_MENU_CONTENT_CLASS =
@@ -368,14 +414,19 @@ export interface TimelineAddMarchersMenu<T = TimelineBeatRange> {
      */
     readonly onDeleteWithMoves?: (pageId: string | number) => void;
     /**
-     * **Keep selected marchers here** and **Let selected marchers follow again** on a page box
-     * (UI-18 keep later pages), above the deletes. Without it, the menu has no such entries.
-     */
-    readonly keepHere?: TimelineKeepHereMenu;
-    /**
      * **Set as shown** on a page box (holds, fork #466). Without it, the menu has no such entry.
      */
     readonly setAsShown?: TimelineSetAsShownMenu;
+    /**
+     * **Hold from previous page** on a page box (holds, fork #472). Without it, the menu has no
+     * such entry.
+     */
+    readonly holdFromPrevious?: TimelinePageCommandMenu;
+    /**
+     * **Clear Page N** on a page box, and **Clear Page N, Pages N–M move back too** where later
+     * pages would (#573). Without it, the menu has no such entries.
+     */
+    readonly clearPage?: TimelineClearPageMenu;
     /**
      * **Subset** on a page box (UI-9): a switch that shows whether the page is a subset, and
      * flips it. Without it, the menu has no such entry.
@@ -390,32 +441,44 @@ export interface TimelineAddMarchersMenu<T = TimelineBeatRange> {
     ) => readonly TimelineMenuEntry[];
 }
 
-/** The page box menu's keep entries (UI-18 keep later pages), by page id. */
-export interface TimelineKeepHereMenu {
+/** A page box menu entry for the selected marchers (holds), by page id. */
+export interface TimelinePageCommandMenu {
     /**
-     * Whether some selected marchers follow on the page (Keep applies) or were kept there
-     * (Follow again applies); null when no marchers are selected, so neither entry shows
-     */
-    readonly stateFor: (pageId: string | number) => {
-        readonly canKeep: boolean;
-        readonly canFollow: boolean;
-        /** The key that runs the entry from here (**K**), shown after it */
-        readonly keepShortcut?: string;
-        readonly followShortcut?: string;
-    } | null;
-    readonly onKeep: (pageId: string | number) => void;
-    readonly onFollow: (pageId: string | number) => void;
-}
-
-/** The page box menu's **Set as shown** entry (holds, fork #466), by page id. */
-export interface TimelineSetAsShownMenu {
-    /**
-     * Why the entry can't run on the page (no selected marcher is Not set there), or null when it
-     * can; undefined when no marchers are selected, so the entry doesn't show
+     * Why the entry can't run on the page, or null when it can; undefined when no marchers are
+     * selected, so the entry doesn't show
      */
     readonly reasonFor: (pageId: string | number) => string | null | undefined;
     readonly onSet: (pageId: string | number) => void;
+    /**
+     * What the entry would do for the selection on the page (`holdEntryStates`): checked when it
+     * would change nobody because every selected marcher is already in its state, and how many it
+     * would change for its label
+     */
+    readonly entryOn?: (pageId: string | number) => HoldEntryState | undefined;
 }
+
+/** The page box menu's **Clear Page N** entries (#573), by page id. */
+export interface TimelineClearPageMenu {
+    /**
+     * The entries' labels on the page, read when its menu opens; undefined for none (home).
+     * `checked` when every selected marcher is already Not defined there (`holdEntryStates`): the
+     * Clear Page N entry shows ticked and off, and the follow-back entry doesn't show.
+     */
+    readonly labelsFor: (pageId: string | number) =>
+        | {
+              clear: string;
+              followBack: string | null;
+              checked?: boolean;
+          }
+        | undefined;
+    readonly onClear: (pageId: string | number, followBack: boolean) => void;
+}
+
+/**
+ * The page box menu's **Set as shown** entry (holds, fork #466), by page id: unavailable when no
+ * selected marcher is Not set there.
+ */
+export type TimelineSetAsShownMenu = TimelinePageCommandMenu;
 
 /**
  * What was right-clicked, in view beats. A clip names its track, so `Timeline` can send the
@@ -508,8 +571,9 @@ export function useTimelineRangeMenu({
         const canDelete =
             (menu?.onDeleteFlag !== undefined ||
                 menu?.onDeleteWithMoves !== undefined ||
-                menu?.keepHere !== undefined ||
                 menu?.setAsShown !== undefined ||
+                menu?.holdFromPrevious !== undefined ||
+                menu?.clearPage !== undefined ||
                 menu?.subset !== undefined ||
                 menu?.extraFor !== undefined) &&
             target.pageId !== undefined;
@@ -519,13 +583,17 @@ export function useTimelineRangeMenu({
     };
     const disabledReason = menu?.disabledReason ?? null;
     const moves = open ? movesOf(open.target) : null;
-    const keepState =
-        open && menu?.keepHere && open.target.pageId !== undefined
-            ? menu.keepHere.stateFor(open.target.pageId)
-            : null;
     const setAsShownReason =
         open && menu?.setAsShown && open.target.pageId !== undefined
             ? menu.setAsShown.reasonFor(open.target.pageId)
+            : undefined;
+    const holdReason =
+        open && menu?.holdFromPrevious && open.target.pageId !== undefined
+            ? menu.holdFromPrevious.reasonFor(open.target.pageId)
+            : undefined;
+    const clearLabels =
+        open && menu?.clearPage && open.target.pageId !== undefined
+            ? menu.clearPage.labelsFor(open.target.pageId)
             : undefined;
     const pageExtra =
         open && menu?.extraFor && open.target.pageId !== undefined
@@ -576,69 +644,89 @@ export function useTimelineRangeMenu({
                         )}
                         {setAsShownReason !== undefined && (
                             <>
-                                <MenuItemWithReason
+                                <HoldCommandItem
+                                    command="defineAsShown"
                                     testId="timeline-range-menu-set-as-shown"
+                                    menu={menu!.setAsShown!}
+                                    pageId={open.target.pageId!}
                                     reason={setAsShownReason}
-                                    reasonTestId="timeline-range-menu-set-as-shown-reason"
-                                    onSelect={() =>
-                                        menu?.setAsShown?.onSet(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                >
-                                    <DiamondIcon size={14} />
-                                    {tolgee.t(
+                                    icon={<DiamondIcon size={14} />}
+                                    name={tolgee.t(
                                         "timeline.rangeMenu.setAsShown",
-                                        "Set as shown",
+                                        "{defineAsShown}",
+                                        holdTerms(),
                                     )}
-                                </MenuItemWithReason>
-                                {!keepState && (
+                                />
+                                {holdReason === undefined && (
                                     <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                                 )}
                             </>
                         )}
-                        {keepState && (
+                        {holdReason !== undefined && (
                             <>
-                                <DropdownMenu.Item
-                                    data-testid="timeline-range-menu-keep-here"
-                                    disabled={!keepState.canKeep}
-                                    aria-keyshortcuts={keepState.keepShortcut}
-                                    onSelect={() =>
-                                        menu?.keepHere?.onKeep(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                    className={TIMELINE_MENU_ITEM_CLASS}
-                                >
-                                    <LinkBreakIcon size={14} />
-                                    {tolgee.t(
-                                        "timeline.rangeMenu.keepHere",
-                                        "Keep selected marchers here",
+                                <HoldCommandItem
+                                    command="holdFromPrevious"
+                                    testId="timeline-range-menu-hold-from-previous"
+                                    menu={menu!.holdFromPrevious!}
+                                    pageId={open.target.pageId!}
+                                    reason={holdReason}
+                                    icon={<PauseIcon size={14} />}
+                                    name={tolgee.t(
+                                        "timeline.rangeMenu.holdFromPrevious",
+                                        "{holdFromPrevious}",
+                                        holdTerms(),
                                     )}
-                                    <MenuShortcut
-                                        keys={keepState.keepShortcut}
-                                    />
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item
-                                    data-testid="timeline-range-menu-follow-again"
-                                    disabled={!keepState.canFollow}
-                                    aria-keyshortcuts={keepState.followShortcut}
-                                    onSelect={() =>
-                                        menu?.keepHere?.onFollow(
-                                            open.target.pageId!,
-                                        )
-                                    }
-                                    className={TIMELINE_MENU_ITEM_CLASS}
-                                >
-                                    <LinkSimpleIcon size={14} />
-                                    {tolgee.t(
-                                        "timeline.rangeMenu.followAgain",
-                                        "Let selected marchers follow again",
+                                />
+                                {clearLabels === undefined && (
+                                    <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                )}
+                            </>
+                        )}
+                        {clearLabels !== undefined && (
+                            <>
+                                {clearLabels.checked ? (
+                                    <DropdownMenu.CheckboxItem
+                                        data-testid="timeline-range-menu-clear-page"
+                                        checked
+                                        disabled
+                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                    >
+                                        <DropdownMenu.ItemIndicator className="flex">
+                                            <CheckIcon size={14} />
+                                        </DropdownMenu.ItemIndicator>
+                                        {clearLabels.clear}
+                                    </DropdownMenu.CheckboxItem>
+                                ) : (
+                                    <DropdownMenu.Item
+                                        data-testid="timeline-range-menu-clear-page"
+                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                        onSelect={() =>
+                                            menu?.clearPage?.onClear(
+                                                open.target.pageId!,
+                                                false,
+                                            )
+                                        }
+                                    >
+                                        <EraserIcon size={14} />
+                                        {clearLabels.clear}
+                                    </DropdownMenu.Item>
+                                )}
+                                {!clearLabels.checked &&
+                                    clearLabels.followBack !== null && (
+                                        <DropdownMenu.Item
+                                            data-testid="timeline-range-menu-clear-page-follow-back"
+                                            className={TIMELINE_MENU_ITEM_CLASS}
+                                            onSelect={() =>
+                                                menu?.clearPage?.onClear(
+                                                    open.target.pageId!,
+                                                    true,
+                                                )
+                                            }
+                                        >
+                                            <EraserIcon size={14} />
+                                            {clearLabels.followBack}
+                                        </DropdownMenu.Item>
                                     )}
-                                    <MenuShortcut
-                                        keys={keepState.followShortcut}
-                                    />
-                                </DropdownMenu.Item>
                                 <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
                             </>
                         )}

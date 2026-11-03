@@ -45,6 +45,7 @@ const LATER_TABLES = [
     "timeline_shape_recipes",
     "timeline_shape_recipe_marchers",
     "saved_shapes",
+    "timeline_held_marks",
 ];
 
 const CUE_TABLES = [
@@ -204,8 +205,15 @@ describe(`Migration ${CUE_MIGRATION.tag}`, () => {
         expect(await open(showPath)).toMatchObject({ kind: "none" });
 
         withDb(showPath, (db) => {
+            // Rolled back to before 0022, the file has the kept table again; 0029 drops it
             expect(tableNames(db)).toEqual(
-                [...before.tables, ...CUE_TABLES, ...LATER_TABLES].sort(),
+                [
+                    ...before.tables.filter(
+                        (t) => t !== "timeline_kept_assignments",
+                    ),
+                    ...CUE_TABLES,
+                    ...LATER_TABLES,
+                ].sort(),
             );
             expect(readUserVersion(db)).toBe(TIMELINE_MODEL_USER_VERSION);
             expect(count(db, "timelines")).toBe(before.timelines);

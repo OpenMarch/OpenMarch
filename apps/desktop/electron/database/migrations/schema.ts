@@ -529,28 +529,35 @@ export const timeline_slot_destinations = sqliteTable(
 );
 
 /**
- * A **kept** spot (ADR 0001 amendment 2026-10-09): the marcher's own zero-motion move over a page
- * box that the designer kept there, so edits of earlier pages stop at it. The move itself is an
- * ordinary one-slot shapeless transition and its assignment; this row only marks that
- * assignment as kept, so it can be told apart from a move that happens to go nowhere.
- *
- * App data, not resolver data: it isn't in `timeline_change_log` and the resolver never reads it.
- * The assignment id is the rowid, so undo restores the same row (C-2). Deleting the assignment
- * cascades here; no trigger reads this table, so undo, which replays with foreign keys off, may
- * re-insert it before its assignment (C-1).
+ * A **Held** hold (holds README decision 2; ADR 0001 amendment 2026-10-30): one marcher stands
+ * still on purpose over `[start_beat, end_beat)`, where it has no move. Editing a count inside
+ * it edits the move that arrives at `start_beat`, so the whole hold moves. App data, kept apart
+ * from the motion tables: not in `timeline_change_log`, never read by the
+ * resolver (the marcher holds there anyway, spec R-6). No move of the marcher overlaps a mark
+ * (H-1) and one marcher's marks don't overlap (H-3), checked at commit
+ * (`timeline_held_violations`). A rowid key, so undo restores the same row (C-2).
  */
-export const timeline_kept_assignments = sqliteTable(
-    "timeline_kept_assignments",
+export const timeline_held_marks = sqliteTable(
+    "timeline_held_marks",
     {
-        assignment_id: integer()
-            .primaryKey()
-            .references(() => timeline_assignments.id, {
-                onDelete: "cascade",
-            }),
-        created_at: text()
+        id: integer().primaryKey(),
+        marcher_id: integer()
             .notNull()
-            .default(sql`(CURRENT_TIMESTAMP)`),
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        start_beat: integer().notNull(),
+        end_beat: integer().notNull(),
     },
+    (table) => [
+        unique().on(table.marcher_id, table.start_beat),
+        check(
+            "timeline_held_marks_start_beat_check",
+            sql`typeof(start_beat) = 'integer' AND start_beat >= 0`,
+        ),
+        check(
+            "timeline_held_marks_end_beat_check",
+            sql`typeof(end_beat) = 'integer' AND end_beat > start_beat`,
+        ),
+    ],
 );
 
 /**

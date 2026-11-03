@@ -13,7 +13,6 @@ import { addPageFlag } from "../pageFlags";
 import { moveMarchersInTarget } from "../timelineMoves";
 import { readBasicRows } from "../basicRows";
 import { readPageGrid } from "../timelineRipple";
-import { markAssignmentsKeptInTransaction } from "../timelineKeptMarkers";
 
 keepFixturesInPageMode(
     "its tests build their own timeline state: a show made in timeline mode",
@@ -39,7 +38,6 @@ const TIMELINE_TABLES = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
-    schema.timeline_kept_assignments,
 ];
 const TABLES = [
     schema.pages,
@@ -299,37 +297,6 @@ describeDbTests("Basic + splits moves at the new flag", (it) => {
             [9, 15, 0],
             [15, 17, 0],
         ]);
-        expectSamePositions(await positions(db), positionsBefore);
-        expect(await violations(db)).toEqual([]);
-    });
-
-    it("a kept spot split in two stays kept in both halves", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await range(db, a, 9, 17, A);
-        const [row] = await readBasicRows(db, { marcherIds: [a] });
-        await db.transaction((tx) =>
-            markAssignmentsKeptInTransaction(tx, [row!.assignmentId]),
-        );
-        const positionsBefore = await positions(db);
-
-        await addPageFlag({ db, beat: 13, splitMoves: true });
-
-        const halves = await readBasicRows(db, { marcherIds: [a] });
-        expect(halves.map((r) => [r.start, r.end])).toEqual([
-            [9, 13],
-            [13, 17],
-        ]);
-        const kept = (
-            await db.select().from(schema.timeline_kept_assignments).all()
-        )
-            .map((k) => k.assignment_id)
-            .sort((x, y) => x - y);
-        expect(kept).toEqual(
-            halves.map((r) => r.assignmentId).sort((x, y) => x - y),
-        );
         expectSamePositions(await positions(db), positionsBefore);
         expect(await violations(db)).toEqual([]);
     });

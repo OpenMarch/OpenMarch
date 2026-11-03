@@ -1,105 +1,42 @@
 import { useMemo, useRef } from "react";
 import { useTranslate } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import { LinkBreakIcon, LinkSimpleIcon } from "@phosphor-icons/react";
+import { LinkSimpleIcon } from "@phosphor-icons/react";
 import {
     pageChainWords,
-    type KeepToggle,
     type KeepTranslate,
     type MarcherNameOf,
     type PageChainWords,
     type PageKeepState,
 } from "@/timeline/timelineKeepLater";
-import { followAgainOn, keepOnPage } from "@/timeline/timelineKeepCommands";
+import { setAsShownOn } from "@/timeline/timelineSetAsShown";
 import { OWN_KEYS_WITH_SPACE } from "./timelineHotkeys";
 import { ShortcutTooltip } from "./ShortcutTooltip";
-import {
-    timelineRangeTargetProps,
-    type TimelineKeepHereMenu,
-} from "./TimelineRangeMenu";
+import { timelineRangeTargetProps } from "./TimelineRangeMenu";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 import { pageLabelRoom } from "./TimelineGeometry";
 
 /** A page box's chain (`pageChainWords`), with what a click does. */
 export interface PageKeepChain extends PageChainWords {
     readonly onToggle: () => void;
-    /** **K** does what a click does, so the tooltip says so */
-    readonly withK?: boolean;
-    /** **K** does what the page's menu does for `menuLabel`'s marchers (a box too narrow for it) */
-    readonly menuWithK?: boolean;
 }
-
-/** The keyboard shortcut that toggles keep (`toggleKeepOnPage`), as menus and tooltips show it */
-export const KEEP_SHORTCUT = "K";
-
-/** Whether **K** (`keep`) would do `action` on the page `pageId`. */
-const kDoes = (
-    k: KeepToggle | null | undefined,
-    pageId: string | number,
-    action: KeepToggle["action"],
-) => !!k && String(k.pageId) === String(pageId) && k.action === action;
 
 /** Each page box's chain, by page id; boxes without one aren't in it. */
 export type PageKeepChains = ReadonlyMap<string | number, PageKeepChain>;
-
-/**
- * The page box menu's keep entries (`TimelineKeepHereMenu`) from the selection's keep states:
- * **Keep selected marchers here** for the ones that follow on the box, **Let selected marchers
- * follow again** for the kept ones. Neither shows without a selection. The entry **K** would run
- * shows the key.
- *
- * @param k what **K** does from the current page (`keepToggle`)
- */
-export function keepHereMenu(
-    states: readonly PageKeepState[],
-    k: KeepToggle | null = null,
-): TimelineKeepHereMenu {
-    const of = (pageId: string | number) =>
-        states.find((s) => String(s.pageId) === String(pageId));
-    return {
-        stateFor: (pageId) => {
-            const state = of(pageId);
-            return state
-                ? {
-                      canKeep: state.follows.length > 0,
-                      canFollow: state.kept.length > 0,
-                      keepShortcut: kDoes(k, pageId, "keep")
-                          ? KEEP_SHORTCUT
-                          : undefined,
-                      followShortcut: kDoes(k, pageId, "follow")
-                          ? KEEP_SHORTCUT
-                          : undefined,
-                  }
-                : null;
-        },
-        onKeep: (pageId) => {
-            const state = of(pageId);
-            if (state && state.follows.length > 0)
-                void keepOnPage(state.box, state.follows);
-        },
-        onFollow: (pageId) => {
-            const state = of(pageId);
-            if (state && state.kept.length > 0)
-                void followAgainOn(state.box, state.kept);
-        },
-    };
-}
 
 const NO_CHAINS: PageKeepChains = new Map();
 
 /**
  * The chains on the page boxes for the selected marchers (UI-18 keep later pages): one per box
- * they follow into, or were kept on. None without a selection (owner, 2026-10-09). A click keeps
- * or lets follow again exactly the marchers its words name, as one undo step.
+ * they follow into (Not set). None without a selection (owner, 2026-10-09). A click sets exactly
+ * the marchers its words name as shown there (holds decision 12), as one undo step.
  *
  * @param states the selection's keep states (`usePageKeepStates`)
  * @param nameOf the selected marchers' names, for the words
- * @param k what **K** does from the current page (`keepToggle`): that chain's tooltip says (K)
  */
 export function usePageKeepChains(
     states: readonly PageKeepState[],
     nameOf?: MarcherNameOf,
-    k: KeepToggle | null = null,
 ): PageKeepChains {
     const { t } = useTranslate();
     return useMemo(
@@ -109,9 +46,8 @@ export function usePageKeepChains(
                 (key, defaultValue, params) =>
                     t(key, { defaultValue, ...params }),
                 nameOf,
-                k,
             ),
-        [states, t, nameOf, k],
+        [states, t, nameOf],
     );
 }
 
@@ -120,7 +56,6 @@ export function pageKeepChains(
     states: readonly PageKeepState[],
     translate?: KeepTranslate,
     nameOf?: MarcherNameOf,
-    k: KeepToggle | null = null,
 ): PageKeepChains {
     if (states.length === 0) return NO_CHAINS;
     const chains = new Map<number, PageKeepChain>();
@@ -129,17 +64,7 @@ export function pageKeepChains(
         if (!words) continue;
         chains.set(state.pageId, {
             ...words,
-            // Only where K changes exactly the chain's marchers
-            withK:
-                kDoes(k, state.pageId, words.action) &&
-                k!.marcherIds.join() === words.marcherIds.join(),
-            // K changes whom the menu does (`keepToggle`, `keepHereMenu`) wherever it acts the same
-            menuWithK: kDoes(k, state.pageId, words.action),
-            onToggle: () =>
-                void (words.action === "keep" ? keepOnPage : followAgainOn)(
-                    state.box,
-                    words.marcherIds,
-                ),
+            onToggle: () => void setAsShownOn(state.box, words.marcherIds),
         });
     }
     return chains;
@@ -165,19 +90,11 @@ export const CHAIN_INSET = 14;
  * grip reach in from the flag there
  */
 const CHAIN_END_CLEARANCE = 8;
-/** The gap between a chain or dot and the page label */
+/** The gap between a chain and the page label */
 const LABEL_GAP = 2;
 /** The chain's sizes (px): full where the box has room, then small */
 export const CHAIN_SIZES = [16, 12] as const;
-/** The dot a kept or mixed chain becomes where it can't fit (`PageKeepDot`) */
-export const KEEP_DOT_SIZE = 8;
-/**
- * The nearest a dot comes to a flag: clear of the flag's line and the grip's 3px hover bar, the
- * only marks drawn there. It takes no pointer, so the handles above it lose nothing.
- */
-const DOT_MIN_INSET = 3;
-
-/** How much of a box's right side its label (if shown) or right flag takes from a keep mark */
+/** How much of a box's right side its label (if shown) or right flag takes from a chain */
 const markEnd = (labelChars: number, noLabel: number) =>
     labelChars > 0 ? pageLabelRoom(labelChars) + LABEL_GAP : noLabel;
 
@@ -190,8 +107,8 @@ export interface ChainFit {
 /**
  * Where a box's chain fits (owner, 2026-10-12: chains on narrow boxes covered the page numbers and
  * each other): at the bottom left, `CHAIN_INSET` in from the flag before it, at the largest size
- * that leaves the label and the box's right flag clear. Null where neither size fits, however
- * narrow the box: it shows a dot instead (`keepDotFit`).
+ * that leaves the label and the box's right flag clear. Null where neither size fits: the box's
+ * tooltip carries the chain's words instead.
  *
  * @param labelChars the box's label length, 0 when the box is too narrow to show it
  */
@@ -204,31 +121,8 @@ export function chainFit(
     return size === undefined ? null : { size, offset: CHAIN_INSET };
 }
 
-/** Where a box's dot goes (`PageKeepDot`): how far in from its left edge, and if clear of the label */
-export interface KeepDotFit {
-    readonly offset: number;
-    readonly clear: boolean;
-}
-
 /**
- * Where a box's dot goes: in from the flag as a chain would be (`CHAIN_INSET`), or as far in as
- * the label leaves room for, but no nearer the flag than `DOT_MIN_INSET`. A box too narrow for its
- * label centers it when that's nearer; a box whose label leaves no room puts it at the minimum,
- * not clear of the label.
- */
-export function keepDotFit(boxWidth: number, labelChars: number): KeepDotFit {
-    const room = boxWidth - markEnd(labelChars, DOT_MIN_INSET) - KEEP_DOT_SIZE;
-    if (room >= DOT_MIN_INSET)
-        return { offset: Math.min(CHAIN_INSET, room), clear: true };
-    if (labelChars > 0) return { offset: DOT_MIN_INSET, clear: false };
-    return {
-        offset: Math.max(0, Math.round((boxWidth - KEEP_DOT_SIZE) / 2)),
-        clear: true,
-    };
-}
-
-/**
- * The left padding a box gives its label with a keep mark at `offset`, `size` wide: the label is
+ * The left padding a box gives its label with a chain at `offset`, `size` wide: the label is
  * sticky (it slides left when the box runs off the viewport's right edge), and a sticky label
  * never leaves its box's padding, so it stops before the mark.
  */
@@ -238,26 +132,18 @@ export const labelPaddingBeside = (offset: number, size: number) =>
 const BASE =
     "focus-visible:ring-accent absolute z-30 flex items-center justify-center rounded-full outline-hidden focus-visible:ring-2";
 
-/**
- * Kept and linked are told apart at a glance (wp19): kept is a filled chip, linked a quiet
- * outline, and a mix a broken link outlined in the accent (simulated users read the accent
- * outlined link as linked, 2026-10-12). A hovered link fills, so it can't be read as a mix.
- */
-const KIND_CLASS: Record<PageKeepChain["kind"], string> = {
-    follows:
-        "bg-fg-2 border border-text-subtitle/70 text-text-subtitle hover:border-accent hover:bg-accent hover:text-text-invert",
-    kept: "bg-accent text-text-invert shadow-sm hover:opacity-85",
-    mixed: "bg-fg-2 border border-accent text-accent hover:bg-accent/15",
-};
+/** A linked chain is a quiet outline that fills when hovered (wp19) */
+const CHAIN_CLASS =
+    "bg-fg-2 border border-text-subtitle/70 text-text-subtitle hover:border-accent hover:bg-accent hover:text-text-invert";
 
 /**
- * A linked chain shows only on the selected page, the page **K** works on, and the box under the
- * pointer (its own box, drawn just before it); everywhere else the
- * inspector's hold line says they hold, and the box's menu keeps them. Simulated users, 2026-10-12: a chain on
- * every following page drowned out the kept ones; with none they couldn't find keep.
+ * A linked chain shows only on the selected page and the box under the pointer (its own box,
+ * drawn just before it); everywhere else the inspector's hold line says they hold, and the box's
+ * menu sets them as shown. Simulated users, 2026-10-12: a chain on every following page was too
+ * much; with none they couldn't find the command.
  *
  * Hidden, it takes no pointer (review, 2026-10-12): a press there goes to the box under it
- * (select, scrub, drag), not to keep. Hovering the box shows it at once but lets it take the
+ * (select, scrub, drag), not to the chain. Hovering the box shows it at once but lets it take the
  * pointer only `REVEAL_PRESS_DELAY` later, so a press as the pointer arrives (or a tap, which
  * hovers the box as it lands) still goes to the box. Once the pointer is on it, its own hover
  * keeps it so (the box isn't hovered then). Tab still reaches it, and focus shows it at once.
@@ -267,19 +153,11 @@ const REVEAL_ON_HOVER =
 /** How long a chain shown by hovering its box waits to take the pointer (ms, in `REVEAL_ON_HOVER`) */
 export const REVEAL_PRESS_DELAY = 200;
 
-const KIND_WEIGHT: Record<PageKeepChain["kind"], "regular" | "bold"> = {
-    follows: "regular",
-    kept: "bold",
-    mixed: "bold",
-};
-
 /**
  * A page box's chain (UI-18 keep later pages), a sibling drawn right after the box, at its bottom
- * left: an outlined link where the selected marchers follow into the
- * page, broken on a filled accent chip where they were kept, and broken in an accent outline
- * where some were. Its tooltip names whom a click changes, and (K) where **K** does the same.
- * The press never reaches the box, so it doesn't select, scrub or drag it; a right-click opens
- * the box's menu, which has the same commands.
+ * left: an outlined link where the selected marchers follow into the page. Its tooltip names whom
+ * a click sets as shown. The press never reaches the box, so it doesn't select, scrub or drag it;
+ * a right-click opens the box's menu, which has the same command.
  */
 export function PageKeepChainButton({
     chain,
@@ -299,20 +177,18 @@ export function PageKeepChainButton({
     left: number;
     /** The chain's size (`chainFit`) */
     size: number;
-    /** A linked chain shows without hovering its box (the selected page, K's page) */
+    /** A linked chain shows without hovering its box (the selected page) */
     always: boolean;
 }) {
-    const Icon = chain.kind === "follows" ? LinkSimpleIcon : LinkBreakIcon;
     const stop = (event: { stopPropagation: () => void }) =>
         event.stopPropagation();
     // A click runs only after a press on the chain itself, or from the keyboard (detail 0): a tap
     // whose press went to the box can end as a click here once the chain shows
     const pressed = useRef(false);
-    const hidden = chain.kind === "follows" && !always;
+    const hidden = !always;
     return (
         <ShortcutTooltip
             label={chain.label}
-            shortcut={chain.withK ? KEEP_SHORTCUT : undefined}
             hint={chain.hint}
             side="top"
             closeOnPress
@@ -323,7 +199,7 @@ export function PageKeepChainButton({
                 // Enter and Space press it, not the app's shortcuts (pre-merge review)
                 data-timeline-own-keys={OWN_KEYS_WITH_SPACE}
                 data-testid="page-keep-chain"
-                data-chain={chain.kind}
+                data-chain="follows"
                 data-reveal={hidden ? "hover" : undefined}
                 {...timelineRangeTargetProps(range, undefined, pageId)}
                 aria-label={tolgee.t(
@@ -331,8 +207,7 @@ export function PageKeepChainButton({
                     "Page {page}: {label}. {hint}",
                     { page: pageLabel, label: chain.label, hint: chain.hint },
                 )}
-                aria-keyshortcuts={chain.withK ? KEEP_SHORTCUT : undefined}
-                className={`${BASE} ${KIND_CLASS[chain.kind]}${hidden ? ` ${REVEAL_ON_HOVER}` : ""}`}
+                className={`${BASE} ${CHAIN_CLASS}${hidden ? ` ${REVEAL_ON_HOVER}` : ""}`}
                 style={{
                     left,
                     bottom: 2,
@@ -353,47 +228,8 @@ export function PageKeepChainButton({
                     if (event.detail === 0 || fromPress) chain.onToggle();
                 }}
             >
-                <Icon
-                    size={size - 4}
-                    weight={KIND_WEIGHT[chain.kind]}
-                    aria-hidden
-                />
-                {chain.kind === "mixed" && size >= CHAIN_SIZES[0] && (
-                    <span
-                        aria-hidden
-                        data-testid="page-keep-chain-count"
-                        className="bg-accent text-text-invert absolute -top-[4px] -right-[6px] flex h-[11px] min-w-[11px] items-center justify-center rounded-full px-[2px] text-[8px] leading-none font-bold"
-                    >
-                        {chain.keptCount}
-                    </span>
-                )}
+                <LinkSimpleIcon size={size - 4} weight="regular" aria-hidden />
             </button>
         </ShortcutTooltip>
-    );
-}
-
-/**
- * A kept or mixed chain in a box too narrow for it (`chainFit`): a dot at the box's bottom, filled
- * where kept, a ring where some are, where `keepDotFit` puts it. The box's tooltip carries the
- * chain's words.
- */
-export function PageKeepDot({
-    kind,
-    left,
-}: {
-    kind: PageKeepChain["kind"];
-    /** How far in from the box's left edge (px, `keepDotFit`) */
-    left: number;
-}) {
-    return (
-        <span
-            aria-hidden
-            data-testid="page-keep-dot"
-            data-chain={kind}
-            className={`pointer-events-none absolute bottom-[2px] size-[8px] rounded-full ${
-                kind === "kept" ? "bg-accent" : "border-accent bg-fg-2 border-2"
-            }`}
-            style={{ left }}
-        />
     );
 }

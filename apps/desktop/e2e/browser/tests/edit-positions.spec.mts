@@ -102,7 +102,9 @@ test("swap two marchers", async ({ show }) => {
     await expectCanvasMatchesShow(show);
 });
 
-test("copy every position from the previous page", async ({ show }) => {
+test("Clear this page for every marcher shows the previous page's positions", async ({
+    show,
+}) => {
     const { page } = show;
     await goToPage1(show);
 
@@ -115,11 +117,30 @@ test("copy every position from the previous page", async ({ show }) => {
     await expect.poll(() => positions(show, 1)).toEqual(asPositions(PAGE_1));
 });
 
-test("copy only the selected marcher from the previous page", async ({
+/** Who has a row over page 1's counts (from beat 16), and its moves' slot counts. */
+const page1Rows = (show: Show) =>
+    show.readSnapshot(async (query) => ({
+        marchers: (
+            await query<{ marcher_id: number }>(
+                "SELECT DISTINCT marcher_id FROM timeline_assignments WHERE end_beat > 16 ORDER BY marcher_id",
+            )
+        ).map((r) => r.marcher_id),
+        slots: (
+            await query<{ slot_count: number }>(
+                "SELECT slot_count FROM timeline_transitions WHERE end_beat > 16 ORDER BY id",
+            )
+        ).map((r) => r.slot_count),
+    }));
+
+test("Clear this page for the selected marcher takes it out of the page's shared move (holds 4)", async ({
     show,
 }) => {
     const { page } = show;
     await goToPage1(show);
+    expect(await page1Rows(show)).toEqual({
+        marchers: [1, 2, 3, 4],
+        slots: [4],
+    });
 
     await clickMarcher(page, "T2");
     await expect.poll(() => selectedDrillNumbers(page)).toEqual(["T2"]);
@@ -128,5 +149,15 @@ test("copy only the selected marcher from the previous page", async ({
     const expected = asPositions(PAGE_1);
     expected[1] = asPositions(PAGE_0)[1];
     await expect.poll(() => positions(show, 1)).toEqual(expected);
+    // Not set on page 1: no move of its own there, and its slot compacted
+    expect(await page1Rows(show)).toEqual({ marchers: [1, 3, 4], slots: [3] });
     await expectCanvasMatchesShow(show);
+
+    // One undo puts it back in the move
+    await page.keyboard.press("Control+z");
+    await expect.poll(() => positions(show, 1)).toEqual(asPositions(PAGE_1));
+    expect(await page1Rows(show)).toEqual({
+        marchers: [1, 2, 3, 4],
+        slots: [4],
+    });
 });

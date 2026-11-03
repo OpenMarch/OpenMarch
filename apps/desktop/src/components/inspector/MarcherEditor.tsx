@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import ClearPageMenuItems from "@/components/toolbar/ClearPageMenuItems";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     fieldPropertiesQueryOptions,
@@ -426,13 +427,11 @@ function AlignmentButtons() {
                     </Dropdown.Trigger>
                     <Dropdown.Portal>
                         <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <ActionButton
-                                action="setSelectedMarchersToPreviousPage"
+                            <ClearPageMenuItems
+                                scope="selected"
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                            </ActionButton>
+                            />
                             <ActionButton
                                 action="setSelectedMarchersToNextPage"
                                 onRun={closePlaceMenu}

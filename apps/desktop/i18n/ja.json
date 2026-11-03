@@ -25,10 +25,8 @@
             "noPreviousPage": "前のページの座標をメンバーに設定できません。前のページがありません。",
             "setAllToNext": "次のページの位置をコピー（全員）",
             "setAllToNextSuccess": "{count, plural, other {ページ{currentPage}の全メンバー#人の座標を次のページ{nextPage}の座標に設定しました}}",
-            "setAllToPrevious": "前のページの位置をコピー（全員）",
             "setSelectedToNext": "次のページの位置をコピー（選択中）",
             "setSelectedToNextSuccess": "{count, plural, other {ページ{currentPage}のメンバー#人の座標を次のページ{nextPage}の座標に設定しました}}",
-            "setSelectedToPrevious": "前のページの位置をコピー（選択中）",
             "setAllToPreviousDone": "{count, plural, other {ページ{currentPage}の全メンバー#人の座標を前のページ{previousPage}の座標に設定しました}}",
             "setSelectedToPreviousDone": "{count, plural, other {ページ{currentPage}のメンバー#人の座標を前のページ{previousPage}の座標に設定しました}}"
         },
@@ -136,10 +134,8 @@
             "previousPage": "前のページ（タイムライン）",
             "splitMoveAtPlayhead": "再生ヘッドの位置で動きを分割",
             "tapBeats": "仮の拍を{count}個追加",
-            "toggleKeepOnPage": "選択したメンバーをこのページの位置に保持（このページで移動する場合は次のページで保持）、または再び前のページに追従させる",
             "unsetHere": "キーフレームを削除",
             "unsetHereAndFollowing": "キーフレームを削除、以降のページも追従",
-            "unsetHereAndPages": "{count, plural, =1 {キーフレームを削除、ページ{first}も追従} other {キーフレームを削除、ページ{first}–{last}も追従}}",
             "unsetHereKeywords": "キーフレーム ひし形 ダイヤ 解除 設定 以降 削除 クリア 取り消し 座標 位置 keyframe diamond unset set following remove clear take back coordinate position delete",
             "splitSelectedIntoNewMove": "選択したメンバーを新しい動きに分割",
             "mergeMoveIntoPage": "この動きをページに統合"
@@ -928,26 +924,14 @@
             "swapMarchers": "メンバーを入れ替え",
             "timeline": {
                 "buttonWithHint": "{label}。{hint}",
-                "followAgain": "追従に戻す",
-                "followAgainHint": "{who, select, named {{names}を再びページ{from}に追従させ、ページ{from}を編集するとここでも移動するようにします} someNamed {{names}（選択中の{total}人のうち{count}人）を再びページ{from}に追従させ、ページ{from}を編集するとここでも移動するようにします} some {選択中の{total}人のうち{count}人を再びページ{from}に追従させ、ページ{from}を編集するとここでも移動するようにします} other {これらのメンバーを再びページ{from}に追従させ、ページ{from}を編集するとここでも移動するようにします}}",
-                "followAgainHintEarlier": "{who, select, named {{names}を再び前のページに追従させます} someNamed {{names}（選択中の{total}人のうち{count}人）を再び前のページに追従させます} some {選択中の{total}人のうち{count}人を再び前のページに追従させます} other {これらのメンバーを再び前のページに追従させます}}",
                 "goToPage": "これらのメンバーが最後に動いたページ{page}へ移動",
                 "goToStart": "先頭へ移動",
                 "holdFrom": "ページ{page}から静止",
                 "holdFromStart": "最初から静止",
                 "holdHere": "これらのメンバーはここで静止しています",
-                "keepHere": "ここで固定",
-                "keepHereHint": "{who, select, named {{names}をページ{page}に固定し、ページ{from}を編集してもここでは動かないようにします} someNamed {{names}（選択中の{total}人のうち{count}人）をページ{page}に固定し、ページ{from}を編集してもここでは動かないようにします} some {選択中の{total}人のうち{count}人をページ{page}に固定し、ページ{from}を編集してもここでは動かないようにします} other {これらのメンバーをページ{page}に固定し、ページ{from}を編集してもここでは動かないようにします}}",
-                "keepHereHintEarlier": "{who, select, named {{names}をページ{page}に固定し、前のページを編集してもここでは動かないようにします} someNamed {{names}（選択中の{total}人のうち{count}人）をページ{page}に固定し、前のページを編集してもここでは動かないようにします} some {選択中の{total}人のうち{count}人をページ{page}に固定し、前のページを編集してもここでは動かないようにします} other {これらのメンバーをページ{page}に固定し、前のページを編集してもここでは動かないようにします}}",
-                "keptOnThisPage": "このページに固定",
                 "movesOnThisPage": "このページで移動",
-                "pagesFollow": "{count, plural, =1 {ページ{first}がこれらのメンバーに追従} other {ページ{first}–{last}がこれらのメンバーに追従}}",
-                "pagesFollowSome": "{count, plural, =1 {ページ{first}がこれらのメンバーの一部に追従} other {ページ{first}–{last}がこれらのメンバーの一部に追従}}",
                 "someHoldHere": "これらのメンバーの一部はここで静止しています",
-                "someKeptOnThisPage": "これらのメンバーの一部はこのページに固定されています",
                 "unsetHere": "キーフレームを削除",
-                "unsetHereAndFollowingHint": "このカウントのキーフレームを削除し、{pageCount, plural, =1 {ページ{first}} other {ページ{first}–{last}}}を直前のキーフレームに追従させます",
-                "unsetHereAndFollowingHintSome": "選択中の{total}人のうち、このカウントにキーフレームがある{count}人のキーフレームを削除し、{pageCount, plural, =1 {ページ{first}} other {ページ{first}–{last}}}を直前のキーフレームに追従させます",
                 "unsetHereHint": "このカウントのキーフレームを削除し、前の位置に追従させます。以降のページの位置は変わりません",
                 "unsetHereHintSome": "選択中の{total}人のうち、このカウントにキーフレームがある{count}人のキーフレームを削除し、前の位置に追従させます。以降のページの位置は変わりません",
                 "unsetHereNone": "選択中のメンバーには、このカウントにキーフレームがありません"
@@ -2797,32 +2781,9 @@
         },
         "keep": {
             "chain": {
-                "ariaLabel": "ページ{page}：{label}。{hint}",
-                "follows": "{count, plural, other {#人のメンバーがページ{from}の位置を引き継いでいます}}",
-                "followsEarlier": "{count, plural, other {#人のメンバーが前のページの位置を引き継いでいます}}",
-                "followsHint": "ページ{from}の変更はページ{page}にも反映されます。クリックすると、代わりに{count, plural, =1 {このメンバー} other {これらのメンバー}}をここに固定します",
-                "followsHintEarlier": "前のページの変更はページ{page}にも反映されます。クリックすると、代わりに{count, plural, =1 {このメンバー} other {これらのメンバー}}をここに固定します",
-                "followsMenuHint": "ページ{from}の変更はページ{page}にも反映されます。ページを右クリックすると、代わりに{count, plural, =1 {このメンバー} other {これらのメンバー}}をここに固定できます",
-                "followsMenuHintEarlier": "前のページの変更はページ{page}にも反映されます。ページを右クリックすると、代わりに{count, plural, =1 {このメンバー} other {これらのメンバー}}をここに固定できます",
-                "followsNamed": "{count, plural, other {{names}はページ{from}の位置を引き継いでいます}}",
-                "followsNamedEarlier": "{count, plural, other {{names}は前のページの位置を引き継いでいます}}",
-                "kept": "{count, plural, other {#人のメンバーがページ{page}に固定されています}}",
-                "keptHint": "ページ{from}の変更はここで止まります。クリックすると、再びページ{from}に従います",
-                "keptHintEarlier": "前のページの変更はここで止まります。クリックすると、再び従います",
-                "keptMenuHint": "ページ{from}の変更はここで止まります。ページを右クリックすると、再びページ{from}に従うようにできます",
-                "keptMenuHintEarlier": "前のページの変更はここで止まります。ページを右クリックすると、再び従うようにできます",
-                "keptNamed": "{names}はページ{page}に固定されています",
-                "mixed": "{kept, plural, other {選択した{total}人中#人がページ{page}に固定されています}}",
-                "mixedNamed": "{kept, plural, other {選択した{total}人中#人がページ{page}に固定されています（{names}）}}",
-                "mixedRestHint": "{count, plural, =1 {残りの1人は前のページに従っています。クリックすると、そのメンバーもここに固定します} other {残りの#人は前のページに従っています。クリックすると、それらのメンバーもここに固定します}}",
-                "mixedRestMenuHint": "{count, plural, =1 {残りの1人は前のページに従っています。ページを右クリックすると、そのメンバーもここに固定できます} other {残りの#人は前のページに従っています。ページを右クリックすると、それらのメンバーもここに固定できます}}"
-            },
-            "field": {
-                "kept": "ページ{page}に固定 · ページ{from}に従わない",
-                "keptEarlier": "ページ{page}に固定 · 前のページに従わない"
+                "ariaLabel": "ページ{page}：{label}。{hint}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {ページ{first}はこの隊形を引き継いでいたため、一緒に変更されました} other {ページ{first}–{last}はこの隊形を引き継いでいたため、一緒に変更されました}}",
                 "keepAsBefore": "{count, plural, =1 {ページ{first}を元のままにする} other {ページ{first}–{last}を元のままにする}}",
                 "keepError": "後のページの保持中にエラーが発生しました"
             },
@@ -2831,7 +2792,6 @@
             },
             "errors": {
                 "keep": "メンバーをページに固定中にエラーが発生しました",
-                "followAgain": "メンバーを再び従わせる際にエラーが発生しました",
                 "readKept": "固定位置の読み込み中にエラーが発生しました"
             }
         },
@@ -2871,8 +2831,6 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "ページとその動きを削除",
-            "followAgain": "選択したメンバーを再び追従させる",
-            "keepHere": "選択したメンバーの位置をここで保持",
             "setAsShown": "表示どおりにセット",
             "setAsShownNone": "選択したメンバーは全員、{page}ですでにセット済みか、動きの途中です",
             "setAsShownError": "メンバーを表示どおりにセットする際にエラーが発生しました",
@@ -3261,9 +3219,6 @@
             "keep": {
                 "wholePage": "「キープ」は{counts}ではなく、ページ全体に対して使えます"
             },
-            "setAsShown": {
-                "wholePage": "「表示どおりに設定」は{counts}ではなく、ページ全体に対して使えます"
-            },
             "tooFarPastEnd": "終わりから{count, plural, other {#カウント}}先です。1回の編集で追加できるのは最大{max}カウントです"
         }
     },
@@ -3292,7 +3247,6 @@
             "placeSelectedMarchers": "選択したメンバーを配置",
             "snapToggleCaption": "スナップ",
             "toNextPagePositions": "...次のページの位置へ",
-            "toPreviousPagePositions": "...前のページの位置へ",
             "setMarcherPositionsAriaLabel": "メンバーの位置を設定"
         },
         "collisions": {

@@ -20,7 +20,7 @@ import { sampleMarcherPath } from "./timelineKeyframes";
  *   stolen out, R-4) or F only resumes it with a catch-up (`resume`, D-12): F's planned path for it
  *   over those beats, gray and dashed. Planned means as if nothing had stolen it: a throwaway
  *   resolver over F's transitions alone, with every member starting where it really is at F's start
- *   (the `sampleShape` pattern in `timelineMoves.ts`).
+ *   (the `sampleShape` pattern in `timelineMoveHelpers.ts`).
  * - **context**: the move that takes the member out of F, drawn over its own whole span (one hop),
  *   in that move's color, so a move that runs past F's end shows.
  * - **origin**, **destination**, **ghost end** and **forks**: where the member starts, where it

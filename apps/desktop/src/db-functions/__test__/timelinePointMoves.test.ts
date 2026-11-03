@@ -15,7 +15,6 @@ import {
 import { transactionWithHistory } from "../history";
 import { readBasicRows } from "../basicRows";
 import { pointsInBox } from "@/timeline/basicSimple";
-import { markAssignmentsKeptInTransaction } from "../timelineKeptMarkers";
 
 keepFixturesInPageMode(
     "its tests build their own timeline state: a show made in timeline mode",
@@ -42,7 +41,6 @@ const TABLES = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
-    schema.timeline_kept_assignments,
 ];
 
 const snapshot = async (db: DbConnection) => {
@@ -124,13 +122,13 @@ const point = async (
     db: DbConnection,
     beat: number,
     moves: [number, XY][],
-    { box = PAGE2, clearOwn = false } = {},
+    { box = PAGE2, clearPage = false } = {},
 ) =>
     await moveMarchersInTarget({
         db,
         target: { kind: "point", beat, box },
         moves: moves.map(([marcherId, [x, y]]) => ({ marcherId, x, y })),
-        clearOwn,
+        clearPage,
     });
 
 /** Undo once: the data is `before`; redo once: it is `after` again. */
@@ -328,103 +326,6 @@ describeDbTests("Basic point writes: the spec table", (it) => {
         expect((await resolverOf(db)).positionAt(a, 25)).toEqual(start);
         expect(await violations(db)).toEqual([]);
     });
-
-    it("a kept move dragged back to its start keeps its row; its new ending is written", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await range(db, a, 9, 17, A);
-        const [row] = await readBasicRows(db, { marcherIds: [a] });
-        await db.transaction((tx) =>
-            markAssignmentsKeptInTransaction(tx, [row!.assignmentId]),
-        );
-        const start = (await resolverOf(db)).positionAt(a, 9) as XY;
-        await point(db, 17, [[a, start]]);
-        expect(await rowsOf(db, a)).toEqual([[9, 17, 0]]);
-        expect((await resolverOf(db)).positionAt(a, 17)).toEqual(start);
-        // Edited, so it is an ordinary own move now
-        expect(
-            await db.select().from(schema.timeline_kept_assignments).all(),
-        ).toEqual([]);
-    });
-});
-
-describeDbTests("Basic point writes: kept spots and drag back", (it) => {
-    const kept = (db: DbConnection) =>
-        db.select().from(schema.timeline_kept_assignments).all();
-    const keepRowEndingAt = async (
-        db: DbConnection,
-        marcherId: number,
-        end: number,
-    ) => {
-        const row = (await readBasicRows(db, { marcherIds: [marcherId] })).find(
-            (r) => r.end === end,
-        )!;
-        await db.transaction((tx) =>
-            markAssignmentsKeptInTransaction(tx, [row.assignmentId]),
-        );
-    };
-
-    it("a kept move with a move after it, dragged back to its start, is not merged away", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await range(db, a, 9, 17, A);
-        await point(db, 13, [[a, B]]);
-        await keepRowEndingAt(db, a, 13);
-        const start = (await resolverOf(db)).positionAt(a, 9) as XY;
-        await point(db, 13, [[a, start]]);
-        // Its new ending is written instead; the split stays
-        expect(await rowsOf(db, a)).toEqual([
-            [9, 13, 0],
-            [13, 17, 0],
-        ]);
-        const r = await resolverOf(db);
-        expect(r.positionAt(a, 13)).toEqual(start);
-        expect(r.positionAt(a, 17)).toEqual(A);
-        expect(await violations(db)).toEqual([]);
-    });
-
-    it("dragging back onto a kept move's start keeps the merged move kept", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await range(db, a, 9, 17, A);
-        await point(db, 13, [[a, B]]);
-        await keepRowEndingAt(db, a, 17);
-        const start = (await resolverOf(db)).positionAt(a, 9) as XY;
-        await point(db, 13, [[a, start]]);
-        expect(await rowsOf(db, a)).toEqual([[9, 17, 0]]);
-        const [merged] = await readBasicRows(db, { marcherIds: [a] });
-        expect((await kept(db)).map((k) => k.assignment_id)).toEqual([
-            merged!.assignmentId,
-        ]);
-        expect((await resolverOf(db)).positionAt(a, 17)).toEqual(A);
-    });
-
-    it("removing a kept spot's split point keeps the merged move kept", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await range(db, a, 9, 17, A);
-        await point(db, 13, [[a, B]]);
-        await keepRowEndingAt(db, a, 17);
-        await removePositionAtBeat({
-            db,
-            beat: 13,
-            box: PAGE2,
-            marcherIds: [a],
-        });
-        const [merged] = await readBasicRows(db, { marcherIds: [a] });
-        expect(merged).toMatchObject({ start: 9, end: 17 });
-        expect((await kept(db)).map((k) => k.assignment_id)).toEqual([
-            merged!.assignmentId,
-        ]);
-    });
 });
 
 describeDbTests("Basic point writes: a merge that goes nowhere", (it) => {
@@ -512,62 +413,6 @@ describeDbTests("Basic point writes: a merge that goes nowhere", (it) => {
             expect(r.positionAt(a, beat)).toEqual(C);
     });
 
-    it("a kept spot merged in place keeps its move, still kept", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await point(db, 13, [[a, B]]);
-        const second = (await readBasicRows(db, { marcherIds: [a] })).find(
-            (r) => r.end === 17,
-        )!;
-        await db.transaction((tx) =>
-            markAssignmentsKeptInTransaction(tx, [second.assignmentId]),
-        );
-        const held = (await resolverOf(db)).positionAt(a, 17) as XY;
-        await removePositionAtBeat({
-            db,
-            beat: 13,
-            box: PAGE2,
-            marcherIds: [a],
-        });
-        const rows = await readBasicRows(db, { marcherIds: [a] });
-        expect(rows.map((r) => [r.start, r.end])).toEqual([[9, 17]]);
-        expect(
-            (
-                await db.select().from(schema.timeline_kept_assignments).all()
-            ).map((k) => k.assignment_id),
-        ).toEqual([rows[0]!.assignmentId]);
-        expect((await resolverOf(db)).positionAt(a, 17)).toEqual(held);
-    });
-
-    it("a kept first half spares the merge, and the merged move stays kept", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await point(db, 11, [[a, B]]);
-        const first = (await readBasicRows(db, { marcherIds: [a] })).find(
-            (r) => r.end === 11,
-        )!;
-        await db.transaction((tx) =>
-            markAssignmentsKeptInTransaction(tx, [first.assignmentId]),
-        );
-        await removePositionAtBeat({
-            db,
-            beat: 11,
-            box: PAGE2,
-            marcherIds: [a],
-        });
-        const rows = await readBasicRows(db, { marcherIds: [a] });
-        expect(rows.map((r) => [r.start, r.end])).toEqual([[9, 17]]);
-        expect(
-            (
-                await db.select().from(schema.timeline_kept_assignments).all()
-            ).map((k) => k.assignment_id),
-        ).toEqual([rows[0]!.assignmentId]);
-    });
-
     it("a chain of points in a hold: removing the first takes the moves that go nowhere after it too", async ({
         db,
         marchersAndPages: _,
@@ -634,39 +479,6 @@ describeDbTests("Basic point writes: a merge that goes nowhere", (it) => {
         expect(r.positionAt(a, 11)).toEqual(B);
         expect(r.positionAt(a, 14)).toEqual(C);
         expect(r.positionAt(a, 17)).toEqual(A);
-    });
-
-    it("a point set inside a kept move keeps the second half kept; removing it merges back, kept", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await madeInTimelineMode(db);
-        await range(db, a, 9, 17, A);
-        const [row] = await readBasicRows(db, { marcherIds: [a] });
-        await db.transaction((tx) =>
-            markAssignmentsKeptInTransaction(tx, [row!.assignmentId]),
-        );
-        const keptIds = async () =>
-            (
-                await db.select().from(schema.timeline_kept_assignments).all()
-            ).map((k) => k.assignment_id);
-        await point(db, 13, [[a, B]]);
-        const rows = await readBasicRows(db, { marcherIds: [a] });
-        expect(rows.map((r) => [r.start, r.end])).toEqual([
-            [9, 13],
-            [13, 17],
-        ]);
-        expect(await keptIds()).toEqual([rows[1]!.assignmentId]);
-        await removePositionAtBeat({
-            db,
-            beat: 13,
-            box: PAGE2,
-            marcherIds: [a],
-        });
-        const merged = await readBasicRows(db, { marcherIds: [a] });
-        expect(merged.map((r) => [r.start, r.end])).toEqual([[9, 17]]);
-        expect(await keptIds()).toEqual([merged[0]!.assignmentId]);
-        expect((await resolverOf(db)).positionAt(a, 17)).toEqual(A);
     });
 
     it("removing one marcher's no-motion merge and another's real merge in one step", async ({
@@ -775,7 +587,7 @@ describeDbTests("Basic point writes: repeated and mixed edits", (it) => {
         ]);
     });
 
-    it("set to previous page (clearOwn on the flag) deletes every move in the box", async ({
+    it("set to previous page (clearPage on the flag) deletes every move in the box", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -784,7 +596,7 @@ describeDbTests("Basic point writes: repeated and mixed edits", (it) => {
         await range(db, a, 9, 17, A);
         await point(db, 13, [[a, C]]);
         const before = await snapshot(db);
-        const result = await point(db, 17, [[a, B]], { clearOwn: true });
+        const result = await point(db, 17, [[a, B]], { clearPage: true });
         expect(result.cleared).toEqual([a]);
         expect(await rowsOf(db, a)).toEqual([[1, 9, 0]]);
         expect(await timelineRanges(db)).toEqual([[1, 9]]);
@@ -1060,7 +872,7 @@ describeDbTests("Basic point writes on a converted show", (it) => {
             db,
             box.end,
             [marcher, ...others].map((m) => [m, C] as [number, XY]),
-            { box, clearOwn: true },
+            { box, clearPage: true },
         );
         expect(await vacant(db)).toEqual([]);
         expect(await transitionsOver(db, box)).toEqual([]);
@@ -1079,7 +891,7 @@ describeDbTests("Basic point writes on a converted show", (it) => {
         const { box, marcher, others } = await converted(db);
         const othersBefore = await positionsOf(db, others);
         const before = await snapshot(db);
-        await point(db, box.end, [[marcher, C]], { box, clearOwn: true });
+        await point(db, box.end, [[marcher, C]], { box, clearPage: true });
         expect(await vacant(db)).toEqual([]);
         const [shared] = await transitionsOver(db, box);
         expect(shared!.slot_count).toBe(others.length);
@@ -1101,7 +913,7 @@ describeDbTests("Basic point writes on a converted show", (it) => {
         const last = rows.find((r) => r.slotIndex === rows.length - 1)!;
         await point(db, box.end, [[first.marcherId, C]], {
             box,
-            clearOwn: true,
+            clearPage: true,
         });
         // The last slot's marcher now holds slot 0
         const moved = (

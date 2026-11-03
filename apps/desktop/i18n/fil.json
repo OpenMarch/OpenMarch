@@ -25,10 +25,8 @@
             "noPreviousPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa nakaraang pahina. Walang nakaraang pahina",
             "setAllToNext": "Kopyahin ang mga posisyon mula sa susunod na pahina (lahat ng miyembro)",
             "setAllToNextSuccess": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})}}",
-            "setAllToPrevious": "Kopyahin ang mga posisyon mula sa nakaraang pahina (lahat ng miyembro)",
             "setSelectedToNext": "Kopyahin ang mga posisyon mula sa susunod na pahina (mga napili)",
             "setSelectedToNextSuccess": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})}}",
-            "setSelectedToPrevious": "Kopyahin ang mga posisyon mula sa nakaraang pahina (mga napili)",
             "setAllToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}"
         },
@@ -136,10 +134,8 @@
             "previousPage": "Nakaraang pahina (timeline)",
             "splitMoveAtPlayhead": "Hatiin ang galaw sa playhead",
             "tapBeats": "Magdagdag ng {count} pansamantalang kumpas",
-            "toggleKeepOnPage": "Panatilihin ang mga napiling miyembro sa puwesto nila sa pahinang ito (sa susunod na pahina kung gumagalaw sila rito), o hayaan silang sumunod ulit",
             "unsetHere": "Alisin ang keyframe",
             "unsetHereAndFollowing": "Alisin ang keyframe, susunod ulit ang mga kasunod na pahina",
-            "unsetHereAndPages": "{count, plural, =1 {Alisin ang keyframe, susunod ulit ang Pahina {first}} other {Alisin ang keyframe, susunod ulit ang Pahina {first}–{last}}}",
             "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete alisin burahin posisyon diyamante",
             "splitSelectedIntoNewMove": "Ihiwalay ang mga napiling miyembro sa bagong galaw",
             "mergeMoveIntoPage": "Isama ang galaw na ito sa pahina nito"
@@ -928,26 +924,14 @@
             "swapMarchers": "Pagpalitin ang mga miyembro",
             "timeline": {
                 "buttonWithHint": "{label}. {hint}",
-                "followAgain": "Sundan ulit",
-                "followAgainHint": "{who, select, named {Hayaang sundan ulit ng {names} ang Pahina {from}, para gagalaw rin sila rito kapag in-edit ang Pahina {from}} someNamed {Hayaang sundan ulit ng {names} ({count} sa {total} na napili) ang Pahina {from}, para gagalaw rin sila rito kapag in-edit ang Pahina {from}} some {Hayaang sundan ulit ng {count} sa {total} na napili ang Pahina {from}, para gagalaw rin sila rito kapag in-edit ang Pahina {from}} other {Hayaang sundan ulit ng mga miyembrong ito ang Pahina {from}, para gagalaw rin sila rito kapag in-edit ang Pahina {from}}}",
-                "followAgainHintEarlier": "{who, select, named {Hayaang sundan ulit ng {names} ang mga naunang pahina} someNamed {Hayaang sundan ulit ng {names} ({count} sa {total} na napili) ang mga naunang pahina} some {Hayaang sundan ulit ng {count} sa {total} na napili ang mga naunang pahina} other {Hayaang sundan ulit ng mga miyembrong ito ang mga naunang pahina}}",
                 "goToPage": "Pumunta sa Pahina {page}, kung saan huling gumalaw ang mga miyembrong ito",
                 "goToStart": "Pumunta sa simula",
                 "holdFrom": "Nakatigil mula sa Pahina {page}",
                 "holdFromStart": "Nakatigil mula sa simula",
                 "holdHere": "Nakatigil dito ang mga miyembrong ito",
-                "keepHere": "Panatilihin dito",
-                "keepHereHint": "{who, select, named {Panatilihin ang {names} sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang Pahina {from}} someNamed {Panatilihin ang {names} ({count} sa {total} na napili) sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang Pahina {from}} some {Panatilihin ang {count} sa {total} na napili sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang Pahina {from}} other {Panatilihin ang mga miyembrong ito sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang Pahina {from}}}",
-                "keepHereHintEarlier": "{who, select, named {Panatilihin ang {names} sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang mga naunang pahina} someNamed {Panatilihin ang {names} ({count} sa {total} na napili) sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang mga naunang pahina} some {Panatilihin ang {count} sa {total} na napili sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang mga naunang pahina} other {Panatilihin ang mga miyembrong ito sa Pahina {page}, para hindi sila malilipat dito kapag in-edit ang mga naunang pahina}}",
-                "keptOnThisPage": "Pinanatili sa pahinang ito",
                 "movesOnThisPage": "Gumagalaw sa pahinang ito",
-                "pagesFollow": "{count, plural, =1 {Sinusundan ng Pahina {first} ang mga miyembrong ito} other {Sinusundan ng mga Pahina {first}–{last} ang mga miyembrong ito}}",
-                "pagesFollowSome": "{count, plural, =1 {Sinusundan ng Pahina {first} ang ilan sa mga miyembrong ito} other {Sinusundan ng mga Pahina {first}–{last} ang ilan sa mga miyembrong ito}}",
                 "someHoldHere": "Nakatigil dito ang ilan sa mga miyembrong ito",
-                "someKeptOnThisPage": "Pinanatili sa pahinang ito ang ilan sa mga miyembrong ito",
                 "unsetHere": "Alisin ang keyframe",
-                "unsetHereAndFollowingHint": "Alisin ang kanilang keyframe sa bilang na ito, at {pageCount, plural, =1 {susundan ulit ng Pahina {first}} other {susundan ulit ng mga Pahina {first}–{last}}} ang keyframe bago nito",
-                "unsetHereAndFollowingHintSome": "Alisin ang keyframe ng {count} sa {total} na napili na may keyframe sa bilang na ito, at {pageCount, plural, =1 {susundan ulit ng Pahina {first}} other {susundan ulit ng mga Pahina {first}–{last}}} ang keyframe bago nito",
                 "unsetHereHint": "Alisin ang kanilang keyframe sa bilang na ito, para sundan nila ulit ang mga nauna. Mananatili sa puwesto ang mga susunod na pahina",
                 "unsetHereHintSome": "Alisin ang keyframe ng {count} sa {total} na napili na may keyframe sa bilang na ito, para sundan nila ulit ang mga nauna. Mananatili sa puwesto ang mga susunod na pahina",
                 "unsetHereNone": "Wala sa mga napiling miyembro ang may keyframe sa bilang na ito"
@@ -2797,32 +2781,9 @@
         },
         "keep": {
             "chain": {
-                "ariaLabel": "Pahina {page}: {label}. {hint}",
-                "follows": "{count, plural, one {# miyembro ang nananatili sa puwestong iniwan ng Pahina {from}} other {# miyembro ang nananatili sa puwestong iniwan ng Pahina {from}}}",
-                "followsEarlier": "{count, plural, one {# miyembro ang nananatili sa puwestong iniwan ng mga naunang pahina} other {# miyembro ang nananatili sa puwestong iniwan ng mga naunang pahina}}",
-                "followsHint": "Nadadala sa Pahina {page} ang mga pagbabago sa Pahina {from}. I-click para panatilihin na lang {count, plural, =1 {siya} other {sila}} dito",
-                "followsHintEarlier": "Nadadala sa Pahina {page} ang mga pagbabago sa mga naunang pahina. I-click para panatilihin na lang {count, plural, =1 {siya} other {sila}} dito",
-                "followsMenuHint": "Nadadala sa Pahina {page} ang mga pagbabago sa Pahina {from}. I-right-click ang pahina para panatilihin na lang {count, plural, =1 {siya} other {sila}} dito",
-                "followsMenuHintEarlier": "Nadadala sa Pahina {page} ang mga pagbabago sa mga naunang pahina. I-right-click ang pahina para panatilihin na lang {count, plural, =1 {siya} other {sila}} dito",
-                "followsNamed": "{count, plural, =1 {Nananatili ang {names} sa puwestong iniwan ng Pahina {from}} other {Nananatili ang {names} sa puwestong iniwan ng Pahina {from}}}",
-                "followsNamedEarlier": "{count, plural, =1 {Nananatili ang {names} sa puwestong iniwan ng mga naunang pahina} other {Nananatili ang {names} sa puwestong iniwan ng mga naunang pahina}}",
-                "kept": "{count, plural, one {# miyembro ang pinanatili sa Pahina {page}} other {# miyembro ang pinanatili sa Pahina {page}}}",
-                "keptHint": "Dito humihinto ang mga pagbabago sa Pahina {from}. I-click para sundan ulit ang Pahina {from}",
-                "keptHintEarlier": "Dito humihinto ang mga pagbabago sa mga naunang pahina. I-click para sundan ulit ang mga ito",
-                "keptMenuHint": "Dito humihinto ang mga pagbabago sa Pahina {from}. I-right-click ang pahina para sundan ulit ang Pahina {from}",
-                "keptMenuHintEarlier": "Dito humihinto ang mga pagbabago sa mga naunang pahina. I-right-click ang pahina para sundan ulit ang mga ito",
-                "keptNamed": "Pinanatili ang {names} sa Pahina {page}",
-                "mixed": "{kept, plural, one {# sa {total} napili ang pinanatili sa Pahina {page}} other {# sa {total} napili ang pinanatili sa Pahina {page}}}",
-                "mixedNamed": "{kept, plural, one {# sa {total} napili ang pinanatili sa Pahina {page} ({names})} other {# sa {total} napili ang pinanatili sa Pahina {page} ({names})}}",
-                "mixedRestHint": "{count, plural, =1 {Sumusunod sa mga naunang pahina ang isa pa. I-click para panatilihin din siya rito} other {Sumusunod sa mga naunang pahina ang # iba pa. I-click para panatilihin din sila rito}}",
-                "mixedRestMenuHint": "{count, plural, =1 {Sumusunod sa mga naunang pahina ang isa pa. I-right-click ang pahina para panatilihin din siya rito} other {Sumusunod sa mga naunang pahina ang # iba pa. I-right-click ang pahina para panatilihin din sila rito}}"
-            },
-            "field": {
-                "kept": "Pinanatili sa Pahina {page} · hindi susunod sa Pahina {from}",
-                "keptEarlier": "Pinanatili sa Pahina {page} · hindi susunod sa mga naunang pahina"
+                "ariaLabel": "Pahina {page}: {label}. {hint}"
             },
             "followed": {
-                "changed": "{count, plural, =1 {Ginagamit ng Pahina {first} ang pormasyong ito, kaya nagbago rin ito} other {Ginagamit ng mga Pahina {first}–{last} ang pormasyong ito, kaya nagbago rin ang mga ito}}",
                 "keepAsBefore": "{count, plural, =1 {Panatilihin ang Pahina {first} gaya ng dati} other {Panatilihin ang mga Pahina {first}–{last} gaya ng dati}}",
                 "keepError": "Error sa pagpapanatili ng mga susunod na pahina"
             },
@@ -2831,7 +2792,6 @@
             },
             "errors": {
                 "keep": "Error sa pagpapanatili ng mga miyembro sa pahina",
-                "followAgain": "Error sa pagpapasunod ulit sa mga miyembro",
                 "readKept": "Error sa pagbasa ng mga pinanatiling puwesto"
             }
         },
@@ -2871,8 +2831,6 @@
         },
         "rangeMenu": {
             "deleteWithMoves": "Burahin ang pahina at mga galaw nito",
-            "followAgain": "Pasunurin muli ang mga napiling miyembro",
-            "keepHere": "Panatilihin dito ang mga napiling miyembro",
             "setAsShown": "I-set ayon sa nakikita",
             "setAsShownNone": "Naka-set na sa {page} ang bawat napiling miyembro, o nasa gitna sila ng isang galaw",
             "setAsShownError": "Nagka-error sa pag-set ng mga miyembro ayon sa nakikita",
@@ -3261,9 +3219,6 @@
             "keep": {
                 "wholePage": "Gumagana lang ang Panatilihin sa buong pahina, hindi sa {counts}"
             },
-            "setAsShown": {
-                "wholePage": "Gumagana lang ang Itakda gaya ng ipinapakita sa buong pahina, hindi sa {counts}"
-            },
             "tooFarPastEnd": "lampas na iyan nang {count, plural, one {# bilang} other {# bilang}} sa dulo; hanggang {max} lang ang kayang itabi ng isang edit"
         }
     },
@@ -3292,7 +3247,6 @@
             "placeSelectedMarchers": "Ilagay ang mga napiling miyembro",
             "snapToggleCaption": "Snap",
             "toNextPagePositions": "...sa mga posisyon sa susunod na pahina",
-            "toPreviousPagePositions": "...sa mga posisyon sa nakaraang pahina",
             "setMarcherPositionsAriaLabel": "Itakda ang mga posisyon ng miyembro"
         },
         "collisions": {

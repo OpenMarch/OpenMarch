@@ -64,8 +64,8 @@ describe("drill edits in Visuals mode (performer-behavior.md 7.1)", () => {
             if (kept.has(getActionDefinition(id).category))
                 expect(isDrillEditingAction(id), id).toBe(false);
         expect(isDrillEditingAction("toggleWorkspace")).toBe(false);
-        // K keeps the selected marchers on later pages (UI-18), filed under the timeline
-        expect(isDrillEditingAction("toggleKeepOnPage")).toBe(true);
+        // Unset here changes the drill, filed under the timeline
+        expect(isDrillEditingAction("timelineUnsetHere")).toBe(true);
     });
 
     it("don't run in Visuals mode, and run again in the Editor", () => {
