@@ -10,7 +10,6 @@ import { useTimelinePlaybackDriver } from "./useTimelinePlaybackDriver";
 import { useHeldMarksHost } from "./useHeldMarks";
 import { useBasicModeGuards } from "./useBasicModeGuards";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
-import { useCollisionDetection } from "@/hooks/useCollisionDetection";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { pageFlags } from "./timelinePlayhead";
 import { useBasicLocksHost } from "./basicLocks";
@@ -102,8 +101,8 @@ export default function TimelineResolverHost() {
     useBasicLocksHost(true);
     // Holds (#472): the Held marks the timeline's Held bars read
     useHeldMarksHost(db, true);
-    // #226: the selected page's collisions, for both fields and the Collisions tab
-    useCollisionDetection();
+    // #226's collision detection (useCollisionDetection) is unmounted while Collisions is
+    // hidden; mount it here again with the toolbar's Collisions tab.
     // The console API can write fixtures into the file: development builds only
     useTimelineDevApi(db, import.meta.env.DEV);
     return null;
