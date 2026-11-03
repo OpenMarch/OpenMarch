@@ -142,17 +142,21 @@ describe("ACTIONS", () => {
             });
             expect(def.hiddenFromPalette).toBeUndefined();
         }
-        expect(ACTIONS.timelineHoldFromPrevious.defaultBindings).toEqual(["H"]);
+        expect(ACTIONS.timelineHoldFromPrevious.defaultBindings).toEqual([
+            "$mod+H",
+            "Control+H",
+        ]);
         expect(ACTIONS.timelineDefineAsShown.defaultBindings).toEqual([]);
-        // H is no other action's key
-        const h = canonicalBinding("H");
+        // ⌘H / Ctrl+H is no other action's key; plain H stays the shape editor's hide-marchers
+        const keys = ["$mod+H", "Control+H"].map(canonicalBinding);
         expect(
             ACTION_IDS.filter((id) =>
-                ACTIONS[id].defaultBindings.some(
-                    (b) => canonicalBinding(b) === h,
+                ACTIONS[id].defaultBindings.some((b) =>
+                    keys.includes(canonicalBinding(b)),
                 ),
             ),
         ).toEqual(["timelineHoldFromPrevious"]);
+        expect(ACTIONS.shapeHideMarchers.defaultBindings).toEqual(["H"]);
     });
 
     it("generates 24 nudge actions and 9 tap-beat actions", () => {

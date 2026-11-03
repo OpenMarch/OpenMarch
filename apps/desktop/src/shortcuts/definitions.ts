@@ -470,7 +470,9 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
     },
     // Holds (#472): the selected marchers on the current page box are Held where the previous
-    // page leaves them, as the page box menu's entry. H for hold
+    // page leaves them, as the page box menu's entry. ⌘H / Ctrl+H for hold (owner, 2026-11-02); plain
+    // H is the shape editor's hide-marchers. On macOS the app menu's Hide takes ⌘H, so Control+H is
+    // listed as well, as Metronome does with ⌘M
     timelineHoldFromPrevious: {
         labelKey: "actions.batchEdit.holdFromPrevious",
         labelHoldTerms: true,
@@ -478,7 +480,7 @@ const STATIC_ACTIONS = {
         category: "batchEdit",
         editsDrill: true,
         scope: "canvas",
-        defaultBindings: ["H"],
+        defaultBindings: ["$mod+H", "Control+H"],
     },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.setAllToNext",

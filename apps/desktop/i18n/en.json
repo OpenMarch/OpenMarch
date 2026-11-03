@@ -2849,7 +2849,6 @@
             },
             "errors": {
                 "keep": "Error keeping marchers on the page",
-                "followAgain": "Error letting marchers follow again",
                 "readKept": "Error reading the kept spots"
             }
         },
