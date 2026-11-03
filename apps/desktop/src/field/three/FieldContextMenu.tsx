@@ -35,10 +35,6 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  *
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
- * - **Remove keyframe** and **Remove keyframe, Pages N–M move back too** (Set
- *   vs Following, #304, #305): timeline mode only, as in the inspector. The
- *   second is shown only while it's offered (some pages follow), with its
- *   handler's label naming the pages.
  * - The commands that set the selection's state on the current page (holds):
  *   **Define as shown** and **Hold from previous page** (timeline mode only),
  *   then **Clear this page**, with **set to next page** after it. Each says what it would do
@@ -50,7 +46,6 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  */
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeGroup", "shapeUngroup"],
-    ["timelineUnsetHere", "timelineUnsetHereAndFollowing"],
     [
         "timelineDefineAsShown",
         "timelineHoldFromPrevious",
@@ -70,11 +65,6 @@ const GROUPS: readonly (readonly ActionId[])[] = [
 /** The actions the menu offers, in order. */
 export const FIELD_MENU_ACTIONS: readonly ActionId[] = GROUPS.flat();
 
-const UNSET: ReadonlySet<ActionId> = new Set([
-    "timelineUnsetHere",
-    "timelineUnsetHereAndFollowing",
-]);
-
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
 const HOLDS: ReadonlySet<ActionId> = new Set([
     "timelineDefineAsShown",
@@ -82,7 +72,7 @@ const HOLDS: ReadonlySet<ActionId> = new Set([
 ]);
 
 /** The group whose entries can show checked: each keeps room for the check, so the words line up */
-const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[2]);
+const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[1]);
 
 /** The entries' style, as the timeline's menus */
 const ITEM_CLASS =
@@ -110,7 +100,7 @@ export default function FieldContextMenu({
     at: { x: number; y: number } | null;
     onClose: () => void;
     selectedCount: number;
-    /** Whether the show's timeline is loaded (Unset and the holds need it). */
+    /** Whether the show's timeline is loaded (the holds need it). */
     timelineMode: boolean;
 }) {
     const { t } = useTranslate();
@@ -131,12 +121,9 @@ export default function FieldContextMenu({
     const shown = (id: ActionId) =>
         id === "shapeGroup" || id === "shapeUngroup"
             ? isActionEnabled(id)
-            : UNSET.has(id)
-              ? timelineMode &&
-                (id === "timelineUnsetHere" || isActionEnabled(id))
-              : HOLDS.has(id)
-                ? timelineMode
-                : true;
+            : HOLDS.has(id)
+              ? timelineMode
+              : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
     const groups = GROUPS.map((group) => group.filter(shown)).filter(

@@ -15,7 +15,7 @@ import { seedShowSql } from "../seed.mjs";
 // Unset here (Set vs Following, #300 and #304): the selected marchers Set on
 // the playhead's count lose that coordinate and follow from earlier; the later
 // pages that followed it keep their spots. It's the timelineUnsetHere action,
-// run here from the command palette and the inspector's button.
+// run here from the command palette.
 //
 // Pages flag at beats 9, 17 and 25 (measures 3, 5 and 7), four beats a
 // measure. Over page 1 everyone moves. Over page 2 T1 and T2 move and T3
@@ -117,7 +117,18 @@ async function unsetFromPalette(page: Page) {
     await page.keyboard.press("Enter");
 }
 
-const unsetButton = (page: Page) => page.getByTestId("timeline-unset-here");
+/** Whether Remove keyframe is offered in the command palette, which it then closes. */
+async function expectUnsetDisabled(page: Page) {
+    await page.keyboard.press("ControlOrMeta+k");
+    await page.getByPlaceholder("Search commands…").fill("Remove keyframe");
+    await expect(
+        page.getByRole("option", {
+            name: "Remove keyframe Timeline",
+            exact: true,
+        }),
+    ).toHaveAttribute("aria-disabled", "true");
+    await page.keyboard.press("Escape");
+}
 
 async function unsetThenUndo(show: Show) {
     const { page } = show;
@@ -152,8 +163,7 @@ test("a mixed selection takes back only the marchers Set on the count", async ({
 }) => {
     const { page } = show;
     await atPage2With(show, ["T2", "T3"]);
-    await expect(unsetButton(page)).toBeEnabled();
-    await unsetButton(page).click();
+    await unsetFromPalette(page);
 
     await expect
         .poll(() => spots(show, 2))
@@ -172,21 +182,12 @@ test("Unset here is disabled when no selected marcher is Set on the count", asyn
 }) => {
     const { page } = show;
     await atPage2With(show, ["T3"]);
-    await expect(unsetButton(page)).toBeDisabled();
-    await page.keyboard.press("ControlOrMeta+k");
-    await page.getByPlaceholder("Search commands…").fill("Remove keyframe");
-    await expect(
-        page.getByRole("option", {
-            name: "Remove keyframe Timeline",
-            exact: true,
-        }),
-    ).toHaveAttribute("aria-disabled", "true");
-    await page.keyboard.press("Escape");
+    await expectUnsetDisabled(page);
 
     // Partway through page 2, nobody is Set
     await goTo(page, "m4");
     await clickMarcher(page, "T1");
-    await expect(unsetButton(page)).toBeDisabled();
+    await expectUnsetDisabled(page);
     expect(await spots(show, 2)).toEqual(PAGE_2_BEFORE);
 });
 

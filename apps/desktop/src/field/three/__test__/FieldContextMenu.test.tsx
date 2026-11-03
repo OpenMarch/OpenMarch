@@ -101,9 +101,9 @@ describe("FieldContextMenu", () => {
     });
 
     it("runs the action chosen through the actions layer, then closes", () => {
-        const run = handle("timelineUnsetHere");
+        const run = handle("setSelectedMarchersToPreviousPage");
         const { onClose } = open();
-        fireEvent.click(item("timelineUnsetHere")!);
+        fireEvent.click(item("setSelectedMarchersToPreviousPage")!);
         expect(run).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalled();
     });
@@ -116,32 +116,6 @@ describe("FieldContextMenu", () => {
         fireEvent.click(align);
         expect(run).not.toHaveBeenCalled();
         expect(item("alignVertically")).toHaveAttribute("data-disabled");
-    });
-
-    it("names the pages in Unset here and on Pages N–M, and hides it when no pages follow", () => {
-        handle("timelineUnsetHere");
-        const off = registerActionHandler("timelineUnsetHereAndFollowing", {
-            run: vi.fn(),
-            isEnabled: () => true,
-            label: () => "Remove keyframe, Pages 3–4 move back too",
-        });
-        open();
-        expect(item("timelineUnsetHereAndFollowing")).toHaveTextContent(
-            "Remove keyframe, Pages 3–4 move back too",
-        );
-        cleanup();
-        off();
-        handle("timelineUnsetHereAndFollowing", { enabled: false });
-        open();
-        expect(item("timelineUnsetHere")).not.toBeNull();
-        expect(item("timelineUnsetHereAndFollowing")).toBeNull();
-    });
-
-    it("leaves Unset out outside timeline mode, as the inspector does", () => {
-        handle("timelineUnsetHere");
-        open({ timelineMode: false });
-        expect(item("timelineUnsetHere")).toBeNull();
-        expect(item("alignHorizontally")).not.toBeNull();
     });
 
     it("lists the actions in groups, with the page state commands together", () => {
@@ -159,7 +133,6 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            ["timelineUnsetHere", "timelineUnsetHereAndFollowing"],
             [
                 "timelineDefineAsShown",
                 "timelineHoldFromPrevious",
@@ -273,7 +246,7 @@ describe("FieldContextMenu", () => {
             screen.getAllByRole("menuitem").map((el) => el.textContent),
         ).toEqual(
             expect.arrayContaining([
-                expect.stringContaining("Remove keyframe"),
+                expect.stringContaining("Swap"),
                 expect.stringContaining("Align horizontally"),
                 expect.stringContaining("Select all"),
             ]),
