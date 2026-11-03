@@ -477,7 +477,7 @@ function GuideLabel({
                 y={y + h / 2}
                 fontSize={GUIDE_LABEL_PX}
                 fontWeight={600}
-                fontFamily="DM Sans, sans-serif"
+                className="font-sans"
                 fill={GUIDE_INK_TEXT}
                 textAnchor="middle"
                 dominantBaseline="central"
@@ -691,7 +691,7 @@ function GroupGapLabel({
                 y={at.y}
                 fontSize={GROUP_LABEL_PX}
                 fontWeight={600}
-                fontFamily="DM Sans, sans-serif"
+                className="font-sans"
                 fill={seam ? GROUP_SEAM_INK : "white"}
                 textAnchor="middle"
                 dominantBaseline="central"
@@ -745,7 +745,7 @@ function OffsetStep({
                     y={y}
                     fontSize={GROUP_LABEL_PX}
                     fontWeight={600}
-                    fontFamily="DM Sans, sans-serif"
+                    className="font-sans"
                     fill="black"
                     textAnchor="middle"
                     dominantBaseline="central"
@@ -911,7 +911,7 @@ function ModeDrawing({
                         x={p.x}
                         y={p.y - (SPOT_RADIUS + 2) * z}
                         fontSize={SPOT_LABEL_PX}
-                        fontFamily="DM Sans, sans-serif"
+                        className="font-sans"
                         textAnchor="middle"
                         fill={shape}
                         data-testid="fieldShapeSpotLabel"

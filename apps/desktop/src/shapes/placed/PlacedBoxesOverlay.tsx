@@ -213,7 +213,7 @@ export function PlacedBoxesOverlay({
                             x={a.x}
                             y={a.y - LABEL_GAP_PX}
                             fontSize={LABEL_PX}
-                            fontFamily="DM Sans, sans-serif"
+                            className="font-sans"
                             fill={color}
                             dominantBaseline="hanging"
                         >

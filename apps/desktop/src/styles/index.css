@@ -345,7 +345,7 @@ textarea,
     background-color: var(--color-bg-1);
     border-radius: 6px;
     opacity: 1 !important; /* Ensure content stays visible */
-    font-family: "DM Mono";
+    font-family: var(--font-mono);
 }
 
 /* BEATS */
