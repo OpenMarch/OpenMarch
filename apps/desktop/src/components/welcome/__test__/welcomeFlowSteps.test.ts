@@ -4,6 +4,7 @@ import {
     canContinueFrom,
     getWelcomeSteps,
     isAnalyticsChoiceMade,
+    isReturningUser,
     shouldShowWelcomeFlow,
 } from "../welcomeFlowSteps";
 
@@ -50,5 +51,75 @@ describe("welcome flow steps", () => {
         expect(shouldShowWelcomeFlow({ loaded: true, mode: "expert" })).toBe(
             false,
         );
+    });
+});
+
+describe("returning people", () => {
+    const none = {
+        optOutAnalytics: undefined,
+        databasePath: undefined,
+        recentFileCount: 0,
+    };
+    const desktop = { isWeb: false };
+
+    it("counts anyone who answered the old analytics question", () => {
+        expect(
+            isReturningUser({ ...none, optOutAnalytics: false }, desktop),
+        ).toBe(true);
+        expect(
+            isReturningUser({ ...none, optOutAnalytics: true }, desktop),
+        ).toBe(true);
+    });
+
+    it("counts anyone who opened a show", () => {
+        expect(isReturningUser({ ...none, recentFileCount: 1 }, desktop)).toBe(
+            true,
+        );
+        expect(
+            isReturningUser(
+                { ...none, databasePath: "/shows/a.dots" },
+                desktop,
+            ),
+        ).toBe(true);
+    });
+
+    it("doesn't count a fresh install or a closed, emptied path", () => {
+        expect(isReturningUser(none, desktop)).toBe(false);
+        expect(isReturningUser({ ...none, databasePath: "" }, desktop)).toBe(
+            false,
+        );
+        expect(
+            isReturningUser({ ...none, optOutAnalytics: null }, desktop),
+        ).toBe(false);
+    });
+
+    it("never counts on the web, which answers analytics for everyone", () => {
+        expect(
+            isReturningUser(
+                {
+                    optOutAnalytics: true,
+                    databasePath: "x",
+                    recentFileCount: 3,
+                },
+                { isWeb: true },
+            ),
+        ).toBe(false);
+    });
+
+    it("adds What's new and drops the choices already made", () => {
+        expect(
+            getWelcomeSteps({
+                analyticsChoiceMade: true,
+                isWeb: false,
+                returning: { languageSaved: true, themeSaved: true },
+            }),
+        ).toEqual(["welcome", "whatsNew", "mode"]);
+        expect(
+            getWelcomeSteps({
+                analyticsChoiceMade: false,
+                isWeb: false,
+                returning: { languageSaved: false, themeSaved: true },
+            }),
+        ).toEqual(["welcome", "whatsNew", "language", "mode", "analytics"]);
     });
 });

@@ -3770,6 +3770,19 @@
         "welcome": {
             "description": "Welcome to the future of design. Let's get you set up.",
             "title": "Welcome to OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "OpenMarch has changed a lot since you last used it. Here's what's new, then a few quick choices.",
+            "start": "See what's new",
+            "title": "Welcome back"
+        },
+        "whatsNew": {
+            "modes": "Basic works in pages, like a drill chart. Expert opens up the full timeline.",
+            "props": "Draw props on the field and move them on the timeline, just like marchers.",
+            "shapes": "Draw a line, arc, circle or box, and your selected marchers fill it.",
+            "timeline": "A timeline under the field lines up your pages, moves and counts with the music.",
+            "title": "What's new",
+            "view3d": "The 3D View plays your show from the stands, with marchers in uniform."
         }
     },
     "workspaceSettings": {

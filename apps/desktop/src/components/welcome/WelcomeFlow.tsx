@@ -14,6 +14,8 @@ import {
     canContinueFrom,
     getWelcomeSteps,
     isAnalyticsChoiceMade,
+    isReturningUser,
+    type ReturningUserChoices,
     type WelcomeStepId,
 } from "./welcomeFlowSteps";
 import WelcomeStep from "./steps/WelcomeStep";
@@ -21,6 +23,7 @@ import LanguageStep from "./steps/LanguageStep";
 import ThemeStep from "./steps/ThemeStep";
 import ModeStep from "./steps/ModeStep";
 import AnalyticsStep from "./steps/AnalyticsStep";
+import WhatsNewStep from "./steps/WhatsNewStep";
 import DevSkipSetupButton from "./DevSkipSetupButton";
 
 export interface WelcomeFlowProps {
@@ -34,6 +37,7 @@ export interface WelcomeFlowProps {
 }
 
 const STEP_TITLE_KEYS: Record<Exclude<WelcomeStepId, "welcome">, string> = {
+    whatsNew: "welcomeFlow.whatsNew.title",
     language: "welcomeFlow.language.title",
     theme: "welcomeFlow.theme.title",
     mode: "welcomeFlow.mode.title",
@@ -56,12 +60,53 @@ function suggestedLanguage(): string {
     return matchAppLanguage(navigator.languages ?? []) ?? "en";
 }
 
+/** A raw setting; unset (or unreadable) is undefined. */
+async function readSetting(key: string): Promise<unknown> {
+    try {
+        return await window.electron.invoke("settings:get", key);
+    } catch {
+        return undefined;
+    }
+}
+
+const isSaved = (value: unknown) => typeof value === "string" && value !== "";
+
+/**
+ * Whether the person used OpenMarch before, and if so which choices they
+ * already made. Read once, before this flow saves anything.
+ */
+async function readReturningUser(): Promise<ReturningUserChoices | null> {
+    const [optOutAnalytics, databasePath, language, theme, recentFiles] =
+        await Promise.all([
+            readSetting("optOutAnalytics"),
+            readSetting("databasePath"),
+            readSetting("language"),
+            readSetting("theme"),
+            Promise.resolve()
+                .then(() => window.electron.getRecentFiles())
+                .catch(() => []),
+        ]);
+    const returning = isReturningUser(
+        {
+            optOutAnalytics,
+            databasePath,
+            recentFileCount: Array.isArray(recentFiles)
+                ? recentFiles.length
+                : 0,
+        },
+        { isWeb: isWebBuild },
+    );
+    if (!returning) return null;
+    return { languageSaved: isSaved(language), themeSaved: isSaved(theme) };
+}
+
 /**
  * First launch (UI-19): a welcome page, then language, light or dark, Basic or
  * Expert, and the analytics opt-in when it hasn't been answered (never on the
  * web). It fills the launch page until it's finished, then the launch page
  * shows. Language and theme apply and save as they're picked; finishing saves
- * the mode.
+ * the mode. Someone who used OpenMarch before gets "Welcome back" and What's
+ * new, and isn't asked again for a language or theme they chose.
  */
 // eslint-disable-next-line max-lines-per-function
 export default function WelcomeFlow({
@@ -79,6 +124,10 @@ export default function WelcomeFlow({
     const [analyticsChoiceMade, setAnalyticsChoiceMade] = useState<
         boolean | null
     >(null);
+    // undefined while it's read; null for a new person.
+    const [returning, setReturning] = useState<
+        ReturningUserChoices | null | undefined
+    >(undefined);
     const [stepIndex, setStepIndex] = useState(0);
     const [chosenMode, setChosenMode] = useState<EditorMode | null>(null);
 
@@ -123,6 +172,16 @@ export default function WelcomeFlow({
 
     useEffect(() => {
         let active = true;
+        void readReturningUser().then((choices) => {
+            if (active) setReturning(choices);
+        });
+        return () => {
+            active = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        let active = true;
         void Promise.resolve(
             window.electron.invoke("settings:get", "optOutAnalytics"),
         )
@@ -143,8 +202,9 @@ export default function WelcomeFlow({
             getWelcomeSteps({
                 analyticsChoiceMade: analyticsChoiceMade ?? false,
                 isWeb: isWebBuild,
+                returning,
             }),
-        [analyticsChoiceMade],
+        [analyticsChoiceMade, returning],
     );
     const step = steps[Math.min(stepIndex, steps.length - 1)];
     const isLast = stepIndex >= steps.length - 1;
@@ -209,6 +269,16 @@ export default function WelcomeFlow({
         setStepIndex(stepIndex + 1);
     };
 
+    // The first page differs for returning people; show it once that's known.
+    if (returning === undefined)
+        return (
+            <main
+                className="flex min-h-0 flex-1"
+                aria-label={t("welcomeFlow.dialogLabel")}
+                aria-busy
+            />
+        );
+
     if (step === "welcome")
         return (
             <WelcomeStep
@@ -216,6 +286,7 @@ export default function WelcomeFlow({
                 onDevSkip={devSkip}
                 devSkipDisabled={devSkipDisabled}
                 startLanguage={language?.code ?? suggestedLanguage()}
+                returning={returning !== null}
                 aria-label={t("welcomeFlow.dialogLabel")}
             />
         );
@@ -252,6 +323,7 @@ export default function WelcomeFlow({
                     </div>
 
                     <div key={step} className="animate-fade-in">
+                        {step === "whatsNew" && <WhatsNewStep />}
                         {step === "language" && (
                             <LanguageStep
                                 value={language?.code ?? ""}

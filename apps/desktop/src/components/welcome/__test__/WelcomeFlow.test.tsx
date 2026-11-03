@@ -21,12 +21,27 @@ vi.mock("@/utilities/webBuild", async (importOriginal) => ({
 
 /**
  * Stands in for the preload's settings bridge (the IPC boundary). `language`
- * is the stored setting: undefined when it was never chosen.
+ * is the stored setting: undefined when it was never chosen. `earlier` is
+ * what an earlier OpenMarch left behind: other settings and recent files.
  */
-function stubElectron(optOutAnalytics: unknown, language?: string) {
-    const settings: Record<string, unknown> = { optOutAnalytics, language };
+function stubElectron(
+    optOutAnalytics: unknown,
+    language?: string,
+    earlier: {
+        theme?: string;
+        databasePath?: string;
+        recentFiles?: unknown[];
+    } = {},
+) {
+    const settings: Record<string, unknown> = {
+        optOutAnalytics,
+        language,
+        theme: earlier.theme,
+        databasePath: earlier.databasePath,
+    };
     const electron = {
         invoke: vi.fn(async (_channel: string, key: string) => settings[key]),
+        getRecentFiles: vi.fn(async () => earlier.recentFiles ?? []),
         send: vi.fn(),
         getTheme: vi.fn(async () => "dark"),
         setTheme: vi.fn(async () => undefined),
@@ -60,6 +75,41 @@ async function goToModeStep() {
     await screen.findByTestId("welcome-theme-options");
     fireEvent.click(continueButton());
     return screen.findByTestId("editor-mode-card-basic");
+}
+
+/** Each step's content, to tell where the flow is. */
+const STEP_TEST_IDS = {
+    "welcome-greeting": "welcome",
+    "welcome-whats-new": "whatsNew",
+    "welcome-language-options": "language",
+    "welcome-theme-options": "theme",
+    "editor-mode-card-basic": "mode",
+} as const;
+
+async function currentStep(): Promise<string> {
+    let found = "";
+    await waitFor(() => {
+        const testId = Object.keys(STEP_TEST_IDS).find((id) =>
+            screen.queryByTestId(id),
+        ) as keyof typeof STEP_TEST_IDS | undefined;
+        expect(testId).toBeDefined();
+        found = STEP_TEST_IDS[testId!];
+    });
+    return found;
+}
+
+/** Continues from the first page to the mode step; returns the steps passed. */
+async function stepsToMode(): Promise<string[]> {
+    const seen: string[] = [];
+    let step = await currentStep();
+    while (step !== "mode") {
+        seen.push(step);
+        fireEvent.click(continueButton());
+        const left = step;
+        await waitFor(async () => expect(await currentStep()).not.toBe(left));
+        step = await currentStep();
+    }
+    return seen;
 }
 
 function setSystemLanguages(languages: string[]) {
@@ -116,7 +166,7 @@ describe("WelcomeFlow", () => {
         const { onFinish, reload } = renderFlow();
         await waitFor(() => expect(electron.invoke).toHaveBeenCalled());
 
-        await goToModeStep();
+        await stepsToMode();
         fireEvent.click(screen.getByTestId("editor-mode-card-expert"));
         await waitFor(() => expect(continueButton()).toBeEnabled());
         fireEvent.click(continueButton());
@@ -154,7 +204,7 @@ describe("WelcomeFlow", () => {
         const { onFinish, reload } = renderFlow();
         await waitFor(() => expect(electron.invoke).toHaveBeenCalled());
 
-        await goToModeStep();
+        await stepsToMode();
         fireEvent.click(screen.getByTestId("welcome-dev-skip"));
 
         expect(useEditorModeStore.getState().mode).toBe("expert");
@@ -180,22 +230,32 @@ describe("WelcomeFlow", () => {
 
     it("dev skip waits for the analytics setting off the web", async () => {
         const electron = stubElectron(true);
-        let answer: (value: unknown) => void = () => {};
+        const waiting: ((value: unknown) => void)[] = [];
+        const answer = (value: unknown) => waiting.forEach((r) => r(value));
         electron.invoke.mockImplementation(async (_channel, key) =>
             key === "optOutAnalytics"
-                ? new Promise((resolve) => (answer = resolve))
+                ? new Promise((resolve) => waiting.push(resolve))
                 : undefined,
         );
         renderFlow();
 
-        const skip = await screen.findByTestId("welcome-dev-skip");
-        expect(skip).toBeDisabled();
+        // Until it's read, the page waits (it may be "Welcome back").
+        await waitFor(() =>
+            expect(electron.invoke).toHaveBeenCalledWith(
+                "settings:get",
+                "optOutAnalytics",
+            ),
+        );
+        const skip = screen.queryByTestId("welcome-dev-skip");
+        if (skip) expect(skip).toBeDisabled();
         answer(false);
-        await waitFor(() => expect(skip).toBeEnabled());
+        await waitFor(() =>
+            expect(screen.getByTestId("welcome-dev-skip")).toBeEnabled(),
+        );
     });
 
     it("switches and saves the language and theme as they are picked", async () => {
-        const electron = stubElectron(false);
+        const electron = stubElectron(undefined);
         renderFlow();
 
         fireEvent.click(await screen.findByTestId("welcome-continue"));
@@ -215,7 +275,7 @@ describe("WelcomeFlow", () => {
 
     it("starts on the system's language and saves it on Continue", async () => {
         setSystemLanguages(["es-MX", "en-US"]);
-        const electron = stubElectron(false);
+        const electron = stubElectron(undefined);
         renderFlow();
 
         fireEvent.click(await screen.findByTestId("welcome-continue"));
@@ -231,7 +291,7 @@ describe("WelcomeFlow", () => {
 
     it("keeps a saved language, even English, instead of the system's", async () => {
         setSystemLanguages(["es-MX", "en-US"]);
-        const electron = stubElectron(false, "en");
+        const electron = stubElectron(undefined, "en");
         renderFlow();
 
         fireEvent.click(await screen.findByTestId("welcome-continue"));
@@ -248,7 +308,7 @@ describe("WelcomeFlow", () => {
     });
 
     it("follows the saved language when it is applied after the flow opens", async () => {
-        const electron = stubElectron(false, "fr");
+        const electron = stubElectron(undefined, "fr");
         renderFlow();
         fireEvent.click(await screen.findByTestId("welcome-continue"));
         await screen.findByTestId("welcome-language-options");
@@ -269,7 +329,7 @@ describe("WelcomeFlow", () => {
 
     it("doesn't undo a language changed in Settings during the flow", async () => {
         setSystemLanguages(["es-MX", "en-US"]);
-        const electron = stubElectron(false);
+        const electron = stubElectron(undefined);
         renderFlow();
         fireEvent.click(await screen.findByTestId("welcome-continue"));
         await screen.findByTestId("welcome-language-options");
@@ -290,7 +350,7 @@ describe("WelcomeFlow", () => {
 
     it("shows the welcome page in every language, starting on the suggested one", async () => {
         setSystemLanguages(["es-MX", "en-US"]);
-        stubElectron(false);
+        stubElectron(undefined);
         renderFlow();
 
         const description = await screen.findByTestId("welcome-description");
@@ -310,5 +370,65 @@ describe("WelcomeFlow", () => {
         expect(
             await screen.findByText("Choose your language"),
         ).toBeInTheDocument();
+    });
+
+    it("welcomes a returning person back and skips what they already chose", async () => {
+        const electron = stubElectron(false, "en", {
+            theme: "dark",
+            recentFiles: [{ path: "/shows/fall.dots" }],
+        });
+        const { onFinish } = renderFlow();
+
+        const greeting = await screen.findByTestId("welcome-greeting");
+        await waitFor(() => expect(greeting.textContent).toBe("Welcome back"));
+        expect(continueButton()).toHaveAccessibleName("See what's new");
+
+        fireEvent.click(continueButton());
+        const list = await screen.findByTestId("welcome-whats-new");
+        expect(screen.getByText("What's new")).toBeInTheDocument();
+        expect(list.querySelectorAll("li")).toHaveLength(5);
+
+        fireEvent.click(continueButton());
+        fireEvent.click(await screen.findByTestId("editor-mode-card-basic"));
+        fireEvent.click(continueButton());
+
+        expect(useEditorModeStore.getState().mode).toBe("basic");
+        expect(electron.setLanguage).not.toHaveBeenCalled();
+        expect(electron.setTheme).not.toHaveBeenCalled();
+        expect(onFinish).toHaveBeenCalledWith({ willReload: false });
+    });
+
+    it("asks a returning person for the choices they never made", async () => {
+        stubElectron(undefined, undefined, {
+            databasePath: "/shows/fall.dots",
+        });
+        renderFlow();
+
+        expect(await stepsToMode()).toEqual([
+            "welcome",
+            "whatsNew",
+            "language",
+            "theme",
+        ]);
+        fireEvent.click(screen.getByTestId("editor-mode-card-expert"));
+        fireEvent.click(continueButton());
+        expect(
+            await screen.findByTestId("welcome-analytics-opt-in"),
+        ).toBeInTheDocument();
+    });
+
+    it("gives a new person the first-time welcome", async () => {
+        stubElectron(undefined);
+        renderFlow();
+
+        expect(await stepsToMode()).toEqual(["welcome", "language", "theme"]);
+    });
+
+    it("never says welcome back on the web", async () => {
+        webBuild.isWeb = true;
+        stubElectron(true, "en", { theme: "dark" });
+        renderFlow();
+
+        expect(await stepsToMode()).toEqual(["welcome", "language", "theme"]);
     });
 });
