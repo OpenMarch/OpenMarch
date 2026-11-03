@@ -1201,6 +1201,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         count: number,
         /** The box's title ("Add a count before …") and the toast once done ("Added …") */
         what: { title: string; done: string },
+        /** The counts are a new measure before the measure starting at `at` */
+        asMeasure = false,
     ) => {
         // a whole measure has no stretch of music to fit into: it can only shift what's after
         const span = count > 1 ? null : keepSpan(at === 1 ? 1 : at - 1);
@@ -1356,6 +1358,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                             count,
                             duration: len,
                             drill: "adjust",
+                            measure: asMeasure,
                         }),
                     ),
             },
@@ -2521,16 +2524,22 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                             count: m.counts,
                             measure: String(m.number),
                         };
-                        void askAdd(e, m.start, m.counts, {
-                            title: t(
-                                "tempoMode.band.ask.addMeasureBefore",
-                                params,
-                            ),
-                            done: t(
-                                "tempoMode.band.ask.addedMeasureBefore",
-                                params,
-                            ),
-                        });
+                        void askAdd(
+                            e,
+                            m.start,
+                            m.counts,
+                            {
+                                title: t(
+                                    "tempoMode.band.ask.addMeasureBefore",
+                                    params,
+                                ),
+                                done: t(
+                                    "tempoMode.band.ask.addedMeasureBefore",
+                                    params,
+                                ),
+                            },
+                            true,
+                        );
                     },
                     range: { from: m.start, to: m.start },
                     separatorBefore: true,

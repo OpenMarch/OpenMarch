@@ -5,7 +5,7 @@
  * written by `meterWrites.ts`.
  */
 import { setAudioOffsetInTransaction } from "./audioOffset";
-import { and, asc, eq, gt, gte, inArray, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, lt, lte, ne, or } from "drizzle-orm";
 import { db, schema } from "@/global/database/db";
 import tolgee from "@/global/singletons/Tolgee";
 import { transactionWithHistory } from "@/db-functions/history";
@@ -15,10 +15,15 @@ import {
     deleteBeatsCarryingCuesInTransaction,
     updateBeatsInTransaction,
 } from "@/db-functions/beat";
-import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
+import {
+    readPageGrid,
+    withTimelinePageRipple,
+} from "@/db-functions/timelineRipple";
+import { FIRST_PAGE_ID, updateLastPageCounts } from "@/db-functions/page";
 import { ensureCountsInTransaction } from "@/db-functions/endlessCounts";
 import { resizeTimelineInTransaction } from "@/db-functions/timelineResize";
 import {
+    createMeasuresInTransaction,
     deleteMeasuresInTransaction,
     updateMeasuresInTransaction,
 } from "@/db-functions/measures";
@@ -282,6 +287,127 @@ async function movesAround(
         );
 }
 
+/**
+ * Whether `keep` must leave a move alone (it then changes length, and counts as couldn't keep):
+ *
+ * - a Held hold grows out of its end (an arrival): shortening or lengthening the move would leave
+ *   the hold growing out of nothing (`E-H1`, refusing the whole edit); a hold moves with its
+ *   arrival only through the ripple (#473);
+ * - `shrink` (the counts at its end it would give up, after counts were added inside it) hold
+ *   another move of its marchers (a keyframe the added counts pushed there), not one under it:
+ *   that move would then run past the shortened move and win over its set;
+ * - `grow` (the counts after its end it would take back) is not free for every marcher in it:
+ *   another move of theirs, at any layer, or a Held hold is there. The move gets its counts back
+ *   only "if nothing is in the way there"; growing over the next page's move would leave that
+ *   page's set a count after its flag. A move it already runs over (the page's move under a
+ *   keyframe) is not in the way, but it may not grow up to that move's end.
+ */
+async function keepIsBlocked(
+    tx: DbTransaction,
+    move: { id: number; start_beat: number; end_beat: number },
+    {
+        grow,
+        shrink,
+    }: {
+        grow?: { from: number; to: number };
+        shrink?: { from: number; to: number };
+    } = {},
+): Promise<boolean> {
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const members = [
+        ...new Set(
+            (
+                await tx
+                    .select({ marcher: a.marcher_id })
+                    .from(a)
+                    .innerJoin(t, eq(a.transition_id, t.id))
+                    .where(eq(t.timeline_id, move.id))
+                    .all()
+            ).map((r) => r.marcher),
+        ),
+    ];
+    if (members.length === 0) return false;
+    const h = schema.timeline_held_marks;
+    const held = await tx
+        .select({ id: h.id, start: h.start_beat, end: h.end_beat })
+        .from(h)
+        .where(inArray(h.marcher_id, members))
+        .all();
+    if (
+        held.some(
+            (m) =>
+                m.start === move.end_beat ||
+                (grow && m.start < grow.to && m.end > grow.from),
+        )
+    )
+        return true;
+    if (shrink) {
+        const pushedThere = await tx
+            .select({ id: a.id })
+            .from(a)
+            .innerJoin(t, eq(a.transition_id, t.id))
+            .where(
+                and(
+                    inArray(a.marcher_id, members),
+                    ne(t.timeline_id, move.id),
+                    lt(a.start_beat, shrink.to),
+                    // ending where the move would end ties with it, and the higher one wins
+                    gte(a.end_beat, shrink.from),
+                    // not a move under it (one running over all of it)
+                    or(
+                        gt(a.start_beat, move.start_beat),
+                        lt(a.end_beat, move.end_beat),
+                    ),
+                ),
+            )
+            .get();
+        if (pushedThere) return true;
+    }
+    if (!grow) return false;
+    const inTheWay = await tx
+        .select({ id: a.id })
+        .from(a)
+        .innerJoin(t, eq(a.transition_id, t.id))
+        .where(
+            and(
+                inArray(a.marcher_id, members),
+                ne(t.timeline_id, move.id),
+                lt(a.start_beat, grow.to),
+                gt(a.end_beat, grow.from),
+                // not a move it already runs over
+                or(
+                    gte(a.start_beat, move.end_beat),
+                    lte(a.end_beat, move.start_beat),
+                ),
+            ),
+        )
+        .get();
+    if (inTheWay) return true;
+    // nor up to the end of a move under it: ending together, the higher one wins over its set
+    const under = await tx
+        .select({ id: a.id })
+        .from(a)
+        .innerJoin(t, eq(a.transition_id, t.id))
+        .where(
+            and(
+                inArray(a.marcher_id, members),
+                ne(t.timeline_id, move.id),
+                lte(a.start_beat, move.start_beat),
+                gt(a.end_beat, move.start_beat),
+                lte(a.end_beat, grow.to),
+            ),
+        )
+        .get();
+    return under !== undefined;
+}
+
+/** The last page (by the page grid), or undefined when the show has only its first page */
+async function lastPageInTransaction(tx: DbTransaction) {
+    const last = (await readPageGrid(tx)).pages.at(-1);
+    return last && last.id !== FIRST_PAGE_ID ? last : undefined;
+}
+
 /** A move's range in spec beats (`[start, end)`) */
 export interface MoveSpan {
     id: number;
@@ -339,6 +465,7 @@ export async function insertCounts({
     duration,
     drill,
     respaced,
+    measure = false,
 }: {
     at: number;
     count: number;
@@ -346,12 +473,29 @@ export async function insertCounts({
     drill: DrillChoice;
     /** Lengths to give the counts from `from` on afterwards (keep everything else in place) */
     respaced?: { from: number; lengths: readonly number[] };
+    /**
+     * Add a measure before measure `at` (`at` starts one): the new counts are a measure of their
+     * own, in the time signature of the measure after them, rather than more counts of the
+     * measure before
+     */
+    measure?: boolean;
 }): Promise<CountEditResult> {
     return await transactionWithHistory(db, "tempoInsertCounts", async (tx) => {
         await ensureCountsInTransaction({ tx, through: at });
         // A count added right after a move's last count lengthens it too (the page before a page
         // boundary takes the count), so with `keep` that move holds as well
         const around = await movesAround(tx, at, { orEnding: true });
+        // The last page has no flag after it to move: counts added inside it (or right after it,
+        // as at any page boundary) make it longer, so its move stretches like any page's
+        const last = await lastPageInTransaction(tx);
+        // `at` is a count number (an ordinal); beats are placed by position, which may have gaps
+        const before = await tx
+            .select({ position: schema.beats.position })
+            .from(schema.beats)
+            .orderBy(asc(schema.beats.position))
+            .limit(1)
+            .offset(at - 1)
+            .get();
         await withTimelinePageRipple(tx, async () => {
             await createBeatsInTransaction({
                 tx,
@@ -359,9 +503,15 @@ export async function insertCounts({
                     duration,
                     include_in_measure: true,
                 })),
-                startingPosition: at - 1,
+                startingPosition: before?.position ?? at - 1,
             });
+            if (last && last.start < at && at <= last.end)
+                await updateLastPageCounts({
+                    tx,
+                    lastPageCounts: last.end - last.start + count,
+                });
         });
+        if (measure) await addMeasureBeforeInTransaction(tx, at, count);
         await writeLengthsInTransaction(tx, respaced);
         const result: CountEditResult = { kept: 0, couldNotKeep: 0 };
         if (drill === "keep")
@@ -377,6 +527,17 @@ export async function insertCounts({
                     now.start_beat -
                     (move.end_beat - move.start_beat);
                 if (grew <= 0) continue;
+                if (
+                    await keepIsBlocked(tx, now, {
+                        shrink: {
+                            from: now.end_beat - grew,
+                            to: now.end_beat,
+                        },
+                    })
+                ) {
+                    result.couldNotKeep++;
+                    continue;
+                }
                 try {
                     await resizeTimelineInTransaction({
                         tx,
@@ -391,6 +552,49 @@ export async function insertCounts({
             }
         return result;
     });
+}
+
+/**
+ * After `count` counts were added at `at` before the measure that started there: a measure starts
+ * on the first new count. In a show with time signatures written, it gets the one in effect at the
+ * measure after it, written only where it changes (ADR 0007), so the measure after keeps reading
+ * as before. Does nothing when no measure started at `at`.
+ */
+async function addMeasureBeforeInTransaction(
+    tx: DbTransaction,
+    at: number,
+    count: number,
+): Promise<void> {
+    const ids = await beatIdsInTransaction(tx);
+    const ordinalOf = new Map(ids.map((id, i) => [id, i]));
+    const rows = (await tx.select().from(schema.measures))
+        .flatMap((m) => {
+            const start = ordinalOf.get(m.start_beat);
+            return start === undefined ? [] : [{ ...m, start }];
+        })
+        .sort((a, b) => a.start - b.start);
+    const after = rows.find((m) => m.start === at + count);
+    if (!after || ids[at] === undefined) return;
+    const written = rows.some((m) => m.meter);
+    const inEffect = [...rows]
+        .reverse()
+        .find((m) => m.start <= after.start && m.meter);
+    const [created] = await createMeasuresInTransaction({
+        tx,
+        newItems: [
+            {
+                start_beat: ids[at]!,
+                rehearsal_mark: null,
+                notes: null,
+                ...(written && inEffect
+                    ? { meter: inEffect.meter, grouping: inEffect.grouping }
+                    : {}),
+            },
+        ],
+    });
+    if (!written || !created) return;
+    await clearRepeatedMeterInTransaction(tx, after.id);
+    await clearRepeatedMeterInTransaction(tx, created.id);
 }
 
 type MeasureRow = typeof schema.measures.$inferSelect;
@@ -534,11 +738,30 @@ export async function deleteCounts({
         const survivor = ids[to];
         if (doomed.length === 0 || survivor === undefined)
             throw new Error(tolgee.t("tempoMode.errors.cantRemoveLastCount"));
+        // Every move that loses counts, its first count included (as the dialog lists them)
         const around = new Map<number, typeof schema.timelines.$inferSelect>();
-        for (let b = from; b < to; b++)
-            for (const m of await movesAround(tx, b)) around.set(m.id, m);
+        for (const m of await tx
+            .select()
+            .from(schema.timelines)
+            .where(
+                and(
+                    lt(schema.timelines.start_beat, to),
+                    gt(schema.timelines.end_beat, from),
+                ),
+            ))
+            around.set(m.id, m);
         let cues: CueCarryResult = { moved: [], dropped: [] };
         let holderId: number | undefined;
+        // The last page gets shorter by the counts removed from it (see insertCounts)
+        const last = await lastPageInTransaction(tx);
+        const removed = to - from;
+        const mapped = (o: number) =>
+            o <= from ? o : Math.max(from, o - removed);
+        const lastLength = last
+            ? mapped(last.end) - mapped(last.start)
+            : undefined;
+        if (last && lastLength! < 1)
+            throw new Error(tolgee.t("tempoMode.errors.wouldRemovePage"));
         await withTimelinePageRipple(tx, async () => {
             // Measures and pages on the removed counts move to the next count left
             holderId = await moveMeasuresOffInTransaction(
@@ -567,6 +790,8 @@ export async function deleteCounts({
                 tx,
                 beatIds: new Set(doomed),
             }));
+            if (last && lastLength !== last.end - last.start)
+                await updateLastPageCounts({ tx, lastPageCounts: lastLength! });
         });
         if (holderId !== undefined)
             await clearRepeatedMeterInTransaction(tx, holderId);
@@ -585,6 +810,14 @@ export async function deleteCounts({
                     move.start_beat -
                     (now.end_beat - now.start_beat);
                 if (lost <= 0) continue;
+                if (
+                    await keepIsBlocked(tx, now, {
+                        grow: { from: now.end_beat, to: now.end_beat + lost },
+                    })
+                ) {
+                    result.couldNotKeep++;
+                    continue;
+                }
                 try {
                     await resizeTimelineInTransaction({
                         tx,
