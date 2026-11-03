@@ -28,11 +28,19 @@ export const storedMeter = (m: Meter | null) => ({
 export async function writeMeter({
     plan,
     before,
+    storeThrough,
 }: {
     plan: MeterPlan;
     before: readonly number[];
+    /**
+     * A plan made past the stored counts (over the endless ones too) stores the counts up to here
+     * first, so its counts and measures are all there to write
+     */
+    storeThrough?: number;
 }): Promise<void> {
     await transactionWithHistory(db, "tempoMeter", async (tx) => {
+        if (storeThrough !== undefined)
+            await ensureCountsInTransaction({ tx, through: storeThrough });
         await writeMeasuresInTransaction(tx, plan.measures);
         const ids = await beatIdsInTransaction(tx);
         const after = plan.result.durations;

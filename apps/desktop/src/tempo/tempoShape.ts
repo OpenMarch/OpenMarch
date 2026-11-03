@@ -198,10 +198,11 @@ export function laneTempos(
     lengths: readonly number[],
     units: readonly number[],
     holds: ReadonlySet<number>,
-    storedCount: number,
+    /** Where the counts end: the drawn ones, stored or not */
+    countEnd: number,
 ): number[] {
     const q = (b: number) => quarterBpmOf(lengths[b] ?? 0, units[b] ?? 2);
-    const count = Math.min(lengths.length, storedCount);
+    const count = Math.min(lengths.length, countEnd);
     let first = 1;
     while (first < count && holds.has(first)) first++;
     return lengths.slice(0, count).map((_, b) => {
@@ -224,10 +225,10 @@ export function typedChanges(
     changes: ReadonlySet<number>,
     from: number,
     to: number,
-    storedCount: number,
+    countEnd: number,
 ): Set<number> {
     const typed = new Set([...changes].filter((c) => c <= from || c >= to));
     if (from > 1) typed.add(from);
-    if (to < storedCount) typed.add(to);
+    if (to < countEnd) typed.add(to);
     return typed;
 }

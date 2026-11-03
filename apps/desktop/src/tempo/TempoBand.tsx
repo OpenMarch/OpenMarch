@@ -290,8 +290,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     /** Each stored count's tempo as the lane reads it (see laneTempos). Index 0 is unused. */
     const laneBpms = useCallback(
         (lengths: readonly number[]) =>
-            laneTempos(lengths, units, data.holds, data.storedCount),
-        [data.storedCount, data.holds, units],
+            laneTempos(lengths, units, data.holds, data.durations.length),
+        [data.durations.length, data.holds, units],
     );
     /**
      * Where tempo changes start: the lane's points. A show with none stored yet gets them read
@@ -989,7 +989,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const tempoAfter = (end: number) => {
         let b = end;
         while (data.holds.has(b)) b++;
-        return b < data.storedCount ? qBpm(b, data.durations) : null;
+        return b < data.durations.length ? qBpm(b, data.durations) : null;
     };
     const bpmText = (bpm: number) => `♩${Math.round(bpm * 10) / 10}`;
     /** The music heard now */
@@ -1036,7 +1036,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             { fixed: data.holds },
         );
         // the counts typed for are a stretch of their own: the points inside go, one at each end
-        const typed = typedChanges(changes, from, to, data.storedCount);
+        const typed = typedChanges(changes, from, to, data.durations.length);
         commit(t("tempoMode.band.action.tempo"), {
             ...result,
             changes: typed,
@@ -1524,14 +1524,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
 
     // ---- measures and marks --------------------------------------------------------------
     const setMeasureNumber = (measure: TempoMeasure, value: string) => {
-        if (measure.id === null) return;
         const n = value.trim() === "" ? null : Number(value);
         if (n !== null && !Number.isInteger(n)) {
             toast.error(t("tempoMode.band.toast.notMeasureNumber", { value }));
             return;
         }
         void run(t("tempoMode.band.action.measureNumber"), async () => {
-            await writeMeasureNumber({ measureId: measure.id!, number: n });
+            await writeMeasureNumber({ measure, number: n });
             await refetch();
         });
     };
@@ -1547,10 +1546,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         e: { clientX: number; clientY: number },
         measure: TempoMeasure,
     ) => {
-        if (measure.id === null) {
-            toast.info(t("tempoMode.band.toast.addCountsFirst"));
-            return;
-        }
         setEditor({
             x: e.clientX,
             y: e.clientY,
@@ -1566,7 +1561,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         t("tempoMode.band.action.rehearsalMark"),
                         async () => {
                             await setRehearsalMark({
-                                measureId: measure.id!,
+                                measure,
                                 mark,
                             });
                             await refetch();
@@ -1609,7 +1604,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                     async () => {
                                         await moveRehearsalMark({
                                             fromId: other.id!,
-                                            toId: measure.id!,
+                                            to: measure,
                                             mark,
                                         });
                                         await refetch();
@@ -1630,10 +1625,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         e: { clientX: number; clientY: number },
         measure: TempoMeasure,
     ) => {
-        if (measure.id === null) {
-            toast.info(t("tempoMode.band.toast.addCountsFirst"));
-            return;
-        }
         setEditor({
             x: e.clientX,
             y: e.clientY,
@@ -1806,10 +1797,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 let best: TempoMeasure | null = null;
                 for (const m of data.measures)
                     if (
-                        m.id !== null &&
-                        (!best ||
-                            Math.abs(starts[m.start]! - heard) <
-                                Math.abs(starts[best.start]! - heard))
+                        !best ||
+                        Math.abs(starts[m.start]! - heard) <
+                            Math.abs(starts[best.start]! - heard)
                     )
                         best = m;
                 if (!best) return;
@@ -1819,7 +1809,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 const measure = best;
                 void run(t("tempoMode.band.action.rehearsalMark"), async () => {
                     await setRehearsalMark({
-                        measureId: measure.id!,
+                        measure,
                         mark: name,
                     });
                     await refetch();
@@ -1961,7 +1951,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     };
     /** Add a tempo change at count `b`: nothing is re-timed, the stretch just splits */
     const addChange = (b: number) => {
-        if (b <= 1 || b >= data.storedCount || changes.has(b)) return;
+        if (b <= 1 || b >= data.durations.length || changes.has(b)) return;
         const added = new Set(changes);
         added.add(b);
         commit(
@@ -2127,11 +2117,10 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         if (cancelGesture.current) return;
         const x = localX(e);
         if (gesture.kind === "mark") {
-            // the nearest stored measure's start
+            // the nearest measure's start
             let to = gesture.measure.start;
             for (const m of data.measures)
                 if (
-                    m.id !== null &&
                     Math.abs(xOf(m.start, ppb) - x) < Math.abs(xOf(to, ppb) - x)
                 )
                     to = m.start;
@@ -2301,7 +2290,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             void run(t("tempoMode.band.action.rehearsalMark"), async () => {
                 await moveRehearsalMark({
                     fromId: g.measure.id!,
-                    toId: target.id!,
+                    to: target,
                     mark,
                 });
                 await refetch();
@@ -2420,7 +2409,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             addChange(Math.round(beat));
         } else if (y >= MEASURES.top) {
             const m = laneMeasureAt(x, y);
-            if (m && m.id !== null) renumber(e, m);
+            if (m) renumber(e, m);
         } else if (y >= MARKS.top) {
             const m = laneMeasureAt(x, y);
             if (m) editMark(e, m);
@@ -2593,7 +2582,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         range: one,
                     },
                 );
-            if (onTempo && !hold && beat < data.storedCount) {
+            if (onTempo && !hold && beat < data.durations.length) {
                 if (beat > 1)
                     items.push(
                         changes.has(beat)
@@ -2735,11 +2724,21 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         const was = measureAt(start);
         // just this measure: the measures after keep their time signatures and move to follow
         // it (a 2/4 bar in 4/4 brings the downbeats after it 2 counts earlier, as in the score)
+        // past the stored counts, the plan takes in the endless measures too, and they're stored
+        const past = was?.id === null;
+        // ...up to the last one the timeline ends inside, unless that's the one set
+        const cut = data.measures.at(-1);
+        const upTo =
+            cut && cut.id === null && cut.start > start
+                ? cut.start
+                : data.durations.length;
         const plan = planMeter({
             durations: data.durations,
             holds: data.holds,
-            measures: data.measures.filter((m) => m.id !== null),
-            beatCount: data.storedCount,
+            measures: past
+                ? data.measures.filter((m) => m.start < upTo)
+                : data.measures.filter((m) => m.id !== null),
+            beatCount: past ? upTo : data.storedCount,
             start,
             meter,
             only,
@@ -2769,7 +2768,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         ].filter((note): note is string => typeof note === "string");
         setPreview(plan.result);
         void run(t("tempoMode.band.action.timeSignature"), async () => {
-            await writeMeter({ plan, before: data.durations });
+            await writeMeter({
+                plan,
+                before: data.durations,
+                storeThrough: past ? upTo : undefined,
+            });
             await refetch();
             toast.success(notes.join(". "), { id: NOTE_TOAST });
         });

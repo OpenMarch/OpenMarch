@@ -4414,7 +4414,6 @@
                 "outlier": "{where} is much {direction, select, faster {faster} other {slower}} ({tempo}) than its neighbours ({before}, {after}): it may be off the music. Right-click it > Set tempo… to fix it, or leave it if the music really does that."
             },
             "toast": {
-                "addCountsFirst": "Add pages or counts out here first",
                 "changedFirst": "{action}: not applied, since the show changed just before. Try again.",
                 "failed": "{action}: {error}",
                 "holdInvalid": "A hold is a length in seconds, such as 2.5",

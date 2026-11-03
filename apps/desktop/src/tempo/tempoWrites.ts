@@ -32,6 +32,41 @@ export interface TempoMarks {
     changes?: ReadonlySet<number>;
 }
 
+/**
+ * A measure as tempo mode knows it: a stored one has its id; one past the stored counts (endless)
+ * has none yet, only where it starts (a spec beat)
+ */
+export interface MeasureRef {
+    id: number | null;
+    start: number;
+}
+
+/**
+ * The stored id of `measure`. One past the stored counts has the counts up to it stored first, in
+ * the same edit; they continue the show's last measure, so a measure starts where it was drawn.
+ */
+async function measureIdInTransaction(
+    tx: DbTransaction,
+    measure: MeasureRef,
+): Promise<number> {
+    if (measure.id !== null) return measure.id;
+    await ensureCountsInTransaction({ tx, through: measure.start + 1 });
+    const beatId = (await beatIdsInTransaction(tx))[measure.start];
+    const row =
+        beatId === undefined
+            ? undefined
+            : await tx
+                  .select({ id: schema.measures.id })
+                  .from(schema.measures)
+                  .where(eq(schema.measures.start_beat, beatId))
+                  .get();
+    if (!row)
+        throw new Error(
+            `no measure starts at count ${measure.start} once stored`,
+        );
+    return row.id;
+}
+
 /** Beat ids by ordinal (position order), beat 0 first */
 export async function beatIdsInTransaction(
     tx: DbTransaction,
@@ -179,16 +214,17 @@ export async function writeMarks(marks: TempoMarks): Promise<void> {
 
 /** Set (or clear, with null) the number a measure gets by hand: one undo step */
 export async function setMeasureNumber({
-    measureId,
+    measure,
     number,
 }: {
-    measureId: number;
+    measure: MeasureRef;
     number: number | null;
 }): Promise<void> {
     await transactionWithHistory(db, "tempoMeasureNumber", async (tx) => {
+        const id = await measureIdInTransaction(tx, measure);
         await updateMeasuresInTransaction({
             tx,
-            modifiedItems: [{ id: measureId, number_override: number }],
+            modifiedItems: [{ id, number_override: number }],
         });
     });
 }
@@ -568,14 +604,15 @@ export async function deleteCounts({
 /** Move a rehearsal mark from one measure to another: one undo step */
 export async function moveRehearsalMark({
     fromId,
-    toId,
+    to,
     mark,
 }: {
     fromId: number;
-    toId: number;
+    to: MeasureRef;
     mark: string;
 }): Promise<void> {
     await transactionWithHistory(db, "tempoMoveRehearsalMark", async (tx) => {
+        const toId = await measureIdInTransaction(tx, to);
         await updateMeasuresInTransaction({
             tx,
             modifiedItems: [
@@ -588,16 +625,17 @@ export async function moveRehearsalMark({
 
 /** Set (or clear, with null) a measure's rehearsal mark */
 export async function setRehearsalMark({
-    measureId,
+    measure,
     mark,
 }: {
-    measureId: number;
+    measure: MeasureRef;
     mark: string | null;
 }): Promise<void> {
     await transactionWithHistory(db, "tempoRehearsalMark", async (tx) => {
+        const id = await measureIdInTransaction(tx, measure);
         await updateMeasuresInTransaction({
             tx,
-            modifiedItems: [{ id: measureId, rehearsal_mark: mark }],
+            modifiedItems: [{ id, rehearsal_mark: mark }],
         });
     });
 }

@@ -109,14 +109,19 @@ export function useTempoData(beatCount: number): TempoData {
             while (b < n && !countGrid.isDownbeat(b)) b++;
             last.counts = Math.max(last.counts, b - last.start);
             let number = last.number + 1;
+            let full = last.counts;
             while (b < n) {
                 let e = b + 1;
                 while (e < n && !countGrid.isDownbeat(e)) e++;
+                // the timeline ends inside the last one: it's as long as the one before, not a
+                // short measure (which would read as a time signature of its own)
+                const counts = e >= n ? Math.max(e - b, full) : e - b;
+                full = counts;
                 ms.push({
                     start: b,
                     number: number++,
                     mark: null,
-                    counts: e - b,
+                    counts,
                     id: null,
                     overridden: false,
                 });
