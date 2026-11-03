@@ -1241,7 +1241,7 @@ describe("DatabaseSync Repair", () => {
             const originalDbPath = path.join(tempDir, "newer.dots");
             const originalDb =
                 await createNewDatabaseWithMigrations(originalDbPath);
-            originalDb.prepare("PRAGMA user_version = 10").run();
+            originalDb.prepare("PRAGMA user_version = 9").run();
             originalDb.close();
             const before = fs.readFileSync(originalDbPath);
             const fixedPath = path.join(tempDir, "newer - FIXED.dots");

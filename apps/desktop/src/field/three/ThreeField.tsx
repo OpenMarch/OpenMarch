@@ -202,7 +202,7 @@ function ThreeFieldView() {
     const { beats, pages, countGrid } = useTimingObjects()!;
     const preview = useIsPreviewMode();
     const panning = useFieldViewStore((s) => s.panning);
-    const { image: fieldImage, size: fieldImageSize } = useFieldImage();
+    const { image: fieldImage } = useFieldImage();
     // Planned once, for the layer that draws it and the field test API
     const fieldImagePlan = useMemo(
         () =>
@@ -212,11 +212,10 @@ function ThreeFieldView() {
                       fieldImage && {
                           width: fieldImage.width,
                           height: fieldImage.height,
-                          size: fieldImageSize,
                       },
                   )
                 : null,
-        [fieldProperties, fieldImage, fieldImageSize],
+        [fieldProperties, fieldImage],
     );
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const { mutateAsync: moveMarchers } = useMutation(

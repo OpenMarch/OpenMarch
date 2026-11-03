@@ -189,25 +189,6 @@ globalThis.omPdf = {
         if (!entry) throw new Error("That PDF is closed.");
         return renderPage(entry.doc, index, width, height);
     }),
-    // Any image the browser draws (such as a BMP), as a PNG data URL: for a legacy field image
-    // the Artwork pipeline can't read (ADR 0002 D-23). pdf.js isn't involved.
-    decodeImage: (token, maxPixels) => answer(async () => {
-        const response = await fetch("/doc/" + encodeURIComponent(token));
-        if (!response.ok) throw new Error("The image wasn't handed over.");
-        const bitmap = await createImageBitmap(
-            new Blob([await response.arrayBuffer()]),
-        );
-        if (bitmap.width * bitmap.height > maxPixels)
-            throw new Error("The image is too large to read.");
-        const canvas = document.createElement("canvas");
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        const context = canvas.getContext("2d");
-        if (!context) throw new Error("No 2D canvas.");
-        context.drawImage(bitmap, 0, 0);
-        bitmap.close();
-        return canvas.toDataURL("image/png");
-    }),
     close: (id) => answer(async () => {
         const entry = docs.get(id);
         docs.delete(id);

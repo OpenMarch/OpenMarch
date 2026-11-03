@@ -116,13 +116,6 @@ export function createImportClient(
 
 export type ImportClient = ReturnType<typeof createImportClient>;
 
-let editorClient: ImportClient | undefined;
-/** The editor's one import client, made on first use (the Assets panel, "Upload floor…"). */
-export function editorImportClient(): ImportClient {
-    editorClient ??= createImportClient();
-    return editorClient;
-}
-
 /** An object URL for IPC bytes; revoke it with `URL.revokeObjectURL`. */
 export function bytesToObjectUrl(payload: BytesPayload): string {
     // Copy into a plain ArrayBuffer-backed view, which `Blob` accepts.

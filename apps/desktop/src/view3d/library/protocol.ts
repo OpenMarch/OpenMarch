@@ -285,12 +285,6 @@ export const PickContextSchema = z.strictObject({
     surface: ArtworkSurfaceSchema.optional(),
     /** The slot's size: the picker pre-fills kind, slot and size. */
     size: ArtworkSizeChoiceSchema.optional(),
-    /**
-     * How an image of another shape takes `size`, keeping its own shape: inside it ("fit") or
-     * covering it ("fill"), as the field image is placed. Without it, only an image of the
-     * slot's shape takes the slot's size.
-     */
-    fit: z.enum(["fill", "fit"]).optional(),
 });
 export type PickContext = z.infer<typeof PickContextSchema>;
 

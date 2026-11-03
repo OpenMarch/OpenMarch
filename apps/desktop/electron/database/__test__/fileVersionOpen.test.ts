@@ -1,7 +1,7 @@
 /**
- * Opens real `.dots` files at versions 7, 8, 9 and 10 through the same steps as the
+ * Opens real `.dots` files at versions 7, 8 and 9 through the same steps as the
  * main process's `setActiveDb` (setDbPath, version decision, migrations), and
- * checks that 7, 8 and 9 open and keep their version while 10 is refused without a
+ * checks that 7 and 8 open and keep their version while 9 is refused without a
  * single byte of the file changing (ADR 0001 §6).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -96,24 +96,21 @@ describe("opening files by format version", () => {
         vi.restoreAllMocks();
     });
 
-    it.each([7, 8, 9])(
-        "opens a file at %i and keeps its version",
-        async (v) => {
-            const filePath = path.join(tempDir, `show-${v}.dots`);
-            await createShowFile(filePath, v);
+    it.each([7, 8])("opens a file at %i and keeps its version", async (v) => {
+        const filePath = path.join(tempDir, `show-${v}.dots`);
+        await createShowFile(filePath, v);
 
-            expect(await openLikeSetActiveDb(filePath)).toBe(200);
-            expect(userVersionOf(filePath)).toBe(v);
+        expect(await openLikeSetActiveDb(filePath)).toBe(200);
+        expect(userVersionOf(filePath)).toBe(v);
 
-            // Opening twice doesn't drift either.
-            expect(await openLikeSetActiveDb(filePath)).toBe(200);
-            expect(userVersionOf(filePath)).toBe(v);
-        },
-    );
+        // Opening twice doesn't drift either.
+        expect(await openLikeSetActiveDb(filePath)).toBe(200);
+        expect(userVersionOf(filePath)).toBe(v);
+    });
 
-    it("refuses a file at 10 and leaves its bytes unchanged", async () => {
-        const filePath = path.join(tempDir, "show-10.dots");
-        await createShowFile(filePath, 10);
+    it("refuses a file at 9 and leaves its bytes unchanged", async () => {
+        const filePath = path.join(tempDir, "show-9.dots");
+        await createShowFile(filePath, 9);
         const hashBefore = sha256(filePath);
         const mtimeBefore = fs.statSync(filePath).mtimeMs;
         const filesBefore = siblings(filePath);
@@ -123,7 +120,7 @@ describe("opening files by format version", () => {
         expect(sha256(filePath)).toBe(hashBefore);
         expect(fs.statSync(filePath).mtimeMs).toBe(mtimeBefore);
         expect(siblings(filePath)).toEqual(filesBefore);
-        expect(userVersionOf(filePath)).toBe(10);
+        expect(userVersionOf(filePath)).toBe(9);
     });
 
     it("refuses a much newer file too", async () => {
@@ -135,7 +132,7 @@ describe("opening files by format version", () => {
         expect(sha256(filePath)).toBe(hashBefore);
     });
 
-    it("creates a new file at 8: it gets 9 with its first floor", async () => {
+    it("creates a new file at 8", async () => {
         const filePath = path.join(tempDir, "new.dots");
 
         expect(await openLikeSetActiveDb(filePath, true)).toBe(200);
@@ -143,7 +140,7 @@ describe("opening files by format version", () => {
     });
 
     describe("migration service", () => {
-        it.each([7, 8, 9])(
+        it.each([7, 8])(
             "runs migrations on a file at %i without changing its version",
             async (v) => {
                 const db = new DatabaseSync(path.join(tempDir, `m-${v}.dots`));
@@ -178,10 +175,10 @@ describe("opening files by format version", () => {
             },
         );
 
-        it("refuses a file at 10 with a message to update, without migrating", async () => {
-            const db = new DatabaseSync(path.join(tempDir, "m-10.dots"));
+        it("refuses a file at 9 with a message to update, without migrating", async () => {
+            const db = new DatabaseSync(path.join(tempDir, "m-9.dots"));
             try {
-                db.prepare("PRAGMA user_version = 10").run();
+                db.prepare("PRAGMA user_version = 9").run();
                 const migrator = new DrizzleMigrationService(getOrm(db), db);
                 await expect(
                     migrator.applyPendingMigrations(migrationsFolder),
@@ -192,7 +189,7 @@ describe("opening files by format version", () => {
                     )
                     .all();
                 expect(tables).toEqual([]);
-                expect(readUserVersion(db)).toBe(10);
+                expect(readUserVersion(db)).toBe(9);
             } finally {
                 db.close();
             }

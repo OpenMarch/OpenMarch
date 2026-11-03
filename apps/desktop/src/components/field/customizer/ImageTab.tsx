@@ -1,5 +1,6 @@
 import { FieldProperties } from "@openmarch/core";
-import { TabContent, Switch, Slider } from "@openmarch/ui";
+import { updateFieldPropertiesImage } from "@/global/classes/FieldProperties";
+import { TabContent, Button, Switch, Slider } from "@openmarch/ui";
 import {
     Select,
     SelectContent,
@@ -11,7 +12,6 @@ import { T, useTolgee } from "@tolgee/react";
 import { fieldLengthText } from "./fieldSizeText";
 import FormField, { StaticFormField } from "../../ui/FormField";
 import { inputClassname } from "./utils";
-import FieldFloorControls from "./FieldFloorControls";
 import clsx from "clsx";
 import { useState, useEffect, useMemo, useCallback } from "react";
 
@@ -138,7 +138,56 @@ export function ImageTab({
                     </div>
                 </StaticFormField>
 
-                <FieldFloorControls fieldProperties={currentFieldProperties} />
+                <div className="flex h-fit min-h-0 items-center gap-8">
+                    <label htmlFor="field-properties-image-input">
+                        <Button
+                            className="w-full"
+                            tooltipText={t(
+                                "fieldProperties.tooltips.importImage",
+                            )}
+                            tooltipSide="right"
+                            variant="primary"
+                            type="button"
+                            size="compact"
+                            onClick={() => {
+                                // one would hope the label "for" would be good enough, but it's not
+                                // so we need to manually click the file input
+                                document
+                                    .getElementById(
+                                        "field-properties-image-input",
+                                    )
+                                    ?.click();
+                            }}
+                        >
+                            <T keyName="fieldProperties.buttons.importImage" />
+                        </Button>
+                    </label>
+                    <input
+                        type="file"
+                        id="field-properties-image-input"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={async (
+                            e: React.ChangeEvent<HTMLInputElement>,
+                        ) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const arrayBuffer = await file.arrayBuffer();
+                            const raw = new Uint8Array(arrayBuffer);
+                            await updateFieldPropertiesImage(raw);
+                            updateFieldProperties(
+                                new FieldProperties({
+                                    ...currentFieldProperties,
+                                    showFieldImage: true,
+                                    backgroundImageOpacity: 1.0,
+                                }),
+                            );
+                        }}
+                    />
+                    <div className="text-sub text-text-subtitle h-fit min-h-0 w-fit leading-none whitespace-nowrap">
+                        <T keyName="fieldProperties.messages.refreshAfterImporting" />
+                    </div>
+                </div>
             </div>
 
             <div className="flex flex-col gap-12">

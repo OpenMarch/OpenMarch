@@ -439,46 +439,6 @@ async function openRecentFile(filePath: string) {
     return resCode;
 }
 
-/** A new show copies a previous show's field image as its own floor (ADR 0002 D-23). */
-function handleNewShowFloorIpc() {
-    ipcMain.handle(
-        "newShow:setFloorFromImage",
-        async (event, image: unknown) => {
-            if (event.sender !== win?.webContents)
-                throw new Error("Only the editor sets the floor");
-            if (
-                !(image instanceof Uint8Array) ||
-                image.byteLength === 0 ||
-                image.byteLength > LIBRARY_LIMITS.artworkBytes
-            )
-                throw new Error("Not a field image");
-            const [{ setFloorFromImage }, { floorFromFieldImage }] =
-                await Promise.all([
-                    import("../database/convertFieldImage"),
-                    import("./floor/fieldImageFloor"),
-                ]);
-            await setFloorFromImage(
-                DatabaseServices.getOrmConnection() as never,
-                image,
-                floorFromFieldImage,
-            );
-        },
-    );
-    ipcMain.handle(
-        "newShow:setFloorFromVersion",
-        async (event, version: unknown) => {
-            if (event.sender !== win?.webContents)
-                throw new Error("Only the editor sets the floor");
-            const { setFloorFromVersion, parseFloorVersion } =
-                await import("../database/convertFieldImage");
-            await setFloorFromVersion(
-                DatabaseServices.getOrmConnection() as never,
-                parseFloorVersion(version),
-            );
-        },
-    );
-}
-
 function initDatabaseIpcHandlers() {
     ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
     ipcMain.handle("database:getPath", () => DatabaseServices.getDbPath());
@@ -521,7 +481,6 @@ function initDatabaseIpcHandlers() {
     ipcMain.handle("newShow:choosePreviousDotsFile", async () =>
         choosePreviousDotsFile(win, showFileDialogFilters()),
     );
-    handleNewShowFloorIpc();
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             DatabaseServices.closePersistentConnection();

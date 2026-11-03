@@ -28,7 +28,7 @@ vi.mock("@/components/library/import/ImportPreviewCanvas", () => ({
 
 const embedImported = vi.fn();
 vi.mock("@/hooks/queries/useShowLibrary", () => ({
-    useEmbedImportedVersions: () => ({ mutateAsync: embedImported }),
+    useEmbedImportedVersions: () => ({ mutate: embedImported }),
     useShowLibrary: () => ({ data: [] }),
 }));
 

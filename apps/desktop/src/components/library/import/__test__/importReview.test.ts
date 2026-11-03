@@ -1016,46 +1016,4 @@ describe("artwork defaults (Q77)", () => {
             size: { width: { typed: "90 ft" }, height: { typed: "72 ft" } },
         });
     });
-
-    describe("a slot size the image takes in its own shape (Upload floor…)", () => {
-        // A football field, 120 × 53⅓ yd
-        const field = {
-            width: { m: 109.728 },
-            height: { m: 48.768 },
-            source: "slot" as const,
-            templateId: null,
-        };
-
-        it("fits a square image inside the field, not the 90 × 90 ft default", () => {
-            const group = initialGroup(groupOf(1000, 1000), {
-                surface: "baseFloor",
-                size: field,
-                fit: "fit",
-            });
-            expect(group.sizeChosen).toBe(true);
-            expect(group.standard).toBeNull();
-            expect(group.size?.width.m).toBeCloseTo(48.768, 3);
-            expect(group.size?.height.m).toBeCloseTo(48.768, 3);
-        });
-
-        it("covers the field with a square image when the field image fills", () => {
-            const group = initialGroup(groupOf(1000, 1000), {
-                surface: "baseFloor",
-                size: field,
-                fit: "fill",
-            });
-            expect(group.size?.width.m).toBeCloseTo(109.728, 3);
-            expect(group.size?.height.m).toBeCloseTo(109.728, 3);
-        });
-
-        it("takes the field's size as it is for an image of the field's shape", () => {
-            const group = initialGroup(groupOf(2250, 1000), {
-                surface: "baseFloor",
-                size: field,
-                fit: "fit",
-            });
-            expect(group.size?.width.m).toBeCloseTo(109.728, 3);
-            expect(group.size?.height.m).toBeCloseTo(48.768, 3);
-        });
-    });
 });

@@ -443,23 +443,6 @@ export function defaultSizeFor(
 }
 
 /**
- * `width` × `height` reshaped to `aspect` (width / height): the largest size inside it ("fit")
- * or the smallest covering it ("fill").
- */
-export function fitAspect(
-    width: number,
-    height: number,
-    aspect: number,
-    fit: "fill" | "fit",
-): { width: number; height: number } {
-    const byHeight =
-        fit === "fill" ? aspect > width / height : aspect <= width / height;
-    return byHeight
-        ? { width: height * aspect, height }
-        : { width, height: width / aspect };
-}
-
-/**
  * A group's starting size and surface. A size in the file or from the slot
  * wins; then a chip, as before (Q68); then the surface's default fitted to
  * the image (Q77). The surface is the slot's, else what the size implies,
@@ -489,20 +472,6 @@ export function initialGroup(
             height: plainLength(context.size.height),
             source: "slot",
             templateId: context.size.templateId ?? null,
-        };
-    } else if (context?.size && context.fit) {
-        // Another shape: the slot's area in the image's shape, such as a floor on the field
-        const fitted = fitAspect(
-            context.size.width.m,
-            context.size.height.m,
-            group.aspect,
-            context.fit,
-        );
-        size = {
-            width: { m: fitted.width },
-            height: { m: fitted.height },
-            source: "slot",
-            templateId: null,
         };
     }
     if (size) {

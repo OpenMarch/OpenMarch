@@ -8,29 +8,16 @@ import { test, expect } from "../fixtures.mjs";
 const WIDE_PNG =
     "89504e470d0a1a0a0000000d4948445200000004000000010802000000765e989a0000000d49444154789c6338a1a10147001efd04610bd608430000000049454e44ae426082";
 
-/** Hashes for the seeded floor; only their length is checked when they are read. */
-const BLOB_HASH = "b".repeat(64);
-const VERSION_HASH = "c".repeat(64);
-const FLOOR_ID = "e2e00000-0000-4000-8000-00000000f100";
-
-/**
- * Gives the show a floor (ADR 0002 D-23) whose display texture is `WIDE_PNG`: the bytes in
- * `library_blobs`, the Version in `library_items`, and the floor named in the field properties.
- */
 const withImage = (
     imageFillOrFit: "fit" | "fill",
     { show = true, opacity = 0.4 } = {},
 ) => [
-    `INSERT OR REPLACE INTO library_blobs (hash, data) VALUES ('${BLOB_HASH}', X'${WIDE_PNG}')`,
-    `INSERT OR REPLACE INTO library_items (item_id, version_hash, kind, name, parts, metadata)
-        VALUES ('${FLOOR_ID}', '${VERSION_HASH}', 'artwork', 'Field image',
-            '{"display":"${BLOB_HASH}"}', '{}')`,
     `UPDATE field_properties SET
         json_data = json_set(json_data,
             '$.showFieldImage', json('${show}'),
             '$.imageFillOrFit', '${imageFillOrFit}',
-            '$.backgroundImageOpacity', ${opacity},
-            '$.floor', json('{"itemId":"${FLOOR_ID}","versionHash":"${VERSION_HASH}"}'))`,
+            '$.backgroundImageOpacity', ${opacity}),
+        image = X'${WIDE_PNG}'`,
 ];
 
 /** Within three quarters of a field unit, for edges drawn between pixels. */

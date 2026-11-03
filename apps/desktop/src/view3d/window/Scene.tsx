@@ -67,7 +67,6 @@ import CameraRig from "./camera/CameraRig";
 import { DEFAULT_NEAR } from "./camera/rigMath";
 import { CROWD_CLEAR_RADIUS, useView3dSceneStore } from "./sceneStore";
 import { useFieldImage } from "./useFieldImage";
-import type { FieldImageSize } from "@/db-functions/fieldFloor";
 import {
     FALLBACK_LOG_MESSAGE,
     createQualityFallbackState,
@@ -123,8 +122,7 @@ export default function Scene() {
     const venue = useVenueSettings();
     const showCameras = useShowCameras();
     const field = useQuery(fieldPropertiesQueryOptions());
-    // The tarp is a GPU texture: the floor's display texture, not its original
-    const fieldImage = useFieldImage("display");
+    const fieldImage = useFieldImage();
     const kitId = useView3dSceneStore((s) => s.kitId);
     const lighting = useView3dSceneStore((s) => s.lighting);
     const quality = useView3dSceneStore((s) => s.quality);
@@ -174,7 +172,6 @@ export default function Scene() {
                         savedCameras={showCameras.data!.venues}
                         fieldProperties={field.data!}
                         image={fieldImage.image}
-                        imageSize={fieldImage.size}
                     />
                 )}
                 {ready && <CameraRig />}
@@ -189,7 +186,6 @@ interface SceneContentsProps {
     savedCameras: ShowVenueCameras;
     fieldProperties: FieldProperties;
     image: ImageBitmap | null;
-    imageSize: FieldImageSize | null;
 }
 
 /** How long the scene must add no shaders before the warm-up runs (ms). */
@@ -201,7 +197,6 @@ function SceneContents({
     savedCameras,
     fieldProperties: fieldPropertiesIn,
     image,
-    imageSize,
 }: SceneContentsProps) {
     const gl = useThree((s) => s.gl);
     const scene = useThree((s) => s.scene);
@@ -279,7 +274,6 @@ function SceneContents({
             style: fieldStyle,
             params,
             image,
-            imageSizeM: imageSize,
             maxTextureSize: gl.capabilities.maxTextureSize,
             anisotropy: gl.capabilities.getMaxAnisotropy(),
         });
@@ -288,7 +282,7 @@ function SceneContents({
             scene.remove(surface.mesh);
             surface.dispose();
         };
-    }, [scene, gl, fieldProperties, fieldStyle, params, image, imageSize]);
+    }, [scene, gl, fieldProperties, fieldStyle, params, image]);
 
     // Crowd: one instanced mesh from the kit's seat rows.
     useEffect(() => {

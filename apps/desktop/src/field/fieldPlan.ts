@@ -1,6 +1,5 @@
 import {
     FieldProperties,
-    stepMeters,
     type Checkpoint,
     type RgbaColor,
 } from "@openmarch/core";
@@ -81,15 +80,7 @@ export type FieldPlanOptions = {
      * The field image's natural size, when the show has one; 0 by 0 if it
      * didn't decode. Drawn only if the field properties show it.
      */
-    image?: {
-        width: number;
-        height: number;
-        /**
-         * The floor's physical size in meters (ADR 0002 D-23): drawn at that size, centered on
-         * the field. Without it, the image is placed by fill or fit.
-         */
-        size?: { widthM: number; heightM: number } | null;
-    } | null;
+    image?: { width: number; height: number } | null;
 };
 
 const GRID_STROKE = FieldProperties.GRID_STROKE_WIDTH;
@@ -215,30 +206,9 @@ export const fieldImagePlacement = (
 };
 
 /**
- * Where a floor of `size` meters goes: at that size, centered on the field (ADR 0002 D-23). A
- * floor made from a legacy image was sized by its fill or fit placement, so it lands where the
- * image did.
- */
-export const floorPlacement = (
-    fieldProperties: Pick<
-        FieldProperties,
-        "width" | "height" | "pixelsPerStep" | "stepSizeInches"
-    >,
-    size: { widthM: number; heightM: number },
-) => {
-    const { width, height } = fieldProperties;
-    const pixelsPerMeter =
-        fieldProperties.pixelsPerStep /
-        stepMeters(fieldProperties as FieldProperties);
-    const w = size.widthM * pixelsPerMeter;
-    const h = size.heightM * pixelsPerMeter;
-    return { x: (width - w) / 2, y: (height - h) / 2, width: w, height: h };
-};
-
-/**
  * Where the field image is drawn and how opaque, or null when the field
- * properties hide it or there's no image. A floor goes at its physical size; an image whose
- * size is unknown (it didn't decode) is stretched over the field.
+ * properties hide it or there's no image. An image whose size is unknown (it
+ * didn't decode) is stretched over the field.
  */
 export function planFieldImage(
     fieldProperties: FieldProperties,
@@ -246,11 +216,10 @@ export function planFieldImage(
 ): FieldPlanImage | null {
     if (!fieldProperties.showFieldImage || !image) return null;
     const { width, height } = fieldProperties;
-    const at = image.size
-        ? floorPlacement(fieldProperties, image.size)
-        : image.width > 0 && image.height > 0
-          ? fieldImagePlacement(fieldProperties, image)
-          : { x: 0, y: 0, width, height };
+    const at =
+        image.width > 0 && image.height > 0
+            ? fieldImagePlacement(fieldProperties, image)
+            : { x: 0, y: 0, width, height };
     return { ...at, opacity: fieldProperties.backgroundImageOpacity };
 }
 

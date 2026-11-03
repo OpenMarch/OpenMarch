@@ -16,12 +16,6 @@ import { parseFromWorkspaceSettings } from "@/components/launchpage/parseFromWor
 import { getLastPageNumber } from "@openmarch/core";
 import type { DbConnection } from "@/db-functions/types";
 import { readSourceTimelinePositions } from "@/timeline/sourceTimelinePositions";
-import { getFieldFloor } from "@/db-functions/fieldFloor";
-import {
-    readEmbeddedVersion,
-    type EmbedLibraryVersion,
-} from "@/db-functions/showLibrary";
-import { fieldForNewShow } from "./previousDotsField";
 
 export interface PreviousDotsMarcherImport {
     name?: string | null;
@@ -68,8 +62,6 @@ export interface PreviousDotsImportResult {
     sourcePath: string;
     fieldPropertiesJson: string;
     fieldImage: Uint8Array | null;
-    /** The previous show's floor Version, copied into the new show as it is (D-23) */
-    fieldFloor: EmbedLibraryVersion | null;
     marchers: PreviousDotsMarcherImport[];
     coordinates: PreviousDotsCoordinateImport[];
     sectionAppearances: PreviousDotsSectionAppearanceImport[];
@@ -280,21 +272,14 @@ export async function readPreviousDotsFile(
             sourcePageNumberOffset ?? 0,
         );
 
-        // D-23: the previous show's floor Version comes across as it is, without the reference,
-        // and the new show embeds it and names it as its own floor
-        const { fieldPropertiesJson, fieldImage, fieldFloor } = fieldForNewShow(
-            fieldProperties.json_data,
-            fieldProperties.image
-                ? new Uint8Array(fieldProperties.image)
-                : null,
-            await previousFloorVersion(orm),
-        );
+        const fieldImage = fieldProperties.image
+            ? new Uint8Array(fieldProperties.image)
+            : null;
 
         return {
             sourcePath,
-            fieldPropertiesJson,
+            fieldPropertiesJson: fieldProperties.json_data,
             fieldImage,
-            fieldFloor,
             marchers: marchers.map(({ id: _id, ...marcher }) => marcher),
             coordinates,
             sectionAppearances: sectionAppearancesRaw,
@@ -334,21 +319,4 @@ export async function choosePreviousDotsFile(
 
     if (result.canceled || !result.filePaths[0]) return null;
     return await readPreviousDotsFile(result.filePaths[0]);
-}
-
-/** The previous show's floor Version, or null; a file from before the Library tables has none. */
-async function previousFloorVersion(
-    orm: DB,
-): Promise<EmbedLibraryVersion | null> {
-    try {
-        const floor = await getFieldFloor({ db: orm as never });
-        if (!floor) return null;
-        const version = await readEmbeddedVersion({
-            db: orm as never,
-            ref: floor,
-        });
-        return version?.kind === "artwork" ? version : null;
-    } catch {
-        return null;
-    }
 }

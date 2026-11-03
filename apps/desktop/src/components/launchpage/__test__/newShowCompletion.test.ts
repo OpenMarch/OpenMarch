@@ -83,9 +83,6 @@ describeDbTests("completeNewShow", (it) => {
         window.electron.log = vi.fn();
         window.electron.databaseIsReady = vi.fn().mockResolvedValue(true);
         window.electron.finalizeNewShowDraft = vi.fn().mockResolvedValue(200);
-        window.electron.setNewShowFloorFromImage = vi
-            .fn()
-            .mockResolvedValue(undefined);
         window.electron.getDefaultDocumentsPath = vi
             .fn()
             .mockResolvedValue("/tmp");
@@ -606,10 +603,8 @@ describeDbTests("completeNewShow", (it) => {
             y: 123,
         });
 
-        // Main makes the new show's floor from the previous show's image (D-23)
-        expect(window.electron.setNewShowFloorFromImage).toHaveBeenCalledWith(
-            fieldImage,
-        );
+        const importedImage = await getFieldPropertiesImage();
+        expect(importedImage).toEqual(fieldImage);
 
         const sectionAppearances = await getSectionAppearances({ db });
         expect(sectionAppearances).toHaveLength(1);

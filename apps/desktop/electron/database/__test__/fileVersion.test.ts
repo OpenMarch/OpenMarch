@@ -12,9 +12,9 @@ import {
 } from "../fileVersion";
 
 describe("file-format version", () => {
-    it("supports the page model (7), the timeline model (8) and the floor model (9)", () => {
+    it("supports the page model (7) and the timeline model (8)", () => {
         expect(MIN_SUPPORTED_USER_VERSION).toBe(7);
-        expect(MAX_SUPPORTED_USER_VERSION).toBe(9);
+        expect(MAX_SUPPORTED_USER_VERSION).toBe(8);
         expect(NEW_FILE_USER_VERSION).toBe(8);
     });
 
@@ -26,14 +26,14 @@ describe("file-format version", () => {
             });
         });
 
-        it.each([7, 8, 9])("accepts an existing file at %i", (version) => {
+        it.each([7, 8])("accepts an existing file at %i", (version) => {
             expect(decideFileVersion(version, false)).toEqual({
                 action: "accept",
                 version,
             });
         });
 
-        it.each([7, 8, 9])(
+        it.each([7, 8])(
             "accepts a 'new' file already at %i without rewriting it",
             (version) => {
                 expect(decideFileVersion(version, true)).toEqual({
@@ -43,7 +43,7 @@ describe("file-format version", () => {
             },
         );
 
-        it.each([10, 11, 42, 2 ** 31 - 1])(
+        it.each([9, 10, 42, 2 ** 31 - 1])(
             "refuses a file at %i as too new, new or not",
             (version) => {
                 for (const isNewFile of [false, true]) {
@@ -71,11 +71,10 @@ describe("file-format version", () => {
         });
     });
 
-    it("isSupportedUserVersion covers exactly 7, 8 and 9", () => {
-        expect([0, 6, 7, 8, 9, 10].map(isSupportedUserVersion)).toEqual([
+    it("isSupportedUserVersion covers exactly 7 and 8", () => {
+        expect([0, 6, 7, 8, 9].map(isSupportedUserVersion)).toEqual([
             false,
             false,
-            true,
             true,
             true,
             false,
@@ -111,7 +110,6 @@ describe("file-format version", () => {
             [8, true],
             [9, false],
             [9, true],
-            [10, false],
             [1000, false],
         ])("never writes the version of a file at %i (new: %s)", (v, isNew) => {
             withDb(v, (db) => {

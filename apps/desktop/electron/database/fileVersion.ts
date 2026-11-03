@@ -8,29 +8,26 @@
  * - 7: page model. 7 is left over from the pre-Drizzle migration system; every
  *   Drizzle-era file before timelines is at 7. The app converts it to 8 when it
  *   opens it, once the person confirms (`convertOnOpen.ts`).
- * - 8: timeline model.
- * - 9: floor model (ADR 0002 D-23). The show's field image is its floor, an embedded Base floor
- *   Artwork named in the field properties; `field_properties.image` is legacy. A file is
- *   written as 9 when it gets a floor: opening an 8 converts its field image
- *   (`convertFieldImage.ts`), and Upload floor… sets one (`setFieldFloorInTransaction`). A build
- *   that only knows 8 then refuses the file instead of editing a field image nothing reads. A
- *   file without a floor, new or opened, stays at 8, so opening a show to look at it never
- *   changes it.
+ * - 8: timeline model. New files start here.
+ * - 9: a fork-only floor model (the field image as an embedded Base floor), since parked. No
+ *   release wrote it. Such a file opens as the timeline file it is and is written back as 8;
+ *   its floor is no longer read.
  */
 import type { DatabaseSync } from "node:sqlite";
 
 /** Version of a page-model file. */
 export const PAGE_MODEL_USER_VERSION = 7;
-/** Version of a timeline-model file (what the page conversion writes). */
+/** Version of a timeline-model file (new files, and files the conversion wrote). */
 export const TIMELINE_MODEL_USER_VERSION = 8;
-/** Version of a file whose field image is its floor (written once it has one). */
-export const FLOOR_MODEL_USER_VERSION = 9;
+
+/** Version of a fork-internal file from the parked floor model. Opened, then written as 8. */
+export const PARKED_FLOOR_USER_VERSION = 9;
 
 /** Oldest version this build opens. Older files must go through 0.0.10 first. */
 export const MIN_SUPPORTED_USER_VERSION = PAGE_MODEL_USER_VERSION;
 /** Newest version this build opens. Anything higher was written by a newer release. */
-export const MAX_SUPPORTED_USER_VERSION = FLOOR_MODEL_USER_VERSION;
-/** Version written into a brand-new file: a timeline show, with no floor yet. */
+export const MAX_SUPPORTED_USER_VERSION = TIMELINE_MODEL_USER_VERSION;
+/** Version written into a brand-new file: a new show is a timeline show. */
 export const NEW_FILE_USER_VERSION = TIMELINE_MODEL_USER_VERSION;
 
 /**
@@ -44,6 +41,8 @@ export type FileVersionDecision =
     | { action: "accept"; version: number }
     /** A new, empty file: set its version to `version` before migrating. */
     | { action: "initialize"; version: number }
+    /** A parked floor-model file (9): write `version` (8) and open it as a timeline file. */
+    | { action: "downgrade"; version: number }
     /** Written by a newer release. Don't write anything to the file. */
     | { action: "refuse-too-new"; version: number }
     /**
@@ -66,6 +65,9 @@ export function decideFileVersion(
 ): FileVersionDecision {
     if (!Number.isInteger(userVersion)) {
         throw new Error(`Invalid user_version: ${userVersion}`);
+    }
+    if (userVersion === PARKED_FLOOR_USER_VERSION) {
+        return { action: "downgrade", version: TIMELINE_MODEL_USER_VERSION };
     }
     if (userVersion > MAX_SUPPORTED_USER_VERSION) {
         return { action: "refuse-too-new", version: userVersion };
@@ -97,15 +99,15 @@ export function readUserVersion(db: DatabaseSync): number {
 }
 
 /**
- * Sets the version of a new file when `decideFileVersion` says to, and never
- * otherwise. Returns the decision so callers can act on a refusal.
+ * Sets the version of a new file, or of a parked floor-model file, when `decideFileVersion` says
+ * to, and never otherwise. Returns the decision so callers can act on a refusal.
  */
 export function applyFileVersionDecision(
     db: DatabaseSync,
     isNewFile: boolean,
 ): FileVersionDecision {
     const decision = decideFileVersion(readUserVersion(db), isNewFile);
-    if (decision.action === "initialize") {
+    if (decision.action === "initialize" || decision.action === "downgrade") {
         db.prepare(`PRAGMA user_version = ${decision.version}`).run();
     }
     return decision;

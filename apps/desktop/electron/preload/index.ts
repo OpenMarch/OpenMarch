@@ -13,7 +13,6 @@ import * as DbServices from "@om-electron/database/database.services";
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 import type { PreviousDotsImportResult } from "@om-electron/main/services/previous-dots-import-service";
-import type { EmbedLibraryVersion } from "@/db-functions/showLibrary";
 import type {
     AuthState,
     AuthError,
@@ -368,15 +367,6 @@ const APP_API = {
         ipcRenderer.invoke(
             "newShow:choosePreviousDotsFile",
         ) as Promise<PreviousDotsImportResult | null>,
-    /** Makes a previous show's field image the new show's floor (ADR 0002 D-23). */
-    setNewShowFloorFromImage: (image: Uint8Array) =>
-        ipcRenderer.invoke("newShow:setFloorFromImage", image) as Promise<void>,
-    /** Copies a previous show's floor Version into the new show, as it is (ADR 0002 D-23). */
-    setNewShowFloorFromVersion: (version: EmbedLibraryVersion) =>
-        ipcRenderer.invoke(
-            "newShow:setFloorFromVersion",
-            version,
-        ) as Promise<void>,
 
     export: {
         pdf: (params: {
