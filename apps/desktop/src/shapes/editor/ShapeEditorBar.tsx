@@ -1,7 +1,9 @@
 import { T } from "@tolgee/react";
 import Shortcut from "@/components/ui/Shortcut";
+import { create } from "zustand";
 import clsx from "clsx";
 import {
+    Fragment,
     memo,
     useCallback,
     useEffect,
@@ -16,6 +18,7 @@ import {
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { editorPlacement } from "./editorPlacement";
+import { usePlacedBoxPreviewStore } from "../placed/boxSelectionStore";
 import { keepInView } from "./keepInView";
 import { glideTo, isGliding } from "@/field/three/fieldNavigation";
 import {
@@ -69,6 +72,7 @@ import {
 import { currentShapeField } from "../field/shapeFieldContext";
 import {
     toggleRatioLock,
+    toggleSizesLock,
     useShapeEditorStore,
 } from "../frame/shapeEditorStore";
 import { HANDLE_REACH_PX, toolEnvFor } from "../tool/toolEnv";
@@ -105,7 +109,7 @@ import { LayoutMenu } from "./LayoutPicker";
 import { ReshuffleButton } from "./ReshuffleButton";
 import { EdgeToggle } from "./EdgeToggle";
 import { ModeMenu } from "./ModeMenu";
-import { ChoiceMenus } from "./ChoiceMenu";
+import { ChoiceMenus, GuidesMenu } from "./ChoiceMenu";
 import { GroupChips } from "./GroupChips";
 import { GROUP_MENU_ATTRIBUTE, GroupMenu } from "./GroupMenu";
 import { useFocusCarry } from "./focusCarry";
@@ -282,8 +286,18 @@ function ShapeEditorBar({
     const run = useRef<SizeRun | null>(null);
     const anchor = sizeRun(run.current, kind, params, spots);
     const env = envFor();
+    // A placed shape's number drag is previewed on the field until it's saved on release: its
+    // numbers show the preview meanwhile, so the dragged number moves with it
+    const previewed = usePlacedBoxPreviewStore((s) =>
+        s.held ? s.params : null,
+    );
+    const shown = !shape.place && previewed !== null ? previewed : params;
+    const dragged = useDraggedNumberStore((s) => s.key);
+    // An editor closed mid-drag never sees its drag end: let go of its number so later editors
+    // don't keep showing it
+    useEffect(() => () => useDraggedNumberStore.setState({ key: null }), []);
     const layout = env
-        ? chipLayout(kind, params, spots, { ...env, stepPx, anchor })
+        ? chipLayout(kind, shown, spots, { ...env, stepPx, anchor }, dragged)
         : {
               values: [],
               intervals: [],
@@ -390,16 +404,23 @@ function ShapeEditorBar({
                         data-testid={`${testId}-text`}
                     >
                         {layout.values.map((x) => (
-                            <NumberChip
-                                key={x.param.key}
-                                param={x.param}
-                                display={x.display}
-                                note={x.note}
-                                canLess={x.less !== null}
-                                canMore={x.more !== null}
-                                glyph={null}
-                                actions={numbers}
-                            />
+                            <Fragment key={x.param.key}>
+                                <NumberChip
+                                    param={x.param}
+                                    display={x.display}
+                                    note={x.note}
+                                    before={x.before}
+                                    after={x.after}
+                                    canLess={x.less !== null}
+                                    canMore={x.more !== null}
+                                    glyph={null}
+                                    actions={numbers}
+                                />
+                                {layout.ratioLock &&
+                                    x.param.ratioLockAfter === true && (
+                                        <RatioLockButton sizes />
+                                    )}
+                            </Fragment>
                         ))}
                         {target.empty > 0 && (
                             <span className="text-text/60">
@@ -479,7 +500,10 @@ function ShapeEditorBar({
                                     <span className="text-text/60">
                                         {tolgee.t("shapes.edit.steps", "steps")}
                                     </span>
-                                    {layout.ratioLock && <RatioLockButton />}
+                                    {layout.ratioLock &&
+                                        layout.intervals.length > 1 && (
+                                            <RatioLockButton />
+                                        )}
                                     {layout.lock !== null && (
                                         <IntervalLockButton
                                             live={live}
@@ -644,6 +668,14 @@ const turnQuarter = (target: ShapeEditTarget) =>
     );
 
 /**
+ * The number being dragged, by its key: kept in the editor for its drag even where the shape stops
+ * showing it (an Arc's stretch dragged onto a circle, #634), so the drag doesn't lose its number
+ */
+const useDraggedNumberStore = create<{ key: string | null }>(() => ({
+    key: null,
+}));
+
+/**
  * A number's drag: the change from the shape at the press, previewed live. `base` holds the
  * shape at the press. A spacing's (`guides`) shows the field lines a corner or the center lands
  * on while it goes (#452).
@@ -653,11 +685,13 @@ const scrubWith = (
     base: { current: unknown },
     change: (b: unknown, m: ScrubMove, env: ToolEnv) => unknown,
     guides = false,
+    key: string | null = null,
 ) => ({
     onScrubStart: () => {
         base.current = target.params;
         target.begin();
         if (guides) setShapeScrubbing(true);
+        useDraggedNumberStore.setState({ key });
     },
     onScrub: (m: ScrubMove) => {
         const env = envFor(m.roles);
@@ -665,6 +699,7 @@ const scrubWith = (
     },
     onScrubEnd: (keep: boolean) => {
         setShapeScrubbing(false);
+        useDraggedNumberStore.setState({ key: null });
         target.end(keep);
     },
 });
@@ -697,6 +732,7 @@ function numberActions(
                 base,
                 (b, m, env) => param.scrub(b, target.spots, m, env),
                 param.interval === true,
+                param.key,
             ),
         /** A "≈" number pressed: onto the nearest half step, as an edit of it (#459) */
         snap: (param: Param) => {
@@ -720,6 +756,8 @@ const NumberChip = memo(function NumberChip({
     param,
     display,
     note,
+    before = null,
+    after = null,
     canLess,
     canMore,
     glyph,
@@ -730,6 +768,9 @@ const NumberChip = memo(function NumberChip({
     param: Param;
     display: string;
     note: string | null;
+    /** Words just before and after the number, muted ("Circle", "steps") */
+    before?: string | null;
+    after?: string | null;
     canLess: boolean;
     canMore: boolean;
     /** The mark the spacings show before them, if any */
@@ -792,6 +833,7 @@ const NumberChip = memo(function NumberChip({
             data-shows-step={showsStep || undefined}
             {...engage}
         >
+            {before && <span className="text-text/60">{before}</span>}
             {glyph && !glyphAfter && (
                 <span className="text-text/60" aria-hidden>
                     <GlyphText text={glyph} />
@@ -835,6 +877,7 @@ const NumberChip = memo(function NumberChip({
                     <GlyphText text={glyph} />
                 </span>
             )}
+            {after && <span className="text-text/60">{after}</span>}
             {note && <span className="text-text/60">· {note}</span>}
         </span>
     );
@@ -875,23 +918,41 @@ const IntervalLockButton = memo(function IntervalLockButton({
 });
 
 /** Keeps the two spacings in proportion */
-const RatioLockButton = memo(function RatioLockButton() {
-    const ratioLocked = useShapeEditorStore((s) => s.ratioLocked);
+const RatioLockButton = memo(function RatioLockButton({
+    sizes = false,
+}: {
+    /** It locks two sizes rather than spacings: an Arc's width and depth (#634) */
+    sizes?: boolean;
+}) {
+    // Each its own: an Arc's width-and-depth lock doesn't lock a box's spacings (owner on #634)
+    const ratioLocked = useShapeEditorStore((s) =>
+        sizes ? s.sizesLocked : s.ratioLocked,
+    );
     return (
         <IconButton
             label={
-                ratioLocked
-                    ? tolgee.t(
-                          "shapes.edit.ratioLock.locked",
-                          "Spacings locked together: click to unlock",
-                      )
-                    : tolgee.t(
-                          "shapes.edit.ratioLock.unlocked",
-                          "Lock the two spacings together",
-                      )
+                sizes
+                    ? ratioLocked
+                        ? tolgee.t(
+                              "shapes.edit.ratioLock.sizesLocked",
+                              "Width and depth locked together: click to unlock",
+                          )
+                        : tolgee.t(
+                              "shapes.edit.ratioLock.sizesUnlocked",
+                              "Lock the width and depth together",
+                          )
+                    : ratioLocked
+                      ? tolgee.t(
+                            "shapes.edit.ratioLock.locked",
+                            "Spacings locked together: click to unlock",
+                        )
+                      : tolgee.t(
+                            "shapes.edit.ratioLock.unlocked",
+                            "Lock the two spacings together",
+                        )
             }
             pressed={ratioLocked}
-            onClick={toggleRatioLock}
+            onClick={sizes ? toggleSizesLock : toggleRatioLock}
             testId="shape-editor-ratio-lock"
         >
             {/* One chain either way, lit in the accent when locked: a broken
@@ -1102,7 +1163,7 @@ const TurnControls = memo(function TurnControls({
 });
 
 /**
- * Snap, Pathways and ☆ Save (not for a group, which the library can't keep), then Place for a new
+ * The eye, Guides (#634), Snap, Pathways and ☆ Save (not for a group, which the library can't keep), then Place for a new
  * shape or Ungroup for a placed one
  */
 const EndControls = memo(function EndControls({
@@ -1120,6 +1181,9 @@ const EndControls = memo(function EndControls({
         <>
             <span className="flex items-center gap-2">
                 <HideMarchersButton />
+                {/* Which guides a shape draws, beside the other view controls: an Arc's circle
+                    and angle lines (#634) */}
+                <GuidesMenu target={target} />
                 <SnapButton />
                 {canPlace && <PathwaysButton />}
                 {canSave && (
@@ -1304,6 +1368,9 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         return editorPlacement({
             outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
             knob: fieldToElement(view, knob.x, knob.y),
+            handles: kind
+                .handles(params, spots, null)
+                .map(({ at }) => fieldToElement(view, at.x, at.y)),
             width: room.width,
             height: room.height,
             fieldWidth: room.fieldWidth,

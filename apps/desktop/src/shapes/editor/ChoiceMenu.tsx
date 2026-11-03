@@ -1,6 +1,15 @@
 import clsx from "clsx";
 import * as Popover from "@radix-ui/react-popover";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import {
+    CaretDownIcon,
+    CheckIcon,
+    CompassToolIcon,
+} from "@phosphor-icons/react";
+import tolgee from "@/global/singletons/Tolgee";
+import {
+    useShapeGuidesStore,
+    type ShapeGuide,
+} from "@/shapes/field/shapeGuides";
 import type { AnyToolKind, ToolEnv } from "../tool/toolKind";
 import type { ShapeEditTarget } from "./editTargets";
 import { arrowFocus, useEditorMenu, useMenuFocus } from "./menuFocus";
@@ -166,6 +175,100 @@ function ChoiceMenu({
                                         </span>
                                     )}
                                 </span>
+                            </button>
+                        ))}
+                    </div>
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
+    );
+}
+
+/** The Guides menu's words for each guide */
+const GUIDE_LABELS: Record<ShapeGuide, () => string> = {
+    circle: () => tolgee.t("shapes.edit.guides.circle", "Circle"),
+    angles: () => tolgee.t("shapes.edit.guides.angles", "Angle lines"),
+};
+
+/**
+ * The Guides menu (owner on #634): which of the kind's construction guides are drawn while it's
+ * edited, each checked on or off on its own (an Arc's circle, and its angle lines). A compass
+ * among the editor's view controls, since it changes what's shown, not the shape. The user's
+ * choice, kept for every shape. None for a kind without guides, or a shape with none to draw now.
+ */
+export function GuidesMenu({
+    target,
+}: {
+    target: Pick<ShapeEditTarget, "kind" | "params" | "spots">;
+}) {
+    const [open, setOpen] = useEditorMenu();
+    const shown = useShapeGuidesStore((s) => s.shown);
+    const focus = useMenuFocus((el) =>
+        el.querySelector<HTMLElement>('[role="menuitemcheckbox"]'),
+    );
+    const guides = target.kind.guides ?? [];
+    if (
+        guides.length === 0 ||
+        (target.kind.construction?.(target.params, target.spots) ?? [])
+            .length === 0
+    )
+        return null;
+    const label = tolgee.t("shapes.edit.guides.label", "Guides");
+    return (
+        <Popover.Root open={open} onOpenChange={setOpen}>
+            <Tip label={label}>
+                <Popover.Trigger asChild>
+                    <button
+                        type="button"
+                        aria-label={label}
+                        {...focus.trigger}
+                        data-testid="shape-guides"
+                        className="rounded-4 hover:text-accent flex min-h-24 items-center gap-2 p-4"
+                    >
+                        <CompassToolIcon size={14} />
+                        <CaretDownIcon size={8} />
+                    </button>
+                </Popover.Trigger>
+            </Tip>
+            <Popover.Portal>
+                <Popover.Content
+                    side="bottom"
+                    align="start"
+                    sideOffset={6}
+                    {...focus.content}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="rounded-6 border-stroke bg-bg-1 bg-modal text-sub text-text shadow-modal z-50 border p-6"
+                    data-testid="shape-guides-content"
+                >
+                    <div
+                        className="flex flex-col gap-1"
+                        role="menu"
+                        aria-label={label}
+                        onKeyDown={(e) =>
+                            arrowFocus(e, [
+                                ...e.currentTarget.querySelectorAll<HTMLElement>(
+                                    '[role="menuitemcheckbox"]',
+                                ),
+                            ])
+                        }
+                    >
+                        {guides.map((guide) => (
+                            // Checked on and off in place: the menu stays open
+                            <button
+                                key={guide}
+                                type="button"
+                                role="menuitemcheckbox"
+                                aria-checked={shown[guide]}
+                                onClick={() =>
+                                    useShapeGuidesStore.getState().toggle(guide)
+                                }
+                                data-testid={`shape-guides-${guide}`}
+                                className="rounded-4 hover:text-accent flex min-h-24 items-center gap-8 px-4 py-2 text-left"
+                            >
+                                <span className="flex w-12 justify-center">
+                                    {shown[guide] && <CheckIcon size={12} />}
+                                </span>
+                                <span>{GUIDE_LABELS[guide]()}</span>
                             </button>
                         ))}
                     </div>
