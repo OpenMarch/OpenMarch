@@ -1,4 +1,5 @@
 import { afterEach, expect } from "vitest";
+import { refusalText } from "@/test/refusalText";
 import { countDistinct, getTableName } from "drizzle-orm";
 import type { XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
@@ -268,8 +269,8 @@ describeDbTests("Set as shown", (it) => {
             marcherIds: [a],
         }).catch((e: unknown) => e);
         expect(timelineErrorCode(notABox)).toBe("E-ARGS");
-        expect((notABox as Error).message).toContain(
-            "Set as shown works on a whole page, not Page 3, counts 1–4",
+        expect(refusalText(notABox)).toContain(
+            "Define as shown works on a whole page, not Page 3, counts 1–4",
         );
         expect(await snapshot(db)).toEqual(rows);
     });

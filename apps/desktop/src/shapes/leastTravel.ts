@@ -40,6 +40,35 @@ export const leastSquaredTravel: LeastTravelSolver = (from, spots) => {
     return untangle(result, from, spots);
 };
 
+/**
+ * Least travel onto at least as many spots as marchers: the spot index for each marcher, in
+ * `from` order, leaving the spots no one needs empty (a placed Line with holes keeps them, #528)
+ */
+export function leastTravelOnto(
+    from: readonly XY[],
+    spots: readonly XY[],
+): number[] {
+    const n = spots.length;
+    if (from.length > n) throw new Error("More marchers than spots");
+    if (from.length === 0) return [];
+    // Stand-ins for the empty spots, who cost nothing wherever they go
+    const cost = spots.map((_, i) =>
+        i < from.length
+            ? spots.map(
+                  (s) => (from[i]!.x - s.x) ** 2 + (from[i]!.y - s.y) ** 2,
+              )
+            : spots.map(() => 0),
+    );
+    // assignment[spot + 1] = marcher + 1
+    const assignment = hungarianAlgorithm(cost, n);
+    const result = new Array<number>(from.length);
+    for (let spot = 0; spot < n; spot++) {
+        const marcher = assignment[spot + 1]! - 1;
+        if (marcher < from.length) result[marcher] = spot;
+    }
+    return untangle(result, from, spots);
+}
+
 /** The solver `assignSlots` uses for the "nearest" order unless it is given another */
 export const leastTravel: LeastTravelSolver = leastSquaredTravel;
 

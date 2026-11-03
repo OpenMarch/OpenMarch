@@ -2,10 +2,10 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { XIcon } from "@phosphor-icons/react";
 import FieldProperties from "./FieldPropertiesSettings";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function FieldModal() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <SidebarModalLauncher
             name={t("sidebar.field")}
@@ -17,6 +17,7 @@ export default function FieldModal() {
 }
 
 export function FieldPropertiesContents() {
+    const { t } = useTranslate();
     const { toggleOpen } = useSidebarModalStore();
 
     return (
@@ -27,6 +28,7 @@ export function FieldPropertiesContents() {
                 </h4>
                 <div className="flex items-center gap-8">
                     <button
+                        aria-label={t("sidebar.close")}
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
                     >

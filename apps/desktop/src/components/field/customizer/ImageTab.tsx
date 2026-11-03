@@ -8,6 +8,7 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
+import { fieldLengthText } from "./fieldSizeText";
 import FormField, { StaticFormField } from "../../ui/FormField";
 import { inputClassname } from "./utils";
 import FieldFloorControls from "./FieldFloorControls";
@@ -23,7 +24,9 @@ export function ImageTab({
     currentFieldProperties,
     updateFieldProperties,
 }: ImageTabProps) {
-    const { t } = useTolgee();
+    const tolgee = useTolgee(["language"]);
+    const t = tolgee.t;
+    const language = tolgee.getLanguage();
     const [opacityValue, setOpacityValue] = useState(
         currentFieldProperties.backgroundImageOpacity,
     );
@@ -148,12 +151,19 @@ export function ImageTab({
                     </div>
                     <div className="flex w-full gap-8">
                         <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                            {currentFieldProperties.width /
-                                currentFieldProperties.pixelsPerStep}{" "}
-                            <T keyName="fieldProperties.units.steps" />
+                            {t("fieldProperties.measurements.steps", {
+                                count:
+                                    currentFieldProperties.width /
+                                    currentFieldProperties.pixelsPerStep,
+                            })}
                         </div>
                         <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                            {currentFieldProperties.prettyWidth}
+                            {fieldLengthText(
+                                currentFieldProperties.totalWidthInches,
+                                currentFieldProperties.measurementSystem,
+                                t,
+                                language,
+                            )}
                         </div>
                     </div>
                 </div>
@@ -163,12 +173,19 @@ export function ImageTab({
                     </div>
                     <div className="flex w-full gap-8">
                         <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                            {currentFieldProperties.height /
-                                currentFieldProperties.pixelsPerStep}{" "}
-                            <T keyName="fieldProperties.units.steps" />
+                            {t("fieldProperties.measurements.steps", {
+                                count:
+                                    currentFieldProperties.height /
+                                    currentFieldProperties.pixelsPerStep,
+                            })}
                         </div>
                         <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                            {currentFieldProperties.prettyHeight}
+                            {fieldLengthText(
+                                currentFieldProperties.totalHeightInches,
+                                currentFieldProperties.measurementSystem,
+                                t,
+                                language,
+                            )}
                         </div>
                     </div>
                 </div>
@@ -212,7 +229,9 @@ export function ImageTab({
                         <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
                             {(() => {
                                 if (!FieldProperties.imageDimensions) {
-                                    return "N/A";
+                                    return t(
+                                        "fieldProperties.labels.noBackgroundImage",
+                                    );
                                 }
                                 const w = FieldProperties.imageDimensions.width;
                                 const h =
@@ -225,12 +244,18 @@ export function ImageTab({
                                 if (ratioStr.length > 12) {
                                     return divStr;
                                 } else {
-                                    return `${ratioStr}  or  ${divStr}`;
+                                    return t(
+                                        "fieldProperties.messages.fieldRatio",
+                                        {
+                                            ratio: ratioStr,
+                                            decimal: divStr,
+                                        },
+                                    );
                                 }
                             })()}
                         </div>
                         <div className="bg-fg-2 border-stroke rounded-6 w-fit border px-8 py-2 text-center font-mono">
-                            w/h
+                            <T keyName="fieldProperties.labels.widthHeight" />
                         </div>
                     </div>
                 </div>

@@ -1,3 +1,4 @@
+import tolgee from "@/global/singletons/Tolgee";
 import type { Resolver, XY } from "@openmarch/core";
 import { toast } from "sonner";
 import { db } from "@/global/database/db";
@@ -260,7 +261,13 @@ export async function toastLaterOwnMoves(
                 forget();
                 shiftSlotDestinations({ db, shifts: moves }).catch(
                     (e: unknown) =>
-                        toastTimelineError(e, "Error moving marchers"),
+                        toastTimelineError(
+                            e,
+                            tolgee.t(
+                                "marcherPages.moveThemToo.moveError",
+                                "Error moving marchers",
+                            ),
+                        ),
                 );
             },
         },

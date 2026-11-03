@@ -62,8 +62,9 @@ function spread(p: FillParams, n: number): XY[] {
     return spots;
 }
 
+/** Steps to one decimal, as a number so the readout writes it in the app's language */
 const steps = (v: number, ctx: ShapeContext) =>
-    String(Math.round((v / ctx.stepPx) * 10) / 10);
+    Math.round((v / ctx.stepPx) * 10) / 10;
 
 /** The box's local axes */
 const localOf = (p: FillParams, q: XY) => {
@@ -245,7 +246,7 @@ export const fillKind: ShapeKind<FillParams> = {
                 label: tolgee.t("shapes.kinds.fill.readout.about", "About"),
                 value: tolgee.t(
                     "shapes.kinds.fill.readout.apart",
-                    "{steps} steps apart",
+                    "{steps, plural, one {# step apart} other {# steps apart}}",
                     { steps: steps(typicalNeighborDistance(spots), ctx) },
                 ),
             },

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import * as Popover from "@radix-ui/react-popover";
 import { CaretDownIcon, CopyIcon, ShuffleIcon } from "@phosphor-icons/react";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 import {
     distributionOf,

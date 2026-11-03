@@ -1,6 +1,7 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { Description as DialogDescription } from "@radix-ui/react-dialog";
 import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
-import { useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 import { useWelcomeFlowStore } from "@/stores/WelcomeFlowStore";
 import { webChannel } from "@/utilities/webBuild";
@@ -11,10 +12,9 @@ import { webChannel } from "@/utilities/webBuild";
  * flow is on screen.
  */
 export default function WebWelcomeModal() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { open, setOpen } = useWebWelcomeStore();
     const welcomeFlowShowing = useWelcomeFlowStore((s) => s.showing);
-    const save = window.electron.isMacOS ? "⌘S" : "Ctrl+S";
 
     return (
         <Dialog open={open && !welcomeFlowShowing} onOpenChange={setOpen}>
@@ -24,13 +24,7 @@ export default function WebWelcomeModal() {
                     <DialogDescription asChild>
                         <p className="text-text">{t("web.welcome.intro")}</p>
                     </DialogDescription>
-                    {webChannel === "lab" && (
-                        <p>
-                            This is a test build of a feature that is still in
-                            development, so expect rough edges. It opens with an
-                            example show.
-                        </p>
-                    )}
+                    {webChannel === "lab" && <p>{t("web.welcome.labIntro")}</p>}
                     <section className="flex flex-col gap-4">
                         <h3 className="text-text font-medium">
                             {t("web.welcome.savedTitle")}
@@ -41,7 +35,16 @@ export default function WebWelcomeModal() {
                         <h3 className="text-text font-medium">
                             {t("web.welcome.backUpTitle")}
                         </h3>
-                        <p>{t("web.welcome.backUpBody", { save })}</p>
+                        <p>
+                            <T
+                                keyName="web.welcome.backUpBody"
+                                params={{
+                                    keys: () => (
+                                        <Shortcut action="launchSaveFileDialogue" />
+                                    ),
+                                }}
+                            />
+                        </p>
                     </section>
                     <section className="flex flex-col gap-4">
                         <h3 className="text-text font-medium">

@@ -17,7 +17,7 @@ import {
     type Icon,
 } from "@phosphor-icons/react";
 import { LongPressBubble, useLongPress } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import type { FieldMarchers } from "@/field/three/fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "@/field/three/fieldView";
 import { useIsTouchMode } from "@/stores/InputModeStore";
@@ -282,7 +282,7 @@ export default function TouchModifierButtons({
     /** The marchers drawn, for a spot that covers the fewest */
     marchers?: FieldMarchers | null;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const isTouchMode = useIsTouchMode();
     const held = useTouchModifierStore((s) => s.held);
     const latched = useTouchModifierStore((s) => s.latched);

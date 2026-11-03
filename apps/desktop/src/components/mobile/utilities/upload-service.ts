@@ -1,3 +1,4 @@
+import tolgee from "@/global/singletons/Tolgee";
 import { performersOnly } from "@/global/classes/Marcher";
 import type { DB } from "@/global/database/db";
 import { toCompressedOpenMarchBytes } from "./dots-to-om";
@@ -112,10 +113,7 @@ async function createRevisionOnServer({
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        return {
-            success: false,
-            error: `Upload failed: ${errorMessage}`,
-        };
+        return { success: false, error: errorMessage };
     }
 
     return {
@@ -142,7 +140,10 @@ export async function uploadDatabaseToServer(
         const productionId = await getOtmProductionId(dbConnection);
         if (!productionId) {
             throw new Error(
-                "No OTM production linked. Set OTM production in workspace settings.",
+                tolgee.t(
+                    "mobileExport.revision.noProductionLinked",
+                    "No OTM production linked. Set OTM production in workspace settings.",
+                ),
             );
         }
 
@@ -176,13 +177,25 @@ export async function uploadDatabaseToServer(
         });
 
         if (!revisionUploadResult.success) {
-            throw new Error(revisionUploadResult.error || "Upload failed");
+            throw new Error(
+                revisionUploadResult.error ||
+                    tolgee.t(
+                        "mobileExport.revision.uploadFailedUnknown",
+                        "Unknown error",
+                    ),
+            );
         }
 
         return revisionUploadResult;
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        throw new Error(`Upload failed: ${errorMessage}`);
+        throw new Error(
+            tolgee.t(
+                "mobileExport.revision.uploadFailed",
+                "Upload failed: {error}",
+                { error: errorMessage },
+            ),
+        );
     }
 }

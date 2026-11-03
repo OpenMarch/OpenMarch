@@ -3,6 +3,7 @@
  * to the server (checksum matching, set active vs upload).
  */
 
+import tolgee from "@/global/singletons/Tolgee";
 import { getAudioDuration, getAudioSizeMegabytes } from "../audio-files/utils";
 
 export const SILENT_AUDIO_PATH = "silent-audio.wav";
@@ -133,7 +134,10 @@ export function buildAudioUploadFormData(
     sizeMegabytes: number,
 ): FormData {
     const data = file.data;
-    if (data == null) throw new Error("Audio file has no data");
+    if (data == null)
+        throw new Error(
+            tolgee.t("mobileExport.audio.noData", "Audio file has no data"),
+        );
     const filename =
         file.path.replace(/^.*[/\\]/, "") ||
         file.nickname?.replace(/^.*[/\\]/, "") ||
@@ -159,7 +163,10 @@ export async function buildAudioUploadFormDataWithDuration(
     file: LocalAudioFileForSync,
 ): Promise<FormData> {
     const data = file.data;
-    if (data == null) throw new Error("Audio file has no data");
+    if (data == null)
+        throw new Error(
+            tolgee.t("mobileExport.audio.noData", "Audio file has no data"),
+        );
     const filename =
         file.path.replace(/^.*[/\\]/, "") ||
         file.nickname?.replace(/^.*[/\\]/, "") ||

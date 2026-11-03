@@ -15,10 +15,11 @@
  * orbit while trying a look.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useTranslate } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { XIcon } from "@phosphor-icons/react";
 import { Input, Switch } from "@openmarch/ui";
 import clsx from "clsx";
+import Shortcut from "@/components/ui/Shortcut";
 import { useView3dSceneStore } from "../sceneStore";
 import { QUALITY_MODES } from "../qualityPreference";
 import { HAS_SETTINGS_WINDOW, RESOLUTIONS } from "../renderPrefs";
@@ -442,7 +443,7 @@ function StepOffFootRow() {
             onChange={setOverride}
             testId="view3d-step-off-foot-picker"
             hint={t("view3d.settings.stepOffFootHint", {
-                foot: t(`view3d.settings.stepOffFootMode.${showFoot}`),
+                foot: showFoot,
             })}
         />
     );
@@ -450,32 +451,50 @@ function StepOffFootRow() {
 
 /**
  * The window's keyboard and mouse controls (ui.md UI-3, UI-4), in display
- * order. Each has `view3d.keys.<name>` for what it does and
- * `view3d.keyNames.<name>` for the key or gesture.
+ * order. Each has `view3d.keys.<name>` for what it does; its keys are a
+ * binding or display keys shown as a `Shortcut` (mouse gestures are words in
+ * the cap), or two of them as a pair (`view3d.keyNames.pair`).
  */
-const SHORTCUTS = [
-    "playPause",
-    "previousNext",
-    "firstLast",
-    "cameras",
-    "fullscreen",
-    "crowd",
-    "escape",
-    "orbit",
-    "pan",
-    "zoom",
-] as const;
+type ShortcutKeys =
+    | { readonly binding: string }
+    | { readonly keys: readonly string[] }
+    | { readonly pair: readonly [first: string, second: string] };
+
+const SHORTCUTS: readonly (readonly [string, ShortcutKeys])[] = [
+    ["playPause", { binding: "Space" }],
+    ["previousNext", { pair: ["Q", "E"] }],
+    ["firstLast", { pair: ["Alt+Q", "Alt+E"] }],
+    ["cameras", { keys: ["1–9"] }],
+    ["fullscreen", { binding: "F" }],
+    ["crowd", { binding: "C" }],
+    ["escape", { binding: "Escape" }],
+    ["orbit", { binding: "drag" }],
+    ["pan", { binding: "Shift+drag" }],
+    ["zoom", { binding: "scroll" }],
+];
+
+function ShortcutKeysCell({ keys }: { keys: ShortcutKeys }) {
+    if (!("pair" in keys)) return <Shortcut {...keys} />;
+    const [first, second] = keys.pair;
+    return (
+        <T
+            keyName="view3d.keyNames.pair"
+            params={{
+                first: () => <Shortcut binding={first} />,
+                second: () => <Shortcut binding={second} />,
+            }}
+        />
+    );
+}
 
 function ShortcutList() {
     const { t } = useTranslate();
     return (
         <dl className="text-sub grid grid-cols-[auto_1fr] items-baseline gap-x-12 gap-y-4">
-            {SHORTCUTS.map((name) => (
+            {SHORTCUTS.map(([name, keys]) => (
                 <div key={name} className="contents">
-                    <dt>
-                        <kbd className="border-stroke rounded-4 text-text/80 border px-4 font-mono whitespace-nowrap">
-                            {t(`view3d.keyNames.${name}`)}
-                        </kbd>
+                    <dt className="flex items-center gap-4 whitespace-nowrap">
+                        <ShortcutKeysCell keys={keys} />
                     </dt>
                     <dd className="text-text/80">{t(`view3d.keys.${name}`)}</dd>
                 </div>

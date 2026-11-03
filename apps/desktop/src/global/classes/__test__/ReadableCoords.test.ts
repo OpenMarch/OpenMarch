@@ -5,6 +5,7 @@ import {
     Y_DESCRIPTION,
 } from "../ReadableCoords";
 import { describe, expect, it, beforeAll } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 
 /**
  * @param xSteps Negative for side 1, positive for side 2
@@ -24,6 +25,11 @@ function createReadableCoords(
 }
 
 describe("ReadableCoords", () => {
+    // The readouts are translated: load English so they read as written
+    beforeAll(async () => {
+        await tolgee.run();
+    });
+
     describe("NCAA", () => {
         describe("Macro tests", () => {
             beforeAll(() => {

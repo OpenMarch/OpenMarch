@@ -1,11 +1,12 @@
 import { and, eq, inArray, ne, notInArray } from "drizzle-orm";
 import { schema } from "@/global/database/db";
+import { text, type TimelineText } from "@/timeline/timelineText";
 import { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { refuse } from "./timelineErrors";
 import { setTimelineRangeInTransaction } from "./timelineTransitionsInTransaction";
 import { updateTimelineAssignmentsInTransaction } from "./timelineAssignments";
-import { PAGE_TAKEOVER_REFUSAL, readPageBoxes } from "./timelineMoveNames";
+import { pageTakeoverRefusal, readPageBoxes } from "./timelineMoveNames";
 import { pageTimelineIds } from "@/timeline/timelineViewModel";
 import { ensureCountsInTransaction } from "./endlessCounts";
 
@@ -385,15 +386,18 @@ export function growOverLayers(
     return out;
 }
 
-/** Why `[start, end)` is outside `limits`, as a sentence for a toast; `null` when it fits. */
+/**
+ * Why `[start, end)` is outside `limits`, as a sentence for a toast (translated where it is shown);
+ * `null` when it fits.
+ */
 export function timelineResizeRefusal(
     limits: TimelineResizeLimits,
     start: number,
     end: number,
-): string | null {
+): TimelineText | null {
     if (!Number.isInteger(start) || !Number.isInteger(end))
-        return "A move's edges sit on whole counts.";
-    if (end <= start) return "A move is at least 1 count long.";
+        return text.t("timeline.refusals.resize.wholeCounts");
+    if (end <= start) return text.t("timeline.refusals.resize.minimum");
     const outside = (edge: TimelineResizeLimits["startEdge"], beat: number) =>
         beat < edge.min.beat
             ? edge.min
@@ -406,20 +410,20 @@ export function timelineResizeRefusal(
     if (bound) {
         switch (bound.stop.kind) {
             case "show":
-                return "A move can't run past the show.";
+                return text.t("timeline.refusals.resize.pastShow");
             case "minimum":
-                return "A move is at least 1 count long.";
+                return text.t("timeline.refusals.resize.minimum");
             case "move":
-                return "Another move on these marchers is in the way; the edge stops where it starts or ends.";
+                return text.t("timeline.refusals.resize.moveInTheWay");
             case "member":
-                return "A marcher joins or leaves this move partway; the edge can't pass that count.";
+                return text.t("timeline.refusals.resize.memberChange");
         }
     }
     const same = limits.taken.find((t) => t.start === start && t.end === end);
     if (same)
         return same.pageTakeover
-            ? PAGE_TAKEOVER_REFUSAL
-            : "Another move with some of the same marchers already covers exactly these counts.";
+            ? pageTakeoverRefusal()
+            : text.t("timeline.refusals.resize.sameCounts");
     return null;
 }
 

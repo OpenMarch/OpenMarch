@@ -180,16 +180,15 @@ describe("StaticMarcherCoordinateSheet", () => {
                 </Providers>,
             );
 
-            expect(await screen.findByLabelText("marcher header")).toBeTruthy();
+            expect(await screen.findByTestId("marcher-header")).toBeTruthy();
             expect(
-                (await screen.findByLabelText("marcher drill number"))
-                    .textContent,
+                (await screen.findByTestId("marcher-drill-number")).textContent,
             ).toEqual(mockMarcher.drill_number);
             expect(
-                (await screen.findByLabelText("marcher name")).textContent,
+                (await screen.findByTestId("marcher-name")).textContent,
             ).toEqual(mockMarcher.name);
             expect(
-                (await screen.findByLabelText("marcher section")).textContent,
+                (await screen.findByTestId("marcher-section")).textContent,
             ).toEqual(mockMarcher.section);
         });
 
@@ -206,16 +205,15 @@ describe("StaticMarcherCoordinateSheet", () => {
                 </Providers>,
             );
 
-            expect(await screen.findByLabelText("marcher header")).toBeTruthy();
+            expect(await screen.findByTestId("marcher-header")).toBeTruthy();
             expect(
-                (await screen.findByLabelText("marcher drill number"))
-                    .textContent,
+                (await screen.findByTestId("marcher-drill-number")).textContent,
             ).toEqual(mockMarcher.drill_number);
             expect(
-                (await screen.findByLabelText("marcher name")).textContent,
+                (await screen.findByTestId("marcher-name")).textContent,
             ).toEqual(mockMarcher.name);
             expect(
-                (await screen.findByLabelText("marcher section")).textContent,
+                (await screen.findByTestId("marcher-section")).textContent,
             ).toEqual(mockMarcher.section);
         });
     });

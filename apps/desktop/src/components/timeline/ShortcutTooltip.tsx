@@ -1,7 +1,9 @@
-import { Fragment, useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipClassName } from "@openmarch/ui";
+import Shortcut from "@/components/ui/Shortcut";
+import type { ActionId } from "@/shortcuts/definitions";
 
 /**
  * The transport's tooltips (UI-17): the control's name with its shortcut as muted keycaps, as
@@ -29,29 +31,9 @@ export function TransportTooltipProvider({
     );
 }
 
-/** A keyboard shortcut ("Shift + Space", as `KeyboardShortcut.toString` writes it) as keycaps joined by "+". */
-export function Keycaps({ shortcut }: { shortcut: string }) {
-    return (
-        <span className="inline-flex items-center gap-2">
-            {shortcut.split(/\s*\+\s*/).map((key, i) => (
-                <Fragment key={key}>
-                    {i > 0 && (
-                        <span aria-hidden="true" className="text-[11px]">
-                            +
-                        </span>
-                    )}
-                    <kbd className="rounded-4 border-stroke bg-fg-2 text-text-subtitle border px-4 font-mono text-[11px] leading-[16px]">
-                        {key}
-                    </kbd>
-                </Fragment>
-            ))}
-        </span>
-    );
-}
-
 /**
- * Wraps one control (a button that forwards its ref) in a tooltip: `label`, then the shortcut's
- * keycaps, then an optional `hint` line. Needs a `TransportTooltipProvider` above it. Without a
+ * Wraps one control (a button that forwards its ref) in a tooltip: `label`, then the shortcut
+ * (`shortcut`, a binding, or `action`, the action's own as the user has bound it), then an optional `hint` line. Needs a `TransportTooltipProvider` above it. Without a
  * `label` it never opens; with `hideLabel` it opens but doesn't write the label (the control's
  * accessible name stays), for a `hint` that says everything.
  *
@@ -62,19 +44,26 @@ export function Keycaps({ shortcut }: { shortcut: string }) {
 export function ShortcutTooltip({
     label,
     shortcut,
+    action,
     hint,
     hideLabel = false,
     side = "top",
     closeOnPress = false,
+    disabled = false,
     children,
 }: {
     label: string | undefined;
+    /** A binding ("Shift + Space", "$mod+Z") shown as a `Shortcut` */
     shortcut?: string;
+    /** An action whose shortcut to show, as the user has bound it (instead of `shortcut`) */
+    action?: ActionId;
     /** A second line, or a richer guide (the transport's Previous and Next) */
     hint?: ReactNode;
     hideLabel?: boolean;
     side?: "top" | "bottom" | "left" | "right";
     closeOnPress?: boolean;
+    /** Never opens (the touch layout explains controls with a long press instead) */
+    disabled?: boolean;
     children: ReactElement;
 }) {
     const [open, setOpen] = useState(false);
@@ -85,7 +74,10 @@ export function ShortcutTooltip({
         setOpen(next && !pressed.current);
     }, []);
     return (
-        <Tooltip.Root open={open && !!label} onOpenChange={onOpenChange}>
+        <Tooltip.Root
+            open={open && !!label && !disabled}
+            onOpenChange={onOpenChange}
+        >
             <Tooltip.Trigger
                 asChild
                 onPointerDown={
@@ -117,7 +109,11 @@ export function ShortcutTooltip({
                         {!hideLabel && (
                             <span className="flex items-center gap-8 text-[12px]">
                                 {label}
-                                {shortcut && <Keycaps shortcut={shortcut} />}
+                                {action ? (
+                                    <Shortcut action={action} />
+                                ) : (
+                                    shortcut && <Shortcut binding={shortcut} />
+                                )}
                             </span>
                         )}
                         {typeof hint === "string" ? (

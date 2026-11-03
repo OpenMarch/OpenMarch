@@ -13,7 +13,7 @@ import {
     Sketch,
 } from "@uiw/react-color";
 import * as Popover from "@radix-ui/react-popover";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { twMerge } from "tailwind-merge";
 
 interface ColorPickerMiniProps {
@@ -54,7 +54,7 @@ export default function ColorPickerMini({
         initialColor,
     );
     const pickerRef = useRef<HTMLDivElement>(null);
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const handleClose = useCallback(
         (color?: RgbaColor | null) => {
             // If a color is provided, use that
@@ -156,6 +156,7 @@ export default function ColorPickerMini({
             </Popover.Root>
 
             <Button
+                aria-label={t("colorPicker.removeSetting")}
                 tooltipSide="right"
                 size="compact"
                 tooltipText={t("colorPicker.removeSetting")}

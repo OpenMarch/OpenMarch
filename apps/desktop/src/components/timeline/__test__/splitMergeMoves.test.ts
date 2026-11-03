@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeAll } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 import type { StoredTimelineMembership } from "@/stores/TimelineSelectionStore";
 import {
     pauseToSplit,
@@ -12,6 +13,11 @@ import {
     type SplitMergeContext,
 } from "../splitMergeMoves";
 import { isVerticalPeel, PEEL_START_PX } from "../TimelineClipPeel";
+
+// Refusals and toasts are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 /** The split and merge entries and drag previews (docs/timeline/ui.md UI-25). */
 

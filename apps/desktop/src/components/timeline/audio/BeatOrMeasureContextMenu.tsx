@@ -135,7 +135,7 @@ const RehearsalMarkInput = ({
         measure?.rehearsalMark ?? "",
     );
     const queryClient = useQueryClient();
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const updateMeasureMutation = useMutation(
         updateMeasuresMutationOptions(queryClient),
     );
@@ -225,7 +225,7 @@ const TempoInput = ({
     const initialTempo = durationToTempo(beat.duration);
     const [tempo, setTempo] = useState(initialTempo.toString());
     const queryClient = useQueryClient();
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const mutation = useMutation(updateBeatsMutationOptions(queryClient));
 
     const saveTempo = (shouldClose = true) => {
@@ -313,7 +313,7 @@ const TempoInput = ({
                 onBlur={handleBlur}
                 disabled={mutation.isPending}
                 className="w-full"
-                unit="BPM"
+                unit={tolgee.t("music.bpmUnit")}
                 autoFocus
             />
         </>
@@ -330,7 +330,7 @@ const BeatButtons = ({
     closeParent: () => void;
 }) => {
     const queryClient = useQueryClient();
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const { mutate: createBeat, isPending: isCreatingBeat } = useMutation(
         createBeatsMutationOptions(queryClient),
     );
@@ -418,6 +418,7 @@ const BeatButtons = ({
             </Button>
             <div className="flex justify-between">
                 <Button
+                    aria-label={tolgee.t("audio.contextMenu.beat.delete")}
                     variant="red"
                     size="compact"
                     tooltipText={
@@ -463,7 +464,7 @@ const MeasureButtons = ({
     closeParent: () => void;
 }) => {
     const queryClient = useQueryClient();
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     const {
         mutate: createMeasuresAndBeats,
         isPending: isCreatingMeasuresAndBeats,
@@ -553,6 +554,7 @@ const MeasureButtons = ({
             </Button>
             <div className="flex justify-between">
                 <Button
+                    aria-label={tolgee.t("audio.contextMenu.measure.delete")}
                     variant="red"
                     size="compact"
                     tooltipText={
@@ -602,7 +604,7 @@ const ContextMenuContent = ({
     closeParent: () => void;
     beatIdsOnPages: Set<number>;
 }) => {
-    const tolgee = useTolgee();
+    const tolgee = useTolgee(["language"]);
     return (
         <div
             className="flex flex-col gap-8"

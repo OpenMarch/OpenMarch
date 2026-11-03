@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     createCues,
     deleteCues,
@@ -58,7 +59,7 @@ export const createCuesMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: cueKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError("Error creating cues", e, variables);
+            conToastError(tolgee.t("cues.errors.create"), e, variables);
         },
     });
 
@@ -70,7 +71,7 @@ export const updateCuesMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: cueKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError("Error updating cues", e, variables);
+            conToastError(tolgee.t("cues.errors.update"), e, variables);
         },
     });
 
@@ -81,6 +82,6 @@ export const deleteCuesMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: cueKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError("Error deleting cues", e, variables);
+            conToastError(tolgee.t("cues.errors.delete"), e, variables);
         },
     });

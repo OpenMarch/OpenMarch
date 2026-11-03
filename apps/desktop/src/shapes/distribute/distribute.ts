@@ -27,7 +27,7 @@ import {
     outlineSpots,
     type OutlineSides,
 } from "./outline";
-import { circleRegion, rectRegion, type Region } from "./region";
+import { circleRegion, polygonRegion, rectRegion, type Region } from "./region";
 
 /**
  * The host's distributor (spec #385): the spots for a closed shape, given its region, the spot
@@ -80,6 +80,9 @@ export function distribute(input: DistributeInput): FrameSpot[] {
             row: distribution.seed,
             col: k,
         }));
+    // A drawn outline (a closed Line, #529) is filled by a square grid that fits it
+    if (edgeKind(input.region) === "polygon")
+        return gridSpots(input.region, input.n);
     return filesSpots(
         distribution.mode === "files"
             ? distribution
@@ -226,19 +229,79 @@ const sizeOf = (region: Region, n: number, d: SpreadDistribution) =>
     withEdge(region, d) ? edgeSize(region, n) : spreadSize(region, n);
 
 /**
- * Whether `d` spreads with an edge over `region` (#450): a box's rectangle or a circle, which
- * have an edge to follow so far; generator 1 never had one
+ * Whether `d` spreads with an edge over `region` (#450): a box's rectangle, a circle or a drawn
+ * outline (a closed Line, #529); generator 1 never had one
  */
 const withEdge = (region: Region, d: SpreadDistribution) =>
     d.edge === true && d.generator !== 1 && edgeKind(region) !== null;
 
-/** Whether a spread over `region` can have an edge (#450): a box's rectangle or a circle, so far */
+/**
+ * Whether a spread over `region` can have an edge (#450): a box's rectangle, a circle or a drawn
+ * outline (#529)
+ */
 export const takesEdge = (region: Region): boolean => edgeKind(region) !== null;
 
-const edgeKind = (region: Region): "rect" | "circle" | null => {
+const edgeKind = (region: Region): "rect" | "circle" | "polygon" | null => {
     const kind = region.key.split(" ")[0];
-    return kind === "rect" || kind === "circle" ? kind : null;
+    return kind === "rect" || kind === "circle" || kind === "polygon"
+        ? kind
+        : null;
 };
+
+/**
+ * A drawn outline's sides at size `scale` (#529): the runs from one corner to the next, round
+ * from its first corner; with no corner, the whole way round from its first point. A drawn
+ * outline is centered on its frame, so `edgeSides` reads its half sizes too.
+ */
+function polygonSides(
+    region: Region,
+    scale: number,
+): { readonly points: readonly XY[]; readonly length: number }[] {
+    const outline = region.outline.map((p) => ({
+        x: p.x * scale,
+        y: p.y * scale,
+    }));
+    const count = outline.length;
+    const starts = region.corners.length > 0 ? region.corners : [0];
+    return starts.map((from, k) => {
+        const to = starts[(k + 1) % starts.length]!;
+        const steps = (to - from + count) % count || count;
+        const points = Array.from(
+            { length: steps + 1 },
+            (_, i) => outline[(from + i) % count]!,
+        );
+        let length = 0;
+        for (let i = 1; i < points.length; i++)
+            length += Math.hypot(
+                points[i]!.x - points[i - 1]!.x,
+                points[i]!.y - points[i - 1]!.y,
+            );
+        return { points, length };
+    });
+}
+
+/** The point `s` along a run of points */
+function alongRun(points: readonly XY[], s: number): XY {
+    let left = s;
+    for (let i = 1; i < points.length; i++) {
+        const a = points[i - 1]!;
+        const b = points[i]!;
+        const l = Math.hypot(b.x - a.x, b.y - a.y);
+        if (left <= l || i === points.length - 1) {
+            const t = l > 0 ? Math.min(1, left / l) : 0;
+            return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+        }
+        left -= l;
+    }
+    return points[0]!;
+}
+
+/** A drawn outline at size `scale`, its corners kept */
+const polygonAt = (region: Region, scale: number): Region =>
+    polygonRegion(
+        region.outline.map((p) => ({ x: p.x * scale, y: p.y * scale })),
+        region.corners,
+    );
 
 /**
  * How far apart the edge's spots stand along it, in intervals (#450, owner's pick C): close enough
@@ -261,7 +324,9 @@ function edgeSides(region: Region, scale: number) {
 /** The frame at size `scale`, in intervals */
 function frameAt(region: Region, scale: number): Region {
     const { w, h } = edgeSides(region, scale);
-    return edgeKind(region) === "circle" ? circleRegion(w) : rectRegion(w, h);
+    const kind = edgeKind(region);
+    if (kind === "polygon") return polygonAt(region, scale);
+    return kind === "circle" ? circleRegion(w) : rectRegion(w, h);
 }
 
 /**
@@ -274,6 +339,10 @@ function edgePlan(region: Region, scale: number): number[] {
         Math.max(1, Math.min(most, Math.round(length / EDGE_GAP)));
     if (edgeKind(region) === "circle")
         return [along(2 * Math.PI * w, rimHolds(w))];
+    if (edgeKind(region) === "polygon")
+        return polygonSides(region, scale).map(({ length }) =>
+            along(length, Math.max(1, Math.floor(length + 1e-9))),
+        );
     const across = along(2 * w, Math.max(1, Math.floor(2 * w + 1e-9)));
     const deep = along(2 * h, Math.max(1, Math.floor(2 * h + 1e-9)));
     return [across, deep, across, deep];
@@ -395,7 +464,10 @@ export function edgeSize(region: Region, n: number): number {
         const room =
             edgeKind(region) === "circle"
                 ? circleRegion(w - EDGE_ROOM_IN)
-                : rectRegion(w - EDGE_ROOM_IN, h - EDGE_ROOM_IN);
+                : edgeKind(region) === "polygon"
+                  ? polygonRoom(region, scale)
+                  : rectRegion(w - EDGE_ROOM_IN, h - EDGE_ROOM_IN);
+        if (!room) return false;
         return spreadSize(room, rest) <= 1;
     };
     // Too small: a side under an interval. Then doubled until it fits, and halved between
@@ -430,6 +502,17 @@ export function edgeSize(region: Region, n: number): number {
 }
 
 /**
+ * About the room a drawn outline at size `scale` leaves {@link EDGE_ROOM_IN} in from its edge: the
+ * outline shrunk about its center by as much area as that band takes (exact for a square). Only
+ * where the size search starts: the lattice step after it keeps the floor. Null when there's none.
+ */
+function polygonRoom(region: Region, scale: number): Region | null {
+    const at = polygonAt(region, scale);
+    const k = 1 - (EDGE_ROOM_IN * at.perimeter) / (2 * at.area);
+    return k > 0 && at.area > 0 ? polygonAt(region, scale * k) : null;
+}
+
+/**
  * The least the edge takes at size `scale`, as a smooth function of it: a box's sides each
  * {@link EDGE_GAP} apart less half a spot, a circle's rim likewise. The edge takes at least this.
  */
@@ -438,6 +521,8 @@ function edgeAtLeast(region: Region, scale: number): number {
     const along = (length: number) => Math.max(1, length / EDGE_GAP - 0.5);
     if (edgeKind(region) === "circle")
         return Math.min(along(2 * Math.PI * w), rimHolds(w));
+    if (edgeKind(region) === "polygon")
+        return sum(polygonSides(region, scale).map((s) => along(s.length)));
     return 2 * along(2 * w) + 2 * along(2 * h);
 }
 
@@ -520,6 +605,8 @@ function edgeSpots(region: Region, scale: number, count: number): XY[] {
             return { x: -w * Math.sin(a), y: w * Math.cos(a) };
         });
     }
+    if (edgeKind(region) === "polygon")
+        return polygonEdgeSpots(region, scale, count, plan);
     const lengths = [2 * w, 2 * h, 2 * w, 2 * h];
     const holds = lengths.map((l) => Math.max(1, Math.floor(l + 1e-9)));
     const per = count === sum(plan) ? plan : shareOut(count, lengths, holds);
@@ -539,6 +626,24 @@ function edgeSpots(region: Region, scale: number, count: number): XY[] {
             });
     });
     return spots;
+}
+
+/** {@link edgeSpots} for a drawn outline: each side's share from its corner, evenly along it */
+function polygonEdgeSpots(
+    region: Region,
+    scale: number,
+    count: number,
+    plan: readonly number[],
+): XY[] {
+    const sides = polygonSides(region, scale);
+    const lengths = sides.map((s) => s.length);
+    const holds = lengths.map((l) => Math.max(1, Math.floor(l + 1e-9)));
+    const per = count === sum(plan) ? plan : shareOut(count, lengths, holds);
+    return sides.flatMap((side, k) =>
+        Array.from({ length: per[k]! }, (_, i) =>
+            alongRun(side.points, (side.length * i) / per[k]!),
+        ),
+    );
 }
 
 /**
@@ -649,4 +754,130 @@ function roundOutlineSpots(n: number, interval: number): FrameSpot[] {
         const a = (2 * Math.PI * k) / n;
         return { x: -r * Math.sin(a), y: r * Math.cos(a), row: 0, col: k };
     });
+}
+
+/** The four ways a grid can sit on a drawn outline's center: on a spot or between, each way */
+const GRID_PHASES: readonly XY[] = [
+    { x: 0, y: 0 },
+    { x: 0.5, y: 0 },
+    { x: 0, y: 0.5 },
+    { x: 0.5, y: 0.5 },
+];
+
+/**
+ * The square grid's spots `apart` apart inside `region` (a drawn outline, #529), centered on its
+ * frame, from the back, left to right. It sits on the frame whichever way of {@link GRID_PHASES}
+ * takes most spots, or with `n`, the way with the fewest that still has room for `n` (so as few
+ * as can come off the back); the first way of a tie. Laying out (with `n`), a spot a hair outside
+ * counts: the search for the spacing ends with the grid's widest spots on the outline, each a
+ * float error off it by how many spacings it is from the center, and they all count alike.
+ */
+function gridInside(region: Region, apart: number, n?: number): FrameSpot[] {
+    const { left, top, right, bottom } = region.bounds;
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+    const slack =
+        n === undefined ? 0 : 1e-6 * Math.max(right - left, bottom - top);
+    const inside = (p: XY) =>
+        region.contains(p) || region.edgeDistance(p) >= -slack;
+    let best: FrameSpot[] = [];
+    const better = (spots: FrameSpot[]) =>
+        n === undefined || best.length < n
+            ? spots.length > best.length
+            : spots.length >= n && spots.length < best.length;
+    for (const phase of GRID_PHASES) {
+        const spots: FrameSpot[] = [];
+        const rows = Math.ceil((bottom - top) / 2 / apart) + 1;
+        const cols = Math.ceil((right - left) / 2 / apart) + 1;
+        for (let j = -rows; j <= rows; j++)
+            for (let i = -cols; i <= cols; i++) {
+                const p = {
+                    x: cx + (i + phase.x) * apart,
+                    y: cy + (j + phase.y) * apart,
+                };
+                if (inside(p))
+                    spots.push({ ...p, row: j + rows, col: i + cols });
+            }
+        if (better(spots)) best = spots;
+    }
+    return best;
+}
+
+/** How many rounds the grid search halves its step: well under a millionth of the spacing */
+const GRID_ROUNDS = 40;
+
+/**
+ * Grid on a drawn outline (#529): the widest square grid that has room for `n` inside it, in
+ * field units. Zero for an outline with no area.
+ */
+export function gridSpacing(region: Region, n: number): number {
+    if (!(region.area > 0) || n <= 0) return 0;
+    const key = `${region.key} ${n}`;
+    const known = gridSpacings.get(key);
+    if (known !== undefined) return known;
+    const apart = searchGrid(region, n);
+    gridSpacings.set(key, apart);
+    if (gridSpacings.size > SPREADS_KEPT)
+        gridSpacings.delete(gridSpacings.keys().next().value!);
+    return apart;
+}
+
+/** Grid spacings worked out, by outline and count: the chip, spots and readout each ask */
+const gridSpacings = new Map<string, number>();
+
+/** {@link gridSpacing}, worked out */
+function searchGrid(region: Region, n: number): number {
+    const fits = (apart: number) => gridInside(region, apart).length >= n;
+    // From a grid too wide, down in small steps to one that fits, then halved between
+    let hi = 2 * Math.sqrt(region.area / n);
+    while (fits(hi)) hi *= 2;
+    let lo = hi;
+    for (let i = 0; !fits(lo); i++) {
+        lo *= 0.97;
+        if (i === 2000) return 0;
+    }
+    hi = lo / 0.97;
+    for (let i = 0; i < GRID_ROUNDS; i++) {
+        const mid = (lo + hi) / 2;
+        if (fits(mid)) lo = mid;
+        else hi = mid;
+    }
+    return lo;
+}
+
+/**
+ * Grid on a drawn outline (#529): `n` spots of the widest square grid that fits it, at the phase
+ * with the fewest spots that fit, rank by rank from the back, left to right. Spots the grid has
+ * over `n` come off the back rank, from its ends in turn (a short back, as the box's Grid has),
+ * then the next; a rank that empties moves the rest back half a rank each, so they stay centred
+ * in the outline where they still fit it. These spots are part of the Line recipe's format (ADR
+ * 0006): any change to them needs a new version.
+ */
+function gridSpots(region: Region, n: number): FrameSpot[] {
+    const apart = gridSpacing(region, n);
+    if (!(apart > 0)) return [];
+    const spots = gridInside(region, apart, n);
+    const ranks: FrameSpot[][] = [];
+    for (const s of spots) {
+        const rank = ranks.at(-1);
+        if (rank && rank[0]!.row === s.row) rank.push(s);
+        else ranks.push([s]);
+    }
+    let extra = spots.length - n;
+    for (const rank of ranks) {
+        let fromLeft = true;
+        while (extra > 0 && rank.length > 0) {
+            if (fromLeft) rank.shift();
+            else rank.pop();
+            fromLeft = !fromLeft;
+            extra--;
+        }
+        if (extra === 0) break;
+    }
+    const emptied = ranks.filter((rank) => rank.length === 0).length;
+    const left = ranks.flat();
+    if (emptied === 0) return left;
+
+    const centred = left.map((s) => ({ ...s, y: s.y - (emptied * apart) / 2 }));
+    return centred.every((s) => region.contains(s)) ? centred : left;
 }

@@ -28,7 +28,14 @@ import {
 } from "./timelines";
 import { createTimelineTransitionsInTransaction } from "./timelineTransitions";
 import { ensureCountsInTransaction } from "./endlessCounts";
-import { PAGE_TAKEOVER_REFUSAL, pageMoveTakenOver } from "./timelineMoveNames";
+import {
+    marcherLabels,
+    pageMoveTakenOver,
+    pageTakeoverRefusal,
+    readMoveWords,
+} from "./timelineMoveNames";
+import { text } from "@/timeline/timelineText";
+import { beatWhere } from "@/timeline/timelineRangeWords";
 import { createTimelineAssignmentsInTransaction } from "./timelineAssignments";
 import {
     updateTimelineTransitionsInTransaction,
@@ -123,19 +130,24 @@ export const shiftTimelineInTransaction = async ({
     if (delta === 0) return { ...result, startBeat: s, endBeat: e };
     if (s + delta < 0)
         refuse(
-            `the timeline starts at beat ${s}, so it can't move ${-delta} beat${
-                delta === -1 ? "" : "s"
-            } earlier`,
+            text.t("timeline.refusals.moveTimeline.tooEarly", {
+                start: s,
+                count: -delta,
+            }),
         );
     if (e + delta > MAX_BEAT)
-        refuse(`the timeline can't move past beat ${MAX_BEAT}`);
+        refuse(
+            text.t("timeline.refusals.moveTimeline.tooLate", {
+                max: MAX_BEAT,
+            }),
+        );
     if (
         await pageMoveTakenOver(tx, timelineId, {
             start: s + delta,
             end: e + delta,
         })
     )
-        refuse(PAGE_TAKEOVER_REFUSAL);
+        refuse(pageTakeoverRefusal());
     // Past the show's end, the counts it lands on are stored first (endless counts)
     await ensureCountsInTransaction({ tx, through: e + delta });
 
@@ -384,7 +396,7 @@ export const createTrackInTransaction = async ({
             ? [target.marcherId]
             : [...target.marcherIds].sort((a, b) => a - b);
     if (marcherIds.length === 0)
-        refuse("select the marchers to move into the shape");
+        refuse(text.t("timeline.refusals.shapes.selectToMove"));
     if (new Set(marcherIds).size !== marcherIds.length)
         refuse("a marcher appears more than once");
     await requireMarchers(tx, marcherIds);
@@ -442,10 +454,23 @@ export const createTrackInTransaction = async ({
             target.marcherId,
             startBeat,
         );
-        if (!validateDestination([x, y]).ok)
+        if (!validateDestination([x, y]).ok) {
+            const { boxes } = await readMoveWords(tx);
+            const at = beatWhere(startBeat, boxes);
+            const marcher = (await marcherLabels(tx, [target.marcherId])).get(
+                target.marcherId,
+            )!;
             refuse(
-                `marcher ${target.marcherId} is outside the field's bounds at beat ${startBeat}`,
+                at
+                    ? text.t("timeline.refusals.members.offField", {
+                          marcher,
+                          at,
+                      })
+                    : text.t("timeline.refusals.members.offFieldNoWhere", {
+                          marcher,
+                      }),
             );
+        }
         destination = { kind: "individual", points: [[x, y]] };
     }
     const layer = await stealLayer(tx, marcherIds, startBeat, endBeat);

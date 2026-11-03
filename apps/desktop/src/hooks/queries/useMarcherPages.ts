@@ -5,9 +5,10 @@ import { db } from "@/global/database/db";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { FieldProperties } from "@openmarch/core";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
+import tolgee from "@/global/singletons/Tolgee";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import {
     transformMarchersInSelection,
@@ -39,7 +40,11 @@ export const moveMarchersToNeighborPageMutationOptions = () => {
                 keepLaterPages,
             }),
         onError: (e, variables) => {
-            toastTimelineError(e, `Error moving marchers`, variables);
+            toastTimelineError(
+                e,
+                tolgee.t("marcherPages.errors.move"),
+                variables,
+            );
         },
     });
 };
@@ -57,7 +62,11 @@ export const moveMarchersInTargetMutationOptions = () => {
         mutationFn: ({ target, moves }: TimelineEditRequest) =>
             moveMarchersAndOfferFollowUp({ target, moves }),
         onError: (e, variables) => {
-            toastTimelineError(e, `Error moving marchers`, variables);
+            toastTimelineError(
+                e,
+                tolgee.t("marcherPages.errors.move"),
+                variables,
+            );
         },
     });
 };
@@ -79,7 +88,11 @@ export const removePositionAtBeatMutationOptions = () => {
             marcherIds: readonly number[];
         }) => removePositionAtBeat({ db, beat, box, marcherIds }),
         onError: (e, variables) => {
-            toastTimelineError(e, `Error removing the position`, variables);
+            toastTimelineError(
+                e,
+                tolgee.t("marcherPages.errors.removePosition"),
+                variables,
+            );
         },
     });
 };
@@ -123,7 +136,7 @@ export const useUpdateSelectedMarchers = (
         useQuery(fieldPropertiesQueryOptions());
     const selectedMarchersContext = useSelectedMarchers();
     const selectedMarchers = selectedMarchersContext?.selectedMarchers ?? [];
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     return useMutation({
         mutationFn: async (transformFunction: MarcherTransformFunction) => {
@@ -148,7 +161,7 @@ export const useUpdateSelectedMarchers = (
         onError: (e, variables) => {
             toastTimelineError(
                 e,
-                `Error updating selected marchers`,
+                tolgee.t("marcherPages.errors.updateSelected"),
                 variables,
             );
         },

@@ -26,7 +26,7 @@
 - `packages/core`, `packages/musicxml-parser`, and `packages/ui` are publishable/shared packages built with `tsup`; `packages/ui/src/tailwind.css` is the shared style source.
 - Prefer existing UI primitives in `packages/ui/src/components/base`; icons should come from `@phosphor-icons/react`.
 - Read [change routing](docs/conventions/change-routing.md) when ownership is unclear or a change crosses packages.
-- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [testing](docs/conventions/testing.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
+- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [localization](docs/conventions/localization.md), [testing](docs/conventions/testing.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
 
 ## Verification
 

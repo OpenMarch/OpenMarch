@@ -13,11 +13,11 @@ import ClearPageMenuItems from "@/components/toolbar/ClearPageMenuItems";
 import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useState } from "react";
 
 export default function AlignmentTab() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const uiSettings = useUiSettingsStore(
         useShallow((s) => ({
             lockX: s.uiSettings.lockX,
@@ -81,8 +81,11 @@ export default function AlignmentTab() {
 function SetMarcherPositionsDropdown() {
     const [open, setOpen] = useState(false);
     const close = () => setOpen(false);
+    const { t } = useTranslate();
     return (
-        <ToolbarSection aria-label="Set marcher positions">
+        <ToolbarSection
+            aria-label={t("toolbar.alignment.setMarcherPositionsAriaLabel")}
+        >
             <Dropdown.Root open={open} onOpenChange={setOpen}>
                 <Dropdown.Trigger className="hover:text-accent touch:min-h-44 flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
                     <T keyName="toolbar.alignment.placeAllMarchers" />{" "}

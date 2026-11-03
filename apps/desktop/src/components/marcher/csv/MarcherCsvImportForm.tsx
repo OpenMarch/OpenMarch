@@ -1,6 +1,7 @@
+import Shortcut from "@/components/ui/Shortcut";
 import { useMemo, useRef, useState } from "react";
 import { touchSafeAccept } from "@/utilities/fileAccept";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import { Button, InfoNote, ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
 import {
@@ -14,6 +15,9 @@ import {
     XCircleIcon,
 } from "@phosphor-icons/react";
 import type { NewMarcherArgs } from "@/db-functions";
+import { getTranslatedSectionName } from "@/global/classes/Sections";
+import { getEffectiveBindings } from "@/shortcuts/keymap";
+import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import {
     MARCHER_CSV_COLUMNS,
     exampleMarcherCsv,
@@ -22,6 +26,7 @@ import {
     type ExistingDrillNumber,
     type MarcherCsvMode,
 } from "./marcherCsv";
+import { formatList } from "@/utilities/formatList";
 
 /** `File.text()` is missing in some environments (jsdom), so read through FileReader */
 const readText = (f: File) =>
@@ -66,7 +71,11 @@ export default function MarcherCsvImportForm({
     showInfoNote = false,
     className,
 }: MarcherCsvImportFormProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
+    const shortcutOverrides = useShortcutOverridesStore((s) => s.overrides);
+    // False when the person has unbound Undo: the note then names no shortcut
+    const hasUndo =
+        getEffectiveBindings("performUndo", shortcutOverrides).length > 0;
     const fileInput = useRef<HTMLInputElement>(null);
     const readGeneration = useRef(0);
     const [mode, setMode] = useState<MarcherCsvMode>("section");
@@ -177,7 +186,7 @@ export default function MarcherCsvImportForm({
                     type="file"
                     accept={touchSafeAccept(".csv,text/csv")}
                     hidden
-                    aria-label="Marcher CSV file"
+                    aria-label={t("marchers.csv.fileInput")}
                     onChange={(e) => {
                         void onFile(e.target.files?.[0]);
                         e.target.value = "";
@@ -247,7 +256,7 @@ export default function MarcherCsvImportForm({
                         <p className="text-body text-red flex items-center gap-6">
                             <XCircleIcon size={20} className="shrink-0" />
                             {t("marchers.csv.missingColumns", {
-                                columns: plan.missingColumns.join(", "),
+                                columns: formatList(plan.missingColumns),
                             })}
                         </p>
                     ) : valid.length === 0 ? (
@@ -292,7 +301,7 @@ export default function MarcherCsvImportForm({
                     {plan.ignoredColumns.length > 0 && (
                         <p className="text-text/70 text-sub">
                             {t("marchers.csv.ignoredColumns", {
-                                columns: plan.ignoredColumns.join(", "),
+                                columns: formatList(plan.ignoredColumns),
                             })}
                         </p>
                     )}
@@ -317,7 +326,12 @@ export default function MarcherCsvImportForm({
                                                 {r.marcher!.drill_prefix}
                                                 {r.marcher!.drill_order}
                                             </td>
-                                            <td>{r.marcher!.section}</td>
+                                            <td>
+                                                {getTranslatedSectionName(
+                                                    r.marcher!.section,
+                                                    t,
+                                                )}
+                                            </td>
                                             <td>{r.marcher!.name ?? "-"}</td>
                                         </tr>
                                     ))}
@@ -337,7 +351,16 @@ export default function MarcherCsvImportForm({
             </Button>
             {showInfoNote && (
                 <InfoNote>
-                    <T keyName="marchers.csv.info" />
+                    {hasUndo ? (
+                        <T
+                            keyName="marchers.csv.info"
+                            params={{
+                                keys: () => <Shortcut action="performUndo" />,
+                            }}
+                        />
+                    ) : (
+                        <T keyName="marchers.csv.infoNoShortcut" />
+                    )}
                 </InfoNote>
             )}
         </div>

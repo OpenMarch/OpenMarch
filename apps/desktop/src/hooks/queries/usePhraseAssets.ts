@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     createPhraseAssets,
     deletePhraseAssets,
@@ -39,7 +40,11 @@ export const createPhraseAssetsMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: phraseAssetKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError("Error creating phrases", e, variables);
+            conToastError(
+                tolgee.t("music.phrases.errors.create"),
+                e,
+                variables,
+            );
         },
     });
 
@@ -51,7 +56,11 @@ export const updatePhraseAssetsMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: phraseAssetKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError("Error updating phrases", e, variables);
+            conToastError(
+                tolgee.t("music.phrases.errors.update"),
+                e,
+                variables,
+            );
         },
     });
 
@@ -64,6 +73,10 @@ export const deletePhraseAssetsMutationOptions = (qc: QueryClient) =>
             await qc.invalidateQueries({ queryKey: phraseAssetKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError("Error deleting phrases", e, variables);
+            conToastError(
+                tolgee.t("music.phrases.errors.delete"),
+                e,
+                variables,
+            );
         },
     });

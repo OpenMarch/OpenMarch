@@ -124,6 +124,20 @@ const VIEW3D_API = {
     },
 
     /**
+     * The "open the 3D View with the show" setting, for the window's question only: `get` is
+     * undefined while never answered, null where the window shouldn't ask.
+     */
+    autoOpen: {
+        get: () =>
+            ipcRenderer.invoke("view3d:auto-open-get") as Promise<unknown>,
+        set: (autoOpen: boolean) =>
+            ipcRenderer.invoke(
+                "view3d:auto-open-set",
+                autoOpen,
+            ) as Promise<void>,
+    },
+
+    /**
      * Asks the editor to run a playback action (play/pause, a page or beat
      * step, a playback speed), as its own button or key would. With
      * `release`, the key that ran a held action (a speed key) was let go. The

@@ -3,7 +3,7 @@ import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useState } from "react";
 import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { Input, Button, Switch } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import FormField from "../../ui/FormField";
 import { inputClassname, blurOnEnterFunc as blurOnEnter } from "./utils";
 
@@ -24,7 +24,7 @@ export function CheckpointEditor({
     deleteCheckpoint,
     axis,
 }: CheckpointEditorProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const [open, setOpen] = useState(false);
 
     // Local state for validated fields - initialized from props, reset via key={checkpoint.id} in parent
@@ -52,8 +52,10 @@ export function CheckpointEditor({
                 <div className="flex w-full justify-between">
                     <p className="text-text text-body">{checkpoint.name}</p>
                     <p className="text-text/80 text-body">
-                        {checkpoint.stepsFromCenterFront}{" "}
-                        <T keyName="fieldProperties.units.steps" />
+                        <T
+                            keyName="fieldProperties.measurements.steps"
+                            params={{ count: checkpoint.stepsFromCenterFront }}
+                        />
                     </p>
                 </div>
                 {open ? <CaretUpIcon size={20} /> : <CaretDownIcon size={20} />}
@@ -71,7 +73,7 @@ export function CheckpointEditor({
                         tooltip={
                             axis === "x"
                                 ? t(
-                                      "fieldProperties.checkpoint.stepsFromCenterTooltip",
+                                      "fieldProperties.checkpoint.stepsFromCenterHint",
                                   )
                                 : t(
                                       "fieldProperties.checkpoint.stepsFromFrontTooltip",

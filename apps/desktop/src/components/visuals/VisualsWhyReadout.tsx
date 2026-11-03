@@ -7,8 +7,8 @@
  */
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { T, useTolgee } from "@tolgee/react";
-import { cueLibraryValue, type CueTrace } from "@openmarch/core";
+import { T, useTranslate } from "@tolgee/react";
+import type { CueTrace } from "@openmarch/core";
 import { allCuesQueryOptions } from "@/hooks/queries/useCues";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import {
@@ -21,9 +21,11 @@ import { useTargetLabel } from "./useTargetLabel";
 import { whyAt } from "./visualsWhy";
 import { countAtBeatIndex } from "./visualsLanes";
 import { countWords } from "./countWhere";
+import { cueChannelName, cueValueName } from "./cueValueText";
+import { listParts } from "@/utilities/formatList";
 
 export default function VisualsWhyReadout() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const data = useVisualsData();
     const focusIds = useVisualsStore((s) => s.focusMarcherIds);
     const selectCue = useVisualsStore((s) => s.selectCue);
@@ -59,7 +61,7 @@ export default function VisualsWhyReadout() {
         if (!cue) return `#${id}`;
         const at = data.counts.countOfBeatId.get(cue.beatId);
         return t("visuals.why.cue", {
-            value: cueLibraryValue(cue.value)?.name ?? cue.value,
+            value: cueValueName(cue.value) ?? cue.value,
             who: targetLabel(cue.target),
             where: at === undefined ? "–" : where(at),
         });
@@ -78,20 +80,23 @@ export default function VisualsWhyReadout() {
             <span>{describe(id)}</span>
         );
     const reason = (trace: CueTrace) => {
-        if (trace.winner !== null)
-            return (
-                <>
-                    <T keyName="visuals.why.setBy" /> {cueLink(trace.winner)}
-                    {trace.takenOverFrom && (
-                        <>
-                            {" "}
-                            {t("visuals.why.takenOver", {
-                                channel: trace.takenOverFrom,
-                            })}
-                        </>
-                    )}
-                </>
+        if (trace.winner !== null) {
+            const winner = trace.winner;
+            return trace.takenOverFrom ? (
+                <T
+                    keyName="visuals.why.setByTakenOver"
+                    params={{
+                        cue: () => cueLink(winner),
+                        channel: cueChannelName(trace.takenOverFrom),
+                    }}
+                />
+            ) : (
+                <T
+                    keyName="visuals.why.setBy"
+                    params={{ cue: () => cueLink(winner) }}
+                />
             );
+        }
         return t(`visuals.why.default.${trace.default?.source ?? "library"}`);
     };
 
@@ -112,8 +117,7 @@ export default function VisualsWhyReadout() {
                     <p className="text-text">
                         {t("visuals.why.value", {
                             value:
-                                (group.value &&
-                                    cueLibraryValue(group.value)?.name) ??
+                                (group.value && cueValueName(group.value)) ??
                                 group.label ??
                                 "–",
                             n: group.count,
@@ -123,13 +127,35 @@ export default function VisualsWhyReadout() {
                     <p className="text-text-subtitle">{reason(group.trace)}</p>
                     {group.trace.beaten.length > 0 && (
                         <p className="text-text-subtitle">
-                            <T keyName="visuals.why.beat" />{" "}
-                            {group.trace.beaten.map((id, j) => (
-                                <span key={id}>
-                                    {j > 0 && ", "}
-                                    {cueLink(id)}
-                                </span>
-                            ))}
+                            <T
+                                keyName="visuals.why.beat"
+                                params={{
+                                    cues: () =>
+                                        listParts(
+                                            group.trace.beaten.length,
+                                        ).map((part, j) =>
+                                            "item" in part ? (
+                                                <span
+                                                    key={
+                                                        group.trace.beaten[
+                                                            part.item
+                                                        ]
+                                                    }
+                                                >
+                                                    {cueLink(
+                                                        group.trace.beaten[
+                                                            part.item
+                                                        ]!,
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span key={`sep-${j}`}>
+                                                    {part.text}
+                                                </span>
+                                            ),
+                                        ),
+                                }}
+                            />
                         </p>
                     )}
                 </div>

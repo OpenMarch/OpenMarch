@@ -1,5 +1,6 @@
 import tolgee from "@/global/singletons/Tolgee";
 import type { QueryClient } from "@tanstack/react-query";
+import { orderFields, type OrderChoice, type OrderMode } from "../assign";
 import type { XY } from "../types";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import {
@@ -14,6 +15,7 @@ import {
 import { writePlacement } from "../tool/shapePlacement";
 import { liveTargets } from "./liveBox";
 import type { PlacedBox } from "./placedBox";
+import { placedOrderChoice } from "./placedOrder";
 import { useSavingBoxStore } from "./boxSelectionStore";
 import { placedBoxesAt, placedBoxesRead } from "./placedBoxStore";
 import {
@@ -54,6 +56,16 @@ export function carriedOnto(plan: CanvasEditPlan, box: PlacedBox): boolean {
 let unsaved = 0;
 
 /**
+ * Who goes where as a placed shape's recipe saves it: a Line's order (#528), Least travel
+ * otherwise. Drill order is gone (#429); a kind without an order keeps its stored reverse.
+ */
+export const recipeOrderFields = (
+    box: PlacedBox,
+    order: OrderChoice,
+): { orderMode: OrderMode; reverse?: boolean } =>
+    box.kind.ordered ? orderFields(order) : { orderMode: "nearest" };
+
+/**
  * Saves a selected placed shape drawn with `params` through `writePlacement`: its members move to
  * their spots in it and its recipe is saved, as one edit at the edit window (a canvas edit). A
  * shape held from an earlier move gets its own copy on this one; the earlier one stays.
@@ -74,6 +86,8 @@ export function commitBox(
     layOutAgain?: boolean,
     /** Where members come from when laid out again (Recalculate: the start flag) */
     origins?: ReadonlyMap<number, XY>,
+    /** Who goes where, picked anew (#528): the recipe's otherwise */
+    order: OrderChoice = placedOrderChoice(box),
 ): Promise<void> {
     const field = currentShapeField();
     if (!field) return Promise.resolve();
@@ -83,6 +97,7 @@ export function commitBox(
         shapeContextFor(field),
         layOutAgain,
         origins,
+        order,
     );
     useSavingBoxStore.setState({ box: savedAs(box, params, shown) });
     const at: SaveAt = {
@@ -105,6 +120,7 @@ export function commitBox(
                 queryClient,
                 layOutAgain,
                 origins,
+                order,
             );
         } catch (e) {
             console.error("Couldn't save the shape", e);
@@ -173,6 +189,7 @@ async function saveBox(
     queryClient: QueryClient,
     layOutAgain?: boolean,
     origins?: ReadonlyMap<number, XY>,
+    order: OrderChoice = placedOrderChoice(box),
 ): Promise<void> {
     const field = currentShapeField();
     if (!field) return;
@@ -182,6 +199,7 @@ async function saveBox(
         shapeContextFor(field),
         layOutAgain,
         origins,
+        order,
     );
     const next = { ...(params as object), spots };
     await writePlacement(
@@ -189,8 +207,7 @@ async function saveBox(
             recipe: {
                 ...box.recipe,
                 params: next,
-                // Drill order is gone (#429); the column stays for older files
-                orderMode: "nearest",
+                ...recipeOrderFields(box, order),
             },
             members: targets,
             replaces: box.recipe,

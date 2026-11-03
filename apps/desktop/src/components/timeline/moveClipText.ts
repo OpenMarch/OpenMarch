@@ -1,3 +1,4 @@
+import tolgee from "@/global/singletons/Tolgee";
 import type { FlagPage } from "@/timeline/timelinePlayhead";
 import { moveLabels } from "@/timeline/timelineViewModel";
 import type { TimelineInput } from "./Timeline";
@@ -36,13 +37,18 @@ export function describeMoveClips<T extends TimelineInput>({
         const label = labels.get(id);
         if (label !== undefined) return label;
         const stored = storedTimelines.find((t) => t.id === id);
-        return stored ? isolatedTimelineName(stored, pages) : `another move`;
+        return stored
+            ? isolatedTimelineName(stored, pages)
+            : tolgee.t("timeline.moveClip.anotherMove");
     };
     const overridden = new Map<number, string>();
     const described = clips.map((clip) => {
         const id = clip.linkId === undefined ? undefined : Number(clip.linkId);
         const label =
-            id === undefined ? clip.label : (labels.get(id) ?? clip.label);
+            (id === undefined ? undefined : labels.get(id)) ??
+            (clip.unnamed && id !== undefined
+                ? tolgee.t("timeline.moveClip.unnamed", { id })
+                : clip.label);
         // A clip is always a move, even over a page box's range (UI-25)
         const where = isolatedTimelineName(
             { start: clip.startBeatIndex, end: clip.endBeatIndex },
@@ -52,17 +58,22 @@ export function describeMoveClips<T extends TimelineInput>({
         const note =
             clip.overriddenBy && clip.overriddenBy.length > 0
                 ? clip.overriddenBy
-                      .map(
-                          (o) =>
-                              `Overridden by ${nameOf(o.timelineId)} on ${isolatedTimelineName(o, pages)}`,
+                      .map((o) =>
+                          tolgee.t("timeline.moveClip.overriddenBy", {
+                              move: nameOf(o.timelineId),
+                              where: isolatedTimelineName(o, pages),
+                          }),
                       )
-                      .join("; ")
+                      .join(tolgee.t("timeline.moveClip.overriddenSeparator"))
                 : undefined;
         if (id !== undefined && note) overridden.set(id, note);
         return {
             ...clip,
             label,
-            accessibleName: `${label}, move, ${where}`,
+            accessibleName: tolgee.t("timeline.moveClip.accessibleName", {
+                label,
+                where,
+            }),
             ...(note ? { description: note } : {}),
         };
     });

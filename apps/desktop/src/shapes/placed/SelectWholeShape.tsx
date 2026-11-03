@@ -43,9 +43,13 @@ export function SelectWholeShape() {
             data-testid="placed-box-select"
         >
             <BoundingBoxIcon size={16} weight="bold" />
-            {tolgee.t("shapes.placed.selectWhole", "Select {shape}", {
-                shape: partOf.kind.shape.label.toLowerCase(),
-            })}
+            {tolgee.t(
+                "shapes.placed.selectWholeShape",
+                "Select {shape, select, block {box} circle {circle} other {shape}}",
+                {
+                    shape: partOf.kind.shape.id,
+                },
+            )}
         </button>
     );
 }

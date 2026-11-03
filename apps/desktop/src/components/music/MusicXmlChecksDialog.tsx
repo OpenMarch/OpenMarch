@@ -1,4 +1,4 @@
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import {
     Dialog,
     DialogContent,
@@ -6,6 +6,7 @@ import {
     DialogTitle,
 } from "@openmarch/ui";
 import { useMusicXmlChecksStore } from "@/stores/MusicXmlChecksStore";
+import { formatList } from "@/utilities/formatList";
 
 /** Measures as a short list: "m4", "m4, m9", or "m4, m9, m12 and 3 more". */
 const SHOWN_MEASURES = 6;
@@ -15,14 +16,15 @@ const SHOWN_MEASURES = 6;
  * or found contradicting itself, with the measures to look at. Opened from the import's toast.
  */
 export default function MusicXmlChecksDialog() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { fileName, checks, open, setOpen } = useMusicXmlChecksStore();
 
     const measures = (labels: string[]) => {
-        const shown = labels
-            .slice(0, SHOWN_MEASURES)
-            .map((label) => `m${label}`)
-            .join(", ");
+        const shown = formatList(
+            labels
+                .slice(0, SHOWN_MEASURES)
+                .map((label) => t("music.importChecksMeasure", { label })),
+        );
         const more = labels.length - SHOWN_MEASURES;
         return more > 0
             ? t("music.importChecksMoreMeasures", { measures: shown, more })

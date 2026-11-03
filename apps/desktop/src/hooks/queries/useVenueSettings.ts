@@ -18,6 +18,7 @@ import {
     type VenueSettings,
 } from "@/view3d/core/venueSettings";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 
@@ -106,7 +107,7 @@ export const updateVenueSettingsMutationOptions = (qc: QueryClient) =>
         },
         onError: (error, settings) => {
             conToastError(
-                "Failed to update the 3D View venue",
+                tolgee.t("view3d.venue.updateFailed"),
                 error,
                 settings,
             );

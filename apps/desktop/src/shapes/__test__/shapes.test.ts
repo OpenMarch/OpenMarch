@@ -8,9 +8,10 @@ import { arcKind, arcMiddle, arcSegment, type ArcParams } from "../kinds/arc";
 import { lineKind, type LineParams } from "../kinds/line";
 import { SHAPE_KINDS } from "../registry";
 import {
-    describeGaps,
     formatIntervals,
     gapsInSteps,
+    groupGaps,
+    layGroups,
     parseIntervals,
     sampleAlong,
 } from "../spacing";
@@ -23,98 +24,167 @@ const close = (a: number, b: number, eps = 1e-6) =>
     expect(Math.abs(a - b)).toBeLessThan(eps);
 
 describe("parseIntervals", () => {
-    it("reads a single interval as repeating", () => {
-        expect(parseIntervals("2")).toEqual({
-            ok: true,
-            runs: [{ steps: 2, count: 0 }],
-        });
-        expect(parseIntervals(" 1.5 ")).toEqual({
-            ok: true,
-            runs: [{ steps: 1.5, count: 0 }],
-        });
+    /** The groups typed, or the message when it isn't understood */
+    const parsed = (text: string) => {
+        const out = parseIntervals(text);
+        return out.ok ? out.groups : out.message;
+    };
+
+    it("reads a single interval as everyone at it", () => {
+        expect(parsed("2")).toEqual([{ steps: 2 }]);
+        expect(parsed(" 1.5 ")).toEqual([{ steps: 1.5 }]);
+        expect(parsed("2 steps")).toEqual([{ steps: 2 }]);
     });
 
-    it("reads mixed runs as steps x count", () => {
-        expect(parseIntervals("5x3, 2x4")).toEqual({
-            ok: true,
-            runs: [
-                { steps: 5, count: 3 },
-                { steps: 2, count: 4 },
-            ],
-        });
-        expect(parseIntervals("4×2")).toEqual({
-            ok: true,
-            runs: [{ steps: 4, count: 2 }],
-        });
-    });
-
-    it("reads fractions in lists and runs (#423)", () => {
-        const parsed = parseIntervals("2⅔x3,2");
-        if (!parsed.ok) throw new Error(parsed.message);
-        close(parsed.runs[0]!.steps, 8 / 3, 1e-12);
-        expect(parsed.runs.map((r) => r.count)).toEqual([3, 1]);
-        for (const text of ["1 2/3x3", "1-2/3 x 3", "5/3x3"]) {
-            const run = parseIntervals(text);
-            if (!run.ok) throw new Error(run.message);
-            close(run.runs[0]!.steps, 5 / 3, 1e-12);
-            expect(run.runs[0]!.count).toBe(3);
-        }
-        expect(formatIntervals(parsed.runs)).toBe("2⅔x3,2");
-    });
-
-    it("refuses 0, a zero denominator and junk with today's messages", () => {
-        const message = (text: string) => {
-            const parsed = parseIntervals(text);
-            return parsed.ok ? null : parsed.message;
-        };
-        expect(message("0")).toBe("An interval must be more than 0 steps");
-        expect(message("1/0")).toMatch(/isn't an interval/);
-        expect(message("abc")).toMatch(/isn't an interval/);
-    });
-
-    it("refuses what it can't read, with a reason", () => {
-        for (const text of ["", "x3", "2x", "0", "2x0", "abc", "4,,x"]) {
-            const parsed = parseIntervals(text);
-            expect(parsed.ok, text).toBe(false);
-            if (!parsed.ok) expect(parsed.message.length).toBeGreaterThan(0);
-        }
-    });
-
-    it("reads a list as one gap each, mixed with runs", () => {
-        expect(parseIntervals("4,4,2")).toEqual({
-            ok: true,
-            runs: [
-                { steps: 4, count: 1 },
-                { steps: 4, count: 1 },
-                { steps: 2, count: 1 },
-            ],
-        });
-        const mixed = parseIntervals("4x3,2,2");
-        if (!mixed.ok) throw new Error(mixed.message);
-        expect(gapsInSteps(mixed.runs, 5)).toEqual([4, 4, 4, 2, 2]);
-    });
-
-    it("says when a list repeats or runs over", () => {
-        const runs = [
-            { steps: 5, count: 2 },
-            { steps: 2, count: 4 },
+    it("reads count × interval, counting marchers, with * or x between them", () => {
+        const drumline = [
+            { count: 2, steps: 3 },
+            { count: 4, steps: 2 },
         ];
-        expect(describeGaps(runs, 8)).toBe(
-            "7 gaps needed, 6 typed: repeating from the first",
+        expect(parsed("2*3+4*2")).toEqual(drumline);
+        expect(parsed("2x3, 4x2")).toEqual(drumline);
+        expect(parsed("2 × 3 + 4 X 2")).toEqual(drumline);
+    });
+
+    it("reads a group without a count as the rest, wherever it is", () => {
+        expect(parsed("2.5+3*4")).toEqual([
+            { steps: 2.5 },
+            { count: 3, steps: 4 },
+        ]);
+        expect(parsed("3*4+2.5")).toEqual([
+            { count: 3, steps: 4 },
+            { steps: 2.5 },
+        ]);
+        expect(parsed("2*3+2+2*3")).toEqual([
+            { count: 2, steps: 3 },
+            { steps: 2 },
+            { count: 2, steps: 3 },
+        ]);
+    });
+
+    it("keeps fractions exact (#424)", () => {
+        const groups = parsed("2*5/3+2⅔");
+        if (typeof groups === "string") throw new Error(groups);
+        close(groups[0]!.steps, 5 / 3, 1e-12);
+        close(groups[1]!.steps, 8 / 3, 1e-12);
+        for (const text of ["3*1 2/3", "3 x 1-2/3", "3x5/3"]) {
+            const run = parsed(text);
+            if (typeof run === "string") throw new Error(run);
+            expect(run[0]!.count).toBe(3);
+            close(run[0]!.steps, 5 / 3, 1e-12);
+        }
+    });
+
+    it("refuses what it can't read, saying why", () => {
+        expect(parsed("")).toBe("Enter an interval in steps");
+        expect(parsed("0")).toBe("An interval must be more than 0 steps");
+        expect(parsed("2*0")).toBe("An interval must be more than 0 steps");
+        expect(parsed("0*2")).toBe("A group needs at least 1 marcher");
+        expect(parsed("2+3")).toBe(
+            "Only one group can go without a count (the rest). Type a count before the others: 2*3",
         );
-        expect(describeGaps(runs, 7)).toBeUndefined();
-        expect(describeGaps(runs, 5)).toBe(
-            "4 gaps needed, 6 typed: the last 2 unused",
+        // The old interval × gaps form now reads the other way round: a count must be whole
+        expect(parsed("2⅔x3")).toBe(
+            '"2⅔" isn\'t a number of marchers. Type a whole count before the interval: 2*3',
         );
-        expect(describeGaps([{ steps: 2, count: 0 }], 8)).toBeUndefined();
+        for (const text of ["1/0", "abc", "x3", "2x", "4,x", "2*3*4"])
+            expect(parsed(text), text).toMatch(/isn't (an interval|a number)/);
+    });
+
+    it("refuses an empty group between others, but lets a list end in + while it's typed", () => {
+        const empty =
+            "There's an empty group in the list. Type a group between each +: 2*3+4*2";
+        for (const text of ["2*3++4*2", "+2*3", "2*3+ +4*2", "4,,x", "2*3++"])
+            expect(parsed(text), text).toBe(empty);
+        expect(parsed("2*3+")).toEqual([{ count: 2, steps: 3 }]);
+        expect(parsed("2*3+4*2, ")).toEqual([
+            { count: 2, steps: 3 },
+            { count: 4, steps: 2 },
+        ]);
+    });
+
+    it("refuses a group of more than 999 marchers", () => {
+        expect(parsed("999*2")).toEqual([{ count: 999, steps: 2 }]);
+        expect(parsed("1000*2+2")).toBe(
+            "A group can have at most 999 marchers",
+        );
     });
 
     it("round-trips through formatIntervals", () => {
-        for (const text of ["2", "5x3,2x4", "1.5x2,4", "4,4,2", "4x3,2"]) {
-            const parsed = parseIntervals(text);
-            if (!parsed.ok) throw new Error(parsed.message);
-            expect(formatIntervals(parsed.runs)).toBe(text);
+        for (const text of ["2", "2*3+4*2", "2.5+3*4", "2*3+2+2*3", "3*2⅔"]) {
+            const groups = parseIntervals(text);
+            if (!groups.ok) throw new Error(groups.message);
+            expect(formatIntervals(groups.groups)).toBe(text);
         }
+    });
+});
+
+describe("laying out interval groups", () => {
+    const counts = (groups: { count?: number }[], n: number) =>
+        layGroups(groups, n).map(({ count, grown }) =>
+            grown ? `${count} (+${grown})` : count,
+        );
+    const drumline = [
+        { count: 2, steps: 3 },
+        { count: 4, steps: 2 },
+    ];
+
+    it("gives a single interval to everyone", () => {
+        expect(counts([{ steps: 2 }], 5)).toEqual([5]);
+    });
+
+    it("gives the rest every marcher the counted groups don't: at the start, end or both", () => {
+        expect(counts([{ steps: 2.5 }, { count: 3, steps: 4 }], 10)).toEqual([
+            7, 3,
+        ]);
+        expect(counts([{ count: 3, steps: 4 }, { steps: 2.5 }], 10)).toEqual([
+            3, 7,
+        ]);
+        expect(
+            counts(
+                [{ count: 2, steps: 3 }, { steps: 2 }, { count: 2, steps: 3 }],
+                10,
+            ),
+        ).toEqual([2, 6, 2]);
+    });
+
+    it("grows the last group to take extra marchers when there's no rest", () => {
+        expect(counts(drumline, 6)).toEqual([2, 4]);
+        expect(counts(drumline, 10)).toEqual([2, "8 (+4)"]);
+    });
+
+    it("drops groups from the end when there are too many", () => {
+        expect(counts(drumline, 4)).toEqual([2, 2]);
+        expect(counts(drumline, 2)).toEqual([2, 0]);
+        expect(
+            counts(
+                [{ count: 2, steps: 3 }, { steps: 2 }, { count: 2, steps: 3 }],
+                3,
+            ),
+        ).toEqual([2, 0, 1]);
+    });
+
+    it("spaces each group at its interval, a seam at the larger of the two", () => {
+        expect(groupGaps(drumline, 6, (g) => g.steps)).toEqual([3, 3, 2, 2, 2]);
+        expect(
+            groupGaps(
+                [{ steps: 2.5 }, { count: 3, steps: 4 }],
+                6,
+                (g) => g.steps,
+            ),
+        ).toEqual([2.5, 2.5, 4, 4, 4]);
+        // A dropped group leaves no seam
+        expect(
+            groupGaps(
+                [
+                    { count: 2, steps: 3 },
+                    { count: 2, steps: 5 },
+                ],
+                2,
+                (g) => g.steps,
+            ),
+        ).toEqual([3]);
+        expect(groupGaps(drumline, 1, (g) => g.steps)).toEqual([]);
     });
 });
 

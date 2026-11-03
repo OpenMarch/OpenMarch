@@ -8,7 +8,7 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { SnapButton } from "../ShapeEditorBar";
-import { RichTips } from "../Tip";
+import { RichTips } from "@/components/ui/Tip";
 
 /**
  * The floating editor's Snap button (modifier roles, version A): it turns the Snap toggle off and

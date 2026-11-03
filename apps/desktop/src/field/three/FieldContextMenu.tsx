@@ -7,14 +7,15 @@ import {
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { CheckIcon } from "@phosphor-icons/react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
 } from "@/components/timeline/TimelineRangeMenu";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
 import type { ActionId } from "@/shortcuts/definitions";
-import { getActionLabel, getActionShortcutLabel } from "@/shortcuts/labels";
+import { getActionLabel } from "@/shortcuts/labels";
+import Shortcut from "@/components/ui/Shortcut";
 import {
     actionLabelNow,
     isActionChecked,
@@ -23,7 +24,6 @@ import {
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
-import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 
@@ -33,7 +33,8 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  * palette do, and is unavailable when they are. It acts on the selection: the
  * editor selects an unselected marcher right-clicked before it opens.
  *
- * - **Ungroup**, first, shown only while a placed shape is selected whole.
+ * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
+ *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - **Remove keyframe** and **Remove keyframe, Pages N–M move back too** (Set
  *   vs Following, #304, #305): timeline mode only, as in the inspector. The
  *   second is shown only while it's offered (some pages follow), with its
@@ -48,7 +49,7 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  * - **Select all**, which right-clicking empty field reaches for.
  */
 const GROUPS: readonly (readonly ActionId[])[] = [
-    ["shapeUngroup"],
+    ["shapeGroup", "shapeUngroup"],
     ["timelineUnsetHere", "timelineUnsetHereAndFollowing"],
     [
         "timelineDefineAsShown",
@@ -88,7 +89,6 @@ const ITEM_CLASS =
     "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50";
 /** The room for a check in front of a checkable entry's words */
 const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
-const SHORTCUT_CLASS = "text-text-subtitle ml-auto pl-16 font-mono text-[11px]";
 
 /** Each action's enabled state and live label, as one string, so a change re-renders. */
 const handlerSnapshot = () =>
@@ -113,8 +113,7 @@ export default function FieldContextMenu({
     /** Whether the show's timeline is loaded (Unset and the holds need it). */
     timelineMode: boolean;
 }) {
-    const { t } = useTolgee();
-    const overrides = useShortcutOverridesStore((s) => s.overrides);
+    const { t } = useTranslate();
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -130,7 +129,7 @@ export default function FieldContextMenu({
     if (!at) return null;
 
     const shown = (id: ActionId) =>
-        id === "shapeUngroup"
+        id === "shapeGroup" || id === "shapeUngroup"
             ? isActionEnabled(id)
             : UNSET.has(id)
               ? timelineMode &&
@@ -184,11 +183,9 @@ export default function FieldContextMenu({
                                         t(key, params as never),
                                     );
                                 const shortcut = (
-                                    <Shortcut
-                                        keys={getActionShortcutLabel(id, {
-                                            overrides,
-                                        })}
-                                    />
+                                    <span className="ml-auto pl-16">
+                                        <Shortcut action={id} />
+                                    </span>
                                 );
                                 if (isActionChecked(id))
                                     return (
@@ -233,9 +230,6 @@ export default function FieldContextMenu({
         </DropdownMenu.Root>
     );
 }
-
-const Shortcut = ({ keys }: { keys?: string }) =>
-    keys ? <span className={SHORTCUT_CLASS}>{keys}</span> : null;
 
 type MenuPoint = { x: number; y: number };
 

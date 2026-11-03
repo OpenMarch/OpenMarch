@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { touchSafeAccept } from "@/utilities/fileAccept";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useTimingObjects } from "@/hooks";
 import { useImportMusicXml, type ImportResult } from "./MusicXmlImport";
 import { useMusicXmlChecksStore } from "@/stores/MusicXmlChecksStore";
@@ -12,7 +12,7 @@ const CHECKS_TOAST_ID = "musicxml-import-checks";
 
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { measures, pages: allPages, beats: allBeats } = useTimingObjects();
 
     const importMusicXmlMutation = useImportMusicXml();
@@ -24,7 +24,7 @@ export default function MusicXmlSelector() {
 
         try {
             if (!allPages || !allBeats) {
-                toast.error("Failed to fetch required data");
+                toast.error(t("music.importDataMissing"));
                 return;
             }
             const result = await importMusicXmlMutation.mutateAsync({

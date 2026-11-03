@@ -12,10 +12,11 @@ import DetachButton from "../DetachButton";
 import { AudioFileSettings } from "./AudioFileSettings";
 import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
+import { useId } from "react";
 
 export const MobileExportSettingsDialog = () => {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const prefetchSettingsData = usePrefetchSettingsDataFunction();
     return (
         <Dialog>
@@ -52,7 +53,9 @@ const usePrefetchSettingsDataFunction = () => {
 };
 
 const MobileExportSettingsContent = () => {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
+    const backgroundHeadingId = useId();
+    const detachHeadingId = useId();
     const queryClient = useQueryClient();
     const { data: production } = useCurrentProduction();
 
@@ -73,9 +76,12 @@ const MobileExportSettingsContent = () => {
             />
             <section
                 className="flex flex-col gap-8"
-                aria-describedby="Background image"
+                aria-labelledby={backgroundHeadingId}
             >
-                <h3 className="text-body text-text-subtitle font-medium">
+                <h3
+                    id={backgroundHeadingId}
+                    className="text-body text-text-subtitle font-medium"
+                >
                     {t("mobileExport.settings.backgroundImage.title")}
                 </h3>
                 {production.background_image_url ? (
@@ -95,9 +101,12 @@ const MobileExportSettingsContent = () => {
             </section>
             <section
                 className="flex flex-col gap-8"
-                aria-describedby="Detach production"
+                aria-labelledby={detachHeadingId}
             >
-                <h3 className="text-body text-text-subtitle font-medium">
+                <h3
+                    id={detachHeadingId}
+                    className="text-body text-text-subtitle font-medium"
+                >
                     {t("mobileExport.settings.detach.title")}
                 </h3>
                 <DetachButton variant="secondary" />

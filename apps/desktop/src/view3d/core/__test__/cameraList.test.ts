@@ -186,9 +186,9 @@ describe("new camera ids and names", () => {
                 { kind: "kit", id: "view3" },
             ]),
         ).toBe("view2");
-        expect(newCameraName(["Camera 1", "Press box"], "Camera")).toBe(
-            "Camera 2",
-        );
+        expect(
+            newCameraName(["Camera 1", "Press box"], (n) => `Camera ${n}`),
+        ).toBe("Camera 2");
     });
 });
 

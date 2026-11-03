@@ -104,6 +104,12 @@ export function committedConversion(
     }
 }
 
+/**
+ * The `code` of the error a conversion reports when its worker ended without a result; the
+ * error's `reason` says why. The dialog words it from these.
+ */
+export const CONVERSION_STOPPED_CODE = "conversion-stopped";
+
 /** What an open reports when the worker ended without a result. */
 function endedEarly(
     backupPath: string | undefined,
@@ -113,8 +119,11 @@ function endedEarly(
         return {
             status: "conversion-failed",
             backupPath,
-            error: new Error(
-                `The conversion stopped before it finished (${reason}). It was rolled back.`,
+            error: Object.assign(
+                new Error(
+                    `The conversion stopped before it finished (${reason}). It was rolled back.`,
+                ),
+                { code: CONVERSION_STOPPED_CODE, reason },
             ),
         };
     return {
@@ -123,6 +132,8 @@ function endedEarly(
             ok: false,
             code: "unknown",
             message: `Your file couldn't be backed up: the backup stopped before it finished (${reason}).`,
+            messageKey: "convertShow.backupError.stopped",
+            messageParams: { reason },
         },
     };
 }

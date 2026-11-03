@@ -9,7 +9,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import { toast } from "sonner";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
 import { calculateMasterVolume } from "./volume";
 import { useQuery } from "@tanstack/react-query";
@@ -145,7 +145,7 @@ function metronomeGainValue(audioVolume: number): number {
  */
 // eslint-disable-next-line max-lines-per-function
 export default function AudioPlayer() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const audioMuted = useUiSettingsStore((s) => s.uiSettings.audioMuted);
     const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
     const selectedPageContext = useSelectedPage();

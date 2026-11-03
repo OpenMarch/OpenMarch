@@ -8,13 +8,15 @@ import { FormatIcu } from "@tolgee/format-icu";
 import { toast } from "sonner";
 import { TimelineCommitViolationError } from "@/db-functions/timelineChanges";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
+import { text } from "@/timeline/timelineText";
 import { TIMELINE_INSPECTOR_STRINGS } from "@/components/inspector/timelineInspectorStrings";
 import { conToastError } from "@/utilities/utils";
 import { TimelineEditRefusedError } from "../timelineEditRefusals";
 import {
     TIMELINE_DB_ERROR_MESSAGE,
     TIMELINE_ERROR_MESSAGES,
-    HELD_CONFLICT_MESSAGES,
+    HELD_CONFLICT_MESSAGE,
+    HELD_DROPPED_MESSAGE,
     TIMELINE_LEGACY_CONVERSION_MESSAGE,
     TIMELINE_NOT_READY_MESSAGE,
     isLegacyConversionViolation,
@@ -123,15 +125,6 @@ describe("timelineErrorMessage", () => {
     );
 
     it("an E-H1 that knows who names the marchers and the page, and points to Clear this page", () => {
-        const fill = (
-            _key: string,
-            text: string,
-            params?: Record<string, string>,
-        ) =>
-            text.replace(
-                /\{(\w+)\}/g,
-                (_, name: string) => params?.[name] ?? "",
-            );
         const violation = {
             code: "E-H1",
             transitionId: null,
@@ -141,14 +134,14 @@ describe("timelineErrorMessage", () => {
             names: ["T1"],
             pages: ["3"],
         });
-        expect(timelineErrorMessage(one, { translate: fill })).toBe(
+        expect(timelineErrorMessage(one)).toBe(
             "T1 is Held on Page 3. Clear this page to remove the hold, or drag inside it to move it.",
         );
         const many = new TimelineCommitViolationError([violation], {
             names: ["T1", "T2"],
             pages: ["3", "5"],
         });
-        expect(timelineErrorMessage(many, { translate: fill })).toBe(
+        expect(timelineErrorMessage(many)).toBe(
             "T1 and T2 are Held on Pages 3 and 5. Clear this page to remove the holds, or drag inside them to move them.",
         );
     });
@@ -207,12 +200,59 @@ describe("timelineErrorMessage", () => {
         );
     });
 
-    it("E-ARGS shows the error's own message, without the code", () => {
+    it("E-ARGS shows the refusal's own text, translated when shown, without the code", () => {
+        const error = new TimelineWriteError(
+            "E-ARGS",
+            text.t("timeline.refusals.casting.alreadyInSlot", { slot: 3 }),
+        );
+        // The message is for logs: the key and its arguments, built without Tolgee
+        expect(error.message).toBe(
+            'E-ARGS: timeline.refusals.casting.alreadyInSlot {"slot":3}',
+        );
+        expect(timelineErrorMessage(error)).toBe(
+            "the marcher is already in slot 3",
+        );
+        // Each key goes through the translator, nested pieces first
+        const nested = new TimelineWriteError(
+            "E-ARGS",
+            text.t("timeline.refusals.keep.wholePage", {
+                counts: text.t("timeline.where.theseCounts"),
+            }),
+        );
+        const translate = vi.fn(
+            (key: string, _default?: string, params?: object) =>
+                `<${key}${params ? ` ${JSON.stringify(params)}` : ""}>`,
+        );
+        expect(timelineErrorMessage(nested, { translate })).toBe(
+            '<timeline.refusals.keep.wholePage {"counts":"<timeline.where.theseCounts {}>"}>',
+        );
+    });
+
+    it("E-ARGS with only a developer's message gets the fallback, or the generic message", () => {
+        const error = new TimelineWriteError(
+            "E-ARGS",
+            "timeline 7 does not exist",
+        );
+        expect(timelineErrorMessage(error)).toBe(
+            TIMELINE_UNKNOWN_ERROR_MESSAGE.defaultMessage,
+        );
+        expect(
+            timelineErrorMessage(error, {
+                fallback: "Couldn't split the move",
+            }),
+        ).toBe("Couldn't split the move");
+        // A refusal with text for the user shows that, not the fallback
         expect(
             timelineErrorMessage(
-                new TimelineWriteError("E-ARGS", "slot 3 is already taken"),
+                new TimelineWriteError(
+                    "E-ARGS",
+                    text.t("timeline.refusals.casting.alreadyInSlot", {
+                        slot: 3,
+                    }),
+                ),
+                { fallback: "Couldn't split the move" },
             ),
-        ).toBe("slot 3 is already taken");
+        ).toBe("the marcher is already in slot 3");
     });
 
     it("E-DB is generic and never shows the database's text", () => {
@@ -291,6 +331,15 @@ describe("toastTimelineError", () => {
         const error = new TimelineEditRefusedError("inShapeOrFollowTheLeader", {
             marcherIds: [3],
             message: "B3 is in a shape, so it keeps its move here.",
+            params: {
+                count: 1,
+                shapeCount: 1,
+                shapeNames: { list: ["B3"] },
+                leaderCount: 0,
+                leaderNames: { list: [] },
+                orderCount: 0,
+                orderNames: { list: [] },
+            },
         });
         toastTimelineError(error);
         expect(toast.warning).toHaveBeenCalledWith(
@@ -374,7 +423,8 @@ describe("en.json", () => {
             TIMELINE_LEGACY_CONVERSION_MESSAGE,
             NOT_JOINED_MESSAGE,
             ...Object.values(NOT_JOINED_REASONS),
-            ...Object.values(HELD_CONFLICT_MESSAGES),
+            HELD_CONFLICT_MESSAGE,
+            HELD_DROPPED_MESSAGE,
         ])
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });
@@ -385,10 +435,8 @@ describe("en.json", () => {
             "timeline.rangeMenu.deleteWithMoves": "Delete page and its moves",
             "timeline.keep.chain.ariaLabel": "Page {page}: {label}. {hint}",
             "timeline.moveDeleted.message": "Deleted {label}",
-            "timeline.moveDeleted.withPage":
-                "Deleted {label} · Page {pages} changed",
             "timeline.moveDeleted.withPages":
-                "Deleted {label} · Pages {pages} changed",
+                "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}",
             "timeline.keyframes.title": "Keyframe · Page {page}, count {count}",
             "timeline.keyframes.detail": "{set} of {total} selected",
             "timeline.keyframes.detailNames":

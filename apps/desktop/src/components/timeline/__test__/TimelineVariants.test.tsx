@@ -37,11 +37,16 @@ const commonProps = {
     pixelsPerBeat: 16,
 };
 
-/** A guide row's words, a space between each piece (marks and keycaps split them) */
+/**
+ * A guide row's words as shown, a space between each piece (marks and keycaps split them),
+ * without the words a screen reader hears for a shortcut
+ */
 const rowWords = (node: Node): string =>
     (node.nodeType === Node.TEXT_NODE
         ? node.textContent!
-        : [...node.childNodes].map(rowWords).join(" ")
+        : node instanceof Element && node.classList.contains("sr-only")
+          ? ""
+          : [...node.childNodes].map(rowWords).join(" ")
     )
         .replace(/\s+/g, " ")
         .trim();
@@ -1979,8 +1984,8 @@ describe("the transport's go-to box (UI-12)", () => {
         expect(screen.queryByTestId("timeline-go-to")).toBeNull();
     });
 
-    // The timelineGoTo action: G, or Mod+G. The dispatcher builds its keymap for the platform
-    // it finds, so Command+G is tried as a Mac and Control+G off one.
+    // The timelineGoTo action: plain G (⌘G / Ctrl+G is Group since #606). The dispatcher builds
+    // its keymap for the platform it finds.
     const pressG = (modifiers: { ctrlKey?: boolean; metaKey?: boolean }) =>
         act(() => {
             window.dispatchEvent(
@@ -2006,9 +2011,7 @@ describe("the transport's go-to box (UI-12)", () => {
 
     it.each([
         ["G", false, {}],
-        ["Control+G", false, { ctrlKey: true }],
-        ["Command+G on a Mac", true, { metaKey: true }],
-        ["Control+G on a Mac", true, { ctrlKey: true }],
+        ["G on a Mac", true, {}],
     ])("opens with %s", (_name, mac, modifiers) => {
         vi.spyOn(platform, "isMacPlatform").mockReturnValue(mac);
         renderWithShortcuts();
@@ -2019,7 +2022,7 @@ describe("the transport's go-to box (UI-12)", () => {
 
     it("is a timeline action the command palette lists", () => {
         const action = getActionDefinition("timelineGoTo");
-        expect(action.defaultBindings).toEqual(["G", "$mod+G", "Control+G"]);
+        expect(action.defaultBindings).toEqual(["G"]);
         expect(action.hiddenFromPalette).toBeFalsy();
         for (const isMac of [false, true])
             expect(

@@ -25,9 +25,10 @@ export default function LearnContent() {
                         className="bg-fg-1 border-stroke rounded-6 hover:border-accent flex flex-col overflow-clip border duration-150"
                     >
                         <div className="relative h-64">
-                            <div className="bg-accent absolute top-[-15%] right-[5%] -z-10 h-[3rem] w-[7rem] rounded-full text-transparent opacity-75 blur-2xl">
-                                image placeholder
-                            </div>
+                            <div
+                                aria-hidden="true"
+                                className="bg-accent absolute top-[-15%] right-[5%] -z-10 h-[3rem] w-[7rem] rounded-full text-transparent opacity-75 blur-2xl"
+                            />
                         </div>
                         <div className="flex flex-col gap-6 p-8">
                             <YoutubeLogoIcon size={24} />

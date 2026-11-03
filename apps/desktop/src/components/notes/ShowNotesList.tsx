@@ -8,7 +8,7 @@
  */
 import { useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
 import { InfoIcon, WarningIcon } from "@phosphor-icons/react";
 import { notesForItem, type ShowNote } from "@/notes/showNotes";
@@ -19,11 +19,9 @@ import {
 import { allMarcherRowsQueryOptions } from "@/hooks/queries/useMarchers";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import {
-    beatWhere,
-    joinList,
-    type NamedPageBox,
-} from "@/timeline/timelineRangeWords";
+import { beatWhere, type NamedPageBox } from "@/timeline/timelineRangeWords";
+import { translateTimelineText } from "@/timeline/translateTimelineText";
+import { formatAndList } from "@/utilities/formatList";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 
 export interface NotesViewProps {
@@ -40,13 +38,13 @@ export interface NotesViewProps {
     onPick?: (note: ShowNote) => void;
 }
 
-type Translate = ReturnType<typeof useTolgee>["t"];
+type Translate = ReturnType<typeof useTranslate>["t"];
 
 /** Names, up to three, then a count. */
 const names = (t: Translate, list: readonly string[]) =>
     list.length > 3
         ? t("showChecks.performers", { count: list.length })
-        : joinList(list);
+        : formatAndList(list);
 
 /** A note's line and its detail, in the designer's words. */
 export function noteText(
@@ -58,28 +56,40 @@ export function noteText(
         marcherName,
     }: Pick<NotesViewProps, "pageBoxes" | "itemName" | "marcherName">,
 ): { text: string; detail?: string } {
-    const where =
+    const at = note.beat === null ? null : beatWhere(note.beat, pageBoxes);
+    const where = at
+        ? translateTimelineText(at, (key, params) => t(key, params))
+        : null;
+    const withWhere = (text: string) =>
         note.beat === null
-            ? null
-            : (beatWhere(note.beat, pageBoxes) ?? t("showChecks.whereStart"));
-    const withWhere = (text: string) => (where ? `${text}, ${where}` : text);
+            ? text
+            : where
+              ? t("showChecks.withWhere", { text, where })
+              : t("showChecks.withStart", { text });
     const [itemId, ...others] = note.what.itemIds;
     const item = itemId === undefined ? "" : itemName(itemId);
     const who = names(t, note.what.marcherIds.map(marcherName));
     switch (note.kind) {
         case "hand_conflict": {
-            const hand = t(`showChecks.hand.${note.detail?.hand ?? "both"}`);
-            const takers = [
-                ...others.map(itemName),
-                ...(note.detail?.byCarry ? [t("showChecks.carryCue")] : []),
-            ];
+            const hand = note.detail?.hand ?? "both";
+            const takers = others.map(itemName);
+            const other = formatAndList(takers);
             return {
                 text: withWhere(t("showChecks.handConflict", { item })),
-                detail: t("showChecks.handConflictDetail", {
-                    other: joinList(takers),
-                    who,
-                    hand,
-                }),
+                detail: !note.detail?.byCarry
+                    ? t("showChecks.handConflictDetail", {
+                          other,
+                          count: takers.length,
+                          who,
+                          hand,
+                      })
+                    : takers.length === 0
+                      ? t("showChecks.handConflictByCarry", { who, hand })
+                      : t("showChecks.handConflictWithCarry", {
+                            other,
+                            who,
+                            hand,
+                        }),
             };
         }
         case "short_handed_hold":
@@ -120,7 +130,7 @@ function NoteRow({
     note,
     ...props
 }: { note: ShowNote } & Omit<NotesViewProps, "notes">) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { text, detail } = noteText(t, note, props);
     const action = note.action;
     const warning = note.detail?.level === "warning";
@@ -174,7 +184,7 @@ function NoteRow({
 
 /** The show-wide list, from data the caller passes. */
 export function ShowNotesListView({ notes, ...props }: NotesViewProps) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <section
             className="flex flex-col gap-4"

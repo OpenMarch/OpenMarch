@@ -1,7 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
 import { FlagIcon } from "@phosphor-icons/react";
-import { Keycaps } from "./ShortcutTooltip";
+import { T, useTranslate } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
+import Shortcut from "@/components/ui/Shortcut";
+import { TRANSPORT_SHORTCUTS } from "./TransportButtons";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
 import { isTyping, overlayOpen, spaceStaysPlay } from "./timelineHotkeys";
@@ -17,6 +20,7 @@ import {
 } from "@/stores/TimelineSelectionStore";
 import { pageFlags, type FlagPage } from "@/timeline/timelinePlayhead";
 import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
+import { joinList } from "@/timeline/translateTimelineText";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import {
@@ -50,18 +54,27 @@ export function isolatedTimelineName(
     // pages read backwards ("Pages 5–4")
     if (range.end <= range.start) {
         const flag = boxes.find((f) => f.range!.end === range.start);
-        if (flag) return `Page ${flag.page.name}'s flag`;
+        if (flag)
+            return tolgee.t("timeline.rangeName.flag", {
+                page: flag.page.name,
+            });
         const inside = boxes.find(
             (f) => f.range!.start <= range.start && range.start < f.range!.end,
         );
         return inside
-            ? `Page ${inside.page.name}, count ${range.start - inside.range!.start}`
-            : `Beat ${range.start}`;
+            ? tolgee.t("timeline.rangeName.pageCount", {
+                  page: inside.page.name,
+                  count: range.start - inside.range!.start,
+              })
+            : tolgee.t("timeline.rangeName.beat", { beat: range.start });
     }
     const exact = boxes.find(
         (f) => f.range!.start === range.start && f.range!.end === range.end,
     );
-    if (exact && !asMove) return `Page ${exact.page.name}'s move`;
+    if (exact && !asMove)
+        return tolgee.t("timeline.rangeName.pageMove", {
+            page: exact.page.name,
+        });
     const at = (beat: number) =>
         boxes.find((f) => f.range!.start <= beat && beat < f.range!.end);
     const first = at(range.start);
@@ -69,22 +82,46 @@ export function isolatedTimelineName(
     // Past the last flag, where the next page gets written (UI-12)
     const lastBox = boxes[boxes.length - 1];
     if (!first && lastBox && range.start >= lastBox.range!.end)
-        return `After page ${lastBox.page.name}, counts ${range.start - lastBox.range!.end + 1}–${range.end - lastBox.range!.end}`;
-    if (!first || !last) return `Beats ${range.start}–${range.end}`;
+        return tolgee.t("timeline.rangeName.afterPage", {
+            page: lastBox.page.name,
+            from: range.start - lastBox.range!.end + 1,
+            to: range.end - lastBox.range!.end,
+        });
+    if (!first || !last)
+        return tolgee.t("timeline.rangeName.beats", {
+            from: range.start,
+            to: range.end,
+        });
     // Whole pages: "Pages 2–3" (UI-17 follow-up, plainer than counts from page to page)
     if (
         first !== last &&
         first.range!.start === range.start &&
         last.range!.end === range.end
     )
-        return `Pages ${first.page.name}–${last.page.name}`;
+        return tolgee.t("timeline.rangeName.pages", {
+            from: first.page.name,
+            to: last.page.name,
+        });
     const from = range.start - first.range!.start + 1;
     const to = range.end - last.range!.start;
     // "count 3" for one count, not "counts 3–3" (UI-14 review)
-    const counts = from === to ? `count ${from}` : `counts ${from}–${to}`;
-    return first === last
-        ? `Page ${first.page.name}, ${counts}`
-        : `Page ${first.page.name} count ${from} to page ${last.page.name} count ${to}`;
+    if (first !== last)
+        return tolgee.t("timeline.rangeName.pageToPage", {
+            fromPage: first.page.name,
+            from,
+            toPage: last.page.name,
+            to,
+        });
+    return from === to
+        ? tolgee.t("timeline.rangeName.pageCount", {
+              page: first.page.name,
+              count: from,
+          })
+        : tolgee.t("timeline.rangeName.pageCounts", {
+              page: first.page.name,
+              from,
+              to,
+          });
 }
 
 /**
@@ -208,8 +245,8 @@ export function stoppedNote(
     spot: Exclude<StoppedSpot, { kind: "home" }>,
 ): string {
     return spot.kind === "page"
-        ? `Paused on page ${spot.name}`
-        : "Paused after the last page";
+        ? tolgee.t("timeline.windowLine.pausedOnPage", { page: spot.name })
+        : tolgee.t("timeline.windowLine.pausedAfterLast");
 }
 
 /**
@@ -224,15 +261,16 @@ export function editingWords(
         !plan.ok &&
         plan.error instanceof TimelineEditRefusedError &&
         plan.error.refusal === "pastLastPage"
-        ? "Right-click the playhead to add a page here"
-        : `Editing ${name}`;
+        ? tolgee.t("timeline.windowLine.addPageHere")
+        : tolgee.t("timeline.windowLine.editing", { name });
 }
 
 /** "set 3", "sets 3 and 4", "sets 3, 4 and 5" (UI-17 follow-up: plainer than "page 3's set") */
 export const passedSets = (names: readonly string[]) =>
-    names.length === 1
-        ? `set ${names[0]}`
-        : `sets ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+    tolgee.t("timeline.windowLine.passedSets", {
+        count: names.length,
+        names: joinList(names),
+    });
 
 /**
  * The line over the field (UI-12, replacing UI-11's From start badge): what a drag edits now, so
@@ -245,6 +283,7 @@ export const passedSets = (names: readonly string[]) =>
  * while isolated: the isolation bar says it instead.
  */
 export function TimelineFromStartBadge() {
+    const { t } = useTranslate();
     const selection = useTimelineSelectionStore((s) => s.selection);
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
@@ -291,13 +330,19 @@ export function TimelineFromStartBadge() {
     });
     const name =
         selection.kind === "home"
-            ? "home positions"
+            ? t("timeline.windowLine.home")
             : basicSpot
               ? basicSpot.count === null
-                  ? `page ${basicSpot.pageName}`
-                  : `count ${basicSpot.count} of page ${basicSpot.pageName}`
+                  ? t("timeline.windowLine.page", { page: basicSpot.pageName })
+                  : t("timeline.windowLine.countOfPage", {
+                        count: basicSpot.count,
+                        page: basicSpot.pageName,
+                    })
               : splitMoveName !== null && range
-                ? `${splitMoveName} (${isolatedTimelineName(range, pages, true)})`
+                ? t("timeline.windowLine.moveAt", {
+                      move: splitMoveName,
+                      where: isolatedTimelineName(range, pages, true),
+                  })
                 : range
                   ? isolatedTimelineName(range, pages)
                   : "";
@@ -341,10 +386,26 @@ export function TimelineFromStartBadge() {
     const movedOn = stopped !== null;
     const editing = editingWords(basic ? plan : null, name);
     const unusual = loopShown || through.length > 0 || !wholePage || movedOn;
-    const sentence =
-        selection.kind === "none"
-            ? ""
-            : `${stopped ? `${stopped}. ` : ""}${editing}${through.length ? `, through ${passedSets(through)}` : ""}${loopShown ? `. Space loops ${loopName}` : ""}`;
+    let sentence = "";
+    if (selection.kind !== "none") {
+        sentence = through.length
+            ? t("timeline.windowLine.editingThrough", {
+                  editing,
+                  sets: passedSets(through),
+              })
+            : editing;
+        if (stopped)
+            sentence = t("timeline.windowLine.afterPaused", {
+                paused: stopped,
+                rest: sentence,
+            });
+        if (loopShown)
+            sentence = t("timeline.windowLine.withLoop", {
+                rest: sentence,
+                key: TRANSPORT_SHORTCUTS.play,
+                loop: loopName ?? "",
+            });
+    }
     // Flash when it turns prominent for a new reason: a loop elsewhere, or crossing flags
     const flashKey = `${loopShown}|${through.join(",")}`;
     const [fresh, setFresh] = useState(false);
@@ -402,7 +463,9 @@ export function TimelineFromStartBadge() {
             <span className="truncate" aria-hidden="true">
                 {stopped && (
                     <strong className={START_INK.strongText}>
-                        {stopped} ·{" "}
+                        {t("timeline.windowLine.pausedPrefix", {
+                            paused: stopped,
+                        })}{" "}
                     </strong>
                 )}
                 {editing}
@@ -416,7 +479,9 @@ export function TimelineFromStartBadge() {
                         START_INK.strongText,
                     )}
                 >
-                    · through {passedSets(through)}
+                    {t("timeline.windowLine.through", {
+                        sets: passedSets(through),
+                    })}
                 </span>
             )}
             {loopShown && (
@@ -428,8 +493,13 @@ export function TimelineFromStartBadge() {
                         aria-hidden="true"
                         className="flex items-center gap-4"
                     >
-                        <Keycaps shortcut="Space" />
-                        loops {loopName}
+                        <T
+                            keyName="timeline.windowLine.loops"
+                            params={{
+                                keys: () => <Shortcut action="playPause" />,
+                                loop: loopName ?? "",
+                            }}
+                        />
                     </span>
                 </span>
             )}
@@ -443,6 +513,7 @@ export function TimelineFromStartBadge() {
  * and the way out. Renders nothing when no timeline is isolated.
  */
 export default function TimelineIsolationBar() {
+    const { t } = useTranslate();
     useIsolationEscape();
     const timeline = useTimelineSelectionStore(isolatedTimeline);
     // UI-25: a move split off a page's timeline is named as a move, not as the page's
@@ -464,10 +535,14 @@ export default function TimelineIsolationBar() {
             role="status"
             className="border-accent bg-bg-1 text-text rounded-6 text-sub pointer-events-auto absolute top-8 left-1/2 z-10 flex max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-12 border px-12 py-6 whitespace-nowrap shadow-md"
         >
-            <span className="text-accent font-medium">Isolated</span>
+            <span className="text-accent font-medium">
+                {t("timeline.isolation.title")}
+            </span>
             <span>
-                {isolatedTimelineName(timeline, pages, !isPage)} · {count}{" "}
-                {count === 1 ? "marcher" : "marchers"}
+                {t("timeline.isolation.summary", {
+                    name: isolatedTimelineName(timeline, pages, !isPage),
+                    count,
+                })}
             </span>
             <span className="text-text-subtitle flex min-w-0 items-center gap-4 truncate text-[11px]">
                 <svg width="20" height="6" aria-hidden="true">
@@ -484,9 +559,11 @@ export default function TimelineIsolationBar() {
                 <span className="truncate">
                     {/* UI-14 review: read as a key, not run on into the line before */}
                     <span className="sr-only">
-                        Key: dotted gray paths show{" "}
+                        {t("timeline.isolation.ghostKeySpoken")}
                     </span>
-                    where this move would take marchers who left it
+                    <span aria-hidden="true">
+                        {t("timeline.isolation.ghostKey")}
+                    </span>
                 </span>
             </span>
             <Button
@@ -497,7 +574,10 @@ export default function TimelineIsolationBar() {
                     useTimelineSelectionStore.getState().exitIsolation()
                 }
             >
-                Done (Esc)
+                <T
+                    keyName="timeline.isolation.done"
+                    params={{ keys: () => <Shortcut binding="Escape" /> }}
+                />
             </Button>
         </div>
     );

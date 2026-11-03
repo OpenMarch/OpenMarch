@@ -13,7 +13,7 @@ import {
     SelectSeparator,
 } from "@openmarch/ui";
 import { StaticFormField } from "../ui/FormField";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import {
     fieldPropertiesQueryOptions,
     updateFieldPropertiesMutationOptions,
@@ -46,7 +46,7 @@ export default function FieldPropertiesSelector({
         FieldProperties | undefined
     >(fieldProperties);
     const selectRef = useRef<HTMLButtonElement>(null);
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const currentTemplate = externalCurrentTemplate || internalCurrentTemplate;
 
@@ -85,7 +85,7 @@ export default function FieldPropertiesSelector({
     }
 
     if (isLoading && !externalCurrentTemplate) {
-        return <div>Loading...</div>;
+        return <div>{t("fieldProperties.loading")}</div>;
     }
 
     const selectValue = currentTemplate?.isCustom

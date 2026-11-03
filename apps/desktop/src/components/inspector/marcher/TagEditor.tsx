@@ -21,7 +21,8 @@ import {
     allCuesQueryOptions,
 } from "@/hooks/queries";
 import { useTranslate } from "@tolgee/react";
-import { DatabaseTag, getTagName, NewMarcherTagArgs } from "@/db-functions";
+import { DatabaseTag, NewMarcherTagArgs } from "@/db-functions";
+import { tagDisplayName } from "@/components/tags/tagDisplayName";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { AppearanceModalContents } from "@/components/marcher/appearance/AppearanceModal";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -198,7 +199,7 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                     className="rounded-6 bg-fg-1 border-stroke hover:text-accent cursor-pointer border p-4 duration-150 ease-out"
                     onContextMenu={handleContextMenu}
                 >
-                    {getTagName({ tag_id: tag.id, name: tag.name })}
+                    {tagDisplayName({ tag_id: tag.id, name: tag.name }, t)}
                 </div>
             </Popover.Trigger>
             <Popover.Portal>
@@ -213,10 +214,10 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                     {isRenaming ? (
                         <div className="flex flex-col gap-4">
                             <label className="text-text-subtitle text-sm">
-                                Rename tag
+                                {t("tags.rename")}
                             </label>
                             <Input
-                                aria-label="Rename tag"
+                                aria-label={t("tags.rename")}
                                 ref={renameInputRef}
                                 type="text"
                                 value={renameValue}
@@ -224,7 +225,7 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                                 onKeyDown={handleKeyDown}
                                 onBlur={handleRename}
                                 className="bg-input border-stroke text-text rounded-4 focus:border-primary border px-8 py-4 outline-none"
-                                placeholder="Enter tag name..."
+                                placeholder={t("tags.namePlaceholder")}
                                 disabled={isUpdating}
                             />
                         </div>
@@ -234,20 +235,22 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                                 className="text-text hover:text-accent flex cursor-pointer items-center gap-8 transition-all duration-150 ease-out"
                                 onClick={() => setIsRenaming(true)}
                             >
-                                <span className="text-sm">Rename tag</span>
+                                <span className="text-sm">
+                                    {t("tags.rename")}
+                                </span>
                             </div>
                             <div
                                 onClick={handleEditAppearance}
                                 className="text-text-subtitle hover:text-accent flex cursor-pointer items-center justify-between gap-8 text-xs transition-all duration-150 ease-out"
                             >
-                                Edit appearance
+                                {t("tags.editAppearance")}
                                 <PaletteIcon size={16} />
                             </div>
                             <div
                                 onClick={handleDelete}
                                 className="text-text-subtitle hover:text-red flex cursor-pointer items-center justify-between gap-8 text-xs transition-all duration-150 ease-out"
                             >
-                                Delete tag
+                                {t("tags.delete")}
                                 <TrashIcon size={16} />
                             </div>
                             {cuesOnTag > 0 && (
@@ -273,6 +276,7 @@ const NewTagButton = ({
 }: {
     selectedMarcherIds: Set<number>;
 }) => {
+    const { t } = useTranslate();
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [tagName, setTagName] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -315,8 +319,8 @@ const NewTagButton = ({
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
                 <Button
-                    aria-label="Create new tag with selected marchers"
-                    tooltipText="Create new tag with selected marchers"
+                    aria-label={t("tags.createWithSelected")}
+                    tooltipText={t("tags.createWithSelected")}
                     size="compact"
                     variant="secondary"
                     className={buttonClassName}
@@ -344,7 +348,7 @@ const NewTagButton = ({
                             htmlFor="tag-name-input"
                             className="text-text-subtitle text-sm"
                         >
-                            Define a name for the new tag (optional)
+                            {t("tags.newTagNameLabel")}
                         </label>
                         <Input
                             id="tag-name-input"
@@ -354,7 +358,7 @@ const NewTagButton = ({
                             onChange={(e) => setTagName(e.target.value)}
                             onKeyDown={handleKeyDown}
                             className="bg-input border-stroke text-text rounded-4 focus:border-primary border px-8 py-4 outline-none"
-                            placeholder="Enter tag name..."
+                            placeholder={t("tags.namePlaceholder")}
                         />
                     </div>
                     <div className="flex gap-8">
@@ -364,14 +368,14 @@ const NewTagButton = ({
                             className="flex-1"
                             onClick={handleCancel}
                         >
-                            Cancel
+                            {t("tags.cancel")}
                         </Button>
                         <Button
                             size="compact"
                             className="flex-1"
                             onClick={handleCreateTag}
                         >
-                            Create Tag
+                            {t("tags.create")}
                         </Button>
                     </div>
                 </Popover.Content>
@@ -387,6 +391,7 @@ const AddToTagButton = ({
     selectedMarcherIds: Set<number>;
     allTags: DatabaseTag[];
 }) => {
+    const { t } = useTranslate();
     const [popoverOpen, setPopoverOpen] = useState(false);
     const queryClient = useQueryClient();
     const { mutate: createMarcherTags, isPending } = useMutation(
@@ -411,8 +416,8 @@ const AddToTagButton = ({
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
                 <Button
-                    aria-label="Add selected marchers to existing tag"
-                    tooltipText="Add selected marchers to tag"
+                    aria-label={t("tags.addSelectedToExisting")}
+                    tooltipText={t("tags.addSelectedTo")}
                     size="compact"
                     variant="secondary"
                     className={buttonClassName}
@@ -437,7 +442,7 @@ const AddToTagButton = ({
                 >
                     <div className="flex flex-col gap-4">
                         <div className="text-text-subtitle text-sm">
-                            Add selected marchers to tag
+                            {t("tags.addSelectedTo")}
                         </div>
                         {allTags.map((tag) => (
                             <div
@@ -449,7 +454,10 @@ const AddToTagButton = ({
                                     setPopoverOpen(false);
                                 }}
                             >
-                                {getTagName({ tag_id: tag.id, name: tag.name })}
+                                {tagDisplayName(
+                                    { tag_id: tag.id, name: tag.name },
+                                    t,
+                                )}
                             </div>
                         ))}
                     </div>
@@ -466,6 +474,7 @@ const DeleteFromTagButton = ({
     selectedMarcherIds: Set<number>;
     allTags: DatabaseTag[];
 }) => {
+    const { t } = useTranslate();
     const [popoverOpen, setPopoverOpen] = useState(false);
     const { data: allMarcherTags, isSuccess: marcherTagsLoaded } = useQuery(
         allMarcherTagsQueryOptions(),
@@ -508,8 +517,8 @@ const DeleteFromTagButton = ({
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
                 <Button
-                    aria-label="Remove selected marchers from tag"
-                    tooltipText="Remove selected marchers from tag"
+                    aria-label={t("tags.removeSelectedFrom")}
+                    tooltipText={t("tags.removeSelectedFrom")}
                     size="compact"
                     variant="secondary"
                     className={buttonClassName}
@@ -535,7 +544,7 @@ const DeleteFromTagButton = ({
                     }}
                 >
                     <div className="text-text-subtitle text-sm">
-                        Remove selected marchers from tag
+                        {t("tags.removeSelectedFrom")}
                     </div>
                     <div className="wrap flex flex-col gap-4">
                         {allTags
@@ -552,10 +561,13 @@ const DeleteFromTagButton = ({
                                         setPopoverOpen(false);
                                     }}
                                 >
-                                    {getTagName({
-                                        tag_id: tag.id,
-                                        name: tag.name,
-                                    })}
+                                    {tagDisplayName(
+                                        {
+                                            tag_id: tag.id,
+                                            name: tag.name,
+                                        },
+                                        t,
+                                    )}
                                 </div>
                             ))}
                     </div>

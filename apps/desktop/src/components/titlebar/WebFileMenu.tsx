@@ -6,16 +6,16 @@ import {
     DropdownMenuTrigger,
 } from "@radix-ui/react-dropdown-menu";
 import { ListIcon } from "@phosphor-icons/react";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { useSyncExternalStore } from "react";
 import type { ActionId } from "@/shortcuts/definitions";
-import { getActionLabel, getActionShortcutLabel } from "@/shortcuts/labels";
+import { getActionLabel } from "@/shortcuts/labels";
+import Shortcut from "@/components/ui/Shortcut";
 import {
     isActionEnabled,
     runAction,
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
-import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { useWebLibraryStore } from "@/stores/WebLibraryStore";
 
@@ -36,8 +36,7 @@ const FILE_ACTIONS: ActionId[] = [
  * saved in the browser) and the show's Versions.
  */
 export default function WebFileMenu() {
-    const { t } = useTolgee();
-    const overrides = useShortcutOverridesStore((s) => s.overrides);
+    const { t } = useTranslate();
     // No ⌘O / Ctrl+, on a tablet until a keyboard has been used
     const showHints = useShowShortcutHints();
     const openId = useWebLibraryStore((state) => state.library?.openId ?? null);
@@ -55,11 +54,7 @@ export default function WebFileMenu() {
             onSelect={() => runAction(action)}
         >
             <span>{label}</span>
-            {showHints && (
-                <span className="text-sub text-text-subtitle">
-                    {getActionShortcutLabel(action, { overrides })}
-                </span>
-            )}
+            {showHints && <Shortcut action={action} />}
         </DropdownMenuItem>
     );
 

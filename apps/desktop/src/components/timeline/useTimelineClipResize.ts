@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     readTimelineResizeLimits,
     resizeTimeline,
@@ -37,12 +38,14 @@ export function timelineName(
     const page = pageBoxes.find(
         (b) => b.start === range.start && b.end === range.end,
     );
-    const pageName = page?.name ? `Page ${page.name}'s move` : undefined;
+    const pageName = page?.name
+        ? tolgee.t("timeline.rangeName.pageMove", { page: page.name })
+        : undefined;
     if (pageName && pageIds.has(timelineId)) return pageName;
     const clip = timelines.find(
         (t) => t.linkId !== undefined && Number(t.linkId) === timelineId,
     );
-    return clip?.label ?? pageName ?? "another move";
+    return clip?.label ?? pageName ?? tolgee.t("timeline.moveClip.anotherMove");
 }
 
 /** A bound's reason as the drag tag says it (`null`: the show's edge, nothing to say). */
@@ -54,13 +57,24 @@ export function resizeBoundReason(
         case "show":
             return null;
         case "minimum":
-            return "1 count minimum";
+            return tolgee.t("timeline.clipResize.minimum");
         case "member":
-            return "a marcher joins or leaves here";
+            return tolgee.t("timeline.clipResize.member");
         case "move":
-            return `stops at ${nameOf(bound.stop, bound.stop.timelineId)}`;
+            return tolgee.t("timeline.clipResize.stopsAt", {
+                name: nameOf(bound.stop, bound.stop.timelineId),
+            });
     }
 }
+
+/** Why an edge can't land where another move has exactly the range it would give */
+const takenReason = (name: string, pageTakeover: boolean | undefined) =>
+    tolgee.t(
+        pageTakeover
+            ? "timeline.clipResize.takenMerge"
+            : "timeline.clipResize.taken",
+        { name },
+    );
 
 /** A commit that threw: its refusal is a toast, and nothing was written. */
 const refused = (error: unknown) => {
@@ -114,9 +128,10 @@ export function useTimelineClipResize({
                     taken: limits.taken.map((t) => ({
                         startBeatIndex: t.start,
                         endBeatIndex: t.end,
-                        reason: t.pageTakeover
-                            ? `${nameOf(t, t.timelineId)} already has these counts; merge into it instead`
-                            : `${nameOf(t, t.timelineId)} already has these counts`,
+                        reason: takenReason(
+                            nameOf(t, t.timelineId),
+                            t.pageTakeover,
+                        ),
                     })),
                 };
                 return result;

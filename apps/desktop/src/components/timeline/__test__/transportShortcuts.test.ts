@@ -55,27 +55,31 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
 
     it("lists Play, Play from Playhead / Pause and Loop, plus the shortcuts list (UI-17)", () => {
         expect(PLAYBACK_MENU_ACTIONS).toEqual([
-            { action: "playPause", label: "Play / Stop", accelerator: "Space" },
+            {
+                action: "playPause",
+                labelKey: "menu.playback.playPause",
+                accelerator: "Space",
+            },
             {
                 action: "playPage",
-                label: "Play from Playhead / Pause",
+                labelKey: "menu.playback.playPage",
                 accelerator: "Shift+Space",
             },
             {
                 action: "playOn",
-                label: "Play On from Start Flag",
+                labelKey: "menu.playback.playOn",
                 accelerator: "Alt+Space",
             },
             {
                 action: "toggleLoop",
-                label: "Loop On / Off",
+                labelKey: "menu.playback.toggleLoop",
                 accelerator: "C",
             },
         ]);
         expect(HELP_MENU_ACTIONS).toEqual([
             {
                 action: "showShortcuts",
-                label: "Keyboard Shortcuts",
+                labelKey: "menu.help.showShortcuts",
                 accelerator: "Shift+/",
             },
         ]);
@@ -107,21 +111,21 @@ describe("the shortcuts list (UI-17 follow-up)", () => {
             shortcutGroups((key) => key, {}, isMac)
                 .find((g) => g.title === "Shapes")!
                 .rows.map((row) => row.keys);
-        expect(shapeKeys(false)).toEqual(
-            expect.arrayContaining([
-                "Shift + Drag",
-                "Ctrl + Drag",
-                "Alt + Drag",
-            ]),
-        );
-        expect(shapeKeys(true)).toEqual(
-            expect.arrayContaining(["Shift + Drag", "⌘ + Drag", "Alt + Drag"]),
-        );
+        // Bindings, so the shortcut shows ⌘ on a Mac and Ctrl elsewhere
+        for (const isMac of [false, true]) {
+            expect(shapeKeys(isMac)).toEqual(
+                expect.arrayContaining([
+                    "Shift + Drag",
+                    "Mod + Drag",
+                    "Alt + Drag",
+                ]),
+            );
+        }
         const movement = shortcutGroups((key) => key, {}, false)
             .find((g) => g.title === "Move marchers")!
             .rows.map((row) => row.keys);
         expect(movement).toEqual(
-            expect.arrayContaining(["Shift + Drag", "Ctrl + Drag"]),
+            expect.arrayContaining(["Shift + Drag", "Mod + Drag"]),
         );
     });
 
@@ -131,12 +135,12 @@ describe("the shortcuts list (UI-17 follow-up)", () => {
         const playback = groups[0]!.rows.map((row) => row.keys);
         expect(playback).toEqual([
             "Space",
-            "Shift + Space",
-            "Alt + Space",
+            "Shift+Space",
+            "Alt+Space",
             "C",
-            "]",
-            "[",
-            "Ctrl + M",
+            "BracketRight",
+            "BracketLeft",
+            "$mod+M",
         ]);
         const timeline = groups.find((g) => g.title === "Timeline");
         expect(timeline?.rows).toContainEqual({

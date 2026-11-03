@@ -132,7 +132,9 @@ function MatchBlock({
                 }
                 detail={
                     match.builtIn
-                        ? t("library.import.match.builtInDetail")
+                        ? t("library.import.match.builtInDetail", {
+                              name: match.name,
+                          })
                         : t("library.import.match.detail")
                 }
             />

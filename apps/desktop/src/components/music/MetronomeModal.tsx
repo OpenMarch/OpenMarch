@@ -12,7 +12,7 @@ import {
 import { Slider } from "@openmarch/ui";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { BEAT_STYLE_IDS, BeatStyleId } from "@openmarch/metronome";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 
 export default function MetronomeModal({
@@ -22,7 +22,7 @@ export default function MetronomeModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <SidebarModalLauncher
             name={t("sidebar.metronome")}
@@ -35,6 +35,7 @@ export default function MetronomeModal({
 }
 
 function MetronomeModalContents() {
+    const { t } = useTranslate();
     const { toggleOpen } = useSidebarModalStore();
     const {
         isMetronomeOn,
@@ -64,6 +65,7 @@ function MetronomeModalContents() {
                     <T keyName="music.metronome" />
                 </h4>
                 <button
+                    aria-label={t("sidebar.close")}
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >
@@ -125,6 +127,7 @@ function MetronomeModalContents() {
                             max={100}
                             step={1}
                             onValueChange={([v]) => setVolume(v)}
+                            aria-label={t("music.volume")}
                         />
                     </div>
                 </div>
@@ -150,7 +153,7 @@ function MetronomeModalContents() {
                                             keyName={
                                                 BEAT_STYLE_LABELS[
                                                     beatStyle as BeatStyleId
-                                                ] || "music.beatStyle.select"
+                                                ] || "music.select"
                                             }
                                         />
                                     ) as any
@@ -160,7 +163,7 @@ function MetronomeModalContents() {
                                     keyName={
                                         BEAT_STYLE_LABELS[
                                             beatStyle as BeatStyleId
-                                        ] || "music.beatStyle.select"
+                                        ] || "music.select"
                                     }
                                 />
                             </SelectTriggerButton>

@@ -17,14 +17,12 @@
             "snapOff": "Turn Snap off",
             "snapOn": "Snap off: turn it back on",
             "snapToCustomFraction": "Snap to grid",
-            "snapToWhole": "Snap to nearest whole",
             "toggleSnap": "Toggle Snap",
             "toggleSnapKeywords": "snap magnet grid free"
         },
         "batchEdit": {
             "clearPage": "Clear Page {page}",
-            "clearPageAndPage": "Clear Page {page}, Page {next} moves back too",
-            "clearPageAndPages": "Clear Page {page}, Pages {first}–{last} move back too",
+            "clearPageAndLater": "{count, plural, =1 {Clear Page {page}, Page {first} moves back too} other {Clear Page {page}, Pages {first}–{last} move back too}}",
             "clearThisPageAll": "{clearThisPage} (all marchers)",
             "clearThisPageAllAndFollowing": "{clearThisPage} (all marchers), later pages move back too",
             "clearThisPageHoldsToo": "{count, plural, one {{names}'s hold on {pages} was cleared too} other {{names}'s holds on {pages} were cleared too}}.",
@@ -38,9 +36,11 @@
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
             "setAllToNext": "Copy positions from next page (all marchers)",
-            "setAllToNextSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}",
+            "setAllToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
             "setSelectedToNext": "Copy positions from next page (selected)",
-            "setSelectedToNextSuccess": "{count, plural, one {Successfully set {count} marcher coordinate on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}"
+            "setSelectedToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
+            "setAllToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}",
+            "setSelectedToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}"
         },
         "edit": {
             "noRedoAvailable": "No action to redo",
@@ -48,9 +48,11 @@
             "redidCueEdit": "Redid a cue edit (Visuals)",
             "redidDrillEdit": "Redid a drill edit (Editor)",
             "redo": "Redo",
+            "redoFailed": "The redo couldn't be applied, so nothing changed.",
             "undo": "Undo",
             "undidCueEdit": "Undid a cue edit (Visuals)",
-            "undidDrillEdit": "Undid a drill edit (Editor)"
+            "undidDrillEdit": "Undid a drill edit (Editor)",
+            "undoFailed": "The undo couldn't be applied, so nothing changed."
         },
         "file": {
             "closeFile": "Close file",
@@ -69,6 +71,7 @@
             "openExport": "Export…",
             "saveDialogue": "Save a copy…"
         },
+        "labelWithVariant": "{label} ({variant})",
         "movement": {
             "moveDown": "Nudge down",
             "moveLeft": "Nudge left",
@@ -109,25 +112,29 @@
             "selectAll": "Select all"
         },
         "shape": {
-            "delete": "Deletes the current selected shapes",
             "noMarchersSelected": "No marchers selected",
             "block": "Shape: Box",
             "circle": "Shape: Circle",
             "ring": "Favorites ring: hold to pick a shape, tap to keep it open",
             "apply": "Place marchers on the shape",
+            "removeLastPoint": "Shape: Remove the last point while drawing",
             "quarterTurn": "Shape: Turn 90° clockwise",
             "recalculate": "Shape: Recalculate who goes where",
             "evenOut": "Shape: Even out the outline",
+            "hideMarchers": "Shape: Hide the marchers (hold to peek, tap to keep hidden)",
+            "hideMarchersKeywords": "hide show marchers spots walks alone peek eye",
             "expand": "Shape: Expand, keeping the proportions",
             "shrink": "Shape: Shrink, keeping the proportions",
             "keywords": "shape form formation set place",
+            "line": "Shape: Line",
+            "curve": "Shape: Curve",
+            "group": "Group selection",
+            "groupKeywords": "group shape freeze as is keep together combine",
             "ungroup": "Shape: Ungroup",
             "ungroupKeywords": "ungroup shape break apart release separate"
         },
         "swap": {
-            "error": "Could not swap marchers {marcher1} and {marcher2}",
             "mustSelectTwo": "Can only swap when 2 marchers are selected.",
-            "success": "Swapped marchers {marcher1} and {marcher2}",
             "swap": "Swap two marchers"
         },
         "timeline": {
@@ -141,8 +148,7 @@
             "tapBeats": "Add {count} temporary beats",
             "unsetHere": "{removeKeyframe}",
             "unsetHereAndFollowing": "{removeKeyframe}, later pages move back too",
-            "unsetHereAndPage": "{removeKeyframe}, Page {page} moves back too",
-            "unsetHereAndPages": "{removeKeyframe}, Pages {first}–{last} move back too",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, Page {first} moves back too} other {{removeKeyframe}, Pages {first}–{last} move back too}}",
             "unsetHereKeywords": "keyframe diamond unset set defined not defined following remove clear take back coordinate position delete",
             "splitSelectedIntoNewMove": "Split selected marchers into a new move",
             "mergeMoveIntoPage": "Merge this move into its page"
@@ -182,12 +188,18 @@
         "whenYouOptIn": "When you opt-in",
         "whenYouOptOut": "When you opt-out"
     },
+    "app": {
+        "codegenBanner": "🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions",
+        "releaseNotes": "Release notes",
+        "updated": "OpenMarch updated to v{version}"
+    },
     "assets": {
         "credits": {
             "license": {
                 "proprietary": "All rights reserved",
                 "unknown": "Unknown license"
             },
+            "modified": "{credit} (modified)",
             "none": "Nothing in this show needs a credit.",
             "shareNote": {
                 "badge": "Share note",
@@ -203,8 +215,8 @@
             "addToLibrary": "Add to my Library",
             "delete": {
                 "addFirst": "Add to my Library first",
-                "alsoUsedByCues": "{count, plural, one {A cue uses it too:} other {# cues use it too:}}",
-                "atCount": "count {count}",
+                "alsoUsedByCues": "{count, plural, =1 {A cue uses it too:} other {# cues use it too:}}",
+                "useLine": "{channel} · {who} · count {count}",
                 "cancel": "Cancel",
                 "channels": {
                     "carry": "Carry",
@@ -228,6 +240,7 @@
                 "pinnedBy": "It's part of {names}, so it can't be deleted.",
                 "replaceAndDelete": "Replace and delete",
                 "replaced": "Replaced {name} with {replacement}.",
+                "replacedKeptForUndo": "Replaced {name} with {replacement}. {name} stays in this show while Undo can bring it back, and is removed when the show closes after that.",
                 "replaceWith": "Replace with…",
                 "targets": {
                     "band": "Band",
@@ -235,8 +248,8 @@
                     "tag": "A tag"
                 },
                 "title": "Delete {name} from this show?",
-                "usedByCues": "{count, plural, one {A cue uses it. Replace it to delete it:} other {# cues use it. Replace it in all of them to delete it:}}",
-                "usedByItems": "{count, plural, one {A prop uses it, so it can't be deleted:} other {# props use it, so it can't be deleted:}}"
+                "usedByCues": "{count, plural, =1 {A cue uses it. Replace it to delete it:} other {# cues use it. Replace it in all of them to delete it:}}",
+                "usedByItems": "{count, plural, =1 {A prop uses it, so it can't be deleted:} other {# props use it, so it can't be deleted:}}"
             },
             "empty": "This show doesn't use any assets yet.",
             "emptyHint": "Imports are copied into the show you have open.",
@@ -256,9 +269,17 @@
                 "error": "Error replacing beats",
                 "success": "Beats replaced successfully"
             },
-            "save": {
-                "error": "Error creating new beats",
-                "success": "Beats saved successfully"
+            "update": {
+                "error": "Error updating beats"
+            },
+            "delete": {
+                "error": "Error deleting beats"
+            },
+            "shift": {
+                "error": "Error shifting beats"
+            },
+            "flatten": {
+                "error": "Error flattening beat order"
             }
         },
         "context": {
@@ -269,13 +290,16 @@
             "beat": {
                 "addBeat": "Add Beat",
                 "cannotDeleteOnPage": "Beats on pages cannot be deleted",
+                "delete": "Delete beat",
                 "errorCreating": "Error creating beat",
+                "errorCreatingMeasure": "Error creating measure",
                 "errorDeleting": "Error deleting beat",
                 "markAsMeasure": "Mark as Measure"
             },
             "measure": {
                 "addMeasure": "Add Measure",
                 "cannotDeleteOnPage": "Beats on pages cannot be deleted",
+                "delete": "Delete measure",
                 "errorCreatingMeasureAndBeats": "Error creating measure and beats",
                 "errorDeletingMeasureAndBeats": "Error deleting measure and beats",
                 "errorRemovingMarking": "Error removing measure marking",
@@ -297,15 +321,13 @@
         "editableBeatPlayer": {
             "description": "Drag the right edge of any beat to adjust its duration"
         },
-        "play": {
-            "error": "Failed to play audio"
-        },
         "saveNewBeats": {
             "label": "Save New Beats"
         },
         "seeDocs": {
             "label": "See docs"
         },
+        "silentPlaceholder": "Silent Audio",
         "tapNewTempo": {
             "exit": "Exit",
             "label": "Tap New Tempo",
@@ -316,18 +338,34 @@
             "label": "Tap Tempo",
             "tap": "Tap",
             "tapButton": "Tap to add {count} temporary beats at the current audio time"
+        },
+        "player": {
+            "pause": "Pause",
+            "play": "Play",
+            "toStart": "Back to start"
+        },
+        "insert": {
+            "noFileOpen": "No file is open. Create or open a show first.",
+            "databaseUnavailable": "Database became unavailable. Please try again after ensuring the database file is ready."
         }
     },
     "auth": {
         "signIn": "Sign In",
         "signInAriaLabel": "Sign in",
         "signOut": "Sign Out",
-        "userFallback": "User"
+        "userFallback": "User",
+        "fullName": "{firstName} {lastName}",
+        "api": {
+            "requestFailed": "API request failed: {reason}",
+            "requestFailedStatus": "API request failed: {status} {statusText}",
+            "tokenRequired": "Authentication token is required"
+        }
     },
     "colorPicker": {
         "discard": "Discard",
         "removeSetting": "Remove setting",
-        "save": "Save"
+        "save": "Save",
+        "resetToDefault": "Reset to default"
     },
     "commandPalette": {
         "close": "Close",
@@ -360,7 +398,31 @@
             "backingUp": "Saving the copy…",
             "converting": "Converting page {done} of {total}…"
         },
-        "title": "Convert this show to timelines?"
+        "title": "Convert this show to timelines?",
+        "openFailed": {
+            "backupTitle": "Couldn't back up your file",
+            "backupMessage": "\"{fileName}\" wasn't opened, because it couldn't be backed up before converting it to timelines.",
+            "backupDetail": "{error}\n\nYour file was not changed.",
+            "convertTitle": "Couldn't convert your file",
+            "convertMessage": "\"{fileName}\" wasn't opened, because converting it to timelines failed.",
+            "convertDetail": "{error}\n\nYour file wasn't converted, and wasn't changed. A copy of it from before is at:\n{backupPath}",
+            "ok": "OK",
+            "noPages": "It has no pages to convert from. It may have been converted to timelines already and then saved by an older version of OpenMarch.",
+            "conversionStopped": "The conversion stopped before it finished ({reason}). It was rolled back."
+        },
+        "backupError": {
+            "notWritable": "OpenMarch can't write a backup in \"{folder}\" (the folder is read-only or you don't have permission). Your file was not changed. Move it to a folder you can write to, then try again.",
+            "diskFull": "There isn't enough free disk space to back up your file in \"{folder}\". Your file was not changed. Free some space, then try again.",
+            "busy": "Your file is in use by another program, so it can't be backed up right now. Your file was not changed. Close other programs that use it, then try again.",
+            "nameTooLong": "The backup's file name is too long for the file system in \"{folder}\". Your file was not changed. Shorten the file's name, then try again.",
+            "unreadable": "Your file isn't a readable OpenMarch file ({error}). Your file was not changed.",
+            "unknown": "The backup could not be made: {error}. Your file was not changed.",
+            "noFreeName": "No free name for a backup was found in \"{folder}\". Your file was not changed.",
+            "noFreeNameRemoveOld": "No free name for a backup was found in \"{folder}\". Your file was not changed. Remove old \".{suffix}\" backups, then try again. ({error})",
+            "sourceMissing": "The file \"{file}\" doesn't exist, so it can't be backed up.",
+            "verificationFailed": "The backup was made but didn't match your file ({error}), so it was deleted. Your file was not changed.",
+            "stopped": "Your file couldn't be backed up: the backup stopped before it finished ({reason})."
+        }
     },
     "coordinateRoundingSettings": {
         "custom": "Custom",
@@ -373,24 +435,35 @@
         "title": "Coordinate Rounding",
         "unit": "steps",
         "xStepDescription": "Left-click to cycle forward, right-click to cycle backward through X-step options",
-        "yStepDescription": "Left-click to cycle forward, right-click to cycle backward through Y-step options"
+        "yStepDescription": "Left-click to cycle forward, right-click to cycle backward through Y-step options",
+        "roundToQuarter": "Round {axis} to nearest quarter step",
+        "roundToHalf": "Round {axis} to nearest half step",
+        "roundToSteps": "{steps, plural, one {Round {axis} to nearest # step} other {Round {axis} to nearest # steps}}",
+        "xStepValue": "X: {value}",
+        "yStepValue": "Y: {value}"
     },
     "coordinateSheet": {
-        "countAbbreviation": "Ct.",
-        "frontToBack": "Front to Back",
-        "frontToBackAbbreviation": "F. to B.",
-        "measureAbbreviation": "Ms.",
-        "measures": "Measures",
+        "countAbbreviation": "Ct",
+        "countsColumnLabel": "Counts",
         "page": "Page {page}",
-        "pageAbbreviation": "Pg.",
-        "sideToSide": "Side to Side",
-        "sideToSideAbbreviation": "S. to S."
+        "pageColumnLabel": "Page",
+        "pageAbbreviation": "Pg",
+        "quarterPageAbbreviation": "Pg.",
+        "tableLabel": "Coordinates for {drillNumber}",
+        "unnamedMarcherName": "{section} {number}",
+        "xHeader": "X",
+        "yHeader": "Y"
     },
     "cues": {
         "carryNotice": {
             "movedLater": "{count, plural, one {# cue moved to a later count} other {# cues moved to later counts}}",
             "movedTo": "{count, plural, one {# cue moved to count {at}} other {# cues moved to count {at}}}",
             "removed": "{count, plural, one {# cue removed} other {# cues removed}}"
+        },
+        "errors": {
+            "create": "Error creating cues",
+            "delete": "Error deleting cues",
+            "update": "Error updating cues"
         }
     },
     "ensembles": {
@@ -400,9 +473,7 @@
             "description": "Attach this .dots file to this production? This will allow you to upload from this file into the OpenMarch - On the Move mobile app.",
             "title": "Attach to Production"
         },
-        "attached": "(Attached)",
         "attachToProduction": "Attach to production",
-        "createdAtHeader": "Created At",
         "createDialog": {
             "cancel": "Cancel",
             "create": "Create",
@@ -416,22 +487,19 @@
         },
         "createProduction": "Create production",
         "empty": "No ensembles found. Create one above!",
-        "error": "Error loading ensembles",
         "loading": "Loading ensembles...",
-        "nameHeader": "Name",
-        "performersHeader": "Performers",
-        "productionsHeader": "Productions",
-        "viewDetails": "View ensemble details"
+        "viewDetails": "View ensemble details",
+        "loadError": "Error loading ensembles: {error}"
     },
     "exportCoordinates": {
         "abbreviateCoordinateDescriptions": "Abbreviate coordinate descriptions",
         "addPagesToEnd": "Add pages to the end",
-        "addPagesToEndTitle": "{counts, plural, one {Add a page every count up to the end of the last move} other {Add a page every # counts up to the end of the last move}}",
+        "addPagesToEndTitle": "{counts, plural, =1 {Add a page every count up to the end of the last move} other {Add a page every # counts up to the end of the last move}}",
         "cancel": "Cancel",
         "cancelledByUser": "Export cancelled by user",
-        "coordinatesError": "Error: Could not calculate coordinates for marcher page {id}",
         "coordinateSheets": "Coordinate Sheets",
         "drillCharts": "Drill Charts",
+        "drillChartPreviewAlt": "Drill Chart Preview",
         "errorRendering": "Error rendering {drillNumber}",
         "errorTitle": "Error exporting coordinate sheet",
         "exampleMarcherName": "Example Marcher",
@@ -445,26 +513,18 @@
         "exportNotAvailable": "Export Not Available",
         "exportNotAvailableDescription": "Export requires field properties, at least one non-default page, and at least one marcher.",
         "exportPDFSuccess": "Successfully exported as PDF!",
-        "exportSuccess": "{count, plural, one {Successfully exported coordinate sheets for {count} marcher!} other {Successfully exported coordinate sheets for {count} marchers!}}",
-        "fieldProperties": "Field Properties: {status}",
         "fieldPropertiesNotLoaded": "Field properties not loaded",
         "fieldPropertiesRequired": "Field properties are required for export",
         "frontToBackHeader": "Front to Back",
         "funPhrase": {
             "0": "Get ready to march a perfect 8 to 5! 🎺",
             "1": "Getting the files to cover down 📋",
-            "10": "Setting the tempo for success 🎼",
-            "11": "Fine-tuning every step count 🔧",
             "2": "Cleaning drill from the box 🧹",
             "3": "Making sure everyone's in step 👟",
             "4": "Painting a perfect field 🖌️",
-            "5": "Marching toward perfection! 🎯",
-            "6": "Polishing those yard line markers ✨",
-            "7": "Counting off the perfect tempo 🥁",
-            "8": "Aligning the formation like a pro 📐",
-            "9": "Marching toward perfection! 🎯"
+            "5": "Marching toward perfection! 🎯"
         },
-        "generatingPDF": " Generating PDF file for: {drillNumber}",
+        "generatingPDF": "Generating PDF file for: {drillNumber}",
         "includeMeasures": "Include measures",
         "includeNotesAppendix": "Include notes appendix pages",
         "includeNotesAppendixTooltip": "Add portrait appendix pages listing notes for each set.",
@@ -472,7 +532,6 @@
         "individualCharts": "Individual Drill Charts",
         "individualChartsTooltip": "Create customized drill chart PDFs for each individual marcher.",
         "individualChartsTooltipDescription": "If this is not checked, one overview drill chart PDF will be created.",
-        "marcher": "Marcher: {status}",
         "marcherPositionsMissing": "This marcher has no position on some pages, so its chart was skipped.",
         "marchersNotLoaded": "Marchers not loaded",
         "marchersWithoutPositions": "No positions found for {drillNumbers}.",
@@ -487,13 +546,16 @@
         "openExportDirectory": "Click to open export",
         "openExportDirectoryError": "Could not open export directory: {error}",
         "organizeBySection": "Organize by Section",
-        "organizeBySectionTooltip": "Create PDF files for each individual marcher, organized in folders by section.\\nIf this is not checked, one large PDF file will be created with every coordinate sheet in score order.",
-        "page": "Page: {status}",
-        "pageNotFound": "Error: Page not found for marcher page {id}",
         "pdfExportFailed": "PDF Export failed: {error}",
         "preview": "Preview",
-        "processingPage": "Processing page {pageNumber} of {totalPages}: {pageName}",
         "quarterPageLayout": "Quarter-page layout",
+        "rounding": {
+            "eighth": "1/8 (Eighth Step)",
+            "half": "1/2 (Half Step)",
+            "quarter": "1/4 (Quarter Step)",
+            "tenth": "1/10 (Tenth Step)",
+            "whole": "1/1 (Whole Step)"
+        },
         "roundingDenominator": "Coordinate rounding:",
         "sectionAppearancesNotLoaded": "Section appearances not loaded",
         "selectRoundingDenominator": "Select rounding",
@@ -507,7 +569,9 @@
         "useXYHeaders": "Use X/Y headers",
         "video": "Video",
         "videoAudioTrack": "Audio track: {name}",
+        "videoAudioNoData": "Audio file has no data",
         "videoBackground": "Video background",
+        "videoBranding": "Made with {product}",
         "videoExportFailed": "Video export failed: {error}",
         "videoExportSuccess": "Successfully exported video!",
         "videoFieldFraming": "Field framing",
@@ -516,17 +580,26 @@
         "videoFieldResetFraming": "Reset field framing",
         "videoFieldScale": "Scale",
         "videoFrameRate": "Frame rate",
+        "videoFrameRateValue": "{fps} fps",
         "videoNoAudio": "No audio file selected. The video will use a silent audio track.",
+        "videoNoPages": "The show has no pages to export",
+        "videoNoDuration": "The show has no duration to export",
+        "videoNoCanvas": "Could not create export canvas",
+        "videoNoEncoder": "No supported video encoder is available on this system",
         "videoNoWebGL": "Video export needs WebGL, which this computer doesn't have right now. Turn on hardware acceleration or update your graphics drivers, then reopen this window.",
         "videoOpenFile": "Click to open video",
         "videoOverlay": "On-screen info",
         "videoOverlayClock": "Elapsed time",
-        "videoOverlayCountLabel": "Count",
+        "videoOverlayCount": "Count {count} / {total}",
         "videoOverlayMeasures": "Measure numbers & rehearsal marks",
+        "videoOverlayMeasure": "m. {measure}",
+        "videoOverlayMeasureWithMark": "[{mark}]  m. {measure}",
         "videoOverlayPreviewHint": "Drag the overlay to move it (side handle = width, corner = size). Drag empty space to pan the field and scroll to zoom. Use the sliders below for fine adjustments.",
         "videoOverlaySetCounts": "Sets & counts",
-        "videoOverlaySetLabel": "Set",
+        "videoOverlaySet": "Set {set}",
+        "videoOverlaySetTransition": "Set {from} → {to}",
         "videoOverlayTempo": "Tempo",
+        "videoOverlayTempoValue": "{bpm} bpm",
         "videoPreviewLoading": "Loading preview…",
         "videoRendering": "Rendering video... This may take several minutes.",
         "videoResolution": "Resolution",
@@ -541,7 +614,18 @@
         "videoWebSaveMissing": "This video is no longer available. Export it again.",
         "videoWebSaved": "Video saved",
         "videoWebSilent": "This browser can't add the music to videos, so the video will be silent.",
-        "videoWebUnsupported": "This browser can't make videos. Use Safari 16.4 or later, Chrome or Edge."
+        "videoWebUnsupported": "This browser can't make videos. Use Safari 16.4 or later, Chrome or Edge.",
+        "saveDialog": {
+            "chooseFolderTitle": "Select Export Location",
+            "exportHere": "Export Here",
+            "savePdfTitle": "Save PDF",
+            "videoTitle": "Export Video"
+        },
+        "exportedCount": "{count, plural, one {Successfully exported coordinate sheets for {count} marcher!} other {Successfully exported coordinate sheets for {count} marchers!}}",
+        "checkFieldProperties": "Field Properties: {status, select, ok {✓} other {✗}}",
+        "checkMarcher": "Marcher: {status, select, ok {✓} other {✗}}",
+        "checkPage": "Page: {status, select, ok {✓} other {✗}}",
+        "organizeBySectionHint": "Create PDF files for each individual marcher, organized in folders by section. If this is not checked, one large PDF file will be created with every coordinate sheet in score order."
     },
     "field": {
         "benchmark": {
@@ -559,10 +643,12 @@
             "fine": "fine",
             "freeRatio": "free ratio",
             "fromCenter": "from center",
+            "keepDirection": "keep direction",
             "keepRatio": "keep ratio",
             "oneAxis": "one axis",
             "snapOff": "Snap off",
-            "wholeDegrees": "whole degrees"
+            "wholeDegrees": "whole degrees",
+            "withKey": "<keys></keys> {word}"
         },
         "general": {
             "exportField": "Export Field",
@@ -581,7 +667,12 @@
             "unavailable.title": "The field can't be drawn",
             "unavailable.web": "This browser has WebGL graphics turned off or blocked. Turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\"), restart the browser, then reload this page. Your show is safe."
         },
-        "title": "Field"
+        "title": "Field",
+        "errors": {
+            "noWebGL": "WebGL is not available",
+            "contextLost": "The field's WebGL context was lost, so the video can't be drawn. Try the export again.",
+            "offscreenTimeout": "The field didn't start off screen"
+        }
     },
     "fieldDisplay": {
         "caption": {
@@ -591,13 +682,14 @@
         "comingSoon": "Coming soon",
         "direction": "Field direction",
         "label": "Field display",
-        "sections": "Visible sections"
+        "sections": "Visible sections",
+        "comingSoonLabel": "{label}: Coming soon",
+        "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
         "applyFieldType": "Apply Field Type",
         "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
         "buttons": {
-            "importImage": "Import Image",
             "newXCheckpoint": "New X-Checkpoint",
             "newYCheckpoint": "New Y-Checkpoint",
             "resetTheme": "Reset Theme to Default",
@@ -619,13 +711,13 @@
             "shortName": "Short Name",
             "shortNameTooltip": "The primary name of the checkpoint. (E.g. \"45 Yard Line - Side 1\")",
             "stepsFromCenter": "Steps from center",
-            "stepsFromCenterTooltip": "The number of steps away from the center of the field that this checkpoint is. Negative is towards the back.",
             "stepsFromFront": "Steps from front",
             "stepsFromFrontTooltip": "The number of steps away from the front of the field that this checkpoint is. Negative is towards the back.",
             "useAsReference": "Use as reference",
             "useAsReferenceTooltip": "If this checkpoint should be used as a reference for coordinates.",
             "visible": "Visible",
-            "visibleTooltip": "If this checkpoint should be visible on the field"
+            "visibleTooltip": "If this checkpoint should be visible on the field",
+            "stepsFromCenterHint": "The number of steps away from the center of the field that this checkpoint is. Negative is toward the left, as the audience sees the field."
         },
         "customField": "Custom Field",
         "customFieldDocs": "See docs",
@@ -635,7 +727,11 @@
         "errors": {
             "invalidColor": "Invalid color",
             "noPropertiesToLoad": "No field properties to load! This should never happen, please reach out to support",
-            "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
+            "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support.",
+            "invalidJson": "Invalid JSON file.\n\nPlease ensure the file contains valid JSON syntax.",
+            "invalidFile": "Invalid field properties file.\n\n{details}\n\nPlease ensure the file contains all required fields with correct values.",
+            "fieldsHaveErrors": "The following fields have errors:\n{issues}",
+            "unknownValidation": "Unknown validation error"
         },
         "fieldTemplate": {
             "custom": "Custom",
@@ -690,13 +786,12 @@
             "useHashes": "Use Hashes",
             "width": "Width",
             "widthHeight": "w/h",
-            "stepSizeWarningThresholdRatio": "{label} ({steps} to 5)"
+            "noBackgroundImage": "N/A",
+            "stepSizeWarningRatio": "Step Size Warning Threshold ({steps} to 5)"
         },
         "messages": {
             "fieldRatio": "{ratio} or {decimal}",
             "measurementModificationNote": "These values can be modified by adjusting the X and Y coordinates, the step size and the background image",
-            "refreshAfterImporting": "Refresh after importing [Ctrl + R]",
-            "refreshNote": "Below values may not be applied until after a refresh",
             "noFloor": "No floor",
             "floorUnnamed": "Floor"
         },
@@ -729,7 +824,6 @@
             "marchers": "Marchers",
             "pathways": "Pathways"
         },
-        "title": "Field Properties",
         "tooltips": {
             "conformMethod": "Whether to fit the background image inside the field or fill it. The aspect ratio is always maintained",
             "directorsLeft": "E.g. \"Side 1\", \"Audience Left\" or \"Stage Right\"",
@@ -737,7 +831,6 @@
             "fieldName": "The name or title of the field template",
             "halfLineXInterval": "The interval that half lines appear in the UI on the X axis from the center of the field. Leave empty to omit half lines on the X-axis. This is purely cosmetic and does not affect coordinates in any way",
             "halfLineYInterval": "The interval that half lines appear in the UI on the Y axis from the front of the field. Leave empty to omit half lines on the Y-axis. This is purely cosmetic and does not affect coordinates in any way",
-            "importImage": "Import an image to display on the field",
             "leftAbbreviation": "E.g. \"S1\", \"AL\" or \"SR\" (short for \"Side 1\", \"Audience Left\" or \"Stage Right\")",
             "measurementSystem": "The unit of measurement to define the step size in. Can go back and forth",
             "resetTheme": "Reset the theme to the default values",
@@ -753,11 +846,18 @@
             "uploadFloor": "Import an image as this show's floor: its field image in 2D, exports and 3D"
         },
         "units": {
-            "steps": "steps"
+            "inches": "in",
+            "centimeters": "cm"
         },
         "warnings": {
             "xCheckpointsNotEquidistant": "WARNING - The left and rightmost X-checkpoints are not equidistant from the center. This may cause strange graphical artifacts and should be fixed.",
             "yCheckpointsNegative": "WARNING - It is highly recommended that all Y-checkpoints' steps be less than zero (i.e. negative numbers). All of the Y-coordinates should be behind the front of the field. Failing to do so may cause graphical errors and unexpected coordinates."
+        },
+        "loading": "Loading...",
+        "measurements": {
+            "feet": "{value} ft",
+            "meters": "{value} m",
+            "steps": "{count, plural, one {# step} other {# steps}}"
         }
     },
     "fileAccessDialogError": {
@@ -799,13 +899,21 @@
         "saveFileCancel": "Cancel",
         "saveSpinnerText": "Saving copy...",
         "toasts": {
+            "audioUploadFailed": "Failed to upload audio file",
+            "audioUploaded": "Audio file uploaded successfully",
             "error": "Unable to save copy",
+            "errorWithDetails": "Unable to save copy. Error {error}",
+            "noFileOpen": "No file is open. Create or open a show first.",
             "success": "Copy saved"
         },
         "undo": "Undo"
     },
+    "focusNotice": {
+        "exit": "Exit Timeline Focus",
+        "message": "Timeline is currently focussed, all other interaction is disabled. Press <keys></keys> or the button below to re-focus the main editor.",
+        "messageNoKey": "Timeline is currently focussed, all other interaction is disabled. Use the button below to re-focus the main editor."
+    },
     "formButtons": {
-        "cancel": "Cancel",
         "discardChanges": "Discard Changes",
         "editButton": "Edit",
         "saveChanges": "Save Changes"
@@ -818,7 +926,6 @@
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
             "itemsSelected": "{count, plural, one {# prop selected. Edit it in the Props panel.} other {# props selected. Edit them in the Props panel.}}",
-            "loading": "Loading marcher",
             "playing": "Playing. Pause to see and edit the selected marchers.",
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
@@ -829,26 +936,22 @@
             "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
             "timeline": {
-                "countOfSelected": "{count} of the {total} selected",
+                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
                 "holdFrom": "Last moved on Page {page}",
                 "holdFromStart": "No moves since the start",
                 "holdHere": "These marchers have no position of their own here",
                 "movesOnThisPage": "Moves on this page",
-                "namesOfSelected": "{names} ({count} of the {total} selected)",
-                "pageFollows": "Page {page} shows these marchers where this page leaves them",
-                "pageFollowsSome": "Page {page} shows some of these marchers where this page leaves them",
-                "pagesFollow": "Pages {first}–{last} show these marchers where this page leaves them",
-                "pagesFollowSome": "Pages {first}–{last} show some of these marchers where this page leaves them",
+                "pagesShowFromHere": "{count, plural, =1 {Page {first} shows these marchers where this page leaves them} other {Pages {first}–{last} show these marchers where this page leaves them}}",
+                "pagesShowSomeFromHere": "{count, plural, =1 {Page {first} shows some of these marchers where this page leaves them} other {Pages {first}–{last} show some of these marchers where this page leaves them}}",
                 "setAsShown": "{defineAsShown}",
-                "setAsShownHint": "Make {who} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here",
-                "setAsShownHintEarlier": "Make {who} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here",
+                "setAsShownHint": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here}}",
+                "setAsShownHintEarlier": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here}}",
                 "someHoldHere": "Some of these marchers have no position of their own here",
-                "theseMarchers": "these marchers",
                 "unsetHere": "{removeKeyframe}",
-                "unsetHereAndFollowingHint": "Remove their keyframe on this count, and {pages} go back to the keyframe before it",
-                "unsetHereAndFollowingHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pages} go back to the keyframe before it",
+                "unsetHereAndLaterHint": "Remove their keyframe on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
+                "unsetHereAndLaterHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
                 "unsetHereHint": "Remove their keyframe on this count, so they go back to the keyframe before it. Later pages stay where they are",
                 "unsetHereHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they go back to the keyframe before it. Later pages stay where they are",
                 "unsetHereNone": "None of the selected marchers has a keyframe on this count"
@@ -872,51 +975,45 @@
                 "title": "Move",
                 "towardBack": "Move toward the back sideline",
                 "towardFront": "Move toward the front sideline",
-                "towardSide": "Move toward {side}"
+                "towardSide": "Move toward {side}",
+                "towardSide1": "Move toward Side 1",
+                "towardSide2": "Move toward Side 2"
             },
             "newTagCaption": "New tag",
-            "removeFromTagCaption": "Remove"
+            "removeFromTagCaption": "Remove",
+            "alignHeading": "Align",
+            "distributeHeading": "Distribute",
+            "distributeStepsPlaceholder": "Steps",
+            "coords": {
+                "x": "X",
+                "y": "Y",
+                "inside": "inside",
+                "outside": "outside",
+                "on": "On",
+                "inFrontOf": "in front of",
+                "behind": "behind",
+                "xCheckpoint": "X-Checkpoint {id}",
+                "yCheckpoint": "Y-Checkpoint {id}"
+            },
+            "rotation": "Rotation"
         },
         "page": {
             "counts": "Counts",
-            "deletedFailed": "Page deletion failed",
-            "deletedSuccessfully": "Page deleted successfully",
             "measures": "Measures",
             "notes": "Notes",
-            "notesPlaceholder": "Add notes for this page...",
             "paused": "Pause to split this page or change its subset.",
             "splitPage": "Split page",
             "split": {
-                "success": "Page split successfully"
+                "error": "Couldn't split the page"
             },
-            "playing": "Playing…",
             "subset": "Subset",
             "title": "Page {pageNumber}"
         },
         "shape": {
-            "addSegmentButton": "Add",
-            "addSegmentTooltip": "Add segment to shape",
             "alignmentTab": "Alignment",
-            "copyToNextPage": "Copy this shape to the next page",
-            "copyToNextPageButton": "Copy to next page",
-            "copyToPreviousPage": "Copy this shape to the previous page",
-            "copyToPreviousPageButton": "Copy to prev page",
-            "deleteLastSegmentTooltip": "Delete last segment",
-            "errorCopyingPage": "Error copying to page. Are there marchers already assigned to shapes?",
-            "errorNoNextPage": "Cannot copy. There is no next page",
-            "errorNoPreviousPage": "Cannot copy. There is no previous page.",
-            "errorPageNotFound": "Page not found with id {pageId}",
             "fileTab": "File",
-            "marchersOnShape": "{marchersCount} Marchers",
-            "segment": "Segment {index}",
-            "segments": {
-                "title": "Segments"
-            },
             "selectTab": "Select",
-            "shapesTab": "Shapes",
-            "successfullyCopied": "Shape successfully copied to page",
-            "ungroupShapeButton": "Un-group",
-            "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position"
+            "shapesTab": "Shapes"
         },
         "timeline": {
             "move": {
@@ -949,6 +1046,7 @@
             "failedToOpen": "Failed to open file",
             "failedToRemoveRecent": "Failed to remove file from recent list",
             "fieldPreview": "Field Preview",
+            "loading": "Loading",
             "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
@@ -956,7 +1054,19 @@
         },
         "learn": {
             "guides": {
-                "title": "Guides"
+                "title": "Guides",
+                "customizeField": {
+                    "description": "Customize the field to your dimensions, and edit theming.",
+                    "title": "Customize the Field"
+                },
+                "gettingStarted": {
+                    "description": "Beginner guide on how to get started with a show.",
+                    "title": "Getting Started"
+                },
+                "music": {
+                    "description": "Implement your music manually or via tap tempo.",
+                    "title": "Music"
+                }
             },
             "title": "Learn",
             "troubleshooting": {
@@ -964,8 +1074,9 @@
                 "clearCache.description": "Deleting the cache and metadata folder can often fix performance issues. (This will also delete your recent files list and theme!)",
                 "description": "OpenMarch is still under development, so here are some tips when something goes wrong.",
                 "refresh": "Refresh the page",
-                "refresh.description": "When in doubt, refresh the page (Ctrl/Cmd + R). If OpenMarch ever seems broken, refreshing will often fix it.",
-                "title": "Troubleshooting Tips"
+                "title": "Troubleshooting Tips",
+                "cacheFolder": "{system}: <folder></folder>",
+                "refreshHint": "When in doubt, refresh the page (<keys></keys>). If OpenMarch ever seems broken, refreshing will often fix it."
             },
             "videoGuides": {
                 "description": "Watch video guides to learn how to use OpenMarch.",
@@ -976,15 +1087,17 @@
         "newShow": {
             "back": "Back",
             "browse": "Browse",
-            "cancel": "Cancel",
             "client": "Client",
             "create": "Create show",
             "designer": "Designer",
             "errors": {
                 "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
                 "createFailed": "Failed to create show",
+                "databaseNotReady": "Database is not ready. Complete the project step first.",
+                "fieldImageNotCopied": "Couldn't copy the previous show's field image",
+                "filePathRequired": "File path is required",
                 "importFailed": "Failed to import previous .dots file",
-                "nameRequired": "Show name is required",
+                "saveFailed": "Failed to save show at {path}",
                 "xmlNotImported": "MusicXML may not have been imported. You can import it later in the editor."
             },
             "exitConfirm": {
@@ -994,8 +1107,6 @@
                 "title": "Discard new show?"
             },
             "fileExistsWarning": "A file with this name already exists at this location. It will be replaced when you finish creating the show.",
-            "location": "Save location",
-            "moreOptions": "More options",
             "next": "Next",
             "showName": "Show name",
             "skip": "Skip",
@@ -1019,10 +1130,13 @@
                 "performers": {
                     "description": "Add marchers now or skip and add them later in the editor.",
                     "noneAdded": "No performers added yet.",
+                    "removeMarcher": "Remove {marcher}",
+                    "sectionCount": "{section} ({count})",
                     "title": "Performers"
                 },
                 "project": {
                     "description": "Name your show and choose where to save it.",
+                    "fileType": "OpenMarch File",
                     "title": "Project details"
                 },
                 "start": {
@@ -1056,7 +1170,10 @@
         "settings": {
             "title": "Settings"
         },
-        "title": "Launch Page"
+        "title": "Launch Page",
+        "social": {
+            "link": "OpenMarch on {service}"
+        }
     },
     "library": {
         "browser": {
@@ -1092,18 +1209,23 @@
                 "front": "Front, {name}",
                 "back": "Back, {name}"
             },
-            "uniformPart": {
-                "top": "Top",
-                "bottoms": "Bottoms",
-                "overlay": "Overlay (cape)"
-            },
-            "uniformSide": {
-                "front": "{part}, front",
-                "back": "{part}, back"
-            },
             "download": "Download {name} as {format}",
             "saved": "Saved {filename}",
-            "saveFailed": "Couldn't save the template"
+            "saveFailed": "Couldn't save the template",
+            "uniformPanel": {
+                "top": {
+                    "front": "Top, front",
+                    "back": "Top, back"
+                },
+                "bottoms": {
+                    "front": "Bottoms, front",
+                    "back": "Bottoms, back"
+                },
+                "overlay": {
+                    "front": "Overlay (cape), front",
+                    "back": "Overlay (cape), back"
+                }
+            }
         },
         "import": {
             "entry": "Import…",
@@ -1112,6 +1234,8 @@
             "back": "Back to the Library",
             "picking": "Choose files in the dialog…",
             "fileCount": "{count, plural, one {# file} other {# files}}",
+            "fileSizeMb": "{size} MB",
+            "fileSizeKb": "{size} KB",
             "fromPicker": "From the {kind} picker",
             "fromSlot": "For a {surface} slot",
             "pageN": "Page {n}",
@@ -1207,7 +1331,7 @@
                     "misnamed": "Found {names}, which doesn’t match OM_grip_R. Pre-set to its longest side; click the model to move it.",
                     "manual": "Set by your click on the model.",
                     "pick": "Click a point on the model",
-                    "picking": "Clicking… (Esc to stop)"
+                    "picking": "Clicking… (<keys></keys> to stop)"
                 },
                 "surface": {
                     "title": "Artwork surface",
@@ -1271,6 +1395,13 @@
                 "fromFile": "From file: {size}",
                 "width": "Width",
                 "height": "Height",
+                "feetUnit": "ft",
+                "inchesUnit": "in",
+                "feetLabel": "{label} (ft)",
+                "inchesLabel": "{label} (in)",
+                "feetSize": "{width} × {height} ft",
+                "inchesSize": "{width} × {height} in",
+                "lengthSize": "{width} × {height}",
                 "locked": "Aspect locked: artwork is never stretched",
                 "needed": "Choose a size: this file doesn’t say how big it prints.",
                 "printsOn": "Prints on",
@@ -1314,13 +1445,14 @@
                 "before": "Before",
                 "after": "After",
                 "vector": "vector",
+                "pixels": "{width} × {height} px",
                 "views": "Views",
                 "view": {
                     "front": "Front",
                     "side": "Side",
                     "top": "Top"
                 },
-                "pickGrip": "Click a point on the model to set the grip · Esc to stop",
+                "pickGrip": "Click a point on the model to set the grip · <keys></keys> to stop",
                 "surface": "Artwork surface: {name}"
             },
             "errors": {
@@ -1380,7 +1512,21 @@
                     "title": "Something went wrong",
                     "body": "Try again."
                 }
-            }
+            },
+            "finishFailed": "Couldn't finish the import",
+            "copyIntoShowFailed": "Couldn't copy the import into the show"
+        },
+        "fileDialog": {
+            "importTitle": "Import",
+            "saveTemplateTitle": "Save template",
+            "models": "3D model (glb, gltf)",
+            "artwork": "Artwork (png, jpg, svg, pdf)",
+            "modelsAndArtwork": "Models and artwork",
+            "pngImage": "PNG image"
+        },
+        "starterKit": {
+            "saveDialogTitle": "Save the Blender starter kit",
+            "saveFailed": "Couldn't save the Blender starter kit"
         }
     },
     "marchers": {
@@ -1390,10 +1536,7 @@
             "manual": "Add manually"
         },
         "cancelDeleteButton": "Cancel",
-        "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",
-        "createButtonWithSection": "{quantity, plural, one {Create {section} Marcher} other {Create {quantity} {section} Marchers}}",
-        "created": "{count, plural, one {Marcher {drillNumbers} created successfully} other {Marchers {drillNumbers} created successfully}}",
-        "createError": "{count, plural, one {Error creating marcher {drillNumbers}} other {Error creating marchers {drillNumbers}}}",
+        "createButtonWithSection": "{quantity, plural, =1 {Create {section} Marcher} other {Create {quantity} {section} Marchers}}",
         "createInfo": "New marchers may not show up until a refresh",
         "csv": {
             "chooseFile": "Choose CSV file",
@@ -1410,8 +1553,9 @@
                 "duplicateInShow": "{value} already exists in this show"
             },
             "ignoredColumns": "Ignoring columns: {columns}",
-            "importButton": "{count, plural, =0 {Import} one {Import 1 marcher} other {Import {count} marchers}}",
-            "info": "Name, year and notes are optional. Rows with errors are skipped; fix them and import again. Undo with [Ctrl/Cmd+Z].",
+            "importButton": "{count, plural, =0 {Import} =1 {Import 1 marcher} other {Import {count} marchers}}",
+            "info": "Name, year and notes are optional. Rows with errors are skipped; fix them and import again. Undo with <keys></keys>.",
+            "infoNoShortcut": "Name, year and notes are optional. Rows with errors are skipped; fix them and import again. You can undo the import.",
             "line": "Line {line}",
             "missingColumns": "The file needs a {columns} column",
             "mode": {
@@ -1426,34 +1570,30 @@
             },
             "readError": "Could not read that file",
             "result": {
-                "success": "{valid, plural, one {1 marcher is ready to import} other {All {valid} marchers are ready to import}}",
-                "partial": "{valid, plural, one {1 marcher is} other {{valid} marchers are}} ready to import. {invalid, plural, one {1 row has a problem and will be skipped:} other {{invalid} rows have problems and will be skipped:}}",
+                "success": "{valid, plural, =1 {1 marcher is ready to import} other {All {valid} marchers are ready to import}}",
+                "partial": "{valid, plural, =1 {1 marcher is} other {{valid} marchers are}} ready to import. {invalid, plural, =1 {1 row has a problem and will be skipped:} other {{invalid} rows have problems and will be skipped:}}",
                 "failed": "None of the rows could be imported. Fix the problems below and choose the file again:",
                 "empty": "This file doesn't have any marchers in it"
             },
             "sections": "Sections and drill prefixes",
             "sectionsHelp": "Use these section names (or prefixes) in the section column. Drill numbers start with the section's prefix, for example F12 for Flute 12.",
-            "title": "Import from CSV"
+            "title": "Import from CSV",
+            "fileInput": "Marcher CSV file"
         },
         "deleteButton": "Delete",
-        "deleteDescription": "You are about to delete these section styles: {sections}. This can be undone with [Ctrl/Cmd+Z].",
         "deleteTitle": "Warning",
-        "deleteWarning": "You are about to delete these marchers: {marchers}. This can be undone with [Ctrl/Cmd+Z].",
+        "deleteWarningNoShortcut": "You are about to delete these marchers: {marchers}. This can be undone.",
         "drillOrder": "Drill Number",
         "drillOrderError": {
             "exists": "This drill number already exists"
         },
         "drillPrefix": "Drill Prefix",
-        "editButton": "Edit Marchers",
         "editMarcher": "Edit Marcher",
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
-            "allSections": "All Sections",
             "createTagsFirst": "Create tags first in the marcher inspector to add tag appearances.",
             "deleteButton": "Delete",
-            "deleteSectionStyle": "Delete this section style",
-            "discardChanges": "Discard Changes",
             "dragToReorder": "Drag to reorder",
             "drillNumberTitle": "#",
             "editButton": "Edit",
@@ -1465,13 +1605,12 @@
             "none": "None",
             "noSectionStyles": "No section styles defined yet. Add one to customize how each section appears.",
             "outlineColor": "Outline Color",
-            "pendingChanges": "Below values may not be applied until after a refresh",
-            "saveChanges": "Save Changes",
-            "sectionsInShow": "Sections in Show",
-            "sectionStyles": "Section Styles",
             "sectionTitle": "Section",
-            "selectSection": "Section",
-            "shape": "Shape"
+            "shape": "Shape",
+            "loading": "Loading...",
+            "loadError": "Error loading marchers",
+            "unknown": "Unknown",
+            "moreOptions": "More options for {marcher}"
         },
         "listTitle": "List",
         "marcherAppearance": "Marcher Appearance",
@@ -1483,27 +1622,43 @@
         "sectionError": {
             "chooseSection": "Please choose a section"
         },
-        "sectionStyles": "Section Styles",
         "sectionText": "Section",
         "tagText": "Tag",
         "title": "Marchers",
         "updateButton": "Update Marcher",
-        "year": "Year"
+        "year": "Year",
+        "nameInput": "Marcher name input",
+        "yearInput": "Marcher year input",
+        "notesInput": "Marcher notes input",
+        "tagAppearances": {
+            "pageListLabel": "Page {page} tag appearances",
+            "pageHeading": "Page {page}"
+        },
+        "sectionAppearances": {
+            "createError": "Failed to create section appearance",
+            "inShowTab": "In show",
+            "allTab": "All"
+        },
+        "errors": {
+            "create": "Error creating marchers",
+            "delete": "Error deleting marchers",
+            "update": "Error updating marchers"
+        },
+        "backToList": "Back to marcher list",
+        "deleteWarningWithShortcut": "You are about to delete these marchers: {marchers}. This can be undone with <keys></keys>."
     },
     "marcherPages": {
-        "carryForward": {
-            "only": "Change only Page {page}",
-            "onlyEdited": "Only the edited pages",
-            "onePage": "Page {page} followed (it was a copy)",
-            "pages": "Pages {first}–{last} followed (they were copies)"
-        },
         "moveThemToo": {
             "action": "Move them too",
             "laterMoves": "{names} have their own later moves, so they kept their spots",
-            "namesAndOthers": "{first}, {second} and {count} others",
-            "oneMarcher": "{names} has its own move on Page {page}, so it kept its spot",
-            "onePage": "{names} have their own move on Page {page}, so they kept their spot",
-            "withFollowed": "{followed}. {kept}"
+            "namesOthers": "{count, plural, one {# other} other {# others}}",
+            "ownMove": "{count, plural, =1 {{names} has its own move on Page {page}, so it kept its spot} other {{names} have their own move on Page {page}, so they kept their spot}}",
+            "moveError": "Error moving marchers"
+        },
+        "errors": {
+            "move": "Error moving marchers",
+            "removePosition": "Error removing the position",
+            "updateSelected": "Error updating selected marchers"
         }
     },
     "measures": {
@@ -1524,8 +1679,10 @@
             "addHelp": "Performers and instructors will be able to select this audio file in the mobile app.",
             "cancel": "Cancel",
             "delete": "Delete",
+            "duration": "{minutes}m {seconds}s",
             "editNickname": "Edit Nickname",
             "loadFailed": "Failed to load audio files",
+            "noData": "Audio file has no data",
             "nicknameLabel": "Nickname (optional)",
             "nicknamePlaceholder": "Nickname (optional)",
             "nicknamePlaceholderShort": "Nickname",
@@ -1534,6 +1691,7 @@
             "save": "Save",
             "saving": "Saving…",
             "setActive": "Set as active",
+            "sizeMb": "{size} MB",
             "title": "Audio Files",
             "uploading": "Uploading…"
         },
@@ -1546,10 +1704,10 @@
         },
         "date": {
             "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
-            "full": "{month} {day}, {year} - {time}",
             "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
             "justNow": "Just now",
-            "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}"
+            "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}",
+            "dateTime": "{date} - {time}"
         },
         "detach": {
             "button": "Detach File from Production",
@@ -1568,6 +1726,7 @@
             "backgroundSyncFailed": "Revision uploaded, but background image sync failed: {msg}",
             "initialTitle": "Initial revision",
             "newTitleLabel": "New revision title",
+            "noProductionLinked": "No OTM production linked. Set OTM production in workspace settings.",
             "preparing": "Preparing...",
             "publishButton": "Publish to mobile app",
             "publishing": "Publishing to mobile app...",
@@ -1575,7 +1734,9 @@
             "pushing": "Pushing to Mobile App...",
             "titlePlaceholder": "Describe what changed...",
             "titleRequired": "Please provide a revision title",
+            "uploadFailed": "Upload failed: {error}",
             "uploadFailedGeneric": "Upload failed. Check console for details.",
+            "uploadFailedUnknown": "Unknown error",
             "uploadingAudio": "Uploading audio...",
             "uploadingImage": "Uploading image...",
             "uploadSuccess": "Upload successful",
@@ -1589,6 +1750,7 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Production background",
+                "drawFailed": "The background image couldn't be drawn",
                 "empty": "No background image",
                 "help": "The background image is automatically synced when you upload a new revision. To change it, change the background image in field editor and upload a new revision.",
                 "title": "Background image"
@@ -1616,6 +1778,7 @@
         "beatPattern": "Beat Pattern *",
         "beatsPerMeasure": "Beats per measure *",
         "beatStyle": "Beat style",
+        "bpmUnit": "bpm",
         "cancel": "Cancel",
         "create": "Create",
         "custom": "Custom",
@@ -1635,6 +1798,7 @@
         "importAudioFile": "Import audio file",
         "importButton": "Import MusicXML File",
         "importError": "Failed to import MusicXML file",
+        "importDataMissing": "Failed to fetch required data",
         "importing": "Importing...",
         "importLabel": "MusicXML Import",
         "importSuccess": "MusicXML file: \"{fileName}\" imported successfully!",
@@ -1644,6 +1808,7 @@
         "importChecksCount": "{count, plural, one {# thing to check} other {# things to check}}",
         "importChecksShow": "Show",
         "importChecksMoreMeasures": "{measures} and {more} more",
+        "importChecksMeasure": "m{label}",
         "individualBeatTempos": "Individual beat tempos",
         "makeMixedMeter": "Make Mixed Meter",
         "makeSimpleMeter": "Make Regular Meter",
@@ -1671,21 +1836,50 @@
         "tempoGroupNamePlaceholder": "Optional",
         "tempoGroups": "Tempo Groups",
         "tempoGroupUpdated": "Tempo group updated",
+        "undoWithShortcut": "This action is undoable with <keys></keys>",
         "timeSignature": "Time signature: {timeSignature}",
         "title": "Music",
-        "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
         "volume": "Volume",
         "addAfterCaption": "Add after",
         "deleteTempoGroup": "Delete tempo group",
-        "editTempoGroup": "Edit tempo group"
+        "editTempoGroup": "Edit tempo group",
+        "tempoGroupCard": {
+            "measure": "m {measure}",
+            "measureRange": "m {start}-{end}",
+            "measureRangeRepeats": "{range} ({count}x)"
+        },
+        "phrases": {
+            "errors": {
+                "create": "Error creating phrases",
+                "delete": "Error deleting phrases",
+                "update": "Error updating phrases"
+            }
+        }
     },
     "pages": {
-        "createFailed": "Failed to create page - {error}",
-        "createLastPageFailed": "Failed to create last page - {error}",
-        "deletedSuccessfully": "Page deleted successfully",
-        "deleteFailed": "Failed to delete page - {error}",
         "undoDeleteUnavailable": "Can't undo the delete: something changed since. Use Undo in the toolbar to step back.",
-        "updateFailed": "Failed to update page - {error}"
+        "dotModeFailed": "Error setting the dot mode",
+        "noNextPage": "No next page",
+        "noPreviousPage": "No previous page",
+        "durationNoBeat": "Failed to update page duration. No suitable beat found.",
+        "durationFailed": "Failed to update page duration",
+        "yankNegativeCounts": "Cannot yank pages that would result in negative counts",
+        "pushPastEnd": "Cannot push pages further than the end of the show",
+        "yankEmptyPages": "Cannot yank pages that have no beats",
+        "yankOutOfBounds": "Beat yank would result in out of bounds beats",
+        "splitTooShort": "Cannot split page that has less than 2 beats",
+        "splitNoStartBeat": "Failed to find a new start beat",
+        "deleteWithMoves": {
+            "changed": "{count, plural, =1 {Page {pages} changed} other {Pages {pages} changed}}",
+            "changedBoth": "{keptCount, plural, =1 {Page {kept}} other {Pages {kept}}} and {renamedCount, plural, =1 {old Page {renamed}} other {old Pages {renamed}}} changed",
+            "changedOld": "{count, plural, =1 {old Page {pages} changed} other {old Pages {pages} changed}}",
+            "deleted": "{count, plural, =1 {Deleted Page {names}} other {Deleted Pages {names}}}",
+            "grown": "Page {page} is now {counts, plural, one {# count} other {# counts}}",
+            "grownOld": "old Page {page} is now {counts, plural, one {# count} other {# counts}}",
+            "noOtherChanged": "No other page changed"
+        },
+        "createError": "Failed to create page - {error}",
+        "updateError": "Failed to update page - {error}"
     },
     "props": {
         "back": "Back",
@@ -1744,7 +1938,10 @@
         "surfaceLabel": "Surface",
         "title": "Props",
         "transition": "Transition",
-        "width": "Width"
+        "width": "Width",
+        "units": {
+            "meters": "m"
+        }
     },
     "section": {
         "drumMajor": "Drum Major",
@@ -1795,6 +1992,13 @@
         },
         "soloist": {
             "soloist": "Soloist"
+        },
+        "appearances": {
+            "errors": {
+                "create": "Error creating section appearances",
+                "delete": "Error deleting section appearances",
+                "update": "Error updating section appearances"
+            }
         }
     },
     "settings": {
@@ -1805,7 +2009,6 @@
         "database.noShowOpen": "Open a show to repair its file.",
         "developer": "Developer Settings",
         "developer.description": "Tools for translating and debugging OpenMarch.",
-        "developer.refreshNotice": "Please <a>reload the app</a> to update settings.",
         "field": "Field",
         "field.description": "How the field looks.",
         "field.gridLines": "Grid lines",
@@ -1844,6 +2047,7 @@
         "general.showFullDatabasePath.description": "Show the full path of the open file in the title bar instead of just its name.",
         "mouse": "Mouse & Trackpad",
         "mouse.description": "How the mouse and trackpad move around the field.",
+        "mouse.multiplier": "{value}x",
         "mouse.panSensitivity": "Pan sensitivity",
         "mouse.trackpadMode": "Trackpad mode (recommended for macOS)",
         "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
@@ -1869,13 +2073,13 @@
         "plugins.uninstalled": "Removed",
         "plugins.uninstallFailed": "Removal Failed",
         "plugins.uninstalling": "Removing...",
+        "plugins.version": "v{version}",
         "privacy": "Privacy",
         "privacy.analytics": "Share usage analytics",
         "privacy.analytics.description": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
         "privacy.analytics.description.opt_out": "You can opt out of this if you'd prefer. Just know that OpenMarch is a free tool built by volunteers, and this data really helps us understand how designers are using the app and find bugs—especially when we don't hear about them right away on Discord or Facebook :)",
         "privacy.analytics.disabled": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please <a>submit feedback</a> so that we can address it.",
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
-        "privacy.analytics.feedback.link": "submit feedback",
         "privacy.analytics.toggle": "Enable analytics",
         "privacy.description": "Choose what OpenMarch shares to help improve the app.",
         "repairDotsFile": "Repair DOTS file",
@@ -1883,9 +2087,11 @@
         "repairDotsFile.confirm": "Repair",
         "repairDotsFile.description": "This will create a new database file with '- FIXED' appended to the filename. The repair process will copy all data from the current database to a new one with the latest schema. History (undo/redo) will not be copied.",
         "repairDotsFile.error": "Error repairing database: {error}",
+        "repairDotsFile.noFileOpen": "No database file is currently open",
         "repairDotsFile.repairing": "Repairing...",
         "repairDotsFile.success": "Database repaired successfully. Reloading...",
         "repairDotsFile.title": "Repair DOTS file",
+        "repairDotsFile.unknownError": "Unknown error occurred",
         "search": "Search settings",
         "shortcuts": "Keyboard shortcuts",
         "shortcuts.add": "Add shortcut for {action}",
@@ -1903,11 +2109,9 @@
         "shortcuts.category.shape": "Shapes",
         "shortcuts.category.timeline": "Timeline",
         "shortcuts.category.ui": "Interface",
-        "shortcuts.conflict": "{binding} is already used by {actions}.",
         "shortcuts.description": "Change the keys for any action. Changes apply right away.",
         "shortcuts.noResults": "No shortcuts match your search.",
         "shortcuts.reassign": "Reassign",
-        "shortcuts.recording": "Press keys… (Esc to cancel)",
         "shortcuts.remove": "Remove {binding}",
         "shortcuts.reset": "Reset {action} to default",
         "shortcuts.resetAll": "Reset all",
@@ -1951,14 +2155,18 @@
         "input.interface.auto": "Automatic",
         "input.interface.description": "Automatic uses the tablet layout on a tablet and the desktop layout on a computer. Choose Tablet to use the tablet layout on a touch-screen laptop.",
         "input.interface.mouse": "Desktop",
-        "input.interface.touch": "Tablet"
+        "input.interface.touch": "Tablet",
+        "repairDotsFile.reopenFailed": "The repaired file was saved at {path} but couldn't be opened (status {status}).",
+        "utilityUpdateFailed": "Failed to update utility settings",
+        "shortcuts.conflictWith": "<keys></keys> is already used by {actions}.",
+        "shortcuts.recordingHint": "Press keys… (<keys></keys> to cancel)"
     },
     "shapes": {
         "box": {
             "left": {
                 "closeUp": "Close up",
                 "hint": "Their spots stay empty. Undo puts them back.",
-                "many": "{count} left the box",
+                "many": "{count, plural, one {# left the box} other {# left the box}}",
                 "one": "{name} left the box",
                 "resplit": "Re-split"
             },
@@ -1971,7 +2179,6 @@
                 "spacingDeep": "Front-to-back spacing, in steps"
             }
         },
-        "circle": "Circle",
         "edit": {
             "closeUp": {
                 "label": "Close up",
@@ -1990,15 +2197,17 @@
                     "spread": "Spreads evenly"
                 },
                 "styleLabel": "That side",
-                "menu": "Leftover",
+                "tip": "Leftover: {side, select, back {Back} front {Front} left {Left} other {Right}}, {style, select, gap {leaves a gap} other {spreads evenly}}",
                 "spacing": "{count, plural, one {{value} step} other {{value} steps}}",
-                "spacingTip": "The {side} has one fewer marcher, so its marchers are {spacing} apart.",
                 "tipGap": "Click a marcher on the outline (not a corner) to move the gap there.",
-                "tipSpread": "Click a marcher on another side (not a corner) to spread that side instead."
+                "tipSpread": "Click a marcher on another side (not a corner) to spread that side instead.",
+                "menuLabel": "Leftover: {side, select, back {Back} front {Front} left {Left} other {Right}}",
+                "spacingHint": "The {side, select, back {back} front {front} left {left} other {right}} has one fewer marcher, so its marchers are {spacing} apart."
             },
             "mode": {
                 "files": "Grid",
                 "label": "Fill",
+                "current": "Fill: {mode, select, files {Grid} outline {Outline} other {Spread}}",
                 "outline": "Outline",
                 "spread": "Spread"
             },
@@ -2012,7 +2221,8 @@
                 "goBack": "Go back",
                 "text": "Shape open at {moment}"
             },
-            "drawHint": "Drag on the field to draw a {shape} · Esc to cancel",
+            "removePointHint": "Right-click or <keys></keys> removes the last point · Double-click to finish · <esc></esc> to cancel",
+            "removePointHintClick": "Right-click removes the last point · Double-click to finish · <esc></esc> to cancel",
             "drawnOn": "from {page}",
             "edge": {
                 "label": "Edge",
@@ -2065,6 +2275,10 @@
                 "locked": "Spacings locked together: click to unlock",
                 "unlocked": "Lock the two spacings together"
             },
+            "hideMarchers": {
+                "hide": "Hide the marchers",
+                "show": "Show the marchers"
+            },
             "evenOut": {
                 "label": "Even out",
                 "tip": "Spread the marchers as evenly as the box allows",
@@ -2074,7 +2288,9 @@
                 "already": "Who goes where is already least travel",
                 "closeUpFirst": "Recalculate who goes where: close up the empty spots first",
                 "label": "Recalculate",
-                "title": "Recalculate who goes where, by least travel"
+                "title": "Recalculate who goes where, by least travel",
+                "titleInOrder": "Recalculate who goes where, in order along the line",
+                "alreadyInOrder": "Who goes where is already in order along the line"
             },
             "scrubTip": "{label}: click to type, drag to change",
             "snapTip": "Snap to the nearest half step",
@@ -2090,23 +2306,34 @@
             },
             "steps": "steps",
             "turn": "Turn, in degrees clockwise",
-            "ungroup": "Ungroup: the marchers stay where they are"
+            "ungroup": "Ungroup: the marchers stay where they are",
+            "order": {
+                "nearest": "Least travel",
+                "keep": "Keep order",
+                "reverse": "Reverse order",
+                "label": "Who goes where"
+            },
+            "drawHintFor": "Drag on the field to draw a {shape, select, block {box} circle {circle} line {line} curve {curve} arc {arc} other {shape}} · <keys></keys> to cancel",
+            "drawPointsHintFor": "Drag on the field to draw a {shape, select, line {line} curve {curve} arc {arc} other {shape}}, or click point after point · <keys></keys> to cancel"
         },
         "placed": {
-            "label": "{name} · {interval} steps",
-            "left": {
-                "many": "{count} left the {shape}",
-                "one": "{name} left the {shape}"
-            },
+            "label": "{name} · {count, plural, one {{interval} step} other {{interval} steps}}",
+            "name": "{shape} {size}",
+            "layoutSize": "{layout, select, full {Full} stagger {Stagger} rounded {Rounded} notched {Notched} other {Short back}} {size}",
             "editError": "Error editing the shape",
             "fillError": "Error filling the shape",
-            "selectWhole": "Select {shape}",
             "summary": {
-                "empty": "{count, plural, other {# empty}}",
-                "steps": "{interval} steps"
+                "empty": "{count, plural, one {# empty} other {# empty}}",
+                "steps": "{count, plural, one {{interval} step} other {{interval} steps}}"
             },
+            "groupError": "Error grouping the marchers",
             "ungroupError": "Error ungrouping the shape",
-            "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page"
+            "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
+            "leftShape": {
+                "many": "{count, plural, one {# left the {shape, select, block {box} circle {circle} other {shape}}} other {# left the {shape, select, block {box} circle {circle} other {shape}}}}",
+                "one": "{name} left the {shape, select, block {box} circle {circle} other {shape}}"
+            },
+            "selectWholeShape": "Select {shape, select, block {box} circle {circle} other {shape}}"
         },
         "save": {
             "descriptionLabel": "Description of the saved shape (optional)",
@@ -2116,23 +2343,22 @@
             "cancel": "Cancel",
             "nameLabel": "Name of the saved shape",
             "savedAs": "Saved as {name}",
-            "tip": "Save this shape to your library, starred"
+            "tip": "Save this shape to your library, starred",
+            "mixedIntervals": "Lines with mixed intervals can't be saved yet"
         },
         "saved": {
             "copyFailed": "Couldn't copy the saved shape into the show",
             "deleteFailed": "Couldn't delete the saved shape from the show"
         },
-        "square": "Square",
-        "triangle": "Triangle",
-        "x": "X",
         "command": {
             "fill": "Fill: {modes}",
             "layout": "Layout: {layouts}"
         },
         "distribute": {
             "hint": {
-                "add": "add {count}",
-                "remove": "remove {count}"
+                "add": "{count, plural, one {add #} other {add #}}",
+                "addOrRemove": "{more, plural, one {add #} other {add #}} / {fewer, plural, one {remove #} other {remove #}}",
+                "remove": "{count, plural, one {remove #} other {remove #}}"
             },
             "layout": {
                 "full": "Full",
@@ -2146,8 +2372,11 @@
                 "leftToRight": "{counts}, left to right",
                 "short": "{across} × {deep}, {short} short",
                 "staggered": "{across} × {deep} staggered",
-                "straight": "{across} × {deep} straight"
-            }
+                "straight": "{across} × {deep} straight",
+                "size": "{across} × {deep}"
+            },
+            "versionName": "{layout} {version}",
+            "blockName": "{layout} {across} × {deep}"
         },
         "field": {
             "stepLimit": "{steps} to 5"
@@ -2155,7 +2384,7 @@
         "frame": {
             "scale": {
                 "apart": "{spacings} apart",
-                "size": "{sizes} steps"
+                "size": "{count, plural, one {{sizes} step} other {{sizes} steps}}"
             }
         },
         "kinds": {
@@ -2193,8 +2422,9 @@
                 },
                 "readout": {
                     "interval": "Interval",
-                    "intervalValue": "{across} × {deep} steps",
-                    "ranksFiles": "Ranks × files"
+                    "intervalValue": "{across, number} × {deep, number} steps",
+                    "ranksFiles": "Ranks × files",
+                    "ranksFilesValue": "{ranks} × {files}"
                 },
                 "rotation": "Rotation",
                 "shortRank": {
@@ -2245,7 +2475,7 @@
                 "layout": "Layout",
                 "readout": {
                     "about": "About",
-                    "apart": "{steps} steps apart",
+                    "apart": "{steps, plural, one {# step apart} other {# steps apart}}",
                     "edge": "Edge",
                     "edgeAuto": "{count} (auto)"
                 },
@@ -2253,10 +2483,91 @@
                     "noSize": "The shape has no size"
                 }
             },
+            "group": {
+                "label": "Group",
+                "params": {
+                    "interval": "Smallest gap between neighbors, in steps"
+                }
+            },
             "line": {
                 "label": "Line",
                 "validate": {
                     "sameSpot": "The line's ends are on the same spot"
+                },
+                "params": {
+                    "interval": "Spacing between neighbors, in steps",
+                    "cornerOff": "corner off its interval",
+                    "offsetWaits": "along the path until it's one segment (Offset)",
+                    "offsetSide": "Side to side from each marcher to the next, in steps: right is more, left below 0",
+                    "offsetUp": "Front to back from each marcher to the next, in steps: up the screen (toward the back) is more, down below 0"
+                },
+                "spacing": {
+                    "label": "Spacing",
+                    "fit": "Fit",
+                    "keep": "Keep interval",
+                    "pathStart": "Interval on the path, from the start",
+                    "pathCenter": "Interval on the path, centered",
+                    "pathEnd": "Interval on the path, from the end",
+                    "pathOffset": "Offset sets the line's length"
+                },
+                "corners": {
+                    "label": "Corners",
+                    "on": "Marcher on every corner",
+                    "off": "Intervals run around corners"
+                },
+                "lock": {
+                    "locked": "Interval locked: dragging an end keeps it. Click to unlock",
+                    "unlocked": "Lock the interval, so dragging an end keeps it"
+                },
+                "ends": {
+                    "label": "Open or closed",
+                    "open": "Open",
+                    "closed": "Closed"
+                },
+                "measured": {
+                    "offsetSegments": "Only on a one-segment line",
+                    "offsetGroups": "Only with one interval for everyone",
+                    "offsetPath": "Not with Interval on the path",
+                    "noX": "The line doesn't go side to side",
+                    "squareX": "Part of the line runs straight front to back",
+                    "turnsX": "The line turns back side to side",
+                    "noY": "The line doesn't go front to back",
+                    "squareY": "Part of the line runs straight side to side",
+                    "turnsY": "The line turns back front to back",
+                    "label": "Measured",
+                    "along": "Along the path",
+                    "straight": "Straight across",
+                    "x": "↔ Side to side",
+                    "y": "↕ Front to back",
+                    "offset": "Offset"
+                },
+                "menu": {
+                    "marcherPath": "Interval on the path runs past every point",
+                    "marcherFilled": "A filled line's spots follow its fill",
+                    "marcherTooFew": "Too few marchers for one on every point",
+                    "linePuts": "Line puts a marcher here",
+                    "lineKeeps": "Line keeps spacing even here",
+                    "lineWouldPut": "Line would put a marcher here",
+                    "lineWouldKeep": "Line would keep spacing even here",
+                    "marcher": "Marcher on this point",
+                    "marcherFollow": "Follow line's marchers",
+                    "marcherAlways": "Marcher",
+                    "marcherEven": "Even spacing",
+                    "cornerType": "Corner type",
+                    "swapHint": "Double-click a point to swap",
+                    "corner": "Corner",
+                    "smooth": "Smooth",
+                    "roundness": "Roundness",
+                    "delete": "Delete point",
+                    "fewestClosed": "A closed line needs at least three points",
+                    "fewestOpen": "A line needs at least two points",
+                    "open": "Open here",
+                    "close": "Close line",
+                    "closeFew": "A line needs three points to close",
+                    "add": "Add point here",
+                    "straight": "Straight",
+                    "curved": "Curved",
+                    "noCurve": "The line runs straight through here"
                 }
             },
             "measure": {
@@ -2270,7 +2581,8 @@
                 "readout": {
                     "interval": "Interval",
                     "length": "Length",
-                    "run": "Run"
+                    "run": "Run",
+                    "steps": "{steps, plural, one {# step} other {# steps}}"
                 },
                 "spacing": "Spacing"
             }
@@ -2291,7 +2603,9 @@
             "intro": "Star a shape to keep it in the Shapes tab and the shape ring, up to {max}.",
             "note": {
                 "apart": "{spacing} apart",
-                "modeSpacing": "{mode} {spacing}",
+                "modeApart": "{mode, select, outline {Outline} other {Spread}} {spacing} apart",
+                "apartStagger": "{spacing} apart, stagger {fraction}",
+                "apartStaggerLeft": "{spacing} apart, stagger {fraction} left",
                 "showOnly": "this show only",
                 "stagger": "stagger {fraction}",
                 "staggerLeft": "stagger {fraction} left"
@@ -2307,10 +2621,15 @@
         "spacing": {
             "empty": "Enter an interval in steps",
             "noGaps": "A run needs at least 1 gap",
-            "notInterval": "\"{part}\" isn't an interval. Type steps (2), a list (4,4,2) or steps x gaps (4x3)",
+            "notInterval": "\"{part}\" isn't an interval. Type steps (2), or a count and steps for each group (2*3+4*2)",
             "notPositive": "An interval must be more than 0 steps",
             "repeating": "{needed, plural, one {# gap} other {# gaps}} needed, {given} typed: repeating from the first",
-            "unused": "{needed, plural, one {# gap} other {# gaps}} needed, {given} typed: the last {unused} unused"
+            "unused": "{needed, plural, one {# gap} other {# gaps}} needed, {given} typed: the last {unused} unused",
+            "emptyGroup": "There's an empty group in the list. Type a group between each +: 2*3+4*2",
+            "notCount": "\"{count}\" isn't a number of marchers. Type a whole count before the interval: 2*3",
+            "noMarchers": "A group needs at least 1 marcher",
+            "tooManyMarchers": "A group can have at most {max} marchers",
+            "twoRests": "Only one group can go without a count (the rest). Type a count before the others: 2*3"
         },
         "tool": {
             "moment": {
@@ -2332,7 +2651,7 @@
                 "kinds": "Shape kinds",
                 "library": "Library",
                 "libraryTip": "Open the shape library, to star shapes",
-                "ringHint": "Hold {key} on the field for the shape ring"
+                "ringHintKeys": "Hold <keys></keys> on the field for the shape ring"
             }
         },
         "transform": {
@@ -2348,23 +2667,43 @@
             "sameSpot": "{count, plural, one {# marcher would stand} other {# marchers would stand}} on the same spot",
             "stepsTooLong": "{count, plural, one {# marcher needs steps longer than the {limit} limit ({longest}, drawn in orange).} other {# marchers need steps longer than the {limit} limit (longest {longest}, drawn in orange).}} Set the limit in Field › Customize.",
             "tooClose": "{count, plural, one {# marcher is} other {# marchers are}} closer than {min, plural, one {# step} other {# steps}}"
+        },
+        "groups": {
+            "restShort": "rest",
+            "noMarchers": "No marchers left",
+            "all": "All {count}",
+            "first": "First {count}",
+            "last": "Last {count}",
+            "next": "Next {count}",
+            "grown": "Grew by {count} to take the marchers no group has",
+            "interval": "Group {n} spacing, in steps",
+            "remove": "Remove group {n}",
+            "add": "Add a group",
+            "countRest": "Group {n}: the rest of the marchers. Type a count to fix it",
+            "countDropped": "Group {n} marchers: none left for it",
+            "count": "Group {n} marchers",
+            "multiple": "Multiple intervals",
+            "menuTip": "Groups of marchers at their own intervals",
+            "menuLabel": "Multiple intervals: {groups}",
+            "menuName": "Interval groups",
+            "theRest": "the rest,",
+            "at": "at",
+            "addGroup": "Add group",
+            "list": "All groups as a list: count * steps, + between groups",
+            "countAt": "{count} at {interval}"
         }
     },
     "showChecks": {
-        "carryCue": "a Carry cue",
         "carryMismatch": "A Horn/Equipment cue doesn't fit what they carry",
         "crewDistance": "{item}'s crew is away from it",
         "crewDistanceDetail": "Out of reach: {who}",
         "crewlessMove": "{item} moves without a crew",
         "empty": "Nothing to check.",
         "forWho": "For {who}",
-        "hand": {
-            "both": "hands",
-            "left": "left hand",
-            "right": "right hand"
-        },
         "handConflict": "{item} isn't drawn",
-        "handConflictDetail": "{other} takes {who}'s {hand}",
+        "handConflictDetail": "{count, plural, =1 {{other} takes {who}'s {hand, select, left {left hand} right {right hand} other {hands}}} other {{other} take {who}'s {hand, select, left {left hand} right {right hand} other {hands}}}}",
+        "handConflictByCarry": "A Carry cue takes {who}'s {hand, select, left {left hand} right {right hand} other {hands}}",
+        "handConflictWithCarry": "{other} and a Carry cue take {who}'s {hand, select, left {left hand} right {right hand} other {hands}}",
         "performers": "{count, plural, one {# performer} other {# performers}}",
         "pick": "Go to this count and select what it names",
         "putDownDrift": "{item} put down away from its holder",
@@ -2375,43 +2714,65 @@
         "snapToHolder": "Snap to holder",
         "title": "Show checks",
         "titleCount": "Show checks ({count})",
-        "whereStart": "at the start"
+        "withWhere": "{text}, {where}",
+        "withStart": "{text}, at the start"
     },
     "tags": {
         "deleteRemovesCues": "{count, plural, one {# cue targets this tag and will be removed} other {# cues target this tag and will be removed}}",
-        "title": "Tags"
+        "title": "Tags",
+        "rename": "Rename tag",
+        "namePlaceholder": "Enter tag name...",
+        "editAppearance": "Edit appearance",
+        "delete": "Delete tag",
+        "createWithSelected": "Create new tag with selected marchers",
+        "newTagNameLabel": "Define a name for the new tag (optional)",
+        "cancel": "Cancel",
+        "create": "Create Tag",
+        "addSelectedToExisting": "Add selected marchers to existing tag",
+        "addSelectedTo": "Add selected marchers to tag",
+        "removeSelectedFrom": "Remove selected marchers from tag",
+        "errors": {
+            "createAppearances": "Error creating tag appearances",
+            "createFromMarchers": "Error creating new tag from marcher ids",
+            "createMarcherTags": "Error creating marcher tags",
+            "createTags": "Error creating tags",
+            "deleteAppearances": "Error deleting tag appearances",
+            "deleteMarcherTags": "Error deleting marcher tags",
+            "deleteTags": "Error deleting tags",
+            "updateAppearances": "Error updating tag appearances",
+            "updateMarcherTags": "Error updating marcher tags",
+            "updateTags": "Error updating tags"
+        },
+        "unnamed": "tag-{id}"
     },
     "tempoGroup": {
-        "createBeatsError": "Error creating beats",
         "createNewBeatsError": "Error creating new beats",
         "deletedSuccessfully": "Tempo group deleted successfully",
         "deleteFailed": "Failed to delete tempo group",
         "differentBeatsError": "Tempo group has different number of beats. This should not happen. Please reach out to us!",
-        "errorUpdatingTempoGroup": "Error updating tempo group",
-        "noMeasures": "Tempo group has no measures"
+        "errorUpdatingTempoGroup": "Error updating tempo group"
     },
     "timeline": {
         "audio": "Audio",
-        "controls": {
-            "label": "Playback Controls"
-        },
         "edit": {
             "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
                 "catchUp": "Now catches up to the set at the end of {caughtUp}",
                 "keepStops": {
-                    "many": "Keep Pages {first}–{last} as keyframes",
-                    "one": "Keep Page {page} as a keyframe",
+                    "pages": "{count, plural, =1 {Keep Page {first} as a keyframe} other {Keep Pages {first}–{last} as keyframes}}",
                     "unnamed": "Keep them as keyframes"
                 },
+                "keepStopsError": "Couldn't keep those pages as keyframes",
                 "noLongerStop": {
-                    "many": "Pages {first}–{last} are no longer keyframes",
-                    "one": "Page {page} is no longer a keyframe",
+                    "pages": "{count, plural, =1 {Page {first} is no longer a keyframe} other {Pages {first}–{last} are no longer keyframes}}",
                     "unnamed": "The pages inside this move are no longer keyframes"
                 },
                 "through": "Now moves straight through {through}",
                 "throughAndCatchUp": "Now moves straight through {through}, then catches up to the set at the end of {caughtUp}"
-            }
+            },
+            "selectTimeline": "Click the timeline to choose when marchers arrive, then move them.",
+            "notSimple": "Some of these marchers use Expert moves on this page. Switch to Expert to edit them.",
+            "pastLastPage": "There's no page here yet. Right-click the playhead and choose Create page at playhead (F) to write a set after the last page."
         },
         "errors": {
             "assignmentDoesNotFit": "That marcher's move doesn't fit the transition: it must stay inside the transition's range, and use a slot the transition has.",
@@ -2423,18 +2784,14 @@
             "destinationShapeUnsuitable": "That destination doesn't fit the transition. A follow-the-leader transition can't end on a block, and a block needs at least as many places as the transition has slots.",
             "followLeaderBlock": "A follow-the-leader transition can't end on a block. Choose a line, curve, circle or box instead.",
             "followLeaderNeedsShape": "A follow-the-leader transition needs a shape to follow.",
-            "heldConflict": {
-                "many": "{names} are {held} on {pages}. {clearThisPage} to remove the holds, or drag inside them to move them.",
-                "one": "{names} is {held} on {pages}. {clearThisPage} to remove the hold, or drag inside it to move it."
-            },
-            "heldDropped": {
-                "many": "{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.",
-                "one": "{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else."
-            },
+            "heldConflict": "{count, plural, =1 {{names} is {held} on {pages}. {clearThisPage} to remove the hold, or drag inside it to move it.} other {{names} are {held} on {pages}. {clearThisPage} to remove the holds, or drag inside them to move them.}}",
+            "heldDropped": "{count, plural, =1 {{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.} other {{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.}}",
             "heldHoldsOverlap": "A marcher can't have two {held} holds over the same counts.",
+            "heldPages": "{count, plural, =1 {Page {pages}} other {Pages {pages}}}",
             "legacyConvertedTimeline": "This file was converted to timelines by an earlier development build, which put several page moves in one timeline, so it can't be edited. Convert it again: open its backup (the file saved next to it before the conversion).",
             "moveInHeldHold": "That would put a move inside a {held} hold. {clearThisPage} to remove the hold, or drag inside it to move it.",
             "notJoined": {
+                "marcherCount": "{count, plural, one {# marcher} other {# marchers}}",
                 "message": "{names} couldn't join their moves: {reason}.",
                 "overlap": "the joined move would run into another of their moves on the same layer",
                 "partway": "a marcher joins or leaves the next move partway",
@@ -2452,12 +2809,13 @@
         "heldBar": {
             "detail": "{held} of {total} selected",
             "title": "{held} · Page {page}",
-            "titleRange": "{held} · Pages {first}–{last}"
+            "titleRange": "{held} · Pages {first}–{last}",
+            "titleWithDetail": "{title}. {detail}"
         },
         "holdFromPrevious": {
             "arrivalFollowLeader": "{names}: the move before {page} follows the leader",
             "arrivalShape": "{names}: the move before {page} ends in a shape",
-            "count": "{count} marchers",
+            "count": "{count, plural, one {# marcher} other {# marchers}}",
             "crossesFlag": "{names}: a move runs across one of the page's flags",
             "done": "{names} {held} on {page}",
             "expertMoves": "{names}: Expert moves on this page",
@@ -2466,97 +2824,79 @@
             "homeShape": "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
             "noArrival": "{names}: no move ends where {page} starts",
             "none": "Nobody {held} on {page}",
-            "notHeld": "Not {heldLower}:",
+            "notHeldReasons": "Not {heldLower}: {reasons}",
             "shape": "{names}: in a shape on this page"
         },
         "keep": {
             "chain": {
                 "ariaLabel": "Page {page}: {label}. {hint}",
-                "changesEarlier": "Changes to earlier pages",
-                "changesPage": "Changes to Page {from}",
-                "follows": "{count} marchers have no position of their own here, shown {where} them",
-                "followsHint": "{changes} carry onto Page {page}. Click to make them {definedLower} here, where they're shown",
-                "followsHintOne": "{changes} carry onto Page {page}. Click to make it {definedLower} here, where it's shown",
-                "followsMenuHint": "{changes} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep them here",
-                "followsMenuHintOne": "{changes} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep it here",
-                "followsNamed": "{names} have no position of their own here, shown {where} them",
-                "followsNamedOne": "{names} has no position of its own here, shown {where} it",
-                "followsOne": "1 marcher has no position of its own here, shown {where} it",
-                "whereEarlier": "where earlier pages left",
-                "wherePage": "where Page {from} left"
+                "notOwn": "{count, plural, one {# marcher has no position of its own here, shown where Page {from} left it} other {# marchers have no position of their own here, shown where Page {from} left them}}",
+                "notOwnEarlier": "{count, plural, one {# marcher has no position of its own here, shown where earlier pages left it} other {# marchers have no position of their own here, shown where earlier pages left them}}",
+                "notOwnHint": "Changes to Page {from} carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
+                "notOwnHintEarlier": "Changes to earlier pages carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
+                "notOwnMenuHint": "Changes to Page {from} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
+                "notOwnMenuHintEarlier": "Changes to earlier pages carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
+                "notOwnNamed": "{count, plural, =1 {{names} has no position of its own here, shown where Page {from} left it} other {{names} have no position of their own here, shown where Page {from} left them}}",
+                "notOwnNamedEarlier": "{count, plural, =1 {{names} has no position of its own here, shown where earlier pages left it} other {{names} have no position of their own here, shown where earlier pages left them}}"
             },
             "followed": {
-                "keepOne": "Keep Page {page} as before",
-                "keepPages": "Keep Pages {first}–{last} as before",
-                "onePage": "Page {page} had no positions of its own for these marchers, so it changed too",
-                "only": "Change only Page {page}",
-                "pages": "Pages {first}–{last} had no positions of their own for these marchers, so they changed too"
+                "hadNoPositions": "{count, plural, =1 {Page {first} had no positions of its own for these marchers, so it changed too} other {Pages {first}–{last} had no positions of their own for these marchers, so they changed too}}",
+                "keepAsBefore": "{count, plural, =1 {Keep Page {first} as before} other {Keep Pages {first}–{last} as before}}",
+                "keepError": "Error keeping the later pages"
             },
             "names": {
-                "many": "{first}, {second} and {count} others",
-                "three": "{first}, {second} and {third}",
-                "two": "{first} and {second}"
+                "others": "{count, plural, one {# other} other {# others}}"
+            },
+            "errors": {
+                "keep": "Error keeping marchers on the page",
+                "readKept": "Error reading the kept spots"
             }
         },
         "keyframes": {
             "detail": "{set} of {total} selected",
             "detailNames": "{set} of {total} selected: {names}",
             "removeError": "Couldn't remove the keyframes",
-            "removeLocked": "{count, plural, one {One marcher uses Expert moves on this page, so its keyframe wasn't removed. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so their keyframes weren't removed. Switch to Expert to edit them.}}",
-            "removeLockedAll": "{count, plural, one {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
-            "title": "Keyframe · Page {page}, count {count}"
+            "removeLocked": "{count, plural, =1 {One marcher uses Expert moves on this page, so its keyframe wasn't removed. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so their keyframes weren't removed. Switch to Expert to edit them.}}",
+            "removeLockedAll": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
+            "title": "Keyframe · Page {page}, count {count}",
+            "spoken": "{title}. {detail}"
         },
         "label": "Timeline",
         "masterVolume": "Master Volume",
         "moveDeleted": {
             "message": "Deleted {label}",
-            "withPage": "Deleted {label} · Page {pages} changed",
-            "withPages": "Deleted {label} · Pages {pages} changed"
+            "withPages": "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}"
         },
         "moveSplit": {
             "message": "Split {label} at {where}",
-            "oneChanged": "1 marcher's path is redrawn: straight before it, restarted after",
-            "changed": "{count} marchers' paths are redrawn: straight before it, restarted after",
-            "oneRestarted": "1 marcher's curved path restarts after it",
-            "restarted": "{count} marchers' curved paths restart after it",
-            "paused": "Pause to split a move."
-        },
-        "music": {
-            "add": "Add Music"
+            "messageAtPlayhead": "Split {label} at the playhead",
+            "changed": "{count, plural, one {# marcher's path is redrawn: straight before it, restarted after} other {# marchers' paths are redrawn: straight before it, restarted after}}",
+            "restarted": "{count, plural, one {# marcher's curved path restarts after it} other {# marchers' curved paths restart after it}}",
+            "paused": "Pause to split a move.",
+            "isolatedOutside": "Put the playhead inside the move you're editing to split it.",
+            "noneAt": "No move crosses {where}. Put the playhead inside a move to split it.",
+            "noneAtPlayhead": "No move crosses the playhead. Put the playhead inside a move to split it.",
+            "severalAt": "Several moves cross {where}. Right-click the one to split.",
+            "severalAtPlayhead": "Several moves cross the playhead. Right-click the one to split.",
+            "withNote": "{message} · {note}"
         },
         "page": {
             "contextMenu": {
-                "delete": "Delete",
-                "deleteInPlace": "In Place",
-                "deleteInPlaceTimelineTooltip": "Delete this page. Later pages keep their timing and look.",
-                "deleteInPlaceTooltip": "Delete this page and keep later pages where they are.",
-                "deletePage": "Delete",
-                "deleteWithMoves": "With Its Moves",
-                "deleteWithMovesTooltip": "Delete this page and its moves. Later pages that held its positions change.",
-                "deleteYank": "Yank",
-                "deleteYankTooltip": "Delete this page and pull later pages back by its length.",
-                "subsetToggle": "Subset",
-                "title": "Page {pageName}"
+                "subsetToggle": "Subset"
             },
-            "deleted": "Page {pageName} deleted",
-            "deleteFailed": "Failed to delete page",
-            "firstPage": "First page",
             "label": "Page {pageName}",
-            "subset": "Subset",
-            "add": "New page",
-            "addAtEnd": "New page at the end",
-            "added": "Page {pageName} added",
-            "countsLabel": "Page {pageName}: {counts}",
-            "menuButton": "Page {pageName} options",
-            "resizeHandle": "Drag to change the counts of page {pageName}"
+            "homeTooltip": "Home: the start of the show (page {page}'s set)"
         },
-        "pages": "Pages",
         "rangeMenu": {
             "deleteWithMoves": "Delete page and its moves",
             "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "{defineAsShown}",
             "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
-            "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move"
+            "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
+            "setAsShownError": "Error setting marchers as shown",
+            "addSelected": "Add selected marchers",
+            "deletePage": "Delete page",
+            "addSelectedNone": "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
         },
         "terms": {
             "clearThisPage": "Clear this page",
@@ -2574,7 +2914,7 @@
             "always": "Always",
             "dots": "Dots",
             "hold": "Hold {key}",
-            "holdHeading": "Hold",
+            "holdHeading": "Hold <keys></keys>",
             "holdNoKey": "Hold (no key set)",
             "label": "Start flag positions",
             "level": {
@@ -2583,18 +2923,21 @@
                 "selected": "Selected"
             },
             "paths": "Paths",
-            "stateLine": "{state} · Dots: {dots} · Paths: {paths}"
+            "stateLine": "Always · Dots: {dots, select, all {All} selected {Selected} other {Off}} · Paths: {paths, select, all {All} selected {Selected} other {Off}}",
+            "stateLineHoldText": "Hold {key} · Dots: {dots, select, all {All} selected {Selected} other {Off}} · Paths: {paths, select, all {All} selected {Selected} other {Off}}",
+            "stateLineHoldNoKey": "Hold (no key set) · Dots: {dots, select, all {All} selected {Selected} other {Off}} · Paths: {paths, select, all {All} selected {Selected} other {Off}}",
+            "partLabel": "{block}: {part}",
+            "buttonLabel": "Start flag positions: {state}",
+            "stateLineHold": "Hold <keys></keys> · Dots: {dots, select, all {All} selected {Selected} other {Off}} · Paths: {paths, select, all {All} selected {Selected} other {Off}}"
         },
         "split": {
-            "menu": "Split {count} selected into new move",
+            "menu": "{count, plural, one {Split # selected into new move} other {Split # selected into new move}}",
             "menuNone": "Split selected into new move",
             "drag": "Split {count, plural, one {# marcher} other {# marchers}}",
             "done": "Split {count, plural, one {# marcher} other {# marchers}} into {label}",
             "paused": "Pause to split or merge moves.",
             "nothingOnPage": "Nothing moves on this page yet, so there is nothing to split.",
-            "pageSplitOff": "This page has no move of its own. To split a move over it, use the move's clip.",
-            "selectMembers": "Select marchers in {name} to split them into a new move.",
-            "everyMarcher": "Every marcher in {name} is selected. Select only the ones to split off."
+            "pageSplitOff": "This page has no move of its own. To split a move over it, use the move's clip."
         },
         "merge": {
             "menuPair": "Merge {source} into {target}",
@@ -2604,11 +2947,11 @@
             "done": "Merged {source} into {target}",
             "page": "Page {name}",
             "thisPage": "this page",
-            "thisPageStart": "This page",
             "thisMove": "this move",
             "pickTwo": "Pick two moves to merge.",
-            "inBoth": "{count, plural, one {A marcher is} other {# marchers are}} in both moves, so merging would give them two moves at once.",
-            "noPageMove": "{page} has no move of its own to merge into."
+            "inBoth": "{count, plural, =1 {A marcher is} other {# marchers are}} in both moves, so merging would give them two moves at once.",
+            "noPageMove": "Page {page} has no move of its own to merge into.",
+            "noPageMoveUnnamed": "This page has no move of its own to merge into."
         },
         "appendCounts": {
             "pagesAdded": "{pages, plural, one {Added # page to the end of the show.} other {Added # pages to the end of the show.}}"
@@ -2620,41 +2963,382 @@
             "subsetTitle": "{counts, plural, one {Add a subset page of # count, from the last page to the playhead} other {Add a subset page of # counts, from the last page to the playhead}}"
         },
         "compact": {
-            "collapse": "Make the timeline compact",
-            "expand": "Show the full timeline",
-            "fullscreen": "Fullscreen",
-            "hideAudio": "Hide the music waveform",
-            "metronome": "Metronome",
-            "more": "More timeline controls",
-            "showAudio": "Show the music waveform",
-            "zoom": "Timeline zoom"
+            "label": "Compact timeline",
+            "onTooltip": "Compact timeline: on. Click to show the full timeline"
         },
         "volumeSlider": "Timeline volume slider",
-        "zoomIn": "Zoom timeline in",
-        "zoomOut": "Zoom timeline out",
-        "zoomReset": "Reset timeline zoom"
+        "zoomReset": "Reset timeline zoom",
+        "playbackSpeed": {
+            "current": "Playback speed: {speed}",
+            "hintClick": "Click for the next speed, right-click for more",
+            "hintFaster": "Hold <keys></keys> for double speed",
+            "hintSlower": "Hold <keys></keys> for half speed",
+            "holdKeys": "Hold <faster></faster> for double speed, <slower></slower> for half",
+            "title": "Playback speed",
+            "value": "{speed, number}×"
+        },
+        "basic": {
+            "expertMark": {
+                "letter": "E",
+                "tooltip": "{count, plural, =1 {One marcher uses Expert moves on page {page}. Basic can't edit it here.} other {# marchers use Expert moves on page {page}. Basic can't edit them here.}}"
+            },
+            "point": {
+                "label": "Position at count {count} of page {page}",
+                "remove": "Remove this count's position",
+                "tooltip": "Position at count {count} of page {page}. Right-click to remove it."
+            },
+            "locked": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
+            "lockedNotMoved": "{count, plural, =1 {One marcher uses Expert moves on this page, so it wasn't moved. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so they weren't moved. Switch to Expert to edit them.}}",
+            "switchToExpert": "Switch to Expert"
+        },
+        "volume": "Timeline volume",
+        "percent": "{percent}%",
+        "loop": {
+            "label": "Loop",
+            "on": "Loop: on",
+            "off": "Loop: off",
+            "hintIsolated": "Loop is always on for an isolated move",
+            "hintOn": "<keys></keys> loops the bar on the ruler; drag its ends to change it",
+            "hintOff": "Loops the page you're on",
+            "startHandle": "Loop start, beat {beat}",
+            "endHandle": "Loop end, beat {beat}",
+            "handleTooltip": "Drag to move this end of the loop"
+        },
+        "sound": {
+            "stateMetronomeOn": "Sound: volume {volume}%, metronome on",
+            "stateMetronomeOff": "Sound: volume {volume}%, metronome off",
+            "stateMutedMetronomeOn": "Sound: music muted, metronome on",
+            "stateMutedMetronomeOff": "Sound: music muted, metronome off",
+            "mute": "Mute the music",
+            "muteTooltip": "Mute the music (the metronome keeps counting)",
+            "unmuteTooltip": "Unmute the music",
+            "volume": "Volume",
+            "muted": "Muted",
+            "metronomeOn": "Metronome on",
+            "metronomeOff": "Metronome off"
+        },
+        "beatEditor": {
+            "zoomOut": "Zoom out",
+            "zoomIn": "Zoom in"
+        },
+        "waveform": {
+            "label": "Audio waveform"
+        },
+        "rangeName": {
+            "flag": "Page {page}'s flag",
+            "pageCount": "Page {page}, count {count}",
+            "beat": "Beat {beat}",
+            "pageMove": "Page {page}'s move",
+            "afterPage": "After page {page}, counts {from}–{to}",
+            "beats": "Beats {from}–{to}",
+            "pages": "Pages {from}–{to}",
+            "pageCounts": "Page {page}, counts {from}–{to}",
+            "pageToPage": "Page {fromPage} count {from} to page {toPage} count {to}"
+        },
+        "where": {
+            "page": "Page {page}",
+            "pageMove": "Page {page}'s move",
+            "pageCount": "Page {page} count {count}",
+            "countAfterPage": "count {count} after Page {page}",
+            "inPageCount": "Page {page}, count {count}",
+            "inPageCounts": "Page {page}, counts {from}–{to}",
+            "afterPageCount": "after Page {page}, count {count}",
+            "afterPageCounts": "after Page {page}, counts {from}–{to}",
+            "countToCount": "{from} to {to}",
+            "countsFromTo": "the counts from {from} to {to}",
+            "theseCounts": "these counts",
+            "movesAt": "{names} ({where})",
+            "anotherMove": "another move",
+            "moveOn": "the move on {where}",
+            "moveAfter": "the move {where}",
+            "moveFromTo": "the move from {from} to {to}",
+            "thisPage": "this page",
+            "home": "home",
+            "beat": "beat {beat}",
+            "marcher": "marcher {marcher}",
+            "moreMarchers": "{count} more",
+            "thisMove": "this move",
+            "marcherPart": "marcher {marcher}'s part of {move}",
+            "aMove": "a move"
+        },
+        "windowLine": {
+            "pausedOnPage": "Paused on page {page}",
+            "pausedAfterLast": "Paused after the last page",
+            "pausedPrefix": "{paused} ·",
+            "addPageHere": "Right-click the playhead to add a page here",
+            "editing": "Editing {name}",
+            "home": "home positions",
+            "page": "page {page}",
+            "countOfPage": "count {count} of page {page}",
+            "moveAt": "{move} ({where})",
+            "passedSets": "{count, plural, =1 {set {names}} other {sets {names}}}",
+            "through": "· through {sets}",
+            "editingThrough": "{editing}, through {sets}",
+            "afterPaused": "{paused}. {rest}",
+            "withLoop": "{rest}. {key} loops {loop}",
+            "loops": "<keys></keys> loops {loop}"
+        },
+        "isolation": {
+            "title": "Isolated",
+            "summary": "{name} · {count, plural, one {# marcher} other {# marchers}}",
+            "ghostKey": "where this move would take marchers who left it",
+            "ghostKeySpoken": "Key: dotted gray paths show where this move would take marchers who left it",
+            "done": "Done <keys></keys>",
+            "nothingToIsolate": "Nothing moves here yet. Drag marchers in this range to make a move, then double-click it to isolate it."
+        },
+        "moveClip": {
+            "anotherMove": "another move",
+            "unnamed": "Timeline {id}",
+            "overriddenBy": "Overridden by {move} on {where}",
+            "overriddenSeparator": "; ",
+            "accessibleName": "{label}, move, {where}"
+        },
+        "pageFlagBlock": {
+            "home": "Home",
+            "sharesCounts": "{who, select, page {Page {page}'s move} named {\"{name}\"} other {A move}} already has these counts",
+            "startsOrEnds": "{who, select, page {Page {page}'s move} named {\"{name}\"} other {A move}} starts or ends on this flag",
+            "inTheWay": "{who, select, page {Page {page}'s move} named {\"{name}\"} other {A move}} is in the way",
+            "showStart": "The start of the show",
+            "showEnd": "The end of the show"
+        },
+        "pageFlag": {
+            "readoutLine": "Page {page}: {before} → {after, plural, one {# count} other {# counts}}",
+            "gripLabel": "Page {page}'s flag, after {counts, plural, one {# count} other {# counts}}. Drag, or use the arrow keys, to move it",
+            "gripTooltip": "Page {page}'s flag: drag to move it. Page {page} gains what the next page loses; other flags stay."
+        },
+        "readout": {
+            "home": "Home",
+            "pastEnd": "END +{count}",
+            "pageCount": "Pg {page} · ct {count}",
+            "pageCountOf": "Pg {page} · ct {count}/{total}",
+            "measure": "m{measure} beat {beat}",
+            "withMeasure": "{page} · {measure}",
+            "spoken": {
+                "home": "Home, page {page}",
+                "pastEnd": "{count, plural, one {# count past the end of the show} other {# counts past the end of the show}}",
+                "pageCount": "Page {page}, count {count}",
+                "pageCountOf": "Page {page}, count {count} of {total}",
+                "withMeasure": "{where}, measure {measure} beat {beat}"
+            }
+        },
+        "goTo": {
+            "label": "Go to a page, measure or rehearsal mark",
+            "placeholder": "Page, m23 or C",
+            "readoutLabel": "{position}. Go to a page, measure or rehearsal mark",
+            "readoutTooltip": "{position}. Click or press {key} or {modKey} to go to a page, measure or rehearsal mark"
+        },
+        "fit": {
+            "label": "Fit the show",
+            "hint": "Press again to go back. Pinch or <keys></keys> to zoom"
+        },
+        "transport": {
+            "label": "Transport",
+            "more": "More controls",
+            "moreTooltip": "More: sound, the clock, Fit and the view controls",
+            "previousPage": "Previous page",
+            "nextPage": "Next page",
+            "previousBeat": "Previous beat",
+            "nextBeat": "Next beat",
+            "showStart": "Start of the show",
+            "showEnd": "End of the show",
+            "playFromStartAndStop": "Play from start flag and stop at playhead",
+            "playFromStartAndStopMarked": "Play from start flag <start></start> and stop at playhead <playhead></playhead>",
+            "playFromStartAndContinue": "Play from start flag and continue",
+            "playFromStartAndContinueMarked": "Play from start flag <start></start> and continue",
+            "playFromPlayheadAndContinue": "Play from playhead and continue",
+            "playFromPlayheadAndContinueMarked": "Play from playhead <playhead></playhead> and continue",
+            "playLoop": "Play the loop",
+            "playLoopOnce": "Play the loop once",
+            "stopAndGoBack": "Stop and go back",
+            "pauseHere": "Pause here"
+        },
+        "move": {
+            "nameField": "Move name",
+            "nameLimit": "{count, plural, one {# character at most} other {# characters at most}}"
+        },
+        "moveName": {
+            "unnamed": "Move"
+        },
+        "clip": {
+            "keys": "Enter to select, F2 to rename, Shift+F10 for options, Delete to delete",
+            "keysSelected": "Enter or F2 to rename, Shift+F10 for options, Delete to delete",
+            "descriptionWithKeys": "{description}. {keys}",
+            "fallbackName": "{label} timeline, beats {from} through {to}",
+            "selectedName": "{name}, selected",
+            "optionsLabel": "{label} options",
+            "options": "Move options",
+            "renameField": "Rename {label}"
+        },
+        "startFlag": {
+            "dragTooltip": "Start flag: dragged marchers leave from here. Drag to move it.",
+            "label": "Start flag, beat {beat}",
+            "markTooltip": "Start flag: Play starts here"
+        },
+        "selection": {
+            "end": "Selection end",
+            "endTooltip": "Selection end: beat boundary {beat}"
+        },
+        "rehearsalMark": "Rehearsal {mark}, measure {measure}",
+        "playhead": {
+            "label": "Playback position: {position}"
+        },
+        "moveMenu": {
+            "edit": "Edit move",
+            "rename": "Rename move…",
+            "splitAtPlayhead": "Split at playhead",
+            "delete": "Delete move",
+            "paused": "Pause to edit or delete a move."
+        },
+        "splitter": {
+            "label": "Resize timeline"
+        },
+        "windowCount": {
+            "one": "count {count}",
+            "range": "counts {from}–{to}",
+            "length": "{count, plural, one {# count} other {# counts}}"
+        },
+        "createTrack": "Create Track",
+        "playheadChip": {
+            "label": "Show the playhead",
+            "text": "Playhead"
+        },
+        "clipResize": {
+            "minimum": "1 count minimum",
+            "member": "a marcher joins or leaves here",
+            "stopsAt": "stops at {name}",
+            "taken": "{name} already has these counts",
+            "takenMerge": "{name} already has these counts; merge into it instead",
+            "change": "{before} → {after, plural, one {# count} other {# counts}}",
+            "changeNamed": "{label}: {before} → {after, plural, one {# count} other {# counts}}",
+            "throughFlags": "{count, plural, one {through # page flag} other {through # page flags}}",
+            "withNote": "{change} · {note}"
+        },
+        "pagesText": {
+            "one": "Page {page}",
+            "range": "Pages {first}–{last}"
+        },
+        "refusals": {
+            "pageTakeover": "Landing on exactly this page's counts would make this move the page's own move. Merge it into the page instead.",
+            "resize": {
+                "memberChange": "A marcher joins or leaves this move partway; the edge can't pass that count.",
+                "minimum": "A move is at least 1 count long.",
+                "moveInTheWay": "Another move on these marchers is in the way; the edge stops where it starts or ends.",
+                "pastShow": "A move can't run past the show.",
+                "sameCounts": "Another move with some of the same marchers already covers exactly these counts.",
+                "wholeCounts": "A move's edges sit on whole counts."
+            },
+            "split": {
+                "allSelected": "Every marcher in {move} is selected. Select only the ones to split off.",
+                "noneSelected": "Select marchers in {move} to split them into a new move.",
+                "selectToSplit": "select the marchers to split off",
+                "sharedShape": "{count, plural, =1 {{marchers} moves into one shape together with {others}, so they can't be split apart. Select them all, or none of them.} other {{marchers} move into one shape together with {others}, so they can't be split apart. Select them all, or none of them.}}",
+                "followTogether": "{count, plural, =1 {{marchers} follows the leader together with {others}, so they can't be split apart. Select them all, or none of them.} other {{marchers} follow the leader together with {others}, so they can't be split apart. Select them all, or none of them.}}"
+            },
+            "members": {
+                "selectToAdd": "select the marchers to add",
+                "alreadyIn": "{count, plural, =1 {the selected marcher is already in this timeline} other {every selected marcher is already in this timeline}}",
+                "joinPartway": "{marcher} is in {move}, which only partly overlaps {counts}: joining a move partway isn't supported yet. End the range at {start}.",
+                "joinPartwayNoStart": "{marcher} is in {move}, which only partly overlaps {counts}: joining a move partway isn't supported yet. End the range at that move's start.",
+                "wouldReplace": "{marcher} is in {move}, inside {counts}; adding it would replace that move",
+                "offField": "{marcher} would be too far off the field at {at}",
+                "offFieldNoWhere": "{marcher} would be too far off the field there",
+                "selectToRemove": "select the marchers to remove",
+                "notIn": "{count, plural, =1 {the marcher isn't in this timeline} other {none of the selected marchers is in this timeline}}"
+            },
+            "positions": {
+                "noMoveEndsAtPage": "marcher {marcher} has no move that ends at the end of {page}, so there is no destination to change there",
+                "notInMove": "marcher {marcher} isn't in this timeline.",
+                "severalMoves": "marcher {marcher} has more than one move in this timeline. Edit its moves in the inspector.",
+                "stopsEarly": "marcher {marcher} stops at {stop}, before this move ends ({end}). Edit it in the inspector.",
+                "fromOtherMove": "marcher {marcher}'s position at {end} comes from {move}, not this move. Put the start flag and playhead on that move's edges to edit it.",
+                "leftMove": "the marchers aren't in that move any more, so there's nothing to change"
+            },
+            "splitAt": {
+                "outside": "{where} isn't inside {move}. Put the playhead inside the move to split it.",
+                "halfTaken": "{move} already runs over {counts}, so a half can't go there",
+                "nothingBefore": "No one in {move} moves before {where}, so there is nothing to split off.",
+                "nothingAfter": "No one in {move} moves after {where}, so there is nothing to split off."
+            },
+            "merge": {
+                "itself": "a move can't be merged with itself",
+                "pageMove": "{source} is a page's own move. Merge {target} into it instead.",
+                "inBoth": "{count, plural, =1 {{marchers} is in both {source} and {target}, so merging would give it two moves at once.} other {{marchers} are in both {source} and {target}, so merging would give them two moves at once.}}",
+                "partway": "{count, plural, =1 {{marchers} joins or leaves {source} partway, outside {target}'s counts. Resize {source} to {target}'s counts first.} other {{marchers} join or leave {source} partway, outside {target}'s counts. Resize {source} to {target}'s counts first.}}",
+                "fitCollides": "Fitting {source} to {target}'s counts would run {marchers} into {other}. Resize {source} to {target}'s counts first.",
+                "sameCounts": "{count, plural, =1 {{marchers} is already in {other}, over {target}'s counts, so merging would give it two moves over the same counts.} other {{marchers} are already in {other}, over {target}'s counts, so merging would give them two moves over the same counts.}}"
+            },
+            "casting": {
+                "tooManySlots": "this transition has {slots} slots; automatic casting handles up to {max}. Assign its slots one at a time instead",
+                "selectToCast": "select the marchers to cast",
+                "alreadyIn": "{count, plural, =1 {a selected marcher is already in this transition} other {some selected marchers are already in this transition}}",
+                "notEnoughSlots": "the transition has {vacant, plural, one {# vacant slot} other {# vacant slots}} for {marchers, plural, one {# marcher} other {# marchers}}. Raise its slot count first",
+                "followTheLeader": "follow the leader places its marchers by their order on the trail, not by slot, so it can't be recast by nearest slot",
+                "noMarchers": "this transition has no marchers to cast",
+                "alreadyNearest": "every marcher is already in its nearest slot",
+                "alreadyInSlot": "the marcher is already in slot {slot}"
+            },
+            "changesNothing": "that changes nothing",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown} works on a whole page, not {counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious} works on a whole page, not {counts}"
+            },
+            "moveTimeline": {
+                "tooEarly": "the timeline starts at beat {start}, so it can't move {count, plural, one {# beat} other {# beats}} earlier",
+                "tooLate": "the timeline can't move past beat {max}"
+            },
+            "shapes": {
+                "selectToMove": "select the marchers to move into the shape"
+            },
+            "ripple": {
+                "noCounts": "this change would leave {what} with no counts; delete or shorten it first",
+                "outsideShow": "this change would move {what} outside the show"
+            },
+            "keep": {
+                "wholePage": "Keep works on a whole page, not {counts}"
+            },
+            "tooFarPastEnd": "that is {count, plural, one {# count} other {# counts}} past the end; one edit stores at most {max}"
+        }
     },
     "titlebar": {
         "menu": "Menu",
         "reload": "Reload",
+        "webBadge": "Web",
         "bugReport": "Submit bug or feedback",
-        "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
         "databasePathError": "Database Path Error",
         "databasePathError.description": "Failed to fetch .dots file path!\n\nPlease fully quit the app and try again.\n\nIf the issue persists, please reach out to support.",
-        "databasePathError.dismiss": "Dismiss"
+        "databasePathError.dismiss": "Dismiss",
+        "databasePathUnavailable": "Failed to fetch .dots file path! Fully quit the app and try again. If the issue persists, please reach out to support",
+        "window": {
+            "close": "Close",
+            "maximize": "Maximize",
+            "minimize": "Minimize"
+        }
     },
     "toolbar": {
         "alignment": {
             "lockXCaption": "Lock X",
             "lockYCaption": "Lock Y",
             "snapCaption": "Snap to grid",
-            "alignMarchersAriaLabel": "Align marchers",
             "lockMarchersAriaLabel": "Cursor movement and marcher snap",
             "placeAllMarchers": "Place all marchers",
             "placeSelectedMarchers": "Place selected marchers",
             "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
-            "toNextPagePositions": "...to next page positions"
+            "toNextPagePositions": "...to next page positions",
+            "setMarcherPositionsAriaLabel": "Set marcher positions"
+        },
+        "collisions": {
+            "collisionsToolbar": "Collisions",
+            "tab": "Collisions",
+            "found": "{count, plural, one {# Collision Found} other {# Collisions Found}}",
+            "review": "Review",
+            "title": "{count, plural, one {# Collision} other {# Collisions}}",
+            "foundOnNextPage": "{count, plural, one {Found # collision on the next page} other {Found # collisions on the next page}}",
+            "zoomToReview": "Review",
+            "distance": "{distance, number, ::.0} steps",
+            "position": "Position: ({x, number, ::.0}, {y, number, ::.0})"
         },
         "select": {
             "drillPrefixesLabel": "Select drill prefixes",
@@ -2675,7 +3359,9 @@
                 "section": "Section",
                 "tag": "Tag"
             },
-            "selectByText": "Select by"
+            "selectByText": "Select by",
+            "familiesLabel": "Select families",
+            "loading": "Loading..."
         },
         "settings": "App Settings",
         "view": {
@@ -2689,13 +3375,12 @@
             "shapesAlways": "Always",
             "shapesOff": "Off",
             "shapesSelected": "When selected"
-        },
-        "hideToolbar": "Hide toolbar",
-        "showToolbar": "Show toolbar"
+        }
     },
     "versionCheck": {
         "error": {
             "fetchFailed": "An error occurred while fetching the version.",
+            "message": "Error: {message}",
             "noVersion": "Unable to fetch latest version."
         },
         "installLinux": "Install for Linux",
@@ -2707,6 +3392,12 @@
         "trigger": "New Version Available!"
     },
     "view3d": {
+        "autoOpenPrompt": {
+            "description": "You can change this later in Settings › General.",
+            "no": "No",
+            "title": "Open the 3D View on launch?",
+            "yes": "Yes"
+        },
         "camera": {
             "blimp": "Blimp",
             "corner": "Corner",
@@ -2741,8 +3432,8 @@
         "overlay": {
             "cameras": "Camera",
             "crowd": "Crowd",
-            "enterFullscreen": "Fullscreen (F)",
-            "exitFullscreen": "Exit fullscreen (F)",
+            "enterFullscreen": "Fullscreen",
+            "exitFullscreen": "Exit fullscreen",
             "lighting": "Lighting",
             "pickSeat": "Pick a seat",
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
@@ -2818,7 +3509,7 @@
                 "left": "Performer's left",
                 "right": "Performer's right"
             },
-            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right. Follow cues steps off on the show's saved foot ({foot}), or the foot a Feet cue sets.",
+            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right. Follow cues steps off on the show's saved foot ({foot, select, left {performer's left} other {performer's right}}), or the foot a Feet cue sets.",
             "keysSection": "Keyboard and mouse",
             "previewSection": "Preview only",
             "previewHint": "Not saved. These change only what this window draws; in the show, cues decide. Set them back to Follow cues to see the show.",
@@ -2835,20 +3526,11 @@
             "crowd": "Show or hide the crowd",
             "escape": "Cancel a seat pick, close settings, leave fullscreen",
             "orbit": "Orbit",
-            "pan": "Pan (or right-drag)",
+            "pan": "Pan, or drag with the right mouse button",
             "zoom": "Zoom"
         },
         "keyNames": {
-            "playPause": "Space",
-            "previousNext": "Q / E",
-            "firstLast": "Shift+Q / E",
-            "cameras": "1–9",
-            "fullscreen": "F",
-            "crowd": "C",
-            "escape": "Esc",
-            "orbit": "Drag",
-            "pan": "Shift+drag",
-            "zoom": "Scroll"
+            "pair": "<first></first> / <second></second>"
         },
         "uniformPreset": {
             "fade": "Ultraviolet Fade",
@@ -2869,7 +3551,7 @@
             "addView": "Add current view",
             "addViewTooltip": "Save where the view is now as a new camera",
             "full": "A venue can have up to {max} cameras",
-            "newName": "Camera",
+            "newName": "Camera {n}",
             "name": "Camera name",
             "goTo": "Go to {name}",
             "setView": "Set to current view",
@@ -2920,7 +3602,37 @@
             "use": "Use",
             "otherVenue": "This profile is for another venue",
             "deleteProfile": "Delete",
-            "deleteProfileConfirm": "Delete “{name}” from this computer? Shows that use it keep their copy."
+            "deleteProfileConfirm": "Delete “{name}” from this computer? Shows that use it keep their copy.",
+            "saveFailed": "Failed to save the 3D View cameras"
+        },
+        "catalog": {
+            "entry": {
+                "silk5ftPole": "5 ft pole silk",
+                "silk5_5ftPole": "5.5 ft pole silk",
+                "silk6ftPole": "6 ft pole silk",
+                "silk7ftPole": "7 ft pole silk",
+                "silkStandard": "Standard",
+                "silkOversized": "Oversized",
+                "silkTeardrop": "Teardrop",
+                "silkSwing": "Swing",
+                "silkSuperSwing": "Curved or super swing",
+                "silkOversizedSwing": "Oversized swing",
+                "silkArc": "Regular arc",
+                "silkNarrowArc": "Narrow arc",
+                "silkSuperArc": "Super arc",
+                "floorWgiMinimum": "WGI competition area, minimum",
+                "floorWgiMaximum": "WGI competition area, maximum",
+                "flatProp4x8ft": "4 x 8 ft sheet"
+            },
+            "kind": {
+                "silk": "Silk",
+                "floor": "Floor",
+                "flatProp": "Flat prop"
+            },
+            "chip": "{kind} {size}"
+        },
+        "venue": {
+            "updateFailed": "Failed to update the 3D View venue"
         }
     },
     "web": {
@@ -2935,8 +3647,7 @@
         "backupReminder": "“{name}” has changes from several days that aren't backed up anywhere else.",
         "cantKeepForReload": "This browser window can't open a show, because it won't let OpenMarch keep anything even for a moment. Try a normal (not private) window.",
         "close": "Close",
-        "download": "Download .dots",
-        "downloaded": "Downloaded {name}",
+        "noticeDismiss": "Dismiss",
         "fileMenu": "File",
         "fileNotOpened": "The file wasn't opened, so your show stays open: {message}",
         "gotIt": "Got it",
@@ -2953,7 +3664,7 @@
         "homeScreen.howTitle": "How to add it",
         "keptHereNote": "Your shows are saved here as you work. Back up to keep a copy somewhere else, such as Files, Google Drive or email.",
         "leave.memory": "Your changes since the last download will be lost. Download the show first to keep them.\n\nContinue without downloading?",
-        "leave.noAnswer": "The browser didn't answer.",
+        "leave.noAnswer": "Your latest changes aren't saved on this device because the browser didn't answer. If you continue, they are lost. Back up the show first to keep them.\n\nContinue anyway?",
         "leave.unsaved": "Your latest changes aren't saved on this device ({error}). If you continue, they are lost. Back up the show first to keep them.\n\nContinue anyway?",
         "library.backedUpAgo": "Backed up {ago}",
         "library.cancel": "Cancel",
@@ -2981,7 +3692,6 @@
         "memoryNote": "This tab doesn't keep shows (for example, in Private Browsing, or while another tab has OpenMarch open). Download your work before you close it.",
         "neverBackedUp": "Never backed up",
         "notAudioFile": "\"{name}\" isn't an audio file. Choose an MP3, WAV, M4A or similar.",
-        "notDownloadedYet": "Changes since your last download are only in this browser",
         "notKept": "Not kept",
         "notPersistedNote": "The browser may remove shows if space runs low or the site isn't used for a while. Back up often.",
         "notSaved": "Not saved",
@@ -2990,31 +3700,44 @@
         "notShowFile": "\"{name}\" isn't an OpenMarch show. Choose a file that ends in .dots.",
         "persistedNote": "This browser has agreed to keep your shows when space runs low.",
         "reopenFailed": "OpenMarch couldn't reopen your show after reloading. Reload the page to try again.",
+        "repairUnavailable": "Repairing a file isn't available on the web yet",
         "restore": "Restore",
         "restored": "Restored the version from {when}. The state before it is kept in Versions.",
         "savedInBrowser": "Saved in this browser",
         "savedOnIpad": "Saved on this iPad",
         "saving": "Saving…",
+        "saveStatusLabel": "{status}. {backup}",
         "showStaysOpen": "The show stays open: {message}",
+        "startFailed": "OpenMarch couldn't start in this browser: {error}",
         "statusDetailsLabel": "Saving and backups",
         "storageNotice.newerFormat": "Your shows here were saved by a newer version of OpenMarch, so this version leaves them as they are. Use the newer version to open them. Anything you do in this tab is only kept until you close it.",
         "storageNotice.notKept": "This browser won't keep your shows (for example, in Private Browsing). Your work is lost when you close this tab unless you download it. Use a normal Safari tab, or add OpenMarch to your Home Screen.",
         "storageNotice.otherTab": "OpenMarch is open in another tab. In this tab, your show is only kept until you close or reload it. Download it to keep your changes.",
+        "storageNotice.lost": "This browser couldn't store your show (it may be out of space), so it's only kept in this tab until you close or reload it. Download it to keep your changes.",
         "versionReason.beforeRestore": "Before a restore",
         "versionReason.edit": "While editing",
         "versionReason.opened": "When opened",
-        "versions": "Versions",
         "versionsDescription": "A version is kept every couple of minutes while you edit, and when you open a show. Restoring one keeps the current state as a version too, so nothing is lost.",
         "versionsEmpty": "No versions yet. One is kept after your first change.",
         "versionsMenu": "Versions…",
         "versionsTitle": "Versions of “{name}”",
-        "welcome.backUpBody": "File → Back up (or {save}) saves a copy of the show to Files, Google Drive or email. If this device's data is cleared or the device is lost, only your backups remain.",
+        "versionsWhen": "{date} ({ago})",
+        "welcome.backUpBody": "File → Back up (or <keys></keys>) saves a copy of the show to Files, Google Drive or email. If this device's data is cleared or the device is lost, only your backups remain.",
         "welcome.backUpTitle": "Back up regularly",
         "welcome.desktopBody": "PDF export and some file tools need the desktop app. Video export works here.",
         "welcome.desktopTitle": "A few desktop features aren't here yet",
         "welcome.intro": "OpenMarch runs right here on this device. There's no account, and nothing is uploaded.",
+        "welcome.labIntro": "This is a test build of a feature that is still in development, so expect rough edges. It opens with an example show.",
         "welcome.savedBody": "Every change is saved as you work, and the last 20 versions of each show are kept. Find your shows on the start page.",
-        "welcome.savedTitle": "Your shows are saved on this device"
+        "welcome.savedTitle": "Your shows are saved on this device",
+        "variants.label": "Version to try",
+        "variants.name": "Version",
+        "workerError.midChange": "The show is in the middle of a change. Try again in a moment.",
+        "workerError.noFileOpen": "No file is open. Create or open a show first.",
+        "workerError.noLibrary": "This tab doesn't keep shows in the browser",
+        "workerError.noShow": "That show isn't stored here any more",
+        "workerError.notSaved": "The latest changes couldn't be saved.",
+        "workerError.readOnly": "These shows were saved by a newer version of OpenMarch. Use that version to change them."
     },
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
@@ -3066,7 +3789,8 @@
         "warnPropMovesWithoutCrew": "Warn when a prop moves without a crew",
         "warnPropMovesWithoutCrewHelp": "Show checks names a placed prop that moves with nobody on its crew.",
         "close": "Close",
-        "saved": "Show settings saved"
+        "saved": "Show settings saved",
+        "updateFailed": "Failed to update workspace settings"
     },
     "visuals": {
         "workspace": {
@@ -3091,6 +3815,7 @@
             "selectionCount": "{count, plural, =0 {Nothing selected} one {# selected} other {# selected}}",
             "sections": "Sections",
             "tags": "Tags",
+            "unnamedTag": "tag-{id}",
             "clearFocus": "Clear focus",
             "focusHint": "Click a who to focus it. Everyone else dims on the field."
         },
@@ -3100,14 +3825,18 @@
             "selectFirst": "Select marchers on the field to make cues for the selection",
             "marchers": "{count, plural, one {# marcher} other {# marchers}}",
             "mixed": "Mixed",
+            "rowCue": "{who}: {value}",
             "lane": "Cue lane",
             "paste": "{count, plural, one {Paste # cue at the playhead} other {Paste # cues at the playhead}}",
-            "flagged": "{count, plural, one {# flagged cue} other {# flagged cues}}"
+            "flagged": "{count, plural, one {# flagged cue} other {# flagged cues}}",
+            "flaggedCue": "{value}: {problems}"
         },
         "cue": {
             "title": "Cue",
             "delete": "Delete",
             "where": "{who}, {where}",
+            "count": "count {count}",
+            "start": "the start",
             "value": "Value",
             "notForEveryone": "{value} (doesn't fit everyone)",
             "transition": "Transition (counts)",
@@ -3124,15 +3853,15 @@
             "notes": "Notes",
             "facingWheel": "Facing angle",
             "pickPoint": "Pick the point on the field",
-            "pickingPoint": "Click a point on the field (Esc cancels)"
+            "pickingPoint": "Click a point on the field (<keys></keys> cancels)"
         },
         "why": {
             "title": "Why, at {where}",
             "value": "{value}: {n} of {total}",
-            "setBy": "Set by",
-            "beat": "Beat",
+            "setBy": "Set by <cue></cue>",
+            "setByTakenOver": "Set by <cue></cue> (taken over from {channel})",
+            "beat": "Beat <cues></cues>",
             "cue": "{value} for {who} on {where}",
-            "takenOver": "(taken over from {channel})",
             "default": {
                 "library": "The default",
                 "carry": "The default for what they carry",
@@ -3173,13 +3902,146 @@
             "medium": "Medium",
             "high": "High"
         },
+        "values": {
+            "feet": {
+                "step": {
+                    "name": "Step",
+                    "label": "Step",
+                    "half": "½",
+                    "double": "2×",
+                    "markTime": "MT"
+                }
+            },
+            "horn": {
+                "up": {
+                    "name": "Horns up",
+                    "label": "HU"
+                },
+                "down": {
+                    "name": "Horns down",
+                    "label": "HD"
+                },
+                "trail": {
+                    "name": "Trail",
+                    "label": "Trail"
+                }
+            },
+            "battery": {
+                "playing": {
+                    "name": "Playing",
+                    "label": "Play"
+                },
+                "sticksIn": {
+                    "name": "Sticks in",
+                    "label": "In"
+                },
+                "sticksDown": {
+                    "name": "Sticks down",
+                    "label": "Down"
+                }
+            },
+            "flag": {
+                "set": {
+                    "name": "Flag set",
+                    "label": "Set"
+                },
+                "port": {
+                    "name": "Flag port",
+                    "label": "Port"
+                },
+                "dropSpin": {
+                    "name": "Flag drop spin",
+                    "label": "Drop"
+                },
+                "toss1": {
+                    "name": "Flag single toss",
+                    "label": "1x"
+                }
+            },
+            "rifle": {
+                "portArms": {
+                    "name": "Port arms",
+                    "label": "Port"
+                },
+                "present": {
+                    "name": "Present",
+                    "label": "Pres"
+                },
+                "dropSpin": {
+                    "name": "Rifle drop spin",
+                    "label": "Drop"
+                },
+                "toss1": {
+                    "name": "Rifle single toss",
+                    "label": "1x"
+                },
+                "toss2": {
+                    "name": "Rifle double toss",
+                    "label": "2x"
+                }
+            },
+            "sabre": {
+                "set": {
+                    "name": "Sabre set",
+                    "label": "Set"
+                },
+                "toss1": {
+                    "name": "Sabre single toss",
+                    "label": "1x"
+                }
+            },
+            "facing": {
+                "front": {
+                    "name": "Front",
+                    "label": "Front"
+                },
+                "back": {
+                    "name": "Back",
+                    "label": "Back"
+                },
+                "side1": {
+                    "name": "Side 1",
+                    "label": "S1"
+                },
+                "side2": {
+                    "name": "Side 2",
+                    "label": "S2"
+                },
+                "travel": {
+                    "name": "Direction of travel",
+                    "label": "Travel"
+                },
+                "angle": {
+                    "name": "Angle",
+                    "label": "Angle"
+                },
+                "point": {
+                    "name": "Toward a point",
+                    "label": "Point"
+                }
+            },
+            "body": {
+                "neutral": {
+                    "name": "Neutral",
+                    "label": "—"
+                },
+                "kneel": {
+                    "name": "Kneel",
+                    "label": "Kneel"
+                },
+                "choreo": {
+                    "name": "Choreography",
+                    "label": "Choreo"
+                }
+            }
+        },
         "flags": {
-            "clash": "clashes with another cue on the same count",
-            "phrase_overlap": "overlaps another phrase",
-            "takeover_while_moving": "takes over the feet while the dot moves",
-            "fits_nobody": "fits none of its marchers",
-            "kind_not_allowed": "a phrase on a channel that takes states only",
-            "transition_cut": "its transition starts before the cue before it lands"
+            "clash": "Clashes with another cue on the same count.",
+            "phrase_overlap": "Overlaps another phrase.",
+            "takeover_while_moving": "Takes over the feet while the dot moves.",
+            "fits_nobody": "Fits none of its marchers.",
+            "kind_not_allowed": "Is a phrase on a channel that takes states only.",
+            "transition_cut": "Its transition starts before the cue before it lands."
         }
     },
     "canvas": {
@@ -3187,19 +4049,34 @@
             "group": "Zoom",
             "in": "Zoom in",
             "out": "Zoom out",
-            "reset": "Zoom {zoom}%, reset zoom and center"
+            "reset": "Zoom {zoom}%, reset zoom and center",
+            "resetAndCenter": "Reset Zoom and Center",
+            "perspective": "Perspective",
+            "perspectiveComingSoon": "Perspective (coming soon)"
         }
     },
     "errorBoundary": {
-        "copyErrorMessage": "Copy error message"
+        "copyErrorMessage": "Copy error message",
+        "copySupportEmail": "Copy support email",
+        "emailCopied": "Email copied to clipboard!",
+        "errorCopied": "Error copied",
+        "hearAboutThis": "We want to hear about this!",
+        "joinDiscord": "Join our Discord community",
+        "reachOut": "Please reach out to us so we can fix this. Hearing from you is what makes OpenMarch great!",
+        "refreshApp": "Refresh App",
+        "reportIssue": "Report the issue",
+        "stoppedBecause": "OpenMarch stopped due to the following error",
+        "title": "Something went wrong :("
     },
     "sidebar": {
         "appearance": "Appearance",
+        "close": "Close panel",
         "field": "Field",
         "marchers": "Marchers",
         "metronome": "Metronome",
         "mobile": "Mobile app",
         "music": "Music",
+        "renderFail": "Sidebar modal content failed to render",
         "settings": "Show settings"
     },
     "infoTip": {
@@ -3222,40 +4099,14 @@
         }
     },
     "touch": {
-        "dragMode": {
-            "auto": "Auto",
-            "autoDescribe": "{device, select, pencil {finger moves, Pencil selects} other {finger moves, pen selects}}",
-            "autoSentence": "{device, select, pencil {One finger moves the view. Pencil, or hold then drag, selects.} other {One finger moves the view. A pen, or hold then drag, selects.}}",
-            "box": "Box",
-            "boxDescribe": "drag a box to select",
-            "button": "Drag from empty field: {label}, {describe}. Tap to change",
-            "lasso": "Lasso",
-            "lassoDescribe": "draw around to select",
-            "menu": "Drag from empty field",
-            "pan": "Pan",
-            "panDescribe": "drag moves the view",
-            "prefix": "Drag:"
-        },
-        "gestures": {
-            "fingers": "<b>1 finger</b> moves · <b>2</b> zoom",
-            "holdMarcher": "<b>Hold a marcher</b> adds it",
-            "modifiers": "<b>Add</b> taps to add · <b>Snap off</b> moves freely",
-            "penSelects": "{device, select, pencil {<b>Pencil</b>} other {<b>Pen</b>}} or <b>hold + drag</b> selects",
-            "undoRedo": "<b>2-finger tap</b> undo · <b>3</b> redo"
-        },
-        "layoutHint": "Tablet layout has bigger controls",
-        "marcherAdded": "Added {name}",
-        "marcherRemoved": "Removed {name}",
         "modifiers": {
             "add": "Add",
             "addHint": "Add: hold, or tap to keep on. Tapping marchers adds them to the selection",
-            "clearLine": "Clear line",
             "constrain": "Equal",
             "constrainHint": "Equal: hold, or tap to keep on. Equal spacings, one axis when moving, flips proportional scaling",
             "explain": {
                 "add": "Tap marchers to add or remove them.",
                 "constrain": "Equal spacings, one axis when moving, flips proportional scaling.",
-                "drag": "What dragging on empty field does.",
                 "fine": "Marchers move slowly, off the grid. Shapes leave the half steps but still catch lines. Turns go by whole degrees.",
                 "fromCenter": "Boxes draw and resize from their center.",
                 "grip": "Drag to move.",
@@ -3276,29 +4127,176 @@
                 "toggles": "<b>Tap</b> a button to keep it on, or <b>hold</b> it while you drag"
             },
             "noSnap": "Snap off"
-        },
-        "openSettings": "Open Settings",
-        "readout": {
-            "both": "{side} · {frontBack}",
-            "noFrontToBack": "0 steps front to back",
-            "noSideToSide": "0 steps side to side",
-            "toSide": "{count, plural, one {{steps} step} other {{steps} steps}} to {side}",
-            "towardBack": "{count, plural, one {{steps} step} other {{steps} steps}} toward the back",
-            "towardFront": "{count, plural, one {{steps} step} other {{steps} steps}} toward the front"
-        },
-        "redone": "Redone",
-        "theMarcher": "the marcher",
-        "undone": "Undone"
+        }
     },
     "shortcutsDialog": {
         "movement": {
             "constrain": "Move on one axis while dragging",
-            "fineControl": "Fine control while dragging marchers"
+            "fineControl": "Fine control while dragging marchers",
+            "nudge": "Nudge the selected marchers"
         },
         "shape": {
             "constrain": "Constrain (equal spacings, one axis, flips proportional scaling)",
             "fineControl": "Fine control, still catching yard lines and hashes",
             "fromCenter": "Draw or resize a box from center"
+        },
+        "timeline": {
+            "dragWithoutSnapping": "Drag without snapping",
+            "drawRange": "Draw a range (drag)",
+            "fitShow": "Fit the show, or back",
+            "leaveIsolatedMove": "Leave an isolated move",
+            "zoom": "Zoom the timeline"
+        },
+        "title": "Keyboard shortcuts",
+        "group": {
+            "alignment": "Alignment",
+            "batchEdit": "Batch editing",
+            "cursor": "Tools",
+            "edit": "Edit",
+            "file": "File",
+            "movement": "Move marchers",
+            "navigation": "Pages",
+            "other": "Other",
+            "playback": "Playback",
+            "select": "Selection",
+            "shape": "Shapes",
+            "timeline": "Timeline",
+            "ui": "View"
         }
+    },
+    "shortcut": {
+        "gesture": {
+            "drag": "drag",
+            "scroll": "scroll",
+            "click": "click"
+        }
+    },
+    "menu": {
+        "app": {
+            "about": "About {appName}",
+            "services": "Services",
+            "hide": "Hide {appName}",
+            "hideOthers": "Hide Others",
+            "quit": "Quit {appName}",
+            "showAll": "Show All"
+        },
+        "edit": {
+            "title": "Edit",
+            "undo": "Undo",
+            "redo": "Redo",
+            "cut": "Cut",
+            "copy": "Copy",
+            "paste": "Paste",
+            "pasteAndMatchStyle": "Paste and Match Style",
+            "delete": "Delete",
+            "selectAll": "Select All",
+            "speech": "Speech",
+            "startSpeaking": "Start Speaking",
+            "stopSpeaking": "Stop Speaking"
+        },
+        "file": {
+            "title": "File",
+            "open": "Open File",
+            "createNew": "Create New",
+            "saveAsCopy": "Save As Copy",
+            "closeFile": "Close File",
+            "noDocument": {
+                "title": "Cannot Save or Export",
+                "message": "There is currently no active document to save or export."
+            }
+        },
+        "view": {
+            "title": "View",
+            "open3dView": "Open 3D View",
+            "reload": "Reload",
+            "forceReload": "Force Reload",
+            "toggleDevTools": "Toggle Developer Tools",
+            "resetZoom": "Actual Size",
+            "zoomIn": "Zoom In",
+            "zoomOut": "Zoom Out",
+            "toggleFullScreen": "Toggle Full Screen"
+        },
+        "playback": {
+            "title": "Playback",
+            "playPause": "Play / Stop",
+            "playPage": "Play from Playhead / Pause",
+            "playOn": "Play On from Start Flag",
+            "toggleLoop": "Loop On / Off"
+        },
+        "window": {
+            "title": "Window",
+            "minimize": "Minimize",
+            "zoom": "Zoom",
+            "close": "Close",
+            "front": "Bring All to Front"
+        },
+        "help": {
+            "title": "Help",
+            "showShortcuts": "Keyboard Shortcuts",
+            "starterKit": "Get the Blender starter kit…",
+            "website": "Website",
+            "guides": "Docs/Guides"
+        },
+        "withShortcut": "{label}  ({shortcut})"
+    },
+    "fileDialog": {
+        "filters": {
+            "openMarchFile": "OpenMarch File",
+            "allFiles": "All Files",
+            "audioFile": "Audio File",
+            "zipArchive": "Zip archive",
+            "video": "Video"
+        },
+        "newShow": {
+            "button": "Create New"
+        },
+        "saveCopy": {
+            "button": "Save Copy"
+        },
+        "openFailed": {
+            "title": "Error Loading Database"
+        }
+    },
+    "notes": {
+        "snapToHolderFailed": "Error snapping an item to its holder"
+    },
+    "coordinates": {
+        "full": "{x} - {y}",
+        "withSide": "{side}: {position}",
+        "verbose": {
+            "behind": "{steps, plural, =0 {behind {checkpoint}} other {# behind {checkpoint}}}",
+            "behindSteps": "{steps, plural, =0 {behind {checkpoint}} one {# step behind {checkpoint}} other {# steps behind {checkpoint}}}",
+            "inFrontOf": "{steps, plural, =0 {in front of {checkpoint}} other {# in front of {checkpoint}}}",
+            "inFrontOfSteps": "{steps, plural, =0 {in front of {checkpoint}} one {# step in front of {checkpoint}} other {# steps in front of {checkpoint}}}",
+            "inside": "{steps, plural, =0 {inside {checkpoint}} other {# inside {checkpoint}}}",
+            "insideSteps": "{steps, plural, =0 {inside {checkpoint}} one {# step inside {checkpoint}} other {# steps inside {checkpoint}}}",
+            "onX": "On {checkpoint}",
+            "onY": "On {checkpoint}",
+            "outside": "{steps, plural, =0 {outside {checkpoint}} other {# outside {checkpoint}}}",
+            "outsideSteps": "{steps, plural, =0 {outside {checkpoint}} one {# step outside {checkpoint}} other {# steps outside {checkpoint}}}"
+        },
+        "terse": {
+            "behind": "{steps, plural, =0 {BE {checkpoint}} other {# BE {checkpoint}}}",
+            "inFrontOf": "{steps, plural, =0 {FR {checkpoint}} other {# FR {checkpoint}}}",
+            "inside": "{steps, plural, =0 {IN {checkpoint}} other {# IN {checkpoint}}}",
+            "onX": "On {checkpoint}",
+            "onY": "On {checkpoint}",
+            "outside": "{steps, plural, =0 {OUT {checkpoint}} other {# OUT {checkpoint}}}"
+        }
+    },
+    "activities": {
+        "drumCorps": "Drum Corps",
+        "indoorPercussion": "Indoor Percussion",
+        "indoorWinds": "Indoor Winds",
+        "marchingBand": "Marching Band",
+        "other": "Other",
+        "soundSport": "SoundSport",
+        "winterGuard": "Winter Guard"
+    },
+    "stepSize": {
+        "hold": "Hold",
+        "tiny": "Tiny",
+        "toFive": "{steps, number} to 5",
+        "undefined": "Undefined"
     }
 }

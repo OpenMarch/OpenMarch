@@ -106,17 +106,30 @@ export interface Length {
     unit: "ft" | "m";
 }
 
+/** `value` with `digits` decimals in `locale`, without thousands separators (like `toFixed`) */
+const fixed = (value: number, digits: number, locale: string) =>
+    value.toLocaleString(locale, {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+        useGrouping: false,
+    });
+
 /**
  * A length for display: whole feet for imperial fields, meters with one
- * decimal (whole meters from 100 m) for metric fields.
+ * decimal (whole meters from 100 m) for metric fields. `locale` picks the
+ * decimal mark ("en" when omitted).
  */
 export function formatLength(
     meters: number,
     system: MeasurementSystem,
+    locale: string = "en",
 ): Length {
     const m = Number.isFinite(meters) ? Math.max(0, meters) : 0;
     if (system === "metric") {
-        return { value: m >= 100 ? m.toFixed(0) : m.toFixed(1), unit: "m" };
+        return {
+            value: fixed(m, m >= 100 ? 0 : 1, locale),
+            unit: "m",
+        };
     }
-    return { value: (m / METERS_PER_FOOT).toFixed(0), unit: "ft" };
+    return { value: fixed(m / METERS_PER_FOOT, 0, locale), unit: "ft" };
 }

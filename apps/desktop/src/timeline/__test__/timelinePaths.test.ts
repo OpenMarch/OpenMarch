@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeAll } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 import { createResolver, type Resolver } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { StepSize } from "@/global/classes/StepSize";
@@ -16,6 +17,11 @@ import {
     timelineStepSize,
     type PathPage,
 } from "../timelinePaths";
+
+// Step sizes are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 /**
  * Timeline-mode path visuals and step sizes (docs/timeline/phases/07-page-parity.md P7.10):

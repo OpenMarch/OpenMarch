@@ -5,7 +5,7 @@
  * field image in 2D, exports and 3D. "Remove floor" clears it. Both are undoable.
  */
 import { useQueryClient } from "@tanstack/react-query";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
 import type { FieldProperties } from "@openmarch/core";
 import { db } from "@/global/database/db";
@@ -22,7 +22,7 @@ export default function FieldFloorControls({
 }: {
     fieldProperties: FieldProperties;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const reviewing = useAssetsStore((s) => s.review !== null);
     const startImport = useAssetsStore((s) => s.startImport);

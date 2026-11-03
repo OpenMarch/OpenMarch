@@ -487,7 +487,9 @@ export function buildTimelineClipTracks(
                 linkId: timeline.id,
                 targetId: timeline.id,
                 targetType: "timeline",
+                // A stand-in, worded where it is shown (`describeMoveClips`)
                 label: timeline.name ?? `Timeline ${timeline.id}`,
+                ...(timeline.name == null ? { unnamed: true } : {}),
                 color: timelineColor(timeline.id),
                 startBeatIndex: clip.start,
                 endBeatIndex: clip.end,

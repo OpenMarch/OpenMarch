@@ -84,9 +84,13 @@
             "quarterTurn": "Forma: Girar 90° no sentido horário",
             "recalculate": "Forma: Recalcular quem vai para onde",
             "evenOut": "Forma: igualar o contorno",
+            "hideMarchers": "Forma: ocultar os marchadores (segure para espiar, toque para manter oculto)",
+            "hideMarchersKeywords": "ocultar mostrar marchadores pontos caminhos sozinha espiar olho",
             "expand": "Forma: ampliar, mantendo as proporções",
             "shrink": "Forma: reduzir, mantendo as proporções",
             "ring": "Anel de favoritos: segure para escolher uma forma, toque para mantê-lo aberto",
+            "group": "Agrupar seleção",
+            "groupKeywords": "agrupar forma congelar como está juntar combinar",
             "ungroup": "Forma: Desagrupar",
             "ungroupKeywords": "desagrupar forma separar soltar"
         },
@@ -379,6 +383,7 @@
             "fine": "fino",
             "freeRatio": "proporção livre",
             "fromCenter": "a partir do centro",
+            "keepDirection": "manter direção",
             "keepRatio": "manter proporção",
             "oneAxis": "um eixo",
             "snapOff": "Sem ajuste",
@@ -1303,6 +1308,10 @@
                 "locked": "Espaçamentos vinculados: clique para desvincular",
                 "unlocked": "Vincular os dois espaçamentos"
             },
+            "hideMarchers": {
+                "hide": "Ocultar os marchadores",
+                "show": "Mostrar os marchadores"
+            },
             "evenOut": {
                 "label": "Igualar",
                 "tip": "Distribuir os marchadores tão uniformemente quanto o bloco permite",
@@ -1438,6 +1447,12 @@
                     "noSize": "A forma não tem tamanho"
                 }
             },
+            "group": {
+                "label": "Grupo",
+                "params": {
+                    "interval": "Menor espaçamento entre vizinhos, em passos"
+                }
+            },
             "line": {
                 "label": "Linha",
                 "validate": {
@@ -1502,6 +1517,7 @@
                 "empty": "{count, plural, one {# vazio} other {# vazios}}",
                 "steps": "{interval} passos"
             },
+            "groupError": "Erro ao agrupar os integrantes",
             "ungroupError": "Erro ao desagrupar a forma",
             "ungroupIsolated": "Desagrupe esta forma fora do isolamento: ela vem de uma página anterior"
         },

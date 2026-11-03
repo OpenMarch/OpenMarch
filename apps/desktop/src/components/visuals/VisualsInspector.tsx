@@ -7,7 +7,7 @@
  */
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import {
@@ -79,7 +79,7 @@ function Heading({ children }: { children: React.ReactNode }) {
 }
 
 export default function VisualsInspector() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { data: tags } = useQuery(allTagsQueryOptions());
     const { data: byTag } = useQuery(marcherIdsForAllTagIdsQueryOptions());
@@ -168,7 +168,14 @@ export default function VisualsInspector() {
                     <WhoRow
                         key={`tag-${e.who.tagId}`}
                         who={e.who}
-                        label={e.label}
+                        label={
+                            tags
+                                ?.find((x) => x.id === e.who.tagId)
+                                ?.name?.trim() ||
+                            t("visuals.inspector.unnamedTag", {
+                                id: String(e.who.tagId),
+                            })
+                        }
                         count={e.count}
                         testId={`visuals-who-tag-${e.who.tagId}`}
                     />

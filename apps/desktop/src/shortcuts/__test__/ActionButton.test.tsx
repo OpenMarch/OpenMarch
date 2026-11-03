@@ -11,7 +11,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import ActionButton from "../ActionButton";
 import { Button } from "@openmarch/ui";
-import { getActionLabel, getActionTooltip } from "../labels";
+import { getActionLabel, getActionShortcutLabel } from "../labels";
 import { registerActionHandler } from "../registry";
 import { useActionHandler } from "../useActionHandler";
 import { useInputModeStore } from "@/stores/InputModeStore";
@@ -35,23 +35,23 @@ const Providers = ({ children }: { children: React.ReactNode }) => (
 describe("labels", () => {
     it("builds suffix and param labels", () => {
         expect(getActionLabel("moveSelectedMarchersUpFine", t)).toBe(
-            "actions.movement.moveUp (actions.movement.variants.fine)",
+            'actions.labelWithVariant:{"label":"actions.movement.moveUp","variant":"actions.movement.variants.fine"}',
         );
         expect(getActionLabel("timelineTapBeats2", t)).toBe(
             'actions.timeline.tapBeats:{"count":2}',
         );
     });
 
-    it("tooltip uses toggle key and platform binding", () => {
-        expect(
-            getActionTooltip("lockX", t, { toggleState: "on", isMac: false }),
-        ).toBe("actions.alignment.lockXOn [Y]");
-        expect(getActionTooltip("performUndo", t, { isMac: true })).toBe(
-            "actions.edit.undo [⌘Z]",
+    it("writes an action's shortcut as plain text the way each system does", () => {
+        expect(getActionShortcutLabel("performUndo", { isMac: true })).toBe(
+            "⌘Z",
+        );
+        expect(getActionShortcutLabel("performRedo", { isMac: false })).toBe(
+            "Ctrl+Shift+Z",
         );
         expect(
-            getActionTooltip("launchLoadFileDialogue", t, { isMac: false }),
-        ).toBe("actions.file.loadDialogue");
+            getActionShortcutLabel("launchLoadFileDialogue", { isMac: false }),
+        ).toBeUndefined();
     });
 });
 
@@ -111,6 +111,28 @@ describe("ActionButton", () => {
         );
         expect(screen.getByRole("button", { name: "Flip" })).toBeDisabled();
         off();
+    });
+
+    it("names an icon-only button with its action, and has no browser title", () => {
+        render(
+            <ActionButton action="flipHorizontal">
+                <svg />
+            </ActionButton>,
+            { wrapper: Providers },
+        );
+        const button = screen.getByRole("button", {
+            name: /^Flip horizontally/,
+        });
+        expect(button).not.toHaveAttribute("title");
+    });
+
+    it("keeps a button's own text as its name", () => {
+        render(<ActionButton action="flipHorizontal">Flip</ActionButton>, {
+            wrapper: Providers,
+        });
+        expect(
+            screen.getByRole("button", { name: "Flip" }),
+        ).not.toHaveAttribute("aria-label");
     });
 
     it("a caption names the button and shows only in touch mode", () => {

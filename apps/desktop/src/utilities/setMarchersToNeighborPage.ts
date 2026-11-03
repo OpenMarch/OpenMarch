@@ -14,7 +14,7 @@ import {
 } from "@/timeline/timelineErrorMessages";
 import type { TimelineMoveResult } from "@/db-functions/timelineMoves";
 import type { HeldConflict } from "@/db-functions/timelineHeldMarks";
-import { joinList } from "@/timeline/timelineRangeWords";
+import { joinList } from "@/timeline/translateTimelineText";
 import { holdTerms } from "@/timeline/holdTerms";
 
 /**

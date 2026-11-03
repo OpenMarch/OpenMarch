@@ -10,20 +10,23 @@ import {
     drillNumbers,
     frameDrawing,
     guideDrawing,
+    handleDrawing,
     memoDrawing,
     shapeCursor,
     SPOT_LABEL_LIMIT,
 } from "../field/fieldModeBase";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import { toolEnvFor } from "./toolEnv";
-import type { Roles } from "@/input/modifierRoles";
+import { rolesOf, type Roles } from "@/input/modifierRoles";
 import { pressShapeKeys, type HeldFieldGesture } from "../field/heldGesture";
 import {
     cancelGesture,
+    pickMenu,
     pointerMove,
     press,
     pressTarget,
     release,
+    removeLastPoint,
     slotsOf,
     startsOf,
     targetsOf,
@@ -31,6 +34,10 @@ import {
 } from "./toolMachine";
 import { updateTool, useShapeToolStore } from "./shapeToolStore";
 import { ShapeGlide } from "./spotGlide";
+import { openHandleMenu } from "../field/handleMenu";
+import { groupDrawing } from "../field/groupDrawing";
+import { stepDrawing } from "../field/stepDrawing";
+import type { GroupMenuState } from "../field/shapePointer";
 import {
     setShapePointerOver,
     shapeCalm,
@@ -70,6 +77,10 @@ interface Shown {
     readonly pivotPreview: PivotKey | null;
     /** A spacing number is being dragged: guides as for a move (#452) */
     readonly scrubbing: boolean;
+    /** The editor's group menu is open, and the group lit (#526 follow-up) */
+    readonly groupMenu: GroupMenuState | null;
+    /** A number setting the kind's step is engaged: the step drawn (owner on #596) */
+    readonly stepShown: boolean;
 }
 let shown: Shown | null = null;
 const shownNow = (): Shown | null => {
@@ -78,16 +89,28 @@ const shownNow = (): Shown | null => {
     const { hover } = useSpotHover.getState();
     const calm = shapeCalm(!!tool.gesture);
     const walks = useUiSettingsStore.getState().uiSettings.shapeWalks ?? false;
-    const { pivotPreview, scrubbing } = useShapePointerStore.getState();
+    const { pivotPreview, scrubbing, groupMenu, stepShown } =
+        useShapePointerStore.getState();
     if (
         shown?.tool !== tool ||
         shown.hover !== hover ||
         shown.calm !== calm ||
         shown.walks !== walks ||
         shown.pivotPreview !== pivotPreview ||
-        shown.scrubbing !== scrubbing
+        shown.scrubbing !== scrubbing ||
+        shown.groupMenu !== groupMenu ||
+        shown.stepShown !== stepShown
     )
-        shown = { tool, hover, calm, walks, pivotPreview, scrubbing };
+        shown = {
+            tool,
+            hover,
+            calm,
+            walks,
+            pivotPreview,
+            scrubbing,
+            groupMenu,
+            stepShown,
+        };
     return shown;
 };
 
@@ -153,7 +176,7 @@ function hoverAt(tool: ToolState, at: XY, radius: number): void {
 }
 
 const drawingOf = memoDrawing(
-    ({ tool, hover, calm, walks, scrubbing }: Shown) => {
+    ({ tool, hover, calm, walks, scrubbing, groupMenu, stepShown }: Shown) => {
         const field = currentShapeField();
         if (!field) return null;
         const n = tool.spots;
@@ -172,9 +195,10 @@ const drawingOf = memoDrawing(
                 rings,
                 ringIds,
             };
-        // While a drag draws a new shape: its spots and a dashed outline, no walks yet (06). Every
-        // other gesture holds who goes where, so the walks follow it live.
-        const drawing = tool.gesture?.type === "draw";
+        // While a drag or clicked points draw a new shape: its spots and a dashed outline, no walks
+        // yet (06). Every other gesture holds who goes where, so the walks follow it live.
+        const drawing =
+            tool.gesture?.type === "draw" || tool.gesture?.type === "points";
         const targets = drawing ? [] : targetsNow(tool, field);
         const names = drillNumbers(field);
         const env = toolEnvFor(field);
@@ -182,12 +206,14 @@ const drawingOf = memoDrawing(
         const g =
             tool.gesture &&
             tool.gesture.type !== "draw" &&
+            tool.gesture.type !== "points" &&
             tool.gesture.type !== "edit"
                 ? tool.gesture
                 : null;
         return {
             stage: drawing ? ("drawing" as const) : ("open" as const),
             outline: shapeOutline(tool.kind, tool.params, n),
+            openOutline: tool.kind.outlineOpen?.(tool.params, n) ?? false,
             spots,
             walks: walks
                 ? targets.map((t) => ({ from: t.from, to: t.to }))
@@ -205,9 +231,19 @@ const drawingOf = memoDrawing(
                           text: names.get(t.id) ?? "",
                       }))
                     : [],
-            handles: drawing
-                ? []
-                : tool.kind.handles(tool.params, n).map((h) => h.at),
+            ...(drawing
+                ? { handles: [] }
+                : handleDrawing(tool.kind, tool.params, n, tool.selected)),
+            ...(drawing
+                ? {}
+                : stepDrawing(
+                      tool.kind,
+                      tool.params,
+                      n,
+                      stepShown,
+                      tool.gesture,
+                      env.stepPx,
+                  )),
             ...(drawing
                 ? {}
                 : frameDrawing(
@@ -227,6 +263,16 @@ const drawingOf = memoDrawing(
                 env,
                 field,
             ),
+            ...(drawing
+                ? {}
+                : groupDrawing(
+                      tool.kind,
+                      tool.params,
+                      n,
+                      spots,
+                      groupMenu,
+                      env.stepPx,
+                  )),
             ...(hover && !tool.gesture
                 ? { labels: [{ at: hover.at, text: hover.text }] }
                 : {}),
@@ -363,6 +409,18 @@ export function cancelShapeGesture(): void {
 }
 
 /**
+ * While clicking a line's points: the last one taken back (owner, option A on #522). Says whether
+ * points are being clicked, so the right-click or key is used up even when only the first is left.
+ */
+export function removeLastShapePoint(): boolean {
+    const field = currentShapeField();
+    const tool = useShapeToolStore.getState().tool;
+    if (!field || tool?.gesture?.type !== "points") return false;
+    updateTool((t) => removeLastPoint(t, envOf(field, t)));
+    return true;
+}
+
+/**
  * The open shape tool on the field (docs/timeline/research/shapes/06-box-v1.md): a field editor
  * mode that takes every edit press while the tool is open and hands it to the tool's state
  * machine, so nothing selects, drags or lassos underneath. Navigation keeps its presses (right and
@@ -411,17 +469,65 @@ export const shapeToolMode: FieldMode = {
         updateTool((t) => release(t, shapeContextFor(field), click));
     },
     cancel: cancelShapeGesture,
+    // A right-click on a handle with a menu (a Line's point or segment, #569) opens it. While
+    // clicking a line's points it takes the last one back instead, a Mac's Ctrl-click and a long
+    // press too, as they open the menu (owner, option A on #522)
+    openMenu(pointer) {
+        if (removeLastShapePoint()) return true;
+        const tool = useShapeToolStore.getState().tool;
+        const field = currentShapeField();
+        if (!tool || !field || tool.gesture || tool.params === null)
+            return false;
+        return openHandleMenu(
+            tool.kind,
+            tool.params,
+            tool.spots,
+            pressTarget(tool, pointer.field, envOf(field, tool)),
+            pointer.screen,
+            (key, value) => {
+                const now = currentShapeField();
+                if (!now) return null;
+                updateTool((t) =>
+                    pickMenu(
+                        t,
+                        key,
+                        value,
+                        shapeContextFor(now),
+                        envOf(now, t),
+                    ),
+                );
+                const after = useShapeToolStore.getState().tool;
+                return after ? { params: after.params, n: after.spots } : null;
+            },
+        );
+    },
     cursorAt(pointer) {
         const tool = useShapeToolStore.getState().tool;
         const field = currentShapeField();
         if (!tool || !field) return null;
         const env = envOf(field, tool);
+        // Between clicked points the next segment follows the pointer (#524), with the roles the
+        // pointer's keys hold, so it lands where a click would. A role key pressed or released
+        // without a move shows at the next move: no gesture follows the keyboard between clicks.
+        if (tool.gesture?.type === "points") {
+            const roles = rolesOf(pointer, "shape");
+            updateTool((t) =>
+                pointerMove(t, pointer.field, envOf(field, t, roles)),
+            );
+            return "crosshair";
+        }
         // The editor asks for the cursor as the pointer moves, so this is where hovering is seen
         hoverAt(tool, pointer.field, env.hitRadius);
         const target = pressTarget(tool, pointer.field, env);
         setShapePointerOver(target.type !== "draw");
         if (target.type === "draw") return "crosshair";
-        return shapeCursor(tool.kind, tool.params, tool.spots, target);
+        return shapeCursor(
+            tool.kind,
+            tool.params,
+            tool.spots,
+            target,
+            tool.selected,
+        );
     },
     leave() {
         setShapePointerOver(false);

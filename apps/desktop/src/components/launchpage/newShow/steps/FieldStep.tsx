@@ -4,7 +4,7 @@ import { UnitInput } from "@openmarch/ui";
 import FieldPropertiesSelector from "@/components/field/FieldPropertiesSelector";
 import FieldPreview from "@/components/field/FieldPreview";
 import type { NewShowEnsembleData, NewShowFieldData } from "../../newShowTypes";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { getDefaultFieldTemplate } from "@/global/classes/Activities";
 
 interface FieldStepProps {
@@ -54,7 +54,7 @@ export default function FieldStep({
         });
     };
 
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const handleThresholdChange = (valueInUnits: number) => {
         const inches =
@@ -94,8 +94,8 @@ export default function FieldStep({
                     pattern="[0-9]*\.?[0-9]*"
                     unit={
                         currentTemplate.measurementSystem === "imperial"
-                            ? "in"
-                            : "cm"
+                            ? t("fieldProperties.units.inches")
+                            : t("fieldProperties.units.centimeters")
                     }
                     onBlur={(e) => {
                         if (e.target.value === "") return;

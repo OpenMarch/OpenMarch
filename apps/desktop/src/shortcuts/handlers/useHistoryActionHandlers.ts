@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useTolgee } from "@tolgee/react";
+import { useTranslate } from "@tolgee/react";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { isVisualsView } from "@/stores/WorkspaceViewStore";
@@ -30,7 +30,7 @@ const OTHER_WORKSPACE_KEYS = {
 } as const;
 
 export function useHistoryActionHandlers() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const databaseReady = useDatabaseReady();
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
 

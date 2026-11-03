@@ -5,11 +5,11 @@ import MarcherForm, { MarcherFormProps } from "./MarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { AppearanceModalContents } from "./appearance/AppearanceModal";
 
 export default function MarchersModal() {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <SidebarModalLauncher
             name={t("sidebar.marchers")}
@@ -21,6 +21,7 @@ export default function MarchersModal() {
 }
 
 export function MarcherListContents() {
+    const { t } = useTranslate();
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
@@ -51,6 +52,7 @@ export function MarcherListContents() {
                         <T keyName="marchers.addMarcher" />
                     </Button>
                     <button
+                        aria-label={t("sidebar.close")}
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
                     >
@@ -68,6 +70,7 @@ export function MarcherListContents() {
 
 // Marcher add form
 export function MarcherFormContents(props: MarcherFormProps) {
+    const { t } = useTranslate();
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
@@ -75,6 +78,7 @@ export function MarcherFormContents(props: MarcherFormProps) {
             <header className="flex justify-between gap-24">
                 <div className="flex items-center gap-8">
                     <button
+                        aria-label={t("marchers.backToList")}
                         onClick={() => {
                             setContent(<MarcherListContents />, "marchers");
                         }}
@@ -93,6 +97,7 @@ export function MarcherFormContents(props: MarcherFormProps) {
                     </h4>
                 </div>
                 <button
+                    aria-label={t("sidebar.close")}
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >

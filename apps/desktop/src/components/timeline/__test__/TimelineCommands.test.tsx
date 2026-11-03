@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Beat from "@/global/classes/Beat";
 import type { DbConnection } from "@/db-functions/types";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
+import { text } from "@/timeline/timelineText";
 import { createTrack, shiftTimeline } from "@/db-functions/timelineCommands";
 import { conToastError } from "@/utilities/utils";
 import { timelineErrorMessage } from "@/timeline/timelineErrorMessages";
@@ -164,7 +165,10 @@ describe("the timeline's commands", () => {
     it("a refused move shows its own message (E-ARGS) as a toast", async () => {
         const error = new TimelineWriteError(
             "E-ARGS",
-            "the timeline starts at beat 1, so it can't move 2 beats earlier",
+            text.t("timeline.refusals.moveTimeline.tooEarly", {
+                start: 1,
+                count: 2,
+            }),
         );
         vi.mocked(shiftTimeline).mockRejectedValue(error);
         render(

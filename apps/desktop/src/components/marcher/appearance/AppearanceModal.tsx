@@ -2,7 +2,7 @@ import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { TabContent, TabItem, Tabs, TabsList } from "@openmarch/ui";
 import { PaletteIcon, XIcon } from "@phosphor-icons/react";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import SectionAppearanceList from "./SectionAppearanceList";
 import TagAppearanceList from "./TagAppearanceList";
 
@@ -13,7 +13,7 @@ export default function MetronomeModal({
     label?: string | React.ReactNode;
     buttonClassName?: string;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     return (
         <SidebarModalLauncher
             name={t("sidebar.appearance")}
@@ -32,6 +32,7 @@ export function AppearanceModalContents({
     mode?: "section" | "tag";
     launchArgs?: { targetTagId?: number; targetPageId?: number };
 }) {
+    const { t } = useTranslate();
     const localStorageMode = localStorage.getItem("marcher-appearance-mode");
     const setLocalStorageMode = (mode: "section" | "tag") => {
         localStorage.setItem("marcher-appearance-mode", mode);
@@ -45,6 +46,7 @@ export function AppearanceModalContents({
                     <T keyName="marchers.marcherAppearance" />
                 </h4>
                 <button
+                    aria-label={t("sidebar.close")}
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
                 >

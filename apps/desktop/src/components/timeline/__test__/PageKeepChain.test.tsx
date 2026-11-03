@@ -404,6 +404,11 @@ describe("the chains on the page boxes", () => {
                 )
             ).length,
         ).toBeGreaterThan(0);
+        expect(
+            screen
+                .getAllByRole("tooltip")
+                .some((tip) => tip.querySelector("kbd") !== null),
+        ).toBe(false);
     });
 
     it("a box too narrow for its chain keeps its label's usual padding", () => {

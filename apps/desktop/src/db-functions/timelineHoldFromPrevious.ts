@@ -6,6 +6,7 @@ import {
     type BasicRow,
 } from "@/timeline/basicSimple";
 import { countsText } from "@/timeline/timelineRangeWords";
+import { text } from "@/timeline/timelineText";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { NothingToDo, refuse } from "./timelineErrors";
@@ -139,7 +140,10 @@ export async function holdFromPreviousPageInTransaction({
     const grid = await readPageGrid(tx);
     if (!isPageBox(grid, pageBox))
         refuse(
-            `Hold from previous page works on a whole page, not ${countsText(pageBox, grid.pages.slice(1))}`,
+            text.t("timeline.refusals.holdFromPrevious.wholePage", {
+                holdFromPrevious: text.t("timeline.terms.holdFromPrevious"),
+                counts: countsText(pageBox, grid.pages.slice(1)),
+            }),
         );
     const ids = [...new Set(marcherIds)].sort((x, y) => x - y);
     const rows = await readBasicRows(tx, { marcherIds: ids });

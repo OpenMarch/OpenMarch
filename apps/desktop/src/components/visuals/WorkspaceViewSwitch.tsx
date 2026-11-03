@@ -1,4 +1,4 @@
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { SegmentedTextSwitch } from "@openmarch/ui";
 import {
     useWorkspaceViewStore,
@@ -32,7 +32,7 @@ export default function WorkspaceViewSwitch({
 }: {
     className?: string;
 }) {
-    const { t } = useTolgee();
+    const { t } = useTranslate();
     const basic = useIsBasicMode();
     const view = useWorkspaceViewStore((s) => s.view);
     const setView = useWorkspaceViewStore((s) => s.setView);

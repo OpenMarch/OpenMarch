@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useShallow } from "zustand/react/shallow";
 import { Switch, Slider } from "@openmarch/ui";
-import { T, useTranslate } from "@tolgee/react";
+import { T, useTolgee, useTranslate } from "@tolgee/react";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
+import { formatLocale } from "@/utilities/formatLocale";
 
 export default function MouseSettings() {
     const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
@@ -15,6 +16,15 @@ export default function MouseSettings() {
         })),
     );
     const { t } = useTranslate();
+    const language = formatLocale(useTolgee(["language"]).getLanguage());
+    /** A sensitivity as a multiplier, e.g. "1.5x", with the language's decimal mark */
+    const multiplier = (value: number) =>
+        t("settings.mouse.multiplier", {
+            value: value.toLocaleString(language, {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1,
+            }),
+        });
     const [zoomValue, setZoomValue] = useState(
         uiSettings.mouseSettings.zoomSensitivity,
     );
@@ -62,7 +72,7 @@ export default function MouseSettings() {
                     </div>
                     <div className="w-48 shrink-0 text-right">
                         <span className="text-body text-text tabular-nums">
-                            {zoomValue.toFixed(1)}x
+                            {multiplier(zoomValue)}
                         </span>
                     </div>
                 </div>
@@ -125,7 +135,7 @@ export default function MouseSettings() {
                         </div>
                         <div className="w-48 shrink-0 text-right">
                             <span className="text-body text-text tabular-nums">
-                                {trackpadPanValue.toFixed(1)}x
+                                {multiplier(trackpadPanValue)}
                             </span>
                         </div>
                     </div>

@@ -1,9 +1,15 @@
 import tolgee from "@/global/singletons/Tolgee";
 import { compare as compareMarchers } from "@/global/classes/Marcher";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import {
+    displayedBeat,
+    useTimelineSelectionStore,
+} from "@/stores/TimelineSelectionStore";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 import type { AssignMarcher } from "../assign";
 import type { ShapeContext } from "../types";
+import { placedBoxesAt } from "../placed/placedBoxStore";
+import { withPlacedOrder } from "../placed/placedOrder";
 import { moveCounts, originsAtStart } from "./previewContext";
 import type { FieldProperties } from "@openmarch/core";
 import { StepSize } from "@/global/classes/StepSize";
@@ -59,7 +65,7 @@ function contextOf(
 /**
  * The marchers with these ids where the field draws them now (the edit window's arrival), in
  * `ids` order, ranked by drill number, with where each starts the move being edited when that's
- * somewhere else.
+ * somewhere else, and each one's place along the placed Line they all stand on, if they do (#528).
  */
 export function marchersOnField(
     field: ShapeField,
@@ -77,7 +83,7 @@ export function marchersOnField(
     );
     const rank = new Map(ranked.map((m, i) => [m.id, i]));
     const origins = originsAtStart(present.map((m) => m.id));
-    return present.map((m) => {
+    const marchers = present.map((m): AssignMarcher => {
         const { at } = m;
         const from = origins.get(m.id);
         return {
@@ -89,6 +95,10 @@ export function marchersOnField(
                 : {}),
         };
     });
+    return withPlacedOrder(
+        marchers,
+        placedBoxesAt(displayedBeat(useTimelineSelectionStore.getState())),
+    );
 }
 
 /**

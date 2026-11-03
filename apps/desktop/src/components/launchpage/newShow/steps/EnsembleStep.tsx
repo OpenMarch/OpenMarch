@@ -6,7 +6,11 @@ import {
 } from "@openmarch/ui";
 import { WizardFormField } from "@/components/ui/FormField";
 import { useTranslate } from "@tolgee/react";
-import { ACTIVITY_LABELS, DEFAULT_ACTIVITY } from "@/global/classes/Activities";
+import {
+    ACTIVITY_LABELS,
+    DEFAULT_ACTIVITY,
+    activityLabelKey,
+} from "@/global/classes/Activities";
 import type { NewShowEnsembleData } from "../../newShowTypes";
 import { useEffect, useRef, useState } from "react";
 
@@ -23,6 +27,12 @@ export default function EnsembleStep({
     const [activity, setActivity] = useState(
         ensemble?.activity ?? DEFAULT_ACTIVITY,
     );
+
+    // The stored activity is its English label; show it in the app language, or as saved when unknown.
+    const activityLabel = (value: string) => {
+        const key = activityLabelKey(value);
+        return key ? t(key) : value;
+    };
 
     const hasSyncedInitial = useRef(ensemble !== null);
     useEffect(() => {
@@ -43,11 +53,11 @@ export default function EnsembleStep({
                         onChange({ activity: next });
                     }}
                 >
-                    <SelectTriggerButton label={activity} />
+                    <SelectTriggerButton label={activityLabel(activity)} />
                     <SelectContent>
                         {ACTIVITY_LABELS.map((label) => (
                             <SelectItem key={label} value={label}>
-                                {label}
+                                {activityLabel(label)}
                             </SelectItem>
                         ))}
                     </SelectContent>

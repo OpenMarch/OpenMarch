@@ -288,9 +288,9 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(entry("timelineDefineAsShown")).not.toHaveAttribute(
             "data-disabled",
         );
-        // The H after it is its shortcut
+        // Ctrl+H after it is its shortcut (the test runs as Windows/Linux)
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
-            /^Hold from previous pageH$/,
+            /^Hold from previous page.*Ctrl\+H$/,
         );
         // #573: it names the page
         expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(

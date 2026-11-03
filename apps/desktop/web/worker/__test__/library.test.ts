@@ -8,6 +8,7 @@ import {
     isDatabase,
 } from "../library";
 import { VERSION_INTERVAL_MS } from "@/utilities/webLibrary";
+import { WORKER_ERRORS } from "../../protocol";
 
 /**
  * Bytes shaped like a whole SQLite file of `pages` 512-byte pages (header,
@@ -311,7 +312,7 @@ describe("never losing shows the index doesn't describe", () => {
         expect(again.list()).toEqual([]);
         await expect(
             again.addShow("New", show("N"), { backedUp: false }),
-        ).rejects.toThrow(/newer version/);
+        ).rejects.toThrow(WORKER_ERRORS.readOnly.messageKey);
         expect(
             JSON.stringify([...(await root.folder("shows")).subfolders.keys()]),
         ).toBe(before);

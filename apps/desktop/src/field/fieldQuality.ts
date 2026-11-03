@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import tolgee from "@/global/singletons/Tolgee";
 
 /**
  * How well the new field can draw on this machine (ADR 0005 D-3, fork ticket
@@ -54,7 +55,7 @@ export type GlInfo = { kind: GlKind; renderer: string | null };
  */
 export class NoWebGLError extends Error {
     constructor(cause?: unknown) {
-        super("WebGL is not available", { cause });
+        super(tolgee.t("field.errors.noWebGL"), { cause });
         this.name = "NoWebGLError";
     }
 }
@@ -66,9 +67,7 @@ export class NoWebGLError extends Error {
  */
 export class FieldContextLostError extends Error {
     constructor() {
-        super(
-            "The field's WebGL context was lost, so the video can't be drawn. Try the export again.",
-        );
+        super(tolgee.t("field.errors.contextLost"));
         this.name = "FieldContextLostError";
     }
 }

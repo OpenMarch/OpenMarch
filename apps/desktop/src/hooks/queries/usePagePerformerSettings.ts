@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     getPagePerformerSettings,
     setPageDotModes,
@@ -38,6 +39,6 @@ export const setPageDotModesMutationOptions = (qc: QueryClient) =>
             });
         },
         onError: (e, variables) => {
-            conToastError("Error setting the dot mode", e, variables);
+            conToastError(tolgee.t("pages.dotModeFailed"), e, variables);
         },
     });

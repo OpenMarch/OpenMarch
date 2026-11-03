@@ -1,10 +1,11 @@
 import * as Popover from "@radix-ui/react-popover";
 import { PathIcon } from "@phosphor-icons/react";
 import { SegmentedTextSwitch, Switch } from "@openmarch/ui";
-import { useTranslate } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { getActionShortcutKeys } from "@/shortcuts/labels";
+import { getActionShortcutLabel } from "@/shortcuts/labels";
+import Shortcut from "@/components/ui/Shortcut";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import {
     isStartFlagHoldActive,
@@ -20,10 +21,7 @@ import {
     type StartFlagLevels,
     type StartFlagPositionsSettings,
 } from "@/timeline/startFlagLevels";
-import {
-    Keycaps,
-    ShortcutTooltip,
-} from "@/components/timeline/ShortcutTooltip";
+import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
 import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
 
 type State = keyof StartFlagPositionsSettings;
@@ -74,7 +72,10 @@ function LevelsBlock({
                         {t(`timeline.startFlagPositions.${part}`)}
                     </span>
                     <SegmentedTextSwitch
-                        ariaLabel={`${title}: ${t(`timeline.startFlagPositions.${part}`)}`}
+                        ariaLabel={t("timeline.startFlagPositions.partLabel", {
+                            block: title,
+                            part: t(`timeline.startFlagPositions.${part}`),
+                        })}
                         selected={levels[part]}
                         setSelected={(level) =>
                             setLevel(state, part, level as StartFlagLevel)
@@ -108,12 +109,13 @@ export function StartFlagPositionsButton() {
     const keyState = { held, latched };
     const hold = isStartFlagHoldActive(keyState);
     const overrides = useShortcutOverridesStore((s) => s.overrides);
-    const nextPathsKey = getActionShortcutKeys("toggleNextPagePaths", {
+    const nextPathsKey = getActionShortcutLabel("toggleNextPagePaths", {
         overrides,
-    })?.join(" + ");
-    const key = getActionShortcutKeys("toggleStartFlagPositions", {
+    });
+    // As plain text for the hint line and titles; drawn as a Shortcut elsewhere
+    const key = getActionShortcutLabel("toggleStartFlagPositions", {
         overrides,
-    })?.join(" + ");
+    });
     const levels = startFlagLevelsInEffect(settings, keyState);
     // What the field actually draws, as it publishes it (`useStartFlagOverlay`)
     const drawing = useStartFlagKeyStore((s) => s.drawn);
@@ -123,23 +125,52 @@ export function StartFlagPositionsButton() {
         key === undefined
             ? t("timeline.startFlagPositions.holdNoKey")
             : t("timeline.startFlagPositions.hold", { key });
-    const stateLine = t("timeline.startFlagPositions.stateLine", {
-        state: hold ? holdTitle : t("timeline.startFlagPositions.always"),
-        dots: levelName(t, levels.dots),
-        paths: levelName(t, levels.paths),
-    });
+    // The levels as ids: each line words them itself (ICU select)
+    const dots = levels.dots;
+    const paths = levels.paths;
+    // Plain text for the button's screen-reader label
+    const stateLine = !hold
+        ? t("timeline.startFlagPositions.stateLine", { dots, paths })
+        : key === undefined
+          ? t("timeline.startFlagPositions.stateLineHoldNoKey", { dots, paths })
+          : t("timeline.startFlagPositions.stateLineHoldText", {
+                key,
+                dots,
+                paths,
+            });
+    // The tooltip's hint line shows the held key as a keycap
+    const hint =
+        hold && key !== undefined ? (
+            <span className="text-text-subtitle flex items-center gap-4 text-[11px]">
+                <T
+                    keyName="timeline.startFlagPositions.stateLineHold"
+                    params={{
+                        dots,
+                        paths,
+                        keys: () => (
+                            <Shortcut action="toggleStartFlagPositions" />
+                        ),
+                    }}
+                />
+            </span>
+        ) : (
+            stateLine
+        );
     return (
         <Popover.Root>
             <ShortcutTooltip
                 label={label}
-                shortcut={key}
-                hint={stateLine}
+                action="toggleStartFlagPositions"
+                hint={hint}
                 side="left"
             >
                 <Popover.Trigger asChild>
                     <button
                         type="button"
-                        aria-label={`${label}: ${stateLine}`}
+                        aria-label={t(
+                            "timeline.startFlagPositions.buttonLabel",
+                            { state: stateLine },
+                        )}
                         data-testid="start-flag-positions"
                         data-drawing={drawing}
                         data-hold={hold}
@@ -179,12 +210,14 @@ export function StartFlagPositionsButton() {
                             key === undefined ? (
                                 holdTitle
                             ) : (
-                                <>
-                                    {t(
-                                        "timeline.startFlagPositions.holdHeading",
-                                    )}
-                                    <Keycaps shortcut={key} />
-                                </>
+                                <T
+                                    keyName="timeline.startFlagPositions.holdHeading"
+                                    params={{
+                                        keys: () => (
+                                            <Shortcut action="toggleStartFlagPositions" />
+                                        ),
+                                    }}
+                                />
                             )
                         }
                         levels={settings.hold}
@@ -193,7 +226,7 @@ export function StartFlagPositionsButton() {
                         <span className="text-body flex items-center gap-4">
                             {t("toolbar.view.nextPaths")}
                             {nextPathsKey !== undefined && (
-                                <Keycaps shortcut={nextPathsKey} />
+                                <Shortcut action="toggleNextPagePaths" />
                             )}
                         </span>
                         <Switch

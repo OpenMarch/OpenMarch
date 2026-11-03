@@ -17,7 +17,9 @@ export function useShapeFocus(dimming: FieldDimming): void {
     const shapeMembers = useShapeToolStore((s) => {
         const tool = s.tool;
         if (!tool) return null;
-        if (focus === "drawing" && tool.gesture?.type !== "draw") return null;
+        const type = tool.gesture?.type;
+        if (focus === "drawing" && type !== "draw" && type !== "points")
+            return null;
         return tool.marchers;
     });
     // Once drawn, its spots show where they'll be: their dots now would be a second set (#417)

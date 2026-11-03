@@ -25,7 +25,7 @@ import { kindPickGate, pickShapeKind } from "./pickKind";
 import { SHAPE_TOOLS } from "./shapeTools";
 import { useShapeShown } from "./shapeToolStore";
 import { useStarredShapes } from "./starredShapes";
-import { Tip } from "../editor/Tip";
+import { Tip } from "@/components/ui/Tip";
 
 /** The open ring, if any */
 const useRingStore = create<{ ring: RingState | null }>(() => ({

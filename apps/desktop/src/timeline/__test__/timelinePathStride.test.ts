@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeAll } from "vitest";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     createResolver,
     type Resolver,
@@ -19,6 +20,11 @@ import {
     timelineStepSize,
     type PathPage,
 } from "../timelinePaths";
+
+// Step sizes are translated: load English so they read as written
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 /**
  * Review fixes for P7.10 (PR #33): the step size is the stride of the fastest moving stretch,

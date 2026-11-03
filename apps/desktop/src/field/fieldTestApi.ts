@@ -140,6 +140,13 @@ export interface FieldTestApi {
      * (#204), or null when neither is on the field.
      */
     shapeOverlay?(): FieldTestShapeOverlay | null;
+    /**
+     * False while the edited shape's marchers (their dots, labels and paths,
+     * and the shape's spots and walks) are hidden so the shape is seen on its
+     * own (#558, H). Everyone else, and the start ghosts, still show: read
+     * who's hidden from each marcher's `opacity` (0)
+     */
+    marchersShown?(): boolean;
     /** The placed boxes outlined on the field (the View tab's Shapes setting). */
     placedBoxes?(): FieldTestPlacedBox[];
     /**
@@ -192,6 +199,12 @@ export type FieldTestShapeOverlay = {
     gaps: { x: number; y: number }[];
     /** Its handles, in the viewport. */
     handles: ScreenPoint[];
+    /** Its handles that add a point (a line's segment midpoints, #524), in the viewport. */
+    addHandles: ScreenPoint[];
+    /** Handles selected by a click (a line's point, #557), also in `handles` */
+    selectedHandles: ScreenPoint[];
+    /** The ends of a selected point's bar (its tangent, #557), each with the point it runs from */
+    barHandles: { at: ScreenPoint; from: ScreenPoint }[];
     /** Drawing (a drag draws it) or open; null for a mode that doesn't say. */
     stage: "drawing" | "open" | null;
     /** The rotate knob and the center dot, in the viewport; null when not drawn. */
@@ -224,6 +237,34 @@ export type FieldTestShapeOverlay = {
     guideMarks: { x: number; y: number }[];
     /** The spots standing on a guide, tinted, field units (#425). */
     onGuides: { x: number; y: number }[];
+    /**
+     * While the editor's menu of a Line's interval groups is open: each spot ringed in its
+     * group's color, field units, `faint` with no group pointed at, else that group `lit` and the
+     * rest `dim`.
+     */
+    groupMarks: {
+        x: number;
+        y: number;
+        shade: "faint" | "lit" | "dim";
+        group: number;
+    }[];
+    /**
+     * Each gap of the group pointed at, labeled with its interval ("3", "↔ 2½"), at its middle in
+     * field units; a `seam` is where the group meets a neighbor, with the interval there.
+     */
+    groupLabels: { x: number; y: number; text: string; seam: boolean }[];
+    /**
+     * While a Line's Offset numbers are engaged or an end is dragged: the step from the first
+     * marcher to the next, field units, across to `corner` then up or down to `to`, with its two
+     * labels ("↔ 2", "↕ −1"). Null otherwise.
+     */
+    offsetStep: {
+        from: { x: number; y: number };
+        corner: { x: number; y: number };
+        to: { x: number; y: number };
+        across: string;
+        deep: string;
+    } | null;
 };
 
 /** A placed box outlined on the field. */

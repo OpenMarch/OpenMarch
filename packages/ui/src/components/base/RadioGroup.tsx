@@ -9,11 +9,7 @@ export type RadioGroupProps = RadixRadioGroupProps & { children: ReactNode };
 
 export const RadioGroup = ({ children, ...props }: RadioGroupProps) => {
     return (
-        <RadixRadioGroup.Root
-            className="flex flex-col gap-4"
-            aria-label="View density"
-            {...props}
-        >
+        <RadixRadioGroup.Root className="flex flex-col gap-4" {...props}>
             {children}
         </RadixRadioGroup.Root>
     );

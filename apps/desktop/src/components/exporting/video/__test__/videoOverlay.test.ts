@@ -6,6 +6,7 @@ import {
     formatClock,
     formatClockRange,
     OverlayOptions,
+    OverlayText,
     OverlayTimeline,
     padInteger,
     padIntegerSpaced,
@@ -42,6 +43,16 @@ const pages = [
     page("2A", 4, 2, [beat(4), beat(5)]),
 ];
 const measures = [measure(1, 0, "A"), measure(2, 2, null), measure(3, 4, "B")];
+
+/** The overlay text as the English strings build it. */
+const englishText: OverlayText = {
+    set: (set) => `Set ${set}`,
+    setTransition: (from, to) => `Set ${from} → ${to}`,
+    count: (count, total) => `Count ${count} / ${total}`,
+    measure: (measure) => `m. ${measure}`,
+    measureWithMark: (measure, mark) => `[${mark}]  m. ${measure}`,
+    tempo: (bpm) => `${bpm} bpm`,
+};
 
 describe("OverlayTimeline", () => {
     it("reports the first transition at time 0", () => {
@@ -189,8 +200,7 @@ describe("buildOverlaySegments", () => {
         showMeasures: true,
         showTempo: true,
         showClock: true,
-        setLabel: "Set",
-        countLabel: "Count",
+        text: englishText,
     };
 
     it("builds every segment in display order with padded numeric fields", () => {
@@ -276,8 +286,7 @@ describe("buildOverlaySegments", () => {
             showMeasures: false,
             showTempo: false,
             showClock: true,
-            setLabel: "Set",
-            countLabel: "Count",
+            text: englishText,
         };
         const bounds = {
             countDigits: 1,
@@ -407,8 +416,7 @@ describe("drawOverlay theme", () => {
         showMeasures: false,
         showTempo: false,
         showClock: false,
-        setLabel: "Set",
-        countLabel: "Count",
+        text: englishText,
     };
 
     it("uses theme-specific overlay background colors", () => {

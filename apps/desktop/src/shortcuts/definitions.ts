@@ -470,7 +470,9 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
     },
     // Holds (#472): the selected marchers on the current page box are Held where the previous
-    // page leaves them, as the page box menu's entry. H for hold
+    // page leaves them, as the page box menu's entry. ⌘H / Ctrl+H for hold (owner, 2026-11-02); plain
+    // H is the shape editor's hide-marchers. On macOS the app menu's Hide takes ⌘H, so Control+H is
+    // listed as well, as Metronome does with ⌘M
     timelineHoldFromPrevious: {
         labelKey: "actions.batchEdit.holdFromPrevious",
         labelHoldTerms: true,
@@ -478,7 +480,7 @@ const STATIC_ACTIONS = {
         category: "batchEdit",
         editsDrill: true,
         scope: "canvas",
-        defaultBindings: ["H"],
+        defaultBindings: ["$mod+H", "Control+H"],
     },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.setAllToNext",
@@ -742,6 +744,28 @@ const STATIC_ACTIONS = {
         // The command bar lists Shape › Circle instead, which asks the circle's numbers
         hiddenFromPalette: true,
     },
+    shapeLine: {
+        labelKey: "actions.shape.line",
+        keywordsKey: "actions.shape.keywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["L"],
+        args: { kind: "line" },
+        // The command bar lists Shape › Line instead, which asks the line's numbers
+        hiddenFromPalette: true,
+    },
+    // The Curve (#525): a Line whose points start smooth. No key of its own yet
+    shapeCurve: {
+        labelKey: "actions.shape.curve",
+        keywordsKey: "actions.shape.keywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+        args: { kind: "curve" },
+        hiddenFromPalette: true,
+    },
     // The favorites ring (#351): hold to aim and let go to pick a shape, tap to keep it open.
     // The ring takes the key's release, so a held key doesn't repeat it. From the palette it opens
     // latched, as a tap does (#411).
@@ -761,6 +785,18 @@ const STATIC_ACTIONS = {
         editsDrill: true,
         scope: "canvas",
         defaultBindings: ["Enter"],
+    },
+    // While drawing a line point by point, the last point taken back (owner, option A on #522).
+    // Handled only then (shapes/tool/ShapeToolKeys), so the keys do nothing else meanwhile
+    shapeRemoveLastPoint: {
+        labelKey: "actions.shape.removeLastPoint",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["Backspace", "Delete"],
+        // One point a press: a held key doesn't run the line back to its start
+        ignoreRepeat: true,
+        hiddenFromPalette: true,
     },
     // The floating editor's turn and Recalculate (#429), for the open or selected shape only. While
     // one is shown, Alt+F and Alt+Shift+F (flipHorizontal/flipVertical) flip the shape instead of
@@ -811,6 +847,31 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Shift+R"],
         // One press, one turn or recalculation: a held key doesn't repeat it (review)
+        ignoreRepeat: true,
+    },
+    // The shape on its own (#558): hold H to hide the marchers, its spots and walks, tap to keep
+    // them hidden; the editor's eye button and the palette turn the latch over. Drawing only, but
+    // filed with the shape's keys, which Visuals turns off: no shape is edited there
+    shapeHideMarchers: {
+        labelKey: "actions.shape.hideMarchers",
+        keywordsKey: "actions.shape.hideMarchersKeywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["H"],
+        ignoreRepeat: true,
+    },
+
+    // Group the selected marchers into a shape as they stand (#603): nobody moves. ⌘G / Ctrl+G, as
+    // in design tools, paired with Ungroup; Go to keeps plain G (owner, 2026-11-02)
+    // (shapes/placed/groupMarchers)
+    shapeGroup: {
+        labelKey: "actions.shape.group",
+        keywordsKey: "actions.shape.groupKeywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: ["$mod+G", "Control+G"],
         ignoreRepeat: true,
     },
 
@@ -875,7 +936,7 @@ const STATIC_ACTIONS = {
         category: "timeline",
         editsDrill: false,
         scope: "global",
-        defaultBindings: ["G", "$mod+G", "Control+G"],
+        defaultBindings: ["G"],
         ignoreRepeat: true,
     },
 

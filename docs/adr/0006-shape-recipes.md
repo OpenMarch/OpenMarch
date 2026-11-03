@@ -35,12 +35,12 @@ and a group transition into a shape breaks UI-9's one-transition-per-marcher rul
      the recipe), `marcher_id` (deleted with the marcher), `slot` (the marcher's spot in the
      recipe's slot order) and `x`, `y` (where the recipe put it when last placed). One row per
      marcher and recipe.
-3. *(Revised 2026-10-14, see below.)* **Overrides are the difference between where a member
+3. _(Revised 2026-10-14, see below.)_ **Overrides are the difference between where a member
    stands and where its recipe put it.**
    They are not stored separately: a member nudged after placement simply stands somewhere else,
    and reopening the recipe shows it as moved by hand. Editing the recipe moves each member to
    its new spot plus its override, unless the designer resets the overrides.
-4. *(Revised 2026-10-29, see below.)* **A marcher belongs to at most one recipe at a beat.**
+4. _(Revised 2026-10-29, see below.)_ **A marcher belongs to at most one recipe at a beat.**
    Placing marchers with a new shape removes them from the other recipes at the beat it's placed
    at; a recipe left with no members is deleted. Both happen in the same edit as the positions,
    so it is one undo step.
@@ -75,7 +75,6 @@ Decision 3 is replaced: there are no overrides, and a reopened recipe always mat
 
 A recipe is shown at its move's end and at later moments while all its members stand on their
 spots. Editing it at a later moment saves a copy on that later move.
-
 
 ## Amendment, 2026-10-20: the frame and pivot, and spots with marchers
 
@@ -277,6 +276,293 @@ the consequence about splits. None of this changes the schema.
 Verification: the db-function `shapeRecipes.test.ts` covers rules 1 to 3, including the split
 and merge cases (UI-25) with undo; `boxMembership.test.ts` and `box-tool.spec.mts` cover rule 4.
 
+## Amendment, 2026-10-30: Line recipes
+
+The Line shape (spec #522, #523) stores a new kind:
+
+1. **Line recipes are `line`, version 2.** Version 1 is the old shape-model line. Version 2's
+   params are `points` (two or more, each `x`, `y` and a `tension` from 0 to 2: 0 is a corner,
+   above 0 a smooth point the line bends through, centripetal Catmull-Rom with its handles scaled
+   by the tension, 1 the plain curve, #525), `closed` (open when absent), `corners`, `spacing`,
+   `measured` and the host's `pivot`. `spacing` is `{ mode: "fit" }` (the interval follows from the drawn
+   points; since decision 9 it may carry `groups`), `{ mode: "keep", groups }` (Keep interval) or `{ mode: "path", groups, anchor }`
+   (Interval on the path, `anchor` one of `start`, `center`, `end`). A group is
+   `{ interval, count? }`: the interval is the distance between neighbors in field units, as
+   `measured` says, `count` a whole number of marchers from 1, and a group with no `count` is the
+   rest; at most one group in a list is the rest (#526). The groups give the line's gaps in order
+   from its first point. Recipes store the parsed groups, never the typed text, so the interval
+   list's change of meaning (count × interval, from interval × gaps) changes no saved data.
+   `measured` (#527) says what every interval measures. Absent is along the path: the length of
+   line between neighbors (arc length), changed on 2026-11-01 (see below). `"straight"` is
+   straight across, the distance from marcher to marcher (the chord), except across a corner
+   that holds no marcher. `"x"` (↔) is how far neighbors are apart side to side, and `"y"` (↕)
+   front to back. Each spot is then found where the line reaches its coordinate that way, so the
+   line must go one way along that axis over its whole drawn path (curves included); a line that
+   no longer does (a part turned back, or a straight part square to the axis) is laid out along
+   the path until it does again. Measured ↔ or ↕, each neighbor's x (or y) is its gap from the one before,
+   computed from the run's start as `start + i × gap` within each group rather than summed, so a
+   spot on the step grid stays on it; every spot is on the grid that way only with intervals that
+   are whole half steps, in Keep interval (whose start slides along the line onto the grid) and on
+   the path from a start or end on the grid, or centered (the run's start rounded to a half step
+   from the line's start). Fit, and other intervals, put only the start on the grid.
+2. **Corners and stretches.** The two ends always hold a marcher, smooth or not; a smooth point
+   between them never does. The line from an end or a corner to the next corner or end is a
+   stretch, smooth points inside it. `corners` is false when the intervals run around the
+   corners. Absent or true, every corner holds a marcher in Fit and Keep interval, as long as there
+   is at least one gap per stretch; on the path, or with fewer gaps than stretches, the intervals
+   run around the corners whatever it says (#524). With corners holding marchers, each stretch
+   holds a whole number of the line's gaps, in order along it: in Fit and with one interval for
+   everyone, in proportion to the stretches' lengths (measured ↔ or ↕, their lengths that way, so
+   each stretch's gaps are even that way with a marcher on every corner); with groups, each corner at the seam between
+   gaps nearest its share of the line. Keep interval makes each stretch as long as the gaps it
+   holds, as `measured` says (a whole run of the groups, crossing group seams when they fall
+   mid-stretch), a curved stretch scaled about its start, and a corner drag between two straight
+   stretches lands where both are whole runs. A stretch left off its run (a corner dragged with
+   `fine`) scales its gaps to fit, which is even spacing with one interval. In Fit with no groups,
+   or one, each stretch's marchers spread evenly over it, as `measured` says; Fit's mixed groups
+   keep their proportions (decision 9). On the path the
+   run is laid from its anchor along the path itself: from the start, back from the end, or with
+   as much path spare before it as after it.
+3. **A Curve is a Line.** The Curve in the pickers is a preset whose points start smooth; it
+   saves a `line` recipe and reads back as a Line.
+4. **A Line stores no frame.** Its frame (center, size, turn) follows from its points, so the
+   frame amendment's stored center doesn't apply. A kind whose frame follows from its own numbers
+   declares a `readable` check, used instead of the stored-center check when a recipe is read.
+5. **Version 2 grows without a new version.** A later setting is an optional field or a wider
+   value of these. A build reads a Line only when it can lay out every field exactly as saved;
+   anything newer reads as plain positions (decision 5), never as the nearest shape it
+   understands. Each build widens its `readable` check as it learns a field: the first Line build
+   read two straight points and a single group with no count; more points and `corners` came with
+   #524, any number of groups, counted or with one rest, with #526, tensions from 0 to 2 with
+   #525, `measured` (`"x"` or `"y"`, with any of these) with #527, `"straight"` with the
+   change of 2026-11-01 below, `closed` with its
+   `distribution` with #529, together with tensions and groups, a point's `marcher` with
+   #569 (decision 7), and Fit's `groups`, `measured: "offset"` and `offset` with decision 9, and `turn` with decision 10. From #569 a point with any other field reads as plain positions. A closed line is never measured
+   along an axis (it always turns back), so it's laid out along the path when its `measured`
+   says `"x"` or `"y"`; `"straight"` applies to it as to an open line.
+6. **A closed Line (#529).** `closed: true` joins the last point to the first: a closed line has
+   three points or more and a gap for every marcher (n gaps, an open line n − 1), and its spacing
+   is `fit` or `keep`, never `path` (a closed line has no ends to lay a run from). The closing
+   segment runs from the last point to the first, and its curve is the same Catmull-Rom with the
+   neighbors wrapping round (not the mirrored end points an open line has), so a smooth first or
+   last point is smooth on the closing segment too. Its stretches wrap round: from corner to corner
+   round from its first corner, the last back past the first point; with no corner, one stretch
+   all the way round from the first point. In Outline its corners hold marchers and its smooth
+   points never do, except that a line with no corner starts its run on its first point. Its
+   groups run once round from the first corner (the first point when it is one), so the closing
+   stretch holds the gaps that fall on it, and the closing gap (last marcher to first) is the
+   seam between the last group and the first. Keep interval grows or shrinks the whole outline
+   from its pivot to its gaps round (its stretches can't each be set on their own and still meet
+   the first point), noting a corner left off its run. A closed line stores the host's
+   `distribution` as a closed kind does (amendment of 2026-10-22), in Grid (`files`), Outline or
+   Spread (with its `edge`); without one it's Outline. Outline is the line itself, its corners
+   and spacing laid out as above, so it ignores `oddGap`. Grid and Spread fill the outline as
+   drawn: a polygon of its points with each curved segment cut into 32 pieces of equal length
+   along it, its corners only the points of tension 0 (where Edge's sides start; with none, one
+   side all the way round from the first point). The fill's frame is round that polygon and
+   doesn't depend on which point was clicked first or which way round: turned with its sides when
+   sides square to each other make up most of the outline (their directions a quarter turn at a
+   time, averaged by length, within an eighth of a turn of 0), else square to the field, so its
+   ranks square to the field like a box's and the back rank is at the back. Grid is the widest
+   square grid with room for every marcher, at the grid's phase with the fewest spots, extra
+   spots left off its back rank and the spots left re-centred in the outline; it ignores `layout`
+   and `stagger`. Grid's spots on the polygon are part of the format, like the spread
+   generator's: any change to them, or to how a curve is cut into it, needs a new version. Spread
+   fills the polygon, its spacing whatever fits. A `distribution` on an open line, one this build
+   can't read, or `closed` that isn't a boolean reads as plain positions. Opening a closed line
+   keeps its spots and its spacing, groups included, as far as an open line can lay them out the
+   same; a new end inside a curved segment is as smooth as the smoother of its points. Opened at
+   a point (its menu's Open here, #569), that point is the start and the end is one gap back
+   along the closing stretch, so n marchers keep n spots with n − 1 gaps and none stacked. When
+   the point holds a spot the spots stay, the corners switch turned over if that's what keeps
+   them, except where an open line can't lay them out the same: Fit shares gaps between held
+   points by their stretches' lengths, so a closed line whose shares were uneven can open with a
+   marcher moved along a side, and a curve's new ends bend it a little differently, so its spots
+   stay only nearly. When the point holds none (a smooth point, or one kept even through), the
+   spots move along to start on it, the end its gap's width back. Keep interval is sized to its
+   run again wherever the spots don't stay.
+
+7. **A point's marcher (#569).** A point may store `marcher`, true or false, from its menu's
+   Marcher | Even spacing, set over the line's setting with Follow line's marchers off (#568): true
+   (Marcher) holds a marcher there whatever `corners` says, smooth or not; false (Even spacing)
+   forces none, so the intervals run straight through it. Absent (following the line; switching
+   Follow back on clears it) is decision 2's rule, so a Line saved before reads unchanged. It works
+   either way round the switch: a corner can opt out of `corners` absent or true, and a point can
+   opt in with `corners: false`. Decision 2's stretches then run between the points that hold a
+   marcher (the ends, the points saying true, and the corners not saying false while the switch is
+   on), and everything decision 2 says of corners holding marchers (Fit's shares, Keep interval's
+   whole runs, measured ↔ or ↕, a closed line's stretches round from its first held point) is
+   said of them. An open line's ends always hold a marcher, so their `marcher` means nothing and
+   isn't written. On the path, and in a closed line filled as Grid (`files`), Edge (Spread with
+   `edge`) or Spread, no point holds a marcher by its own answer, as no corner does. `marcher` is
+   the only field a point has besides `x`, `y` and `tension`. Builds from before #569 (lab and
+   nightly) don't recognise `marcher` and lay out such Lines as if every point followed the line:
+   that is the accepted one-way door.
+
+8. **Along the path by default (2026-11-01, owner decision on #527).** Until this change an absent
+   `measured` meant straight across: each gap was the chord between neighbors. On a line with a
+   sharp spike whose tip holds no marcher (the corners switch off, or the tip's own answer Even
+   spacing), the next marcher went where the straight distance first reached the interval, far
+   down the spike's other side, so the tip was skipped though the marchers looked evenly spaced.
+   Now an absent `measured` is **along the path**: every gap is that much line, by arc length, and
+   the Measured menu's first choice is Along the path. The old meaning is kept as `"straight"`
+   (the menu's Straight across, once True distance) with one fix: a gap whose straight-across spot
+   would lie past a corner holding no marcher (a point of tension 0 inside the run, between two
+   held points, or anywhere on the path when no point holds a marcher there) goes on from that
+   corner, straight across again, with what is left of it, so a gap never cuts across such a
+   corner. And where a curve turns back toward the marcher before the gap is used up, the way
+   back counts too (a gap is how much the straight distance from the marcher changes along the
+   path), so a gap never jumps the part that curls back. Where a gap lands then moves on
+   smoothly as it grows, which Fit's search for one even interval needs: with the first spot at
+   the straight distance alone, a run could jump a curl and leave the last gap short. Within a stretch of straight segments
+   straight across and along the path are therefore the same; they differ only round a curve,
+   where a smooth point is never such a corner. ↔ and ↕ are unchanged: on a line that goes one way
+   along the axis, the axis distance of a gap is the sum of the distances of the path between, so a
+   gap can't cut a corner short. (A spike pointing across the axis can still leave its tip
+   between two marchers, each an interval apart that way, which is what ↔ or ↕ asks for.)
+
+   This is a one-way door taken while Line version 2 had not reached main (fork PR #568 open):
+   no saved show depends on absent meaning straight across. Lines saved by lab or nightly builds
+   from before this change read as along the path, so a Line with a curve or an un-held corner,
+   saved with no `measured`, can lay out a little differently once reopened or edited. Builds from before this change don't
+   recognise `"straight"` and show such Lines as plain positions (decision 5).
+
+9. **The interval lock and Offset (2026-11-01, owner decisions on #522 and #527).** The floating
+   editor has a lock beside a Line's interval (and beside its group menu, covering every group).
+   It needs no field of its own: unlocked is `fit` and locked is `keep`; `path` counts as locked,
+   pinned at its anchor, and unlocking it is `fit`. Typing an interval no longer switches to Keep
+   interval. Unlocked, it sizes the line from its pivot as Keep interval would and stays `fit`,
+   with the typed groups stored as `{ mode: "fit", groups }`: where the line started from, not a
+   promise, since dragging an end then changes the interval (snapping to whole steps, or half steps
+   zoomed in). With one group the layout ignores it, the interval coming from the drawn line as
+   before. With mixed groups (#526) their proportions are kept: the gaps are scaled by one factor
+   so the run reaches the drawn line end to end as `measured` says (a cornered line's stretches
+   each fit their own share, decision 2), so unlocking mixed intervals doesn't lose them. Locking a
+   `fit` line stores `keep` with the groups it lays out now, exactly as typed while the line is
+   still the length they give. `fit` without `groups` reads as before.
+
+   `measured: "offset"` is rise over run: `offset` is `{ x, y }`, how far each marcher is from the
+   one before it side to side and front to back, in field units like a group's interval, signed
+   from the first point, never both nought. `offset` is stored only with `measured: "offset"`, and
+   always with it. It applies only to an open line of two points with no mixed groups, not on the
+   path. There the spots are `first + i × offset` exactly, so offsets on half steps keep every spot
+   on the grid. In `keep` the line is `n − 1` offsets long, grown from its pivot with its first
+   point then moved onto the grid, its group's interval the offset's length. In `fit` the drawn
+   line gives the offset, `offset` following a drag, and typing either number sizes the line as
+   Keep interval would. A line that has more points, or mixed groups, keeps `measured: "offset"`
+   and `offset` but is laid out along the path at its own spacing until it is one segment with one
+   interval again. Its offset then applies again, as a line turned square to its ↔ or ↕ axis does
+   (decision 1). Picking another measure drops `offset`. Builds from before this change refuse
+   `"offset"` and `offset`, and show such Lines as plain positions (decision 5). They don't refuse
+   Fit's `groups`: their check takes any `fit` spacing, so they read a Fit line with mixed groups
+   as evenly spaced along its drawn line. Line v2 isn't released, so only lab and nightly builds
+   meet that. Saved Lines read unchanged. A saved shape (amendment of 2026-10-20) keeps a Line's
+   `offsetX` and `offsetY` only when it's measured as an offset, so a plain Line comes back plain
+   and an Offset line comes back as Offset at the saved offset.
+
+   Amended 2026-11-01 (owner feedback on #596), nothing stored changes shape: the editor shows the
+   offset in screen directions, read from the line's pivot end (the end nearer the pivot, the
+   first point on a tie): ↔ positive to the right, ↕ positive up the screen, toward the back,
+   which is field y going down; either crosses 0. `offset` itself stays signed from the first
+   point in field units. A new Line (drawn, or another kind turned into one) stores the host's
+   `pivot` at its leftmost end or point, `"w"` or `"e"` for an end, the front end on an upright
+   line, the center when closed. A saved Line without a `pivot` still turns about its center.
+
+10. **A Line's turn (2026-11-01, owner on #596: "Why can it not follow the same rules as the
+    box? … when I draw the line, why can't we just mark that state as 0°?").** A Line may store
+    `turn`: how far the whole line has been turned since it was drawn, in degrees clockwise, from 0
+    up to (not including) 360. Absent is 0. Its frame still points along it (decision 4: center
+    between its ends, rotation its drawn direction, a closed line's square to its outline), since
+    its handles, pivots and knob need that; `turn` is only what the editor reads and steps. So a
+    new Line, dragged or clicked, Line or Curve, either way round, reads 0° and stores nothing new.
+    Only turning the whole shape changes it: the knob (or a corner's ring), the degrees dragged or
+    typed, and ↻. They work as a box's do, counted from the drawn 0°: 15° steps, whole degrees with
+    `fine`, free with the Snap toggle off, ↻ exactly +90°, typed degrees setting the turn. Editing
+    points (dragging ends or corners, adding, deleting, opening or closing) never changes it,
+    and nor does a move. A flip mirrors it (30° becomes 330°): the mirror of a line turned 30° from
+    how it was drawn is the mirrored line turned 30° the other way. A shape turned into a Line keeps
+    the turn its frame had (a box at 30° makes a Line reading 30°, however the line lies in it). A
+    closed Line follows the same rule; its frame's rotation stays the outline's square-to-the-field
+    turn, and `turn` counts how far the outline was turned. A full turn round stores nothing.
+
+    Saved Lines without `turn` read as 0°, their stored geometry taken as drawn, rather than
+    showing their absolute direction: the readout then means the same thing for every Line, and no
+    data changes. Builds from before this change refuse `turn` and show turned Lines as plain
+    positions (decision 5).
+
+    Turned square to the field, a Line goes back onto the grid as a box does: when snapping, after
+    a turn or flip, a line whose points are a whole number of half steps apart each way, or an open
+    line whose ends are level or plumb, is moved so the point nearest its pivot is on the grid. An
+    open line in Fit with level or plumb ends is also stretched from that point, along itself, so
+    its far end lands on the grid; locked (Keep interval, or on the path), its length is its
+    intervals' and is kept. A new Line's pivot is at an end on the grid, so turning it a quarter
+    keeps that end still. A line turned off square stays where it turned. Measured as an offset
+    (decision 9), its `offset` turns with it: turned square to the field it's back on half steps,
+    rid of the turn's float noise; turned off square it's stored exactly as turned, unrounded, so a
+    locked line keeps its interval and points the way it was turned (a 2-step line turned 15°
+    stays 2 steps at 15°, its offset reading about 1.93 and −0.52). Rounding it to half steps would
+    change both.
+
+    An end swung round its neighbor (an open line's end dragged, locked or not, wherever the drag
+    used to round its direction to the half-step grid) points in the knob's steps, but counted from
+    the field rather than from the drawn 0°: 15° from level, so level and plumb are always reachable
+    whichever way the line was drawn, as when drawing. `fine` gives whole degrees, and the Snap
+    toggle off leaves it free. Before, the direction was the pointer rounded to half steps, whose
+    angles stepped by distance. The readout by the pointer shows the end's direction from its
+    neighbor, clockwise from the right as the turn reads, before the length ("15° · 8 steps · 2
+    apart").
+
+Verification (2026-11-01, decision 10): `lineTurn.test.ts` reads 0° after a drag either way, a
+slanted drag, a Curve and clicks; keeps the turn through end drags, an added point and a move;
+steps the knob in 15° from the drawn 0° (whole degrees with `fine`, free with Snap off), the scrub
+the same, ↻ +90° round to nothing stored, typed degrees relative; turns a closed line; mirrors the
+turn on a flip and back; keeps a box's turn in a Line made from it; puts a level line turned about
+its center back on the grid and lands a Fit line's far end on it, its pivot end still; swings an
+end in 15° from level locked and unlocked, 1° with `fine`, free with Snap off, with the angle in
+the readout; reads a Line saved without `turn` as 0°, places and reads back a turned Line, and
+refuses a `turn` outside 0 up to 360. A browser scenario in `line-tool.spec.mts` draws a line right
+to left, reads 0°, turns it with ↻ to 90° and finds `turn: 90` in its recipe.
+
+Verification (2026-11-01, decision 9): `lineLockOffset.test.ts` drags ends and corners unlocked
+onto whole and half steps (↔ by its side-to-side distance), with `fine` free; checks that typing
+leaves the line unlocked and sized; locks and unlocks in one undo step each; locked, swings an end
+along the path, moves an end only front to back under ↔ and side to side under ↕, and steps a
+corner in whole intervals; lays out, types, drags and greys out Offset, falls back along the path
+when a point is added and comes back when it's deleted; checks the modifiers (keep direction, from
+center, nothing locked); places and reads back an Offset line; and refuses an `offset` without its
+measure, a nought or wider `offset`, and Fit `groups` with two rests or none.
+`IntervalLock.test.tsx` covers the button in the real floating editor.
+
+Verification (2026-11-01): `lineAlongPath.test.ts` walks round a spike's un-held tip, along the
+path and straight across, with the corners switch off and with the tip's own Even spacing; checks
+equal arc gaps on a curve by default, equal chord gaps on it measured straight across, both the
+same on straight segments, ↔ still exactly an interval apart in x round un-held corners, and that
+`"straight"` is read and round-trips while along the path stores nothing. `lineMeasured.test.ts`
+covers the menu's four choices and refuses any other `measured`.
+
+Verification (#569): `linePointMenu.test.ts` opts a corner out with the switch on and in with it
+off, in Fit, on a closed line both ways, measured ↔ with each stretch even that way, and in Keep
+interval with the stretch a whole number of intervals; puts a marcher on a smooth point; ignores
+the answer on the path; refuses a non-boolean `marcher` and an unknown point field; and reads a
+placed Line's answer back as saved. Open here starts on the point with nothing stacked and checks
+the spots: unchanged on a square in Fit (corners switch on or off), Keep interval and measured,
+nearly unchanged on a smooth circle, moved along with even gaps from a point holding none, and a
+marcher moved along a side where Fit's uneven shares can't open the same. A new end keeps no
+`marcher`, from Open here or the ends switch.
+
+Verification (#529): `lineClose.test.ts` closes a Line by a click on its first point, an end
+dropped on the other and the editor's choice; checks a gap for every marcher; fills a square and
+an L in Grid, Spread and Edge through the distributor; pins Grid's spots on two outlines; checks
+the same outline clicked from different corners fills the same; opens a cornered outline and a
+grid back to the outline's spots; places and reads back a closed Line in each mode; and refuses a
+fill on an open line, an unknown fill, a closed run on the path and a closed line of two points.
+The session tests close and reopen a Line with mixed groups. `lineClosedCurves.test.ts` closes a
+Curve smoothly through its first point, lays Outline with groups on a closed curve with corners
+(corners held, the smooth point not), puts Edge's spots on the drawn curve, pins Grid's spots on
+a closed curve, and reopens closed curves. `clickPoints.test.ts` covers the host's
+close-on-first-point with a fake kind, and a browser scenario in `line-tool.spec.mts` closes a
+clicked line, fills it in Grid, places and reopens it.
+
 ## Amendment, 2026-11-01: ungrouping
 
 **Ungroup** (Shift+⌘G on a Mac, Ctrl+Shift+G elsewhere; the field's menu; the floating editor)
@@ -305,3 +591,38 @@ positions.
 
 Verification: `placedBox.test.ts` (ungrouped marchers) and the browser scenario "Ungroup on the
 next page ends the box there" in `box-tool.spec.mts`.
+
+## Amendment, 2026-11-01: groups
+
+**Group** (#603; the field's menu and the command palette, no default key yet) makes the selected
+marchers a shape where they stand. Nobody moves. It changes no schema.
+
+1. **A recipe of kind `group`, version 1.** Its `params` are the frame (amendment of 2026-10-20):
+   `center`, `rotation`, `flipX` and `flipY` (absent when false) and the host's `pivot`, plus
+   `points`, each spot in the frame's own axes before any flip, in field units from the center,
+   slot `i` being `points[i]`. `spots` is the spot count, as for every kind. A new group is square
+   to the field, its center the middle of its marchers' bounds. Its size follows from the points,
+   so it isn't stored; scaling rewrites the points.
+2. **Its interval is the smallest gap between neighbors** (#356), each spot's neighbor being its
+   nearest. A gap under half the median of those is left out, so a near-duplicate pair doesn't
+   make it tiny; because the rule reads only proportions, scaling never picks another gap.
+   Scaling sets the interval (half steps for Shrink and Expand, as any kind's spacing) and every
+   point scales with it about the pivot. A group with no interval (stacked marchers) doesn't
+   scale. Its handles stretch it as an ungrouped selection's do (owner on #606, 2026-11-02): a
+   corner both ways and a side one way from the opposite side, constrain keeping the proportions
+   and from center stretching about the middle. Only its points change; its turn, flips and
+   pivot stay.
+3. **It's placed as any shape is**, through `writePlacement` at the edit window, its members set
+   there even though nobody moves (`setAll`), so later pages holding the form follow and it's one
+   undo step. Its members leave the other recipes at that beat (Revision, 2026-10-29), and a shape
+   carried from an earlier page ends there, as it does when a shape is placed over it. After
+   that it's an ordinary placed recipe: it shows on later pages while its form is held, members
+   who move leave holes (it has no Close up or Re-split, being no closed kind), and Ungroup
+   (amendment above) works on it unchanged.
+4. **Who stands where is part of it**, so it has no Recalculate, and it isn't saved to the
+   library, which keeps a kind's intervals and fill, not spots.
+5. An app without the kind shows a group as plain positions (decision 5).
+
+Verification: `group/__test__/groupTool.test.ts` (the frame, turn, flip, move, interval and scale,
+and reading groups back across pages) and the browser scenario "Group makes the selected marchers
+a shape…" in `box-tool.spec.mts`.

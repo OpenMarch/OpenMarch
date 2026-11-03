@@ -49,6 +49,7 @@ import {
     type VersionReason,
 } from "@/utilities/webLibrary";
 import type { Dir } from "./dir";
+import { WORKER_ERRORS } from "../protocol";
 
 /** Why a library can't be changed: it was written by a newer version. */
 export type ReadOnlyReason = "newer-format";
@@ -254,10 +255,7 @@ export class Library {
     }
 
     private assertWritable() {
-        if (this.readOnly)
-            throw new Error(
-                "These shows were saved by a newer version of OpenMarch. Use that version to change them.",
-            );
+        if (this.readOnly) throw new Error(WORKER_ERRORS.readOnly.messageKey);
     }
 
     /** Records a show's name beside it, so a lost index can be rebuilt. */

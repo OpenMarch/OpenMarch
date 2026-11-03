@@ -13,6 +13,7 @@
  * WebAssembly is off, as in the iPad high-security mode), the video is exported
  * without sound and the dialog says so before starting.
  */
+import tolgee from "@/global/singletons/Tolgee";
 import {
     getFirstEncodableAudioCodec,
     getFirstEncodableVideoCodec,
@@ -145,5 +146,10 @@ export async function chooseEncodingTarget(
             audio: "none",
         };
 
-    throw new Error("No supported video encoder is available on this system");
+    throw new Error(
+        tolgee.t(
+            "exportCoordinates.videoNoEncoder",
+            "No supported video encoder is available on this system",
+        ),
+    );
 }

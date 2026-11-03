@@ -1,12 +1,12 @@
 import tolgee from "@/global/singletons/Tolgee";
-// cspell:words Catmull Yuksel Schaefer Keyser
+// cspell:words Catmull
+import { catmullRomControls, mirroredAt } from "../geometry/catmullRom";
 import { principalExtremes } from "../geometry/fit";
 import { makePath, type Path, type Segment } from "../geometry/path";
 import {
     add,
     dist,
     dot,
-    scale,
     snapAngle,
     sub,
     unit,
@@ -41,11 +41,9 @@ function distinctPoints(points: readonly XY[]): XY[] {
 }
 
 /**
- * Centripetal Catmull-Rom (alpha 0.5) through the points, as cubic Bézier segments. Centripetal
- * spacing doesn't loop or cusp when points are uneven, which uniform Catmull-Rom does. The ends
- * use a mirrored phantom point, so an end segment leaves straight toward its neighbor's tangent.
- * Conversion after Yuksel, Schaefer and Keyser, "Parameterization and applications of
- * Catmull-Rom curves" (2011).
+ * Centripetal Catmull-Rom through the points, as cubic Bézier segments (`catmullRomControls`). The
+ * ends use a mirrored phantom point, so an end segment leaves straight toward its neighbor's
+ * tangent.
  */
 export function curveSegments(points: readonly XY[]): Segment[] {
     const p = distinctPoints(points);
@@ -53,42 +51,15 @@ export function curveSegments(points: readonly XY[]): Segment[] {
         const a = p[0] ?? xy(0, 0);
         return [{ type: "line", a, b: a }];
     }
-    const at = (i: number): XY => {
-        if (i < 0) return sub(scale(p[0]!, 2), p[1]!);
-        if (i >= p.length) return sub(scale(p.at(-1)!, 2), p.at(-2)!);
-        return p[i]!;
-    };
     const segments: Segment[] = [];
     for (let i = 0; i < p.length - 1; i++) {
-        const p0 = at(i - 1);
-        const p1 = at(i);
-        const p2 = at(i + 1);
-        const p3 = at(i + 2);
-        // d = |Δ|^alpha with alpha = 0.5, so d² = |Δ|
-        const d1 = Math.sqrt(dist(p0, p1));
-        const d2 = Math.sqrt(dist(p1, p2));
-        const d3 = Math.sqrt(dist(p2, p3));
-        const c1 =
-            d1 < SAME
-                ? p1
-                : scale(
-                      add(
-                          sub(scale(p2, d1 * d1), scale(p0, d2 * d2)),
-                          scale(p1, 2 * d1 * d1 + 3 * d1 * d2 + d2 * d2),
-                      ),
-                      1 / (3 * d1 * (d1 + d2)),
-                  );
-        const c2 =
-            d3 < SAME
-                ? p2
-                : scale(
-                      add(
-                          sub(scale(p1, d3 * d3), scale(p3, d2 * d2)),
-                          scale(p2, 2 * d3 * d3 + 3 * d3 * d2 + d2 * d2),
-                      ),
-                      1 / (3 * d3 * (d3 + d2)),
-                  );
-        segments.push({ type: "cubic", a: p1, c1, c2, b: p2 });
+        const { c1, c2 } = catmullRomControls(
+            mirroredAt(p, i - 1),
+            p[i]!,
+            p[i + 1]!,
+            mirroredAt(p, i + 2),
+        );
+        segments.push({ type: "cubic", a: p[i]!, c1, c2, b: p[i + 1]! });
     }
     return segments;
 }

@@ -7,7 +7,7 @@ import { ToggleGroup, ToggleGroupItem, UnitInput } from "@openmarch/ui";
 import * as Popover from "@radix-ui/react-popover";
 import ToolbarSection from "../toolbar/ToolbarSection";
 import { CaretDownIcon } from "@phosphor-icons/react";
-import { T, useTolgee } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 const STEP_OPTIONS = [0.25, 0.5, 1, 2];
 const ALL_STEP_OPTIONS = [0, ...STEP_OPTIONS]; // Include "None" option (0) first
@@ -32,7 +32,7 @@ function AxisSettings({
     const [customSteps, setCustomSteps] = useState<string>("");
     const [customIsSelected, setCustomIsSelected] = useState(false);
 
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const handleReferencePointChange = (value: string) => {
         const numValue = value === "" ? undefined : parseFloat(value);
@@ -89,15 +89,22 @@ function AxisSettings({
                             key={step}
                             value={step.toString()}
                             onClick={() => setCustomIsSelected(false)}
-                            title={`Round ${axis} to nearest ${
+                            title={
                                 step === 0.25
-                                    ? "quarter"
+                                    ? t(
+                                          "coordinateRoundingSettings.roundToQuarter",
+                                          { axis },
+                                      )
                                     : step === 0.5
-                                      ? "half"
-                                      : step === 0.33
-                                        ? "third"
-                                        : step
-                            } ${step <= 1 ? "step" : "steps"}`}
+                                      ? t(
+                                            "coordinateRoundingSettings.roundToHalf",
+                                            { axis },
+                                        )
+                                      : t(
+                                            "coordinateRoundingSettings.roundToSteps",
+                                            { axis, steps: step },
+                                        )
+                            }
                         >
                             {step === 0.25
                                 ? "¼"
@@ -134,7 +141,7 @@ function AxisSettings({
                             onStepsChange(parseFloat(customSteps));
                         }
                     }}
-                    placeholder="steps"
+                    placeholder={t("coordinateRoundingSettings.unit")}
                 />
                 {showReferencePoint && (
                     <div
@@ -180,7 +187,7 @@ export default function CoordinateRoundingSettings() {
         ),
     );
 
-    const { t } = useTolgee();
+    const { t } = useTranslate();
 
     const handleStepChange = (axis: "X" | "Y", value: number) => {
         setUiSettings({
@@ -336,8 +343,11 @@ export default function CoordinateRoundingSettings() {
                 }}
                 title={t("coordinateRoundingSettings.xStepDescription")}
             >
-                X:{" "}
-                {formatStepValue(uiSettings.coordinateRounding?.nearestXSteps)}
+                {t("coordinateRoundingSettings.xStepValue", {
+                    value: formatStepValue(
+                        uiSettings.coordinateRounding?.nearestXSteps,
+                    ),
+                })}
             </button>
             <button
                 className="text-text-subtitle hover:text-accent cursor-pointer transition-colors select-none"
@@ -348,8 +358,11 @@ export default function CoordinateRoundingSettings() {
                 }}
                 title={t("coordinateRoundingSettings.yStepDescription")}
             >
-                Y:{" "}
-                {formatStepValue(uiSettings.coordinateRounding?.nearestYSteps)}
+                {t("coordinateRoundingSettings.yStepValue", {
+                    value: formatStepValue(
+                        uiSettings.coordinateRounding?.nearestYSteps,
+                    ),
+                })}
             </button>
         </ToolbarSection>
     );

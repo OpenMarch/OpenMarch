@@ -9,7 +9,7 @@ import {
     type PivotKey,
 } from "../frame/frame";
 import { keepFocus } from "./keepFocus";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 import { setPivotPreview } from "../field/shapePointer";
 import { screenCellOf, shapeKeyAt } from "./pivotScreen";

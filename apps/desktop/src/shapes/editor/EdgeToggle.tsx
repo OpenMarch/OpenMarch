@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { SelectionIcon } from "@phosphor-icons/react";
-import { Tip } from "./Tip";
+import { Tip } from "@/components/ui/Tip";
 import tolgee from "@/global/singletons/Tolgee";
 import { distributionOf, edgeSplitOf, withEdge } from "../distribute/modes";
 import type { ToolEnv } from "../tool/toolKind";

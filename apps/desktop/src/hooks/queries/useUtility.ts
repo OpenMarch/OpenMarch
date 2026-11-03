@@ -2,6 +2,7 @@ import { db } from "@/global/database/db";
 import { queryOptions, mutationOptions } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     DbConnection,
     getUtility,
@@ -51,6 +52,6 @@ export const updateUtilityMutationOptions = () =>
             });
         },
         onError: (error) => {
-            conToastError("Failed to update utility settings", error);
+            conToastError(tolgee.t("settings.utilityUpdateFailed"), error);
         },
     });
