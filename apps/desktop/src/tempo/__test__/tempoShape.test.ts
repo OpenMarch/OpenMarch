@@ -10,6 +10,7 @@ import {
     shapeOf,
     stretchesOf,
     temposOf,
+    typedChanges,
 } from "../tempoShape";
 
 /** beat 0 unused, then the tempos */
@@ -160,5 +161,20 @@ describe("laneTempos", () => {
     it("stays finite when every count is a hold", () => {
         const t = laneTempos([0, 4, 3], [2, 2, 2], new Set([1, 2]), 3);
         expect(t.slice(1).every(Number.isFinite)).toBe(true);
+    });
+});
+
+describe("typedChanges", () => {
+    it("drops the points inside the typed counts and marks both ends", () => {
+        const c = typedChanges(new Set([5, 9, 13, 21]), 7, 17, 40);
+        expect([...c].sort((a, b) => a - b)).toEqual([5, 7, 17, 21]);
+    });
+    it("keeps points exactly on the ends", () => {
+        const c = typedChanges(new Set([9, 17]), 9, 17, 40);
+        expect([...c].sort((a, b) => a - b)).toEqual([9, 17]);
+    });
+    it("adds no point on count 1 or past the last count", () => {
+        const c = typedChanges(new Set([9]), 1, 40, 40);
+        expect([...c]).toEqual([]);
     });
 });

@@ -96,6 +96,7 @@ import {
     shapeOf,
     stretchesOf,
     temposOf,
+    typedChanges,
 } from "./tempoShape";
 import {
     deleteCounts,
@@ -1348,10 +1349,8 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             ),
             { fixed: data.holds },
         );
-        // the counts typed for are a stretch of their own: points at both ends
-        const typed = new Set(changes);
-        if (from > 1) typed.add(from);
-        if (to < data.storedCount) typed.add(to);
+        // the counts typed for are a stretch of their own: the points inside go, one at each end
+        const typed = typedChanges(changes, from, to, data.storedCount);
         commit(
             t("tempoMode.band.action.tempo"),
             result && {
@@ -3619,8 +3618,13 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     });
     for (const s of segments) {
         if (s.to < firstBeat || s.from > lastBeat) continue;
+        // a hold has no tempo: the label starts after any holds the stretch begins with (so it
+        // never sits on a fermata), and a stretch of nothing but holds gets none
+        let start = s.from;
+        while (start < s.to && data.holds.has(start)) start++;
+        if (start >= s.to) continue;
         // the label stays in view along its segment, right of the lane names
-        const left = Math.max(xOf(s.from, ppb), gutterRight) + 3;
+        const left = Math.max(xOf(start, ppb), gutterRight) + 3;
         const right = Math.min(xOf(s.to, ppb), viewRight) - 3;
         const from = Math.round(s.bpmFrom);
         // An uneven stretch is labelled with its range, over its highest step, so the label never
@@ -3656,14 +3660,27 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         candidates.push({
             priority: 1,
             boxes,
+            // click the number to type a tempo for this stretch
             render: (index, box) => (
-                <span
+                <button
                     key={`t-${s.from}`}
-                    className="text-accent pointer-events-none absolute text-[10px] leading-[12px] font-medium whitespace-nowrap"
+                    type="button"
+                    data-testid="tempo-label"
+                    className="text-accent absolute cursor-text rounded-[2px] text-[10px] leading-[12px] font-medium whitespace-nowrap hover:underline focus-visible:underline"
                     style={{ left: box.x, top: box.y }}
+                    title={t("tempoMode.band.lane.tempoLabelTitle", {
+                        range: rangeLabel(s.from, s.to),
+                    })}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerMove={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        editTempo(e, s.from, s.to, segmentText(s));
+                    }}
                 >
                     {texts[index]}
-                </span>
+                </button>
             ),
         });
     }

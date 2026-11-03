@@ -4367,6 +4367,7 @@
                 "markTitle": "Rehearsal mark {mark} at m. {measure}: drag it to another measure; double-click to rename it",
                 "renumberedTitle": "Measure {measure}: renumbered by hand; the measures after count on from it. Right-click or double-click to change it.",
                 "shortMeasureTitle": "Measure {measure}: a short measure, {count, plural, one {# count} other {# counts}}",
+                "tempoLabelTitle": "{range}: click to type a tempo",
                 "timeSignatureTitle": "Time signature {meter}: click to change it from here to the next time signature"
             },
             "menu": {

@@ -214,3 +214,20 @@ export function laneTempos(
         return first < count ? q(first) : q(b);
     });
 }
+
+/**
+ * The tempo points after typing one tempo for counts `from`..`to - 1`: those counts become a
+ * stretch of their own, so the points inside go and there's one at each end (none on count 1 or
+ * past the last count).
+ */
+export function typedChanges(
+    changes: ReadonlySet<number>,
+    from: number,
+    to: number,
+    storedCount: number,
+): Set<number> {
+    const typed = new Set([...changes].filter((c) => c <= from || c >= to));
+    if (from > 1) typed.add(from);
+    if (to < storedCount) typed.add(to);
+    return typed;
+}
