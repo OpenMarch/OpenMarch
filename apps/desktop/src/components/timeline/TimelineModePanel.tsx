@@ -559,6 +559,7 @@ export default function TimelineModePanel() {
                     {...(basic ? basicExtras : {})}
                     zoomFitted={zoomFitted}
                     onZoomFittedChange={setZoomFitted}
+                    zoomButtons={tempoMode}
                     // Tempo mode is a focused mode: the timeline is framed in the accent
                     className={clsx(
                         "w-full",

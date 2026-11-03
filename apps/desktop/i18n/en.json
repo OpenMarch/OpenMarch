@@ -3094,6 +3094,11 @@
             "label": "Fit the show",
             "hint": "Press again to go back. Pinch or <keys></keys> to zoom"
         },
+        "zoom": {
+            "in": "Zoom in",
+            "out": "Zoom out",
+            "hint": "Or pinch, or <keys></keys>"
+        },
         "transport": {
             "label": "Transport",
             "more": "More controls",

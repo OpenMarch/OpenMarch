@@ -4,6 +4,8 @@ import {
     ArrowsOutLineHorizontalIcon,
     DotsThreeIcon,
     HouseIcon,
+    MagnifyingGlassMinusIcon,
+    MagnifyingGlassPlusIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { animated, useSpring } from "@react-spring/web";
@@ -149,6 +151,8 @@ export interface TimelineSelectionInteraction {
 }
 
 const FIT_ICON = <ArrowsOutLineHorizontalIcon size={16} />;
+const ZOOM_OUT_ICON = <MagnifyingGlassMinusIcon size={16} />;
+const ZOOM_IN_ICON = <MagnifyingGlassPlusIcon size={16} />;
 const HOUSE_ICON = <HouseIcon size={14} aria-hidden="true" />;
 
 /** Below this width the transport folds its secondary controls into "⋯" (Bitwig's rule) */
@@ -181,6 +185,9 @@ export const TimelineTransport = memo(function TimelineTransport({
     onNavigate,
     onFit,
     fitted = false,
+    onZoom,
+    canZoomIn = true,
+    canZoomOut = true,
     accessories,
     secondary,
     viewControls,
@@ -206,6 +213,10 @@ export const TimelineTransport = memo(function TimelineTransport({
     onFit?: () => void;
     /** The show is fitted, so Fit goes back */
     fitted?: boolean;
+    /** Zoom out (-1) or in (1) a step; with it, the two buttons show beside Fit (tempo mode) */
+    onZoom?: (direction: 1 | -1) => void;
+    canZoomIn?: boolean;
+    canZoomOut?: boolean;
     /** Controls after Next that never fold */
     accessories?: ReactNode;
     /** Controls after those that fold into "⋯" on a narrow panel, such as Sound */
@@ -344,6 +355,34 @@ export const TimelineTransport = memo(function TimelineTransport({
             {FIT_ICON}
         </TransportButton>
     );
+    const zoomHint = (
+        <span className="text-text-subtitle flex items-center gap-4 text-[11px]">
+            <T
+                keyName="timeline.zoom.hint"
+                params={{ keys: () => <Shortcut binding="Mod+scroll" /> }}
+            />
+        </span>
+    );
+    const zoomButtons = onZoom && (
+        <>
+            <TransportButton
+                label={t("timeline.zoom.out")}
+                hint={zoomHint}
+                testId="timeline-zoom-out"
+                onClick={canZoomOut ? () => onZoom(-1) : undefined}
+            >
+                {ZOOM_OUT_ICON}
+            </TransportButton>
+            <TransportButton
+                label={t("timeline.zoom.in")}
+                hint={zoomHint}
+                testId="timeline-zoom-in"
+                onClick={canZoomIn ? () => onZoom(1) : undefined}
+            >
+                {ZOOM_IN_ICON}
+            </TransportButton>
+        </>
+    );
     const divider = (
         <span aria-hidden="true" className="bg-stroke h-16 w-px shrink-0" />
     );
@@ -410,6 +449,7 @@ export const TimelineTransport = memo(function TimelineTransport({
                                 >
                                     {clock}
                                     {secondary}
+                                    {zoomButtons}
                                     {fit}
                                     {viewControls}
                                 </Popover.Content>
@@ -417,6 +457,7 @@ export const TimelineTransport = memo(function TimelineTransport({
                         </Popover.Root>
                     ) : (
                         <>
+                            {zoomButtons}
                             {fit}
                             {viewControls}
                         </>

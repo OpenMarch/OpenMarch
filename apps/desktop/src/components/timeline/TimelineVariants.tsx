@@ -112,6 +112,8 @@ export function fitBackZoom(
 
 /** How much one pixel of wheel or pinch delta zooms */
 const WHEEL_ZOOM_RATE = 0.0025;
+/** How much one click of Zoom in or Zoom out zooms */
+const ZOOM_STEP = 2;
 
 /**
  * The timeline's zoom (UI-12), native to trackpads and wheels:
@@ -316,6 +318,23 @@ const useTimelineZoom = ({
         viewport.scrollLeft = 0;
     })!;
 
+    /**
+     * One click of the zoom buttons (tempo mode, for mouse users): twice or half the zoom, about
+     * the playhead when it's in view (or followed), else about the middle of the view
+     */
+    const step = useLatestCallback((direction: 1 | -1) => {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+        const next = pixelsPerBeat * ZOOM_STEP ** direction;
+        const follow = followAnchor?.();
+        if (follow) return zoomTo(next, follow.anchorPx, follow.anchorBeat);
+        const playheadPx =
+            leadingInset + playheadBeat * pixelsPerBeat - viewport.scrollLeft;
+        const inView = playheadPx >= 0 && playheadPx <= viewport.clientWidth;
+        if (inView) zoomTo(next, playheadPx, playheadBeat);
+        else zoomTo(next, viewport.clientWidth / 2);
+    })!;
+
     // Shift+Z fits, or goes back, unless a text field, popover, menu or dialog has the keys
     useEffect(() => {
         if (!onPixelsPerBeatChange) return;
@@ -338,7 +357,14 @@ const useTimelineZoom = ({
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [fit, onPixelsPerBeatChange]);
 
-    return { fit, fitted: isFitted, viewportWidth };
+    return {
+        fit,
+        fitted: isFitted,
+        viewportWidth,
+        step,
+        canZoomIn: pixelsPerBeat < TIMELINE_MAX_PX_PER_BEAT - 0.001,
+        canZoomOut: pixelsPerBeat > minimum + 0.01,
+    };
 };
 
 const navigateToPage = ({
@@ -990,6 +1016,13 @@ const TimelineSurface = memo(function TimelineSurface({
                         onFit={
                             props.onPixelsPerBeatChange ? zoom.fit : undefined
                         }
+                        onZoom={
+                            props.zoomButtons && props.onPixelsPerBeatChange
+                                ? zoom.step
+                                : undefined
+                        }
+                        canZoomIn={zoom.canZoomIn}
+                        canZoomOut={zoom.canZoomOut}
                         fitted={zoom.fitted}
                     />
                 ) : undefined

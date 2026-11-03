@@ -196,6 +196,8 @@ export interface TimelineProps {
     /** Whether the zoom was fitted to the show; the timeline opens fitted when it was (UI-12) */
     readonly zoomFitted?: boolean;
     readonly onZoomFittedChange?: (fitted: boolean) => void;
+    /** Zoom out and Zoom in buttons beside Fit, for mouse users (tempo mode) */
+    readonly zoomButtons?: boolean;
     readonly selection?: TimelineSelection;
     readonly selectedTarget?: TimelineTarget | null;
     readonly className?: string;
@@ -998,6 +1000,7 @@ export function Timeline(props: TimelineProps) {
         onPixelsPerBeatChange: useLatestCallback(setPixelsPerBeat),
         zoomFitted: props.zoomFitted,
         onZoomFittedChange: useLatestCallback(props.onZoomFittedChange),
+        zoomButtons: props.zoomButtons,
         onSelectionChange: changeSelection,
         onCreateTrack: createTrack,
         addSelectedMarchers: addMarchersMenu,

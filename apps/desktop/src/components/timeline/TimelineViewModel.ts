@@ -315,6 +315,8 @@ export interface TimelineScaleProps {
     /** The zoom was fitted to the show last time (UI-12): the timeline opens fitted */
     readonly zoomFitted?: boolean;
     readonly onZoomFittedChange?: (fitted: boolean) => void;
+    /** Zoom out and Zoom in buttons beside Fit, for mouse users (tempo mode) */
+    readonly zoomButtons?: boolean;
 }
 
 export interface TimelineCommonProps
