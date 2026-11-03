@@ -266,7 +266,6 @@ export interface TimelineInteractionProps {
     readonly returnBeat?: BeatPosition;
     readonly isPlaying: boolean;
     readonly selection?: TimelineSelection;
-    readonly selectedTarget?: TimelineTarget | null;
     readonly onSeek?: TimelineSeek;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** Looping is on, so Play loops (UI-17) */
@@ -277,9 +276,8 @@ export interface TimelineInteractionProps {
     readonly onPlayOn?: () => void;
     readonly onNavigate?: (direction: TimelineNavigation) => void;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
-    readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
-    /** The right-click menu's **Add selected marchers** (UI-9, P8.14), in view beats here */
-    readonly addSelectedMarchers?: TimelineAddMarchersMenu<TimelineMenuTarget>;
+    /** The right-click menu's page-box entries (UI-9), in view beats here */
+    readonly addSelectedMarchers?: TimelineAddMarchersMenu;
     /** A clip's move commands (UI-14), by track id here: its menu, ⋯ button and keys */
     readonly moveCommands?: TimelineMoveCommands<TimelineTrackId>;
     /**
@@ -391,8 +389,3 @@ export interface TimelineRangeChange extends TimelineBeatRange {
  * failed). It never rejects. Nothing (`void`) leaves the preview until the new range arrives.
  */
 export type TimelineRangeCommitResult = Promise<boolean> | void;
-
-export interface TimelineCreateTrackRequest {
-    readonly target: TimelineTarget;
-    readonly range: TimelineBeatRange;
-}

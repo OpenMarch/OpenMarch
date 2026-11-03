@@ -19,94 +19,10 @@ import { ShortcutTooltip } from "./ShortcutTooltip";
 import { PlaybackSpeedButton } from "./PlaybackSpeedButton";
 import { TRANSPORT_SHORTCUTS } from "./TimelinePrimitives";
 import { START_INK } from "./startFlagInk";
-import { TOUCH_TARGET_CLASS } from "./touchTargets";
 import {
     effectivePlaybackSpeed,
     usePlaybackSpeedStore,
 } from "@/stores/PlaybackSpeedStore";
-
-export function TimelineMuteButton() {
-    const { t } = useTranslate();
-    const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
-    const setAudioVolume = useUiSettingsStore((s) => s.setAudioVolume);
-
-    const handleSliderChange = (values: number[]) => {
-        const nextVolume = values[0] ?? 0;
-        setAudioVolume(nextVolume);
-    };
-
-    const sliderValue = audioVolume;
-    const VolumeIcon =
-        sliderValue === 0
-            ? SpeakerSimpleXIcon
-            : sliderValue < 50
-              ? SpeakerSimpleLowIcon
-              : SpeakerSimpleHighIcon;
-
-    return (
-        <Popover.Root>
-            <Popover.Trigger asChild>
-                <button
-                    className={clsx(
-                        { "text-red": sliderValue === 0 },
-                        { "text-text": sliderValue > 0 },
-                        "enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
-                        TOUCH_TARGET_CLASS,
-                    )}
-                    aria-label={t("timeline.volume")}
-                >
-                    <VolumeIcon size={24} />
-                </button>
-            </Popover.Trigger>
-            <Popover.Portal>
-                <Popover.Content className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex flex-col gap-6 border px-16 py-12 backdrop-blur-sm">
-                    <div className="flex items-center justify-between gap-6">
-                        <p className="text-body">
-                            <T keyName="timeline.masterVolume" />
-                        </p>
-                        <span className="text-body font-mono">
-                            {t("timeline.percent", { percent: sliderValue })}
-                        </span>
-                    </div>
-                    <Slider
-                        min={0}
-                        max={100}
-                        step={1}
-                        value={[sliderValue]}
-                        onValueChange={handleSliderChange}
-                        aria-label={t("timeline.volumeSlider")}
-                    />
-                </Popover.Content>
-            </Popover.Portal>
-        </Popover.Root>
-    );
-}
-
-export function TimelineMetronomeButton() {
-    const { t } = useTranslate();
-    const isMetronomeOn = useMetronomeStore((s) => s.isMetronomeOn);
-    const toggleMetronome = useMetronomeStore((s) => s.toggleMetronome);
-
-    return (
-        <div className="flex gap-10" id="timelineMetronome">
-            <button
-                aria-label={t("actions.playback.toggleMetronome")}
-                aria-pressed={isMetronomeOn}
-                className={clsx(
-                    "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
-                    TOUCH_TARGET_CLASS,
-                    {
-                        "text-accent": isMetronomeOn,
-                        "text-text enabled:hover:text-accent": !isMetronomeOn,
-                    },
-                )}
-                onClick={toggleMetronome}
-            >
-                <MetronomeIcon size={24} />
-            </button>
-        </div>
-    );
-}
 
 /**
  * Loop (UI-17, C): turns looping on over the page being edited, or off. Lit while on; the loop is

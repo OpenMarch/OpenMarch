@@ -184,8 +184,7 @@ export const toTimelineSelection = (
  * or a dragged range selects that range, and each seeks (home to beat 0, a range to its end).
  * **Create page at playhead** on the free paused playhead's right-click menu adds a page flag there and selects
  * the new page; a page box's right-click menu deletes its flag (P8.13's writes, wired by P8.15), or the page and its
- * moves (defined coordinates, owner decision 3). Neither Create Track
- * nor **Add selected marchers** is offered: dragging marchers adds them (UI-10). Double-clicking
+ * moves (defined coordinates, owner decision 3). Double-clicking
  * a page box or clip isolates its stored timeline (docs/timeline/research/ownership/09-isolation.md).
  * A clip is a move: its menu, its ⋯ button and Delete edit, rename and delete it (UI-14).
  */
@@ -326,7 +325,6 @@ export default function TimelineModePanel() {
     const commands = useTimelineCommands({
         database: db,
         timelines,
-        selectedMarcherIds,
     });
     // UI-25: a move can be split, and moves merged (not in Basic, which gets no clips)
     const splitMerge = useSplitMergeMoves({

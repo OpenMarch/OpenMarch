@@ -7,15 +7,11 @@ import {
     renameTimeline,
     shiftTimeline,
 } from "@/db-functions/timelineCommands";
-import { addMarchersToTimeline } from "@/db-functions/timelineMembership";
 import type { DbConnection } from "@/db-functions/types";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { allMarcherRowsQueryOptions } from "@/hooks/queries/useMarchers";
-import {
-    toastDroppedHolds,
-    toastTimelineError,
-} from "@/timeline/timelineErrorMessages";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { timelineExists } from "@/db-functions/timelines";
@@ -36,9 +32,7 @@ import {
     type TimelineSelectionState,
 } from "@/stores/TimelineSelectionStore";
 import type { TimelineInput } from "./Timeline";
-import type { TimelineAddMarchersMenu } from "./TimelineRangeMenu";
 import type {
-    TimelineBeatRange,
     TimelineRangeChange,
     TimelineRangeCommitResult,
 } from "./TimelineViewModel";
@@ -64,32 +58,17 @@ export function timelineShiftFor(
     return { timelineId: Number(track.linkId), delta };
 }
 
-/** Why **Add selected marchers** is unavailable, or null when it can run. */
-export function addSelectedMarchersBlocker(
-    selectedMarcherIds: ReadonlySet<number>,
-): string | null {
-    return selectedMarcherIds.size === 0
-        ? tolgee.t("timeline.rangeMenu.addSelectedNone")
-        : null;
-}
-
 /**
  * The panel's side of the commands: the callbacks that run each command as one undoable edit and
  * show a refusal's friendly message (P8.6) as a toast. A clip move of the selected timeline moves
  * the selection with it (UI-9).
- *
- * Create Track isn't offered (P8.15): with one timeline per page it would give a
- * marcher a second transition in a page timeline. **Add selected marchers** replaces it (UI-9
- * Creating a timeline).
  */
 export function useTimelineCommands({
     database,
     timelines,
-    selectedMarcherIds,
 }: {
     database: DbConnection;
     timelines: readonly TimelineInput[];
-    selectedMarcherIds: ReadonlySet<number>;
 }) {
     const commitTimelineRange = useCallback(
         (change: TimelineRangeChange): TimelineRangeCommitResult => {
@@ -123,42 +102,7 @@ export function useTimelineCommands({
 
     return {
         commitTimelineRange,
-        addSelectedMarchers: useAddSelectedMarchers(
-            database,
-            selectedMarcherIds,
-        ),
     };
-}
-
-/**
- * UI-9 Adding marchers: the selected marchers join the timeline over the right-clicked range
- * (spec beats), which is created if none has it, as one undoable edit; a refusal is a toast. The
- * menu doesn't change the selection.
- */
-function useAddSelectedMarchers(
-    database: DbConnection,
-    selectedMarcherIds: ReadonlySet<number>,
-): TimelineAddMarchersMenu {
-    return useMemo(
-        (): TimelineAddMarchersMenu => ({
-            disabledReason: addSelectedMarchersBlocker(selectedMarcherIds),
-            onAdd: (range: TimelineBeatRange) => {
-                if (selectedMarcherIds.size === 0) return;
-                addMarchersToTimeline({
-                    db: database,
-                    range: {
-                        start: range.startBeatIndex,
-                        end: range.endBeatIndex,
-                    },
-                    marcherIds: [...selectedMarcherIds],
-                })
-                    // A hold from the starting spot this move cut off is named (#619)
-                    .then((result) => toastDroppedHolds(result.droppedHolds))
-                    .catch((error: unknown) => toastTimelineError(error));
-            },
-        }),
-        [database, selectedMarcherIds],
-    );
 }
 
 /** Why **Edit move** and **Delete move** are unavailable (UI-14), or null when they can run. */

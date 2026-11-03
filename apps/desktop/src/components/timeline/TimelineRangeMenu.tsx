@@ -19,7 +19,6 @@ import {
     ArrowsSplitIcon,
     PencilSimpleIcon,
     TrashIcon,
-    UserPlusIcon,
     UsersThreeIcon,
     ScissorsIcon,
     QuestionIcon,
@@ -35,14 +34,12 @@ import { useTranslate } from "@tolgee/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 
 /**
- * The timeline's right-click menu (ui.md UI-9 Adding marchers, P8.14). It offers **Add selected
- * marchers** on a page box, a clip (its timeline) or a dragged range, for the range under the
- * pointer. Opening it doesn't change the timeline selection: the marchers to add are picked first,
- * where they can be selected. On a page box it also offers **Delete page** (UI-9 Deleting a flag,
- * P8.15), which keeps every later page's look, and next to it **Delete page and its moves**
- * (defined coordinates, owner decision 3). On a clip it offers the move's entries (UI-14):
- * **Edit move**, **Rename move…** and **Delete move**, the same entries as the selected clip's ⋯
- * button.
+ * The timeline's right-click menu (ui.md UI-9, P8.14). On a page box it offers **Delete page**
+ * (UI-9 Deleting a flag, P8.15), which keeps every later page's look, and next to it **Delete page
+ * and its moves** (defined coordinates, owner decision 3), plus the hold and subset entries. On a
+ * clip it offers the move's entries (UI-14): **Edit move**, **Rename move…** and **Delete move**,
+ * the same entries as the selected clip's ⋯ button. A dragged range with none of those opens
+ * nothing.
  */
 
 /**
@@ -410,14 +407,10 @@ export function TimelineMoveMenuItems({
 }
 
 /**
- * The menu's command. `Timeline` takes it in spec beats; inside, it gets `TimelineMenuTarget`s
- * (`T`), whose ranges are view beats.
+ * The page-box side of the timeline's right-click menu. `Timeline` builds it from its page
+ * commands; ranges are view beats on the surface.
  */
-export interface TimelineAddMarchersMenu<T = TimelineBeatRange> {
-    /** **Add selected marchers**; without it, the menu has no add entry */
-    readonly onAdd?: (target: T) => void;
-    /** Why the command is unavailable (for example, no marchers are selected), or null */
-    readonly disabledReason?: string | null;
+export interface TimelineAddMarchersMenu {
     /**
      * **Delete page** on a page box (UI-9 Deleting a flag, P8.15): the page whose flag goes.
      * Without it, the menu has no delete entry.
@@ -561,7 +554,7 @@ export function useTimelineRangeMenu({
     movesFor,
     resolveRange,
 }: {
-    menu?: TimelineAddMarchersMenu<TimelineMenuTarget>;
+    menu?: TimelineAddMarchersMenu;
     /** A clip's move entries (UI-14) by its track id, or null where it has none */
     movesFor?: (trackId: string) => TimelineMoveMenuActions | null;
     resolveRange: (event: MouseEvent<HTMLElement>) => TimelineMenuTarget | null;
@@ -582,7 +575,7 @@ export function useTimelineRangeMenu({
         if (!menu && !movesFor) return;
         const target = resolveRange(event);
         if (!target) return;
-        // Nothing to offer here: no add, no page box to delete the flag of, and no move
+        // Nothing to offer here: no page-box entry, and no move
         const canDelete =
             (menu?.onDeleteFlag !== undefined ||
                 menu?.onDeleteWithMoves !== undefined ||
@@ -592,11 +585,10 @@ export function useTimelineRangeMenu({
                 menu?.subset !== undefined ||
                 menu?.extraFor !== undefined) &&
             target.pageId !== undefined;
-        if (!menu?.onAdd && !canDelete && !movesOf(target)) return;
+        if (!canDelete && !movesOf(target)) return;
         event.preventDefault();
         setOpen({ target, x: event.clientX, y: event.clientY });
     };
-    const disabledReason = menu?.disabledReason ?? null;
     const moves = open ? movesOf(open.target) : null;
     const setAsShownReason =
         open && menu?.setAsShown && open.target.pageId !== undefined
@@ -640,17 +632,6 @@ export function useTimelineRangeMenu({
                     className={TIMELINE_MENU_CONTENT_CLASS}
                 >
                     <TimelineMenuClose.Provider value={() => setOpen(null)}>
-                        {menu?.onAdd && (
-                            <MenuItemWithReason
-                                testId="timeline-range-menu-add"
-                                reason={disabledReason}
-                                reasonTestId="timeline-range-menu-reason"
-                                onSelect={() => menu.onAdd?.(open.target)}
-                            >
-                                <UserPlusIcon size={14} />
-                                {tolgee.t("timeline.rangeMenu.addSelected")}
-                            </MenuItemWithReason>
-                        )}
                         {pageExtra.length > 0 && (
                             <>
                                 <TimelineMenuEntries entries={pageExtra} />
