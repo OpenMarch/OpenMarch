@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNull, ne, notInArray, sql } from "drizzle-orm";
-import { schema } from "@/global/database/db";
+import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection, DbTransaction } from "./types";
 
 /**
