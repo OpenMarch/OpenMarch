@@ -386,7 +386,10 @@ describe("WelcomeFlow", () => {
         fireEvent.click(continueButton());
         const list = await screen.findByTestId("welcome-whats-new");
         expect(screen.getByText("What's new")).toBeInTheDocument();
-        expect(list.querySelectorAll("li")).toHaveLength(5);
+        expect(list.querySelectorAll("li")).toHaveLength(7);
+        expect(
+            screen.getByRole("link", { name: /OpenMarch guides/ }),
+        ).toHaveAttribute("href", "https://openmarch.com/guides");
 
         fireEvent.click(continueButton());
         fireEvent.click(await screen.findByTestId("editor-mode-card-basic"));
