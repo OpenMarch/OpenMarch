@@ -26,7 +26,6 @@ import {
     CollapsedTimeline,
     ExpandedTimeline,
 } from "./TimelineVariants";
-import type { TimelineBand } from "./TimelineBand";
 import type { PageKeepChains } from "./PageKeepChain";
 import type {
     TimelineKeyframe,
@@ -162,7 +161,7 @@ const STOPPED_AT_START: TimelinePlayback = {
  */
 export interface TimelineProps {
     /**
-     * A timeline that only navigates (Visuals mode, performer-behavior.md section 7.1): no clips,
+     * A timeline that only navigates (Preview): no clips,
      * no window, no page flag or move edits, no ranges drawn. Page boxes and home still select
      * (`onSelectionChange`, to go to that page), and the ruler and the surface scrub. The editing
      * commands given are ignored
@@ -170,8 +169,6 @@ export interface TimelineProps {
     readonly readOnly?: boolean;
     /** A read-only timeline with no start flag drawn (Preview, which always plays on) */
     readonly hideStartFlag?: boolean;
-    /** Lanes drawn in place of the clip rows, under the waveform (Visuals mode's cue lanes) */
-    readonly band?: TimelineBand;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -1048,7 +1045,7 @@ export function Timeline(props: TimelineProps) {
         expertMarks: props.expertMarks,
     };
 
-    // Read-only (Visuals mode): no window and no edits; page boxes still select, to go to their page
+    // Read-only (Preview): no window and no edits; page boxes still select, to go to their page
     // Its start flag is still drawn, where Play starts from
     const shownProps = readOnly
         ? {
@@ -1057,9 +1054,8 @@ export function Timeline(props: TimelineProps) {
               startFlagBeat: props.hideStartFlag
                   ? undefined
                   : readOnlyStartFlag(selection),
-              band: props.band,
           }
-        : { ...commonProps, band: props.band };
+        : commonProps;
 
     return props.mode === "basic" ? (
         <BasicTimeline {...shownProps} />

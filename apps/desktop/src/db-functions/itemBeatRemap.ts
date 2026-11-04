@@ -2,28 +2,22 @@
  * Keeping item changes when beats go: deleting beats (the carry, ADR 0004 amendment of
  * 2026-10-15) and replacing every beat (a tempo edit in the audio editor, a MusicXML import).
  * The item tables' `beat_id ON DELETE CASCADE` would otherwise take the changes with their beats:
- * a prop made after beat 0 would lose its only Outline and stay Off field for good, and every
- * Placement change and slot assignment would go. Both run in the deletion's transaction, so one
- * undo restores everything.
+ * a prop made after beat 0 would lose its only Outline and stay Off field for good. Both run in
+ * the deletion's transaction, so one undo restores everything.
  *
  * Extension point: every item table keyed by beat belongs in {@link BEAT_KEYED_ITEM_TABLES},
- * with its own uniqueness `key`; tables a file doesn't have yet are skipped by name. A table
- * whose rows hang off a change (`item_placement_marchers`) moves with it and needs no entry.
+ * with its own uniqueness `key`; tables a file doesn't have yet are skipped by name.
  */
 import { asc, eq, sql } from "drizzle-orm";
 import { schema } from "@/global/database/db";
 import type { DbConnection, DbTransaction } from "./types";
 import { FIRST_BEAT_ID } from "./beat";
-import { beatsAfterDeletion } from "./cues";
 
 /** One change in a beat-keyed item table. */
 interface BeatKeyedRow {
     id: number;
     beatId: number;
-    /**
-     * What a beat holds at most one change per, besides the beat: the item for Outline and
-     * Placement changes, the item and slot for slot assignments
-     */
+    /** What a beat holds at most one change per, besides the beat: the item for Outline changes */
     key: string;
 }
 
@@ -44,48 +38,35 @@ interface BeatKeyedItemTableEntry {
      * last change there goes back to the last surviving beat before it.
      */
     keepsOne?: boolean;
-    /** After changes land on beats, rank them among the changes already there */
-    landed?: (tx: DbTransaction, landed: readonly LandedRow[]) => Promise<void>;
 }
 
 /**
- * Ranks Placement changes that landed on a beat below the ones already there, in time order
- * among themselves: of two items' changes that now share a count, the one that was already on it
- * stays newer, so who holds what doesn't change (ADR 0004's "existing wins").
+ * Before deleting `beatIds`: each beat's order, and each deleted beat's next surviving beat (null
+ * at the end of the show).
  */
-const rankLandedPlacements = async (
+const beatsAfterDeletion = async (
     tx: DbTransaction,
-    landed: readonly LandedRow[],
+    beatIds: ReadonlySet<number>,
 ) => {
-    const byBeat = new Map<number, LandedRow[]>();
-    for (const row of landed) {
-        const list = byBeat.get(row.to);
-        if (list) list.push(row);
-        else byBeat.set(row.to, [row]);
-    }
-    const ids = new Set(landed.map((r) => r.id));
-    for (const [beatId, rows] of byBeat) {
-        const others = (
-            await tx
-                .select({
-                    id: schema.item_placements.id,
-                    rank: schema.item_placements.beat_rank,
-                })
-                .from(schema.item_placements)
-                .where(eq(schema.item_placements.beat_id, beatId))
-                .all()
-        ).filter((r) => !ids.has(r.id));
-        if (others.length === 0 && rows.length === 1) continue;
-        const below =
-            others.length > 0 ? Math.min(...others.map((r) => r.rank)) : 0;
-        const ordered = [...rows].sort((a, b) => a.at - b.at || a.id - b.id);
-        for (const [i, row] of ordered.entries())
-            await tx
-                .update(schema.item_placements)
-                .set({ beat_rank: below - (ordered.length - i) })
-                .where(eq(schema.item_placements.id, row.id))
-                .run();
-    }
+    const beats = await tx
+        .select({ id: schema.beats.id })
+        .from(schema.beats)
+        .orderBy(asc(schema.beats.position), asc(schema.beats.id))
+        .all();
+    const order = new Map<number, number>();
+    const nextBeat = new Map<number, number | null>();
+    let run: number[] = [];
+    beats.forEach(({ id }, i) => {
+        order.set(id, i);
+        if (beatIds.has(id)) {
+            run.push(id);
+            return;
+        }
+        for (const deleted of run) nextBeat.set(deleted, id);
+        run = [];
+    });
+    for (const deleted of run) nextBeat.set(deleted, null);
+    return { order, nextBeat };
 };
 
 /** The item tables whose changes are carried past deleted beats and re-mapped onto new ones. */
@@ -115,60 +96,6 @@ export const BEAT_KEYED_ITEM_TABLES: readonly BeatKeyedItemTableEntry[] = [
                 .run();
         },
         keepsOne: true,
-    },
-    {
-        // Holders and crew hang off the change and move with it
-        name: "item_placements",
-        rows: async (tx) =>
-            (
-                await tx
-                    .select({
-                        id: schema.item_placements.id,
-                        item_id: schema.item_placements.item_id,
-                        beat_id: schema.item_placements.beat_id,
-                    })
-                    .from(schema.item_placements)
-                    .all()
-            ).map((r) => ({
-                id: r.id,
-                beatId: r.beat_id,
-                key: String(r.item_id),
-            })),
-        move: async (tx, id, beatId) => {
-            await tx
-                .update(schema.item_placements)
-                .set({ beat_id: beatId })
-                .where(eq(schema.item_placements.id, id))
-                .run();
-        },
-        landed: rankLandedPlacements,
-    },
-    {
-        // One assignment per slot
-        name: "item_artwork_slots",
-        rows: async (tx) =>
-            (
-                await tx
-                    .select({
-                        id: schema.item_artwork_slots.id,
-                        item_id: schema.item_artwork_slots.item_id,
-                        slot: schema.item_artwork_slots.slot,
-                        beat_id: schema.item_artwork_slots.beat_id,
-                    })
-                    .from(schema.item_artwork_slots)
-                    .all()
-            ).map((r) => ({
-                id: r.id,
-                beatId: r.beat_id,
-                key: `${r.item_id}|${r.slot}`,
-            })),
-        move: async (tx, id, beatId) => {
-            await tx
-                .update(schema.item_artwork_slots)
-                .set({ beat_id: beatId })
-                .where(eq(schema.item_artwork_slots.id, id))
-                .run();
-        },
     },
 ];
 
@@ -215,19 +142,16 @@ const land = async (
     landed: readonly LandedRow[],
 ) => {
     for (const { id, to } of landed) await entry.move(tx, id, to);
-    if (landed.length > 0) await entry.landed?.(tx, landed);
 };
 
 /**
- * Carries the item changes on beats about to be deleted forward, as cues are carried (ADR 0004
- * amendment of 2026-10-15). Call it in the deletion's transaction, before the beats go, so one
+ * Carries the item changes on beats about to be deleted forward. Call it in the deletion's transaction, before the beats go, so one
  * undo restores both. Per item (and key) and table, of the changes on a run of deleted beats only
  * the last is kept: it moves to the first surviving beat after the run, unless the item already
  * has a change there, which wins. With no beat after the run, the changes go with their beats,
  * unless that would leave an item no Outline at all: then its last Outline change moves to the
  * last surviving beat before the run. Without this, deleting the count a prop was made on would
- * leave it Off field for good. A Placement change that lands on a count another item's change is
- * already on ranks below it, so deleting a count never changes which item a performer holds.
+ * leave it Off field for good.
  */
 export async function carryItemChangesPastDeletedBeatsInTransaction({
     tx,
@@ -314,8 +238,7 @@ export const nearestSurvivingBeatByTime = (
  * caller deletes those beats as part of replacing them all. Call it after the new beats exist and
  * in the same transaction as the deletion. When several changes for one item (and key) land on
  * one beat, the latest in time is kept and the rest go with their beats; a change already on the
- * surviving beat wins, as with the carry on deleting beats (ADR 0004 amendment of 2026-10-15).
- * Placement changes of several items landing on one beat keep their order in time.
+ * surviving beat wins, as with the carry on deleting beats.
  */
 export async function remapItemChangesOntoReplacementBeatsInTransaction({
     tx,

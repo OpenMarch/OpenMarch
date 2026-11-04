@@ -710,9 +710,7 @@ const TimelineSurface = memo(function TimelineSurface({
     // is as tall as the surface (`TimelinePaneStretchContext`)
     const viewportHeight = useElementHeight(viewportRef);
     const stretch = useContext(TimelinePaneStretchContext);
-    // Lanes in place of the clip rows (Visuals mode's cue lanes, performer-behavior.md 7.1)
-    const band = basic ? undefined : props.band;
-    const contentHeight = band ? trackTop + band.height : timelineHeight;
+    const contentHeight = timelineHeight;
     const surfaceHeight = stretch
         ? Math.max(contentHeight, viewportHeight)
         : contentHeight;
@@ -1075,13 +1073,6 @@ const TimelineSurface = memo(function TimelineSurface({
                                     : [renderClip(track, rowIndex)],
                             ),
                         )}
-                        {band?.render({
-                            top: trackTop,
-                            width,
-                            pixelsPerBeat,
-                            beatCount: model.beatCount,
-                            snapBeats: seekSnapBeats,
-                        })}
                     </div>
                     {/* The clips dropping out of a page box (`useClipDrops`), over the pinned
                         header so they are seen leaving it. They take no clicks while they drop */}

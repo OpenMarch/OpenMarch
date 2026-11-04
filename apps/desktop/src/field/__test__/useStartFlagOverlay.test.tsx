@@ -15,7 +15,6 @@ import {
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useStartFlagKeyStore } from "@/stores/StartFlagKeyStore";
-import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { planStartFlagOverlay } from "../startFlagOverlay";
 import { useStartFlagOverlay } from "../three/useStartFlagOverlay";
@@ -115,7 +114,6 @@ beforeEach(() => {
         pressedAt: null,
         drawn: false,
     });
-    useWorkspaceViewStore.setState({ view: "editor" });
     useEditorModeStore.setState({ mode: "expert" });
 });
 
@@ -172,7 +170,7 @@ describe("useStartFlagOverlay", () => {
         );
     });
 
-    it("draws nothing when the levels in effect are off, at home, isolating, or in Visuals", () => {
+    it("draws nothing when the levels in effect are off, at home, or isolating", () => {
         const { resolver, calls } = counted(g6());
         ready(resolver);
         setLevels({
@@ -206,14 +204,6 @@ describe("useStartFlagOverlay", () => {
         expect(result.current).toBeNull();
         act(() => {
             useTimelineSelectionStore.setState({ isolation: null });
-        });
-
-        act(() => {
-            useWorkspaceViewStore.setState({ view: "visuals" });
-        });
-        expect(result.current).toBeNull();
-        act(() => {
-            useWorkspaceViewStore.setState({ view: "editor" });
         });
         expect(result.current).not.toBeNull();
     });

@@ -22,12 +22,7 @@ import {
     type TimelineInput,
     type TimelineSelection,
 } from "./Timeline";
-import type { TimelineBand } from "./TimelineBand";
-import {
-    TimelineLoopButton,
-    TimelineSoundButton,
-    TimelineSpeedButton,
-} from "./TimelineControls";
+import { TimelineSoundButton, TimelineSpeedButton } from "./TimelineControls";
 import { PlayingTimeline } from "./TimelineModePanel";
 
 const NO_WAVEFORM = { peaksByBeat: [] };
@@ -36,12 +31,6 @@ const NO_CLIPS: TimelineInput[] = [];
 // The transport's controls read their own state: the same elements every render, as in the drill
 // timeline's panel
 const SOUND_BUTTON = <TimelineSoundButton />;
-const LOOP_BUTTONS = (
-    <>
-        <TimelineLoopButton />
-        <TimelineSpeedButton />
-    </>
-);
 const SPEED_BUTTON = <TimelineSpeedButton />;
 
 /**
@@ -102,41 +91,6 @@ function useSavedZoomFit() {
     );
     const setZoomFitted = useUiSettingsStore((s) => s.setTimelineZoomFitted);
     return { zoomFitted, onZoomFittedChange: setZoomFitted };
-}
-
-/**
- * The timeline as a ruler for someone else's lanes (Visuals mode, performer-behavior.md section
- * 7.1): the same pages, measures, waveform, playhead, transport and zoom as the drill timeline,
- * read-only (`TimelineProps.readOnly`), with `band` in place of the clip rows. Always expanded.
- */
-export function TimelineNavigationPanel({ band }: { band: TimelineBand }) {
-    const { beats, pages, measures, countGrid } = useTimingObjects()!;
-    const waveform = useWaveformLane(beats, countGrid);
-    const goTo = useGoToPage(countGrid);
-    // The counts go on past the stored ones, as on the drill timeline (endless counts)
-    const stopBeat = usePlaybackStopBeat();
-    const zoomFit = useSavedZoomFit();
-    return (
-        <TimelineWaveformProvider waveform={waveform ?? NO_WAVEFORM}>
-            <PlayingTimeline
-                mode="expanded"
-                readOnly
-                band={band}
-                showTransport
-                {...zoomFit}
-                className="w-full"
-                beats={beats}
-                pages={pages}
-                measures={measures}
-                timelines={NO_CLIPS}
-                transportAccessories={LOOP_BUTTONS}
-                transportSecondary={SOUND_BUTTON}
-                onSelectionChange={goTo}
-                countGrid={countGrid}
-                fitBeat={stopBeat}
-            />
-        </TimelineWaveformProvider>
-    );
 }
 
 /**

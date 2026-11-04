@@ -22,8 +22,8 @@ import { carryForSection } from "../instruments/catalog";
 
 /**
  * What a marcher carries, for the cues that fit them: their section's usual
- * equipment. The editor's Visuals mode and the 3D window both fit cues by it,
- * whatever the window's guard equipment preview shows.
+ * equipment. The 3D window fits cues and picks the Horn/Equipment default by
+ * it.
  */
 export function sectionCueCarry(section: string): PerformerCarry {
     return performerCarryOf(carryForSection(section)?.family ?? null);

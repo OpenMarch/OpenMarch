@@ -7,7 +7,6 @@ import { TimelineMoveCardSlot } from "./TimelineMoveCard";
 import { T } from "@tolgee/react";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { InspectorPageProvider } from "./InspectorPageContext";
-import { ShowChecksSection } from "@/components/notes/ShowNotesList";
 import { useCompactInspector } from "./useCompactInspector";
 
 function Inspector() {
@@ -35,7 +34,6 @@ function Inspector() {
                     <PageEditor />
                     <MarcherEditor />
                     {/* ADR 0002 D-22: the show's one quiet list, in both modes */}
-                    <ShowChecksSection />
                     {compact && <PageNotesSection />}
                 </div>
 

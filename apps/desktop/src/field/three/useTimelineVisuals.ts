@@ -1,4 +1,3 @@
-import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import { useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { FieldProperties } from "@openmarch/core";
@@ -25,12 +24,6 @@ import {
     planPathOverlay,
     type OverlayPlan,
 } from "@/field/timelineOverlays";
-import { useVisualsStore } from "@/stores/VisualsStore";
-import {
-    isVisualsView,
-    useWorkspaceViewStore,
-} from "@/stores/WorkspaceViewStore";
-import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { FieldDimming } from "./fieldDimming";
 import { FieldFollowing } from "./fieldFollowing";
 
@@ -157,23 +150,13 @@ export function useTimelineVisuals({
 
 /**
  * UI-9: while a move is isolated, the marchers outside it are dimmed, once the
- * resolver is ready. In Visuals mode a focused who does the same, ahead of
- * any isolation (performer-behavior.md section 7.1); dimmed marchers stay
- * selectable there, since the selection is a who. Follows the stores outside
- * React; `FieldDimming` ignores updates that keep the same members, such as
+ * resolver is ready. Follows the store outside React; `FieldDimming` ignores updates that keep the same members, such as
  * the window moving inside the move.
  */
 function useFieldDimming(enabled: boolean): FieldDimming {
     const dimming = useMemo(() => new FieldDimming(), []);
     useEffect(() => {
         const update = () => {
-            const focused = isVisualsView()
-                ? useVisualsStore.getState().focusMarcherIds
-                : null;
-            if (focused) {
-                dimming.set(focused);
-                return;
-            }
             const isolated = enabled
                 ? isolatedTimeline(useTimelineSelectionStore.getState())
                 : null;
@@ -188,13 +171,6 @@ function useFieldDimming(enabled: boolean): FieldDimming {
                 )
                     update();
             }),
-            useVisualsStore.subscribe((state, previous) => {
-                if (state.focusMarcherIds !== previous.focusMarcherIds)
-                    update();
-            }),
-            useWorkspaceViewStore.subscribe(update),
-            useEditorModeStore.subscribe(update),
-            usePreviewModeStore.subscribe(update),
         ];
         return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
     }, [dimming, enabled]);

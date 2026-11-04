@@ -23,7 +23,6 @@ import { QueryClient, mutationOptions } from "@tanstack/react-query";
 import { tagKeys, invalidateTagQueries } from "./queries";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
-import { invalidateCueQueries } from "../useCues";
 
 // ============================================================================
 // TAGS MUTATIONS
@@ -79,8 +78,6 @@ export const deleteTagsMutationOptions = (qc: QueryClient) => {
             }),
         onSuccess: async (_) => {
             invalidateTagQueries(qc);
-            // Cues targeting the tag went with it (ADR 0004 D-1)
-            void invalidateCueQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("tags.errors.deleteTags"), e, variables);

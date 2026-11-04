@@ -19,14 +19,6 @@
  *   default when the stored one doesn't fit the kit).
  * - `quality`: the render quality the scene builds for. `low` drops
  *   shadows and halves the crowd.
- * - `hornState`, `guardEquipment`, `stepOffFoot`: the window's preview
- *   overrides (performer-behavior.md section 7.5, `performers/previewOverrides.ts`).
- *   Never saved; null, the start, follows the show: the compiled
- *   Horn/Equipment cues from horns up, each guard section's own equipment,
- *   and the show's saved step-off foot (`performerDefaults`, ADR 0004 D-4)
- *   with Feet cues setting their own. A horn state holds every carrier in
- *   that hold for the whole show; a guard piece goes in every guard
- *   member's hands; a foot replaces the show's default foot.
  * - `powerPrefs`: pause drawing when nothing moves, and cap the frame rate
  *   on battery (`drawPolicy.ts`); saved per computer. Set it with
  *   `setPowerPrefs`. `onBattery` is the window's own reading of the battery.
@@ -70,8 +62,6 @@ import {
     saveQualityMode,
     type QualityMode,
 } from "./qualityPreference";
-import type { HoldState } from "./hornState";
-import type { GuardModelId } from "@/view3d/core/instruments/model";
 import {
     POWER_STORAGE_KEY,
     loadPowerPrefs,
@@ -84,7 +74,6 @@ import {
     saveResolution,
     type Resolution,
 } from "./renderPrefs";
-import type { StepOffFoot } from "./performers/marchers/marcherBodies";
 
 /** People within this many meters of a seat camera are hidden (ui.md UI-3). */
 export const CROWD_CLEAR_RADIUS = 4.9;
@@ -102,12 +91,6 @@ export interface View3dSceneState {
     lighting: LightingPreset | null;
     quality: View3dQuality;
     setQuality: (quality: View3dQuality) => void;
-    hornState: HoldState | null;
-    setHornState: (state: HoldState | null) => void;
-    guardEquipment: GuardModelId | null;
-    setGuardEquipment: (equipment: GuardModelId | null) => void;
-    stepOffFoot: StepOffFoot | null;
-    setStepOffFoot: (foot: StepOffFoot | null) => void;
     powerPrefs: PowerPrefs;
     setPowerPrefs: (prefs: PowerPrefs) => void;
     onBattery: boolean;
@@ -172,12 +155,6 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
     lighting: null,
     quality: initialQuality(startMode),
     setQuality: (quality) => set({ quality }),
-    hornState: null,
-    setHornState: (hornState) => set({ hornState }),
-    guardEquipment: null,
-    setGuardEquipment: (guardEquipment) => set({ guardEquipment }),
-    stepOffFoot: null,
-    setStepOffFoot: (stepOffFoot) => set({ stepOffFoot }),
     powerPrefs: loadPowerPrefs(),
     setPowerPrefs: (powerPrefs) => {
         savePowerPrefs(powerPrefs);

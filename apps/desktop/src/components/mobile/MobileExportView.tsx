@@ -25,6 +25,7 @@ import { twMerge } from "tailwind-merge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
+import PageLinesNote from "./PageLinesNote";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile, {
     computePlaceholderAudioDurationFromPages,
@@ -73,6 +74,7 @@ export default function MobileExportView({
                     productionId={currentProduction.id}
                     currentProduction={currentProduction}
                 />
+                <PageLinesNote />
                 <RevisionsList
                     revisions={currentProduction.revisions}
                     activeRevisionId={currentProduction.active_revision_id}

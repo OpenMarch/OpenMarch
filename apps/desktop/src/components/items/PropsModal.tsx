@@ -28,7 +28,6 @@ import {
 } from "@openmarch/ui";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import ColorPickerMini from "@/components/ui/ColorPickerMini";
-import { ItemNotes } from "@/components/notes/ShowNotesList";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
@@ -486,7 +485,6 @@ function PropEditor({ itemId }: { itemId: number }) {
 
     return (
         <div className="flex flex-col gap-16">
-            <ItemNotes itemId={item.id} />
             <label className="flex flex-col gap-4 text-sm">
                 <span className="text-text/70">
                     <T keyName="props.name" />

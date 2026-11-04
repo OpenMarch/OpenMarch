@@ -2,7 +2,6 @@ import tolgee from "@/global/singletons/Tolgee";
 import clsx from "clsx";
 import { useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
-import { StarIcon } from "@phosphor-icons/react";
 import { create } from "zustand";
 import { performersOnly } from "@/global/classes/Marcher";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -24,8 +23,10 @@ import {
 import { kindPickGate, pickShapeKind } from "./pickKind";
 import { SHAPE_TOOLS } from "./shapeTools";
 import { useShapeShown } from "./shapeToolStore";
-import { useStarredShapes } from "./starredShapes";
 import { Tip } from "@/components/ui/Tip";
+
+/** The ring's slots, the same every time */
+const SLOTS = ringSlots(SHAPE_TOOLS);
 
 /** The open ring, if any */
 const useRingStore = create<{ ring: RingState | null }>(() => ({
@@ -56,8 +57,8 @@ function ringCenter(): { x: number; y: number } {
 
 /**
  * The favorites ring (#351, spec #344): hold R to open a ring of shapes around the cursor, slide
- * toward one and let go to arm it; tap R to keep it open until a click. It holds the starred
- * shapes, then the basic kinds in the Shapes tab's order, at most 8. Picking goes through the
+ * toward one and let go to arm it; tap R to keep it open until a click. It holds the kinds in
+ * the Shapes tab's order, at most 8. Picking goes through the
  * host's `pickShapeKind`, so with a shape open it turns into the picked kind, and with nobody
  * selected the shapes are greyed out and say why. Escape closes it before anything else. The key
  * is the `openShapeRing` action, so it can be rebound.
@@ -69,8 +70,7 @@ export default function FavoritesRing() {
         () => performersOnly(selected ?? []),
         [selected],
     );
-    const starred = useStarredShapes();
-    const slots = useMemo(() => ringSlots(starred, SHAPE_TOOLS), [starred]);
+    const slots = SLOTS;
     const gate = kindPickGate(useShapeShown(), performers);
     const ring = useRingStore((s) => s.ring);
 
@@ -198,7 +198,6 @@ export default function FavoritesRing() {
                             slot={slot}
                             angle={slotAngle(i, slots.length)}
                             hot={ring.hot === i}
-                            starred={starred.some((s) => s.id === slot.id)}
                             disabled={!gate.ok}
                             title={gate.ok ? undefined : gate.reason}
                             onPick={() => pick(i)}
@@ -236,7 +235,6 @@ function RingSlot({
     slot,
     angle,
     hot,
-    starred,
     disabled,
     title,
     onPick,
@@ -244,8 +242,6 @@ function RingSlot({
     slot: RingShape;
     angle: number;
     hot: boolean;
-    /** Starred in the library, rather than a basic kind filling an empty slot */
-    starred: boolean;
     disabled: boolean;
     title: string | undefined;
     onPick: () => void;
@@ -259,7 +255,6 @@ function RingSlot({
                 aria-disabled={disabled}
                 data-testid={`shape-ring-slot-${slot.id}`}
                 data-hot={hot}
-                data-starred={starred}
                 className={clsx(
                     "border-stroke text-body pointer-events-auto absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-6 rounded-full border px-12 py-6 whitespace-nowrap",
                     hot && !disabled
@@ -280,16 +275,6 @@ function RingSlot({
             >
                 <ShapePreviewIcon kind={slot.kind} size={20} picked={hot} />
                 {slot.label}
-                {starred && (
-                    <StarIcon
-                        size={12}
-                        weight="fill"
-                        aria-label={tolgee.t(
-                            "shapes.tool.ring.starred",
-                            "Starred",
-                        )}
-                    />
-                )}
             </button>
         </Tip>
     );

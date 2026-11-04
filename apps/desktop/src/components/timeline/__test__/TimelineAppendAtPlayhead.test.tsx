@@ -139,7 +139,7 @@ describe("+ Add N-Count Page at the playhead", () => {
         expect(onAppend).toHaveBeenCalledTimes(1);
     });
 
-    it("isn't there on a read-only timeline (Preview, Visuals), though it's given one", () => {
+    it("isn't there on a read-only timeline (Preview), though it's given one", () => {
         show({ appendAtPlayhead: append(), readOnly: true });
         expect(button()).toBeNull();
     });

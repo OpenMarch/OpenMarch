@@ -24,7 +24,6 @@ import {
 import { DEFAULT_STALE_TIME } from "./constants";
 import { beatKeys } from "./useBeats";
 import tolgee from "@/global/singletons/Tolgee";
-import { showCueCarryNotice } from "@/utilities/cueCarryNotice";
 
 const KEY_BASE = "measures";
 
@@ -208,9 +207,6 @@ export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                             }),
                     ),
             );
-        },
-        onSuccess: (cues) => {
-            showCueCarryNotice(cues, qc);
         },
         onSettled: () => {
             // Invalidate all queries
